@@ -16,13 +16,47 @@ export interface SnapResult {
 }
 
 function getEdges(node: SceneNode) {
+  if (node.rotation === 0) {
+    return {
+      left: node.x,
+      right: node.x + node.width,
+      centerX: node.x + node.width / 2,
+      top: node.y,
+      bottom: node.y + node.height,
+      centerY: node.y + node.height / 2
+    }
+  }
+
+  const cx = node.x + node.width / 2
+  const cy = node.y + node.height / 2
+  const rad = (node.rotation * Math.PI) / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const hw = node.width / 2
+  const hh = node.height / 2
+
+  const corners = [
+    { x: cx + (-hw) * cos - (-hh) * sin, y: cy + (-hw) * sin + (-hh) * cos },
+    { x: cx + hw * cos - (-hh) * sin, y: cy + hw * sin + (-hh) * cos },
+    { x: cx + hw * cos - hh * sin, y: cy + hw * sin + hh * cos },
+    { x: cx + (-hw) * cos - hh * sin, y: cy + (-hw) * sin + hh * cos },
+  ]
+
+  let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity
+  for (const c of corners) {
+    left = Math.min(left, c.x)
+    right = Math.max(right, c.x)
+    top = Math.min(top, c.y)
+    bottom = Math.max(bottom, c.y)
+  }
+
   return {
-    left: node.x,
-    right: node.x + node.width,
-    centerX: node.x + node.width / 2,
-    top: node.y,
-    bottom: node.y + node.height,
-    centerY: node.y + node.height / 2
+    left,
+    right,
+    centerX: (left + right) / 2,
+    top,
+    bottom,
+    centerY: (top + bottom) / 2
   }
 }
 
@@ -123,10 +157,11 @@ export function computeSelectionBounds(
   let maxX = -Infinity
   let maxY = -Infinity
   for (const n of nodes) {
-    minX = Math.min(minX, n.x)
-    minY = Math.min(minY, n.y)
-    maxX = Math.max(maxX, n.x + n.width)
-    maxY = Math.max(maxY, n.y + n.height)
+    const edges = getEdges(n)
+    minX = Math.min(minX, edges.left)
+    minY = Math.min(minY, edges.top)
+    maxX = Math.max(maxX, edges.right)
+    maxY = Math.max(maxY, edges.bottom)
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
