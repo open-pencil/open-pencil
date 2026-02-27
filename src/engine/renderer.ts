@@ -29,6 +29,7 @@ export class SkiaRenderer {
   private fillPaint: Paint
   private strokePaint: Paint
   private selectionPaint: Paint
+  private parentOutlinePaint: Paint
   private snapPaint: Paint
   private textFont: Font | null = null
   private fontMgr: FontMgr | null = null
@@ -57,6 +58,13 @@ export class SkiaRenderer {
     this.selectionPaint.setStrokeWidth(1)
     this.selectionPaint.setColor(ck.Color4f(0.23, 0.51, 0.96, 1.0))
     this.selectionPaint.setAntiAlias(true)
+
+    this.parentOutlinePaint = new ck.Paint()
+    this.parentOutlinePaint.setStyle(ck.PaintStyle.Stroke)
+    this.parentOutlinePaint.setStrokeWidth(1)
+    this.parentOutlinePaint.setColor(ck.Color4f(0.23, 0.51, 0.96, 0.5))
+    this.parentOutlinePaint.setAntiAlias(true)
+    this.parentOutlinePaint.setPathEffect(ck.PathEffect.MakeDash([4, 4], 0))
 
     this.snapPaint = new ck.Paint()
     this.snapPaint.setStyle(ck.PaintStyle.Stroke)
@@ -127,6 +135,8 @@ export class SkiaRenderer {
     if (selectedIds.size === 0) return
 
     this.selectionPaint.setStrokeWidth(1)
+
+    this.drawParentFrameOutlines(canvas, graph, selectedIds)
 
     if (selectedIds.size === 1) {
       const id = [...selectedIds][0]
@@ -210,6 +220,36 @@ export class SkiaRenderer {
     rotFill.delete()
 
     canvas.restore()
+  }
+
+  private drawParentFrameOutlines(
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>
+  ): void {
+    const drawn = new Set<string>()
+    for (const id of selectedIds) {
+      const node = graph.getNode(id)
+      if (!node?.parentId || node.parentId === graph.rootId) continue
+      if (drawn.has(node.parentId) || selectedIds.has(node.parentId)) continue
+
+      const parent = graph.getNode(node.parentId)
+      if (!parent) continue
+      drawn.add(node.parentId)
+
+      const abs = graph.getAbsolutePosition(parent.id)
+      const x = abs.x * this.zoom + this.panX
+      const y = abs.y * this.zoom + this.panY
+      const w = parent.width * this.zoom
+      const h = parent.height * this.zoom
+
+      canvas.save()
+      if (parent.rotation !== 0) {
+        canvas.rotate(parent.rotation, x + w / 2, y + h / 2)
+      }
+      canvas.drawRect(this.ck.LTRBRect(x, y, x + w, y + h), this.parentOutlinePaint)
+      canvas.restore()
+    }
   }
 
   private drawNodeOutline(
