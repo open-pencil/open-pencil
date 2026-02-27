@@ -1,5 +1,11 @@
 import { reactive, shallowRef, computed } from 'vue'
 
+import {
+  parseFigmaClipboard,
+  importClipboardNodes,
+  parseOpenPencilClipboard,
+  buildFigmaClipboardHTML
+} from '../engine/clipboard'
 import { readFigFile } from '../engine/fig-file'
 import { SceneGraph } from '../engine/scene-graph'
 import { UndoManager } from '../engine/undo'
@@ -223,6 +229,85 @@ export function createEditorStore() {
     }
   }
 
+  async function copySelected() {
+    const nodes = selectedNodes.value
+    if (nodes.length === 0) return
+
+    const html = buildFigmaClipboardHTML(nodes, graph)
+    const names = nodes.map((n) => n.name).join('\n')
+
+    const clipboardItem = new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([names], { type: 'text/plain' })
+    })
+    await navigator.clipboard.write([clipboardItem])
+  }
+
+  async function cutSelected() {
+    await copySelected()
+    deleteSelected()
+  }
+
+  async function pasteFromClipboard() {
+    const items = await navigator.clipboard.read()
+    let html = ''
+    for (const item of items) {
+      if (item.types.includes('text/html')) {
+        const blob = await item.getType('text/html')
+        html = await blob.text()
+        break
+      }
+    }
+    if (!html) return
+
+    // Try our own format first
+    const ownNodes = parseOpenPencilClipboard(html)
+    if (ownNodes) {
+      pasteOpenPencilNodes(ownNodes)
+      return
+    }
+
+    // Try Figma format
+    const figma = await parseFigmaClipboard(html)
+    if (figma) {
+      const created = importClipboardNodes(figma.nodes, graph, graph.rootId, 20, 20)
+      if (created.length > 0) {
+        state.selectedIds = new Set(created)
+        requestRender()
+      }
+    }
+  }
+
+  function pasteOpenPencilNodes(
+    nodes: Array<SceneNode & { children?: SceneNode[] }>,
+    parentId?: string
+  ) {
+    const target = parentId ?? graph.rootId
+    const newIds: string[] = []
+
+    function createTree(src: SceneNode & { children?: SceneNode[] }, pid: string, isTop: boolean) {
+      const node = graph.createNode(src.type, pid, {
+        ...src,
+        x: src.x + (isTop ? 20 : 0),
+        y: src.y + (isTop ? 20 : 0)
+      })
+      if (isTop) newIds.push(node.id)
+      if (src.children) {
+        for (const child of src.children) {
+          createTree(child, node.id, false)
+        }
+      }
+    }
+
+    for (const src of nodes) {
+      createTree(src, target, true)
+    }
+    if (newIds.length > 0) {
+      state.selectedIds = new Set(newIds)
+      requestRender()
+    }
+  }
+
   function deleteSelected() {
     undo.beginBatch('Delete')
     for (const id of state.selectedIds) {
@@ -347,6 +432,9 @@ export function createEditorStore() {
     updateNode,
     createShape,
     duplicateSelected,
+    copySelected,
+    cutSelected,
+    pasteFromClipboard,
     deleteSelected,
     commitMove,
     undoAction,

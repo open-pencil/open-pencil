@@ -44,6 +44,15 @@ export function useKeyboard(store: EditorStore) {
       } else if (e.key === 'o') {
         e.preventDefault()
         openFileDialog(store)
+      } else if (e.key === 'c') {
+        e.preventDefault()
+        store.copySelected()
+      } else if (e.key === 'x') {
+        e.preventDefault()
+        store.cutSelected()
+      } else if (e.key === 'v') {
+        e.preventDefault()
+        store.pasteFromClipboard()
       }
     }
 
