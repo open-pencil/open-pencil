@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 
+import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
+
 import ColorPicker from './ColorPicker.vue'
 import { useEditorStore } from '../stores/editor'
 
@@ -214,17 +216,21 @@ function colorHex(c: Color) {
 
       <div class="section">
         <label class="section-label">Appearance</label>
-        <div class="input-row">
-          <label class="prop-input full">
-            <span class="prop-label">Opacity</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              :value="store.selectedNodes.value[0]?.opacity * 100"
-              @input="updateProp('opacity', +($event.target as HTMLInputElement).value / 100)"
-            />
-          </label>
+        <div class="opacity-row">
+          <span class="prop-label">Opacity</span>
+          <SliderRoot
+            class="slider-root"
+            :model-value="[Math.round((store.selectedNodes.value[0]?.opacity ?? 1) * 100)]"
+            :max="100"
+            :step="1"
+            @update:model-value="(v) => updateProp('opacity', (v?.[0] ?? 100) / 100)"
+          >
+            <SliderTrack class="slider-track">
+              <SliderRange class="slider-range" />
+            </SliderTrack>
+            <SliderThumb class="slider-thumb" />
+          </SliderRoot>
+          <span class="prop-value">{{ Math.round((store.selectedNodes.value[0]?.opacity ?? 1) * 100) }}%</span>
         </div>
       </div>
     </div>
@@ -537,18 +543,21 @@ function colorHex(c: Color) {
       <!-- Appearance -->
       <div class="section">
         <label class="section-label">Appearance</label>
-        <div class="input-row">
-          <label class="prop-input full">
-            <span class="prop-label">Opacity</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              :value="node.opacity * 100"
-              @input="updateProp('opacity', +($event.target as HTMLInputElement).value / 100)"
-            />
-            <span class="prop-value">{{ Math.round(node.opacity * 100) }}%</span>
-          </label>
+        <div class="opacity-row">
+          <span class="prop-label">Opacity</span>
+          <SliderRoot
+            class="slider-root"
+            :model-value="[Math.round(node.opacity * 100)]"
+            :max="100"
+            :step="1"
+            @update:model-value="(v) => updateProp('opacity', (v?.[0] ?? 100) / 100)"
+          >
+            <SliderTrack class="slider-track">
+              <SliderRange class="slider-range" />
+            </SliderTrack>
+            <SliderThumb class="slider-thumb" />
+          </SliderRoot>
+          <span class="prop-value">{{ Math.round(node.opacity * 100) }}%</span>
         </div>
       </div>
 
@@ -753,31 +762,56 @@ function colorHex(c: Color) {
   font-size: 12px;
 }
 
-.prop-input input[type='range'] {
+.opacity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-root {
+  position: relative;
+  display: flex;
+  align-items: center;
   flex: 1;
-  min-width: 0;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
+  height: 16px;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+
+.slider-track {
+  position: relative;
+  flex-grow: 1;
+  height: 3px;
   background: var(--border);
   border-radius: 2px;
-  outline: none;
-  cursor: pointer;
 }
 
-.prop-input input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
+.slider-range {
+  position: absolute;
+  height: 100%;
+  background: var(--accent, #3b82f6);
+  border-radius: 2px;
+}
+
+.slider-thumb {
+  display: block;
   width: 10px;
   height: 10px;
+  background: white;
   border-radius: 50%;
-  background: var(--text);
-  border: none;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+  outline: none;
   cursor: pointer;
+  transition: box-shadow 0.1s;
 }
 
-.prop-input input[type='range']::-webkit-slider-thumb:hover {
-  background: var(--accent, #3b82f6);
+.slider-thumb:hover {
+  box-shadow: 0 0 0 2px var(--accent, #3b82f6);
+}
+
+.slider-thumb:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent, #3b82f6);
 }
 
 .prop-value {
