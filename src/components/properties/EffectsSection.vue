@@ -106,7 +106,7 @@ function toggleExpand(index: number) {
       >+</button>
     </div>
 
-    <div v-for="(effect, i) in node.effects" :key="i" class="relative">
+    <div v-for="(effect, i) in node.effects" :key="i">
       <!-- Collapsed row: color swatch | type dropdown | eye | minus -->
       <div class="group flex items-center gap-1.5 py-0.5">
         <button
@@ -144,96 +144,61 @@ function toggleExpand(index: number) {
         >−</button>
       </div>
 
-      <!-- Expanded popover -->
-      <div
-        v-if="expandedIndex === i"
-        class="absolute right-full top-0 z-50 mr-2 w-56 rounded-lg border border-border bg-panel p-3 shadow-lg"
-      >
-        <div class="mb-3 flex items-center justify-between">
-          <select
-            class="cursor-pointer appearance-none border-none bg-transparent text-xs font-medium text-surface outline-none"
-            :value="effect.type"
-            @change="updateType(i, ($event.target as HTMLSelectElement).value as EffectType)"
-          >
-            <option v-for="t in EFFECT_TYPES" :key="t" :value="t" class="bg-panel text-surface">{{ EFFECT_LABELS[t] }}</option>
-          </select>
-          <button
-            class="cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
-            @click="toggleExpand(i)"
-          >
-            <icon-lucide-x class="size-3.5" />
-          </button>
-        </div>
-
+      <!-- Expanded controls inline -->
+      <div v-if="expandedIndex === i" class="flex flex-col gap-1.5 py-1.5">
         <template v-if="isShadow(effect.type)">
-          <div class="flex flex-col gap-2.5">
-            <div class="flex items-center gap-3">
-              <span class="w-12 text-[11px] text-muted">Position</span>
-              <div class="flex flex-1 items-center gap-1">
-                <ScrubInput
-                  icon="X"
-                  :model-value="effect.offset.x"
-                  @update:model-value="updateEffect(i, { offset: { ...effect.offset, x: $event } })"
-                />
-                <ScrubInput
-                  icon="Y"
-                  :model-value="effect.offset.y"
-                  @update:model-value="updateEffect(i, { offset: { ...effect.offset, y: $event } })"
-                />
-              </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <span class="w-12 text-[11px] text-muted">Blur</span>
-              <ScrubInput
-                class="flex-1"
-                :model-value="effect.radius"
-                :min="0"
-                @update:model-value="updateEffect(i, { radius: $event })"
-              />
-            </div>
-
-            <div class="flex items-center gap-3">
-              <span class="w-12 text-[11px] text-muted">Spread</span>
-              <ScrubInput
-                class="flex-1"
-                :model-value="effect.spread"
-                @update:model-value="updateEffect(i, { spread: $event })"
-              />
-            </div>
-
-            <div class="flex items-center gap-3">
-              <span class="w-12 text-[11px] text-muted">Color</span>
-              <div class="flex flex-1 items-center gap-1">
-                <ColorPicker :color="effect.color" @update="updateColor(i, $event)" />
-                <input
-                  class="min-w-0 flex-1 border-none bg-transparent font-mono text-xs text-surface outline-none"
-                  :value="colorToHexRaw(effect.color)"
-                  @change="updateHex(i, ($event.target as HTMLInputElement).value)"
-                />
-                <ScrubInput
-                  class="w-12"
-                  suffix="%"
-                  :model-value="Math.round(effect.color.a * 100)"
-                  :min="0"
-                  :max="100"
-                  @update:model-value="updateColorOpacity(i, $event)"
-                />
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <template v-else>
-          <div class="flex items-center gap-3">
-            <span class="w-12 text-[11px] text-muted">Blur</span>
+          <div class="flex items-center gap-1.5">
             <ScrubInput
-              class="flex-1"
+              icon="X"
+              :model-value="effect.offset.x"
+              @update:model-value="updateEffect(i, { offset: { ...effect.offset, x: $event } })"
+            />
+            <ScrubInput
+              icon="Y"
+              :model-value="effect.offset.y"
+              @update:model-value="updateEffect(i, { offset: { ...effect.offset, y: $event } })"
+            />
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <ScrubInput
+              icon="B"
               :model-value="effect.radius"
               :min="0"
               @update:model-value="updateEffect(i, { radius: $event })"
             />
+            <ScrubInput
+              icon="S"
+              :model-value="effect.spread"
+              @update:model-value="updateEffect(i, { spread: $event })"
+            />
           </div>
+
+          <div class="flex items-center gap-1.5">
+            <ColorPicker :color="effect.color" @update="updateColor(i, $event)" />
+            <input
+              class="min-w-0 flex-1 rounded border border-border bg-input px-1.5 py-0.5 font-mono text-xs text-surface outline-none"
+              :value="colorToHexRaw(effect.color)"
+              @change="updateHex(i, ($event.target as HTMLInputElement).value)"
+            />
+            <ScrubInput
+              class="w-14"
+              suffix="%"
+              :model-value="Math.round(effect.color.a * 100)"
+              :min="0"
+              :max="100"
+              @update:model-value="updateColorOpacity(i, $event)"
+            />
+          </div>
+        </template>
+
+        <template v-else>
+          <ScrubInput
+            icon="B"
+            :model-value="effect.radius"
+            :min="0"
+            @update:model-value="updateEffect(i, { radius: $event })"
+          />
         </template>
       </div>
     </div>

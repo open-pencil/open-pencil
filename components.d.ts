@@ -44,7 +44,6 @@ declare module 'vue' {
     IconLucideRotateCcw: typeof import('~icons/lucide/rotate-ccw')['default']
     IconLucideRotateCw: typeof import('~icons/lucide/rotate-cw')['default']
     IconLucideSearch: typeof import('~icons/lucide/search')['default']
-    IconLucideX: typeof import('~icons/lucide/x')['default']
     LayersPanel: typeof import('./src/components/LayersPanel.vue')['default']
     LayoutSection: typeof import('./src/components/properties/LayoutSection.vue')['default']
     PageSection: typeof import('./src/components/properties/PageSection.vue')['default']
