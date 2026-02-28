@@ -38,7 +38,44 @@ export const RULER_MINOR_TICK = 0.25
 export const RULER_HIGHLIGHT_ALPHA = 0.3
 
 export const PEN_HANDLE_RADIUS = 3
+export const PEN_VERTEX_RADIUS = 4
+export const PEN_CLOSE_RADIUS_BOOST = 2
+export const PEN_PATH_STROKE_WIDTH = 2
+export const PEN_CLOSE_THRESHOLD = 8
 export const PARENT_OUTLINE_ALPHA = 0.5
+export const PARENT_OUTLINE_DASH = 4
 export const DEFAULT_FONT_SIZE = 14
 export const LABEL_FONT_SIZE = 11
 export const SIZE_FONT_SIZE = 10
+
+export const ROTATION_HANDLE_RADIUS = 4
+export const ROTATION_SNAP_DEGREES = 15
+export const ROTATION_HIT_OFFSET = 24
+
+export const HANDLE_HALF_SIZE = 3
+
+export const LABEL_OFFSET_Y = 8
+export const SIZE_PILL_PADDING_X = 6
+export const SIZE_PILL_PADDING_Y = 6
+export const SIZE_PILL_HEIGHT = 18
+export const SIZE_PILL_RADIUS = 4
+export const SIZE_PILL_TEXT_OFFSET_Y = 13
+
+export const MARQUEE_FILL_ALPHA = 0.08
+export const SELECTION_DASH_ALPHA = 0.6
+export const DROP_HIGHLIGHT_ALPHA = 0.8
+export const DROP_HIGHLIGHT_STROKE = 2
+
+export const LAYOUT_INDICATOR_STROKE = 2
+
+export const DEFAULT_TEXT_WIDTH = 200
+export const DEFAULT_TEXT_HEIGHT = 24
+
+export const AUTO_LAYOUT_BREAK_THRESHOLD = 8
+export const HANDLE_HIT_RADIUS = 6
+export const ROTATION_HIT_RADIUS = 8
+
+export const ZOOM_SENSITIVITY = 0.99
+
+export const RULER_TARGET_PIXEL_SPACING = 100
+export const RULER_MAJOR_TOLERANCE = 0.01

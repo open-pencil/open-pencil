@@ -3,7 +3,15 @@ import {
   RULER_SIZE, RULER_BG_COLOR, RULER_TICK_COLOR, RULER_TEXT_COLOR,
   RULER_BADGE_HEIGHT, RULER_BADGE_PADDING, RULER_BADGE_RADIUS, RULER_BADGE_EXCLUSION,
   RULER_TEXT_BASELINE, RULER_MAJOR_TICK, RULER_MINOR_TICK, RULER_HIGHLIGHT_ALPHA,
-  PEN_HANDLE_RADIUS, PARENT_OUTLINE_ALPHA, DEFAULT_FONT_SIZE, LABEL_FONT_SIZE, SIZE_FONT_SIZE
+  PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS, PEN_CLOSE_RADIUS_BOOST, PEN_PATH_STROKE_WIDTH,
+  PARENT_OUTLINE_ALPHA, PARENT_OUTLINE_DASH,
+  DEFAULT_FONT_SIZE, LABEL_FONT_SIZE, SIZE_FONT_SIZE,
+  ROTATION_HANDLE_RADIUS, HANDLE_HALF_SIZE,
+  LABEL_OFFSET_Y, SIZE_PILL_PADDING_X, SIZE_PILL_PADDING_Y, SIZE_PILL_HEIGHT,
+  SIZE_PILL_RADIUS, SIZE_PILL_TEXT_OFFSET_Y,
+  MARQUEE_FILL_ALPHA, SELECTION_DASH_ALPHA, DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE,
+  LAYOUT_INDICATOR_STROKE,
+  RULER_TARGET_PIXEL_SPACING, RULER_MAJOR_TOLERANCE
 } from '../constants'
 import type { SceneNode, SceneGraph, Fill } from './scene-graph'
 import type { SnapGuide } from './snap'
@@ -92,7 +100,7 @@ export class SkiaRenderer {
     this.parentOutlinePaint.setStrokeWidth(1)
     this.parentOutlinePaint.setColor(this.selColor(PARENT_OUTLINE_ALPHA))
     this.parentOutlinePaint.setAntiAlias(true)
-    this.parentOutlinePaint.setPathEffect(ck.PathEffect.MakeDash([4, 4], 0))
+    this.parentOutlinePaint.setPathEffect(ck.PathEffect.MakeDash([PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH], 0))
 
     this.snapPaint = new ck.Paint()
     this.snapPaint.setStyle(ck.PaintStyle.Stroke)
@@ -242,7 +250,7 @@ export class SkiaRenderer {
     this.drawHandle(canvas, x2, my)
 
     // Rotation handle (line extending above + circle)
-    const rotHandleY = y1 - ROTATION_HANDLE_OFFSET - 4
+    const rotHandleY = y1 - ROTATION_HANDLE_OFFSET - ROTATION_HANDLE_RADIUS
     const rotLinePaint = new this.ck.Paint()
     rotLinePaint.setStyle(this.ck.PaintStyle.Stroke)
     rotLinePaint.setStrokeWidth(1)
@@ -254,8 +262,8 @@ export class SkiaRenderer {
     rotFill.setStyle(this.ck.PaintStyle.Fill)
     rotFill.setColor(this.ck.WHITE)
     rotFill.setAntiAlias(true)
-    canvas.drawCircle(mx, rotHandleY, 4, rotFill)
-    canvas.drawCircle(mx, rotHandleY, 4, rotLinePaint)
+    canvas.drawCircle(mx, rotHandleY, ROTATION_HANDLE_RADIUS, rotFill)
+    canvas.drawCircle(mx, rotHandleY, ROTATION_HANDLE_RADIUS, rotLinePaint)
     rotLinePaint.delete()
     rotFill.delete()
 
@@ -303,7 +311,7 @@ export class SkiaRenderer {
         labelPaint.setStyle(this.ck.PaintStyle.Fill)
         labelPaint.setColor(this.selColor())
         labelPaint.setAntiAlias(true)
-        canvas.drawText(node.name, sx1, sy1 - 8, labelPaint, this.labelFont)
+        canvas.drawText(node.name, sx1, sy1 - LABEL_OFFSET_Y, labelPaint, this.labelFont)
         labelPaint.delete()
       }
     }
@@ -316,24 +324,24 @@ export class SkiaRenderer {
     const widths = this.sizeFont.getGlyphWidths(glyphIds)
     let textWidth = 0
     for (let i = 0; i < widths.length; i++) textWidth += widths[i]
-    const pillW = textWidth + 12
-    const pillH = 18
+    const pillW = textWidth + SIZE_PILL_PADDING_X * 2
+    const pillH = SIZE_PILL_HEIGHT
     const pillX = smx - pillW / 2
-    const pillY = sy2 + 6
+    const pillY = sy2 + SIZE_PILL_PADDING_Y
 
     const pillPaint = new this.ck.Paint()
     pillPaint.setStyle(this.ck.PaintStyle.Fill)
     pillPaint.setColor(this.selColor())
     pillPaint.setAntiAlias(true)
 
-    const rrect = this.ck.RRectXY(this.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH), 4, 4)
+    const rrect = this.ck.RRectXY(this.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH), SIZE_PILL_RADIUS, SIZE_PILL_RADIUS)
     canvas.drawRRect(rrect, pillPaint)
 
     const textPaint = new this.ck.Paint()
     textPaint.setStyle(this.ck.PaintStyle.Fill)
     textPaint.setColor(this.ck.WHITE)
     textPaint.setAntiAlias(true)
-    canvas.drawText(sizeText, pillX + 6, pillY + 13, textPaint, this.sizeFont)
+    canvas.drawText(sizeText, pillX + SIZE_PILL_PADDING_X, pillY + SIZE_PILL_TEXT_OFFSET_Y, textPaint, this.sizeFont)
 
     pillPaint.delete()
     textPaint.delete()
@@ -426,7 +434,7 @@ export class SkiaRenderer {
     const dashPaint = new this.ck.Paint()
     dashPaint.setStyle(this.ck.PaintStyle.Stroke)
     dashPaint.setStrokeWidth(1)
-    dashPaint.setColor(this.selColor(0.6))
+    dashPaint.setColor(this.selColor(SELECTION_DASH_ALPHA))
     dashPaint.setAntiAlias(true)
 
     canvas.drawRect(this.ck.LTRBRect(minX, minY, maxX, maxY), dashPaint)
@@ -464,12 +472,11 @@ export class SkiaRenderer {
   }
 
   private drawHandle(canvas: Canvas, x: number, y: number): void {
-    const S = 3
     const handleFill = new this.ck.Paint()
     handleFill.setStyle(this.ck.PaintStyle.Fill)
     handleFill.setColor(this.ck.WHITE)
 
-    const rect = this.ck.LTRBRect(x - S, y - S, x + S, y + S)
+    const rect = this.ck.LTRBRect(x - HANDLE_HALF_SIZE, y - HANDLE_HALF_SIZE, x + HANDLE_HALF_SIZE, y + HANDLE_HALF_SIZE)
     canvas.drawRect(rect, handleFill)
     canvas.drawRect(rect, this.selectionPaint)
     handleFill.delete()
@@ -511,7 +518,7 @@ export class SkiaRenderer {
 
     const fill = new this.ck.Paint()
     fill.setStyle(this.ck.PaintStyle.Fill)
-    fill.setColor(this.selColor(0.08))
+    fill.setColor(this.selColor(MARQUEE_FILL_ALPHA))
     canvas.drawRect(rect, fill)
     canvas.drawRect(rect, this.selectionPaint)
     fill.delete()
@@ -527,7 +534,7 @@ export class SkiaRenderer {
 
     const paint = new this.ck.Paint()
     paint.setStyle(this.ck.PaintStyle.Stroke)
-    paint.setStrokeWidth(2)
+    paint.setStrokeWidth(LAYOUT_INDICATOR_STROKE)
     paint.setColor(this.selColor())
     paint.setAntiAlias(true)
 
@@ -582,8 +589,8 @@ export class SkiaRenderer {
     if (overlays.dropTargetId === nodeId) {
       const highlight = new this.ck.Paint()
       highlight.setStyle(this.ck.PaintStyle.Stroke)
-      highlight.setStrokeWidth(2 / this.zoom)
-      highlight.setColor(this.selColor(0.8))
+      highlight.setStrokeWidth(DROP_HIGHLIGHT_STROKE / this.zoom)
+      highlight.setColor(this.selColor(DROP_HIGHLIGHT_ALPHA))
       highlight.setAntiAlias(true)
       canvas.drawRect(this.ck.LTRBRect(0, 0, node.width, node.height), highlight)
       highlight.delete()
@@ -716,10 +723,10 @@ export class SkiaRenderer {
         textStyle: {
           color: this.fillPaint.getColor(),
           fontFamilies: [node.fontFamily || 'Inter'],
-          fontSize: node.fontSize || 14,
+          fontSize: node.fontSize || DEFAULT_FONT_SIZE,
           fontStyle: { weight: { value: node.fontWeight || 400 } as FontWeight },
           letterSpacing: node.letterSpacing || 0,
-          heightMultiplier: node.lineHeight ? node.lineHeight / (node.fontSize || 14) : undefined
+          heightMultiplier: node.lineHeight ? node.lineHeight / (node.fontSize || DEFAULT_FONT_SIZE) : undefined
         }
       })
       const builder = this.ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, this.fontProvider)
@@ -730,7 +737,7 @@ export class SkiaRenderer {
       paragraph.delete()
       builder.delete()
     } else if (this.textFont) {
-      canvas.drawText(text, 0, node.fontSize || 14, this.fillPaint, this.textFont)
+      canvas.drawText(text, 0, node.fontSize || DEFAULT_FONT_SIZE, this.fillPaint, this.textFont)
     }
   }
 
@@ -766,11 +773,9 @@ export class SkiaRenderer {
     if (!penState || penState.vertices.length === 0) return
 
     const { vertices, segments, dragTangent, cursorX, cursorY } = penState
-    const VERTEX_RADIUS = 4
-
     const pathPaint = new this.ck.Paint()
     pathPaint.setStyle(this.ck.PaintStyle.Stroke)
-    pathPaint.setStrokeWidth(2)
+    pathPaint.setStrokeWidth(PEN_PATH_STROKE_WIDTH)
     pathPaint.setColor(this.selColor())
     pathPaint.setAntiAlias(true)
 
@@ -787,7 +792,7 @@ export class SkiaRenderer {
 
     const vertexStroke = new this.ck.Paint()
     vertexStroke.setStyle(this.ck.PaintStyle.Stroke)
-    vertexStroke.setStrokeWidth(2)
+    vertexStroke.setStrokeWidth(PEN_PATH_STROKE_WIDTH)
     vertexStroke.setColor(this.selColor())
     vertexStroke.setAntiAlias(true)
 
@@ -875,7 +880,7 @@ export class SkiaRenderer {
     // Draw vertices
     for (let i = 0; i < vertices.length; i++) {
       const v = toScreen(vertices[i].x, vertices[i].y)
-      const radius = i === 0 && penState.closingToFirst ? VERTEX_RADIUS + 2 : VERTEX_RADIUS
+      const radius = i === 0 && penState.closingToFirst ? PEN_VERTEX_RADIUS + PEN_CLOSE_RADIUS_BOOST : PEN_VERTEX_RADIUS
       canvas.drawCircle(v.x, v.y, radius, vertexFill)
       canvas.drawCircle(v.x, v.y, radius, vertexStroke)
     }
@@ -954,7 +959,7 @@ export class SkiaRenderer {
     for (let wx = startX; wx <= worldRight; wx += minorStep) {
       const sx = wx * this.zoom + this.panX
       if (sx < R) continue
-      const isMajor = Math.abs(wx % step) < 0.01
+      const isMajor = Math.abs(wx % step) < RULER_MAJOR_TOLERANCE
       const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
       canvas.drawLine(sx, R - tickLen, sx, R, tickPaint)
 
@@ -979,7 +984,7 @@ export class SkiaRenderer {
     for (let wy = startY; wy <= worldBottom; wy += minorStep) {
       const sy = wy * this.zoom + this.panY
       if (sy < R) continue
-      const isMajor = Math.abs(wy % step) < 0.01
+      const isMajor = Math.abs(wy % step) < RULER_MAJOR_TOLERANCE
       const tickLen = isMajor ? R * RULER_MAJOR_TICK : R * RULER_MINOR_TICK
       canvas.drawLine(R - tickLen, sy, R, sy, tickPaint)
 
@@ -1060,8 +1065,7 @@ export class SkiaRenderer {
 
   private rulerStep(): number {
     const pixelsPerUnit = this.zoom
-    const targetPixelSpacing = 100
-    const rawStep = targetPixelSpacing / pixelsPerUnit
+    const rawStep = RULER_TARGET_PIXEL_SPACING / pixelsPerUnit
     const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
     const normalized = rawStep / magnitude
 

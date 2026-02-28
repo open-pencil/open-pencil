@@ -1,6 +1,6 @@
 import { reactive, shallowRef, computed } from 'vue'
 
-import { DEFAULT_SHAPE_FILL, DEFAULT_FRAME_FILL, CANVAS_BG_COLOR } from '../constants'
+import { DEFAULT_SHAPE_FILL, DEFAULT_FRAME_FILL, CANVAS_BG_COLOR, ZOOM_SENSITIVITY } from '../constants'
 import type { Color } from '../types'
 import {
   parseFigmaClipboard,
@@ -976,7 +976,7 @@ export function createEditorStore() {
   }
 
   function applyZoom(delta: number, centerX: number, centerY: number) {
-    const factor = Math.pow(0.99, delta)
+    const factor = Math.pow(ZOOM_SENSITIVITY, delta)
     const newZoom = Math.max(0.02, Math.min(256, state.zoom * factor))
     state.panX = centerX - (centerX - state.panX) * (newZoom / state.zoom)
     state.panY = centerY - (centerY - state.panY) * (newZoom / state.zoom)

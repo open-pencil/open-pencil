@@ -2,6 +2,11 @@ import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
 import { computeSelectionBounds, computeSnap } from '../engine/snap'
+import {
+  AUTO_LAYOUT_BREAK_THRESHOLD, HANDLE_HIT_RADIUS, ROTATION_HIT_RADIUS,
+  PEN_CLOSE_THRESHOLD, ROTATION_SNAP_DEGREES, ROTATION_HIT_OFFSET,
+  DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_HEIGHT
+} from '../constants'
 
 import type { NodeType, SceneNode } from '../engine/scene-graph'
 import type { EditorStore, Tool } from '../stores/editor'
@@ -24,8 +29,6 @@ interface DragMove {
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
 }
-
-const AUTO_LAYOUT_BREAK_THRESHOLD = 8
 
 interface DragPan {
   type: 'pan'
@@ -75,8 +78,7 @@ const TOOL_TO_NODE: Partial<Record<Tool, NodeType>> = {
   TEXT: 'TEXT'
 }
 
-const HANDLE_HIT_RADIUS = 6
-const ROTATION_HIT_RADIUS = 8
+
 
 const HANDLE_CURSORS: Record<HandlePosition, string> = {
   nw: 'nwse-resize',
@@ -194,7 +196,7 @@ function hitTestRotationHandle(
   const ur = unrotate(sx, sy, cx, cy, rotation)
 
   const mx = (x1 + x2) / 2
-  const rotY = y1 - 24
+  const rotY = y1 - ROTATION_HIT_OFFSET
   return Math.abs(ur.sx - mx) < ROTATION_HIT_RADIUS && Math.abs(ur.sy - rotY) < ROTATION_HIT_RADIUS
 }
 
@@ -386,7 +388,7 @@ export function useCanvasInput(canvasRef: Ref<HTMLCanvasElement | null>, store: 
 
     // Text tool: click to create text node
     if (tool === 'TEXT') {
-      const nodeId = store.createShape('TEXT', cx, cy, 200, 24)
+      const nodeId = store.createShape('TEXT', cx, cy, DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_HEIGHT)
       store.graph.updateNode(nodeId, { text: '' })
       store.select([nodeId])
       store.startTextEditing(nodeId)
@@ -416,7 +418,7 @@ export function useCanvasInput(canvasRef: Ref<HTMLCanvasElement | null>, store: 
       const first = store.state.penState.vertices[0]
       if (store.state.penState.vertices.length > 2 && first) {
         const dist = Math.hypot(cx - first.x, cy - first.y)
-        store.penSetClosingToFirst(dist < 8)
+        store.penSetClosingToFirst(dist < PEN_CLOSE_THRESHOLD)
       }
       store.requestRender()
     }
@@ -497,7 +499,7 @@ export function useCanvasInput(canvasRef: Ref<HTMLCanvasElement | null>, store: 
 
       // Shift → snap to 15° increments
       if (e.shiftKey) {
-        rotation = Math.round(rotation / 15) * 15
+        rotation = Math.round(rotation / ROTATION_SNAP_DEGREES) * ROTATION_SNAP_DEGREES
       }
 
       // Normalize to -180..180
