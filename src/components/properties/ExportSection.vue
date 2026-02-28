@@ -21,9 +21,13 @@ const SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
 const FORMATS: ExportFormat[] = ['PNG', 'JPG', 'WEBP']
 
 const nodeName = computed(() => {
-  const nodes = store.selectedNodes
-  if (nodes.length === 1) return nodes[0].name ?? 'Export'
-  return `${nodes.length} layers`
+  void store.state.sceneVersion
+  const ids = store.state.selectedIds
+  if (ids.size === 1) {
+    const id = [...ids][0]
+    return store.graph.getNode(id)?.name ?? 'Export'
+  }
+  return `${ids.size} layers`
 })
 
 function addSetting() {
@@ -51,12 +55,14 @@ const PREVIEW_WIDTH = 480
 
 async function updatePreview() {
   if (!showPreview.value) return
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-    previewUrl.value = null
-  }
   const ids = [...store.state.selectedIds]
-  if (ids.length === 0) return
+  if (ids.length === 0) {
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = null
+    }
+    return
+  }
 
   let maxW = 0
   for (const id of ids) {
@@ -67,7 +73,9 @@ async function updatePreview() {
 
   const data = await store.renderExportImage(ids, scale, 'PNG')
   if (data) {
+    const prev = previewUrl.value
     previewUrl.value = URL.createObjectURL(new Blob([data], { type: 'image/png' }))
+    if (prev) URL.revokeObjectURL(prev)
   }
 }
 
