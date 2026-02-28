@@ -92,13 +92,18 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
   onUnmounted(() => {
     destroyed = true
     cancelAnimationFrame(rafId)
+    cancelAnimationFrame(resizeRaf)
     renderer?.destroy()
   })
 
+  let resizeRaf = 0
   useResizeObserver(canvasRef, () => {
     const canvas = canvasRef.value
-    if (!canvas || !ck) return
-    createSurface(canvas)
+    if (!canvas || !ck || resizeRaf) return
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = 0
+      createSurface(canvas)
+    })
   })
 
   watch(
