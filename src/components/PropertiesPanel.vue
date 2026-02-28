@@ -33,7 +33,7 @@ const multiCount = computed(() => store.selectedNodes.value.length)
         <span class="text-[11px] text-muted">Mixed</span>
         <span class="text-xs font-semibold">{{ multiCount }} layers</span>
       </div>
-      <AppearanceSection :opacity="store.selectedNodes.value[0]?.opacity ?? 1" />
+      <AppearanceSection v-if="store.selectedNodes.value[0]" :node="store.selectedNodes.value[0]" />
     </div>
 
     <!-- Single selection -->
@@ -46,7 +46,7 @@ const multiCount = computed(() => store.selectedNodes.value.length)
 
       <PositionSection :node="node" />
       <LayoutSection :node="node" />
-      <AppearanceSection :opacity="node.opacity" />
+      <AppearanceSection :node="node" />
       <TypographySection v-if="node.type === 'TEXT'" :node="node" />
       <FillSection :node-id="node.id" :fills="node.fills" />
       <StrokeSection :node-id="node.id" :strokes="node.strokes" />

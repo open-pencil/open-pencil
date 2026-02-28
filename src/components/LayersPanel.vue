@@ -218,13 +218,14 @@ function updateDropTarget(ev: PointerEvent) {
             @select="onSelect"
           >
             <button
-              class="flex w-full cursor-pointer items-center gap-1 rounded border-none py-1 text-left text-xs"
+              class="group/row flex w-full cursor-pointer items-center gap-1 rounded border-none py-1 text-left text-xs"
               :class="[
                 store.state.selectedIds.has(item.value.id)
                   ? 'bg-accent text-white'
                   : 'bg-transparent text-surface hover:bg-hover',
                 dragging && dragNodeId === item.value.id ? 'opacity-30' : '',
-                dropIntoId === item.value.id ? 'ring-2 ring-accent ring-inset' : ''
+                dropIntoId === item.value.id ? 'ring-2 ring-accent ring-inset' : '',
+                !item.value.visible ? 'opacity-50' : ''
               ]"
               :style="{ paddingLeft: `${8 + (item.level - 1) * 16}px` }"
               @pointerdown.prevent="onPointerDown($event, item.value.id)"
@@ -239,7 +240,11 @@ function updateDropTarget(ev: PointerEvent) {
               </span>
               <span v-else class="w-4 shrink-0" />
               <component :is="nodeIcons[item.value.type] ?? IconSquare" class="size-3 shrink-0 opacity-70" />
-              <span class="truncate">{{ item.value.name }}</span>
+              <span class="min-w-0 flex-1 truncate">{{ item.value.name }}</span>
+              <icon-lucide-eye-off
+                v-if="!item.value.visible"
+                class="mr-1 size-3 shrink-0 text-muted"
+              />
             </button>
           </TreeItem>
         </div>

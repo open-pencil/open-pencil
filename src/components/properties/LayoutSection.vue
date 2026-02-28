@@ -145,10 +145,6 @@ function setAlignment(primary: LayoutAlign, counter: LayoutCounterAlign) {
         </div>
       </div>
     </div>
-    <!-- Corner radius -->
-    <div class="mt-1.5 flex gap-1.5">
-      <ScrubInput icon="↻" :model-value="node.cornerRadius" :min="0" @update:model-value="updateProp('cornerRadius', $event)" @commit="(v: number, p: number) => commitProp('cornerRadius', v, p)" />
-    </div>
   </div>
 
   <!-- Auto Layout -->
