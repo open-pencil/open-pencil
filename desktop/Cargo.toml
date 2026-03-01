@@ -1,5 +1,5 @@
 [package]
-name = "open-pencil-app"
+name = "open_pencil"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
@@ -7,11 +7,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "OpenPencil"
+path = "src/main.rs"
+
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "open_pencil_app_lib"
+name = "open_pencil_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -26,4 +27,5 @@ tauri-plugin-dialog = "2.6.0"
 tauri-plugin-fs = "2.4.5"
 zstd = "0.13"
 zip = { version = "2", default-features = false }
+font-kit = "0.14.3"
 

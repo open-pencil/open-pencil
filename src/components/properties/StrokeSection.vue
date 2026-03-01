@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import ColorPicker from '@/components/ColorPicker.vue'
+import ColorInput from '@/components/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
-import { colorToHexRaw, parseColor } from '@/engine/color'
 
 import type { Color, Stroke } from '@/engine/scene-graph'
 
@@ -12,12 +11,6 @@ function updateColor(index: number, color: Color) {
   const strokes = [...node.value.strokes]
   strokes[index] = { ...strokes[index], color }
   store.updateNodeWithUndo(node.value.id, { strokes }, 'Change stroke')
-}
-
-function updateHex(index: number, hex: string) {
-  const color = parseColor(hex.startsWith('#') ? hex : `#${hex}`)
-  if (!color) return
-  updateColor(index, color)
 }
 
 function updateWeight(index: number, weight: number) {
@@ -78,12 +71,7 @@ function remove(index: number) {
       :key="i"
       class="group flex items-center gap-1.5 py-0.5"
     >
-      <ColorPicker :color="stroke.color" @update="updateColor(i, $event)" />
-      <input
-        class="min-w-0 flex-1 border-none bg-transparent font-mono text-xs text-surface outline-none"
-        :value="colorToHexRaw(stroke.color)"
-        @change="updateHex(i, ($event.target as HTMLInputElement).value)"
-      />
+      <ColorInput :color="stroke.color" editable @update="updateColor(i, $event)" />
       <ScrubInput
         class="w-12"
         suffix="%"

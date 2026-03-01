@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
-import { ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useKeyboard } from './composables/use-keyboard'
@@ -10,7 +9,6 @@ import { provideEditorStore } from './stores/editor'
 
 import EditorCanvas from './components/EditorCanvas.vue'
 import LayersPanel from './components/LayersPanel.vue'
-import VariablesPanel from './components/VariablesPanel.vue'
 import PropertiesPanel from './components/PropertiesPanel.vue'
 import Toolbar from './components/Toolbar.vue'
 
@@ -28,7 +26,6 @@ useEventListener(
   { passive: false }
 )
 
-const showVariables = ref(false)
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 if (!('test' in params)) {
@@ -44,28 +41,8 @@ if (!('test' in params)) {
       class="flex-1 overflow-hidden"
       auto-save-id="editor-layout"
     >
-      <SplitterPanel :default-size="15" :min-size="10" :max-size="30" class="flex flex-col">
-        <SplitterGroup v-if="showVariables" direction="vertical" class="flex-1 overflow-hidden">
-          <SplitterPanel :default-size="60" :min-size="20" class="flex">
-            <LayersPanel />
-          </SplitterPanel>
-          <SplitterResizeHandle class="group relative z-10 -my-1 h-2 cursor-row-resize">
-            <div class="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2" />
-          </SplitterResizeHandle>
-          <SplitterPanel :default-size="40" :min-size="20" class="flex">
-            <VariablesPanel />
-          </SplitterPanel>
-        </SplitterGroup>
-        <template v-else>
-          <LayersPanel />
-        </template>
-        <button
-          class="flex w-full cursor-pointer items-center justify-center gap-1 border-t border-border bg-transparent px-2 py-1 text-[11px] text-muted hover:text-surface"
-          @click="showVariables = !showVariables"
-        >
-          <icon-lucide-braces class="size-3" />
-          {{ showVariables ? 'Hide variables' : 'Variables' }}
-        </button>
+      <SplitterPanel :default-size="15" :min-size="10" :max-size="30" class="flex">
+        <LayersPanel />
       </SplitterPanel>
       <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />

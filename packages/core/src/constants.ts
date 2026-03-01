@@ -68,3 +68,7 @@ export const COMPONENT_LABEL_ICON_GAP = 4
 
 export const RULER_TARGET_PIXEL_SPACING = 100
 export const RULER_MAJOR_TOLERANCE = 0.01
+
+export const TEXT_SELECTION_COLOR = { r: 0.26, g: 0.52, b: 0.96, a: 0.3 }
+export const TEXT_CARET_COLOR = { r: 0, g: 0, b: 0, a: 1 }
+export const TEXT_CARET_WIDTH = 1

@@ -74,7 +74,21 @@ interface DragPen {
   startY: number
 }
 
-type DragState = DragDraw | DragMove | DragPan | DragResize | DragMarquee | DragRotate | DragPen
+interface DragTextSelect {
+  type: 'text-select'
+  startX: number
+  startY: number
+}
+
+type DragState =
+  | DragDraw
+  | DragMove
+  | DragPan
+  | DragResize
+  | DragMarquee
+  | DragRotate
+  | DragPen
+  | DragTextSelect
 
 const TOOL_TO_NODE: Partial<Record<Tool, NodeType>> = {
   FRAME: 'FRAME',
@@ -254,6 +268,23 @@ export function useCanvasInput(
     }
 
     if (tool === 'SELECT') {
+      if (store.state.editingTextId) {
+        const editor = store.textEditor
+        const editNode = store.graph.getNode(store.state.editingTextId)
+        if (editor && editNode) {
+          const abs = store.graph.getAbsolutePosition(editNode.id)
+          const localX = cx - abs.x
+          const localY = cy - abs.y
+          if (localX >= 0 && localY >= 0 && localX <= editNode.width && localY <= editNode.height) {
+            editor.setCursorAt(localX, localY, e.shiftKey)
+            drag.value = { type: 'text-select', startX: cx, startY: cy } as DragState
+            store.requestRender()
+            return
+          }
+        }
+        store.commitTextEdit()
+      }
+
       // Check rotation handle (single selection only)
       if (store.state.selectedIds.size === 1) {
         const id = [...store.state.selectedIds][0]
@@ -636,6 +667,19 @@ export function useCanvasInput(
       return
     }
 
+    if (d.type === 'text-select') {
+      const editor = store.textEditor
+      const editNode = store.state.editingTextId
+        ? store.graph.getNode(store.state.editingTextId)
+        : null
+      if (editor && editNode) {
+        const abs = store.graph.getAbsolutePosition(editNode.id)
+        editor.setCursorAt(cx - abs.x, cy - abs.y, true)
+        store.requestRender()
+      }
+      return
+    }
+
     if (d.type === 'resize') {
       applyResize(d, cx, cy, e.shiftKey)
       return
@@ -798,6 +842,11 @@ export function useCanvasInput(
       }
     }
 
+    if (d.type === 'text-select') {
+      drag.value = null
+      return
+    }
+
     if (d.type === 'resize') {
       store.commitResize(d.nodeId, d.origRect)
     }
@@ -852,6 +901,18 @@ export function useCanvasInput(
 
   function onDblClick(e: MouseEvent) {
     const { cx, cy } = getCoords(e)
+
+    if (store.state.editingTextId) {
+      const editor = store.textEditor
+      const editNode = store.graph.getNode(store.state.editingTextId)
+      if (editor && editNode) {
+        const abs = store.graph.getAbsolutePosition(editNode.id)
+        editor.selectWordAt(cx - abs.x, cy - abs.y)
+        store.requestRender()
+        return
+      }
+    }
+
     const hit =
       hitTestSectionTitle(cx, cy) ??
       hitTestComponentLabel(cx, cy) ??

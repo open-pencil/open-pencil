@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import ColorPicker from '@/components/ColorPicker.vue'
+import ColorInput from '@/components/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
-import { colorToHexRaw, parseColor } from '@/engine/color'
 
 import type { Color, Effect } from '@/engine/scene-graph'
 
@@ -48,15 +47,6 @@ function updateEffect(index: number, changes: Partial<Effect>) {
 
 function updateColor(index: number, color: Color) {
   updateEffect(index, { color })
-}
-
-function updateHex(index: number, hex: string) {
-  const n = node.value
-  if (!n) return
-  const color = parseColor(hex.startsWith('#') ? hex : `#${hex}`)
-  if (!color) return
-  const existing = n.effects[index]
-  updateColor(index, { ...color, a: existing.color.a })
 }
 
 function updateColorOpacity(index: number, opacity: number) {
@@ -197,12 +187,7 @@ function toggleExpand(index: number) {
           </div>
 
           <div class="flex items-center gap-1.5">
-            <ColorPicker :color="effect.color" @update="updateColor(i, $event)" />
-            <input
-              class="min-w-0 flex-1 rounded border border-border bg-input px-1.5 py-0.5 font-mono text-xs text-surface outline-none"
-              :value="colorToHexRaw(effect.color)"
-              @change="updateHex(i, ($event.target as HTMLInputElement).value)"
-            />
+            <ColorInput :color="effect.color" editable @update="updateColor(i, $event)" />
             <ScrubInput
               class="w-14"
               suffix="%"

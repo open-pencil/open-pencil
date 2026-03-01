@@ -52,7 +52,10 @@ import {
   COMPONENT_LABEL_ICON_SIZE,
   COMPONENT_LABEL_ICON_GAP,
   RULER_TARGET_PIXEL_SPACING,
-  RULER_MAJOR_TOLERANCE
+  RULER_MAJOR_TOLERANCE,
+  TEXT_SELECTION_COLOR,
+  TEXT_CARET_COLOR,
+  TEXT_CARET_WIDTH
 } from './constants'
 
 import { vectorNetworkToPath } from './vector'
@@ -60,6 +63,7 @@ import { vectorNetworkToPath } from './vector'
 import type { SceneNode, SceneGraph, Fill, Stroke } from './scene-graph'
 import type { Color } from './types'
 import type { SnapGuide } from './snap'
+import type { TextEditor } from './text-editor'
 import type { Rect } from './types'
 import type { EmbindEnumEntity, Image as CKImage, Path } from 'canvaskit-wasm'
 import type {
@@ -76,6 +80,7 @@ import type {
 export interface RenderOverlays {
   hoveredNodeId?: string | null
   editingTextId?: string | null
+  textEditor?: TextEditor | null
   marquee?: Rect | null
   snapGuides?: SnapGuide[]
   rotationPreview?: { nodeId: string; angle: number } | null
@@ -190,6 +195,10 @@ export class SkiaRenderer {
     this.opacityPaint = new ck.Paint()
 
     this.textFont = new ck.Font(null, DEFAULT_FONT_SIZE)
+  }
+
+  getFontProvider(): TypefaceFontProvider | null {
+    return this.fontProvider
   }
 
   async loadFonts(): Promise<void> {
@@ -837,8 +846,12 @@ export class SkiaRenderer {
       this.renderSection(canvas, node, graph)
     } else if (node.type === 'COMPONENT_SET') {
       this.renderComponentSet(canvas, node, graph)
-    } else if (overlays.editingTextId !== nodeId) {
+    } else {
       this.renderShape(canvas, node, graph)
+    }
+
+    if (overlays.editingTextId === nodeId && overlays.textEditor?.state?.paragraph) {
+      this.drawTextEditOverlay(canvas, node, overlays.textEditor)
     }
 
     // Drop target highlight
@@ -1564,6 +1577,47 @@ export class SkiaRenderer {
         return this.ck.TextAlign.Justify
       default:
         return this.ck.TextAlign.Left
+    }
+  }
+
+  private drawTextEditOverlay(canvas: Canvas, node: SceneNode, editor: TextEditor): void {
+    this.auxStroke.setStrokeWidth(1 / this.zoom)
+    this.auxStroke.setColor(this.selColor())
+    this.auxStroke.setPathEffect(null)
+    canvas.drawRect(this.ck.LTRBRect(0, 0, node.width, node.height), this.auxStroke)
+
+    const selRects = editor.getSelectionRects()
+    if (selRects.length > 0) {
+      this.auxFill.setColor(
+        this.ck.Color4f(
+          TEXT_SELECTION_COLOR.r,
+          TEXT_SELECTION_COLOR.g,
+          TEXT_SELECTION_COLOR.b,
+          TEXT_SELECTION_COLOR.a
+        )
+      )
+      for (const r of selRects) {
+        canvas.drawRect(this.ck.LTRBRect(r.x, r.y, r.x + r.width, r.y + r.height), this.auxFill)
+      }
+    }
+
+    if (editor.caretVisible && !editor.hasSelection()) {
+      const caret = editor.getCaretRect()
+      if (caret) {
+        this.auxFill.setColor(
+          this.ck.Color4f(
+            TEXT_CARET_COLOR.r,
+            TEXT_CARET_COLOR.g,
+            TEXT_CARET_COLOR.b,
+            TEXT_CARET_COLOR.a
+          )
+        )
+        const w = TEXT_CARET_WIDTH / this.zoom
+        canvas.drawRect(
+          this.ck.LTRBRect(caret.x - w / 2, caret.y0, caret.x + w / 2, caret.y1),
+          this.auxFill
+        )
+      }
     }
   }
 

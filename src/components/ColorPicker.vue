@@ -178,7 +178,11 @@ const swatchColor = computed(() => {
         </div>
 
         <!-- Alpha slider -->
-        <div class="mt-2">
+        <div class="alpha-wrap mt-2">
+          <div
+            class="alpha-gradient"
+            :style="{ background: `linear-gradient(to right, transparent, ${hueColor})` }"
+          />
           <input
             type="range"
             class="alpha-slider"
@@ -238,8 +242,34 @@ const swatchColor = computed(() => {
   );
 }
 
+.alpha-wrap {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background-image:
+    linear-gradient(45deg, #444 25%, transparent 25%),
+    linear-gradient(-45deg, #444 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #444 75%),
+    linear-gradient(-45deg, transparent 75%, #444 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+  background-color: #333;
+}
+
+.alpha-gradient {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+}
+
 .alpha-slider {
-  background: linear-gradient(to right, transparent, v-bind(hueColor));
+  position: absolute;
+  inset: 0;
+  background: transparent;
 }
 
 .hue-slider::-webkit-slider-thumb,

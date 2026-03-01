@@ -21,6 +21,7 @@ import { exportFigFile } from '@/engine/fig-export'
 import { computeLayout, computeAllLayouts } from '@/engine/layout'
 import { renderNodesToImage } from '@/engine/render-image'
 import { SceneGraph } from '@/engine/scene-graph'
+import { TextEditor } from '@/engine/text-editor'
 import { UndoManager } from '@/engine/undo'
 import { computeVectorBounds } from '@/engine/vector'
 import { readFigFile } from '@/kiwi/fig-file'
@@ -118,6 +119,7 @@ export function createEditorStore() {
   let filePath: string | null = null
   let _ck: import('canvaskit-wasm').CanvasKit | null = null
   let _renderer: import('@/engine/renderer').SkiaRenderer | null = null
+  let _textEditor: TextEditor | null = null
 
   prefetchFigmaSchema()
 
@@ -467,25 +469,46 @@ export function createEditorStore() {
   }
 
   function startTextEditing(nodeId: string) {
+    if (state.editingTextId) commitTextEdit()
+    const node = graph.getNode(nodeId)
+    if (!node) return
     state.editingTextId = nodeId
+    if (_textEditor) {
+      _textEditor.setFontProvider(_renderer?.getFontProvider() ?? null)
+      _textEditor.start(node)
+    }
+    requestRender()
   }
 
-  function commitTextEdit(nodeId: string, text: string) {
-    const node = graph.getNode(nodeId)
+  function commitTextEdit() {
+    if (!_textEditor?.isActive) {
+      state.editingTextId = null
+      return
+    }
+    const result = _textEditor.stop()
+    if (!result) {
+      state.editingTextId = null
+      requestRender()
+      return
+    }
+    const node = graph.getNode(result.nodeId)
     const prevText = node?.text ?? ''
-    graph.updateNode(nodeId, { text })
+    const newText = result.text
+    graph.updateNode(result.nodeId, { text: newText })
     state.editingTextId = null
-    undo.push({
-      label: 'Edit text',
-      forward: () => {
-        graph.updateNode(nodeId, { text })
-        requestRender()
-      },
-      inverse: () => {
-        graph.updateNode(nodeId, { text: prevText })
-        requestRender()
-      }
-    })
+    if (prevText !== newText) {
+      undo.push({
+        label: 'Edit text',
+        forward: () => {
+          graph.updateNode(result.nodeId, { text: newText })
+          requestRender()
+        },
+        inverse: () => {
+          graph.updateNode(result.nodeId, { text: prevText })
+          requestRender()
+        }
+      })
+    }
     requestRender()
   }
 
@@ -517,6 +540,7 @@ export function createEditorStore() {
   ) {
     _ck = ck
     _renderer = renderer
+    _textEditor = new TextEditor(ck)
   }
 
   function buildFigFile() {
@@ -1764,6 +1788,9 @@ export function createEditorStore() {
   return {
     get graph() {
       return graph
+    },
+    get textEditor() {
+      return _textEditor
     },
     undo,
     state,

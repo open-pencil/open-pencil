@@ -49,11 +49,12 @@ export {
 export { SkiaRenderer, type RenderOverlays } from './renderer'
 export { computeLayout, computeAllLayouts } from './layout'
 export { getCanvasKit, type CanvasKitOptions } from './canvaskit'
-export { loadFont, listFamilies } from './fonts'
+export { loadFont, listFamilies, initFontService, getFontProvider, ensureNodeFont } from './fonts'
 export { parseColor, colorToHex, colorToHexRaw, colorToRgba255 } from './color'
 export { vectorNetworkToPath, decodeVectorNetworkBlob, encodeVectorNetworkBlob, computeVectorBounds } from './vector'
 export { computeSelectionBounds, computeSnap, type SnapGuide } from './snap'
 export { UndoManager } from './undo'
+export { TextEditor, type TextCaret, type TextEditorState } from './text-editor'
 export { renderNodesToImage, renderThumbnail, type ExportFormat } from './render-image'
 export { exportFigFile } from './fig-export'
 export {

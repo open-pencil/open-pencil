@@ -26,13 +26,14 @@
     "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
+    "@open-pencil/cli": "workspace:*",
+    "@open-pencil/core": "workspace:*",
     "@tailwindcss/vite": "^4.2.1",
+    "@tanstack/vue-table": "^8.21.3",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-opener": "^2",
-    "@open-pencil/cli": "workspace:*",
-    "@open-pencil/core": "workspace:*",
     "@vueuse/core": "^14.2.1",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",

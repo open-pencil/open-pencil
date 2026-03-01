@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "open-pencil-app",
+  "productName": "OpenPencil",
   "version": "0.1.0",
   "identifier": "net.dannote.open-pencil",
   "build": {
