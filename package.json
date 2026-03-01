@@ -19,6 +19,7 @@
     "figma:debug": "open -a Figma --args --remote-debugging-port=9222",
     "test:unit": "bun test ./tests/engine",
     "test:coverage": "bun test --coverage ./tests/engine",
+    "test:dupes": "jscpd packages/core/src packages/cli/src src --min-lines 5 --min-tokens 50 --format typescript",
     "open-pencil": "bun packages/cli/src/index.ts"
   },
   "dependencies": {
@@ -49,6 +50,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260228.1",
     "@vitejs/plugin-vue": "^6.0.4",
     "esbuild": "^0.27.3",
+    "jscpd": "^4.0.8",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
     "typescript": "~5.8.3",

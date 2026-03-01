@@ -16,6 +16,7 @@ The root app (`src/`) is the Tauri/Vite desktop editor. Its `src/engine/` files 
 ## Commands
 
 - `bun run check` — lint + typecheck (run before committing)
+- `bun run test:dupes` — jscpd copy-paste detection across all TS sources
 - `bun run format` — oxfmt with import sorting
 - `bun test ./tests/engine` — unit tests
 - `bun run test` — Playwright visual regression
