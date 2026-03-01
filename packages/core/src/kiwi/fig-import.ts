@@ -489,7 +489,7 @@ export function importNodeChanges(
       borderBottomWeight: (ext(nc).borderBottomWeight as number) ?? 0,
       borderLeftWeight: (ext(nc).borderLeftWeight as number) ?? 0,
       independentStrokeWeights: (ext(nc).borderStrokeWeightsIndependent as boolean) ?? false,
-      strokeMiterLimit: (ext(nc).strokeMiterAngle as number) ?? 4,
+      strokeMiterLimit: 4,
       minWidth: (ext(nc).minWidth as number) ?? null,
       maxWidth: (ext(nc).maxWidth as number) ?? null,
       minHeight: (ext(nc).minHeight as number) ?? null,
@@ -499,7 +499,7 @@ export function importNodeChanges(
       counterAxisAlignContent: (ext(nc).stackCounterAlignContent as string) === 'SPACE_BETWEEN' ? 'SPACE_BETWEEN' : 'AUTO',
       itemReverseZIndex: (ext(nc).stackReverseZIndex as boolean) ?? false,
       strokesIncludedInLayout: (ext(nc).strokesIncludedInLayout as boolean) ?? false,
-      expanded: nc.frameMaskDisabled !== true,
+      expanded: true,
       textTruncation: (ext(nc).textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
       autoRename: (ext(nc).autoRename as boolean) ?? true,
       boundVariables: extractBoundVariables(nc)
