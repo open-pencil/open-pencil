@@ -52,7 +52,7 @@ function handleStop() {
             class="flex h-full flex-col items-center justify-center gap-3 text-muted"
           >
             <icon-lucide-message-circle class="size-8 opacity-50" />
-            <p class="text-xs">Describe what you want to create or change.</p>
+            <p class="text-center text-xs">Describe what you want to create or change.</p>
           </div>
 
           <!-- Messages -->
