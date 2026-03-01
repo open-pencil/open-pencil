@@ -16,6 +16,7 @@ declare module 'vue' {
     ChatPanel: typeof import('./src/components/ChatPanel.vue')['default']
     ColorInput: typeof import('./src/components/ColorInput.vue')['default']
     ColorPicker: typeof import('./src/components/ColorPicker.vue')['default']
+    DesignPanel: typeof import('./src/components/DesignPanel.vue')['default']
     EditorCanvas: typeof import('./src/components/EditorCanvas.vue')['default']
     EffectsSection: typeof import('./src/components/properties/EffectsSection.vue')['default']
     ExportSection: typeof import('./src/components/properties/ExportSection.vue')['default']
