@@ -54,7 +54,12 @@ interface MenuItem {
 }
 
 const fileMenu: MenuItem[] = [
-  { label: 'Open…', shortcut: `${mod}O`, action: () => openFileDialog(store) },
+  {
+    label: 'New',
+    shortcut: `${mod}N`,
+    action: () => import('@/stores/tabs').then((m) => m.createTab())
+  },
+  { label: 'Open…', shortcut: `${mod}O`, action: () => openFileDialog() },
   { separator: true },
   { label: 'Save', shortcut: `${mod}S`, action: () => store.saveFigFile() },
   { label: 'Save as…', shortcut: `${mod}⇧S`, action: () => store.saveFigFileAs() },
@@ -159,7 +164,8 @@ const topMenus = [
         v-else
         class="min-w-0 flex-1 cursor-default truncate rounded px-1 py-0.5 text-xs text-surface hover:bg-hover"
         @dblclick="startRename"
-      >{{ store.state.documentName }}</span>
+        >{{ store.state.documentName }}</span
+      >
       <button
         class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
         title="Toggle UI (⌘\)"
@@ -177,58 +183,60 @@ const topMenus = [
             {{ menu.label }}
           </MenubarTrigger>
 
-        <MenubarPortal>
-          <MenubarContent
-            :side-offset="4"
-            align="start"
-            class="min-w-52 rounded-lg border border-border bg-panel p-1 shadow-lg"
-          >
-            <template v-for="(item, i) in menu.items" :key="i">
-              <MenubarSeparator v-if="item.separator" class="mx-1 my-1 h-px bg-border" />
-              <MenubarSub v-else-if="item.sub">
-                <MenubarSubTrigger
-                  class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs text-surface outline-none select-none hover:bg-hover"
+          <MenubarPortal>
+            <MenubarContent
+              :side-offset="4"
+              align="start"
+              class="min-w-52 rounded-lg border border-border bg-panel p-1 shadow-lg"
+            >
+              <template v-for="(item, i) in menu.items" :key="i">
+                <MenubarSeparator v-if="item.separator" class="mx-1 my-1 h-px bg-border" />
+                <MenubarSub v-else-if="item.sub">
+                  <MenubarSubTrigger
+                    class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs text-surface outline-none select-none hover:bg-hover"
+                  >
+                    <span class="flex-1">{{ item.label }}</span>
+                    <IconChevronRight class="size-3 text-muted" />
+                  </MenubarSubTrigger>
+                  <MenubarPortal>
+                    <MenubarSubContent
+                      :side-offset="4"
+                      class="min-w-44 rounded-lg border border-border bg-panel p-1 shadow-lg"
+                    >
+                      <template v-for="(sub, j) in item.sub" :key="j">
+                        <MenubarSeparator v-if="sub.separator" class="mx-1 my-1 h-px bg-border" />
+                        <MenubarItem
+                          v-else
+                          class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none select-none"
+                          :class="sub.disabled ? 'text-muted/50' : 'text-surface hover:bg-hover'"
+                          :disabled="sub.disabled"
+                          @select="sub.action?.()"
+                        >
+                          <span class="flex-1">{{ sub.label }}</span>
+                          <span v-if="sub.shortcut" class="text-[11px] text-muted">{{
+                            sub.shortcut
+                          }}</span>
+                        </MenubarItem>
+                      </template>
+                    </MenubarSubContent>
+                  </MenubarPortal>
+                </MenubarSub>
+                <MenubarItem
+                  v-else
+                  class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none select-none"
+                  :class="item.disabled ? 'text-muted/50' : 'text-surface hover:bg-hover'"
+                  :disabled="item.disabled"
+                  @select="item.action?.()"
                 >
                   <span class="flex-1">{{ item.label }}</span>
-                  <IconChevronRight class="size-3 text-muted" />
-                </MenubarSubTrigger>
-                <MenubarPortal>
-                  <MenubarSubContent
-                    :side-offset="4"
-                    class="min-w-44 rounded-lg border border-border bg-panel p-1 shadow-lg"
-                  >
-                    <template v-for="(sub, j) in item.sub" :key="j">
-                      <MenubarSeparator v-if="sub.separator" class="mx-1 my-1 h-px bg-border" />
-                      <MenubarItem
-                        v-else
-                        class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none select-none"
-                        :class="sub.disabled ? 'text-muted/50' : 'text-surface hover:bg-hover'"
-                        :disabled="sub.disabled"
-                        @select="sub.action?.()"
-                      >
-                        <span class="flex-1">{{ sub.label }}</span>
-                        <span v-if="sub.shortcut" class="text-[11px] text-muted">{{
-                          sub.shortcut
-                        }}</span>
-                      </MenubarItem>
-                    </template>
-                  </MenubarSubContent>
-                </MenubarPortal>
-              </MenubarSub>
-              <MenubarItem
-                v-else
-                class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none select-none"
-                :class="item.disabled ? 'text-muted/50' : 'text-surface hover:bg-hover'"
-                :disabled="item.disabled"
-                @select="item.action?.()"
-              >
-                <span class="flex-1">{{ item.label }}</span>
-                <span v-if="item.shortcut" class="text-[11px] text-muted">{{ item.shortcut }}</span>
-              </MenubarItem>
-            </template>
-          </MenubarContent>
-        </MenubarPortal>
-      </MenubarMenu>
+                  <span v-if="item.shortcut" class="text-[11px] text-muted">{{
+                    item.shortcut
+                  }}</span>
+                </MenubarItem>
+              </template>
+            </MenubarContent>
+          </MenubarPortal>
+        </MenubarMenu>
       </MenubarRoot>
     </div>
   </div>

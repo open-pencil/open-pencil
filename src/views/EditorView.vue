@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide } from 'vue'
+import { computed, provide } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
@@ -9,24 +9,26 @@ import { useMenu } from '@/composables/use-menu'
 import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
 import { toast } from '@/composables/use-toast'
 import { createDemoShapes } from '@/demo'
-import { provideEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/stores/editor'
+import { createTab, activeTab } from '@/stores/tabs'
 
 import CollabPanel from '@/components/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
+import TabBar from '@/components/TabBar.vue'
 import Toolbar from '@/components/Toolbar.vue'
 
 const route = useRoute()
 const router = useRouter()
 
-const store = provideEditorStore()
-useKeyboard(store)
-useMenu(store)
-const collab = useCollab(store)
+const firstTab = createTab()
+const store = computed(() => useEditorStore())
+useKeyboard()
+useMenu()
+const collab = useCollab(firstTab.store)
 provide(COLLAB_KEY, collab)
-window.__OPEN_PENCIL_STORE__ = store
 
 useEventListener(
   document,
@@ -37,12 +39,10 @@ useEventListener(
   { passive: false }
 )
 
-
-
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 if (!('test' in params)) {
-  createDemoShapes(store)
+  createDemoShapes(firstTab.store)
 }
 
 const pendingRoomId = (route.params.roomId as string) || null
@@ -68,8 +68,10 @@ function onDisconnect() {
 <template>
   <div class="flex h-screen w-screen flex-col">
     <SafariBanner />
+    <TabBar />
     <SplitterGroup
       v-if="showChrome && store.state.showUI"
+      :key="activeTab?.id"
       direction="horizontal"
       class="flex-1 overflow-hidden"
       auto-save-id="editor-layout"
@@ -108,7 +110,11 @@ function onDisconnect() {
         <PropertiesPanel />
       </SplitterPanel>
     </SplitterGroup>
-    <div v-else-if="showChrome" class="flex flex-1 overflow-hidden">
+    <div
+      v-else-if="showChrome"
+      :key="'collapsed-' + activeTab?.id"
+      class="flex flex-1 overflow-hidden"
+    >
       <div class="relative flex min-w-0 flex-1">
         <EditorCanvas />
         <Toolbar />
@@ -127,7 +133,7 @@ function onDisconnect() {
         </div>
       </div>
     </div>
-    <div v-else class="flex flex-1 overflow-hidden">
+    <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
       <div class="relative flex min-w-0 flex-1">
         <EditorCanvas />
       </div>

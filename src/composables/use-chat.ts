@@ -6,6 +6,7 @@ import dedent from 'dedent'
 import { computed, ref, watch } from 'vue'
 
 import { createAITools } from '@/ai/tools'
+import { useEditorStore } from '@/stores/editor'
 
 import type { EditorStore } from '@/stores/editor'
 import type { UIMessage } from 'ai'
@@ -65,7 +66,13 @@ function createTransport() {
     }
   })
 
-  const tools = editorStore ? createAITools(editorStore) : {}
+  let currentStore: EditorStore | null = editorStore
+  try {
+    currentStore = useEditorStore()
+  } catch {
+    // store not yet available
+  }
+  const tools = currentStore ? createAITools(currentStore) : {}
 
   const agent = new ToolLoopAgent({
     model: openrouter(modelId.value),

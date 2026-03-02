@@ -1,56 +1,61 @@
 import { useEventListener } from '@vueuse/core'
 
 import { useAIChat } from '@/composables/use-chat'
-import { TOOL_SHORTCUTS } from '@/stores/editor'
+import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
+import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
 
 import { openFileDialog } from './use-menu'
-
-import type { EditorStore } from '@/stores/editor'
 
 function isEditing(e: Event) {
   return e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
 }
 
-export function useKeyboard(store: EditorStore) {
+export function useKeyboard() {
   const { activeTab } = useAIChat()
+
+  function store() {
+    return useEditorStore()
+  }
+
   useEventListener(window, 'copy', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
-    if (e.clipboardData) store.writeCopyData(e.clipboardData)
+    if (e.clipboardData) store().writeCopyData(e.clipboardData)
   })
 
   useEventListener(window, 'cut', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
-    if (e.clipboardData) store.writeCopyData(e.clipboardData)
-    store.deleteSelected()
+    if (e.clipboardData) store().writeCopyData(e.clipboardData)
+    store().deleteSelected()
   })
 
   useEventListener(window, 'paste', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
     const html = e.clipboardData?.getData('text/html') ?? ''
-    if (html) store.pasteFromHTML(html)
+    if (html) store().pasteFromHTML(html)
   })
 
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e)) return
+    const s = store()
 
     const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]
     if (tool) {
-      store.setTool(tool)
+      s.setTool(tool)
       return
     }
 
     if ((e.metaKey || e.ctrlKey) && e.altKey) {
       if (e.code === 'KeyK') {
         e.preventDefault()
-        store.createComponentFromSelection()
+        s.createComponentFromSelection()
         return
       }
       if (e.code === 'KeyB') {
         e.preventDefault()
-        store.detachInstance()
+        s.detachInstance()
         return
       }
     }
@@ -58,23 +63,23 @@ export function useKeyboard(store: EditorStore) {
     if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
       if (e.code === 'KeyK') {
         e.preventDefault()
-        store.createComponentSetFromComponents()
+        s.createComponentSetFromComponents()
         return
       }
       if (e.code === 'KeyH') {
         e.preventDefault()
-        store.toggleVisibility()
+        s.toggleVisibility()
         return
       }
       if (e.code === 'KeyL') {
         e.preventDefault()
-        store.toggleLock()
+        s.toggleLock()
         return
       }
       if (e.code === 'KeyE') {
         e.preventDefault()
-        if (store.state.selectedIds.size > 0) {
-          store.exportSelection(1, 'PNG')
+        if (s.state.selectedIds.size > 0) {
+          s.exportSelection(1, 'PNG')
         }
         return
       }
@@ -83,7 +88,7 @@ export function useKeyboard(store: EditorStore) {
     if (e.metaKey || e.ctrlKey) {
       if (e.code === 'Backslash') {
         e.preventDefault()
-        store.state.showUI = !store.state.showUI
+        s.state.showUI = !s.state.showUI
         return
       }
       if (e.code === 'KeyJ') {
@@ -91,78 +96,88 @@ export function useKeyboard(store: EditorStore) {
         activeTab.value = activeTab.value === 'ai' ? 'design' : 'ai'
         return
       }
+      if (e.key === 'w') {
+        e.preventDefault()
+        if (activeTabRef.value) closeTab(activeTabRef.value.id)
+        return
+      }
+      if (e.key === 'n' || e.key === 't') {
+        e.preventDefault()
+        createTab()
+        return
+      }
       if (e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
-        store.undoAction()
+        s.undoAction()
       } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
         e.preventDefault()
-        store.redoAction()
+        s.redoAction()
       } else if (e.key === '0') {
         e.preventDefault()
-        store.zoomToFit()
+        s.zoomToFit()
       } else if (e.key === 'd') {
         e.preventDefault()
-        store.duplicateSelected()
+        s.duplicateSelected()
       } else if (e.key === 'a') {
         e.preventDefault()
-        store.selectAll()
+        s.selectAll()
       } else if (e.key === 's' && e.shiftKey) {
         e.preventDefault()
-        store.saveFigFileAs()
+        s.saveFigFileAs()
       } else if (e.key === 's') {
         e.preventDefault()
-        store.saveFigFile()
+        s.saveFigFile()
       } else if (e.key === 'o') {
         e.preventDefault()
-        openFileDialog(store)
+        openFileDialog()
       } else if (e.key === 'g' && !e.shiftKey) {
         e.preventDefault()
-        store.groupSelected()
+        s.groupSelected()
       } else if (e.key === 'g' && e.shiftKey) {
         e.preventDefault()
-        store.ungroupSelected()
+        s.ungroupSelected()
       }
     }
 
     if (e.shiftKey && e.key === 'A') {
       e.preventDefault()
-      const node = store.selectedNode.value
-      if (node && node.type === 'FRAME' && store.selectedNodes.value.length === 1) {
-        store.setLayoutMode(node.id, node.layoutMode === 'NONE' ? 'VERTICAL' : 'NONE')
-      } else if (store.selectedNodes.value.length > 0) {
-        store.wrapInAutoLayout()
+      const node = s.selectedNode.value
+      if (node && node.type === 'FRAME' && s.selectedNodes.value.length === 1) {
+        s.setLayoutMode(node.id, node.layoutMode === 'NONE' ? 'VERTICAL' : 'NONE')
+      } else if (s.selectedNodes.value.length > 0) {
+        s.wrapInAutoLayout()
       }
       return
     }
 
     if (e.key === ']') {
       e.preventDefault()
-      store.bringToFront()
+      s.bringToFront()
       return
     }
     if (e.key === '[') {
       e.preventDefault()
-      store.sendToBack()
+      s.sendToBack()
       return
     }
 
     if (e.key === 'Backspace' || e.key === 'Delete') {
-      store.deleteSelected()
+      s.deleteSelected()
     }
 
-    if (e.key === 'Enter' && store.state.penState) {
+    if (e.key === 'Enter' && s.state.penState) {
       e.preventDefault()
-      store.penCommit(false)
+      s.penCommit(false)
       return
     }
 
     if (e.key === 'Escape') {
-      if (store.state.penState) {
-        store.penCancel()
+      if (s.state.penState) {
+        s.penCancel()
         return
       }
-      store.clearSelection()
-      store.setTool('SELECT')
+      s.clearSelection()
+      s.setTool('SELECT')
     }
   })
 }
