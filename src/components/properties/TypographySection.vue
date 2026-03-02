@@ -81,7 +81,9 @@ onMounted(async () => {
       <icon-lucide-alert-triangle
         v-if="hasMissingFonts"
         class="size-3.5 shrink-0 text-amber-400"
-        :title="'Missing font' + (missingFonts.length > 1 ? 's' : '') + ': ' + missingFonts.join(', ')"
+        :title="
+          'Missing font' + (missingFonts.length > 1 ? 's' : '') + ': ' + missingFonts.join(', ')
+        "
       />
     </div>
 
