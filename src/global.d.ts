@@ -66,5 +66,8 @@ interface Window {
   >
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   __OPEN_PENCIL_SET_TRANSPORT__?(factory: () => any): void
-  __OPEN_PENCIL_STORE__?: import('./stores/editor').EditorStore
+  // Typed as `any` to avoid circular reference with EditorStore.
+  // The assignment in EditorView.vue is type-safe; test code uses `!` assertion.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  __OPEN_PENCIL_STORE__?: any
 }

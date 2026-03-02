@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsgo --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "oxlint -c oxlint.json src/",
