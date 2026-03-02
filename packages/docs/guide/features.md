@@ -8,9 +8,11 @@ Design tools are a supply chain problem. When your tool is closed-source, the ve
 
 Open and save native Figma files directly. Import decodes the full 194-definition Kiwi schema including NodeChange messages with ~390 fields. Export encodes the scene graph back to Kiwi binary with Zstd compression and thumbnail generation. Save (<kbd>⌘</kbd><kbd>S</kbd>) and Save As (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd>) use native OS dialogs on the desktop app. The import/export pipeline supports round-trip fidelity.
 
-## Figma Clipboard
+## Copy & Paste with Figma
 
-Copy/paste between OpenPencil and Figma. When you copy in Figma, OpenPencil decodes the fig-kiwi binary from the clipboard. When you copy in OpenPencil, it encodes fig-kiwi binary that Figma can read. Also works between OpenPencil instances.
+Select nodes in Figma, <kbd>⌘</kbd><kbd>C</kbd>, switch to OpenPencil, <kbd>⌘</kbd><kbd>V</kbd> — they appear with fills, strokes, auto-layout, text, corner radii, effects, and vector networks preserved. Works the other way too: copy from OpenPencil, paste into Figma.
+
+Under the hood, both directions use Figma's own fig-kiwi clipboard format — the same base64-encoded Kiwi binary that Figma puts on the clipboard. OpenPencil decodes the full schema on paste (194 definitions, ~390 fields per NodeChange) and encodes it on copy. Vector data round-trips through the `vectorNetworkBlob` binary format. Also works between OpenPencil instances via a separate native clipboard format.
 
 ## Vector Networks
 

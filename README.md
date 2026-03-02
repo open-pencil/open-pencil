@@ -28,7 +28,7 @@ Coding tools went through the same shift. VS Code opened the editor. LLMs opened
 OpenPencil is:
 
 - **Open source** — MIT license, read and modify everything
-- **Figma-compatible** — opens .fig files natively, copy/paste between apps
+- **Figma-compatible** — opens .fig files natively, copy & paste nodes between apps
 - **AI-native** — built-in chat with tool use, bring your own API key, no vendor lock-in
 - **Free forever** — no account, no subscription, no internet required, ~7 MB install
 - **Programmable** — headless CLI, every operation is scriptable
@@ -37,7 +37,8 @@ Your design files are yours. Your tools should be too.
 
 ## Features
 
-- **Figma .fig file import and export** — read and write native Figma files, copy/paste between apps
+- **Figma .fig file import and export** — read and write native Figma files
+- **Copy & paste with Figma** — select nodes in Figma, paste into OpenPencil (and vice versa). Uses Figma's own fig-kiwi clipboard format
 - **Real-time collaboration** — P2P via WebRTC, no server required. Cursors, presence, follow mode
 - **Drawing tools** — shapes, pen tool with vector networks, rich text with system fonts, auto-layout, components with live sync, variables with modes and collections
 - **AI chat** — describe what you want, the AI builds it. 29 tools wired to chat, CLI, and MCP
