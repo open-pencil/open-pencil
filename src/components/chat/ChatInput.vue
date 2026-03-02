@@ -36,14 +36,15 @@ const emit = defineEmits<{
 // ── Context chips (pinned node refs) ─────────────────────────
 const contextChips = ref<SceneNode[]>([])
 
-// When canvas selection changes, add newly selected nodes as chips (dedup by id)
+// Watch selectedIds set — fires on every selection change
 watch(
-  () => store.selectedNodes,
-  (nodes) => {
-    for (const node of nodes) {
-      if (!contextChips.value.some((c) => c.id === node.id)) {
-        contextChips.value.push({ ...node })
-      }
+  () => store.state.selectedIds,
+  (ids) => {
+    if (!ids?.size) return
+    for (const id of ids) {
+      if (contextChips.value.some((c) => c.id === id)) continue
+      const node = store.graph?.getNode(id)
+      if (node) contextChips.value.push({ ...node })
     }
   },
   { deep: true }
