@@ -7,6 +7,7 @@ import { useCollabInjected } from '@/composables/use-collab'
 import { useTextEdit } from '@/composables/use-text-edit'
 import { useEditorStore } from '@/stores/editor'
 import CanvasContextMenu from './CanvasContextMenu.vue'
+import CanvasControls from './CanvasControls.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
@@ -42,6 +43,10 @@ const cursor = computed(() => {
   <CanvasContextMenu>
     <div class="canvas-area relative flex-1 min-w-0 min-h-0 overflow-hidden">
       <canvas ref="canvasRef" :style="{ cursor }" class="block size-full touch-none" />
+      <!-- Bottom-left controls -->
+      <div class="pointer-events-none absolute bottom-4 left-4 z-10 flex items-center gap-2">
+        <CanvasControls />
+      </div>
     </div>
   </CanvasContextMenu>
 </template>

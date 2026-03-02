@@ -14,7 +14,7 @@ Open-source, AI-native design editor. Think Figma, but you can self-host it, ext
 |---|---|---|---|
 | Open source | ✅ MIT | ❌ | ✅ |
 | Rendering | Skia (WASM) | Skia (WASM) | SVG |
-| AI-native | ✅ 26 tools | ❌ Plugins only | ❌ |
+| AI-native | ✅ 38 tools | ❌ Plugins only | ❌ |
 | .fig import/export | ✅ | N/A | ❌ |
 | Desktop | Tauri (~7 MB) | Electron | Browser |
 | Collaboration | P2P (WebRTC + CRDT) | Proprietary | WebSocket |
@@ -553,7 +553,7 @@ Available when 2+ nodes selected. Shown in options bar and right-click menu.
 | .pdf | — | planned |
 | Figma clipboard | ✅ copy/paste between apps | ✅ |
 
-### AI tools — 26 tools
+### AI tools — 38 tools
 
 Tools are defined once in `packages/core/src/tools/schema.ts` as framework-agnostic `ToolDef` objects. Available in the in-app AI chat (via Vercel AI SDK adapter) and in the CLI via the `eval` command.
 
@@ -1082,7 +1082,7 @@ Tauri v2 desktop app (macOS, Windows, Linux). Web app at app.openpencil.dev. CLI
 - **More AI providers** — Anthropic API, Claude Code subscription, Gemini, local models via Ollama
 - **Code signing** — Apple & Azure certificates for properly signed desktop binaries
 - **.fig compatibility** — improving import/export fidelity across a larger set of real-world files
-- **Port all figma-use tools** — bring the full 118-tool set from [figma-use](https://github.com/dannote/figma-use) into the editor (currently 26/118) for complete AI agent design capabilities
+- **Port all figma-use tools** — bring the full 118-tool set from [figma-use](https://github.com/dannote/figma-use) into the editor (currently 38/118) for complete AI agent design capabilities
 - **CI tools** — design linting, code export, visual regression in pipelines via the headless CLI
 - **Prototyping** — frame transitions, interaction triggers, preview mode
 - **SVG/PDF export** — vector export formats

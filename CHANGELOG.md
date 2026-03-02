@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+### AI chat redesign
+
+- **Auto-resize textarea** — input grows with content (up to 160px), Shift+Enter for new lines
+- **Voice input** — mic button transcribes speech via Web Speech API with live interim results
+- **Image attachments** — attach images via button, paste, or drag-and-drop; previewed as thumbnails before sending; passed to vision-capable models
+- **Thinking toggle** — brain button enables extended reasoning on Claude models (8k budget token thinking block); auto-resets conversation when toggled
+- **Model capability badges** — 👁 vision, 🧠 thinking indicators in model picker
+- **Reasoning blocks** — assistant messages with `reasoning` parts show a collapsible "Thinking…" block that auto-closes 1s after streaming ends with duration ("Thought for Xs")
+- **Copy message** — hover any assistant reply to reveal a copy button
+- **Suggestion chips** — empty state shows 4 clickable prompt suggestions
+- **Scroll-to-bottom FAB** — floating button appears when not at the bottom of the conversation
+- **Clear + download toolbar** — trash icon clears conversation (⌘K), download icon exports as markdown
+- **Send button** is now ↵ (corner-down-left), disabled when input is empty
+- `ModelOption` gains `supportsThinking` and `supportsVision` capability flags
+- `use-chat` exposes `thinkingEnabled` + `currentModel` refs; transport recreated when model/thinking changes
+
+### AI tools
+
+- 12 new tools added (26 → 38 / 118): `get_children`, `get_ancestors`, `node_bounds`, `set_text`, `set_font`, `set_text_properties`, `set_blend_mode`, `set_layout_child`, `create_page`, `create_variable`, `set_variable_value`, `bind_variable`
+- Variables: AI can now create design variables, update values per mode, and bind them to node properties
+- Text: dedicated tools for content, font, and layout properties instead of overloaded `update_node`
+
+### Fixes
+
+- Fix 11 `no-non-null-assertion` lint warnings in `use-collab.ts` — proper null guards using captured `const` refs for TypeScript closure narrowing
+
 ## 0.3.2 (2026-03-02)
 
 ### Performance
