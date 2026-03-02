@@ -46,6 +46,7 @@ declare module 'vue' {
     IconLucideAlignVerticalJustifyCenter: typeof import('~icons/lucide/align-vertical-justify-center')['default']
     IconLucideAlignVerticalJustifyEnd: typeof import('~icons/lucide/align-vertical-justify-end')['default']
     IconLucideAlignVerticalJustifyStart: typeof import('~icons/lucide/align-vertical-justify-start')['default']
+    IconLucideArrowUp: typeof import('~icons/lucide/arrow-up')['default']
     IconLucideBaseline: typeof import('~icons/lucide/baseline')['default']
     IconLucideBlend: typeof import('~icons/lucide/blend')['default']
     IconLucideBold: typeof import('~icons/lucide/bold')['default']
