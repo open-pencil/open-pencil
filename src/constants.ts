@@ -109,7 +109,14 @@ export const DEFAULT_TEXT_HEIGHT = 24
 export const AUTO_LAYOUT_BREAK_THRESHOLD = 8
 export const HANDLE_HIT_RADIUS = 6
 export const ROTATION_HIT_RADIUS = 8
-export const ZOOM_SENSITIVITY = 0.99
+
+// Pixels of deltaY for one e-fold of zoom (Math.exp(-deltaY / ZOOM_DIVISOR))
+// Trackpad pinch sends small deltas (~2-5px), mouse wheel sends large (~100px).
+// Lower = more responsive. 50 matches Figma's trackpad feel.
+export const ZOOM_DIVISOR = 50
+// Clamp scale factor per wheel flush to prevent jarring jumps from mouse wheels
+export const ZOOM_SCALE_MIN = 0.75
+export const ZOOM_SCALE_MAX = 1.25
 
 export const SECTION_DEFAULT_FILL: Fill = {
   type: 'SOLID',

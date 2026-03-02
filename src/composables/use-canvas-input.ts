@@ -942,20 +942,35 @@ export function useCanvasInput(
     wheelAccum.hasZoom = false
   }
 
+  // Normalize wheel deltaY across deltaMode variants (line/page/pixel).
+  // Trackpad pinch is always DOM_DELTA_PIXEL; external mice may use LINE or PAGE.
+  function normalizeWheelDelta(e: WheelEvent): { dx: number; dy: number } {
+    let { deltaX, deltaY } = e
+    if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+      deltaX *= 40
+      deltaY *= 40
+    } else if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+      deltaX *= 800
+      deltaY *= 800
+    }
+    return { dx: deltaX, dy: deltaY }
+  }
+
   function onWheel(e: WheelEvent) {
     e.preventDefault()
     const canvas = canvasRef.value
     if (!canvas) return
+    const { dx, dy } = normalizeWheelDelta(e)
 
     if (e.ctrlKey || e.metaKey) {
       const rect = canvas.getBoundingClientRect()
       wheelAccum.zoomCenterX = e.clientX - rect.left
       wheelAccum.zoomCenterY = e.clientY - rect.top
-      wheelAccum.zoomDelta += e.deltaY
+      wheelAccum.zoomDelta += dy
       wheelAccum.hasZoom = true
     } else {
-      wheelAccum.deltaX -= e.deltaX
-      wheelAccum.deltaY -= e.deltaY
+      wheelAccum.deltaX -= dx
+      wheelAccum.deltaY -= dy
     }
     if (!wheelAccum.rafId) {
       wheelAccum.rafId = requestAnimationFrame(flushWheel)

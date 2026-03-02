@@ -7,7 +7,9 @@ import {
   SECTION_DEFAULT_FILL,
   SECTION_DEFAULT_STROKE,
   CANVAS_BG_COLOR,
-  ZOOM_SENSITIVITY
+  ZOOM_DIVISOR,
+  ZOOM_SCALE_MIN,
+  ZOOM_SCALE_MAX
 } from '@/constants'
 import {
   parseFigmaClipboard,
@@ -1933,7 +1935,10 @@ export function createEditorStore() {
   }
 
   function applyZoom(delta: number, centerX: number, centerY: number) {
-    const factor = Math.pow(ZOOM_SENSITIVITY, delta)
+    const factor = Math.min(
+      ZOOM_SCALE_MAX,
+      Math.max(ZOOM_SCALE_MIN, Math.exp(-delta / ZOOM_DIVISOR))
+    )
     const newZoom = Math.max(0.02, Math.min(256, state.zoom * factor))
     state.panX = centerX - (centerX - state.panX) * (newZoom / state.zoom)
     state.panY = centerY - (centerY - state.panY) * (newZoom / state.zoom)
