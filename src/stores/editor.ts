@@ -1,4 +1,4 @@
-import { reactive, shallowRef, computed, watch } from 'vue'
+import { shallowReactive, shallowRef, computed, watch } from 'vue'
 
 import {
   IS_TAURI,
@@ -142,7 +142,7 @@ export function createEditorStore() {
     }, 100)
   }
 
-  const state = reactive({
+  const state = shallowReactive({
     activeTool: 'SELECT' as Tool,
     currentPageId: graph.getPages()[0].id,
     selectedIds: new Set<string>(),
@@ -1446,7 +1446,9 @@ export function createEditorStore() {
       },
       inverse: () => {
         graph.deleteNode(id)
-        state.selectedIds.delete(id)
+        const next = new Set(state.selectedIds)
+        next.delete(id)
+        state.selectedIds = next
         requestRender()
       }
     })

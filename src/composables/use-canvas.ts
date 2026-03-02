@@ -1,5 +1,5 @@
-import { useResizeObserver } from '@vueuse/core'
-import { onMounted, onUnmounted, watch, type Ref } from 'vue'
+import { useRafFn, useResizeObserver } from '@vueuse/core'
+import { onMounted, onUnmounted, type Ref } from 'vue'
 
 import { getCanvasKit } from '@/engine/canvaskit'
 import { SkiaRenderer } from '@/engine/renderer'
@@ -11,6 +11,9 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
   let renderer: SkiaRenderer | null = null
   let ck: CanvasKit | null = null
   let destroyed = false
+  let dirty = true
+  let lastRenderVersion = -1
+  let lastSelectedIds: Set<string> | null = null
 
   async function init() {
     const canvas = canvasRef.value
@@ -62,8 +65,6 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
   const params = new URLSearchParams(window.location.search)
   const showRulers = !params.has('no-rulers')
 
-  let rafId = 0
-
   function renderNow() {
     if (!renderer) return
     renderer.dpr = window.devicePixelRatio || 1
@@ -98,15 +99,18 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
       },
       store.state.sceneVersion
     )
+    lastRenderVersion = store.state.renderVersion
+    lastSelectedIds = store.state.selectedIds
   }
 
-  function render() {
-    if (rafId) return
-    rafId = requestAnimationFrame(() => {
-      rafId = 0
+  const { pause } = useRafFn(() => {
+    const versionChanged = store.state.renderVersion !== lastRenderVersion
+    const selectionChanged = store.state.selectedIds !== lastSelectedIds
+    if (dirty || versionChanged || selectionChanged) {
+      dirty = false
       renderNow()
-    })
-  }
+    }
+  })
 
   onMounted(() => {
     init()
@@ -114,7 +118,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
 
   onUnmounted(() => {
     destroyed = true
-    cancelAnimationFrame(rafId)
+    pause()
     cancelAnimationFrame(resizeRaf)
     renderer?.destroy()
   })
@@ -129,16 +133,6 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     })
   })
 
-  watch(
-    () => store.state.renderVersion,
-    () => render()
-  )
-
-  watch(
-    () => store.state.selectedIds,
-    () => render()
-  )
-
   function hitTestSectionTitle(canvasX: number, canvasY: number) {
     return renderer?.hitTestSectionTitle(store.graph, canvasX, canvasY) ?? null
   }
@@ -147,5 +141,11 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     return renderer?.hitTestComponentLabel(store.graph, canvasX, canvasY) ?? null
   }
 
-  return { render, hitTestSectionTitle, hitTestComponentLabel }
+  return {
+    render: () => {
+      dirty = true
+    },
+    hitTestSectionTitle,
+    hitTestComponentLabel
+  }
 }
