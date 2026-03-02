@@ -95,8 +95,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
             }
           : null,
         remoteCursors: store.state.remoteCursors.length > 0 ? store.state.remoteCursors : undefined
-      },
-      store.state.sceneVersion
+      }
     )
   }
 
