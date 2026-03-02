@@ -1,5 +1,5 @@
 import { Chat } from '@ai-sdk/vue'
-import { DEFAULT_AI_MODEL } from '@open-pencil/core'
+import { AI_MODELS, DEFAULT_AI_MODEL } from '@open-pencil/core'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { DirectChatTransport, ToolLoopAgent } from 'ai'
 import dedent from 'dedent'
@@ -15,6 +15,7 @@ export type { ModelOption } from '@open-pencil/core'
 
 const API_KEY_STORAGE = 'open-pencil:openrouter-api-key'
 const MODEL_STORAGE = 'open-pencil:model'
+const THINKING_STORAGE = 'open-pencil:thinking'
 
 const SYSTEM_PROMPT = dedent`
   You are a design assistant inside OpenPencil, a Figma-like design editor.
@@ -31,6 +32,7 @@ const SYSTEM_PROMPT = dedent`
 
 const apiKey = ref(localStorage.getItem(API_KEY_STORAGE) ?? '')
 const modelId = ref(localStorage.getItem(MODEL_STORAGE) ?? DEFAULT_AI_MODEL)
+const thinkingEnabled = ref(localStorage.getItem(THINKING_STORAGE) === 'true')
 const activeTab = ref<'design' | 'ai'>('design')
 
 let editorStore: EditorStore | null = null
@@ -47,7 +49,13 @@ watch(modelId, (id) => {
   localStorage.setItem(MODEL_STORAGE, id)
 })
 
+watch(thinkingEnabled, (v) => {
+  localStorage.setItem(THINKING_STORAGE, String(v))
+})
+
 const isConfigured = computed(() => apiKey.value.length > 0)
+
+const currentModel = computed(() => AI_MODELS.find((m) => m.id === modelId.value))
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test-only mock transports don't implement full generics
 let overrideTransport: (() => any) | null = null
@@ -65,10 +73,18 @@ function createTransport() {
     }
   })
 
+  const model =
+    thinkingEnabled.value && currentModel.value?.supportsThinking
+      ? openrouter(modelId.value, {
+          // Extended thinking via OpenRouter — Claude-specific extra body
+          extraBody: { thinking: { type: 'enabled', budget_tokens: 8000 } }
+        })
+      : openrouter(modelId.value)
+
   const tools = editorStore ? createAITools(editorStore) : {}
 
   const agent = new ToolLoopAgent({
-    model: openrouter(modelId.value),
+    model,
     instructions: SYSTEM_PROMPT,
     tools
   })
@@ -86,6 +102,7 @@ function ensureChat(): Chat<UIMessage> | null {
   return chat
 }
 
+/** Fully recreate the chat (new transport). Call when model or thinking changes. */
 function resetChat() {
   chat = null
 }
@@ -103,6 +120,8 @@ export function useAIChat(store?: EditorStore) {
   return {
     apiKey,
     modelId,
+    thinkingEnabled,
+    currentModel,
     activeTab,
     isConfigured,
     ensureChat,
