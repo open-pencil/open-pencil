@@ -16,10 +16,13 @@ import {
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 
 import { MODELS, useAIChat } from '@/composables/use-chat'
+import { useEditorStore } from '@/stores/editor'
 
 import type { ChatStatus } from 'ai'
+import type { SceneNode } from '@open-pencil/core'
 
 const { modelId, thinkingEnabled, currentModel, resetChat } = useAIChat()
+const store = useEditorStore()
 
 const props = defineProps<{
   status: ChatStatus
@@ -29,6 +32,67 @@ const emit = defineEmits<{
   submit: [text: string, files?: FileList]
   stop: []
 }>()
+
+// ── Context chips (pinned node refs) ─────────────────────────
+const contextChips = ref<SceneNode[]>([])
+
+// When canvas selection changes, add newly selected nodes as chips (dedup by id)
+watch(
+  () => store.selectedNodes,
+  (nodes) => {
+    for (const node of nodes) {
+      if (!contextChips.value.some((c) => c.id === node.id)) {
+        contextChips.value.push({ ...node })
+      }
+    }
+  },
+  { deep: true }
+)
+
+function removeChip(id: string) {
+  contextChips.value = contextChips.value.filter((c) => c.id !== id)
+}
+
+function clearChips() {
+  contextChips.value = []
+}
+
+const NODE_TYPE_ICONS: Record<string, string> = {
+  FRAME: 'lucide:frame',
+  COMPONENT: 'lucide:component',
+  INSTANCE: 'lucide:layers',
+  TEXT: 'lucide:type',
+  RECTANGLE: 'lucide:square',
+  ELLIPSE: 'lucide:circle',
+  GROUP: 'lucide:group',
+  VECTOR: 'lucide:pen-tool',
+  SECTION: 'lucide:layout-panel-left',
+  PAGE: 'lucide:file',
+}
+
+function chipIcon(type: string): string {
+  return NODE_TYPE_ICONS[type] ?? 'lucide:box'
+}
+
+function chipLabel(node: SceneNode): string {
+  return node.name || node.type.toLowerCase()
+}
+
+function buildContextBlock(): string {
+  if (!contextChips.value.length) return ''
+  const items = contextChips.value.map((n) =>
+    JSON.stringify({
+      id: n.id,
+      type: n.type,
+      name: n.name,
+      x: Math.round(n.x),
+      y: Math.round(n.y),
+      width: Math.round(n.width),
+      height: Math.round(n.height),
+    })
+  )
+  return `\n\n[Selected nodes]\n${items.join('\n')}`
+}
 
 // ── Input ────────────────────────────────────────────────────
 const input = ref('')
@@ -166,9 +230,11 @@ function buildFileList(): FileList | undefined {
 function submit() {
   const text = input.value.trim()
   if (!text && !attachments.value.length) return
-  emit('submit', text, buildFileList())
+  const fullText = text + buildContextBlock()
+  emit('submit', fullText, buildFileList())
   input.value = ''
   clearAttachments()
+  clearChips()
   nextTick(() => { if (textareaEl.value) textareaEl.value.style.height = 'auto' })
 }
 
@@ -222,6 +288,42 @@ const canAttach = computed(() => currentModel.value?.supportsVision ?? true)
               <icon-lucide-x class="size-2.5" />
             </button>
           </div>
+        </div>
+
+        <!-- Context chips (selected nodes) -->
+        <div
+          v-if="contextChips.length > 0"
+          class="flex flex-wrap gap-1 border-b border-border px-2.5 pt-2 pb-1.5"
+        >
+          <div
+            v-for="chip in contextChips"
+            :key="chip.id"
+            class="group flex items-center gap-1 rounded-md border border-border bg-hover px-1.5 py-0.5 text-[10px] text-surface"
+          >
+            <icon-lucide-frame v-if="chip.type === 'FRAME'" class="size-2.5 shrink-0 text-muted" />
+            <icon-lucide-component v-else-if="chip.type === 'COMPONENT'" class="size-2.5 shrink-0 text-purple-400" />
+            <icon-lucide-layers v-else-if="chip.type === 'INSTANCE'" class="size-2.5 shrink-0 text-purple-400" />
+            <icon-lucide-type v-else-if="chip.type === 'TEXT'" class="size-2.5 shrink-0 text-muted" />
+            <icon-lucide-square v-else-if="chip.type === 'RECTANGLE'" class="size-2.5 shrink-0 text-muted" />
+            <icon-lucide-circle v-else-if="chip.type === 'ELLIPSE'" class="size-2.5 shrink-0 text-muted" />
+            <icon-lucide-pen-tool v-else-if="chip.type === 'VECTOR'" class="size-2.5 shrink-0 text-muted" />
+            <icon-lucide-box v-else class="size-2.5 shrink-0 text-muted" />
+            <span class="max-w-[80px] truncate">{{ chipLabel(chip) }}</span>
+            <button
+              class="ml-0.5 flex size-3 items-center justify-center rounded-sm text-muted opacity-50 transition-opacity hover:opacity-100 hover:text-surface"
+              @click.stop="removeChip(chip.id)"
+            >
+              <icon-lucide-x class="size-2" />
+            </button>
+          </div>
+          <!-- Clear all -->
+          <button
+            class="flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] text-muted hover:text-surface transition-colors"
+            @click="clearChips"
+          >
+            <icon-lucide-x class="size-2.5" />
+            clear
+          </button>
         </div>
 
         <!-- Textarea -->
