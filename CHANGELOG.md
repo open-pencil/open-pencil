@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.2 (2026-03-02)
+
+### Performance
+
+- Re-apply SkPicture scene caching for ~7x faster pan/zoom (0.98ms vs 6.8ms per frame at 500 nodes)
+
+### Tests
+
+- Visual regression tests for SkPicture cache: hover on/off cycle, multiple cycles, mouse hover, scene change + hover
+- Type `window.__OPEN_PENCIL_STORE__` globally, remove ad-hoc casts from tests
+
 ## 0.3.1 (2026-03-02)
 
 ### Fixes
