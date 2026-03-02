@@ -1804,6 +1804,33 @@ export function createEditorStore() {
     requestRepaint()
   }
 
+  function zoomToSelection() {
+    const ids = [...state.selectedIds]
+    if (ids.length === 0) return zoomToFit()
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const id of ids) {
+      const abs = graph.getAbsolutePosition(id)
+      const node = graph.getNode(id)
+      if (!node) continue
+      minX = Math.min(minX, abs.x)
+      minY = Math.min(minY, abs.y)
+      maxX = Math.max(maxX, abs.x + node.width)
+      maxY = Math.max(maxY, abs.y + node.height)
+    }
+
+    const padding = 80
+    const w = maxX - minX + padding * 2
+    const h = maxY - minY + padding * 2
+    const viewW = 800
+    const viewH = 600
+    const zoom = Math.min(viewW / w, viewH / h, 8)
+    state.zoom = zoom
+    state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
+    state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
+    requestRepaint()
+  }
+
   function zoomToFit() {
     const nodes = graph.getChildren(state.currentPageId)
     if (nodes.length === 0) return
@@ -1909,6 +1936,7 @@ export function createEditorStore() {
     applyZoom,
     pan,
     zoomToFit,
+    zoomToSelection,
     isTopLevel,
     switchPage,
     addPage,

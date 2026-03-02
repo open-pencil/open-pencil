@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { useEventListener, useScroll } from '@vueuse/core'
-import { computed, markRaw, nextTick, ref, watch } from 'vue'
+import { useEventListener } from '@vueuse/core'
+import { computed, markRaw, ref } from 'vue'
 
 import { useAIChat } from '@/composables/use-chat'
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from '@/components/ai-elements'
 
 import APIKeySetup from './APIKeySetup.vue'
 import ChatInput from './ChatInput.vue'
@@ -14,26 +19,9 @@ import type { UIMessage } from 'ai'
 const { isConfigured, ensureChat, resetChat } = useAIChat()
 
 const chat = ref<Chat<UIMessage> | null>(null)
-const scrollEl = ref<HTMLElement>()
-const atBottom = ref(true)
 
 const messages = computed(() => chat.value?.messages ?? [])
 const status = computed(() => chat.value?.status ?? 'ready')
-
-// ── Scroll tracking ──────────────────────────────────────────
-const { arrivedState } = useScroll(scrollEl, { offset: { bottom: 64 } })
-watch(arrivedState, (s) => {
-  atBottom.value = s.bottom
-})
-
-async function scrollToBottom(behavior: ScrollBehavior = 'smooth') {
-  await nextTick()
-  scrollEl.value?.scrollTo({ top: scrollEl.value.scrollHeight, behavior })
-}
-
-watch(messages, () => {
-  if (atBottom.value) scrollToBottom()
-}, { deep: true })
 
 // ── Actions ──────────────────────────────────────────────────
 const SUGGESTIONS = [
@@ -51,7 +39,6 @@ function handleSubmit(text: string, files?: FileList) {
   chat.value
     ?.sendMessage(files?.length ? { text, files } : { text })
     .catch(() => {})
-  scrollToBottom('instant')
 }
 
 function handleStop() {
@@ -116,8 +103,8 @@ useEventListener('keydown', (e: KeyboardEvent) => {
         </button>
       </div>
 
-      <!-- Messages -->
-      <div ref="scrollEl" class="relative min-h-0 flex-1 overflow-y-auto">
+      <!-- Messages (Conversation from ai-elements-vue) -->
+      <Conversation class="relative">
         <!-- Empty state -->
         <div
           v-if="messages.length === 0"
@@ -142,8 +129,7 @@ useEventListener('keydown', (e: KeyboardEvent) => {
           </div>
         </div>
 
-        <!-- Message list -->
-        <div v-else class="flex flex-col gap-2 px-3 py-3">
+        <ConversationContent v-else>
           <ChatMessage
             v-for="msg in messages"
             :key="msg.id"
@@ -151,42 +137,21 @@ useEventListener('keydown', (e: KeyboardEvent) => {
             :is-streaming="status === 'streaming' && msg === messages[messages.length - 1]"
           />
 
-          <!-- Thinking indicator (submitted but no first token yet) -->
+          <!-- Thinking indicator -->
           <div v-if="status === 'submitted'" class="flex items-center gap-2 py-1">
-            <div
-              class="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent/10"
-            >
+            <div class="flex size-6 shrink-0 items-center justify-center rounded-full bg-accent/10">
               <icon-lucide-sparkles class="size-3 text-accent" />
             </div>
             <div class="flex items-center gap-1">
-              <span
-                class="size-1.5 animate-bounce rounded-full bg-muted"
-                style="animation-delay: 0ms"
-              />
-              <span
-                class="size-1.5 animate-bounce rounded-full bg-muted"
-                style="animation-delay: 150ms"
-              />
-              <span
-                class="size-1.5 animate-bounce rounded-full bg-muted"
-                style="animation-delay: 300ms"
-              />
+              <span class="size-1.5 animate-bounce rounded-full bg-muted" style="animation-delay:0ms" />
+              <span class="size-1.5 animate-bounce rounded-full bg-muted" style="animation-delay:150ms" />
+              <span class="size-1.5 animate-bounce rounded-full bg-muted" style="animation-delay:300ms" />
             </div>
           </div>
-        </div>
-      </div>
+        </ConversationContent>
 
-      <!-- Scroll to bottom FAB -->
-      <Transition name="fade">
-        <button
-          v-if="!atBottom && messages.length > 0"
-          class="absolute bottom-16 left-1/2 z-10 -translate-x-1/2 flex items-center gap-1.5 rounded-full border border-border bg-panel px-3 py-1.5 text-[11px] text-muted shadow-lg hover:bg-hover hover:text-surface"
-          @click="scrollToBottom()"
-        >
-          <icon-lucide-arrow-down class="size-3" />
-          Scroll to bottom
-        </button>
-      </Transition>
+        <ConversationScrollButton />
+      </Conversation>
 
       <ChatInput :status="status" @submit="handleSubmit" @stop="handleStop" />
     </template>

@@ -273,16 +273,16 @@ const canAttach = computed(() => currentModel.value?.supportsVision ?? true)
                   >
                     <SelectItemText class="flex-1">{{ model.name }}</SelectItemText>
                     <div class="flex items-center gap-1">
-                      <span
+                      <icon-lucide-eye
                         v-if="model.supportsVision"
-                        class="text-[9px] text-muted"
+                        class="size-2.5 text-muted"
                         title="Vision"
-                      >👁</span>
-                      <span
+                      />
+                      <icon-lucide-brain
                         v-if="model.supportsThinking"
-                        class="text-[9px] text-muted"
+                        class="size-2.5 text-muted"
                         title="Thinking"
-                      >🧠</span>
+                      />
                       <span
                         v-if="model.tag"
                         class="rounded bg-accent/10 px-1 py-px text-[9px] text-accent"

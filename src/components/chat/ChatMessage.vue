@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
 import 'vue-stream-markdown/index.css'
 import { computed, ref } from 'vue'
 
-import ReasoningBlock from './ReasoningBlock.vue'
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from '@/components/ai-elements'
 
 import type { UIMessage } from 'ai'
 
@@ -142,57 +150,25 @@ const fileParts = computed(() => getFileParts(props.message))
         </div>
       </div>
 
-      <!-- Reasoning block (assistant) -->
-      <ReasoningBlock
+      <!-- Reasoning (ai-elements-vue) -->
+      <Reasoning
         v-for="(r, i) in reasoningParts"
         :key="i"
-        :text="r.text"
         :is-streaming="isStreaming && i === reasoningParts.length - 1"
-      />
-
-      <!-- Tool timeline (assistant) -->
-      <div
-        v-if="!isUser && toolParts.length > 0"
-        class="space-y-px rounded-lg border border-border bg-canvas p-1.5"
       >
-        <CollapsibleRoot v-for="tool in toolParts" :key="tool.toolCallId">
-          <CollapsibleTrigger
-            class="flex w-full items-center gap-2 rounded px-1.5 py-1 text-[11px] hover:bg-hover"
-          >
-            <!-- State icon -->
-            <div
-              class="flex size-4 shrink-0 items-center justify-center rounded-full"
-              :class="{
-                'bg-accent/20 text-accent': toolState(tool) === 'pending',
-                'bg-green-500/20 text-green-400': toolState(tool) === 'done',
-                'bg-red-500/20 text-red-400': toolState(tool) === 'error'
-              }"
-            >
-              <icon-lucide-loader-circle
-                v-if="toolState(tool) === 'pending'"
-                class="size-2.5 animate-spin"
-              />
-              <icon-lucide-check v-else-if="toolState(tool) === 'done'" class="size-2.5" />
-              <icon-lucide-triangle-alert v-else class="size-2.5" />
-            </div>
-            <span class="flex-1 truncate text-left text-surface">{{ toolDisplayName(tool) }}</span>
-            <span class="shrink-0 text-muted">
-              {{ toolState(tool) === 'pending' ? 'Running…' : toolState(tool) === 'done' ? 'Done' : 'Error' }}
-            </span>
-            <icon-lucide-chevron-down
-              v-if="toolState(tool) !== 'pending'"
-              class="ml-0.5 size-3 shrink-0 text-muted transition-transform [[data-state=open]>&]:rotate-180"
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent
-            v-if="toolState(tool) !== 'pending'"
-            class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
-          >
-            <pre
-              class="mt-1 overflow-x-auto rounded bg-input px-2 py-1.5 text-[10px] text-muted"
-            >{{ tool.state === 'error' && tool.errorText ? tool.errorText : JSON.stringify(tool.output, null, 2) }}</pre>
-          </CollapsibleContent>
-        </CollapsibleRoot>
+        <ReasoningTrigger />
+        <ReasoningContent :content="r.text" />
+      </Reasoning>
+
+      <!-- Tool calls (ai-elements-vue) -->
+      <div v-if="!isUser && toolParts.length > 0" class="space-y-1">
+        <Tool v-for="tool in toolParts" :key="tool.toolCallId">
+          <ToolHeader :type="tool.type as any" :state="tool.state" />
+          <ToolContent>
+            <ToolInput :input="tool.input" />
+            <ToolOutput :output="tool.output" :error-text="tool.errorText" />
+          </ToolContent>
+        </Tool>
       </div>
 
       <!-- Text bubble -->
