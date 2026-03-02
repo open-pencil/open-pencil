@@ -2,22 +2,34 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
 import 'vue-stream-markdown/index.css'
+import { computed, ref } from 'vue'
+
+import ReasoningBlock from './ReasoningBlock.vue'
 
 import type { UIMessage } from 'ai'
 
-const { message } = defineProps<{ message: UIMessage }>()
+const props = defineProps<{
+  message: UIMessage
+  isStreaming?: boolean
+}>()
 
-function getTextContent(msg: UIMessage): string {
-  return msg.parts
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join('')
+// ── Part extraction ──────────────────────────────────────────
+function getTextParts(msg: UIMessage) {
+  return msg.parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+}
+
+function getReasoningParts(msg: UIMessage) {
+  return msg.parts.filter(
+    (p): p is { type: 'reasoning'; text: string } =>
+      typeof p === 'object' && p !== null && 'type' in p && (p as { type: string }).type === 'reasoning'
+  )
 }
 
 interface ToolPart {
   type: string
   toolCallId: string
   state: string
+  toolName?: string
   input?: unknown
   output?: unknown
   errorText?: string
@@ -37,37 +49,119 @@ function getToolParts(msg: UIMessage): ToolPart[] {
   return msg.parts.filter(isToolPart)
 }
 
-function toolName(part: ToolPart): string {
-  return part.type.replace(/^tool-/, '')
-}
-
 function toolDisplayName(part: ToolPart): string {
-  return toolName(part)
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase())
+  const raw = part.toolName ?? part.type.replace(/^tool-/, '').replace(/-call$|-result$/, '')
+  return raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
   if (part.state === 'error') return 'error'
-  if (part.state === 'output-available') return 'done'
+  if (part.state === 'output-available' || part.state === 'result') return 'done'
   return 'pending'
 }
+
+// ── Copy ────────────────────────────────────────────────────
+const copied = ref(false)
+const fullText = computed(() =>
+  getTextParts(props.message)
+    .map((p) => p.text)
+    .join('')
+)
+
+async function copyMessage() {
+  if (!fullText.value) return
+  await navigator.clipboard.writeText(fullText.value)
+  copied.value = true
+  setTimeout(() => {
+    copied.value = false
+  }, 1500)
+}
+
+// ── File attachments ─────────────────────────────────────────
+interface FilePart {
+  type: 'file'
+  mediaType?: string
+  url?: string
+  filename?: string
+}
+
+function getFileParts(msg: UIMessage): FilePart[] {
+  return msg.parts.filter(
+    (p): p is FilePart =>
+      typeof p === 'object' && p !== null && 'type' in p && (p as FilePart).type === 'file'
+  )
+}
+
+const isUser = computed(() => props.message.role === 'user')
+const hasContent = computed(() => fullText.value.length > 0)
+const toolParts = computed(() => getToolParts(props.message))
+const reasoningParts = computed(() => getReasoningParts(props.message))
+const fileParts = computed(() => getFileParts(props.message))
 </script>
 
 <template>
-  <div :class="message.role === 'user' ? 'flex justify-end' : ''">
-    <div class="min-w-0 space-y-1.5" :class="message.role === 'user' ? 'max-w-[85%]' : ''">
-      <!-- Tool timeline -->
+  <div :class="['group flex w-full gap-2', isUser ? 'flex-row-reverse' : 'flex-row']">
+    <!-- Avatar -->
+    <div class="mt-0.5 shrink-0">
       <div
-        v-if="message.role === 'assistant' && getToolParts(message).length > 0"
-        class="space-y-0.5 rounded-lg border border-border bg-canvas p-2"
+        v-if="isUser"
+        class="flex size-6 items-center justify-center rounded-full bg-accent/20 text-[10px] font-bold text-accent"
       >
-        <CollapsibleRoot v-for="tool in getToolParts(message)" :key="tool.toolCallId">
+        U
+      </div>
+      <div
+        v-else
+        class="flex size-6 items-center justify-center rounded-full bg-accent/10"
+      >
+        <icon-lucide-sparkles class="size-3 text-accent" />
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div
+      :class="['relative min-w-0 flex-1 space-y-1.5', isUser ? 'items-end' : 'items-start']"
+      style="max-width: calc(100% - 2rem)"
+    >
+      <!-- File attachments (user) -->
+      <div v-if="fileParts.length > 0" class="flex flex-wrap gap-1.5">
+        <div
+          v-for="(f, i) in fileParts"
+          :key="i"
+          class="relative overflow-hidden rounded-lg border border-border bg-hover"
+        >
+          <img
+            v-if="f.mediaType?.startsWith('image/') && f.url"
+            :src="f.url"
+            :alt="f.filename ?? 'attachment'"
+            class="h-20 w-auto max-w-[160px] object-cover"
+          />
+          <div v-else class="flex items-center gap-1.5 px-2 py-1.5 text-[11px] text-muted">
+            <icon-lucide-file class="size-3" />
+            {{ f.filename ?? 'file' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Reasoning block (assistant) -->
+      <ReasoningBlock
+        v-for="(r, i) in reasoningParts"
+        :key="i"
+        :text="r.text"
+        :is-streaming="isStreaming && i === reasoningParts.length - 1"
+      />
+
+      <!-- Tool timeline (assistant) -->
+      <div
+        v-if="!isUser && toolParts.length > 0"
+        class="space-y-px rounded-lg border border-border bg-canvas p-1.5"
+      >
+        <CollapsibleRoot v-for="tool in toolParts" :key="tool.toolCallId">
           <CollapsibleTrigger
-            class="flex w-full items-center gap-2 rounded px-1 py-0.5 hover:bg-hover"
+            class="flex w-full items-center gap-2 rounded px-1.5 py-1 text-[11px] hover:bg-hover"
           >
+            <!-- State icon -->
             <div
-              class="flex size-4 items-center justify-center rounded-full"
+              class="flex size-4 shrink-0 items-center justify-center rounded-full"
               :class="{
                 'bg-accent/20 text-accent': toolState(tool) === 'pending',
                 'bg-green-500/20 text-green-400': toolState(tool) === 'done',
@@ -76,58 +170,111 @@ function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
             >
               <icon-lucide-loader-circle
                 v-if="toolState(tool) === 'pending'"
-                class="size-3 animate-spin"
+                class="size-2.5 animate-spin"
               />
-              <icon-lucide-check v-else-if="toolState(tool) === 'done'" class="size-3" />
-              <icon-lucide-triangle-alert v-else class="size-3" />
+              <icon-lucide-check v-else-if="toolState(tool) === 'done'" class="size-2.5" />
+              <icon-lucide-triangle-alert v-else class="size-2.5" />
             </div>
-            <span class="text-[11px] text-surface">
-              {{ toolDisplayName(tool) }}
-            </span>
-            <span class="text-[10px] text-muted">
-              {{
-                toolState(tool) === 'pending'
-                  ? 'Running…'
-                  : toolState(tool) === 'done'
-                    ? 'Done'
-                    : 'Error'
-              }}
+            <span class="flex-1 truncate text-left text-surface">{{ toolDisplayName(tool) }}</span>
+            <span class="shrink-0 text-muted">
+              {{ toolState(tool) === 'pending' ? 'Running…' : toolState(tool) === 'done' ? 'Done' : 'Error' }}
             </span>
             <icon-lucide-chevron-down
               v-if="toolState(tool) !== 'pending'"
-              class="ml-auto size-3 text-muted transition-transform [[data-state=open]>&]:rotate-180"
+              class="ml-0.5 size-3 shrink-0 text-muted transition-transform [[data-state=open]>&]:rotate-180"
             />
           </CollapsibleTrigger>
           <CollapsibleContent
             v-if="toolState(tool) !== 'pending'"
-            class="overflow-hidden text-[10px] data-[state=closed]:collapsible-up data-[state=open]:collapsible-down"
+            class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
           >
-            <pre class="mt-1 overflow-x-auto rounded bg-input p-2 text-muted">{{
-              tool.state === 'error' && tool.errorText
-                ? tool.errorText
-                : JSON.stringify(tool.output, null, 2)
-            }}</pre>
+            <pre
+              class="mt-1 overflow-x-auto rounded bg-input px-2 py-1.5 text-[10px] text-muted"
+            >{{ tool.state === 'error' && tool.errorText ? tool.errorText : JSON.stringify(tool.output, null, 2) }}</pre>
           </CollapsibleContent>
         </CollapsibleRoot>
       </div>
 
       <!-- Text bubble -->
       <div
-        v-if="getTextContent(message)"
-        class="rounded-xl px-3 py-2 text-xs leading-relaxed"
-        :class="
-          message.role === 'user'
-            ? 'whitespace-pre-wrap rounded-br-md bg-accent text-white'
-            : 'rounded-tl-md bg-hover text-surface'
-        "
+        v-if="hasContent"
+        class="relative"
+        :class="isUser ? 'flex justify-end' : ''"
       >
-        <Markdown
-          v-if="message.role === 'assistant'"
-          :content="getTextContent(message)"
-          class="chat-markdown"
-        />
-        <template v-else>{{ getTextContent(message) }}</template>
+        <div
+          :class="[
+            'min-w-0 rounded-xl px-3 py-2 text-xs leading-relaxed',
+            isUser
+              ? 'rounded-tr-sm bg-accent text-white'
+              : 'rounded-tl-sm bg-hover text-surface'
+          ]"
+        >
+          <Markdown
+            v-if="!isUser"
+            :content="fullText"
+            :mode="isStreaming ? 'streaming' : 'static'"
+            :theme="['github-dark', 'github-dark']"
+            class="chat-markdown"
+          />
+          <span v-else class="whitespace-pre-wrap">{{ fullText }}</span>
+        </div>
+
+        <!-- Copy button — appears on hover for assistant messages -->
+        <button
+          v-if="!isUser && hasContent"
+          class="absolute -bottom-5 left-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted opacity-0 transition-all hover:bg-hover hover:text-surface group-hover:opacity-100"
+          :title="copied ? 'Copied!' : 'Copy'"
+          @click="copyMessage"
+        >
+          <icon-lucide-check v-if="copied" class="size-3 text-green-400" />
+          <icon-lucide-copy v-else class="size-3" />
+          {{ copied ? 'Copied' : 'Copy' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
+
+<style>
+/* Ensure vue-stream-markdown code blocks respect our dark theme */
+.chat-markdown pre {
+  background: var(--color-input) !important;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.chat-markdown code:not(pre code) {
+  background: var(--color-input);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 10px;
+}
+
+.chat-markdown p {
+  margin: 0 0 0.5em;
+}
+
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3 {
+  font-weight: 600;
+  margin: 0.75em 0 0.25em;
+  color: var(--color-surface);
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+  padding-left: 1.25em;
+  margin: 0.25em 0;
+}
+
+.chat-markdown li {
+  margin: 0.15em 0;
+}
+</style>

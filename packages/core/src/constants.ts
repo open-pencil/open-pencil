@@ -79,6 +79,10 @@ export interface ModelOption {
   name: string
   provider: string
   tag?: string
+  /** Whether this model supports extended thinking / reasoning mode */
+  supportsThinking?: boolean
+  /** Whether this model accepts image attachments */
+  supportsVision?: boolean
 }
 
 export const AI_MODELS: ModelOption[] = [
@@ -87,28 +91,45 @@ export const AI_MODELS: ModelOption[] = [
     id: 'anthropic/claude-sonnet-4.6',
     name: 'Claude Sonnet 4.6',
     provider: 'Anthropic',
-    tag: 'Best for design'
+    tag: 'Best for design',
+    supportsThinking: true,
+    supportsVision: true
   },
   {
     id: 'anthropic/claude-opus-4.6',
     name: 'Claude Opus 4.6',
     provider: 'Anthropic',
-    tag: 'Smartest'
+    tag: 'Smartest',
+    supportsThinking: true,
+    supportsVision: true
   },
   // 76.8% SWE-bench, vision + UI-to-code specialist
-  { id: 'moonshotai/kimi-k2.5', name: 'Kimi K2.5', provider: 'Moonshot', tag: 'Vision + code' },
+  {
+    id: 'moonshotai/kimi-k2.5',
+    name: 'Kimi K2.5',
+    provider: 'Moonshot',
+    tag: 'Vision + code',
+    supportsVision: true
+  },
   // 1M context, multimodal (text+image+audio+video), 78% SWE-bench
   {
     id: 'google/gemini-3.1-pro-preview',
     name: 'Gemini 3.1 Pro',
     provider: 'Google',
-    tag: '1M context'
+    tag: '1M context',
+    supportsVision: true
   },
   // 80% SWE-bench, 400K context, agentic coding
-  { id: 'openai/gpt-5.3-codex', name: 'GPT-5.3 Codex', provider: 'OpenAI' },
+  { id: 'openai/gpt-5.3-codex', name: 'GPT-5.3 Codex', provider: 'OpenAI', supportsVision: true },
 
   // Fast & cheap
-  { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', provider: 'Google', tag: 'Fast' },
+  {
+    id: 'google/gemini-3-flash-preview',
+    name: 'Gemini 3 Flash',
+    provider: 'Google',
+    tag: 'Fast',
+    supportsVision: true
+  },
   { id: 'deepseek/deepseek-v3.2', name: 'DeepSeek V3.2', provider: 'DeepSeek', tag: 'Cheap' },
   { id: 'qwen/qwen3.5-flash-02-23', name: 'Qwen 3.5 Flash', provider: 'Qwen', tag: 'Cheap' },
 
