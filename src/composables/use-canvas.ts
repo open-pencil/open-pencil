@@ -1,15 +1,74 @@
 import { useRafFn, useResizeObserver } from '@vueuse/core'
 import { onMounted, onUnmounted, type Ref } from 'vue'
 
-import { getCanvasKit } from '@/engine/canvaskit'
+import { getCanvasKit, getGpuBackend } from '@/engine/canvaskit'
 import { SkiaRenderer } from '@/engine/renderer'
 
 import type { EditorStore } from '@/stores/editor'
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit, Surface } from 'canvaskit-wasm'
+
+interface WebGPUContext {
+  device: GPUDevice
+  deviceContext: unknown
+}
+
+interface CanvasKitWebGPU {
+  MakeGPUDeviceContext(device: GPUDevice): unknown
+  MakeGPUCanvasContext(ctx: unknown, canvas: HTMLCanvasElement, opts?: unknown): unknown
+  MakeGPUCanvasSurface(
+    ctx: unknown,
+    colorSpace?: unknown,
+    width?: number,
+    height?: number
+  ): ReturnType<CanvasKit['MakeSurface']>
+  BeginFrame(canvasCtx: unknown): ReturnType<CanvasKit['MakeSurface']>['getCanvas']
+  EndFrame(): void
+}
+
+function asWebGPU(ck: CanvasKit): CanvasKitWebGPU {
+  return ck as unknown as CanvasKitWebGPU
+}
+
+async function initWebGPU(ck: CanvasKit): Promise<WebGPUContext | null> {
+  if (!('gpu' in navigator)) return null
+  const adapter = await navigator.gpu.requestAdapter()
+  if (!adapter) return null
+  const device = await adapter.requestDevice()
+  const deviceContext = asWebGPU(ck).MakeGPUDeviceContext?.(device)
+  if (!deviceContext) return null
+  return { device, deviceContext }
+}
+
+/**
+ * Graphite requires a fresh SkSurface wrapping the current swapchain texture each frame.
+ * This proxy uses BeginFrame/EndFrame for minimal JS↔WASM overhead — a single WASM call
+ * per frame boundary instead of creating/destroying JS Surface objects.
+ */
+function makeWebGPUSurfaceProxy(ck: CanvasKit, canvasCtx: unknown): Surface {
+  const gpu = asWebGPU(ck)
+
+  return {
+    getCanvas() {
+      const canvas = gpu.BeginFrame(canvasCtx)
+      if (!canvas) throw new Error('BeginFrame returned null')
+      return canvas
+    },
+    flush() {
+      gpu.EndFrame()
+    },
+    reportBackendTypeIsGPU: () => true,
+    width: () => 0,
+    height: () => 0,
+    delete() {},
+    dispose() {},
+    isDeleted: () => false
+  } as unknown as Surface
+}
 
 export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: EditorStore) {
   let renderer: SkiaRenderer | null = null
   let ck: CanvasKit | null = null
+  let gpuCtx: WebGPUContext | null = null
   let destroyed = false
   let dirty = true
   let lastRenderVersion = -1
@@ -21,6 +80,14 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
 
     ck = await getCanvasKit()
     if (destroyed) return
+
+    if (getGpuBackend() === 'webgpu') {
+      gpuCtx = await initWebGPU(ck)
+      if (!gpuCtx) {
+        console.warn('WebGPU init failed, reload without ?gpu=webgpu to use WebGL')
+        return
+      }
+    }
 
     await new Promise((r) => requestAnimationFrame(r))
     createSurface(canvas)
@@ -44,15 +111,26 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     canvas.width = w * dpr
     canvas.height = h * dpr
 
-    const isTest = new URLSearchParams(window.location.search).has('test')
-    const surface = ck.MakeWebGLCanvasSurface(
-      canvas,
-      undefined,
-      isTest ? { preserveDrawingBuffer: 1 } : undefined
-    )
-    if (!surface) {
-      console.error('Failed to create WebGL surface')
-      return
+    let surface
+    if (getGpuBackend() === 'webgpu' && gpuCtx) {
+      const gpu = asWebGPU(ck)
+      const canvasCtx = gpu.MakeGPUCanvasContext(gpuCtx.deviceContext, canvas)
+      if (!canvasCtx) {
+        console.error('Failed to create WebGPU canvas context')
+        return
+      }
+      surface = makeWebGPUSurfaceProxy(ck, canvasCtx)
+    } else {
+      const isTest = new URLSearchParams(window.location.search).has('test')
+      surface = ck.MakeWebGLCanvasSurface(
+        canvas,
+        undefined,
+        isTest ? { preserveDrawingBuffer: 1 } : undefined
+      )
+      if (!surface) {
+        console.error('Failed to create WebGL surface')
+        return
+      }
     }
 
     renderer = new SkiaRenderer(ck, surface)

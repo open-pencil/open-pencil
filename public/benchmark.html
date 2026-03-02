@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>OpenPencil — WebGL vs WebGPU Benchmark</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; padding: 32px; }
+    h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { color: #888; margin-bottom: 24px; font-size: 14px; }
+    .controls { display: flex; gap: 12px; margin-bottom: 24px; align-items: center; }
+    button { padding: 8px 16px; border: 1px solid #444; border-radius: 6px; background: #2a2a2a; color: #e0e0e0; cursor: pointer; font-size: 14px; }
+    button:hover { background: #333; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button.primary { background: #3b82f6; border-color: #3b82f6; }
+    button.primary:hover { background: #2563eb; }
+    select, input { padding: 6px 10px; border: 1px solid #444; border-radius: 6px; background: #2a2a2a; color: #e0e0e0; font-size: 14px; }
+    .canvases { display: flex; gap: 24px; margin-bottom: 24px; }
+    .canvas-box { flex: 1; }
+    .canvas-box h3 { font-size: 14px; margin-bottom: 8px; color: #aaa; }
+    canvas { width: 100%; aspect-ratio: 16/10; border: 1px solid #333; border-radius: 8px; background: #000; }
+    .results { background: #222; border: 1px solid #333; border-radius: 8px; padding: 20px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.8; white-space: pre; overflow-x: auto; }
+    .status { color: #888; font-size: 13px; margin-bottom: 12px; }
+    .winner { color: #4ade80; }
+    .loser { color: #f87171; }
+    .header-row { color: #60a5fa; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>OpenPencil Render Benchmark</h1>
+  <p class="subtitle">WebGL (Ganesh) vs WebGPU (Graphite) — same scene, same renderer</p>
+
+  <div class="controls">
+    <label>Nodes: <input type="number" id="nodeCount" value="500" min="10" max="5000" step="10"></label>
+    <label>Frames: <input type="number" id="iterations" value="200" min="10" max="2000" step="10"></label>
+    <button id="runBtn" class="primary">Run Benchmark</button>
+    <button id="sweepBtn">Run Sweep (100–5000)</button>
+    <span class="status" id="status"></span>
+  </div>
+
+  <div class="canvases">
+    <div class="canvas-box">
+      <h3>WebGL (Ganesh)</h3>
+      <canvas id="webgl-canvas"></canvas>
+    </div>
+    <div class="canvas-box">
+      <h3>WebGPU (Graphite)</h3>
+      <canvas id="webgpu-canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="results" id="results">Click "Run Benchmark" to start...</div>
+
+  <script type="module">
+    const status = document.getElementById('status')
+    const resultsEl = document.getElementById('results')
+    const runBtn = document.getElementById('runBtn')
+
+    function log(text) { resultsEl.textContent = text }
+
+    function loadCKScript(src, locateFile) {
+      return new Promise((resolve, reject) => {
+        const prev = globalThis.CanvasKitInit
+        globalThis.CanvasKitInit = undefined
+        const script = document.createElement('script')
+        script.src = src
+        script.onload = () => {
+          const init = globalThis.CanvasKitInit
+          globalThis.CanvasKitInit = prev
+          if (!init) return reject(new Error('CanvasKitInit not found'))
+          init({ locateFile }).then(resolve, reject)
+        }
+        script.onerror = () => reject(new Error(`Failed to load ${src}`))
+        document.head.appendChild(script)
+      })
+    }
+
+    function loadCanvasKitWebGL() {
+      return loadCKScript(
+        '/node_modules/canvaskit-wasm/bin/canvaskit.js',
+        (f) => `/node_modules/canvaskit-wasm/bin/${f}`
+      )
+    }
+
+    function loadCanvasKitWebGPU() {
+      return loadCKScript(
+        '/canvaskit-webgpu/canvaskit.js',
+        (f) => `/canvaskit-webgpu/${f}`
+      )
+    }
+
+    function createScene(ck, canvas, isWebGPU, nodeCount, gpuCanvasCtx) {
+      const dpr = window.devicePixelRatio || 1
+      const w = canvas.clientWidth
+      const h = canvas.clientHeight
+      canvas.width = w * dpr
+      canvas.height = h * dpr
+
+      let surface
+      if (isWebGPU) {
+        surface = ck.MakeGPUCanvasSurface(gpuCanvasCtx, ck.ColorSpace.SRGB)
+      } else {
+        surface = ck.MakeWebGLCanvasSurface(canvas)
+      }
+
+      if (!surface) throw new Error(`Failed to create ${isWebGPU ? 'WebGPU' : 'WebGL'} surface`)
+
+      const paint = new ck.Paint()
+      paint.setAntiAlias(true)
+      const strokePaint = new ck.Paint()
+      strokePaint.setAntiAlias(true)
+      strokePaint.setStyle(ck.PaintStyle.Stroke)
+      strokePaint.setStrokeWidth(1)
+      strokePaint.setColor(ck.Color(0, 0, 0, 255))
+
+      const cols = Math.ceil(Math.sqrt(nodeCount))
+      const rects = []
+      const colors = []
+      const radii = []
+      const rng = new Uint8Array(nodeCount * 3)
+      crypto.getRandomValues(rng)
+      for (let i = 0; i < nodeCount; i++) {
+        const x = (i % cols) * 60
+        const y = Math.floor(i / cols) * 60
+        rects.push(ck.LTRBRect(x, y, x + 50, y + 50))
+        colors.push(ck.Color(rng[i*3], rng[i*3+1], rng[i*3+2], 255))
+        radii.push(i % 5 === 0 ? 25 : 8)
+      }
+
+      function drawScene(skCanvas, panX, panY, zoom) {
+        skCanvas.clear(ck.Color(245, 245, 245, 255))
+        skCanvas.save()
+        skCanvas.scale(dpr, dpr)
+        skCanvas.translate(panX, panY)
+        skCanvas.scale(zoom, zoom)
+        for (let i = 0; i < nodeCount; i++) {
+          const r = radii[i]
+          const rect = rects[i]
+          const rrect = ck.RRectXY(rect, r, r)
+          paint.setColor(colors[i])
+          skCanvas.drawRRect(rrect, paint)
+          skCanvas.drawRRect(rrect, strokePaint)
+        }
+        skCanvas.restore()
+      }
+
+      return { surface, gpuCanvasCtx, drawScene, paint, strokePaint, ck }
+    }
+
+    function runBenchmark(scene, iterations, benchType, isWebGPU) {
+      const { surface, gpuCanvasCtx, drawScene, ck } = scene
+      const times = []
+
+      for (let i = 0; i < iterations; i++) {
+        let skCanvas
+        if (isWebGPU && gpuCanvasCtx) {
+          skCanvas = ck.BeginFrame(gpuCanvasCtx)
+          if (!skCanvas) throw new Error('BeginFrame returned null')
+        } else {
+          skCanvas = surface.getCanvas()
+        }
+
+        const start = performance.now()
+
+        if (benchType === 'pan') {
+          drawScene(skCanvas, i * 2, i, 1)
+        } else if (benchType === 'zoom') {
+          drawScene(skCanvas, 0, 0, 0.5 + (i / iterations) * 2)
+        } else {
+          drawScene(skCanvas, 0, 0, 1)
+        }
+
+        if (isWebGPU) {
+          ck.EndFrame()
+        } else {
+          surface.flush()
+        }
+        times.push(performance.now() - start)
+      }
+
+      times.sort((a, b) => a - b)
+      const p50 = times[Math.floor(times.length * 0.5)]
+      const p95 = times[Math.floor(times.length * 0.95)]
+      const p99 = times[Math.floor(times.length * 0.99)]
+      const avg = times.reduce((s, t) => s + t, 0) / times.length
+      const total = times.reduce((s, t) => s + t, 0)
+      return {
+        avg: Math.round(avg * 100) / 100,
+        p50: Math.round(p50 * 100) / 100,
+        p95: Math.round(p95 * 100) / 100,
+        p99: Math.round(p99 * 100) / 100,
+        total: Math.round(total),
+        fps: Math.round(1000 / avg)
+      }
+    }
+
+    function formatResults(nodeCount, iterations, webgl, webgpu) {
+      const tests = ['pan', 'zoom', 'static']
+      const labels = { pan: 'Pan (translate)', zoom: 'Zoom (scale)', static: 'Static redraw' }
+
+      let out = `═══ BENCHMARK: ${nodeCount} nodes × ${iterations} frames ═══\n\n`
+      out += `${'Test'.padEnd(18)} ${'Metric'.padEnd(8)} ${'WebGL'.padStart(10)} ${'WebGPU'.padStart(10)} ${'Δ'.padStart(10)}\n`
+      out += '─'.repeat(60) + '\n'
+
+      for (const test of tests) {
+        const gl = webgl[test]
+        const gpu = webgpu[test]
+        if (!gl || !gpu) continue
+
+        for (const metric of ['avg', 'p50', 'p95', 'p99']) {
+          const label = metric === 'avg' ? labels[test] : ''
+          const glVal = gl[metric]
+          const gpuVal = gpu[metric]
+          const ratio = glVal / gpuVal
+          const delta = gpuVal === 0 && glVal === 0 ? 'tied'
+            : gpuVal === 0 ? '∞x faster'
+            : glVal === 0 ? '∞x slower'
+            : ratio > 1 ? `${ratio.toFixed(1)}x faster`
+            : `${(1/ratio).toFixed(1)}x slower`
+
+          out += `${label.padEnd(18)} ${metric.padEnd(8)} ${(glVal + 'ms').padStart(10)} ${(gpuVal + 'ms').padStart(10)} ${delta.padStart(10)}\n`
+        }
+
+        out += `${''.padEnd(18)} ${'fps'.padEnd(8)} ${(gl.fps + '').padStart(10)} ${(gpu.fps + '').padStart(10)}\n`
+        out += '\n'
+      }
+
+      return out
+    }
+
+    let ckGL = null, ckGPU = null, hasWebGPU = false, gpuCanvasCtx = null
+
+    async function initBackends() {
+      if (ckGL) return
+      status.textContent = 'Loading WebGL CanvasKit...'
+      ckGL = await loadCanvasKitWebGL()
+
+      try {
+        if (!navigator.gpu) throw new Error('No navigator.gpu — enable WebGPU in chrome://flags')
+        status.textContent = 'Requesting WebGPU adapter...'
+        const adapter = await navigator.gpu.requestAdapter()
+        if (!adapter) throw new Error('No WebGPU adapter')
+        status.textContent = 'Requesting WebGPU device...'
+        window._benchGpuDevice = await adapter.requestDevice()
+        status.textContent = 'Loading WebGPU CanvasKit WASM...'
+        ckGPU = await loadCanvasKitWebGPU()
+        const gpuDevCtx = ckGPU.MakeGPUDeviceContext(window._benchGpuDevice)
+        gpuCanvasCtx = ckGPU.MakeGPUCanvasContext(gpuDevCtx, document.getElementById('webgpu-canvas'))
+        hasWebGPU = true
+      } catch (e) {
+        console.error('WebGPU init failed:', e)
+        status.textContent = `WebGPU unavailable: ${e.message}. Running WebGL only.`
+        await new Promise(r => setTimeout(r, 2000))
+      }
+    }
+
+    async function runSingle(nodeCount, iterations) {
+      const results = { webgl: {}, webgpu: {} }
+
+      for (const test of ['pan', 'zoom', 'static']) {
+        status.textContent = `WebGL: ${test} (${nodeCount} nodes)...`
+        await new Promise(r => setTimeout(r, 50))
+        const glCanvas = document.getElementById('webgl-canvas')
+        const glScene = createScene(ckGL, glCanvas, false, nodeCount)
+        results.webgl[test] = runBenchmark(glScene, iterations, test, false)
+        glScene.paint.delete()
+        glScene.strokePaint.delete()
+        glScene.surface.delete()
+
+        if (hasWebGPU) {
+          status.textContent = `WebGPU: ${test} (${nodeCount} nodes)...`
+          await new Promise(r => setTimeout(r, 50))
+          const gpuCanvas = document.getElementById('webgpu-canvas')
+          const gpuScene = createScene(ckGPU, gpuCanvas, true, nodeCount, gpuCanvasCtx)
+          results.webgpu[test] = runBenchmark(gpuScene, iterations, test, true)
+          gpuScene.paint.delete()
+          gpuScene.strokePaint.delete()
+        }
+      }
+
+      return results
+    }
+
+    runBtn.addEventListener('click', async () => {
+      runBtn.disabled = true
+      document.getElementById('sweepBtn').disabled = true
+      try {
+        await initBackends()
+        const nodeCount = parseInt(document.getElementById('nodeCount').value)
+        const iterations = parseInt(document.getElementById('iterations').value)
+        const results = await runSingle(nodeCount, iterations)
+        status.textContent = 'Done!'
+        log(formatResults(nodeCount, iterations, results.webgl, hasWebGPU ? results.webgpu : {}))
+      } catch (e) {
+        status.textContent = `Error: ${e.message}`
+        console.error(e)
+      } finally {
+        runBtn.disabled = false
+        document.getElementById('sweepBtn').disabled = false
+      }
+    })
+
+    document.getElementById('sweepBtn').addEventListener('click', async () => {
+      runBtn.disabled = true
+      document.getElementById('sweepBtn').disabled = true
+      try {
+        await initBackends()
+        const counts = [100, 250, 500, 1000, 2000, 3000, 5000]
+        const iterations = 100
+
+        let out = `═══ SWEEP BENCHMARK (${iterations} frames per test) ═══\n\n`
+        out += `${'Nodes'.padStart(7)} ${'Test'.padEnd(18)} ${'WebGL avg'.padStart(11)} ${'WebGPU avg'.padStart(12)} ${'Δ'.padStart(12)}\n`
+        out += '─'.repeat(65) + '\n'
+
+        for (const count of counts) {
+          const results = await runSingle(count, iterations)
+          for (const test of ['pan', 'zoom', 'static']) {
+            const labels = { pan: 'Pan', zoom: 'Zoom', static: 'Static' }
+            const gl = results.webgl[test]
+            const gpu = hasWebGPU ? results.webgpu[test] : null
+            const gpuStr = gpu ? `${gpu.avg}ms` : 'n/a'
+            let delta = ''
+            if (gpu) {
+              const ratio = gl.avg / gpu.avg
+              delta = gpu.avg === 0 && gl.avg === 0 ? 'tied'
+                : gpu.avg === 0 ? '∞x faster'
+                : gl.avg === 0 ? '∞x slower'
+                : ratio > 1 ? `${ratio.toFixed(1)}x faster`
+                : `${(1/ratio).toFixed(1)}x slower`
+            }
+            out += `${(count + '').padStart(7)} ${labels[test].padEnd(18)} ${(gl.avg + 'ms').padStart(11)} ${gpuStr.padStart(12)} ${delta.padStart(12)}\n`
+          }
+          out += '\n'
+          log(out + '(running...)')
+        }
+
+        status.textContent = 'Done!'
+        log(out.replace('(running...)', ''))
+      } catch (e) {
+        status.textContent = `Error: ${e.message}`
+        console.error(e)
+      } finally {
+        runBtn.disabled = false
+        document.getElementById('sweepBtn').disabled = false
+      }
+    })
+  </script>
+</body>
+</html>

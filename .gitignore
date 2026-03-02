@@ -14,6 +14,7 @@ dist-ssr
 
 # Copied from node_modules at build time
 public/canvaskit.wasm
+public/canvaskit-webgpu/
 
 # Editor directories and files
 .vscode/*
