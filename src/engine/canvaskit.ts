@@ -1,1 +1,6 @@
-export { getCanvasKit, type CanvasKitOptions } from '@open-pencil/core'
+export {
+  getCanvasKit,
+  getGpuBackend,
+  type CanvasKitOptions,
+  type GpuBackend
+} from '@open-pencil/core'

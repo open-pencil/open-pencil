@@ -6,10 +6,12 @@ import tailwindcss from '@tailwindcss/vite'
 import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import Components from 'unplugin-vue-components/vite'
-import { copyFileSync, existsSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'fs'
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST
+// @ts-expect-error process is a nodejs global
+const enableWebGPU = process.env.WEBGPU === '1'
 
 export default defineConfig(async () => ({
   resolve: {
@@ -21,11 +23,27 @@ export default defineConfig(async () => ({
   plugins: [
     {
       name: 'copy-canvaskit-wasm',
-      buildStart() {
+      async buildStart() {
         const src = 'node_modules/canvaskit-wasm/bin/canvaskit.wasm'
         const dest = 'public/canvaskit.wasm'
         if (existsSync(src) && !existsSync(dest)) {
           copyFileSync(src, dest)
+        }
+
+        if (enableWebGPU) {
+          const webgpuDir = 'public/canvaskit-webgpu'
+          if (!existsSync(`${webgpuDir}/canvaskit.wasm`)) {
+            mkdirSync(webgpuDir, { recursive: true })
+            const tag = 'v0.1.0-webgpu'
+            const base = `https://github.com/open-pencil/skia/releases/download/${tag}`
+            console.log(`Downloading CanvasKit WebGPU from ${base}...`)
+            for (const file of ['canvaskit.js', 'canvaskit.wasm']) {
+              const resp = await fetch(`${base}/${file}`)
+              if (!resp.ok) throw new Error(`Failed to download ${file}: ${resp.status}`)
+              writeFileSync(`${webgpuDir}/${file}`, Buffer.from(await resp.arrayBuffer()))
+            }
+            console.log('CanvasKit WebGPU downloaded.')
+          }
         }
       }
     },
