@@ -21,6 +21,8 @@ interface CanvasKitWebGPU {
     width?: number,
     height?: number
   ): ReturnType<CanvasKit['MakeSurface']>
+  BeginFrame(canvasCtx: unknown): ReturnType<CanvasKit['MakeSurface']>['getCanvas']
+  EndFrame(): void
 }
 
 function asWebGPU(ck: CanvasKit): CanvasKitWebGPU {
@@ -39,44 +41,26 @@ async function initWebGPU(ck: CanvasKit): Promise<WebGPUContext | null> {
 
 /**
  * Graphite requires a fresh SkSurface wrapping the current swapchain texture each frame.
- * This proxy implements the Surface interface but creates a real surface on getCanvas()
- * and disposes it on flush(), transparent to the renderer.
+ * This proxy uses BeginFrame/EndFrame for minimal JS↔WASM overhead — a single WASM call
+ * per frame boundary instead of creating/destroying JS Surface objects.
  */
 function makeWebGPUSurfaceProxy(ck: CanvasKit, canvasCtx: unknown): Surface {
   const gpu = asWebGPU(ck)
-  let frameSurface: Surface | null = null
 
   return {
     getCanvas() {
-      if (frameSurface) {
-        frameSurface.delete()
-        frameSurface = null
-      }
-      frameSurface = gpu.MakeGPUCanvasSurface(canvasCtx, ck.ColorSpace.SRGB)
-      if (!frameSurface) {
-        console.error('[WebGPU] MakeGPUCanvasSurface returned null')
-        throw new Error('Failed to create WebGPU frame surface')
-      }
-      return frameSurface.getCanvas()
+      const canvas = gpu.BeginFrame(canvasCtx)
+      if (!canvas) throw new Error('BeginFrame returned null')
+      return canvas
     },
     flush() {
-      if (frameSurface) {
-        frameSurface.flush()
-        frameSurface = null
-        // Don't dispose — let the swapchain texture live until next getCanvas()
-      }
+      gpu.EndFrame()
     },
     reportBackendTypeIsGPU: () => true,
     width: () => 0,
     height: () => 0,
-    delete() {
-      frameSurface?.dispose()
-      frameSurface = null
-    },
-    dispose() {
-      frameSurface?.dispose()
-      frameSurface = null
-    },
+    delete() {},
+    dispose() {},
     isDeleted: () => false
   } as unknown as Surface
 }
