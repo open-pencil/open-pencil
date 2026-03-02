@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### AI tools
+
+- 12 new tools added (26 → 38 / 118): `get_children`, `get_ancestors`, `node_bounds`, `set_text`, `set_font`, `set_text_properties`, `set_blend_mode`, `set_layout_child`, `create_page`, `create_variable`, `set_variable_value`, `bind_variable`
+- Variables: AI can now create design variables, update values per mode, and bind them to node properties
+- Text: dedicated tools for content, font, and layout properties instead of overloaded `update_node`
+
+### Fixes
+
+- Fix 11 `no-non-null-assertion` lint warnings in `use-collab.ts` — proper null guards using captured `const` refs for TypeScript closure narrowing
+
 ## 0.3.2 (2026-03-02)
 
 ### Performance

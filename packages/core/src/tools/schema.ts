@@ -9,6 +9,7 @@
 import { parseColor } from '../color'
 
 import type { FigmaAPI, FigmaNodeProxy } from '../figma-api'
+import type { Variable, VariableCollection, VariableType } from '../scene-graph'
 
 export type ParamType = 'string' | 'number' | 'boolean' | 'color' | 'string[]'
 
@@ -653,21 +654,461 @@ export const evalCode = defineTool({
   }
 })
 
+// ─── Tree navigation tools ────────────────────────────────────
+
+export const getChildren = defineTool({
+  name: 'get_children',
+  description: 'Get the direct children of a node.',
+  params: {
+    id: { type: 'string', description: 'Parent node ID', required: true }
+  },
+  execute: (figma, { id }) => {
+    const node = figma.getNodeById(id)
+    if (!node) return { error: `Node "${id}" not found` }
+    const children = figma.graph.getChildren(id)
+    return {
+      id,
+      childCount: children.length,
+      children: children.map((c) => ({ id: c.id, name: c.name, type: c.type }))
+    }
+  }
+})
+
+export const getAncestors = defineTool({
+  name: 'get_ancestors',
+  description: 'Get the ancestor chain of a node from its parent up to the page root.',
+  params: {
+    id: { type: 'string', description: 'Node ID', required: true }
+  },
+  execute: (figma, { id }) => {
+    if (!figma.getNodeById(id)) return { error: `Node "${id}" not found` }
+    const ancestors: { id: string; name: string; type: string }[] = []
+    let raw = figma.graph.getNode(id)
+    while (raw?.parentId) {
+      const parent = figma.graph.getNode(raw.parentId)
+      if (!parent) break
+      ancestors.push({ id: parent.id, name: parent.name, type: parent.type })
+      raw = parent
+    }
+    return { id, ancestors }
+  }
+})
+
+export const nodeBounds = defineTool({
+  name: 'node_bounds',
+  description: 'Get the absolute bounding box of a node in canvas space.',
+  params: {
+    id: { type: 'string', description: 'Node ID', required: true }
+  },
+  execute: (figma, { id }) => {
+    const node = figma.getNodeById(id)
+    if (!node) return { error: `Node "${id}" not found` }
+    const bounds = node.absoluteBoundingBox
+    return { id, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+  }
+})
+
+// ─── Text tools ───────────────────────────────────────────────
+
+export const setText = defineTool({
+  name: 'set_text',
+  description: 'Set the text content of a TEXT node.',
+  params: {
+    id: { type: 'string', description: 'Text node ID', required: true },
+    text: { type: 'string', description: 'New text content', required: true }
+  },
+  execute: (figma, { id, text }) => {
+    const node = figma.getNodeById(id)
+    if (!node) return { error: `Node "${id}" not found` }
+    if (node.type !== 'TEXT') return { error: `Node "${id}" is not a TEXT node` }
+    node.characters = text
+    return { id, text }
+  }
+})
+
+export const setFont = defineTool({
+  name: 'set_font',
+  description: 'Set font properties on a TEXT node: family, size, weight, line height, letter spacing.',
+  params: {
+    id: { type: 'string', description: 'Text node ID', required: true },
+    family: { type: 'string', description: 'Font family name, e.g. "Inter"' },
+    size: { type: 'number', description: 'Font size in pixels', min: 1 },
+    weight: {
+      type: 'number',
+      description: 'Font weight: 100 (thin) → 900 (black)',
+      min: 100,
+      max: 900
+    },
+    italic: { type: 'boolean', description: 'Italic style' },
+    line_height: { type: 'number', description: 'Line height in pixels (null = auto)', min: 0 },
+    letter_spacing: { type: 'number', description: 'Letter spacing in pixels' }
+  },
+  execute: (figma, args) => {
+    const node = figma.getNodeById(args.id)
+    if (!node) return { error: `Node "${args.id}" not found` }
+    if (node.type !== 'TEXT') return { error: `Node "${args.id}" is not a TEXT node` }
+    const updated: string[] = []
+    if (args.family !== undefined || args.weight !== undefined || args.italic !== undefined) {
+      const current = node.fontName
+      node.fontName = {
+        family: args.family ?? current.family,
+        style: buildFontStyle(args.weight ?? node.fontWeight, args.italic ?? false)
+      }
+      updated.push('fontName')
+    }
+    if (args.size !== undefined) {
+      node.fontSize = args.size
+      updated.push('fontSize')
+    }
+    if (args.line_height !== undefined) {
+      node.lineHeight = args.line_height
+      updated.push('lineHeight')
+    }
+    if (args.letter_spacing !== undefined) {
+      node.letterSpacing = args.letter_spacing
+      updated.push('letterSpacing')
+    }
+    return { id: args.id, updated }
+  }
+})
+
+function buildFontStyle(weight: number, italic: boolean): string {
+  const names: Record<number, string> = {
+    100: 'Thin', 200: 'Extra Light', 300: 'Light', 400: 'Regular',
+    500: 'Medium', 600: 'Semi Bold', 700: 'Bold', 800: 'Extra Bold', 900: 'Black'
+  }
+  const base = names[weight] ?? 'Regular'
+  return italic ? `${base} Italic` : base
+}
+
+export const setTextProperties = defineTool({
+  name: 'set_text_properties',
+  description:
+    'Set text layout properties: alignment, auto-resize, text case, decoration, truncation.',
+  params: {
+    id: { type: 'string', description: 'Text node ID', required: true },
+    align_horizontal: {
+      type: 'string',
+      description: 'Horizontal text alignment',
+      enum: ['LEFT', 'CENTER', 'RIGHT', 'JUSTIFIED']
+    },
+    align_vertical: {
+      type: 'string',
+      description: 'Vertical text alignment',
+      enum: ['TOP', 'CENTER', 'BOTTOM']
+    },
+    auto_resize: {
+      type: 'string',
+      description: 'Text auto-resize mode',
+      enum: ['NONE', 'WIDTH_AND_HEIGHT', 'HEIGHT', 'TRUNCATE']
+    },
+    text_case: {
+      type: 'string',
+      description: 'Text case transform',
+      enum: ['ORIGINAL', 'UPPER', 'LOWER', 'TITLE', 'SMALL_CAPS', 'SMALL_CAPS_FORCED']
+    },
+    text_decoration: {
+      type: 'string',
+      description: 'Text decoration',
+      enum: ['NONE', 'UNDERLINE', 'STRIKETHROUGH']
+    },
+    max_lines: { type: 'number', description: 'Max visible lines (null = unlimited)', min: 1 }
+  },
+  execute: (figma, args) => {
+    const node = figma.getNodeById(args.id)
+    if (!node) return { error: `Node "${args.id}" not found` }
+    if (node.type !== 'TEXT') return { error: `Node "${args.id}" is not a TEXT node` }
+    const updated: string[] = []
+    if (args.align_horizontal !== undefined) {
+      node.textAlignHorizontal = args.align_horizontal
+      updated.push('textAlignHorizontal')
+    }
+    if (args.align_vertical !== undefined) {
+      node.textAlignVertical = args.align_vertical
+      updated.push('textAlignVertical')
+    }
+    if (args.auto_resize !== undefined) {
+      node.textAutoResize = args.auto_resize
+      updated.push('textAutoResize')
+    }
+    if (args.text_case !== undefined) {
+      node.textCase = args.text_case
+      updated.push('textCase')
+    }
+    if (args.text_decoration !== undefined) {
+      node.textDecoration = args.text_decoration
+      updated.push('textDecoration')
+    }
+    if (args.max_lines !== undefined) {
+      node.maxLines = args.max_lines
+      updated.push('maxLines')
+    }
+    return { id: args.id, updated }
+  }
+})
+
+// ─── Appearance tools ─────────────────────────────────────────
+
+export const setBlendMode = defineTool({
+  name: 'set_blend_mode',
+  description: 'Set the blend mode and/or rotation of a node.',
+  params: {
+    id: { type: 'string', description: 'Node ID', required: true },
+    blend_mode: {
+      type: 'string',
+      description: 'CSS-style blend mode',
+      enum: [
+        'NORMAL', 'DARKEN', 'MULTIPLY', 'LINEAR_BURN', 'COLOR_BURN',
+        'LIGHTEN', 'SCREEN', 'LINEAR_DODGE', 'COLOR_DODGE',
+        'OVERLAY', 'SOFT_LIGHT', 'HARD_LIGHT',
+        'DIFFERENCE', 'EXCLUSION',
+        'HUE', 'SATURATION', 'COLOR', 'LUMINOSITY',
+        'PASS_THROUGH'
+      ]
+    },
+    rotation: { type: 'number', description: 'Rotation in degrees', min: -180, max: 180 }
+  },
+  execute: (figma, args) => {
+    const node = figma.getNodeById(args.id)
+    if (!node) return { error: `Node "${args.id}" not found` }
+    const updated: string[] = []
+    if (args.blend_mode !== undefined) {
+      node.blendMode = args.blend_mode
+      updated.push('blendMode')
+    }
+    if (args.rotation !== undefined) {
+      node.rotation = args.rotation
+      updated.push('rotation')
+    }
+    return { id: args.id, updated }
+  }
+})
+
+// ─── Layout child tools ───────────────────────────────────────
+
+export const setLayoutChild = defineTool({
+  name: 'set_layout_child',
+  description:
+    'Configure auto-layout child behaviour: sizing (FIXED/HUG/FILL), grow, alignment, absolute positioning.',
+  params: {
+    id: { type: 'string', description: 'Child node ID', required: true },
+    sizing_horizontal: {
+      type: 'string',
+      description: 'Horizontal sizing mode',
+      enum: ['FIXED', 'HUG', 'FILL']
+    },
+    sizing_vertical: {
+      type: 'string',
+      description: 'Vertical sizing mode',
+      enum: ['FIXED', 'HUG', 'FILL']
+    },
+    grow: { type: 'number', description: 'Flex grow factor (0 = no grow, 1 = grow)', min: 0 },
+    align_self: {
+      type: 'string',
+      description: 'Self alignment override',
+      enum: ['INHERIT', 'STRETCH']
+    },
+    positioning: {
+      type: 'string',
+      description: 'ABSOLUTE to take node out of auto-layout flow',
+      enum: ['AUTO', 'ABSOLUTE']
+    }
+  },
+  execute: (figma, args) => {
+    const node = figma.getNodeById(args.id)
+    if (!node) return { error: `Node "${args.id}" not found` }
+    const updated: string[] = []
+    if (args.sizing_horizontal !== undefined) {
+      node.layoutSizingHorizontal = args.sizing_horizontal
+      updated.push('layoutSizingHorizontal')
+    }
+    if (args.sizing_vertical !== undefined) {
+      node.layoutSizingVertical = args.sizing_vertical
+      updated.push('layoutSizingVertical')
+    }
+    if (args.grow !== undefined) {
+      node.layoutGrow = args.grow
+      updated.push('layoutGrow')
+    }
+    if (args.align_self !== undefined) {
+      node.layoutAlign = args.align_self
+      updated.push('layoutAlign')
+    }
+    if (args.positioning !== undefined) {
+      node.layoutPositioning = args.positioning
+      updated.push('layoutPositioning')
+    }
+    return { id: args.id, updated }
+  }
+})
+
+// ─── Page tools ───────────────────────────────────────────────
+
+export const createPage = defineTool({
+  name: 'create_page',
+  description: 'Create a new page in the document.',
+  params: {
+    name: { type: 'string', description: 'Page name', required: true }
+  },
+  execute: (figma, { name }) => {
+    const page = figma.createPage()
+    page.name = name
+    return { id: page.id, name: page.name }
+  }
+})
+
+// ─── Variable tools ───────────────────────────────────────────
+
+export const createVariable = defineTool({
+  name: 'create_variable',
+  description:
+    'Create a design variable. If no collection_id is given, creates a default "Variables" collection.',
+  params: {
+    name: { type: 'string', description: 'Variable name', required: true },
+    type: {
+      type: 'string',
+      description: 'Variable type',
+      required: true,
+      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
+    },
+    value: {
+      type: 'string',
+      description:
+        'Initial value. COLOR: hex string. FLOAT: number. STRING: text. BOOLEAN: "true"/"false".',
+      required: true
+    },
+    collection_id: { type: 'string', description: 'Collection ID to add variable to' }
+  },
+  execute: (figma, args) => {
+    let collectionId = args.collection_id
+    if (!collectionId) {
+      const existing = [...figma.graph.variableCollections.values()]
+      if (existing.length > 0) {
+        collectionId = existing[0].id
+      } else {
+        const modeId = crypto.randomUUID()
+        const col: VariableCollection = {
+          id: crypto.randomUUID(),
+          name: 'Variables',
+          modes: [{ modeId, name: 'Default' }],
+          defaultModeId: modeId,
+          variableIds: []
+        }
+        figma.graph.addCollection(col)
+        collectionId = col.id
+      }
+    }
+    const collection = figma.graph.variableCollections.get(collectionId)
+    if (!collection) return { error: `Collection "${collectionId}" not found` }
+    const modeId = collection.defaultModeId
+    const parsedValue = parseVariableValue(args.type as VariableType, args.value)
+    const variable: Variable = {
+      id: crypto.randomUUID(),
+      name: args.name,
+      type: args.type as VariableType,
+      collectionId,
+      valuesByMode: { [modeId]: parsedValue },
+      description: '',
+      hiddenFromPublishing: false
+    }
+    figma.graph.addVariable(variable)
+    return { id: variable.id, name: variable.name, type: variable.type, collectionId }
+  }
+})
+
+export const setVariableValue = defineTool({
+  name: 'set_variable_value',
+  description: "Set a variable's value for its default mode.",
+  params: {
+    id: { type: 'string', description: 'Variable ID', required: true },
+    value: {
+      type: 'string',
+      description:
+        'New value. COLOR: hex string. FLOAT: number. STRING: text. BOOLEAN: "true"/"false".',
+      required: true
+    },
+    mode_id: {
+      type: 'string',
+      description: "Mode ID to set value for (defaults to collection's default mode)"
+    }
+  },
+  execute: (figma, args) => {
+    const variable = figma.graph.variables.get(args.id)
+    if (!variable) return { error: `Variable "${args.id}" not found` }
+    const modeId = args.mode_id ?? figma.graph.getActiveModeId(variable.collectionId)
+    variable.valuesByMode[modeId] = parseVariableValue(variable.type, args.value)
+    return { id: args.id, modeId, value: variable.valuesByMode[modeId] }
+  }
+})
+
+export const bindVariable = defineTool({
+  name: 'bind_variable',
+  description:
+    'Bind a node property to a design variable. Common fields: "opacity", "fills.0.opacity", "width", "height".',
+  params: {
+    node_id: { type: 'string', description: 'Node ID', required: true },
+    field: {
+      type: 'string',
+      description: 'Property field path to bind (e.g. "opacity", "fills.0.opacity")',
+      required: true
+    },
+    variable_id: { type: 'string', description: 'Variable ID to bind', required: true }
+  },
+  execute: (figma, { node_id, field, variable_id }) => {
+    if (!figma.getNodeById(node_id)) return { error: `Node "${node_id}" not found` }
+    if (!figma.graph.variables.get(variable_id))
+      return { error: `Variable "${variable_id}" not found` }
+    figma.graph.bindVariable(node_id, field, variable_id)
+    return { node_id, field, variable_id }
+  }
+})
+
+function parseVariableValue(
+  type: VariableType,
+  raw: string
+): Variable['valuesByMode'][string] {
+  switch (type) {
+    case 'COLOR':
+      return parseColor(raw)
+    case 'FLOAT':
+      return Number(raw)
+    case 'BOOLEAN':
+      return raw === 'true'
+    case 'STRING':
+    default:
+      return raw
+  }
+}
+
 // ─── Registry ─────────────────────────────────────────────────
 
 export const ALL_TOOLS: ToolDef[] = [
+  // Read
   getSelection,
   getPageTree,
   getNode,
   findNodes,
+  getChildren,
+  getAncestors,
+  nodeBounds,
+  // Create
   createShape,
+  createPage,
   render,
+  // Fill / stroke / effects
   setFill,
   setStroke,
   setEffects,
+  // Node mutation
   updateNode,
+  setText,
+  setFont,
+  setTextProperties,
+  setBlendMode,
   setLayout,
+  setLayoutChild,
   setConstraints,
+  // Structure
   deleteNode,
   cloneNode,
   renameNode,
@@ -677,9 +1118,15 @@ export const ALL_TOOLS: ToolDef[] = [
   ungroupNode,
   createComponent,
   createInstance,
+  // Pages
   listPages,
   switchPage,
+  // Variables
   listVariables,
   listCollections,
+  createVariable,
+  setVariableValue,
+  bindVariable,
+  // Escape hatch
   evalCode
 ]

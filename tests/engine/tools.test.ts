@@ -388,3 +388,333 @@ describe('render', () => {
     expect(result.children.length).toBeGreaterThan(0)
   })
 })
+
+// ─── New tools (38 total) ─────────────────────────────────────
+
+describe('get_children', () => {
+  test('returns direct children of a frame', () => {
+    const { figma } = setup()
+    const parent = figma.createFrame()
+    const child1 = figma.createRectangle()
+    const child2 = figma.createEllipse()
+    parent.appendChild(child1)
+    parent.appendChild(child2)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'get_children')!
+    const result = tool.execute(figma, { id: parent.id }) as any
+    expect(result.childCount).toBe(2)
+    expect(result.children.map((c: any) => c.id)).toContain(child1.id)
+    expect(result.children.map((c: any) => c.id)).toContain(child2.id)
+  })
+
+  test('returns error for unknown node', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'get_children')!
+    const result = tool.execute(figma, { id: 'nope' }) as any
+    expect(result.error).toBeTruthy()
+  })
+})
+
+describe('get_ancestors', () => {
+  test('returns ancestor chain', () => {
+    const { figma } = setup()
+    const grandparent = figma.createFrame()
+    const parent = figma.createFrame()
+    const child = figma.createRectangle()
+    grandparent.appendChild(parent)
+    parent.appendChild(child)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'get_ancestors')!
+    const result = tool.execute(figma, { id: child.id }) as any
+    const ids = result.ancestors.map((a: any) => a.id)
+    expect(ids).toContain(parent.id)
+    expect(ids).toContain(grandparent.id)
+  })
+
+  test('returns error for unknown node', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'get_ancestors')!
+    const result = tool.execute(figma, { id: 'nope' }) as any
+    expect(result.error).toBeTruthy()
+  })
+})
+
+describe('node_bounds', () => {
+  test('returns bounding box for a positioned node', () => {
+    const { figma } = setup()
+    const node = figma.createRectangle()
+    node.x = 50
+    node.y = 80
+    node.resize(120, 60)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'node_bounds')!
+    const result = tool.execute(figma, { id: node.id }) as any
+    expect(result.x).toBe(50)
+    expect(result.y).toBe(80)
+    expect(result.width).toBe(120)
+    expect(result.height).toBe(60)
+  })
+})
+
+describe('set_text', () => {
+  test('sets text content on a TEXT node', () => {
+    const { figma } = setup()
+    const node = figma.createText()
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_text')!
+    tool.execute(figma, { id: node.id, text: 'Hello World' })
+    expect(node.characters).toBe('Hello World')
+  })
+
+  test('returns error when node is not TEXT', () => {
+    const { figma } = setup()
+    const node = figma.createRectangle()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_text')!
+    const result = tool.execute(figma, { id: node.id, text: 'oops' }) as any
+    expect(result.error).toMatch(/not a TEXT node/)
+  })
+})
+
+describe('set_font', () => {
+  test('sets font size and weight', () => {
+    const { figma } = setup()
+    const node = figma.createText()
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_font')!
+    tool.execute(figma, { id: node.id, size: 24, weight: 700 })
+    expect(node.fontSize).toBe(24)
+    expect(node.fontWeight).toBe(700)
+  })
+
+  test('sets font family', () => {
+    const { figma } = setup()
+    const node = figma.createText()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_font')!
+    tool.execute(figma, { id: node.id, family: 'Roboto', weight: 400 })
+    expect(node.fontName.family).toBe('Roboto')
+  })
+
+  test('sets line height and letter spacing', () => {
+    const { figma } = setup()
+    const node = figma.createText()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_font')!
+    tool.execute(figma, { id: node.id, line_height: 28, letter_spacing: 0.5 })
+    expect(node.lineHeight).toBe(28)
+    expect(node.letterSpacing).toBe(0.5)
+  })
+
+  test('returns error for non-TEXT node', () => {
+    const { figma } = setup()
+    const node = figma.createRectangle()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_font')!
+    const result = tool.execute(figma, { id: node.id, size: 16 }) as any
+    expect(result.error).toMatch(/not a TEXT node/)
+  })
+})
+
+describe('set_text_properties', () => {
+  test('sets horizontal and vertical alignment', () => {
+    const { figma } = setup()
+    const node = figma.createText()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_text_properties')!
+    tool.execute(figma, { id: node.id, align_horizontal: 'CENTER', align_vertical: 'CENTER' })
+    expect(node.textAlignHorizontal).toBe('CENTER')
+    expect(node.textAlignVertical).toBe('CENTER')
+  })
+
+  test('sets auto-resize and text case', () => {
+    const { figma } = setup()
+    const node = figma.createText()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_text_properties')!
+    tool.execute(figma, { id: node.id, auto_resize: 'HEIGHT', text_case: 'UPPER' })
+    expect(node.textAutoResize).toBe('HEIGHT')
+    expect(node.textCase).toBe('UPPER')
+  })
+
+  test('returns error for non-TEXT node', () => {
+    const { figma } = setup()
+    const node = figma.createFrame()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_text_properties')!
+    const result = tool.execute(figma, { id: node.id, align_horizontal: 'LEFT' }) as any
+    expect(result.error).toMatch(/not a TEXT node/)
+  })
+})
+
+describe('set_blend_mode', () => {
+  test('sets blend mode', () => {
+    const { figma } = setup()
+    const node = figma.createRectangle()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_blend_mode')!
+    tool.execute(figma, { id: node.id, blend_mode: 'MULTIPLY' })
+    expect(node.blendMode).toBe('MULTIPLY')
+  })
+
+  test('sets rotation', () => {
+    const { figma } = setup()
+    const node = figma.createRectangle()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_blend_mode')!
+    tool.execute(figma, { id: node.id, rotation: 45 })
+    expect(node.rotation).toBe(45)
+  })
+})
+
+describe('set_layout_child', () => {
+  test('sets layout sizing and grow', () => {
+    const { figma } = setup()
+    const frame = figma.createFrame()
+    frame.layoutMode = 'HORIZONTAL'
+    const child = figma.createRectangle()
+    frame.appendChild(child)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_layout_child')!
+    tool.execute(figma, { id: child.id, sizing_horizontal: 'FILL', grow: 1 })
+    expect(child.layoutGrow).toBe(1)
+  })
+
+  test('sets absolute positioning', () => {
+    const { figma } = setup()
+    const frame = figma.createFrame()
+    frame.layoutMode = 'VERTICAL'
+    const child = figma.createRectangle()
+    frame.appendChild(child)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_layout_child')!
+    tool.execute(figma, { id: child.id, positioning: 'ABSOLUTE' })
+    expect(child.layoutPositioning).toBe('ABSOLUTE')
+  })
+})
+
+describe('create_page', () => {
+  test('creates a page with the given name', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'create_page')!
+    const result = tool.execute(figma, { name: 'Flows' }) as any
+    expect(result.name).toBe('Flows')
+    expect(result.id).toBeTruthy()
+    const pages = figma.root.children
+    expect(pages.some((p) => p.id === result.id)).toBe(true)
+  })
+})
+
+describe('create_variable', () => {
+  test('creates a FLOAT variable with auto-created collection', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const result = tool.execute(figma, { name: 'spacing-md', type: 'FLOAT', value: '16' }) as any
+    expect(result.name).toBe('spacing-md')
+    expect(result.type).toBe('FLOAT')
+    expect(result.id).toBeTruthy()
+    const variable = figma.graph.variables.get(result.id)!
+    expect(Object.values(variable.valuesByMode)[0]).toBe(16)
+  })
+
+  test('creates a COLOR variable', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const result = tool.execute(figma, { name: 'brand', type: 'COLOR', value: '#ff0000' }) as any
+    const variable = figma.graph.variables.get(result.id)!
+    const color = Object.values(variable.valuesByMode)[0] as any
+    expect(color.r).toBeCloseTo(1)
+    expect(color.g).toBeCloseTo(0)
+    expect(color.b).toBeCloseTo(0)
+  })
+
+  test('creates a BOOLEAN variable', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const result = tool.execute(figma, { name: 'darkMode', type: 'BOOLEAN', value: 'true' }) as any
+    const variable = figma.graph.variables.get(result.id)!
+    expect(Object.values(variable.valuesByMode)[0]).toBe(true)
+  })
+
+  test('creates a STRING variable', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const result = tool.execute(figma, { name: 'label', type: 'STRING', value: 'Hello' }) as any
+    const variable = figma.graph.variables.get(result.id)!
+    expect(Object.values(variable.valuesByMode)[0]).toBe('Hello')
+  })
+
+  test('uses existing collection when specified', () => {
+    const { figma } = setup()
+    const modeId = 'mode-1'
+    const col = {
+      id: 'col-1', name: 'Tokens',
+      modes: [{ modeId, name: 'Default' }],
+      defaultModeId: modeId, variableIds: []
+    }
+    figma.graph.addCollection(col)
+    const tool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const result = tool.execute(figma, {
+      name: 'radius', type: 'FLOAT', value: '8', collection_id: 'col-1'
+    }) as any
+    expect(result.collectionId).toBe('col-1')
+  })
+})
+
+describe('set_variable_value', () => {
+  test('updates the value in the default mode', () => {
+    const { figma } = setup()
+    const createTool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const { id } = createTool.execute(figma, { name: 'gap', type: 'FLOAT', value: '8' }) as any
+
+    const setTool = ALL_TOOLS.find((t) => t.name === 'set_variable_value')!
+    setTool.execute(figma, { id, value: '16' })
+
+    const variable = figma.graph.variables.get(id)!
+    expect(Object.values(variable.valuesByMode)[0]).toBe(16)
+  })
+
+  test('returns error for unknown variable', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_variable_value')!
+    const result = tool.execute(figma, { id: 'no-such', value: '1' }) as any
+    expect(result.error).toBeTruthy()
+  })
+})
+
+describe('bind_variable', () => {
+  test('binds a variable to a node field', () => {
+    const { figma } = setup()
+    const createTool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const { id: varId } = createTool.execute(figma, {
+      name: 'opacity-dim', type: 'FLOAT', value: '0.5'
+    }) as any
+
+    const node = figma.createRectangle()
+    const tool = ALL_TOOLS.find((t) => t.name === 'bind_variable')!
+    tool.execute(figma, { node_id: node.id, field: 'opacity', variable_id: varId })
+
+    const raw = figma.graph.getNode(node.id)!
+    expect(raw.boundVariables['opacity']).toBe(varId)
+  })
+
+  test('returns error for unknown node', () => {
+    const { figma } = setup()
+    const createTool = ALL_TOOLS.find((t) => t.name === 'create_variable')!
+    const { id: varId } = createTool.execute(figma, {
+      name: 'x', type: 'FLOAT', value: '0'
+    }) as any
+    const tool = ALL_TOOLS.find((t) => t.name === 'bind_variable')!
+    const result = tool.execute(figma, {
+      node_id: 'no-node', field: 'opacity', variable_id: varId
+    }) as any
+    expect(result.error).toBeTruthy()
+  })
+
+  test('returns error for unknown variable', () => {
+    const { figma } = setup()
+    const node = figma.createRectangle()
+    const tool = ALL_TOOLS.find((t) => t.name === 'bind_variable')!
+    const result = tool.execute(figma, {
+      node_id: node.id, field: 'opacity', variable_id: 'no-var'
+    }) as any
+    expect(result.error).toBeTruthy()
+  })
+})
+
+describe('ALL_TOOLS count', () => {
+  test('has 38 tools registered', () => {
+    expect(ALL_TOOLS.length).toBe(38)
+  })
+})
