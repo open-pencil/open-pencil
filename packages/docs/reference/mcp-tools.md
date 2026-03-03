@@ -59,7 +59,15 @@ openpencil-mcp-http
 
 Or from source: `bun packages/mcp/src/http.ts` / `npx tsx packages/mcp/src/http.ts`
 
-Starts on port 3100 (override with `PORT` env var). Endpoints:
+Security defaults (HTTP transport):
+
+- Binds to `127.0.0.1` by default (`HOST` to override)
+- `eval` tool is disabled
+- File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to current working directory)
+- CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin
+- Optional auth token: `OPENPENCIL_MCP_AUTH_TOKEN` (client sends `Authorization: Bearer <token>` or `x-mcp-token`)
+
+Server starts on port 3100 (override with `PORT` env var). Endpoints:
 
 - `GET /health` — server status
 - `POST /mcp` — MCP Streamable HTTP (SSE). Sessions via `mcp-session-id` header.
@@ -138,3 +146,5 @@ Starts on port 3100 (override with `PORT` env var). Endpoints:
 | Tool | Description |
 |------|-------------|
 | `eval` | Execute JavaScript with full Figma Plugin API access |
+
+Note: `eval` is available over stdio, but disabled in HTTP mode for security.

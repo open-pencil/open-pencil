@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 import { join } from 'node:path'
-import { writeFile, unlink } from 'node:fs/promises'
+import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
@@ -10,6 +11,21 @@ import { SceneGraph, exportFigFile } from '@open-pencil/core'
 
 function parseResult(result: { content: { type: string; text: string }[] }): unknown {
   return JSON.parse(result.content[0].text)
+}
+
+async function createLinkedClient(options?: Parameters<typeof createServer>[1]) {
+  const server = createServer('0.0.0-test', options)
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
+  await server.connect(serverTransport)
+  const client = new Client({ name: 'test-client', version: '0.0.0' })
+  await client.connect(clientTransport)
+  return {
+    client,
+    close: async () => {
+      await client.close()
+      await server.close()
+    }
+  }
 }
 
 describe('MCP server', () => {
@@ -260,5 +276,54 @@ describe('MCP server', () => {
     const r = result as { content: { text: string }[]; isError?: boolean }
     const text = r.content[0].text
     expect(r.isError === true || text.toLowerCase().includes('required')).toBe(true)
+  })
+
+  test('createServer option enableEval=false removes eval tool', async () => {
+    const custom = await createLinkedClient({ enableEval: false })
+    try {
+      const { tools } = await custom.client.listTools()
+      const names = tools.map((t) => t.name)
+      expect(names).not.toContain('eval')
+      expect(names).toContain('create_shape')
+    } finally {
+      await custom.close()
+    }
+  })
+
+  test('createServer option fileRoot restricts open_file and save_file paths', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'openpencil-mcp-root-'))
+    const insidePath = join(rootDir, 'inside.fig')
+    const outsidePath = join(tmpdir(), `outside-${Date.now()}.fig`)
+
+    const graph = new SceneGraph()
+    const bytes = exportFigFile(graph)
+    await writeFile(insidePath, new Uint8Array(bytes))
+
+    const custom = await createLinkedClient({ fileRoot: rootDir })
+    try {
+      const openInside = await custom.client.callTool({
+        name: 'open_file',
+        arguments: { path: insidePath }
+      })
+      expect(openInside.isError).not.toBe(true)
+
+      const saveOutside = await custom.client.callTool({
+        name: 'save_file',
+        arguments: { path: outsidePath }
+      })
+      expect(saveOutside.isError).toBe(true)
+      const saveOutsideErr = parseResult(saveOutside) as { error: string }
+      expect(saveOutsideErr.error).toContain('outside allowed root')
+
+      const saveInside = await custom.client.callTool({
+        name: 'save_file',
+        arguments: { path: insidePath }
+      })
+      expect(saveInside.isError).not.toBe(true)
+    } finally {
+      await custom.close()
+      await unlink(outsidePath).catch(() => {})
+      await rm(rootDir, { recursive: true, force: true })
+    }
   })
 })

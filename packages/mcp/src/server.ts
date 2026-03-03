@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
+import { isAbsolute, relative, resolve } from 'node:path'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
@@ -8,6 +9,10 @@ import { ALL_TOOLS, FigmaAPI, parseFigFile, computeAllLayouts, SceneGraph } from
 import type { ToolDef, ParamDef, ParamType } from '@open-pencil/core'
 
 type McpResult = { content: { type: 'text'; text: string }[]; isError?: boolean }
+export interface CreateServerOptions {
+  enableEval?: boolean
+  fileRoot?: string | null
+}
 
 function ok(data: unknown): McpResult {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
@@ -39,8 +44,12 @@ function paramToZod(param: ParamDef): z.ZodTypeAny {
   return param.required ? schema : schema.optional()
 }
 
-export function createServer(version: string): McpServer {
+export function createServer(version: string, options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({ name: 'open-pencil', version })
+  const enableEval = options.enableEval ?? true
+  const fileRoot = options.fileRoot === null || options.fileRoot === undefined
+    ? null
+    : resolve(options.fileRoot)
 
   let graph: SceneGraph | null = null
   let currentPageId: string | null = null
@@ -50,6 +59,16 @@ export function createServer(version: string): McpServer {
     const api = new FigmaAPI(graph)
     if (currentPageId) api.currentPage = api.wrapNode(currentPageId)
     return api
+  }
+
+  function resolveAndCheckPath(filePath: string): string {
+    const resolved = resolve(filePath)
+    if (!fileRoot) return resolved
+    const rel = relative(fileRoot, resolved)
+    if (rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))) {
+      return resolved
+    }
+    throw new Error(`Path "${filePath}" is outside allowed root "${fileRoot}"`)
   }
 
   function registerTool(def: ToolDef) {
@@ -78,7 +97,8 @@ export function createServer(version: string): McpServer {
     },
     async ({ path: filePath }: { path: string }) => {
       try {
-        const buf = await readFile(filePath)
+        const path = resolveAndCheckPath(filePath)
+        const buf = await readFile(path)
         graph = await parseFigFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
         computeAllLayouts(graph)
         const pages = graph.getPages()
@@ -100,9 +120,10 @@ export function createServer(version: string): McpServer {
       try {
         if (!graph) throw new Error('No document loaded')
         const { exportFigFile } = await import('@open-pencil/core')
+        const path = resolveAndCheckPath(filePath)
         const data = await exportFigFile(graph)
-        await writeFile(filePath, new Uint8Array(data))
-        return ok({ saved: filePath, bytes: data.byteLength })
+        await writeFile(path, new Uint8Array(data))
+        return ok({ saved: path, bytes: data.byteLength })
       } catch (e) {
         return fail(e)
       }
@@ -128,6 +149,7 @@ export function createServer(version: string): McpServer {
   )
 
   for (const tool of ALL_TOOLS) {
+    if (!enableEval && tool.name === 'eval') continue
     registerTool(tool)
   }
 

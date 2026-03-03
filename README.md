@@ -120,6 +120,13 @@ bun add -g @open-pencil/mcp
 openpencil-mcp-http   # http://localhost:3100/mcp
 ```
 
+Security defaults for HTTP transport:
+- Binds to `127.0.0.1` by default (`HOST` to override)
+- `eval` tool is disabled
+- File access is restricted to `OPENPENCIL_MCP_ROOT` (defaults to current working directory)
+- Optional auth: set `OPENPENCIL_MCP_AUTH_TOKEN` and send `Authorization: Bearer <token>` (or `x-mcp-token`)
+- CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow a specific origin
+
 75 tools: create shapes, set fills/strokes/layout, variables, vectors, boolean ops, viewport, find nodes, open/save `.fig` files, render JSX to design nodes.
 
 ## Scripts
