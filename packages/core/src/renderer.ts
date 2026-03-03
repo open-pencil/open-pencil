@@ -959,6 +959,22 @@ export class SkiaRenderer {
       canvas.saveLayer(this.opacityPaint)
     }
 
+    // Layer blur: wrap the entire node content in a blurred saveLayer
+    const layerBlur = node.effects.find((e) => e.visible && e.type === 'LAYER_BLUR')
+    if (layerBlur) {
+      const blurPaint = new this.ck.Paint()
+      blurPaint.setImageFilter(
+        this.ck.ImageFilter.MakeBlur(
+          layerBlur.radius / 2,
+          layerBlur.radius / 2,
+          this.ck.TileMode.Clamp,
+          null
+        )
+      )
+      canvas.saveLayer(blurPaint)
+      blurPaint.delete()
+    }
+
     const rotation =
       overlays.rotationPreview?.nodeId === nodeId ? overlays.rotationPreview.angle : node.rotation
 
@@ -1013,6 +1029,9 @@ export class SkiaRenderer {
       }
     }
 
+    if (layerBlur) {
+      canvas.restore()
+    }
     if (node.opacity < 1) {
       canvas.restore()
     }
@@ -1534,6 +1553,19 @@ export class SkiaRenderer {
     )
   }
 
+  private clipNodeShape(canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean): void {
+    if (node.type === 'ELLIPSE') {
+      const clipPath = new this.ck.Path()
+      clipPath.addOval(rect)
+      canvas.clipPath(clipPath, this.ck.ClipOp.Intersect, true)
+      clipPath.delete()
+    } else if (hasRadius) {
+      canvas.clipRRect(this.makeRRect(node), this.ck.ClipOp.Intersect, true)
+    } else {
+      canvas.clipRect(rect, this.ck.ClipOp.Intersect, true)
+    }
+  }
+
   private makeRRectWithSpread(node: SceneNode, spread: number): Float32Array {
     if (node.independentCorners) {
       return new Float32Array([
@@ -1642,38 +1674,40 @@ export class SkiaRenderer {
           effect.color.b,
           effect.color.a
         )
+        const sigma = effect.radius / 2
 
         if (node.type === 'TEXT') {
-          const blurFilter = this.ck.ImageFilter.MakeBlur(
-            effect.radius,
-            effect.radius,
-            this.ck.TileMode.Decal,
+          // Text shadow: render text glyphs offset + blurred + recolored
+          const dropFilter = this.ck.ImageFilter.MakeDropShadowOnly(
+            effect.offset.x,
+            effect.offset.y,
+            sigma,
+            sigma,
+            shadowColor,
             null
           )
           const layerPaint = new this.ck.Paint()
-          layerPaint.setImageFilter(blurFilter)
-          layerPaint.setColorFilter(
-            this.ck.ColorFilter.MakeBlend(shadowColor, this.ck.BlendMode.SrcIn)
-          )
-          canvas.save()
-          canvas.translate(effect.offset.x, effect.offset.y)
+          layerPaint.setImageFilter(dropFilter)
           canvas.saveLayer(layerPaint)
           this.renderText(canvas, node)
           canvas.restore()
-          canvas.restore()
           layerPaint.delete()
         } else {
-          this.auxFill.setColor(shadowColor)
-          this.auxFill.setImageFilter(
-            this.ck.ImageFilter.MakeBlur(
-              effect.radius,
-              effect.radius,
-              this.ck.TileMode.Decal,
-              null
-            )
+          // Shape shadow: use MakeDropShadowOnly on the node shape so the
+          // shadow doesn't bleed through the opaque fill above it.
+          const dropFilter = this.ck.ImageFilter.MakeDropShadowOnly(
+            effect.offset.x,
+            effect.offset.y,
+            sigma,
+            sigma,
+            shadowColor,
+            null
           )
-          canvas.save()
-          canvas.translate(effect.offset.x, effect.offset.y)
+          const layerPaint = new this.ck.Paint()
+          layerPaint.setImageFilter(dropFilter)
+          canvas.saveLayer(layerPaint)
+          this.auxFill.setColor(this.ck.WHITE)
+          this.auxFill.setImageFilter(null)
           if (node.type === 'ELLIPSE') {
             const spreadRect = this.ck.LTRBRect(-sp, -sp, node.width + sp, node.height + sp)
             canvas.drawOval(spreadRect, this.auxFill)
@@ -1684,45 +1718,24 @@ export class SkiaRenderer {
             canvas.drawRect(spreadRect, this.auxFill)
           }
           canvas.restore()
-          this.auxFill.setImageFilter(null)
+          layerPaint.delete()
         }
-      }
-
-      if (pass === 'front' && effect.type === 'LAYER_BLUR') {
-        const blurFilter = this.ck.ImageFilter.MakeBlur(
-          effect.radius,
-          effect.radius,
-          this.ck.TileMode.Clamp,
-          null
-        )
-        const blurPaint = new this.ck.Paint()
-        blurPaint.setImageFilter(blurFilter)
-        canvas.saveLayer(blurPaint)
-        this.drawNodeFill(canvas, node, rect, hasRadius)
-        canvas.restore()
-        blurPaint.delete()
       }
 
       if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
+        // Background blur: blur whatever has been rendered so far
+        // (content behind this node), clipped to the node shape.
         canvas.save()
-        if (node.type === 'ELLIPSE') {
-          const clipPath = new this.ck.Path()
-          clipPath.addOval(rect)
-          canvas.clipPath(clipPath, this.ck.ClipOp.Intersect, true)
-          clipPath.delete()
-        } else if (hasRadius) {
-          canvas.clipRRect(this.makeRRect(node), this.ck.ClipOp.Intersect, true)
-        } else {
-          canvas.clipRect(rect, this.ck.ClipOp.Intersect, true)
-        }
-        const bgBlurFilter = this.ck.ImageFilter.MakeBlur(
-          effect.radius,
-          effect.radius,
-          this.ck.TileMode.Clamp,
-          null
-        )
+        this.clipNodeShape(canvas, node, rect, hasRadius)
         const bgBlurPaint = new this.ck.Paint()
-        bgBlurPaint.setImageFilter(bgBlurFilter)
+        bgBlurPaint.setImageFilter(
+          this.ck.ImageFilter.MakeBlur(
+            effect.radius / 2,
+            effect.radius / 2,
+            this.ck.TileMode.Clamp,
+            null
+          )
+        )
         canvas.saveLayer(bgBlurPaint)
         canvas.restore()
         canvas.restore()
@@ -1730,25 +1743,18 @@ export class SkiaRenderer {
       }
 
       if (pass === 'front' && effect.type === 'FOREGROUND_BLUR') {
+        // Foreground blur: blur content in front, clipped to node shape
         canvas.save()
-        if (node.type === 'ELLIPSE') {
-          const clipPath = new this.ck.Path()
-          clipPath.addOval(rect)
-          canvas.clipPath(clipPath, this.ck.ClipOp.Intersect, true)
-          clipPath.delete()
-        } else if (hasRadius) {
-          canvas.clipRRect(this.makeRRect(node), this.ck.ClipOp.Intersect, true)
-        } else {
-          canvas.clipRect(rect, this.ck.ClipOp.Intersect, true)
-        }
-        const fgBlurFilter = this.ck.ImageFilter.MakeBlur(
-          effect.radius,
-          effect.radius,
-          this.ck.TileMode.Clamp,
-          null
-        )
+        this.clipNodeShape(canvas, node, rect, hasRadius)
         const fgBlurPaint = new this.ck.Paint()
-        fgBlurPaint.setImageFilter(fgBlurFilter)
+        fgBlurPaint.setImageFilter(
+          this.ck.ImageFilter.MakeBlur(
+            effect.radius / 2,
+            effect.radius / 2,
+            this.ck.TileMode.Clamp,
+            null
+          )
+        )
         canvas.saveLayer(fgBlurPaint)
         canvas.restore()
         canvas.restore()

@@ -39,7 +39,7 @@ describe('Renderer handles all effect types', () => {
   })
 
   test('handles LAYER_BLUR', () => {
-    expect(rendererSource).toContain("effect.type === 'LAYER_BLUR'")
+    expect(rendererSource).toContain("e.type === 'LAYER_BLUR'")
   })
 
   test('handles BACKGROUND_BLUR', () => {
@@ -53,13 +53,13 @@ describe('Renderer handles all effect types', () => {
 
 describe('Shadow spread support', () => {
   test('drop shadow uses spread for shape expansion', () => {
-    // The DROP_SHADOW block should reference effect.spread
     const dropShadowSection = rendererSource.slice(
       rendererSource.indexOf("effect.type === 'DROP_SHADOW'"),
       rendererSource.indexOf("effect.type === 'DROP_SHADOW'") + 2000
     )
     expect(dropShadowSection).toContain('effect.spread')
     expect(dropShadowSection).toContain('makeRRectWithSpread')
+    expect(dropShadowSection).toContain('MakeDropShadowOnly')
   })
 
   test('inner shadow uses spread for cutout contraction', () => {
@@ -87,6 +87,7 @@ describe('Text shadow renders on glyphs, not bounding box', () => {
     )
     expect(dropShadowBlock).toContain("node.type === 'TEXT'")
     expect(dropShadowBlock).toContain('renderText')
+    expect(dropShadowBlock).toContain('MakeDropShadowOnly')
   })
 
   test('inner shadow has TEXT-specific branch', () => {
@@ -100,9 +101,11 @@ describe('Text shadow renders on glyphs, not bounding box', () => {
 })
 
 describe('Blur effects use saveLayer pattern', () => {
-  test('layer blur uses saveLayer with blur filter', () => {
-    const layerBlurIdx = rendererSource.indexOf("effect.type === 'LAYER_BLUR'")
-    const layerBlurSection = rendererSource.slice(layerBlurIdx, layerBlurIdx + 500)
+  test('layer blur wraps node content in a blurred saveLayer', () => {
+    expect(rendererSource).toContain("e.type === 'LAYER_BLUR'")
+    // Applied at the renderNode level, not in renderEffects
+    const layerBlurIdx = rendererSource.indexOf("e.type === 'LAYER_BLUR'")
+    const layerBlurSection = rendererSource.slice(layerBlurIdx - 200, layerBlurIdx + 300)
     expect(layerBlurSection).toContain('MakeBlur')
     expect(layerBlurSection).toContain('saveLayer')
   })
@@ -110,7 +113,7 @@ describe('Blur effects use saveLayer pattern', () => {
   test('background blur clips to node shape before blurring', () => {
     const bgBlurIdx = rendererSource.indexOf("effect.type === 'BACKGROUND_BLUR'")
     const bgBlurSection = rendererSource.slice(bgBlurIdx, bgBlurIdx + 800)
-    expect(bgBlurSection).toContain('clipRect')
+    expect(bgBlurSection).toContain('clipNodeShape')
     expect(bgBlurSection).toContain('MakeBlur')
     expect(bgBlurSection).toContain('saveLayer')
   })
@@ -118,7 +121,7 @@ describe('Blur effects use saveLayer pattern', () => {
   test('foreground blur clips to node shape before blurring', () => {
     const fgBlurIdx = rendererSource.indexOf("effect.type === 'FOREGROUND_BLUR'")
     const fgBlurSection = rendererSource.slice(fgBlurIdx, fgBlurIdx + 800)
-    expect(fgBlurSection).toContain('clipRect')
+    expect(fgBlurSection).toContain('clipNodeShape')
     expect(fgBlurSection).toContain('MakeBlur')
     expect(fgBlurSection).toContain('saveLayer')
   })
