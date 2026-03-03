@@ -44,6 +44,9 @@
 
 ### Performance
 
+- Per-node SkPicture cache for effect rendering — unchanged shadow/blur nodes replay from cache on scene redraws
+- Drop shadows use `MaskFilter` direct draw instead of `saveLayer` offscreen buffers
+- Cached `ImageFilter`, `MaskFilter`, reusable effect paint — zero per-frame WASM allocations for effects
 - Optimize zoom/pan smoothness with `shallowReactive`, `useRafFn`, and input coalescing
 
 ### Build
