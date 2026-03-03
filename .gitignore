@@ -35,3 +35,4 @@ packages/docs/.vitepress/dist/
 packages/collab/.wrangler/
 packages/core/vendor/canvaskit-webgpu/
 patches/skia-webgpu/
+deploy.sh

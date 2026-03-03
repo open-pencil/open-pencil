@@ -1,5 +1,5 @@
 import { joinRoom as joinTrysteroRoom } from 'trystero/mqtt'
-import { ref, watch, onUnmounted, computed, type InjectionKey, inject } from 'vue'
+import { ref, shallowRef, watch, onUnmounted, computed, type InjectionKey, inject } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
@@ -14,7 +14,7 @@ import {
 
 import type { SceneNode } from '@/engine/scene-graph'
 import type { EditorStore } from '@/stores/editor'
-import type { Color } from '@/types'
+import type { Color, VoiceState } from '@/types'
 import type { Room } from 'trystero'
 
 export interface RemotePeer {
@@ -23,6 +23,7 @@ export interface RemotePeer {
   color: Color
   cursor?: { x: number; y: number; pageId: string }
   selection?: string[]
+  voice?: VoiceState
 }
 
 export interface CollabState {
@@ -43,24 +44,28 @@ export function useCollab(store: EditorStore) {
   })
 
   let ydoc: Y.Doc | null = null
-  let awareness: awarenessProtocol.Awareness | null = null
   let ynodes: Y.Map<Y.Map<unknown>> | null = null
-  let room: Room | null = null
   let persistence: IndexeddbPersistence | null = null
+  const roomRef = shallowRef<Room | null>(null)
+  const awarenessRef = shallowRef<awarenessProtocol.Awareness | null>(null)
   let suppressGraphEvents = false
   let suppressYjsEvents = false
   let sendYjsUpdate: ((data: Uint8Array, peerId?: string) => void) | null = null
   let sendAwareness: ((data: Uint8Array, peerId?: string) => void) | null = null
   let sendSyncStep1: ((data: Uint8Array, peerId?: string) => void) | null = null
+  let onDisconnectVoice: (() => void) | null = null
+  const peerJoinCallbacks: Array<(peerId: string) => void> = []
+  const peerLeaveCallbacks: Array<(peerId: string) => void> = []
 
   const remotePeers = computed(() => state.value.peers)
 
   function connect(roomId: string) {
-    if (room) disconnect()
+    if (roomRef.value) disconnect()
 
     state.value.roomId = roomId
     ydoc = new Y.Doc()
-    awareness = new awarenessProtocol.Awareness(ydoc)
+    const awareness = new awarenessProtocol.Awareness(ydoc)
+    awarenessRef.value = awareness
     ynodes = ydoc.getMap('nodes')
 
     persistence = new IndexeddbPersistence(`op-room-${roomId}`, ydoc)
@@ -81,7 +86,7 @@ export function useCollab(store: EditorStore) {
       store.requestRender()
     })
 
-    room = joinTrysteroRoom(
+    const room = joinTrysteroRoom(
       {
         appId: TRYSTERO_APP_ID,
         rtcConfig: {
@@ -89,20 +94,21 @@ export function useCollab(store: EditorStore) {
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun.cloudflare.com:3478' },
             {
-              urls: 'turn:openrelay.metered.ca:443',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
+              urls: 'turn:168.222.252.107:3478',
+              username: 'openpencil',
+              credential: '149a911b6db258cb6838daa565bb0d5d'
             },
             {
-              urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-              username: 'openrelayproject',
-              credential: 'openrelayproject'
+              urls: 'turn:168.222.252.107:3478?transport=tcp',
+              username: 'openpencil',
+              credential: '149a911b6db258cb6838daa565bb0d5d'
             }
           ]
         }
       },
       roomId
     )
+    roomRef.value = room
 
     const [sendUpdate, getUpdate] = room.makeAction<Uint8Array>('yjs-update')
     const [sendAw, getAw] = room.makeAction<Uint8Array>('awareness')
@@ -119,8 +125,8 @@ export function useCollab(store: EditorStore) {
     })
 
     getAw((data) => {
-      if (!awareness) return
-      awarenessProtocol.applyAwarenessUpdate(awareness, new Uint8Array(data), null)
+      if (!awarenessRef.value) return
+      awarenessProtocol.applyAwarenessUpdate(awarenessRef.value, new Uint8Array(data), null)
     })
 
     getSync((data, peerId) => {
@@ -144,7 +150,7 @@ export function useCollab(store: EditorStore) {
       'update',
       ({ added, updated, removed }: { added: number[]; updated: number[]; removed: number[] }) => {
         const changedClients = [...added, ...updated, ...removed]
-        const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness!, changedClients)
+        const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
         sendAwareness?.(encodedUpdate)
       }
     )
@@ -154,22 +160,20 @@ export function useCollab(store: EditorStore) {
       const sv = Y.encodeStateVector(ydoc!)
       sendSyncStep1?.(sv, peerId)
 
-      if (awareness) {
-        const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness, [
-          awareness.clientID
-        ])
-        sendAwareness?.(encodedUpdate, peerId)
-      }
+      const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness, [awareness.clientID])
+      sendAwareness?.(encodedUpdate, peerId)
+
+      for (const cb of peerJoinCallbacks) cb(peerId)
     })
 
-    room.onPeerLeave(() => {
-      if (awareness) {
-        const remoteClients = [...awareness.getStates().keys()].filter(
-          (id) => id !== awareness!.clientID
-        )
-        awarenessProtocol.removeAwarenessStates(awareness, remoteClients, 'peer-left')
-      }
+    room.onPeerLeave((peerId) => {
+      const remoteClients = [...awareness.getStates().keys()].filter(
+        (id) => id !== awareness.clientID
+      )
+      awarenessProtocol.removeAwarenessStates(awareness, remoteClients, 'peer-left')
       updatePeersList()
+
+      for (const cb of peerLeaveCallbacks) cb(peerId)
     })
 
     state.value.connected = true
@@ -178,10 +182,12 @@ export function useCollab(store: EditorStore) {
     watch(
       () => store.state.zoom,
       (zoom) => {
-        if (!awareness) return
-        const prev = awareness.getLocalState()?.cursor as Record<string, unknown> | undefined
+        if (!awarenessRef.value) return
+        const prev = awarenessRef.value.getLocalState()?.cursor as
+          | Record<string, unknown>
+          | undefined
         if (prev) {
-          awareness.setLocalStateField('cursor', { ...prev, zoom })
+          awarenessRef.value.setLocalStateField('cursor', { ...prev, zoom })
         }
       }
     )
@@ -196,15 +202,16 @@ export function useCollab(store: EditorStore) {
   }
 
   function disconnect() {
-    room?.leave()
-    room = null
+    onDisconnectVoice?.()
+    roomRef.value?.leave()
+    roomRef.value = null
     sendYjsUpdate = null
     sendAwareness = null
     sendSyncStep1 = null
 
-    if (awareness) {
-      awareness.destroy()
-      awareness = null
+    if (awarenessRef.value) {
+      awarenessRef.value.destroy()
+      awarenessRef.value = null
     }
     if (persistence) {
       persistence.destroy()
@@ -220,6 +227,18 @@ export function useCollab(store: EditorStore) {
     state.value.peers = []
     store.state.remoteCursors = []
     store.requestRender()
+  }
+
+  function registerVoiceCleanup(fn: () => void) {
+    onDisconnectVoice = fn
+  }
+
+  function onPeerJoin(fn: (peerId: string) => void) {
+    peerJoinCallbacks.push(fn)
+  }
+
+  function onPeerLeave(fn: (peerId: string) => void) {
+    peerLeaveCallbacks.push(fn)
   }
 
   function syncNodeToYjs(nodeId: string) {
@@ -325,28 +344,28 @@ export function useCollab(store: EditorStore) {
   }
 
   function broadcastAwareness() {
-    if (!awareness) return
-    awareness.setLocalStateField('user', {
+    if (!awarenessRef.value) return
+    awarenessRef.value.setLocalStateField('user', {
       name: state.value.localName,
       color: state.value.localColor
     })
   }
 
   function updateCursor(x: number, y: number, pageId: string) {
-    if (!awareness) return
-    awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
+    if (!awarenessRef.value) return
+    awarenessRef.value.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
   }
 
   function updateSelection(ids: string[]) {
-    if (!awareness) return
-    awareness.setLocalStateField('selection', ids)
+    if (!awarenessRef.value) return
+    awarenessRef.value.setLocalStateField('selection', ids)
   }
 
   function updatePeersList() {
-    if (!awareness) return
-    const states = awareness.getStates()
+    if (!awarenessRef.value) return
+    const states = awarenessRef.value.getStates()
     const peers: RemotePeer[] = []
-    const localClientId = awareness.clientID
+    const localClientId = awarenessRef.value.clientID
     const currentPageId = store.state.currentPageId
 
     states.forEach((peerState, clientId) => {
@@ -358,7 +377,8 @@ export function useCollab(store: EditorStore) {
         name: user.name || 'Anonymous',
         color: user.color || PEER_COLORS[clientId % PEER_COLORS.length],
         cursor: peerState.cursor as RemotePeer['cursor'],
-        selection: peerState.selection as string[]
+        selection: peerState.selection as string[],
+        voice: peerState.voice as VoiceState | undefined
       })
     })
 
@@ -408,8 +428,8 @@ export function useCollab(store: EditorStore) {
   }
 
   function tickFollow() {
-    if (!followingPeer.value || !awareness) return
-    const peerState = awareness.getStates().get(followingPeer.value)
+    if (!followingPeer.value || !awarenessRef.value) return
+    const peerState = awarenessRef.value.getStates().get(followingPeer.value)
     if (!peerState?.cursor) {
       followingPeer.value = null
       return
@@ -436,6 +456,8 @@ export function useCollab(store: EditorStore) {
     state,
     remotePeers,
     followingPeer,
+    roomRef,
+    awarenessRef,
     connect: joinRoom,
     disconnect,
     shareCurrentDoc,
@@ -443,7 +465,10 @@ export function useCollab(store: EditorStore) {
     updateSelection,
     setLocalName,
     followPeer,
-    tickFollow
+    tickFollow,
+    registerVoiceCleanup,
+    onPeerJoin,
+    onPeerLeave
   }
 }
 

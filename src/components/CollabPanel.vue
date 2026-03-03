@@ -14,6 +14,7 @@ import {
 
 import type { CollabState, RemotePeer } from '@/composables/use-collab'
 import { toast } from '@/composables/use-toast'
+import { useVoiceInjected } from '@/composables/use-voice'
 import type { Color } from '@/types'
 
 const props = defineProps<{
@@ -30,6 +31,8 @@ const emit = defineEmits<{
   'update:name': [name: string]
   follow: [clientId: number | null]
 }>()
+
+const voice = useVoiceInjected()
 
 const joinInput = ref('')
 const nameDraft = ref(props.state.localName)
@@ -68,6 +71,15 @@ function onJoin() {
   popoverOpen.value = false
 }
 
+function onVoiceToggle() {
+  if (!voice) return
+  if (voice.voiceState.value.inCall) {
+    voice.leaveCall()
+  } else {
+    voice.joinCall()
+  }
+}
+
 function colorToCSS(c: Color): string {
   return `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`
 }
@@ -89,13 +101,32 @@ function initials(name: string): string {
     <!-- Avatar stack -->
     <TooltipProvider :delay-duration="200">
       <div class="flex -space-x-1.5">
+        <!-- Local user avatar -->
         <TooltipRoot>
           <TooltipTrigger as-child>
-            <div
-              class="flex size-6 items-center justify-center rounded-full border-2 border-panel text-[10px] font-semibold text-white"
-              :style="{ background: colorToCSS(state.localColor) }"
-            >
-              {{ initials(state.localName || 'You') }}
+            <div class="relative">
+              <div
+                class="flex size-6 items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-shadow"
+                :class="[
+                  voice?.voiceState.value.speaking
+                    ? 'border-panel ring-2 animate-pulse'
+                    : 'border-panel'
+                ]"
+                :style="{
+                  background: colorToCSS(state.localColor),
+                  ...(voice?.voiceState.value.speaking
+                    ? { '--tw-ring-color': colorToCSS(state.localColor) }
+                    : {})
+                }"
+              >
+                {{ initials(state.localName || 'You') }}
+              </div>
+              <div
+                v-if="voice?.voiceState.value.inCall && voice.voiceState.value.muted"
+                class="absolute -bottom-0.5 -right-0.5 flex size-3 items-center justify-center rounded-full bg-red-600"
+              >
+                <icon-lucide-mic-off class="size-2 text-white" />
+              </div>
             </div>
           </TooltipTrigger>
           <TooltipPortal>
@@ -108,19 +139,33 @@ function initials(name: string): string {
           </TooltipPortal>
         </TooltipRoot>
 
+        <!-- Remote peer avatars -->
         <TooltipRoot v-for="peer in peers" :key="peer.clientId">
           <TooltipTrigger as-child>
-            <div
-              class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-all"
-              :class="
-                followingPeer === peer.clientId
-                  ? 'border-white ring-2 ring-white/40'
-                  : 'border-panel'
-              "
-              :style="{ background: colorToCSS(peer.color) }"
-              @click="emit('follow', followingPeer === peer.clientId ? null : peer.clientId)"
-            >
-              {{ initials(peer.name) }}
+            <div class="relative">
+              <div
+                class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-all"
+                :class="[
+                  followingPeer === peer.clientId
+                    ? 'border-white ring-2 ring-white/40'
+                    : peer.voice?.speaking
+                      ? 'border-panel ring-2 animate-pulse'
+                      : 'border-panel'
+                ]"
+                :style="{
+                  background: colorToCSS(peer.color),
+                  ...(peer.voice?.speaking ? { '--tw-ring-color': colorToCSS(peer.color) } : {})
+                }"
+                @click="emit('follow', followingPeer === peer.clientId ? null : peer.clientId)"
+              >
+                {{ initials(peer.name) }}
+              </div>
+              <div
+                v-if="peer.voice?.inCall && peer.voice.muted"
+                class="absolute -bottom-0.5 -right-0.5 flex size-3 items-center justify-center rounded-full bg-red-600"
+              >
+                <icon-lucide-mic-off class="size-2 text-white" />
+              </div>
             </div>
           </TooltipTrigger>
           <TooltipPortal>
@@ -140,6 +185,63 @@ function initials(name: string): string {
     </TooltipProvider>
 
     <div class="flex-1" />
+
+    <!-- Voice call button -->
+    <TooltipProvider v-if="state.connected" :delay-duration="200">
+      <div class="flex items-center gap-1">
+        <!-- Mute toggle (visible when in call) -->
+        <TooltipRoot v-if="voice?.voiceState.value.inCall">
+          <TooltipTrigger as-child>
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-md border-none transition-colors"
+              :class="
+                voice.voiceState.value.muted
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              "
+              @click="voice.toggleMute"
+            >
+              <icon-lucide-mic-off v-if="voice.voiceState.value.muted" class="size-3.5" />
+              <icon-lucide-mic v-else class="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipPortal>
+            <TooltipContent
+              class="rounded bg-neutral-800 px-2 py-1 text-xs text-white shadow-lg"
+              :side-offset="4"
+            >
+              {{ voice.voiceState.value.muted ? 'Unmute (M)' : 'Mute (M)' }}
+            </TooltipContent>
+          </TooltipPortal>
+        </TooltipRoot>
+
+        <!-- Join/Leave call button -->
+        <TooltipRoot>
+          <TooltipTrigger as-child>
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-md border-none transition-colors"
+              :class="
+                voice?.voiceState.value.inCall
+                  ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
+                  : 'bg-surface/10 text-muted hover:bg-surface/20 hover:text-surface'
+              "
+              @click="onVoiceToggle"
+            >
+              <icon-lucide-phone-off v-if="voice?.voiceState.value.inCall" class="size-3.5" />
+              <icon-lucide-mic v-else class="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipPortal>
+            <TooltipContent
+              class="rounded bg-neutral-800 px-2 py-1 text-xs text-white shadow-lg"
+              :side-offset="4"
+            >
+              {{ voice?.voiceState.value.inCall ? 'Leave voice call' : 'Join voice call' }}
+            </TooltipContent>
+          </TooltipPortal>
+        </TooltipRoot>
+      </div>
+    </TooltipProvider>
 
     <!-- Share button / popover -->
     <PopoverRoot v-model:open="popoverOpen">
