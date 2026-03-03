@@ -148,4 +148,87 @@ test.describe('Render performance', () => {
 
     expect(results.pan.avg).toBeLessThan(50)
   })
+
+  test('benchmark: shadow rendering throughput', async () => {
+    const SHADOW_NODES = 50
+    const SHADOW_ITERS = 100
+
+    const results = await helper.page.evaluate(
+      ({ count, iterations }) => {
+        const store = window.__OPEN_PENCIL_STORE__!
+        const renderer = store.renderer!
+        const graph = store.graph
+        const pageId = store.state.currentPageId
+
+        const shadowIds: string[] = []
+        const cols = Math.ceil(Math.sqrt(count))
+        for (let i = 0; i < count; i++) {
+          const id = graph.createNode('RECTANGLE', pageId, {
+            x: (i % cols) * 80,
+            y: Math.floor(i / cols) * 80 + 2000,
+            width: 60,
+            height: 60,
+            cornerRadius: 8,
+            fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }],
+            effects: [
+              {
+                type: 'DROP_SHADOW',
+                color: { r: 0, g: 0, b: 0, a: 0.2 },
+                offset: { x: 0, y: 4 },
+                radius: 12,
+                spread: 0,
+                visible: true
+              }
+            ]
+          })
+          shadowIds.push(id)
+        }
+
+        function setupRenderer() {
+          renderer.dpr = window.devicePixelRatio || 1
+          renderer.panX = 0
+          renderer.panY = -2000
+          renderer.zoom = 1
+          renderer.viewportWidth = 1280
+          renderer.viewportHeight = 800
+          renderer.showRulers = false
+          renderer.pageColor = store.state.pageColor
+          renderer.pageId = pageId
+        }
+
+        setupRenderer()
+        renderer.render(graph, store.state.selectedIds, {}, store.state.sceneVersion)
+
+        setupRenderer()
+        const sceneStart = performance.now()
+        for (let i = 0; i < iterations; i++) {
+          const node = graph.getNode(shadowIds[i % shadowIds.length]!)
+          if (node) graph.updateNode(node.id, { x: node.x + 0.1 })
+          store.state.sceneVersion++
+          renderer.render(graph, store.state.selectedIds, {}, store.state.sceneVersion)
+        }
+        const sceneMs = performance.now() - sceneStart
+
+        for (const id of shadowIds) graph.deleteNode(id)
+
+        return {
+          scene: {
+            ms: Math.round(sceneMs * 100) / 100,
+            avg: Math.round((sceneMs / iterations) * 100) / 100
+          }
+        }
+      },
+      { count: SHADOW_NODES, iterations: SHADOW_ITERS }
+    )
+
+    console.log(
+      `\n═══ SHADOW BENCHMARK (${SHADOW_NODES} shadow nodes, ${SHADOW_ITERS} iterations) ═══`
+    )
+    console.log(
+      `  Scene change:  ${results.scene.avg}ms/frame  (${results.scene.ms}ms total)`
+    )
+    console.log(`═══════════════════════════════════════════════════════\n`)
+
+    expect(results.scene.avg).toBeLessThan(50)
+  })
 })

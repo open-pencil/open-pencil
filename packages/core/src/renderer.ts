@@ -76,7 +76,8 @@ import type {
   FontWeight,
   TypefaceFontProvider,
   SkPicture,
-  ImageFilter
+  ImageFilter,
+  MaskFilter
 } from 'canvaskit-wasm'
 
 export interface RenderOverlays {
@@ -128,6 +129,9 @@ export class SkiaRenderer {
   private opacityPaint: Paint
   private effectLayerPaint: Paint
   private imageFilterCache = new Map<string, ImageFilter>()
+  private maskFilterCache = new Map<number, MaskFilter>()
+  private _tmpColor = new Float32Array(4)
+  private _tmpRect = new Float32Array(4)
   private textFont: Font | null = null
   private labelFont: Font | null = null
   private sizeFont: Font | null = null
@@ -164,6 +168,24 @@ export class SkiaRenderer {
   pageId: string | null = null
 
   private worldViewport = { x: 0, y: 0, w: 0, h: 0 }
+
+  private color4f(r: number, g: number, b: number, a: number): Float32Array {
+    const c = this._tmpColor
+    c[0] = r
+    c[1] = g
+    c[2] = b
+    c[3] = a
+    return c
+  }
+
+  private ltrb(l: number, t: number, r: number, b: number): Float32Array {
+    const rc = this._tmpRect
+    rc[0] = l
+    rc[1] = t
+    rc[2] = r
+    rc[3] = b
+    return rc
+  }
 
   private selColor(alpha = 1) {
     return this.ck.Color4f(SELECTION_COLOR.r, SELECTION_COLOR.g, SELECTION_COLOR.b, alpha)
@@ -1582,6 +1604,15 @@ export class SkiaRenderer {
     return filter
   }
 
+  private getCachedMaskBlur(sigma: number): MaskFilter {
+    let filter = this.maskFilterCache.get(sigma)
+    if (!filter) {
+      filter = this.ck.MaskFilter.MakeBlur(this.ck.BlurStyle.Normal, sigma, true)
+      this.maskFilterCache.set(sigma, filter)
+    }
+    return filter
+  }
+
   private applyClippedBlur(
     canvas: Canvas,
     node: SceneNode,
@@ -1712,40 +1743,42 @@ export class SkiaRenderer {
 
       if (pass === 'behind' && effect.type === 'DROP_SHADOW') {
         const sp = effect.spread
-        const shadowColor = this.ck.Color4f(
-          effect.color.r,
-          effect.color.g,
-          effect.color.b,
-          effect.color.a
-        )
         const sigma = effect.radius / 2
 
-        const dropFilter = this.getCachedDropShadow(
-          effect.offset.x,
-          effect.offset.y,
-          sigma,
-          shadowColor
-        )
-        this.effectLayerPaint.setImageFilter(dropFilter)
-
         if (node.type === 'TEXT') {
+          const shadowColor = this.ck.Color4f(
+            effect.color.r,
+            effect.color.g,
+            effect.color.b,
+            effect.color.a
+          )
+          const dropFilter = this.getCachedDropShadow(
+            effect.offset.x,
+            effect.offset.y,
+            sigma,
+            shadowColor
+          )
+          this.effectLayerPaint.setImageFilter(dropFilter)
           canvas.saveLayer(this.effectLayerPaint)
           this.renderText(canvas, node)
           canvas.restore()
         } else {
-          canvas.saveLayer(this.effectLayerPaint)
-          this.auxFill.setColor(this.ck.WHITE)
+          this.auxFill.setColor(
+            this.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+          )
+          this.auxFill.setMaskFilter(this.getCachedMaskBlur(sigma))
           this.auxFill.setImageFilter(null)
+          canvas.save()
+          canvas.translate(effect.offset.x, effect.offset.y)
           if (node.type === 'ELLIPSE') {
-            const spreadRect = this.ck.LTRBRect(-sp, -sp, node.width + sp, node.height + sp)
-            canvas.drawOval(spreadRect, this.auxFill)
+            canvas.drawOval(this.ltrb(-sp, -sp, node.width + sp, node.height + sp), this.auxFill)
           } else if (hasRadius) {
             canvas.drawRRect(this.makeRRectWithSpread(node, sp), this.auxFill)
           } else {
-            const spreadRect = this.ck.LTRBRect(-sp, -sp, node.width + sp, node.height + sp)
-            canvas.drawRect(spreadRect, this.auxFill)
+            canvas.drawRect(this.ltrb(-sp, -sp, node.width + sp, node.height + sp), this.auxFill)
           }
           canvas.restore()
+          this.auxFill.setMaskFilter(null)
         }
       }
 
@@ -2634,6 +2667,8 @@ export class SkiaRenderer {
     this.effectLayerPaint.delete()
     for (const filter of this.imageFilterCache.values()) filter.delete()
     this.imageFilterCache.clear()
+    for (const filter of this.maskFilterCache.values()) filter.delete()
+    this.maskFilterCache.clear()
     this.scenePicture?.delete()
     this.surface.delete()
   }
