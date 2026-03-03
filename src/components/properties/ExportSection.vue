@@ -92,8 +92,6 @@ watch(previewKey, updatePreview, { flush: 'post' })
 onUnmounted(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
-
-
 </script>
 
 <template>

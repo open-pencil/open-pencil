@@ -1,11 +1,5 @@
 import { describe, test, expect } from 'bun:test'
 
-/**
- * These tests verify the renderer source code has the correct
- * rendering order and handles all effect types. Since CanvasKit
- * requires a browser/WASM environment, we validate the source structure.
- */
-
 const rendererSource = await Bun.file(
   new URL('../../packages/core/src/renderer.ts', import.meta.url)
 ).text()
@@ -110,19 +104,17 @@ describe('Blur effects use saveLayer pattern', () => {
     expect(layerBlurSection).toContain('saveLayer')
   })
 
-  test('background blur clips to node shape before blurring', () => {
-    const bgBlurIdx = rendererSource.indexOf("effect.type === 'BACKGROUND_BLUR'")
-    const bgBlurSection = rendererSource.slice(bgBlurIdx, bgBlurIdx + 800)
-    expect(bgBlurSection).toContain('clipNodeShape')
-    expect(bgBlurSection).toContain('MakeBlur')
-    expect(bgBlurSection).toContain('saveLayer')
+  test('background and foreground blur use applyClippedBlur', () => {
+    expect(rendererSource).toContain("effect.type === 'BACKGROUND_BLUR'")
+    expect(rendererSource).toContain("effect.type === 'FOREGROUND_BLUR'")
+    expect(rendererSource).toContain('applyClippedBlur')
   })
 
-  test('foreground blur clips to node shape before blurring', () => {
-    const fgBlurIdx = rendererSource.indexOf("effect.type === 'FOREGROUND_BLUR'")
-    const fgBlurSection = rendererSource.slice(fgBlurIdx, fgBlurIdx + 800)
-    expect(fgBlurSection).toContain('clipNodeShape')
-    expect(fgBlurSection).toContain('MakeBlur')
-    expect(fgBlurSection).toContain('saveLayer')
+  test('applyClippedBlur clips to node shape and uses saveLayer', () => {
+    const idx = rendererSource.indexOf('private applyClippedBlur')
+    const section = rendererSource.slice(idx, idx + 500)
+    expect(section).toContain('clipNodeShape')
+    expect(section).toContain('MakeBlur')
+    expect(section).toContain('saveLayer')
   })
 })

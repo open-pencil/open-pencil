@@ -94,12 +94,13 @@ function onSelect(val: string) {
               <span class="truncate">{{ option }}</span>
             </ListboxItem>
           </ListboxVirtualizer>
-          <div v-if="families.length === 0" class="flex h-full items-center justify-center px-3 text-center text-xs text-muted">
+          <div
+            v-if="families.length === 0"
+            class="flex h-full items-center justify-center px-3 text-center text-xs text-muted"
+          >
             <div>
               <p>No local fonts available.</p>
-              <p class="mt-1">
-                Use the desktop app or Chrome/Edge to access system fonts.
-              </p>
+              <p class="mt-1">Use the desktop app or Chrome/Edge to access system fonts.</p>
             </div>
           </div>
           <div v-else-if="filtered.length === 0" class="px-2 py-3 text-center text-xs text-muted">

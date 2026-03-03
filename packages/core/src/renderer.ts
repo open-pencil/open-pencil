@@ -959,7 +959,6 @@ export class SkiaRenderer {
       canvas.saveLayer(this.opacityPaint)
     }
 
-    // Layer blur: wrap the entire node content in a blurred saveLayer
     const layerBlur = node.effects.find((e) => e.visible && e.type === 'LAYER_BLUR')
     if (layerBlur) {
       const blurPaint = new this.ck.Paint()
@@ -1553,6 +1552,25 @@ export class SkiaRenderer {
     )
   }
 
+  private applyClippedBlur(
+    canvas: Canvas,
+    node: SceneNode,
+    rect: Float32Array,
+    hasRadius: boolean,
+    sigma: number
+  ): void {
+    canvas.save()
+    this.clipNodeShape(canvas, node, rect, hasRadius)
+    const blurPaint = new this.ck.Paint()
+    blurPaint.setImageFilter(
+      this.ck.ImageFilter.MakeBlur(sigma, sigma, this.ck.TileMode.Clamp, null)
+    )
+    canvas.saveLayer(blurPaint)
+    canvas.restore()
+    canvas.restore()
+    blurPaint.delete()
+  }
+
   private clipNodeShape(canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean): void {
     if (node.type === 'ELLIPSE') {
       const clipPath = new this.ck.Path()
@@ -1677,7 +1695,6 @@ export class SkiaRenderer {
         const sigma = effect.radius / 2
 
         if (node.type === 'TEXT') {
-          // Text shadow: render text glyphs offset + blurred + recolored
           const dropFilter = this.ck.ImageFilter.MakeDropShadowOnly(
             effect.offset.x,
             effect.offset.y,
@@ -1693,8 +1710,6 @@ export class SkiaRenderer {
           canvas.restore()
           layerPaint.delete()
         } else {
-          // Shape shadow: use MakeDropShadowOnly on the node shape so the
-          // shadow doesn't bleed through the opaque fill above it.
           const dropFilter = this.ck.ImageFilter.MakeDropShadowOnly(
             effect.offset.x,
             effect.offset.y,
@@ -1722,48 +1737,15 @@ export class SkiaRenderer {
         }
       }
 
-      if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
-        // Background blur: blur whatever has been rendered so far
-        // (content behind this node), clipped to the node shape.
-        canvas.save()
-        this.clipNodeShape(canvas, node, rect, hasRadius)
-        const bgBlurPaint = new this.ck.Paint()
-        bgBlurPaint.setImageFilter(
-          this.ck.ImageFilter.MakeBlur(
-            effect.radius / 2,
-            effect.radius / 2,
-            this.ck.TileMode.Clamp,
-            null
-          )
-        )
-        canvas.saveLayer(bgBlurPaint)
-        canvas.restore()
-        canvas.restore()
-        bgBlurPaint.delete()
-      }
-
-      if (pass === 'front' && effect.type === 'FOREGROUND_BLUR') {
-        // Foreground blur: blur content in front, clipped to node shape
-        canvas.save()
-        this.clipNodeShape(canvas, node, rect, hasRadius)
-        const fgBlurPaint = new this.ck.Paint()
-        fgBlurPaint.setImageFilter(
-          this.ck.ImageFilter.MakeBlur(
-            effect.radius / 2,
-            effect.radius / 2,
-            this.ck.TileMode.Clamp,
-            null
-          )
-        )
-        canvas.saveLayer(fgBlurPaint)
-        canvas.restore()
-        canvas.restore()
-        fgBlurPaint.delete()
+      if (
+        (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') ||
+        (pass === 'front' && effect.type === 'FOREGROUND_BLUR')
+      ) {
+        this.applyClippedBlur(canvas, node, rect, hasRadius, effect.radius / 2)
       }
 
       if (pass === 'front' && effect.type === 'INNER_SHADOW') {
         if (node.type === 'TEXT') {
-          // For text, render inner shadow using the text glyphs as the clip
           const blurFilter = this.ck.ImageFilter.MakeBlur(
             effect.radius,
             effect.radius,
@@ -1787,8 +1769,6 @@ export class SkiaRenderer {
           layerPaint.delete()
           continue
         }
-        // Inner shadow: draw a shadow clipped to the node shape
-        // Spread contracts the cutout (positive spread = larger shadow)
         const sp = effect.spread
         this.auxFill.setColor(
           this.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
