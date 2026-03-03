@@ -41,6 +41,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
   let renderer: SkiaRenderer | null = null
   let ck: CanvasKit | null = null
   let gpuCtx: WebGPUContext | null = null
+  let glContext: ReturnType<CanvasKit['MakeGrContext']> | null = null
   let destroyed = false
   let dirty = true
   let lastRenderVersion = -1
@@ -71,17 +72,34 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     }
   }
 
+  function sizeCanvas(canvas: HTMLCanvasElement) {
+    const dpr = window.devicePixelRatio || 1
+    canvas.width = canvas.clientWidth * dpr
+    canvas.height = canvas.clientHeight * dpr
+  }
+
+  function makeGLSurface(canvas: HTMLCanvasElement) {
+    if (!ck) return null
+    if (!glContext) {
+      const isTest = new URLSearchParams(window.location.search).has('test')
+      const glAttrs = isTest ? { preserveDrawingBuffer: 1 } : undefined
+      const handle = ck.GetWebGLContext(canvas, glAttrs)
+      if (!handle) return null
+      glContext = ck.MakeGrContext(handle)
+    }
+    if (!glContext) return null
+    return ck.MakeOnScreenGLSurface(glContext, canvas.width, canvas.height, ck.ColorSpace.SRGB)
+  }
+
   function createSurface(canvas: HTMLCanvasElement) {
     if (!ck) return
 
     renderer?.destroy()
     renderer = null
+    glContext?.delete()
+    glContext = null
 
-    const dpr = window.devicePixelRatio || 1
-    const w = canvas.clientWidth
-    const h = canvas.clientHeight
-    canvas.width = w * dpr
-    canvas.height = h * dpr
+    sizeCanvas(canvas)
 
     let surface
     if (getGpuBackend() === 'webgpu' && gpuCtx) {
@@ -93,12 +111,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
         return
       }
     } else {
-      const isTest = new URLSearchParams(window.location.search).has('test')
-      surface = ck.MakeWebGLCanvasSurface(
-        canvas,
-        undefined,
-        isTest ? { preserveDrawingBuffer: 1 } : undefined
-      )
+      surface = makeGLSurface(canvas)
       if (!surface) {
         console.error('Failed to create WebGL surface')
         return
@@ -171,6 +184,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     pause()
     cancelAnimationFrame(resizeRaf)
     renderer?.destroy()
+    glContext?.delete()
   })
 
   let resizeRaf = 0
@@ -179,9 +193,26 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     if (!canvas || !ck || resizeRaf) return
     resizeRaf = requestAnimationFrame(() => {
       resizeRaf = 0
-      createSurface(canvas)
+      resizeCanvas(canvas)
     })
   })
+
+  function resizeCanvas(canvas: HTMLCanvasElement) {
+    if (!ck || !renderer) {
+      createSurface(canvas)
+      return
+    }
+
+    sizeCanvas(canvas)
+
+    const surface = makeGLSurface(canvas)
+    if (!surface) {
+      createSurface(canvas)
+      return
+    }
+    renderer.replaceSurface(surface)
+    renderNow()
+  }
 
   function hitTestSectionTitle(canvasX: number, canvasY: number) {
     return renderer?.hitTestSectionTitle(store.graph, canvasX, canvasY) ?? null

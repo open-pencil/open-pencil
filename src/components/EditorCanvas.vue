@@ -63,7 +63,9 @@ const cursor = computed(() => {
           <div
             class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-white/8"
           >
-            <div class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] rounded-full bg-white/25" />
+            <div
+              class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] rounded-full bg-white/25"
+            />
           </div>
         </div>
       </Transition>

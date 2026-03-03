@@ -328,6 +328,12 @@ export class SkiaRenderer {
     this.invalidateAllPictures()
   }
 
+  replaceSurface(surface: Surface): void {
+    this.surface.delete()
+    this.surface = surface
+    this.invalidateScenePicture()
+  }
+
   invalidateScenePicture(): void {
     this.scenePicture?.delete()
     this.scenePicture = null
