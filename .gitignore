@@ -33,3 +33,5 @@ test-results/
 packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/
 packages/collab/.wrangler/
+packages/core/vendor/canvaskit-webgpu/
+patches/skia-webgpu/
