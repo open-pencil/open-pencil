@@ -864,6 +864,7 @@ export function createEditorStore() {
     if ('vectorNetwork' in changes) {
       _renderer?.invalidateVectorPath(id)
     }
+    _renderer?.invalidateNodePicture(id)
     runLayoutForNode(id)
     syncIfInsideComponent(id)
     requestRender()

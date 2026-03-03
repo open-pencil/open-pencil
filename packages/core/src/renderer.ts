@@ -145,6 +145,7 @@ export class SkiaRenderer {
   private scenePicture: SkPicture | null = null
   private scenePictureVersion = -1
   private scenePicturePageId: string | null = null
+  private nodePictureCache = new Map<string, SkPicture>()
 
   private rulerBgPaint: Paint
   private rulerTickPaint: Paint
@@ -324,13 +325,27 @@ export class SkiaRenderer {
     }
 
     this.fontsLoaded = true
-    this.invalidateScenePicture()
+    this.invalidateAllPictures()
   }
 
   invalidateScenePicture(): void {
     this.scenePicture?.delete()
     this.scenePicture = null
     this.scenePictureVersion = -1
+  }
+
+  invalidateAllPictures(): void {
+    this.invalidateScenePicture()
+    for (const pic of this.nodePictureCache.values()) pic.delete()
+    this.nodePictureCache.clear()
+  }
+
+  invalidateNodePicture(nodeId: string): void {
+    const pic = this.nodePictureCache.get(nodeId)
+    if (pic) {
+      pic.delete()
+      this.nodePictureCache.delete(nodeId)
+    }
   }
 
   hitTestSectionTitle(graph: SceneGraph, canvasX: number, canvasY: number): SceneNode | null {
@@ -1382,6 +1397,43 @@ export class SkiaRenderer {
   }
 
   private renderShape(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
+    const hasEffects = node.effects.length > 0 && node.effects.some((e) => e.visible)
+
+    if (hasEffects) {
+      const cached = this.nodePictureCache.get(node.id)
+      if (cached) {
+        canvas.drawPicture(cached)
+        return
+      }
+
+      const margin = this.effectOverflow(node)
+      const bounds = this.ck.LTRBRect(-margin, -margin, node.width + margin, node.height + margin)
+      const recorder = new this.ck.PictureRecorder()
+      const recCanvas = recorder.beginRecording(bounds)
+      this.renderShapeUncached(recCanvas, node, graph)
+      const picture = recorder.finishRecordingAsPicture()
+      recorder.delete()
+      this.nodePictureCache.set(node.id, picture)
+      canvas.drawPicture(picture)
+    } else {
+      this.renderShapeUncached(canvas, node, graph)
+    }
+  }
+
+  private effectOverflow(node: SceneNode): number {
+    let expand = 0
+    for (const e of node.effects) {
+      if (!e.visible) continue
+      const blur = e.radius
+      const spread = e.spread
+      const ox = Math.abs(e.offset.x)
+      const oy = Math.abs(e.offset.y)
+      expand = Math.max(expand, blur + spread + ox, blur + spread + oy)
+    }
+    return expand
+  }
+
+  private renderShapeUncached(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
     const rect = this.ck.LTRBRect(0, 0, node.width, node.height)
 
     const hasRadius =
@@ -2669,6 +2721,8 @@ export class SkiaRenderer {
     this.imageFilterCache.clear()
     for (const filter of this.maskFilterCache.values()) filter.delete()
     this.maskFilterCache.clear()
+    for (const pic of this.nodePictureCache.values()) pic.delete()
+    this.nodePictureCache.clear()
     this.scenePicture?.delete()
     this.surface.delete()
   }
