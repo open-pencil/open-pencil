@@ -100,7 +100,7 @@ jobs:
             if npm view "${name}@${version}" version 2>/dev/null; then
               echo "${name}@${version} already published, skipping"
             else
-              cd "$dir" && pnpm publish --provenance --access public --no-git-checks
+              (cd "$dir" && pnpm publish --provenance --access public --no-git-checks)
             fi
           }
           publish_if_new packages/core
