@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import { extractImageFilesFromClipboard } from '@/composables/use-canvas-drop'
 import { useAIChat } from '@/composables/use-chat'
+import { useVoiceInjected } from '@/composables/use-voice'
 import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
 import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
 
@@ -54,6 +55,7 @@ function shouldPreventDefault(e: KeyboardEvent, hasPenState: boolean): boolean {
 
 export function useKeyboard() {
   const { activeTab } = useAIChat()
+  const voice = useVoiceInjected()
   const store = useEditorStore()
   const breakpoints = useBreakpoints({ mobile: 768 })
   const isMobile = breakpoints.smaller('mobile')
@@ -95,6 +97,21 @@ export function useKeyboard() {
     onEventFired(e) {
       if (e.type !== 'keydown') return
       if (isEditing(e)) return
+
+      if (
+        e.key.toLowerCase() === 'm' &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        voice?.voiceState.value.inCall &&
+        store.state.activeTool !== 'TEXT' &&
+        !store.state.editingTextId
+      ) {
+        e.preventDefault()
+        voice.toggleMute()
+        return
+      }
 
       if (!e.metaKey && !e.ctrlKey && !e.altKey) {
         const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]
