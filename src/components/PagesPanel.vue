@@ -46,7 +46,9 @@ function onKeydown(e: KeyboardEvent, pageId: string) {
 <template>
   <div data-test-id="pages-panel" class="flex min-h-0 flex-1 flex-col">
     <div class="flex shrink-0 items-center justify-between px-3 py-1.5">
-      <span data-test-id="pages-header" class="text-[11px] uppercase tracking-wider text-muted">Pages</span>
+      <span data-test-id="pages-header" class="text-[11px] uppercase tracking-wider text-muted"
+        >Pages</span
+      >
       <button
         data-test-id="pages-add"
         class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"

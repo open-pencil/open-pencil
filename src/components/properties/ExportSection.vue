@@ -107,7 +107,13 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <div v-for="(setting, i) in settings" :key="i" data-test-id="export-item" :data-test-index="i" class="flex items-center gap-1.5 py-0.5">
+    <div
+      v-for="(setting, i) in settings"
+      :key="i"
+      data-test-id="export-item"
+      :data-test-index="i"
+      class="flex items-center gap-1.5 py-0.5"
+    >
       <AppSelect
         :model-value="setting.scale"
         :options="SCALE_OPTIONS"

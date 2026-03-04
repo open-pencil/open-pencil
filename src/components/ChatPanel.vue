@@ -61,7 +61,11 @@ function handleStop() {
             <ChatMessage v-for="msg in messages" :key="msg.id" :message="msg" />
 
             <!-- Typing indicator -->
-            <div v-if="status === 'submitted'" data-test-id="chat-typing-indicator" class="flex gap-2">
+            <div
+              v-if="status === 'submitted'"
+              data-test-id="chat-typing-indicator"
+              class="flex gap-2"
+            >
               <div
                 class="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted/20 text-[10px] font-bold text-muted"
               >

@@ -310,7 +310,10 @@ function setAlignment(primary: LayoutAlign, counter: LayoutCounterAlign) {
 
       <!-- Alignment grid + Gap -->
       <div class="mt-1.5 flex items-center gap-2">
-        <div data-test-id="layout-alignment-grid" class="grid grid-cols-3 gap-0.5 rounded border border-border bg-input p-1">
+        <div
+          data-test-id="layout-alignment-grid"
+          class="grid grid-cols-3 gap-0.5 rounded border border-border bg-input p-1"
+        >
           <button
             v-for="(a, i) in ALIGN_GRID"
             :key="i"

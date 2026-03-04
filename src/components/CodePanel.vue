@@ -38,12 +38,19 @@ watch(jsxCode, () => {
 </script>
 
 <template>
-  <div v-if="!jsxCode" data-test-id="code-panel-empty" class="flex flex-1 items-center justify-center px-4 text-center">
+  <div
+    v-if="!jsxCode"
+    data-test-id="code-panel-empty"
+    class="flex flex-1 items-center justify-center px-4 text-center"
+  >
     <span class="text-xs text-muted">Select a layer to see its JSX code</span>
   </div>
 
   <div v-else data-test-id="code-panel" class="flex min-h-0 flex-1 flex-col">
-    <div data-test-id="code-panel-header" class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5">
+    <div
+      data-test-id="code-panel-header"
+      class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5"
+    >
       <span class="text-[11px] text-muted">JSX</span>
       <button
         data-test-id="code-panel-copy"

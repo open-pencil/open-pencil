@@ -89,7 +89,11 @@ const menuClass =
       <span>Cut</span>
       <span class="text-[11px] text-muted">⌘X</span>
     </ContextMenuItem>
-    <ContextMenuItem data-test-id="context-paste" :class="itemClass" @select="document.execCommand('paste')">
+    <ContextMenuItem
+      data-test-id="context-paste"
+      :class="itemClass"
+      @select="document.execCommand('paste')"
+    >
       <span>Paste here</span>
       <span class="text-[11px] text-muted">⌘V</span>
     </ContextMenuItem>
@@ -102,7 +106,12 @@ const menuClass =
       <span>Duplicate</span>
       <span class="text-[11px] text-muted">⌘D</span>
     </ContextMenuItem>
-    <ContextMenuItem data-test-id="context-delete" :class="itemClass" :disabled="!hasSelection" @select="store.deleteSelected()">
+    <ContextMenuItem
+      data-test-id="context-delete"
+      :class="itemClass"
+      :disabled="!hasSelection"
+      @select="store.deleteSelected()"
+    >
       <span>Delete</span>
       <span class="text-[11px] text-muted">⌫</span>
     </ContextMenuItem>
@@ -128,26 +137,51 @@ const menuClass =
       </ContextMenuPortal>
     </ContextMenuSub>
 
-    <ContextMenuItem data-test-id="context-bring-to-front" :class="itemClass" :disabled="!hasSelection" @select="store.bringToFront()">
+    <ContextMenuItem
+      data-test-id="context-bring-to-front"
+      :class="itemClass"
+      :disabled="!hasSelection"
+      @select="store.bringToFront()"
+    >
       <span>Bring to front</span>
       <span class="text-[11px] text-muted">]</span>
     </ContextMenuItem>
-    <ContextMenuItem data-test-id="context-send-to-back" :class="itemClass" :disabled="!hasSelection" @select="store.sendToBack()">
+    <ContextMenuItem
+      data-test-id="context-send-to-back"
+      :class="itemClass"
+      :disabled="!hasSelection"
+      @select="store.sendToBack()"
+    >
       <span>Send to back</span>
       <span class="text-[11px] text-muted">[</span>
     </ContextMenuItem>
 
     <ContextMenuSeparator class="my-1 h-px bg-border" />
 
-    <ContextMenuItem data-test-id="context-group" :class="itemClass" :disabled="multiCount < 2" @select="store.groupSelected()">
+    <ContextMenuItem
+      data-test-id="context-group"
+      :class="itemClass"
+      :disabled="multiCount < 2"
+      @select="store.groupSelected()"
+    >
       <span>Group</span>
       <span class="text-[11px] text-muted">⌘G</span>
     </ContextMenuItem>
-    <ContextMenuItem v-if="isGroup" data-test-id="context-ungroup" :class="itemClass" @select="store.ungroupSelected()">
+    <ContextMenuItem
+      v-if="isGroup"
+      data-test-id="context-ungroup"
+      :class="itemClass"
+      @select="store.ungroupSelected()"
+    >
       <span>Ungroup</span>
       <span class="text-[11px] text-muted">⇧⌘G</span>
     </ContextMenuItem>
-    <ContextMenuItem v-if="hasSelection" data-test-id="context-auto-layout" :class="itemClass" @select="store.wrapInAutoLayout()">
+    <ContextMenuItem
+      v-if="hasSelection"
+      data-test-id="context-auto-layout"
+      :class="itemClass"
+      @select="store.wrapInAutoLayout()"
+    >
       <span>Add auto layout</span>
       <span class="text-[11px] text-muted">⇧A</span>
     </ContextMenuItem>
@@ -188,7 +222,12 @@ const menuClass =
     >
       <span>Go to main component</span>
     </ContextMenuItem>
-    <ContextMenuItem v-if="isInstance" data-test-id="context-detach-instance" :class="itemClass" @select="store.detachInstance()">
+    <ContextMenuItem
+      v-if="isInstance"
+      data-test-id="context-detach-instance"
+      :class="itemClass"
+      @select="store.detachInstance()"
+    >
       <span>Detach instance</span>
       <span class="text-[11px] text-muted">⌥⌘B</span>
     </ContextMenuItem>
@@ -196,18 +235,30 @@ const menuClass =
     <template v-if="hasSelection">
       <ContextMenuSeparator class="my-1 h-px bg-border" />
 
-      <ContextMenuItem data-test-id="context-toggle-visibility" :class="itemClass" @select="store.toggleVisibility()">
+      <ContextMenuItem
+        data-test-id="context-toggle-visibility"
+        :class="itemClass"
+        @select="store.toggleVisibility()"
+      >
         <span>{{ isVisible ? 'Hide' : 'Show' }}</span>
         <span class="text-[11px] text-muted">⇧⌘H</span>
       </ContextMenuItem>
-      <ContextMenuItem data-test-id="context-toggle-lock" :class="itemClass" @select="store.toggleLock()">
+      <ContextMenuItem
+        data-test-id="context-toggle-lock"
+        :class="itemClass"
+        @select="store.toggleLock()"
+      >
         <span>{{ isLocked ? 'Unlock' : 'Lock' }}</span>
         <span class="text-[11px] text-muted">⇧⌘L</span>
       </ContextMenuItem>
 
       <ContextMenuSeparator class="my-1 h-px bg-border" />
 
-      <ContextMenuItem data-test-id="context-export-png" :class="itemClass" @select="store.exportSelection(1, 'PNG')">
+      <ContextMenuItem
+        data-test-id="context-export-png"
+        :class="itemClass"
+        @select="store.exportSelection(1, 'PNG')"
+      >
         <span>Export as PNG</span>
         <span class="text-[11px] text-muted">⇧⌘E</span>
       </ContextMenuItem>

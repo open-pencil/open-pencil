@@ -157,7 +157,12 @@ function toggleExpand(index: number) {
 
     <p v-if="effectsAreMixed" class="text-[11px] text-muted">Click + to replace mixed effects</p>
 
-    <div v-for="(effect, i) in effectsAreMixed ? [] : ((node ?? nodes[0])?.effects ?? [])" :key="i" data-test-id="effects-item" :data-test-index="i">
+    <div
+      v-for="(effect, i) in effectsAreMixed ? [] : ((node ?? nodes[0])?.effects ?? [])"
+      :key="i"
+      data-test-id="effects-item"
+      :data-test-index="i"
+    >
       <!-- Collapsed row: color swatch | type dropdown | eye | minus -->
       <div class="group flex items-center gap-1.5 py-0.5">
         <button

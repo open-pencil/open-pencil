@@ -14,7 +14,10 @@ function save() {
 </script>
 
 <template>
-  <div data-test-id="api-key-setup" class="flex flex-1 flex-col items-center justify-center gap-4 px-4">
+  <div
+    data-test-id="api-key-setup"
+    class="flex flex-1 flex-col items-center justify-center gap-4 px-4"
+  >
     <icon-lucide-key-round class="size-8 text-muted" />
     <p class="text-center text-xs text-muted">Enter your OpenRouter API key to start chatting.</p>
     <form class="flex w-full gap-1.5" @submit.prevent="save">

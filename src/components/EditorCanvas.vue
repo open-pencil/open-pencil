@@ -40,8 +40,16 @@ const cursor = computed(() => {
 
 <template>
   <CanvasContextMenu>
-    <div data-test-id="canvas-area" class="canvas-area relative flex-1 min-w-0 min-h-0 overflow-hidden">
-      <canvas ref="canvasRef" data-test-id="canvas-element" :style="{ cursor }" class="block size-full touch-none" />
+    <div
+      data-test-id="canvas-area"
+      class="canvas-area relative flex-1 min-w-0 min-h-0 overflow-hidden"
+    >
+      <canvas
+        ref="canvasRef"
+        data-test-id="canvas-element"
+        :style="{ cursor }"
+        class="block size-full touch-none"
+      />
       <Transition leave-active-class="transition-opacity duration-300" leave-to-class="opacity-0">
         <div
           v-if="store.state.loading"

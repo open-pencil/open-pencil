@@ -147,7 +147,15 @@ const hueColor = computed(() => {
 
   <!-- Hue slider -->
   <div class="mt-2">
-    <input type="range" data-test-id="hsv-hue-slider" class="hue-slider" :value="hue" min="0" max="360" @input="onHueInput" />
+    <input
+      type="range"
+      data-test-id="hsv-hue-slider"
+      class="hue-slider"
+      :value="hue"
+      min="0"
+      max="360"
+      @input="onHueInput"
+    />
   </div>
 
   <!-- Alpha slider -->

@@ -55,7 +55,10 @@ function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
 </script>
 
 <template>
-  <div :data-test-id="`chat-message-${message.role}`" :class="message.role === 'user' ? 'flex justify-end' : ''">
+  <div
+    :data-test-id="`chat-message-${message.role}`"
+    :class="message.role === 'user' ? 'flex justify-end' : ''"
+  >
     <div class="min-w-0 space-y-1.5" :class="message.role === 'user' ? 'max-w-[85%]' : ''">
       <!-- Tool timeline -->
       <div

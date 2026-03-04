@@ -81,7 +81,10 @@ function activeKeyForTool(tool: (typeof TOOLS)[number]): Tool {
 
 <template>
   <div class="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center">
-    <div data-test-id="toolbar" class="flex gap-0.5 rounded-xl border border-border bg-panel p-1 shadow-lg">
+    <div
+      data-test-id="toolbar"
+      class="flex gap-0.5 rounded-xl border border-border bg-panel p-1 shadow-lg"
+    >
       <template v-for="tool in TOOLS" :key="tool.key">
         <!-- Tool with flyout: split button + chevron -->
         <div v-if="tool.flyout && tool.flyout.length > 1" class="flex items-center">
