@@ -7,12 +7,15 @@
 - Stroke align (Inside/Center/Outside) with clip-based rendering matching Figma behavior
 - Individual stroke weights per side (Top/Right/Bottom/Left) with side selector dropdown
 - Google Fonts fallback — automatically loads fonts from Google Fonts API when not available locally
+- Auto-save toggle in File menu — disable to prevent automatic writes to the opened .fig file
 
 ### Fixes
 
 - Show loading overlay until all document fonts are loaded (no more partially rendered text)
 - Load fonts when switching pages (previously only loaded for the first page)
 - Always show visibility toggle on fill, stroke, and effect rows (matches Figma)
+- Fix renderer crash on double destroy when closing files quickly
+- Fix .fig page ordering — use deterministic byte comparison for fractional index positions
 - Fix text truncation using `textTruncation` field instead of `textAutoResize`
 - Fix horizontal scrollbar on design and pages panels
 - Style scrollbars for Tauri (thin dark overlay instead of default OS chrome)
