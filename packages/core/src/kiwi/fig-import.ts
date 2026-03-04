@@ -1,3 +1,4 @@
+import type { VariableType, VariableValue } from '../scene-graph'
 import { SceneGraph } from '../scene-graph'
 
 import { guidToString, nodeChangeToProps, sortChildren } from './kiwi-convert'
@@ -104,8 +105,8 @@ export function importNodeChanges(
         })
       }
 
-      let type: import('../scene-graph').VariableType = 'FLOAT'
-      let value: import('../scene-graph').VariableValue = 0
+      let type: VariableType = 'FLOAT'
+      let value: VariableValue = 0
       const dt = varData.dataType
       const v = varData.value
 
