@@ -8,9 +8,13 @@
 - Individual stroke weights per side (Top/Right/Bottom/Left) with side selector dropdown
 - Google Fonts fallback — automatically loads fonts from Google Fonts API when not available locally
 - Auto-save toggle in File menu — disable to prevent automatic writes to the opened .fig file
+- Renderer profiler with in-canvas HUD overlay, GPU timing, and phase instrumentation
 
 ### Fixes
 
+- Fix instance overrides on .fig import — resolve guidPaths by overrideKey, handle component swaps (`overriddenSymbolID`), propagate through nested clone chains
+- Fix internal pages becoming visible after .fig round-trip — preserve `internalOnly` flag on export
+- Scope layout recomputation to current page for paste/undo/font-load (major speedup on large multi-page files)
 - Show loading overlay until all document fonts are loaded (no more partially rendered text)
 - Load fonts when switching pages (previously only loaded for the first page)
 - Always show visibility toggle on fill, stroke, and effect rows (matches Figma)
