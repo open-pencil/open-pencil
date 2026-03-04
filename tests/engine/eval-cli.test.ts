@@ -109,12 +109,20 @@ describe('eval CLI', () => {
   })
 
   test('stdin reads code from pipe', async () => {
-    const { stdout, exitCode } = await run(
-      ['eval', FIXTURE, '--stdin'],
-      'return figma.currentPage.name',
-    )
-    expect(exitCode).toBe(0)
-    expect(stdout.length).toBeGreaterThan(0)
+    const proc = Bun.spawn(['bun', CLI, 'eval', FIXTURE, '--stdin'], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+      stdin: 'pipe',
+    })
+    proc.stdin.write('return figma.currentPage.name')
+    proc.stdin.end()
+    const [stdout, stderr] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+    ])
+    const exitCode = await proc.exited
+    if (exitCode !== 0) throw new Error(`exit ${exitCode}: ${stderr}`)
+    expect(stdout.trim().length).toBeGreaterThan(0)
   })
 
   test('--json outputs valid JSON', async () => {
