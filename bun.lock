@@ -26,7 +26,7 @@
         "fzstd": "^0.1.1",
         "lib0": "^0.2.117",
         "prismjs": "^1.30.0",
-        "reka-ui": "^2.8.2",
+        "reka-ui": "^2.9.0",
         "tailwindcss": "^4.2.1",
         "trystero": "^0.22.0",
         "valibot": "^1.2.0",
@@ -61,7 +61,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.4.2",
+      "version": "0.6.0",
       "bin": {
         "openpencil": "./src/index.ts",
       },
@@ -77,7 +77,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.4.2",
+      "version": "0.6.0",
       "dependencies": {
         "canvaskit-wasm": "^0.40.0",
         "culori": "^4.0.2",
@@ -99,7 +99,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.4.2",
+      "version": "0.6.0",
       "bin": {
         "openpencil-mcp": "./dist/index.js",
         "openpencil-mcp-http": "./dist/http.js",
@@ -1590,7 +1590,7 @@
 
     "regex-utilities": ["regex-utilities@2.3.0", "", {}, "sha512-8VhliFJAWRaUiVvREIiW2NXXTmHs4vMNnSzuJVhscgmGav3g9VDxLrQndI3dZZVVdp0ZO/5v0xmX516/7M9cng=="],
 
-    "reka-ui": ["reka-ui@2.8.2", "", { "dependencies": { "@floating-ui/dom": "^1.6.13", "@floating-ui/vue": "^1.1.6", "@internationalized/date": "^3.5.0", "@internationalized/number": "^3.5.0", "@tanstack/vue-virtual": "^3.12.0", "@vueuse/core": "^14.1.0", "@vueuse/shared": "^14.1.0", "aria-hidden": "^1.2.4", "defu": "^6.1.4", "ohash": "^2.0.11" }, "peerDependencies": { "vue": ">= 3.2.0" } }, "sha512-8lTKcJhmG+D3UyJxhBnNnW/720sLzm0pbA9AC1MWazmJ5YchJAyTSl+O00xP/kxBmEN0fw5JqWVHguiFmsGjzA=="],
+    "reka-ui": ["reka-ui@2.9.0", "", { "dependencies": { "@floating-ui/dom": "^1.6.13", "@floating-ui/vue": "^1.1.6", "@internationalized/date": "^3.5.0", "@internationalized/number": "^3.5.0", "@tanstack/vue-virtual": "^3.12.0", "@vueuse/core": "^14.1.0", "@vueuse/shared": "^14.1.0", "aria-hidden": "^1.2.4", "defu": "^6.1.4", "ohash": "^2.0.11" }, "peerDependencies": { "vue": ">= 3.4.0" } }, "sha512-5dpp80u109iLTbRBu+jhAk8R/877/JN20gYGjb3GsuAgS7E/5QTX5ZxuzWtZAVbChBDYDpXc8pkaQAFpa6s+4w=="],
 
     "repeat-string": ["repeat-string@1.6.1", "", {}, "sha512-PV0dzCYDNfRi1jCDbJzpW7jNNDRuCOG/jI5ctQcGKt/clZD+YcPS3yIlWuTJMmESC8aevCFmWJy5wjAFgNqN6w=="],
 
