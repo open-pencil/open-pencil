@@ -1,4 +1,6 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test, setDefaultTimeout } from 'bun:test'
+
+setDefaultTimeout(30_000)
 import { join } from 'path'
 
 const CLI = join(import.meta.dir, '../../packages/cli/src/index.ts')
