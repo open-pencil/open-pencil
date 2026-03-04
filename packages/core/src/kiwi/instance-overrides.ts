@@ -4,19 +4,13 @@ import type { GUID } from './codec'
 
 interface SymbolOverride {
   guidPath?: { guids?: GUID[] }
+  overriddenSymbolID?: GUID
   [key: string]: unknown
 }
 
 interface SymbolData {
   symbolID?: GUID
   symbolOverrides?: SymbolOverride[]
-}
-
-interface ComponentPropDef {
-  id: GUID
-  name: string
-  type: string
-  initialValue?: { boolValue?: boolean; textValue?: string }
 }
 
 interface ComponentPropRef {
@@ -32,7 +26,6 @@ interface ComponentPropAssignment {
 interface DerivedSymbolOverride {
   guidPath?: { guids?: GUID[] }
   size?: { x: number; y: number }
-  [key: string]: unknown
 }
 
 export interface InstanceNodeChange {
@@ -40,7 +33,6 @@ export interface InstanceNodeChange {
   guid?: GUID
   overrideKey?: GUID
   symbolData?: SymbolData
-  componentPropDefs?: ComponentPropDef[]
   componentPropRefs?: ComponentPropRef[]
   componentPropAssignments?: ComponentPropAssignment[]
   derivedSymbolData?: DerivedSymbolOverride[]
@@ -85,14 +77,14 @@ export function populateAndApplyOverrides(
 
   // Component root resolution (walks componentId chain to the ultimate source)
   const componentIdRoot = new Map<string, string>()
-  function getComponentRoot(nodeId: string): string {
+  function getComponentRoot(nodeId: string, depth = 0): string {
     if (componentIdRoot.has(nodeId)) return componentIdRoot.get(nodeId) ?? nodeId
     const node = graph.getNode(nodeId)
-    if (!node?.componentId) {
+    if (!node?.componentId || depth > 20) {
       componentIdRoot.set(nodeId, nodeId)
       return nodeId
     }
-    const root = getComponentRoot(node.componentId)
+    const root = getComponentRoot(node.componentId, depth + 1)
     componentIdRoot.set(nodeId, root)
     return root
   }
@@ -101,14 +93,11 @@ export function populateAndApplyOverrides(
     const targetRoot = getComponentRoot(componentId)
     const parent = graph.getNode(parentId)
     if (!parent) return null
-    // Check direct children first, then recurse
     for (const childId of parent.childIds) {
       const child = graph.getNode(childId)
       if (!child) continue
       if (child.componentId === componentId) return childId
       if (child.componentId && getComponentRoot(child.componentId) === targetRoot) return childId
-    }
-    for (const childId of parent.childIds) {
       const deep = findNodeByComponentId(childId, componentId)
       if (deep) return deep
     }
@@ -147,6 +136,35 @@ export function populateAndApplyOverrides(
   // Component children reference property definitions via componentPropRefs.
   // Instances set values via componentPropAssignments. After cloning, we walk
   // each instance's descendants and apply the assignments.
+
+  function findPropRefs(nodeId: string, propRefsMap: Map<string, ComponentPropRef[]>): ComponentPropRef[] | undefined {
+    let sourceId: string | undefined = nodeId
+    for (let depth = 0; sourceId && depth < 10; depth++) {
+      const figmaId = nodeIdToGuid.get(sourceId)
+      if (figmaId) {
+        const refs = propRefsMap.get(figmaId)
+        if (refs) return refs
+      }
+      const node = graph.getNode(sourceId)
+      const nextId = node?.componentId ?? undefined
+      if (nextId === sourceId) break
+      sourceId = nextId
+    }
+    return undefined
+  }
+
+  function repopulateInstance(nodeId: string, compId: string) {
+    const node = graph.getNode(nodeId)
+    if (!node || node.type !== 'INSTANCE') return
+    for (const childId of [...node.childIds]) graph.deleteNode(childId)
+    graph.updateNode(nodeId, { componentId: compId })
+    const comp = graph.getNode(compId)
+    if (comp && comp.childIds.length > 0) {
+      graph.populateInstanceChildren(nodeId, compId)
+    }
+    componentIdRoot.clear()
+  }
+
   function applyComponentProperties() {
     const propRefsMap = new Map<string, ComponentPropRef[]>()
     for (const [figmaId, nc] of changeMap) {
@@ -157,76 +175,53 @@ export function populateAndApplyOverrides(
     if (propRefsMap.size === 0) return
 
     for (const [figmaId, nc] of changeMap) {
-      const assignments = (nc as Record<string, unknown>).componentPropAssignments as ComponentPropAssignment[] | undefined
-      if (!assignments?.length) continue
+      if (!nc.componentPropAssignments?.length) continue
 
       const instanceNodeId = guidToNodeId.get(figmaId)
       if (!instanceNodeId) continue
-      const instanceNode = graph.getNode(instanceNodeId)
-      if (!instanceNode || instanceNode.type !== 'INSTANCE') continue
+      if (graph.getNode(instanceNodeId)?.type !== 'INSTANCE') continue
 
       const valueByDef = new Map<string, ComponentPropAssignment['value']>()
-      for (const a of assignments) {
-        if (!a.defID) continue
-        valueByDef.set(guidToString(a.defID), a.value)
+      for (const a of nc.componentPropAssignments) {
+        if (a.defID) valueByDef.set(guidToString(a.defID), a.value)
       }
 
-      function applyToDescendants(parentId: string) {
-        const parent = graph.getNode(parentId)
-        if (!parent) return
-        for (const childId of parent.childIds) {
-          const child = graph.getNode(childId)
-          if (!child) continue
+      applyPropAssignments(instanceNodeId, valueByDef, propRefsMap)
+    }
+  }
 
-          if (child.componentId) {
-            // Walk componentId chain to find the source node's propRefs
-            let sourceId: string | undefined = child.componentId
-            let refs: ComponentPropRef[] | undefined
-            const seen = new Set<string>()
-            while (sourceId && !seen.has(sourceId)) {
-              seen.add(sourceId)
-              const fid = nodeIdToGuid.get(sourceId)
-              if (fid) {
-                refs = propRefsMap.get(fid)
-                if (refs) break
-              }
-              const sourceNode = graph.getNode(sourceId)
-              sourceId = sourceNode?.componentId ?? undefined
-            }
+  function applyPropAssignments(
+    parentId: string,
+    valueByDef: Map<string, ComponentPropAssignment['value']>,
+    propRefsMap: Map<string, ComponentPropRef[]>
+  ) {
+    const parent = graph.getNode(parentId)
+    if (!parent) return
 
-            if (refs) {
-              for (const ref of refs) {
-                if (!ref.defID) continue
-                const defKey = guidToString(ref.defID)
-                const val = valueByDef.get(defKey)
-                if (!val) continue
+    for (const childId of parent.childIds) {
+      const child = graph.getNode(childId)
+      if (!child?.componentId) {
+        applyPropAssignments(childId, valueByDef, propRefsMap)
+        continue
+      }
 
-                if (ref.componentPropNodeField === 'VISIBLE' && val.boolValue !== undefined) {
-                  graph.updateNode(childId, { visible: val.boolValue })
-                } else if (ref.componentPropNodeField === 'OVERRIDDEN_SYMBOL_ID') {
-                  // Instance swap via component property
-                  const swapTarget = val.textValue ?? (val as Record<string, unknown>).guidValue
-                  if (!swapTarget || typeof swapTarget !== 'string') continue
-                  const newCompId = guidToNodeId.get(swapTarget)
-                  if (newCompId && child.type === 'INSTANCE') {
-                    for (const cid of [...child.childIds]) graph.deleteNode(cid)
-                    graph.updateNode(childId, { componentId: newCompId })
-                    const newComp = graph.getNode(newCompId)
-                    if (newComp && newComp.childIds.length > 0) {
-                      graph.populateInstanceChildren(childId, newCompId)
-                    }
-                    componentIdRoot.clear()
-                  }
-                }
-              }
-            }
+      const refs = findPropRefs(child.componentId, propRefsMap)
+      if (refs) {
+        for (const ref of refs) {
+          if (!ref.defID) continue
+          const val = valueByDef.get(guidToString(ref.defID))
+          if (!val) continue
+
+          if (ref.componentPropNodeField === 'VISIBLE' && val.boolValue !== undefined) {
+            graph.updateNode(childId, { visible: val.boolValue })
+          } else if (ref.componentPropNodeField === 'OVERRIDDEN_SYMBOL_ID' && val.textValue) {
+            const newCompId = guidToNodeId.get(val.textValue)
+            if (newCompId) repopulateInstance(childId, newCompId)
           }
-
-          applyToDescendants(childId)
         }
       }
 
-      applyToDescendants(instanceNodeId)
+      applyPropAssignments(childId, valueByDef, propRefsMap)
     }
   }
 
@@ -278,24 +273,12 @@ export function populateAndApplyOverrides(
 
         overriddenNodes.add(targetId)
 
-        // Instance swap
-        const swapGuid = (ov as Record<string, unknown>).overriddenSymbolID as GUID | undefined
-        if (swapGuid) {
-          const swapFigmaId = guidToString(swapGuid)
-          const newCompId = guidToNodeId.get(swapFigmaId)
-          const target = graph.getNode(targetId)
-          if (newCompId && target?.type === 'INSTANCE') {
-            for (const childId of [...target.childIds]) graph.deleteNode(childId)
-            graph.updateNode(targetId, { componentId: newCompId })
-            const newComp = graph.getNode(newCompId)
-            if (newComp && newComp.childIds.length > 0) {
-              graph.populateInstanceChildren(targetId, newCompId)
-            }
-            componentIdRoot.clear()
-          }
+        if (ov.overriddenSymbolID) {
+          const newCompId = guidToNodeId.get(guidToString(ov.overriddenSymbolID))
+          if (newCompId) repopulateInstance(targetId, newCompId)
         }
 
-        const { guidPath: _, overriddenSymbolID: _s, ...fields } = ov as Record<string, unknown>
+        const { guidPath: _, overriddenSymbolID: _s, ...fields } = ov
         if (Object.keys(fields).length === 0) continue
 
         const updates = convertOverrideToProps(fields as Record<string, unknown>)
@@ -306,6 +289,9 @@ export function populateAndApplyOverrides(
     }
   }
 
+  // Order matters: symbolOverrides set property values, componentProperties
+  // toggle visibility/swap instances, derivedSymbolData applies Figma's
+  // pre-computed sizes for the resulting configuration.
   applySymbolOverrides()
   applyComponentProperties()
   applyDerivedSymbolData()
@@ -351,8 +337,7 @@ export function populateAndApplyOverrides(
       if (!node) continue
 
       if (node.type === 'INSTANCE' && source.type === 'INSTANCE' && node.componentId) {
-        for (const childId of [...node.childIds]) graph.deleteNode(childId)
-        graph.populateInstanceChildren(node.id, node.componentId)
+        repopulateInstance(node.id, node.componentId)
       } else {
         const updates: Partial<SceneNode> = {}
         if (source.text !== node.text) updates.text = source.text
