@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Demo recording infrastructure — `packages/demos` with webreel for scripted browser demo capture (`bun run demo`, `demo:list`, `demo:preview`)
+
 ### Fixes
 
 - Fix horizontal scrollbar on design and pages panels

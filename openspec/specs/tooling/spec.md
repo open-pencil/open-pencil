@@ -79,15 +79,18 @@ The codebase SHALL maintain 0 oxlint warnings and 0 tsgo type errors. `bun run c
 - **THEN** both lint and typecheck pass with zero issues
 
 ### Requirement: Bun workspace monorepo
-The project SHALL use Bun workspaces with packages: root (app), packages/core (@open-pencil/core), packages/cli (@open-pencil/cli). The workspace is configured in the root package.json. CLI is runnable via `bun open-pencil` in the workspace.
+The project SHALL use Bun workspaces with packages: root (app), packages/core (@open-pencil/core), packages/cli (@open-pencil/cli), packages/docs (@open-pencil/docs), packages/demos. The workspace is configured in the root package.json. CLI is runnable via `bun open-pencil` in the workspace. Demo recording is runnable via `bun run demo:record`.
 
 #### Scenario: Workspace packages resolve
 - **WHEN** the app imports from @open-pencil/core
 - **THEN** Bun resolves it to packages/core/ via workspace linking
 
+#### Scenario: Demo recording scripts available
+- **WHEN** `bun run demo:record` is executed at the project root
+- **THEN** the script delegates to the packages/demos recording workflow
+
 ### Requirement: npm publishing preparation
 @open-pencil/core and @open-pencil/cli SHALL have proper package.json fields for npm publishing: name, version, description, exports, main, types, files, license, repository.
-
 
 ### Requirement: Copy-paste detection
 The project SHALL use jscpd for copy-paste detection. The `bun run jscpd` command SHALL scan for duplicated code blocks.
@@ -109,3 +112,4 @@ The project SHALL include a `test:coverage` script for measuring code coverage.
 #### Scenario: Run coverage
 - **WHEN** `bun run test:coverage` is run
 - **THEN** test coverage metrics are reported
+

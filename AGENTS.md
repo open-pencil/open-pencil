@@ -6,10 +6,11 @@ Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also 
 
 ## Monorepo
 
-Bun workspace with three packages:
+Bun workspace with four packages:
 
 - `packages/core` — `@open-pencil/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
 - `packages/cli` — `@open-pencil/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
+- `packages/demos` — `@open-pencil/demos`: scripted demo recording via webreel (fork: `@sld0ant/webreel-fork`). See [Demos](#demos).
 - `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Stdio + HTTP (Hono). Reuses `createServer()` factory with all core tools.
 
 The root app (`src/`) is the Tauri/Vite desktop editor. Its `src/engine/` files are thin re-export shims from `@open-pencil/core`.
@@ -33,6 +34,11 @@ The root app (`src/`) is the Tauri/Vite desktop editor. Its `src/engine/` files 
 - `bun open-pencil analyze typography <file>` — font/size/weight stats
 - `bun open-pencil analyze spacing <file>` — gap/padding values
 - `bun open-pencil analyze clusters <file>` — repeated patterns
+- `bun run demo` — record all demo videos (dev server must be running)
+- `bun run demo --scenario toolbar` — record a specific demo by name
+- `bun run demo:list` — list available demo scenarios
+- `bun run demo:preview` — preview all demos in visible browser without recording
+- `bun run demo:preview --scenario toolbar` — preview a specific demo
 
 ## Releases & CI
 
@@ -82,6 +88,18 @@ When adding features, update `CHANGELOG.md` (Unreleased section) and `README.md`
 - All CLI output must use `agentfmt` formatters — `fmtList`, `fmtHistogram`, `fmtSummary`, `fmtNode`, `fmtTree`, `kv`, `entity`, `bold`, `dim`, etc.
 - Don't hand-roll `console.log` formatting — use the helpers from `packages/cli/src/format.ts` which re-exports agentfmt with project-specific adapters (`nodeToData`, `nodeDetails`, `nodeToTreeNode`, `nodeToListItem`)
 - Every command supports `--json` for machine-readable output
+
+## Demos
+
+- `packages/demos` uses `@sld0ant/webreel-fork` (fork of [vercel-labs/webreel](https://github.com/vercel-labs/webreel)) to record scripted browser demos
+- API mirrors Playwright: `bun run demo` (all), `bun run demo --scenario <name>` (specific), `bun run demo:preview` (visible browser)
+- Scenarios defined in `packages/demos/webreel.config.json` — single config with multiple videos in the `videos` object
+- Dev server (`bun run dev` or `bun run tauri dev`) must be running at `http://localhost:1420` before recording
+- Chrome and ffmpeg are auto-downloaded to `~/.webreel` on first run (~500MB one-time)
+- Generated videos go to `packages/demos/videos/` — gitignored, not stored in repo
+- Scenarios target `data-test-id` selectors for stability
+- To add a new demo: add a video entry to `webreel.config.json` with url, steps, and optional output format
+- Output formats: WebM (project default), MP4 (`"output": "name.mp4"`), GIF (`"output": "name.gif"`)
 
 ## Tools (AI / MCP / CLI)
 

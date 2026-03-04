@@ -26,7 +26,10 @@
     "open-pencil": "bun packages/cli/src/index.ts",
     "docs:dev": "bun --filter @open-pencil/docs dev",
     "docs:build": "bun --filter @open-pencil/docs build",
-    "docs:preview": "bun --filter @open-pencil/docs preview"
+    "docs:preview": "bun --filter @open-pencil/docs preview",
+    "demo": "bun packages/demos/scripts/record.ts",
+    "demo:list": "bun packages/demos/scripts/list.ts",
+    "demo:preview": "bun packages/demos/scripts/record.ts --preview"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.37",

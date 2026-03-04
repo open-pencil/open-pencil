@@ -1,0 +1,25 @@
+{
+  "$schema": "https://webreel.dev/schema/v1.json",
+  "outDir": "videos/",
+  "baseUrl": "http://localhost:1420",
+  "viewport": { "width": 1280, "height": 720 },
+  "defaultDelay": 400,
+  "videos": {
+    "toolbar": {
+      "url": "/",
+      "output": "toolbar.webm",
+      "waitFor": "[data-test-id=\"toolbar\"]",
+      "steps": [
+        { "action": "pause", "ms": 800 },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-select\"]" },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-frame\"]" },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-rectangle\"]" },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-pen\"]" },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-text\"]" },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-hand\"]" },
+        { "action": "click", "selector": "[data-test-id=\"toolbar-tool-select\"]" },
+        { "action": "pause", "ms": 500 }
+      ]
+    }
+  }
+}

@@ -34,5 +34,7 @@ packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/
 packages/collab/.wrangler/
 packages/core/vendor/canvaskit-webgpu/
+packages/demos/videos/
+packages/demos/.webreel/
 patches/skia-webgpu/
 .wrangler/
