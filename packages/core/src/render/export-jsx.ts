@@ -98,58 +98,90 @@ function formatProp(key: string, value: unknown): string {
   return `${key}={${JSON.stringify(value)}}`
 }
 
+function getNodeContext(node: SceneNode, graph: SceneGraph) {
+  const parent = node.parentId ? graph.getNode(node.parentId) : null
+  return {
+    isAutoLayout: node.layoutMode !== 'NONE',
+    parentIsAutoLayout: parent ? parent.layoutMode !== 'NONE' : false
+  }
+}
+
+type PaddingEdges = { pt: number; pr: number; pb: number; pl: number }
+
+function collectPadding(node: SceneNode): PaddingEdges | null {
+  const { paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl } = node
+  if (pt === 0 && pr === 0 && pb === 0 && pl === 0) return null
+  return { pt, pr, pb, pl }
+}
+
+function emitPadding<T>(
+  edges: PaddingEdges,
+  uniform: (v: number) => T,
+  symmetric: (y: number, x: number) => T[],
+  individual: (edges: PaddingEdges) => T[]
+): T[] {
+  const { pt, pr, pb, pl } = edges
+  if (pt === pr && pr === pb && pb === pl) return [uniform(pt)]
+  if (pt === pb && pl === pr) return symmetric(pt, pl)
+  return individual(edges)
+}
+
+interface CornerRadii {
+  tl: number
+  tr: number
+  br: number
+  bl: number
+}
+
+function collectCornerRadii(node: SceneNode): CornerRadii | null {
+  if (node.cornerRadius <= 0) return null
+  if (node.independentCorners) {
+    return {
+      tl: node.topLeftRadius,
+      tr: node.topRightRadius,
+      br: node.bottomRightRadius,
+      bl: node.bottomLeftRadius
+    }
+  }
+  const r = node.cornerRadius
+  return { tl: r, tr: r, br: r, bl: r }
+}
+
+// --- OpenPencil format ---
+
 function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
   const props: [string, unknown][] = []
+  const { isAutoLayout, parentIsAutoLayout } = getNodeContext(node, graph)
 
   if (node.name && node.name !== node.type) {
     props.push(['name', node.name])
   }
 
-  if (node.layoutMode !== 'NONE') {
-    props.push(['flex', node.layoutMode === 'HORIZONTAL' ? 'row' : 'col'])
-  }
-
-  const isAutoLayout = node.layoutMode !== 'NONE'
-  const parent = node.parentId ? graph.getNode(node.parentId) : null
-  const parentIsAutoLayout = parent ? parent.layoutMode !== 'NONE' : false
-
   if (isAutoLayout) {
+    props.push(['flex', node.layoutMode === 'HORIZONTAL' ? 'row' : 'col'])
     const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
     const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
 
-    if (node.primaryAxisSizing === 'HUG') {
-      /* hug is default with flex, omit */
-    } else if (node.primaryAxisSizing === 'FILL') {
+    if (node.primaryAxisSizing === 'FILL')
       props.push([primaryAxis === 'width' ? 'w' : 'h', 'fill'])
-    } else {
+    else if (node.primaryAxisSizing !== 'HUG')
       props.push([primaryAxis === 'width' ? 'w' : 'h', node[primaryAxis]])
-    }
 
-    if (node.counterAxisSizing === 'HUG') {
-      /* hug is default, omit */
-    } else if (node.counterAxisSizing === 'FILL') {
+    if (node.counterAxisSizing === 'FILL')
       props.push([crossAxis === 'width' ? 'w' : 'h', 'fill'])
-    } else {
+    else if (node.counterAxisSizing !== 'HUG')
       props.push([crossAxis === 'width' ? 'w' : 'h', node[crossAxis]])
-    }
   } else {
     if (node.width > 0) props.push(['w', node.width])
     if (node.height > 0) props.push(['h', node.height])
   }
 
-  if (parentIsAutoLayout && node.layoutGrow > 0) {
-    props.push(['grow', node.layoutGrow])
-  }
-
-  if (isAutoLayout && node.itemSpacing > 0) {
-    props.push(['gap', node.itemSpacing])
-  }
+  if (parentIsAutoLayout && node.layoutGrow > 0) props.push(['grow', node.layoutGrow])
+  if (isAutoLayout && node.itemSpacing > 0) props.push(['gap', node.itemSpacing])
 
   if (isAutoLayout && node.layoutWrap === 'WRAP') {
     props.push(['wrap', true])
-    if (node.counterAxisSpacing > 0) {
-      props.push(['rowGap', node.counterAxisSpacing])
-    }
+    if (node.counterAxisSpacing > 0) props.push(['rowGap', node.counterAxisSpacing])
   }
 
   if (isAutoLayout) {
@@ -160,22 +192,24 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
     if (node.counterAxisAlign === 'CENTER') props.push(['items', 'center'])
     else if (node.counterAxisAlign === 'MAX') props.push(['items', 'end'])
     else if (node.counterAxisAlign === 'STRETCH') props.push(['items', 'stretch'])
-  }
 
-  if (isAutoLayout) {
-    const { paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl } = node
-    if (pt > 0 || pr > 0 || pb > 0 || pl > 0) {
-      if (pt === pr && pr === pb && pb === pl) {
-        props.push(['p', pt])
-      } else if (pt === pb && pl === pr) {
-        props.push(['py', pt])
-        props.push(['px', pl])
-      } else {
-        if (pt > 0) props.push(['pt', pt])
-        if (pr > 0) props.push(['pr', pr])
-        if (pb > 0) props.push(['pb', pb])
-        if (pl > 0) props.push(['pl', pl])
-      }
+    const pad = collectPadding(node)
+    if (pad) {
+      props.push(
+        ...emitPadding(
+          pad,
+          (v) => ['p', v] as [string, unknown],
+          (y, x) => [['py', y], ['px', x]] as [string, unknown][],
+          ({ pt, pr, pb, pl }) => {
+            const r: [string, unknown][] = []
+            if (pt > 0) r.push(['pt', pt])
+            if (pr > 0) r.push(['pr', pr])
+            if (pb > 0) r.push(['pb', pb])
+            if (pl > 0) r.push(['pl', pl])
+            return r
+          }
+        )
+      )
     }
   }
 
@@ -188,24 +222,16 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
     if (stroke.weight !== 1) props.push(['strokeWidth', stroke.weight])
   }
 
-  if (node.cornerRadius > 0) {
-    if (node.independentCorners) {
-      const {
-        topLeftRadius: tl,
-        topRightRadius: tr,
-        bottomRightRadius: br,
-        bottomLeftRadius: bl
-      } = node
-      if (tl === tr && tr === br && br === bl) {
-        props.push(['rounded', tl])
-      } else {
-        if (tl > 0) props.push(['roundedTL', tl])
-        if (tr > 0) props.push(['roundedTR', tr])
-        if (br > 0) props.push(['roundedBR', br])
-        if (bl > 0) props.push(['roundedBL', bl])
-      }
+  const corners = collectCornerRadii(node)
+  if (corners) {
+    const { tl, tr, br, bl } = corners
+    if (tl === tr && tr === br && br === bl) {
+      props.push(['rounded', tl])
     } else {
-      props.push(['rounded', node.cornerRadius])
+      if (tl > 0) props.push(['roundedTL', tl])
+      if (tr > 0) props.push(['roundedTR', tr])
+      if (br > 0) props.push(['roundedBR', br])
+      if (bl > 0) props.push(['roundedBL', bl])
     }
   }
 
@@ -229,7 +255,8 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
 
   if (node.type === 'TEXT') {
     if (node.fontSize !== 14) props.push(['size', node.fontSize])
-    if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY) props.push(['font', node.fontFamily])
+    if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY)
+      props.push(['font', node.fontFamily])
     if (node.fontWeight !== 400) {
       if (node.fontWeight === 700) props.push(['weight', 'bold'])
       else if (node.fontWeight === 500) props.push(['weight', 'medium'])
@@ -257,53 +284,44 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
   return props
 }
 
+// --- Tailwind CSS v4 format ---
+
+function twRounded(prefix: string, px: number): string {
+  const r = borderRadiusToTw(px)
+  return r ? `${prefix}-${r}` : prefix
+}
+
 function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
   const classes: string[] = []
-  const isAutoLayout = node.layoutMode !== 'NONE'
+  const { isAutoLayout, parentIsAutoLayout } = getNodeContext(node, graph)
 
   if (isAutoLayout) {
     classes.push('flex')
     if (node.layoutMode === 'VERTICAL') classes.push('flex-col')
-  }
 
-  const parent = node.parentId ? graph.getNode(node.parentId) : null
-  const parentIsAutoLayout = parent ? parent.layoutMode !== 'NONE' : false
-
-  if (isAutoLayout) {
     const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
     const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
     const wProp = primaryAxis === 'width' ? 'w' : 'h'
     const hProp = crossAxis === 'width' ? 'w' : 'h'
 
-    if (node.primaryAxisSizing === 'FILL') {
-      classes.push(`${wProp}-full`)
-    } else if (node.primaryAxisSizing !== 'HUG') {
+    if (node.primaryAxisSizing === 'FILL') classes.push(`${wProp}-full`)
+    else if (node.primaryAxisSizing !== 'HUG')
       classes.push(`${wProp}-${pxToSpacing(node[primaryAxis])}`)
-    }
 
-    if (node.counterAxisSizing === 'FILL') {
-      classes.push(`${hProp}-full`)
-    } else if (node.counterAxisSizing !== 'HUG') {
+    if (node.counterAxisSizing === 'FILL') classes.push(`${hProp}-full`)
+    else if (node.counterAxisSizing !== 'HUG')
       classes.push(`${hProp}-${pxToSpacing(node[crossAxis])}`)
-    }
   } else {
     if (node.width > 0) classes.push(`w-${pxToSpacing(node.width)}`)
     if (node.height > 0) classes.push(`h-${pxToSpacing(node.height)}`)
   }
 
-  if (parentIsAutoLayout && node.layoutGrow > 0) {
-    classes.push('grow')
-  }
-
-  if (isAutoLayout && node.itemSpacing > 0) {
-    classes.push(`gap-${pxToSpacing(node.itemSpacing)}`)
-  }
+  if (parentIsAutoLayout && node.layoutGrow > 0) classes.push('grow')
+  if (isAutoLayout && node.itemSpacing > 0) classes.push(`gap-${pxToSpacing(node.itemSpacing)}`)
 
   if (isAutoLayout && node.layoutWrap === 'WRAP') {
     classes.push('flex-wrap')
-    if (node.counterAxisSpacing > 0) {
-      classes.push(`gap-y-${pxToSpacing(node.counterAxisSpacing)}`)
-    }
+    if (node.counterAxisSpacing > 0) classes.push(`gap-y-${pxToSpacing(node.counterAxisSpacing)}`)
   }
 
   if (isAutoLayout) {
@@ -314,22 +332,24 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
     if (node.counterAxisAlign === 'CENTER') classes.push('items-center')
     else if (node.counterAxisAlign === 'MAX') classes.push('items-end')
     else if (node.counterAxisAlign === 'STRETCH') classes.push('items-stretch')
-  }
 
-  if (isAutoLayout) {
-    const { paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl } = node
-    if (pt > 0 || pr > 0 || pb > 0 || pl > 0) {
-      if (pt === pr && pr === pb && pb === pl) {
-        classes.push(`p-${pxToSpacing(pt)}`)
-      } else if (pt === pb && pl === pr) {
-        classes.push(`py-${pxToSpacing(pt)}`)
-        classes.push(`px-${pxToSpacing(pl)}`)
-      } else {
-        if (pt > 0) classes.push(`pt-${pxToSpacing(pt)}`)
-        if (pr > 0) classes.push(`pr-${pxToSpacing(pr)}`)
-        if (pb > 0) classes.push(`pb-${pxToSpacing(pb)}`)
-        if (pl > 0) classes.push(`pl-${pxToSpacing(pl)}`)
-      }
+    const pad = collectPadding(node)
+    if (pad) {
+      classes.push(
+        ...emitPadding(
+          pad,
+          (v) => `p-${pxToSpacing(v)}`,
+          (y, x) => [`py-${pxToSpacing(y)}`, `px-${pxToSpacing(x)}`],
+          ({ pt, pr, pb, pl }) => {
+            const r: string[] = []
+            if (pt > 0) r.push(`pt-${pxToSpacing(pt)}`)
+            if (pr > 0) r.push(`pr-${pxToSpacing(pr)}`)
+            if (pb > 0) r.push(`pb-${pxToSpacing(pb)}`)
+            if (pl > 0) r.push(`pl-${pxToSpacing(pl)}`)
+            return r
+          }
+        )
+      )
     }
   }
 
@@ -343,38 +363,16 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
     classes.push(`border-${colorToTwClass(stroke.color)}`)
   }
 
-  if (node.cornerRadius > 0) {
-    if (node.independentCorners) {
-      const {
-        topLeftRadius: tl,
-        topRightRadius: tr,
-        bottomRightRadius: br,
-        bottomLeftRadius: bl
-      } = node
-      if (tl === tr && tr === br && br === bl) {
-        const r = borderRadiusToTw(tl)
-        classes.push(r ? `rounded-${r}` : 'rounded')
-      } else {
-        if (tl > 0) {
-          const r = borderRadiusToTw(tl)
-          classes.push(r ? `rounded-tl-${r}` : 'rounded-tl')
-        }
-        if (tr > 0) {
-          const r = borderRadiusToTw(tr)
-          classes.push(r ? `rounded-tr-${r}` : 'rounded-tr')
-        }
-        if (br > 0) {
-          const r = borderRadiusToTw(br)
-          classes.push(r ? `rounded-br-${r}` : 'rounded-br')
-        }
-        if (bl > 0) {
-          const r = borderRadiusToTw(bl)
-          classes.push(r ? `rounded-bl-${r}` : 'rounded-bl')
-        }
-      }
+  const corners = collectCornerRadii(node)
+  if (corners) {
+    const { tl, tr, br, bl } = corners
+    if (tl === tr && tr === br && br === bl) {
+      classes.push(twRounded('rounded', tl))
     } else {
-      const r = borderRadiusToTw(node.cornerRadius)
-      classes.push(r ? `rounded-${r}` : 'rounded')
+      if (tl > 0) classes.push(twRounded('rounded-tl', tl))
+      if (tr > 0) classes.push(twRounded('rounded-tr', tr))
+      if (br > 0) classes.push(twRounded('rounded-br', br))
+      if (bl > 0) classes.push(twRounded('rounded-bl', bl))
     }
   }
 
@@ -384,13 +382,9 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
 
   for (const effect of node.effects) {
     if (!effect.visible) continue
-    if (effect.type === 'DROP_SHADOW') {
-      classes.push('shadow')
-    } else if (effect.type === 'LAYER_BLUR') {
-      classes.push(`blur-[${effect.radius}px]`)
-    } else if (effect.type === 'BACKGROUND_BLUR') {
-      classes.push(`backdrop-blur-[${effect.radius}px]`)
-    }
+    if (effect.type === 'DROP_SHADOW') classes.push('shadow')
+    else if (effect.type === 'LAYER_BLUR') classes.push(`blur-[${effect.radius}px]`)
+    else if (effect.type === 'BACKGROUND_BLUR') classes.push(`backdrop-blur-[${effect.radius}px]`)
   }
 
   if (node.type === 'TEXT') {
@@ -398,9 +392,7 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
     if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY) {
       classes.push(`font-['${node.fontFamily.replace(/\s+/g, '_')}']`)
     }
-    if (node.fontWeight !== 400) {
-      classes.push(`font-${fontWeightToTw(node.fontWeight)}`)
-    }
+    if (node.fontWeight !== 400) classes.push(`font-${fontWeightToTw(node.fontWeight)}`)
     if (node.textAlignHorizontal !== 'LEFT') {
       classes.push(`text-${node.textAlignHorizontal.toLowerCase()}`)
     }
@@ -410,6 +402,8 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
 
   return classes
 }
+
+// --- JSX rendering ---
 
 function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: JSXFormat): string {
   const tagMap = format === 'tailwind' ? NODE_TYPE_TO_TW_TAG : NODE_TYPE_TO_TAG
@@ -431,9 +425,8 @@ function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: J
 
   const opening = attrsStr ? `<${tag} ${attrsStr}` : `<${tag}`
   const children = graph.getChildren(node.id)
-  const isText = node.type === 'TEXT'
 
-  if (isText) {
+  if (node.type === 'TEXT') {
     const text = node.text
     if (!text) return `${prefix}${opening} />`
     const escaped = escapeJSXText(text)
@@ -447,18 +440,14 @@ function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: J
     ].join('\n')
   }
 
-  if (children.length === 0) {
-    return `${prefix}${opening} />`
-  }
+  if (children.length === 0) return `${prefix}${opening} />`
 
   const childJSX = children
     .filter((c) => c.visible)
     .map((c) => nodeToJSX(c, graph, indent + 1, format))
     .filter(Boolean)
 
-  if (childJSX.length === 0) {
-    return `${prefix}${opening} />`
-  }
+  if (childJSX.length === 0) return `${prefix}${opening} />`
 
   return [`${prefix}${opening}>`, ...childJSX, `${prefix}</${tag}>`].join('\n')
 }
