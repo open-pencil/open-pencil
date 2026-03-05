@@ -1,12 +1,11 @@
 {
-  "name": "@open-pencil/mcp",
-  "version": "0.6.0",
+  "name": "@open-pencil/acp",
+  "version": "0.5.1",
   "license": "MIT",
   "type": "module",
-  "main": "./src/server.ts",
+  "main": "./src/agent.ts",
   "bin": {
-    "openpencil-mcp": "./dist/index.js",
-    "openpencil-mcp-http": "./dist/http.js"
+    "openpencil-acp": "./dist/index.js"
   },
   "files": [
     "src",
@@ -19,19 +18,16 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
-    "directory": "packages/mcp"
+    "directory": "packages/acp"
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.9",
-    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@agentclientprotocol/sdk": "^0.14.1",
     "@open-pencil/core": "workspace:*",
-    "canvaskit-wasm": "^0.40.0",
-    "hono": "^4.11.4",
-    "zod": "^3.25.0"
+    "canvaskit-wasm": "^0.40.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"

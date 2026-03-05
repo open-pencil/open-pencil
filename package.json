@@ -64,6 +64,7 @@
     "yoga-layout": "^3.2.1"
   },
   "devDependencies": {
+    "@agentclientprotocol/sdk": "^0.14.1",
     "@iconify-json/lucide": "^1.2.94",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@playwright/test": "^1.58.2",

@@ -47,6 +47,7 @@
 - W/H inputs in multi-selection mode
 - Flip horizontal/vertical using scale transform instead of rotation
 - Single-node alignment aligns to parent frame bounds
+- ACP agent package — Agent Client Protocol server for AI coding tools, reusing core ToolDefs. Sends available commands via `session/update` notification per ACP spec, cleans up sessions on connection close, uses `PROTOCOL_VERSION` constant
 
 ### Build
 
