@@ -68,6 +68,7 @@ jobs:
       - name: Add new contributors to release notes
         if: startsWith(github.ref, 'refs/tags/v')
         id: release_body
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_NOTES: ${{ steps.changelog.outputs.release_notes }}
