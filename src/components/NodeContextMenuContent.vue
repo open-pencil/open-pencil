@@ -9,8 +9,10 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
+import { selectionToJsx, renderNodesToSVG } from '@open-pencil/core'
 
 import { useEditorStore } from '@/stores/editor'
+import { toast } from '@/composables/use-toast'
 
 const store = useEditorStore()
 
@@ -60,6 +62,42 @@ const isLocked = computed(() => {
   if (!singleNode.value) return false
   return singleNode.value.locked
 })
+
+function selectedIds(): string[] {
+  return [...store.state.selectedIds]
+}
+
+async function copyAsText() {
+  const ids = selectedIds()
+  const names = ids.map((id) => store.graph.getNode(id)?.name ?? id).join('\n')
+  await navigator.clipboard.writeText(names)
+  toast.show('Copied as text')
+}
+
+async function copyAsSVG() {
+  const ids = selectedIds()
+  const svg = renderNodesToSVG(store.graph, store.state.currentPageId, ids)
+  if (!svg) return
+  await navigator.clipboard.writeText(svg)
+  toast.show('Copied as SVG')
+}
+
+async function copyAsPNG() {
+  const ids = selectedIds()
+  const data = await store.renderExportImage(ids, 2, 'PNG')
+  if (!data) return
+  const blob = new Blob([data], { type: 'image/png' })
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+  toast.show('Copied as PNG')
+}
+
+function copyAsJSX() {
+  const ids = selectedIds()
+  const jsx = selectionToJsx(ids, store.graph)
+  if (!jsx) return
+  navigator.clipboard.writeText(jsx)
+  toast.show('Copied as JSX')
+}
 
 const itemClass =
   'flex w-full cursor-pointer select-none items-center justify-between gap-6 rounded px-2 py-1.5 text-xs text-surface outline-none data-[highlighted]:bg-hover data-[disabled]:cursor-default data-[disabled]:text-muted'
@@ -254,6 +292,46 @@ const menuClass =
 
       <ContextMenuSeparator class="my-1 h-px bg-border" />
 
+      <ContextMenuSub>
+        <ContextMenuSubTrigger data-test-id="context-copy-paste-as" :class="itemClass">
+          <span>Copy/Paste as</span>
+          <span class="text-sm text-muted">›</span>
+        </ContextMenuSubTrigger>
+        <ContextMenuPortal>
+          <ContextMenuSubContent :class="menuClass">
+            <ContextMenuItem
+              data-test-id="context-copy-as-text"
+              :class="itemClass"
+              @select="copyAsText"
+            >
+              Copy as text
+            </ContextMenuItem>
+            <ContextMenuItem
+              data-test-id="context-copy-as-svg"
+              :class="itemClass"
+              @select="copyAsSVG"
+            >
+              Copy as SVG
+            </ContextMenuItem>
+            <ContextMenuItem
+              data-test-id="context-copy-as-png"
+              :class="itemClass"
+              @select="copyAsPNG"
+            >
+              <span>Copy as PNG</span>
+              <span class="text-[11px] text-muted">⇧⌘C</span>
+            </ContextMenuItem>
+            <ContextMenuItem
+              data-test-id="context-copy-as-jsx"
+              :class="itemClass"
+              @select="copyAsJSX"
+            >
+              Copy as JSX
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuPortal>
+      </ContextMenuSub>
+
       <ContextMenuItem
         data-test-id="context-export-png"
         :class="itemClass"
@@ -261,14 +339,6 @@ const menuClass =
       >
         <span>Export as PNG</span>
         <span class="text-[11px] text-muted">⇧⌘E</span>
-      </ContextMenuItem>
-
-      <ContextMenuItem
-        data-test-id="context-export-svg"
-        :class="itemClass"
-        @select="store.exportSelection(1, 'SVG')"
-      >
-        <span>Export as SVG</span>
       </ContextMenuItem>
     </template>
   </ContextMenuContent>
