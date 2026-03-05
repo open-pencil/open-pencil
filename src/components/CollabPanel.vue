@@ -12,9 +12,10 @@ import {
   TooltipProvider
 } from 'reka-ui'
 
+import { colorToCSS } from '@open-pencil/core'
 import type { CollabState, RemotePeer } from '@/composables/use-collab'
 import { toast } from '@/composables/use-toast'
-import type { Color } from '@/types'
+import { initials } from '@/utils/text'
 
 const props = defineProps<{
   state: CollabState
@@ -68,20 +69,7 @@ function onJoin() {
   popoverOpen.value = false
 }
 
-function colorToCSS(c: Color): string {
-  return `rgb(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)})`
-}
 
-function initials(name: string): string {
-  return (
-    name
-      .split(' ')
-      .map((w) => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || '?'
-  )
-}
 </script>
 
 <template>

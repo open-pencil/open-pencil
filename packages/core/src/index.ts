@@ -68,7 +68,7 @@ export {
   styleToWeight,
   weightToStyle
 } from './fonts'
-export { parseColor, colorToHex, colorToHexRaw, colorToRgba255 } from './color'
+export { parseColor, colorToHex, colorToHexRaw, colorToRgba255, colorToCSS } from './color'
 export {
   vectorNetworkToPath,
   geometryBlobToPath,

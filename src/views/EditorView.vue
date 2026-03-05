@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide } from 'vue'
-import { useEventListener, useUrlSearchParams } from '@vueuse/core'
+import { useBreakpoints, useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
@@ -15,6 +15,9 @@ import { createTab, activeTab } from '@/stores/tabs'
 import CollabPanel from '@/components/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
+import MobileDrawer from '@/components/MobileDrawer.vue'
+import MobileHud from '@/components/MobileHud.vue'
+import MobileRibbon from '@/components/MobileRibbon.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
@@ -25,6 +28,8 @@ const router = useRouter()
 
 const firstTab = createTab()
 const store = useEditorStore()
+const breakpoints = useBreakpoints({ mobile: 768 })
+const isMobile = breakpoints.smaller('mobile')
 useKeyboard()
 useMenu()
 const collab = useCollab(firstTab.store)
@@ -63,14 +68,22 @@ function onDisconnect() {
   collab.disconnect()
   router.push('/')
 }
+
+function onMobileTabChange() {
+  if (store.state.mobileDrawerSnap === 'closed') {
+    store.state.mobileDrawerSnap = 'half'
+  }
+}
 </script>
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
     <SafariBanner />
     <TabBar />
+
+    <!-- Desktop layout -->
     <SplitterGroup
-      v-if="showChrome && store.state.showUI"
+      v-if="!isMobile && showChrome && store.state.showUI"
       :key="activeTab?.id"
       direction="horizontal"
       class="flex-1 overflow-hidden"
@@ -110,6 +123,33 @@ function onDisconnect() {
         <PropertiesPanel />
       </SplitterPanel>
     </SplitterGroup>
+
+    <!-- Mobile layout -->
+    <div
+      v-else-if="isMobile && showChrome && store.state.showUI"
+      :key="'mobile-' + activeTab?.id"
+      class="flex flex-1 overflow-hidden"
+    >
+      <div class="relative flex min-w-0 flex-1">
+        <EditorCanvas />
+        <MobileHud
+          :collab-state="collab.state.value"
+          :collab-peers="collab.remotePeers.value"
+          :pending-room-id="pendingRoomId"
+          :following-peer="collab.followingPeer.value"
+          @share="onShare"
+          @join="onJoin"
+          @disconnect="onDisconnect"
+          @update:collab-name="collab.setLocalName"
+          @follow="collab.followPeer"
+        />
+        <Toolbar />
+      </div>
+      <MobileRibbon @tab-change="onMobileTabChange" />
+      <MobileDrawer />
+    </div>
+
+    <!-- Collapsed UI (showUI=false) -->
     <div
       v-else-if="showChrome"
       :key="'collapsed-' + activeTab?.id"
@@ -117,8 +157,8 @@ function onDisconnect() {
     >
       <div class="relative flex min-w-0 flex-1">
         <EditorCanvas />
-        <Toolbar />
         <div
+          v-if="!isMobile"
           class="absolute left-7 top-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
         >
           <img src="/favicon-32.png" class="size-4" alt="OpenPencil" />
@@ -136,6 +176,8 @@ function onDisconnect() {
         </div>
       </div>
     </div>
+
+    <!-- Bare canvas (no chrome, e.g. ?no-chrome) -->
     <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
       <div class="relative flex min-w-0 flex-1">
         <EditorCanvas />

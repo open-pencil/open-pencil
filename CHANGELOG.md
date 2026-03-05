@@ -11,6 +11,10 @@
 - Split tools into domain files (read, create, modify, structure, variables, vector, analyze) — easier to navigate and extend
 - Replace inline type definitions with named types (`Color`, `Vector`, `SceneNode`) across the codebase
 
+### Internal
+
+- Mobile UI cleanup: extract shared `colorToCSS` util to core, `initials` to `src/utils/text`, `toolIcons` to `src/utils/tools`; replace hand-rolled dropdowns with reka-ui Popover/DropdownMenu; narrow `mobileDrawerSnap` type to string union; move magic numbers to constants; disable PWA service worker in dev mode
+
 ## 0.7.0 — 2026-03-05
 
 ### Features

@@ -182,7 +182,7 @@ export function createEditorStore() {
       y: number
       selection?: string[]
     }>,
-    showUI: matchMedia('(min-width: 768px)').matches,
+    showUI: true,
     documentName: 'Untitled' as string,
     panX: 0,
     pageColor: { ...CANVAS_BG_COLOR } as Color,
@@ -191,6 +191,11 @@ export function createEditorStore() {
     renderVersion: 0,
     sceneVersion: 0,
     loading: false,
+    activeRibbonTab: null as 'panels' | 'code' | 'ai' | null,
+    panelMode: 'design' as 'layers' | 'design',
+    actionToast: null as string | null,
+    mobileDrawerSnap: 'closed' as 'closed' | 'half' | 'full',
+    clipboardHtml: '',
     autosaveEnabled: true
   })
 
@@ -1897,6 +1902,23 @@ export function createEditorStore() {
     requestRender()
   }
 
+  function mobileCopy() {
+    const transfer = new DataTransfer()
+    writeCopyData(transfer)
+    state.clipboardHtml = transfer.getData('text/html')
+  }
+
+  function mobileCut() {
+    mobileCopy()
+    deleteSelected()
+  }
+
+  function mobilePaste() {
+    if (state.clipboardHtml) {
+      pasteFromHTML(state.clipboardHtml)
+    }
+  }
+
   function commitMove(originals: Map<string, { x: number; y: number }>) {
     const finals = new Map<string, { x: number; y: number }>()
     for (const [id] of originals) {
@@ -2116,6 +2138,9 @@ export function createEditorStore() {
     duplicateSelected,
     writeCopyData,
     pasteFromHTML,
+    mobileCopy,
+    mobileCut,
+    mobilePaste,
     deleteSelected,
     commitMove,
     commitResize,

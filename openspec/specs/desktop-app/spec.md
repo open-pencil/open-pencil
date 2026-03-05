@@ -4,11 +4,15 @@
 Tauri v2 desktop shell. Cross-platform native menu bar with wired events, Developer Tools access, and `desktop/` directory structure for Tauri configuration and Rust source.
 ## Requirements
 ### Requirement: Tauri v2 desktop shell
-The editor SHALL run as a native desktop app via Tauri v2 with the web frontend loaded in a webview. The app identifier SHALL be `net.dannote.open-pencil`.
+The editor SHALL run as a native desktop app via Tauri v2 with the web frontend loaded in a webview. The app identifier SHALL be `net.dannote.open-pencil`. When running inside the Tauri webview, the service worker SHALL NOT be registered to avoid intercepting Tauri IPC and native file system requests.
 
 #### Scenario: Desktop app launch
 - **WHEN** user runs `bun run tauri dev`
 - **THEN** a native desktop window opens with the editor UI and CanvasKit rendering
+
+#### Scenario: No service worker in Tauri
+- **WHEN** the app loads inside the Tauri webview
+- **THEN** `navigator.serviceWorker.register` is never called and no SW is active
 
 ### Requirement: Native macOS menu bar
 The desktop app SHALL display a native menu bar. On macOS, an app-level submenu (OpenPencil) with About, Services, Hide, Hide Others, Show All, and Quit items SHALL be shown. On Windows and Linux, this submenu SHALL be omitted. File, Edit, View, Object, Window, and Help menus SHALL be present on all platforms.
