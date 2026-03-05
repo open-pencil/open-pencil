@@ -79,6 +79,18 @@ function formatShadow(e: Effect): string | null {
   return `${e.offset.x} ${e.offset.y} ${e.radius} ${formatColor(e.color, e.color.a)}`
 }
 
+const JSX_ENTITY: Record<string, string> = {
+  '{': '&#123;',
+  '}': '&#125;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '&': '&amp;'
+}
+
+function escapeJSXText(text: string): string {
+  return text.replace(/[{}<>&]/g, (c) => JSX_ENTITY[c]!)
+}
+
 function formatProp(key: string, value: unknown): string {
   if (typeof value === 'string') return `${key}="${value}"`
   if (typeof value === 'number') return `${key}={${value}}`
@@ -424,27 +436,15 @@ function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: J
   if (isText) {
     const text = node.text
     if (!text) return `${prefix}${opening} />`
-    const escaped = text.replace(/[{}<>&]/g, (c) =>
-      c === '{'
-        ? '&#123;'
-        : c === '}'
-          ? '&#125;'
-          : c === '<'
-            ? '&lt;'
-            : c === '>'
-              ? '&gt;'
-              : '&amp;'
-    )
+    const escaped = escapeJSXText(text)
     if (!escaped.includes('\n')) {
       return `${prefix}${opening}>${escaped}</${tag}>`
     }
-    const lines = escaped.split('\n')
-    const parts = [
+    return [
       `${prefix}${opening}>`,
-      ...lines.map((l) => `${prefix}  ${l}`),
+      ...escaped.split('\n').map((l) => `${prefix}  ${l}`),
       `${prefix}</${tag}>`
-    ]
-    return parts.join('\n')
+    ].join('\n')
   }
 
   if (children.length === 0) {
