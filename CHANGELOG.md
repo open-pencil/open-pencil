@@ -8,6 +8,8 @@
 
 ### Features
 
+- SVG export — export selections as SVG from the export panel, context menu, or CLI (`bun open-pencil export --format svg`). Supports rectangles, ellipses, lines, stars, polygons, vectors, text with style runs, gradients, image fills, effects, blend modes, clip paths, and nested groups (#46)
+
 - Stroke align (Inside/Center/Outside) with clip-based rendering matching Figma behavior
 - Individual stroke weights per side (Top/Right/Bottom/Left) with side selector dropdown
 - Google Fonts fallback — automatically loads fonts from Google Fonts API when not available locally
