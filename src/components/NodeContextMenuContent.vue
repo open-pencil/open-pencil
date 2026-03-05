@@ -9,7 +9,7 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
-import { selectionToJsx, renderNodesToSVG } from '@open-pencil/core'
+import { selectionToJSX, renderNodesToSVG } from '@open-pencil/core'
 
 import { useEditorStore } from '@/stores/editor'
 import { toast } from '@/composables/use-toast'
@@ -93,7 +93,7 @@ async function copyAsPNG() {
 
 function copyAsJSX() {
   const ids = selectedIds()
-  const jsx = selectionToJsx(ids, store.graph)
+  const jsx = selectionToJSX(ids, store.graph)
   if (!jsx) return
   navigator.clipboard.writeText(jsx)
   toast.show('Copied as JSX')

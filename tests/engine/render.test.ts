@@ -3,7 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   SceneGraph,
   renderTree,
-  renderJsx,
+  renderJSX,
   renderTreeNode,
   Frame,
   Text,
@@ -311,7 +311,7 @@ describe('renderTreeNode', () => {
   })
 })
 
-describe('renderJsx (string → scene graph)', () => {
+describe('renderJSX (string → scene graph)', () => {
   it('renders JSX string', async () => {
     const g = createGraph()
     const jsx = `
@@ -319,7 +319,7 @@ describe('renderJsx (string → scene graph)', () => {
         <Text name="Hello" size={16} color="#000">World</Text>
       </Frame>
     `
-    const result = await renderJsx(g, jsx)
+    const result = await renderJSX(g, jsx)
 
     expect(result.name).toBe('Test')
     const node = g.nodes.get(result.id)!
@@ -339,7 +339,7 @@ describe('renderJsx (string → scene graph)', () => {
         <Text name="Description" size={14} color="#6B7280">Lorem ipsum</Text>
       </Frame>
     `
-    const result = await renderJsx(g, jsx)
+    const result = await renderJSX(g, jsx)
     const card = g.nodes.get(result.id)!
 
     expect(card.layoutMode).toBe('VERTICAL')
@@ -348,7 +348,7 @@ describe('renderJsx (string → scene graph)', () => {
 
   it('renders with position', async () => {
     const g = createGraph()
-    const result = await renderJsx(g, '<Frame name="At" w={50} h={50} />', { x: 100, y: 200 })
+    const result = await renderJSX(g, '<Frame name="At" w={50} h={50} />', { x: 100, y: 200 })
     const node = g.nodes.get(result.id)!
 
     expect(node.x).toBe(100)

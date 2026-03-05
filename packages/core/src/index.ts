@@ -108,7 +108,7 @@ export {
 
 export {
   renderTree,
-  renderJsx,
+  renderJSX,
   renderTreeNode,
   buildComponent,
   Frame,
@@ -134,8 +134,9 @@ export {
   type TextProps,
   type StyleProps,
   type RenderResult,
-  sceneNodeToJsx,
-  selectionToJsx
+  sceneNodeToJSX,
+  selectionToJSX,
+  type JSXFormat
 } from './render'
 export {
   parseFigmaClipboard,

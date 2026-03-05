@@ -29,6 +29,6 @@ export {
 
 export { renderTree, type RenderResult } from './renderer'
 
-export { renderJsx, renderTreeNode, buildComponent } from './render-jsx'
+export { renderJSX, renderTreeNode, buildComponent } from './render-jsx'
 
-export { sceneNodeToJsx, selectionToJsx } from './export-jsx'
+export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './export-jsx'

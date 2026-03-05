@@ -36,7 +36,7 @@ export async function buildComponent(jsxString: string): Promise<() => unknown> 
   return new Function('React', result.code)(React) as () => unknown
 }
 
-interface RenderJsxOptions {
+interface RenderJSXOptions {
   x?: number
   y?: number
   parentId?: string
@@ -46,10 +46,10 @@ interface RenderJsxOptions {
  * Render a JSX string into the scene graph.
  * For headless/CLI use — requires esbuild.
  */
-export async function renderJsx(
+export async function renderJSX(
   graph: SceneGraph,
   jsxString: string,
-  options?: RenderJsxOptions
+  options?: RenderJSXOptions
 ): Promise<RenderResult> {
   const Component = await buildComponent(jsxString)
   const element = React.createElement(Component, null)
@@ -69,7 +69,7 @@ export async function renderJsx(
 export function renderTreeNode(
   graph: SceneGraph,
   tree: TreeNode,
-  options?: RenderJsxOptions
+  options?: RenderJSXOptions
 ): RenderResult {
   return renderTree(graph, tree, options)
 }

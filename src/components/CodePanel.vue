@@ -4,17 +4,24 @@ import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import { selectionToJsx } from '@open-pencil/core'
+import { selectionToJSX } from '@open-pencil/core'
 import { useEditorStore } from '@/stores/editor'
+
+import type { JSXFormat } from '@open-pencil/core'
 
 const store = useEditorStore()
 const copied = ref(false)
+const jsxFormat = ref<JSXFormat>('openpencil')
+
+function toggleFormat() {
+  jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
+}
 
 const jsxCode = computed(() => {
   void store.state.sceneVersion
   const ids = [...store.state.selectedIds]
   if (ids.length === 0) return ''
-  return selectionToJsx(ids, store.graph)
+  return selectionToJSX(ids, store.graph, jsxFormat.value)
 })
 
 const highlightedLines = computed(() => {
@@ -51,7 +58,16 @@ watch(jsxCode, () => {
       data-test-id="code-panel-header"
       class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5"
     >
-      <span class="text-[11px] text-muted">JSX</span>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[11px] text-muted">JSX</span>
+        <button
+          data-test-id="code-panel-format-toggle"
+          class="rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
+          @click="toggleFormat"
+        >
+          {{ jsxFormat === 'openpencil' ? 'OpenPencil' : 'Tailwind' }}
+        </button>
+      </div>
       <button
         data-test-id="code-panel-copy"
         class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover hover:text-surface"

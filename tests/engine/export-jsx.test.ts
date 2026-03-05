@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, sceneNodeToJsx, selectionToJsx } from '@open-pencil/core'
+import { SceneGraph, sceneNodeToJSX, selectionToJSX } from '@open-pencil/core'
 
 function makeGraph() {
   const graph = new SceneGraph()
@@ -12,7 +12,7 @@ function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
 
-describe('sceneNodeToJsx', () => {
+describe('sceneNodeToJSX', () => {
   test('basic rectangle', () => {
     const graph = makeGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), {
@@ -20,7 +20,7 @@ describe('sceneNodeToJsx', () => {
       width: 100,
       height: 50
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toBe('<Rectangle name="Box" w={100} h={50} />')
   })
 
@@ -33,7 +33,7 @@ describe('sceneNodeToJsx', () => {
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
       cornerRadius: 16
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('w={320}')
     expect(jsx).toContain('h={200}')
     expect(jsx).toContain('bg="#FFFFFF"')
@@ -55,7 +55,7 @@ describe('sceneNodeToJsx', () => {
         { type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
       ]
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('<Text')
     expect(jsx).toContain('size={18}')
     expect(jsx).toContain('weight="bold"')
@@ -78,7 +78,7 @@ describe('sceneNodeToJsx', () => {
       primaryAxisSizing: 'FIXED',
       counterAxisSizing: 'HUG'
     })
-    const jsx = sceneNodeToJsx(frame.id, graph)
+    const jsx = sceneNodeToJSX(frame.id, graph)
     expect(jsx).toContain('flex="row"')
     expect(jsx).toContain('gap={16}')
     expect(jsx).toContain('p={12}')
@@ -113,7 +113,7 @@ describe('sceneNodeToJsx', () => {
       ]
     })
 
-    const jsx = sceneNodeToJsx(frame.id, graph)
+    const jsx = sceneNodeToJSX(frame.id, graph)
     expect(jsx).toContain('<Frame')
     expect(jsx).toContain('flex="col"')
     expect(jsx).toContain('gap={8}')
@@ -137,7 +137,7 @@ describe('sceneNodeToJsx', () => {
       primaryAxisSizing: 'FIXED',
       counterAxisSizing: 'FIXED'
     })
-    const jsx = sceneNodeToJsx(frame.id, graph)
+    const jsx = sceneNodeToJSX(frame.id, graph)
     expect(jsx).toContain('py={8}')
     expect(jsx).toContain('px={16}')
     expect(jsx).not.toContain('pt=')
@@ -157,7 +157,7 @@ describe('sceneNodeToJsx', () => {
       bottomRightRadius: 0,
       bottomLeftRadius: 20
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('roundedTL={20}')
     expect(jsx).toContain('roundedBL={20}')
     expect(jsx).not.toContain('roundedTR=')
@@ -172,7 +172,7 @@ describe('sceneNodeToJsx', () => {
       opacity: 0.5,
       rotation: 45
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('opacity={0.5}')
     expect(jsx).toContain('rotate={45}')
   })
@@ -186,7 +186,7 @@ describe('sceneNodeToJsx', () => {
         { color: { r: 1, g: 0, b: 0, a: 1 }, weight: 2, opacity: 1, visible: true, align: 'INSIDE' as const }
       ]
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('stroke="#FF0000"')
     expect(jsx).toContain('strokeWidth={2}')
   })
@@ -209,7 +209,7 @@ describe('sceneNodeToJsx', () => {
       height: 50,
       visible: false
     })
-    const jsx = sceneNodeToJsx(frame.id, graph)
+    const jsx = sceneNodeToJSX(frame.id, graph)
     expect(jsx).toContain('Visible')
     expect(jsx).not.toContain('Hidden')
   })
@@ -222,7 +222,7 @@ describe('sceneNodeToJsx', () => {
       height: 20,
       text: ''
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('/>')
     expect(jsx).not.toContain('</Text>')
   })
@@ -236,7 +236,7 @@ describe('sceneNodeToJsx', () => {
       rotation: 0,
       cornerRadius: 0
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).not.toContain('opacity')
     expect(jsx).not.toContain('rotate')
     expect(jsx).not.toContain('rounded')
@@ -266,13 +266,13 @@ describe('sceneNodeToJsx', () => {
         }
       ]
     })
-    const jsx = sceneNodeToJsx(node.id, graph)
+    const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('shadow="0 4 8')
     expect(jsx).toContain('blur={4}')
   })
 })
 
-describe('selectionToJsx', () => {
+describe('selectionToJSX', () => {
   test('multiple nodes separated by blank lines', () => {
     const graph = makeGraph()
     const a = graph.createNode('RECTANGLE', pageId(graph), {
@@ -285,7 +285,7 @@ describe('selectionToJsx', () => {
       width: 20,
       height: 20
     })
-    const jsx = selectionToJsx([a.id, b.id], graph)
+    const jsx = selectionToJSX([a.id, b.id], graph)
     expect(jsx).toContain('<Rectangle')
     expect(jsx).toContain('<Ellipse')
     expect(jsx).toContain('\n\n')

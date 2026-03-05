@@ -1,7 +1,17 @@
 import { colorToHex } from '../color'
 import { DEFAULT_FONT_FAMILY } from '../constants'
+import {
+  pxToSpacing,
+  colorToTwClass,
+  fontSizeToTw,
+  fontWeightToTw,
+  borderRadiusToTw,
+  opacityToTw
+} from './tailwind'
 
 import type { SceneGraph, SceneNode, Fill, Stroke, Effect, NodeType, Color } from '../scene-graph'
+
+export type JSXFormat = 'openpencil' | 'tailwind'
 
 const NODE_TYPE_TO_TAG: Partial<Record<NodeType, string>> = {
   FRAME: 'Frame',
@@ -18,6 +28,23 @@ const NODE_TYPE_TO_TAG: Partial<Record<NodeType, string>> = {
   COMPONENT: 'Component',
   COMPONENT_SET: 'Frame',
   INSTANCE: 'Frame'
+}
+
+const NODE_TYPE_TO_TW_TAG: Partial<Record<NodeType, string>> = {
+  FRAME: 'div',
+  RECTANGLE: 'div',
+  ROUNDED_RECTANGLE: 'div',
+  ELLIPSE: 'div',
+  TEXT: 'p',
+  LINE: 'div',
+  STAR: 'div',
+  POLYGON: 'div',
+  VECTOR: 'div',
+  GROUP: 'div',
+  SECTION: 'section',
+  COMPONENT: 'div',
+  COMPONENT_SET: 'div',
+  INSTANCE: 'div'
 }
 
 function formatColor(color: Color, opacity = 1): string {
@@ -218,15 +245,179 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
   return props
 }
 
-function nodeToJsx(node: SceneNode, graph: SceneGraph, indent: number): string {
-  const tag = NODE_TYPE_TO_TAG[node.type]
+function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
+  const classes: string[] = []
+  const isAutoLayout = node.layoutMode !== 'NONE'
+
+  if (isAutoLayout) {
+    classes.push('flex')
+    if (node.layoutMode === 'VERTICAL') classes.push('flex-col')
+  }
+
+  const parent = node.parentId ? graph.getNode(node.parentId) : null
+  const parentIsAutoLayout = parent ? parent.layoutMode !== 'NONE' : false
+
+  if (isAutoLayout) {
+    const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
+    const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
+    const wProp = primaryAxis === 'width' ? 'w' : 'h'
+    const hProp = crossAxis === 'width' ? 'w' : 'h'
+
+    if (node.primaryAxisSizing === 'FILL') {
+      classes.push(`${wProp}-full`)
+    } else if (node.primaryAxisSizing !== 'HUG') {
+      classes.push(`${wProp}-${pxToSpacing(node[primaryAxis])}`)
+    }
+
+    if (node.counterAxisSizing === 'FILL') {
+      classes.push(`${hProp}-full`)
+    } else if (node.counterAxisSizing !== 'HUG') {
+      classes.push(`${hProp}-${pxToSpacing(node[crossAxis])}`)
+    }
+  } else {
+    if (node.width > 0) classes.push(`w-${pxToSpacing(node.width)}`)
+    if (node.height > 0) classes.push(`h-${pxToSpacing(node.height)}`)
+  }
+
+  if (parentIsAutoLayout && node.layoutGrow > 0) {
+    classes.push('grow')
+  }
+
+  if (isAutoLayout && node.itemSpacing > 0) {
+    classes.push(`gap-${pxToSpacing(node.itemSpacing)}`)
+  }
+
+  if (isAutoLayout && node.layoutWrap === 'WRAP') {
+    classes.push('flex-wrap')
+    if (node.counterAxisSpacing > 0) {
+      classes.push(`gap-y-${pxToSpacing(node.counterAxisSpacing)}`)
+    }
+  }
+
+  if (isAutoLayout) {
+    if (node.primaryAxisAlign === 'CENTER') classes.push('justify-center')
+    else if (node.primaryAxisAlign === 'MAX') classes.push('justify-end')
+    else if (node.primaryAxisAlign === 'SPACE_BETWEEN') classes.push('justify-between')
+
+    if (node.counterAxisAlign === 'CENTER') classes.push('items-center')
+    else if (node.counterAxisAlign === 'MAX') classes.push('items-end')
+    else if (node.counterAxisAlign === 'STRETCH') classes.push('items-stretch')
+  }
+
+  if (isAutoLayout) {
+    const { paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl } = node
+    if (pt > 0 || pr > 0 || pb > 0 || pl > 0) {
+      if (pt === pr && pr === pb && pb === pl) {
+        classes.push(`p-${pxToSpacing(pt)}`)
+      } else if (pt === pb && pl === pr) {
+        classes.push(`py-${pxToSpacing(pt)}`)
+        classes.push(`px-${pxToSpacing(pl)}`)
+      } else {
+        if (pt > 0) classes.push(`pt-${pxToSpacing(pt)}`)
+        if (pr > 0) classes.push(`pr-${pxToSpacing(pr)}`)
+        if (pb > 0) classes.push(`pb-${pxToSpacing(pb)}`)
+        if (pl > 0) classes.push(`pl-${pxToSpacing(pl)}`)
+      }
+    }
+  }
+
+  const bg = solidFillColor(node.fills)
+  if (bg && node.type !== 'TEXT') classes.push(`bg-${colorToTwClass(bg)}`)
+
+  const stroke = solidStroke(node.strokes)
+  if (stroke) {
+    if (stroke.weight !== 1) classes.push(`border-${pxToSpacing(stroke.weight)}`)
+    else classes.push('border')
+    classes.push(`border-${colorToTwClass(stroke.color)}`)
+  }
+
+  if (node.cornerRadius > 0) {
+    if (node.independentCorners) {
+      const {
+        topLeftRadius: tl,
+        topRightRadius: tr,
+        bottomRightRadius: br,
+        bottomLeftRadius: bl
+      } = node
+      if (tl === tr && tr === br && br === bl) {
+        const r = borderRadiusToTw(tl)
+        classes.push(r ? `rounded-${r}` : 'rounded')
+      } else {
+        if (tl > 0) {
+          const r = borderRadiusToTw(tl)
+          classes.push(r ? `rounded-tl-${r}` : 'rounded-tl')
+        }
+        if (tr > 0) {
+          const r = borderRadiusToTw(tr)
+          classes.push(r ? `rounded-tr-${r}` : 'rounded-tr')
+        }
+        if (br > 0) {
+          const r = borderRadiusToTw(br)
+          classes.push(r ? `rounded-br-${r}` : 'rounded-br')
+        }
+        if (bl > 0) {
+          const r = borderRadiusToTw(bl)
+          classes.push(r ? `rounded-bl-${r}` : 'rounded-bl')
+        }
+      }
+    } else {
+      const r = borderRadiusToTw(node.cornerRadius)
+      classes.push(r ? `rounded-${r}` : 'rounded')
+    }
+  }
+
+  if (node.opacity < 1) classes.push(`opacity-${opacityToTw(node.opacity)}`)
+  if (node.rotation !== 0) classes.push(`rotate-${Math.round(node.rotation)}`)
+  if (node.clipsContent) classes.push('overflow-hidden')
+
+  for (const effect of node.effects) {
+    if (!effect.visible) continue
+    if (effect.type === 'DROP_SHADOW') {
+      classes.push('shadow')
+    } else if (effect.type === 'LAYER_BLUR') {
+      classes.push(`blur-[${effect.radius}px]`)
+    } else if (effect.type === 'BACKGROUND_BLUR') {
+      classes.push(`backdrop-blur-[${effect.radius}px]`)
+    }
+  }
+
+  if (node.type === 'TEXT') {
+    classes.push(`text-${fontSizeToTw(node.fontSize)}`)
+    if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY) {
+      classes.push(`font-['${node.fontFamily.replace(/\s+/g, '_')}']`)
+    }
+    if (node.fontWeight !== 400) {
+      classes.push(`font-${fontWeightToTw(node.fontWeight)}`)
+    }
+    if (node.textAlignHorizontal !== 'LEFT') {
+      classes.push(`text-${node.textAlignHorizontal.toLowerCase()}`)
+    }
+    const textColor = solidFillColor(node.fills)
+    if (textColor) classes.push(`text-${colorToTwClass(textColor)}`)
+  }
+
+  return classes
+}
+
+function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: JSXFormat): string {
+  const tagMap = format === 'tailwind' ? NODE_TYPE_TO_TW_TAG : NODE_TYPE_TO_TAG
+  const tag = tagMap[node.type]
   if (!tag) return ''
 
   const prefix = '  '.repeat(indent)
-  const props = collectProps(node, graph)
-  const propsStr = props.map(([k, v]) => formatProp(k, v)).join(' ')
-  const opening = propsStr ? `<${tag} ${propsStr}` : `<${tag}`
+  let attrsStr: string
 
+  if (format === 'tailwind') {
+    const classes = collectTailwindClasses(node, graph)
+    const nameAttr = node.name && node.name !== node.type ? ` data-name="${node.name}"` : ''
+    const classAttr = classes.length > 0 ? ` className="${classes.join(' ')}"` : ''
+    attrsStr = `${nameAttr}${classAttr}`.trim()
+  } else {
+    const props = collectProps(node, graph)
+    attrsStr = props.map(([k, v]) => formatProp(k, v)).join(' ')
+  }
+
+  const opening = attrsStr ? `<${tag} ${attrsStr}` : `<${tag}`
   const children = graph.getChildren(node.id)
   const isText = node.type === 'TEXT'
 
@@ -260,27 +451,35 @@ function nodeToJsx(node: SceneNode, graph: SceneGraph, indent: number): string {
     return `${prefix}${opening} />`
   }
 
-  const childJsx = children
+  const childJSX = children
     .filter((c) => c.visible)
-    .map((c) => nodeToJsx(c, graph, indent + 1))
+    .map((c) => nodeToJSX(c, graph, indent + 1, format))
     .filter(Boolean)
 
-  if (childJsx.length === 0) {
+  if (childJSX.length === 0) {
     return `${prefix}${opening} />`
   }
 
-  return [`${prefix}${opening}>`, ...childJsx, `${prefix}</${tag}>`].join('\n')
+  return [`${prefix}${opening}>`, ...childJSX, `${prefix}</${tag}>`].join('\n')
 }
 
-export function sceneNodeToJsx(nodeId: string, graph: SceneGraph): string {
+export function sceneNodeToJSX(
+  nodeId: string,
+  graph: SceneGraph,
+  format: JSXFormat = 'openpencil'
+): string {
   const node = graph.getNode(nodeId)
   if (!node) return ''
-  return nodeToJsx(node, graph, 0)
+  return nodeToJSX(node, graph, 0, format)
 }
 
-export function selectionToJsx(nodeIds: string[], graph: SceneGraph): string {
+export function selectionToJSX(
+  nodeIds: string[],
+  graph: SceneGraph,
+  format: JSXFormat = 'openpencil'
+): string {
   return nodeIds
-    .map((id) => sceneNodeToJsx(id, graph))
+    .map((id) => sceneNodeToJSX(id, graph, format))
     .filter(Boolean)
     .join('\n\n')
 }
