@@ -50,6 +50,7 @@
     "fflate": "^0.8.2",
     "fzstd": "^0.1.1",
     "lib0": "^0.2.117",
+    "motion-v": "^2.0.0",
     "prismjs": "^1.30.0",
     "reka-ui": "^2.9.0",
     "tailwindcss": "^4.2.1",
@@ -82,6 +83,8 @@
     "typescript": "~5.8.3",
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^31.0.0",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
   }
 }

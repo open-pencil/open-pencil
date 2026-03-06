@@ -12,7 +12,7 @@ import type {
   VariableType,
   VariableValue
 } from './scene-graph'
-import type { Rect } from './types'
+import type { Rect, Vector } from './types'
 
 const MIXED = Symbol('mixed')
 
@@ -1251,11 +1251,11 @@ export class FigmaAPI {
 
   private _viewport = { x: 0, y: 0, zoom: 1 }
 
-  get viewport(): { center: { x: number; y: number }; zoom: number } {
+  get viewport(): { center: Vector; zoom: number } {
     return { center: { x: this._viewport.x, y: this._viewport.y }, zoom: this._viewport.zoom }
   }
 
-  set viewport(v: { center: { x: number; y: number }; zoom: number }) {
+  set viewport(v: { center: Vector; zoom: number }) {
     this._viewport = { x: v.center.x, y: v.center.y, zoom: v.zoom }
   }
 
@@ -1272,6 +1272,11 @@ export class FigmaAPI {
 
   commitUndo(): void {}
   triggerUndo(): void {}
+
+  exportImage?: (
+    nodeIds: string[],
+    options: { scale?: number; format?: 'PNG' | 'JPG' | 'WEBP'; quality?: number }
+  ) => Promise<Uint8Array | null>
 }
 
 export { FigmaNodeProxy }

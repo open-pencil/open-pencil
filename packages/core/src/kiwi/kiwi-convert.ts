@@ -41,9 +41,9 @@ export function guidToString(guid: GUID): string {
   return `${guid.sessionID}:${guid.localID}`
 }
 
-function convertColor(color?: { r: number; g: number; b: number; a: number }): Color {
+function convertColor(color?: Partial<Color>): Color {
   if (!color) return { ...BLACK }
-  return { r: color.r, g: color.g, b: color.b, a: color.a }
+  return { r: color.r ?? 0, g: color.g ?? 0, b: color.b ?? 0, a: color.a ?? 1 }
 }
 
 function imageHashToString(hash: Record<string, number>): string {

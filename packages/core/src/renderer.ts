@@ -56,7 +56,15 @@ import {
   TEXT_SELECTION_COLOR,
   TEXT_CARET_COLOR,
   TEXT_CARET_WIDTH,
-  DEFAULT_FONT_FAMILY
+  DEFAULT_FONT_FAMILY,
+  FLASH_COLOR,
+  FLASH_ATTACK_MS,
+  FLASH_HOLD_MS,
+  FLASH_RELEASE_MS,
+  FLASH_STROKE_WIDTH,
+  FLASH_PADDING,
+  FLASH_OVERSHOOT,
+  FLASH_RADIUS
 } from './constants'
 import { isFontLoaded, getCJKFallbackFamily } from './fonts'
 import { vectorNetworkToPath, geometryBlobToPath } from './vector'
@@ -176,6 +184,8 @@ export class SkiaRenderer {
   private worldViewport = { x: 0, y: 0, w: 0, h: 0 }
   private _nodeCount = 0
   private _culledCount = 0
+  private _flashes: Array<{ nodeId: string; startTime: number }> = []
+  private _flashPaint: Paint | null = null
 
   private color4f(r: number, g: number, b: number, a: number): Float32Array {
     const c = this._tmpColor
@@ -365,6 +375,14 @@ export class SkiaRenderer {
       pic.delete()
       this.nodePictureCache.delete(nodeId)
     }
+  }
+
+  flashNode(nodeId: string): void {
+    this._flashes.push({ nodeId, startTime: performance.now() })
+  }
+
+  get hasActiveFlashes(): boolean {
+    return this._flashes.length > 0
   }
 
   hitTestSectionTitle(graph: SceneGraph, canvasX: number, canvasY: number): SceneNode | null {
@@ -584,6 +602,7 @@ export class SkiaRenderer {
     p.beginPhase('render:selection')
     this.drawSelection(canvas, graph, selectedIds, overlays)
     p.endPhase('render:selection')
+    this.drawFlashes(canvas, graph)
     this.drawSnapGuides(canvas, overlays.snapGuides)
     this.drawMarquee(canvas, overlays.marquee)
     this.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
@@ -1006,6 +1025,80 @@ export class SkiaRenderer {
     this.auxFill.setColor(this.selColor(MARQUEE_FILL_ALPHA))
     canvas.drawRect(rect, this.auxFill)
     canvas.drawRect(rect, this.selectionPaint)
+  }
+
+  // --- Node flash effect ---
+
+  private drawFlashes(canvas: Canvas, graph: SceneGraph): void {
+    if (this._flashes.length === 0) return
+
+    const now = performance.now()
+    const ck = this.ck
+    const totalMs = FLASH_ATTACK_MS + FLASH_HOLD_MS + FLASH_RELEASE_MS
+
+    if (!this._flashPaint) {
+      this._flashPaint = new ck.Paint()
+      this._flashPaint.setStyle(ck.PaintStyle.Stroke)
+      this._flashPaint.setAntiAlias(true)
+    }
+
+    const paint = this._flashPaint
+    const zoom = this.zoom
+
+    for (let i = this._flashes.length - 1; i >= 0; i--) {
+      const flash = this._flashes[i]
+      const elapsed = now - flash.startTime
+      if (elapsed > totalMs) {
+        this._flashes.splice(i, 1)
+        continue
+      }
+
+      const node = graph.getNode(flash.nodeId)
+      if (!node) {
+        this._flashes.splice(i, 1)
+        continue
+      }
+
+      const abs = graph.getAbsolutePosition(flash.nodeId)
+      const cx = (abs.x + node.width / 2) * zoom + this.panX
+      const cy = (abs.y + node.height / 2) * zoom + this.panY
+      const hw = (node.width / 2) * zoom
+      const hh = (node.height / 2) * zoom
+
+      let opacity: number
+      let extraPad: number
+
+      if (elapsed < FLASH_ATTACK_MS) {
+        const t = elapsed / FLASH_ATTACK_MS
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+        opacity = ease
+        extraPad = (1 - ease) * FLASH_OVERSHOOT
+      } else if (elapsed < FLASH_ATTACK_MS + FLASH_HOLD_MS) {
+        opacity = 1
+        extraPad = 0
+      } else {
+        const t = (elapsed - FLASH_ATTACK_MS - FLASH_HOLD_MS) / FLASH_RELEASE_MS
+        opacity = 1 - t * t
+        extraPad = 0
+      }
+
+      const pad = FLASH_PADDING + extraPad
+      const r = FLASH_RADIUS
+
+      paint.setColor(ck.Color4f(FLASH_COLOR.r, FLASH_COLOR.g, FLASH_COLOR.b, opacity))
+      paint.setStrokeWidth(FLASH_STROKE_WIDTH)
+
+      canvas.save()
+      if (node.rotation !== 0) canvas.rotate(node.rotation, cx, cy)
+
+      const rect = ck.RRectXY(
+        ck.LTRBRect(cx - hw - pad, cy - hh - pad, cx + hw + pad, cy + hh + pad),
+        r,
+        r
+      )
+      canvas.drawRRect(rect, paint)
+      canvas.restore()
+    }
   }
 
   // --- Layout insert indicator ---
@@ -3106,6 +3199,7 @@ export class SkiaRenderer {
     for (const pic of this.nodePictureCache.values()) pic?.delete()
     this.nodePictureCache.clear()
     this.scenePicture?.delete()
+    this._flashPaint?.delete()
     this.profiler.destroy()
     this.surface.delete()
   }

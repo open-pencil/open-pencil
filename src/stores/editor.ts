@@ -182,7 +182,7 @@ export function createEditorStore() {
       y: number
       selection?: string[]
     }>,
-    showUI: matchMedia('(min-width: 768px)').matches,
+    showUI: true,
     documentName: 'Untitled' as string,
     panX: 0,
     pageColor: { ...CANVAS_BG_COLOR } as Color,
@@ -191,6 +191,11 @@ export function createEditorStore() {
     renderVersion: 0,
     sceneVersion: 0,
     loading: false,
+    activeRibbonTab: 'panels' as 'panels' | 'code' | 'ai',
+    panelMode: 'design' as 'layers' | 'design',
+    actionToast: null as string | null,
+    mobileDrawerSnap: 'closed' as 'closed' | 'half' | 'full',
+    clipboardHtml: '',
     autosaveEnabled: true
   })
 
@@ -241,6 +246,22 @@ export function createEditorStore() {
 
   function requestRepaint() {
     state.renderVersion++
+  }
+
+  let flashRafId = 0
+  function flashNodes(nodeIds: string[]) {
+    if (!_renderer) return
+    for (const id of nodeIds) _renderer.flashNode(id)
+    if (!flashRafId) pumpFlashes()
+  }
+
+  function pumpFlashes() {
+    if (!_renderer?.hasActiveFlashes) {
+      flashRafId = 0
+      return
+    }
+    state.renderVersion++
+    flashRafId = requestAnimationFrame(pumpFlashes)
   }
 
   function isTopLevel(parentId: string | null): boolean {
@@ -1881,6 +1902,23 @@ export function createEditorStore() {
     requestRender()
   }
 
+  function mobileCopy() {
+    const transfer = new DataTransfer()
+    writeCopyData(transfer)
+    state.clipboardHtml = transfer.getData('text/html')
+  }
+
+  function mobileCut() {
+    mobileCopy()
+    deleteSelected()
+  }
+
+  function mobilePaste() {
+    if (state.clipboardHtml) {
+      pasteFromHTML(state.clipboardHtml)
+    }
+  }
+
   function commitMove(originals: Map<string, { x: number; y: number }>) {
     const finals = new Map<string, { x: number; y: number }>()
     for (const [id] of originals) {
@@ -2052,6 +2090,7 @@ export function createEditorStore() {
     layerTree,
     requestRender,
     requestRepaint,
+    flashNodes,
     setTool,
     select,
     clearSelection,
@@ -2099,6 +2138,9 @@ export function createEditorStore() {
     duplicateSelected,
     writeCopyData,
     pasteFromHTML,
+    mobileCopy,
+    mobileCut,
+    mobilePaste,
     deleteSelected,
     commitMove,
     commitResize,

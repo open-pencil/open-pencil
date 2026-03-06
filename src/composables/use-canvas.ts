@@ -127,7 +127,13 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
   }
 
   const params = new URLSearchParams(window.location.search)
-  const showRulers = !params.has('no-rulers')
+  const noRulersParam = params.has('no-rulers')
+  const mobileQuery = matchMedia('(max-width: 767px)')
+  let showRulers = !noRulersParam && !mobileQuery.matches
+  mobileQuery.addEventListener('change', (e) => {
+    showRulers = !noRulersParam && !e.matches
+    dirty = true
+  })
 
   function renderNow() {
     if (!renderer || destroyed) return

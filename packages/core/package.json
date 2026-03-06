@@ -30,12 +30,14 @@
   "dependencies": {
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",
+    "diff": "^8.0.3",
     "fflate": "^0.8.2",
     "fzstd": "^0.1.1",
     "yoga-layout": "^3.2.1"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",
+    "@types/diff": "^8.0.0",
     "typescript": "~5.8.3"
   }
 }

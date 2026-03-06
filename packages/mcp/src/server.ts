@@ -4,11 +4,21 @@ import { isAbsolute, relative, resolve } from 'node:path'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 
-import { ALL_TOOLS, FigmaAPI, parseFigFile, computeAllLayouts, SceneGraph } from '@open-pencil/core'
+import {
+  ALL_TOOLS,
+  FigmaAPI,
+  parseFigFile,
+  computeAllLayouts,
+  SceneGraph,
+  renderNodesToImage,
+  SkiaRenderer
+} from '@open-pencil/core'
 
-import type { ToolDef, ParamDef, ParamType } from '@open-pencil/core'
+import type { ToolDef, ParamDef, ParamType, ExportFormat } from '@open-pencil/core'
+import type { CanvasKit } from 'canvaskit-wasm'
 
-type McpResult = { content: { type: 'text'; text: string }[]; isError?: boolean }
+type McpContent = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }
+type McpResult = { content: McpContent[]; isError?: boolean }
 export interface CreateServerOptions {
   enableEval?: boolean
   fileRoot?: string | null
@@ -44,6 +54,17 @@ function paramToZod(param: ParamDef): z.ZodTypeAny {
   return param.required ? schema : schema.optional()
 }
 
+let ckInstance: CanvasKit | null = null
+
+async function getCanvasKit(): Promise<CanvasKit> {
+  if (ckInstance) return ckInstance
+  const CanvasKitInit = (await import('canvaskit-wasm/full')).default
+  const ckPath = import.meta.resolve('canvaskit-wasm/full')
+  const binDir = new URL('.', ckPath).pathname
+  ckInstance = await CanvasKitInit({ locateFile: (file: string) => binDir + file })
+  return ckInstance
+}
+
 export function createServer(version: string, options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({ name: 'open-pencil', version })
   const enableEval = options.enableEval ?? true
@@ -58,6 +79,19 @@ export function createServer(version: string, options: CreateServerOptions = {})
     if (!graph) throw new Error('No document loaded. Use open_file or new_document first.')
     const api = new FigmaAPI(graph)
     if (currentPageId) api.currentPage = api.wrapNode(currentPageId)
+    api.exportImage = async (nodeIds, opts) => {
+      const ck = await getCanvasKit()
+      const surface = ck.MakeSurface(1, 1)!
+      const renderer = new SkiaRenderer(ck, surface)
+      renderer.viewportWidth = 1
+      renderer.viewportHeight = 1
+      renderer.dpr = 1
+      const pageId = currentPageId ?? graph!.getPages()[0]?.id ?? graph!.rootId
+      return renderNodesToImage(ck, renderer, graph!, pageId, nodeIds, {
+        scale: opts.scale ?? 1,
+        format: (opts.format ?? 'PNG') as ExportFormat
+      })
+    }
     return api
   }
 
@@ -80,7 +114,12 @@ export function createServer(version: string, options: CreateServerOptions = {})
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic schema from ToolDef params
     server.registerTool(def.name, { description: def.description, inputSchema: z.object(shape) } as any, async (args: any) => {
       try {
-        const result = await def.execute(makeFigma(), args as Record<string, unknown>)
+        const result = await def.execute(makeFigma(), args as Record<string, unknown>) as Record<string, unknown>
+        if (result && typeof result === 'object' && 'base64' in result && 'mimeType' in result) {
+          return {
+            content: [{ type: 'image' as const, data: result.base64 as string, mimeType: result.mimeType as string }]
+          }
+        }
         return ok(result)
       } catch (e) {
         return fail(e)

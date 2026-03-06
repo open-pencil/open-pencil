@@ -58,7 +58,7 @@ The root app (`src/`) is the Tauri/Vite desktop editor. Its `src/engine/` files 
 
 ### Before committing
 
-Run all quality gates:
+Run all quality gates (see [Code quality](#code-quality) for the self-review checklist):
 
 ```sh
 bun run check          # oxlint + typecheck
@@ -85,14 +85,23 @@ When adding features, update `CHANGELOG.md` (Unreleased section) and `README.md`
 
 ## Tools (AI / MCP / CLI)
 
-- Tool operations are defined once in `packages/core/src/tools/schema.ts` as framework-agnostic `ToolDef` objects
+- Tool operations live in `packages/core/src/tools/` as framework-agnostic `ToolDef` objects, split by domain:
+  - `schema.ts` — `ToolDef` type, `defineTool()`, shared helpers (`nodeSummary`, `nodeToResult`)
+  - `read.ts` — query tools: selection, find, pages, fonts, components
+  - `create.ts` — shape/component/page creation, JSX render
+  - `modify.ts` — property setters: fills, strokes, effects, text, layout
+  - `structure.ts` — tree ops: delete, clone, reparent, group, arrange
+  - `variables.ts` — variable/collection CRUD and binding
+  - `vector.ts` — boolean ops, paths, viewport, SVG/image export
+  - `analyze.ts` — analyze (colors, typography, spacing, clusters), diff, eval
+  - `registry.ts` — assembles all tools into the `ALL_TOOLS` array
 - Each tool has: name, description, typed params, and an `execute(figma: FigmaAPI, args)` function
 - `defineTool()` gives type-safe params in the execute body; the array `ALL_TOOLS` erases the generics for adapters
 - AI adapter (`packages/core/src/tools/ai-adapter.ts`): `toolsToAI()` converts ToolDefs → valibot schemas + Vercel AI `tool()` wrappers
 - `src/ai/tools.ts` is just a thin wire: creates FigmaAPI from editor store, calls `toolsToAI()`
 - CLI commands (`packages/cli/src/commands/`) are **not** generated from ToolDefs — they have custom agentfmt formatting, tree walking, pagination. The `eval` command is the CLI's access to all ToolDef operations via FigmaAPI.
 - MCP adapter (`packages/mcp/src/server.ts`): `createServer()` converts ToolDefs → zod schemas + MCP `registerTool()`. Adds `open_file`, `save_file`, `new_document` for headless file ops. Two entry points: `index.ts` (stdio), `http.ts` (Hono + Streamable HTTP with sessions).
-- To add a new tool: add a `defineTool()` in `schema.ts`, add to `ALL_TOOLS` array — it's instantly available in AI chat, MCP, and via `eval` in CLI
+- To add a new tool: add a `defineTool()` in the appropriate domain file, add to `ALL_TOOLS` in `registry.ts` — it's instantly available in AI chat, MCP, and via `eval` in CLI
 - `FigmaAPI` (`packages/core/src/figma-api.ts`) is the execution target for all tools — Figma Plugin API compatible, uses Symbols for hidden internals
 
 ## Collaboration
@@ -113,13 +122,41 @@ When adding features, update `CHANGELOG.md` (Unreleased section) and `README.md`
 - No `any` — use proper types, generics, declaration merging
 - No `!` non-null assertions — use guards, `?.`, `??`
 - No `Math.random()` — use `crypto.getRandomValues()` everywhere
+- No inline type definitions when a named type exists — use `Color` not `{ r: number; g: number; b: number; a: number }`, use `Vector` not `{ x: number; y: number }`, use `SceneNode` / `Effect` / `Fill` / `Stroke` from `scene-graph.ts` instead of re-spelling their shapes inline
 - Shared types (GUID, Color, Vector, Matrix, Rect) live in `packages/core/src/types.ts`
+- Domain types (SceneNode, Fill, Stroke, Effect, BlendMode, etc.) live in `packages/core/src/scene-graph.ts`
 - Window API extensions (showOpenFilePicker, queryLocalFonts) live in `src/global.d.ts` and `packages/core/src/global.d.ts`
 - Use `culori` for color conversions — don't reimplement parseColor/colorToRgba
-- Use `@vueuse/core` hooks (useEventListener, etc.) — don't do manual addEventListener/removeEventListener
+- Use `@vueuse/core` hooks — prefer higher-level composables (`useBreakpoints`, `useEventListener`, `onClickOutside`, etc.) over raw APIs (`useMediaQuery`, manual `addEventListener`)
+- No module-level mutable state in components — use the editor store
+- Prefer `tw-animate-css` for animations — don't hand-write `<style>` transition keyframes
+- No duplicated component logic — if two components share data (icon maps, util functions, constants), export from one place and import in both
 - `packages/core/src/kiwi/kiwi-schema/` is vendored — don't modify
 - Core code must guard browser APIs: `typeof window !== 'undefined'`, `typeof document === 'undefined'`
 - Constants in `src/constants.ts` — no magic numbers in components or composables
+
+## Code quality
+
+Before submitting a PR, run the full quality gate and do a self-review:
+
+```sh
+bun run check          # oxlint + typecheck — zero errors required
+bun run format         # oxfmt with import sorting
+bun run test:dupes     # jscpd — must stay under 3% duplication
+bun run test:unit      # bun:test
+bun run test           # Playwright E2E
+```
+
+Self-review checklist:
+- Run `bun run test:dupes` — if duplication rises, extract shared helpers or use existing types
+- No inline type definitions that duplicate named types (Color, Vector, SceneNode, Effect, Fill, Stroke, etc.)
+- No copy-pasted logic — extract into functions. If two components share a util, icon map, or data structure, export from one place. If `jscpd` flags it, fix it.
+- Use precise union types — `'closed' | 'half' | 'full'` not `number | string | null`
+- Files should stay under ~600 lines — split by domain when they grow (see `packages/core/src/tools/` for the pattern)
+- `structuredClone` for deep copies, never shallow spread when mutating nested objects
+- Don't hand-roll what a dependency already does. Check existing deps first (`package.json`, `packages/*/package.json`). If none covers it, find a quality library instead of inlining an implementation — e.g. use `diff` for unified diffs, not a custom line-by-line loop; use `culori` for color math, not manual RGB parsing
+- Check Reka UI for existing components (Dialog, Popover, DropdownMenu, Select, Tooltip, Toast, etc.) before building custom ones — especially dropdowns, popovers, and modals
+
 
 ## Rendering
 

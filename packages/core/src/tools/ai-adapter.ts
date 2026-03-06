@@ -12,6 +12,28 @@ export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
   onBeforeExecute?: () => void
   onAfterExecute?: () => void
+  onFlashNodes?: (nodeIds: string[]) => void
+}
+
+function extractIdsFromArray(arr: unknown[]): string[] {
+  const ids: string[] = []
+  for (const item of arr) {
+    if (item && typeof item === 'object' && typeof (item as Record<string, unknown>).id === 'string') {
+      ids.push((item as Record<string, unknown>).id as string)
+    }
+  }
+  return ids
+}
+
+function extractNodeIds(result: unknown): string[] {
+  if (!result || typeof result !== 'object') return []
+  const obj = result as Record<string, unknown>
+  if (typeof obj.deleted === 'string') return []
+  const ids: string[] = []
+  if (typeof obj.id === 'string') ids.push(obj.id)
+  if (Array.isArray(obj.selection)) ids.push(...extractIdsFromArray(obj.selection))
+  if (Array.isArray(obj.results)) ids.push(...extractIdsFromArray(obj.results))
+  return ids
 }
 
 export function toolsToAI(
@@ -38,7 +60,12 @@ export function toolsToAI(
       execute: async (args: Record<string, unknown>) => {
         options.onBeforeExecute?.()
         try {
-          return await def.execute(options.getFigma(), args as any)
+          const execResult = await def.execute(options.getFigma(), args as any)
+          if (def.mutates && options.onFlashNodes) {
+            const ids = extractNodeIds(execResult)
+            if (ids.length > 0) options.onFlashNodes(ids)
+          }
+          return execResult
         } finally {
           options.onAfterExecute?.()
         }

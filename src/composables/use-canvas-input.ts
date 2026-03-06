@@ -1092,8 +1092,6 @@ export function useCanvasInput(
     })
   }
 
-  // Touch support for iOS/mobile: single-finger pan, two-finger pinch-zoom
-  const isTouchDevice = matchMedia('(pointer: coarse)').matches
   let activeTouches: Touch[] = []
   let pinchStartDist = 0
   let pinchStartZoom = 0
@@ -1104,14 +1102,31 @@ export function useCanvasInput(
     return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY)
   }
 
+  let touchAsMouse = false
+
+  function syntheticMouse(type: string, t: Touch): MouseEvent {
+    return new MouseEvent(type, {
+      clientX: t.clientX,
+      clientY: t.clientY,
+      screenX: t.screenX,
+      screenY: t.screenY,
+      button: 0,
+      buttons: 1,
+      bubbles: true
+    })
+  }
+
   function onTouchStart(e: TouchEvent) {
-    if (!isTouchDevice) return
     e.preventDefault()
     activeTouches = Array.from(e.touches)
     const canvas = canvasRef.value
     if (!canvas) return
 
     if (activeTouches.length === 2) {
+      if (touchAsMouse) {
+        onMouseUp()
+        touchAsMouse = false
+      }
       drag.value = null
       const [a, b] = activeTouches
       pinchStartDist = touchDist(a, b)
@@ -1121,18 +1136,24 @@ export function useCanvasInput(
       pinchMidY = (a.clientY + b.clientY) / 2 - rect.top
     } else if (activeTouches.length === 1) {
       const t = activeTouches[0]
-      drag.value = {
-        type: 'pan',
-        startScreenX: t.clientX,
-        startScreenY: t.clientY,
-        startPanX: store.state.panX,
-        startPanY: store.state.panY
+      const tool = store.state.activeTool
+      if (tool === 'HAND') {
+        touchAsMouse = false
+        drag.value = {
+          type: 'pan',
+          startScreenX: t.clientX,
+          startScreenY: t.clientY,
+          startPanX: store.state.panX,
+          startPanY: store.state.panY
+        }
+      } else {
+        touchAsMouse = true
+        onMouseDown(syntheticMouse('mousedown', t))
       }
     }
   }
 
   function onTouchMove(e: TouchEvent) {
-    if (!isTouchDevice) return
     e.preventDefault()
     activeTouches = Array.from(e.touches)
     const canvas = canvasRef.value
@@ -1162,31 +1183,41 @@ export function useCanvasInput(
       pinchMidX = newMidX
       pinchMidY = newMidY
       store.requestRepaint()
-    } else if (activeTouches.length === 1 && drag.value?.type === 'pan') {
+    } else if (activeTouches.length === 1) {
       const t = activeTouches[0]
-      const d = drag.value
-      store.state.panX = d.startPanX + (t.clientX - d.startScreenX)
-      store.state.panY = d.startPanY + (t.clientY - d.startScreenY)
-      store.requestRepaint()
+      if (touchAsMouse) {
+        onMouseMove(syntheticMouse('mousemove', t))
+      } else if (drag.value?.type === 'pan') {
+        const d = drag.value
+        store.state.panX = d.startPanX + (t.clientX - d.startScreenX)
+        store.state.panY = d.startPanY + (t.clientY - d.startScreenY)
+        store.requestRepaint()
+      }
     }
   }
 
   function onTouchEnd(e: TouchEvent) {
-    if (!isTouchDevice) return
     e.preventDefault()
     activeTouches = Array.from(e.touches)
 
     if (activeTouches.length === 0) {
-      drag.value = null
+      if (touchAsMouse) {
+        onMouseUp()
+        touchAsMouse = false
+      } else {
+        drag.value = null
+      }
       pinchStartDist = 0
     } else if (activeTouches.length === 1) {
       const t = activeTouches[0]
-      drag.value = {
-        type: 'pan',
-        startScreenX: t.clientX,
-        startScreenY: t.clientY,
-        startPanX: store.state.panX,
-        startPanY: store.state.panY
+      if (!touchAsMouse) {
+        drag.value = {
+          type: 'pan',
+          startScreenX: t.clientX,
+          startScreenY: t.clientY,
+          startPanX: store.state.panX,
+          startPanY: store.state.panY
+        }
       }
       pinchStartDist = 0
     }

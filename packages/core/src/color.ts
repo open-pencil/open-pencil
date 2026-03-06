@@ -35,7 +35,12 @@ export function colorToRgba255(color: Color) {
   }
 }
 
-export function rgba255ToColor(rgba: { r: number; g: number; b: number; a: number }): Color {
+export function colorToCSS(color: Color): string {
+  const { r, g, b } = colorToRgba255(color)
+  return `rgb(${r}, ${g}, ${b})`
+}
+
+export function rgba255ToColor(rgba: Color): Color {
   return { r: rgba.r / 255, g: rgba.g / 255, b: rgba.b / 255, a: rgba.a }
 }
 

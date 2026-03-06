@@ -6,9 +6,6 @@
  * and MCP (JSON Schema) are generated from these definitions.
  */
 
-import { parseColor } from '../color'
-import { DEFAULT_SHADOW_COLOR } from '../constants'
-
 import type { FigmaAPI, FigmaNodeProxy } from '../figma-api'
 
 export type ParamType = 'string' | 'number' | 'boolean' | 'color' | 'string[]'
@@ -26,6 +23,7 @@ export interface ParamDef {
 export interface ToolDef {
   name: string
   description: string
+  mutates?: boolean
   params: Record<string, ParamDef>
   execute: (figma: FigmaAPI, args: Record<string, any>) => unknown
 }
@@ -51,17 +49,18 @@ type ResolvedParams<P extends Record<string, ParamDef>> = {
 export function defineTool<P extends Record<string, ParamDef>>(def: {
   name: string
   description: string
+  mutates?: boolean
   params: P
   execute: (figma: FigmaAPI, args: ResolvedParams<P>) => unknown
 }): ToolDef {
   return def as unknown as ToolDef
 }
 
-function nodeToResult(node: FigmaNodeProxy): Record<string, unknown> {
+export function nodeToResult(node: FigmaNodeProxy): Record<string, unknown> {
   return node.toJSON()
 }
 
-function nodeSummary(node: FigmaNodeProxy): { id: string; name: string; type: string } {
+export function nodeSummary(node: FigmaNodeProxy): { id: string; name: string; type: string } {
   return { id: node.id, name: node.name, type: node.type }
 }
 
