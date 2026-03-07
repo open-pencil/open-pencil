@@ -143,6 +143,6 @@ export const SECTION_DEFAULT_STROKE: Stroke = {
   align: 'INSIDE'
 }
 
-export const VOICE_SPEAKING_THRESHOLD = -50
+export const VOICE_SPEAKING_THRESHOLD = 0.015
 export const VOICE_SPEAKING_DEBOUNCE_MS = 200
 export const VOICE_DETECTION_INTERVAL_MS = 100
