@@ -97,17 +97,13 @@ function onVoiceToggle() {
             <div class="relative z-10">
               <div
                 data-test-id="collab-local-avatar"
-                class="flex size-6 items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-shadow"
-                :class="[
-                  voice?.voiceState.value.speaking
-                    ? 'border-panel ring-2 animate-pulse'
-                    : 'border-panel'
-                ]"
+                class="flex size-6 items-center justify-center rounded-full border-2 border-panel text-[10px] font-semibold text-white transition-[outline]"
                 :style="{
                   background: colorToCSS(state.localColor),
-                  ...(voice?.voiceState.value.speaking
-                    ? { '--tw-ring-color': colorToCSS(state.localColor) }
-                    : {})
+                  outline: voice?.voiceState.value.speaking
+                    ? `2px solid ${colorToCSS(state.localColor)}`
+                    : '2px solid transparent',
+                  outlineOffset: '1px'
                 }"
               >
                 {{ initials(state.localName || 'You') }}
@@ -136,17 +132,14 @@ function onVoiceToggle() {
             <div class="relative z-10 hover:z-20">
               <div
                 data-test-id="collab-peer-avatar"
-                class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-all"
-                :class="[
-                  followingPeer === peer.clientId
-                    ? 'border-white ring-2 ring-white/40'
-                    : peer.voice?.speaking
-                      ? 'border-panel ring-2 animate-pulse'
-                      : 'border-panel'
-                ]"
+                class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-[outline]"
+                :class="followingPeer === peer.clientId ? 'border-white' : 'border-panel'"
                 :style="{
                   background: colorToCSS(peer.color),
-                  ...(peer.voice?.speaking ? { '--tw-ring-color': colorToCSS(peer.color) } : {})
+                  outline: peer.voice?.speaking
+                    ? `2px solid ${colorToCSS(peer.color)}`
+                    : '2px solid transparent',
+                  outlineOffset: '1px'
                 }"
                 @click="collab.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
               >
