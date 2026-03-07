@@ -22,6 +22,10 @@
     "canvaskit-wasm": "^0.40.0",
     "citty": "^0.1.6"
   },
+  "scripts": {
+    "build": "bunx tsgo && bunx fix-esm-import-path dist",
+    "prepublishOnly": "bun run build"
+  },
   "devDependencies": {
     "@types/bun": "^1.2.9"
   }
