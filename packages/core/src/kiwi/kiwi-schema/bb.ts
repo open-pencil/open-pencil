@@ -1,6 +1,7 @@
 let int32 = new Int32Array(1)
 let float32 = new Float32Array(int32.buffer)
 const textDecoder = new TextDecoder()
+const textEncoder = new TextEncoder()
 
 export class ByteBuffer {
   private _data: Uint8Array
@@ -202,43 +203,18 @@ export class ByteBuffer {
   }
 
   writeString(value: string): void {
-    let codePoint
-
-    for (let i = 0; i < value.length; i++) {
-      // Decode UTF-16
-      let a = value.charCodeAt(i)
-      if (i + 1 === value.length || a < 0xd800 || a >= 0xdc00) {
-        codePoint = a
-      } else {
-        let b = value.charCodeAt(++i)
-        codePoint = (a << 10) + b + (0x10000 - (0xd800 << 10) - 0xdc00)
-      }
-
-      // Strings are null-terminated
-      if (codePoint === 0) {
-        throw new Error('Cannot encode a string containing the null character')
-      }
-
-      // Encode UTF-8
-      if (codePoint < 0x80) {
-        this.writeByte(codePoint)
-      } else {
-        if (codePoint < 0x800) {
-          this.writeByte(((codePoint >> 6) & 0x1f) | 0xc0)
-        } else {
-          if (codePoint < 0x10000) {
-            this.writeByte(((codePoint >> 12) & 0x0f) | 0xe0)
-          } else {
-            this.writeByte(((codePoint >> 18) & 0x07) | 0xf0)
-            this.writeByte(((codePoint >> 12) & 0x3f) | 0x80)
-          }
-          this.writeByte(((codePoint >> 6) & 0x3f) | 0x80)
-        }
-        this.writeByte((codePoint & 0x3f) | 0x80)
-      }
+    // Strings are null-terminated in Kiwi. Keep this guard explicit so we never
+    // silently truncate data on embedded NUL.
+    if (value.includes('\0')) {
+      throw new Error('Cannot encode a string containing the null character')
     }
 
-    // Strings are null-terminated
-    this.writeByte(0)
+    // Use TextEncoder for UTF-8 correctness (CJK / surrogate pairs / emoji)
+    // instead of manually assembling code points.
+    const bytes = textEncoder.encode(value)
+    const index = this.length
+    this._growBy(bytes.length + 1)
+    this._data.set(bytes, index)
+    this._data[index + bytes.length] = 0
   }
 }
