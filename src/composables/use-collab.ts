@@ -140,18 +140,20 @@ export function useCollab(store: EditorStore) {
       sendYjsUpdate?.(update)
     })
 
-    awareness.on(
+    const aw = awareness
+    aw.on(
       'update',
       ({ added, updated, removed }: { added: number[]; updated: number[]; removed: number[] }) => {
         const changedClients = [...added, ...updated, ...removed]
-        const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness!, changedClients)
+        const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(aw, changedClients)
         sendAwareness?.(encodedUpdate)
       }
     )
 
     room.onPeerJoin((peerId) => {
       state.value.connected = true
-      const sv = Y.encodeStateVector(ydoc!)
+      if (!ydoc) return
+      const sv = Y.encodeStateVector(ydoc)
       sendSyncStep1?.(sv, peerId)
 
       if (awareness) {
@@ -164,10 +166,11 @@ export function useCollab(store: EditorStore) {
 
     room.onPeerLeave(() => {
       if (awareness) {
-        const remoteClients = [...awareness.getStates().keys()].filter(
-          (id) => id !== awareness!.clientID
+        const leaveAw = awareness
+        const remoteClients = [...leaveAw.getStates().keys()].filter(
+          (id) => id !== leaveAw.clientID
         )
-        awarenessProtocol.removeAwarenessStates(awareness, remoteClients, 'peer-left')
+        awarenessProtocol.removeAwarenessStates(leaveAw, remoteClients, 'peer-left')
       }
       updatePeersList()
     })
@@ -230,11 +233,12 @@ export function useCollab(store: EditorStore) {
     if (!node) return
 
     suppressYjsEvents = true
+    const yns = ynodes
     ydoc.transact(() => {
-      let ynode = ynodes!.get(nodeId)
+      let ynode = yns.get(nodeId)
       if (!ynode) {
         ynode = new Y.Map()
-        ynodes!.set(nodeId, ynode)
+        yns.set(nodeId, ynode)
       }
       syncNodePropsToYMap(node, ynode)
     })
@@ -254,12 +258,13 @@ export function useCollab(store: EditorStore) {
   function syncAllNodesToYjs() {
     if (!ydoc || !ynodes) return
     suppressYjsEvents = true
+    const yns = ynodes
     ydoc.transact(() => {
       for (const node of store.graph.getAllNodes()) {
-        let ynode = ynodes!.get(node.id)
+        let ynode = yns.get(node.id)
         if (!ynode) {
           ynode = new Y.Map()
-          ynodes!.set(node.id, ynode)
+          yns.set(node.id, ynode)
         }
         syncNodePropsToYMap(node, ynode)
       }
@@ -268,20 +273,22 @@ export function useCollab(store: EditorStore) {
   }
 
   function applyYjsToGraph(events: Y.YEvent<Y.Map<unknown>>[]) {
+    if (!ynodes) return
+    const yns = ynodes
     for (const event of events) {
-      if (event.target === ynodes) {
+      if (event.target === yns) {
         for (const [key, change] of event.changes.keys) {
           if (change.action === 'add') {
-            const ynode = ynodes!.get(key)
+            const ynode = yns.get(key)
             if (ynode) applyYnodeToGraph(key, ynode)
           } else if (change.action === 'delete') {
             store.graph.deleteNode(key)
           }
         }
-      } else if (event.target.parent === ynodes) {
+      } else if (event.target.parent === yns) {
         const nodeId = findNodeIdForYMap(event.target as Y.Map<unknown>)
         if (nodeId) {
-          const ynode = ynodes!.get(nodeId)
+          const ynode = yns.get(nodeId)
           if (ynode) applyYnodeToGraph(nodeId, ynode)
         }
       }
@@ -370,8 +377,8 @@ export function useCollab(store: EditorStore) {
       .map((p) => ({
         name: p.name,
         color: p.color,
-        x: p.cursor!.x,
-        y: p.cursor!.y,
+        x: p.cursor?.x ?? 0,
+        y: p.cursor?.y ?? 0,
         selection: p.selection
       }))
     store.requestRender()
