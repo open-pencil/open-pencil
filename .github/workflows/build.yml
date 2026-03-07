@@ -142,6 +142,23 @@ jobs:
 
       - run: bun install
 
+      - name: Resolve workspace dependencies
+        run: |
+          node -e '
+          const fs = require("fs");
+          const core = require("./packages/core/package.json");
+          const pkgs = ["packages/cli/package.json", "packages/mcp/package.json"];
+          for (const p of pkgs) {
+            const pkg = JSON.parse(fs.readFileSync(p));
+            for (const depType of ["dependencies", "devDependencies", "peerDependencies"]) {
+              if (pkg[depType]?.["@open-pencil/core"]) {
+                pkg[depType]["@open-pencil/core"] = "^" + core.version;
+              }
+            }
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+          }
+          '
+
       - uses: pnpm/action-setup@v4
         with:
           version: latest
