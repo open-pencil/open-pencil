@@ -16,11 +16,13 @@ import {
 import { colorToCSS } from '@open-pencil/core'
 import { useCollabInjected } from '@/composables/use-collab'
 import { toast } from '@/composables/use-toast'
+import { useVoiceInjected } from '@/composables/use-voice'
 import { initials } from '@/utils/text'
 
 const route = useRoute()
 const router = useRouter()
 const collab = useCollabInjected()
+const voice = useVoiceInjected()
 
 const joinInput = ref('')
 const nameDraft = ref(collab.state.value.localName)
@@ -72,6 +74,15 @@ function onDisconnect() {
   collab.disconnect()
   router.push('/')
 }
+
+function onVoiceToggle() {
+  if (!voice) return
+  if (voice.voiceState.value.inCall) {
+    voice.leaveCall()
+  } else {
+    voice.joinCall()
+  }
+}
 </script>
 
 <template>
@@ -81,12 +92,26 @@ function onDisconnect() {
       <div class="flex -space-x-1.5">
         <TooltipRoot>
           <TooltipTrigger as-child>
-            <div
-              data-test-id="collab-local-avatar"
-              class="flex size-6 items-center justify-center rounded-full border-2 border-panel text-[10px] font-semibold text-white"
-              :style="{ background: colorToCSS(state.localColor) }"
-            >
-              {{ initials(state.localName || 'You') }}
+            <div class="relative z-10">
+              <div
+                data-test-id="collab-local-avatar"
+                class="flex size-6 items-center justify-center rounded-full border-2 border-panel text-[10px] font-semibold text-white transition-[outline]"
+                :style="{
+                  background: colorToCSS(state.localColor),
+                  outline: voice?.voiceState.value.speaking
+                    ? `2px solid ${colorToCSS(state.localColor)}`
+                    : '2px solid transparent',
+                  outlineOffset: '1px'
+                }"
+              >
+                {{ initials(state.localName || 'You') }}
+              </div>
+              <div
+                v-if="voice?.voiceState.value.inCall && voice.voiceState.value.muted"
+                class="absolute -bottom-0.5 -right-0.5 z-20 flex size-3 items-center justify-center rounded-full bg-red-600"
+              >
+                <icon-lucide-mic-off class="size-2 text-white" />
+              </div>
             </div>
           </TooltipTrigger>
           <TooltipPortal>
@@ -101,18 +126,28 @@ function onDisconnect() {
 
         <TooltipRoot v-for="peer in peers" :key="peer.clientId">
           <TooltipTrigger as-child>
-            <div
-              data-test-id="collab-peer-avatar"
-              class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-all"
-              :class="
-                followingPeer === peer.clientId
-                  ? 'border-white ring-2 ring-white/40'
-                  : 'border-panel'
-              "
-              :style="{ background: colorToCSS(peer.color) }"
-              @click="collab.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
-            >
-              {{ initials(peer.name) }}
+            <div class="relative z-10 hover:z-20">
+              <div
+                data-test-id="collab-peer-avatar"
+                class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-[outline]"
+                :class="followingPeer === peer.clientId ? 'border-white' : 'border-panel'"
+                :style="{
+                  background: colorToCSS(peer.color),
+                  outline: peer.voice?.speaking
+                    ? `2px solid ${colorToCSS(peer.color)}`
+                    : '2px solid transparent',
+                  outlineOffset: '1px'
+                }"
+                @click="collab.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
+              >
+                {{ initials(peer.name) }}
+              </div>
+              <div
+                v-if="peer.voice?.inCall && peer.voice.muted"
+                class="absolute -bottom-0.5 -right-0.5 z-20 flex size-3 items-center justify-center rounded-full bg-red-600"
+              >
+                <icon-lucide-mic-off class="size-2 text-white" />
+              </div>
             </div>
           </TooltipTrigger>
           <TooltipPortal>
@@ -132,6 +167,61 @@ function onDisconnect() {
     </TooltipProvider>
 
     <div class="flex-1" />
+
+    <!-- Voice call buttons -->
+    <TooltipProvider v-if="state.connected" :delay-duration="200">
+      <div class="flex items-center gap-1">
+        <TooltipRoot v-if="voice?.voiceState.value.inCall">
+          <TooltipTrigger as-child>
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-md border-none transition-colors"
+              :class="
+                voice.voiceState.value.muted
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              "
+              @click="voice.toggleMute"
+            >
+              <icon-lucide-mic-off v-if="voice.voiceState.value.muted" class="size-3.5" />
+              <icon-lucide-mic v-else class="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipPortal>
+            <TooltipContent
+              class="rounded bg-neutral-800 px-2 py-1 text-xs text-white shadow-lg"
+              :side-offset="4"
+            >
+              {{ voice.voiceState.value.muted ? 'Unmute (M)' : 'Mute (M)' }}
+            </TooltipContent>
+          </TooltipPortal>
+        </TooltipRoot>
+
+        <TooltipRoot>
+          <TooltipTrigger as-child>
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-md border-none transition-colors"
+              :class="
+                voice?.voiceState.value.inCall
+                  ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
+                  : 'bg-surface/10 text-muted hover:bg-surface/20 hover:text-surface'
+              "
+              @click="onVoiceToggle"
+            >
+              <icon-lucide-phone-off v-if="voice?.voiceState.value.inCall" class="size-3.5" />
+              <icon-lucide-mic v-else class="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipPortal>
+            <TooltipContent
+              class="rounded bg-neutral-800 px-2 py-1 text-xs text-white shadow-lg"
+              :side-offset="4"
+            >
+              {{ voice?.voiceState.value.inCall ? 'Leave voice call' : 'Join voice call' }}
+            </TooltipContent>
+          </TooltipPortal>
+        </TooltipRoot>
+      </div>
+    </TooltipProvider>
 
     <!-- Share button / popover -->
     <PopoverRoot v-model:open="popoverOpen">

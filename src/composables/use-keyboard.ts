@@ -1,6 +1,7 @@
 import { useBreakpoints, useEventListener } from '@vueuse/core'
 
 import { useAIChat } from '@/composables/use-chat'
+import { useVoiceInjected } from '@/composables/use-voice'
 import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
 import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
 
@@ -12,6 +13,7 @@ function isEditing(e: Event) {
 
 export function useKeyboard() {
   const { activeTab } = useAIChat()
+  const voice = useVoiceInjected()
   const store = useEditorStore()
   const breakpoints = useBreakpoints({ mobile: 768 })
   const isMobile = breakpoints.smaller('mobile')
@@ -38,6 +40,21 @@ export function useKeyboard() {
 
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e)) return
+
+    if (
+      e.key.toLowerCase() === 'm' &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.altKey &&
+      !e.shiftKey &&
+      voice?.voiceState.value.inCall &&
+      store.state.activeTool !== 'TEXT' &&
+      !store.state.editingTextId
+    ) {
+      e.preventDefault()
+      voice.toggleMute()
+      return
+    }
 
     const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]
     if (tool) {
