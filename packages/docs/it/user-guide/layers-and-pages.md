@@ -11,11 +11,16 @@ Albero gerarchico sulla sinistra. Espandi/comprimi, trascina per riordinare, att
 - **Cambiare pagina** — click su un tab
 - **Aggiungere** — pulsante aggiungi
 - **Eliminare** — rimuovi pagina corrente
-- **Rinominare** — doppio click sul nome
+- **Rinominare** — doppio click sul nome; Invio o clic altrove per confermare, Esc per annullare
 
 Ogni pagina ha il suo viewport indipendente.
 
 ## Pannello proprietà
-Tre tab: **Design** (proprietà contestuali), **Codice** (JSX), **IA** (chat ⌘ J).
+Tre tab: **Design** (proprietà contestuali), **Codice** (JSX / Tailwind CSS v4), **IA** (chat ⌘ J).
 
 Design: aspetto, riempimento, contorno, effetti, tipografia, layout, esportazione.
+
+## Layout mobile
+
+Su mobile, i pannelli laterali sono sostituiti da un cassetto inferiore scorrevole con schede: Livelli, Proprietà, Design, Codice.
+

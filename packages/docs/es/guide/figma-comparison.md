@@ -6,7 +6,7 @@ Comparación característica por característica de las capacidades de Figma Des
 ✅ Soportado — la característica funciona de extremo a extremo · 🟡 Parcial — el comportamiento base existe, faltan algunas sub-características · 🔲 Aún no implementado
 :::
 
-**Cobertura:** 88 de 152 ítems de características de Figma abordados — 70 ✅ completamente soportados, 18 🟡 parciales, 64 🔲 pendientes. Última actualización: 2026-03-04.
+**Cobertura:** 94 de 158 ítems de características de Figma abordados — 76 ✅ completamente soportados, 18 🟡 parciales, 64 🔲 pendientes. Última actualización: 2026-03-07.
 
 ## Interfaz y navegación
 
@@ -28,7 +28,7 @@ Comparación característica por característica de las capacidades de Figma Des
 | Miniaturas personalizadas | 🔲 | Miniatura generada en export, pero sin selector de miniatura personalizada |
 | Configuración de valores de nudge | 🔲 | Por defecto 1px/10px; Figma permite valores personalizados |
 | Menú de app (modo navegador) | ✅ | Menús Archivo, Editar, Ver, Objeto, Texto, Organizar; Tauri usa menús nativos |
-| Herramientas IA | 🟡 | 75 herramientas vía OpenRouter + servidor MCP; sin imágenes generadas por IA ni búsqueda IA aún |
+| Herramientas IA | 🟡 | 78 herramientas vía OpenRouter + servidor MCP; sin imágenes generadas por IA ni búsqueda IA aún |
 
 ## Capas y formas
 
@@ -48,7 +48,7 @@ Comparación característica por característica de las capacidades de Figma Des
 | Escalar capas proporcionalmente | 🟡 | Shift-redimensionar mantiene proporciones; sin herramienta Scale dedicada (K) |
 | Bloquear y desbloquear capas | ✅ | ⇧⌘L alterna bloqueo; nodos bloqueados no se pueden seleccionar/mover |
 | Alternar visibilidad de capa | ✅ | Icono de ojo en panel de capas + atajo ⇧⌘H |
-| Renombrar capas | 🟡 | Renombrado programático vía store; sin UI de renombrado inline en panel de capas aún |
+| Renombrar capas | ✅ | Doble clic para renombrar inline; Enter/Escape/clic para confirmar |
 | Traer al frente / Enviar al fondo | ✅ | Atajos ] y [; también en menú contextual |
 | Mover a página | ✅ | Mover nodos entre páginas vía menú contextual |
 | Restricciones (redimensionamiento responsivo) | 🔲 | Fijar bordes/centro para comportamiento de resize del padre |
@@ -193,9 +193,9 @@ Comparación característica por característica de las capacidades de Figma Des
 | Portapapeles de Figma (pegar) | ✅ | Decodificar binario Kiwi del portapapeles de Figma |
 | Portapapeles de Figma (copiar) | ✅ | Codificar binario Kiwi que Figma puede leer |
 | Import de archivo Sketch | 🔲 | Parseo de archivos .sketch |
-| Export de imagen/SVG | 🟡 | PNG/JPG/WEBP con selector de escala y vista previa; SVG/PDF aún no |
+| Export de imagen/SVG/PDF | 🟡 | PNG/JPG/WEBP/SVG export ✅; PDF export 🔲 |
 | Historial de versiones | 🔲 | Navegar y restaurar versiones anteriores |
-| Copiar assets entre herramientas | 🟡 | Portapapeles de Figma funciona; sin portapapeles SVG/PDF |
+| Copiar assets entre herramientas | ✅ | Portapapeles Figma (Kiwi binary), Copiar como texto/SVG/PNG/JSX |
 
 ## API de plugins y scripting
 
@@ -215,7 +215,7 @@ Comparación característica por característica de las capacidades de Figma Des
 | Code Connect | 🔲 | Vincular componentes de diseño a código |
 | Fragmentos de código | 🟡 | Export JSX con resaltado y copia; sin fragmentos CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Integración con plugin de editor |
-| Servidor MCP | ✅ | @open-pencil/mcp con transportes stdio + HTTP; 75 herramientas core + 3 de gestión de archivos |
+| Servidor MCP | ✅ | @open-pencil/mcp con transportes stdio + HTTP; 75 herramientas core + 3 de gestión de archivos = 78 total |
 | Herramientas CLI | ✅ | CLI headless: info, tree, find, export, analyze, node, pages, variables, eval; servidor MCP |
 
 ## Figma Draw

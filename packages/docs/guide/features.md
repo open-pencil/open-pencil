@@ -140,15 +140,33 @@ Supports COLOR type with full UI, FLOAT/STRING/BOOLEAN types defined. Organize v
 
 The demo document includes three collections: Primitives (9 colors with Light/Dark modes), Semantic (aliases to Primitives), and Spacing (8 number tokens with Default/Compact modes). Variables are bound to demo nodes for live preview.
 
-## Image Export
+## Image & SVG Export
 
-Export selected nodes as PNG, JPG, or WEBP. The Export section in the properties panel provides scale selection (0.5×–4×), format picker, multi-export support (add multiple export settings), and a live preview with checkerboard background. JPG renders with white background, PNG/WEBP with transparency. Also available via context menu "Export…" and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> shortcut. Uses Tauri save dialog, File System Access API, or download fallback depending on platform.
+Export selected nodes as PNG, JPG, WEBP, or SVG. The Export section in the properties panel provides scale selection (0.5×–4×, hidden for SVG), format picker, multi-export support, and a live preview with checkerboard background. Also available via context menu "Export…" and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd>. SVG export supports rectangles, ellipses, lines, stars, polygons, vectors, text with style runs, gradients, image fills, effects, blend modes, and nested groups.
+
+CLI: `bun open-pencil export --format svg file.fig`. MCP/AI tool: `export_svg`.
+
+## Copy/Paste as
+
+The context menu **Copy/Paste as** submenu exposes multiple clipboard formats:
+
+- **Copy as text** — visible text content from the selection
+- **Copy as SVG** — full SVG markup of the selection
+- **Copy as PNG** — renders at 2× to the system clipboard (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>)
+- **Copy as JSX** — OpenPencil JSX compatible with `renderJsx()`
+
+## Stroke Align & Per-Side Weights
+
+Stroke alignment controls where the stroke is drawn relative to the shape boundary: **Inside** (stroke painted inside, clip path trims overlap with fill), **Center**, or **Outside**. Rendering matches Figma's behavior exactly.
+
+Individual stroke weights per side let you set different widths for Top, Right, Bottom, and Left independently via the side selector dropdown in the Stroke section.
 
 ## Context Menu
 
 Right-click on the canvas opens a Figma-style context menu. Actions adapt to the current selection:
 
 - **Clipboard** — Copy, Cut, Paste here, Duplicate, Delete
+- **Copy/Paste as** — Copy as text, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), JSX
 - **Z-order** — Bring to front, Send to back
 - **Grouping** — Group, Ungroup, Add auto layout
 - **Components** — Create component, Create component set, Create instance, Go to main component, Detach instance (purple-styled items)
@@ -174,6 +192,40 @@ In browser mode, a menu bar built with reka-ui Menubar provides access to all ma
 ## Autosave
 
 Files are automatically saved 3 seconds after the last scene change. A debounced watcher monitors `sceneVersion` — multiple rapid edits only trigger a single write after activity settles. Uses the Tauri fs plugin on desktop or the File System Access API in supported browsers. Autosave is disabled for new untitled documents until the user performs an explicit Save As. Errors are handled silently — the user can always trigger a manual save with <kbd>⌘</kbd><kbd>S</kbd>.
+
+**Auto-save toggle** — File → Auto-save disables automatic writes when you want full manual control (useful during exploratory edits you may not want to persist).
+
+## Mobile Layout & PWA
+
+OpenPencil is installable as a Progressive Web App on mobile devices. The responsive layout adapts to small screens:
+
+- Side panels replaced by a **swipeable bottom drawer** with tabs: Layers, Properties, Design, Code
+- Toolbar collapses to a compact strip with animated category switching
+- Spring-animated drawer with pan gesture control
+- PWA manifest with icons and service worker for offline capability (disabled in dev mode)
+
+## Tailwind CSS v4 JSX Export
+
+The Code panel's format toggle switches between two output modes:
+
+- **OpenPencil** — custom component tree (`Frame`, `Text`, `Rect`, etc.) compatible with `renderJsx()`
+- **Tailwind CSS v4** — HTML with utility classes (`<div className="flex gap-4 p-3">`) ready to drop into any React or Vue project
+
+Tailwind output supports layout, sizing, colors, border radius, opacity, rotation, overflow, shadows, blur, and typography. Uses v4 spacing semantics (px/4 multiplier) with automatic fallback to arbitrary values for non-standard sizes.
+
+CLI: `bun open-pencil export --format jsx --style tailwind file.fig`
+
+## Google Fonts Fallback
+
+When a font is not available locally, OpenPencil automatically fetches it from Google Fonts API. This ensures text renders correctly when opening .fig files that reference fonts not installed on the system — no manual font installation required.
+
+## Layer Inline Rename
+
+Double-click any layer name in the layers panel to rename it inline. Press **Enter** or click away to commit, **Escape** to cancel. Works for all node types.
+
+## Renderer Profiler
+
+A developer HUD overlay shows per-frame render timing, GPU phase breakdown, and frame budget. Accessible via the View menu. Useful for diagnosing performance issues on complex documents.
 
 ## P2P Collaboration
 
@@ -227,6 +279,16 @@ Single-node alignment aligns to parent frame bounds. Multi-selection uses the se
 
 All numeric inputs in the properties panel use a drag-to-scrub interaction — drag horizontally to adjust the value, or click to type directly. Supports suffix display (°, px, %).
 
+## Homebrew Tap
+
+macOS users can install the desktop app via Homebrew:
+
+```sh
+brew install open-pencil/tap/open-pencil
+```
+
+Supports Apple Silicon (arm64) and Intel (x64). The tap is auto-updated on each release via GitHub Actions.
+
 ## CI/CD Builds
 
 GitHub Actions workflow builds native Tauri desktop apps on version tags. The build matrix covers macOS (arm64, x64), Windows (x64, arm64), and Linux (x64). Builds use `tauri-apps/tauri-action` and produce draft GitHub releases with platform-specific binaries. macOS builds are code-signed and notarized via Apple Developer certificates. Release notes are auto-populated from CHANGELOG.md.
@@ -270,7 +332,7 @@ Built-in AI assistant accessible via the AI tab in the properties panel or <kbd>
 
 **Model selector** with curated models: Claude, Gemini, GPT, DeepSeek, Qwen, Kimi, Llama — stored in `@open-pencil/core` constants with benchmark-ranked tags. Responses stream as markdown (vue-stream-markdown).
 
-**75 tools** defined in `packages/core/src/tools/schema.ts`, covering: read operations (selection, page tree, node details, search), create operations (shapes, frames, vectors, slices, pages, components, instances), modify operations (fill, stroke, effects, layout, constraints, text, font, opacity, rotation, radius, visibility, blend mode, lock), node manipulation (move, resize, reparent, clone, delete, flatten, boolean operations), variable CRUD (get, find, create, set, delete, bind, collections), vector path tools (get, set, scale, flip, move), viewport control, and an `eval` escape hatch. Tools are wired to AI chat (valibot schemas), MCP server (zod schemas), and CLI (`eval` command). Tool calls display as collapsible timeline entries in the chat (reka-ui Collapsible).
+**78 tools** defined in `packages/core/src/tools/schema.ts`, covering: read operations (selection, page tree, node details, search, components), create operations (shapes, frames, vectors, slices, pages, components, instances), modify operations (fill, stroke, effects, layout, constraints, text, font, opacity, rotation, radius, visibility, blend mode, lock, stroke align), node manipulation (move, resize, reparent, clone, delete, flatten, boolean operations, arrange), variable CRUD (get, find, create, set, delete, bind, collections), vector path tools (get, set, scale, flip, move), analyze (colors, typography, spacing, clusters), diff (create/show snapshots), and an `eval` escape hatch. Tools are wired to AI chat (valibot schemas), MCP server (zod schemas), and CLI (`eval` command). Tool calls display as collapsible timeline entries in the chat (reka-ui Collapsible).
 
 **MCP server** (`packages/mcp/`) exposes all tools for external AI coding tools. Two transports: stdio for Claude Code/Cursor/Windsurf (`openpencil-mcp`), HTTP with Hono + Streamable HTTP for scripts and CI (`openpencil-mcp-http`). Adds 3 file management tools (`open_file`, `save_file`, `new_document`) on top of the 75 core tools, for 78 total. Runs on Bun and Node.js. See [MCP Tools reference](/reference/mcp-tools).
 

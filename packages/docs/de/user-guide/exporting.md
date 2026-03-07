@@ -14,7 +14,8 @@ Wählen Sie einen Knoten und nutzen Sie den Export-Bereich im Eigenschaftspanel.
 ### Export-Einstellungen
 
 - **Skalierung** — 0,5×, 0,75×, 1×, 1,5×, 2×, 3× oder 4×
-- **Format** — PNG (transparenter Hintergrund), JPG (weißer Hintergrund), WEBP (transparenter Hintergrund)
+- **Skalierung** — 0,5×–4× (für SVG ausgeblendet — Vektoren sind auflösungsunabhängig)
+- **Format** — PNG (transparenter Hintergrund), JPG (weißer Hintergrund), WEBP (transparenter Hintergrund), SVG (Vektor)
 
 Sie können mehrere Export-Einstellungen hinzufügen. Eine Live-Vorschau mit Schachbretthintergrund zeigt, was exportiert wird.
 
@@ -25,6 +26,17 @@ Sie können mehrere Export-Einstellungen hinzufügen. Eine Live-Vorschau mit Sch
 | Tastenkürzel | ⇧ ⌘ E | Shift + Strg + E |
 | Kontextmenü | Rechtsklick → Exportieren… | Rechtsklick → Exportieren… |
 | Eigenschaftspanel | Klick auf „Exportieren" | Klick auf „Exportieren" |
+
+## Als kopieren
+
+Das Kontextmenü bietet **Als kopieren** mit mehreren Zwischenablage-Formaten:
+
+| Aktion | Mac | Windows / Linux |
+|--------|-----|-----------------|
+| Als Text kopieren | — | — |
+| Als SVG kopieren | — | — |
+| Als PNG kopieren | ⇧ ⌘ C | Shift + Strg + C |
+| Als JSX kopieren | — | — |
 
 ## .fig-Dateioperationen
 
@@ -55,6 +67,7 @@ Aus OpenPencil exportierte Dateien können in Figma geöffnet werden und umgekeh
 | Aktion | Mac | Windows / Linux |
 |--------|-----|-----------------|
 | Auswahl exportieren | ⇧ ⌘ E | Shift + Strg + E |
+| Als PNG kopieren | ⇧ ⌘ C | Shift + Strg + C |
 | Datei öffnen | ⌘ O | Strg + O |
 | Speichern | ⌘ S | Strg + S |
 | Speichern unter | ⇧ ⌘ S | Shift + Strg + S |
@@ -63,3 +76,4 @@ Aus OpenPencil exportierte Dateien können in Figma geöffnet werden und umgekeh
 
 - Verwenden Sie 2× oder 3× Skalierung für hochauflösende Bildschirme.
 - JPG verwendet immer weißen Hintergrund — nutzen Sie PNG oder WEBP für Transparenz.
+- Verwenden Sie SVG-Export für vektorielle Weiterbearbeitung in Code-Editoren oder Illustrator.

@@ -6,7 +6,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 ✅ Supporté — la fonctionnalité est complète · 🟡 Partiel — le comportement de base existe, certaines sous-fonctionnalités manquent · 🔲 Pas encore implémenté
 :::
 
-**Couverture :** 88 des 152 éléments Figma traités — 70 ✅ entièrement supportés, 18 🟡 partiels, 64 🔲 en attente. Dernière mise à jour : 2026-03-04.
+**Couverture :** 94 des 158 éléments Figma traités — 76 ✅ entièrement supportés, 18 🟡 partiels, 64 🔲 en attente. Dernière mise à jour : 2026-03-07.
 
 ## Interface et navigation
 
@@ -28,7 +28,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Miniatures personnalisées | 🔲 | Miniature générée à l'export, mais pas de sélecteur personnalisé |
 | Réglages de valeur de nudge | 🔲 | Défaut 1px/10px ; Figma permet des valeurs personnalisées |
 | Menu de l'app (mode navigateur) | ✅ | Menus Fichier, Édition, Affichage, Objet, Texte, Disposition ; Tauri utilise les menus natifs |
-| Outils IA | 🟡 | 75 outils via OpenRouter + serveur MCP ; pas d'images générées par IA ni de recherche IA encore |
+| Outils IA | 🟡 | 78 outils via OpenRouter + serveur MCP ; pas d'images générées par IA ni de recherche IA encore |
 
 ## Calques et formes
 
@@ -48,7 +48,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Mettre à l'échelle proportionnellement | 🟡 | Shift-redimensionner contraint les proportions ; pas d'outil Scale dédié (K) |
 | Verrouiller et déverrouiller des calques | ✅ | ⇧⌘L toggle le verrouillage |
 | Basculer la visibilité | ✅ | Icône œil dans le panneau + raccourci ⇧⌘H |
-| Renommer des calques | 🟡 | Renommage programmatique via store ; pas d'UI inline encore |
+| Renommer des calques | ✅ | Double-clic renommage inline ; Entrée/Échap/clic pour valider |
 | Mettre au premier plan / Envoyer en arrière | ✅ | Raccourcis ] et [ ; aussi dans le menu contextuel |
 | Déplacer vers une page | ✅ | Déplacer les nœuds entre pages via menu contextuel |
 | Contraintes (redimensionnement réactif) | 🔲 | Épingler bords/centre pour le comportement de resize parent |
@@ -193,9 +193,9 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Presse-papiers Figma (coller) | ✅ | Décoder binaire Kiwi du presse-papiers Figma |
 | Presse-papiers Figma (copier) | ✅ | Encoder binaire Kiwi lisible par Figma |
 | Import de fichier Sketch | 🔲 | Analyse de fichiers .sketch |
-| Export image/SVG | 🟡 | PNG/JPG/WEBP avec sélecteur d'échelle et aperçu ; SVG/PDF pas encore |
+| Export image/SVG | 🟡 | PNG/JPG/WEBP avec sélecteur d'échelle et aperçu ; WEBP/SVG export ✅ ; PDF export 🔲 |
 | Historique des versions | 🔲 | Parcourir et restaurer les versions précédentes |
-| Copier des assets entre outils | 🟡 | Presse-papiers Figma fonctionne ; pas de presse-papiers SVG/PDF |
+| Copier des assets entre outils | 🟡 | Presse-papiers Figma fonctionne ; Copier comme texte/SVG/PNG/JSX |
 
 ## API de plugins et scripting
 
@@ -215,7 +215,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Code Connect | 🔲 | Lier composants de design au code |
 | Extraits de code | 🟡 | Export JSX avec coloration et copie ; pas d'extraits CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Intégration plugin éditeur |
-| Serveur MCP | ✅ | @open-pencil/mcp avec transports stdio + HTTP ; 75 outils core + 3 gestion de fichiers |
+| Serveur MCP | ✅ | @open-pencil/mcp avec transports stdio + HTTP ; 75 outils core + 3 gestion de fichiers = 78 total |
 | Outils CLI | ✅ | CLI headless : info, tree, find, export, analyze, node, pages, variables, eval ; serveur MCP |
 
 ## Figma Draw

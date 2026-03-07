@@ -6,6 +6,22 @@ description: Right-click context menu actions in OpenPencil — clipboard, z-ord
 # Context Menu
 
 Right-click on the canvas to open the context menu. If you right-click on a node, it is selected first. Right-clicking on empty canvas clears the selection.
+## Copy/Paste as
+
+The **Copy/Paste as** submenu offers additional clipboard formats for the selected node(s):
+
+| Action | Shortcut (Mac) | Shortcut (Win/Linux) |
+|--------|----------------|----------------------|
+| Copy as text | — | — |
+| Copy as SVG | — | — |
+| Copy as PNG | ⇧ ⌘ C | Shift + Ctrl + C |
+| Copy as JSX | — | — |
+
+- **Copy as text** — copies visible text content from the selection
+- **Copy as SVG** — copies the node tree as SVG markup
+- **Copy as PNG** — renders at 2× and places on the system clipboard (paste into Slack, Notion, etc.)
+- **Copy as JSX** — copies the OpenPencil JSX representation for use with `renderJsx()`
+
 ## Clipboard Actions
 
 | Action | Shortcut (Mac) | Shortcut (Win/Linux) |

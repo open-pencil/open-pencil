@@ -6,6 +6,17 @@ description: Azioni del menu contestuale con click destro in OpenPencil.
 
 Click destro sul canvas per aprire il menu contestuale. Click destro su un nodo lo seleziona prima.
 
+## Copia come
+
+Il sottomenu **Copia come** offre questi formati:
+
+| Azione | Mac | Windows / Linux |
+|--------|-----|-----------------|
+| Copia come testo | — | — |
+| Copia come SVG | — | — |
+| Copia come PNG | ⇧ ⌘ C | Shift + Ctrl + C |
+| Copia come JSX | — | — |
+
 ## Appunti
 Copia (⌘C), Taglia (⌘X), Incolla (⌘V), Duplica (⌘D), Elimina (⌫)
 

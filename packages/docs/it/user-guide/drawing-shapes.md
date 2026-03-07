@@ -20,7 +20,7 @@ description: Creare rettangoli, ellissi, linee, frame e sezioni in OpenPencil.
 
 ## Proprietà
 - **Riempimento** — colore solido, gradiente (lineare, radiale, angolare, diamante), immagine
-- **Contorno** — larghezza, colore, stile estremità, stile giunzione, tratteggio
+- **Contorno** — larghezza (uniforme o per lato: Alto/Destra/Basso/Sinistra), colore, allineamento (Interno/Centro/Esterno), stile estremità, stile giunzione, tratteggio
 - **Raggio angoli** — uniforme o indipendente per angolo
 - **Effetti** — ombra esterna, ombra interna, sfocatura livello, sfocatura sfondo
 

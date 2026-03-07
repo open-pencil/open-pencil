@@ -6,7 +6,7 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 ✅ Supportato — la funzionalità è completa · 🟡 Parziale — il comportamento di base esiste, mancano alcune sotto-funzionalità · 🔲 Non ancora implementato
 :::
 
-**Copertura:** 88 dei 152 elementi Figma affrontati — 70 ✅ completamente supportati, 18 🟡 parziali, 64 🔲 in sospeso. Ultimo aggiornamento: 2026-03-04.
+**Copertura:** 94 dei 158 elementi Figma affrontati — 76 ✅ completamente supportati, 18 🟡 parziali, 64 🔲 in sospeso. Ultimo aggiornamento: 2026-03-07.
 
 ## Interfaccia e navigazione
 
@@ -28,7 +28,7 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 | Miniature personalizzate | 🔲 | Miniatura generata all'export, ma nessun selettore personalizzato |
 | Impostazioni valore nudge | 🔲 | Default 1px/10px; Figma consente valori personalizzati |
 | Menu app (modalità browser) | ✅ | Menu File, Modifica, Visualizza, Oggetto, Testo, Disponi; Tauri usa menu nativi |
-| Strumenti IA | 🟡 | 75 strumenti via OpenRouter + server MCP; nessuna immagine generata da IA o ricerca IA ancora |
+| Strumenti IA | 🟡 | 78 strumenti via OpenRouter + server MCP; nessuna immagine generata da IA o ricerca IA ancora |
 
 ## Livelli e forme
 
@@ -48,7 +48,7 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 | Scalare livelli proporzionalmente | 🟡 | Shift-ridimensiona mantiene proporzioni; nessuno strumento Scale dedicato (K) |
 | Bloccare e sbloccare livelli | ✅ | ⇧⌘L alterna blocco |
 | Toggle visibilità livello | ✅ | Icona occhio nel pannello + scorciatoia ⇧⌘H |
-| Rinominare livelli | 🟡 | Rinomina programmata via store; nessuna UI inline ancora |
+| Rinominare livelli | ✅ | Doppio clic per rinomina inline; Invio/Esc/clic per confermare |
 | Porta in primo piano / Invia in fondo | ✅ | Scorciatoie ] e [; anche nel menu contestuale |
 | Sposta a pagina | ✅ | Spostare nodi tra pagine tramite menu contestuale |
 | Vincoli (ridimensionamento responsivo) | 🔲 | Fissare bordi/centro per comportamento resize genitore |
@@ -193,9 +193,9 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 | Appunti Figma (incolla) | ✅ | Decodificare binario Kiwi dagli appunti Figma |
 | Appunti Figma (copia) | ✅ | Codificare binario Kiwi leggibile da Figma |
 | Import file Sketch | 🔲 | Parsing file .sketch |
-| Export immagine/SVG | 🟡 | PNG/JPG/WEBP con selettore scala e anteprima; SVG/PDF non ancora |
+| Export immagine/SVG | 🟡 | PNG/JPG/WEBP con selettore scala e anteprima; WEBP/SVG export ✅; PDF export 🔲 |
 | Cronologia versioni | 🔲 | Sfogliare e ripristinare versioni precedenti |
-| Copiare asset tra strumenti | 🟡 | Appunti Figma funzionano; nessun appunti SVG/PDF |
+| Copiare asset tra strumenti | 🟡 | Appunti Figma funzionano; Copia come testo/SVG/PNG/JSX |
 
 ## API plugin e scripting
 
@@ -215,7 +215,7 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 | Code Connect | 🔲 | Collegare componenti design al codice |
 | Frammenti di codice | 🟡 | Export JSX con evidenziazione e copia; nessun frammento CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Integrazione plugin editor |
-| Server MCP | ✅ | @open-pencil/mcp con trasporti stdio + HTTP; 75 strumenti core + 3 gestione file |
+| Server MCP | ✅ | @open-pencil/mcp con trasporti stdio + HTTP; 75 strumenti core + 3 gestione file = 78 total |
 | Strumenti CLI | ✅ | CLI headless: info, tree, find, export, analyze, node, pages, variables, eval; server MCP |
 
 ## Figma Draw

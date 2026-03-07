@@ -176,9 +176,56 @@ Alle numerischen Eingaben im Eigenschafts-Panel verwenden eine Zieh-zum-Ändern-
 
 GitHub Actions baut native Tauri-Desktop-Apps bei Versions-Tags. Die Build-Matrix umfasst macOS (arm64, x64), Windows (x64, arm64) und Linux (x64). macOS-Builds sind mit Apple-Developer-Zertifikaten signiert und notarisiert. Release-Notes werden automatisch aus CHANGELOG.md befüllt.
 
+## Bild- & SVG-Export
+
+Exportieren Sie ausgewählte Knoten als PNG, JPG, WEBP oder SVG. SVG-Export unterstützt Rechtecke, Ellipsen, Linien, Sterne, Polygone, Vektoren, Text, Verläufe, Bildausfüllungen, Effekte und verschachtelte Gruppen.
+
+CLI: `bun open-pencil export --format svg file.fig`. MCP/KI-Tool: `export_svg`.
+
+## Als kopieren
+
+Das **Als kopieren**-Untermenü im Kontextmenü bietet:
+
+- **Als Text kopieren** — sichtbarer Textinhalt
+- **Als SVG kopieren** — SVG-Markup der Auswahl
+- **Als PNG kopieren** — rendert bei 2× in die Zwischenablage (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>)
+- **Als JSX kopieren** — OpenPencil JSX
+
+## Konturausrichtung & Pro-Seite-Breiten
+
+Konturausrichtung: **Innen**, **Mitte** oder **Außen** (beschneidungsbasiertes Rendering wie in Figma). Individuelle Konturbreiten pro Seite (Oben/Rechts/Unten/Links) über das Seitenauswahl-Dropdown.
+
+## Mobile Layout & PWA
+
+OpenPencil ist als Progressive Web App auf Mobilgeräten installierbar. Das Layout passt sich kleinen Bildschirmen an — Seitenpanels werden durch ein wischbares unteres Drawer mit Tabs ersetzt: Ebenen, Eigenschaften, Design, Code.
+
+## Tailwind CSS v4 JSX-Export
+
+Der Code-Tab bietet einen Formatschalter zwischen **OpenPencil JSX** und **Tailwind CSS v4** (HTML mit Utility-Klassen). CLI: `bun open-pencil export --format jsx --style tailwind file.fig`
+
+## Google Fonts Fallback
+
+Wenn eine Schriftart lokal nicht verfügbar ist, lädt OpenPencil sie automatisch von der Google Fonts API.
+
+## Homebrew-Tap
+
+macOS-Nutzer können die Desktop-App über Homebrew installieren:
+
+```sh
+brew install open-pencil/tap/open-pencil
+```
+
+## Ebenen-Inline-Umbenennen
+
+Doppelklick auf einen Ebenennamen zum Inline-Umbenennen. Enter oder Klick außerhalb bestätigt, Escape bricht ab.
+
+## Renderer-Profiler
+
+Ein HUD-Overlay zeigt Frame-Timing, GPU-Phasen und Frame-Budget. Zugänglich über das Ansichtsmenü.
+
 ## KI-Chat
 
-Integrierter KI-Assistent über den KI-Tab oder <kbd>⌘</kbd><kbd>J</kbd>. Kommuniziert direkt mit OpenRouter. **75 Werkzeuge** für Lesen, Erstellen, Ändern und Organisieren von Design-Elementen. **MCP-Server** für externe KI-Coding-Tools.
+Integrierter KI-Assistent über den KI-Tab oder <kbd>⌘</kbd><kbd>J</kbd>. Kommuniziert direkt mit OpenRouter. **78 Werkzeuge** für Lesen, Erstellen, Ändern und Organisieren von Design-Elementen. **MCP-Server** für externe KI-Coding-Tools.
 
 ## @open-pencil/core & CLI
 
@@ -198,7 +245,7 @@ Programmatische Design-Erstellung über TreeNode-Builder-Funktionen aus `@open-p
 
 ## Code-Panel
 
-Der Code-Tab im Eigenschafts-Panel zeigt die JSX-Darstellung der aktuellen Auswahl mit Prism.js-Syntaxhervorhebung und einem Kopieren-Button.
+Der Code-Tab im Eigenschafts-Panel zeigt die Code-Darstellung der aktuellen Auswahl mit Syntaxhervorhebung und einem Kopieren-Button. Ein Formatschalter wechselt zwischen OpenPencil JSX und Tailwind CSS v4.
 
 ## Codequalität
 

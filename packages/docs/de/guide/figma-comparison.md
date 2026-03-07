@@ -6,7 +6,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 ✅ Unterstützt — Funktion funktioniert vollständig · 🟡 Teilweise — Grundverhalten vorhanden, einige Unterfunktionen fehlen · 🔲 Noch nicht implementiert
 :::
 
-**Abdeckung:** 88 von 152 Figma-Feature-Punkten adressiert — 70 ✅ vollständig unterstützt, 18 🟡 teilweise, 64 🔲 noch nicht. Zuletzt aktualisiert: 2026-03-04.
+**Abdeckung:** 94 von 158 Figma-Feature-Punkten adressiert — 76 ✅ vollständig unterstützt, 18 🟡 teilweise, 64 🔲 noch nicht. Zuletzt aktualisiert: 2026-03-07.
 
 ## Benutzeroberfläche & Navigation
 
@@ -28,7 +28,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Benutzerdefinierte Dateiminiatur | 🔲 | Miniatur beim Export generiert, aber kein benutzerdefinierter Auswähler |
 | Nudge-Wert-Einstellungen | 🔲 | Standard 1px/10px; Figma erlaubt benutzerdefinierte Werte |
 | App-Menü (Browser-Modus) | ✅ | Datei, Bearbeiten, Ansicht, Objekt, Text, Anordnen; Tauri verwendet native Menüs |
-| KI-Werkzeuge | 🟡 | 75 Werkzeuge via OpenRouter + MCP-Server; noch keine KI-generierten Bilder oder KI-Suche |
+| KI-Werkzeuge | 🟡 | 78 Werkzeuge via OpenRouter + MCP-Server; noch keine KI-generierten Bilder oder KI-Suche |
 
 ## Ebenen & Formen
 
@@ -48,7 +48,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Ebenen proportional skalieren | 🟡 | Umschalt-Resize hält Proportionen; kein dediziertes Scale-Werkzeug (K) |
 | Ebenen sperren/entsperren | ✅ | ⇧⌘L schaltet Sperre um |
 | Ebenensichtbarkeit umschalten | ✅ | Augen-Icon im Panel + ⇧⌘H-Kürzel |
-| Ebenen umbenennen | 🟡 | Programmatisches Umbenennen via Store; noch kein Inline-Umbenennen-UI |
+| Ebenen umbenennen | ✅ | Doppelklick-Inline-Umbenennen; Enter/Escape/Blur zum Bestätigen |
 | Nach vorne / Nach hinten | ✅ | ] und [ Tastaturkürzel; auch im Kontextmenü |
 | Auf Seite verschieben | ✅ | Knoten zwischen Seiten verschieben via Kontextmenü |
 | Einschränkungen (responsives Resize) | 🔲 | Kanten/Mitte fixieren für Eltern-Resize-Verhalten |
@@ -193,7 +193,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Figma-Zwischenablage (Einfügen) | ✅ | Kiwi-Binär aus Figma-Zwischenablage dekodieren |
 | Figma-Zwischenablage (Kopieren) | ✅ | Kiwi-Binär kodieren, das Figma lesen kann |
 | Sketch-Datei-Import | 🔲 | .sketch-Datei-Parsing |
-| Bild/SVG-Export | 🟡 | PNG/JPG/WEBP mit Skalierung und Vorschau; SVG/PDF noch nicht |
+| Bild/SVG/PDF-Export | 🟡 | PNG/JPG/WEBP/SVG-Export ✅; PDF-Export 🔲 |
 | Versionsverlauf | 🔲 | Vorherige Versionen durchsuchen und wiederherstellen |
 | Assets zwischen Tools kopieren | 🟡 | Figma-Zwischenablage funktioniert; kein SVG/PDF-Clipboard |
 
@@ -215,7 +215,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Code Connect | 🔲 | Design-Komponenten mit Code verknüpfen |
 | Code-Snippets | 🟡 | JSX-Export mit Hervorhebung und Kopieren; keine CSS/Swift/Kotlin-Snippets |
 | Figma für VS Code | 🔲 | Editor-Plugin-Integration |
-| MCP-Server | ✅ | @open-pencil/mcp mit stdio + HTTP-Transporten; 75 Kern-Werkzeuge + 3 Dateiverwaltung |
+| MCP-Server | ✅ | @open-pencil/mcp mit stdio + HTTP-Transporten; 75 Kern-Werkzeuge + 3 Dateiverwaltung = 78 gesamt |
 | CLI-Werkzeuge | ✅ | Headless-CLI: info, tree, find, export, analyze, node, pages, variables, eval; MCP-Server |
 
 ## Figma Draw

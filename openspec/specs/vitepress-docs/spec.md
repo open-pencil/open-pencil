@@ -242,3 +242,43 @@ The docs site SHALL reference tool unification in development pages when relevan
 #### Scenario: Tool architecture mention
 - **WHEN** user reads development/contributing docs
 - **THEN** unified tool definitions (`packages/core/src/tools/`) are mentioned as canonical source
+
+### Requirement: SVG export documentation (sync-docs-v07-v08)
+
+The features page and exporting article SHALL document SVG as an export format. The format table SHALL include SVG with a note that the scale selector is hidden for SVG. CLI and MCP tool SHALL be mentioned.
+
+#### Scenario: SVG in exporting article
+- **WHEN** user reads the Exporting user guide article
+- **THEN** SVG appears in the format table
+
+### Requirement: Copy/Paste as submenu documentation (sync-docs-v07-v08)
+
+The context menu article SHALL document the Copy/Paste as submenu: Copy as text, SVG, PNG (⇧⌘C), JSX.
+
+#### Scenario: Copy/Paste as section present
+- **WHEN** user reads the Context Menu article
+- **THEN** a Copy/Paste as section lists all four formats
+
+### Requirement: Homebrew install (sync-docs-v07-v08)
+
+The Getting Started guide SHALL include Homebrew install before "Building from Source".
+
+#### Scenario: Homebrew section present
+- **WHEN** user reads Getting Started
+- **THEN** `brew install open-pencil/tap/open-pencil` is shown
+
+### Requirement: Keyboard shortcuts accuracy (sync-docs-v07-v08)
+
+⌘N/⌘T, ⌘W, and ⌘\\ SHALL be marked ✅. ⇧⌘C (Copy as PNG) SHALL be added as ✅.
+
+### Requirement: MCP tools completeness (sync-docs-v07-v08)
+
+All 78 tools SHALL be listed in the MCP tools reference.
+
+### Requirement: Comparison tables accuracy (sync-docs-v07-v08)
+
+comparison.md SHALL show 78 tools (not 75) and NOT list SVG export as a Penpot advantage. figma-comparison.md SHALL show Rename layers ✅, SVG export ✅, Copy/Paste as ✅, Stroke align ✅, per-side weights ✅.
+
+### Requirement: Architecture roadmap section (sync-docs-v07-v08)
+
+architecture.md SHALL include a "What's Next" section covering: more AI providers, full figma-use tools, CI design tooling, prototyping, CSS Grid, PDF export, .fig fidelity.

@@ -20,7 +20,7 @@ description: Créer des rectangles, ellipses, lignes, cadres et sections dans Op
 
 ## Propriétés
 - **Remplissage** — couleur unie, dégradé (linéaire, radial, angulaire, diamant), image
-- **Contour** — largeur, couleur, terminaison, jointure, tirets
+- **Contour** — largeur (uniforme ou par côté : Haut/Droite/Bas/Gauche), couleur, alignement (Intérieur/Centre/Extérieur), terminaison, jointure, tirets
 - **Rayon des coins** — uniforme ou indépendant par coin
 - **Effets** — ombre portée, ombre interne, flou de calque, flou d'arrière-plan
 

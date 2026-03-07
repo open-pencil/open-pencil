@@ -6,7 +6,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 ✅ Obsługiwane — funkcja działa w pełni · 🟡 Częściowe — podstawowe zachowanie istnieje, brakuje niektórych pod-funkcji · 🔲 Jeszcze nie zaimplementowane
 :::
 
-**Pokrycie:** 88 ze 152 elementów Figmy uwzględnionych — 70 ✅ w pełni obsługiwanych, 18 🟡 częściowych, 64 🔲 oczekujących. Ostatnia aktualizacja: 2026-03-04.
+**Pokrycie:** 94 ze 158 elementów Figmy uwzględnionych — 76 ✅ w pełni obsługiwanych, 18 🟡 częściowych, 64 🔲 oczekujących. Ostatnia aktualizacja: 2026-03-07.
 
 ## Interfejs i nawigacja
 
@@ -28,7 +28,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Niestandardowe miniatury | 🔲 | Miniatura generowana przy eksporcie, ale bez selektora |
 | Ustawienia wartości nudge | 🔲 | Domyślnie 1px/10px; Figma pozwala na wartości niestandardowe |
 | Menu aplikacji (tryb przeglądarkowy) | ✅ | Menu Plik, Edycja, Widok, Obiekt, Tekst, Rozmieszczenie; Tauri używa natywnych menu |
-| Narzędzia AI | 🟡 | 75 narzędzi przez OpenRouter + serwer MCP; bez obrazów generowanych przez AI ani wyszukiwania AI jeszcze |
+| Narzędzia AI | 🟡 | 78 narzędzi przez OpenRouter + serwer MCP; bez obrazów generowanych przez AI ani wyszukiwania AI jeszcze |
 
 ## Warstwy i kształty
 
@@ -48,7 +48,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Skaluj warstwy proporcjonalnie | 🟡 | Shift-zmiana rozmiaru utrzymuje proporcje; brak dedykowanego narzędzia Scale (K) |
 | Zablokuj i odblokuj warstwy | ✅ | ⇧⌘L przełącza blokadę |
 | Przełącz widoczność warstwy | ✅ | Ikona oka w panelu + skrót ⇧⌘H |
-| Zmień nazwę warstw | 🟡 | Programistyczna zmiana nazwy; brak inline UI jeszcze |
+| Zmień nazwę warstw | ✅ | Dwuklik - zmiana nazwy inline; Enter/Escape/blur aby zatwierdzić |
 | Przenieś na wierzch / Wyślij na spód | ✅ | Skróty ] i [; też w menu kontekstowym |
 | Przenieś na stronę | ✅ | Przenoszenie węzłów między stronami przez menu kontekstowe |
 | Ograniczenia (responsywna zmiana rozmiaru) | 🔲 | Przypięcie krawędzi/centrum dla zachowania resize rodzica |
@@ -193,9 +193,9 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Schowek Figmy (wklej) | ✅ | Dekodowanie binarnego Kiwi ze schowka Figmy |
 | Schowek Figmy (kopiuj) | ✅ | Kodowanie binarnego Kiwi czytelnego przez Figmę |
 | Import pliku Sketch | 🔲 | Parsowanie plików .sketch |
-| Eksport obrazu/SVG | 🟡 | PNG/JPG/WEBP z selektorem skali i podglądem; SVG/PDF jeszcze nie |
+| Eksport obrazu/SVG | 🟡 | PNG/JPG/WEBP z selektorem skali i podglądem; WEBP/SVG export ✅; PDF export 🔲 |
 | Historia wersji | 🔲 | Przeglądanie i przywracanie poprzednich wersji |
-| Kopiowanie zasobów między narzędziami | 🟡 | Schowek Figmy działa; brak schowka SVG/PDF |
+| Kopiowanie zasobów między narzędziami | 🟡 | Schowek Figmy działa; Kopiuj jako tekst/SVG/PNG/JSX |
 
 ## API pluginów i skryptowanie
 
@@ -215,7 +215,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Code Connect | 🔲 | Łączenie komponentów projektowych z kodem |
 | Fragmenty kodu | 🟡 | Eksport JSX z podświetlaniem i kopiowaniem; brak fragmentów CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Integracja z pluginem edytora |
-| Serwer MCP | ✅ | @open-pencil/mcp z transportami stdio + HTTP; 75 narzędzi core + 3 zarządzanie plikami |
+| Serwer MCP | ✅ | @open-pencil/mcp z transportami stdio + HTTP; 75 narzędzi core + 3 zarządzanie plikami = 78 total |
 | Narzędzia CLI | ✅ | Headless CLI: info, tree, find, export, analyze, node, pages, variables, eval; serwer MCP |
 
 ## Figma Draw

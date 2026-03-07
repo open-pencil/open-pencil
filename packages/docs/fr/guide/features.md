@@ -152,7 +152,43 @@ Création programmable via TreeNode builders. Props shorthand style Tailwind.
 
 ## Chat IA
 
-Assistant IA intégré via <kbd>⌘</kbd><kbd>J</kbd>. **75 outils** dans `schema.ts` couvrant lecture, création, modification, manipulation de nœuds, CRUD variables, outils vectoriels, contrôle viewport et `eval`. **Serveur MCP** expose 78 outils au total (75 core + 3 gestion fichiers) pour les outils de codage IA externes.
+Assistant IA intégré via <kbd>⌘</kbd><kbd>J</kbd>. **78 outils** dans `schema.ts` couvrant lecture, création, modification, manipulation de nœuds, CRUD variables, outils vectoriels, contrôle viewport et `eval`. **Serveur MCP** expose 78 outils au total (75 core + 3 gestion fichiers) pour les outils de codage IA externes.
+
+## Export SVG
+
+Exporte les nœuds sélectionnés en PNG, JPG, WEBP ou SVG. CLI : `bun open-pencil export --format svg file.fig`.
+
+## Copier en tant que
+
+Le sous-menu **Copier en tant que** du menu contextuel propose : Copier en tant que texte, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), JSX.
+
+## Alignement du contour & épaisseurs par côté
+
+Alignement : **Intérieur**, **Centre** ou **Extérieur**. Épaisseurs individuelles par côté (Haut/Droite/Bas/Gauche).
+
+## Layout mobile & PWA
+
+Installable en PWA. Sur mobile, panneaux latéraux remplacés par un tiroir inférieur glissable avec onglets.
+
+## Export Tailwind CSS v4
+
+L'onglet Code propose un basculement entre **OpenPencil JSX** et **Tailwind CSS v4** (HTML avec classes utilitaires).
+
+## Google Fonts Fallback
+
+Si une police n'est pas disponible localement, OpenPencil la charge automatiquement depuis Google Fonts API.
+
+## Homebrew Tap
+
+Sur macOS : `brew install open-pencil/tap/open-pencil`
+
+## Renommage inline des calques
+
+Double-clic sur le nom d'un calque pour le renommer. Entrée ou clic ailleurs valide, Échap annule.
+
+## Profileur de rendu
+
+Superposition HUD avec métriques de timing. Accessible via le menu Affichage.
 
 ## Panneau de code
 

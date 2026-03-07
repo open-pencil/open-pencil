@@ -20,7 +20,7 @@ description: Crear rectángulos, elipses, líneas, marcos y secciones en OpenPen
 
 ## Propiedades
 - **Relleno** — color sólido, gradiente (lineal, radial, angular, diamante), imagen
-- **Trazo** — ancho, color, remate, unión, patrón de guiones
+- **Trazo** — ancho (uniforme o por lado: Arriba/Derecha/Abajo/Izquierda), color, alineación (Interior/Centro/Exterior), remate, unión, patrón de guiones
 - **Radio de esquinas** — uniforme o independiente por esquina
 - **Efectos** — sombra exterior, sombra interior, desenfoque de capa, desenfoque de fondo
 

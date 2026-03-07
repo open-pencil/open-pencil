@@ -25,7 +25,7 @@ Klicken Sie auf das Auge-Symbol neben einer Ebene, um sie auf dem Canvas ein- od
 
 ### Umbenennen
 
-Doppelklicken Sie auf einen Ebenennamen, um ihn inline umzubenennen.
+Doppelklicken Sie auf einen Ebenennamen, um ihn inline umzubenennen. **Enter** oder Klick außerhalb bestätigt, **Escape** bricht ab.
 
 ### Auswahl-Synchronisation
 

@@ -168,7 +168,43 @@ Asistente IA integrado accesible vía la pestaña IA o <kbd>⌘</kbd><kbd>J</kbd
 
 **75 herramientas** definidas en `packages/core/src/tools/schema.ts`, cubriendo: operaciones de lectura, creación, modificación, manipulación de nodos, CRUD de variables, herramientas de rutas vectoriales, control de viewport y un escape hatch `eval`. Las herramientas están conectadas al chat IA (schemas valibot), servidor MCP (schemas zod) y CLI (comando `eval`).
 
-**Servidor MCP** (`packages/mcp/`) expone todas las herramientas para herramientas de codificación IA externas. Dos transportes: stdio y HTTP con Hono. Añade 3 herramientas de gestión de archivos sobre las 75 herramientas core, para 78 en total.
+**Servidor MCP** (`packages/mcp/`) expone todas las herramientas para herramientas de codificación IA externas. Dos transportes: stdio y HTTP con Hono. Añade 3 herramientas de gestión de archivos sobre las 75 herramientas core (= 78 en total), para 78 en total.
+
+## Exportación SVG
+
+Exporta nodos seleccionados como PNG, JPG, WEBP o SVG. CLI: `bun open-pencil export --format svg file.fig`.
+
+## Copiar como
+
+El submenú **Copiar como** del menú contextual ofrece: Copiar como texto, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), JSX.
+
+## Alineación de trazo y pesos por lado
+
+Alineación: **Interior**, **Centro** o **Exterior**. Pesos individuales por lado (Arriba/Derecha/Abajo/Izquierda) mediante el selector de lados.
+
+## Layout móvil & PWA
+
+Instalable como PWA. En móvil, paneles laterales reemplazados por cajón inferior deslizable con pestañas.
+
+## Exportación Tailwind CSS v4
+
+La pestaña Código ofrece alternancia entre **OpenPencil JSX** y **Tailwind CSS v4** (HTML con clases de utilidad).
+
+## Google Fonts Fallback
+
+Cuando una fuente no está disponible localmente, OpenPencil la carga automáticamente de Google Fonts API.
+
+## Homebrew Tap
+
+En macOS: `brew install open-pencil/tap/open-pencil`
+
+## Renombrar capas inline
+
+Doble clic en el nombre de una capa para renombrarla. Enter o clic fuera confirma, Escape cancela.
+
+## Profiler de renderizado
+
+Superposición HUD con métricas de tiempo de renderizado. Accesible desde el menú Vista.
 
 ## Panel de código
 

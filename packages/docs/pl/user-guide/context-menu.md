@@ -6,6 +6,17 @@ description: Akcje menu kontekstowego (prawy przycisk) w OpenPencil.
 
 Prawy przycisk na płótnie otwiera menu kontekstowe. Prawy przycisk na węźle najpierw go zaznacza.
 
+## Kopiuj jako
+
+Podmenu **Kopiuj jako** oferuje następujące formaty:
+
+| Akcja | Mac | Windows / Linux |
+|-------|-----|-----------------|
+| Kopiuj jako tekst | — | — |
+| Kopiuj jako SVG | — | — |
+| Kopiuj jako PNG | ⇧ ⌘ C | Shift + Ctrl + C |
+| Kopiuj jako JSX | — | — |
+
 ## Schowek
 Kopiuj (⌘C), Wytnij (⌘X), Wklej (⌘V), Duplikuj (⌘D), Usuń (⌫)
 

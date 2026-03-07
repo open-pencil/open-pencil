@@ -7,6 +7,17 @@ description: Rechtsklick-Kontextmenü-Aktionen in OpenPencil — Zwischenablage,
 
 Rechtsklicken Sie auf dem Canvas, um das Kontextmenü zu öffnen. Bei Rechtsklick auf einen Knoten wird dieser zuerst ausgewählt. Rechtsklick auf leeren Canvas hebt die Auswahl auf.
 
+## Als kopieren
+
+Das Untermenü **Als kopieren** bietet folgende Zwischenablage-Formate:
+
+| Aktion | Kürzel (Mac) | Kürzel (Win/Linux) |
+|--------|--------------|---------------------|
+| Als Text kopieren | — | — |
+| Als SVG kopieren | — | — |
+| Als PNG kopieren | ⇧ ⌘ C | Shift + Strg + C |
+| Als JSX kopieren | — | — |
+
 ## Zwischenablage
 
 | Aktion | Kürzel (Mac) | Kürzel (Win/Linux) |

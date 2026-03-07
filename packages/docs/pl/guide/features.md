@@ -152,7 +152,43 @@ Programistyczne tworzenie designu przez buildery TreeNode. Propsy shorthand w st
 
 ## Chat AI
 
-Wbudowany asystent AI przez <kbd>⌘</kbd><kbd>J</kbd>. **75 narzędzi** w `schema.ts` obejmujących: odczyt, tworzenie, modyfikację, manipulację węzłów, CRUD zmiennych, narzędzia wektorowe, kontrolę viewportu i `eval`. **Serwer MCP** udostępnia 78 narzędzi łącznie (75 core + 3 zarządzanie plikami) dla zewnętrznych narzędzi kodowania AI.
+Wbudowany asystent AI przez <kbd>⌘</kbd><kbd>J</kbd>. **78 narzędzi** w `schema.ts` obejmujących: odczyt, tworzenie, modyfikację, manipulację węzłów, CRUD zmiennych, narzędzia wektorowe, kontrolę viewportu i `eval`. **Serwer MCP** udostępnia 78 narzędzi łącznie (75 core + 3 zarządzanie plikami) dla zewnętrznych narzędzi kodowania AI.
+
+## Eksport SVG
+
+Eksportuje wybrane węzły jako PNG, JPG, WEBP lub SVG. CLI: `bun open-pencil export --format svg file.fig`.
+
+## Kopiuj jako
+
+Podmenu **Kopiuj jako** w menu kontekstowym oferuje: Kopiuj jako tekst, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), JSX.
+
+## Wyrównanie obrysu i grubości per-strona
+
+Wyrównanie: **Wewnątrz**, **Środek** lub **Na zewnątrz**. Indywidualne grubości per-strona (Góra/Prawo/Dół/Lewo).
+
+## Układ mobilny & PWA
+
+Instalowalne jako PWA. Na urządzeniach mobilnych panele boczne zastąpione przez wysuwaną szufladę dolną z zakładkami.
+
+## Eksport Tailwind CSS v4
+
+Zakładka Kod oferuje przełącznik między **OpenPencil JSX** a **Tailwind CSS v4** (HTML z klasami utility).
+
+## Google Fonts Fallback
+
+Gdy czcionka nie jest dostępna lokalnie, OpenPencil ładuje ją automatycznie z Google Fonts API.
+
+## Homebrew Tap
+
+Na macOS: `brew install open-pencil/tap/open-pencil`
+
+## Inline zmiana nazwy warstw
+
+Dwuklik na nazwie warstwy aby ją zmienić. Enter lub klik poza polem zatwierdza, Escape anuluje.
+
+## Profiler renderowania
+
+Nakładka HUD z metrykami czasu renderowania. Dostępna z menu Widok.
 
 ## Panel kodu
 

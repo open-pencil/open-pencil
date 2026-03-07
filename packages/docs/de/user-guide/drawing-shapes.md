@@ -40,7 +40,14 @@ Jede Form kann eine Füllung haben: **Vollfarbe**, **Verlauf** (Linear, Radial, 
 
 ### Kontur
 
-Fügen Sie einer Form eine Kontur hinzu. Eigenschaften: Breite, Farbe, Kappenstil, Verbindungsstil, Strichmuster.
+Fügen Sie einer Form eine Kontur hinzu. Eigenschaften:
+
+- **Breite** — einheitlich oder pro Seite (Oben/Rechts/Unten/Links) über das Seitenauswahl-Dropdown
+- **Farbe** — Vollton mit Deckkraft
+- **Ausrichtung** — Innen, Mitte oder Außen (beschneidungsbasiertes Rendering wie in Figma)
+- **Kappenstil** — Keine, Rund, Quadrat, Pfeil
+- **Verbindungsstil** — Gehrung, Abgeschrägt, Rund
+- **Strichmuster** — Strich-Ein/Strich-Aus
 
 ### Eckenradius
 

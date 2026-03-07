@@ -152,7 +152,43 @@ Creazione programmabile via TreeNode builder. Props shorthand stile Tailwind.
 
 ## Chat IA
 
-Assistente IA integrato via <kbd>⌘</kbd><kbd>J</kbd>. **75 strumenti** in `schema.ts` che coprono lettura, creazione, modifica, manipolazione nodi, CRUD variabili, strumenti vettoriali, controllo viewport e `eval`. **Server MCP** espone 78 strumenti totali (75 core + 3 gestione file) per strumenti di codifica IA esterni.
+Assistente IA integrato via <kbd>⌘</kbd><kbd>J</kbd>. **78 strumenti** in `schema.ts` che coprono lettura, creazione, modifica, manipolazione nodi, CRUD variabili, strumenti vettoriali, controllo viewport e `eval`. **Server MCP** espone 78 strumenti totali (75 core + 3 gestione file) per strumenti di codifica IA esterni.
+
+## Export SVG
+
+Esporta i nodi selezionati come PNG, JPG, WEBP o SVG. CLI: `bun open-pencil export --format svg file.fig`.
+
+## Copia come
+
+Il sottomenu **Copia come** del menu contestuale offre: Copia come testo, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), JSX.
+
+## Allineamento contorno e spessori per lato
+
+Allineamento: **Interno**, **Centro** o **Esterno**. Spessori individuali per lato (Alto/Destra/Basso/Sinistra).
+
+## Layout mobile & PWA
+
+Installabile come PWA. Su mobile, i pannelli laterali sono sostituiti da un cassetto inferiore scorrevole con schede.
+
+## Export Tailwind CSS v4
+
+La scheda Codice offre un selettore tra **OpenPencil JSX** e **Tailwind CSS v4** (HTML con classi utility).
+
+## Google Fonts Fallback
+
+Se un font non è disponibile localmente, OpenPencil lo carica automaticamente da Google Fonts API.
+
+## Homebrew Tap
+
+Su macOS: `brew install open-pencil/tap/open-pencil`
+
+## Rinomina inline livelli
+
+Doppio click sul nome di un livello per rinominarlo. Invio o clic altrove conferma, Esc annulla.
+
+## Profiler di rendering
+
+Overlay HUD con metriche di timing. Accessibile dal menu Visualizza.
 
 ## Pannello codice
 

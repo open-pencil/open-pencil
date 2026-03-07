@@ -6,6 +6,17 @@ description: Acciones del menú contextual (clic derecho) en OpenPencil.
 
 Clic derecho en el lienzo para abrir el menú contextual. Clic derecho en un nodo lo selecciona primero.
 
+## Copiar como
+
+El submenú **Copiar como** ofrece estos formatos:
+
+| Acción | Mac | Windows / Linux |
+|--------|-----|-----------------|
+| Copiar como texto | — | — |
+| Copiar como SVG | — | — |
+| Copiar como PNG | ⇧ ⌘ C | Shift + Ctrl + C |
+| Copiar como JSX | — | — |
+
 ## Portapapeles
 Copiar (⌘C), Cortar (⌘X), Pegar (⌘V), Duplicar (⌘D), Eliminar (⌫)
 

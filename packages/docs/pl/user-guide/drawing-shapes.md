@@ -20,7 +20,7 @@ description: Tworzenie prostokątów, elips, linii, ramek i sekcji w OpenPencil.
 
 ## Właściwości
 - **Wypełnienie** — kolor, gradient (liniowy, radialny, kątowy, diamentowy), obraz
-- **Obrys** — szerokość, kolor, zakończenie, złącze, wzór kreski
+- **Obrys** — szerokość (jednolita lub per-strona: Góra/Prawo/Dół/Lewo), kolor, wyrównanie (Wewnątrz/Środek/Na zewnątrz), zakończenie, złącze, wzór kreski
 - **Promień narożników** — jednolity lub niezależny per narożnik
 - **Efekty** — cień zewnętrzny, cień wewnętrzny, rozmycie warstwy, rozmycie tła
 

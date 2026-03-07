@@ -24,7 +24,7 @@ Click the eye icon next to any layer to hide or show it on the canvas. Hidden no
 
 ### Rename
 
-Double-click a layer name to rename it inline.
+Double-click a layer name to rename it inline. Press **Enter** or click away to commit, **Escape** to cancel.
 
 ### Selection Sync
 
@@ -61,7 +61,10 @@ When no nodes are selected, the Design tab shows page-level properties including
 
 ### Code Tab
 
-Displays the selected node as JSX code with syntax highlighting, line numbers, and a copy button. Useful for exporting designs as code.
+Displays the selected node as code with syntax highlighting, line numbers, and a copy button. A format toggle lets you switch between two output modes:
+
+- **OpenPencil JSX** — custom component tree compatible with `renderJsx()` for programmatic round-trip
+- **Tailwind CSS v4** — HTML with utility classes (`<div className="flex gap-4 p-3">`) ready to paste into React/Vue projects
 
 ### AI Tab
 
@@ -72,6 +75,10 @@ An AI chat interface (also toggled with **⌘ J**) that can create and modify de
 | Action | Mac | Windows / Linux |
 |--------|-----|-----------------|
 | Toggle AI chat | ⌘ J | Ctrl + J |
+
+## Mobile Layout
+
+On mobile and small screens, the side panels are replaced by a swipeable bottom drawer. Tabs at the top of the drawer switch between Layers, Properties, Design, and Code views. The toolbar collapses to a compact horizontal strip with category switching.
 
 ## Tips
 
