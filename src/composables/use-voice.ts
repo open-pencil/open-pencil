@@ -116,7 +116,7 @@ export function useVoice(collab: CollabReturn) {
     analyser.fftSize = 256
     source.connect(analyser)
 
-    const frequencyData = new Float32Array(analyser.frequencyBinCount)
+    const timeDomainData = new Float32Array(analyser.fftSize)
 
     detectionInterval = setInterval(() => {
       if (!analyser || voiceState.value.muted) {
@@ -127,15 +127,15 @@ export function useVoice(collab: CollabReturn) {
         return
       }
 
-      analyser.getFloatFrequencyData(frequencyData)
+      analyser.getFloatTimeDomainData(timeDomainData)
 
-      let sum = 0
-      for (let i = 0; i < frequencyData.length; i++) {
-        sum += frequencyData[i]
+      let sumSquares = 0
+      for (let i = 0; i < timeDomainData.length; i++) {
+        sumSquares += timeDomainData[i] * timeDomainData[i]
       }
-      const avgDb = sum / frequencyData.length
+      const rms = Math.sqrt(sumSquares / timeDomainData.length)
 
-      if (avgDb > VOICE_SPEAKING_THRESHOLD) {
+      if (rms > VOICE_SPEAKING_THRESHOLD) {
         if (speakingTimeout) {
           clearTimeout(speakingTimeout)
           speakingTimeout = null
