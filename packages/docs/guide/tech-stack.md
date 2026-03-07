@@ -10,7 +10,9 @@
 | **Styling** | Tailwind CSS 4 | Utility-first, fast iteration, dark theme |
 | **Layout** | Yoga WASM | CSS flexbox engine from Meta, battle-tested in React Native |
 | **File Format** | Kiwi binary + Zstd | Figma's own format — compact, fast parsing, .fig compatible |
+| **Collaboration** | Trystero + Yjs | P2P WebRTC via MQTT signaling, CRDT sync, y-indexeddb persistence |
 | **Color** | culori | Color space conversions (HSV, RGB, hex) |
+| **AI/MCP** | MCP SDK + Hono | 75 tools for AI coding tools, stdio + HTTP transports |
 | **Desktop** | Tauri v2 | ~5MB native app (vs Electron's ~100MB), Rust backend |
 | **Build** | Vite 7 | Fast HMR, native ES modules |
 | **Testing** | Playwright + bun:test | Visual regression (E2E) + fast unit tests |
@@ -29,7 +31,10 @@
   "tailwindcss": "^4.2.1",
   "culori": "^4.0.2",
   "fzstd": "^0.1.1",
-  "fflate": "^0.8.2"
+  "fflate": "^0.8.2",
+  "trystero": "^0.20.0",
+  "yjs": "^13.6.24",
+  "y-indexeddb": "^9.0.12"
 }
 ```
 
@@ -55,5 +60,4 @@ Yoga is maintained by Meta, battle-tested across billions of React Native device
 
 | Technology | Purpose | Phase |
 |-----------|---------|-------|
-| Yjs (CRDT) | Real-time collaboration | Phase 6 |
-| MCP Server | AI agent integration (117 tools) | Phase 5 |
+| CSS Grid in Yoga | Grid-based auto layout | Blocked on upstream (facebook/yoga#1893) |

@@ -4,14 +4,14 @@
 TBD - created by archiving change vitepress-userdoc. Update Purpose after archive.
 ## Requirements
 ### Requirement: User guide landing page
-The docs site SHALL have an `index.md` at `docs/user-guide/` with the title "User Guide", a brief description positioning OpenPencil as an open-source, Figma-compatible design editor, and links to all user guide articles organized by category.
+The docs site SHALL have an `index.md` at `packages/docs/user-guide/` with the title "User Guide", a brief description positioning OpenPencil as an open-source, Figma-compatible design editor, and links to all user guide articles organized by category.
 
 #### Scenario: Landing page renders
 - **WHEN** user navigates to /user-guide/
 - **THEN** a page with "User Guide" title, open-source/Figma-compatible positioning, and categorized links to all articles is displayed
 
 ### Requirement: Canvas navigation article
-The docs site SHALL have a `canvas-navigation.md` article in `docs/user-guide/` documenting panning (space+drag, middle mouse, trackpad, hand tool), zooming (ctrl+scroll, pinch, keyboard shortcuts), and zoom reset.
+The docs site SHALL have a `canvas-navigation.md` article in `packages/docs/user-guide/` documenting panning (space+drag, middle mouse, trackpad, hand tool), zooming (ctrl+scroll, pinch, keyboard shortcuts), and zoom reset.
 
 #### Scenario: Canvas navigation article renders
 - **WHEN** user navigates to /user-guide/canvas-navigation
@@ -101,3 +101,31 @@ Each user guide article SHALL follow a consistent structure: title, brief introd
 - **WHEN** user reads any user guide article
 - **THEN** the article has an intro paragraph, subsections explaining features, and a shortcuts table
 
+
+### Requirement: Stroke align and per-side weights (sync-docs-v07-v08)
+
+The drawing-shapes article SHALL document stroke alignment (Inside/Center/Outside) and per-side weights (Top/Right/Bottom/Left).
+
+#### Scenario: Stroke align documented
+- **WHEN** user reads Drawing Shapes
+- **THEN** Inside/Center/Outside alignment is described
+
+### Requirement: Layer inline rename (sync-docs-v07-v08)
+
+The layers-and-pages article SHALL document double-click to rename inline with Enter/Escape/blur to commit.
+
+### Requirement: Copy/Paste as in context-menu (sync-docs-v07-v08)
+
+A Copy/Paste as section SHALL be present in context-menu article for all locales.
+
+### Requirement: Mobile drawer note (sync-docs-v07-v08)
+
+The layers-and-pages article SHALL mention the mobile bottom drawer layout.
+
+### Requirement: Code panel format toggle (sync-docs-v07-v08)
+
+The Code Tab description SHALL mention OpenPencil JSX and Tailwind CSS v4 format toggle.
+
+### Requirement: Locale parity (sync-docs-v07-v08)
+
+DE, ES, FR, IT, PL translations SHALL include all sections present in EN for features.md, comparison.md, figma-comparison.md, exporting.md, drawing-shapes.md, layers-and-pages.md, and context-menu.md.

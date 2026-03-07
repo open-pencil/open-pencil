@@ -4,7 +4,7 @@
 VitePress documentation page with feature-by-feature comparison tables mapping Figma Design features to Open Pencil's implementation status. Sourced from Figma help center articles (~90) and cross-referenced against Open Pencil's specs and features.
 ## Requirements
 ### Requirement: Feature comparison page exists
-The documentation site SHALL include a page at `docs/guide/figma-comparison.md` that provides feature-by-feature comparison tables mapping Figma Design features to Open Pencil status.
+The documentation site SHALL include a page at `packages/docs/guide/figma-comparison.md` that provides feature-by-feature comparison tables mapping Figma Design features to Open Pencil status.
 
 #### Scenario: Page is accessible
 - **WHEN** user navigates to `/guide/figma-comparison` on the docs site

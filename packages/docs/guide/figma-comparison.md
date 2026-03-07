@@ -6,7 +6,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
 :::
 
-**Coverage:** 83 of 150 Figma feature items addressed — 64 ✅ fully supported, 19 🟡 partial, 67 🔲 not yet. Last updated: 2026-03-01.
+**Coverage:** 94 of 158 Figma feature items addressed — 76 ✅ fully supported, 18 🟡 partial, 64 🔲 not yet. Last updated: 2026-03-07.
 
 ## Interface & Navigation
 
@@ -27,7 +27,8 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Layer outlines view | 🔲 | Wireframe view of all layers |
 | Custom file thumbnails | 🔲 | Thumbnail generated on export, but no custom thumbnail picker |
 | Nudge value settings | 🔲 | Default 1px/10px; Figma allows custom small/big nudge values |
-| AI tools | 🟡 | 26 AI tools via OpenRouter (create/modify/delete shapes, fills/strokes/effects, layout, constraints, components, groups, pages, variables); no AI-generated images or AI-powered search yet |
+| App menu (browser mode) | ✅ | File, Edit, View, Object, Text, Arrange menus; Tauri uses native menus |
+| AI tools | 🟡 | 78 tools via OpenRouter + MCP server; no AI-generated images or AI-powered search yet |
 
 ## Layers & Shapes
 
@@ -43,18 +44,18 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Layer types & hierarchy | ✅ | 17 node types, flat Map + parent-child tree |
 | Select layers | ✅ | Click, shift-click, marquee selection |
 | Alignment & position | ✅ | Position, rotation, dimensions in properties panel |
-| Copy & paste objects | ✅ | Standard clipboard + Figma Kiwi binary format |
+| Copy & paste objects | ✅ | Standard clipboard + Figma Kiwi binary format; Copy as text/SVG/PNG/JSX |
 | Scale layers proportionally | 🟡 | Shift-resize constrains proportions; no dedicated Scale tool (K) |
 | Lock & unlock layers | ✅ | ⇧⌘L toggles lock; locked nodes can't be selected/moved from canvas |
 | Toggle layer visibility | ✅ | Eye icon in layers panel + ⇧⌘H keyboard shortcut |
-| Rename layers | 🟡 | Programmatic rename via store; no inline rename UI in layers panel yet |
+| Rename layers | ✅ | Double-click inline rename in layers panel; Enter/Escape/blur to commit |
 | Bring to front / Send to back | ✅ | ] and [ keyboard shortcuts; also in context menu |
 | Move to page | ✅ | Move selected nodes between pages via context menu |
 | Constraints (responsive resize) | 🔲 | Pin edges/center for parent resize behavior |
 | Smart selection (distribute/align) | 🔲 | Evenly space and align multi-selection |
 | Layout guides (columns, rows, grid) | 🔲 | Column/row/grid overlay guides on frames |
 | Measure distances between layers | 🔲 | Alt-hover to show distances |
-| Edit objects in bulk | 🔲 | Batch property editing |
+| Edit objects in bulk | ✅ | Multi-selection properties panel: edit position, size, appearance, fill, stroke, effects across multiple nodes; shared values display normally, differing values show "Mixed" |
 | Identify matching objects | 🔲 | Find similar layers |
 | Copy/paste properties | 🔲 | Copy fill/stroke/effects between layers |
 | Parent-child relationships | ✅ | Full hierarchy with parentIndex, reparenting via drag |
@@ -128,6 +129,8 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Stroke cap (round, square, arrow) | ✅ | NONE, ROUND, SQUARE, ARROW_LINES, ARROW_EQUILATERAL |
 | Stroke join (miter, bevel, round) | ✅ | All three join types |
 | Dash patterns | ✅ | Dash-on/dash-off stroke pattern |
+| Stroke alignment | ✅ | Inside/Center/Outside with clip-based rendering matching Figma behavior |
+| Individual stroke weights per side | ✅ | Top/Right/Bottom/Left with side selector dropdown |
 | Corner radius | ✅ | Uniform and per-corner radius with independent toggle in properties panel |
 | Corner smoothing (iOS-style) | 🔲 | Figma's continuous corner rounding |
 | Multiple fills/strokes per layer | 🔲 | Figma allows stacking fills and strokes |
@@ -187,29 +190,36 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Feature | Status | Notes |
 |---------|--------|-------|
 | .fig file import | ✅ | Full Kiwi codec: 194 definitions, ~390 fields per NodeChange |
-| .fig file export | ✅ | Kiwi encoding + Zstd compression + thumbnail generation |
-| Save / Save As | ✅ | ⌘S / ⇧⌘S with native OS dialogs (Tauri) |
+| .fig file export | ✅ | Kiwi encoding + Zstd compression + thumbnail generation; COMPONENT/COMPONENT_SET mapped to SYMBOL for round-trip |
+| Save / Save As | ✅ | ⌘S / ⇧⌘S; native dialogs (Tauri), File System Access API (Chrome/Edge), download fallback (Safari) |
 | Figma clipboard (paste) | ✅ | Decode Kiwi binary from Figma clipboard |
 | Figma clipboard (copy) | ✅ | Encode Kiwi binary that Figma can read |
 | Sketch file import | 🔲 | .sketch file parsing |
-| Image/SVG export | 🟡 | PNG/JPG/WEBP with scale selector and live preview; SVG/PDF not yet |
+| Image/SVG/PDF export | 🟡 | PNG/JPG/WEBP/SVG export ✅; PDF export 🔲 |
 | Version history | 🔲 | Browse and restore previous versions |
-| Copy assets between tools | 🟡 | Figma clipboard works; no SVG/PDF clipboard |
+| Copy assets between tools | ✅ | Figma clipboard (Kiwi binary), Copy as text/SVG/PNG/JSX |
+
+## Plugin API & Scripting
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Eval command with Figma Plugin API | ✅ | Headless JavaScript execution with figma global object matching Figma's plugin surface |
 
 ## Collaboration & Dev Mode
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Comments (pin, thread, resolve) | 🔲 | Planned for Phase 6 |
-| Real-time multiplayer | 🔲 | Planned (Yjs-based) |
+| Real-time multiplayer | ✅ | P2P via Trystero + Yjs CRDT, cursors, follow mode; no server required |
 | Cursor chat | 🔲 | Inline chat bubbles at cursor |
 | Branching & merging | 🔲 | Version branches for design files |
 | Dev Mode (inspect) | 🟡 | Code tab shows JSX representation of selection; no CSS properties or handoff specs |
 | Code Connect | 🔲 | Link design components to code |
 | Code snippets | 🟡 | JSX export with syntax highlighting and copy; no CSS/Swift/Kotlin snippets |
+| Tailwind CSS v4 export | ✅ | Export as HTML with Tailwind utility classes from Code panel, CLI, or programmatically |
 | Figma for VS Code | 🔲 | Editor plugin integration |
-| MCP server | 🔲 | Planned; porting 118 tools from figma-use (26 currently available as AI tools) |
-| CLI tools | 🟡 | Headless CLI: info, tree, find, export, analyze (colors/typography/spacing/clusters), node, pages, variables, eval; MCP server not yet |
+| MCP server | ✅ | @open-pencil/mcp with stdio + HTTP transports; 75 core tools + 3 file management tools = 78 total |
+| CLI tools | ✅ | Headless CLI: info, tree, find, export, analyze, node, pages, variables, eval; MCP server with stdio + HTTP |
 
 ## Figma Draw
 

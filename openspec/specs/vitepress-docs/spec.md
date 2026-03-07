@@ -1,21 +1,21 @@
 # vitepress-docs Specification
 
 ## Purpose
-VitePress documentation site at `docs/` with content derived from PLAN.md, README, and openspec specs. Includes guide pages (getting started, architecture, tech stack), reference pages (keyboard shortcuts, node types, MCP tools), and development pages (contributing, testing, openspec workflow, roadmap).
+VitePress documentation site at `packages/docs/` as `@open-pencil/docs` workspace package. Content derived from PLAN.md, README, and openspec specs. Includes guide pages (getting started, architecture, tech stack), reference pages (keyboard shortcuts, node types, MCP tools), and development pages (contributing, testing, openspec workflow, roadmap).
 ## Requirements
 ### Requirement: VitePress documentation site
-The project SHALL have a VitePress documentation site in the `docs/` directory with its own `.vitepress/config.ts` configuration, independent from the app's Vite config.
+The project SHALL have a VitePress documentation site in the `packages/docs/` directory as `@open-pencil/docs` workspace package, with its own `.vitepress/config.ts` configuration and `package.json`.
 
 #### Scenario: Docs dev server starts
-- **WHEN** `bun run docs:dev` is executed
+- **WHEN** `cd packages/docs && bun run dev` is executed
 - **THEN** VitePress dev server starts and serves the documentation site
 
 #### Scenario: Docs build succeeds
-- **WHEN** `bun run docs:build` is executed
-- **THEN** VitePress produces a static site in `docs/.vitepress/dist/`
+- **WHEN** `cd packages/docs && bun run build` is executed
+- **THEN** VitePress produces a static site in `packages/docs/.vitepress/dist/`
 
 ### Requirement: Landing page
-The docs site SHALL have an index.md landing page with project name, tagline "Open-source Figma alternative. Fully local, AI-native, programmable.", and quick navigation to guide and reference sections. The feature cards SHALL reflect the five pillars: open source, Figma-compatible, AI-native, fully local, programmable.
+The docs site SHALL have an index.md landing page with project name, tagline "Open-source Figma alternative. Fully local, AI-native, programmable.", quick navigation to guide and reference sections, download links (GitHub Releases, app.openpencil.dev), and "no subscription, bring your own API key" messaging. The feature cards SHALL reflect the five pillars: open source, Figma-compatible, AI-native, fully local, programmable.
 
 #### Scenario: Landing page loads
 - **WHEN** user opens the docs site root URL
@@ -81,10 +81,10 @@ The docs site SHALL use dark appearance to match the editor's dark aesthetic.
 - **THEN** the site renders with VitePress dark theme
 
 ### Requirement: Build artifacts excluded from git
-`docs/.vitepress/dist` and `docs/.vitepress/cache` SHALL be listed in `.gitignore`.
+`packages/docs/.vitepress/dist` and `packages/docs/.vitepress/cache` SHALL be listed in `.gitignore`.
 
 #### Scenario: Gitignore entries
-- **WHEN** `bun run docs:build` creates output in `docs/.vitepress/dist/`
+- **WHEN** `bun run docs:build` creates output in `packages/docs/.vitepress/dist/`
 - **THEN** the output directory is not tracked by git
 
 ### Requirement: Docs reflect sections feature
@@ -150,3 +150,135 @@ The VitePress sidebar SHALL include a "Comparison" link in the Guide section aft
 - **WHEN** user views the Guide sidebar
 - **THEN** a "Comparison" entry appears after "Tech Stack" linking to /guide/comparison
 
+
+### Requirement: Eval command documentation
+
+The docs site SHALL include comprehensive documentation for the eval command in `packages/docs/eval-command.md`.
+
+#### Scenario: Eval command page exists
+- **WHEN** user navigates to `/eval-command`
+- **THEN** full documentation for `open-pencil eval` command is displayed
+
+#### Scenario: Overview section
+- **WHEN** user reads eval command docs
+- **THEN** overview explains purpose (headless scripting with Figma Plugin API)
+
+#### Scenario: Usage examples
+- **WHEN** user reads eval command docs
+- **THEN** code examples show `--code`, `--stdin`, `--write`, `-o`, `--json` usage
+
+#### Scenario: Architecture section
+- **WHEN** user reads eval command docs
+- **THEN** architecture diagram shows CLI → loadDocument → FigmaAPI → execute → serialize flow
+
+#### Scenario: FigmaAPI surface coverage
+- **WHEN** user reads eval command docs
+- **THEN** documentation lists supported methods (createFrame, createRectangle, findAll, etc.)
+
+#### Scenario: AI integration examples
+- **WHEN** user reads eval command docs
+- **THEN** examples show how AI tools use eval for batch operations
+
+#### Scenario: Testing patterns
+- **WHEN** user reads eval command docs
+- **THEN** examples show headless testing with eval
+
+#### Scenario: Migration from Figma plugins
+- **WHEN** user reads eval command docs
+- **THEN** guide explains how to adapt Figma plugin code to eval scripts
+
+#### Scenario: 437 lines of documentation
+- **WHEN** eval-command.md is counted
+- **THEN** it contains 437 lines of comprehensive content
+
+### Requirement: Comparison matrix updates
+
+The docs site SHALL update comparison matrices to reflect new features (app menu, eval command, Figma Plugin API).
+
+#### Scenario: Figma comparison update
+- **WHEN** user reads `packages/docs/guide/figma-comparison.md`
+- **THEN** Interface & Navigation section includes app menu status
+
+#### Scenario: Plugin API row
+- **WHEN** user reads Figma comparison
+- **THEN** a row documents eval command with Figma Plugin API compatibility
+
+#### Scenario: AI tools update
+- **WHEN** user reads Figma comparison
+- **THEN** AI tools row is updated to reflect unified tool definitions and eval integration
+
+#### Scenario: Penpot comparison update
+- **WHEN** user reads `packages/docs/guide/comparison.md`
+- **THEN** Architecture section highlights headless scripting advantage (eval command with Plugin API that Penpot lacks)
+
+### Requirement: App menu documentation
+
+The docs site SHALL document app menu in appropriate guide pages.
+
+#### Scenario: App menu in features
+- **WHEN** user reads Features page
+- **THEN** app menu is listed with menus (File, Edit, View, Object, Text, Arrange) and key actions
+
+#### Scenario: Browser mode distinction
+- **WHEN** user reads app menu docs
+- **THEN** clarification that menu bar only appears in browser mode (Tauri uses native menus)
+
+### Requirement: Autosave documentation
+
+The docs site SHALL document autosave behavior in appropriate guide pages.
+
+#### Scenario: Autosave in features
+- **WHEN** user reads Features page or Getting Started
+- **THEN** autosave is explained (3-second debounce, automatic for files with handle)
+
+#### Scenario: Autosave limitations
+- **WHEN** user reads autosave docs
+- **THEN** note that new unsaved files don't autosave until user performs Save As
+
+### Requirement: AGENTS.md update reference
+
+The docs site SHALL reference tool unification in development pages when relevant.
+
+#### Scenario: Tool architecture mention
+- **WHEN** user reads development/contributing docs
+- **THEN** unified tool definitions (`packages/core/src/tools/`) are mentioned as canonical source
+
+### Requirement: SVG export documentation (sync-docs-v07-v08)
+
+The features page and exporting article SHALL document SVG as an export format. The format table SHALL include SVG with a note that the scale selector is hidden for SVG. CLI and MCP tool SHALL be mentioned.
+
+#### Scenario: SVG in exporting article
+- **WHEN** user reads the Exporting user guide article
+- **THEN** SVG appears in the format table
+
+### Requirement: Copy/Paste as submenu documentation (sync-docs-v07-v08)
+
+The context menu article SHALL document the Copy/Paste as submenu: Copy as text, SVG, PNG (⇧⌘C), JSX.
+
+#### Scenario: Copy/Paste as section present
+- **WHEN** user reads the Context Menu article
+- **THEN** a Copy/Paste as section lists all four formats
+
+### Requirement: Homebrew install (sync-docs-v07-v08)
+
+The Getting Started guide SHALL include Homebrew install before "Building from Source".
+
+#### Scenario: Homebrew section present
+- **WHEN** user reads Getting Started
+- **THEN** `brew install open-pencil/tap/open-pencil` is shown
+
+### Requirement: Keyboard shortcuts accuracy (sync-docs-v07-v08)
+
+⌘N/⌘T, ⌘W, and ⌘\\ SHALL be marked ✅. ⇧⌘C (Copy as PNG) SHALL be added as ✅.
+
+### Requirement: MCP tools completeness (sync-docs-v07-v08)
+
+All 78 tools SHALL be listed in the MCP tools reference.
+
+### Requirement: Comparison tables accuracy (sync-docs-v07-v08)
+
+comparison.md SHALL show 78 tools (not 75) and NOT list SVG export as a Penpot advantage. figma-comparison.md SHALL show Rename layers ✅, SVG export ✅, Copy/Paste as ✅, Stroke align ✅, per-side weights ✅.
+
+### Requirement: Architecture roadmap section (sync-docs-v07-v08)
+
+architecture.md SHALL include a "What's Next" section covering: more AI providers, full figma-use tools, CI design tooling, prototyping, CSS Grid, PDF export, .fig fidelity.

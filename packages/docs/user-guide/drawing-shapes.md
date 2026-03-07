@@ -47,7 +47,14 @@ Every shape can have a fill. The fill section supports:
 
 ### Stroke
 
-Add an outline to any shape. Stroke properties include width, color, cap style, join style, and dash pattern.
+Add an outline to any shape. Stroke properties include:
+
+- **Width** — uniform or per-side (Top/Right/Bottom/Left) via the side selector dropdown
+- **Color** — solid color with opacity
+- **Alignment** — Inside, Center, or Outside the shape boundary (clip-based rendering matches Figma behavior)
+- **Cap style** — None, Round, Square, Arrow Lines, Arrow Equilateral (for open paths)
+- **Join style** — Miter, Bevel, Round
+- **Dash pattern** — dash-on/dash-off
 
 ### Corner Radius
 

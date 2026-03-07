@@ -95,43 +95,59 @@ Components, instances, overrides, variables, collections, modes, image export.
 - Variable types: FLOAT, STRING, BOOLEAN editing UI
 - Variable-driven theming
 
-### Phase 5: AI Integration & Tooling 🟡
+### Phase 5: AI Integration & Tooling ✅
 
-Core extraction, CLI, MCP server, design guidelines, screenshot verification loop.
+Core extraction, CLI, MCP server, AI tools, eval command.
 
 **Delivered:**
 - @open-pencil/core extracted to packages/core/ (zero DOM deps, Bun workspace)
-- @open-pencil/cli with headless .fig operations (info, tree, find, export, analyze, node, pages, variables), CanvasKit CPU rasterization, --json output
+- @open-pencil/cli with headless .fig operations (info, tree, find, export, analyze, node, pages, variables, eval), CanvasKit CPU rasterization, --json output
+- `eval` command with Figma-compatible Plugin API for headless scripting
 - JSX renderer: TreeNode builders (Frame, Text, Rectangle, etc.), renderTreeNode/renderJsx, Tailwind-like shorthand props, 27 tests
 - jscpd copy-paste detection (15.6% → 0.62%), kiwi-serialize.ts consolidation
 - .fig roundtrip tests with LFS fixtures (material3.fig 87K nodes, nuxtui.fig 314K nodes)
 - .fig import O(n²) → O(n) fix (37s → 535ms on 87K nodes), ByteBuffer optimization
-- test:coverage script
-- AI chat: OpenRouter direct (no backend), Stronghold key storage, 26 tools (create_shape, set_fill, set_effects, set_constraints, components, groups, pages, variables, eval_code, etc.), model selector, ⌘J toggle, streaming markdown, Playwright tests with mock transport
+- AI chat: OpenRouter direct (no backend), Stronghold key storage, 75 tools defined once in `schema.ts`, model selector, ⌘J toggle, streaming markdown, Playwright tests with mock transport
+- 49 additional AI/MCP tools ported from figma-use (75 total): granular set tools, node operations, variable CRUD, boolean operations, vector path tools, viewport control
+- MCP server (@open-pencil/mcp): stdio + HTTP (Hono + Streamable HTTP with sessions), 75 core tools + 3 file management tools, runs on Bun and Node.js
+- Unified tool definitions: define once in `schema.ts`, adapt for AI chat (valibot), MCP (zod), CLI (eval)
 - Code panel: sceneNodeToJsx() export, Prism.js highlighting, line numbers, copy button, 14 tests
 - Properties panel restructured: Design | Code | AI tabs
-- npm publishing preparation for core and cli packages
+- App menu bar for browser mode (File, Edit, View, Object, Text, Arrange)
+- Autosave: debounced 3s write after last scene change
+- Multi-selection properties panel with shared/mixed value handling
+- npm publishing with provenance for core, cli, and mcp packages
 
 **Planned:**
-- Port remaining figma-use tools (118 total, 26 currently implemented)
 - Attached mode: WebSocket to running editor for eval, create, export, screenshot
 - Design guidelines system
-- AI-driven design workflow via MCP
 - Screenshot verification loop
 
-### Phase 6: Polish + Distribution 🔲
+### Phase 6: Collaboration + Distribution 🟡
 
-Prototyping, comments, desktop distribution, documentation, public launch.
+Real-time collaboration, prototyping, comments, desktop distribution.
+
+**Delivered:**
+- P2P collaboration via Trystero (WebRTC) + Yjs CRDT — no server relay
+- Awareness protocol: live cursors, selections, presence with colored cursor arrows
+- Follow mode: click peer avatar to follow their viewport
+- Local persistence via y-indexeddb
+- Share link at `/share/<room-id>` with secure room IDs
+- Effects rendering: drop shadow, inner shadow, shadow spread, layer blur, background blur, foreground blur
+- Per-node SkPicture cache for effects (zero re-computation for static effects)
+- Multi-file tabs: ⌘N/⌘T new tab, ⌘W close, ⌘O open in new tab
+- Apple code signing and notarization for macOS builds
+- Linux builds (x64) added to CI
+- Git LFS moved to Cloudflare R2
+- VitePress documentation site at openpencil.dev with i18n (6 languages)
+- CI/PR templates, CONTRIBUTING.md, SECURITY.md
 
 **Planned:**
-- Prototyping (frame connections, transitions)
+- Prototyping (frame connections, transitions, animations)
 - Comments (pin, threads, resolve)
-- Linux Tauri builds (macOS and Windows already covered by CI)
 - PWA support
-- Documentation site (VitePress)
-- Performance optimization (Lighthouse > 90)
+- Variant switching, FLOAT/STRING/BOOLEAN variable UI, variable-driven theming
 - Full Figma compatibility test suite
-- Deferred from Phase 4: variant switching, FLOAT/STRING/BOOLEAN variable UI, variable-driven theming
 
 ## Timeline
 
@@ -141,5 +157,5 @@ Prototyping, comments, desktop distribution, documentation, public launch.
 | Phase 2: Editor UI + Layout | 3 months | ✅ Complete |
 | Phase 3: File I/O + Visual Features | 2 months | ✅ Complete |
 | Phase 4: Components + Variables | 2 months | ✅ Complete |
-| Phase 5: AI Integration & Tooling | 2 months | 🟡 In Progress |
-| Phase 6: Polish + Distribution | 2 months | 🔲 Planned |
+| Phase 5: AI Integration & Tooling | 2 months | ✅ Complete |
+| Phase 6: Collaboration + Distribution | 2 months | 🟡 In Progress |

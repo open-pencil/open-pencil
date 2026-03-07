@@ -21,6 +21,7 @@ The CLI SHALL support the following commands:
 - `open-pencil node <file> <id>` — detailed properties of a specific node
 - `open-pencil pages <file>` — list pages with node counts
 - `open-pencil variables <file>` — list design variables and collections
+- `open-pencil eval <file>` — execute JavaScript with Figma Plugin API
 
 All commands SHALL support `--json` for machine-readable output.
 
@@ -35,6 +36,10 @@ All commands SHALL support `--json` for machine-readable output.
 #### Scenario: JSON output
 - **WHEN** `bun open-pencil tree design.fig --json` is run
 - **THEN** the node tree is output as JSON
+
+#### Scenario: Eval command
+- **WHEN** `bun open-pencil eval design.fig --code 'return figma.currentPage.children.length'` is run
+- **THEN** system executes JavaScript with `figma` global and prints result
 
 ### Requirement: Workspace integration
 The CLI SHALL be runnable via `bun open-pencil` within the Bun workspace, without global installation.
@@ -74,3 +79,35 @@ The CLI SHALL provide `open-pencil variables <file>` to list design variables an
 #### Scenario: List variables
 - **WHEN** `bun open-pencil variables design.fig` is run
 - **THEN** all variable collections, modes, and variable values are listed
+
+### Requirement: Eval command for headless scripting
+
+The CLI SHALL provide `open-pencil eval <file>` command for executing JavaScript against .fig files with a Figma-compatible `figma` global object.
+
+#### Scenario: Inline code execution
+- **WHEN** `bun open-pencil eval design.fig --code 'return figma.currentPage.children.length'` is run
+- **THEN** system loads design.fig, executes code, and prints result
+
+#### Scenario: Reading code from stdin
+- **WHEN** `cat script.js | bun open-pencil eval design.fig --stdin` is run
+- **THEN** system reads script from stdin and executes
+
+#### Scenario: Writing changes back
+- **WHEN** `bun open-pencil eval design.fig --code 'frame.name = "Updated"' --write` is run
+- **THEN** system modifies design.fig in-place after execution
+
+#### Scenario: Writing to output file
+- **WHEN** `bun open-pencil eval design.fig --code '...' -o modified.fig` is run
+- **THEN** system writes modified document to modified.fig
+
+#### Scenario: JSON output
+- **WHEN** `bun open-pencil eval design.fig --code '...' --json` is run
+- **THEN** system formats result as JSON
+
+#### Scenario: Figma API access
+- **WHEN** eval code accesses `figma.createFrame()`, `figma.currentPage.findAll()`, etc.
+- **THEN** system provides FigmaAPI instance bound to loaded document
+
+#### Scenario: Error handling
+- **WHEN** eval code throws error
+- **THEN** system prints error message and stack trace to stderr

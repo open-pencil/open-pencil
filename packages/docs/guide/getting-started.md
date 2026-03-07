@@ -17,6 +17,14 @@ Pre-built binaries for macOS, Windows, and Linux are available on the [releases 
 | Linux (x64) | `.AppImage` / `.deb` |
 
 
+## macOS via Homebrew
+
+```sh
+brew install open-pencil/tap/open-pencil
+```
+
+This installs the latest signed release for macOS (Apple Silicon and Intel). The tap is auto-updated on each release.
+
 ## Building from Source
 
 ### Prerequisites
