@@ -92,7 +92,7 @@ function onVoiceToggle() {
       <div class="flex -space-x-1.5">
         <TooltipRoot>
           <TooltipTrigger as-child>
-            <div class="relative">
+            <div class="relative z-10">
               <div
                 data-test-id="collab-local-avatar"
                 class="flex size-6 items-center justify-center rounded-full border-2 border-panel text-[10px] font-semibold text-white transition-shadow"
@@ -108,7 +108,7 @@ function onVoiceToggle() {
               </div>
               <div
                 v-if="voice?.voiceState.value.inCall && voice.voiceState.value.muted"
-                class="absolute -bottom-0.5 -right-0.5 flex size-3 items-center justify-center rounded-full bg-red-600"
+                class="absolute -bottom-0.5 -right-0.5 z-20 flex size-3 items-center justify-center rounded-full bg-red-600"
               >
                 <icon-lucide-mic-off class="size-2 text-white" />
               </div>
@@ -126,7 +126,7 @@ function onVoiceToggle() {
 
         <TooltipRoot v-for="peer in peers" :key="peer.clientId">
           <TooltipTrigger as-child>
-            <div class="relative">
+            <div class="relative z-10 hover:z-20">
               <div
                 data-test-id="collab-peer-avatar"
                 class="flex size-6 cursor-pointer items-center justify-center rounded-full border-2 text-[10px] font-semibold text-white transition-all"
@@ -147,7 +147,7 @@ function onVoiceToggle() {
               </div>
               <div
                 v-if="peer.voice?.inCall && peer.voice.muted"
-                class="absolute -bottom-0.5 -right-0.5 flex size-3 items-center justify-center rounded-full bg-red-600"
+                class="absolute -bottom-0.5 -right-0.5 z-20 flex size-3 items-center justify-center rounded-full bg-red-600"
               >
                 <icon-lucide-mic-off class="size-2 text-white" />
               </div>
