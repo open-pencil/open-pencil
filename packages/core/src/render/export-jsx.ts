@@ -195,6 +195,11 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
     props.push(['name', node.name])
   }
 
+  if (!parentIsAutoLayout && !parentIsGrid && (node.x !== 0 || node.y !== 0)) {
+    if (node.x !== 0) props.push(['x', node.x])
+    if (node.y !== 0) props.push(['y', node.y])
+  }
+
   if (isGrid) {
     props.push(['grid', true])
     if (node.gridTemplateColumns.length > 0)
@@ -219,12 +224,28 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
       props.push([crossAxis === 'width' ? 'w' : 'h', 'fill'])
     else if (node.counterAxisSizing !== 'HUG')
       props.push([crossAxis === 'width' ? 'w' : 'h', node[crossAxis]])
+  } else if (node.type === 'TEXT') {
+    const autoResize = node.textAutoResize
+    const emitW = autoResize !== 'WIDTH_AND_HEIGHT'
+    const emitH = autoResize === 'NONE' || autoResize === 'TRUNCATE'
+    if (emitW && node.width > 0) props.push(['w', node.width])
+    if (emitH && node.height > 0) props.push(['h', node.height])
   } else {
     if (node.width > 0) props.push(['w', node.width])
     if (node.height > 0) props.push(['h', node.height])
   }
 
-  if (parentIsAutoLayout && node.layoutGrow > 0) props.push(['grow', node.layoutGrow])
+  if (parentIsAutoLayout) {
+    if (node.layoutGrow > 0) props.push(['grow', node.layoutGrow])
+    if (node.layoutAlignSelf === 'STRETCH') {
+      const parent = node.parentId ? graph.getNode(node.parentId) : null
+      if (parent && (parent.layoutMode === 'HORIZONTAL' || parent.layoutMode === 'VERTICAL')) {
+        const crossDim = parent.layoutMode === 'HORIZONTAL' ? 'h' : 'w'
+        const hasDim = props.some(([k]) => k === crossDim)
+        if (!hasDim) props.push([crossDim, 'fill'])
+      }
+    }
+  }
 
   if (parentIsGrid && node.gridPosition) {
     const pos = node.gridPosition

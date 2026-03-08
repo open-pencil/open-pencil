@@ -355,6 +355,89 @@ describe('sceneNodeToJSX', () => {
     expect(jsx).toContain('colSpan={2}')
     expect(jsx).not.toContain('rowSpan')
   })
+
+  test('text with textAutoResize HEIGHT omits h', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'Auto',
+      width: 200,
+      height: 30,
+      text: 'Hello',
+      textAutoResize: 'HEIGHT'
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('w={200}')
+    expect(jsx).not.toContain('h=')
+  })
+
+  test('text with textAutoResize WIDTH_AND_HEIGHT omits both w and h', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'FullAuto',
+      width: 150,
+      height: 20,
+      text: 'Hi',
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).not.toContain('w=')
+    expect(jsx).not.toContain('h=')
+  })
+
+  test('text with textAutoResize NONE exports both w and h', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'Fixed',
+      width: 200,
+      height: 50,
+      text: 'Fixed',
+      textAutoResize: 'NONE'
+    })
+    const jsx = sceneNodeToJSX(node.id, graph)
+    expect(jsx).toContain('w={200}')
+    expect(jsx).toContain('h={50}')
+  })
+
+  test('absolute positioned node exports x and y', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Container',
+      width: 400,
+      height: 300
+    })
+    const child = graph.createNode('RECTANGLE', frame.id, {
+      name: 'Badge',
+      width: 32,
+      height: 32,
+      x: 16,
+      y: 24
+    })
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).toContain('x={16}')
+    expect(jsx).toContain('y={24}')
+  })
+
+  test('child inside auto-layout omits x and y', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Row',
+      width: 400,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      name: 'Item',
+      width: 50,
+      height: 50,
+      x: 100,
+      y: 25
+    })
+    const jsx = sceneNodeToJSX(frame.id, graph)
+    expect(jsx).not.toContain('x={')
+    expect(jsx).not.toContain('y={')
+  })
 })
 
 describe('selectionToJSX', () => {

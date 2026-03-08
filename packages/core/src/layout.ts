@@ -7,6 +7,7 @@ import Yoga, {
   Gutter,
   Justify,
   Edge,
+  Overflow,
   Wrap,
   type Node as YogaNode
 } from 'yoga-layout'
@@ -140,6 +141,7 @@ function buildYogaTree(graph: SceneGraph, frame: SceneNode): YogaNode {
   root.setFlexWrap(frame.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
   root.setJustifyContent(mapJustify(frame.primaryAxisAlign))
   root.setAlignItems(mapAlign(frame.counterAxisAlign))
+  if (frame.clipsContent) root.setOverflow(Overflow.Hidden)
 
   root.setPadding(Edge.Top, frame.paddingTop)
   root.setPadding(Edge.Right, frame.paddingRight)
@@ -231,6 +233,7 @@ function configureChildAsAutoLayout(
   yogaChild.setFlexWrap(child.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
   yogaChild.setJustifyContent(mapJustify(child.primaryAxisAlign))
   yogaChild.setAlignItems(mapAlign(child.counterAxisAlign))
+  if (child.clipsContent) yogaChild.setOverflow(Overflow.Hidden)
 
   yogaChild.setPadding(Edge.Top, child.paddingTop)
   yogaChild.setPadding(Edge.Right, child.paddingRight)
@@ -265,12 +268,13 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const stretchCross = child.layoutAlignSelf === 'STRETCH' || parent.counterAxisAlign === 'STRETCH'
 
-  const measured =
-    child.type === 'TEXT' && child.textAutoResize === 'WIDTH_AND_HEIGHT'
-      ? measureTextSize(child)
-      : null
-  const w = measured ? measured.width : child.width
-  const h = child.height
+  const isText = child.type === 'TEXT'
+  const autoW = isText && child.textAutoResize === 'WIDTH_AND_HEIGHT'
+  const autoH = isText && (child.textAutoResize === 'HEIGHT' || child.textAutoResize === 'WIDTH_AND_HEIGHT')
+
+  const measured = (autoW || autoH) ? measureTextSize(child) : null
+  const w = autoW && measured ? measured.width : child.width
+  const h = autoH && measured ? measured.height : child.height
 
   if (child.layoutGrow > 0) {
     yogaChild.setFlexGrow(child.layoutGrow)

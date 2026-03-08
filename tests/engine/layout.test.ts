@@ -1048,6 +1048,42 @@ describe('Auto Layout', () => {
       expect(updatedText.width).toBe(200)
     })
   })
+
+  describe('overflow hidden (clipsContent)', () => {
+    test('child wider than parent is constrained when parent clips', () => {
+      const graph = new SceneGraph()
+      graph.addPage('P')
+      const pid = pageId(graph)
+
+      const row = autoFrame(graph, pid, {
+        width: 300,
+        height: 40,
+        layoutMode: 'HORIZONTAL',
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+      })
+
+      const bar = graph.createNode('FRAME', row.id, {
+        layoutMode: 'HORIZONTAL',
+        primaryAxisSizing: 'HUG',
+        counterAxisSizing: 'FIXED',
+        height: 6,
+        layoutGrow: 1,
+        clipsContent: true,
+      })
+
+      graph.createNode('RECTANGLE', bar.id, {
+        width: 500,
+        height: 6,
+      })
+
+      computeAllLayouts(graph)
+
+      const updatedBar = graph.getNode(bar.id)!
+      expect(updatedBar.width).toBeLessThanOrEqual(300)
+      expect(updatedBar.width).toBeGreaterThan(0)
+    })
+  })
 })
 
 function gridFrame(

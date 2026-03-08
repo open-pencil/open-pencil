@@ -180,6 +180,18 @@ describe('renderTree', () => {
     expect(node.paddingTop).toBe(4) // pt overrides py
   })
 
+  it('Frame with padding but no flex auto-enables vertical auto-layout', () => {
+    const g = createGraph()
+    const tree = Frame({ name: 'PaddedNoFlex', p: 12, bg: '#FFF' })
+    const result = renderTree(g, tree)
+    const node = g.nodes.get(result.id)!
+
+    expect(node.layoutMode).toBe('VERTICAL')
+    expect(node.primaryAxisSizing).toBe('HUG')
+    expect(node.counterAxisSizing).toBe('HUG')
+    expect(node.paddingTop).toBe(12)
+  })
+
   it('handles corner radius', () => {
     const g = createGraph()
     const tree = Frame({ name: 'Rounded', rounded: 12 })
@@ -235,6 +247,42 @@ describe('renderTree', () => {
     expect(node.counterAxisSizing).toBe('HUG')
   })
 
+  it('maps w/h to correct axis for flex="row"', () => {
+    const g = createGraph()
+    const tree = Frame({ name: 'Row', flex: 'row', w: 400, h: 200 })
+    const result = renderTree(g, tree)
+    const node = g.nodes.get(result.id)!
+
+    expect(node.layoutMode).toBe('HORIZONTAL')
+    expect(node.primaryAxisSizing).toBe('FIXED')
+    expect(node.counterAxisSizing).toBe('FIXED')
+    expect(node.width).toBe(400)
+    expect(node.height).toBe(200)
+  })
+
+  it('maps w/h to correct axis for flex="col"', () => {
+    const g = createGraph()
+    const tree = Frame({ name: 'Col', flex: 'col', w: 320 })
+    const result = renderTree(g, tree)
+    const node = g.nodes.get(result.id)!
+
+    expect(node.layoutMode).toBe('VERTICAL')
+    expect(node.primaryAxisSizing).toBe('HUG')
+    expect(node.counterAxisSizing).toBe('FIXED')
+    expect(node.width).toBe(320)
+  })
+
+  it('maps fixed h to primaryAxisSizing for flex="col"', () => {
+    const g = createGraph()
+    const tree = Frame({ name: 'ColFixed', flex: 'col', h: 500 })
+    const result = renderTree(g, tree)
+    const node = g.nodes.get(result.id)!
+
+    expect(node.layoutMode).toBe('VERTICAL')
+    expect(node.primaryAxisSizing).toBe('FIXED')
+    expect(node.counterAxisSizing).toBe('HUG')
+  })
+
   it('handles fill sizing', () => {
     const g = createGraph()
     const tree = Frame({ name: 'Fill', w: 'fill' })
@@ -242,6 +290,67 @@ describe('renderTree', () => {
     const node = g.nodes.get(result.id)!
 
     expect(node.layoutGrow).toBe(1)
+  })
+
+  it('w="fill" in flex-col sets layoutAlignSelf=STRETCH without layoutGrow', () => {
+    const g = createGraph()
+    const tree = Frame({
+      name: 'Col',
+      flex: 'col',
+      children: [Frame({ name: 'Child', w: 'fill', h: 10 })]
+    })
+    const result = renderTree(g, tree)
+    const parent = g.nodes.get(result.id)!
+    const child = g.nodes.get(parent.childIds[0]!)!
+
+    expect(child.layoutAlignSelf).toBe('STRETCH')
+    expect(child.layoutGrow).toBe(0)
+  })
+
+  it('h="fill" in flex-col sets layoutGrow without layoutAlignSelf', () => {
+    const g = createGraph()
+    const tree = Frame({
+      name: 'Col',
+      flex: 'col',
+      h: 400,
+      children: [Frame({ name: 'Child', h: 'fill' })]
+    })
+    const result = renderTree(g, tree)
+    const parent = g.nodes.get(result.id)!
+    const child = g.nodes.get(parent.childIds[0]!)!
+
+    expect(child.layoutGrow).toBe(1)
+    expect(child.layoutAlignSelf).not.toBe('STRETCH')
+  })
+
+  it('w="fill" in flex-row sets layoutGrow', () => {
+    const g = createGraph()
+    const tree = Frame({
+      name: 'Row',
+      flex: 'row',
+      w: 400,
+      children: [Frame({ name: 'Child', w: 'fill' })]
+    })
+    const result = renderTree(g, tree)
+    const parent = g.nodes.get(result.id)!
+    const child = g.nodes.get(parent.childIds[0]!)!
+
+    expect(child.layoutGrow).toBe(1)
+  })
+
+  it('h="fill" in flex-row sets layoutAlignSelf=STRETCH without layoutGrow', () => {
+    const g = createGraph()
+    const tree = Frame({
+      name: 'Row',
+      flex: 'row',
+      children: [Frame({ name: 'Child', h: 'fill', w: 50 })]
+    })
+    const result = renderTree(g, tree)
+    const parent = g.nodes.get(result.id)!
+    const child = g.nodes.get(parent.childIds[0]!)!
+
+    expect(child.layoutAlignSelf).toBe('STRETCH')
+    expect(child.layoutGrow).toBe(0)
   })
 
   it('handles shadow effect', () => {
