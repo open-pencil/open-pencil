@@ -1,4 +1,5 @@
 import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './constants'
+import { copyFills, copyStrokes, copyEffects } from './copy'
 
 export type { GUID, Color } from './types'
 
@@ -989,7 +990,15 @@ export class SceneGraph {
     key: K
   ): void {
     const val = source[key]
-    target[key] = (Array.isArray(val) ? structuredClone(val) : val) as SceneNode[K]
+    if (key === 'fills') {
+      target[key] = copyFills(source.fills) as SceneNode[K]
+    } else if (key === 'strokes') {
+      target[key] = copyStrokes(source.strokes) as SceneNode[K]
+    } else if (key === 'effects') {
+      target[key] = copyEffects(source.effects) as SceneNode[K]
+    } else {
+      target[key] = (Array.isArray(val) ? structuredClone(val) : val) as SceneNode[K]
+    }
   }
 
   createInstance(

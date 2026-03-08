@@ -1,4 +1,5 @@
 import type { SceneGraph, SceneNode, GeometryPath } from '../scene-graph'
+import { copyFills, copyStrokes, copyEffects, copyStyleRuns } from '../copy'
 import { guidToString, convertOverrideToProps, resolveGeometryPaths } from './kiwi-convert'
 import { profileStage, profileStart } from './fig-parse-profile'
 import type { GUID } from './codec'
@@ -570,10 +571,10 @@ export function populateAndApplyOverrides(
     if (source.text !== undefined && source.text !== target.text) updates.text = source.text
     if (source.visible !== undefined && source.visible !== target.visible) updates.visible = source.visible
     if (source.opacity !== undefined && source.opacity !== target.opacity) updates.opacity = source.opacity
-    if (source.fills !== undefined && source.fills !== target.fills) updates.fills = structuredClone(source.fills)
-    if (source.strokes !== undefined && source.strokes !== target.strokes) updates.strokes = structuredClone(source.strokes)
-    if (source.effects !== undefined && source.effects !== target.effects) updates.effects = structuredClone(source.effects)
-    if (source.styleRuns !== undefined && source.styleRuns !== target.styleRuns) updates.styleRuns = structuredClone(source.styleRuns)
+    if (source.fills !== undefined && source.fills !== target.fills) updates.fills = copyFills(source.fills)
+    if (source.strokes !== undefined && source.strokes !== target.strokes) updates.strokes = copyStrokes(source.strokes)
+    if (source.effects !== undefined && source.effects !== target.effects) updates.effects = copyEffects(source.effects)
+    if (source.styleRuns !== undefined && source.styleRuns !== target.styleRuns) updates.styleRuns = copyStyleRuns(source.styleRuns)
     if (source.layoutGrow !== undefined && source.layoutGrow !== target.layoutGrow) updates.layoutGrow = source.layoutGrow
     if (source.textAutoResize !== undefined && source.textAutoResize !== target.textAutoResize) updates.textAutoResize = source.textAutoResize
     if (source.locked !== undefined && source.locked !== target.locked) updates.locked = source.locked
