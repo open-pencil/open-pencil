@@ -22,6 +22,7 @@ const buf = readFileSync(path)
 const buffer = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
 
 async function main() {
+  const fileSizeMb = (buffer.byteLength / 1024 / 1024).toFixed(2)
   const t0 = performance.now()
   const graph = await parseFigFileInWorker(buffer, { profile: true })
   const t1 = performance.now()
@@ -30,7 +31,7 @@ async function main() {
     .__FIG_PARSE_PROFILE_RESULT__
   const total = t1 - t0
 
-  console.log(`\n[fig-parse worker profile] ${file} (${(buffer.byteLength / 1024 / 1024).toFixed(2)} MB)`)
+  console.log(`\n[fig-parse worker profile] ${file} (${fileSizeMb} MB)`)
   console.log(`  nodes: ${graph.nodes.size}, pages: ${graph.getPages().length}`)
   console.log('')
   if (profile?.length) {
