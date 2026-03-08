@@ -1,0 +1,26 @@
+[package]
+name = "kiwi-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "WASM Kiwi decoder for OpenPencil .fig files"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+kiwi-schema = "0.2"
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+getrandom = { version = "0.2", optional = true }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"
+
+[features]
+default = []
+
+[profile.release]
+lto = true
+opt-level = 3
