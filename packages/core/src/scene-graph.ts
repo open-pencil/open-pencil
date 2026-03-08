@@ -158,8 +158,22 @@ export interface ArcData {
   innerRadius: number
 }
 
-export type LayoutMode = 'NONE' | 'HORIZONTAL' | 'VERTICAL'
+export type LayoutMode = 'NONE' | 'HORIZONTAL' | 'VERTICAL' | 'GRID'
 export type LayoutSizing = 'FIXED' | 'HUG' | 'FILL'
+
+export type GridTrackSizing = 'FIXED' | 'FR' | 'AUTO'
+
+export interface GridTrack {
+  sizing: GridTrackSizing
+  value: number
+}
+
+export interface GridPosition {
+  column: number
+  row: number
+  columnSpan: number
+  rowSpan: number
+}
 export type LayoutAlign = 'MIN' | 'CENTER' | 'MAX' | 'SPACE_BETWEEN'
 export type LayoutCounterAlign = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'BASELINE'
 export type LayoutWrap = 'NO_WRAP' | 'WRAP'
@@ -256,6 +270,12 @@ export interface SceneNode {
 
   isMask: boolean
   maskType: MaskType
+
+  gridTemplateColumns: GridTrack[]
+  gridTemplateRows: GridTrack[]
+  gridColumnGap: number
+  gridRowGap: number
+  gridPosition: GridPosition | null
 
   counterAxisAlignContent: 'AUTO' | 'SPACE_BETWEEN'
   itemReverseZIndex: boolean
@@ -390,6 +410,11 @@ function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): 
     maxHeight: null,
     isMask: false,
     maskType: 'ALPHA',
+    gridTemplateColumns: [],
+    gridTemplateRows: [],
+    gridColumnGap: 0,
+    gridRowGap: 0,
+    gridPosition: null,
     counterAxisAlignContent: 'AUTO',
     itemReverseZIndex: false,
     strokesIncludedInLayout: false,
@@ -922,6 +947,11 @@ export class SceneGraph {
     'paddingRight',
     'paddingBottom',
     'paddingLeft',
+    'gridTemplateColumns',
+    'gridTemplateRows',
+    'gridColumnGap',
+    'gridRowGap',
+    'gridPosition',
     'clipsContent',
     'independentStrokeWeights',
     'borderTopWeight',

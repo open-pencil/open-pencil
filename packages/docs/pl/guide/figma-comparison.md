@@ -145,7 +145,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Align items | ✅ | Start, center, end, stretch |
 | Wymiarowanie dzieci (stałe, wypełnij, dopasuj) | ✅ | Tryby wymiarowania per dziecko |
 | Wrap | ✅ | Flex wrap dla layoutu wieloliniowego |
-| Przepływ auto layout siatka | 🔲 | Auto layout oparty na siatce Figmy |
+| Przepływ auto layout siatka | ✅ | CSS Grid przez fork Yoga — ścieżki kolumn/wierszy, odstępy, spany |
 | Przepływy połączone (zagnieżdżone) | ✅ | Zagnieżdżone ramki auto-layout z różnymi kierunkami |
 | Zmiana kolejności przeciąganiem w auto layout | ✅ | Wizualny wskaźnik wstawiania |
 | Min/max szerokość i wysokość | 🔲 | Figma obsługuje ograniczenia min/max |

@@ -40,7 +40,7 @@
         "y-indexeddb": "^9.0.12",
         "y-protocols": "^1.0.7",
         "yjs": "^13.6.29",
-        "yoga-layout": "^3.2.1",
+        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
       },
       "devDependencies": {
         "@agentclientprotocol/sdk": "^0.14.1",
@@ -110,7 +110,7 @@
         "diff": "^8.0.3",
         "fflate": "^0.8.2",
         "fzstd": "^0.1.1",
-        "yoga-layout": "^3.2.1",
+        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
       },
       "devDependencies": {
         "@types/culori": "^4.0.1",
@@ -2612,7 +2612,7 @@
 
     "yjs": ["yjs@13.6.29", "", { "dependencies": { "lib0": "^0.2.99" } }, "sha512-kHqDPdltoXH+X4w1lVmMtddE3Oeqq48nM40FD5ojTd8xYhQpzIDcfE2keMSU5bAgRPJBe225WTUdyUgj1DtbiQ=="],
 
-    "yoga-layout": ["yoga-layout@3.2.1", "", {}, "sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ=="],
+    "yoga-layout": ["@open-pencil/yoga-layout@3.3.0-grid.2", "", {}, "sha512-BFaOZ2iXD/v3Y805j5PN/biIKCFEOB/U3Wg8d7gG7FR4NK/hrp199/vMbNr7/BOfH/Xuu6JariSFNKll9zQSBw=="],
 
     "zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 

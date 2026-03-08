@@ -65,7 +65,7 @@
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
-    "yoga-layout": "^3.2.1"
+    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.14.1",

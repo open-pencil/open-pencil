@@ -8,7 +8,7 @@
 | **UI Framework** | Vue 3 + VueUse | Reactive composition API, excellent TypeScript support |
 | **Components** | Reka UI | Headless, accessible UI primitives (tree, slider, etc.) |
 | **Styling** | Tailwind CSS 4 | Utility-first, fast iteration, dark theme |
-| **Layout** | Yoga WASM | CSS flexbox engine from Meta, battle-tested in React Native |
+| **Layout** | Yoga WASM | CSS flexbox and grid engine from Meta, battle-tested in React Native |
 | **File Format** | Kiwi binary + Zstd | Figma's own format — compact, fast parsing, .fig compatible |
 | **Collaboration** | Trystero + Yjs | P2P WebRTC via MQTT signaling, CRDT sync, y-indexeddb persistence |
 | **Color** | culori | Color space conversions (HSV, RGB, hex) |
@@ -60,4 +60,4 @@ Yoga is maintained by Meta, battle-tested across billions of React Native device
 
 | Technology | Purpose | Phase |
 |-----------|---------|-------|
-| CSS Grid in Yoga | Grid-based auto layout | Blocked on upstream (facebook/yoga#1893) |
+| CSS Grid in Yoga | Grid-based auto layout | ✅ Supported via [Yoga fork](https://github.com/open-pencil/yoga/tree/grid) |

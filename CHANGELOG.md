@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- CSS Grid layout mode — select a frame, click the grid icon in the auto layout toolbar to switch from flex to grid. Configure column/row tracks (fr, fixed px, auto), column and row gaps, and per-side padding. Powered by a [Yoga fork](https://github.com/open-pencil/yoga/tree/grid) with cherry-picked CSS Grid PRs from upstream
+- JSX and Tailwind CSS export for grid layouts — `grid grid-cols-N`, `gap-x-*`/`gap-y-*`, child `col-start-*`/`row-start-*`/`col-span-*`/`row-span-*`
+
+### Improvements
+
+- Compact layout controls — icon-based gap (↔/↕) and padding (T/R/B/L) inputs instead of text labels
+- Auto-detect horizontal vs vertical direction when wrapping in auto layout (Shift+A)
+- Fix alignment grid for vertical layouts — visual positions now match spatial axes
+- Fix grid switch from HUG-sized frames — frame expands to fit children
+- Remove unwanted white fill when wrapping in auto layout
+
 ## 0.8.0 — 2026-03-07
 
 ### Features

@@ -108,7 +108,7 @@ Przejścia między ramkami, wyzwalacze interakcji (kliknięcie, najechanie, prze
 
 ### CSS Grid Layout
 
-Yoga WASM obecnie obsługuje tylko flexbox. CSS Grid jest upstream w [facebook/yoga#1893](https://github.com/facebook/yoga/pull/1893). OpenPencil adoptuje go po wydaniu nowej wersji Yoga.
+CSS Grid jest obsługiwany przez [fork Yoga](https://github.com/open-pencil/yoga/tree/grid) z cherry-picked PR-ami grid z upstream. Wybierz ramkę, kliknij ikonę siatki, aby przełączyć z flex na grid. Konfiguruj ścieżki kolumn/wierszy (fr, stałe px, auto), odstępy kolumn i wierszy oraz padding po każdej stronie.
 
 ### Podpisywanie kodu Windows
 

@@ -108,7 +108,7 @@ Transitions frame-à-frame, déclencheurs d'interaction (clic, survol, glissemen
 
 ### Layout CSS Grid
 
-Yoga WASM ne supporte actuellement que le flexbox. CSS Grid est en développement en amont dans [facebook/yoga#1893](https://github.com/facebook/yoga/pull/1893). OpenPencil l'adoptera dès la sortie de la version Yoga correspondante.
+CSS Grid est supporté via un [fork de Yoga](https://github.com/open-pencil/yoga/tree/grid) avec des PRs grid cherry-picked de l'upstream. Sélectionnez un frame, cliquez sur l'icône grille pour passer de flex à grid. Configurez les tracks colonnes/lignes (fr, px fixes, auto), les gaps colonnes et lignes, et le padding par côté.
 
 ### Signature de code Windows
 

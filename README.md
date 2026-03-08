@@ -24,6 +24,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 - **AI builds designs** — describe what you want in chat, 90 tools create and modify nodes. Bring your own API key
 - **Fully programmable** — headless CLI, Figma Plugin API via `eval`, MCP server for AI agents
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
+- **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
 - **Tailwind CSS export** — export any selection as HTML with Tailwind v4 utility classes
 - **~7 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 

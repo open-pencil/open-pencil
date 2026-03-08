@@ -60,4 +60,4 @@ Yoga est maintenu par Meta, éprouvé sur des milliards d'appareils React Native
 
 | Technologie | Objectif | Phase |
 |-----------|---------|-------|
-| CSS Grid dans Yoga | Auto layout basé sur une grille | Bloqué en amont (facebook/yoga#1893) |
+| CSS Grid dans Yoga | Auto layout basé sur une grille | ✅ Supporté via [fork Yoga](https://github.com/open-pencil/yoga/tree/grid) |

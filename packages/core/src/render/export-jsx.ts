@@ -9,7 +9,16 @@ import {
   opacityToTw
 } from './tailwind'
 
-import type { SceneGraph, SceneNode, Fill, Stroke, Effect, NodeType, Color } from '../scene-graph'
+import type {
+  SceneGraph,
+  SceneNode,
+  Fill,
+  Stroke,
+  Effect,
+  NodeType,
+  Color,
+  GridTrack
+} from '../scene-graph'
 
 export type JSXFormat = 'openpencil' | 'tailwind'
 
@@ -115,7 +124,10 @@ function getNodeContext(node: SceneNode, graph: SceneGraph) {
   const parent = node.parentId ? graph.getNode(node.parentId) : null
   return {
     isAutoLayout: node.layoutMode !== 'NONE',
-    parentIsAutoLayout: parent ? parent.layoutMode !== 'NONE' : false
+    isGrid: node.layoutMode === 'GRID',
+    isFlex: node.layoutMode === 'HORIZONTAL' || node.layoutMode === 'VERTICAL',
+    parentIsAutoLayout: parent ? parent.layoutMode !== 'NONE' : false,
+    parentIsGrid: parent ? parent.layoutMode === 'GRID' : false
   }
 }
 
@@ -160,17 +172,40 @@ function collectCornerRadii(node: SceneNode): CornerRadii | null {
   return { tl: r, tr: r, br: r, bl: r }
 }
 
+function formatTrack(t: GridTrack): string {
+  if (t.sizing === 'FR') return `${t.value}fr`
+  if (t.sizing === 'FIXED') return `${t.value}px`
+  return 'auto'
+}
+
+function formatTracks(tracks: GridTrack[]): string {
+  return tracks.map(formatTrack).join(' ')
+}
+
 // --- OpenPencil format ---
 
 function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
   const props: [string, unknown][] = []
-  const { isAutoLayout, parentIsAutoLayout } = getNodeContext(node, graph)
+  const { isAutoLayout, isGrid, isFlex, parentIsAutoLayout, parentIsGrid } = getNodeContext(
+    node,
+    graph
+  )
 
   if (node.name && node.name !== node.type) {
     props.push(['name', node.name])
   }
 
-  if (isAutoLayout) {
+  if (isGrid) {
+    props.push(['grid', true])
+    if (node.gridTemplateColumns.length > 0)
+      props.push(['columns', formatTracks(node.gridTemplateColumns)])
+    if (node.gridTemplateRows.length > 0)
+      props.push(['rows', formatTracks(node.gridTemplateRows)])
+    if (node.width > 0) props.push(['w', node.width])
+    if (node.height > 0) props.push(['h', node.height])
+    if (node.gridColumnGap > 0) props.push(['columnGap', node.gridColumnGap])
+    if (node.gridRowGap > 0) props.push(['rowGap', node.gridRowGap])
+  } else if (isFlex) {
     props.push(['flex', node.layoutMode === 'HORIZONTAL' ? 'row' : 'col'])
     const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
     const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
@@ -190,14 +225,23 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
   }
 
   if (parentIsAutoLayout && node.layoutGrow > 0) props.push(['grow', node.layoutGrow])
-  if (isAutoLayout && node.itemSpacing > 0) props.push(['gap', node.itemSpacing])
 
-  if (isAutoLayout && node.layoutWrap === 'WRAP') {
+  if (parentIsGrid && node.gridPosition) {
+    const pos = node.gridPosition
+    if (pos.column > 0) props.push(['colStart', pos.column])
+    if (pos.row > 0) props.push(['rowStart', pos.row])
+    if (pos.columnSpan > 1) props.push(['colSpan', pos.columnSpan])
+    if (pos.rowSpan > 1) props.push(['rowSpan', pos.rowSpan])
+  }
+
+  if (isFlex && node.itemSpacing > 0) props.push(['gap', node.itemSpacing])
+
+  if (isFlex && node.layoutWrap === 'WRAP') {
     props.push(['wrap', true])
     if (node.counterAxisSpacing > 0) props.push(['rowGap', node.counterAxisSpacing])
   }
 
-  if (isAutoLayout) {
+  if (isFlex) {
     if (node.primaryAxisAlign === 'CENTER') props.push(['justify', 'center'])
     else if (node.primaryAxisAlign === 'MAX') props.push(['justify', 'end'])
     else if (node.primaryAxisAlign === 'SPACE_BETWEEN') props.push(['justify', 'between'])
@@ -205,7 +249,9 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
     if (node.counterAxisAlign === 'CENTER') props.push(['items', 'center'])
     else if (node.counterAxisAlign === 'MAX') props.push(['items', 'end'])
     else if (node.counterAxisAlign === 'STRETCH') props.push(['items', 'stretch'])
+  }
 
+  if (isAutoLayout) {
     const pad = collectPadding(node)
     if (pad) {
       props.push(
@@ -304,11 +350,30 @@ function twRounded(prefix: string, px: number): string {
   return r ? `${prefix}-${r}` : prefix
 }
 
+function gridTemplateTw(tracks: GridTrack[]): string {
+  const allEqual1Fr = tracks.every((t) => t.sizing === 'FR' && t.value === 1)
+  if (allEqual1Fr) return String(tracks.length)
+  return `[${tracks.map(formatTrack).join('_')}]`
+}
+
 function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
   const classes: string[] = []
-  const { isAutoLayout, parentIsAutoLayout } = getNodeContext(node, graph)
+  const { isAutoLayout, isGrid, isFlex, parentIsAutoLayout, parentIsGrid } = getNodeContext(
+    node,
+    graph
+  )
 
-  if (isAutoLayout) {
+  if (isGrid) {
+    classes.push('grid')
+    if (node.gridTemplateColumns.length > 0)
+      classes.push(`grid-cols-${gridTemplateTw(node.gridTemplateColumns)}`)
+    if (node.gridTemplateRows.length > 0)
+      classes.push(`grid-rows-${gridTemplateTw(node.gridTemplateRows)}`)
+    if (node.width > 0) classes.push(`w-${pxToSpacing(node.width)}`)
+    if (node.height > 0) classes.push(`h-${pxToSpacing(node.height)}`)
+    if (node.gridColumnGap > 0) classes.push(`gap-x-${pxToSpacing(node.gridColumnGap)}`)
+    if (node.gridRowGap > 0) classes.push(`gap-y-${pxToSpacing(node.gridRowGap)}`)
+  } else if (isFlex) {
     classes.push('flex')
     if (node.layoutMode === 'VERTICAL') classes.push('flex-col')
 
@@ -330,14 +395,23 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
   }
 
   if (parentIsAutoLayout && node.layoutGrow > 0) classes.push('grow')
-  if (isAutoLayout && node.itemSpacing > 0) classes.push(`gap-${pxToSpacing(node.itemSpacing)}`)
 
-  if (isAutoLayout && node.layoutWrap === 'WRAP') {
+  if (parentIsGrid && node.gridPosition) {
+    const pos = node.gridPosition
+    if (pos.column > 0) classes.push(`col-start-${pos.column}`)
+    if (pos.row > 0) classes.push(`row-start-${pos.row}`)
+    if (pos.columnSpan > 1) classes.push(`col-span-${pos.columnSpan}`)
+    if (pos.rowSpan > 1) classes.push(`row-span-${pos.rowSpan}`)
+  }
+
+  if (isFlex && node.itemSpacing > 0) classes.push(`gap-${pxToSpacing(node.itemSpacing)}`)
+
+  if (isFlex && node.layoutWrap === 'WRAP') {
     classes.push('flex-wrap')
     if (node.counterAxisSpacing > 0) classes.push(`gap-y-${pxToSpacing(node.counterAxisSpacing)}`)
   }
 
-  if (isAutoLayout) {
+  if (isFlex) {
     if (node.primaryAxisAlign === 'CENTER') classes.push('justify-center')
     else if (node.primaryAxisAlign === 'MAX') classes.push('justify-end')
     else if (node.primaryAxisAlign === 'SPACE_BETWEEN') classes.push('justify-between')
@@ -345,7 +419,9 @@ function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
     if (node.counterAxisAlign === 'CENTER') classes.push('items-center')
     else if (node.counterAxisAlign === 'MAX') classes.push('items-end')
     else if (node.counterAxisAlign === 'STRETCH') classes.push('items-stretch')
+  }
 
+  if (isAutoLayout) {
     const pad = collectPadding(node)
     if (pad) {
       classes.push(

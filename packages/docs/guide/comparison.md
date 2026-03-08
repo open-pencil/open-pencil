@@ -266,7 +266,7 @@ Open Pencil's approach is simpler and lower overhead. Penpot's approach is more 
 2. **PDF export** — headless Chromium export service for PDF rendering (OpenPencil exports SVG but not PDF yet)
 3. **Plugin system** — full plugin API with sandboxed execution
 4. **Design tokens** — native design token support
-5. **CSS Grid layout** — custom implementation (Open Pencil waiting for Yoga Grid)
+5. **CSS Grid layout** — custom implementation (Open Pencil uses Yoga fork with grid support)
 6. **Self-hosting** — Docker-based deployment for teams
 7. **Maturity** — years of production usage, battle-tested at scale
 

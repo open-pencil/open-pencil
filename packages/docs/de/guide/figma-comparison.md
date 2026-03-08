@@ -145,7 +145,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Align Items | ✅ | Start, Center, <kbd>End</kbd>, Stretch |
 | Kindgröße (fix, füllen, anpassen) | ✅ | Größenmodi pro Kind |
 | Wrap | ✅ | Flex-Wrap für mehrzeiliges Layout |
-| Grid-Auto-Layout-Fluss | 🔲 | Figmas rasterbasiertes Auto-Layout |
+| Grid-Auto-Layout-Fluss | ✅ | CSS Grid über Yoga-Fork — Spalten-/Zeilen-Tracks, Gaps, Spans |
 | Kombinierte Flüsse (verschachtelt) | ✅ | Verschachtelte Auto-Layout-Frames mit verschiedenen Richtungen |
 | Drag-Neuordnung in Auto Layout | ✅ | Visueller Einfügeindikator |
 | Min/Max Breite und Höhe | 🔲 | Figma unterstützt Min/Max-Einschränkungen |

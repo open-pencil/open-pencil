@@ -145,7 +145,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Align items | ✅ | Start, center, end, stretch |
 | Dimensionnement des enfants (fixe, remplir, ajuster) | ✅ | Modes de dimensionnement par enfant |
 | Wrap | ✅ | Flex wrap pour layout multi-ligne |
-| Flux auto layout en grille | 🔲 | Auto layout basé sur grille de Figma |
+| Flux auto layout en grille | ✅ | CSS Grid via fork Yoga — tracks colonnes/lignes, gaps, spans |
 | Flux combinés (imbriqués) | ✅ | Frames auto-layout imbriqués avec directions différentes |
 | Réordonnancer par glissement dans auto layout | ✅ | Indicateur visuel d'insertion |
 | Largeur/hauteur min et max | 🔲 | Figma supporte les contraintes min/max |

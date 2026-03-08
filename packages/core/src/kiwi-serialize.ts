@@ -279,7 +279,7 @@ export function sceneNodeToKiwi(
     if (node.clipsContent) nc.clipsContent = true
   }
 
-  if (node.layoutMode !== 'NONE') {
+  if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
     nc.stackMode = node.layoutMode
     nc.stackSpacing = node.itemSpacing
     nc.stackVerticalPadding = node.paddingTop

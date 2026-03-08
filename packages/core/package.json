@@ -41,7 +41,7 @@
     "diff": "^8.0.3",
     "fflate": "^0.8.2",
     "fzstd": "^0.1.1",
-    "yoga-layout": "^3.2.1"
+    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",

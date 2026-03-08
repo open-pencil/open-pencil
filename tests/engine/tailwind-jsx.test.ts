@@ -509,4 +509,87 @@ describe('Tailwind JSX export', () => {
     expect(jsx).toContain('text-white')
     expect(jsx).not.toContain('#')
   })
+
+  test('grid layout → grid + grid-cols + grid-rows', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'Grid',
+      width: 400,
+      height: 300,
+      layoutMode: 'GRID',
+      gridTemplateColumns: [
+        { sizing: 'FR', value: 1 },
+        { sizing: 'FR', value: 1 },
+        { sizing: 'FR', value: 1 }
+      ],
+      gridTemplateRows: [
+        { sizing: 'FR', value: 1 },
+        { sizing: 'FR', value: 1 }
+      ],
+      gridColumnGap: 16,
+      gridRowGap: 8,
+      paddingTop: 12,
+      paddingRight: 12,
+      paddingBottom: 12,
+      paddingLeft: 12
+    })
+    const jsx = tw(graph, frame.id)
+    expect(jsx).toContain('grid ')
+    expect(jsx).toContain('grid-cols-3')
+    expect(jsx).toContain('grid-rows-2')
+    expect(jsx).toContain('gap-x-4')
+    expect(jsx).toContain('gap-y-2')
+    expect(jsx).toContain('p-3')
+    expect(jsx).not.toContain('flex')
+  })
+
+  test('grid with mixed tracks uses arbitrary value', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      width: 600,
+      height: 400,
+      layoutMode: 'GRID',
+      gridTemplateColumns: [
+        { sizing: 'FIXED', value: 200 },
+        { sizing: 'FR', value: 1 },
+        { sizing: 'AUTO', value: 0 }
+      ],
+      gridTemplateRows: [],
+      gridColumnGap: 0,
+      gridRowGap: 0
+    })
+    const jsx = tw(graph, frame.id)
+    expect(jsx).toContain('grid-cols-[200px_1fr_auto]')
+    expect(jsx).not.toContain('grid-rows')
+  })
+
+  test('grid child placement → col-start/row-start/col-span', () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      width: 400,
+      height: 300,
+      layoutMode: 'GRID',
+      gridTemplateColumns: [
+        { sizing: 'FR', value: 1 },
+        { sizing: 'FR', value: 1 }
+      ],
+      gridTemplateRows: [
+        { sizing: 'FR', value: 1 },
+        { sizing: 'FR', value: 1 }
+      ],
+      gridColumnGap: 0,
+      gridRowGap: 0
+    })
+    const child = graph.createNode('RECTANGLE', frame.id, {
+      name: 'Span',
+      width: 100,
+      height: 50,
+      gridPosition: { column: 1, row: 2, columnSpan: 2, rowSpan: 1 }
+    })
+    const jsx = tw(graph, child.id)
+    expect(jsx).toContain('col-start-1')
+    expect(jsx).toContain('row-start-2')
+    expect(jsx).toContain('col-span-2')
+    expect(jsx).not.toContain('row-span')
+  })
 })

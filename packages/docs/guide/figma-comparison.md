@@ -147,7 +147,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Align items | ✅ | Start, center, end, stretch |
 | Child sizing (fixed, fill, hug) | ✅ | Per-child sizing modes |
 | Wrap | ✅ | Flex wrap for multi-line layout |
-| Grid auto layout flow | 🔲 | Figma's grid-based auto layout (rows × columns) |
+| Grid auto layout flow | ✅ | CSS Grid via Yoga fork — column/row tracks, gaps, spans |
 | Combined flows (nested) | ✅ | Nested auto-layout frames with different directions |
 | Drag reorder within auto layout | ✅ | Visual insertion indicator |
 | Min/max width and height | 🔲 | Figma supports min/max constraints on auto-layout children |

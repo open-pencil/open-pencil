@@ -108,7 +108,7 @@ Headless CLI уже поддерживает `analyze colors/typography/spacing/
 
 ### Макет CSS Grid
 
-Yoga WASM пока поддерживает только flexbox. CSS Grid находится в разработке в [facebook/yoga#1893](https://github.com/facebook/yoga/pull/1893). OpenPencil адаптирует его после выхода релиза Yoga.
+CSS Grid поддерживается через [форк Yoga](https://github.com/open-pencil/yoga/tree/grid). Выберите фрейм, нажмите на иконку сетки для переключения с flex на grid. Настройте колонки и строки (fr, фиксированные px, auto), зазоры между ними и отступы с каждой стороны.
 
 ### Подпись кода для Windows
 

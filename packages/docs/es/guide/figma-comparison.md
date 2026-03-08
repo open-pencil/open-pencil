@@ -145,7 +145,7 @@ Comparación característica por característica de las capacidades de Figma Des
 | Align items | ✅ | Start, center, end, stretch |
 | Dimensionado de hijos (fijo, rellenar, ajustar) | ✅ | Modos de dimensionado por hijo |
 | Wrap | ✅ | Flex wrap para layout multi-línea |
-| Flujo auto layout grid | 🔲 | Auto layout basado en grid de Figma |
+| Flujo auto layout grid | ✅ | CSS Grid vía fork de Yoga — tracks de columna/fila, gaps, spans |
 | Flujos combinados (anidados) | ✅ | Frames auto-layout anidados con diferentes direcciones |
 | Reordenar arrastrando en auto layout | ✅ | Indicador visual de inserción |
 | Ancho/alto mínimo y máximo | 🔲 | Figma soporta restricciones min/max en hijos de auto-layout |
