@@ -62,16 +62,27 @@ export function populateAndApplyOverrides(
   blobs: Uint8Array[] = []
 ): void {
   const t0 = profileStart()
-  // Iterative population: cloning creates new instances that themselves need children
-  let populated = 1
-  while (populated > 0) {
-    populated = 0
-    for (const node of graph.getAllNodes()) {
-      if (node.type !== 'INSTANCE' || !node.componentId || node.childIds.length > 0) continue
-      const comp = graph.getNode(node.componentId)
-      if (comp && comp.childIds.length > 0) {
-        graph.populateInstanceChildren(node.id, node.componentId)
-        populated++
+  // Work queue: avoid full getAllNodes() scan per iteration. Collect empty instances
+  // once, then process; new instances from populateInstanceChildren go on the queue.
+  const queue: string[] = []
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'INSTANCE' || !node.componentId || node.childIds.length > 0) continue
+    const comp = graph.getNode(node.componentId)
+    if (comp?.childIds.length) queue.push(node.id)
+  }
+  while (queue.length > 0) {
+    const instanceId = queue.shift() as string
+    const node = graph.getNode(instanceId)
+    if (!node || node.type !== 'INSTANCE' || !node.componentId || node.childIds.length > 0)
+      continue
+    const comp = graph.getNode(node.componentId)
+    if (!comp?.childIds.length) continue
+    graph.populateInstanceChildren(node.id, node.componentId)
+    for (const childId of node.childIds) {
+      const child = graph.getNode(childId)
+      if (child?.type === 'INSTANCE' && child.componentId && child.childIds.length === 0) {
+        const c = graph.getNode(child.componentId)
+        if (c?.childIds.length) queue.push(childId)
       }
     }
   }
