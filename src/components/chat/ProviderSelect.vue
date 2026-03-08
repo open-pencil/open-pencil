@@ -12,7 +12,7 @@ import {
 import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
 import { AI_PROVIDERS, useAIChat } from '@/composables/use-chat'
 
-const { providerId, providerDef } = useAIChat()
+const { providerID, providerDef } = useAIChat()
 
 defineProps<{
   triggerClass?: string
@@ -22,7 +22,7 @@ defineProps<{
 </script>
 
 <template>
-  <SelectRoot v-model="providerId">
+  <SelectRoot v-model="providerID">
     <SelectTrigger
       :data-test-id="testId"
       :class="

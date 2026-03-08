@@ -87,7 +87,7 @@ export const TEXT_SELECTION_COLOR = { r: 0.26, g: 0.52, b: 0.96, a: 0.3 }
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
 
-export type AIProviderId =
+export type AIProviderID =
   | 'openrouter'
   | 'anthropic'
   | 'openai'
@@ -101,7 +101,7 @@ export interface ModelOption {
 }
 
 export interface AIProviderDef {
-  id: AIProviderId
+  id: AIProviderID
   name: string
   keyPlaceholder: string
   keyURL: string
@@ -182,7 +182,7 @@ export const AI_PROVIDERS: AIProviderDef[] = [
   }
 ]
 
-export const DEFAULT_AI_PROVIDER: AIProviderId = 'openrouter'
+export const DEFAULT_AI_PROVIDER: AIProviderID = 'openrouter'
 export const DEFAULT_AI_MODEL = AI_PROVIDERS[0].defaultModel
 
 export const AUTOMATION_HTTP_PORT = 7600

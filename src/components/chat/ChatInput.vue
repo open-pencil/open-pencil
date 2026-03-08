@@ -21,7 +21,7 @@ import { uiInput } from '@/components/ui/input'
 import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
 import { useAIChat } from '@/composables/use-chat'
 
-const { providerId, providerDef, modelId, customModelId } = useAIChat()
+const { providerID, providerDef, modelID, customModelID } = useAIChat()
 
 const props = defineProps<{
   status: 'ready' | 'submitted' | 'streaming' | 'error'
@@ -35,11 +35,11 @@ const emit = defineEmits<{
 const input = ref('')
 
 const isStreaming = computed(() => props.status === 'streaming' || props.status === 'submitted')
-const isCustomProvider = computed(() => providerId.value === 'openai-compatible')
+const isCustomProvider = computed(() => providerID.value === 'openai-compatible')
 
 const selectedModelName = computed(() => {
-  if (isCustomProvider.value) return customModelId.value || 'No model'
-  return providerDef.value.models.find((m) => m.id === modelId.value)?.name ?? modelId.value
+  if (isCustomProvider.value) return customModelID.value || 'No model'
+  return providerDef.value.models.find((m) => m.id === modelID.value)?.name ?? modelID.value
 })
 
 function handleSubmit(e: Event) {
@@ -65,7 +65,7 @@ function handleSubmit(e: Event) {
             {{ selectedModelName }}
           </div>
         </template>
-        <SelectRoot v-else v-model="modelId">
+        <SelectRoot v-else v-model="modelID">
           <SelectTrigger
             data-test-id="chat-model-selector"
             :class="

@@ -5,11 +5,11 @@ import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
 
-const { providerId, providerDef, setApiKey, customBaseURL, customModelId } = useAIChat()
+const { providerID, providerDef, setAPIKey, customBaseURL, customModelID } = useAIChat()
 
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
-const customModelInput = ref(customModelId.value)
+const customModelInput = ref(customModelID.value)
 
 function save() {
   const key = keyInput.value.trim()
@@ -18,9 +18,9 @@ function save() {
     customBaseURL.value = baseURLInput.value.trim()
   }
   if (providerDef.value.supportsCustomModel) {
-    customModelId.value = customModelInput.value.trim()
+    customModelID.value = customModelInput.value.trim()
   }
-  setApiKey(key)
+  setAPIKey(key)
   keyInput.value = ''
 }
 </script>
@@ -28,53 +28,53 @@ function save() {
 <template>
   <div
     data-test-id="provider-setup"
-    class="flex flex-1 flex-col items-center justify-center gap-4 px-4"
+    class="flex flex-1 flex-col items-center justify-center px-6"
   >
-    <icon-lucide-sparkles class="size-8 text-muted" />
-    <p class="text-center text-xs text-muted">Connect an AI provider to start chatting.</p>
+    <icon-lucide-sparkles class="mb-3 size-7 text-muted" />
+    <p class="mb-5 text-center text-xs text-muted">Connect an AI provider to start chatting.</p>
 
-    <ProviderSelect
-      test-id="provider-selector"
-      trigger-class="w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface"
-      item-class="rounded px-2 py-1.5 text-[11px]"
-    />
+    <form class="flex w-full flex-col gap-2" @submit.prevent="save">
+      <ProviderSelect
+        test-id="provider-selector"
+        trigger-class="w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface"
+        item-class="rounded px-2 py-1.5 text-[11px]"
+      />
 
-    <!-- Base URL (OpenAI-compatible only) -->
-    <input
-      v-if="providerDef.supportsCustomBaseURL"
-      v-model="baseURLInput"
-      type="text"
-      data-test-id="provider-base-url"
-      placeholder="Base URL (e.g. http://localhost:11434/v1)"
-      :class="uiInput()"
-    />
+      <!-- Base URL (OpenAI-compatible only) -->
+      <input
+        v-if="providerDef.supportsCustomBaseURL"
+        v-model="baseURLInput"
+        type="text"
+        data-test-id="provider-base-url"
+        placeholder="Base URL (e.g. http://localhost:11434/v1)"
+        :class="uiInput()"
+      />
 
-    <!-- Custom model ID (OpenAI-compatible only) -->
-    <input
-      v-if="providerDef.supportsCustomModel"
-      v-model="customModelInput"
-      type="text"
-      data-test-id="provider-custom-model"
-      placeholder="Model ID (e.g. llama-3.3-70b)"
-      :class="uiInput()"
-    />
+      <!-- Custom model ID (OpenAI-compatible only) -->
+      <input
+        v-if="providerDef.supportsCustomModel"
+        v-model="customModelInput"
+        type="text"
+        data-test-id="provider-custom-model"
+        placeholder="Model ID (e.g. llama-3.3-70b)"
+        :class="uiInput()"
+      />
 
-    <!-- API key input -->
-    <form class="flex w-full gap-1.5" @submit.prevent="save">
       <input
         v-model="keyInput"
         type="password"
         data-test-id="api-key-input"
         :placeholder="providerDef.keyPlaceholder"
-        :class="uiInput({ class: 'min-w-0 flex-1' })"
+        :class="uiInput()"
       />
+
       <button
         type="submit"
         data-test-id="api-key-save"
-        class="shrink-0 rounded bg-accent px-2.5 py-1 text-xs font-medium text-white hover:bg-accent/90"
+        class="mt-1 w-full rounded bg-accent py-1.5 text-xs font-medium text-white hover:bg-accent/90"
         :disabled="!keyInput.trim()"
       >
-        Save
+        Connect
       </button>
     </form>
 
@@ -83,16 +83,16 @@ function save() {
       :href="providerDef.keyURL"
       target="_blank"
       data-test-id="api-key-get-link"
-      class="text-[10px] text-muted underline hover:text-surface"
+      class="mt-2.5 text-[10px] text-muted underline hover:text-surface"
     >
-      Get a {{ providerDef.name }} API key →
+      Get an {{ providerDef.name }} API key →
     </a>
 
     <p
-      v-if="providerId === 'openrouter'"
-      class="text-center text-[10px] leading-relaxed text-muted/70"
+      v-if="providerID === 'openrouter'"
+      class="mt-3 text-center text-[10px] leading-relaxed text-muted/50"
     >
-      OpenRouter gives you access to 100+ models from all providers with a single API key.
+      One key for 100+ models from all providers.
     </p>
   </div>
 </template>

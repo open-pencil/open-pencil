@@ -16,23 +16,23 @@ import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
 
-const { providerId, providerDef, apiKey, setApiKey, customBaseURL, customModelId } = useAIChat()
+const { providerID, providerDef, apiKey, setAPIKey, customBaseURL, customModelID } = useAIChat()
 
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
-const customModelInput = ref(customModelId.value)
+const customModelInput = ref(customModelID.value)
 const hasExistingKey = ref(!!apiKey.value)
 
-watch(providerId, () => {
+watch(providerID, () => {
   keyInput.value = ''
   hasExistingKey.value = !!apiKey.value
   baseURLInput.value = customBaseURL.value
-  customModelInput.value = customModelId.value
+  customModelInput.value = customModelID.value
 })
 
 function save() {
   if (keyInput.value.trim()) {
-    setApiKey(keyInput.value.trim())
+    setAPIKey(keyInput.value.trim())
     hasExistingKey.value = true
     keyInput.value = ''
   }
@@ -40,12 +40,12 @@ function save() {
     customBaseURL.value = baseURLInput.value.trim()
   }
   if (providerDef.value.supportsCustomModel) {
-    customModelId.value = customModelInput.value.trim()
+    customModelID.value = customModelInput.value.trim()
   }
 }
 
 function clearKey() {
-  setApiKey('')
+  setAPIKey('')
   keyInput.value = ''
   hasExistingKey.value = false
 }

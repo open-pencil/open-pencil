@@ -12,11 +12,11 @@ import { createAITools } from '@/ai/tools'
 import { useEditorStore } from '@/stores/editor'
 import { AI_PROVIDERS, DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER } from '@open-pencil/core'
 
-import type { AIProviderId } from '@open-pencil/core'
+import type { AIProviderID } from '@open-pencil/core'
 import type { LanguageModel, UIMessage } from 'ai'
 
 export { AI_PROVIDERS } from '@open-pencil/core'
-export type { AIProviderDef, AIProviderId, ModelOption } from '@open-pencil/core'
+export type { AIProviderDef, AIProviderID, ModelOption } from '@open-pencil/core'
 
 const STORAGE_PREFIX = 'open-pencil:'
 const LEGACY_KEY_STORAGE = `${STORAGE_PREFIX}openrouter-api-key`
@@ -51,48 +51,48 @@ const SYSTEM_PROMPT = dedent`
   When the user asks to create a layout, use create_shape with FRAME, then set_layout for auto-layout.
 `
 
-const providerId = useLocalStorage<AIProviderId>(
+const providerID = useLocalStorage<AIProviderID>(
   `${STORAGE_PREFIX}ai-provider`,
   DEFAULT_AI_PROVIDER
 )
-const apiKeyStorageKey = computed(() => keyStorageKey(providerId.value))
+const apiKeyStorageKey = computed(() => keyStorageKey(providerID.value))
 const apiKey = useLocalStorage(apiKeyStorageKey, '')
-const modelId = useLocalStorage(`${STORAGE_PREFIX}ai-model`, DEFAULT_AI_MODEL)
+const modelID = useLocalStorage(`${STORAGE_PREFIX}ai-model`, DEFAULT_AI_MODEL)
 const customBaseURL = useLocalStorage(`${STORAGE_PREFIX}ai-base-url`, '')
-const customModelId = useLocalStorage(`${STORAGE_PREFIX}ai-custom-model`, '')
+const customModelID = useLocalStorage(`${STORAGE_PREFIX}ai-custom-model`, '')
 const activeTab = ref<'design' | 'ai'>('design')
 
 const providerDef = computed(
-  () => AI_PROVIDERS.find((p) => p.id === providerId.value) ?? AI_PROVIDERS[0]
+  () => AI_PROVIDERS.find((p) => p.id === providerID.value) ?? AI_PROVIDERS[0]
 )
 
 const isConfigured = computed(() => {
   if (!apiKey.value) return false
-  if (providerId.value === 'openai-compatible' && !customBaseURL.value) return false
+  if (providerID.value === 'openai-compatible' && !customBaseURL.value) return false
   return true
 })
 
-watch(providerId, (id) => {
+watch(providerID, (id) => {
   const def = AI_PROVIDERS.find((p) => p.id === id)
   if (def?.defaultModel) {
-    modelId.value = def.defaultModel
+    modelID.value = def.defaultModel
   }
   resetChat()
 })
 
-watch(modelId, () => resetChat())
-watch(customModelId, () => resetChat())
+watch(modelID, () => resetChat())
+watch(customModelID, () => resetChat())
 
-function setApiKey(key: string) {
+function setAPIKey(key: string) {
   apiKey.value = key
 }
 
 function createModel(): LanguageModel {
   const key = apiKey.value
-  const effectiveModelId =
-    providerId.value === 'openai-compatible' ? customModelId.value : modelId.value
+  const effectiveModelID =
+    providerID.value === 'openai-compatible' ? customModelID.value : modelID.value
 
-  switch (providerId.value) {
+  switch (providerID.value) {
     case 'openrouter': {
       const openrouter = createOpenRouter({
         apiKey: key,
@@ -101,26 +101,26 @@ function createModel(): LanguageModel {
           'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
         }
       })
-      return openrouter(effectiveModelId)
+      return openrouter(effectiveModelID)
     }
     case 'anthropic': {
       const anthropic = createAnthropic({ apiKey: key })
-      return anthropic(effectiveModelId)
+      return anthropic(effectiveModelID)
     }
     case 'openai': {
       const openai = createOpenAI({ apiKey: key })
-      return openai(effectiveModelId)
+      return openai(effectiveModelID)
     }
     case 'google': {
       const google = createGoogleGenerativeAI({ apiKey: key })
-      return google(effectiveModelId)
+      return google(effectiveModelID)
     }
     case 'openai-compatible': {
       const custom = createOpenAI({
         apiKey: key,
         baseURL: customBaseURL.value
       })
-      return custom(effectiveModelId)
+      return custom(effectiveModelID)
     }
   }
 }
@@ -166,13 +166,13 @@ if (typeof window !== 'undefined') {
 
 export function useAIChat() {
   return {
-    providerId,
+    providerID,
     providerDef,
     apiKey,
-    setApiKey,
-    modelId,
+    setAPIKey,
+    modelID,
     customBaseURL,
-    customModelId,
+    customModelID,
     activeTab,
     isConfigured,
     ensureChat,
