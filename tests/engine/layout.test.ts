@@ -1321,6 +1321,64 @@ describe('Grid Layout', () => {
     })
   })
 
+  describe('flex-to-grid switch', () => {
+    test('HUG frame expands to fit children in grid', () => {
+      const graph = new SceneGraph()
+      const page = pageId(graph)
+
+      const frame = autoFrame(graph, page, {
+        layoutMode: 'VERTICAL',
+        primaryAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG',
+        width: 100,
+        height: 100,
+      })
+      rect(graph, frame.id, 80, 80)
+      rect(graph, frame.id, 80, 80)
+      rect(graph, frame.id, 80, 80)
+      rect(graph, frame.id, 80, 80)
+
+      computeLayout(graph, frame.id)
+      const hugNode = graph.getNode(frame.id)!
+      expect(hugNode.width).toBe(80)
+      expect(hugNode.height).toBe(320)
+
+      const children = graph.getChildren(frame.id)
+      const cols = Math.max(2, Math.ceil(Math.sqrt(children.length)))
+      const rows = Math.max(1, Math.ceil(children.length / cols))
+      const maxChildW = Math.max(...children.map((c) => c.width))
+      const maxChildH = Math.max(...children.map((c) => c.height))
+
+      graph.updateNode(frame.id, {
+        layoutMode: 'GRID',
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+        width: maxChildW * cols,
+        height: maxChildH * rows,
+        gridTemplateColumns: Array.from({ length: cols }, () => ({ sizing: 'FR' as const, value: 1 })),
+        gridTemplateRows: Array.from({ length: rows }, () => ({ sizing: 'FR' as const, value: 1 })),
+        gridColumnGap: 0,
+        gridRowGap: 0,
+      })
+
+      computeLayout(graph, frame.id)
+
+      const gridNode = graph.getNode(frame.id)!
+      expect(gridNode.width).toBe(160)
+      expect(gridNode.height).toBe(160)
+
+      const gridChildren = graph.getChildren(frame.id)
+      expect(gridChildren[0].x).toBe(0)
+      expect(gridChildren[0].y).toBe(0)
+      expect(gridChildren[1].x).toBe(80)
+      expect(gridChildren[1].y).toBe(0)
+      expect(gridChildren[2].x).toBe(0)
+      expect(gridChildren[2].y).toBe(80)
+      expect(gridChildren[3].x).toBe(80)
+      expect(gridChildren[3].y).toBe(80)
+    })
+  })
+
   describe('computeAllLayouts with grid', () => {
     test('grid frames are computed in bottom-up pass', () => {
       const graph = new SceneGraph()
