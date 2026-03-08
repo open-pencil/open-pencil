@@ -26,7 +26,13 @@ import {
   getKiwiMessageType
 } from './protocol.ts'
 
-import type { ChromeDevToolsTarget } from '@/types.ts'
+interface ChromeDevToolsTarget {
+  id: string
+  url: string
+  title: string
+  type: string
+  webSocketDebuggerUrl: string
+}
 
 export interface SessionInfo {
   sessionID: number
@@ -77,7 +83,7 @@ export class FigmaMultiplayerClient {
           Cookie: cookies,
           Origin: 'https://www.figma.com'
         }
-      } as WebSocketInit)
+      })
 
       this.ws.binaryType = 'arraybuffer'
 
@@ -188,7 +194,7 @@ export class FigmaMultiplayerClient {
     )
 
     const encoded = encodeMessage(message)
-    this.ws.send(encoded)
+    this.ws.send(encoded.buffer as ArrayBuffer)
   }
 
   /**
@@ -224,7 +230,7 @@ export class FigmaMultiplayerClient {
       }
 
       this.ws?.addEventListener('message', handler)
-      this.sendNodeChanges(nodeChanges)
+      void this.sendNodeChanges(nodeChanges)
     })
   }
 
@@ -267,11 +273,6 @@ export class FigmaMultiplayerClient {
     this.state = 'disconnected'
     this.sessionInfo = null
   }
-}
-
-// WebSocket with headers support (Bun/Node specific)
-interface WebSocketInit {
-  headers?: Record<string, string>
 }
 
 /**

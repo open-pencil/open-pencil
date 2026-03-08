@@ -11,7 +11,7 @@ preloadFonts()
 createApp(App).use(router).mount('#app')
 
 if (!IS_TAURI) {
-  import('virtual:pwa-register').then(({ registerSW }) => {
+  void import('virtual:pwa-register').then(({ registerSW }) => {
     registerSW({ immediate: true })
   })
 }

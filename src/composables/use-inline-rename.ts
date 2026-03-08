@@ -7,7 +7,7 @@ export function useInlineRename(onCommit: (id: string, newName: string) => void)
   function start(id: string, currentName: string, selector: string) {
     editingId.value = id
     originalName = currentName
-    nextTick(() => {
+    void nextTick(() => {
       const input = document.querySelector<HTMLInputElement>(selector)
       input?.focus()
       input?.select()

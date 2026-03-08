@@ -121,7 +121,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     const glCtx = (canvas.getContext('webgl2') ?? null) as WebGL2RenderingContext | null
     renderer = new SkiaRenderer(ck, surface, glCtx)
     store.setCanvasKit(ck, renderer)
-    renderer.loadFonts().then(() => renderNow())
+    void renderer.loadFonts().then(() => renderNow())
     renderNow()
     canvas.dataset.ready = '1'
   }
@@ -183,7 +183,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
   })
 
   onMounted(() => {
-    init()
+    void init()
   })
 
   onUnmounted(() => {

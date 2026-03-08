@@ -127,7 +127,7 @@ export function useCollab(store: EditorStore) {
       if (!ydoc) return
       const sv = new Uint8Array(data)
       const update = Y.encodeStateAsUpdate(ydoc, sv)
-      sendSyncReply(update, peerId)
+      void sendSyncReply(update, peerId)
     })
 
     getSyncReply((data) => {
@@ -196,7 +196,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function disconnect() {
-    room?.leave()
+    void room?.leave()
     room = null
     sendYjsUpdate = null
     sendAwareness = null
@@ -207,7 +207,7 @@ export function useCollab(store: EditorStore) {
       awareness = null
     }
     if (persistence) {
-      persistence.destroy()
+      void persistence.destroy()
       persistence = null
     }
     if (ydoc) {

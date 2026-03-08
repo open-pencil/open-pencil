@@ -42,7 +42,7 @@ export async function openFileDialog() {
   input.accept = '.fig'
   input.addEventListener('change', () => {
     const file = input.files?.[0]
-    if (file) openFileInNewTab(file)
+    if (file) void openFileInNewTab(file)
   })
   input.click()
 }
@@ -66,7 +66,7 @@ const MENU_ACTIONS: Record<string, () => void> = {
   'detach-instance': () => store.detachInstance(),
   'zoom-fit': () => store.zoomToFit(),
   export: () => {
-    if (store.state.selectedIds.size > 0) store.exportSelection(1, 'PNG')
+    if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'PNG')
   }
 }
 
@@ -75,8 +75,8 @@ export function useMenu() {
 
   let unlisten: (() => void) | undefined
 
-  import('@tauri-apps/api/event').then(({ listen }) => {
-    listen<string>('menu-event', (event) => {
+  void import('@tauri-apps/api/event').then(({ listen }) => {
+    void listen<string>('menu-event', (event) => {
       const action = MENU_ACTIONS[event.payload]
       if (action) action()
     }).then((fn) => {

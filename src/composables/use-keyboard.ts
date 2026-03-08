@@ -77,7 +77,7 @@ export function useKeyboard() {
       if (e.code === 'KeyE') {
         e.preventDefault()
         if (store.state.selectedIds.size > 0) {
-          store.exportSelection(1, 'PNG')
+          void store.exportSelection(1, 'PNG')
         }
         return
       }
@@ -128,13 +128,13 @@ export function useKeyboard() {
         store.selectAll()
       } else if (e.key === 's' && e.shiftKey) {
         e.preventDefault()
-        store.saveFigFileAs()
+        void store.saveFigFileAs()
       } else if (e.key === 's') {
         e.preventDefault()
-        store.saveFigFile()
+        void store.saveFigFile()
       } else if (e.key === 'o') {
         e.preventDefault()
-        openFileDialog()
+        void openFileDialog()
       } else if (e.key === 'g' && !e.shiftKey) {
         e.preventDefault()
         store.groupSelected()

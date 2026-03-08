@@ -192,7 +192,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
         return
       case 'v':
         if (isMeta) {
-          handlePaste(node)
+          void handlePaste(node)
           e.preventDefault()
         }
         return
@@ -292,7 +292,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
     const editor = store.textEditor
     if (!editor) return
     const text = editor.getSelectedText()
-    if (text) navigator.clipboard.writeText(text)
+    if (text) void navigator.clipboard.writeText(text)
   }
 
   function handleCut(node: ReturnType<typeof getEditingNode>) {
@@ -300,7 +300,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
     if (!editor || !node) return
     const text = editor.getSelectedText()
     if (text) {
-      navigator.clipboard.writeText(text)
+      void navigator.clipboard.writeText(text)
       deleteText(node, false)
       resetBlink()
     }
