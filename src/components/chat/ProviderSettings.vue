@@ -5,13 +5,6 @@ import {
   PopoverPortal,
   PopoverRoot,
   PopoverTrigger,
-  SelectContent,
-  SelectItem,
-  SelectItemText,
-  SelectPortal,
-  SelectRoot,
-  SelectTrigger,
-  SelectViewport,
   TooltipContent,
   TooltipPortal,
   TooltipRoot,
@@ -19,8 +12,9 @@ import {
 } from 'reka-ui'
 import { ref, watch } from 'vue'
 
-import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
-import { AI_PROVIDERS, useAIChat } from '@/composables/use-chat'
+import ProviderSelect from '@/components/chat/ProviderSelect.vue'
+import { uiInput } from '@/components/ui/input'
+import { useAIChat } from '@/composables/use-chat'
 
 const { providerId, providerDef, apiKey, setApiKey, customBaseUrl, customModelId } = useAIChat()
 
@@ -90,39 +84,7 @@ function clearKey() {
         <div class="flex flex-col gap-2.5">
           <h3 class="text-[11px] font-semibold text-surface">AI Provider</h3>
 
-          <!-- Provider selector -->
-          <SelectRoot v-model="providerId">
-            <SelectTrigger
-              data-test-id="provider-settings-provider"
-              :class="
-                selectTrigger({
-                  class:
-                    'w-full justify-between rounded border border-border bg-input px-2 py-1 text-[11px] text-surface'
-                })
-              "
-            >
-              {{ providerDef.name }}
-              <icon-lucide-chevron-down class="size-2.5 text-muted" />
-            </SelectTrigger>
-            <SelectPortal>
-              <SelectContent
-                position="popper"
-                :side-offset="4"
-                :class="selectContent({ radius: 'lg', padding: 'md' })"
-              >
-                <SelectViewport>
-                  <SelectItem
-                    v-for="provider in AI_PROVIDERS"
-                    :key="provider.id"
-                    :value="provider.id"
-                    :class="selectItem({ class: 'rounded px-2 py-1 text-[11px]' })"
-                  >
-                    <SelectItemText>{{ provider.name }}</SelectItemText>
-                  </SelectItem>
-                </SelectViewport>
-              </SelectContent>
-            </SelectPortal>
-          </SelectRoot>
+          <ProviderSelect test-id="provider-settings-provider" />
 
           <!-- Base URL (OpenAI-compatible only) -->
           <div v-if="providerDef.supportsCustomBaseUrl" class="flex flex-col gap-1">
@@ -132,7 +94,7 @@ function clearKey() {
               type="text"
               data-test-id="provider-settings-base-url"
               placeholder="http://localhost:11434/v1"
-              class="w-full rounded border border-border bg-input px-2 py-1 text-[11px] text-surface outline-none focus:border-accent"
+              :class="uiInput({ size: 'sm' })"
               @change="save"
             />
           </div>
@@ -145,7 +107,7 @@ function clearKey() {
               type="text"
               data-test-id="provider-settings-custom-model"
               placeholder="e.g. llama-3.3-70b"
-              class="w-full rounded border border-border bg-input px-2 py-1 text-[11px] text-surface outline-none focus:border-accent"
+              :class="uiInput({ size: 'sm' })"
               @change="save"
             />
           </div>
@@ -170,7 +132,7 @@ function clearKey() {
               :placeholder="
                 hasExistingKey ? 'Key saved — enter new to replace' : providerDef.keyPlaceholder
               "
-              class="w-full rounded border border-border bg-input px-2 py-1 text-[11px] text-surface outline-none focus:border-accent"
+              :class="uiInput({ size: 'sm' })"
               @change="save"
             />
             <a

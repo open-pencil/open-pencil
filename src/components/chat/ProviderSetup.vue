@@ -1,17 +1,9 @@
 <script setup lang="ts">
-import {
-  SelectContent,
-  SelectItem,
-  SelectItemText,
-  SelectPortal,
-  SelectRoot,
-  SelectTrigger,
-  SelectViewport
-} from 'reka-ui'
 import { ref } from 'vue'
 
-import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
-import { AI_PROVIDERS, useAIChat } from '@/composables/use-chat'
+import ProviderSelect from '@/components/chat/ProviderSelect.vue'
+import { uiInput } from '@/components/ui/input'
+import { useAIChat } from '@/composables/use-chat'
 
 const { providerId, providerDef, setApiKey, customBaseUrl, customModelId } = useAIChat()
 
@@ -41,39 +33,11 @@ function save() {
     <icon-lucide-sparkles class="size-8 text-muted" />
     <p class="text-center text-xs text-muted">Connect an AI provider to start chatting.</p>
 
-    <!-- Provider selector -->
-    <SelectRoot v-model="providerId">
-      <SelectTrigger
-        data-test-id="provider-selector"
-        :class="
-          selectTrigger({
-            class:
-              'w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface'
-          })
-        "
-      >
-        {{ providerDef.name }}
-        <icon-lucide-chevron-down class="size-3 text-muted" />
-      </SelectTrigger>
-      <SelectPortal>
-        <SelectContent
-          position="popper"
-          :side-offset="4"
-          :class="selectContent({ radius: 'lg', padding: 'md' })"
-        >
-          <SelectViewport>
-            <SelectItem
-              v-for="provider in AI_PROVIDERS"
-              :key="provider.id"
-              :value="provider.id"
-              :class="selectItem({ class: 'rounded px-2 py-1.5 text-[11px]' })"
-            >
-              <SelectItemText>{{ provider.name }}</SelectItemText>
-            </SelectItem>
-          </SelectViewport>
-        </SelectContent>
-      </SelectPortal>
-    </SelectRoot>
+    <ProviderSelect
+      test-id="provider-selector"
+      trigger-class="w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface"
+      item-class="rounded px-2 py-1.5 text-[11px]"
+    />
 
     <!-- Base URL (OpenAI-compatible only) -->
     <input
@@ -82,7 +46,7 @@ function save() {
       type="text"
       data-test-id="provider-base-url"
       placeholder="Base URL (e.g. http://localhost:11434/v1)"
-      class="w-full rounded border border-border bg-input px-2 py-1 text-xs text-surface outline-none focus:border-accent"
+      :class="uiInput()"
     />
 
     <!-- Custom model ID (OpenAI-compatible only) -->
@@ -92,7 +56,7 @@ function save() {
       type="text"
       data-test-id="provider-custom-model"
       placeholder="Model ID (e.g. llama-3.3-70b)"
-      class="w-full rounded border border-border bg-input px-2 py-1 text-xs text-surface outline-none focus:border-accent"
+      :class="uiInput()"
     />
 
     <!-- API key input -->
@@ -102,7 +66,7 @@ function save() {
         type="password"
         data-test-id="api-key-input"
         :placeholder="providerDef.keyPlaceholder"
-        class="min-w-0 flex-1 rounded border border-border bg-input px-2 py-1 text-xs text-surface outline-none focus:border-accent"
+        :class="uiInput({ class: 'min-w-0 flex-1' })"
       />
       <button
         type="submit"

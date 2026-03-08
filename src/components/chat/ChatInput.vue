@@ -17,6 +17,7 @@ import { computed, ref } from 'vue'
 
 import ProviderSettings from '@/components/chat/ProviderSettings.vue'
 import { uiButton } from '@/components/ui/button'
+import { uiInput } from '@/components/ui/input'
 import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
 import { useAIChat } from '@/composables/use-chat'
 
@@ -119,7 +120,7 @@ function handleSubmit(e: Event) {
           type="text"
           data-test-id="chat-input"
           placeholder="Describe a change…"
-          class="min-w-0 flex-1 rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface outline-none placeholder:text-muted focus:border-accent"
+          :class="uiInput({ class: 'min-w-0 flex-1 placeholder:text-muted' })"
           :disabled="status === 'submitted'"
         />
         <TooltipRoot v-if="isStreaming">
