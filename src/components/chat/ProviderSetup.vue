@@ -13,16 +13,20 @@ import { ref } from 'vue'
 import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
 import { AI_PROVIDERS, useAIChat } from '@/composables/use-chat'
 
-const { providerId, providerDef, setApiKey, customBaseUrl } = useAIChat()
+const { providerId, providerDef, setApiKey, customBaseUrl, customModelId } = useAIChat()
 
 const keyInput = ref('')
 const baseUrlInput = ref(customBaseUrl.value)
+const customModelInput = ref(customModelId.value)
 
 function save() {
   const key = keyInput.value.trim()
   if (!key) return
   if (providerDef.value.supportsCustomBaseUrl) {
     customBaseUrl.value = baseUrlInput.value.trim()
+  }
+  if (providerDef.value.supportsCustomModel) {
+    customModelId.value = customModelInput.value.trim()
   }
   setApiKey(key)
   keyInput.value = ''
@@ -78,6 +82,16 @@ function save() {
       type="text"
       data-test-id="provider-base-url"
       placeholder="Base URL (e.g. http://localhost:11434/v1)"
+      class="w-full rounded border border-border bg-input px-2 py-1 text-xs text-surface outline-none focus:border-accent"
+    />
+
+    <!-- Custom model ID (OpenAI-compatible only) -->
+    <input
+      v-if="providerDef.supportsCustomModel"
+      v-model="customModelInput"
+      type="text"
+      data-test-id="provider-custom-model"
+      placeholder="Model ID (e.g. llama-3.3-70b)"
       class="w-full rounded border border-border bg-input px-2 py-1 text-xs text-surface outline-none focus:border-accent"
     />
 

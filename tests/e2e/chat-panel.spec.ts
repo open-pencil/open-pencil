@@ -166,7 +166,7 @@ test('assistant responds', async () => {
 })
 
 test('model selector is visible and clickable', async () => {
-  const trigger = page.getByRole('combobox')
+  const trigger = page.locator('[data-test-id="chat-model-selector"]')
   await expect(trigger).toBeVisible()
   await trigger.click()
 

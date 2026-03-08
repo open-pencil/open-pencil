@@ -24,31 +24,23 @@ import { AI_PROVIDERS, useAIChat } from '@/composables/use-chat'
 
 const { providerId, providerDef, apiKey, setApiKey, customBaseUrl, customModelId } = useAIChat()
 
-const keyInput = ref(apiKey.value ? '••••••••' : '')
+const keyInput = ref('')
 const baseUrlInput = ref(customBaseUrl.value)
 const customModelInput = ref(customModelId.value)
-const keyDirty = ref(false)
+const hasExistingKey = ref(!!apiKey.value)
 
 watch(providerId, () => {
-  keyInput.value = apiKey.value ? '••••••••' : ''
-  keyDirty.value = false
+  keyInput.value = ''
+  hasExistingKey.value = !!apiKey.value
   baseUrlInput.value = customBaseUrl.value
   customModelInput.value = customModelId.value
 })
 
-function handleKeyInput(e: Event) {
-  const val = (e.target as HTMLInputElement).value
-  if (!keyDirty.value) {
-    keyDirty.value = true
-    keyInput.value = val.replace('••••••••', '')
-  } else {
-    keyInput.value = val
-  }
-}
-
 function save() {
-  if (keyDirty.value) {
+  if (keyInput.value.trim()) {
     setApiKey(keyInput.value.trim())
+    hasExistingKey.value = true
+    keyInput.value = ''
   }
   if (providerDef.value.supportsCustomBaseUrl) {
     customBaseUrl.value = baseUrlInput.value.trim()
@@ -61,7 +53,7 @@ function save() {
 function clearKey() {
   setApiKey('')
   keyInput.value = ''
-  keyDirty.value = false
+  hasExistingKey.value = false
 }
 </script>
 
@@ -172,12 +164,13 @@ function clearKey() {
               </button>
             </div>
             <input
-              :value="keyInput"
+              v-model="keyInput"
               type="password"
               data-test-id="provider-settings-api-key"
-              :placeholder="providerDef.keyPlaceholder"
+              :placeholder="
+                hasExistingKey ? 'Key saved — enter new to replace' : providerDef.keyPlaceholder
+              "
               class="w-full rounded border border-border bg-input px-2 py-1 text-[11px] text-surface outline-none focus:border-accent"
-              @input="handleKeyInput"
               @change="save"
             />
             <a

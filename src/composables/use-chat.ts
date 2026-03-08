@@ -57,21 +57,11 @@ const SYSTEM_PROMPT = dedent`
 const providerId = ref<AIProviderId>(
   (localStorage.getItem(PROVIDER_STORAGE) as AIProviderId) || DEFAULT_AI_PROVIDER
 )
+const apiKey = ref(localStorage.getItem(keyStorageKey(providerId.value)) ?? '')
 const modelId = ref(localStorage.getItem(MODEL_STORAGE) ?? DEFAULT_AI_MODEL)
 const customBaseUrl = ref(localStorage.getItem(BASE_URL_STORAGE) ?? '')
 const customModelId = ref(localStorage.getItem(CUSTOM_MODEL_STORAGE) ?? '')
 const activeTab = ref<'design' | 'ai'>('design')
-
-const apiKey = computed({
-  get: () => localStorage.getItem(keyStorageKey(providerId.value)) ?? '',
-  set: (key: string) => {
-    if (key) {
-      localStorage.setItem(keyStorageKey(providerId.value), key)
-    } else {
-      localStorage.removeItem(keyStorageKey(providerId.value))
-    }
-  }
-})
 
 const providerDef = computed(
   () => AI_PROVIDERS.find((p) => p.id === providerId.value) ?? AI_PROVIDERS[0]
@@ -85,6 +75,7 @@ const isConfigured = computed(() => {
 
 watch(providerId, (id) => {
   localStorage.setItem(PROVIDER_STORAGE, id)
+  apiKey.value = localStorage.getItem(keyStorageKey(id)) ?? ''
   const def = AI_PROVIDERS.find((p) => p.id === id)
   if (def?.defaultModel) {
     modelId.value = def.defaultModel
@@ -92,14 +83,28 @@ watch(providerId, (id) => {
   resetChat()
 })
 
-watch(modelId, (id) => localStorage.setItem(MODEL_STORAGE, id))
+watch(apiKey, (key) => {
+  if (key) {
+    localStorage.setItem(keyStorageKey(providerId.value), key)
+  } else {
+    localStorage.removeItem(keyStorageKey(providerId.value))
+  }
+})
+
+watch(modelId, (id) => {
+  localStorage.setItem(MODEL_STORAGE, id)
+  resetChat()
+})
+
 watch(customBaseUrl, (url) => {
   if (url) localStorage.setItem(BASE_URL_STORAGE, url)
   else localStorage.removeItem(BASE_URL_STORAGE)
 })
+
 watch(customModelId, (id) => {
   if (id) localStorage.setItem(CUSTOM_MODEL_STORAGE, id)
   else localStorage.removeItem(CUSTOM_MODEL_STORAGE)
+  resetChat()
 })
 
 function setApiKey(key: string) {
