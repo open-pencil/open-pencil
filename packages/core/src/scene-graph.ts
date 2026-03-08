@@ -318,7 +318,6 @@ export function generateId(): string {
 // Hot properties (always accessed) are set as own properties in createDefaultNode.
 // Cold properties fall through to this shared prototype, saving ~70 property allocations per node.
 const COLD_DEFAULTS = {
-  effects: [] as Effect[],
   cornerRadius: 0,
   topLeftRadius: 0,
   topRightRadius: 0,
@@ -340,7 +339,6 @@ const COLD_DEFAULTS = {
   lineHeight: null as number | null,
   letterSpacing: 0,
   maxLines: null as number | null,
-  styleRuns: [] as StyleRun[],
   horizontalConstraint: 'MIN' as const,
   verticalConstraint: 'MIN' as const,
   layoutWrap: 'NO_WRAP' as const,
@@ -411,6 +409,8 @@ function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): 
   node.opacity = 1
   node.fills = []
   node.strokes = []
+  node.effects = []
+  node.styleRuns = []
   node.clipsContent = false
   node.layoutMode = 'NONE'
   node.blendMode = 'PASS_THROUGH'
