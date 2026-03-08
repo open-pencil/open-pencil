@@ -114,7 +114,9 @@ const heightSizingOptions = computed(() => {
   return options
 })
 
-const ALIGN_GRID: Array<{ primary: LayoutAlign; counter: LayoutCounterAlign }> = [
+type AlignCell = { primary: LayoutAlign; counter: LayoutCounterAlign }
+
+const ALIGN_HORIZONTAL: AlignCell[] = [
   { primary: 'MIN', counter: 'MIN' },
   { primary: 'CENTER', counter: 'MIN' },
   { primary: 'MAX', counter: 'MIN' },
@@ -125,6 +127,22 @@ const ALIGN_GRID: Array<{ primary: LayoutAlign; counter: LayoutCounterAlign }> =
   { primary: 'CENTER', counter: 'MAX' },
   { primary: 'MAX', counter: 'MAX' }
 ]
+
+const ALIGN_VERTICAL: AlignCell[] = [
+  { primary: 'MIN', counter: 'MIN' },
+  { primary: 'MIN', counter: 'CENTER' },
+  { primary: 'MIN', counter: 'MAX' },
+  { primary: 'CENTER', counter: 'MIN' },
+  { primary: 'CENTER', counter: 'CENTER' },
+  { primary: 'CENTER', counter: 'MAX' },
+  { primary: 'MAX', counter: 'MIN' },
+  { primary: 'MAX', counter: 'CENTER' },
+  { primary: 'MAX', counter: 'MAX' }
+]
+
+const alignGrid = computed(() =>
+  node.value.layoutMode === 'VERTICAL' ? ALIGN_VERTICAL : ALIGN_HORIZONTAL
+)
 
 function setAlignment(primary: LayoutAlign, counter: LayoutCounterAlign) {
   store.updateNodeWithUndo(
@@ -391,14 +409,14 @@ function trackLabel(track: GridTrack): string {
         <!-- Grid gaps -->
         <div class="mt-2 grid grid-cols-2 gap-1.5">
           <ScrubInput
-            icon="Col gap"
+            icon="↔"
             :model-value="Math.round(node.gridColumnGap)"
             :min="0"
             @update:model-value="updateProp('gridColumnGap', $event)"
             @commit="(v: number, p: number) => commitProp('gridColumnGap', v, p)"
           />
           <ScrubInput
-            icon="Row gap"
+            icon="↕"
             :model-value="Math.round(node.gridRowGap)"
             :min="0"
             @update:model-value="updateProp('gridRowGap', $event)"
@@ -409,61 +427,64 @@ function trackLabel(track: GridTrack): string {
 
       <!-- Flex-specific controls -->
       <template v-if="isFlex">
-        <div class="mt-2 grid grid-cols-2 gap-1.5">
+        <div class="mt-2 flex items-center gap-1.5">
           <ScrubInput
             data-test-id="layout-gap-input"
-            icon="Gap"
+            class="flex-1"
+            :icon="node.layoutMode === 'VERTICAL' ? '↕' : '↔'"
             :model-value="Math.round(node.itemSpacing)"
             :min="0"
             @update:model-value="updateProp('itemSpacing', $event)"
             @commit="(v: number, p: number) => commitProp('itemSpacing', v, p)"
           />
-
-          <template v-if="hasUniformPadding() && !showIndividualPadding">
-            <ScrubInput
-              data-test-id="layout-uniform-padding-input"
-              icon="Pad"
-              :model-value="Math.round(node.paddingTop)"
-              :min="0"
-              @update:model-value="setUniformPadding"
-              @commit="commitUniformPadding"
-            />
-          </template>
           <button
-            class="rounded border border-border bg-transparent px-2 py-1 text-left text-xs text-muted hover:bg-hover hover:text-surface"
+            class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-transparent text-muted hover:bg-hover hover:text-surface"
+            :title="showIndividualPadding || !hasUniformPadding() ? 'Uniform padding' : 'Per-side padding'"
             @click="showIndividualPadding = !showIndividualPadding"
           >
-            {{ showIndividualPadding ? 'Uniform padding' : 'Per-side padding' }}
+            <icon-lucide-minus v-if="showIndividualPadding || !hasUniformPadding()" class="size-3" />
+            <icon-lucide-plus v-else class="size-3" />
           </button>
+        </div>
+
+        <div v-if="!showIndividualPadding && hasUniformPadding()" class="mt-1.5">
+          <ScrubInput
+            data-test-id="layout-uniform-padding-input"
+            icon="☐"
+            :model-value="Math.round(node.paddingTop)"
+            :min="0"
+            @update:model-value="setUniformPadding"
+            @commit="commitUniformPadding"
+          />
         </div>
       </template>
 
-      <!-- Padding (shared by both flex and grid) -->
-      <template v-if="isGrid || showIndividualPadding || !hasUniformPadding()">
+      <!-- Per-side padding -->
+      <template v-if="isGrid || (isFlex && (showIndividualPadding || !hasUniformPadding()))">
         <div class="mt-1.5 grid grid-cols-2 gap-1.5">
           <ScrubInput
-            icon="Top"
+            icon="T"
             :model-value="Math.round(node.paddingTop)"
             :min="0"
             @update:model-value="updateProp('paddingTop', $event)"
             @commit="(v: number, p: number) => commitProp('paddingTop', v, p)"
           />
           <ScrubInput
-            icon="Right"
+            icon="R"
             :model-value="Math.round(node.paddingRight)"
             :min="0"
             @update:model-value="updateProp('paddingRight', $event)"
             @commit="(v: number, p: number) => commitProp('paddingRight', v, p)"
           />
           <ScrubInput
-            icon="Bottom"
+            icon="B"
             :model-value="Math.round(node.paddingBottom)"
             :min="0"
             @update:model-value="updateProp('paddingBottom', $event)"
             @commit="(v: number, p: number) => commitProp('paddingBottom', v, p)"
           />
           <ScrubInput
-            icon="Left"
+            icon="L"
             :model-value="Math.round(node.paddingLeft)"
             :min="0"
             @update:model-value="updateProp('paddingLeft', $event)"
@@ -477,7 +498,7 @@ function trackLabel(track: GridTrack): string {
         <label class="mb-1 block text-[11px] text-muted">Alignment</label>
         <div data-test-id="layout-alignment-grid" class="grid w-fit grid-cols-3 gap-0.5">
           <button
-            v-for="cell in ALIGN_GRID"
+            v-for="cell in alignGrid"
             :key="`${cell.primary}-${cell.counter}`"
             class="flex size-6 cursor-pointer items-center justify-center rounded border text-[11px]"
             :class="

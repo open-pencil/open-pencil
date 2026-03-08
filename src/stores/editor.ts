@@ -1009,6 +1009,14 @@ export function createEditorStore() {
       }))
       updates.gridColumnGap = 0
       updates.gridRowGap = 0
+      updates.primaryAxisSizing = 'FIXED'
+      updates.counterAxisSizing = 'FIXED'
+      if (node.primaryAxisSizing === 'HUG' || node.counterAxisSizing === 'HUG') {
+        const maxChildW = Math.max(...children.map((c) => c.width), 100)
+        const maxChildH = Math.max(...children.map((c) => c.height), 100)
+        updates.width = maxChildW * cols
+        updates.height = maxChildH * rows
+      }
       updates.paddingTop = 0
       updates.paddingRight = 0
       updates.paddingBottom = 0
@@ -1077,18 +1085,21 @@ export function createEditorStore() {
 
     const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : graph.getAbsolutePosition(parentId)
 
+    const direction: LayoutMode =
+      nodes.length <= 1 ? 'VERTICAL' : maxX - minX >= maxY - minY ? 'HORIZONTAL' : 'VERTICAL'
+
     const frame = graph.createNode('FRAME', parentId, {
       name: 'Frame',
       x: minX - parentAbs.x,
       y: minY - parentAbs.y,
       width: maxX - minX,
       height: maxY - minY,
-      layoutMode: 'VERTICAL',
+      layoutMode: direction,
       primaryAxisSizing: 'HUG',
       counterAxisSizing: 'HUG',
       primaryAxisAlign: 'MIN',
       counterAxisAlign: 'MIN',
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+      fills: []
     })
     const frameId = frame.id
 
