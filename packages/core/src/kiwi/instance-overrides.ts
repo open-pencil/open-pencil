@@ -110,6 +110,41 @@ export function populateAndApplyOverrides(
       arr.push(node.id)
     }
   }
+
+  function updateIndexForInstance(
+    parentId: string,
+    oldChildEntries: Array<{ id: string; componentId: string }>,
+    newChildIds: string[]
+  ) {
+    let parentMap = childrenByComponentId.get(parentId)
+    if (parentMap) {
+      for (const { id: childId, componentId } of oldChildEntries) {
+        const arr = parentMap.get(componentId)
+        if (arr) {
+          const i = arr.indexOf(childId)
+          if (i >= 0) arr.splice(i, 1)
+          if (arr.length === 0) parentMap.delete(componentId)
+        }
+      }
+      if (parentMap.size === 0) childrenByComponentId.delete(parentId)
+    }
+
+    for (const childId of newChildIds) {
+      const child = graph.getNode(childId)
+      if (!child?.componentId) continue
+      parentMap = childrenByComponentId.get(parentId)
+      if (!parentMap) {
+        parentMap = new Map()
+        childrenByComponentId.set(parentId, parentMap)
+      }
+      let arr = parentMap.get(child.componentId)
+      if (!arr) {
+        arr = []
+        parentMap.set(child.componentId, arr)
+      }
+      arr.push(childId)
+    }
+  }
   buildComponentIndex()
 
   const t1 = profileStart()
@@ -265,14 +300,24 @@ export function populateAndApplyOverrides(
     const node = graph.getNode(nodeId)
     if (!node || node.type !== 'INSTANCE') return
 
-    for (const childId of [...node.childIds]) graph.deleteNode(childId)
+    const oldChildEntries = node.childIds
+      .map((id) => {
+        const c = graph.getNode(id)
+        return c?.componentId ? { id, componentId: c.componentId } : null
+      })
+      .filter((e): e is { id: string; componentId: string } => e != null)
+    const childIdsToDelete = [...node.childIds]
+    for (const childId of childIdsToDelete) graph.deleteNode(childId)
     graph.updateNode(nodeId, { componentId: compId })
     const comp = graph.getNode(compId)
+    let newChildIds: string[] = []
     if (comp && comp.childIds.length > 0) {
       graph.populateInstanceChildren(nodeId, compId)
+      const updated = graph.getNode(nodeId)
+      newChildIds = updated?.childIds ?? []
     }
     componentIdRoot.clear()
-    buildComponentIndex()
+    updateIndexForInstance(nodeId, oldChildEntries, newChildIds)
   }
 
   function applyComponentProperties() {
