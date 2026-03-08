@@ -88,6 +88,29 @@ export function populateAndApplyOverrides(
   }
   profileStage('4f1_populateInstanceChildren', t0)
 
+  // Build componentId → child nodeId index for fast lookups.
+  // Maps parentId → (componentId → nodeId[]) for O(1) child-by-component lookup.
+  const childrenByComponentId = new Map<string, Map<string, string[]>>()
+
+  function buildComponentIndex() {
+    childrenByComponentId.clear()
+    for (const node of graph.getAllNodes()) {
+      if (!node.parentId || !node.componentId) continue
+      let parentMap = childrenByComponentId.get(node.parentId)
+      if (!parentMap) {
+        parentMap = new Map()
+        childrenByComponentId.set(node.parentId, parentMap)
+      }
+      let arr = parentMap.get(node.componentId)
+      if (!arr) {
+        arr = []
+        parentMap.set(node.componentId, arr)
+      }
+      arr.push(node.id)
+    }
+  }
+  buildComponentIndex()
+
   const t1 = profileStart()
   // Build overrideKey → figmaGuid map
   const overrideKeyToGuid = new Map<string, string>()
@@ -159,17 +182,17 @@ export function populateAndApplyOverrides(
   }
 
   function findNodeByComponentId(parentId: string, componentId: string): string | null {
-    const parent = graph.getNode(parentId)
-    if (!parent) return null
-
-    // Pass 1: exact componentId match on direct children
-    for (const childId of parent.childIds) {
-      const child = graph.getNode(childId)
-      if (child?.componentId === componentId) return childId
+    // Pass 1: exact componentId match via index (O(1) instead of linear scan)
+    const parentMap = childrenByComponentId.get(parentId)
+    if (parentMap) {
+      const exact = parentMap.get(componentId)
+      if (exact?.length) return exact[0]
     }
 
     // Pass 2: root match — but only if exactly one child shares the root
-    // (multiple siblings with the same root are ambiguous)
+    const parent = graph.getNode(parentId)
+    if (!parent) return null
+
     const targetRoot = preComputedRoot.get(componentId) ?? getComponentRoot(componentId)
     if (targetRoot) {
       let rootMatch: string | null = null
@@ -186,7 +209,7 @@ export function populateAndApplyOverrides(
       if (rootMatch && !ambiguous) return rootMatch
     }
 
-    // Pass 3: recurse into children
+    // Pass 3: recurse into children (rare — only when passes 1 & 2 fail)
     for (const childId of parent.childIds) {
       const deep = findNodeByComponentId(childId, componentId)
       if (deep) return deep
@@ -248,6 +271,7 @@ export function populateAndApplyOverrides(
       graph.populateInstanceChildren(nodeId, compId)
     }
     componentIdRoot.clear()
+    buildComponentIndex()
   }
 
   function applyComponentProperties() {
@@ -493,8 +517,8 @@ export function populateAndApplyOverrides(
             if (source.height !== clone.height) cu.height = source.height
             if (source.x !== clone.x) cu.x = source.x
             if (source.y !== clone.y) cu.y = source.y
-            if (source.fillGeometry !== clone.fillGeometry) cu.fillGeometry = structuredClone(source.fillGeometry)
-            if (source.strokeGeometry !== clone.strokeGeometry) cu.strokeGeometry = structuredClone(source.strokeGeometry)
+            if (source.fillGeometry !== clone.fillGeometry) cu.fillGeometry = source.fillGeometry
+            if (source.strokeGeometry !== clone.strokeGeometry) cu.strokeGeometry = source.strokeGeometry
             if (Object.keys(cu).length > 0) graph.updateNode(cloneId, cu)
           }
           queue.push(cloneId)

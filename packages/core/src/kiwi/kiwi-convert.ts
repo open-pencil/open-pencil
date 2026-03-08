@@ -1,4 +1,4 @@
-import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '../constants'
+import { BLACK, DEFAULT_FONT_FAMILY } from '../constants'
 import { styleToWeight } from '../fonts'
 import { decodeVectorNetworkBlob } from '../vector'
 
@@ -438,116 +438,181 @@ export function nodeChangeToProps(
   let nodeType = mapNodeType(nc.type)
   if (nodeType === 'FRAME' && isComponentSet(nc)) nodeType = 'COMPONENT_SET'
 
-  const x = nc.transform?.m02 ?? 0
-  const y = nc.transform?.m12 ?? 0
-  const width = nc.size?.x ?? 100
-  const height = nc.size?.y ?? 100
+  // Build props sparsely — only include values that differ from COLD_DEFAULTS.
+  // With the prototype-backed SceneNode, omitted properties fall through to
+  // the shared default, saving per-node allocation.
+  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = { nodeType } as any
 
-  let rotation = 0
-  let flipX = false
-  let flipY = false
+  // Always set spatial properties (hot path)
+  props.name = nc.name ?? nodeType
+  props.x = nc.transform?.m02 ?? 0
+  props.y = nc.transform?.m12 ?? 0
+  props.width = nc.size?.x ?? 100
+  props.height = nc.size?.y ?? 100
+
   if (nc.transform) {
     const det = nc.transform.m00 * nc.transform.m11 - nc.transform.m01 * nc.transform.m10
-    if (det < 0) flipX = true
-    const sx = flipX ? -1 : 1
-    rotation = Math.atan2(nc.transform.m10 * sx, nc.transform.m00 * sx) * (180 / Math.PI)
+    if (det < 0) props.flipX = true
+    const sx = props.flipX ? -1 : 1
+    const r = Math.atan2(nc.transform.m10 * sx, nc.transform.m00 * sx) * (180 / Math.PI)
+    if (r !== 0) props.rotation = r
   }
 
+  // Scalar properties — only set if non-default
+  if (nc.opacity != null && nc.opacity !== 1) props.opacity = nc.opacity
+  if (nc.visible === false) props.visible = false
+  if (nc.locked) props.locked = true
+
+  const bm = ext(nc).blendMode as string | undefined
+  if (bm && bm !== 'PASS_THROUGH') props.blendMode = bm as Fill['blendMode']
+
+  // Arrays — only create if non-empty
+  const fills = convertFills(nc.fillPaints)
+  if (fills.length > 0) props.fills = fills
   const dashPattern = (ext(nc).dashPattern as number[]) ?? []
+  const strokes = convertStrokes(nc.strokePaints, nc.strokeWeight, nc.strokeAlign, nc.strokeCap, nc.strokeJoin, dashPattern)
+  if (strokes.length > 0) props.strokes = strokes
+  const effects = convertEffects(nc.effects)
+  if (effects.length > 0) props.effects = effects
 
-  return {
-    nodeType,
-    name: nc.name ?? nodeType,
-    x,
-    y,
-    width,
-    height,
-    rotation,
-    flipX,
-    flipY,
-    opacity: nc.opacity ?? 1,
-    visible: nc.visible ?? true,
-    locked: nc.locked ?? false,
-    blendMode: (ext(nc).blendMode as Fill['blendMode']) ?? 'PASS_THROUGH',
-    fills: convertFills(nc.fillPaints),
-    strokes: convertStrokes(
-      nc.strokePaints,
-      nc.strokeWeight,
-      nc.strokeAlign,
-      nc.strokeCap,
-      nc.strokeJoin,
-      dashPattern
-    ),
-    effects: convertEffects(nc.effects),
-    cornerRadius: nc.cornerRadius ?? 0,
-    topLeftRadius: nc.rectangleTopLeftCornerRadius ?? nc.cornerRadius ?? 0,
-    topRightRadius: nc.rectangleTopRightCornerRadius ?? nc.cornerRadius ?? 0,
-    bottomRightRadius: nc.rectangleBottomRightCornerRadius ?? nc.cornerRadius ?? 0,
-    bottomLeftRadius: nc.rectangleBottomLeftCornerRadius ?? nc.cornerRadius ?? 0,
-    independentCorners: nc.rectangleCornerRadiiIndependent ?? false,
-    cornerSmoothing: nc.cornerSmoothing ?? 0,
-    text: nc.textData?.characters ?? '',
-    fontSize: nc.fontSize ?? 14,
-    fontFamily: nc.fontName?.family ?? DEFAULT_FONT_FAMILY,
-    fontWeight: styleToWeight(nc.fontName?.style ?? ''),
-    italic: nc.fontName?.style?.toLowerCase().includes('italic') ?? false,
-    textAlignHorizontal:
-      (nc.textAlignHorizontal as 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED') ?? 'LEFT',
-    textAlignVertical: (ext(nc).textAlignVertical as TextAlignVertical) ?? 'TOP',
-    textAutoResize: (ext(nc).textAutoResize as TextAutoResize) ?? 'NONE',
-    textCase: (ext(nc).textCase as TextCase) ?? 'ORIGINAL',
-    textDecoration: mapTextDecoration(ext(nc).textDecoration as string),
-    lineHeight: convertLineHeight(nc.lineHeight, nc.fontSize),
-    letterSpacing: convertLetterSpacing(nc.letterSpacing, nc.fontSize),
-    maxLines: (ext(nc).maxLines as number) ?? null,
-    styleRuns: importStyleRuns(nc),
-    horizontalConstraint: mapConstraint(ext(nc).horizontalConstraint as string),
-    verticalConstraint: mapConstraint(ext(nc).verticalConstraint as string),
-    layoutMode: mapStackMode(nc.stackMode),
-    itemSpacing: nc.stackSpacing ?? 0,
-    paddingTop: nc.stackVerticalPadding ?? nc.stackPadding ?? 0,
-    paddingBottom: nc.stackPaddingBottom ?? nc.stackVerticalPadding ?? nc.stackPadding ?? 0,
-    paddingLeft: nc.stackHorizontalPadding ?? nc.stackPadding ?? 0,
-    paddingRight: nc.stackPaddingRight ?? nc.stackHorizontalPadding ?? nc.stackPadding ?? 0,
-    primaryAxisSizing: mapStackSizing(nc.stackPrimarySizing),
-    counterAxisSizing: mapStackSizing(nc.stackCounterSizing),
-    primaryAxisAlign: mapStackJustify(nc.stackPrimaryAlignItems ?? nc.stackJustify),
-    counterAxisAlign: mapStackCounterAlign(nc.stackCounterAlignItems ?? nc.stackCounterAlign),
-    layoutWrap: ext(nc).stackWrap === 'WRAP' ? 'WRAP' : 'NO_WRAP',
-    counterAxisSpacing: (ext(nc).stackCounterSpacing as number) ?? 0,
-    layoutPositioning: ext(nc).stackPositioning === 'ABSOLUTE' ? 'ABSOLUTE' : 'AUTO',
-    layoutGrow: (ext(nc).stackChildPrimaryGrow as number) ?? 0,
-    layoutAlignSelf: (ext(nc).stackChildAlignSelf as string) === 'STRETCH' ? 'STRETCH' : 'AUTO',
-    vectorNetwork: resolveVectorNetwork(nc, blobs),
-    fillGeometry: resolveGeometryPaths(nc.fillGeometry, blobs),
-    strokeGeometry: resolveGeometryPaths(nc.strokeGeometry, blobs),
-    arcData: mapArcData(ext(nc).arcData as Record<string, number> | undefined),
-    strokeCap: (nc.strokeCap ?? 'NONE') as StrokeCap,
-    strokeJoin: (nc.strokeJoin ?? 'MITER') as StrokeJoin,
-    dashPattern,
-    borderTopWeight: (ext(nc).borderTopWeight as number) ?? 0,
-    borderRightWeight: (ext(nc).borderRightWeight as number) ?? 0,
-    borderBottomWeight: (ext(nc).borderBottomWeight as number) ?? 0,
-    borderLeftWeight: (ext(nc).borderLeftWeight as number) ?? 0,
-    independentStrokeWeights: (ext(nc).borderStrokeWeightsIndependent as boolean) ?? false,
-    strokeMiterLimit: DEFAULT_STROKE_MITER_LIMIT,
-    minWidth: (ext(nc).minWidth as number) ?? null,
-    maxWidth: (ext(nc).maxWidth as number) ?? null,
-    minHeight: (ext(nc).minHeight as number) ?? null,
-    maxHeight: (ext(nc).maxHeight as number) ?? null,
-    isMask: (ext(nc).isMask as boolean) ?? false,
-    maskType: ((ext(nc).maskType as string) ?? 'ALPHA') as 'ALPHA' | 'VECTOR' | 'LUMINANCE',
-    counterAxisAlignContent:
-      (ext(nc).stackCounterAlignContent as string) === 'SPACE_BETWEEN' ? 'SPACE_BETWEEN' : 'AUTO',
-    itemReverseZIndex: (ext(nc).stackReverseZIndex as boolean) ?? false,
-    strokesIncludedInLayout: (ext(nc).strokesIncludedInLayout as boolean) ?? false,
-    expanded: true,
-    textTruncation: (ext(nc).textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
-    autoRename: (ext(nc).autoRename as boolean) ?? true,
-    boundVariables: extractBoundVariables(nc),
-    clipsContent: nc.frameMaskDisabled === false,
-    componentId: extractSymbolId(nc)
-  }
+  // Corner radii
+  const cr = nc.cornerRadius ?? 0
+  if (cr !== 0) props.cornerRadius = cr
+  const tlr = nc.rectangleTopLeftCornerRadius ?? cr
+  if (tlr !== 0) props.topLeftRadius = tlr
+  const trr = nc.rectangleTopRightCornerRadius ?? cr
+  if (trr !== 0) props.topRightRadius = trr
+  const brr = nc.rectangleBottomRightCornerRadius ?? cr
+  if (brr !== 0) props.bottomRightRadius = brr
+  const blr = nc.rectangleBottomLeftCornerRadius ?? cr
+  if (blr !== 0) props.bottomLeftRadius = blr
+  if (nc.rectangleCornerRadiiIndependent) props.independentCorners = true
+  const cs = nc.cornerSmoothing ?? 0
+  if (cs !== 0) props.cornerSmoothing = cs
+
+  // Text properties
+  const text = nc.textData?.characters ?? ''
+  if (text !== '') props.text = text
+  if (nc.fontSize != null && nc.fontSize !== 14) props.fontSize = nc.fontSize
+  const ff = nc.fontName?.family
+  if (ff && ff !== DEFAULT_FONT_FAMILY) props.fontFamily = ff
+  const fw = styleToWeight(nc.fontName?.style ?? '')
+  if (fw !== 400) props.fontWeight = fw
+  if (nc.fontName?.style?.toLowerCase().includes('italic')) props.italic = true
+  const tah = nc.textAlignHorizontal as string | undefined
+  if (tah && tah !== 'LEFT') props.textAlignHorizontal = tah as SceneNode['textAlignHorizontal']
+  const tav = ext(nc).textAlignVertical as string | undefined
+  if (tav && tav !== 'TOP') props.textAlignVertical = tav as TextAlignVertical
+  const tar = ext(nc).textAutoResize as string | undefined
+  if (tar && tar !== 'NONE') props.textAutoResize = tar as TextAutoResize
+  const tc = ext(nc).textCase as string | undefined
+  if (tc && tc !== 'ORIGINAL') props.textCase = tc as TextCase
+  const td = mapTextDecoration(ext(nc).textDecoration as string)
+  if (td !== 'NONE') props.textDecoration = td
+  const lh = convertLineHeight(nc.lineHeight, nc.fontSize)
+  if (lh != null) props.lineHeight = lh
+  const ls = convertLetterSpacing(nc.letterSpacing, nc.fontSize)
+  if (ls !== 0) props.letterSpacing = ls
+  const ml = (ext(nc).maxLines as number) ?? null
+  if (ml != null) props.maxLines = ml
+  const sr = importStyleRuns(nc)
+  if (sr.length > 0) props.styleRuns = sr
+
+  // Constraints
+  const hc = mapConstraint(ext(nc).horizontalConstraint as string)
+  if (hc !== 'MIN') props.horizontalConstraint = hc
+  const vc = mapConstraint(ext(nc).verticalConstraint as string)
+  if (vc !== 'MIN') props.verticalConstraint = vc
+
+  // Layout
+  const lm = mapStackMode(nc.stackMode)
+  if (lm !== 'NONE') props.layoutMode = lm
+  const is = nc.stackSpacing ?? 0
+  if (is !== 0) props.itemSpacing = is
+  const pt = nc.stackVerticalPadding ?? nc.stackPadding ?? 0
+  if (pt !== 0) props.paddingTop = pt
+  const pb = nc.stackPaddingBottom ?? nc.stackVerticalPadding ?? nc.stackPadding ?? 0
+  if (pb !== 0) props.paddingBottom = pb
+  const pl = nc.stackHorizontalPadding ?? nc.stackPadding ?? 0
+  if (pl !== 0) props.paddingLeft = pl
+  const pr = nc.stackPaddingRight ?? nc.stackHorizontalPadding ?? nc.stackPadding ?? 0
+  if (pr !== 0) props.paddingRight = pr
+  const pas = mapStackSizing(nc.stackPrimarySizing)
+  if (pas !== 'FIXED') props.primaryAxisSizing = pas
+  const cas = mapStackSizing(nc.stackCounterSizing)
+  if (cas !== 'FIXED') props.counterAxisSizing = cas
+  const paa = mapStackJustify(nc.stackPrimaryAlignItems ?? nc.stackJustify)
+  if (paa !== 'MIN') props.primaryAxisAlign = paa
+  const caa = mapStackCounterAlign(nc.stackCounterAlignItems ?? nc.stackCounterAlign)
+  if (caa !== 'MIN') props.counterAxisAlign = caa
+  if (ext(nc).stackWrap === 'WRAP') props.layoutWrap = 'WRAP'
+  const csp = (ext(nc).stackCounterSpacing as number) ?? 0
+  if (csp !== 0) props.counterAxisSpacing = csp
+  if (ext(nc).stackPositioning === 'ABSOLUTE') props.layoutPositioning = 'ABSOLUTE'
+  const lg = (ext(nc).stackChildPrimaryGrow as number) ?? 0
+  if (lg !== 0) props.layoutGrow = lg
+  if ((ext(nc).stackChildAlignSelf as string) === 'STRETCH') props.layoutAlignSelf = 'STRETCH'
+
+  // Geometry
+  const vn = resolveVectorNetwork(nc, blobs)
+  if (vn) props.vectorNetwork = vn
+  const fg = resolveGeometryPaths(nc.fillGeometry, blobs)
+  if (fg.length > 0) props.fillGeometry = fg
+  const sg = resolveGeometryPaths(nc.strokeGeometry, blobs)
+  if (sg.length > 0) props.strokeGeometry = sg
+  const ad = mapArcData(ext(nc).arcData as Record<string, number> | undefined)
+  if (ad) props.arcData = ad
+
+  // Stroke detail
+  const sc = (nc.strokeCap ?? 'NONE') as StrokeCap
+  if (sc !== 'NONE') props.strokeCap = sc
+  const sj = (nc.strokeJoin ?? 'MITER') as StrokeJoin
+  if (sj !== 'MITER') props.strokeJoin = sj
+  if (dashPattern.length > 0) props.dashPattern = dashPattern
+
+  // Border weights
+  const btw = (ext(nc).borderTopWeight as number) ?? 0
+  if (btw !== 0) props.borderTopWeight = btw
+  const brw = (ext(nc).borderRightWeight as number) ?? 0
+  if (brw !== 0) props.borderRightWeight = brw
+  const bbw = (ext(nc).borderBottomWeight as number) ?? 0
+  if (bbw !== 0) props.borderBottomWeight = bbw
+  const blw = (ext(nc).borderLeftWeight as number) ?? 0
+  if (blw !== 0) props.borderLeftWeight = blw
+  if ((ext(nc).borderStrokeWeightsIndependent as boolean)) props.independentStrokeWeights = true
+
+  // Min/max dimensions
+  const mnw = (ext(nc).minWidth as number) ?? null
+  if (mnw != null) props.minWidth = mnw
+  const mxw = (ext(nc).maxWidth as number) ?? null
+  if (mxw != null) props.maxWidth = mxw
+  const mnh = (ext(nc).minHeight as number) ?? null
+  if (mnh != null) props.minHeight = mnh
+  const mxh = (ext(nc).maxHeight as number) ?? null
+  if (mxh != null) props.maxHeight = mxh
+
+  // Masks
+  if ((ext(nc).isMask as boolean)) props.isMask = true
+  const mt = (ext(nc).maskType as string) ?? 'ALPHA'
+  if (mt !== 'ALPHA') props.maskType = mt as 'ALPHA' | 'VECTOR' | 'LUMINANCE'
+
+  // Misc layout
+  if ((ext(nc).stackCounterAlignContent as string) === 'SPACE_BETWEEN') props.counterAxisAlignContent = 'SPACE_BETWEEN'
+  if ((ext(nc).stackReverseZIndex as boolean)) props.itemReverseZIndex = true
+  if ((ext(nc).strokesIncludedInLayout as boolean)) props.strokesIncludedInLayout = true
+  if ((ext(nc).textTruncation as string) === 'ENDING') props.textTruncation = 'ENDING'
+  if ((ext(nc).autoRename as boolean) === false) props.autoRename = false
+
+  // Bound variables
+  const bv = extractBoundVariables(nc)
+  if (Object.keys(bv).length > 0) props.boundVariables = bv
+
+  // Clipping & component
+  if (nc.frameMaskDisabled === false) props.clipsContent = true
+  const cid = extractSymbolId(nc)
+  if (cid !== '') props.componentId = cid
+
+  return props
 }
 
 function isComponentSet(nc: NodeChange): boolean {
