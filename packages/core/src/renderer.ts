@@ -158,6 +158,9 @@ export class SkiaRenderer {
   private strokeGeometryCache = new Map<string, Path[]>()
   private strokeGeometryCacheOrder: string[] = []
   private static readonly MAX_PATH_CACHE_SIZE = 10000
+  private static readonly VIEWPORT_EVICTION_MARGIN = 2
+  private static readonly VIEWPORT_EVICTION_INTERVAL = 5
+  private _pathCacheEvictionFrameCount = 0
   private scenePicture: SkPicture | null = null
   private scenePictureVersion = -1
   private scenePicturePageId: string | null = null
@@ -566,6 +569,16 @@ export class SkiaRenderer {
       overlays.dropTargetId != null ||
       overlays.rotationPreview != null ||
       overlays.editingTextId != null
+
+    if (hasVolatileOverlays) {
+      this._pathCacheEvictionFrameCount++
+      if (this._pathCacheEvictionFrameCount >= SkiaRenderer.VIEWPORT_EVICTION_INTERVAL) {
+        this._pathCacheEvictionFrameCount = 0
+        this.evictViewportPathCaches(graph)
+      }
+    } else {
+      this._pathCacheEvictionFrameCount = 0
+    }
 
     const canUsePicture =
       !hasVolatileOverlays &&
@@ -1289,6 +1302,62 @@ export class SkiaRenderer {
         if (paths) {
           for (const p of paths) p.delete()
           cache.delete(oldest)
+        }
+      }
+    }
+  }
+
+  /** Evict path cache entries for nodes outside viewport + margin. Used during volatile overlays (pan/zoom). */
+  private evictViewportPathCaches(graph: SceneGraph): void {
+    const vp = this.worldViewport
+    const m = SkiaRenderer.VIEWPORT_EVICTION_MARGIN
+    const left = vp.x - vp.w * m
+    const top = vp.y - vp.h * m
+    const right = vp.x + vp.w * (1 + m)
+    const bottom = vp.y + vp.h * (1 + m)
+
+    const keep = new Set<string>()
+    const pageId = this.pageId ?? graph.rootId
+    const page = graph.getNode(pageId)
+    if (!page) return
+
+    function walk(nodeId: string) {
+      const node = graph.getNode(nodeId)
+      if (!node) return
+      const abs = graph.getAbsolutePosition(nodeId)
+      const nright = abs.x + node.width
+      const nbottom = abs.y + node.height
+      if (nright >= left && abs.x <= right && nbottom >= top && abs.y <= bottom) {
+        const needsPath =
+          (node.vectorNetwork && node.type === 'VECTOR') ||
+          node.fillGeometry.length > 0 ||
+          node.strokeGeometry.length > 0
+        if (needsPath) keep.add(nodeId)
+      }
+      for (const cid of node.childIds) walk(cid)
+    }
+    for (const cid of page.childIds) walk(cid)
+
+    for (const cache of [
+      this.vectorPathCache,
+      this.fillGeometryCache,
+      this.strokeGeometryCache
+    ] as const) {
+      const order =
+        cache === this.vectorPathCache
+          ? this.vectorPathCacheOrder
+          : cache === this.fillGeometryCache
+            ? this.fillGeometryCacheOrder
+            : this.strokeGeometryCacheOrder
+      for (const nodeId of [...cache.keys()]) {
+        if (!keep.has(nodeId)) {
+          const paths = cache.get(nodeId)
+          if (paths) {
+            for (const p of paths) p.delete()
+            cache.delete(nodeId)
+          }
+          const idx = order.indexOf(nodeId)
+          if (idx >= 0) order.splice(idx, 1)
         }
       }
     }
