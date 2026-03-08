@@ -156,7 +156,7 @@ function clearKey() {
               <label class="text-[10px] text-muted">API Key</label>
               <button
                 v-if="apiKey"
-                class="text-[10px] text-muted hover:text-surface"
+                class="cursor-pointer text-[10px] text-muted hover:text-surface"
                 data-test-id="provider-settings-clear-key"
                 @click="clearKey"
               >

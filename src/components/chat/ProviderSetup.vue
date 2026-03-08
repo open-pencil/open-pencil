@@ -42,7 +42,7 @@ function save() {
     <p class="text-center text-xs text-muted">Connect an AI provider to start chatting.</p>
 
     <!-- Provider selector -->
-    <SelectRoot v-model="providerId" class="w-full">
+    <SelectRoot v-model="providerId">
       <SelectTrigger
         data-test-id="provider-selector"
         :class="
