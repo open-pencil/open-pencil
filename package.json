@@ -20,6 +20,7 @@
     "typecheck": "oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src packages/cli/src packages/mcp/src packages/acp/src",
     "typecheck:app": "oxlint -c oxlint.json --type-aware --type-check src/",
     "check": "turbo lint && bun run typecheck",
+    "postinstall": "playwright install",
     "test": "playwright test --project=openpencil",
     "test:update": "playwright test --project=openpencil --update-snapshots",
     "test:figma": "playwright test --project=figma",
