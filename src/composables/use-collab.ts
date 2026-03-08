@@ -1,3 +1,4 @@
+import { useLocalStorage } from '@vueuse/core'
 import { joinRoom as joinTrysteroRoom } from 'trystero/mqtt'
 import { ref, watch, onUnmounted, computed, type InjectionKey, inject } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
@@ -34,11 +35,12 @@ export interface CollabState {
 }
 
 export function useCollab(store: EditorStore) {
+  const storedName = useLocalStorage('op-collab-name', '')
   const state = ref<CollabState>({
     connected: false,
     roomId: null,
     peers: [],
-    localName: localStorage.getItem('op-collab-name') || '',
+    localName: storedName.value,
     localColor: PEER_COLORS[crypto.getRandomValues(new Uint8Array(1))[0] % PEER_COLORS.length]
   })
 
@@ -388,7 +390,7 @@ export function useCollab(store: EditorStore) {
 
   function setLocalName(name: string) {
     state.value.localName = name
-    localStorage.setItem('op-collab-name', name)
+    storedName.value = name
     broadcastAwareness()
   }
 
