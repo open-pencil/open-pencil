@@ -129,6 +129,7 @@ function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
         <Markdown
           v-if="message.role === 'assistant'"
           :content="getTextContent(message)"
+          :mermaid="false"
           class="chat-markdown"
         />
         <template v-else>{{ getTextContent(message) }}</template>

@@ -18,7 +18,11 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      shiki: resolve(__dirname, 'src/shims/shiki.ts')
+      // vue-stream-markdown eagerly loads these optional peer deps on mount.
+      // Alias to empty shims to avoid runtime errors and reduce bundle size.
+      shiki: resolve(__dirname, 'src/shims/shiki.ts'),
+      mermaid: resolve(__dirname, 'src/shims/mermaid.ts'),
+      'beautiful-mermaid': resolve(__dirname, 'src/shims/mermaid.ts')
     }
   },
   plugins: [
