@@ -288,8 +288,8 @@ export const exportImage = defineTool({
     },
     scale: {
       type: 'number',
-      description: 'Export scale multiplier (default: 1)',
-      default: 1,
+      description: 'Export scale multiplier (default: 0.5)',
+      default: 0.5,
       min: 0.1,
       max: 4
     }
@@ -304,7 +304,7 @@ export const exportImage = defineTool({
         : figma.currentPage.children.map((n) => n.id)
     const format = ((args.format as string) ?? 'PNG').toUpperCase() as 'PNG' | 'JPG' | 'WEBP'
     const data = await figma.exportImage(ids, {
-      scale: args.scale ?? 1,
+      scale: args.scale ?? 0.5,
       format
     })
     if (!data || data.length === 0) return { error: 'No visible nodes to export' }
