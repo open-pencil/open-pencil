@@ -605,6 +605,7 @@ export function createEditorStore() {
       await new Promise((r) => requestAnimationFrame(r))
       const imported = await readFigFile(file)
       graph = imported
+      subscribeToGraph()
       computeAllLayouts(graph)
       undo.clear()
       pageViewports.clear()
@@ -731,11 +732,13 @@ export function createEditorStore() {
       const file = new File([blob], state.documentName + '.fig')
       const imported = await readFigFile(file)
       graph = imported
+      subscribeToGraph()
       computeAllLayouts(graph)
     } else if (fileHandle) {
       const file = await fileHandle.getFile()
       const imported = await readFigFile(file)
       graph = imported
+      subscribeToGraph()
       computeAllLayouts(graph)
     } else {
       return
@@ -926,16 +929,18 @@ export function createEditorStore() {
     }
   }
 
-  function updateNode(id: string, changes: Partial<SceneNode>) {
-    graph.updateNode(id, changes)
+  function onNodeUpdated(id: string, changes: Partial<SceneNode>) {
     if ('vectorNetwork' in changes) {
       _renderer?.invalidateVectorPath(id)
     }
     _renderer?.invalidateNodePicture(id)
-    runLayoutForNode(id)
-    syncIfInsideComponent(id)
-    requestRender()
   }
+
+  function subscribeToGraph() {
+    graph.emitter.on('node:updated', onNodeUpdated)
+  }
+
+  subscribeToGraph()
 
   function syncIfInsideComponent(nodeId: string) {
     let current = graph.getNode(nodeId)
@@ -946,6 +951,13 @@ export function createEditorStore() {
       }
       current = current.parentId ? graph.getNode(current.parentId) : undefined
     }
+  }
+
+  function updateNode(id: string, changes: Partial<SceneNode>) {
+    graph.updateNode(id, changes)
+    runLayoutForNode(id)
+    syncIfInsideComponent(id)
+    requestRender()
   }
 
   function updateNodeWithUndo(id: string, changes: Partial<SceneNode>, label = 'Update') {

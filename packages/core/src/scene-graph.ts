@@ -1,8 +1,19 @@
+import { createNanoEvents } from 'nanoevents'
+
 import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './constants'
 import { copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
 
 export type { GUID, Color } from './types'
 import type { Matrix, Vector, Color, Rect } from './types'
+import type { Emitter } from 'nanoevents'
+
+export interface SceneGraphEvents {
+  'node:created': (node: SceneNode) => void
+  'node:updated': (id: string, changes: Partial<SceneNode>) => void
+  'node:deleted': (id: string) => void
+  'node:reparented': (nodeId: string, oldParentId: string | null, newParentId: string) => void
+  'node:reordered': (nodeId: string, parentId: string, index: number) => void
+}
 
 export type HandleMirroring = 'NONE' | 'ANGLE' | 'ANGLE_AND_LENGTH'
 export type WindingRule = 'NONZERO' | 'EVENODD'
@@ -452,6 +463,7 @@ export class SceneGraph {
   variableCollections = new Map<string, VariableCollection>()
   activeMode = new Map<string, string>()
   rootId: string
+  readonly emitter: Emitter<SceneGraphEvents> = createNanoEvents()
   private absPosCache = new Map<string, Vector>()
 
   constructor() {
@@ -705,6 +717,7 @@ export class SceneGraph {
       parent.childIds.push(node.id)
     }
 
+    this.emitter.emit('node:created', node)
     return node
   }
 
@@ -713,6 +726,7 @@ export class SceneGraph {
     if (!node) return
     this.absPosCache.clear()
     Object.assign(node, changes)
+    this.emitter.emit('node:updated', id, changes)
   }
 
   reparentNode(nodeId: string, newParentId: string): void {
@@ -725,6 +739,7 @@ export class SceneGraph {
     if (!newParent) return
     if (node.parentId === newParentId) return
 
+    const oldParentId = node.parentId
     this.absPosCache.clear()
 
     // Convert absolute position
@@ -747,6 +762,8 @@ export class SceneGraph {
     // Adjust position so node stays in same visual place
     node.x = absPos.x - newParentAbs.x
     node.y = absPos.y - newParentAbs.y
+
+    this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
   }
 
   reorderChild(nodeId: string, parentId: string, insertIndex: number): void {
@@ -774,6 +791,8 @@ export class SceneGraph {
     node.parentId = parentId
     idx = Math.min(idx, newParent.childIds.length)
     newParent.childIds.splice(idx, 0, nodeId)
+
+    this.emitter.emit('node:reordered', nodeId, parentId, idx)
   }
 
   deleteNode(id: string): void {
@@ -792,6 +811,7 @@ export class SceneGraph {
     }
 
     this.nodes.delete(id)
+    this.emitter.emit('node:deleted', id)
   }
 
   hitTest(px: number, py: number, scopeId?: string): SceneNode | null {

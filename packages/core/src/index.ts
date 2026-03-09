@@ -46,7 +46,8 @@ export {
   type VariableCollection,
   type VariableCollectionMode,
   type CharacterStyleOverride,
-  type StyleRun
+  type StyleRun,
+  type SceneGraphEvents
 } from './scene-graph'
 
 export { FigmaAPI, FigmaNodeProxy, type FigmaFontName } from './figma-api'

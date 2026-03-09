@@ -48,8 +48,9 @@ export function useCollab(store: EditorStore) {
   let ynodes: Y.Map<Y.Map<unknown>> | null = null
   let room: Room | null = null
   let persistence: IndexeddbPersistence | null = null
-  let suppressGraphEvents = false
+  let suppressGraphSync = false
   let suppressYjsEvents = false
+  let unbindGraphEvents: (() => void) | null = null
   let sendYjsUpdate: ((data: Uint8Array, peerId?: string) => void) | null = null
   let sendAwareness: ((data: Uint8Array, peerId?: string) => void) | null = null
   let sendSyncStep1: ((data: Uint8Array, peerId?: string) => void) | null = null
@@ -73,11 +74,11 @@ export function useCollab(store: EditorStore) {
 
     ynodes.observeDeep((events) => {
       if (suppressYjsEvents) return
-      suppressGraphEvents = true
+      suppressGraphSync = true
       try {
         applyYjsToGraph(events)
       } finally {
-        suppressGraphEvents = false
+        suppressGraphSync = false
       }
       store.requestRender()
     })
@@ -191,16 +192,38 @@ export function useCollab(store: EditorStore) {
       }
     )
 
-    const origUpdateNode = store.graph.updateNode.bind(store.graph)
-    store.graph.updateNode = (id: string, changes: Partial<SceneNode>) => {
-      origUpdateNode(id, changes)
-      if (!suppressGraphEvents && ydoc && ynodes) {
-        syncNodeToYjs(id)
+    function onGraphMutation(nodeId: string) {
+      if (!suppressGraphSync && ydoc && ynodes) {
+        syncNodeToYjs(nodeId)
       }
+    }
+
+    const unbindUpdated = store.graph.emitter.on('node:updated', (id) => onGraphMutation(id))
+    const unbindCreated = store.graph.emitter.on('node:created', (node) => onGraphMutation(node.id))
+    const unbindReparented = store.graph.emitter.on('node:reparented', (nodeId) =>
+      onGraphMutation(nodeId)
+    )
+    const unbindDeleted = store.graph.emitter.on('node:deleted', (id) => {
+      if (!suppressGraphSync && ydoc && ynodes) {
+        suppressYjsEvents = true
+        ydoc.transact(() => {
+          ynodes!.delete(id)
+        })
+        suppressYjsEvents = false
+      }
+    })
+
+    unbindGraphEvents = () => {
+      unbindUpdated()
+      unbindCreated()
+      unbindReparented()
+      unbindDeleted()
     }
   }
 
   function disconnect() {
+    unbindGraphEvents?.()
+    unbindGraphEvents = null
     void room?.leave()
     room = null
     sendYjsUpdate = null

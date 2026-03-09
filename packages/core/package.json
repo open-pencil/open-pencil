@@ -41,6 +41,7 @@
     "diff": "^8.0.3",
     "fflate": "^0.8.2",
     "fzstd": "^0.1.1",
+    "nanoevents": "^9.1.0",
     "sucrase": "^3.35.1",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"
   },
