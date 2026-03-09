@@ -33,8 +33,9 @@ openspec/
 
 ```sh
 bun install
-bun run dev          # Editor at localhost:1420
-bun run docs:dev     # Docs at localhost:5173
+bun run dev              # Editor at localhost:1420
+bun run tauri dev        # Desktop app with hot reload
+bun run docs:dev         # Docs at localhost:5173
 ```
 
 ## Code Style

@@ -23,7 +23,8 @@ export default defineConfig(async () => ({
       shiki: resolve(__dirname, 'src/shims/shiki.ts'),
       mermaid: resolve(__dirname, 'src/shims/mermaid.ts'),
       'beautiful-mermaid': resolve(__dirname, 'src/shims/mermaid.ts')
-    }
+    },
+    extensions: ['.ts', '.tsx', '.mts', '.js', '.jsx', '.mjs', '.json']
   },
   plugins: [
     {
@@ -84,6 +85,9 @@ export default defineConfig(async () => ({
     })
   ],
   clearScreen: false,
+  worker: {
+    format: 'es'
+  },
   server: {
     port: 1420,
     strictPort: true,

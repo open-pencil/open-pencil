@@ -1,5 +1,9 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
   "plugins": ["typescript", "import", "unicorn", "vue"],
   "jsPlugins": ["./lint/plugin.js"],
   "env": {
@@ -88,7 +92,6 @@
         "typescript/no-non-null-assertion": "off"
       }
     },
-    
     {
       "files": ["**/kiwi/kiwi-schema/**"],
       "rules": {
@@ -117,7 +120,13 @@
       "rules": {
         "open-pencil/no-raw-console-format": "error"
       }
+    },
+    {
+      "files": ["**/composables/use-collab.ts"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off"
+      }
     }
   ],
-  "ignorePatterns": ["node_modules", "dist", "desktop", "*.config.*"]
+  "ignorePatterns": ["node_modules", "dist", "desktop", "*.config.*", "src/kiwi/client.ts"]
 }

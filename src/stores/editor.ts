@@ -26,6 +26,10 @@ import {
   buildOpenPencilClipboardHTML,
   prefetchFigmaSchema,
   readFigFile,
+  parseFigFileInWorker,
+  getFigParseProfile,
+  addFigParseStage,
+  clearFigParseProfile,
   renderNodesToImage,
   renderNodesToSVG,
   SceneGraph,
@@ -666,9 +670,44 @@ export function createEditorStore() {
     try {
       state.loading = true
       await new Promise((r) => requestAnimationFrame(r))
-      const imported = await readFigFile(file)
+
+      const doProfile = typeof globalThis !== 'undefined' && (globalThis as unknown as { __FIG_PARSE_PROFILE__?: boolean }).__FIG_PARSE_PROFILE__
+      let imported: SceneGraph
+      const noWorker = typeof globalThis !== 'undefined' && (globalThis as unknown as { __FIG_NO_WORKER__?: boolean }).__FIG_NO_WORKER__
+      if (typeof Worker !== 'undefined' && !noWorker) {
+        imported = await parseFigFileInWorker(await file.arrayBuffer(), { profile: doProfile })
+      } else {
+        if (doProfile) {
+          ;(globalThis as unknown as { __FIG_PARSE_PROFILE__: boolean }).__FIG_PARSE_PROFILE__ = true
+          clearFigParseProfile()
+        }
+        imported = await readFigFile(file)
+        if (doProfile) {
+          const tLayout = performance.now()
+          computeAllLayouts(imported)
+          addFigParseStage('5_computeAllLayouts', performance.now() - tLayout)
+          const profile = getFigParseProfile()
+          const total = profile.reduce((s, x) => s + x.ms, 0)
+          console.log(
+            '[fig-parse profile]',
+            ...profile.map((s) => `\n  ${s.stage}: ${s.ms.toFixed(1)}ms (${((100 * s.ms) / total).toFixed(1)}%)`),
+            `\n  total: ${total.toFixed(1)}ms`
+          )
+        }
+        if (!doProfile) computeAllLayouts(imported)
+      }
+      if (typeof Worker !== 'undefined' && doProfile) {
+        const profile = (globalThis as unknown as { __FIG_PARSE_PROFILE_RESULT__?: Array<{ stage: string; ms: number }> }).__FIG_PARSE_PROFILE_RESULT__
+        if (profile) {
+          const total = profile.reduce((s, x) => s + x.ms, 0)
+          console.log(
+            '[fig-parse profile]',
+            ...profile.map((s) => `\n  ${s.stage}: ${s.ms.toFixed(1)}ms (${((100 * s.ms) / total).toFixed(1)}%)`),
+            `\n  total: ${total.toFixed(1)}ms`
+          )
+        }
+      }
       graph = imported
-      computeAllLayouts(graph)
       undo.clear()
       pageViewports.clear()
       fileHandle = handle ?? null
@@ -787,21 +826,25 @@ export function createEditorStore() {
     const viewport = { panX: state.panX, panY: state.panY, zoom: state.zoom }
     const pageId = state.currentPageId
 
+    let file: File
     if (filePath && IS_TAURI) {
       const { readFile: tauriRead } = await import('@tauri-apps/plugin-fs')
       const bytes = await tauriRead(filePath)
       const blob = new Blob([bytes])
-      const file = new File([blob], state.documentName + '.fig')
-      const imported = await readFigFile(file)
-      graph = imported
-      computeAllLayouts(graph)
+      file = new File([blob], state.documentName + '.fig')
     } else if (fileHandle) {
-      const file = await fileHandle.getFile()
-      const imported = await readFigFile(file)
-      graph = imported
-      computeAllLayouts(graph)
+      file = await fileHandle.getFile()
     } else {
       return
+    }
+
+    const doProfile = typeof globalThis !== 'undefined' && (globalThis as unknown as { __FIG_PARSE_PROFILE__?: boolean }).__FIG_PARSE_PROFILE__
+    const noWorker = typeof globalThis !== 'undefined' && (globalThis as unknown as { __FIG_NO_WORKER__?: boolean }).__FIG_NO_WORKER__
+    if (typeof Worker !== 'undefined' && !noWorker) {
+      graph = await parseFigFileInWorker(await file.arrayBuffer(), { profile: doProfile })
+    } else {
+      graph = await readFigFile(file)
+      computeAllLayouts(graph)
     }
 
     undo.clear()

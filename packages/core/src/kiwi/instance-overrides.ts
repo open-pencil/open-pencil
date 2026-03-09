@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode, GeometryPath } from '../scene-graph'
 import { guidToString, convertOverrideToProps, resolveGeometryPaths } from './kiwi-convert'
 import { copyFills, copyStrokes, copyEffects, copyStyleRuns, copyGeometryPaths } from '../copy'
+import { profileStage, profileStart } from './fig-parse-profile'
 import type { GUID } from './codec'
 import type { Matrix, Vector } from '../types'
 
@@ -668,13 +669,21 @@ export function populateAndApplyOverrides(
   // 3. componentProperties — toggle visibility / swap via prop assignments
   //    (must run AFTER sync so repopulated children aren't lost)
   // 4. derivedSymbolData — apply Figma's pre-computed sizes last
+  const t2 = profileStart()
   const overriddenNodes = applySymbolOverrides()
+  profileStage('4f3_applySymbolOverrides', t2)
 
+  const t3 = profileStart()
   propagateOverridesTransitively(overriddenNodes)
+  profileStage('4f4_propagateOverridesTransitively', t3)
 
+  const t4 = profileStart()
   applyComponentProperties()
+  profileStage('4f5_applyComponentProperties', t4)
 
+  const t5 = profileStart()
   // DSD resolution runs AFTER overrides so guidPaths can reach children
   // of instance-swapped nodes (repopulateInstance replaces children).
   applyDerivedSymbolData()
+  profileStage('4f6_applyDerivedSymbolData', t5)
 }

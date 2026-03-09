@@ -192,7 +192,8 @@ export {
   type TextPictureBuilder
 } from './clipboard'
 
-export { readFigFile, parseFigFile } from './kiwi/fig-file'
+export { readFigFile, parseFigFile, parseFigFileInWorker } from './kiwi/fig-file'
+export { getFigParseProfile, addFigParseStage, clearFigParseProfile, logFigParseProfile } from './kiwi/fig-parse-profile'
 export { importNodeChanges } from './kiwi/fig-import'
 export {
   initCodec,

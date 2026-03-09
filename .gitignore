@@ -38,3 +38,12 @@ packages/collab/.wrangler/
 packages/core/vendor/canvaskit-webgpu/
 patches/skia-webgpu/
 .wrangler/
+.turbo
+
+# Rust/WASM build artifacts
+packages/kiwi-wasm/target/
+packages/kiwi-wasm/pkg/
+
+# Stale tsc output in core src (outDir is dist/)
+packages/core/src/**/*.js
+packages/core/src/**/*.d.ts

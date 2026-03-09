@@ -22,9 +22,17 @@ Run all of these before submitting a PR:
 ```bash
 bun run check        # oxlint + typecheck
 bun run format       # oxfmt with import sorting
+bun run test         # bun:test unit tests (tests/engine/)
 bun run test:dupes   # jscpd < 3% duplication
-bun run test:unit    # bun:test (tests/engine/)
-bun run test         # Playwright E2E (auto-starts dev server)
+```
+
+### E2E tests (optional, requires Playwright browsers)
+
+```bash
+bun run test:e2e:install   # one-time: download browsers
+bun run test:e2e           # Playwright visual regression (auto-starts dev server)
+bun run test:e2e:update    # regenerate screenshot baselines
+bun run test:e2e:figma     # Figma CDP tests (requires Figma open with --remote-debugging-port=9222)
 ```
 
 ## Project structure

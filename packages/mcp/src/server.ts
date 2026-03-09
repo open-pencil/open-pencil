@@ -113,7 +113,7 @@ export function createServer(version: string, options: CreateServerOptions = {})
       shape[key] = paramToZod(param)
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic schema from ToolDef params
+    // oxlint-disable-next-line typescript/no-explicit-any -- dynamic schema from ToolDef params
     server.registerTool(def.name, { description: def.description, inputSchema: z.object(shape) } as any, async (args: any) => {
       try {
         const result = await def.execute(makeFigma(), args)

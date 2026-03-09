@@ -334,105 +334,126 @@ export function generateId(): string {
   return `0:${nextLocalID++}`
 }
 
+// Shared cold defaults — single allocation, reused by all nodes via prototype chain.
+// Hot properties (always accessed) are set as own properties in createDefaultNode.
+// Cold properties fall through to this shared prototype, saving ~70 property allocations per node.
+const COLD_DEFAULTS = {
+  cornerRadius: 0,
+  topLeftRadius: 0,
+  topRightRadius: 0,
+  bottomRightRadius: 0,
+  bottomLeftRadius: 0,
+  independentCorners: false,
+  cornerSmoothing: 0,
+  locked: false,
+  text: '',
+  fontSize: 14,
+  fontFamily: DEFAULT_FONT_FAMILY,
+  fontWeight: 400,
+  italic: false,
+  textAlignHorizontal: 'LEFT' as const,
+  textAlignVertical: 'TOP' as const,
+  textAutoResize: 'NONE' as const,
+  textCase: 'ORIGINAL' as const,
+  textDecoration: 'NONE' as const,
+  lineHeight: null as number | null,
+  letterSpacing: 0,
+  maxLines: null as number | null,
+  horizontalConstraint: 'MIN' as const,
+  verticalConstraint: 'MIN' as const,
+  layoutWrap: 'NO_WRAP' as const,
+  primaryAxisAlign: 'MIN' as const,
+  counterAxisAlign: 'MIN' as const,
+  primaryAxisSizing: 'FIXED' as const,
+  counterAxisSizing: 'FIXED' as const,
+  itemSpacing: 0,
+  counterAxisSpacing: 0,
+  paddingTop: 0,
+  paddingRight: 0,
+  paddingBottom: 0,
+  paddingLeft: 0,
+  layoutPositioning: 'AUTO' as const,
+  layoutGrow: 0,
+  layoutAlignSelf: 'AUTO' as const,
+  vectorNetwork: null as VectorNetwork | null,
+  fillGeometry: [] as GeometryPath[],
+  strokeGeometry: [] as GeometryPath[],
+  arcData: null as ArcData | null,
+  strokeCap: 'NONE' as const,
+  strokeJoin: 'MITER' as const,
+  dashPattern: [] as number[],
+  borderTopWeight: 0,
+  borderRightWeight: 0,
+  borderBottomWeight: 0,
+  borderLeftWeight: 0,
+  independentStrokeWeights: false,
+  strokeMiterLimit: DEFAULT_STROKE_MITER_LIMIT,
+  minWidth: null as number | null,
+  maxWidth: null as number | null,
+  minHeight: null as number | null,
+  maxHeight: null as number | null,
+  isMask: false,
+  maskType: 'ALPHA' as const,
+  gridTemplateColumns: [] as GridTrack[],
+  gridTemplateRows: [] as GridTrack[],
+  gridColumnGap: 0,
+  gridRowGap: 0,
+  gridPosition: null as GridPosition | null,
+  counterAxisAlignContent: 'AUTO' as const,
+  itemReverseZIndex: false,
+  strokesIncludedInLayout: false,
+  expanded: true,
+  textTruncation: 'DISABLED' as const,
+  autoRename: true,
+  pointCount: 5,
+  starInnerRadius: 0.38,
+  overrides: {} as Record<string, unknown>,
+  boundVariables: {} as Record<string, string>,
+  textPicture: null as Uint8Array | null,
+}
+
+// Note: COLD_DEFAULTS and its contents are intentionally NOT frozen.
+// Freezing any property (even nested arrays/objects) makes that property
+// non-writable in the prototype chain, blocking Object.assign and direct
+// assignment on derived objects in strict mode.
+
 function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): SceneNode {
-  return {
-    id: generateId(),
-    type,
-    name: type.charAt(0) + type.slice(1).toLowerCase(),
-    parentId: null,
-    childIds: [],
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-    rotation: 0,
-    fills: [],
-    strokes: [],
-    effects: [],
-    opacity: 1,
-    cornerRadius: 0,
-    topLeftRadius: 0,
-    topRightRadius: 0,
-    bottomRightRadius: 0,
-    bottomLeftRadius: 0,
-    independentCorners: false,
-    cornerSmoothing: 0,
-    visible: true,
-    locked: false,
-    clipsContent: false,
-    text: '',
-    fontSize: 14,
-    fontFamily: DEFAULT_FONT_FAMILY,
-    fontWeight: 400,
-    italic: false,
-    textAlignHorizontal: 'LEFT',
-    lineHeight: null,
-    letterSpacing: 0,
-    layoutMode: 'NONE',
-    layoutWrap: 'NO_WRAP',
-    primaryAxisAlign: 'MIN',
-    counterAxisAlign: 'MIN',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 0,
-    counterAxisSpacing: 0,
-    paddingTop: 0,
-    paddingRight: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    blendMode: 'PASS_THROUGH',
-    layoutPositioning: 'AUTO',
-    layoutGrow: 0,
-    layoutAlignSelf: 'AUTO',
-    vectorNetwork: null,
-    fillGeometry: [],
-    strokeGeometry: [],
-    arcData: null,
-    textAlignVertical: 'TOP',
-    textAutoResize: 'NONE',
-    textCase: 'ORIGINAL',
-    textDecoration: 'NONE',
-    maxLines: null,
-    styleRuns: [],
-    horizontalConstraint: 'MIN',
-    verticalConstraint: 'MIN',
-    strokeCap: 'NONE',
-    strokeJoin: 'MITER',
-    dashPattern: [],
-    borderTopWeight: 0,
-    borderRightWeight: 0,
-    borderBottomWeight: 0,
-    borderLeftWeight: 0,
-    independentStrokeWeights: false,
-    strokeMiterLimit: DEFAULT_STROKE_MITER_LIMIT,
-    minWidth: null,
-    maxWidth: null,
-    minHeight: null,
-    maxHeight: null,
-    isMask: false,
-    maskType: 'ALPHA',
-    gridTemplateColumns: [],
-    gridTemplateRows: [],
-    gridColumnGap: 0,
-    gridRowGap: 0,
-    gridPosition: null,
-    counterAxisAlignContent: 'AUTO',
-    itemReverseZIndex: false,
-    strokesIncludedInLayout: false,
-    expanded: true,
-    textTruncation: 'DISABLED',
-    autoRename: true,
-    pointCount: 5,
-    starInnerRadius: 0.38,
-    componentId: null,
-    overrides: {},
-    boundVariables: {},
-    internalOnly: false,
-    flipX: false,
-    flipY: false,
-    textPicture: null,
-    ...overrides
+  // Hot properties are own properties, cold defaults come from prototype
+  const node = Object.create(COLD_DEFAULTS) as SceneNode
+  node.id = generateId()
+  node.type = type
+  node.name = type.charAt(0) + type.slice(1).toLowerCase()
+  node.parentId = null
+  node.childIds = []
+  node.x = 0
+  node.y = 0
+  node.width = 100
+  node.height = 100
+  node.rotation = 0
+  node.visible = true
+  node.opacity = 1
+  node.fills = []
+  node.strokes = []
+  node.effects = []
+  node.styleRuns = []
+  node.clipsContent = false
+  node.layoutMode = 'NONE'
+  node.blendMode = 'PASS_THROUGH'
+  node.componentId = null
+  node.internalOnly = false
+  node.flipX = false
+  node.flipY = false
+  // Mutable containers must be own properties — code writes directly into them
+  // (e.g., node.boundVariables[field] = id, delete node.overrides[key])
+  node.overrides = {}
+  node.boundVariables = {}
+
+  // Apply overrides — these become own properties, shadowing the prototype
+  if (Object.keys(overrides).length > 0) {
+    Object.assign(node, overrides)
   }
+
+  return node
 }
 
 const CONTAINER_TYPES = new Set<NodeType>([
@@ -464,6 +485,38 @@ export class SceneGraph {
     this.nodes.set(root.id, root)
 
     this.addPage('Page 1')
+  }
+
+  /**
+   * Reconstruct SceneGraph from Worker postMessage payload.
+   * Used when parse runs in a Web Worker.
+   */
+  static fromPlainData(data: {
+    nodes: Array<[string, SceneNode]>
+    images: Array<[string, Uint8Array]>
+    variables: Array<[string, Variable]>
+    variableCollections: Array<[string, VariableCollection]>
+    activeMode: Array<[string, string]>
+    rootId: string
+  }): SceneGraph {
+    const g = new SceneGraph()
+    g.nodes.clear()
+    g.images.clear()
+    g.variables.clear()
+    g.variableCollections.clear()
+    g.activeMode.clear()
+    for (const [k, v] of data.nodes) {
+      // Re-apply prototype to save memory after Worker transfer
+      const node = Object.create(COLD_DEFAULTS) as SceneNode
+      Object.assign(node, v)
+      g.nodes.set(k, node)
+    }
+    for (const [k, v] of data.images) g.images.set(k, v)
+    for (const [k, v] of data.variables) g.variables.set(k, v)
+    for (const [k, v] of data.variableCollections) g.variableCollections.set(k, v)
+    for (const [k, v] of data.activeMode) g.activeMode.set(k, v)
+    g.rootId = data.rootId
+    return g
   }
 
   addPage(name: string): SceneNode {

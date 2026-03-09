@@ -9,6 +9,7 @@ import {
 } from './kiwi-convert'
 import { populateAndApplyOverrides } from './instance-overrides'
 import type { InstanceNodeChange } from './instance-overrides'
+import { profileStage, profileStart } from './fig-parse-profile'
 
 import type { NodeChange, VariableDataValuesEntry } from './codec'
 
@@ -19,6 +20,7 @@ interface ChangeMaps {
 }
 
 function buildChangeMaps(nodeChanges: NodeChange[]): ChangeMaps {
+  const t0 = profileStart()
   const changeMap = new Map<string, NodeChange>()
   const parentMap = new Map<string, string>()
   const childrenMap = new Map<string, string[]>()
@@ -39,11 +41,14 @@ function buildChangeMaps(nodeChanges: NodeChange[]): ChangeMaps {
       siblings.push(id)
     }
   }
+  profileStage('4a_buildChangeMap', t0)
 
+  const t1 = profileStart()
   for (const [parentId, children] of childrenMap) {
     const parentNc = changeMap.get(parentId)
     if (parentNc) sortChildren(children, parentNc, changeMap)
   }
+  profileStage('4b_sortChildren', t1)
 
   return { changeMap, parentMap, childrenMap }
 }
@@ -267,19 +272,28 @@ export function importNodeChanges(
     }
   }
 
+  const t2 = profileStart()
   importPages(graph, changeMap, parentMap, childrenMap, created, createSceneNode)
+  profileStage('4c_createSceneNodes', t2)
 
+  const t3 = profileStart()
   importCollections(changeMap, graph)
   importVariableEntries(changeMap, parentMap, graph)
   importVariableBindings(changeMap, guidToNodeId, graph)
-  remapComponentIds(graph, guidToNodeId)
+  profileStage('4d_importVariables', t3)
 
+  const t4 = profileStart()
+  remapComponentIds(graph, guidToNodeId)
+  profileStage('4e_remapComponentIds', t4)
+
+  const t5 = profileStart()
   populateAndApplyOverrides(
     graph,
     changeMap as unknown as Map<string, InstanceNodeChange>,
     guidToNodeId,
     blobs
   )
+  profileStage('4f_populateAndApplyOverrides', t5)
 
   if (graph.getPages(true).length === 0) {
     graph.addPage('Page 1')

@@ -5,6 +5,8 @@ const NODE_COUNT = 500
 const ITERATIONS = 200
 
 test.describe('Render performance', () => {
+  test.slow() // benchmarks run 200+ render iterations — needs ~30s
+
   let helper: CanvasHelper
 
   test.beforeAll(async ({ browser }) => {
@@ -163,7 +165,7 @@ test.describe('Render performance', () => {
         const shadowIds: string[] = []
         const cols = Math.ceil(Math.sqrt(count))
         for (let i = 0; i < count; i++) {
-          const id = graph.createNode('RECTANGLE', pageId, {
+          const node = graph.createNode('RECTANGLE', pageId, {
             x: (i % cols) * 80,
             y: Math.floor(i / cols) * 80 + 2000,
             width: 60,
@@ -181,7 +183,7 @@ test.describe('Render performance', () => {
               }
             ]
           })
-          shadowIds.push(id)
+          shadowIds.push(node.id)
         }
 
         function setupRenderer() {
@@ -209,7 +211,7 @@ test.describe('Render performance', () => {
         }
         const sceneMs = performance.now() - sceneStart
 
-        for (const id of shadowIds) graph.deleteNode(id)
+        for (const sid of shadowIds) graph.deleteNode(sid)
 
         return {
           scene: {

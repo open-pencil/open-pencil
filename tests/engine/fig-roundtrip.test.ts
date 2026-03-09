@@ -4,6 +4,7 @@ import { resolve } from 'path'
 
 import {
   parseFigFile,
+  parseFigFileInWorker,
   exportFigFile,
   importNodeChanges,
   initCodec,
@@ -71,6 +72,18 @@ beforeAll(async () => {
   const buf = readFileSync(resolve(FIXTURES, 'gold-preview.fig'))
   parsed = await parseFigFile(buf.buffer as ArrayBuffer)
   allNodes = collectAllNodes(parsed)
+})
+
+describe('parseFigFileInWorker', () => {
+  test('output matches parseFigFile for small fixture', async () => {
+    if (typeof Worker === 'undefined') return
+    const buf = readFileSync(resolve(FIXTURES, 'gold-preview.fig'))
+    const direct = await parseFigFile(buf.buffer.slice(0) as ArrayBuffer)
+    const workerGraph = await parseFigFileInWorker(buf.buffer.slice(0) as ArrayBuffer)
+    expect(workerGraph.nodes.size).toBe(direct.nodes.size)
+    expect(workerGraph.getPages().length).toBe(direct.getPages().length)
+    expect(workerGraph.images.size).toBe(direct.images.size)
+  })
 })
 
 describe('parse real .fig files', () => {
@@ -805,6 +818,36 @@ describe('edge cases', () => {
     const iconChildren = graph.getChildren(iconClone.id)
     expect(iconChildren).toHaveLength(2)
     expect(iconChildren.map((c) => c.name).sort()).toEqual(['PathB1', 'PathB2'])
+  })
+
+  test('instance override copy: mutation of one instance does not affect component or other instances', () => {
+    // Regression for copyFills/copyStrokes/copyEffects in syncNodeProps and copyProp.
+    // Instance nodes must have independent copies; mutating one must not affect component or other instances.
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const comp = graph.createNode('COMPONENT', page.id, {
+      name: 'Comp',
+      width: 100,
+      height: 100,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }]
+    })
+    const frame = graph.createNode('FRAME', page.id, { name: 'Frame', width: 300, height: 300 })
+    const inst1 = graph.createInstance(comp!.id, frame!.id)
+    const inst2 = graph.createInstance(comp!.id, frame!.id)
+    expect(inst1).toBeDefined()
+    expect(inst2).toBeDefined()
+
+    const compFill = graph.getNode(comp!.id)!.fills[0]
+    const origR = compFill.color.r
+
+    // Mutate instance 1's fill in place
+    const inst1Node = graph.getNode(inst1!.id)!
+    inst1Node.fills[0]!.color.r = 0.5
+
+    // Component and instance 2 must be unchanged
+    expect(graph.getNode(comp!.id)!.fills[0]!.color.r).toBe(origR)
+    expect(graph.getNode(inst2!.id)!.fills[0]!.color.r).toBe(origR)
+    expect(inst1Node.fills[0]!.color.r).toBe(0.5)
   })
 
   test('DSD propagates through intermediate clones that are also DSD-targeted', async () => {

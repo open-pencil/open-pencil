@@ -212,6 +212,7 @@ bun run tauri dev  # Desktop app (requires Rust)
 |---------|-------------|
 | `bun run check` | Lint + typecheck |
 | `bun run test` | E2E visual regression |
+| `bun run test:e2e` | Playwright visual regression (run `test:e2e:install` first) |
 | `bun run test:unit` | Unit tests |
 | `bun run format` | Code formatting |
 

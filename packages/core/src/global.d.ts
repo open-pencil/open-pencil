@@ -1,11 +1,11 @@
-interface FontData {
-  family: string
-  fullName: string
-  postscriptName: string
-  style: string
-  blob(): Promise<Blob>
-}
-
 interface Window {
-  queryLocalFonts?(): Promise<FontData[]>
+  queryLocalFonts?(): Promise<
+    {
+      family: string
+      fullName: string
+      style: string
+      postscriptName: string
+      blob(): Promise<Blob>
+    }[]
+  >
 }

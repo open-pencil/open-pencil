@@ -36,6 +36,7 @@
     "types": "./dist/index.d.ts"
   },
   "dependencies": {
+    "@open-pencil/kiwi-wasm": "workspace:*",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",
     "diff": "^8.0.3",
