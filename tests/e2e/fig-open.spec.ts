@@ -47,6 +47,9 @@ test.describe('Open .fig file', () => {
         const arr = new Uint8Array(binary.length)
         for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i)
         const file = new File([arr], 'minimal.fig', { type: 'application/octet-stream' })
+        // Bypass Worker pipeline — yoga-layout WASM top-level await
+        // hangs in Vite-served Worker context (Chromium + SwiftShader)
+        ;(globalThis as any).__FIG_NO_WORKER__ = true
         const store = window.__OPEN_PENCIL_STORE__!
         await store.openFigFile(file)
         return {

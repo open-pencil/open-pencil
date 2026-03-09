@@ -10,6 +10,9 @@ test.describe.configure({ mode: 'serial' })
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
   await page.goto('/')
+  // Clear stale layout state from previous test runs
+  await page.evaluate(() => localStorage.removeItem('reka:editor-layout'))
+  await page.reload()
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 })
@@ -43,6 +46,9 @@ test('layers panel resize increases width', async () => {
 
 test('panel width persists after page reload', async () => {
   const recordedWidth = (await page.locator('[data-test-id="layers-panel"]').boundingBox())!.width
+
+  // Wait for reka-ui's debounced localStorage save (100ms debounce)
+  await page.waitForTimeout(200)
 
   await page.reload()
   canvas = new CanvasHelper(page)
