@@ -22,6 +22,7 @@ export {
   type LayoutMode,
   type LayoutSizing,
   type LayoutAlign,
+  type LayoutAlignSelf,
   type LayoutCounterAlign,
   type LayoutWrap,
   type GridTrack,

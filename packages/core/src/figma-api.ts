@@ -698,13 +698,14 @@ class FigmaNodeProxy {
 
   get layoutAlign(): string {
     const n = this._raw()
-    return n.layoutAlignSelf === 'STRETCH' ? 'STRETCH' : 'INHERIT'
+    if (n.layoutAlignSelf === 'AUTO') return 'INHERIT'
+    return n.layoutAlignSelf
   }
 
   set layoutAlign(v: string) {
-    const mapped = v === 'STRETCH' ? 'STRETCH' : 'AUTO'
+    const mapped = v === 'INHERIT' ? 'AUTO' : v
     this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
-      layoutAlignSelf: mapped
+      layoutAlignSelf: mapped as SceneNode['layoutAlignSelf']
     })
   }
 

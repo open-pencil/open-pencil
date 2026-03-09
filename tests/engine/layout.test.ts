@@ -469,7 +469,7 @@ describe('Auto Layout', () => {
   })
 
   describe('hidden children', () => {
-    test('hidden children collapse to zero size in auto layout', () => {
+    test('hidden children preserve original size but collapse in layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 300,
@@ -483,12 +483,12 @@ describe('Auto Layout', () => {
       computeLayout(graph, frame.id)
 
       const children = graph.getChildren(frame.id)
-      expect(children[0].width).toBe(0)
-      expect(children[0].height).toBe(0)
+      expect(children[0].width).toBe(50)
+      expect(children[0].height).toBe(50)
       expect(children[1].x).toBe(0)
       expect(children[1].width).toBe(80)
-      expect(children[2].width).toBe(0)
-      expect(children[2].height).toBe(0)
+      expect(children[2].width).toBe(50)
+      expect(children[2].height).toBe(50)
     })
 
     test('hidden children do not consume spacing', () => {
@@ -525,7 +525,7 @@ describe('Auto Layout', () => {
       expect(f.height).toBe(30)
     })
 
-    test('hidden nested auto-layout children collapse', () => {
+    test('hidden nested auto-layout children preserve size but collapse in layout', () => {
       const graph = new SceneGraph()
       const outer = autoFrame(graph, pageId(graph), {
         width: 300,
@@ -546,8 +546,8 @@ describe('Auto Layout', () => {
 
       const children = graph.getChildren(outer.id)
       const innerNode = graph.getNode(inner.id)!
-      expect(innerNode.width).toBe(0)
-      expect(innerNode.height).toBe(0)
+      expect(innerNode.width).toBe(50)
+      expect(innerNode.height).toBe(50)
       expect(children[1].x).toBe(0)
     })
   })
@@ -1283,6 +1283,272 @@ describe('Auto Layout', () => {
       expect(children[2].y).toBe(80)
     })
   })
+
+  describe('SPACE_EVENLY alignment', () => {
+    test('SPACE_EVENLY distributes equal gaps including edges', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 100,
+        primaryAxisAlign: 'SPACE_EVENLY' as const,
+      })
+      rect(graph, frame.id, 50, 50)
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      // 400 - 100 = 300 free, 3 gaps → 100 each
+      expect(children[0].x).toBe(100)
+      expect(children[1].x).toBe(250)
+    })
+
+    test('SPACE_EVENLY differs from SPACE_BETWEEN', () => {
+      const graph = new SceneGraph()
+
+      const sbFrame = autoFrame(graph, pageId(graph), {
+        width: 300,
+        height: 50,
+        primaryAxisAlign: 'SPACE_BETWEEN',
+      })
+      rect(graph, sbFrame.id, 50, 50)
+      rect(graph, sbFrame.id, 50, 50)
+      rect(graph, sbFrame.id, 50, 50)
+
+      const seFrame = autoFrame(graph, pageId(graph), {
+        width: 300,
+        height: 50,
+        primaryAxisAlign: 'SPACE_EVENLY' as const,
+      })
+      rect(graph, seFrame.id, 50, 50)
+      rect(graph, seFrame.id, 50, 50)
+      rect(graph, seFrame.id, 50, 50)
+
+      computeAllLayouts(graph)
+
+      const sbChildren = graph.getChildren(sbFrame.id)
+      const seChildren = graph.getChildren(seFrame.id)
+
+      // SPACE_BETWEEN: first at 0, last at 250
+      expect(sbChildren[0].x).toBe(0)
+      expect(sbChildren[2].x).toBe(250)
+
+      // SPACE_EVENLY: 300 - 150 = 150, 4 gaps → 37.5
+      expect(seChildren[0].x).toBeCloseTo(37.5, -1)
+      expect(seChildren[2].x).toBeCloseTo(212.5, -1)
+    })
+  })
+
+  describe('layoutAlignSelf extended values', () => {
+    test('layoutAlignSelf CENTER positions child at cross-axis center', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 200,
+        counterAxisAlign: 'MIN',
+      })
+      rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'CENTER' as const })
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].y).toBe(75)
+      expect(children[1].y).toBe(0)
+    })
+
+    test('layoutAlignSelf MAX positions child at cross-axis end', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 200,
+        counterAxisAlign: 'MIN',
+      })
+      rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'MAX' as const })
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].y).toBe(150)
+      expect(children[1].y).toBe(0)
+    })
+
+    test('layoutAlignSelf MIN overrides parent STRETCH', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 200,
+        counterAxisAlign: 'STRETCH',
+      })
+      rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'MIN' as const })
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].y).toBe(0)
+      expect(children[0].height).toBe(50)
+      expect(children[1].height).toBe(200)
+    })
+
+    test('layoutAlignSelf in vertical layout', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        layoutMode: 'VERTICAL',
+        width: 300,
+        height: 400,
+        counterAxisAlign: 'MIN',
+      })
+      rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'CENTER' as const })
+      rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'MAX' as const })
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].x).toBe(125)
+      expect(children[1].x).toBe(250)
+    })
+  })
+
+  describe('FILL flexBasis', () => {
+    test('FILL children with different content sizes get equal width', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 100,
+      })
+
+      const inner1 = autoFrame(graph, frame.id, {
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+        width: 100,
+        height: 50,
+        layoutGrow: 1,
+      })
+      rect(graph, inner1.id, 100, 50)
+
+      const inner2 = autoFrame(graph, frame.id, {
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+        width: 200,
+        height: 50,
+        layoutGrow: 1,
+      })
+      rect(graph, inner2.id, 200, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].width).toBe(200)
+      expect(children[1].width).toBe(200)
+    })
+
+    test('nested FILL children distribute from zero basis', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 300,
+        height: 100,
+        itemSpacing: 0,
+      })
+      autoFrame(graph, frame.id, {
+        primaryAxisSizing: 'FILL' as const,
+        counterAxisSizing: 'FIXED',
+        width: 50,
+        height: 100,
+      })
+      autoFrame(graph, frame.id, {
+        primaryAxisSizing: 'FILL' as const,
+        counterAxisSizing: 'FIXED',
+        width: 50,
+        height: 100,
+      })
+      autoFrame(graph, frame.id, {
+        primaryAxisSizing: 'FILL' as const,
+        counterAxisSizing: 'FIXED',
+        width: 50,
+        height: 100,
+      })
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].width).toBe(100)
+      expect(children[1].width).toBe(100)
+      expect(children[2].width).toBe(100)
+    })
+  })
+
+  describe('hidden children preserve dimensions', () => {
+    test('re-showing a hidden child restores original size', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 300,
+        height: 100,
+      })
+      const child = rect(graph, frame.id, 80, 60)
+
+      computeLayout(graph, frame.id)
+      expect(graph.getNode(child.id)!.width).toBe(80)
+
+      graph.updateNode(child.id, { visible: false })
+      computeLayout(graph, frame.id)
+      expect(graph.getNode(child.id)!.width).toBe(80)
+      expect(graph.getNode(child.id)!.height).toBe(60)
+
+      graph.updateNode(child.id, { visible: true })
+      computeLayout(graph, frame.id)
+      expect(graph.getNode(child.id)!.width).toBe(80)
+      expect(graph.getNode(child.id)!.height).toBe(60)
+    })
+  })
+
+  describe('absolute children in Yoga tree', () => {
+    test('absolute children do not affect auto-layout flow', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 200,
+        primaryAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG',
+      })
+      rect(graph, frame.id, 50, 50)
+      rect(graph, frame.id, 100, 100, { layoutPositioning: 'ABSOLUTE', x: 300, y: 150 })
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const f = graph.getNode(frame.id)!
+      expect(f.width).toBe(100)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].x).toBe(0)
+      expect(children[2].x).toBe(50)
+
+      expect(children[1].x).toBe(300)
+      expect(children[1].y).toBe(150)
+    })
+
+    test('absolute children preserve position when parent resizes', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 200,
+        itemSpacing: 10,
+      })
+      rect(graph, frame.id, 50, 50)
+      rect(graph, frame.id, 80, 40, { layoutPositioning: 'ABSOLUTE', x: 200, y: 100 })
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].x).toBe(0)
+      expect(children[1].x).toBe(200)
+      expect(children[1].y).toBe(100)
+      expect(children[1].width).toBe(80)
+      expect(children[1].height).toBe(40)
+    })
+  })
 })
 
 function gridFrame(
@@ -1542,7 +1808,7 @@ describe('Grid Layout', () => {
   })
 
   describe('hidden children', () => {
-    test('hidden children collapse in grid', () => {
+    test('hidden children preserve size in grid', () => {
       const graph = new SceneGraph()
       const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr()])
       rect(graph, frame.id, 50, 50, { visible: false })
@@ -1551,8 +1817,8 @@ describe('Grid Layout', () => {
       computeLayout(graph, frame.id)
 
       const children = graph.getChildren(frame.id)
-      expect(children[0].width).toBe(0)
-      expect(children[0].height).toBe(0)
+      expect(children[0].width).toBe(50)
+      expect(children[0].height).toBe(50)
     })
   })
 
@@ -1641,6 +1907,40 @@ describe('Grid Layout', () => {
       const outerChildren = graph.getChildren(outer.id)
       expect(outerChildren[0].y).toBe(0)
       expect(outerChildren[1].y).toBe(110)
+    })
+  })
+
+  describe('grid stretch sizing', () => {
+    test('STRETCH child fills grid cell', () => {
+      const graph = new SceneGraph()
+      const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr()], {
+        width: 300,
+        height: 100,
+      })
+      rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'STRETCH' as const })
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].width).toBe(150)
+      expect(children[0].height).toBe(100)
+    })
+
+    test('layoutGrow child fills grid cell', () => {
+      const graph = new SceneGraph()
+      const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr()], {
+        width: 400,
+        height: 200,
+      })
+      rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
+      rect(graph, frame.id, 50, 50)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].width).toBe(200)
+      expect(children[0].height).toBe(200)
     })
   })
 })

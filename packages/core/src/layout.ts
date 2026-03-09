@@ -9,6 +9,7 @@ import Yoga, {
   Edge,
   MeasureMode,
   Overflow,
+  PositionType,
   Wrap,
   type Node as YogaNode
 } from 'yoga-layout'
@@ -103,7 +104,8 @@ function createGridChildNode(child: SceneNode): YogaNode {
       yogaChild.setGridRowEndSpan(pos.rowSpan)
     }
     if (child.layoutGrow > 0 || child.layoutAlignSelf === 'STRETCH') {
-      yogaChild.setFlexGrow(1)
+      yogaChild.setWidthStretch()
+      yogaChild.setHeightStretch()
     } else {
       yogaChild.setWidth(child.width)
       yogaChild.setHeight(child.height)
@@ -118,8 +120,13 @@ function buildGridTree(graph: SceneGraph, frame: SceneNode): YogaNode {
 
   const children = graph.getChildren(frame.id)
   for (const child of children) {
-    if (child.layoutPositioning === 'ABSOLUTE') continue
-    root.insertChild(createGridChildNode(child), root.getChildCount())
+    if (child.layoutPositioning === 'ABSOLUTE') {
+      const yogaChild = Yoga.Node.create()
+      configureAbsoluteChild(yogaChild, child)
+      root.insertChild(yogaChild, root.getChildCount())
+    } else {
+      root.insertChild(createGridChildNode(child), root.getChildCount())
+    }
   }
 
   return root
@@ -143,11 +150,11 @@ function buildYogaTree(graph: SceneGraph, frame: SceneNode): YogaNode {
 
   const children = graph.getChildren(frame.id)
   for (const child of children) {
-    if (child.layoutPositioning === 'ABSOLUTE') continue
-
     const yogaChild = Yoga.Node.create()
 
-    if (!child.visible) {
+    if (child.layoutPositioning === 'ABSOLUTE') {
+      configureAbsoluteChild(yogaChild, child)
+    } else if (!child.visible) {
       yogaChild.setDisplay(Display.None)
     } else if (child.layoutMode === 'GRID') {
       configureChildAsGrid(yogaChild, child, frame, graph)
@@ -161,6 +168,14 @@ function buildYogaTree(graph: SceneGraph, frame: SceneNode): YogaNode {
   }
 
   return root
+}
+
+function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): void {
+  yogaChild.setPositionType(PositionType.Absolute)
+  yogaChild.setPosition(Edge.Left, child.x)
+  yogaChild.setPosition(Edge.Top, child.y)
+  yogaChild.setWidth(child.width)
+  yogaChild.setHeight(child.height)
 }
 
 function configureFlexContainer(yogaNode: YogaNode, node: SceneNode): void {
@@ -204,14 +219,18 @@ function configureChildAsGrid(
   if (child.layoutGrow > 0) {
     yogaChild.setFlexGrow(child.layoutGrow)
   }
-  if (child.layoutAlignSelf === 'STRETCH') {
-    yogaChild.setAlignSelf(Align.Stretch)
-  }
+  const selfAlign = mapAlignSelf(child.layoutAlignSelf)
+  if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
   const grandchildren = graph.getChildren(child.id)
   for (const gc of grandchildren) {
-    if (gc.layoutPositioning === 'ABSOLUTE') continue
-    yogaChild.insertChild(createGridChildNode(gc), yogaChild.getChildCount())
+    if (gc.layoutPositioning === 'ABSOLUTE') {
+      const yogaGC = Yoga.Node.create()
+      configureAbsoluteChild(yogaGC, gc)
+      yogaChild.insertChild(yogaGC, yogaChild.getChildCount())
+    } else {
+      yogaChild.insertChild(createGridChildNode(gc), yogaChild.getChildCount())
+    }
   }
 }
 
@@ -242,17 +261,17 @@ function configureChildAsAutoLayout(
     setSizing(yogaChild, 'height', heightSizing, child.height, child.layoutGrow)
   }
 
-  if (child.layoutAlignSelf === 'STRETCH') {
-    yogaChild.setAlignSelf(Align.Stretch)
-  }
+  const selfAlign = mapAlignSelf(child.layoutAlignSelf)
+  if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
   configureFlexContainer(yogaChild, child)
 
   const grandchildren = graph.getChildren(child.id)
   for (const gc of grandchildren) {
-    if (gc.layoutPositioning === 'ABSOLUTE') continue
     const yogaGC = Yoga.Node.create()
-    if (!gc.visible) {
+    if (gc.layoutPositioning === 'ABSOLUTE') {
+      configureAbsoluteChild(yogaGC, gc)
+    } else if (!gc.visible) {
       yogaGC.setDisplay(Display.None)
     } else if (gc.layoutMode !== 'NONE') {
       configureChildAsAutoLayout(yogaGC, gc, child, graph)
@@ -265,7 +284,10 @@ function configureChildAsAutoLayout(
 
 function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: SceneNode): void {
   const isRow = parent.layoutMode === 'HORIZONTAL'
-  const stretchCross = child.layoutAlignSelf === 'STRETCH' || parent.counterAxisAlign === 'STRETCH'
+  const selfOverride = child.layoutAlignSelf !== 'AUTO'
+  const stretchCross = selfOverride
+    ? child.layoutAlignSelf === 'STRETCH'
+    : parent.counterAxisAlign === 'STRETCH'
 
   const isText = child.type === 'TEXT'
   const needsMeasureFunc =
@@ -277,9 +299,8 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
     configureNonTextLeaf(yogaChild, child, isRow, stretchCross)
   }
 
-  if (child.layoutAlignSelf === 'STRETCH') {
-    yogaChild.setAlignSelf(Align.Stretch)
-  }
+  const selfAlign = mapAlignSelf(child.layoutAlignSelf)
+  if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
   applyMinMaxConstraints(yogaChild, child)
 }
@@ -367,6 +388,7 @@ function setSizing(
   if (grow > 0) {
     yogaNode.setFlexGrow(grow)
     yogaNode.setFlexShrink(1)
+    yogaNode.setFlexBasis(0)
     return
   }
 
@@ -380,6 +402,7 @@ function setSizing(
     case 'FILL':
       yogaNode.setFlexGrow(1)
       yogaNode.setFlexShrink(1)
+      yogaNode.setFlexBasis(0)
       break
   }
 }
@@ -407,19 +430,22 @@ function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode
   const children = graph.getChildren(frame.id)
   let yogaIndex = 0
   for (const child of children) {
-    if (child.layoutPositioning === 'ABSOLUTE') continue
-
     const yogaChild = yogaNode.getChild(yogaIndex)
     yogaIndex++
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!yogaChild) continue
 
-    graph.updateNode(child.id, {
-      x: yogaChild.getComputedLeft(),
-      y: yogaChild.getComputedTop(),
-      width: yogaChild.getComputedWidth(),
-      height: yogaChild.getComputedHeight()
-    })
+    if (child.visible && child.layoutPositioning === 'ABSOLUTE') {
+      // Absolute children keep their manual x/y — Yoga only needs them
+      // in the tree so they don't break child indexing
+    } else if (child.visible) {
+      graph.updateNode(child.id, {
+        x: yogaChild.getComputedLeft(),
+        y: yogaChild.getComputedTop(),
+        width: yogaChild.getComputedWidth(),
+        height: yogaChild.getComputedHeight()
+      })
+    }
 
     if (child.layoutMode !== 'NONE') {
       applyYogaLayout(graph, child, yogaChild)
@@ -442,6 +468,8 @@ function mapJustify(align: string): Justify {
       return Justify.FlexEnd
     case 'SPACE_BETWEEN':
       return Justify.SpaceBetween
+    case 'SPACE_EVENLY':
+      return Justify.SpaceEvenly
     default:
       return Justify.FlexStart
   }
@@ -459,5 +487,22 @@ function mapAlign(align: string): Align {
       return Align.Baseline
     default:
       return Align.FlexStart
+  }
+}
+
+function mapAlignSelf(alignSelf: string): Align | null {
+  switch (alignSelf) {
+    case 'MIN':
+      return Align.FlexStart
+    case 'CENTER':
+      return Align.Center
+    case 'MAX':
+      return Align.FlexEnd
+    case 'STRETCH':
+      return Align.Stretch
+    case 'BASELINE':
+      return Align.Baseline
+    default:
+      return null
   }
 }
