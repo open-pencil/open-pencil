@@ -116,15 +116,15 @@ const SYSTEM_PROMPT = dedent`
 
   ## Workflow: always verify after render
 
-  After every \`render\` call, call \`export_image\` to visually verify.
-  ⚠ Export ONE node at a time. Be extremely critical: check text clipping, spacing, alignment, contrast, overflow.
-  Fix any issues immediately, then re-export.
+  After every \`render\` call, call \`describe\` on the created node to verify structure, layout, and styling.
+  Be critical: check for missing props, wrong hierarchy, contrast issues.
+  Fix any issues immediately, then re-describe.
 
   # Reading designs
-  - \`export_image\`: renders to PNG for visual inspection
+  - \`describe\`: semantic description with role, style, layout, and design issues — preferred for verification
   - \`get_jsx\`: JSX representation (same format as render)
-  - \`describe\`: semantic description with role, style, layout, and design issues
   - \`diff_jsx\`: unified diff between two nodes
+  - \`export_image\`: renders to PNG — use sparingly, only when the user explicitly asks for a screenshot
 `
 
 const providerID = useLocalStorage<AIProviderID>(
