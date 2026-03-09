@@ -5,7 +5,7 @@ import { isTreeNode } from './tree'
 import type { SceneGraph, SceneNode, NodeType, LayoutMode, Stroke } from '../scene-graph'
 import type { TreeNode } from './tree'
 
-const TYPE_MAP: Record<string, NodeType> = {
+const TYPE_MAP: Partial<Record<string, NodeType>> = {
   frame: 'FRAME',
   view: 'FRAME',
   rectangle: 'RECTANGLE',
@@ -83,7 +83,7 @@ export function renderTree(
   tree: TreeNode,
   options: RenderOptions = {}
 ): RenderResult {
-  const parentId = options.parentId ?? graph.getPages()[0]?.id ?? graph.rootId
+  const parentId = options.parentId ?? graph.getPages()[0].id
 
   const result = renderNode(graph, tree, parentId)
 
@@ -122,11 +122,10 @@ function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): SceneN
   return node
 }
 
-function propsToOverrides(props: Record<string, unknown>, isText: boolean): Partial<SceneNode> {
-  const o: Partial<SceneNode> = {}
-
-  if (props.name) o.name = props.name as string
-
+function applySizeOverrides(
+  props: Record<string, unknown>,
+  o: Partial<SceneNode>
+): { w: unknown; h: unknown } {
   const w = props.w ?? props.width
   const h = props.h ?? props.height
   if (typeof w === 'number') o.width = w
@@ -143,13 +142,17 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
   if (props.x !== undefined) o.x = props.x as number
   if (props.y !== undefined) o.y = props.y as number
 
+  return { w, h }
+}
+
+function applyVisualOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   const bg = props.bg ?? props.fill
   if (typeof bg === 'string') {
     o.fills = [colorToFill(bg)]
   }
 
   if (typeof props.stroke === 'string') {
-    const strokeWidth = (props.strokeWidth as number) ?? 1
+    const strokeWidth = (props.strokeWidth as number | undefined) ?? 1
     o.strokes = [parseStroke(props.stroke, strokeWidth)]
   }
 
@@ -177,7 +180,38 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
     o.blendMode = (props.blendMode as string).toUpperCase() as SceneNode['blendMode']
   }
   if (props.overflow === 'hidden') o.clipsContent = true
+}
 
+function applyPaddingOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+  const p = props.p ?? props.padding
+  if (typeof p === 'number') {
+    o.paddingTop = p
+    o.paddingRight = p
+    o.paddingBottom = p
+    o.paddingLeft = p
+  }
+  const px = props.px as number | undefined
+  const py = props.py as number | undefined
+  if (px !== undefined) {
+    o.paddingLeft = px
+    o.paddingRight = px
+  }
+  if (py !== undefined) {
+    o.paddingTop = py
+    o.paddingBottom = py
+  }
+  if (props.pt !== undefined) o.paddingTop = props.pt as number
+  if (props.pr !== undefined) o.paddingRight = props.pr as number
+  if (props.pb !== undefined) o.paddingBottom = props.pb as number
+  if (props.pl !== undefined) o.paddingLeft = props.pl as number
+}
+
+function applyLayoutOverrides(
+  props: Record<string, unknown>,
+  o: Partial<SceneNode>,
+  w: unknown,
+  h: unknown
+): void {
   if (props.flex !== undefined) {
     const dir = props.flex as string
     o.layoutMode = (dir === 'col' || dir === 'column' ? 'VERTICAL' : 'HORIZONTAL') as LayoutMode
@@ -205,66 +239,48 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
     o.counterAxisAlign = COUNTER_ALIGN_MAP[props.items as string] ?? 'MIN'
   }
 
-  const p = props.p ?? props.padding
-  if (typeof p === 'number') {
-    o.paddingTop = p
-    o.paddingRight = p
-    o.paddingBottom = p
-    o.paddingLeft = p
-  }
-  const px = props.px as number | undefined
-  const py = props.py as number | undefined
-  if (px !== undefined) {
-    o.paddingLeft = px
-    o.paddingRight = px
-  }
-  if (py !== undefined) {
-    o.paddingTop = py
-    o.paddingBottom = py
-  }
-  if (props.pt !== undefined) o.paddingTop = props.pt as number
-  if (props.pr !== undefined) o.paddingRight = props.pr as number
-  if (props.pb !== undefined) o.paddingBottom = props.pb as number
-  if (props.pl !== undefined) o.paddingLeft = props.pl as number
+  applyPaddingOverrides(props, o)
 
   if (props.grow !== undefined) o.layoutGrow = props.grow as number
 
   if (props.minW !== undefined) o.width = Math.max(o.width ?? 0, props.minW as number)
   if (props.maxW !== undefined) o.width = Math.min(o.width ?? Infinity, props.maxW as number)
+}
 
-  if (isText) {
-    const fontSize = props.size ?? props.fontSize
-    if (typeof fontSize === 'number') o.fontSize = fontSize
+function applyTextOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+  const fontSize = props.size ?? props.fontSize
+  if (typeof fontSize === 'number') o.fontSize = fontSize
 
-    const fontFamily = props.font ?? props.fontFamily
-    if (typeof fontFamily === 'string') o.fontFamily = fontFamily
+  const fontFamily = props.font ?? props.fontFamily
+  if (typeof fontFamily === 'string') o.fontFamily = fontFamily
 
-    const weight = props.weight ?? props.fontWeight
-    if (typeof weight === 'number') {
-      o.fontWeight = weight
-    } else if (typeof weight === 'string') {
-      o.fontWeight = WEIGHT_MAP[weight] ?? 400
-    }
-
-    if (typeof props.color === 'string') {
-      o.fills = [colorToFill(props.color)]
-    }
-
-    if (props.textAlign) {
-      o.textAlignHorizontal = TEXT_ALIGN_MAP[props.textAlign as string] ?? 'LEFT'
-    }
-
-    o.textAutoResize = props.textAutoResize
-      ? (TEXT_AUTO_RESIZE_MAP[props.textAutoResize as string] ?? 'NONE')
-      : 'HEIGHT'
+  const weight = props.weight ?? props.fontWeight
+  if (typeof weight === 'number') {
+    o.fontWeight = weight
+  } else if (typeof weight === 'string') {
+    o.fontWeight = WEIGHT_MAP[weight] ?? 400
   }
 
+  if (typeof props.color === 'string') {
+    o.fills = [colorToFill(props.color)]
+  }
+
+  if (props.textAlign) {
+    o.textAlignHorizontal = TEXT_ALIGN_MAP[props.textAlign as string] ?? 'LEFT'
+  }
+
+  o.textAutoResize = props.textAutoResize
+    ? (TEXT_AUTO_RESIZE_MAP[props.textAutoResize as string] ?? 'NONE')
+    : 'HEIGHT'
+}
+
+function applyEffectOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   if (props.points !== undefined) o.pointCount = props.points as number
   if (props.innerRadius !== undefined) o.starInnerRadius = props.innerRadius as number
   if (props.pointCount !== undefined) o.pointCount = props.pointCount as number
 
   if (typeof props.shadow === 'string') {
-    const parts = (props.shadow as string).split(/\s+/)
+    const parts = props.shadow.split(/\s+/)
     if (parts.length >= 4) {
       const c = parseColor(parts.slice(3).join(' '))
       o.effects = [
@@ -272,8 +288,8 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
         {
           type: 'DROP_SHADOW',
           color: c,
-          offset: { x: parseFloat(parts[0]!), y: parseFloat(parts[1]!) },
-          radius: parseFloat(parts[2]!),
+          offset: { x: parseFloat(parts[0]), y: parseFloat(parts[1]) },
+          radius: parseFloat(parts[2]),
           spread: 0,
           visible: true
         }
@@ -286,7 +302,7 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
       ...(o.effects ?? []),
       {
         type: 'LAYER_BLUR',
-        radius: props.blur as number,
+        radius: props.blur,
         visible: true,
         color: { ...TRANSPARENT },
         offset: { x: 0, y: 0 },
@@ -294,6 +310,18 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
       }
     ]
   }
+}
+
+function propsToOverrides(props: Record<string, unknown>, isText: boolean): Partial<SceneNode> {
+  const o: Partial<SceneNode> = {}
+
+  if (props.name) o.name = props.name as string
+
+  const { w, h } = applySizeOverrides(props, o)
+  applyVisualOverrides(props, o)
+  applyLayoutOverrides(props, o, w, h)
+  if (isText) applyTextOverrides(props, o)
+  applyEffectOverrides(props, o)
 
   return o
 }

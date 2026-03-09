@@ -1,5 +1,5 @@
 import type { SceneNode, Stroke } from '../scene-graph'
-import type { Canvas } from 'canvaskit-wasm'
+import type { Canvas, Paint } from 'canvaskit-wasm'
 import type { SkiaRenderer } from './renderer'
 
 export function drawNodeStroke(
@@ -129,28 +129,28 @@ export function drawIndividualSideStrokes(
 
   const tw = node.borderTopWeight
   if (tw > 0) {
-    const y = inside ? tw / 2 : outside ? -tw / 2 : 0
+    const y = inside ? tw / 2 : (outside ? -tw / 2 : 0)
     r.strokePaint.setStrokeWidth(tw)
     canvas.drawLine(0, y, w, y, r.strokePaint)
   }
 
   const rw = node.borderRightWeight
   if (rw > 0) {
-    const x = inside ? w - rw / 2 : outside ? w + rw / 2 : w
+    const x = inside ? w - rw / 2 : (outside ? w + rw / 2 : w)
     r.strokePaint.setStrokeWidth(rw)
     canvas.drawLine(x, 0, x, h, r.strokePaint)
   }
 
   const bw = node.borderBottomWeight
   if (bw > 0) {
-    const y = inside ? h - bw / 2 : outside ? h + bw / 2 : h
+    const y = inside ? h - bw / 2 : (outside ? h + bw / 2 : h)
     r.strokePaint.setStrokeWidth(bw)
     canvas.drawLine(0, y, w, y, r.strokePaint)
   }
 
   const lw = node.borderLeftWeight
   if (lw > 0) {
-    const x = inside ? lw / 2 : outside ? -lw / 2 : 0
+    const x = inside ? lw / 2 : (outside ? -lw / 2 : 0)
     r.strokePaint.setStrokeWidth(lw)
     canvas.drawLine(x, 0, x, h, r.strokePaint)
   }
@@ -160,7 +160,7 @@ export function strokeNodeShape(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  paint: import('canvaskit-wasm').Paint
+  paint: Paint
 ): void {
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
 

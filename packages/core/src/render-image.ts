@@ -1,6 +1,6 @@
 import type { SkiaRenderer } from './renderer'
 import type { SceneGraph } from './scene-graph'
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 export type ExportFormat = 'PNG' | 'JPG' | 'WEBP' | 'SVG'
 
@@ -53,7 +53,7 @@ function renderToSurface(
   height: number,
   format: ExportFormat,
   quality: number,
-  setup: (canvas: import('canvaskit-wasm').Canvas) => void
+  setup: (canvas: Canvas) => void
 ): Uint8Array | null {
   const surface = ck.MakeSurface(width, height)
   if (!surface) return null

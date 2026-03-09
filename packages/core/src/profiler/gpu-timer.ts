@@ -34,7 +34,6 @@ export class GPUTimer {
     if (this.pending.length >= MAX_PENDING_QUERIES) return
 
     const query = this.gl.createQuery()
-    if (!query) return
 
     this.gl.beginQuery(this.ext.TIME_ELAPSED_EXT, query)
     this.activeQuery = query

@@ -158,7 +158,6 @@ export function parseVarint(data: Uint8Array, pos: number): [number, number] {
 
   while (pos < data.length) {
     const byte = data[pos]
-    if (byte === undefined) break
     pos++
     value |= (byte & KIWI.VARINT_VALUE_MASK) << shift
 

@@ -12,7 +12,7 @@
     "build": "bun run lint && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "oxlint -c oxlint.json --type-aware --type-check src/",
+    "lint": "oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/cli/src/ packages/mcp/src/ packages/acp/src/",
     "format": "oxfmt --write src/",
     "check": "bun run lint",
     "test": "playwright test --project=openpencil",

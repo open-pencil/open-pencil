@@ -35,87 +35,104 @@ export function connectAutomation(getStore: () => EditorStore) {
     return makeFigmaFromStore(getStore())
   }
 
+  async function handleEval(store: EditorStore, args: unknown): Promise<unknown> {
+    const code = (args as { code?: string }).code
+    if (!code) throw new Error('Missing "code" in args')
+    const figma = makeFigma()
+    const AsyncFunction = Object.getPrototypeOf(async function () {
+      /* noop */
+    }).constructor
+    const wrappedCode = code.trim().startsWith('return')
+      ? code
+      : `return (async () => { ${code} })()`
+    const fn = new AsyncFunction('figma', wrappedCode)
+    const result = await fn(figma)
+    store.requestRender()
+    return { ok: true, result: result ?? null }
+  }
+
+  async function handleToolRender(
+    store: EditorStore,
+    toolArgs: Record<string, unknown>
+  ): Promise<unknown> {
+    const tree = toolArgs.tree as Parameters<typeof renderTreeNode>[1]
+    const result = renderTreeNode(store.graph, tree, {
+      parentId: (toolArgs.parent_id as string | undefined) ?? store.state.currentPageId,
+      x: toolArgs.x as number | undefined,
+      y: toolArgs.y as number | undefined
+    })
+    computeAllLayouts(store.graph, store.state.currentPageId)
+    store.requestRender()
+    store.flashNodes([result.id])
+    return {
+      ok: true,
+      result: { id: result.id, name: result.name, type: result.type, children: result.childIds }
+    }
+  }
+
+  async function handleTool(store: EditorStore, args: unknown): Promise<unknown> {
+    const toolName = (args as { name?: string }).name
+    const toolArgs = (args as { args?: Record<string, unknown> }).args ?? {}
+    if (!toolName) throw new Error('Missing "name" in args')
+
+    if (toolName === 'render' && toolArgs.tree) {
+      return handleToolRender(store, toolArgs)
+    }
+
+    const def = ALL_TOOLS.find((t) => t.name === toolName)
+    if (!def) throw new Error(`Unknown tool: ${toolName}`)
+    const figma = makeFigma()
+    const result = await def.execute(figma, toolArgs)
+    if (def.mutates) {
+      computeAllLayouts(store.graph, store.state.currentPageId)
+      store.requestRender()
+      store.flashNodes(extractNodeIds(result))
+    }
+    return { ok: true, result }
+  }
+
+  async function handleExport(store: EditorStore, args: unknown): Promise<unknown> {
+    const exportArgs = args as { nodeIds?: string[]; scale?: number; format?: string } | undefined
+    const nodeIds = exportArgs?.nodeIds ?? [...store.state.selectedIds]
+    if (nodeIds.length === 0) throw new Error('No nodes to export')
+    const data = await store.renderExportImage(
+      nodeIds,
+      exportArgs?.scale ?? 1,
+      (exportArgs?.format ?? 'PNG') as ExportFormat
+    )
+    if (!data) throw new Error('Export failed')
+    let binary = ''
+    for (const byte of data) binary += String.fromCharCode(byte)
+    const base64 = btoa(binary)
+    return {
+      ok: true,
+      result: { base64, mimeType: `image/${(exportArgs?.format ?? 'png').toLowerCase()}` }
+    }
+  }
+
+  async function handleExportJsx(store: EditorStore, args: unknown): Promise<unknown> {
+    const jsxArgs = args as { nodeIds?: string[]; style?: string } | undefined
+    const style = (jsxArgs?.style ?? 'openpencil') as 'openpencil' | 'tailwind'
+    const currentPage = store.graph.getNode(store.state.currentPageId)
+    const nodeIds = jsxArgs?.nodeIds ?? currentPage?.childIds ?? []
+    const jsx =
+      nodeIds.length === 1
+        ? sceneNodeToJSX(nodeIds[0], store.graph, style)
+        : selectionToJSX(nodeIds, store.graph, style)
+    return { ok: true, result: { jsx } }
+  }
+
+  const commandHandlers: Partial<Record<string, (store: EditorStore, args: unknown) => Promise<unknown>>> = {
+    eval: handleEval,
+    tool: handleTool,
+    export: handleExport,
+    export_jsx: handleExportJsx
+  }
+
   async function handleRequest(_id: string, command: string, args: unknown): Promise<unknown> {
     const store = getStore()
-
-    if (command === 'eval') {
-      const code = (args as { code?: string }).code
-      if (!code) throw new Error('Missing "code" in args')
-      const figma = makeFigma()
-      const AsyncFunction = Object.getPrototypeOf(async function () { /* noop */ }).constructor
-      const wrappedCode = code.trim().startsWith('return')
-        ? code
-        : `return (async () => { ${code} })()`
-      const fn = new AsyncFunction('figma', wrappedCode)
-      const result = await fn(figma)
-      store.requestRender()
-      return { ok: true, result: result ?? null }
-    }
-
-    if (command === 'tool') {
-      const toolName = (args as { name?: string }).name
-      const toolArgs = (args as { args?: Record<string, unknown> }).args ?? {}
-      if (!toolName) throw new Error('Missing "name" in args')
-
-      if (toolName === 'render' && toolArgs.tree) {
-        const tree = toolArgs.tree as Parameters<typeof renderTreeNode>[1]
-        const result = renderTreeNode(store.graph, tree, {
-          parentId: (toolArgs.parent_id as string | undefined) ?? store.state.currentPageId,
-          x: toolArgs.x as number | undefined,
-          y: toolArgs.y as number | undefined
-        })
-        computeAllLayouts(store.graph, store.state.currentPageId)
-        store.requestRender()
-        store.flashNodes([result.id])
-        return {
-          ok: true,
-          result: { id: result.id, name: result.name, type: result.type, children: result.childIds }
-        }
-      }
-
-      const def = ALL_TOOLS.find((t) => t.name === toolName)
-      if (!def) throw new Error(`Unknown tool: ${toolName}`)
-      const figma = makeFigma()
-      const result = await def.execute(figma, toolArgs)
-      if (def.mutates) {
-        computeAllLayouts(store.graph, store.state.currentPageId)
-        store.requestRender()
-        store.flashNodes(extractNodeIds(result))
-      }
-      return { ok: true, result }
-    }
-
-    if (command === 'export') {
-      const exportArgs = args as { nodeIds?: string[]; scale?: number; format?: string } | undefined
-      const nodeIds = exportArgs?.nodeIds ?? [...store.state.selectedIds]
-      if (nodeIds.length === 0) throw new Error('No nodes to export')
-      const data = await store.renderExportImage(
-        nodeIds,
-        exportArgs?.scale ?? 1,
-        (exportArgs?.format ?? 'PNG') as ExportFormat
-      )
-      if (!data) throw new Error('Export failed')
-      let binary = ''
-      for (const byte of data) binary += String.fromCharCode(byte)
-      const base64 = btoa(binary)
-      return {
-        ok: true,
-        result: { base64, mimeType: `image/${(exportArgs?.format ?? 'png').toLowerCase()}` }
-      }
-    }
-
-    if (command === 'export_jsx') {
-      const jsxArgs = args as { nodeIds?: string[]; style?: string } | undefined
-      const style = (jsxArgs?.style ?? 'openpencil') as 'openpencil' | 'tailwind'
-      const currentPage = store.graph.getNode(store.state.currentPageId)
-      const nodeIds = jsxArgs?.nodeIds ?? currentPage?.childIds ?? []
-      const jsx =
-        nodeIds.length === 1
-          ? sceneNodeToJSX(nodeIds[0], store.graph, style)
-          : selectionToJSX(nodeIds, store.graph, style)
-      return { ok: true, result: { jsx } }
-    }
-
+    const handler = commandHandlers[command]
+    if (handler) return handler(store, args)
     const result = executeRpcCommand(store.graph, command, args ?? {})
     return { ok: true, result }
   }

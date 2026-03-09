@@ -22,7 +22,7 @@
 
     "no-empty-function": "error",
     "max-lines": ["warn", { "max": 600 }],
-    "complexity": ["warn", { "max": 20 }],
+    "complexity": ["error", { "max": 20 }],
 
     "typescript/no-explicit-any": "warn",
     "typescript/no-non-null-assertion": "warn",
@@ -77,7 +77,8 @@
     }],
     "open-pencil/no-structuredclone-scene-arrays": "error",
     "open-pencil/no-math-random": "error",
-    "open-pencil/no-hand-rolled-color": "error"
+    "open-pencil/no-hand-rolled-color": "error",
+    "open-pencil/no-raw-console-format": "off"
   },
   "overrides": [
     {
@@ -87,11 +88,18 @@
         "typescript/no-non-null-assertion": "off"
       }
     },
+    
     {
       "files": ["**/kiwi/kiwi-schema/**"],
       "rules": {
         "typescript/no-explicit-any": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/no-non-null-assertion": "off",
+        "typescript/prefer-for-of": "off",
+        "typescript/prefer-optional-chain": "off",
+        "typescript/consistent-type-imports": "off",
+        "typescript/no-unnecessary-condition": "off",
+        "import/no-mutable-exports": "off",
+        "complexity": "off"
       }
     },
     {
@@ -102,6 +110,12 @@
       ],
       "rules": {
         "max-lines": "off"
+      }
+    },
+    {
+      "files": ["packages/cli/src/commands/**"],
+      "rules": {
+        "open-pencil/no-raw-console-format": "error"
       }
     }
   ],

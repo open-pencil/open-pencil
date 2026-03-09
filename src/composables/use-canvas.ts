@@ -230,11 +230,18 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     return renderer?.hitTestComponentLabel(store.graph, canvasX, canvasY) ?? null
   }
 
+  function hitTestFrameTitle(canvasX: number, canvasY: number) {
+    return (
+      renderer?.hitTestFrameTitle(store.graph, canvasX, canvasY, store.state.selectedIds) ?? null
+    )
+  }
+
   return {
     render: () => {
       dirty = true
     },
     hitTestSectionTitle,
-    hitTestComponentLabel
+    hitTestComponentLabel,
+    hitTestFrameTitle
   }
 }

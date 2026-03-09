@@ -2,7 +2,7 @@ export const FIG_KIWI_VERSION = 106
 
 import { deflateSync, inflateSync } from 'fflate'
 
-import { weightToStyle, getLoadedFontData, styleToWeight } from './fonts'
+import { weightToStyle, getLoadedFontData } from './fonts'
 import { encodeVectorNetworkBlob } from './vector'
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './kiwi/kiwi-convert'
 
@@ -13,7 +13,7 @@ import type { GUID } from './types'
 const fontDigestCache = new Map<string, Uint8Array>()
 
 async function computeFontDigest(data: ArrayBuffer): Promise<Uint8Array> {
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
+  if (typeof crypto !== 'undefined') {
     const hash = await crypto.subtle.digest('SHA-1', data)
     return new Uint8Array(hash)
   }
@@ -22,7 +22,8 @@ async function computeFontDigest(data: ArrayBuffer): Promise<Uint8Array> {
 
 async function getFontDigest(family: string, style: string): Promise<Uint8Array | null> {
   const key = `${family}|${style}`
-  if (fontDigestCache.has(key)) return fontDigestCache.get(key)!
+  const cached = fontDigestCache.get(key)
+  if (cached) return cached
   const data = getLoadedFontData(family, style)
   if (!data) return null
   const digest = await computeFontDigest(data)
@@ -172,7 +173,7 @@ function buildDerivedTextData(
     const key = `${family}|${style}`
     if (seen.has(key)) return
     seen.add(key)
-    fontMeta!.push({
+    fontMeta.push({
       key: { family, style, postscript: '' },
       fontLineHeight: 1.2,
       fontDigest: digestMap.get(key),
@@ -202,7 +203,7 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
     return { characters: node.text, lines: textLines(node.text) }
   }
 
-  const charIds = new Array<number>(node.text.length).fill(0)
+  const charIds = Array.from<number>({ length: node.text.length }).fill(0)
   const styleMap = new Map<string, { id: number; style: CharacterStyleOverride }>()
   let nextId = 1
 
@@ -247,6 +248,140 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
   }
 }
 
+function fillToKiwiPaint(f: SceneNode['fills'][number]): Paint {
+  const paint: Paint = {
+    type: f.type,
+    color: f.color,
+    opacity: f.opacity,
+    visible: f.visible,
+    blendMode: f.blendMode ?? 'NORMAL'
+  }
+  if (f.gradientStops) {
+    paint.stops = f.gradientStops.map((s) => ({ color: s.color, position: s.position }))
+  }
+  if (f.gradientTransform) paint.transform = f.gradientTransform
+  if (f.imageHash) paint.image = { hash: f.imageHash }
+  if (f.imageScaleMode) paint.imageScaleMode = f.imageScaleMode
+  if (f.imageTransform) paint.transform = f.imageTransform
+  return paint
+}
+
+function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
+  if (node.cornerRadius > 0 || node.independentCorners) {
+    nc.cornerRadius = node.cornerRadius
+    nc.rectangleCornerRadiiIndependent = node.independentCorners
+    nc.rectangleTopLeftCornerRadius = node.independentCorners
+      ? node.topLeftRadius
+      : node.cornerRadius
+    nc.rectangleTopRightCornerRadius = node.independentCorners
+      ? node.topRightRadius
+      : node.cornerRadius
+    nc.rectangleBottomLeftCornerRadius = node.independentCorners
+      ? node.bottomLeftRadius
+      : node.cornerRadius
+    nc.rectangleBottomRightCornerRadius = node.independentCorners
+      ? node.bottomRightRadius
+      : node.cornerRadius
+  }
+  if (node.cornerSmoothing > 0) {
+    nc.cornerSmoothing = node.cornerSmoothing
+  }
+}
+
+function serializeTextProps(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  fontDigestMap?: Map<string, Uint8Array>
+): void {
+  nc.fontSize = node.fontSize
+  nc.fontName = {
+    family: node.fontFamily,
+    style: weightToStyle(node.fontWeight, node.italic),
+    postscript: ''
+  }
+  nc.textData = exportTextData(node)
+  nc.textAutoResize = 'WIDTH_AND_HEIGHT'
+  nc.textAlignHorizontal = node.textAlignHorizontal
+  nc.textUserLayoutVersion = 3
+  if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap)
+  if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
+  if (node.letterSpacing !== 0) nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
+  if (node.textDecoration !== 'NONE') {
+    nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
+  }
+}
+
+function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
+  if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
+    nc.stackMode = node.layoutMode
+    nc.stackSpacing = node.itemSpacing
+    nc.stackVerticalPadding = node.paddingTop
+    nc.stackHorizontalPadding = node.paddingLeft
+    nc.stackPaddingBottom = node.paddingBottom
+    nc.stackPaddingRight = node.paddingRight
+    nc.stackPrimarySizing = node.primaryAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
+    nc.stackCounterSizing = node.counterAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
+    nc.stackPrimaryAlignItems = node.primaryAxisAlign
+    nc.stackCounterAlignItems = node.counterAxisAlign
+    if (node.layoutWrap === 'WRAP') nc.stackWrap = 'WRAP'
+    if (node.counterAxisSpacing > 0) nc.stackCounterSpacing = node.counterAxisSpacing
+  }
+  if (node.layoutPositioning === 'ABSOLUTE') nc.stackPositioning = 'ABSOLUTE'
+  if (node.layoutGrow > 0) nc.stackChildPrimaryGrow = node.layoutGrow
+}
+
+function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+  if (node.vectorNetwork && node.type === 'VECTOR') {
+    const blobIdx = blobs.length
+    blobs.push(encodeVectorNetworkBlob(node.vectorNetwork))
+    nc.vectorData = {
+      vectorNetworkBlob: blobIdx,
+      normalizedSize: { x: node.width, y: node.height }
+    }
+  }
+  if (node.fillGeometry.length > 0) {
+    nc.fillGeometry = node.fillGeometry.map((g) => {
+      const blobIdx = blobs.length
+      blobs.push(g.commandsBlob)
+      return { windingRule: g.windingRule, commandsBlob: blobIdx }
+    })
+  }
+  if (node.strokeGeometry.length > 0) {
+    nc.strokeGeometry = node.strokeGeometry.map((g) => {
+      const blobIdx = blobs.length
+      blobs.push(g.commandsBlob)
+      return { windingRule: g.windingRule, commandsBlob: blobIdx }
+    })
+  }
+}
+
+function serializeVariableBindings(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  graph: SceneGraph
+): void {
+  if (Object.keys(node.boundVariables).length === 0) return
+  const entries: VariableConsumptionEntry[] = []
+  const typeMap: Record<string, string> = { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }
+  for (const [field, varId] of Object.entries(node.boundVariables)) {
+    const kiwiField = VARIABLE_BINDING_FIELDS[field]
+    if (!kiwiField) continue
+    const variable = graph.variables.get(varId)
+    if (!variable) continue
+    const varGuid = stringToGuid(varId)
+    const resolvedType = typeMap[variable.type] ?? 'FLOAT'
+    entries.push({
+      variableData: {
+        value: { alias: { guid: varGuid } },
+        dataType: 'ALIAS',
+        resolvedDataType: resolvedType
+      },
+      variableField: kiwiField
+    })
+  }
+  if (entries.length > 0) nc.variableConsumptionMap = { entries }
+}
+
 export function sceneNodeToKiwi(
   node: SceneNode,
   parentGuid: GUID,
@@ -264,24 +399,7 @@ export function sceneNodeToKiwi(
   const cos = Math.cos((node.rotation * Math.PI) / 180)
   const sin = Math.sin((node.rotation * Math.PI) / 180)
 
-  const fillPaints = node.fills.map((f) => {
-    const paint: Paint = {
-      type: f.type,
-      color: f.color,
-      opacity: f.opacity,
-      visible: f.visible,
-      blendMode: f.blendMode ?? 'NORMAL'
-    }
-    if (f.gradientStops) {
-      paint.stops = f.gradientStops.map((s) => ({ color: s.color, position: s.position }))
-    }
-    if (f.gradientTransform) paint.transform = f.gradientTransform
-    if (f.imageHash) paint.image = { hash: f.imageHash }
-    if (f.imageScaleMode) paint.imageScaleMode = f.imageScaleMode
-    if (f.imageTransform) paint.transform = f.imageTransform
-    return paint
-  })
-
+  const fillPaints = node.fills.map(fillToKiwiPaint)
   const strokePaints = node.strokes.map((s) => ({
     type: 'SOLID' as const,
     color: s.color,
@@ -315,26 +433,7 @@ export function sceneNodeToKiwi(
   if (fillPaints.length > 0) nc.fillPaints = fillPaints
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
-  if (node.cornerRadius > 0 || node.independentCorners) {
-    nc.cornerRadius = node.cornerRadius
-    nc.rectangleCornerRadiiIndependent = node.independentCorners
-    nc.rectangleTopLeftCornerRadius = node.independentCorners
-      ? node.topLeftRadius
-      : node.cornerRadius
-    nc.rectangleTopRightCornerRadius = node.independentCorners
-      ? node.topRightRadius
-      : node.cornerRadius
-    nc.rectangleBottomLeftCornerRadius = node.independentCorners
-      ? node.bottomLeftRadius
-      : node.cornerRadius
-    nc.rectangleBottomRightCornerRadius = node.independentCorners
-      ? node.bottomRightRadius
-      : node.cornerRadius
-  }
-
-  if (node.cornerSmoothing > 0) {
-    nc.cornerSmoothing = node.cornerSmoothing
-  }
+  serializeCornerRadii(node, nc)
 
   if (node.effects.length > 0) {
     nc.effects = node.effects.map((e) => ({
@@ -347,92 +446,16 @@ export function sceneNodeToKiwi(
     }))
   }
 
-  if (node.type === 'TEXT') {
-    nc.fontSize = node.fontSize
-    nc.fontName = {
-      family: node.fontFamily,
-      style: weightToStyle(node.fontWeight, node.italic),
-      postscript: ''
-    }
-    nc.textData = exportTextData(node)
-    nc.textAutoResize = 'WIDTH_AND_HEIGHT'
-    nc.textAlignHorizontal = node.textAlignHorizontal
-    nc.textUserLayoutVersion = 3
-    if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap)
-    if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
-    if (node.letterSpacing !== 0) nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
-    if (node.textDecoration !== 'NONE') {
-      nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
-    }
-  }
+  if (node.type === 'TEXT') serializeTextProps(node, nc, fontDigestMap)
 
   if (node.type === 'FRAME' || node.type === 'GROUP') {
     nc.frameMaskDisabled = node.type === 'GROUP'
     if (node.clipsContent) nc.clipsContent = true
   }
 
-  if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
-    nc.stackMode = node.layoutMode
-    nc.stackSpacing = node.itemSpacing
-    nc.stackVerticalPadding = node.paddingTop
-    nc.stackHorizontalPadding = node.paddingLeft
-    nc.stackPaddingBottom = node.paddingBottom
-    nc.stackPaddingRight = node.paddingRight
-    nc.stackPrimarySizing = node.primaryAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
-    nc.stackCounterSizing = node.counterAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
-    nc.stackPrimaryAlignItems = node.primaryAxisAlign
-    nc.stackCounterAlignItems = node.counterAxisAlign
-    if (node.layoutWrap === 'WRAP') nc.stackWrap = 'WRAP'
-    if (node.counterAxisSpacing > 0) nc.stackCounterSpacing = node.counterAxisSpacing
-  }
-
-  if (node.layoutPositioning === 'ABSOLUTE') nc.stackPositioning = 'ABSOLUTE'
-  if (node.layoutGrow > 0) nc.stackChildPrimaryGrow = node.layoutGrow
-
-  if (node.vectorNetwork && node.type === 'VECTOR') {
-    const blobIdx = blobs.length
-    blobs.push(encodeVectorNetworkBlob(node.vectorNetwork))
-    nc.vectorData = {
-      vectorNetworkBlob: blobIdx,
-      normalizedSize: { x: node.width, y: node.height }
-    }
-  }
-
-  if (node.fillGeometry.length > 0) {
-    nc.fillGeometry = node.fillGeometry.map((g) => {
-      const blobIdx = blobs.length
-      blobs.push(g.commandsBlob)
-      return { windingRule: g.windingRule, commandsBlob: blobIdx }
-    })
-  }
-  if (node.strokeGeometry.length > 0) {
-    nc.strokeGeometry = node.strokeGeometry.map((g) => {
-      const blobIdx = blobs.length
-      blobs.push(g.commandsBlob)
-      return { windingRule: g.windingRule, commandsBlob: blobIdx }
-    })
-  }
-
-  if (Object.keys(node.boundVariables).length > 0) {
-    const entries: VariableConsumptionEntry[] = []
-    for (const [field, varId] of Object.entries(node.boundVariables)) {
-      const kiwiField = VARIABLE_BINDING_FIELDS[field]
-      if (!kiwiField) continue
-      const variable = graph.variables.get(varId)
-      if (!variable) continue
-      const varGuid = stringToGuid(varId)
-      const resolvedType = variable.type === 'COLOR' ? 'COLOR' : variable.type === 'BOOLEAN' ? 'BOOLEAN' : variable.type === 'STRING' ? 'STRING' : 'FLOAT'
-      entries.push({
-        variableData: {
-          value: { alias: { guid: varGuid } },
-          dataType: 'ALIAS',
-          resolvedDataType: resolvedType
-        },
-        variableField: kiwiField
-      })
-    }
-    if (entries.length > 0) nc.variableConsumptionMap = { entries }
-  }
+  serializeLayoutProps(node, nc)
+  serializeGeometry(node, nc, blobs)
+  serializeVariableBindings(node, nc, graph)
 
   const result: KiwiNodeChange[] = [nc]
   const children = graph.getChildren(node.id)

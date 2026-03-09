@@ -152,7 +152,7 @@ export function createAgent(
       commands.push({
         name: bt.name,
         description: bt.description,
-        input: { type: 'unstructured' }
+        input: { hint: 'JSON arguments or key=value pairs' }
       })
     }
 
@@ -160,7 +160,7 @@ export function createAgent(
       commands.push({
         name: def.name,
         description: def.description,
-        input: { type: 'unstructured' }
+        input: { hint: 'JSON arguments or key=value pairs' }
       })
     }
 
@@ -216,7 +216,7 @@ export function createAgent(
       const signal = session.pendingPrompt.signal
 
       const userText = params.prompt
-        .filter((b): b is acp.TextContent => b.type === 'text')
+        .filter((b): b is acp.TextContent & { type: 'text' } => b.type === 'text')
         .map((b) => b.text)
         .join('\n')
 
@@ -290,25 +290,12 @@ export function createAgent(
         update: {
           sessionUpdate: 'tool_call',
           toolCallId,
-          title: `${toolName}`,
+          title: toolName,
           kind,
           status: 'pending',
           rawInput: toolArgs
         }
       })
-
-      if (signal.aborted) {
-        await connection.sessionUpdate({
-          sessionId: params.sessionId,
-          update: {
-            sessionUpdate: 'tool_call_update',
-            toolCallId,
-            status: 'cancelled'
-          }
-        })
-        session.pendingPrompt = null
-        return { stopReason: 'cancelled' }
-      }
 
       await connection.sessionUpdate({
         sessionId: params.sessionId,
@@ -324,8 +311,8 @@ export function createAgent(
 
         if (builtin) {
           result = await builtin.execute(toolArgs, session)
-        } else {
-          result = await coreTool!.execute(makeFigma(session), toolArgs)
+        } else if (coreTool) {
+          result = await coreTool.execute(makeFigma(session), toolArgs)
         }
 
         await connection.sessionUpdate({

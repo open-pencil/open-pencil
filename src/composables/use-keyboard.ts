@@ -1,6 +1,5 @@
-import type { ComputedRef } from 'vue'
-import { computed } from 'vue'
 import { useBreakpoints, useEventListener, useMagicKeys, whenever } from '@vueuse/core'
+import { computed } from 'vue'
 
 import { useAIChat } from '@/composables/use-chat'
 import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
@@ -8,8 +7,48 @@ import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
 
 import { openFileDialog } from './use-menu'
 
+import type { ComputedRef } from 'vue'
+
 function isEditing(e: Event) {
   return e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
+}
+
+const PREVENT_MOD_ALT = new Set(['KeyK', 'KeyB'])
+const PREVENT_MOD_SHIFT = new Set(['KeyK', 'KeyH', 'KeyL', 'KeyE', 'KeyS', 'KeyG', 'KeyZ'])
+const PREVENT_MOD_ONLY = new Set([
+  'Backslash',
+  'KeyJ',
+  'KeyW',
+  'KeyN',
+  'KeyT',
+  'KeyZ',
+  'KeyY',
+  'Digit0',
+  'Digit1',
+  'Digit2',
+  'KeyD',
+  'KeyA',
+  'KeyS',
+  'KeyO',
+  'KeyG'
+])
+const PREVENT_SHIFT_ONLY = new Set(['Digit1', 'Digit2', 'KeyA'])
+const PREVENT_PLAIN_KEY = new Set(['[', ']'])
+const PREVENT_DELETE_KEY = new Set(['Backspace', 'Delete'])
+
+function shouldPreventDefault(e: KeyboardEvent, hasPenState: boolean): boolean {
+  const mod = e.metaKey || e.ctrlKey
+
+  if (mod) {
+    if (e.altKey && PREVENT_MOD_ALT.has(e.code)) return true
+    if (e.shiftKey && PREVENT_MOD_SHIFT.has(e.code)) return true
+    if (!e.shiftKey && !e.altKey && PREVENT_MOD_ONLY.has(e.code)) return true
+  } else {
+    if (e.shiftKey && PREVENT_SHIFT_ONLY.has(e.code)) return true
+    if (!e.shiftKey && PREVENT_PLAIN_KEY.has(e.key)) return true
+  }
+
+  return PREVENT_DELETE_KEY.has(e.key) || (e.key === 'Enter' && hasPenState)
 }
 
 export function useKeyboard() {
@@ -66,23 +105,7 @@ export function useKeyboard() {
         }
       }
 
-      const mod = e.metaKey || e.ctrlKey
-      if (mod && e.altKey && ['KeyK', 'KeyB'].includes(e.code)) e.preventDefault()
-      if (mod && e.shiftKey && ['KeyK', 'KeyH', 'KeyL', 'KeyE', 'KeyS', 'KeyG', 'KeyZ'].includes(e.code))
-        e.preventDefault()
-      if (mod && !e.shiftKey && !e.altKey) {
-        if (
-          [
-            'Backslash', 'KeyJ', 'KeyW', 'KeyN', 'KeyT', 'KeyZ', 'KeyY',
-            'Digit0', 'Digit1', 'Digit2',
-            'KeyD', 'KeyA', 'KeyS', 'KeyO', 'KeyG'
-          ].includes(e.code)
-        ) e.preventDefault()
-      }
-      if (!mod && e.shiftKey && ['Digit1', 'Digit2', 'KeyA'].includes(e.code)) e.preventDefault()
-      if (!mod && !e.shiftKey && ['[', ']'].includes(e.key)) e.preventDefault()
-      if (['Backspace', 'Delete'].includes(e.key)) e.preventDefault()
-      if (e.key === 'Enter' && store.state.penState) e.preventDefault()
+      if (shouldPreventDefault(e, !!store.state.penState)) e.preventDefault()
     }
   })
 
@@ -114,7 +137,9 @@ export function useKeyboard() {
   whenever(mod('shift+keyz'), () => store.redoAction())
 
   // --- Mod + Key ---
-  whenever(mod('backslash'), () => { store.state.showUI = !store.state.showUI })
+  whenever(mod('backslash'), () => {
+    store.state.showUI = !store.state.showUI
+  })
   whenever(mod('keyj'), () => {
     if (isMobile.value) {
       store.state.activeRibbonTab = store.state.activeRibbonTab === 'ai' ? 'panels' : 'ai'
@@ -125,7 +150,9 @@ export function useKeyboard() {
       activeTab.value = activeTab.value === 'ai' ? 'design' : 'ai'
     }
   })
-  whenever(mod('keyw'), () => { if (activeTabRef.value) closeTab(activeTabRef.value.id) })
+  whenever(mod('keyw'), () => {
+    if (activeTabRef.value) closeTab(activeTabRef.value.id)
+  })
   whenever(mod('keyn'), () => createTab())
   whenever(mod('keyt'), () => createTab())
   whenever(mod('keyz'), () => store.undoAction())
@@ -163,8 +190,12 @@ export function useKeyboard() {
   // --- Plain keys (no modifiers) ---
   function plain(key: string): ComputedRef<boolean> {
     return computed(
-      () => keys[key].value && !keys['meta'].value && !keys['control'].value
-        && !keys['shift'].value && !keys['alt'].value
+      () =>
+        keys[key].value &&
+        !keys['meta'].value &&
+        !keys['control'].value &&
+        !keys['shift'].value &&
+        !keys['alt'].value
     )
   }
 

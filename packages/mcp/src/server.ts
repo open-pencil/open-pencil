@@ -77,17 +77,19 @@ export function createServer(version: string, options: CreateServerOptions = {})
 
   function makeFigma(): FigmaAPI {
     if (!graph) throw new Error('No document loaded. Use open_file or new_document first.')
-    const api = new FigmaAPI(graph)
+    const g = graph
+    const api = new FigmaAPI(g)
     if (currentPageId) api.currentPage = api.wrapNode(currentPageId)
     api.exportImage = async (nodeIds, opts) => {
       const ck = await getCanvasKit()
-      const surface = ck.MakeSurface(1, 1)!
+      const surface = ck.MakeSurface(1, 1)
+      if (!surface) throw new Error('Failed to create CanvasKit surface')
       const renderer = new SkiaRenderer(ck, surface)
       renderer.viewportWidth = 1
       renderer.viewportHeight = 1
       renderer.dpr = 1
-      const pageId = currentPageId ?? graph!.getPages()[0]?.id ?? graph!.rootId
-      return renderNodesToImage(ck, renderer, graph!, pageId, nodeIds, {
+      const pageId = currentPageId ?? g.getPages()[0].id
+      return renderNodesToImage(ck, renderer, g, pageId, nodeIds, {
         scale: opts.scale ?? 1,
         format: (opts.format ?? 'PNG') as ExportFormat
       })

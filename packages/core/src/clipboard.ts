@@ -50,7 +50,7 @@ export async function parseFigmaClipboard(
   }
 
   const blobs: Uint8Array[] = (msg.blobs ?? []).map((b) =>
-    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes) as number[])
+    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes))
   )
 
   return { nodes: msg.nodeChanges ?? [], meta, blobs }
@@ -77,6 +77,13 @@ const NON_VISUAL_TYPES = new Set([
   'SLIDE'
 ])
 
+function isChildOfVisualNode(nc: KiwiNodeChange, parentTypes: Map<string, string>): boolean {
+  const parentId = nc.parentIndex?.guid
+    ? `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`
+    : null
+  return !!parentId && parentTypes.has(parentId) && !NON_VISUAL_TYPES.has(parentTypes.get(parentId) ?? '')
+}
+
 export function figmaNodesBounds(
   nodeChanges: KiwiNodeChange[]
 ): { x: number; y: number; w: number; h: number } | null {
@@ -87,18 +94,13 @@ export function figmaNodesBounds(
 
   const parentTypes = new Map<string, string>()
   for (const nc of nodeChanges) {
-    if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     parentTypes.set(id, nc.type ?? '')
   }
 
   for (const nc of nodeChanges) {
-    if (!nc.guid || !nc.type || NON_VISUAL_TYPES.has(nc.type)) continue
-    const parentId = nc.parentIndex?.guid
-      ? `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`
-      : null
-    if (parentId && parentTypes.has(parentId) && !NON_VISUAL_TYPES.has(parentTypes.get(parentId)!))
-      continue
+    if (!nc.type || NON_VISUAL_TYPES.has(nc.type)) continue
+    if (isChildOfVisualNode(nc, parentTypes)) continue
 
     const x = nc.transform?.m02 ?? 0
     const y = nc.transform?.m12 ?? 0
@@ -114,25 +116,28 @@ export function figmaNodesBounds(
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
 }
 
-export function importClipboardNodes(
-  nodeChanges: KiwiNodeChange[],
-  graph: SceneGraph,
-  targetParentId: string,
-  offsetX = 0,
-  offsetY = 0,
-  blobs: Uint8Array[] = []
-): string[] {
+interface ClipboardImportMaps {
+  guidMap: Map<string, KiwiNodeChange>
+  parentMap: Map<string, string>
+}
+
+function buildClipboardMaps(nodeChanges: KiwiNodeChange[]): ClipboardImportMaps {
   const guidMap = new Map<string, KiwiNodeChange>()
   const parentMap = new Map<string, string>()
   for (const nc of nodeChanges) {
-    if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     guidMap.set(id, nc)
     if (nc.parentIndex?.guid) {
       parentMap.set(id, `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`)
     }
   }
+  return { guidMap, parentMap }
+}
 
+function findInternalNodeIds(
+  guidMap: Map<string, KiwiNodeChange>,
+  parentMap: Map<string, string>
+): { internalCanvasIds: Set<string>; internalFigmaIds: Set<string> } {
   const internalCanvasIds = new Set<string>()
   for (const [id, nc] of guidMap) {
     if (nc.type === 'CANVAS' && nc.internalOnly) {
@@ -149,6 +154,14 @@ export function importClipboardNodes(
   }
   for (const canvasId of internalCanvasIds) markInternal(canvasId)
 
+  return { internalCanvasIds, internalFigmaIds }
+}
+
+function classifyTopLevelNodes(
+  guidMap: Map<string, KiwiNodeChange>,
+  parentMap: Map<string, string>,
+  internalCanvasIds: Set<string>
+): { topLevel: string[]; internalTopLevel: string[] } {
   const topLevel: string[] = []
   const internalTopLevel: string[] = []
   for (const [id, nc] of guidMap) {
@@ -166,6 +179,39 @@ export function importClipboardNodes(
       }
     }
   }
+  return { topLevel, internalTopLevel }
+}
+
+function remapComponentIds(created: Map<string, string>, graph: SceneGraph): void {
+  for (const [, ourId] of created) {
+    const node = graph.getNode(ourId)
+    if (node?.type !== 'INSTANCE' || !node.componentId) continue
+    const ourComponentId = created.get(node.componentId)
+    if (ourComponentId) graph.updateNode(ourId, { componentId: ourComponentId })
+  }
+}
+
+function detachOrphanedInstances(created: Map<string, string>, graph: SceneGraph): void {
+  for (const [, ourId] of created) {
+    const node = graph.getNode(ourId)
+    if (node?.type !== 'INSTANCE') continue
+    if (node.childIds.length === 0 && (!node.componentId || !graph.getNode(node.componentId))) {
+      graph.updateNode(ourId, { type: 'FRAME', componentId: '' })
+    }
+  }
+}
+
+export function importClipboardNodes(
+  nodeChanges: KiwiNodeChange[],
+  graph: SceneGraph,
+  targetParentId: string,
+  offsetX = 0,
+  offsetY = 0,
+  blobs: Uint8Array[] = []
+): string[] {
+  const { guidMap, parentMap } = buildClipboardMaps(nodeChanges)
+  const { internalCanvasIds, internalFigmaIds } = findInternalNodeIds(guidMap, parentMap)
+  const { topLevel, internalTopLevel } = classifyTopLevelNodes(guidMap, parentMap, internalCanvasIds)
 
   const created = new Map<string, string>()
   const createdIds: string[] = []
@@ -207,13 +253,7 @@ export function importClipboardNodes(
     createNode(id, targetParentId)
   }
 
-  // Remap componentId from original Figma GUIDs to our node IDs
-  for (const [, ourId] of created) {
-    const node = graph.getNode(ourId)
-    if (!node || node.type !== 'INSTANCE' || !node.componentId) continue
-    const ourComponentId = created.get(node.componentId)
-    if (ourComponentId) graph.updateNode(ourId, { componentId: ourComponentId })
-  }
+  remapComponentIds(created, graph)
 
   populateAndApplyOverrides(
     graph,
@@ -227,16 +267,7 @@ export function importClipboardNodes(
     if (ourId) graph.deleteNode(ourId)
   }
 
-  // Detach orphaned instances whose components weren't in the paste data.
-  // Without the component, children can't be populated — convert to FRAME
-  // so the node at least renders its own fills/strokes/layout.
-  for (const [, ourId] of created) {
-    const node = graph.getNode(ourId)
-    if (!node || node.type !== 'INSTANCE') continue
-    if (node.childIds.length === 0 && !graph.getNode(node.componentId)) {
-      graph.updateNode(ourId, { type: 'FRAME', componentId: '' })
-    }
-  }
+  detachOrphanedInstances(created, graph)
 
   return createdIds
 }

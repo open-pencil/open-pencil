@@ -2,7 +2,7 @@ import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './consta
 import { copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
 
 export type { GUID, Color } from './types'
-import type { Matrix, Vector } from './types'
+import type { Matrix, Vector, Color, Rect } from './types'
 
 export type HandleMirroring = 'NONE' | 'ANGLE' | 'ANGLE_AND_LENGTH'
 export type WindingRule = 'NONZERO' | 'EVENODD'
@@ -58,7 +58,6 @@ export type NodeType =
   | 'CONNECTOR'
   | 'SHAPE_WITH_TEXT'
 
-import type { Color, Matrix, Rect } from './types'
 
 export type FillType =
   | 'SOLID'
@@ -526,9 +525,18 @@ export class SceneGraph {
     const collection = this.variableCollections.get(collectionId)
     if (!collection) throw new Error(`Collection "${collectionId}" not found`)
     const id = generateId()
-    const defaultValue =
-      value ??
-      (type === 'COLOR' ? { ...BLACK } : type === 'FLOAT' ? 0 : type === 'BOOLEAN' ? false : '')
+    let defaultValue: VariableValue
+    if (value !== undefined) {
+      defaultValue = value
+    } else if (type === 'COLOR') {
+      defaultValue = { ...BLACK }
+    } else if (type === 'FLOAT') {
+      defaultValue = 0
+    } else if (type === 'BOOLEAN') {
+      defaultValue = false
+    } else {
+      defaultValue = ''
+    }
     const valuesByMode: Record<string, VariableValue> = {}
     for (const mode of collection.modes) {
       valuesByMode[mode.modeId] = structuredClone(defaultValue)
@@ -592,8 +600,7 @@ export class SceneGraph {
     if (!variable) return undefined
     const resolvedModeId = modeId ?? this.getActiveModeId(variable.collectionId)
     const value = variable.valuesByMode[resolvedModeId]
-    if (value === undefined) return undefined
-    if (typeof value === 'object' && value !== null && 'aliasId' in value) {
+    if (typeof value === 'object' && 'aliasId' in value) {
       const seen = visited ?? new Set<string>()
       seen.add(variableId)
       return this.resolveVariable(value.aliasId, undefined, seen)
@@ -603,7 +610,7 @@ export class SceneGraph {
 
   resolveColorVariable(variableId: string): Color | undefined {
     const value = this.resolveVariable(variableId)
-    if (value && typeof value === 'object' && 'r' in value) return value as Color
+    if (value && typeof value === 'object' && 'r' in value) return value
     return undefined
   }
 
@@ -806,6 +813,48 @@ export class SceneGraph {
     )
   }
 
+  private static containsPoint(
+    px: number,
+    py: number,
+    ax: number,
+    ay: number,
+    node: SceneNode
+  ): boolean {
+    return px >= ax && px <= ax + node.width && py >= ay && py <= ay + node.height
+  }
+
+  private hitTestOpaqueContainer(
+    px: number,
+    py: number,
+    child: SceneNode,
+    childId: string,
+    ax: number,
+    ay: number,
+    deep: boolean
+  ): SceneNode | null {
+    if (!SceneGraph.containsPoint(px, py, ax, ay, child)) return null
+    const childHit = this.hitTestChildren(px, py, childId, ax, ay, deep)
+    if (childHit) return child
+    if (SceneGraph.hasVisibleFillOrStroke(child)) return child
+    return null
+  }
+
+  private hitTestTransparentContainer(
+    px: number,
+    py: number,
+    child: SceneNode,
+    childId: string,
+    ax: number,
+    ay: number,
+    deep: boolean
+  ): SceneNode | null {
+    const deepHit = this.hitTestChildren(px, py, childId, ax, ay, deep)
+    if (deepHit) return deepHit
+    if (child.type === 'GROUP') return null
+    if (SceneGraph.containsPoint(px, py, ax, ay, child) && SceneGraph.hasVisibleFillOrStroke(child)) return child
+    return null
+  }
+
   private hitTestChildren(
     px: number,
     py: number,
@@ -818,12 +867,9 @@ export class SceneGraph {
     if (!parent) return null
 
     if (parent.clipsContent) {
-      if (px < offsetX || px > offsetX + parent.width || py < offsetY || py > offsetY + parent.height) {
-        return null
-      }
+      if (!SceneGraph.containsPoint(px, py, offsetX, offsetY, parent)) return null
     }
 
-    // Reverse order = topmost first
     for (let i = parent.childIds.length - 1; i >= 0; i--) {
       const childId = parent.childIds[i]
       const child = this.nodes.get(childId)
@@ -833,32 +879,18 @@ export class SceneGraph {
       const ay = offsetY + child.y
 
       if (CONTAINER_TYPES.has(child.type)) {
-        // Components/instances: don't recurse unless in deep mode (double-click).
-        // Still check fills — empty instances are click-through like frames.
         if (SceneGraph.OPAQUE_CONTAINER_TYPES.has(child.type) && !deep) {
-          if (px >= ax && px <= ax + child.width && py >= ay && py <= ay + child.height) {
-            const childHit = this.hitTestChildren(px, py, childId, ax, ay, deep)
-            if (childHit) return child
-            if (SceneGraph.hasVisibleFillOrStroke(child)) return child
-          }
+          const hit = this.hitTestOpaqueContainer(px, py, child, childId, ax, ay, deep)
+          if (hit) return hit
           continue
         }
 
-        const deepHit = this.hitTestChildren(px, py, childId, ax, ay, deep)
-        if (deepHit) return deepHit
-
-        // Groups are always click-through (only children are hittable).
-        // Frames/sections without visible fills or strokes are also click-through.
-        if (child.type === 'GROUP') continue
-        if (px >= ax && px <= ax + child.width && py >= ay && py <= ay + child.height) {
-          if (SceneGraph.hasVisibleFillOrStroke(child)) return child
-        }
+        const hit = this.hitTestTransparentContainer(px, py, child, childId, ax, ay, deep)
+        if (hit) return hit
         continue
       }
 
-      if (px >= ax && px <= ax + child.width && py >= ay && py <= ay + child.height) {
-        return child
-      }
+      if (SceneGraph.containsPoint(px, py, ax, ay, child)) return child
     }
     return null
   }
@@ -962,10 +994,10 @@ export class SceneGraph {
     'borderLeftWeight'
   ]
 
-  private static copyProp<K extends keyof SceneNode>(
+  private static copyProp(
     target: Partial<SceneNode> | SceneNode,
     source: SceneNode,
-    key: K
+    key: keyof SceneNode
   ): void {
     const val = source[key]
     if (key === 'fills') {
@@ -977,7 +1009,7 @@ export class SceneGraph {
     } else if (key === 'styleRuns') {
       ;(target as Record<string, unknown>)[key] = copyStyleRuns(val as StyleRun[])
     } else {
-      target[key] = (Array.isArray(val) ? structuredClone(val) : val) as SceneNode[K]
+      ;(target as Record<string, unknown>)[key] = Array.isArray(val) ? structuredClone(val) : val
     }
   }
 
@@ -987,7 +1019,7 @@ export class SceneGraph {
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
     const component = this.nodes.get(componentId)
-    if (!component || component.type !== 'COMPONENT') return null
+    if (component?.type !== 'COMPONENT') return null
 
     const props: Partial<SceneNode> = { name: component.name, componentId }
     for (const key of SceneGraph.INSTANCE_SYNC_PROPS) {
@@ -1030,7 +1062,7 @@ export class SceneGraph {
 
   syncInstances(componentId: string): void {
     const component = this.nodes.get(componentId)
-    if (!component || component.type !== 'COMPONENT') return
+    if (component?.type !== 'COMPONENT') return
 
     for (const instance of this.getInstances(componentId)) {
       // Sync instance-level props (unless overridden)
@@ -1112,7 +1144,7 @@ export class SceneGraph {
 
   detachInstance(instanceId: string): void {
     const node = this.nodes.get(instanceId)
-    if (!node || node.type !== 'INSTANCE') return
+    if (node?.type !== 'INSTANCE') return
     node.type = 'FRAME'
     node.componentId = null
     node.overrides = {}
