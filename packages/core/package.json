@@ -40,6 +40,7 @@
     "culori": "^4.0.2",
     "diff": "^8.0.3",
     "fflate": "^0.8.2",
+    "fontoxpath": "^3.34.0",
     "fzstd": "^0.1.1",
     "sucrase": "^3.35.1",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"

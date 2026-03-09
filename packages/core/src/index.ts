@@ -53,9 +53,11 @@ export { FigmaAPI, FigmaNodeProxy, type FigmaFontName } from './figma-api'
 export { ALL_TOOLS, defineTool, toolsToAI } from './tools'
 export type { ToolDef, ParamDef, ParamType } from './tools'
 export { executeRpcCommand, ALL_RPC_COMMANDS } from './rpc'
+export { queryByXPath, matchByXPath } from './xpath'
+export type { XPathQueryOptions } from './xpath'
 export type {
   InfoResult, PageItem, TreeArgs, TreeResult, TreeNodeResult,
-  FindArgs, FindNodeResult, NodeArgs, NodeResult,
+  FindArgs, FindNodeResult, QueryArgs, QueryNodeResult, NodeArgs, NodeResult,
   VariablesArgs, VariablesResult,
   AnalyzeColorsArgs, AnalyzeColorsResult,
   AnalyzeTypographyArgs, AnalyzeTypographyResult,

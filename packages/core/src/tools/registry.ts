@@ -1,7 +1,7 @@
 import type { ToolDef } from './schema'
 
 import {
-  getSelection, getPageTree, getNode, findNodes, getComponents,
+  getSelection, getPageTree, getNode, findNodes, queryNodes, getComponents,
   listPages, switchPage, getCurrentPage, pageBounds, selectNodes, listFonts
 } from './read'
 import {
@@ -41,6 +41,7 @@ export const ALL_TOOLS: ToolDef[] = [
   getPageTree,
   getNode,
   findNodes,
+  queryNodes,
   getComponents,
   listPages,
   switchPage,

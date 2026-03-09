@@ -7,6 +7,8 @@ export type {
   TreeNodeResult,
   FindArgs,
   FindNodeResult,
+  QueryArgs,
+  QueryNodeResult,
   NodeArgs,
   NodeResult,
   VariablesArgs,

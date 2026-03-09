@@ -6,6 +6,7 @@ import evalCmd from './commands/eval'
 import exportCmd from './commands/export'
 import find from './commands/find'
 import info from './commands/info'
+import query from './commands/query'
 import node from './commands/node'
 import pages from './commands/pages'
 import tree from './commands/tree'
@@ -25,6 +26,7 @@ const main = defineCommand({
     export: exportCmd,
     find,
     info,
+    query,
     node,
     pages,
     tree,
