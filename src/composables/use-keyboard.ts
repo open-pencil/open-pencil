@@ -41,8 +41,22 @@ export function useKeyboard() {
   const keys = useMagicKeys({
     passive: false,
     onEventFired(e) {
-      if (e.type !== 'keydown') return
       if (isEditing(e)) return
+
+      // Space held → temporary pan tool
+      if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        if (e.type === 'keydown' && store.state.activeTool !== 'HAND') {
+          e.preventDefault()
+          store.state.spaceToolPrev = store.state.activeTool
+          store.setTool('HAND')
+        } else if (e.type === 'keyup' && store.state.spaceToolPrev) {
+          store.setTool(store.state.spaceToolPrev)
+          store.state.spaceToolPrev = null
+        }
+        return
+      }
+
+      if (e.type !== 'keydown') return
 
       if (!e.metaKey && !e.ctrlKey && !e.altKey) {
         const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]

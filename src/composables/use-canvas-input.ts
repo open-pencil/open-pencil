@@ -4,10 +4,9 @@ import { ref, type Ref } from 'vue'
 import {
   AUTO_LAYOUT_BREAK_THRESHOLD,
   HANDLE_HIT_RADIUS,
-  ROTATION_HIT_RADIUS,
+  CORNER_ROTATE_ZONE,
   PEN_CLOSE_THRESHOLD,
   ROTATION_SNAP_DEGREES,
-  ROTATION_HIT_OFFSET,
   DEFAULT_TEXT_WIDTH,
   DEFAULT_TEXT_HEIGHT
 } from '@/constants'
@@ -198,7 +197,7 @@ function hitTestHandle(
   return null
 }
 
-function hitTestRotationHandle(
+function hitTestCornerRotation(
   sx: number,
   sy: number,
   absX: number,
@@ -209,15 +208,45 @@ function hitTestRotationHandle(
   panX: number,
   panY: number,
   rotation = 0
-): boolean {
-  const { x1, x2, y1, y2 } = getScreenRect(absX, absY, w, h, zoom, panX, panY)
+): 'nw' | 'ne' | 'se' | 'sw' | null {
+  const { x1, y1, x2, y2 } = getScreenRect(absX, absY, w, h, zoom, panX, panY)
   const cx = (x1 + x2) / 2
   const cy = (y1 + y2) / 2
   const ur = unrotate(sx, sy, cx, cy, rotation)
 
-  const mx = (x1 + x2) / 2
-  const rotY = y1 - ROTATION_HIT_OFFSET
-  return Math.abs(ur.sx - mx) < ROTATION_HIT_RADIUS && Math.abs(ur.sy - rotY) < ROTATION_HIT_RADIUS
+  const corners = [
+    { pos: 'nw' as const, x: x1, y: y1 },
+    { pos: 'ne' as const, x: x2, y: y1 },
+    { pos: 'se' as const, x: x2, y: y2 },
+    { pos: 'sw' as const, x: x1, y: y2 },
+  ]
+
+  for (const { pos, x, y } of corners) {
+    const dx = Math.abs(ur.sx - x)
+    const dy = Math.abs(ur.sy - y)
+    if (dx <= CORNER_ROTATE_ZONE && dy <= CORNER_ROTATE_ZONE &&
+        (dx > HANDLE_HIT_RADIUS || dy > HANDLE_HIT_RADIUS)) {
+      return pos
+    }
+  }
+  return null
+}
+
+function rotateCursor(corner: 'nw' | 'ne' | 'se' | 'sw', nodeRotation = 0): string {
+  // Base tangent per corner + node's own rotation so cursor tracks the shape orientation
+  const angles: Record<string, number> = { nw: 315, ne: 45, se: 135, sw: 225 }
+  const deg = (angles[corner] + nodeRotation + 360) % 360
+  // 16×16 white-only cursor. ∩ arc with two triangular arrowheads at each end.
+  // Base orientation: arc opens downward, arrows point down at left and right ends.
+  const svg = [
+    `<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'>`,
+    `<g transform='rotate(${deg} 8 8)'>`,
+    `<path d='M2 9 A6 6 0 0 1 14 9' fill='none' stroke='white' stroke-width='2' stroke-linecap='butt'/>`,
+    `<polygon points='0,8 4,8 2,13' fill='white'/>`,
+    `<polygon points='12,8 16,8 14,13' fill='white'/>`,
+    `</g></svg>`
+  ].join('')
+  return `url("data:image/svg+xml,${svg}") 8 8, crosshair`
 }
 
 export function useCanvasInput(
@@ -311,43 +340,7 @@ export function useCanvasInput(
         store.commitTextEdit()
       }
 
-      // Check rotation handle (single selection only)
-      if (store.state.selectedIds.size === 1) {
-        const id = [...store.state.selectedIds][0]
-        const node = store.graph.getNode(id)
-        if (node) {
-          const abs = store.graph.getAbsolutePosition(id)
-          if (
-            hitTestRotationHandle(
-              sx,
-              sy,
-              abs.x,
-              abs.y,
-              node.width,
-              node.height,
-              store.state.zoom,
-              store.state.panX,
-              store.state.panY,
-              node.rotation
-            )
-          ) {
-            const screenCx = (abs.x + node.width / 2) * store.state.zoom + store.state.panX
-            const screenCy = (abs.y + node.height / 2) * store.state.zoom + store.state.panY
-            const startAngle = Math.atan2(sy - screenCy, sx - screenCx) * (180 / Math.PI)
-            drag.value = {
-              type: 'rotate',
-              nodeId: id,
-              centerX: screenCx,
-              centerY: screenCy,
-              startAngle,
-              origRotation: node.rotation
-            }
-            return
-          }
-        }
-      }
-
-      // Check resize handles
+      // Check resize handles first
       for (const id of store.state.selectedIds) {
         const node = store.graph.getNode(id)
         if (!node) continue
@@ -374,6 +367,41 @@ export function useCanvasInput(
             nodeId: id
           }
           return
+        }
+      }
+
+      // Corner rotation zone (single selection only, outside the box near corners)
+      if (store.state.selectedIds.size === 1) {
+        const id = [...store.state.selectedIds][0]
+        const node = store.graph.getNode(id)
+        if (node) {
+          const abs = store.graph.getAbsolutePosition(id)
+          const corner = hitTestCornerRotation(
+            sx,
+            sy,
+            abs.x,
+            abs.y,
+            node.width,
+            node.height,
+            store.state.zoom,
+            store.state.panX,
+            store.state.panY,
+            node.rotation
+          )
+          if (corner !== null) {
+            const screenCx = (abs.x + node.width / 2) * store.state.zoom + store.state.panX
+            const screenCy = (abs.y + node.height / 2) * store.state.zoom + store.state.panY
+            const startAngle = Math.atan2(sy - screenCy, sx - screenCx) * (180 / Math.PI)
+            drag.value = {
+              type: 'rotate',
+              nodeId: id,
+              centerX: screenCx,
+              centerY: screenCy,
+              startAngle,
+              origRotation: node.rotation
+            }
+            return
+          }
         }
       }
 
@@ -506,37 +534,36 @@ export function useCanvasInput(
       const { sx, sy, cx, cy } = getCoords(e)
       let cursor: string | null = null
 
-      // Rotation handle cursor
-      if (store.state.selectedIds.size === 1) {
+      // Resize handle cursors (checked first)
+      for (const id of store.state.selectedIds) {
+        const node = store.graph.getNode(id)
+        if (!node) continue
+        const abs = store.graph.getAbsolutePosition(id)
+        const handle = hitTestHandle(
+          sx,
+          sy,
+          abs.x,
+          abs.y,
+          node.width,
+          node.height,
+          store.state.zoom,
+          store.state.panX,
+          store.state.panY,
+          node.rotation
+        )
+        if (handle) {
+          cursor = HANDLE_CURSORS[handle]
+          break
+        }
+      }
+
+      // Corner rotation zone cursor (only if not on a resize handle)
+      if (!cursor && store.state.selectedIds.size === 1) {
         const id = [...store.state.selectedIds][0]
         const node = store.graph.getNode(id)
         if (node) {
           const abs = store.graph.getAbsolutePosition(id)
-          if (
-            hitTestRotationHandle(
-              sx,
-              sy,
-              abs.x,
-              abs.y,
-              node.width,
-              node.height,
-              store.state.zoom,
-              store.state.panX,
-              store.state.panY,
-              node.rotation
-            )
-          ) {
-            cursor = 'grab'
-          }
-        }
-      }
-
-      if (!cursor) {
-        for (const id of store.state.selectedIds) {
-          const node = store.graph.getNode(id)
-          if (!node) continue
-          const abs = store.graph.getAbsolutePosition(id)
-          const handle = hitTestHandle(
+          const corner = hitTestCornerRotation(
             sx,
             sy,
             abs.x,
@@ -548,9 +575,8 @@ export function useCanvasInput(
             store.state.panY,
             node.rotation
           )
-          if (handle) {
-            cursor = HANDLE_CURSORS[handle]
-            break
+          if (corner !== null) {
+            cursor = rotateCursor(corner, node.rotation)
           }
         }
       }

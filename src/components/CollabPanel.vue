@@ -138,7 +138,7 @@ function onDisconnect() {
       <PopoverTrigger as-child>
         <button
           data-test-id="collab-share-button"
-          class="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-none px-3 text-xs font-medium transition-colors"
+          class="flex size-7 cursor-pointer items-center justify-center rounded-full border-none transition-colors"
           :class="
             state.connected
               ? 'bg-green-600 text-white hover:bg-green-700'
@@ -146,9 +146,9 @@ function onDisconnect() {
                 ? 'bg-amber-600 text-white animate-pulse'
                 : 'bg-accent text-white hover:bg-accent/90'
           "
+          :title="state.connected ? 'Connected' : isJoining ? 'Join room' : 'Share'"
         >
           <icon-lucide-share-2 class="size-3.5" />
-          {{ state.connected ? 'Connected' : isJoining ? 'Join room' : 'Share' }}
         </button>
       </PopoverTrigger>
 

@@ -79,10 +79,10 @@ export const TOOLS: ToolDef[] = [
     key: 'RECTANGLE',
     label: 'Rectangle',
     shortcut: 'R',
-    flyout: ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR']
+    flyout: ['RECTANGLE', 'ELLIPSE', 'LINE', 'POLYGON', 'STAR']
   },
-  { key: 'PEN', label: 'Pen', shortcut: 'P' },
   { key: 'TEXT', label: 'Text', shortcut: 'T' },
+  { key: 'PEN', label: 'Pen', shortcut: 'P' },
   { key: 'HAND', label: 'Hand', shortcut: 'H' }
 ]
 
@@ -202,7 +202,8 @@ export function createEditorStore() {
     actionToast: null as string | null,
     mobileDrawerSnap: 'closed' as 'closed' | 'half' | 'full',
     clipboardHtml: '',
-    autosaveEnabled: true
+    autosaveEnabled: true,
+    spaceToolPrev: null as Tool | null
   })
 
   const AUTOSAVE_DELAY = 3000

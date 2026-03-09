@@ -137,7 +137,7 @@ onUnmounted(() => {
     <button
       v-if="settings.length > 0"
       data-test-id="export-button"
-      class="mt-1.5 w-full cursor-pointer truncate rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-default disabled:opacity-50"
+      class="mt-1.5 w-full cursor-pointer truncate rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90 disabled:cursor-default disabled:opacity-50"
       :disabled="exporting"
       @click="doExport"
     >

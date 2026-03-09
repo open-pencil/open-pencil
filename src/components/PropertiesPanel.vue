@@ -43,13 +43,6 @@ const { activeTab } = useAIChat()
           <icon-lucide-sparkles class="size-3" />
           AI
         </TabsTrigger>
-        <span
-          v-if="activeTab === 'design'"
-          data-test-id="properties-zoom"
-          class="ml-auto cursor-pointer rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover"
-        >
-          {{ Math.round(store.state.zoom * 100) }}%
-        </span>
       </TabsList>
 
       <TabsContent

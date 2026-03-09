@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import {
-  DropdownMenuRoot,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuPortal
-} from 'reka-ui'
 import { useBreakpoints } from '@vueuse/core'
 import { AnimatePresence, motion } from 'motion-v'
 
-import IconChevronDown from '~icons/lucide/chevron-down'
 import IconChevronLeft from '~icons/lucide/chevron-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
 import IconCopy from '~icons/lucide/copy'
@@ -24,13 +16,12 @@ import IconGroup from '~icons/lucide/group'
 import IconUngroup from '~icons/lucide/ungroup'
 import IconLock from '~icons/lucide/lock'
 
-import { menuContent, menuItem } from '@/components/ui/menu'
 import { ACTION_TOAST_DURATION } from '@/constants'
 import { useEditorStore } from '@/stores/editor'
 import { toolIcons } from '@/utils/tools'
 
 import type { Component } from 'vue'
-import type { Tool , TOOLS} from '@/stores/editor'
+import type { Tool } from '@/stores/editor'
 
 const store = useEditorStore()
 const breakpoints = useBreakpoints({ mobile: 768 })
@@ -62,16 +53,6 @@ const toolShortcuts: Record<Tool, string> = {
   PEN: 'P',
   TEXT: 'T',
   HAND: 'H'
-}
-
-function isActive(tool: (typeof TOOLS)[number]): boolean {
-  if (tool.key === store.state.activeTool) return true
-  return tool.flyout?.includes(store.state.activeTool) ?? false
-}
-
-function activeKeyForTool(tool: (typeof TOOLS)[number]): Tool {
-  if (tool.flyout?.includes(store.state.activeTool)) return store.state.activeTool
-  return tool.key
 }
 
 interface ActionItem {
@@ -131,89 +112,75 @@ function goNext() {
   slideDirection.value = 1
   mobileCategory.value++
 }
+
+const toolbarExpanded = ref(false)
+
+interface FlatTool {
+  key: Tool
+  dividerBefore: boolean
+  secondary: boolean
+}
+
+// Group 1: navigation — SELECT, HAND
+// Group 2: shapes — FRAME, RECTANGLE, ELLIPSE, TEXT  (divider before)
+// Expanded extras: SECTION, LINE, POLYGON, STAR, PEN
+const FLAT_TOOLS: FlatTool[] = [
+  { key: 'SELECT',    dividerBefore: false, secondary: false },
+  { key: 'HAND',      dividerBefore: false, secondary: false },
+  { key: 'FRAME',     dividerBefore: true,  secondary: false },
+  { key: 'SECTION',   dividerBefore: false, secondary: true  },
+  { key: 'RECTANGLE', dividerBefore: false, secondary: false },
+  { key: 'ELLIPSE',   dividerBefore: false, secondary: false },
+  { key: 'LINE',      dividerBefore: false, secondary: true  },
+  { key: 'POLYGON',   dividerBefore: false, secondary: true  },
+  { key: 'STAR',      dividerBefore: false, secondary: true  },
+  { key: 'TEXT',      dividerBefore: false, secondary: false },
+  { key: 'PEN',       dividerBefore: true,  secondary: true  },
+]
+
+const visibleTools = computed(() =>
+  toolbarExpanded.value ? FLAT_TOOLS : FLAT_TOOLS.filter(t => !t.secondary)
+)
 </script>
 
 <template>
-  <div v-if="!isMobile" class="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center">
+  <!-- Desktop toolbar -->
+  <div v-if="!isMobile" class="fixed bottom-5 left-1/2 z-10 -translate-x-1/2">
     <div
       data-test-id="toolbar"
-      class="flex gap-0.5 rounded-xl border border-border bg-panel p-1 shadow-lg"
+      class="flex items-center gap-0.5 rounded-2xl border border-border/60 bg-panel/95 px-1.5 py-1 shadow-2xl backdrop-blur-sm"
     >
-      <template v-for="tool in TOOLS" :key="tool.key">
-        <div v-if="tool.flyout && tool.flyout.length > 1" class="flex items-center">
-          <button
-            :data-test-id="`toolbar-tool-${activeKeyForTool(tool).toLowerCase()}`"
-            class="flex size-8 cursor-pointer items-center justify-center rounded-lg border-none transition-colors"
-            :class="
-              isActive(tool)
-                ? 'bg-accent text-white'
-                : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
-            "
-            :title="`${toolLabels[activeKeyForTool(tool)]} (${tool.shortcut})`"
-            @click="store.setTool(activeKeyForTool(tool))"
-          >
-            <component :is="toolIcons[activeKeyForTool(tool)]" class="size-4" />
-          </button>
+      <template v-for="ft in visibleTools" :key="ft.key">
+        <div v-if="ft.dividerBefore" class="mx-1 h-4 w-px shrink-0 rounded-full bg-border/50" />
 
-          <DropdownMenuRoot>
-            <DropdownMenuTrigger as-child>
-              <button
-                :data-test-id="`toolbar-flyout-${tool.key.toLowerCase()}`"
-                class="flex h-8 w-3 cursor-pointer items-center justify-center rounded-lg border-none transition-colors"
-                :class="
-                  isActive(tool)
-                    ? 'bg-accent text-white'
-                    : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
-                "
-              >
-                <IconChevronDown class="size-2.5" />
-              </button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuPortal>
-              <DropdownMenuContent
-                side="top"
-                :side-offset="8"
-                align="start"
-                :class="menuContent({ class: 'min-w-32' })"
-              >
-                <DropdownMenuItem
-                  v-for="sub in tool.flyout"
-                  :key="sub"
-                  :data-test-id="`toolbar-flyout-item-${sub.toLowerCase()}`"
-                  :class="
-                    menuItem({
-                      class: store.state.activeTool === sub ? 'bg-accent text-white' : undefined
-                    })
-                  "
-                  @select="store.setTool(sub)"
-                >
-                  <component :is="toolIcons[sub]" class="size-3.5" />
-                  <span class="flex-1">{{ toolLabels[sub] }}</span>
-                  <span v-if="toolShortcuts[sub]" class="text-[11px] text-muted">{{
-                    toolShortcuts[sub]
-                  }}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenuPortal>
-          </DropdownMenuRoot>
-        </div>
-
+        <!-- Tool with flyout: circular button + badge caret -->
         <button
-          v-else
-          :data-test-id="`toolbar-tool-${tool.key.toLowerCase()}`"
-          class="flex size-8 cursor-pointer items-center justify-center rounded-lg border-none transition-colors"
-          :class="
-            isActive(tool)
-              ? 'bg-accent text-white'
-              : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
-          "
-          :title="`${toolLabels[tool.key]} (${tool.shortcut})`"
-          @click="store.setTool(tool.key)"
+          :data-test-id="`toolbar-tool-${ft.key.toLowerCase()}`"
+          class="flex cursor-pointer items-center justify-center rounded-full border-none transition-all duration-150"
+          :class="[
+            'size-7',
+            store.state.activeTool === ft.key
+              ? 'bg-accent/15 text-accent'
+              : 'text-muted hover:bg-white/5 hover:text-surface'
+          ]"
+          :title="`${toolLabels[ft.key]}${toolShortcuts[ft.key] ? ` (${toolShortcuts[ft.key]})` : ''}`"
+          @click="store.setTool(ft.key)"
         >
-          <component :is="toolIcons[tool.key]" class="size-4" />
+          <component :is="toolIcons[ft.key]" class="size-[15px]" />
         </button>
       </template>
+
+      <!-- Expand / collapse toggle -->
+      <div class="mx-1 h-4 w-px shrink-0 rounded-full bg-border/50" />
+      <button
+        data-test-id="toolbar-expand"
+        class="flex size-6 cursor-pointer items-center justify-center rounded-full text-muted transition-all duration-150 hover:bg-accent/10 hover:text-accent"
+        :title="toolbarExpanded ? 'Show less' : 'Show all tools'"
+        @click="toolbarExpanded = !toolbarExpanded"
+      >
+        <IconChevronRight v-if="!toolbarExpanded" class="size-2.5" />
+        <IconChevronLeft v-else class="size-2.5" />
+      </button>
     </div>
   </div>
 
@@ -229,7 +196,7 @@ function goNext() {
   >
     <motion.button
       data-test-id="mobile-toolbar-prev"
-      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel shadow-sm select-none"
+      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border/60 bg-panel/95 text-muted shadow-lg backdrop-blur-sm select-none"
       :class="hasPrev ? 'text-muted' : 'pointer-events-none'"
       :animate="{ opacity: hasPrev ? 1 : 0 }"
       :transition="{ duration: 0.15 }"
@@ -241,7 +208,7 @@ function goNext() {
     <motion.div
       layout
       data-test-id="mobile-toolbar-container"
-      class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
+      class="relative flex h-11 items-center overflow-hidden rounded-2xl border border-border/60 bg-panel/95 px-1.5 shadow-2xl backdrop-blur-sm"
       :transition="{ layout: { type: 'spring', damping: 30, stiffness: 500 } }"
     >
       <AnimatePresence mode="popLayout" :custom="slideDirection">
@@ -249,90 +216,45 @@ function goNext() {
           v-if="mobileCategory === 0"
           key="tools"
           data-test-id="mobile-toolbar-tools"
-          class="flex gap-0.5"
+          class="flex items-center gap-0.5"
           :variants="slideVariants"
           initial="initial"
           animate="animate"
           exit="exit"
           :transition="{ duration: 0.15 }"
         >
-          <template v-for="tool in TOOLS" :key="tool.key">
-            <div v-if="tool.flyout && tool.flyout.length > 1" class="flex items-center">
-              <button
-                :data-test-id="`mobile-toolbar-tool-${activeKeyForTool(tool).toLowerCase()}`"
-                class="flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none transition-colors select-none"
-                :class="
-                  isActive(tool)
-                    ? 'bg-accent text-white'
-                    : 'bg-transparent text-muted active:bg-hover'
-                "
-                @click="store.setTool(activeKeyForTool(tool))"
-              >
-                <component :is="toolIcons[activeKeyForTool(tool)]" class="size-4" />
-              </button>
-
-              <DropdownMenuRoot>
-                <DropdownMenuTrigger as-child>
-                  <button
-                    :data-test-id="`mobile-toolbar-flyout-${tool.key.toLowerCase()}`"
-                    class="flex h-8 w-3 cursor-pointer items-center justify-center rounded-[6px] border-none transition-colors select-none"
-                    :class="
-                      isActive(tool)
-                        ? 'bg-accent text-white'
-                        : 'bg-transparent text-muted active:bg-hover'
-                    "
-                  >
-                    <IconChevronDown class="size-2.5" />
-                  </button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuPortal>
-                  <DropdownMenuContent
-                    side="top"
-                    :side-offset="8"
-                    align="start"
-                    :class="menuContent({ class: 'min-w-32' })"
-                  >
-                    <DropdownMenuItem
-                      v-for="sub in tool.flyout"
-                      :key="sub"
-                      :data-test-id="`mobile-toolbar-flyout-item-${sub.toLowerCase()}`"
-                      :class="
-                        menuItem({
-                          class: store.state.activeTool === sub ? 'bg-accent text-white' : undefined
-                        })
-                      "
-                      @select="store.setTool(sub)"
-                    >
-                      <component :is="toolIcons[sub]" class="size-3.5" />
-                      <span class="flex-1">{{ toolLabels[sub] }}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenuPortal>
-              </DropdownMenuRoot>
-            </div>
-
+          <template v-for="ft in visibleTools" :key="ft.key">
+            <div v-if="ft.dividerBefore" class="mx-0.5 h-4 w-px shrink-0 rounded-full bg-border/50" />
             <button
-              v-else
-              :data-test-id="`mobile-toolbar-tool-${tool.key.toLowerCase()}`"
-              class="flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none transition-colors select-none"
-              :class="
-                isActive(tool)
-                  ? 'bg-accent text-white'
-                  : 'bg-transparent text-muted active:bg-hover'
-              "
-              @click="store.setTool(tool.key)"
+              :data-test-id="`mobile-toolbar-tool-${ft.key.toLowerCase()}`"
+              class="flex cursor-pointer items-center justify-center rounded-full border-none transition-all duration-150 select-none"
+              :class="[
+                'size-7',
+                store.state.activeTool === ft.key
+                  ? 'bg-accent/15 text-accent'
+                  : 'text-muted active:bg-white/5 active:text-surface'
+              ]"
+              @click="store.setTool(ft.key)"
             >
-              <component :is="toolIcons[tool.key]" class="size-4" />
+              <component :is="toolIcons[ft.key]" class="size-[15px]" />
             </button>
           </template>
+          <!-- Expand toggle -->
+          <div class="mx-0.5 h-4 w-px shrink-0 rounded-full bg-border/50" />
+          <button
+            class="flex size-6 cursor-pointer items-center justify-center rounded-full text-muted transition-all duration-150 select-none active:bg-accent/10 active:text-accent"
+            @click="toolbarExpanded = !toolbarExpanded"
+          >
+            <IconChevronRight v-if="!toolbarExpanded" class="size-2.5" />
+            <IconChevronLeft v-else class="size-2.5" />
+          </button>
         </motion.div>
 
         <motion.div
           v-else-if="mobileCategory === 1"
           key="edit"
           data-test-id="mobile-toolbar-edit"
-          class="flex gap-0.5"
+          class="flex items-center gap-0.5"
           :variants="slideVariants"
           initial="initial"
           animate="animate"
@@ -343,10 +265,11 @@ function goNext() {
             v-for="item in editActions"
             :key="item.label"
             :data-test-id="`mobile-toolbar-${item.label.toLowerCase()}`"
-            class="flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted transition-colors select-none active:bg-hover active:text-surface"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-muted transition-all duration-150 select-none active:bg-white/5 active:text-surface"
+            :title="item.label"
             @click="onActionTap(item)"
           >
-            <component :is="item.icon" class="size-4" />
+            <component :is="item.icon" class="size-[17px]" />
           </button>
         </motion.div>
 
@@ -354,7 +277,7 @@ function goNext() {
           v-else
           key="arrange"
           data-test-id="mobile-toolbar-arrange"
-          class="flex gap-0.5"
+          class="flex items-center gap-0.5"
           :variants="slideVariants"
           initial="initial"
           animate="animate"
@@ -365,10 +288,11 @@ function goNext() {
             v-for="item in arrangeActions"
             :key="item.label"
             :data-test-id="`mobile-toolbar-${item.label.toLowerCase()}`"
-            class="flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted transition-colors select-none active:bg-hover active:text-surface"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-full border-none bg-transparent text-muted transition-all duration-150 select-none active:bg-white/5 active:text-surface"
+            :title="item.label"
             @click="onActionTap(item)"
           >
-            <component :is="item.icon" class="size-4" />
+            <component :is="item.icon" class="size-[17px]" />
           </button>
         </motion.div>
       </AnimatePresence>
@@ -376,7 +300,7 @@ function goNext() {
 
     <motion.button
       data-test-id="mobile-toolbar-next"
-      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel shadow-sm select-none"
+      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border/60 bg-panel/95 text-muted shadow-lg backdrop-blur-sm select-none"
       :class="hasNext ? 'text-muted' : 'pointer-events-none'"
       :animate="{ opacity: hasNext ? 1 : 0 }"
       :transition="{ duration: 0.15 }"
