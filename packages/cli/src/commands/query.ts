@@ -18,7 +18,7 @@ async function getData(
   }
   if (isAppMode(file)) return rpc<QueryNodeResult[]>('query', rpcArgs)
   const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'query', rpcArgs) as QueryNodeResult[] | { error: string }
+  return await executeRpcCommand(graph, 'query', rpcArgs) as QueryNodeResult[] | { error: string }
 }
 
 export default defineCommand({

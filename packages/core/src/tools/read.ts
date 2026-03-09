@@ -225,9 +225,9 @@ Examples:
     page: { type: 'string', description: 'Page name (default: current page)' },
     limit: { type: 'number', description: 'Max results (default: 1000)' }
   },
-  execute: (figma, args) => {
+  execute: async (figma, args) => {
     try {
-      const nodes = queryByXPath(figma.graph, args.selector, {
+      const nodes = await queryByXPath(figma.graph, args.selector, {
         page: args.page ?? figma.currentPage.name,
         limit: args.limit
       })

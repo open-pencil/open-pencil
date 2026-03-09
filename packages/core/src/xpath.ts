@@ -1,5 +1,3 @@
-import { evaluateXPathToNodes, evaluateXPathToBoolean } from 'fontoxpath'
-
 import type { IDomFacade } from 'fontoxpath'
 import type { SceneGraph, SceneNode } from './scene-graph'
 
@@ -136,7 +134,7 @@ function getChildren(graph: SceneGraph, wrapped: XPathNode): XPathNode[] {
 }
 
 function isDocument(node: unknown): node is XPathDocument {
-  return (node as XPathDocument)?.nodeType === NODE_TYPES.DOCUMENT_NODE
+  return (node as XPathDocument).nodeType === NODE_TYPES.DOCUMENT_NODE
 }
 
 function createDomFacade(graph: SceneGraph) {
@@ -208,11 +206,11 @@ export interface XPathQueryOptions {
   page?: string
 }
 
-export function queryByXPath(
+export async function queryByXPath(
   graph: SceneGraph,
   selector: string,
   options: XPathQueryOptions = {}
-): SceneNode[] {
+): Promise<SceneNode[]> {
   const { limit = 1000 } = options
   const pages = graph.getPages()
   const targetPages = options.page
@@ -221,6 +219,7 @@ export function queryByXPath(
 
   if (targetPages.length === 0) return []
 
+  const { evaluateXPathToNodes } = await import('fontoxpath')
   const domFacade = createDomFacade(graph) as unknown as IDomFacade
   const results: SceneNode[] = []
 
@@ -231,7 +230,7 @@ export function queryByXPath(
     for (const node of nodes) {
       if (results.length >= limit) break
       const sceneNode = (node as XPathNode)._sceneNode
-      if (sceneNode && sceneNode.type !== 'CANVAS') {
+      if (sceneNode.type !== 'CANVAS') {
         results.push(sceneNode)
       }
     }
@@ -242,11 +241,12 @@ export function queryByXPath(
   return results
 }
 
-export function matchByXPath(
+export async function matchByXPath(
   graph: SceneGraph,
   selector: string,
   node: SceneNode
-): boolean {
+): Promise<boolean> {
+  const { evaluateXPathToBoolean } = await import('fontoxpath')
   const domFacade = createDomFacade(graph) as unknown as IDomFacade
   const wrapped = wrapNode(graph, node)
   try {

@@ -316,7 +316,7 @@ describe('find_nodes', () => {
 })
 
 describe('query_nodes', () => {
-  test('finds all frames with //FRAME', () => {
+  test('finds all frames with //FRAME', async () => {
     const { figma } = setup()
     const f1 = figma.createFrame()
     f1.resize(200, 200)
@@ -327,12 +327,12 @@ describe('query_nodes', () => {
     figma.createRectangle()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = tool.execute(figma, { selector: '//FRAME' }) as any
+    const result = await tool.execute(figma, { selector: '//FRAME' }) as any
     expect(result.count).toBe(2)
     expect(result.nodes.every((n: any) => n.type === 'FRAME')).toBe(true)
   })
 
-  test('finds by attribute //RECTANGLE[@width < 200]', () => {
+  test('finds by attribute //RECTANGLE[@width < 200]', async () => {
     const { figma } = setup()
     const small = figma.createRectangle()
     small.resize(100, 50)
@@ -342,12 +342,12 @@ describe('query_nodes', () => {
     big.name = 'Big'
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = tool.execute(figma, { selector: '//RECTANGLE[@width < 200]' }) as any
+    const result = await tool.execute(figma, { selector: '//RECTANGLE[@width < 200]' }) as any
     expect(result.count).toBe(1)
     expect(result.nodes[0].name).toBe('Small')
   })
 
-  test('finds by name with contains', () => {
+  test('finds by name with contains', async () => {
     const { figma } = setup()
     const t1 = figma.createText()
     t1.name = 'Label Primary'
@@ -357,22 +357,22 @@ describe('query_nodes', () => {
     t3.name = 'Label Secondary'
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = tool.execute(figma, {
+    const result = await tool.execute(figma, {
       selector: '//TEXT[contains(@name, "Label")]'
     }) as any
     expect(result.count).toBe(2)
     expect(result.nodes.every((n: any) => n.name.includes('Label'))).toBe(true)
   })
 
-  test('returns error for invalid xpath', () => {
+  test('returns error for invalid xpath', async () => {
     const { figma } = setup()
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = tool.execute(figma, { selector: '///invalid[[[[' }) as any
+    const result = await tool.execute(figma, { selector: '///invalid[[[[' }) as any
     expect(result.error).toBeTruthy()
     expect(result.error).toContain('XPath error')
   })
 
-  test('respects limit param', () => {
+  test('respects limit param', async () => {
     const { figma } = setup()
     for (let i = 0; i < 10; i++) {
       const r = figma.createRectangle()
@@ -380,16 +380,16 @@ describe('query_nodes', () => {
     }
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = tool.execute(figma, { selector: '//RECTANGLE', limit: 3 }) as any
+    const result = await tool.execute(figma, { selector: '//RECTANGLE', limit: 3 }) as any
     expect(result.count).toBe(3)
   })
 
-  test('returns empty array when nothing matches', () => {
+  test('returns empty array when nothing matches', async () => {
     const { figma } = setup()
     figma.createRectangle()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = tool.execute(figma, { selector: '//ELLIPSE' }) as any
+    const result = await tool.execute(figma, { selector: '//ELLIPSE' }) as any
     expect(result.count).toBe(0)
     expect(result.nodes).toEqual([])
   })

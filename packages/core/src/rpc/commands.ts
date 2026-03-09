@@ -5,7 +5,7 @@ import type { SceneGraph, SceneNode, Variable } from '../scene-graph'
 
 export interface RpcCommand<A = unknown, R = unknown> {
   name: string
-  execute: (graph: SceneGraph, args: A) => R
+  execute: (graph: SceneGraph, args: A) => R | Promise<R>
 }
 
 /** Walk descendants. Callback returns `false` to stop traversal. */
@@ -213,9 +213,9 @@ export interface QueryNodeResult {
 
 export const queryCommand: RpcCommand<QueryArgs, QueryNodeResult[] | { error: string }> = {
   name: 'query',
-  execute: (graph, args) => {
+  execute: async (graph, args) => {
     try {
-      const nodes = queryByXPath(graph, args.selector, {
+      const nodes = await queryByXPath(graph, args.selector, {
         page: args.page,
         limit: args.limit
       })
