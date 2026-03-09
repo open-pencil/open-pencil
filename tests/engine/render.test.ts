@@ -170,6 +170,20 @@ describe('renderTree', () => {
     expect(node.layoutWrap).toBe('WRAP')
   })
 
+  it('justify/items without flex auto-enables auto-layout', () => {
+    const g = createGraph()
+    const tree = Frame(
+      { name: 'IconBtn', w: 36, h: 36, justify: 'center', items: 'center' },
+      Text({ size: 16, color: '#FFFFFF', children: '★' })
+    )
+    const result = renderTree(g, tree)
+    const n = g.nodes.get(result.id)!
+
+    expect(n.layoutMode).toBe('VERTICAL')
+    expect(n.primaryAxisAlign).toBe('CENTER')
+    expect(n.counterAxisAlign).toBe('CENTER')
+  })
+
   it('handles padding shorthands', () => {
     const g = createGraph()
     const tree = Frame({ name: 'Padded', px: 16, py: 8, pt: 4 })

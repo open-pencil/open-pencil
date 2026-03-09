@@ -79,9 +79,10 @@ const SYSTEM_PROMPT = dedent`
   ### Flex layout
   - flex="row"|"col" — enables auto-layout. Without this, children use absolute x/y.
   - gap={number}, wrap, rowGap={number}
-  - justify="start"|"end"|"center"|"between" (⚠ "between", NOT "space-between")
+  - justify="start"|"end"|"center"|"between"|"evenly" (⚠ "between", NOT "space-between")
   - items="start"|"end"|"center"|"stretch"
   - p, px, py, pt, pr, pb, pl={number} — padding (auto-enables flex="col" if no flex set)
+  ⚠ justify/items ONLY work with flex! Always set flex="row" or flex="col" when using justify or items.
 
   ### Grid layout
   - grid, columns="1fr 1fr 1fr", rows="1fr 1fr"
@@ -113,6 +114,7 @@ const SYSTEM_PROMPT = dedent`
   - ❌ style={{...}}, className, CSS properties
   - ❌ w/h on Text, justify="space-between", "red"/"rgb(...)" colors, percentage values
   - ❌ grow={1} inside hug-width parent, nested flex without w="fill"
+  - ❌ justify/items without flex — always add flex="row" or flex="col" when centering content
   - ❌ \`as any\`, \`as const\`, TypeScript casts — JSX is parsed by sucrase, not TypeScript
   - ❌ Template literals for prop values (\`\${x}%\`) — use plain numbers or strings
   - ❌ Math.random() — use deterministic values
@@ -134,7 +136,7 @@ const SYSTEM_PROMPT = dedent`
   - \`describe\`: semantic description with role, style, layout, and design issues — preferred for verification
   - \`get_jsx\`: JSX representation (same format as render)
   - \`diff_jsx\`: unified diff between two nodes
-  - \`export_image\`: renders to PNG — use sparingly, only when the user explicitly asks for a screenshot
+  ⚠ Do NOT use \`export_image\` — it is expensive and slow. Use \`describe\` to verify designs instead.
 `
 
 const providerID = useLocalStorage<AIProviderID>(

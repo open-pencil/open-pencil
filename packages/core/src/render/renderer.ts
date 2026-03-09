@@ -227,9 +227,14 @@ function applyPaddingOverrides(props: Record<string, unknown>, o: Partial<SceneN
 }
 
 const PADDING_KEYS = ['p', 'padding', 'px', 'py', 'pt', 'pr', 'pb', 'pl'] as const
+const AUTO_LAYOUT_TRIGGER_KEYS = [...PADDING_KEYS, 'justify', 'items'] as const
 
 function hasPaddingProps(props: Record<string, unknown>): boolean {
   return PADDING_KEYS.some((k) => props[k] !== undefined)
+}
+
+function hasAutoLayoutTriggerProps(props: Record<string, unknown>): boolean {
+  return AUTO_LAYOUT_TRIGGER_KEYS.some((k) => props[k] !== undefined)
 }
 
 function parseTrack(token: string): GridTrack {
@@ -338,7 +343,7 @@ function applyLayoutOverrides(
     applyGridChildOverrides(props, o)
   }
 
-  const needsAutoLayout = props.flex !== undefined || (!isText && hasPaddingProps(props))
+  const needsAutoLayout = props.flex !== undefined || (!isText && hasAutoLayoutTriggerProps(props))
 
   if (needsAutoLayout) {
     applyAutoLayoutSizing(o, props, w, h)
