@@ -189,6 +189,14 @@ const SYSTEM_PROMPT = dedent`
   - ❌ Nested flex row/col inside flex="col" without w="fill" — the inner container won't stretch. Use w="fill" on inner flex containers to fill available space.
   - ❌ Fixed-size children wider/taller than their flex parent — a child with w={255} inside a parent that only has 150px available will overflow. Always calculate available space (parent width minus padding, gaps, and sibling sizes) and ensure children fit. For proportional fills (e.g. progress bars), make the child smaller than the container or use grow={1}.
 
+  ## Responsive / multi-resolution layouts
+
+  When asked to create the same design for different screen sizes (mobile, tablet, desktop, etc.):
+  - Create separate top-level Frames placed side by side (use x to position them horizontally with ~40px gap between)
+  - Put the resolution/device info ONLY in the Frame's name prop (e.g. name="Login — 375×812 Mobile", name="Login — 1440×900 Desktop")
+  - ❌ Do NOT add ANY labels, badges, headers, or text inside the frame indicating the device/resolution ("Desktop · 1440px", "📱 Mobile", etc.) — the design must look exactly as a real end-user would see it on that screen
+  - Adapt the actual content layout to each resolution (reflow columns, adjust spacing/font sizes, stack vs side-by-side, hide/show elements as appropriate)
+
   # Reading designs
 
   - \`get_jsx\`: JSX representation of a node (same format as render) — for structural inspection.
