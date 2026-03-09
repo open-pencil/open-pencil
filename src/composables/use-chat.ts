@@ -252,6 +252,7 @@ const apiKey = useLocalStorage(apiKeyStorageKey, '')
 const modelID = useLocalStorage(`${STORAGE_PREFIX}ai-model`, DEFAULT_AI_MODEL)
 const customBaseURL = useLocalStorage(`${STORAGE_PREFIX}ai-base-url`, '')
 const customModelID = useLocalStorage(`${STORAGE_PREFIX}ai-custom-model`, '')
+const customAPIType = useLocalStorage<'completions' | 'responses'>(`${STORAGE_PREFIX}ai-api-type`, 'completions')
 const activeTab = ref<'design' | 'ai'>('design')
 
 const providerDef = computed(
@@ -276,6 +277,7 @@ watch(providerID, (id) => {
 
 watch(modelID, () => resetChat())
 watch(customModelID, () => resetChat())
+watch(customAPIType, () => resetChat())
 
 function setAPIKey(key: string) {
   apiKey.value = key
@@ -315,7 +317,9 @@ function createModel(): LanguageModel {
         apiKey: key,
         baseURL: customBaseURL.value
       })
-      return custom.chat(effectiveModelID)
+      return customAPIType.value === 'responses'
+        ? custom.responses(effectiveModelID)
+        : custom.chat(effectiveModelID)
     }
     case 'anthropic-compatible': {
       const custom = createAnthropic({
@@ -378,6 +382,7 @@ export function useAIChat() {
     modelID,
     customBaseURL,
     customModelID,
+    customAPIType,
     activeTab,
     isConfigured,
     ensureChat,

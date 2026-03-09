@@ -5,6 +5,10 @@ import {
   PopoverPortal,
   PopoverRoot,
   PopoverTrigger,
+  TabsContent,
+  TabsList,
+  TabsRoot,
+  TabsTrigger,
   TooltipContent,
   TooltipPortal,
   TooltipRoot,
@@ -16,7 +20,15 @@ import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
 
-const { providerID, providerDef, apiKey, setAPIKey, customBaseURL, customModelID } = useAIChat()
+const {
+  providerID,
+  providerDef,
+  apiKey,
+  setAPIKey,
+  customBaseURL,
+  customModelID,
+  customAPIType
+} = useAIChat()
 
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
@@ -110,6 +122,34 @@ function clearKey() {
               :class="uiInput({ size: 'sm' })"
               @change="save"
             />
+          </div>
+
+          <!-- API type (OpenAI-compatible only) -->
+          <div v-if="providerID === 'openai-compatible'" class="flex flex-col gap-1">
+            <label class="text-[10px] text-muted">API Type</label>
+            <TabsRoot
+              :model-value="customAPIType"
+              data-test-id="provider-settings-api-type"
+              class="flex flex-col"
+              @update:model-value="(v: string) => { customAPIType = v as 'completions' | 'responses'; save() }"
+            >
+              <TabsList class="flex rounded bg-canvas">
+                <TabsTrigger
+                  value="completions"
+                  class="flex-1 rounded px-2 py-1 text-[10px] text-muted data-[state=active]:bg-hover data-[state=active]:text-surface"
+                >
+                  Completions
+                </TabsTrigger>
+                <TabsTrigger
+                  value="responses"
+                  class="flex-1 rounded px-2 py-1 text-[10px] text-muted data-[state=active]:bg-hover data-[state=active]:text-surface"
+                >
+                  Responses
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="completions" />
+              <TabsContent value="responses" />
+            </TabsRoot>
           </div>
 
           <!-- API key -->
