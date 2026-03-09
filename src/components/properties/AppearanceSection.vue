@@ -147,22 +147,10 @@ const cornerRadiusValue = computed(() => {
 </script>
 
 <template>
-  <div v-if="active" data-test-id="appearance-section" class="border-b border-border px-3 py-2">
-    <div class="mb-1.5 flex items-center justify-between">
-      <label class="text-[11px] text-muted">Appearance</label>
-      <button
-        data-test-id="appearance-visibility"
-        class="flex cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 text-muted hover:bg-hover hover:text-surface"
-        :class="{ 'text-accent': visibilityState === 'hidden' }"
-        title="Toggle visibility"
-        @click="toggleVisibility"
-      >
-        <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
-        <icon-lucide-eye-off v-else-if="visibilityState === 'hidden'" class="size-3.5" />
-        <icon-lucide-eye class="size-3.5 opacity-50" v-else />
-      </button>
-    </div>
-    <div class="flex gap-1.5">
+  <div v-if="active" data-test-id="appearance-section" class="border-b border-border px-3 py-2 flex flex-col gap-1.5">
+    <!-- Opacity row -->
+    <div class="flex items-center gap-2">
+      <label class="w-20 shrink-0 text-[11px] text-muted">Opacity</label>
       <ScrubInput
         suffix="%"
         :model-value="opacityValue"
@@ -175,7 +163,23 @@ const cornerRadiusValue = computed(() => {
           <icon-lucide-blend class="size-3" />
         </template>
       </ScrubInput>
-      <template v-if="hasCornerRadius">
+      <button
+        data-test-id="appearance-visibility"
+        class="flex shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 text-muted hover:bg-hover hover:text-surface"
+        :class="{ 'text-accent': visibilityState === 'hidden' }"
+        title="Toggle visibility"
+        @click="toggleVisibility"
+      >
+        <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
+        <icon-lucide-eye-off v-else-if="visibilityState === 'hidden'" class="size-3.5" />
+        <icon-lucide-eye class="size-3.5 opacity-50" v-else />
+      </button>
+    </div>
+
+    <!-- Border Radius row -->
+    <div v-if="hasCornerRadius" class="flex items-center gap-2">
+      <label class="w-20 shrink-0 text-[11px] text-muted">Border Radius</label>
+      <div class="flex flex-1 gap-1.5">
         <ScrubInput
           v-if="independentCorners !== true"
           data-test-id="corner-radius-input"
@@ -195,20 +199,14 @@ const cornerRadiusValue = computed(() => {
           title="Independent corner radii"
           @click="toggleIndependentCorners"
         >
-          <svg
-            class="size-3"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
+          <svg class="size-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M1 4V2.5A1.5 1.5 0 0 1 2.5 1H4" />
             <path d="M8 1h1.5A2.5 2.5 0 0 1 11 3.5V5" />
             <path d="M11 8v1a2 2 0 0 1-2 2H8" />
             <path d="M4 11H3a2 2 0 0 1-2-2V8" />
           </svg>
         </button>
-      </template>
+      </div>
     </div>
 
     <div

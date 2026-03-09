@@ -13,7 +13,6 @@ import { createDemoShapes } from '@/demo'
 import { useEditorStore } from '@/stores/editor'
 import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
 
-import CollabPanel from '@/components/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
@@ -79,17 +78,44 @@ useHead({ title: route.meta.demo ? 'Demo' : undefined })
         <div class="relative flex min-w-0 flex-1">
           <EditorCanvas />
           <Toolbar />
+          <!-- Zoom controls -->
+          <div class="absolute bottom-5 right-4 z-10 flex items-center gap-0.5 rounded-2xl border border-border/30 bg-panel/50 px-1.5 py-1 shadow-2xl backdrop-blur-sm">
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-full border-none text-muted transition-all duration-150 hover:bg-white/5 hover:text-surface"
+              title="Zoom out"
+              @click="store.applyZoom(100, 0, 0)"
+            >
+              <icon-lucide-zoom-out class="size-[15px]" />
+            </button>
+            <button
+              class="min-w-[48px] cursor-pointer rounded-full border-none bg-transparent px-1 py-0.5 text-center text-[11px] text-muted transition-colors hover:bg-white/5 hover:text-surface"
+              title="Reset zoom (Ctrl+0)"
+              @click="store.zoomTo100()"
+            >
+              {{ Math.round(store.state.zoom * 100) }}%
+            </button>
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-full border-none text-muted transition-all duration-150 hover:bg-white/5 hover:text-surface"
+              title="Zoom in"
+              @click="store.applyZoom(-100, 0, 0)"
+            >
+              <icon-lucide-zoom-in class="size-[15px]" />
+            </button>
+            <div class="mx-1 h-4 w-px shrink-0 rounded-full bg-border/50" />
+            <button
+              class="flex size-7 cursor-pointer items-center justify-center rounded-full border-none text-muted transition-all duration-150 hover:bg-white/5 hover:text-surface"
+              title="Zoom to fit (Ctrl+1)"
+              @click="store.zoomToFit()"
+            >
+              <icon-lucide-maximize-2 class="size-[15px]" />
+            </button>
+          </div>
         </div>
       </SplitterPanel>
       <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
       <SplitterPanel :default-size="18" :min-size="10" :max-size="30" class="flex flex-col">
-        <div
-          class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
-        >
-          <CollabPanel />
-        </div>
         <PropertiesPanel />
       </SplitterPanel>
     </SplitterGroup>

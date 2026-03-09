@@ -5,10 +5,11 @@ export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' i
 export const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
 export const TRANSPARENT: Color = { r: 0, g: 0, b: 0, a: 0 }
 export const DEFAULT_SHADOW_COLOR: Color = { r: 0, g: 0, b: 0, a: 0.25 }
-export const SELECTION_COLOR = { r: 0.23, g: 0.51, b: 0.96, a: 1 } satisfies Color
+export const SELECTION_COLOR = { r: 0.478, g: 0.522, b: 0.208, a: 1 } satisfies Color
 export const COMPONENT_COLOR = { r: 0.592, g: 0.278, b: 1, a: 1 } satisfies Color
 export const SNAP_COLOR = { r: 1.0, g: 0.0, b: 0.56, a: 1 } satisfies Color
-export const CANVAS_BG_COLOR = { r: 0.96, g: 0.96, b: 0.96, a: 1 } satisfies Color
+export const CANVAS_BG_COLOR = { r: 0.1, g: 0.1, b: 0.1, a: 1 } satisfies Color
+export const DOT_GRID_COLOR = { r: 0.3, g: 0.3, b: 0.3, a: 1 } satisfies Color
 
 export const ROTATION_HANDLE_OFFSET = 20
 export const SNAP_THRESHOLD = 5
@@ -24,7 +25,7 @@ export const RULER_BADGE_EXCLUSION = 30
 export const RULER_TEXT_BASELINE = 0.65
 export const RULER_MAJOR_TICK = 0.5
 export const RULER_MINOR_TICK = 0.25
-export const RULER_HIGHLIGHT_ALPHA = 0.3
+export const RULER_HIGHLIGHT_ALPHA = 0.12
 
 export const PEN_HANDLE_RADIUS = 3
 export const PEN_VERTEX_RADIUS = 4
@@ -83,7 +84,7 @@ export const FLASH_PADDING = 5
 export const FLASH_OVERSHOOT = 30
 export const FLASH_RADIUS = 4
 
-export const TEXT_SELECTION_COLOR = { r: 0.26, g: 0.52, b: 0.96, a: 0.3 }
+export const TEXT_SELECTION_COLOR = { r: 0.478, g: 0.522, b: 0.208, a: 0.3 }
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
 

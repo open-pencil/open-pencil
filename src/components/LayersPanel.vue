@@ -2,6 +2,7 @@
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import AppMenu from './AppMenu.vue'
+import CollabPanel from './CollabPanel.vue'
 import LayerTree from './LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 </script>
@@ -34,7 +35,11 @@ import PagesPanel from './PagesPanel.vue'
         >
           Layers
         </header>
-        <LayerTree data-test-id="layers-tree" />
+        <LayerTree data-test-id="layers-tree" class="flex-1" />
+        <!-- Profile + Share anchored to bottom of layer panel -->
+        <div class="shrink-0 border-t border-border px-2 py-2">
+          <CollabPanel />
+        </div>
       </SplitterPanel>
     </SplitterGroup>
   </aside>

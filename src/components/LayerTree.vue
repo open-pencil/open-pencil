@@ -19,6 +19,9 @@ import IconRows from '~icons/lucide/rows-3'
 import IconSection from '~icons/lucide/layout-grid'
 import IconSquare from '~icons/lucide/square'
 import IconType from '~icons/lucide/type'
+import IconLock from '~icons/lucide/lock'
+import IconLockOpen from '~icons/lucide/lock-open'
+import IconTrash2 from '~icons/lucide/trash-2'
 
 import { useEditorStore } from '@/stores/editor'
 import NodeContextMenuContent from './NodeContextMenuContent.vue'
@@ -32,6 +35,7 @@ interface LayerNode {
   type: string
   layoutMode: string
   visible: boolean
+  locked: boolean
   children?: LayerNode[]
 }
 
@@ -76,6 +80,7 @@ function buildTree(parentId: string): LayerNode[] {
       type: node.type,
       layoutMode: node.layoutMode,
       visible: node.visible,
+      locked: node.locked ?? false,
       children: node.childIds.length > 0 ? buildTree(node.id) : undefined
     }))
 }
@@ -372,7 +377,7 @@ function updateDropTarget(ev: PointerEvent) {
                 class="group/row flex w-full cursor-pointer items-center gap-1 rounded border-none py-1 text-left text-xs"
                 :class="[
                   store.state.selectedIds.has(item.value.id)
-                    ? 'bg-accent text-white'
+                    ? 'bg-accent/10 text-surface'
                     : 'bg-transparent text-surface hover:bg-hover',
                   dragging && dragNodeId === item.value.id ? 'opacity-30' : '',
                   dropIntoId === item.value.id ? 'ring-2 ring-accent ring-inset' : '',
@@ -401,10 +406,27 @@ function updateDropTarget(ev: PointerEvent) {
                   "
                 />
                 <span class="min-w-0 flex-1 truncate">{{ item.value.name }}</span>
-                <icon-lucide-eye-off
-                  v-if="!item.value.visible"
-                  class="mr-1 size-3 shrink-0 text-muted"
-                />
+                <span class="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100">
+                  <icon-lucide-eye-off
+                    v-if="!item.value.visible"
+                    class="size-3 shrink-0 text-muted"
+                  />
+                  <button
+                    class="flex size-5 items-center justify-center rounded text-muted hover:bg-hover/80 hover:text-surface"
+                    :title="item.value.locked ? 'Unlock layer' : 'Lock layer'"
+                    @click.stop="store.select([item.value.id]); store.toggleLock()"
+                  >
+                    <IconLock v-if="item.value.locked" class="size-3" />
+                    <IconLockOpen v-else class="size-3" />
+                  </button>
+                  <button
+                    class="flex size-5 items-center justify-center rounded text-muted hover:bg-hover/80 hover:text-red-400"
+                    title="Delete layer"
+                    @click.stop="store.select([item.value.id]); store.deleteSelected()"
+                  >
+                    <IconTrash2 class="size-3" />
+                  </button>
+                </span>
               </button>
             </TreeItem>
           </div>

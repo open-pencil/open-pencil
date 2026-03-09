@@ -195,6 +195,7 @@ export class SkiaRenderer {
   penHandlePaint: Paint
   penVertexFill: Paint
   penVertexStroke: Paint
+  dotGridPaint: Paint
 
   panX = 0
   panY = 0
@@ -367,6 +368,12 @@ export class SkiaRenderer {
     this.penVertexStroke.setStrokeWidth(PEN_PATH_STROKE_WIDTH)
     this.penVertexStroke.setColor(this.selColor())
     this.penVertexStroke.setAntiAlias(true)
+
+    this.dotGridPaint = new ck.Paint()
+    this.dotGridPaint.setStyle(ck.PaintStyle.Stroke)
+    this.dotGridPaint.setStrokeWidth(1.5)
+    this.dotGridPaint.setStrokeCap(ck.StrokeCap.Round)
+    this.dotGridPaint.setAntiAlias(true)
   }
 
   getFontProvider(): TypefaceFontProvider | null {
@@ -622,6 +629,7 @@ export class SkiaRenderer {
 
     const canvas = this.surface.getCanvas()
     canvas.clear(this.ck.Color4f(this.pageColor.r, this.pageColor.g, this.pageColor.b, 1))
+    this.drawDotGrid(canvas)
 
     this.worldViewport = {
       x: -this.panX / this.zoom,
@@ -712,6 +720,45 @@ export class SkiaRenderer {
 
     p.setNodeCounts(this._nodeCount, this._culledCount)
     p.endFrame()
+  }
+
+  private drawDotGrid(canvas: Canvas): void {
+    const zoom = this.zoom
+    // Choose world-space grid spacing based on zoom level
+    let worldSpacing: number
+    if (zoom < 0.2) worldSpacing = 100
+    else if (zoom < 0.5) worldSpacing = 40
+    else worldSpacing = 20
+
+    const screenSpacing = worldSpacing * zoom
+    // Keep dots from crowding up when spacing is too small
+    if (screenSpacing < 6) return
+
+    // Fade dots in smoothly once they become visible
+    const dotAlpha = Math.min(0.55, ((screenSpacing - 6) / 16) * 0.55)
+    if (dotAlpha <= 0) return
+
+    // Align grid to pan offset so dots appear fixed in world space
+    const offsetX = ((this.panX % screenSpacing) + screenSpacing) % screenSpacing
+    const offsetY = ((this.panY % screenSpacing) + screenSpacing) % screenSpacing
+
+    const cols = Math.ceil(this.viewportWidth / screenSpacing) + 2
+    const rows = Math.ceil(this.viewportHeight / screenSpacing) + 2
+
+    const points = new Float32Array(cols * rows * 2)
+    let idx = 0
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        points[idx++] = offsetX + col * screenSpacing
+        points[idx++] = offsetY + row * screenSpacing
+      }
+    }
+
+    canvas.save()
+    canvas.scale(this.dpr, this.dpr)
+    this.dotGridPaint.setColor(this.ck.Color4f(0.32, 0.32, 0.32, dotAlpha))
+    canvas.drawPoints(this.ck.PointMode.Points, points, this.dotGridPaint)
+    canvas.restore()
   }
 
   private recordScenePicture(canvas: Canvas, graph: SceneGraph, sceneVersion: number): void {

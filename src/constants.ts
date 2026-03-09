@@ -119,6 +119,7 @@ export const DEFAULT_TEXT_HEIGHT = 24
 export const AUTO_LAYOUT_BREAK_THRESHOLD = 8
 export const HANDLE_HIT_RADIUS = 6
 export const ROTATION_HIT_RADIUS = 8
+export const CORNER_ROTATE_ZONE = 16
 
 // Pixels of deltaY for one e-fold of zoom (Math.exp(-deltaY / ZOOM_DIVISOR))
 // Trackpad pinch sends small deltas (~2-5px), mouse wheel sends large (~100px).

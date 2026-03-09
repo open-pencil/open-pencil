@@ -295,7 +295,7 @@ function stopSwatchColor(stop: GradientStop) {
                     v-for="sub in GRADIENT_SUBTYPES"
                     :key="sub.type"
                     :value="sub.type"
-                    class="relative flex cursor-pointer items-center rounded py-1 pr-2 pl-6 text-xs text-surface outline-none data-[highlighted]:bg-accent data-[highlighted]:text-white"
+                    class="relative flex cursor-pointer items-center rounded py-1 pr-2 pl-6 text-xs text-surface outline-none data-[highlighted]:bg-hover"
                   >
                     <SelectItemIndicator class="absolute left-1.5">
                       <icon-lucide-check class="size-3" />
