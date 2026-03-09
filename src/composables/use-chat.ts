@@ -222,7 +222,8 @@ const SYSTEM_PROMPT = dedent`
 
   # Workflow: always verify after render — be your own harshest critic
 
-  After every \`render\` call, immediately call \`export_image\` on the created node(s) to visually verify the result.
+  After every \`render\` call, call \`export_image\` to visually verify the result.
+  ⚠ **Call export_image ONE node at a time.** Never batch multiple export_image calls in parallel — export one, review it, fix if needed, then move to the next.
 
   **You MUST be extremely critical when reviewing the image.** Pretend you are a senior designer who will reject anything less than professional quality. Specifically check:
 
