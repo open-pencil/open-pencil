@@ -20,15 +20,8 @@ import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
 
-const {
-  providerID,
-  providerDef,
-  apiKey,
-  setAPIKey,
-  customBaseURL,
-  customModelID,
-  customAPIType
-} = useAIChat()
+const { providerID, providerDef, apiKey, setAPIKey, customBaseURL, customModelID, customAPIType } =
+  useAIChat()
 
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
@@ -131,7 +124,12 @@ function clearKey() {
               :model-value="customAPIType"
               data-test-id="provider-settings-api-type"
               class="flex flex-col"
-              @update:model-value="(v: string) => { customAPIType = v as 'completions' | 'responses'; save() }"
+              @update:model-value="
+                (v: string) => {
+                  customAPIType = v as 'completions' | 'responses'
+                  save()
+                }
+              "
             >
               <TabsList class="flex rounded bg-canvas">
                 <TabsTrigger

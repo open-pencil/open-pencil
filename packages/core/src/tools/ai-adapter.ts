@@ -74,14 +74,15 @@ export function toolsToAI(
     }
 
     if (def.name === 'export_image') {
-      toolOpts.experimental_toToolResultContent = (res: unknown) => {
-        if (res && typeof res === 'object' && 'base64' in res && 'mimeType' in res) {
-          const r = res as { base64: string; mimeType: string }
-          return [
-            { type: 'image' as const, data: r.base64, mimeType: r.mimeType }
-          ]
+      toolOpts.toModelOutput = ({ output }: { output: unknown }) => {
+        if (output && typeof output === 'object' && 'base64' in output && 'mimeType' in output) {
+          const r = output as { base64: string; mimeType: string }
+          return {
+            type: 'content' as const,
+            value: [{ type: 'media' as const, mediaType: r.mimeType, data: r.base64 }]
+          }
         }
-        return [{ type: 'text' as const, text: JSON.stringify(res) }]
+        return { type: 'json' as const, value: output as Record<string, unknown> }
       }
     }
 

@@ -220,15 +220,28 @@ const SYSTEM_PROMPT = dedent`
   - ❌ Do NOT add ANY labels, badges, headers, or text inside the frame indicating the device/resolution ("Desktop · 1440px", "📱 Mobile", etc.) — the design must look exactly as a real end-user would see it on that screen
   - Adapt the actual content layout to each resolution (reflow columns, adjust spacing/font sizes, stack vs side-by-side, hide/show elements as appropriate)
 
-  # Workflow: always verify after render
+  # Workflow: always verify after render — be your own harshest critic
 
-  After every \`render\` call, immediately call \`export_image\` on the created node(s) to visually verify the result. The image is sent back to you — inspect it for:
-  - Clipped or overlapping text
-  - Missing or invisible elements (wrong color on background)
-  - Incorrect spacing, alignment, or sizing
-  - Any visual issues
+  After every \`render\` call, immediately call \`export_image\` on the created node(s) to visually verify the result.
 
-  If you spot problems, fix them with another \`render\` (delete + re-render) or targeted \`set_*\` calls, then \`export_image\` again.
+  **You MUST be extremely critical when reviewing the image.** Pretend you are a senior designer who will reject anything less than professional quality. Specifically check:
+
+  1. **Text**: Is ANY text clipped, overlapping, truncated, or running outside its container? Is text readable (correct color on background)? Are font sizes appropriate and consistent?
+  2. **Spacing**: Are gaps even? Does padding look balanced? Are elements crammed together or floating with too much empty space?
+  3. **Alignment**: Are elements that should be aligned actually aligned? Left edges, centers, baselines?
+  4. **Colors & contrast**: Can you actually SEE every element? Borders, dividers, subtle backgrounds — are they visible or lost against the background? Text on dark bg must be light, text on light bg must be dark.
+  5. **Sizing**: Do containers fit their content? Are there elements that are too small (100×100 default) or too large? Do "fill" children actually stretch?
+  6. **Overflow**: Are children spilling outside their parent frame? Anything cut off at edges?
+  7. **Completeness**: Is anything missing from the design? Empty frames? Placeholder-looking elements?
+  8. **Polish**: Does this look like a professional design or a rough draft? Would you be embarrassed to show this to a client?
+
+  **If you find ANY issue — even a minor one — fix it immediately.** Delete and re-render, or use targeted \`set_*\` calls. Then \`export_image\` again and re-inspect. Repeat until the design is genuinely good.
+
+  **Do NOT say "looks good" when it doesn't.** Common self-deception patterns to avoid:
+  - "The layout looks clean" when text is clearly clipped
+  - "Colors work well" when elements are barely visible
+  - "Spacing is good" when gaps are uneven
+  - Ignoring issues because you just created the design and want to move on
 
   # Reading & inspecting designs
 
@@ -252,7 +265,10 @@ const apiKey = useLocalStorage(apiKeyStorageKey, '')
 const modelID = useLocalStorage(`${STORAGE_PREFIX}ai-model`, DEFAULT_AI_MODEL)
 const customBaseURL = useLocalStorage(`${STORAGE_PREFIX}ai-base-url`, '')
 const customModelID = useLocalStorage(`${STORAGE_PREFIX}ai-custom-model`, '')
-const customAPIType = useLocalStorage<'completions' | 'responses'>(`${STORAGE_PREFIX}ai-api-type`, 'completions')
+const customAPIType = useLocalStorage<'completions' | 'responses'>(
+  `${STORAGE_PREFIX}ai-api-type`,
+  'completions'
+)
 const activeTab = ref<'design' | 'ai'>('design')
 
 const providerDef = computed(
