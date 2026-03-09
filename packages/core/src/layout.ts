@@ -296,25 +296,37 @@ function configureTextLeaf(
     yogaChild.setFlexGrow(child.layoutGrow)
   }
 
+  const cache = new Map<number, { width: number; height: number }>()
+  const UNCONSTRAINED_KEY = -1
+
   if (autoResize === 'WIDTH_AND_HEIGHT') {
     yogaChild.setMeasureFunc((width, widthMode, _height, _heightMode) => {
       const maxW = widthMode === MeasureMode.Undefined ? undefined : width
+      const cacheKey = maxW === undefined ? UNCONSTRAINED_KEY : Math.round(maxW)
+      const cached = cache.get(cacheKey)
+      if (cached) return cached
+
       const measured = globalTextMeasurer!(child, maxW)
-      if (!measured) return { width: child.width, height: child.height }
-      return measured
+      const result = measured ?? { width: child.width, height: child.height }
+      cache.set(cacheKey, result)
+      return result
     })
   } else if (autoResize === 'HEIGHT') {
     const fixedWidth = child.width
     if (child.layoutGrow <= 0) {
-      if (isRow) yogaChild.setWidth(fixedWidth)
-      else yogaChild.setWidth(fixedWidth)
+      yogaChild.setWidth(fixedWidth)
     }
     yogaChild.setMeasureFunc((width, widthMode, _height, _heightMode) => {
       const constraintW =
         widthMode === MeasureMode.Undefined ? fixedWidth : Math.min(width, fixedWidth || width)
+      const cacheKey = Math.round(constraintW)
+      const cached = cache.get(cacheKey)
+      if (cached) return cached
+
       const measured = globalTextMeasurer!(child, constraintW)
-      if (!measured) return { width: constraintW, height: child.height }
-      return { width: constraintW, height: measured.height }
+      const result = { width: constraintW, height: measured?.height ?? child.height }
+      cache.set(cacheKey, result)
+      return result
     })
   }
 }
