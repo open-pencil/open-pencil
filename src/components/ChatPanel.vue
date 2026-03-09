@@ -15,7 +15,8 @@ const IS_DEV = import.meta.env.DEV
 
 const { isConfigured, ensureChat, resetChat } = useAIChat()
 
-const chat = ref<Chat<UIMessage> | null>(null)
+const existing = ensureChat()
+const chat = ref<Chat<UIMessage> | null>(existing ? markRaw(existing) : null)
 const messagesEnd = ref<HTMLDivElement>()
 const debugCopied = ref(false)
 
