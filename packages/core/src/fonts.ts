@@ -68,6 +68,7 @@ function normalizeFontFamily(family: string): string {
 }
 
 async function fetchGoogleFontFiles(family: string): Promise<Record<string, string> | null> {
+  if (!family) return null
   if (googleFontsCache.has(family)) return googleFontsCache.get(family)!
   if (googleFontsFailed.has(family)) return null
 
@@ -126,6 +127,7 @@ async function fetchGoogleFont(family: string, style: string): Promise<ArrayBuff
 }
 
 export async function loadFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
+  if (!family) return null
   const cacheKey = `${family}|${style}`
   if (loadedFamilies.has(cacheKey)) {
     const cached = loadedFamilies.get(cacheKey)

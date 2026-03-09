@@ -236,7 +236,12 @@ export function createEditorStore() {
     const nodes: SceneNode[] = []
     for (const id of state.selectedIds) {
       const n = graph.getNode(id)
-      if (n) nodes.push({ ...n })
+      if (n) {
+        // Snapshot all enumerable properties including prototype (COLD_DEFAULTS)
+        const copy: Record<string, unknown> = {}
+        for (const key in n) copy[key] = (n as unknown as Record<string, unknown>)[key]
+        nodes.push(copy as unknown as SceneNode)
+      }
     }
     return nodes
   })

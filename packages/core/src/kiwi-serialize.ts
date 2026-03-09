@@ -339,14 +339,14 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
       normalizedSize: { x: node.width, y: node.height }
     }
   }
-  if (node.fillGeometry.length > 0) {
+  if (node.fillGeometry && node.fillGeometry.length > 0) {
     nc.fillGeometry = node.fillGeometry.map((g) => {
       const blobIdx = blobs.length
       blobs.push(g.commandsBlob)
       return { windingRule: g.windingRule, commandsBlob: blobIdx }
     })
   }
-  if (node.strokeGeometry.length > 0) {
+  if (node.strokeGeometry && node.strokeGeometry.length > 0) {
     nc.strokeGeometry = node.strokeGeometry.map((g) => {
       const blobIdx = blobs.length
       blobs.push(g.commandsBlob)
@@ -360,7 +360,7 @@ function serializeVariableBindings(
   nc: KiwiNodeChange,
   graph: SceneGraph
 ): void {
-  if (Object.keys(node.boundVariables).length === 0) return
+  if (!node.boundVariables || Object.keys(node.boundVariables).length === 0) return
   const entries: VariableConsumptionEntry[] = []
   const typeMap: Record<string, string> = { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }
   for (const [field, varId] of Object.entries(node.boundVariables)) {
