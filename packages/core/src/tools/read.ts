@@ -221,6 +221,16 @@ export const getJsx = defineTool({
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
     const jsx = sceneNodeToJSX(id, figma.graph)
+    const MAX_JSX_LENGTH = 12_000
+    if (jsx.length > MAX_JSX_LENGTH) {
+      return {
+        id,
+        name: node.name,
+        jsx: jsx.slice(0, MAX_JSX_LENGTH),
+        truncated: true,
+        totalLength: jsx.length
+      }
+    }
     return { id, name: node.name, jsx }
   }
 })
