@@ -315,6 +315,86 @@ describe('find_nodes', () => {
   })
 })
 
+describe('query_nodes', () => {
+  test('finds all frames with //FRAME', () => {
+    const { figma } = setup()
+    const f1 = figma.createFrame()
+    f1.resize(200, 200)
+    f1.name = 'Frame A'
+    const f2 = figma.createFrame()
+    f2.resize(300, 300)
+    f2.name = 'Frame B'
+    figma.createRectangle()
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
+    const result = tool.execute(figma, { selector: '//FRAME' }) as any
+    expect(result.count).toBe(2)
+    expect(result.nodes.every((n: any) => n.type === 'FRAME')).toBe(true)
+  })
+
+  test('finds by attribute //RECTANGLE[@width < 200]', () => {
+    const { figma } = setup()
+    const small = figma.createRectangle()
+    small.resize(100, 50)
+    small.name = 'Small'
+    const big = figma.createRectangle()
+    big.resize(400, 400)
+    big.name = 'Big'
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
+    const result = tool.execute(figma, { selector: '//RECTANGLE[@width < 200]' }) as any
+    expect(result.count).toBe(1)
+    expect(result.nodes[0].name).toBe('Small')
+  })
+
+  test('finds by name with contains', () => {
+    const { figma } = setup()
+    const t1 = figma.createText()
+    t1.name = 'Label Primary'
+    const t2 = figma.createText()
+    t2.name = 'Title'
+    const t3 = figma.createText()
+    t3.name = 'Label Secondary'
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
+    const result = tool.execute(figma, {
+      selector: '//TEXT[contains(@name, "Label")]'
+    }) as any
+    expect(result.count).toBe(2)
+    expect(result.nodes.every((n: any) => n.name.includes('Label'))).toBe(true)
+  })
+
+  test('returns error for invalid xpath', () => {
+    const { figma } = setup()
+    const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
+    const result = tool.execute(figma, { selector: '///invalid[[[[' }) as any
+    expect(result.error).toBeTruthy()
+    expect(result.error).toContain('XPath error')
+  })
+
+  test('respects limit param', () => {
+    const { figma } = setup()
+    for (let i = 0; i < 10; i++) {
+      const r = figma.createRectangle()
+      r.name = `Rect ${i}`
+    }
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
+    const result = tool.execute(figma, { selector: '//RECTANGLE', limit: 3 }) as any
+    expect(result.count).toBe(3)
+  })
+
+  test('returns empty array when nothing matches', () => {
+    const { figma } = setup()
+    figma.createRectangle()
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
+    const result = tool.execute(figma, { selector: '//ELLIPSE' }) as any
+    expect(result.count).toBe(0)
+    expect(result.nodes).toEqual([])
+  })
+})
+
 describe('get_node', () => {
   test('returns node details', () => {
     const { figma } = setup()

@@ -54,6 +54,18 @@ open-pencil info design.fig
           [0] [frame] "Guidance" (0:46571)
 ```
 
+### Query with XPath
+
+Use XPath selectors to find nodes by type, attributes, and structure:
+
+```sh
+open-pencil query design.fig "//FRAME"                              # All frames
+open-pencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px
+open-pencil query design.fig "//TEXT[contains(@name, 'Button')]"     # Text with 'Button' in name
+open-pencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
+open-pencil query design.fig "//SECTION//TEXT"                       # Text inside sections
+```
+
 ### Export
 
 Render to PNG, JPG, WEBP, SVG — or export as JSX with Tailwind utility classes:

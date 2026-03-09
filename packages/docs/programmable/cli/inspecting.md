@@ -56,6 +56,65 @@ open-pencil find design.fig --name "Button"
 
 Both flags can be combined to narrow results further.
 
+## Query with XPath
+
+Use XPath selectors to find nodes by type, attributes, and tree structure:
+
+```sh
+open-pencil query design.fig "//FRAME"
+```
+
+### Useful patterns
+
+**By type:**
+
+```sh
+open-pencil query design.fig "//TEXT"                    # All text nodes
+open-pencil query design.fig "//COMPONENT"               # All components
+open-pencil query design.fig "//INSTANCE"                # All instances
+```
+
+**By attributes:**
+
+```sh
+open-pencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px wide
+open-pencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
+open-pencil query design.fig "//*[@visible = false]"                # Hidden nodes
+open-pencil query design.fig "//TEXT[@fontSize >= 24]"              # Large text
+open-pencil query design.fig "//*[@opacity < 1]"                    # Semi-transparent nodes
+```
+
+**By name and text content:**
+
+```sh
+open-pencil query design.fig "//TEXT[contains(@name, 'Button')]"    # Name contains 'Button'
+open-pencil query design.fig "//TEXT[contains(@text, 'Hello')]"     # Text content contains 'Hello'
+```
+
+**By hierarchy:**
+
+```sh
+open-pencil query design.fig "//SECTION//TEXT"            # Text inside sections
+open-pencil query design.fig "//FRAME/TEXT"               # Direct text children of frames
+open-pencil query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside component sets
+```
+
+### Queryable attributes
+
+`name`, `width`, `height`, `x`, `y`, `visible`, `opacity`, `cornerRadius`, `fontSize`, `fontFamily`, `fontWeight`, `layoutMode`, `itemSpacing`, `paddingTop`, `paddingRight`, `paddingBottom`, `paddingLeft`, `strokeWeight`, `rotation`, `locked`, `blendMode`, `text`, `lineHeight`, `letterSpacing`
+
+### Example output
+
+```
+  Found 5 nodes
+
+[0] [frame] "Logo  92×32" (0:9)
+[1] [frame] "logo-short-6  31×32" (0:10)
+[2] [frame] "wrapper  128×73" (0:20)
+[3] [frame] "pen-drawing  148×52" (0:21)
+[4] [frame] "surprised-emoji  32×32" (0:26)
+```
+
 ## Node Details
 
 Inspect all properties of a specific node by its ID:

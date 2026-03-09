@@ -19,7 +19,6 @@ const QUERYABLE_ATTRS = [
   'visible',
   'opacity',
   'cornerRadius',
-  'characters',
   'fontSize',
   'fontFamily',
   'fontWeight',
