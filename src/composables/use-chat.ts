@@ -107,6 +107,9 @@ const SYSTEM_PROMPT = dedent`
   - ❌ style={{...}}, className, CSS properties
   - ❌ w/h on Text, justify="space-between", "red"/"rgb(...)" colors, percentage values
   - ❌ grow={1} inside hug-width parent, nested flex without w="fill"
+  - ❌ \`as any\`, \`as const\`, TypeScript casts — JSX is parsed by sucrase, not TypeScript
+  - ❌ Template literals for prop values (\`\${x}%\`) — use plain numbers or strings
+  - ❌ Math.random() — use deterministic values
 
   ## Color contrast rules
   - Subtle backgrounds on dark bg: at least #FFFFFF30 alpha (~19%)
