@@ -1,5 +1,19 @@
 import { defineTool, nodeSummary } from './schema'
 
+const CHUNK_SIZE = 0x8000
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(bytes).toString('base64')
+  }
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + CHUNK_SIZE)
+    binary += String.fromCharCode.apply(null, chunk as unknown as number[])
+  }
+  return btoa(binary)
+}
+
 export const booleanUnion = defineTool({
   name: 'boolean_union',
   mutates: true,
@@ -294,10 +308,7 @@ export const exportImage = defineTool({
       format
     })
     if (!data || data.length === 0) return { error: 'No visible nodes to export' }
-    const base64 =
-      typeof Buffer !== 'undefined'
-        ? Buffer.from(data).toString('base64')
-        : btoa(String.fromCharCode(...data))
+    const base64 = uint8ArrayToBase64(data)
     const mimeMap = { PNG: 'image/png', JPG: 'image/jpeg', WEBP: 'image/webp' } as const
     return {
       mimeType: mimeMap[format],

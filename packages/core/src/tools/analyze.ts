@@ -5,7 +5,7 @@ import { colorDistance, colorToHex, parseColor } from '../color'
 import { defineTool } from './schema'
 
 import type { Color } from '../types'
-import type { SceneNode } from '../scene-graph'
+import type { SceneGraph, SceneNode } from '../scene-graph'
 import type { FigmaAPI } from '../figma-api'
 
 interface ColorEntry {
@@ -691,7 +691,11 @@ interface DescribeIssue {
   suggestion?: string
 }
 
-function detectIssues(node: SceneNode, gridSize: number): DescribeIssue[] {
+const MIN_FILL_OPACITY = 0.15
+const MIN_STROKE_OPACITY = 0.20
+const LOW_CONTRAST_THRESHOLD = 15
+
+function detectIssues(node: SceneNode, gridSize: number, graph?: SceneGraph): DescribeIssue[] {
   const issues: DescribeIssue[] = []
   if (node.x % 1 !== 0 || node.y % 1 !== 0) {
     issues.push({
@@ -711,7 +715,54 @@ function detectIssues(node: SceneNode, gridSize: number): DescribeIssue[] {
     const nearest = Math.round(node.itemSpacing / gridSize) * gridSize
     issues.push({ message: `Gap ${node.itemSpacing} not on ${gridSize}px grid`, suggestion: `${nearest}` })
   }
+
+  for (const fill of node.fills) {
+    if (!fill.visible) continue
+    if (fill.type === 'SOLID' && fill.opacity < MIN_FILL_OPACITY) {
+      issues.push({
+        message: `Near-invisible fill ${colorToHex(fill.color)} at ${Math.round(fill.opacity * 100)}% opacity`,
+        suggestion: `Increase opacity to at least ${Math.round(MIN_FILL_OPACITY * 100)}% or use an opaque color`
+      })
+    }
+  }
+
+  for (const stroke of node.strokes) {
+    if (!stroke.visible) continue
+    if (stroke.opacity < MIN_STROKE_OPACITY) {
+      issues.push({
+        message: `Near-invisible stroke at ${Math.round(stroke.opacity * 100)}% opacity`,
+        suggestion: `Increase opacity to at least ${Math.round(MIN_STROKE_OPACITY * 100)}%`
+      })
+    }
+  }
+
+  if (node.type === 'TEXT' && graph && node.parentId) {
+    const textFill = node.fills.find((f) => f.visible && f.type === 'SOLID')
+    if (textFill) {
+      const parentBg = findAncestorBackground(node, graph)
+      if (parentBg) {
+        const dist = colorDistance(textFill.color, parentBg)
+        if (dist < LOW_CONTRAST_THRESHOLD) {
+          issues.push({
+            message: `Low contrast: text ${colorToHex(textFill.color)} on ${colorToHex(parentBg)} background (distance ${Math.round(dist)})`,
+            suggestion: 'Increase color difference between text and background'
+          })
+        }
+      }
+    }
+  }
+
   return issues
+}
+
+function findAncestorBackground(node: SceneNode, graph: SceneGraph): Color | null {
+  let current = node.parentId ? graph.getNode(node.parentId) : null
+  while (current) {
+    const solidFill = current.fills.find((f) => f.visible && f.type === 'SOLID' && f.opacity > 0.5)
+    if (solidFill) return solidFill.color
+    current = current.parentId ? graph.getNode(current.parentId) : null
+  }
+  return null
 }
 
 interface DescribeChild {
@@ -776,7 +827,7 @@ export const describe = defineTool({
 
     const visual = describeVisual(raw)
     const layout = describeLayout(raw)
-    const issues = detectIssues(raw, gridSize)
+    const issues = detectIssues(raw, gridSize, figma.graph)
 
     const children: DescribeChild[] = []
     for (const childId of raw.childIds) {

@@ -189,6 +189,29 @@ const SYSTEM_PROMPT = dedent`
   - ❌ Nested flex row/col inside flex="col" without w="fill" — the inner container won't stretch. Use w="fill" on inner flex containers to fill available space.
   - ❌ Fixed-size children wider/taller than their flex parent — a child with w={255} inside a parent that only has 150px available will overflow. Always calculate available space (parent width minus padding, gaps, and sibling sizes) and ensure children fit. For proportional fills (e.g. progress bars), make the child smaller than the container or use grow={1}.
 
+  ## Color contrast & visibility rules
+
+  Elements must be clearly visible. Common mistakes on dark backgrounds:
+
+  - ❌ \`bg="#FFFFFF08"\`, \`bg="#FFFFFF10"\`, \`bg="#FFFFFF15"\` — these are 3-8% white opacity, nearly invisible on dark backgrounds.
+  - ❌ \`stroke="#FFFFFF15"\` — invisible stroke on dark background.
+  - ❌ Dividers/separators with \`bg="#FFFFFF10"\` — a 6% white line on a dark surface is invisible.
+  - ❌ Dark semi-transparent overlays on dark backgrounds (e.g. \`bg="#0F0F1A40"\` on \`#1A1A2E\`) — no visible contrast.
+
+  **Minimum alpha guidelines (8-digit hex):**
+  - Subtle backgrounds (cards, tags, badges on dark bg): use at least \`30\` alpha (\`#FFFFFF30\` = ~19%)
+  - Borders/strokes on dark bg: at least \`40\` alpha (\`#FFFFFF40\` = ~25%)
+  - Dividers/separators: at least \`25\` alpha (\`#FFFFFF25\` = ~15%)
+  - Overlays/scrims: at least \`60\` alpha (\`#00000060\` = ~38%)
+
+  **Better alternatives for dark themes:**
+  - Instead of transparent white, use opaque tinted colors: \`bg="#1E1E32"\`, \`bg="#252540"\`, \`bg="#2A2A45"\`
+  - Dividers: \`bg="#333355"\` or \`bg="#FFFFFF25"\` — not \`bg="#FFFFFF10"\`
+  - Tag backgrounds: \`bg="#FFFFFF20"\` minimum, or an opaque muted color like \`bg="#2A2A45"\`
+  - Strokes: \`stroke="#FFFFFF30"\` minimum, or opaque \`stroke="#444466"\`
+
+  When using \`export_image\` to verify, pay special attention to whether subtle elements (dividers, tag borders, card backgrounds) are actually distinguishable from their parent background.
+
   ## Responsive / multi-resolution layouts
 
   When asked to create the same design for different screen sizes (mobile, tablet, desktop, etc.):
