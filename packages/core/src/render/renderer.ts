@@ -152,6 +152,12 @@ function applySizeOverrides(
   if (props.x !== undefined) o.x = props.x as number
   if (props.y !== undefined) o.y = props.y as number
 
+  const hasExplicitPosition = props.x !== undefined || props.y !== undefined
+  const isInsideAutoLayout = parentLayout !== 'NONE'
+  if (hasExplicitPosition && isInsideAutoLayout) {
+    o.layoutPositioning = 'ABSOLUTE'
+  }
+
   return { w, h }
 }
 
@@ -279,7 +285,11 @@ function applyLayoutOverrides(
   if (props.maxW !== undefined) o.width = Math.min(o.width ?? Infinity, props.maxW as number)
 }
 
-function applyTextOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+function applyTextOverrides(
+  props: Record<string, unknown>,
+  o: Partial<SceneNode>,
+  parentLayout: SceneNode['layoutMode']
+): void {
   const fontSize = props.size ?? props.fontSize
   if (typeof fontSize === 'number') o.fontSize = fontSize
 
@@ -301,11 +311,17 @@ function applyTextOverrides(props: Record<string, unknown>, o: Partial<SceneNode
     o.textAlignHorizontal = TEXT_ALIGN_MAP[props.textAlign as string] ?? 'LEFT'
   }
 
-  const hasExplicitWidth = (props.w ?? props.width) !== undefined
+  const w = props.w ?? props.width
+  const hasExplicitWidth = w !== undefined
+  const fillsParent = w === 'fill' || (props.grow as number) > 0
+  const isInsideAutoLayout = parentLayout !== 'NONE'
+
   if (props.textAutoResize) {
     o.textAutoResize = TEXT_AUTO_RESIZE_MAP[props.textAutoResize as string] ?? 'NONE'
+  } else if (hasExplicitWidth || (isInsideAutoLayout && fillsParent)) {
+    o.textAutoResize = 'HEIGHT'
   } else {
-    o.textAutoResize = hasExplicitWidth ? 'HEIGHT' : 'WIDTH_AND_HEIGHT'
+    o.textAutoResize = 'WIDTH_AND_HEIGHT'
   }
 }
 
@@ -359,7 +375,7 @@ function propsToOverrides(
   const { w, h } = applySizeOverrides(props, o, parentLayout)
   applyVisualOverrides(props, o)
   applyLayoutOverrides(props, o, w, h, isText)
-  if (isText) applyTextOverrides(props, o)
+  if (isText) applyTextOverrides(props, o, parentLayout)
   applyShapeAndEffectOverrides(props, o)
 
   return o

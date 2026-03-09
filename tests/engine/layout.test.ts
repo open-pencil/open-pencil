@@ -1047,6 +1047,241 @@ describe('Auto Layout', () => {
       const updatedText = graph.getNode(text.id)!
       expect(updatedText.width).toBe(200)
     })
+
+    test('HEIGHT auto-resize text wraps via MeasureFunc when filling parent', () => {
+      const graph = new SceneGraph()
+      const pid = pageId(graph)
+
+      const frame = autoFrame(graph, pid, {
+        width: 300,
+        height: 200,
+        layoutMode: 'VERTICAL',
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+      })
+
+      const text = graph.createNode('TEXT', frame.id, {
+        width: 300,
+        height: 20,
+        text: 'Long text that should wrap within the available width',
+        fontSize: 14,
+        textAutoResize: 'HEIGHT' as const,
+      })
+
+      setTextMeasurer((_node, maxWidth) => {
+        const w = maxWidth ?? 1e6
+        if (w >= 300) return { width: 300, height: 20 }
+        return { width: w, height: 60 }
+      })
+
+      computeAllLayouts(graph)
+      setTextMeasurer(null)
+
+      const updatedText = graph.getNode(text.id)!
+      expect(updatedText.width).toBe(300)
+      expect(updatedText.height).toBe(20)
+    })
+
+    test('MeasureFunc receives constraint width from flex layout', () => {
+      const graph = new SceneGraph()
+      const pid = pageId(graph)
+
+      const frame = autoFrame(graph, pid, {
+        width: 400,
+        height: 200,
+        layoutMode: 'HORIZONTAL',
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+        itemSpacing: 10,
+      })
+
+      rect(graph, frame.id, 100, 50)
+
+      const text = graph.createNode('TEXT', frame.id, {
+        width: 500,
+        height: 20,
+        text: 'Wide text',
+        fontSize: 14,
+        textAutoResize: 'WIDTH_AND_HEIGHT' as const,
+        layoutGrow: 1,
+      })
+
+      const receivedWidths: number[] = []
+      setTextMeasurer((_node, maxWidth) => {
+        if (maxWidth !== undefined) receivedWidths.push(Math.round(maxWidth))
+        const w = maxWidth ?? 500
+        return { width: Math.min(200, w), height: w < 200 ? 40 : 20 }
+      })
+
+      computeAllLayouts(graph)
+      setTextMeasurer(null)
+
+      // 400 - 100 - 10 = 290 available for the fill text
+      expect(receivedWidths.length).toBeGreaterThan(0)
+      const updatedText = graph.getNode(text.id)!
+      expect(updatedText.width).toBe(290)
+    })
+
+    test('textAutoResize NONE skips MeasureFunc', () => {
+      const graph = new SceneGraph()
+      const pid = pageId(graph)
+
+      const frame = autoFrame(graph, pid, {
+        width: 300,
+        height: 100,
+        layoutMode: 'HORIZONTAL',
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+      })
+
+      const text = graph.createNode('TEXT', frame.id, {
+        width: 150,
+        height: 40,
+        text: 'Fixed text',
+        fontSize: 14,
+        textAutoResize: 'NONE' as const,
+      })
+
+      let measureCalled = false
+      setTextMeasurer(() => {
+        measureCalled = true
+        return { width: 80, height: 20 }
+      })
+
+      computeAllLayouts(graph)
+      setTextMeasurer(null)
+
+      expect(measureCalled).toBe(false)
+      const updatedText = graph.getNode(text.id)!
+      expect(updatedText.width).toBe(150)
+      expect(updatedText.height).toBe(40)
+    })
+  })
+
+  describe('min/max constraints', () => {
+    test('maxWidth clamps child in horizontal layout', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 400,
+        height: 100,
+      })
+      rect(graph, frame.id, 50, 50, { layoutGrow: 1, maxWidth: 200 })
+
+      computeLayout(graph, frame.id)
+
+      const child = graph.getChildren(frame.id)[0]
+      expect(child.width).toBe(200)
+    })
+
+    test('minWidth prevents shrinking below minimum', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 100,
+        height: 100,
+      })
+      rect(graph, frame.id, 200, 50, { minWidth: 150 })
+
+      computeLayout(graph, frame.id)
+
+      const child = graph.getChildren(frame.id)[0]
+      expect(child.width).toBeGreaterThanOrEqual(150)
+    })
+
+    test('maxHeight clamps child in vertical layout', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        layoutMode: 'VERTICAL',
+        width: 200,
+        height: 400,
+      })
+      rect(graph, frame.id, 50, 50, { layoutGrow: 1, maxHeight: 150 })
+
+      computeLayout(graph, frame.id)
+
+      const child = graph.getChildren(frame.id)[0]
+      expect(child.height).toBe(150)
+    })
+
+    test('minHeight enforces minimum in vertical layout', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        layoutMode: 'VERTICAL',
+        width: 200,
+        height: 400,
+      })
+      rect(graph, frame.id, 50, 30, { minHeight: 80 })
+
+      computeLayout(graph, frame.id)
+
+      const child = graph.getChildren(frame.id)[0]
+      expect(child.height).toBe(80)
+    })
+
+    test('min/max on nested auto-layout frame', () => {
+      const graph = new SceneGraph()
+      const outer = autoFrame(graph, pageId(graph), {
+        width: 500,
+        height: 200,
+      })
+      const inner = autoFrame(graph, outer.id, {
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+        width: 50,
+        height: 50,
+        layoutGrow: 1,
+        maxWidth: 250,
+      })
+      rect(graph, inner.id, 30, 30)
+
+      computeLayout(graph, outer.id)
+
+      const innerNode = graph.getNode(inner.id)!
+      expect(innerNode.width).toBe(250)
+    })
+  })
+
+  describe('counterAxisAlignContent', () => {
+    test('SPACE_BETWEEN distributes wrapped rows evenly', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 200,
+        height: 300,
+        layoutWrap: 'WRAP',
+        counterAxisAlignContent: 'SPACE_BETWEEN' as const,
+      })
+      rect(graph, frame.id, 120, 40)
+      rect(graph, frame.id, 120, 40)
+      rect(graph, frame.id, 120, 40)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      // 3 rows of 40px each = 120px total, 300 - 120 = 180px free space
+      // SPACE_BETWEEN: first row at 0, last row at 260
+      expect(children[0].y).toBe(0)
+      expect(children[2].y).toBe(260)
+      // Middle row centered: (0 + 260) / 2 = 130
+      expect(children[1].y).toBe(130)
+    })
+
+    test('AUTO (default) packs wrapped rows at start', () => {
+      const graph = new SceneGraph()
+      const frame = autoFrame(graph, pageId(graph), {
+        width: 200,
+        height: 300,
+        layoutWrap: 'WRAP',
+      })
+      rect(graph, frame.id, 120, 40)
+      rect(graph, frame.id, 120, 40)
+      rect(graph, frame.id, 120, 40)
+
+      computeLayout(graph, frame.id)
+
+      const children = graph.getChildren(frame.id)
+      expect(children[0].y).toBe(0)
+      expect(children[1].y).toBe(40)
+      expect(children[2].y).toBe(80)
+    })
   })
 })
 

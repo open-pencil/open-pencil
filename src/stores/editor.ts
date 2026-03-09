@@ -431,7 +431,6 @@ export function createEditorStore() {
         }
       }
     })
-
   }
 
   function reorderChildWithUndo(nodeId: string, newParentId: string, insertIndex: number) {
@@ -460,7 +459,6 @@ export function createEditorStore() {
         if (origParentId !== newParentId) runLayoutForNode(newParentId)
       }
     })
-
   }
 
   function reparentNodes(nodeIds: string[], newParentId: string) {
@@ -686,7 +684,7 @@ export function createEditorStore() {
     _ck = ck
     _renderer = renderer
     _textEditor = new TextEditor(ck)
-    setTextMeasurer((node) => renderer.measureTextNode(node))
+    setTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
   }
 
   function buildFigFile() {

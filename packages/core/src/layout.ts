@@ -7,6 +7,7 @@ import Yoga, {
   Gutter,
   Justify,
   Edge,
+  MeasureMode,
   Overflow,
   Wrap,
   type Node as YogaNode
@@ -14,7 +15,10 @@ import Yoga, {
 
 import type { GridTrack, SceneGraph, SceneNode } from './scene-graph'
 
-export type TextMeasurer = (node: SceneNode) => { width: number; height: number } | null
+export type TextMeasurer = (
+  node: SceneNode,
+  maxWidth?: number
+) => { width: number; height: number } | null
 
 let globalTextMeasurer: TextMeasurer | null = null
 
@@ -135,31 +139,10 @@ function buildYogaTree(graph: SceneGraph, frame: SceneNode): YogaNode {
     else root.setWidth(frame.width)
   }
 
-  root.setFlexDirection(
-    frame.layoutMode === 'HORIZONTAL' ? FlexDirection.Row : FlexDirection.Column
-  )
-  root.setFlexWrap(frame.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
-  root.setJustifyContent(mapJustify(frame.primaryAxisAlign))
-  root.setAlignItems(mapAlign(frame.counterAxisAlign))
-  if (frame.clipsContent) root.setOverflow(Overflow.Hidden)
-
-  root.setPadding(Edge.Top, frame.paddingTop)
-  root.setPadding(Edge.Right, frame.paddingRight)
-  root.setPadding(Edge.Bottom, frame.paddingBottom)
-  root.setPadding(Edge.Left, frame.paddingLeft)
-
-  root.setGap(
-    Gutter.Column,
-    frame.layoutMode === 'HORIZONTAL' ? frame.itemSpacing : frame.counterAxisSpacing
-  )
-  root.setGap(
-    Gutter.Row,
-    frame.layoutMode === 'HORIZONTAL' ? frame.counterAxisSpacing : frame.itemSpacing
-  )
+  configureFlexContainer(root, frame)
 
   const children = graph.getChildren(frame.id)
   for (const child of children) {
-
     if (child.layoutPositioning === 'ABSOLUTE') continue
 
     const yogaChild = Yoga.Node.create()
@@ -178,6 +161,36 @@ function buildYogaTree(graph: SceneGraph, frame: SceneNode): YogaNode {
   }
 
   return root
+}
+
+function configureFlexContainer(yogaNode: YogaNode, node: SceneNode): void {
+  yogaNode.setFlexDirection(
+    node.layoutMode === 'HORIZONTAL' ? FlexDirection.Row : FlexDirection.Column
+  )
+  yogaNode.setFlexWrap(node.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
+  yogaNode.setJustifyContent(mapJustify(node.primaryAxisAlign))
+  yogaNode.setAlignItems(mapAlign(node.counterAxisAlign))
+  if (node.clipsContent) yogaNode.setOverflow(Overflow.Hidden)
+
+  if (node.layoutWrap === 'WRAP' && node.counterAxisAlignContent === 'SPACE_BETWEEN') {
+    yogaNode.setAlignContent(Align.SpaceBetween)
+  }
+
+  yogaNode.setPadding(Edge.Top, node.paddingTop)
+  yogaNode.setPadding(Edge.Right, node.paddingRight)
+  yogaNode.setPadding(Edge.Bottom, node.paddingBottom)
+  yogaNode.setPadding(Edge.Left, node.paddingLeft)
+
+  yogaNode.setGap(
+    Gutter.Column,
+    node.layoutMode === 'HORIZONTAL' ? node.itemSpacing : node.counterAxisSpacing
+  )
+  yogaNode.setGap(
+    Gutter.Row,
+    node.layoutMode === 'HORIZONTAL' ? node.counterAxisSpacing : node.itemSpacing
+  )
+
+  applyMinMaxConstraints(yogaNode, node)
 }
 
 function configureChildAsGrid(
@@ -200,6 +213,13 @@ function configureChildAsGrid(
     if (gc.layoutPositioning === 'ABSOLUTE') continue
     yogaChild.insertChild(createGridChildNode(gc), yogaChild.getChildCount())
   }
+}
+
+function applyMinMaxConstraints(yogaNode: YogaNode, node: SceneNode): void {
+  if (node.minWidth != null) yogaNode.setMinWidth(node.minWidth)
+  if (node.maxWidth != null) yogaNode.setMaxWidth(node.maxWidth)
+  if (node.minHeight != null) yogaNode.setMinHeight(node.minHeight)
+  if (node.maxHeight != null) yogaNode.setMaxHeight(node.maxHeight)
 }
 
 function configureChildAsAutoLayout(
@@ -226,27 +246,7 @@ function configureChildAsAutoLayout(
     yogaChild.setAlignSelf(Align.Stretch)
   }
 
-  yogaChild.setFlexDirection(
-    child.layoutMode === 'HORIZONTAL' ? FlexDirection.Row : FlexDirection.Column
-  )
-  yogaChild.setFlexWrap(child.layoutWrap === 'WRAP' ? Wrap.Wrap : Wrap.NoWrap)
-  yogaChild.setJustifyContent(mapJustify(child.primaryAxisAlign))
-  yogaChild.setAlignItems(mapAlign(child.counterAxisAlign))
-  if (child.clipsContent) yogaChild.setOverflow(Overflow.Hidden)
-
-  yogaChild.setPadding(Edge.Top, child.paddingTop)
-  yogaChild.setPadding(Edge.Right, child.paddingRight)
-  yogaChild.setPadding(Edge.Bottom, child.paddingBottom)
-  yogaChild.setPadding(Edge.Left, child.paddingLeft)
-
-  yogaChild.setGap(
-    Gutter.Column,
-    child.layoutMode === 'HORIZONTAL' ? child.itemSpacing : child.counterAxisSpacing
-  )
-  yogaChild.setGap(
-    Gutter.Row,
-    child.layoutMode === 'HORIZONTAL' ? child.counterAxisSpacing : child.itemSpacing
-  )
+  configureFlexContainer(yogaChild, child)
 
   const grandchildren = graph.getChildren(child.id)
   for (const gc of grandchildren) {
@@ -268,12 +268,65 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
   const stretchCross = child.layoutAlignSelf === 'STRETCH' || parent.counterAxisAlign === 'STRETCH'
 
   const isText = child.type === 'TEXT'
-  const autoW = isText && child.textAutoResize === 'WIDTH_AND_HEIGHT'
-  const autoH = isText && (child.textAutoResize === 'HEIGHT' || child.textAutoResize === 'WIDTH_AND_HEIGHT')
+  const needsMeasureFunc =
+    isText && globalTextMeasurer && child.textAutoResize !== 'NONE'
 
-  const measured = (autoW || autoH) ? measureTextSize(child) : null
-  const w = autoW && measured ? measured.width : child.width
-  const h = autoH && measured ? measured.height : child.height
+  if (needsMeasureFunc) {
+    configureTextLeaf(yogaChild, child, parent)
+  } else {
+    configureNonTextLeaf(yogaChild, child, isRow, stretchCross)
+  }
+
+  if (child.layoutAlignSelf === 'STRETCH') {
+    yogaChild.setAlignSelf(Align.Stretch)
+  }
+
+  applyMinMaxConstraints(yogaChild, child)
+}
+
+function configureTextLeaf(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode
+): void {
+  const isRow = parent.layoutMode === 'HORIZONTAL'
+  const autoResize = child.textAutoResize
+
+  if (child.layoutGrow > 0) {
+    yogaChild.setFlexGrow(child.layoutGrow)
+  }
+
+  if (autoResize === 'WIDTH_AND_HEIGHT') {
+    yogaChild.setMeasureFunc((width, widthMode, _height, _heightMode) => {
+      const maxW = widthMode === MeasureMode.Undefined ? undefined : width
+      const measured = globalTextMeasurer!(child, maxW)
+      if (!measured) return { width: child.width, height: child.height }
+      return measured
+    })
+  } else if (autoResize === 'HEIGHT') {
+    const fixedWidth = child.width
+    if (child.layoutGrow <= 0) {
+      if (isRow) yogaChild.setWidth(fixedWidth)
+      else yogaChild.setWidth(fixedWidth)
+    }
+    yogaChild.setMeasureFunc((width, widthMode, _height, _heightMode) => {
+      const constraintW =
+        widthMode === MeasureMode.Undefined ? fixedWidth : Math.min(width, fixedWidth || width)
+      const measured = globalTextMeasurer!(child, constraintW)
+      if (!measured) return { width: constraintW, height: child.height }
+      return { width: constraintW, height: measured.height }
+    })
+  }
+}
+
+function configureNonTextLeaf(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  isRow: boolean,
+  stretchCross: boolean
+): void {
+  const w = child.width
+  const h = child.height
 
   if (child.layoutGrow > 0) {
     yogaChild.setFlexGrow(child.layoutGrow)
@@ -290,15 +343,6 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
       if (!stretchCross) yogaChild.setWidth(w)
     }
   }
-
-  if (child.layoutAlignSelf === 'STRETCH') {
-    yogaChild.setAlignSelf(Align.Stretch)
-  }
-}
-
-function measureTextSize(node: SceneNode): { width: number; height: number } | null {
-  if (!globalTextMeasurer) return null
-  return globalTextMeasurer(node)
 }
 
 function setSizing(

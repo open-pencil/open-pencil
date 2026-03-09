@@ -750,12 +750,18 @@ export class SkiaRenderer {
     }
   }
 
-  measureTextNode(node: SceneNode): { width: number; height: number } | null {
+  measureTextNode(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
     if (!this.fontsLoaded || !this.fontProvider || !this.isNodeFontLoaded(node)) return null
     if (node.type !== 'TEXT' || !node.text) return null
 
     const paragraph = this.buildParagraph(node)
-    paragraph.layout(node.textAutoResize === 'WIDTH_AND_HEIGHT' ? 1e6 : node.width || 1e6)
+    const layoutWidth =
+      maxWidth !== undefined
+        ? maxWidth
+        : node.textAutoResize === 'WIDTH_AND_HEIGHT'
+          ? 1e6
+          : node.width || 1e6
+    paragraph.layout(layoutWidth)
     const width = paragraph.getLongestLine()
     const height = paragraph.getHeight()
     paragraph.delete()
