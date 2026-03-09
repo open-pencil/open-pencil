@@ -16,7 +16,7 @@ Nodes are shown in a collapsible tree. Click the chevron next to a frame, group,
 
 ### Drag Reorder
 
-Drag layers to reorder them. This changes the node's z-order in the scene graph — nodes higher in the list render on top.
+Drag layers to reorder them. Nodes higher in the list render on top.
 
 ### Visibility Toggle
 
@@ -24,7 +24,7 @@ Click the eye icon next to any layer to hide or show it on the canvas. Hidden no
 
 ### Rename
 
-Double-click a layer name to rename it inline.
+Double-click a layer name to rename it inline. Press <kbd>Enter</kbd> or click away to commit, <kbd>Escape</kbd> to cancel.
 
 ### Selection Sync
 
@@ -37,7 +37,7 @@ The pages panel shows all pages in the document.
 - **Switch page** — click a page tab to make it active. The canvas switches to that page and restores its viewport position.
 - **Add page** — click the add button to create a new page
 - **Delete page** — remove the current page
-- **Rename page** — double-click the page name for inline editing. Pressing Enter or Escape, or clicking away, commits the rename.
+- **Rename page** — double-click the page name for inline editing. Pressing <kbd>Enter</kbd> or <kbd>Escape</kbd>, or clicking away, commits the rename.
 
 Each page has its own canvas and viewport state.
 
@@ -61,17 +61,24 @@ When no nodes are selected, the Design tab shows page-level properties including
 
 ### Code Tab
 
-Displays the selected node as JSX code with syntax highlighting, line numbers, and a copy button. Useful for exporting designs as code.
+Displays the selected node as code with syntax highlighting, line numbers, and a copy button. A format toggle lets you switch between two output modes:
+
+- **OpenPencil JSX** — custom component tree compatible with `renderJsx()` for programmatic round-trip
+- **Tailwind CSS v4** — HTML with utility classes (`<div className="flex gap-4 p-3">`) ready to paste into React/Vue projects
 
 ### AI Tab
 
-An AI chat interface (also toggled with **⌘ J**) that can create and modify design elements via natural language. Supports multiple AI models through OpenRouter.
+An AI chat interface (also toggled with <kbd>⌘</kbd><kbd>J</kbd>) that can create and modify design elements via natural language. Supports multiple AI models through OpenRouter.
 
 ## Keyboard Shortcuts
 
 | Action | Mac | Windows / Linux |
 |--------|-----|-----------------|
-| Toggle AI chat | ⌘ J | Ctrl + J |
+| Toggle AI chat | <kbd>⌘</kbd><kbd>J</kbd> | <kbd>Ctrl</kbd> + <kbd>J</kbd> |
+
+## Mobile Layout
+
+On mobile and small screens, the side panels are replaced by a swipeable bottom drawer. Tabs at the top of the drawer switch between Layers, Properties, Design, and Code views. The toolbar collapses to a compact horizontal strip with category switching.
 
 ## Tips
 

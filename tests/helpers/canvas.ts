@@ -27,7 +27,8 @@ export class CanvasHelper {
   }
 
   async waitForInit() {
-    await this.page.locator('canvas[data-ready="1"]').waitFor({ timeout: 5000 })
+    await this.page.locator('canvas[data-ready="1"]').waitFor({ timeout: 30000 })
+    await this.page.locator('[data-test-id="canvas-loading"]').waitFor({ state: 'hidden', timeout: 30000 })
   }
 
   async clearCanvas() {
@@ -41,7 +42,9 @@ export class CanvasHelper {
   }
 
   private async canvasBounds() {
-    return this.canvas.boundingBox().then((b) => b!)
+    const b = await this.canvas.boundingBox()
+    if (!b) throw new Error('Canvas has no bounding box — is it visible?')
+    return b
   }
 
   async click(canvasX: number, canvasY: number) {
@@ -113,6 +116,63 @@ export class CanvasHelper {
 
   async duplicate() {
     await this.pressKey('Meta+d')
+    await this.waitForRender()
+  }
+
+  async marquee(x1: number, y1: number, x2: number, y2: number, steps = 10) {
+    const box = await this.canvasBounds()
+    await this.page.mouse.move(box.x + x1, box.y + y1)
+    await this.page.mouse.down()
+    await this.page.mouse.move(box.x + x2, box.y + y2, { steps })
+    await this.page.mouse.up()
+    await this.waitForRender()
+  }
+
+  async hover(x: number, y: number) {
+    const box = await this.canvasBounds()
+    await this.page.mouse.move(box.x + x, box.y + y)
+    await this.waitForRender()
+  }
+
+  /** Point `locator` at the outer ScrubInput container (`[data-test-id="scrub-input"]`), not the inner `<input>`. */
+  async dragScrubInput(locator: Locator, deltaX: number) {
+    await locator.scrollIntoViewIfNeeded()
+    const box = await locator.boundingBox()
+    if (!box) throw new Error('dragScrubInput: element has no bounding box')
+    const cx = box.x + box.width / 2
+    const cy = box.y + box.height / 2
+    await this.page.mouse.move(cx, cy)
+    await this.page.mouse.down()
+    await this.page.mouse.move(cx + deltaX, cy, { steps: 10 })
+    await this.page.mouse.up()
+    await this.waitForRender()
+  }
+
+  async altDrag(fromX: number, fromY: number, toX: number, toY: number) {
+    const box = await this.canvasBounds()
+    await this.page.keyboard.down('Alt')
+    await this.page.mouse.move(box.x + fromX, box.y + fromY)
+    await this.page.mouse.down()
+    await this.page.mouse.move(box.x + toX, box.y + toY, { steps: 10 })
+    await this.page.mouse.up()
+    await this.page.keyboard.up('Alt')
+    await this.waitForRender()
+  }
+
+  async shiftDrag(fromX: number, fromY: number, toX: number, toY: number) {
+    const box = await this.canvasBounds()
+    await this.page.keyboard.down('Shift')
+    await this.page.mouse.move(box.x + fromX, box.y + fromY)
+    await this.page.mouse.down()
+    await this.page.mouse.move(box.x + toX, box.y + toY, { steps: 10 })
+    await this.page.mouse.up()
+    await this.page.keyboard.up('Shift')
+    await this.waitForRender()
+  }
+
+  async dblclick(x: number, y: number) {
+    const box = await this.canvasBounds()
+    await this.page.mouse.dblclick(box.x + x, box.y + y)
     await this.waitForRender()
   }
 }

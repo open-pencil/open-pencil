@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, h } from 'vue'
+import { ref, computed, watch, nextTick, h, type Component } from 'vue'
 import {
   DialogRoot,
   DialogPortal,
@@ -24,9 +24,9 @@ import IconType from '~icons/lucide/type'
 import IconToggleLeft from '~icons/lucide/toggle-left'
 import IconX from '~icons/lucide/x'
 import ColorInput from './ColorInput.vue'
-import { colorToHexRaw, parseColor } from '@/engine/color'
+import { colorToHexRaw, parseColor } from '@open-pencil/core'
 import { useEditorStore } from '@/stores/editor'
-import type { Variable, Color } from '@/engine/scene-graph'
+import type { Variable, VariableCollection, VariableValue, Color } from '@open-pencil/core'
 
 const open = defineModel<boolean>('open', { default: false })
 const store = useEditorStore()
@@ -43,14 +43,25 @@ watch(collections, (cols) => {
 })
 
 const editingCollectionId = ref<string | null>(null)
+const collectionInputRefs = new Map<string, HTMLInputElement>()
+const pendingCollectionFocusId = ref<string | null>(null)
+
+function setCollectionInputRef(id: string, el: HTMLInputElement | null) {
+  if (el) collectionInputRefs.set(id, el)
+  else collectionInputRefs.delete(id)
+
+  if (el && pendingCollectionFocusId.value === id) {
+    pendingCollectionFocusId.value = null
+    void nextTick(() => {
+      el.focus()
+      el.select()
+    })
+  }
+}
 
 function startRenameCollection(id: string) {
   editingCollectionId.value = id
-  nextTick(() => {
-    const input = document.querySelector<HTMLInputElement>('[data-collection-edit]')
-    input?.focus()
-    input?.select()
-  })
+  pendingCollectionFocusId.value = id
 }
 
 function commitRenameCollection(id: string, input: HTMLInputElement) {
@@ -144,7 +155,7 @@ function updateColorValue(variable: Variable, modeId: string, color: Color) {
 
 function commitValueEdit(variable: Variable, modeId: string, newValue: string) {
   const oldValue = structuredClone(variable.valuesByMode[modeId])
-  let parsed: import('@open-pencil/core').VariableValue
+  let parsed: VariableValue
   if (variable.type === 'COLOR') {
     parsed = parseColor(newValue.startsWith('#') ? newValue : `#${newValue}`)
   } else if (variable.type === 'FLOAT') {
@@ -176,7 +187,7 @@ function addVariable() {
   if (!col) return
 
   const id = `var:${Date.now()}`
-  const valuesByMode: Record<string, import('@open-pencil/core').VariableValue> = {}
+  const valuesByMode: Record<string, VariableValue> = {}
   for (const mode of col.modes) {
     valuesByMode[mode.modeId] = { r: 0, g: 0, b: 0, a: 1 }
   }
@@ -207,7 +218,7 @@ function addVariable() {
 
 function addCollection() {
   const id = `col:${Date.now()}`
-  const collection: import('@open-pencil/core').VariableCollection = {
+  const collection: VariableCollection = {
     id,
     name: 'New collection',
     modes: [{ modeId: 'default', name: 'Mode 1' }],
@@ -262,14 +273,13 @@ const columns = computed<ColumnDef<Variable>[]>(() => {
     cell: ({ row }) => {
       const v = row.original
       const iconClass = 'size-3.5 shrink-0 text-muted'
-      const iconComponent =
-        v.type === 'COLOR'
-          ? IconPalette
-          : v.type === 'FLOAT'
-            ? IconHash
-            : v.type === 'STRING'
-              ? IconType
-              : IconToggleLeft
+      const VARIABLE_TYPE_ICONS: Record<string, Component> = {
+        COLOR: IconPalette,
+        FLOAT: IconHash,
+        STRING: IconType,
+        BOOLEAN: IconToggleLeft
+      }
+      const iconComponent = VARIABLE_TYPE_ICONS[v.type] ?? IconToggleLeft
       const icon = h(iconComponent, { class: iconClass })
 
       return h('div', { class: 'flex items-center gap-2' }, [
@@ -412,7 +422,7 @@ const table = useVueTable({
                 <template v-for="col in collections" :key="col.id">
                   <input
                     v-if="editingCollectionId === col.id"
-                    data-collection-edit
+                    :ref="(el) => setCollectionInputRef(col.id, el as HTMLInputElement | null)"
                     class="w-24 rounded border border-accent bg-input px-2 py-0.5 text-xs text-surface outline-none"
                     :value="col.name"
                     @blur="commitRenameCollection(col.id, $event.target as HTMLInputElement)"
@@ -436,6 +446,7 @@ const table = useVueTable({
                   <icon-lucide-search class="size-3 text-muted" />
                   <input
                     v-model="searchTerm"
+                    data-test-id="variables-search-input"
                     class="w-24 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
                     placeholder="Search"
                   />
@@ -505,6 +516,7 @@ const table = useVueTable({
                     <tr
                       v-for="row in table.getRowModel().rows"
                       :key="row.id"
+                      data-test-id="variable-row"
                       class="group border-b border-border/30 hover:bg-hover/50"
                     >
                       <td

@@ -103,14 +103,10 @@ export const pathScale = defineTool({
       v.y = cy + (v.y - cy) * factor
     }
     for (const s of vn.segments) {
-      if (s.tangentStart) {
-        s.tangentStart.x *= factor
-        s.tangentStart.y *= factor
-      }
-      if (s.tangentEnd) {
-        s.tangentEnd.x *= factor
-        s.tangentEnd.y *= factor
-      }
+      s.tangentStart.x *= factor
+      s.tangentStart.y *= factor
+      s.tangentEnd.x *= factor
+      s.tangentEnd.y *= factor
     }
     figma.graph.updateNode(id, { vectorNetwork: vn } as any)
     return { id, factor }
@@ -142,14 +138,10 @@ export const pathFlip = defineTool({
       else v.y = h - v.y
     }
     for (const s of vn.segments) {
-      if (s.tangentStart) {
-        if (axis === 'horizontal') s.tangentStart.x = -s.tangentStart.x
-        else s.tangentStart.y = -s.tangentStart.y
-      }
-      if (s.tangentEnd) {
-        if (axis === 'horizontal') s.tangentEnd.x = -s.tangentEnd.x
-        else s.tangentEnd.y = -s.tangentEnd.y
-      }
+      if (axis === 'horizontal') s.tangentStart.x = -s.tangentStart.x
+      else s.tangentStart.y = -s.tangentStart.y
+      if (axis === 'horizontal') s.tangentEnd.x = -s.tangentEnd.x
+      else s.tangentEnd.y = -s.tangentEnd.y
     }
     figma.graph.updateNode(id, { vectorNetwork: vn } as any)
     return { id, axis }
@@ -288,7 +280,7 @@ export const exportImage = defineTool({
       args.ids && args.ids.length > 0
         ? args.ids
         : figma.currentPage.children.map((n) => n.id)
-    const format = ((args.format as string) ?? 'PNG').toUpperCase() as 'PNG' | 'JPG' | 'WEBP'
+    const format = (args.format ?? 'PNG').toUpperCase() as 'PNG' | 'JPG' | 'WEBP'
     const data = await figma.exportImage(ids, {
       scale: args.scale ?? 1,
       format

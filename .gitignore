@@ -32,6 +32,8 @@ test-results/
 .env
 packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
 packages/collab/.wrangler/
 packages/core/vendor/canvaskit-webgpu/
 patches/skia-webgpu/

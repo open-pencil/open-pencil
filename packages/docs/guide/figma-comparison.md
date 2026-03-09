@@ -6,7 +6,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
 :::
 
-**Coverage:** 83 of 150 Figma feature items addressed — 64 ✅ fully supported, 19 🟡 partial, 67 🔲 not yet. Last updated: 2026-03-01.
+**Coverage:** 94 of 158 Figma feature items addressed — 76 ✅ fully supported, 18 🟡 partial, 64 🔲 not yet. Last updated: 2026-03-07.
 
 ## Interface & Navigation
 
@@ -16,7 +16,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Layers panel (left sidebar) | ✅ | Tree view with expand/collapse, drag reorder, visibility toggle; resizable width |
 | Pages panel | ✅ | Add, delete, rename pages; per-page viewport state |
 | Properties panel (right sidebar) | ✅ | Sections: Appearance, Fill, Stroke, Effects, Typography, Layout, Position; resizable width |
-| Zoom & pan | ✅ | Ctrl+scroll, pinch, ⌘+/⌘−/⌘0, space+drag, middle mouse, hand tool (H) |
+| Zoom & pan | ✅ | <kbd>Ctrl</kbd> + scroll, pinch, <kbd>⌘</kbd><kbd>+</kbd> / <kbd>⌘</kbd><kbd>−</kbd> / <kbd>⌘</kbd><kbd>0</kbd>, <kbd>Space</kbd> + drag, middle mouse, hand tool (<kbd>H</kbd>) |
 | Canvas rulers | ✅ | Top/left rulers with selection highlight bands and coordinate badges |
 | Canvas background color | ✅ | Per-page background via properties panel |
 | Canvas guides | 🔲 | Figma supports draggable guides from rulers |
@@ -27,7 +27,8 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Layer outlines view | 🔲 | Wireframe view of all layers |
 | Custom file thumbnails | 🔲 | Thumbnail generated on export, but no custom thumbnail picker |
 | Nudge value settings | 🔲 | Default 1px/10px; Figma allows custom small/big nudge values |
-| AI tools | 🟡 | 26 AI tools via OpenRouter (create/modify/delete shapes, fills/strokes/effects, layout, constraints, components, groups, pages, variables); no AI-generated images or AI-powered search yet |
+| App menu (browser mode) | ✅ | File, Edit, View, Object, Text, Arrange menus; Tauri uses native menus |
+| AI tools | 🟡 | 90 tools via OpenRouter + MCP server; no AI-generated images or AI-powered search yet |
 
 ## Layers & Shapes
 
@@ -35,7 +36,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 |---------|--------|-------|
 | Shape tools (Rectangle, Ellipse, Line, Polygon, Star) | ✅ | All basic shape types; polygon side count and star inner radius configurable |
 | Frames | ✅ | Clip content, independent coordinate system |
-| Groups | ✅ | ⌘G to group, ⇧⌘G to ungroup |
+| Groups | ✅ | <kbd>⌘</kbd><kbd>G</kbd> to group, <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd> to ungroup |
 | Sections | ✅ | Title pills, auto-adopt overlapping nodes, luminance-adaptive text |
 | Arc tool (arcs, semi-circles, rings) | ✅ | arcData with start/end angle and inner radius |
 | Pencil (freehand) tool | 🔲 | Figma's freehand drawing tool |
@@ -43,18 +44,18 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Layer types & hierarchy | ✅ | 17 node types, flat Map + parent-child tree |
 | Select layers | ✅ | Click, shift-click, marquee selection |
 | Alignment & position | ✅ | Position, rotation, dimensions in properties panel |
-| Copy & paste objects | ✅ | Standard clipboard + Figma Kiwi binary format |
+| Copy & paste objects | ✅ | Standard clipboard + Figma Kiwi binary format; Copy as text/SVG/PNG/JSX |
 | Scale layers proportionally | 🟡 | Shift-resize constrains proportions; no dedicated Scale tool (K) |
-| Lock & unlock layers | ✅ | ⇧⌘L toggles lock; locked nodes can't be selected/moved from canvas |
-| Toggle layer visibility | ✅ | Eye icon in layers panel + ⇧⌘H keyboard shortcut |
-| Rename layers | 🟡 | Programmatic rename via store; no inline rename UI in layers panel yet |
+| Lock & unlock layers | ✅ | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> toggles lock; locked nodes can't be selected/moved from canvas |
+| Toggle layer visibility | ✅ | Eye icon in layers panel + <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> keyboard shortcut |
+| Rename layers | ✅ | Double-click inline rename in layers panel; <kbd>Enter</kbd>/<kbd>Escape</kbd>/blur to commit |
 | Bring to front / Send to back | ✅ | ] and [ keyboard shortcuts; also in context menu |
 | Move to page | ✅ | Move selected nodes between pages via context menu |
 | Constraints (responsive resize) | 🔲 | Pin edges/center for parent resize behavior |
 | Smart selection (distribute/align) | 🔲 | Evenly space and align multi-selection |
 | Layout guides (columns, rows, grid) | 🔲 | Column/row/grid overlay guides on frames |
 | Measure distances between layers | 🔲 | Alt-hover to show distances |
-| Edit objects in bulk | 🔲 | Batch property editing |
+| Edit objects in bulk | ✅ | Multi-selection properties panel: edit position, size, appearance, fill, stroke, effects across multiple nodes; shared values display normally, differing values show "Mixed" |
 | Identify matching objects | 🔲 | Find similar layers |
 | Copy/paste properties | 🔲 | Copy fill/stroke/effects between layers |
 | Parent-child relationships | ✅ | Full hierarchy with parentIndex, reparenting via drag |
@@ -78,13 +79,13 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Text tool & inline editing | ✅ | Canvas-native editing, phantom textarea, cursor/selection/word select, drag to select, double/triple-click, rich text style runs (⌘B/I/U, S button) |
+| Text tool & inline editing | ✅ | Canvas-native editing, phantom textarea, cursor/selection/word select, drag to select, double/triple-click, rich text style runs (<kbd>⌘</kbd><kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd>, **S** button) |
 | Text rendering (Paragraph API) | ✅ | CanvasKit Paragraph for shaping, line-breaking, metrics |
 | Font loading (system fonts) | ✅ | Inter default, font-kit in Tauri with OnceLock cache + preloading, queryLocalFonts in browser |
 | Font family & weight | ✅ | FontPicker with virtual scroll, search, CSS preview; weight selection in properties panel |
 | Font size & line height | ✅ | Editable in typography section |
 | Text alignment | 🟡 | Basic alignment; Figma has vertical alignment and auto-width/height modes |
-| Text styles | 🟡 | Per-selection bold/italic/underline/strikethrough (⌘B/I/U, S button); not yet reusable named text style presets |
+| Text styles | 🟡 | Per-selection bold/italic/underline/strikethrough (<kbd>⌘</kbd><kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd>, **S** button); not yet reusable named text style presets |
 | Text resizing modes (auto, fixed, hug) | 🔲 | Figma's auto-width, auto-height, fixed-size text modes |
 | Bulleted & numbered lists | 🔲 | List formatting in text |
 | Links in text | 🔲 | Hyperlinks within text content |
@@ -125,9 +126,11 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Background blur | ✅ | Blur content behind layer |
 | Foreground blur | ✅ | Blur in foreground |
 | Stroke weight | ✅ | Configurable in properties panel |
-| Stroke cap (round, square, arrow) | ✅ | NONE, ROUND, SQUARE, ARROW_LINES, ARROW_EQUILATERAL |
+| Stroke cap (round, square, arrow) | ✅ | `NONE`, `ROUND`, `SQUARE`, `ARROW_LINES`, `ARROW_EQUILATERAL` |
 | Stroke join (miter, bevel, round) | ✅ | All three join types |
 | Dash patterns | ✅ | Dash-on/dash-off stroke pattern |
+| Stroke alignment | ✅ | Inside/Center/Outside with clip-based rendering matching Figma behavior |
+| Individual stroke weights per side | ✅ | Top/Right/Bottom/Left with side selector dropdown |
 | Corner radius | ✅ | Uniform and per-corner radius with independent toggle in properties panel |
 | Corner smoothing (iOS-style) | 🔲 | Figma's continuous corner rounding |
 | Multiple fills/strokes per layer | 🔲 | Figma allows stacking fills and strokes |
@@ -137,14 +140,14 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Horizontal & vertical flow | ✅ | Yoga WASM flexbox engine |
-| Toggle auto layout (⇧A) | ✅ | Toggle on frame or wrap selection |
+| Toggle auto layout (<kbd>⇧</kbd><kbd>A</kbd>) | ✅ | Toggle on frame or wrap selection |
 | Gap (spacing between children) | ✅ | Configurable in properties panel |
 | Padding (uniform & per-side) | ✅ | All four sides independently |
 | Justify content | ✅ | Start, center, end, space-between |
 | Align items | ✅ | Start, center, end, stretch |
 | Child sizing (fixed, fill, hug) | ✅ | Per-child sizing modes |
 | Wrap | ✅ | Flex wrap for multi-line layout |
-| Grid auto layout flow | 🔲 | Figma's grid-based auto layout (rows × columns) |
+| Grid auto layout flow | ✅ | CSS Grid via Yoga fork — column/row tracks, gaps, spans |
 | Combined flows (nested) | ✅ | Nested auto-layout frames with different directions |
 | Drag reorder within auto layout | ✅ | Visual insertion indicator |
 | Min/max width and height | 🔲 | Figma supports min/max constraints on auto-layout children |
@@ -153,17 +156,17 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Create components | 🟡 | ⌥⌘K creates from frame/group or wraps selection; no component properties UI yet |
-| Component sets | 🟡 | ⇧⌘K combines components; dashed purple border; no variant property editing |
+| Create components | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> creates from frame/group or wraps selection; no component properties UI yet |
+| Component sets | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> combines components; dashed purple border; no variant property editing |
 | Component instances | 🟡 | Create instance from context menu with child cloning and componentId mapping; live sync from component; no override editing UI |
 | Variants | 🔲 | Variant switching and property-based selection |
 | Component properties | 🔲 | Boolean, text, instance swap properties |
 | Override propagation | ✅ | Changes to main component propagate to all instances; overrides preserved |
-| Variables (color, number, string, boolean) | 🟡 | COLOR full UI (dialog, TanStack Table, inline editing, undo/redo, demo collections); FLOAT/STRING/BOOLEAN defined but no editing UI |
+| Variables (color, number, string, boolean) | 🟡 | `COLOR` full UI (dialog, TanStack Table, inline editing, undo/redo, demo collections); `FLOAT`/STRING/BOOLEAN defined but no editing UI |
 | Variable collections & modes | 🟡 | Collections, modes, activeMode switching work; no variable-driven theming UI yet |
 | Styles (color, text, effect, layout) | 🔲 | Reusable named style presets |
 | Libraries (publish, share, update) | 🔲 | Shared component/style libraries |
-| Detach instance | ✅ | ⌥⌘B converts instance back to frame |
+| Detach instance | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> converts instance back to frame |
 | Go to main component | ✅ | Navigate to source component, cross-page |
 
 ## Prototyping
@@ -186,30 +189,37 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| .fig file import | ✅ | Full Kiwi codec: 194 definitions, ~390 fields per NodeChange |
-| .fig file export | ✅ | Kiwi encoding + Zstd compression + thumbnail generation |
-| Save / Save As | ✅ | ⌘S / ⇧⌘S with native OS dialogs (Tauri) |
+| .fig file import | ✅ | Full Kiwi codec: 194 definitions, ~390 fields per `NodeChange` |
+| .fig file export | ✅ | Kiwi encoding + Zstd compression + thumbnail generation; `COMPONENT`/COMPONENT_SET mapped to `SYMBOL` for round-trip |
+| Save / Save As | ✅ | <kbd>⌘</kbd><kbd>S</kbd> / <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd>; native dialogs (Tauri), File System Access API (Chrome/Edge), download fallback (Safari) |
 | Figma clipboard (paste) | ✅ | Decode Kiwi binary from Figma clipboard |
 | Figma clipboard (copy) | ✅ | Encode Kiwi binary that Figma can read |
 | Sketch file import | 🔲 | .sketch file parsing |
-| Image/SVG export | 🟡 | PNG/JPG/WEBP with scale selector and live preview; SVG/PDF not yet |
+| Image/SVG/PDF export | 🟡 | PNG/JPG/WEBP/SVG export ✅; PDF export 🔲 |
 | Version history | 🔲 | Browse and restore previous versions |
-| Copy assets between tools | 🟡 | Figma clipboard works; no SVG/PDF clipboard |
+| Copy assets between tools | ✅ | Figma clipboard (Kiwi binary), Copy as text/SVG/PNG/JSX |
+
+## Plugin API & Scripting
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Eval command with Figma Plugin API | ✅ | Headless JavaScript execution with figma global object matching Figma's plugin surface |
 
 ## Collaboration & Dev Mode
 
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Comments (pin, thread, resolve) | 🔲 | Planned for Phase 6 |
-| Real-time multiplayer | 🔲 | Planned (Yjs-based) |
+| Real-time multiplayer | ✅ | P2P via Trystero + Yjs CRDT, cursors, follow mode; no server required |
 | Cursor chat | 🔲 | Inline chat bubbles at cursor |
 | Branching & merging | 🔲 | Version branches for design files |
 | Dev Mode (inspect) | 🟡 | Code tab shows JSX representation of selection; no CSS properties or handoff specs |
 | Code Connect | 🔲 | Link design components to code |
 | Code snippets | 🟡 | JSX export with syntax highlighting and copy; no CSS/Swift/Kotlin snippets |
+| Tailwind CSS v4 export | ✅ | Export as HTML with Tailwind utility classes from Code panel, CLI, or programmatically |
 | Figma for VS Code | 🔲 | Editor plugin integration |
-| MCP server | 🔲 | Planned; porting 118 tools from figma-use (26 currently available as AI tools) |
-| CLI tools | 🟡 | Headless CLI: info, tree, find, export, analyze (colors/typography/spacing/clusters), node, pages, variables, eval; MCP server not yet |
+| MCP server | ✅ | @open-pencil/mcp with stdio + HTTP transports; 87 core tools + 3 file management tools = 90 total |
+| CLI tools | ✅ | Headless CLI: info, tree, find, export, analyze, node, pages, variables, eval; MCP server with stdio + HTTP |
 
 ## Figma Draw
 

@@ -14,11 +14,10 @@ import {
   type Color as RekaColor
 } from 'reka-ui'
 
-import { colorToHex } from '@/engine/color'
+import type { Color } from '@open-pencil/core'
+import { colorToHex8, rgba255ToColor } from '@open-pencil/core'
 
-import type { Color } from '@/types'
-
-const props = defineProps<{
+const { color } = defineProps<{
   color: Color
 }>()
 
@@ -26,22 +25,13 @@ const emit = defineEmits<{
   update: [color: Color]
 }>()
 
-const hexWithAlpha = computed(() => {
-  const hex = colorToHex(props.color)
-  if (props.color.a < 1) {
-    const aa = Math.round(props.color.a * 255)
-      .toString(16)
-      .padStart(2, '0')
-    return `${hex}${aa}`
-  }
-  return hex
-})
+const hexWithAlpha = computed(() => colorToHex8(color))
 
 const rekaColor = computed(() => normalizeColor(hexWithAlpha.value))
 
 function rekaToColor(c: RekaColor): Color {
   const rgb = convertToRgb(c)
-  return { r: rgb.r / 255, g: rgb.g / 255, b: rgb.b / 255, a: rgb.alpha }
+  return rgba255ToColor(rgb.r, rgb.g, rgb.b, rgb.alpha)
 }
 
 function onRekaColorUpdate(c: RekaColor) {

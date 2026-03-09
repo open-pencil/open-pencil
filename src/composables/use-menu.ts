@@ -13,9 +13,9 @@ export async function openFileDialog() {
       multiple: false
     })
     if (!path) return
-    const bytes = await readFile(path as string)
-    const file = new File([bytes], (path as string).split('/').pop() ?? 'file.fig')
-    await openFileInNewTab(file, undefined, path as string)
+    const bytes = await readFile(path)
+    const file = new File([bytes], (path).split('/').pop() ?? 'file.fig')
+    await openFileInNewTab(file, undefined, path)
     return
   }
 
@@ -49,14 +49,14 @@ export async function openFileDialog() {
 
 const store = useEditorStore()
 
-const MENU_ACTIONS: Record<string, () => void> = {
+const MENU_ACTIONS: Partial<Record<string, () => void>> = {
   new: () => createTab(),
-  open: () => openFileDialog(),
+  open: () => void openFileDialog(),
   close: () => {
     if (activeTab.value) closeTab(activeTab.value.id)
   },
-  save: () => store.saveFigFile(),
-  'save-as': () => store.saveFigFileAs(),
+  save: () => void store.saveFigFile(),
+  'save-as': () => void store.saveFigFileAs(),
   duplicate: () => store.duplicateSelected(),
   delete: () => store.deleteSelected(),
   group: () => store.groupSelected(),
@@ -64,7 +64,9 @@ const MENU_ACTIONS: Record<string, () => void> = {
   'create-component': () => store.createComponentFromSelection(),
   'create-component-set': () => store.createComponentSetFromComponents(),
   'detach-instance': () => store.detachInstance(),
+  'zoom-100': () => store.zoomTo100(),
   'zoom-fit': () => store.zoomToFit(),
+  'zoom-selection': () => store.zoomToSelection(),
   export: () => {
     if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'PNG')
   }

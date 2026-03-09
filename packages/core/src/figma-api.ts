@@ -1,6 +1,5 @@
-import { SceneGraph } from './scene-graph'
-
 import type {
+  SceneGraph,
   SceneNode,
   NodeType,
   Fill,
@@ -13,6 +12,7 @@ import type {
   VariableValue
 } from './scene-graph'
 import type { Rect, Vector } from './types'
+import { copyFills, copyStrokes, copyEffects } from './copy'
 
 const MIXED = Symbol('mixed')
 
@@ -159,7 +159,7 @@ class FigmaNodeProxy {
   // --- Visual ---
 
   get fills(): readonly Fill[] {
-    return Object.freeze(structuredClone(this._raw().fills))
+    return Object.freeze(copyFills(this._raw().fills))
   }
 
   set fills(v: readonly Fill[]) {
@@ -167,7 +167,7 @@ class FigmaNodeProxy {
   }
 
   get strokes(): readonly Stroke[] {
-    return Object.freeze(structuredClone(this._raw().strokes))
+    return Object.freeze(copyStrokes(this._raw().strokes))
   }
 
   set strokes(v: readonly Stroke[]) {
@@ -175,7 +175,7 @@ class FigmaNodeProxy {
   }
 
   get effects(): readonly Effect[] {
-    return Object.freeze(structuredClone(this._raw().effects))
+    return Object.freeze(copyEffects(this._raw().effects))
   }
 
   set effects(v: readonly Effect[]) {
@@ -233,11 +233,11 @@ class FigmaNodeProxy {
   set cornerRadius(v: number | typeof MIXED) {
     if (v === MIXED) return
     this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
-      cornerRadius: v as number,
-      topLeftRadius: v as number,
-      topRightRadius: v as number,
-      bottomRightRadius: v as number,
-      bottomLeftRadius: v as number,
+      cornerRadius: v,
+      topLeftRadius: v,
+      topRightRadius: v,
+      bottomRightRadius: v,
+      bottomLeftRadius: v,
       independentCorners: false
     })
   }
@@ -304,7 +304,7 @@ class FigmaNodeProxy {
   set strokeWeight(v: number) {
     const n = this._raw()
     if (n.strokes.length > 0) {
-      const strokes = structuredClone(n.strokes)
+      const strokes = copyStrokes(n.strokes)
       strokes[0].weight = v
       this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { strokes })
     }
@@ -318,7 +318,7 @@ class FigmaNodeProxy {
   set strokeAlign(v: string) {
     const n = this._raw()
     if (n.strokes.length > 0) {
-      const strokes = structuredClone(n.strokes)
+      const strokes = copyStrokes(n.strokes)
       strokes[0].align = v as Stroke['align']
       this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { strokes })
     }
@@ -704,7 +704,7 @@ class FigmaNodeProxy {
   set layoutAlign(v: string) {
     const mapped = v === 'STRETCH' ? 'STRETCH' : 'AUTO'
     this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
-      layoutAlignSelf: mapped as SceneNode['layoutAlignSelf']
+      layoutAlignSelf: mapped
     })
   }
 
@@ -1100,7 +1100,7 @@ export class FigmaAPI {
 
   ungroup(node: FigmaNodeProxy): void {
     const raw = this.graph.getNode(node[INTERNAL_ID])
-    if (!raw || raw.type !== 'GROUP') return
+    if (raw?.type !== 'GROUP') return
     const parentId = raw.parentId ?? this._currentPageId
     for (const childId of [...raw.childIds]) {
       this.graph.reparentNode(childId, parentId)
@@ -1119,9 +1119,9 @@ export class FigmaAPI {
       height: raw.height,
       x: raw.x,
       y: raw.y,
-      fills: structuredClone(raw.fills),
-      strokes: structuredClone(raw.strokes),
-      effects: structuredClone(raw.effects),
+      fills: copyFills(raw.fills),
+      strokes: copyStrokes(raw.strokes),
+      effects: copyEffects(raw.effects),
       cornerRadius: raw.cornerRadius,
       topLeftRadius: raw.topLeftRadius,
       topRightRadius: raw.topRightRadius,
@@ -1239,7 +1239,7 @@ export class FigmaAPI {
       y: first.y,
       width: first.width,
       height: first.height,
-      fills: structuredClone(first.fills)
+      fills: copyFills(first.fills)
     })
     for (const id of nodeIds) {
       this.graph.deleteNode(id)
@@ -1251,8 +1251,33 @@ export class FigmaAPI {
 
   private _viewport = { x: 0, y: 0, zoom: 1 }
 
-  get viewport(): { center: Vector; zoom: number } {
-    return { center: { x: this._viewport.x, y: this._viewport.y }, zoom: this._viewport.zoom }
+  get viewport(): { center: Vector; zoom: number; scrollAndZoomIntoView: (nodes: readonly { absoluteBoundingBox: Rect }[]) => void } {
+    return {
+      center: { x: this._viewport.x, y: this._viewport.y },
+      zoom: this._viewport.zoom,
+      scrollAndZoomIntoView: (nodes) => {
+        let minX = Infinity
+        let minY = Infinity
+        let maxX = -Infinity
+        let maxY = -Infinity
+        for (const node of nodes) {
+          const b = node.absoluteBoundingBox
+          minX = Math.min(minX, b.x)
+          minY = Math.min(minY, b.y)
+          maxX = Math.max(maxX, b.x + b.width)
+          maxY = Math.max(maxY, b.y + b.height)
+        }
+        if (minX === Infinity) return
+
+        const padding = 80
+        const contentW = maxX - minX + padding * 2
+        const contentH = maxY - minY + padding * 2
+        const viewW = typeof window !== 'undefined' ? window.innerWidth : 1280
+        const viewH = typeof window !== 'undefined' ? window.innerHeight : 720
+        const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
+        this._viewport = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom }
+      }
+    }
   }
 
   set viewport(v: { center: Vector; zoom: number }) {
@@ -1267,10 +1292,13 @@ export class FigmaAPI {
 
   notify(message: string): { cancel: () => void } {
     if (typeof console !== 'undefined') console.log(`[figma.notify] ${message}`)
+    // eslint-disable-next-line no-empty-function
     return { cancel() {} }
   }
 
+  // eslint-disable-next-line no-empty-function
   commitUndo(): void {}
+  // eslint-disable-next-line no-empty-function
   triggerUndo(): void {}
 
   exportImage?: (

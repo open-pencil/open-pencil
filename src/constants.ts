@@ -58,8 +58,7 @@ export {
   RULER_MAJOR_TOLERANCE
 } from '@open-pencil/core'
 
-import type { Color } from '@/types'
-import type { Fill, Stroke } from '@open-pencil/core'
+import type { Color, Fill, Stroke } from '@open-pencil/core'
 
 export const TRYSTERO_APP_ID = 'openpencil'
 export const ROOM_ID_LENGTH = 8

@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { FrameStats } from '../../packages/core/src/profiler/frame-stats'
-import { DrawCallCounter } from '../../packages/core/src/profiler/draw-call-counter'
-import { PhaseTimer } from '../../packages/core/src/profiler/phase-timer'
-import { GPUTimer } from '../../packages/core/src/profiler/gpu-timer'
-import { CaptureStack, toSpeedscopeJSON } from '../../packages/core/src/profiler/frame-capture'
+import { FrameStats, DrawCallCounter, PhaseTimer, GPUTimer, CaptureStack, toSpeedscopeJSON } from '@open-pencil/core'
 
 describe('FrameStats', () => {
   it('records frames and computes rolling averages', () => {

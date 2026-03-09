@@ -29,7 +29,7 @@ let compiledSchema: CompiledSchema | null = null
  */
 export async function initCodec(): Promise<void> {
   if (compiledSchema) return
-  compiledSchema = compileSchema(figmaSchema as Schema) as CompiledSchema
+  compiledSchema = compileSchema(figmaSchema) as CompiledSchema
 }
 
 export function getCompiledSchema() {
@@ -38,7 +38,7 @@ export function getCompiledSchema() {
 }
 
 export function getSchemaBytes(): Uint8Array {
-  return encodeBinarySchema(figmaSchema as Schema)
+  return encodeBinarySchema(figmaSchema)
 }
 
 /**
@@ -193,7 +193,7 @@ export interface Paint {
   visible?: boolean
   blendMode?: string
   stops?: { color: Color; position: number }[]
-  transform?: { m00: number; m01: number; m02: number; m10: number; m11: number; m12: number }
+  transform?: Matrix
   image?: { hash: string }
   imageScaleMode?: string
   colorVariableBinding?: VariableBinding
@@ -209,7 +209,33 @@ export interface Effect {
   blendMode?: string
 }
 
+export interface VariableAnyValue {
+  boolValue?: boolean
+  textValue?: string
+  floatValue?: number
+  colorValue?: Color
+  alias?: { guid: GUID }
+}
+
+export interface VariableDataEntry {
+  value?: VariableAnyValue
+  dataType?: string
+  resolvedDataType?: string
+}
+
+export interface VariableConsumptionEntry {
+  nodeField?: number
+  variableData?: VariableDataEntry
+  variableField?: string
+}
+
+export interface VariableDataValuesEntry {
+  modeID: GUID
+  variableData: VariableDataEntry
+}
+
 export interface NodeChange {
+  [key: string]: unknown
   guid: GUID
   phase?: 'CREATED' | 'REMOVED'
   parentIndex?: ParentIndex
@@ -265,10 +291,24 @@ export interface NodeChange {
   textAutoResize?: string
   textData?: {
     characters: string
-    lines?: unknown[]
+    lines?: Array<{ lineType?: string; styleId?: number; indentationLevel?: number }>
     characterStyleIDs?: number[]
     styleOverrideTable?: NodeChange[]
   }
+  derivedTextData?: {
+    layoutSize?: Vector
+    fontMetaData?: Array<{
+      key: { family: string; style: string; postscript?: string }
+      fontLineHeight: number
+      fontDigest?: Uint8Array | Record<string, number>
+      fontStyle?: string
+      fontWeight?: number
+    }>
+    truncationStartIndex?: number
+    truncatedHeight?: number
+  }
+  textUserLayoutVersion?: number
+  textDecoration?: string
   lineHeight?: { value: number; units: string }
   letterSpacing?: { value: number; units: string }
   // Symbol/Instance
@@ -288,6 +328,14 @@ export interface NodeChange {
   // Constraints
   horizontalConstraint?: string
   verticalConstraint?: string
+  // Variables
+  variableData?: VariableDataEntry
+  variableConsumptionMap?: { entries?: VariableConsumptionEntry[] }
+  variableSetModes?: Array<{ id: GUID; name: string; sortPosition?: string }>
+  variableSetID?: { guid: GUID }
+  variableResolvedType?: string
+  variableDataValues?: { entries?: VariableDataValuesEntry[] }
+  variableScopes?: string[]
 }
 
 export interface FigmaMessage {
@@ -296,6 +344,7 @@ export interface FigmaMessage {
   ackID?: number
   reconnectSequenceNumber?: number
   nodeChanges?: NodeChange[]
+  blobs?: Array<{ bytes: Uint8Array }>
 }
 
 /**
@@ -428,7 +477,7 @@ export function encodePaintWithVariableBinding(
   const { colorVariableBinding: _, ...basePaint } = paint
 
   const baseBytes = compiledSchema.encodePaint(basePaint)
-  const baseArray = Array.from(baseBytes) as number[]
+  const baseArray = Array.from(baseBytes)
 
   // Remove trailing 00
   if (baseArray[baseArray.length - 1] === 0) {
@@ -455,7 +504,7 @@ export function encodePaintWithVariableBinding(
  * Parse a variable ID string (e.g., "VariableID:38448:122296")
  * Returns sessionID and localID
  */
-export function parseVariableId(variableId: string): { sessionID: number; localID: number } | null {
+export function parseVariableId(variableId: string): GUID | null {
   const match = variableId.match(/VariableID:(\d+):(\d+)/)
   if (!match) return null
   return {
@@ -518,7 +567,7 @@ export function encodeNodeChangeWithVariables(nodeChange: NodeChange): Uint8Arra
 function injectVariableBinding(
   hex: string,
   marker: string,
-  binding: { variableID: { sessionID: number; localID: number } }
+  binding: { variableID: GUID }
 ): string {
   const markerIdx = hex.indexOf(marker)
   if (markerIdx === -1) return hex

@@ -1,4 +1,5 @@
-import { useBreakpoints, useEventListener } from '@vueuse/core'
+import { useBreakpoints, useEventListener, useMagicKeys, whenever } from '@vueuse/core'
+import { computed } from 'vue'
 
 import { useAIChat } from '@/composables/use-chat'
 import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
@@ -6,8 +7,48 @@ import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
 
 import { openFileDialog } from './use-menu'
 
+import type { ComputedRef } from 'vue'
+
 function isEditing(e: Event) {
   return e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
+}
+
+const PREVENT_MOD_ALT = new Set(['KeyK', 'KeyB'])
+const PREVENT_MOD_SHIFT = new Set(['KeyK', 'KeyH', 'KeyL', 'KeyE', 'KeyS', 'KeyG', 'KeyZ'])
+const PREVENT_MOD_ONLY = new Set([
+  'Backslash',
+  'KeyJ',
+  'KeyW',
+  'KeyN',
+  'KeyT',
+  'KeyZ',
+  'KeyY',
+  'Digit0',
+  'Digit1',
+  'Digit2',
+  'KeyD',
+  'KeyA',
+  'KeyS',
+  'KeyO',
+  'KeyG'
+])
+const PREVENT_SHIFT_ONLY = new Set(['Digit1', 'Digit2', 'KeyA'])
+const PREVENT_PLAIN_KEY = new Set(['[', ']'])
+const PREVENT_DELETE_KEY = new Set(['Backspace', 'Delete'])
+
+function shouldPreventDefault(e: KeyboardEvent, hasPenState: boolean): boolean {
+  const mod = e.metaKey || e.ctrlKey
+
+  if (mod) {
+    if (e.altKey && PREVENT_MOD_ALT.has(e.code)) return true
+    if (e.shiftKey && PREVENT_MOD_SHIFT.has(e.code)) return true
+    if (!e.shiftKey && !e.altKey && PREVENT_MOD_ONLY.has(e.code)) return true
+  } else {
+    if (e.shiftKey && PREVENT_SHIFT_ONLY.has(e.code)) return true
+    if (!e.shiftKey && PREVENT_PLAIN_KEY.has(e.key)) return true
+  }
+
+  return PREVENT_DELETE_KEY.has(e.key) || (e.key === 'Enter' && hasPenState)
 }
 
 export function useKeyboard() {
@@ -36,153 +77,127 @@ export function useKeyboard() {
     if (html) store.pasteFromHTML(html)
   })
 
-  useEventListener(window, 'keydown', (e: KeyboardEvent) => {
-    if (isEditing(e)) return
+  const keys = useMagicKeys({
+    passive: false,
+    onEventFired(e) {
+      if (e.type !== 'keydown') return
+      if (isEditing(e)) return
 
-    const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]
-    if (tool) {
-      store.setTool(tool)
-      return
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.altKey) {
-      if (e.code === 'KeyK') {
-        e.preventDefault()
-        store.createComponentFromSelection()
-        return
-      }
-      if (e.code === 'KeyB') {
-        e.preventDefault()
-        store.detachInstance()
-        return
-      }
-    }
-
-    if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
-      if (e.code === 'KeyK') {
-        e.preventDefault()
-        store.createComponentSetFromComponents()
-        return
-      }
-      if (e.code === 'KeyH') {
-        e.preventDefault()
-        store.toggleVisibility()
-        return
-      }
-      if (e.code === 'KeyL') {
-        e.preventDefault()
-        store.toggleLock()
-        return
-      }
-      if (e.code === 'KeyE') {
-        e.preventDefault()
-        if (store.state.selectedIds.size > 0) {
-          void store.exportSelection(1, 'PNG')
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]
+        if (tool) {
+          store.setTool(tool)
+          return
         }
-        return
       }
-    }
 
-    if (e.metaKey || e.ctrlKey) {
-      if (e.code === 'Backslash') {
-        e.preventDefault()
-        store.state.showUI = !store.state.showUI
-        return
-      }
-      if (e.code === 'KeyJ') {
-        e.preventDefault()
-        if (isMobile.value) {
-          store.state.activeRibbonTab = store.state.activeRibbonTab === 'ai' ? 'panels' : 'ai'
-          if (store.state.mobileDrawerSnap === 'closed') {
-            store.state.mobileDrawerSnap = 'half'
-          }
-        } else {
-          activeTab.value = activeTab.value === 'ai' ? 'design' : 'ai'
-        }
-        return
-      }
-      if (e.key === 'w') {
-        e.preventDefault()
-        if (activeTabRef.value) closeTab(activeTabRef.value.id)
-        return
-      }
-      if (e.key === 'n' || e.key === 't') {
-        e.preventDefault()
-        createTab()
-        return
-      }
-      if (e.key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        store.undoAction()
-      } else if ((e.key === 'z' && e.shiftKey) || e.key === 'y') {
-        e.preventDefault()
-        store.redoAction()
-      } else if (e.key === '0') {
-        e.preventDefault()
-        store.zoomToFit()
-      } else if (e.key === 'd') {
-        e.preventDefault()
-        store.duplicateSelected()
-      } else if (e.key === 'a') {
-        e.preventDefault()
-        store.selectAll()
-      } else if (e.key === 's' && e.shiftKey) {
-        e.preventDefault()
-        void store.saveFigFileAs()
-      } else if (e.key === 's') {
-        e.preventDefault()
-        void store.saveFigFile()
-      } else if (e.key === 'o') {
-        e.preventDefault()
-        void openFileDialog()
-      } else if (e.key === 'g' && !e.shiftKey) {
-        e.preventDefault()
-        store.groupSelected()
-      } else if (e.key === 'g' && e.shiftKey) {
-        e.preventDefault()
-        store.ungroupSelected()
-      }
+      if (shouldPreventDefault(e, !!store.state.penState)) e.preventDefault()
     }
+  })
 
-    if (e.shiftKey && e.key === 'A') {
-      e.preventDefault()
+  // Cross-platform mod: true when Meta (Mac) or Control (Win/Linux) is pressed with the combo.
+  // Checks that no extra modifiers are held beyond what the combo specifies.
+  function mod(combo: string): ComputedRef<boolean> {
+    const hasShift = combo.includes('shift')
+    const hasAlt = combo.includes('alt')
+    const base = computed(() => keys[`meta+${combo}`].value || keys[`control+${combo}`].value)
+    if (hasShift && hasAlt) return base
+    if (hasShift) return computed(() => base.value && !keys['alt'].value)
+    if (hasAlt) return computed(() => base.value && !keys['shift'].value)
+    return computed(() => base.value && !keys['shift'].value && !keys['alt'].value)
+  }
+
+  // --- Mod + Alt ---
+  whenever(mod('alt+keyk'), () => store.createComponentFromSelection())
+  whenever(mod('alt+keyb'), () => store.detachInstance())
+
+  // --- Mod + Shift ---
+  whenever(mod('shift+keyk'), () => store.createComponentSetFromComponents())
+  whenever(mod('shift+keyh'), () => store.toggleVisibility())
+  whenever(mod('shift+keyl'), () => store.toggleLock())
+  whenever(mod('shift+keye'), () => {
+    if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'PNG')
+  })
+  whenever(mod('shift+keys'), () => store.saveFigFileAs())
+  whenever(mod('shift+keyg'), () => store.ungroupSelected())
+  whenever(mod('shift+keyz'), () => store.redoAction())
+
+  // --- Mod + Key ---
+  whenever(mod('backslash'), () => {
+    store.state.showUI = !store.state.showUI
+  })
+  whenever(mod('keyj'), () => {
+    if (isMobile.value) {
+      store.state.activeRibbonTab = store.state.activeRibbonTab === 'ai' ? 'panels' : 'ai'
+      if (store.state.mobileDrawerSnap === 'closed') {
+        store.state.mobileDrawerSnap = 'half'
+      }
+    } else {
+      activeTab.value = activeTab.value === 'ai' ? 'design' : 'ai'
+    }
+  })
+  whenever(mod('keyw'), () => {
+    if (activeTabRef.value) closeTab(activeTabRef.value.id)
+  })
+  whenever(mod('keyn'), () => createTab())
+  whenever(mod('keyt'), () => createTab())
+  whenever(mod('keyz'), () => store.undoAction())
+  whenever(mod('keyy'), () => store.redoAction())
+  whenever(mod('digit0'), () => store.zoomTo100())
+  whenever(mod('digit1'), () => store.zoomToFit())
+  whenever(mod('digit2'), () => store.zoomToSelection())
+  whenever(mod('keyd'), () => store.duplicateSelected())
+  whenever(mod('keya'), () => store.selectAll())
+  whenever(mod('keys'), () => store.saveFigFile())
+  whenever(mod('keyo'), () => openFileDialog())
+  whenever(mod('keyg'), () => store.groupSelected())
+
+  // --- Shift (no mod) ---
+  whenever(
+    computed(() => keys['shift+digit1'].value && !keys['meta'].value && !keys['control'].value),
+    () => store.zoomToFit()
+  )
+  whenever(
+    computed(() => keys['shift+digit2'].value && !keys['meta'].value && !keys['control'].value),
+    () => store.zoomToSelection()
+  )
+  whenever(
+    computed(() => keys['shift+keya'].value && !keys['meta'].value && !keys['control'].value),
+    () => {
       const node = store.selectedNode.value
-      if (node && node.type === 'FRAME' && store.selectedNodes.value.length === 1) {
+      if (node?.type === 'FRAME' && store.selectedNodes.value.length === 1) {
         store.setLayoutMode(node.id, node.layoutMode === 'NONE' ? 'VERTICAL' : 'NONE')
       } else if (store.selectedNodes.value.length > 0) {
         store.wrapInAutoLayout()
       }
+    }
+  )
+
+  // --- Plain keys (no modifiers) ---
+  function plain(key: string): ComputedRef<boolean> {
+    return computed(
+      () =>
+        keys[key].value &&
+        !keys['meta'].value &&
+        !keys['control'].value &&
+        !keys['shift'].value &&
+        !keys['alt'].value
+    )
+  }
+
+  whenever(plain('bracketright'), () => store.bringToFront())
+  whenever(plain('bracketleft'), () => store.sendToBack())
+  whenever(plain('backspace'), () => store.deleteSelected())
+  whenever(plain('delete'), () => store.deleteSelected())
+  whenever(plain('enter'), () => {
+    if (store.state.penState) store.penCommit(false)
+  })
+  whenever(plain('escape'), () => {
+    if (store.state.penState) {
+      store.penCancel()
       return
     }
-
-    if (e.key === ']') {
-      e.preventDefault()
-      store.bringToFront()
-      return
-    }
-    if (e.key === '[') {
-      e.preventDefault()
-      store.sendToBack()
-      return
-    }
-
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      store.deleteSelected()
-    }
-
-    if (e.key === 'Enter' && store.state.penState) {
-      e.preventDefault()
-      store.penCommit(false)
-      return
-    }
-
-    if (e.key === 'Escape') {
-      if (store.state.penState) {
-        store.penCancel()
-        return
-      }
-      store.clearSelection()
-      store.setTool('SELECT')
-    }
+    store.clearSelection()
+    store.setTool('SELECT')
   })
 }

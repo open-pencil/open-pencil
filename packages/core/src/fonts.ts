@@ -5,7 +5,8 @@ import {
   CJK_FALLBACK_FAMILIES_MACOS,
   CJK_FALLBACK_FAMILIES_WINDOWS,
   CJK_FALLBACK_FAMILIES_LINUX,
-  CJK_GOOGLE_FONT
+  CJK_GOOGLE_FONT,
+  GOOGLE_FONTS_API_KEY
 } from './constants'
 import type { SceneGraph } from './scene-graph'
 
@@ -59,10 +60,12 @@ const BUNDLED_FONTS: Record<string, string> = {
   'Inter|Regular': '/Inter-Regular.ttf'
 }
 
-import { GOOGLE_FONTS_API_KEY } from './constants'
-
 const googleFontsCache = new Map<string, Record<string, string>>()
 const googleFontsFailed = new Set<string>()
+
+function normalizeFontFamily(family: string): string {
+  return family.replace(/\s+Variable$/i, '')
+}
 
 async function fetchGoogleFontFiles(family: string): Promise<Record<string, string> | null> {
   if (googleFontsCache.has(family)) return googleFontsCache.get(family)!
@@ -71,6 +74,13 @@ async function fetchGoogleFontFiles(family: string): Promise<Record<string, stri
   const url = `https://www.googleapis.com/webfonts/v1/webfonts?family=${encodeURIComponent(family)}&key=${GOOGLE_FONTS_API_KEY}`
   const response = await fetch(url)
   if (!response.ok) {
+    const normalized = normalizeFontFamily(family)
+    if (normalized !== family) {
+      const result = await fetchGoogleFontFiles(normalized)
+      if (result) googleFontsCache.set(family, result)
+      else googleFontsFailed.add(family)
+      return result
+    }
     googleFontsFailed.add(family)
     return null
   }
@@ -78,6 +88,13 @@ async function fetchGoogleFontFiles(family: string): Promise<Record<string, stri
   const data = (await response.json()) as { items?: Array<{ files?: Record<string, string> }> }
   const files = data.items?.[0]?.files
   if (!files) {
+    const normalized = normalizeFontFamily(family)
+    if (normalized !== family) {
+      const result = await fetchGoogleFontFiles(normalized)
+      if (result) googleFontsCache.set(family, result)
+      else googleFontsFailed.add(family)
+      return result
+    }
     googleFontsFailed.add(family)
     return null
   }
@@ -118,12 +135,17 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
   }
 
   // Try local font access API first (browser only)
-  if (typeof window !== 'undefined' && window.queryLocalFonts) {
+  if (window.queryLocalFonts) {
     try {
       const fonts = await window.queryLocalFonts()
+      const normalized = normalizeFontFamily(family)
       const match =
         fonts.find((f: FontInfo) => f.family === family && f.style === style) ??
-        fonts.find((f: FontInfo) => f.family === family)
+        fonts.find((f: FontInfo) => f.family === family) ??
+        (normalized !== family
+          ? (fonts.find((f: FontInfo) => f.family === normalized && f.style === style) ??
+            fonts.find((f: FontInfo) => f.family === normalized))
+          : undefined)
       if (match) {
         const blob: Blob = await match.blob()
         const buffer = await blob.arrayBuffer()
@@ -191,7 +213,9 @@ function registerFontInBrowser(family: string, style: string, data: ArrayBuffer)
     weight: String(weight),
     style: italic
   })
-  face.load().then(() => document.fonts.add(face))
+  face.load().then(() => document.fonts.add(face)).catch(() => {
+    console.warn(`Failed to load font "${family}" (${style})`)
+  })
 }
 
 export function styleToWeight(style: string): number {
@@ -222,6 +246,10 @@ export function isFontLoaded(family: string): boolean {
   return [...loadedFamilies.keys()].some((k) => k.startsWith(`${family}|`))
 }
 
+export function getLoadedFontData(family: string, style: string): ArrayBuffer | null {
+  return loadedFamilies.get(`${family}|${style}`) ?? null
+}
+
 export function collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[string, string]> {
   const fontKeys = new Set<string>()
   const collect = (id: string) => {
@@ -232,7 +260,7 @@ export function collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[st
       fontKeys.add(`${family}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
       for (const run of node.styleRuns) {
         const f = run.style.fontFamily ?? family
-        const w = run.style.fontWeight ?? node.fontWeight ?? 400
+        const w = run.style.fontWeight ?? node.fontWeight
         const i = run.style.italic ?? node.italic
         fontKeys.add(`${f}\0${weightToStyle(w, i)}`)
       }

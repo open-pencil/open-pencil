@@ -1,3 +1,4 @@
+import { createHead } from '@unhead/vue/client'
 import { createApp } from 'vue'
 
 import './app.css'
@@ -8,7 +9,8 @@ import App from './App.vue'
 import router from './router'
 
 preloadFonts()
-createApp(App).use(router).mount('#app')
+const head = createHead()
+createApp(App).use(router).use(head).mount('#app')
 
 if (!IS_TAURI) {
   void import('virtual:pwa-register').then(({ registerSW }) => {

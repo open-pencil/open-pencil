@@ -60,6 +60,7 @@ export class CaptureStack {
     profile.selfTime = profile.endTime - profile.startTime - childrenTime
 
     const parent = this.stack[this.stack.length - 1]
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (parent) {
       parent.children.push(profile)
     } else {

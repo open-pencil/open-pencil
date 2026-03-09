@@ -10,11 +10,11 @@ The bottom toolbar provides tools for creating shapes, frames, and sections. Sel
 
 | Tool | Shortcut | Description |
 |------|----------|-------------|
-| Rectangle | R | Draws a rectangle |
-| Ellipse | O | Draws an ellipse |
-| Line | L | Draws a line |
-| Frame | F | Draws a frame (container for other nodes) |
-| Section | S | Draws a section (auto-adopts overlapping siblings) |
+| Rectangle | <kbd>R</kbd> | Draws a rectangle |
+| Ellipse | <kbd>O</kbd> | Draws an ellipse |
+| Line | <kbd>L</kbd> | Draws a line |
+| Frame | <kbd>F</kbd> | Draws a frame (container for other nodes) |
+| Section | <kbd>S</kbd> | Draws a section (auto-adopts overlapping siblings) |
 
 ## Shapes Flyout
 
@@ -27,7 +27,7 @@ Polygon and Star have no keyboard shortcut — access them from the shapes flyou
 
 ## Constrained Drawing
 
-Hold **Shift** while dragging to constrain the shape:
+Hold <kbd>Shift</kbd> while dragging to constrain the shape:
 
 - Rectangle → square (equal width and height)
 - Ellipse → circle
@@ -47,7 +47,14 @@ Every shape can have a fill. The fill section supports:
 
 ### Stroke
 
-Add an outline to any shape. Stroke properties include width, color, cap style, join style, and dash pattern.
+Add an outline to any shape. Stroke properties include:
+
+- **Width** — uniform or per-side (Top/Right/Bottom/Left) via the side selector dropdown
+- **Color** — solid color with opacity
+- **Alignment** — Inside, Center, or Outside the shape boundary (clip-based rendering matches Figma behavior)
+- **Cap style** — None, Round, Square, Arrow Lines, Arrow Equilateral (for open paths)
+- **Join style** — Miter, Bevel, Round
+- **Dash pattern** — dash-on/dash-off
 
 ### Corner Radius
 
@@ -75,12 +82,12 @@ Click **+** to add an effect. Each effect row is collapsible with inline control
 
 | Action | Mac | Windows / Linux |
 |--------|-----|-----------------|
-| Rectangle tool | R | R |
-| Ellipse tool | O | O |
-| Line tool | L | L |
-| Frame tool | F | F |
-| Section tool | S | S |
-| Constrain to square/circle | Shift + drag | Shift + drag |
+| Rectangle tool | <kbd>R</kbd> | <kbd>R</kbd> |
+| Ellipse tool | <kbd>O</kbd> | <kbd>O</kbd> |
+| Line tool | <kbd>L</kbd> | <kbd>L</kbd> |
+| Frame tool | <kbd>F</kbd> | <kbd>F</kbd> |
+| Section tool | <kbd>S</kbd> | <kbd>S</kbd> |
+| Constrain to square/circle | <kbd>Shift</kbd> + drag | <kbd>Shift</kbd> + drag |
 
 ## Tips
 

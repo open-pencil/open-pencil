@@ -321,6 +321,7 @@ export function populateAndApplyOverrides(
   }
 
   function applyComponentProperties() {
+    const tp0 = profileStart()
     const propRefsMap = new Map<string, ComponentPropRef[]>()
     for (const [figmaId, nc] of changeMap) {
       if (nc.componentPropRefs?.length) {
@@ -328,9 +329,21 @@ export function populateAndApplyOverrides(
       }
     }
     if (propRefsMap.size === 0) return
+    profileStage('4f5a_buildPropRefsMap', tp0)
 
+    // Memoize findPropRefs by componentId — clones sharing the same
+    // componentId pay the chain-walk cost exactly once.
+    const propRefsCache = new Map<string, ComponentPropRef[] | null>()
+    function findPropRefsCached(compId: string): ComponentPropRef[] | null {
+      const cached = propRefsCache.get(compId)
+      if (cached !== undefined) return cached
+      const refs = findPropRefs(compId, propRefsMap) ?? null
+      propRefsCache.set(compId, refs)
+      return refs
+    }
+
+    const tp1 = profileStart()
     // Collect all assignment sources: figmaGuid → assignments[]
-    // Sources: top-level on instance nodes, and inside symbolOverrides
     const assignmentSources = new Map<string, ComponentPropAssignment[]>()
     for (const [figmaId, nc] of changeMap) {
       if (nc.componentPropAssignments?.length) {
@@ -338,43 +351,109 @@ export function populateAndApplyOverrides(
       }
     }
 
-    // Apply assignments from the instance's own kiwi data first. The graph
-    // node for a kiwi INSTANCE has componentPropAssignments that control
-    // which children are visible, swapped, etc.
+    // Pre-build merged assignment map per INSTANCE.
+    // Merge own + source assignments into a single map per instance.
+    // Source (component defaults) overwrites own — matching current behavior
+    // where source applyPropAssignments runs AFTER own.
+    const instanceAssignments = new Map<string, Map<string, ComponentPropAssignment['value']>>()
     for (const node of graph.getAllNodes()) {
       if (node.type !== 'INSTANCE') continue
+      const merged = new Map<string, ComponentPropAssignment['value']>()
+
+      // Own assignments first
       const ownFigmaId = nodeIdToGuid.get(node.id)
       if (ownFigmaId) {
         const ownAssignments = assignmentSources.get(ownFigmaId)
         if (ownAssignments) {
-          const valueByDef = new Map<string, ComponentPropAssignment['value']>()
           for (const a of ownAssignments) {
-            if (a.defID) valueByDef.set(guidToString(a.defID), a.value)
+            if (a.defID) merged.set(guidToString(a.defID), a.value)
           }
-          applyPropAssignments(node.id, valueByDef, propRefsMap)
         }
       }
 
-      // Also apply assignments from cloned instance sources. After
-      // population, cloned instances have componentId pointing to
-      // the original kiwi node. If that node had assignments, apply
-      // them to the clone (defaults for nested instances).
-      if (!node.componentId) continue
-      const sourceFigmaId = nodeIdToGuid.get(node.componentId)
-      if (!sourceFigmaId) continue
-      const assignments = assignmentSources.get(sourceFigmaId)
-      if (!assignments) continue
-
-      const valueByDef = new Map<string, ComponentPropAssignment['value']>()
-      for (const a of assignments) {
-        if (a.defID) valueByDef.set(guidToString(a.defID), a.value)
+      // Source (component default) assignments overwrite own
+      if (node.componentId) {
+        const sourceFigmaId = nodeIdToGuid.get(node.componentId)
+        if (sourceFigmaId) {
+          const sourceAssignments = assignmentSources.get(sourceFigmaId)
+          if (sourceAssignments) {
+            for (const a of sourceAssignments) {
+              if (a.defID) merged.set(guidToString(a.defID), a.value)
+            }
+          }
+        }
       }
-      applyPropAssignments(node.id, valueByDef, propRefsMap)
+
+      if (merged.size > 0) instanceAssignments.set(node.id, merged)
+    }
+    profileStage('4f5b_buildAssignmentMaps', tp1)
+
+    const tp2 = profileStart()
+    // Find all nodes with relevant propRefs in a single graph scan.
+    const relevantNodes: Array<{ nodeId: string; refs: ComponentPropRef[] }> = []
+    for (const node of graph.getAllNodes()) {
+      if (!node.componentId) continue
+      const refs = findPropRefsCached(node.componentId)
+      if (refs) relevantNodes.push({ nodeId: node.id, refs })
+    }
+    profileStage('4f5c_findRelevantNodes', tp2)
+
+    const tp3 = profileStart()
+    // Bottom-up: for each relevant node, walk UP to collect ancestor
+    // INSTANCE assignments. Apply outermost first so innermost overwrites
+    // (last write wins via graph.updateNode → Object.assign), matching the
+    // current top-down behavior where parents are visited before children.
+    for (const { nodeId, refs } of relevantNodes) {
+      const ancestors: Array<Map<string, ComponentPropAssignment['value']>> = []
+      let cur = graph.getNode(nodeId)
+      while (cur?.parentId) {
+        const parent = graph.getNode(cur.parentId)
+        if (!parent) break
+        const assignments = instanceAssignments.get(parent.id)
+        if (assignments) ancestors.push(assignments)
+        cur = parent
+      }
+
+      if (ancestors.length === 0) continue
+
+      // Apply outermost first (ancestors collected innermost-first, reverse)
+      for (let i = ancestors.length - 1; i >= 0; i--) {
+        const valueByDef = ancestors[i]
+        for (const ref of refs) {
+          if (!ref.defID) continue
+          const val = valueByDef.get(guidToString(ref.defID))
+          if (!val) continue
+
+          if (ref.componentPropNodeField === 'VISIBLE' && val.boolValue !== undefined) {
+            graph.updateNode(nodeId, { visible: val.boolValue })
+          } else if (ref.componentPropNodeField === 'OVERRIDDEN_SYMBOL_ID') {
+            const swapId = val.textValue ?? (val.guidValue ? guidToString(val.guidValue) : undefined)
+            if (!swapId) continue
+            const newCompId = guidToNodeId.get(swapId)
+            if (newCompId) repopulateInstance(nodeId, newCompId)
+          }
+        }
+      }
+    }
+    profileStage('4f5d_applyAssignmentsBottomUp', tp3)
+
+    // Pre-compute which nodeIds have at least one descendant with relevant
+    // propRefs, for pruning the symbolOverride-scoped recursion in Step 4.
+    const hasRelevantDescendant = new Set<string>()
+    for (const { nodeId } of relevantNodes) {
+      let cur: string | undefined = nodeId
+      while (cur) {
+        if (hasRelevantDescendant.has(cur)) break
+        hasRelevantDescendant.add(cur)
+        const n = graph.getNode(cur)
+        cur = n?.parentId ?? undefined
+      }
     }
 
-    // Apply assignments from symbolOverrides, scoped to the nested
-    // instance their guidPath resolves to. These override the defaults
-    // set above.
+    const tp4 = profileStart()
+    // Step 4: symbolOverride-scoped assignments. These override the
+    // defaults set above, scoped to the nested instance their guidPath
+    // resolves to. Uses pruned recursion via hasRelevantDescendant.
     for (const [figmaId, nc] of changeMap) {
       const instanceNodeId = guidToNodeId.get(figmaId)
       if (!instanceNodeId) continue
@@ -395,45 +474,43 @@ export function populateAndApplyOverrides(
         for (const a of ov.componentPropAssignments) {
           if (a.defID) valueByDef.set(guidToString(a.defID), a.value)
         }
-        applyPropAssignments(targetId, valueByDef, propRefsMap)
+        applyPropAssignmentsPruned(targetId, valueByDef)
       }
     }
-  }
+    profileStage('4f5e_applySymbolOverrideAssignments', tp4)
 
-  function applyPropAssignments(
-    parentId: string,
-    valueByDef: Map<string, ComponentPropAssignment['value']>,
-    propRefsMap: Map<string, ComponentPropRef[]>
-  ) {
-    const parent = graph.getNode(parentId)
-    if (!parent) return
-
-    for (const childId of parent.childIds) {
-      const child = graph.getNode(childId)
-      if (!child?.componentId) {
-        applyPropAssignments(childId, valueByDef, propRefsMap)
-        continue
-      }
-
-      const refs = findPropRefs(child.componentId, propRefsMap)
-      if (refs) {
-        for (const ref of refs) {
-          if (!ref.defID) continue
-          const val = valueByDef.get(guidToString(ref.defID))
-          if (!val) continue
-
-          if (ref.componentPropNodeField === 'VISIBLE' && val.boolValue !== undefined) {
-            graph.updateNode(childId, { visible: val.boolValue })
-          } else if (ref.componentPropNodeField === 'OVERRIDDEN_SYMBOL_ID') {
-            const swapId = val.textValue ?? (val.guidValue ? guidToString(val.guidValue) : undefined)
-            if (!swapId) continue
-            const newCompId = guidToNodeId.get(swapId)
-            if (newCompId) repopulateInstance(childId, newCompId)
+    // Pruned version: skip branches without relevant descendants
+    function applyPropAssignmentsPruned(
+      parentId: string,
+      valueByDef: Map<string, ComponentPropAssignment['value']>
+    ) {
+      const parent = graph.getNode(parentId)
+      if (!parent) return
+      for (const childId of parent.childIds) {
+        if (!hasRelevantDescendant.has(childId)) continue
+        const child = graph.getNode(childId)
+        if (!child?.componentId) {
+          applyPropAssignmentsPruned(childId, valueByDef)
+          continue
+        }
+        const refs = findPropRefsCached(child.componentId)
+        if (refs) {
+          for (const ref of refs) {
+            if (!ref.defID) continue
+            const val = valueByDef.get(guidToString(ref.defID))
+            if (!val) continue
+            if (ref.componentPropNodeField === 'VISIBLE' && val.boolValue !== undefined) {
+              graph.updateNode(childId, { visible: val.boolValue })
+            } else if (ref.componentPropNodeField === 'OVERRIDDEN_SYMBOL_ID') {
+              const swapId = val.textValue ?? (val.guidValue ? guidToString(val.guidValue) : undefined)
+              if (!swapId) continue
+              const newCompId = guidToNodeId.get(swapId)
+              if (newCompId) repopulateInstance(childId, newCompId)
+            }
           }
         }
+        applyPropAssignmentsPruned(childId, valueByDef)
       }
-
-      applyPropAssignments(childId, valueByDef, propRefsMap)
     }
   }
 
@@ -641,9 +718,7 @@ export function populateAndApplyOverrides(
     }
   }
 
-  function propagateOverridesTransitively(seeds: Set<string>) {
-    if (seeds.size === 0) return
-
+  function buildClonesOf(): Map<string, string[]> {
     const clonesOf = new Map<string, string[]>()
     for (const node of graph.getAllNodes()) {
       if (!node.componentId) continue
@@ -654,6 +729,11 @@ export function populateAndApplyOverrides(
       }
       arr.push(node.id)
     }
+    return clonesOf
+  }
+
+  function propagateOverridesTransitively(seeds: Set<string>, clonesOf: Map<string, string[]>) {
+    if (seeds.size === 0) return
 
     // Also seed parent INSTANCE nodes of overridden children so their
     // clones are visited by the BFS — deep overrides (e.g., stroke color
@@ -734,7 +814,8 @@ export function populateAndApplyOverrides(
   profileStage('4f3_applySymbolOverrides', t2)
 
   const t3 = profileStart()
-  propagateOverridesTransitively(overriddenNodes)
+  const clonesOf = buildClonesOf()
+  propagateOverridesTransitively(overriddenNodes, clonesOf)
   profileStage('4f4_propagateOverridesTransitively', t3)
 
   const t4 = profileStart()

@@ -1,83 +1,73 @@
 import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
-import { fmtNode, fmtList, nodeToData, nodeDetails, formatType, printError } from '../format'
-import type { SceneNode, SceneGraph } from '@open-pencil/core'
+import { isAppMode, requireFile, rpc } from '../app-client'
+import { fmtNode, printError, formatType } from '../format'
+import { executeRpcCommand, colorToHex } from '@open-pencil/core'
 
-function fullNodeDetails(graph: SceneGraph, node: SceneNode): Record<string, unknown> {
-  const details = nodeDetails(node)
+import type { Color, NodeResult } from '@open-pencil/core'
 
-  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
-  if (parent) details.parent = `${parent.name} (${parent.id})`
-
-  if (node.text) {
-    details.text = node.text.length > 80 ? node.text.slice(0, 80) + '…' : node.text
-  }
-
-  if (node.childIds.length > 0) details.children = node.childIds.length
-
-  for (const [field, varId] of Object.entries(node.boundVariables)) {
-    const variable = graph.variables.get(varId)
-    details[`var:${field}`] = variable?.name ?? varId
-  }
-
-  return details
+async function getData(file: string | undefined, id: string): Promise<NodeResult | { error: string }> {
+  if (isAppMode(file)) return rpc<NodeResult>('node', { id })
+  const graph = await loadDocument(requireFile(file))
+  return executeRpcCommand(graph, 'node', { id }) as NodeResult | { error: string }
 }
 
 export default defineCommand({
   meta: { description: 'Show detailed node properties by ID' },
   args: {
-    file: { type: 'positional', description: '.fig file path', required: true },
+    file: { type: 'positional', description: '.fig file path (omit to connect to running app)', required: false },
     id: { type: 'string', description: 'Node ID', required: true },
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const graph = await loadDocument(args.file)
-    const node = graph.getNode(args.id)
+    const data = await getData(args.file, args.id)
 
-    if (!node) {
-      printError(`Node "${args.id}" not found.`)
+    if ('error' in data) {
+      printError(data.error)
       process.exit(1)
     }
 
     if (args.json) {
-      const { childIds, parentId, ...rest } = node
-      const children = childIds.length
-      const parent = parentId ? graph.getNode(parentId) : undefined
-      console.log(
-        JSON.stringify(
-          {
-            ...rest,
-            parent: parent ? { id: parent.id, name: parent.name, type: parent.type } : null,
-            children
-          },
-          null,
-          2
-        )
-      )
+      console.log(JSON.stringify(data, null, 2))
       return
     }
 
-    console.log('')
-    console.log(fmtNode(nodeToData(node), fullNodeDetails(graph, node)))
-
-    if (node.childIds.length > 0) {
-      const children = node.childIds
-        .map((id) => graph.getNode(id))
-        .filter((n): n is SceneNode => n !== undefined)
-        .slice(0, 10)
-        .map((child) => ({
-          header: `[${formatType(child.type)}] "${child.name}" (${child.id})`
-        }))
-
-      if (node.childIds.length > 10) {
-        children.push({ header: `… and ${node.childIds.length - 10} more` })
-      }
-
-      console.log('')
-      console.log(fmtList(children, { compact: true }))
+    const nodeData = {
+      type: formatType(data.type),
+      name: data.name,
+      id: data.id,
+      width: data.width,
+      height: data.height,
+      x: data.x,
+      y: data.y
     }
 
+    const details: Record<string, unknown> = {}
+    if (data.parent) details.parent = `${data.parent.name} (${data.parent.id})`
+    if (data.text) details.text = data.text
+    if (data.fills.length > 0) {
+      const solid = (data.fills as Array<{ type: string; visible: boolean; color: Color; opacity: number }>)
+        .find((f) => f.type === 'SOLID' && f.visible)
+      if (solid) {
+        const hex = colorToHex(solid.color)
+        details.fill = solid.opacity < 1 ? `${hex} ${Math.round(solid.opacity * 100)}%` : hex
+      }
+    }
+    if (data.cornerRadius) details.radius = `${data.cornerRadius}px`
+    if (data.rotation) details.rotate = `${Math.round(data.rotation)}°`
+    if (data.opacity < 1) details.opacity = data.opacity
+    if (!data.visible) details.visible = false
+    if (data.locked) details.locked = true
+    if (data.fontFamily) details.font = `${data.fontSize}px ${data.fontFamily}`
+    if (data.layoutMode !== 'NONE') details.layout = data.layoutMode.toLowerCase()
+    if (data.children > 0) details.children = data.children
+    for (const [field, name] of Object.entries(data.boundVariables)) {
+      details[`var:${field}`] = name
+    }
+
+    console.log('')
+    console.log(fmtNode(nodeData, details))
     console.log('')
   }
 })

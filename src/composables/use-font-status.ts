@@ -1,5 +1,6 @@
-import { isFontLoaded, DEFAULT_FONT_FAMILY } from '@open-pencil/core'
 import { computed } from 'vue'
+
+import { isFontLoaded, DEFAULT_FONT_FAMILY } from '@open-pencil/core'
 
 import type { SceneNode } from '@open-pencil/core'
 

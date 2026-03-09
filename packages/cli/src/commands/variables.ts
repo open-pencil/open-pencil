@@ -1,82 +1,50 @@
 import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
-import { bold, fmtList, fmtSummary } from '../format'
-import type { SceneGraph, Variable } from '@open-pencil/core'
+import { isAppMode, requireFile, rpc } from '../app-client'
+import { bold, entity, fmtList, fmtSummary } from '../format'
+import { executeRpcCommand } from '@open-pencil/core'
 
-function formatValue(variable: Variable, graph: SceneGraph): string {
-  const modeId = graph.getActiveModeId(variable.collectionId)
-  const raw = variable.valuesByMode[modeId]
-  if (raw === undefined) return '–'
+import type { VariablesResult } from '@open-pencil/core'
 
-  if (typeof raw === 'object' && raw !== null && 'aliasId' in raw) {
-    const alias = graph.variables.get(raw.aliasId)
-    return alias ? `→ ${alias.name}` : `→ ${raw.aliasId}`
-  }
-
-  if (typeof raw === 'object' && 'r' in raw) {
-    const { r, g, b } = raw as { r: number; g: number; b: number }
-    return (
-      '#' +
-      [r, g, b]
-        .map((c) =>
-          Math.round(c * 255)
-            .toString(16)
-            .padStart(2, '0')
-        )
-        .join('')
-    )
-  }
-
-  return String(raw)
+async function getData(file: string | undefined, args: { collection?: string; type?: string }): Promise<VariablesResult> {
+  const rpcArgs = { collection: args.collection, type: args.type }
+  if (isAppMode(file)) return rpc<VariablesResult>('variables', rpcArgs)
+  const graph = await loadDocument(requireFile(file))
+  return executeRpcCommand(graph, 'variables', rpcArgs) as VariablesResult
 }
 
 export default defineCommand({
   meta: { description: 'List design variables and collections' },
   args: {
-    file: { type: 'positional', description: '.fig file path', required: true },
+    file: { type: 'positional', description: '.fig file path (omit to connect to running app)', required: false },
     collection: { type: 'string', description: 'Filter by collection name' },
     type: { type: 'string', description: 'Filter by type: COLOR, FLOAT, STRING, BOOLEAN' },
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const graph = await loadDocument(args.file)
+    const data = await getData(args.file, args)
 
-    const collections = [...graph.variableCollections.values()]
-    const variables = [...graph.variables.values()]
-
-    if (variables.length === 0) {
+    if (data.totalVariables === 0) {
       console.log('No variables found.')
       return
     }
 
     if (args.json) {
-      console.log(JSON.stringify({ collections, variables }, null, 2))
+      console.log(JSON.stringify(data, null, 2))
       return
     }
 
-    const typeFilter = args.type?.toUpperCase()
-    const collFilter = args.collection?.toLowerCase()
-
     console.log('')
 
-    for (const coll of collections) {
-      if (collFilter && !coll.name.toLowerCase().includes(collFilter)) continue
-
-      const collVars = graph
-        .getVariablesForCollection(coll.id)
-        .filter((v) => !typeFilter || v.type === typeFilter)
-
-      if (collVars.length === 0) continue
-
-      const modes = coll.modes.map((m) => m.name).join(', ')
-      console.log(bold(`  ${coll.name}`) + ` (${modes})`)
+    for (const coll of data.collections) {
+      console.log(bold(entity(coll.name, coll.modes.join(', '))))
       console.log('')
       console.log(
         fmtList(
-          collVars.map((v) => ({
+          coll.variables.map((v) => ({
             header: v.name,
-            details: { value: formatValue(v, graph), type: v.type.toLowerCase() }
+            details: { value: v.value, type: v.type.toLowerCase() }
           })),
           { compact: true }
         )
@@ -86,8 +54,8 @@ export default defineCommand({
 
     console.log(
       fmtSummary({
-        variables: variables.length,
-        collections: collections.length
+        variables: data.totalVariables,
+        collections: data.totalCollections
       })
     )
     console.log('')

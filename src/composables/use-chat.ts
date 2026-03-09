@@ -1,51 +1,137 @@
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenAI } from '@ai-sdk/openai'
 import { Chat } from '@ai-sdk/vue'
-import { DEFAULT_AI_MODEL } from '@open-pencil/core'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { useLocalStorage } from '@vueuse/core'
 import { DirectChatTransport, ToolLoopAgent } from 'ai'
 import dedent from 'dedent'
 import { computed, ref, watch } from 'vue'
 
 import { createAITools } from '@/ai/tools'
 import { useEditorStore } from '@/stores/editor'
+import { AI_PROVIDERS, DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER } from '@open-pencil/core'
 
-import type { UIMessage } from 'ai'
+import type { AIProviderID } from '@open-pencil/core'
+import type { LanguageModel, UIMessage } from 'ai'
 
-export { AI_MODELS as MODELS } from '@open-pencil/core'
-export type { ModelOption } from '@open-pencil/core'
 
-const API_KEY_STORAGE = 'open-pencil:openrouter-api-key'
-const MODEL_STORAGE = 'open-pencil:model'
+
+const STORAGE_PREFIX = 'open-pencil:'
+const LEGACY_KEY_STORAGE = `${STORAGE_PREFIX}openrouter-api-key`
+
+function keyStorageKey(id: string) {
+  return `${STORAGE_PREFIX}ai-key:${id}`
+}
+
+function migrateLegacyStorage() {
+  const legacyKey = localStorage.getItem(LEGACY_KEY_STORAGE)
+  if (legacyKey) {
+    localStorage.setItem(keyStorageKey('openrouter'), legacyKey)
+    localStorage.removeItem(LEGACY_KEY_STORAGE)
+    if (!localStorage.getItem(`${STORAGE_PREFIX}ai-provider`)) {
+      localStorage.setItem(`${STORAGE_PREFIX}ai-provider`, 'openrouter')
+    }
+  }
+}
+
+if (typeof window !== 'undefined') migrateLegacyStorage()
 
 const SYSTEM_PROMPT = dedent`
   You are a design assistant inside OpenPencil, a Figma-like design editor.
   Help users create and modify designs. Be concise and direct.
   When describing changes, use specific design terminology.
 
-  Available node types: FRAME (containers/cards), RECTANGLE, ELLIPSE, TEXT, LINE, STAR, POLYGON, SECTION.
-  Colors can be hex strings (#ff0000) or RGBA objects with values 0–1.
-  Coordinates use canvas space — (0, 0) is the top-left of the page.
+  Use the render tool with JSX as the primary way to create designs.
+  JSX supports full JavaScript expressions (map, ternaries, Array.from, etc.).
+  Available tags: Frame, Text, Rectangle, Ellipse, Line, Star, Polygon, Group, Section.
+  Common props: name, w, h, x, y, bg (hex color), stroke, rounded, opacity, rotate.
+  Layout: flex="row"|"col", gap, justify, items, p, px, py, pt/pr/pb/pl, wrap.
+  Text: size, weight, color, font, textAlign.
+  Sizing: w/h accept numbers (px) or "hug"/"fill".
 
+  Colors are hex strings (#ff0000). Coordinates use canvas space — (0, 0) is top-left.
   Always use tools to make changes. After creating nodes, briefly describe what you did.
-  When the user asks to create a layout, use create_shape with FRAME, then set_layout for auto-layout.
+  Use create_shape + set_layout only for simple single nodes; prefer render for layouts.
 `
 
-const apiKey = ref(localStorage.getItem(API_KEY_STORAGE) ?? '')
-const modelId = ref(localStorage.getItem(MODEL_STORAGE) ?? DEFAULT_AI_MODEL)
+const providerID = useLocalStorage<AIProviderID>(
+  `${STORAGE_PREFIX}ai-provider`,
+  DEFAULT_AI_PROVIDER
+)
+const apiKeyStorageKey = computed(() => keyStorageKey(providerID.value))
+const apiKey = useLocalStorage(apiKeyStorageKey, '')
+const modelID = useLocalStorage(`${STORAGE_PREFIX}ai-model`, DEFAULT_AI_MODEL)
+const customBaseURL = useLocalStorage(`${STORAGE_PREFIX}ai-base-url`, '')
+const customModelID = useLocalStorage(`${STORAGE_PREFIX}ai-custom-model`, '')
 const activeTab = ref<'design' | 'ai'>('design')
 
-watch(apiKey, (key) => {
-  if (key) {
-    localStorage.setItem(API_KEY_STORAGE, key)
-  } else {
-    localStorage.removeItem(API_KEY_STORAGE)
+const providerDef = computed(
+  () => AI_PROVIDERS.find((p) => p.id === providerID.value) ?? AI_PROVIDERS[0]
+)
+
+const isConfigured = computed(() => {
+  if (!apiKey.value) return false
+  if (providerID.value === 'openai-compatible' && !customBaseURL.value) return false
+  return true
+})
+
+watch(providerID, (id) => {
+  const def = AI_PROVIDERS.find((p) => p.id === id)
+  if (def?.defaultModel) {
+    modelID.value = def.defaultModel
   }
+  resetChat()
 })
 
-watch(modelId, (id) => {
-  localStorage.setItem(MODEL_STORAGE, id)
-})
+watch(modelID, () => resetChat())
+watch(customModelID, () => resetChat())
 
-const isConfigured = computed(() => apiKey.value.length > 0)
+function setAPIKey(key: string) {
+  apiKey.value = key
+}
+
+function createModel(): LanguageModel {
+  const key = apiKey.value
+  const effectiveModelID =
+    providerID.value === 'openai-compatible' ? customModelID.value : modelID.value
+
+  switch (providerID.value) {
+    case 'openrouter': {
+      const openrouter = createOpenRouter({
+        apiKey: key,
+        headers: {
+          'X-OpenRouter-Title': 'OpenPencil',
+          'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
+        }
+      })
+      return openrouter(effectiveModelID)
+    }
+    case 'anthropic': {
+      const anthropic = createAnthropic({ apiKey: key })
+      return anthropic(effectiveModelID)
+    }
+    case 'openai': {
+      const openai = createOpenAI({ apiKey: key })
+      return openai(effectiveModelID)
+    }
+    case 'google': {
+      const google = createGoogleGenerativeAI({ apiKey: key })
+      return google(effectiveModelID)
+    }
+    case 'openai-compatible': {
+      const custom = createOpenAI({
+        apiKey: key,
+        baseURL: customBaseURL.value
+      })
+      return custom(effectiveModelID)
+    }
+    default: {
+      const _exhaustive: never = providerID.value
+      throw new Error(`Unknown provider: ${String(_exhaustive)}`)
+    }
+  }
+}
 
 // oxlint-disable-next-line typescript/no-explicit-any -- test-only mock transports don't implement full generics
 let overrideTransport: (() => any) | null = null
@@ -55,18 +141,10 @@ let chat: Chat<UIMessage> | null = null
 function createTransport() {
   if (overrideTransport) return overrideTransport()
 
-  const openrouter = createOpenRouter({
-    apiKey: apiKey.value,
-    headers: {
-      'X-OpenRouter-Title': 'OpenPencil',
-      'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
-    }
-  })
-
   const tools = createAITools(useEditorStore())
 
   const agent = new ToolLoopAgent({
-    model: openrouter(modelId.value),
+    model: createModel(),
     instructions: SYSTEM_PROMPT,
     tools
   })
@@ -75,7 +153,7 @@ function createTransport() {
 }
 
 function ensureChat(): Chat<UIMessage> | null {
-  if (!apiKey.value) return null
+  if (!isConfigured.value) return null
   if (!chat) {
     chat = new Chat<UIMessage>({
       transport: createTransport()
@@ -96,8 +174,13 @@ if (typeof window !== 'undefined') {
 
 export function useAIChat() {
   return {
+    providerID,
+    providerDef,
     apiKey,
-    modelId,
+    setAPIKey,
+    modelID,
+    customBaseURL,
+    customModelID,
     activeTab,
     isConfigured,
     ensureChat,

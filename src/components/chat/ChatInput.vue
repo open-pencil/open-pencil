@@ -15,11 +15,15 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { MODELS, useAIChat } from '@/composables/use-chat'
+import ProviderSettings from '@/components/chat/ProviderSettings.vue'
+import { uiButton } from '@/components/ui/button'
+import { uiInput } from '@/components/ui/input'
+import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
+import { useAIChat } from '@/composables/use-chat'
 
-const { modelId } = useAIChat()
+const { providerID, providerDef, modelID, customModelID } = useAIChat()
 
-const props = defineProps<{
+const { status } = defineProps<{
   status: 'ready' | 'submitted' | 'streaming' | 'error'
 }>()
 
@@ -30,10 +34,13 @@ const emit = defineEmits<{
 
 const input = ref('')
 
-const isStreaming = computed(() => props.status === 'streaming' || props.status === 'submitted')
-const selectedModelName = computed(
-  () => MODELS.find((m) => m.id === modelId.value)?.name ?? modelId.value
-)
+const isStreaming = computed(() => status === 'streaming' || status === 'submitted')
+const isCustomProvider = computed(() => providerID.value === 'openai-compatible')
+
+const selectedModelName = computed(() => {
+  if (isCustomProvider.value) return customModelID.value || 'No model'
+  return providerDef.value.models.find((m) => m.id === modelID.value)?.name ?? modelID.value
+})
 
 function handleSubmit(e: Event) {
   e.preventDefault()
@@ -47,12 +54,26 @@ function handleSubmit(e: Event) {
 <template>
   <TooltipProvider>
     <div class="shrink-0 border-t border-border px-3 py-2">
-      <!-- Model selector -->
-      <div class="mb-1.5 flex items-center">
-        <SelectRoot v-model="modelId">
+      <!-- Model selector & settings -->
+      <div class="mb-1.5 flex items-center gap-1">
+        <template v-if="isCustomProvider">
+          <div
+            class="flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-muted"
+            data-test-id="chat-custom-model-label"
+          >
+            <icon-lucide-bot class="size-3" />
+            {{ selectedModelName }}
+          </div>
+        </template>
+        <SelectRoot v-else v-model="modelID">
           <SelectTrigger
             data-test-id="chat-model-selector"
-            class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted hover:bg-hover hover:text-surface"
+            :class="
+              selectTrigger({
+                class:
+                  'gap-1 rounded border-none bg-transparent px-1.5 py-0.5 text-[10px] text-muted'
+              })
+            "
           >
             <icon-lucide-bot class="size-3" />
             {{ selectedModelName }}
@@ -63,14 +84,16 @@ function handleSubmit(e: Event) {
               position="popper"
               side="top"
               :side-offset="4"
-              class="z-50 max-h-60 overflow-y-auto rounded-lg border border-border bg-panel p-1 shadow-lg"
+              :class="
+                selectContent({ radius: 'lg', padding: 'md', class: 'max-h-60 overflow-y-auto' })
+              "
             >
               <SelectViewport>
                 <SelectItem
-                  v-for="model in MODELS"
+                  v-for="model in providerDef.models"
                   :key="model.id"
                   :value="model.id"
-                  class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[11px] text-surface outline-none data-[highlighted]:bg-hover"
+                  :class="selectItem({ class: 'gap-2 rounded px-2 py-1.5 text-[11px]' })"
                 >
                   <SelectItemText class="flex-1">{{ model.name }}</SelectItemText>
                   <span
@@ -84,6 +107,10 @@ function handleSubmit(e: Event) {
             </SelectContent>
           </SelectPortal>
         </SelectRoot>
+
+        <div class="ml-auto">
+          <ProviderSettings />
+        </div>
       </div>
 
       <!-- Input form -->
@@ -93,7 +120,7 @@ function handleSubmit(e: Event) {
           type="text"
           data-test-id="chat-input"
           placeholder="Describe a change…"
-          class="min-w-0 flex-1 rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface outline-none placeholder:text-muted focus:border-accent"
+          :class="uiInput({ class: 'min-w-0 flex-1 placeholder:text-muted' })"
           :disabled="status === 'submitted'"
         />
         <TooltipRoot v-if="isStreaming">
@@ -101,7 +128,14 @@ function handleSubmit(e: Event) {
             <button
               type="button"
               data-test-id="chat-stop-button"
-              class="shrink-0 rounded border border-border px-2 py-1.5 text-xs text-muted hover:bg-hover"
+              :class="
+                uiButton({
+                  tone: 'ghost',
+                  shape: 'rounded',
+                  size: 'sm',
+                  class: 'shrink-0 border border-border px-2 py-1.5'
+                })
+              "
               @click="emit('stop')"
             >
               <icon-lucide-square class="size-3" />
@@ -122,7 +156,14 @@ function handleSubmit(e: Event) {
             <button
               type="submit"
               data-test-id="chat-send-button"
-              class="shrink-0 rounded bg-accent px-2.5 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+              :class="
+                uiButton({
+                  tone: 'accent',
+                  shape: 'rounded',
+                  size: 'sm',
+                  class: 'shrink-0 px-2.5 py-1.5 font-medium'
+                })
+              "
               :disabled="!input.trim()"
             >
               <icon-lucide-send class="size-3" />

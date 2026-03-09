@@ -6,8 +6,7 @@ export interface TreeNode {
 
 export function isTreeNode(x: unknown): x is TreeNode {
   if (x === null || typeof x !== 'object') return false
-  const obj = x as Record<string, unknown>
-  return typeof obj.type === 'string' && 'props' in obj && Array.isArray(obj.children)
+  return 'type' in x && typeof x.type === 'string' && 'props' in x && 'children' in x && Array.isArray(x.children)
 }
 
 interface ReactElement {
@@ -64,7 +63,7 @@ function resolveChild(child: unknown): TreeNode | string | null {
   return resolveToTree(child)
 }
 
-export function node(type: string, props: Record<string, unknown>): TreeNode {
+export function node(type: string, props: { children?: unknown; [key: string]: unknown }): TreeNode {
   const { children, ...rest } = props
   const processed = [children]
     .flat(Infinity)

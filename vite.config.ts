@@ -9,6 +9,8 @@ import Components from 'unplugin-vue-components/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { copyFileSync, existsSync, mkdirSync } from 'fs'
 
+import { automationPlugin } from './src/automation/vite-plugin'
+
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST
 
@@ -16,7 +18,11 @@ export default defineConfig(async () => ({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      shiki: resolve(__dirname, 'src/shims/shiki.ts')
+      // vue-stream-markdown eagerly loads these optional peer deps on mount.
+      // Alias to empty shims to avoid runtime errors and reduce bundle size.
+      shiki: resolve(__dirname, 'src/shims/shiki.ts'),
+      mermaid: resolve(__dirname, 'src/shims/mermaid.ts'),
+      'beautiful-mermaid': resolve(__dirname, 'src/shims/mermaid.ts')
     },
     extensions: ['.ts', '.tsx', '.mts', '.js', '.jsx', '.mjs', '.json']
   },
@@ -49,6 +55,7 @@ export default defineConfig(async () => ({
     tailwindcss(),
     Icons({ compiler: 'vue3' }),
     Components({ resolvers: [IconsResolver({ prefix: 'icon' })] }),
+    automationPlugin(),
     vue(),
     VitePWA({
       registerType: 'autoUpdate',

@@ -13,7 +13,7 @@ function expandRuns(runs: StyleRun[], textLength: number): (CharacterStyleOverri
   const chars: (CharacterStyleOverride | null)[] = new Array(textLength).fill(null)
   for (const run of runs) {
     for (let i = run.start; i < run.start + run.length && i < textLength; i++) {
-      chars[i] = { ...(chars[i] ?? {}), ...run.style }
+      chars[i] = { ...chars[i], ...run.style }
     }
   }
   return chars
@@ -29,7 +29,7 @@ export function applyStyleToRange(
   const chars = expandRuns(runs, textLength)
 
   for (let i = start; i < end && i < textLength; i++) {
-    chars[i] = { ...(chars[i] ?? {}), ...patch }
+    chars[i] = { ...chars[i], ...patch }
   }
 
   return compactRuns(chars)

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 
 import AppSelect from '@/components/AppSelect.vue'
+import { menuContent, menuItem } from '@/components/ui/menu'
 import ColorInput from '@/components/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
@@ -14,20 +15,14 @@ import {
   DropdownMenuPortal
 } from 'reka-ui'
 
-import type { Color, Stroke } from '@/engine/scene-graph'
-import type { SceneNode } from '@/engine/scene-graph'
+import type { Color, SceneNode, Stroke } from '@open-pencil/core'
 
 type StrokeSides = 'ALL' | 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CUSTOM'
 
 const { store } = useNodeProps()
-const { nodes, isMulti, active, activeNode } = useMultiProps()
+const { nodes, isMulti, active, activeNode, isArrayMixed } = useMultiProps()
 
-const strokesAreMixed = computed(() => {
-  if (!isMulti.value) return false
-  const all = nodes.value
-  const first = JSON.stringify(all[0].strokes)
-  return all.some((n) => JSON.stringify(n.strokes) !== first)
-})
+const strokesAreMixed = computed(() => isArrayMixed('strokes'))
 
 const ALIGN_OPTIONS: { value: Stroke['align']; label: string }[] = [
   { value: 'INSIDE', label: 'Inside' },
@@ -322,12 +317,12 @@ const borderWeights = computed(() => {
           <DropdownMenuContent
             :side-offset="4"
             align="end"
-            class="z-50 min-w-[140px] rounded-md border border-border bg-panel p-0.5 shadow-lg"
+            :class="menuContent({ class: 'min-w-[140px] rounded-md p-0.5' })"
           >
             <DropdownMenuItem
               v-for="opt in SIDE_OPTIONS"
               :key="opt.value"
-              class="relative flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-surface outline-none data-[highlighted]:bg-hover"
+              :class="menuItem({ justify: 'start', class: 'relative px-2' })"
               @click="selectSide(opt.value)"
             >
               <icon-lucide-check

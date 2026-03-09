@@ -4,21 +4,73 @@
 
 ### Features
 
+- CSS Grid layout mode — select a frame, click the grid icon in the auto layout toolbar to switch from flex to grid. Configure column/row tracks (fr, fixed px, auto), column and row gaps, and per-side padding. Powered by a [Yoga fork](https://github.com/open-pencil/yoga/tree/grid) with cherry-picked CSS Grid PRs from upstream
+- JSX and Tailwind CSS export for grid layouts — `grid grid-cols-N`, `gap-x-*`/`gap-y-*`, child `col-start-*`/`row-start-*`/`col-span-*`/`row-span-*`
+- Multi-provider AI support — connect to Anthropic, OpenAI, Google AI, or any OpenAI-compatible endpoint directly, in addition to OpenRouter. Per-provider API key storage, provider settings popover, automatic migration from single OpenRouter key
+
+### Fixes
+
+- Serialize variables, collections, and bindings to `.fig` files — previously lost on save (#65)
+- Text nodes created via MCP now render in Figma — emit `derivedTextData` with font metadata and layout size (#64)
+- Double-click on layer tree no longer toggles expand/collapse — use the chevron instead
+- Page rename input matches layer rename styling
+
+
+### Performance
+
+- Replace `structuredClone` with typed copy helpers for fills, strokes, effects, and style runs (~24× faster in hot paths)
+- Filter .fig unzip to only decompress canvas and image entries, skipping metadata cruft
+- Instance population uses a work queue instead of repeated full graph scans
+
+### Improvements
+
+- Auto-layout icons in layer tree — vertical (rows), horizontal (columns), and grid icons for auto-layout frames; components keep their purple diamond
+- Frame titles on canvas are now draggable — clicking a selected top-level frame's name label starts a drag
+- Compact layout controls — icon-based gap (↔/↕) and padding (T/R/B/L) inputs instead of text labels
+- Auto-detect horizontal vs vertical direction when wrapping in auto layout (Shift+A)
+- Fix alignment grid for vertical layouts — visual positions now match spatial axes
+- Fix grid switch from HUG-sized frames — frame expands to fit children
+- Remove unwanted white fill when wrapping in auto layout
+
+## 0.8.0 — 2026-03-07
+
+### Features
+
 - Mobile layout & PWA — responsive editor with touch-optimized toolbar, swipeable bottom drawer (layers/properties/design/code), HUD overlay, and installable PWA with icons and service worker
 - Tailwind CSS v4 JSX export — export selections as HTML with Tailwind utility classes (`<div className="flex gap-4 p-3">`) from the Code panel, CLI (`bun open-pencil export --format jsx --style tailwind`), or programmatically via `sceneNodeToJSX(id, graph, 'tailwind')`. Supports layout, sizing, colors, border radius, opacity, rotation, overflow, shadows, blur, and typography. Uses v4 spacing semantics (px/4 multiplier) with automatic fallback to arbitrary values.
 - Code panel format toggle — switch between OpenPencil (custom components) and Tailwind (HTML + utility classes) output
 - Homebrew tap — `brew install open-pencil/tap/open-pencil` for macOS (arm64 + x64), auto-updated on each release
 - Double-click to rename layers — inline rename in layer panel, shared `useInlineRename` composable
 - New AI/MCP tools: `analyze_colors`, `analyze_typography`, `analyze_spacing`, `analyze_clusters`, `diff_create`, `diff_show`, `get_components`, `get_current_page`, `arrange`, `node_to_component`
+- CLI-to-app RPC bridge — all CLI commands work against the running app when no file is specified. Start the app, then run `bun open-pencil tree` to inspect the live document
+- VitePress docs site — user guide, reference, architecture, and development docs at openpencil.dev with 6 locales (en, de, fr, es, it, pl), SEO (OG tags, hreflang, JSON-LD, sitemap), and dark theme
 
 ### Improvements
 
+- Refactor mobile drawer tabs, layout sizing dropdowns, and inline rename to use Reka UI primitives
+- Add shared UI style helpers with tailwind-variants for menus, selects, buttons, and surfaces
+- Unified tool definitions — define once in `packages/core/src/tools/`, automatically available in AI chat, CLI, and MCP
+- Harden FigmaAPI — hide internals via Symbols, freeze arrays, fix `layoutSizing`, 30+ new properties and methods
 - Split tools into domain files (read, create, modify, structure, variables, vector, analyze) — easier to navigate and extend
 - Replace inline type definitions with named types (`Color`, `Vector`, `SceneNode`) across the codebase
+- Split 3200-line `renderer.ts` into `packages/core/src/renderer/` with 10 focused files (scene, overlays, fills, strokes, shapes, effects, rulers, labels)
+- Centralize all color utilities in `packages/core/src/color.ts` — `colorToHex8`, `colorToCSSCompact`, `normalizeColor`, `colorDistance`; remove 5 duplicate implementations across the codebase
+- Add `geometry.ts` with shared rotation math (`degToRad`, `radToDeg`, `rotatePoint`, `rotatedCorners`, `rotatedBBox`)
+- Extract `isArrayMixed()` helper for multi-selection property panels
 
 ### Fixes
 
 - Fix drawer animation jump on close — single spring transition instead of two-phase
+- Fix `ALL_TOOLS` registry missing newer tools (`analyzeColors`, `diffCreate`, `exportImage`, `arrangeNodes`)
+- Fix `renderJSX` typo in tool definitions (`renderJsx` → `renderJSX`)
+- Fix all oxlint warnings and tsgo errors — replace `!` non-null assertions in `use-collab.ts` with local const captures
+- Fix broken test imports — stale `../../src/engine/` paths updated to `@open-pencil/core`
+- Fix flaky E2E tests: layers panel navigates to `/demo`, zoom-to-fit test zooms in first, snapshot rendering stabilized with `workers: 1` and `colorScheme: dark`
+- Fix bogus .fig import mappings for `expanded` and `strokeMiterLimit` fields
+- Fix PWA manifest error in dev mode, handle invalid font data gracefully
+- Fix eval response unwrapping and `export_jsx` page selection in RPC bridge
+- Fix automation commands not recomputing layouts after mutations
+- Fix workspace dependency not resolved when installing from npm (switch CI to pnpm publish)
 
 ### Internal
 
@@ -26,6 +78,10 @@
 - Mobile drawer: replace `useSwipe` + manual rAF animation with `motion.div` `:animate` + `@pan`/`@panEnd`; always-on tab state (no more null `activeRibbonTab`); content stays rendered when closed
 - Mobile toolbar: replace manual `scrollWidth` measuring + inline CSS transitions with `motion.div layout` + `AnimatePresence` directional slide variants
 - Mobile UI cleanup: extract shared `colorToCSS` util to core, `initials` to `src/utils/text`, `toolIcons` to `src/utils/tools`; replace hand-rolled dropdowns with reka-ui Popover/DropdownMenu; narrow `mobileDrawerSnap` type to string union; move magic numbers to constants; disable PWA service worker in dev mode
+- 83 new E2E tests (57 → 140): design panel, code panel, components, copy/paste, multi-page, text editing, keyboard shortcuts, context menu
+- 150 new unit tests (588 → 738): color, undo, snap, vector, style-runs, text-editor
+- 48 new E2E tests (9 spec files) + 26 mutation unit tests + store/canvas test helpers
+- Add `data-test-id` attributes to AppearanceSection, LayoutSection, TypographySection, VariablesDialog, EditorView
 
 ## 0.7.0 — 2026-03-05
 

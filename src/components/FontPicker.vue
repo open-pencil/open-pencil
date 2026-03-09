@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import type {
+  ListboxFilter} from 'reka-ui';
 import {
   ListboxContent,
-  ListboxFilter,
   ListboxItem,
   ListboxRoot,
   ListboxVirtualizer,
@@ -12,6 +13,8 @@ import {
   useFilter
 } from 'reka-ui'
 
+import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
+import { panelSurface } from '@/components/ui/surface'
 import { listFamilies } from '@/engine/fonts'
 
 const modelValue = defineModel<string>({ required: true })
@@ -51,7 +54,7 @@ function onSelect(val: string) {
     <PopoverAnchor>
       <button
         data-test-id="font-picker-trigger"
-        class="flex w-full cursor-pointer items-center justify-between rounded border border-border bg-input px-2 py-1 text-xs text-surface hover:bg-hover"
+        :class="selectTrigger({ class: 'w-full rounded px-2 py-1 text-xs' })"
         @click="open = !open"
       >
         <span class="truncate">{{ modelValue }}</span>
@@ -61,7 +64,13 @@ function onSelect(val: string) {
     <PopoverContent
       :side-offset="2"
       align="start"
-      class="z-50 flex min-w-56 w-[var(--reka-popper-anchor-width)] flex-col overflow-hidden rounded-md border border-border bg-panel shadow-lg"
+      :class="
+        panelSurface({
+          radius: 'md',
+          padding: 'none',
+          class: 'z-50 flex min-w-56 w-[var(--reka-popper-anchor-width)] flex-col overflow-hidden'
+        })
+      "
       @open-auto-focus.prevent
     >
       <ListboxRoot :model-value="modelValue" @update:model-value="onSelect">
@@ -89,7 +98,7 @@ function onSelect(val: string) {
             <ListboxItem
               :value="option"
               data-test-id="font-picker-item"
-              class="flex w-full cursor-pointer items-center gap-2 px-2 py-2 text-sm text-surface outline-none data-[highlighted]:bg-hover"
+              :class="selectItem({ class: 'w-full gap-2 px-2 py-2 text-sm' })"
               :style="{ fontFamily: `'${option}', sans-serif` }"
             >
               <icon-lucide-check v-if="option === modelValue" class="size-3 shrink-0 text-accent" />

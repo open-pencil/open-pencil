@@ -31,9 +31,10 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 
 | Shortcut | Action | Status |
 |----------|--------|--------|
-| <kbd>⌘</kbd><kbd>N</kbd> | New Window | 🔲 |
+| <kbd>⌘</kbd><kbd>N</kbd> | New Tab | ✅ |
+| <kbd>⌘</kbd><kbd>T</kbd> | New Tab | ✅ |
 | <kbd>⌘</kbd><kbd>O</kbd> | Open File | ✅ |
-| <kbd>⌘</kbd><kbd>W</kbd> | Close Tab | 🔲 |
+| <kbd>⌘</kbd><kbd>W</kbd> | Close Tab | ✅ |
 | <kbd>⌘</kbd><kbd>S</kbd> | Save | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | Save As | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> | Export… | ✅ |
@@ -52,6 +53,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>⌫</kbd> | Delete | ✅ |
 | <kbd>⌘</kbd><kbd>A</kbd> | Select All | ✅ |
 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>A</kbd> | Select Inverse | 🔲 |
+| <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy as PNG | ✅ |
 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>C</kbd> | Copy Properties | 🔲 |
 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>V</kbd> | Paste Properties | 🔲 |
 
@@ -62,7 +64,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>⌘</kbd><kbd>'</kbd> | Pixel Grid | 🔲 |
 | <kbd>⌃</kbd><kbd>G</kbd> | Layout Guides | 🔲 |
 | <kbd>⇧</kbd><kbd>R</kbd> | Rulers | 🔲 |
-| <kbd>⌘</kbd><kbd>\\</kbd> | Show/Hide UI | 🔲 |
+| <kbd>⌘</kbd><kbd>\\</kbd> | Show/Hide UI | ✅ |
 | <kbd>⌘</kbd><kbd>=</kbd> | Zoom In | ✅ |
 | <kbd>⌘</kbd><kbd>-</kbd> | Zoom Out | ✅ |
 | <kbd>⌘</kbd><kbd>0</kbd> | Zoom to 100% | ✅ |

@@ -2,14 +2,14 @@ import CanvasKitInit from 'canvaskit-wasm/full'
 import type { CanvasKit } from 'canvaskit-wasm'
 import {
   parseFigFile,
-  SceneGraph,
+  type SceneGraph,
+  type ExportFormat,
   SkiaRenderer,
   computeAllLayouts,
   loadFont,
   renderNodesToImage,
   renderThumbnail
 } from '@open-pencil/core'
-import type { ExportFormat } from '@open-pencil/core'
 
 let ck: CanvasKit | null = null
 

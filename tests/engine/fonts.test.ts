@@ -6,8 +6,8 @@ import {
   markFontLoaded,
   styleToWeight,
   weightToStyle,
-} from '../../packages/core/src/fonts'
-import { SceneGraph } from '../../packages/core/src/scene-graph'
+  SceneGraph,
+} from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

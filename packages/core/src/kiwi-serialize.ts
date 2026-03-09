@@ -2,11 +2,56 @@ export const FIG_KIWI_VERSION = 106
 
 import { deflateSync, inflateSync } from 'fflate'
 
-import { weightToStyle } from './fonts'
+import { weightToStyle, getLoadedFontData, styleToWeight } from './fonts'
 import { encodeVectorNetworkBlob } from './vector'
+import { stringToGuid, VARIABLE_BINDING_FIELDS } from './kiwi/kiwi-convert'
 
-import type { NodeChange, Paint } from './kiwi/codec'
+import type { NodeChange, Paint, VariableConsumptionEntry } from './kiwi/codec'
 import type { SceneGraph, SceneNode, CharacterStyleOverride } from './scene-graph'
+import type { GUID } from './types'
+
+const fontDigestCache = new Map<string, Uint8Array>()
+
+async function computeFontDigest(data: ArrayBuffer): Promise<Uint8Array> {
+  if (typeof crypto !== 'undefined') {
+    const hash = await crypto.subtle.digest('SHA-1', data)
+    return new Uint8Array(hash)
+  }
+  return new Uint8Array(20)
+}
+
+async function getFontDigest(family: string, style: string): Promise<Uint8Array | null> {
+  const key = `${family}|${style}`
+  if (fontDigestCache.has(key)) return fontDigestCache.get(key)!
+  const data = getLoadedFontData(family, style)
+  if (!data) return null
+  const digest = await computeFontDigest(data)
+  fontDigestCache.set(key, digest)
+  return digest
+}
+
+export async function buildFontDigestMap(graph: SceneGraph): Promise<Map<string, Uint8Array>> {
+  const fontKeys = new Set<string>()
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'TEXT') continue
+    const baseStyle = weightToStyle(node.fontWeight, node.italic)
+    fontKeys.add(`${node.fontFamily}|${baseStyle}`)
+    for (const run of node.styleRuns) {
+      const family = run.style.fontFamily ?? node.fontFamily
+      const weight = run.style.fontWeight ?? node.fontWeight
+      const italic = run.style.italic ?? node.italic
+      fontKeys.add(`${family}|${weightToStyle(weight, italic)}`)
+    }
+  }
+
+  const result = new Map<string, Uint8Array>()
+  for (const key of fontKeys) {
+    const [family, style] = key.split('|')
+    const digest = await getFontDigest(family, style)
+    if (digest) result.set(key, digest)
+  }
+  return result
+}
 
 type KiwiNodeChange = NodeChange & Record<string, unknown>
 
@@ -110,10 +155,51 @@ export function fractionalPosition(index: number): string {
   return String.fromCharCode('!'.charCodeAt(0) + index)
 }
 
+function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
+  const lineCount = Math.max(1, text.split('\n').length)
+  return Array.from({ length: lineCount }, () => ({ lineType: 'PLAIN' }))
+}
+
+function buildDerivedTextData(
+  node: SceneNode,
+  digestMap: Map<string, Uint8Array>
+): NodeChange['derivedTextData'] {
+  const fontMeta: NonNullable<NodeChange['derivedTextData']>['fontMetaData'] = []
+  const seen = new Set<string>()
+
+  const addFont = (family: string, weight: number, italic: boolean) => {
+    const style = weightToStyle(weight, italic)
+    const key = `${family}|${style}`
+    if (seen.has(key)) return
+    seen.add(key)
+    fontMeta.push({
+      key: { family, style, postscript: '' },
+      fontLineHeight: 1.2,
+      fontDigest: digestMap.get(key),
+      fontStyle: italic ? 'ITALIC' : 'NORMAL',
+      fontWeight: weight
+    })
+  }
+
+  addFont(node.fontFamily, node.fontWeight, node.italic)
+  for (const run of node.styleRuns) {
+    addFont(
+      run.style.fontFamily ?? node.fontFamily,
+      run.style.fontWeight ?? node.fontWeight,
+      run.style.italic ?? node.italic
+    )
+  }
+
+  return {
+    layoutSize: { x: node.width, y: node.height },
+    fontMetaData: fontMeta
+  }
+}
+
 function exportTextData(node: SceneNode): NodeChange['textData'] {
   const runs = node.styleRuns
   if (runs.length === 0) {
-    return { characters: node.text }
+    return { characters: node.text, lines: textLines(node.text) }
   }
 
   const charIds = new Array<number>(node.text.length).fill(0)
@@ -155,6 +241,7 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
 
   return {
     characters: node.text,
+    lines: textLines(node.text),
     characterStyleIDs: charIds,
     styleOverrideTable: overrideTable
   }
@@ -162,14 +249,17 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
 
 export function sceneNodeToKiwi(
   node: SceneNode,
-  parentGuid: { sessionID: number; localID: number },
+  parentGuid: GUID,
   childIndex: number,
   localIdCounter: { value: number },
   graph: SceneGraph,
-  blobs: Uint8Array[]
+  blobs: Uint8Array[],
+  nodeIdToGuid?: Map<string, GUID>,
+  fontDigestMap?: Map<string, Uint8Array>
 ): KiwiNodeChange[] {
   const localID = localIdCounter.value++
   const guid = { sessionID: 1, localID }
+  nodeIdToGuid?.set(node.id, guid)
   const sx = node.flipX ? -1 : 1
   const cos = Math.cos((node.rotation * Math.PI) / 180)
   const sin = Math.sin((node.rotation * Math.PI) / 180)
@@ -267,11 +357,12 @@ export function sceneNodeToKiwi(
     nc.textData = exportTextData(node)
     nc.textAutoResize = 'WIDTH_AND_HEIGHT'
     nc.textAlignHorizontal = node.textAlignHorizontal
+    nc.textUserLayoutVersion = 3
+    if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap)
     if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
     if (node.letterSpacing !== 0) nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
     if (node.textDecoration !== 'NONE') {
-      ;(nc as Record<string, unknown>).textDecoration =
-        node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
+      nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
     }
   }
 
@@ -280,7 +371,7 @@ export function sceneNodeToKiwi(
     if (node.clipsContent) nc.clipsContent = true
   }
 
-  if (node.layoutMode !== 'NONE') {
+  if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
     nc.stackMode = node.layoutMode
     nc.stackSpacing = node.itemSpacing
     nc.stackVerticalPadding = node.paddingTop
@@ -322,10 +413,32 @@ export function sceneNodeToKiwi(
     })
   }
 
+  if (Object.keys(node.boundVariables).length > 0) {
+    const entries: VariableConsumptionEntry[] = []
+    for (const [field, varId] of Object.entries(node.boundVariables)) {
+      const kiwiField = VARIABLE_BINDING_FIELDS[field]
+      if (!kiwiField) continue
+      const variable = graph.variables.get(varId)
+      if (!variable) continue
+      const varGuid = stringToGuid(varId)
+      const typeMap: Record<string, string> = { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }
+      const resolvedType = typeMap[variable.type] ?? 'FLOAT'
+      entries.push({
+        variableData: {
+          value: { alias: { guid: varGuid } },
+          dataType: 'ALIAS',
+          resolvedDataType: resolvedType
+        },
+        variableField: kiwiField
+      })
+    }
+    if (entries.length > 0) nc.variableConsumptionMap = { entries }
+  }
+
   const result: KiwiNodeChange[] = [nc]
   const children = graph.getChildren(node.id)
   for (let i = 0; i < children.length; i++) {
-    result.push(...sceneNodeToKiwi(children[i], guid, i, localIdCounter, graph, blobs))
+    result.push(...sceneNodeToKiwi(children[i], guid, i, localIdCounter, graph, blobs, nodeIdToGuid, fontDigestMap))
   }
 
   return result

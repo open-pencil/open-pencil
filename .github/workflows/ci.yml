@@ -31,11 +31,8 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - name: Lint
-        run: bun run lint
-
-      - name: Typecheck
-        run: bun run typecheck
+      - name: Lint & typecheck
+        run: bun run check
 
       - name: Unit tests
         run: bun test tests/engine/

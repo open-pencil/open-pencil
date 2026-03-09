@@ -12,6 +12,7 @@ import {
 import { selectionToJSX, renderNodesToSVG } from '@open-pencil/core'
 
 import { useEditorStore } from '@/stores/editor'
+import { menuContent, menuItem, menuSeparator } from '@/components/ui/menu'
 import { toast } from '@/composables/use-toast'
 
 const store = useEditorStore()
@@ -99,12 +100,12 @@ function copyAsJSX() {
   toast.show('Copied as JSX')
 }
 
-const itemClass =
-  'flex w-full cursor-pointer select-none items-center justify-between gap-6 rounded px-2 py-1.5 text-xs text-surface outline-none data-[highlighted]:bg-hover data-[disabled]:cursor-default data-[disabled]:text-muted'
-const componentItemClass =
-  'flex w-full cursor-pointer select-none items-center justify-between gap-6 rounded px-2 py-1.5 text-xs text-[#9747ff] outline-none data-[highlighted]:bg-[#9747ff]/12 data-[disabled]:cursor-default data-[disabled]:text-[#9747ff]/40'
-const menuClass =
-  'z-50 min-w-56 rounded-lg border border-border bg-panel p-1 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95'
+const itemClass = menuItem()
+const componentItemClass = menuItem({ tone: 'component' })
+const menuClass = menuContent({
+  class: 'min-w-56 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95'
+})
+const separatorClass = menuSeparator({ class: 'my-1' })
 </script>
 
 <template>
@@ -154,7 +155,7 @@ const menuClass =
       <span class="text-[11px] text-muted">⌫</span>
     </ContextMenuItem>
 
-    <ContextMenuSeparator class="my-1 h-px bg-border" />
+    <ContextMenuSeparator :class="separatorClass" />
 
     <ContextMenuSub v-if="otherPages.length > 0 && hasSelection">
       <ContextMenuSubTrigger data-test-id="context-move-to-page" :class="itemClass">
@@ -194,7 +195,7 @@ const menuClass =
       <span class="text-[11px] text-muted">[</span>
     </ContextMenuItem>
 
-    <ContextMenuSeparator class="my-1 h-px bg-border" />
+    <ContextMenuSeparator :class="separatorClass" />
 
     <ContextMenuItem
       data-test-id="context-group"
@@ -224,7 +225,7 @@ const menuClass =
       <span class="text-[11px] text-muted">⇧A</span>
     </ContextMenuItem>
 
-    <ContextMenuSeparator class="my-1 h-px bg-border" />
+    <ContextMenuSeparator :class="separatorClass" />
 
     <ContextMenuItem
       data-test-id="context-create-component"
@@ -271,7 +272,7 @@ const menuClass =
     </ContextMenuItem>
 
     <template v-if="hasSelection">
-      <ContextMenuSeparator class="my-1 h-px bg-border" />
+      <ContextMenuSeparator :class="separatorClass" />
 
       <ContextMenuItem
         data-test-id="context-toggle-visibility"
@@ -290,7 +291,7 @@ const menuClass =
         <span class="text-[11px] text-muted">⇧⌘L</span>
       </ContextMenuItem>
 
-      <ContextMenuSeparator class="my-1 h-px bg-border" />
+      <ContextMenuSeparator :class="separatorClass" />
 
       <ContextMenuSub>
         <ContextMenuSubTrigger data-test-id="context-copy-paste-as" :class="itemClass">

@@ -107,7 +107,7 @@ function chatInput() {
 }
 
 function apiKeyInput() {
-  return page.locator('input[placeholder="sk-or-…"]')
+  return page.locator('[data-test-id="api-key-input"]')
 }
 
 test('⌘J switches to AI tab', async () => {
@@ -121,16 +121,16 @@ test('⌘J switches back to Design tab', async () => {
   await expect(designTab()).toHaveAttribute('data-state', 'active')
 })
 
-test('clicking AI tab shows API key setup when no key set', async () => {
+test('clicking AI tab shows provider setup when no key set', async () => {
   await chatTab().click()
   await expect(apiKeyInput()).toBeVisible()
-  await expect(page.getByText('Enter your OpenRouter API key')).toBeVisible()
+  await expect(page.getByText('Connect an AI provider to start chatting.')).toBeVisible()
 })
 
 test('saving API key shows chat interface', async () => {
   const key = USE_REAL_LLM ? OPENROUTER_KEY : 'sk-or-test-key-12345'
   await apiKeyInput().fill(key)
-  await page.locator('button:has-text("Save")').click()
+  await page.locator('button:has-text("Connect")').click()
 
   await expect(chatInput()).toBeVisible()
   await expect(page.getByText('Describe what you want to create or change.')).toBeVisible()
@@ -166,7 +166,7 @@ test('assistant responds', async () => {
 })
 
 test('model selector is visible and clickable', async () => {
-  const trigger = page.getByRole('combobox')
+  const trigger = page.locator('[data-test-id="chat-model-selector"]')
   await expect(trigger).toBeVisible()
   await trigger.click()
 

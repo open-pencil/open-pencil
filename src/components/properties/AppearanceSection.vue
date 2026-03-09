@@ -5,7 +5,7 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
 import { MIXED, useMultiProps } from '@/composables/use-multi-props'
 
-import type { SceneNode } from '@/engine/scene-graph'
+import type { SceneNode } from '@open-pencil/core'
 
 const { store, updateProp, commitProp } = useNodeProps()
 const { node, nodes, isMulti, active, merged, updateAllWithUndo } = useMultiProps()
@@ -27,7 +27,7 @@ const hasCornerRadius = computed(() => {
 
 const visibilityState = computed(() => {
   const v = merged('visible')
-  return v === MIXED ? 'mixed' : v ? 'visible' : 'hidden'
+  return v === MIXED ? 'mixed' : (v ? 'visible' : 'hidden')
 })
 
 function toggleVisibility() {
@@ -178,6 +178,7 @@ const cornerRadiusValue = computed(() => {
       <template v-if="hasCornerRadius">
         <ScrubInput
           v-if="independentCorners !== true"
+          data-test-id="corner-radius-input"
           :model-value="cornerRadiusValue"
           :min="0"
           @update:model-value="updateProp('cornerRadius', $event)"
@@ -188,6 +189,7 @@ const cornerRadiusValue = computed(() => {
           </template>
         </ScrubInput>
         <button
+          data-test-id="independent-corners-toggle"
           class="flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           :class="{ '!border-accent !text-accent': independentCorners === true }"
           title="Independent corner radii"
@@ -214,6 +216,7 @@ const cornerRadiusValue = computed(() => {
       class="mt-1.5 grid grid-cols-2 gap-1.5"
     >
       <ScrubInput
+        data-test-id="corner-tl-input"
         :model-value="node!.topLeftRadius"
         :min="0"
         @update:model-value="updateCornerProp('topLeftRadius', $event)"
@@ -232,6 +235,7 @@ const cornerRadiusValue = computed(() => {
         </template>
       </ScrubInput>
       <ScrubInput
+        data-test-id="corner-tr-input"
         :model-value="node!.topRightRadius"
         :min="0"
         @update:model-value="updateCornerProp('topRightRadius', $event)"
@@ -250,6 +254,7 @@ const cornerRadiusValue = computed(() => {
         </template>
       </ScrubInput>
       <ScrubInput
+        data-test-id="corner-bl-input"
         :model-value="node!.bottomLeftRadius"
         :min="0"
         @update:model-value="updateCornerProp('bottomLeftRadius', $event)"
@@ -268,6 +273,7 @@ const cornerRadiusValue = computed(() => {
         </template>
       </ScrubInput>
       <ScrubInput
+        data-test-id="corner-br-input"
         :model-value="node!.bottomRightRadius"
         :min="0"
         @update:model-value="updateCornerProp('bottomRightRadius', $event)"

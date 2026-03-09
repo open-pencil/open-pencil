@@ -16,31 +16,32 @@ import {
 
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { ref, nextTick } from 'vue'
+import { computed, ref } from 'vue'
 
+import { useInlineRename } from '@/composables/use-inline-rename'
+import { menuContent, menuItem, menuSeparator } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { openFileDialog } from '@/composables/use-menu'
 import { useEditorStore } from '@/stores/editor'
 
 const store = useEditorStore()
 
-const editingName = ref(false)
+const DOCUMENT_NAME_ID = 'document-name'
+const rename = useInlineRename<'document-name'>((_id, name) => {
+  store.state.documentName = name
+})
+const editingName = computed(() => rename.editingId.value === DOCUMENT_NAME_ID)
+
+function setNameInputRef(el: HTMLInputElement | null) {
+  if (el) void rename.focusInput(el)
+}
 
 function startRename() {
-  editingName.value = true
-  nextTick(() => {
-    const input = document.querySelector<HTMLInputElement>('[data-doc-name-edit]')
-    input?.focus()
-    input?.select()
-  })
+  rename.start(DOCUMENT_NAME_ID, store.state.documentName)
 }
 
 function commitRename(input: HTMLInputElement) {
-  const value = input.value.trim()
-  if (value) {
-    store.state.documentName = value
-  }
-  editingName.value = false
+  rename.commit(DOCUMENT_NAME_ID, input)
 }
 
 const isMac = navigator.platform.includes('Mac')
@@ -101,7 +102,9 @@ const editMenu: MenuItem[] = [
 ]
 
 const viewMenu: MenuItem[] = [
-  { label: 'Zoom to fit', shortcut: '⇧1', action: () => store.zoomToFit() },
+  { label: 'Zoom to 100%', shortcut: `${mod}0`, action: () => store.zoomTo100() },
+  { label: 'Zoom to fit', shortcut: `${mod}1`, action: () => store.zoomToFit() },
+  { label: 'Zoom to selection', shortcut: `${mod}2`, action: () => store.zoomToSelection() },
   {
     label: 'Zoom in',
     shortcut: `${mod}=`,
@@ -177,13 +180,13 @@ const topMenus = [
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
       <input
         v-if="editingName"
-        data-doc-name-edit
+        :ref="(el) => setNameInputRef(el as HTMLInputElement | null)"
         data-test-id="app-document-name-input"
         class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0.5 text-xs text-surface outline-none"
         :value="store.state.documentName"
         @blur="commitRename($event.target as HTMLInputElement)"
         @keydown.enter="($event.target as HTMLInputElement).blur()"
-        @keydown.escape="editingName = false"
+        @keydown="rename.onKeydown"
       />
       <span
         v-else
@@ -215,28 +218,22 @@ const topMenus = [
             <MenubarContent
               :side-offset="4"
               align="start"
-              class="min-w-52 rounded-lg border border-border bg-panel p-1 shadow-lg"
+              :class="menuContent({ class: 'min-w-52' })"
             >
               <template v-for="(item, i) in menu.items" :key="i">
-                <MenubarSeparator v-if="item.separator" class="mx-1 my-1 h-px bg-border" />
+                <MenubarSeparator v-if="item.separator" :class="menuSeparator()" />
                 <MenubarSub v-else-if="item.sub">
-                  <MenubarSubTrigger
-                    class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs text-surface outline-none select-none hover:bg-hover"
-                  >
+                  <MenubarSubTrigger :class="menuItem()">
                     <span class="flex-1">{{ item.label }}</span>
                     <IconChevronRight class="size-3 text-muted" />
                   </MenubarSubTrigger>
                   <MenubarPortal>
-                    <MenubarSubContent
-                      :side-offset="4"
-                      class="min-w-44 rounded-lg border border-border bg-panel p-1 shadow-lg"
-                    >
+                    <MenubarSubContent :side-offset="4" :class="menuContent({ class: 'min-w-44' })">
                       <template v-for="(sub, j) in item.sub" :key="j">
-                        <MenubarSeparator v-if="sub.separator" class="mx-1 my-1 h-px bg-border" />
+                        <MenubarSeparator v-if="sub.separator" :class="menuSeparator()" />
                         <MenubarItem
                           v-else
-                          class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none select-none"
-                          :class="sub.disabled ? 'text-muted/50' : 'text-surface hover:bg-hover'"
+                          :class="menuItem()"
                           :disabled="sub.disabled"
                           @select="sub.action?.()"
                         >
@@ -252,7 +249,7 @@ const topMenus = [
                 <MenubarCheckboxItem
                   v-else-if="item.onCheckedChange"
                   :model-value="item.checked"
-                  class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs text-surface outline-none select-none hover:bg-hover"
+                  :class="menuItem()"
                   @update:model-value="item.onCheckedChange?.($event as boolean)"
                 >
                   <span class="flex-1">{{ item.label }}</span>
@@ -262,8 +259,7 @@ const topMenus = [
                 </MenubarCheckboxItem>
                 <MenubarItem
                   v-else
-                  class="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs outline-none select-none"
-                  :class="item.disabled ? 'text-muted/50' : 'text-surface hover:bg-hover'"
+                  :class="menuItem()"
                   :disabled="item.disabled"
                   @select="item.action?.()"
                 >

@@ -29,6 +29,8 @@ export {
 
 export { renderTree, type RenderResult } from './renderer'
 
+export { createElement } from './mini-react'
+
 export { renderJSX, renderTreeNode, buildComponent } from './render-jsx'
 
 export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './export-jsx'

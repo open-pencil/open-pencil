@@ -1,56 +1,35 @@
 <script setup lang="ts">
+import { isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
 import 'vue-stream-markdown/index.css'
 
-import type { UIMessage } from 'ai'
+import type { UIMessage, UIMessagePart } from 'ai'
 
 const { message } = defineProps<{ message: UIMessage }>()
 
-function getTextContent(msg: UIMessage): string {
-  return msg.parts
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
-    .join('')
-}
-
-interface ToolPart {
-  type: string
-  toolCallId: string
-  state: string
-  input?: unknown
-  output?: unknown
-  errorText?: string
-}
-
-function isToolPart(part: unknown): part is ToolPart {
-  return (
-    typeof part === 'object' &&
-    part !== null &&
-    'type' in part &&
-    typeof (part as ToolPart).type === 'string' &&
-    (part as ToolPart).type.startsWith('tool-')
-  )
-}
-
-function getToolParts(msg: UIMessage): ToolPart[] {
-  return msg.parts.filter(isToolPart)
-}
-
-function toolName(part: ToolPart): string {
-  return part.type.replace(/^tool-/, '')
-}
+type ToolPart = Extract<UIMessagePart, { toolCallId: string }>
 
 function toolDisplayName(part: ToolPart): string {
-  return toolName(part)
+  return getToolName(part)
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+function hasErrorOutput(part: ToolPart): boolean {
+  return part.state === 'output-available' &&
+    typeof part.output === 'object' && part.output !== null && 'error' in part.output
+}
+
 function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
-  if (part.state === 'error') return 'error'
+  if (part.state === 'output-error' || hasErrorOutput(part)) return 'error'
   if (part.state === 'output-available') return 'done'
   return 'pending'
+}
+
+function partKey(part: UIMessagePart, index: number): string {
+  if ('toolCallId' in part) return part.toolCallId
+  return `part-${index}`
 }
 </script>
 
@@ -60,78 +39,89 @@ function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
     :class="message.role === 'user' ? 'flex justify-end' : ''"
   >
     <div class="min-w-0 space-y-1.5" :class="message.role === 'user' ? 'max-w-[85%]' : ''">
-      <!-- Tool timeline -->
-      <div
-        v-if="message.role === 'assistant' && getToolParts(message).length > 0"
-        data-test-id="chat-tool-timeline"
-        class="space-y-0.5 rounded-lg border border-border bg-canvas p-2"
-      >
-        <CollapsibleRoot v-for="tool in getToolParts(message)" :key="tool.toolCallId">
-          <CollapsibleTrigger
-            class="flex w-full items-center gap-2 rounded px-1 py-0.5 hover:bg-hover"
+      <template v-if="message.role === 'assistant'">
+        <template v-for="(part, i) in message.parts" :key="partKey(part, i)">
+          <!-- Tool call -->
+          <div
+            v-if="isToolUIPart(part)"
+            class="rounded-lg border border-border bg-canvas p-2"
           >
-            <div
-              class="flex size-4 items-center justify-center rounded-full"
-              :class="{
-                'bg-accent/20 text-accent': toolState(tool) === 'pending',
-                'bg-green-500/20 text-green-400': toolState(tool) === 'done',
-                'bg-red-500/20 text-red-400': toolState(tool) === 'error'
-              }"
-            >
-              <icon-lucide-loader-circle
-                v-if="toolState(tool) === 'pending'"
-                class="size-3 animate-spin"
-              />
-              <icon-lucide-check v-else-if="toolState(tool) === 'done'" class="size-3" />
-              <icon-lucide-triangle-alert v-else class="size-3" />
-            </div>
-            <span class="text-[11px] text-surface">
-              {{ toolDisplayName(tool) }}
-            </span>
-            <span class="text-[10px] text-muted">
-              {{
-                toolState(tool) === 'pending'
-                  ? 'Running…'
-                  : toolState(tool) === 'done'
-                    ? 'Done'
-                    : 'Error'
-              }}
-            </span>
-            <icon-lucide-chevron-down
-              v-if="toolState(tool) !== 'pending'"
-              class="ml-auto size-3 text-muted transition-transform [[data-state=open]>&]:rotate-180"
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent
-            v-if="toolState(tool) !== 'pending'"
-            class="overflow-hidden text-[10px] data-[state=closed]:collapsible-up data-[state=open]:collapsible-down"
-          >
-            <pre class="mt-1 overflow-x-auto rounded bg-input p-2 text-muted">{{
-              tool.state === 'error' && tool.errorText
-                ? tool.errorText
-                : JSON.stringify(tool.output, null, 2)
-            }}</pre>
-          </CollapsibleContent>
-        </CollapsibleRoot>
-      </div>
+            <CollapsibleRoot>
+              <CollapsibleTrigger
+                class="flex w-full items-center gap-2 rounded px-1 py-0.5 hover:bg-hover"
+              >
+                <div
+                  class="flex size-4 items-center justify-center rounded-full"
+                  :class="{
+                    'bg-accent/20 text-accent': toolState(part) === 'pending',
+                    'bg-green-500/20 text-green-400': toolState(part) === 'done',
+                    'bg-red-500/20 text-red-400': toolState(part) === 'error'
+                  }"
+                >
+                  <icon-lucide-loader-circle
+                    v-if="toolState(part) === 'pending'"
+                    class="size-3 animate-spin"
+                  />
+                  <icon-lucide-check
+                    v-else-if="toolState(part) === 'done'"
+                    class="size-3"
+                  />
+                  <icon-lucide-triangle-alert v-else class="size-3" />
+                </div>
+                <span class="text-[11px] text-surface">
+                  {{ toolDisplayName(part) }}
+                </span>
+                <span class="text-[10px] text-muted">
+                  {{
+                    toolState(part) === 'pending'
+                      ? 'Running…'
+                      : toolState(part) === 'done'
+                        ? 'Done'
+                        : 'Error'
+                  }}
+                </span>
+                <icon-lucide-chevron-down
+                  v-if="toolState(part) !== 'pending'"
+                  class="ml-auto size-3 text-muted transition-transform [[data-state=open]>&]:rotate-180"
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent
+                v-if="toolState(part) !== 'pending'"
+                class="overflow-hidden text-[10px] data-[state=closed]:collapsible-up data-[state=open]:collapsible-down"
+              >
+                <pre class="mt-1 overflow-x-auto rounded bg-input p-2 text-muted">{{
+                  part.state === 'output-error' && part.errorText
+                    ? part.errorText
+                    : hasErrorOutput(part)
+                      ? (part.output as { error: string }).error
+                      : JSON.stringify(part.output, null, 2)
+                }}</pre>
+              </CollapsibleContent>
+            </CollapsibleRoot>
+          </div>
 
-      <!-- Text bubble -->
+          <!-- Text -->
+          <div
+            v-else-if="isTextUIPart(part) && part.text"
+            data-test-id="chat-text-bubble"
+            class="rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
+          >
+            <Markdown
+              :content="part.text"
+              :mermaid="false"
+              class="chat-markdown"
+            />
+          </div>
+        </template>
+      </template>
+
+      <!-- User message -->
       <div
-        v-if="getTextContent(message)"
+        v-else-if="message.role === 'user'"
         data-test-id="chat-text-bubble"
-        class="rounded-xl px-3 py-2 text-xs leading-relaxed"
-        :class="
-          message.role === 'user'
-            ? 'whitespace-pre-wrap rounded-br-md bg-accent text-white'
-            : 'rounded-tl-md bg-hover text-surface'
-        "
+        class="whitespace-pre-wrap rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed text-white"
       >
-        <Markdown
-          v-if="message.role === 'assistant'"
-          :content="getTextContent(message)"
-          class="chat-markdown"
-        />
-        <template v-else>{{ getTextContent(message) }}</template>
+        {{ message.parts.filter(isTextUIPart).map((p) => p.text).join('') }}
       </div>
     </div>
   </div>

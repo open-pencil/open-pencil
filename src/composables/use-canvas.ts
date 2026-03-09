@@ -1,8 +1,7 @@
-import { useRafFn, useResizeObserver } from '@vueuse/core'
+import { useBreakpoints, useRafFn, useResizeObserver } from '@vueuse/core'
 import { onMounted, onUnmounted, type Ref } from 'vue'
 
-import { getCanvasKit, getGpuBackend } from '@/engine/canvaskit'
-import { SkiaRenderer } from '@/engine/renderer'
+import { getCanvasKit, getGpuBackend, SkiaRenderer } from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
 import type { CanvasKit } from 'canvaskit-wasm'
@@ -32,6 +31,7 @@ async function initWebGPU(ck: CanvasKit): Promise<WebGPUContext | null> {
   const adapter = await navigator.gpu.requestAdapter()
   if (!adapter) return null
   const device = await adapter.requestDevice()
+  // oxlint-disable-next-line typescript/no-unnecessary-condition -- WebGPU CanvasKit API may not exist at runtime
   const deviceContext = asWebGPU(ck).MakeGPUDeviceContext?.(device)
   if (!deviceContext) return null
   return { device, deviceContext }
@@ -52,6 +52,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     if (!canvas || destroyed) return
 
     ck = await getCanvasKit()
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- async race: destroyed may change during await
     if (destroyed) return
 
     if (getGpuBackend() === 'webgpu') {
@@ -118,7 +119,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
       }
     }
 
-    const glCtx = (canvas.getContext('webgl2') ?? null) as WebGL2RenderingContext | null
+    const glCtx = (canvas.getContext('webgl2') ?? null)
     renderer = new SkiaRenderer(ck, surface, glCtx)
     store.setCanvasKit(ck, renderer)
     void renderer.loadFonts().then(() => renderNow())
@@ -128,12 +129,12 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
 
   const params = new URLSearchParams(window.location.search)
   const noRulersParam = params.has('no-rulers')
-  const mobileQuery = matchMedia('(max-width: 767px)')
-  let showRulers = !noRulersParam && !mobileQuery.matches
-  mobileQuery.addEventListener('change', (e) => {
-    showRulers = !noRulersParam && !e.matches
-    dirty = true
-  })
+  const breakpoints = useBreakpoints({ mobile: 768 })
+  const isMobile = breakpoints.smaller('mobile')
+
+  function showRulers() {
+    return !noRulersParam && !isMobile.value
+  }
 
   function renderNow() {
     if (!renderer || destroyed) return
@@ -143,7 +144,7 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     renderer.zoom = store.state.zoom
     renderer.viewportWidth = canvasRef.value?.clientWidth ?? 0
     renderer.viewportHeight = canvasRef.value?.clientHeight ?? 0
-    renderer.showRulers = showRulers
+    renderer.showRulers = showRulers()
     renderer.pageColor = store.state.pageColor
     renderer.pageId = store.state.currentPageId
     renderer.render(
@@ -229,11 +230,18 @@ export function useCanvas(canvasRef: Ref<HTMLCanvasElement | null>, store: Edito
     return renderer?.hitTestComponentLabel(store.graph, canvasX, canvasY) ?? null
   }
 
+  function hitTestFrameTitle(canvasX: number, canvasY: number) {
+    return (
+      renderer?.hitTestFrameTitle(store.graph, canvasX, canvasY, store.state.selectedIds) ?? null
+    )
+  }
+
   return {
     render: () => {
       dirty = true
     },
     hitTestSectionTitle,
-    hitTestComponentLabel
+    hitTestComponentLabel,
+    hitTestFrameTitle
   }
 }

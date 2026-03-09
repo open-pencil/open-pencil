@@ -1,8 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { importNodeChanges } from '../../src/kiwi/fig-import'
-
-import type { NodeChange } from '../../src/kiwi/codec'
+import { importNodeChanges, type NodeChange } from '@open-pencil/core'
 
 function doc(): NodeChange {
   return {

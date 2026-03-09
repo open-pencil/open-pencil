@@ -5,7 +5,7 @@ import { isTreeNode } from './tree'
 import type { SceneGraph, SceneNode, NodeType, LayoutMode, Stroke } from '../scene-graph'
 import type { TreeNode } from './tree'
 
-const TYPE_MAP: Record<string, NodeType> = {
+const TYPE_MAP: Partial<Record<string, NodeType>> = {
   frame: 'FRAME',
   view: 'FRAME',
   rectangle: 'RECTANGLE',
@@ -83,7 +83,7 @@ export function renderTree(
   tree: TreeNode,
   options: RenderOptions = {}
 ): RenderResult {
-  const parentId = options.parentId ?? graph.getPages()[0]?.id ?? graph.rootId
+  const parentId = options.parentId ?? graph.getPages()[0].id
 
   const result = renderNode(graph, tree, parentId)
 
@@ -149,7 +149,7 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
   }
 
   if (typeof props.stroke === 'string') {
-    const strokeWidth = (props.strokeWidth as number) ?? 1
+    const strokeWidth = (props.strokeWidth as number | undefined) ?? 1
     o.strokes = [parseStroke(props.stroke, strokeWidth)]
   }
 
@@ -264,7 +264,7 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
   if (props.pointCount !== undefined) o.pointCount = props.pointCount as number
 
   if (typeof props.shadow === 'string') {
-    const parts = (props.shadow as string).split(/\s+/)
+    const parts = props.shadow.split(/\s+/)
     if (parts.length >= 4) {
       const c = parseColor(parts.slice(3).join(' '))
       o.effects = [
@@ -272,8 +272,8 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
         {
           type: 'DROP_SHADOW',
           color: c,
-          offset: { x: parseFloat(parts[0]!), y: parseFloat(parts[1]!) },
-          radius: parseFloat(parts[2]!),
+          offset: { x: parseFloat(parts[0]), y: parseFloat(parts[1]) },
+          radius: parseFloat(parts[2]),
           spread: 0,
           visible: true
         }
@@ -286,7 +286,7 @@ function propsToOverrides(props: Record<string, unknown>, isText: boolean): Part
       ...(o.effects ?? []),
       {
         type: 'LAYER_BLUR',
-        radius: props.blur as number,
+        radius: props.blur,
         visible: true,
         color: { ...TRANSPARENT },
         offset: { x: 0, y: 0 },

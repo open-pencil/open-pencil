@@ -6,12 +6,14 @@
   "singleQuote": true,
   "printWidth": 100,
   "arrowParens": "always",
-  "experimentalSortImports": {
+  "sortImports": {
     "order": "asc",
     "ignoreCase": true,
     "newlinesBetween": true,
+    "internalPattern": ["@open-pencil/", "@/"],
     "groups": [
-      ["builtin", "external"],
+      "builtin",
+      "external",
       "internal",
       ["parent", "sibling", "index"],
       "type"

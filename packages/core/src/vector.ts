@@ -7,6 +7,7 @@ import type {
   WindingRule
 } from './scene-graph'
 import type { CanvasKit, Path } from 'canvaskit-wasm'
+import type { Rect } from './types'
 
 // --- vectorNetworkBlob binary format ---
 // Header:  [numVertices:u32, numSegments:u32, numRegions:u32]  (12 bytes)
@@ -53,7 +54,7 @@ export function decodeVectorNetworkBlob(
     vertices.push({
       x,
       y,
-      handleMirroring: (override?.handleMirroring as HandleMirroring) ?? 'NONE'
+      handleMirroring: (override?.handleMirroring as HandleMirroring | undefined) ?? 'NONE'
     })
   }
 
@@ -300,6 +301,7 @@ function buildChains(segments: VectorSegment[], _vertexCount: number): number[][
     let current = startVertex
     const chain: number[] = []
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
       const segs = adj.get(current)
       if (!segs) break
@@ -320,12 +322,7 @@ function buildChains(segments: VectorSegment[], _vertexCount: number): number[][
   return chains
 }
 
-export function computeVectorBounds(network: VectorNetwork): {
-  x: number
-  y: number
-  width: number
-  height: number
-} {
+export function computeVectorBounds(network: VectorNetwork): Rect {
   if (network.vertices.length === 0) {
     return { x: 0, y: 0, width: 0, height: 0 }
   }
@@ -371,7 +368,7 @@ export function geometryBlobToPath(
   windingRule: WindingRule
 ): Path {
   const path = new ck.Path()
-  if (!blob || !(blob.buffer instanceof ArrayBuffer)) return path
+  if (!(blob.buffer instanceof ArrayBuffer)) return path
   const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   let o = 0
 

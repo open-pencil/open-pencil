@@ -97,10 +97,9 @@ export function createPropertyChange(
   changes: Partial<SceneNode>,
   label: string
 ): UndoEntry {
-  const previous: Partial<SceneNode> = {}
-  for (const key of Object.keys(changes) as (keyof SceneNode)[]) {
-    ;(previous as Record<string, unknown>)[key] = node[key]
-  }
+  const previous = Object.fromEntries(
+    (Object.keys(changes) as (keyof SceneNode)[]).map((key) => [key, node[key]])
+  ) as Partial<SceneNode>
 
   return {
     label,

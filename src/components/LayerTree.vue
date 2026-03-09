@@ -8,11 +8,14 @@ import { useInlineRename } from '@/composables/use-inline-rename'
 import IconCircle from '~icons/lucide/circle'
 import IconComponent from '~icons/lucide/diamond'
 import IconComponentSet from '~icons/lucide/component'
+import IconColumns from '~icons/lucide/columns-3'
 import IconFrame from '~icons/lucide/frame'
+import IconGrid from '~icons/lucide/grid-3x3'
 import IconGroup from '~icons/lucide/group'
-import IconInstance from '~icons/lucide/diamond'
+
 import IconMinus from '~icons/lucide/minus'
 import IconPenTool from '~icons/lucide/pen-tool'
+import IconRows from '~icons/lucide/rows-3'
 import IconSection from '~icons/lucide/layout-grid'
 import IconSquare from '~icons/lucide/square'
 import IconType from '~icons/lucide/type'
@@ -27,22 +30,36 @@ interface LayerNode {
   id: string
   name: string
   type: string
+  layoutMode: string
   visible: boolean
   children?: LayerNode[]
 }
 
-const nodeIcons: Record<string, typeof IconSquare> = {
+const nodeIcons: Partial<Record<string, typeof IconSquare>> = {
   SECTION: IconSection,
   ELLIPSE: IconCircle,
   FRAME: IconFrame,
   GROUP: IconGroup,
   COMPONENT: IconComponent,
   COMPONENT_SET: IconComponentSet,
-  INSTANCE: IconInstance,
+  INSTANCE: IconComponent,
   LINE: IconMinus,
   TEXT: IconType,
   VECTOR: IconPenTool,
   RECTANGLE: IconSquare
+}
+
+const autoLayoutIcons: Partial<Record<string, typeof IconSquare>> = {
+  VERTICAL: IconRows,
+  HORIZONTAL: IconColumns,
+  GRID: IconGrid
+}
+
+function nodeIcon(node: LayerNode) {
+  if (node.type === 'FRAME' && node.layoutMode !== 'NONE') {
+    return autoLayoutIcons[node.layoutMode] ?? IconFrame
+  }
+  return nodeIcons[node.type] ?? IconSquare
 }
 
 const COMPONENT_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
@@ -57,6 +74,7 @@ function buildTree(parentId: string): LayerNode[] {
       id: node.id,
       name: node.name,
       type: node.type,
+      layoutMode: node.layoutMode,
       visible: node.visible,
       children: node.childIds.length > 0 ? buildTree(node.id) : undefined
     }))
@@ -117,7 +135,7 @@ function onLayerRightClick(e: MouseEvent) {
 
 function toggleExpand(id: string) {
   const idx = expanded.value.indexOf(id)
-  if (idx >= 0) {
+  if (idx !== -1) {
     expanded.value = expanded.value.filter((e) => e !== id)
   } else {
     expanded.value = [...expanded.value, id]
@@ -178,6 +196,57 @@ function cleanup() {
   stopUp?.()
 }
 
+interface InsertPosition {
+  parentId: string
+  index: number
+  y: number
+  depth: number
+}
+
+function resolveInsertPosition(
+  row: HTMLElement,
+  rowId: string,
+  rect: DOMRect,
+  listRect: DOMRect,
+  scrollTop: number,
+  edge: 'before' | 'after'
+): InsertPosition | null {
+  const rowNode = store.graph.getNode(rowId)
+  if (!rowNode) return null
+  const parentId = rowNode.parentId ?? store.state.currentPageId
+  const parent = store.graph.getNode(parentId)
+  if (!parent) return null
+
+  const idx = parent.childIds.indexOf(rowId)
+  const level = parseInt(row.dataset.level ?? '0')
+
+  if (edge === 'before') {
+    return {
+      parentId,
+      index: Math.max(0, idx),
+      y: rect.top - listRect.top + scrollTop,
+      depth: level
+    }
+  }
+  return {
+    parentId,
+    index: idx + 1,
+    y: rect.bottom - listRect.top + scrollTop,
+    depth: level
+  }
+}
+
+type DropZone = 'top' | 'mid-container' | 'bottom'
+
+function classifyDropZone(mouseY: number, rect: DOMRect, isContainer: boolean): DropZone {
+  const topZone = rect.top + rect.height * 0.25
+  const bottomZone = rect.top + rect.height * 0.75
+
+  if (mouseY > topZone && mouseY < bottomZone && isContainer) return 'mid-container'
+  if (mouseY <= rect.top + rect.height / 2) return 'top'
+  return 'bottom'
+}
+
 function updateDropTarget(ev: PointerEvent) {
   const list = listRef.value
   if (!list || !dragNodeId.value) return
@@ -186,58 +255,33 @@ function updateDropTarget(ev: PointerEvent) {
   const listRect = list.getBoundingClientRect()
   const mouseY = ev.clientY
 
-  let bestInsertBefore: { parentId: string; index: number; y: number; depth: number } | null = null
+  let bestInsertBefore: InsertPosition | null = null
   let bestInto: { nodeId: string } | null = null
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]
     const rowId = row.dataset.nodeId
-    if (!rowId) continue
-    if (rowId === dragNodeId.value) continue
-
-    const rect = row.getBoundingClientRect()
-    const rowMid = rect.top + rect.height / 2
-    const topZone = rect.top + rect.height * 0.25
-    const bottomZone = rect.top + rect.height * 0.75
+    if (!rowId || rowId === dragNodeId.value) continue
 
     const rowNode = store.graph.getNode(rowId)
     if (!rowNode) continue
 
-    if (mouseY > topZone && mouseY < bottomZone && store.graph.isContainer(rowId)) {
+    const rect = row.getBoundingClientRect()
+    const zone = classifyDropZone(mouseY, rect, store.graph.isContainer(rowId))
+
+    if (zone === 'mid-container') {
       bestInto = { nodeId: rowId }
       bestInsertBefore = null
       break
     }
 
-    if (mouseY <= rowMid) {
-      const parentId = rowNode.parentId ?? store.state.currentPageId
-      const parent = store.graph.getNode(parentId)
-      if (parent) {
-        const idx = parent.childIds.indexOf(rowId)
-        const level = parseInt(row.dataset.level ?? '0')
-        bestInsertBefore = {
-          parentId,
-          index: Math.max(0, idx),
-          y: rect.top - listRect.top + list.scrollTop,
-          depth: level
-        }
-      }
+    if (zone === 'top') {
+      bestInsertBefore = resolveInsertPosition(row, rowId, rect, listRect, list.scrollTop, 'before')
       break
     }
 
-    if (i === rows.length - 1 && mouseY > rowMid) {
-      const parentId = rowNode.parentId ?? store.state.currentPageId
-      const parent = store.graph.getNode(parentId)
-      if (parent) {
-        const idx = parent.childIds.indexOf(rowId)
-        const level = parseInt(row.dataset.level ?? '0')
-        bestInsertBefore = {
-          parentId,
-          index: idx + 1,
-          y: rect.bottom - listRect.top + list.scrollTop,
-          depth: level
-        }
-      }
+    if (i === rows.length - 1) {
+      bestInsertBefore = resolveInsertPosition(row, rowId, rect, listRect, list.scrollTop, 'after')
     }
   }
 
@@ -279,18 +323,41 @@ function updateDropTarget(ev: PointerEvent) {
             :data-node-id="item.value.id"
             :data-level="item.level"
           >
-            <TreeItem v-slot="{ isExpanded }" v-bind="item.bind" as-child @select="onSelect">
+            <TreeItem
+              v-slot="{ isExpanded }"
+              v-bind="item.bind"
+              as-child
+              @select="onSelect"
+              @toggle="
+                (e: CustomEvent) => {
+                  if (e.detail.originalEvent?.type === 'click') e.preventDefault()
+                }
+              "
+            >
               <div
                 v-if="rename.editingId.value === item.value.id"
                 class="flex w-full items-center gap-1 py-1"
                 :style="{ paddingLeft: `${8 + (item.level - 1) * 16}px` }"
               >
-                <span class="w-4 shrink-0" />
+                <span
+                  v-if="item.hasChildren"
+                  class="flex w-4 shrink-0 cursor-pointer items-center justify-center text-muted transition-transform hover:text-surface"
+                  :class="isExpanded ? 'rotate-90' : 'rotate-0'"
+                  @click.stop="toggleExpand(item.value.id)"
+                >
+                  <icon-lucide-chevron-right class="size-3" />
+                </span>
+                <span v-else class="w-4 shrink-0" />
                 <component
-                  :is="nodeIcons[item.value.type] ?? IconSquare"
+                  :is="nodeIcon(item.value)"
                   class="size-3 shrink-0 opacity-70"
                 />
                 <input
+                  :ref="
+                    (el) => {
+                      if (el) rename.focusInput(el as HTMLInputElement)
+                    }
+                  "
                   data-layer-edit
                   data-test-id="layers-item-input"
                   class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-xs text-surface outline-none"
@@ -325,7 +392,7 @@ function updateDropTarget(ev: PointerEvent) {
                 </span>
                 <span v-else class="w-4 shrink-0" />
                 <component
-                  :is="nodeIcons[item.value.type] ?? IconSquare"
+                  :is="nodeIcon(item.value)"
                   class="size-3 shrink-0"
                   :class="
                     COMPONENT_TYPES.has(item.value.type)

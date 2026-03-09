@@ -7,6 +7,7 @@
 
 import type { FigmaAPI } from '../figma-api'
 import type { ToolDef, ParamDef, ParamType } from './schema'
+import type * as valibot from 'valibot'
 
 export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
@@ -18,8 +19,8 @@ export interface AIAdapterOptions {
 function extractIdsFromArray(arr: unknown[]): string[] {
   const ids: string[] = []
   for (const item of arr) {
-    if (item && typeof item === 'object' && typeof (item as Record<string, unknown>).id === 'string') {
-      ids.push((item as Record<string, unknown>).id as string)
+    if (item && typeof item === 'object' && 'id' in item && typeof item.id === 'string') {
+      ids.push(item.id)
     }
   }
   return ids
@@ -27,12 +28,11 @@ function extractIdsFromArray(arr: unknown[]): string[] {
 
 function extractNodeIds(result: unknown): string[] {
   if (!result || typeof result !== 'object') return []
-  const obj = result as Record<string, unknown>
-  if (typeof obj.deleted === 'string') return []
+  if ('deleted' in result && typeof result.deleted === 'string') return []
   const ids: string[] = []
-  if (typeof obj.id === 'string') ids.push(obj.id)
-  if (Array.isArray(obj.selection)) ids.push(...extractIdsFromArray(obj.selection))
-  if (Array.isArray(obj.results)) ids.push(...extractIdsFromArray(obj.results))
+  if ('id' in result && typeof result.id === 'string') ids.push(result.id)
+  if ('selection' in result && Array.isArray(result.selection)) ids.push(...extractIdsFromArray(result.selection))
+  if ('results' in result && Array.isArray(result.results)) ids.push(...extractIdsFromArray(result.results))
   return ids
 }
 
@@ -40,7 +40,7 @@ export function toolsToAI(
   tools: ToolDef[],
   options: AIAdapterOptions,
   deps: {
-    v: typeof import('valibot')
+    v: typeof valibot
     valibotSchema: (schema: any) => any
     tool: (opts: any) => any
   }
@@ -66,6 +66,8 @@ export function toolsToAI(
             if (ids.length > 0) options.onFlashNodes(ids)
           }
           return execResult
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : String(err) }
         } finally {
           options.onAfterExecute?.()
         }
@@ -76,7 +78,7 @@ export function toolsToAI(
   return result
 }
 
-function paramToValibot(v: typeof import('valibot'), param: ParamDef): unknown {
+function paramToValibot(v: typeof valibot, param: ParamDef): unknown {
   const typeMap: Record<ParamType, () => unknown> = {
     string: () => (param.enum ? v.picklist(param.enum as [string, ...string[]]) : v.string()),
     number: () => {

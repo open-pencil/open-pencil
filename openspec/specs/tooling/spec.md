@@ -4,22 +4,22 @@
 Build and development tooling. Vite 7 build system, oxlint linting, oxfmt formatting, typescript-go type checking, and Tailwind CSS 4 integration.
 ## Requirements
 ### Requirement: Vite 7 build system
-The project SHALL use Vite 7 as the build tool with dev server at port 1420 and HMR support. VitePress SHALL be installed as a devDependency for the documentation site. The `docs:dev`, `docs:build`, and `docs:preview` scripts SHALL be added to package.json.
+The project SHALL use Vite 7 as the build tool with dev server at port 1420 and HMR support. Documentation lives in `packages/docs/` as `@open-pencil/docs` workspace package with its own dev/build/preview scripts.
 
 #### Scenario: Dev server
 - **WHEN** `bun run dev` is executed
 - **THEN** Vite dev server starts at http://localhost:1420 with hot module replacement
 
-#### Scenario: Docs scripts available
-- **WHEN** `bun run docs:dev` is executed
+#### Scenario: Docs dev
+- **WHEN** `cd packages/docs && bun run dev` is executed
 - **THEN** VitePress dev server starts for the documentation site
 
 #### Scenario: Docs build
-- **WHEN** `bun run docs:build` is executed
-- **THEN** VitePress builds the documentation site to `docs/.vitepress/dist/`
+- **WHEN** `cd packages/docs && bun run build` is executed
+- **THEN** VitePress builds the documentation site to `packages/docs/.vitepress/dist/`
 
 #### Scenario: Docs preview
-- **WHEN** `bun run docs:preview` is executed
+- **WHEN** `cd packages/docs && bun run preview` is executed
 - **THEN** a static server previews the built documentation site
 
 ### Requirement: oxlint linting
@@ -79,7 +79,7 @@ The codebase SHALL maintain 0 oxlint warnings and 0 tsgo type errors. `bun run c
 - **THEN** both lint and typecheck pass with zero issues
 
 ### Requirement: Bun workspace monorepo
-The project SHALL use Bun workspaces with packages: root (app), packages/core (@open-pencil/core), packages/cli (@open-pencil/cli). The workspace is configured in the root package.json. CLI is runnable via `bun open-pencil` in the workspace.
+The project SHALL use Bun workspaces with packages: root (app), packages/core (@open-pencil/core), packages/cli (@open-pencil/cli), packages/docs (@open-pencil/docs). The workspace is configured in the root package.json. CLI is runnable via `bun open-pencil` in the workspace.
 
 #### Scenario: Workspace packages resolve
 - **WHEN** the app imports from @open-pencil/core
@@ -109,3 +109,113 @@ The project SHALL include a `test:coverage` script for measuring code coverage.
 #### Scenario: Run coverage
 - **WHEN** `bun run test:coverage` is run
 - **THEN** test coverage metrics are reported
+
+### Requirement: Unified tool definitions
+
+The project SHALL define design tools once in `packages/core/src/tools/` and adapt them for AI, CLI, and MCP contexts.
+
+#### Scenario: Canonical tool schema
+- **WHEN** a new tool is added
+- **THEN** it is defined in `packages/core/src/tools/schema.ts` as the single source of truth
+
+#### Scenario: AI adapter
+- **WHEN** AI assistant needs tool definitions
+- **THEN** `packages/core/src/tools/ai-adapter.ts` converts schema to LLM-compatible format
+
+#### Scenario: CLI adapter
+- **WHEN** CLI commands use tools
+- **THEN** citty commands consume tool schema directly
+
+#### Scenario: MCP adapter (future)
+- **WHEN** MCP server integration is added
+- **THEN** MCP protocol adapter converts tool schema to MCP format
+
+### Requirement: Tool schema structure
+
+Tool schemas SHALL be defined in `packages/core/src/tools/schema.ts` with name, description, parameters (with types and descriptions), and handler function.
+
+#### Scenario: Tool definition format
+- **WHEN** defining a tool in schema.ts
+- **THEN** structure includes `{ name, description, parameters: { <param>: { type, description } }, handler: (params) => result }`
+
+#### Scenario: Type-safe parameters
+- **WHEN** tool is invoked
+- **THEN** parameters are validated against schema types
+
+### Requirement: Deduplication of AI tools
+
+The project SHALL eliminate duplication in `src/ai/tools.ts` by using `FigmaAPI.toJSON()` for node serialization and shared color parsing from `packages/core/src`.
+
+#### Scenario: Node serialization
+- **WHEN** AI tool returns node data
+- **THEN** it uses `figmaAPI.toJSON(node)` instead of custom JSON builders
+
+#### Scenario: Color parsing
+- **WHEN** AI tool parses color input
+- **THEN** it uses `parseColor()` from core instead of inline regex
+
+#### Scenario: Code reduction
+- **WHEN** AI tools are refactored
+- **THEN** 311 lines are removed from `src/ai/tools.ts` via deduplication
+
+### Requirement: Shared tool testing
+
+The project SHALL provide test suites for tools in `tests/engine/tools.test.ts`, `tests/engine/tools-ai-adapter.test.ts`, and `tests/engine/tools-cli.test.ts`.
+
+#### Scenario: Tool schema tests
+- **WHEN** `tests/engine/tools.test.ts` runs
+- **THEN** each tool schema is validated for structure and handler execution
+
+#### Scenario: AI adapter tests
+- **WHEN** `tests/engine/tools-ai-adapter.test.ts` runs
+- **THEN** AI tool format conversion is verified
+
+#### Scenario: CLI adapter tests
+- **WHEN** `tests/engine/tools-cli.test.ts` runs
+- **THEN** CLI command integration with tool schema is verified
+
+### Requirement: Tool handler execution
+
+Tool handlers SHALL receive parameters as plain objects and return structured results (success/error, data).
+
+#### Scenario: Successful tool execution
+- **WHEN** tool handler is invoked with valid params
+- **THEN** it returns `{ success: true, data: <result> }`
+
+#### Scenario: Tool execution error
+- **WHEN** tool handler encounters error
+- **THEN** it returns `{ success: false, error: "message" }`
+
+### Requirement: Tool documentation
+
+Each tool in schema.ts SHALL have clear description and parameter documentation for AI/human comprehension.
+
+#### Scenario: Tool description
+- **WHEN** AI queries available tools
+- **THEN** description explains what the tool does (e.g., "Create a rectangle with specified dimensions and position")
+
+#### Scenario: Parameter descriptions
+- **WHEN** AI reads parameter schema
+- **THEN** each parameter has type and description (e.g., `width: { type: 'number', description: 'Rectangle width in pixels' }`)
+
+
+### Requirement: CHANGELOG
+The project SHALL maintain a CHANGELOG.md in the root following Keep a Changelog conventions.
+
+#### Scenario: Changelog exists
+- **WHEN** user reads CHANGELOG.md
+- **THEN** version history with categorized changes (Editor, CLI, File Format, etc.) is listed
+
+### Requirement: npm trusted publishing
+Package configs SHALL include `repository` field and `provenance: true` for npm trusted publishing via GitHub Actions.
+
+#### Scenario: Publish with provenance
+- **WHEN** GitHub Actions release workflow runs
+- **THEN** packages are published to npm with provenance attestation
+
+### Requirement: CI app deployment
+The project SHALL have a GitHub Actions workflow (`app.yml`) for deploying the web app to app.openpencil.dev.
+
+#### Scenario: App deploys on push
+- **WHEN** code is pushed to main branch
+- **THEN** GitHub Actions builds and deploys the app

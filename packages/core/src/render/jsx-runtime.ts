@@ -4,14 +4,14 @@ export function jsx(type: string | ((props: BaseProps) => TreeNode), props: Base
   if (typeof type === 'function') {
     return type(props)
   }
-  return node(type, props as Record<string, unknown>)
+  return node(type, props)
 }
 
 export const jsxs = jsx
 export const jsxDEV = jsx
 
 export function Fragment({ children }: { children?: unknown }): TreeNode {
-  return node('fragment', { children } as Record<string, unknown>)
+  return node('fragment', { children })
 }
 
 export namespace JSX {

@@ -56,7 +56,7 @@ export function switchTab(tabId: string) {
 
 export function closeTab(tabId: string) {
   const idx = tabsRef.value.findIndex((t) => t.id === tabId)
-  if (idx < 0) return
+  if (idx === -1) return
 
   const wasActive = activeTabId.value === tabId
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
@@ -79,7 +79,7 @@ export async function openFileInNewTab(
 ): Promise<void> {
   const current = activeTab.value
   const isUntouched =
-    current && current.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
+    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
 
   if (isUntouched) {
     await current.store.openFigFile(file, handle, path)

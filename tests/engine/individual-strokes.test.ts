@@ -1,10 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { SceneGraph } from '../../packages/core/src/scene-graph'
-import { FigmaAPI } from '../../packages/core/src/figma-api'
-import { sceneNodeToKiwi } from '../../packages/core/src/kiwi-serialize'
-
-import type { Stroke } from '../../packages/core/src/scene-graph'
+import { SceneGraph, FigmaAPI, sceneNodeToKiwi, type Stroke } from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

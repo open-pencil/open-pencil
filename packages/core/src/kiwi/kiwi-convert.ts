@@ -1,6 +1,8 @@
-import { BLACK, DEFAULT_FONT_FAMILY } from '../constants'
+import { normalizeColor } from '../color'
+import { DEFAULT_FONT_FAMILY } from '../constants'
 import { styleToWeight } from '../fonts'
 import { decodeVectorNetworkBlob } from '../vector'
+import type { Matrix, Vector } from '../types'
 
 import type {
   SceneNode,
@@ -9,7 +11,6 @@ import type {
   FillType,
   Stroke,
   Effect,
-  Color,
   BlendMode,
   ImageScaleMode,
   GradientTransform,
@@ -33,18 +34,44 @@ import type {
 } from '../scene-graph'
 import type { NodeChange, Paint, Effect as KiwiEffect, GUID } from './codec'
 
-function ext(nc: NodeChange): Record<string, unknown> {
-  return nc as unknown as Record<string, unknown>
-}
+
 
 export function guidToString(guid: GUID): string {
   return `${guid.sessionID}:${guid.localID}`
 }
 
-function convertColor(color?: Partial<Color>): Color {
-  if (!color) return { ...BLACK }
-  return { r: color.r ?? 0, g: color.g ?? 0, b: color.b ?? 0, a: color.a ?? 1 }
+export function stringToGuid(str: string): GUID {
+  const [session, local] = str.split(':')
+  return { sessionID: parseInt(session, 10), localID: parseInt(local, 10) }
 }
+
+export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
+  cornerRadius: 'CORNER_RADIUS',
+  topLeftRadius: 'RECTANGLE_TOP_LEFT_CORNER_RADIUS',
+  topRightRadius: 'RECTANGLE_TOP_RIGHT_CORNER_RADIUS',
+  bottomLeftRadius: 'RECTANGLE_BOTTOM_LEFT_CORNER_RADIUS',
+  bottomRightRadius: 'RECTANGLE_BOTTOM_RIGHT_CORNER_RADIUS',
+  strokeWeight: 'STROKE_WEIGHT',
+  itemSpacing: 'STACK_SPACING',
+  paddingLeft: 'STACK_PADDING_LEFT',
+  paddingTop: 'STACK_PADDING_TOP',
+  paddingRight: 'STACK_PADDING_RIGHT',
+  paddingBottom: 'STACK_PADDING_BOTTOM',
+  counterAxisSpacing: 'STACK_COUNTER_SPACING',
+  visible: 'VISIBLE',
+  opacity: 'OPACITY',
+  width: 'WIDTH',
+  height: 'HEIGHT',
+  fontSize: 'FONT_SIZE',
+  letterSpacing: 'LETTER_SPACING',
+  lineHeight: 'LINE_HEIGHT'
+}
+
+export const VARIABLE_BINDING_FIELDS_INVERSE: Record<string, string> = Object.fromEntries(
+  Object.entries(VARIABLE_BINDING_FIELDS).map(([k, v]) => [v, k])
+)
+
+const convertColor = normalizeColor
 
 function imageHashToString(hash: Record<string, number>): string {
   const bytes = Object.keys(hash)
@@ -53,14 +80,7 @@ function imageHashToString(hash: Record<string, number>): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-function convertGradientTransform(t?: {
-  m00: number
-  m01: number
-  m02: number
-  m10: number
-  m11: number
-  m12: number
-}): GradientTransform | undefined {
+function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
   if (!t) return undefined
   return { m00: t.m00, m01: t.m01, m02: t.m02, m10: t.m10, m11: t.m11, m12: t.m12 }
 }
@@ -69,14 +89,14 @@ export function convertFills(paints?: Paint[]): Fill[] {
   if (!paints) return []
   return paints.map((p) => {
     const base: Fill = {
-      type: (p.type ?? 'SOLID') as FillType,
+      type: p.type as FillType,
       color: convertColor(p.color),
       opacity: p.opacity ?? 1,
       visible: p.visible ?? true,
       blendMode: (p.blendMode ?? 'NORMAL') as BlendMode
     }
 
-    if (p.type?.startsWith('GRADIENT') && p.stops) {
+    if (p.type.startsWith('GRADIENT') && p.stops) {
       base.gradientStops = p.stops.map((s) => ({
         color: convertColor(s.color),
         position: s.position
@@ -95,7 +115,7 @@ export function convertFills(paints?: Paint[]): Fill[] {
           base.imageHash = img.hash
         }
       }
-      base.imageScaleMode = (p.imageScaleMode as ImageScaleMode) ?? 'FILL'
+      base.imageScaleMode = (p.imageScaleMode ?? 'FILL') as ImageScaleMode
       if (p.transform) {
         base.imageTransform = convertGradientTransform(p.transform)
       }
@@ -121,9 +141,9 @@ function convertStrokes(
     visible: p.visible ?? true,
     align: (align === 'INSIDE'
       ? 'INSIDE'
-      : align === 'OUTSIDE'
+      : (align === 'OUTSIDE'
         ? 'OUTSIDE'
-        : 'CENTER') as Stroke['align'],
+        : 'CENTER')),
     cap: (cap ?? 'NONE') as StrokeCap,
     join: (join ?? 'MITER') as StrokeJoin,
     dashPattern: dashPattern ?? []
@@ -133,13 +153,13 @@ function convertStrokes(
 function convertEffects(effects?: KiwiEffect[]): Effect[] {
   if (!effects) return []
   return effects.map((e) => ({
-    type: e.type as Effect['type'],
+    type: e.type,
     color: convertColor(e.color),
     offset: e.offset ?? { x: 0, y: 0 },
     radius: e.radius ?? 0,
     spread: e.spread ?? 0,
     visible: e.visible ?? true,
-    blendMode: (e.blendMode as BlendMode) ?? 'NORMAL'
+    blendMode: (e.blendMode ?? 'NORMAL') as BlendMode
   }))
 }
 
@@ -277,6 +297,7 @@ function convertLineHeight(
   if (!lh) return null
   if (lh.units === 'PIXELS') return lh.value
   if (lh.units === 'PERCENT') return (lh.value / 100) * (fontSize ?? 14)
+  if (lh.units === 'RAW') return lh.value * (fontSize ?? 14)
   return null
 }
 
@@ -290,7 +311,7 @@ function convertLetterSpacing(
   return ls.value
 }
 
-function mapArcData(data?: Record<string, number>): ArcData | null {
+function mapArcData(data?: Partial<ArcData>): ArcData | null {
   if (!data) return null
   return {
     startingAngle: data.startingAngle ?? 0,
@@ -309,21 +330,23 @@ function importStyleRuns(nc: NodeChange): StyleRun[] {
 
   const styleMap = new Map<number, CharacterStyleOverride>()
   for (const override of table) {
-    const id = (override as unknown as Record<string, unknown>).styleID as number | undefined
+    const id = override.styleID as number | undefined
     if (id === undefined) continue
     const style: CharacterStyleOverride = {}
     if (override.fontName) {
       style.fontFamily = override.fontName.family
-      style.fontWeight = styleToWeight(override.fontName.style ?? '')
-      style.italic = override.fontName.style?.toLowerCase().includes('italic') ?? false
+      style.fontWeight = styleToWeight(override.fontName.style)
+      style.italic = override.fontName.style.toLowerCase().includes('italic')
     }
     if (override.fontSize !== undefined) style.fontSize = override.fontSize
-    if (override.letterSpacing) style.letterSpacing = override.letterSpacing.value
+    if (override.letterSpacing) {
+      style.letterSpacing = convertLetterSpacing(override.letterSpacing, override.fontSize ?? nc.fontSize)
+    }
     if (override.lineHeight) {
-      const lh = convertLineHeight(override.lineHeight, override.fontSize)
+      const lh = convertLineHeight(override.lineHeight, override.fontSize ?? nc.fontSize)
       if (lh != null) style.lineHeight = lh
     }
-    const deco = ext(override).textDecoration as string | undefined
+    const deco = override.textDecoration
     if (deco) style.textDecoration = mapTextDecoration(deco)
     if (Object.keys(style).length > 0) styleMap.set(id, style)
   }
@@ -354,21 +377,20 @@ function resolveVectorNetwork(
   nc: NodeChange,
   blobs: Uint8Array[]
 ): VectorNetwork | null {
-  const vectorData = (nc as unknown as Record<string, unknown>).vectorData as
+  const vectorData = nc.vectorData as
     | {
         vectorNetworkBlob?: number
-        normalizedSize?: { x: number; y: number }
+        normalizedSize?: Vector
         styleOverrideTable?: Array<{ styleID: number; handleMirroring?: string }>
       }
     | undefined
 
-  if (!vectorData || vectorData.vectorNetworkBlob === undefined) return null
+  if (vectorData?.vectorNetworkBlob === undefined) return null
   const idx = vectorData.vectorNetworkBlob
   if (idx < 0 || idx >= blobs.length) return null
 
   try {
     const network = decodeVectorNetworkBlob(blobs[idx], vectorData.styleOverrideTable)
-    if (!network) return null
 
     const ns = vectorData.normalizedSize
     const nodeW = nc.size?.x ?? 0
@@ -407,7 +429,7 @@ export function resolveGeometryPaths(
     if (p.commandsBlob === undefined || p.commandsBlob < 0 || p.commandsBlob >= blobs.length)
       continue
     const blob = blobs[p.commandsBlob]
-    if (!blob || blob.length === 0) continue
+    if (blob.length === 0) continue
     result.push({
       windingRule: (p.windingRule === 'EVENODD' ? 'EVENODD' : 'NONZERO') as WindingRule,
       commandsBlob: blob
@@ -463,13 +485,13 @@ export function nodeChangeToProps(
   if (nc.visible === false) props.visible = false
   if (nc.locked) props.locked = true
 
-  const bm = ext(nc).blendMode as string | undefined
+  const bm = nc.blendMode as string | undefined
   if (bm && bm !== 'PASS_THROUGH') props.blendMode = bm as Fill['blendMode']
 
   // Arrays — only create if non-empty
   const fills = convertFills(nc.fillPaints)
   if (fills.length > 0) props.fills = fills
-  const dashPattern = (ext(nc).dashPattern as number[]) ?? []
+  const dashPattern = nc.dashPattern ?? []
   const strokes = convertStrokes(nc.strokePaints, nc.strokeWeight, nc.strokeAlign, nc.strokeCap, nc.strokeJoin, dashPattern)
   if (strokes.length > 0) props.strokes = strokes
   const effects = convertEffects(nc.effects)
@@ -501,27 +523,27 @@ export function nodeChangeToProps(
   if (nc.fontName?.style?.toLowerCase().includes('italic')) props.italic = true
   const tah = nc.textAlignHorizontal as string | undefined
   if (tah && tah !== 'LEFT') props.textAlignHorizontal = tah as SceneNode['textAlignHorizontal']
-  const tav = ext(nc).textAlignVertical as string | undefined
+  const tav = nc.textAlignVertical as string | undefined
   if (tav && tav !== 'TOP') props.textAlignVertical = tav as TextAlignVertical
-  const tar = ext(nc).textAutoResize as string | undefined
+  const tar = nc.textAutoResize as string | undefined
   if (tar && tar !== 'NONE') props.textAutoResize = tar as TextAutoResize
-  const tc = ext(nc).textCase as string | undefined
+  const tc = nc.textCase as string | undefined
   if (tc && tc !== 'ORIGINAL') props.textCase = tc as TextCase
-  const td = mapTextDecoration(ext(nc).textDecoration as string)
+  const td = mapTextDecoration(nc.textDecoration as string)
   if (td !== 'NONE') props.textDecoration = td
   const lh = convertLineHeight(nc.lineHeight, nc.fontSize)
   if (lh != null) props.lineHeight = lh
   const ls = convertLetterSpacing(nc.letterSpacing, nc.fontSize)
   if (ls !== 0) props.letterSpacing = ls
-  const ml = (ext(nc).maxLines as number) ?? null
+  const ml = (nc.maxLines as number) ?? null
   if (ml != null) props.maxLines = ml
   const sr = importStyleRuns(nc)
   if (sr.length > 0) props.styleRuns = sr
 
   // Constraints
-  const hc = mapConstraint(ext(nc).horizontalConstraint as string)
+  const hc = mapConstraint(nc.horizontalConstraint as string)
   if (hc !== 'MIN') props.horizontalConstraint = hc
-  const vc = mapConstraint(ext(nc).verticalConstraint as string)
+  const vc = mapConstraint(nc.verticalConstraint as string)
   if (vc !== 'MIN') props.verticalConstraint = vc
 
   // Layout
@@ -545,13 +567,13 @@ export function nodeChangeToProps(
   if (paa !== 'MIN') props.primaryAxisAlign = paa
   const caa = mapStackCounterAlign(nc.stackCounterAlignItems ?? nc.stackCounterAlign)
   if (caa !== 'MIN') props.counterAxisAlign = caa
-  if (ext(nc).stackWrap === 'WRAP') props.layoutWrap = 'WRAP'
-  const csp = (ext(nc).stackCounterSpacing as number) ?? 0
+  if (nc.stackWrap === 'WRAP') props.layoutWrap = 'WRAP'
+  const csp = nc.stackCounterSpacing ?? 0
   if (csp !== 0) props.counterAxisSpacing = csp
-  if (ext(nc).stackPositioning === 'ABSOLUTE') props.layoutPositioning = 'ABSOLUTE'
-  const lg = (ext(nc).stackChildPrimaryGrow as number) ?? 0
+  if (nc.stackPositioning === 'ABSOLUTE') props.layoutPositioning = 'ABSOLUTE'
+  const lg = nc.stackChildPrimaryGrow ?? 0
   if (lg !== 0) props.layoutGrow = lg
-  if ((ext(nc).stackChildAlignSelf as string) === 'STRETCH') props.layoutAlignSelf = 'STRETCH'
+  if ((nc.stackChildAlignSelf as string) === 'STRETCH') props.layoutAlignSelf = 'STRETCH'
 
   // Geometry
   const vn = resolveVectorNetwork(nc, blobs)
@@ -560,7 +582,7 @@ export function nodeChangeToProps(
   if (fg.length > 0) props.fillGeometry = fg
   const sg = resolveGeometryPaths(nc.strokeGeometry, blobs)
   if (sg.length > 0) props.strokeGeometry = sg
-  const ad = mapArcData(ext(nc).arcData as Record<string, number> | undefined)
+  const ad = mapArcData(nc.arcData as Partial<ArcData> | undefined)
   if (ad) props.arcData = ad
 
   // Stroke detail
@@ -571,37 +593,37 @@ export function nodeChangeToProps(
   if (dashPattern.length > 0) props.dashPattern = dashPattern
 
   // Border weights
-  const btw = (ext(nc).borderTopWeight as number) ?? 0
+  const btw = (nc.borderTopWeight ?? 0) as number
   if (btw !== 0) props.borderTopWeight = btw
-  const brw = (ext(nc).borderRightWeight as number) ?? 0
+  const brw = (nc.borderRightWeight ?? 0) as number
   if (brw !== 0) props.borderRightWeight = brw
-  const bbw = (ext(nc).borderBottomWeight as number) ?? 0
+  const bbw = (nc.borderBottomWeight ?? 0) as number
   if (bbw !== 0) props.borderBottomWeight = bbw
-  const blw = (ext(nc).borderLeftWeight as number) ?? 0
+  const blw = (nc.borderLeftWeight ?? 0) as number
   if (blw !== 0) props.borderLeftWeight = blw
-  if ((ext(nc).borderStrokeWeightsIndependent as boolean)) props.independentStrokeWeights = true
+  if ((nc.borderStrokeWeightsIndependent as boolean)) props.independentStrokeWeights = true
 
   // Min/max dimensions
-  const mnw = (ext(nc).minWidth as number) ?? null
+  const mnw = (nc.minWidth ?? null) as number | null
   if (mnw != null) props.minWidth = mnw
-  const mxw = (ext(nc).maxWidth as number) ?? null
+  const mxw = (nc.maxWidth ?? null) as number | null
   if (mxw != null) props.maxWidth = mxw
-  const mnh = (ext(nc).minHeight as number) ?? null
+  const mnh = (nc.minHeight ?? null) as number | null
   if (mnh != null) props.minHeight = mnh
-  const mxh = (ext(nc).maxHeight as number) ?? null
+  const mxh = (nc.maxHeight ?? null) as number | null
   if (mxh != null) props.maxHeight = mxh
 
   // Masks
-  if ((ext(nc).isMask as boolean)) props.isMask = true
-  const mt = (ext(nc).maskType as string) ?? 'ALPHA'
+  if ((nc.isMask as boolean)) props.isMask = true
+  const mt = (nc.maskType as string) ?? 'ALPHA'
   if (mt !== 'ALPHA') props.maskType = mt as 'ALPHA' | 'VECTOR' | 'LUMINANCE'
 
   // Misc layout
-  if ((ext(nc).stackCounterAlignContent as string) === 'SPACE_BETWEEN') props.counterAxisAlignContent = 'SPACE_BETWEEN'
-  if ((ext(nc).stackReverseZIndex as boolean)) props.itemReverseZIndex = true
-  if ((ext(nc).strokesIncludedInLayout as boolean)) props.strokesIncludedInLayout = true
-  if ((ext(nc).textTruncation as string) === 'ENDING') props.textTruncation = 'ENDING'
-  if ((ext(nc).autoRename as boolean) === false) props.autoRename = false
+  if ((nc.stackCounterAlignContent as string) === 'SPACE_BETWEEN') props.counterAxisAlignContent = 'SPACE_BETWEEN'
+  if ((nc.stackReverseZIndex as boolean)) props.itemReverseZIndex = true
+  if ((nc.strokesIncludedInLayout as boolean)) props.strokesIncludedInLayout = true
+  if ((nc.textTruncation as string) === 'ENDING') props.textTruncation = 'ENDING'
+  if ((nc.autoRename as boolean) === false) props.autoRename = false
 
   // Bound variables
   const bv = extractBoundVariables(nc)
@@ -616,7 +638,7 @@ export function nodeChangeToProps(
 }
 
 function isComponentSet(nc: NodeChange): boolean {
-  const defs = ext(nc).componentPropDefs as Array<{ type?: string }> | undefined
+  const defs = nc.componentPropDefs as Array<{ type?: string }> | undefined
   if (!defs?.length) return false
   return defs.some((d) => d.type === 'VARIANT')
 }
@@ -626,7 +648,7 @@ export function sortChildren(
   parentNc: NodeChange,
   nodeMap: Map<string, NodeChange>
 ): void {
-  const stackMode = (parentNc as unknown as Record<string, unknown>).stackMode as string | undefined
+  const stackMode = parentNc.stackMode as string | undefined
   if (stackMode === 'HORIZONTAL' || stackMode === 'VERTICAL') {
     const axis = stackMode === 'HORIZONTAL' ? 'm02' : 'm12'
     children.sort((a, b) => {
@@ -638,13 +660,13 @@ export function sortChildren(
     children.sort((a, b) => {
       const aPos = nodeMap.get(a)?.parentIndex?.position ?? ''
       const bPos = nodeMap.get(b)?.parentIndex?.position ?? ''
-      return aPos < bPos ? -1 : aPos > bPos ? 1 : 0
+      return aPos < bPos ? -1 : (aPos > bPos ? 1 : 0)
     })
   }
 }
 
 function extractSymbolId(nc: NodeChange): string {
-  const sd = (nc as unknown as Record<string, unknown>).symbolData as
+  const sd = nc.symbolData as
     | { symbolID?: GUID }
     | undefined
   if (!sd?.symbolID) return ''
@@ -722,9 +744,8 @@ export function convertOverrideToProps(ov: Record<string, unknown>): Partial<Sce
     updates.strokes = updates.strokes ?? []
   }
   if (ov.strokeAlign != null && updates.strokes) {
-    const align = (
-      ov.strokeAlign === 'INSIDE' ? 'INSIDE' : ov.strokeAlign === 'OUTSIDE' ? 'OUTSIDE' : 'CENTER'
-    ) as Stroke['align']
+    const align =
+      ov.strokeAlign === 'INSIDE' ? 'INSIDE' : (ov.strokeAlign === 'OUTSIDE' ? 'OUTSIDE' : 'CENTER')
     for (const s of updates.strokes) s.align = align
   }
   if (ov.borderTopWeight != null) updates.borderTopWeight = ov.borderTopWeight as number
@@ -764,7 +785,7 @@ export function convertOverrideToProps(ov: Record<string, unknown>): Partial<Sce
     updates.textDecoration = mapTextDecoration(ov.textDecoration as string)
 
   if (ov.arcData != null)
-    updates.arcData = mapArcData(ov.arcData as Record<string, number> | undefined)
+    updates.arcData = mapArcData(ov.arcData as Partial<ArcData> | undefined)
   if (ov.frameMaskDisabled != null) updates.clipsContent = ov.frameMaskDisabled === false
 
   return updates

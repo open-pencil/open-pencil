@@ -19,10 +19,10 @@ export function createElement(
       ...props,
       children:
         flatChildren.length === 1
-          ? (flatChildren as ReactNode[])
-          : flatChildren.length > 0
+          ? flatChildren
+          : (flatChildren.length > 0
             ? flatChildren
-            : undefined
+            : undefined)
     }
   }
 }

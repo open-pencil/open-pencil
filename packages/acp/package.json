@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/acp",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "license": "MIT",
   "type": "module",
   "main": "./src/agent.ts",

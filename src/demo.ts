@@ -1,7 +1,7 @@
-import { computeAllLayouts } from './engine/layout'
+import { computeAllLayouts } from '@open-pencil/core'
 
-import type { Color, Effect, Fill, GradientStop } from './engine/scene-graph'
 import type { EditorStore } from './stores/editor'
+import type { Color, Effect, Fill, GradientStop } from '@open-pencil/core'
 
 const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }
 const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }

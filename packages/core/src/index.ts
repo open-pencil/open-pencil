@@ -1,4 +1,5 @@
 export type { GUID, Color, Vector, Matrix, Rect } from './types'
+export { degToRad, radToDeg, rotatePoint, rotatedCorners, rotatedBBox } from './geometry'
 
 export * from './constants'
 
@@ -23,6 +24,9 @@ export {
   type LayoutAlign,
   type LayoutCounterAlign,
   type LayoutWrap,
+  type GridTrack,
+  type GridTrackSizing,
+  type GridPosition,
   type ConstraintType,
   type TextAutoResize,
   type TextAlignVertical,
@@ -48,8 +52,26 @@ export {
 export { FigmaAPI, FigmaNodeProxy, type FigmaFontName } from './figma-api'
 export { ALL_TOOLS, defineTool, toolsToAI } from './tools'
 export type { ToolDef, ParamDef, ParamType } from './tools'
-export { SkiaRenderer, type RenderOverlays } from './renderer'
-export { RenderProfiler } from './profiler'
+export { executeRpcCommand, ALL_RPC_COMMANDS } from './rpc'
+export type {
+  InfoResult, PageItem, TreeArgs, TreeResult, TreeNodeResult,
+  FindArgs, FindNodeResult, NodeArgs, NodeResult,
+  VariablesArgs, VariablesResult,
+  AnalyzeColorsArgs, AnalyzeColorsResult,
+  AnalyzeTypographyArgs, AnalyzeTypographyResult,
+  AnalyzeSpacingResult, SpacingValue,
+  AnalyzeClustersArgs, AnalyzeClustersResult, TypographyStyle
+} from './rpc'
+export { SkiaRenderer, type RenderOverlays } from './renderer/index'
+export {
+  RenderProfiler,
+  FrameStats,
+  GPUTimer,
+  DrawCallCounter,
+  PhaseTimer,
+  CaptureStack,
+  toSpeedscopeJSON
+} from './profiler'
 export type { FrameCapture, NodeProfile } from './profiler'
 export { computeLayout, computeAllLayouts, setTextMeasurer } from './layout'
 export type { TextMeasurer } from './layout'
@@ -61,6 +83,7 @@ export {
   initFontService,
   getFontProvider,
   isFontLoaded,
+  getLoadedFontData,
   markFontLoaded,
   ensureNodeFont,
   ensureCJKFallback,
@@ -68,7 +91,19 @@ export {
   styleToWeight,
   weightToStyle
 } from './fonts'
-export { parseColor, colorToHex, colorToHexRaw, colorToRgba255, colorToCSS } from './color'
+export {
+  parseColor,
+  normalizeColor,
+  colorToHex,
+  colorToHex8,
+  colorToHexRaw,
+  colorToRgba255,
+  colorToCSS,
+  colorToCSSCompact,
+  rgba255ToColor,
+  colorToFill,
+  colorDistance
+} from './color'
 export {
   vectorNetworkToPath,
   geometryBlobToPath,
@@ -80,6 +115,10 @@ export { computeSelectionBounds, computeSnap, type SnapGuide } from './snap'
 export { UndoManager } from './undo'
 export { TextEditor, type TextCaret, type TextEditorState } from './text-editor'
 export {
+  getStyleAt,
+  applyStyleToRange,
+  removeStyleFromRange,
+  selectionHasStyle,
   toggleBoldInRange,
   toggleItalicInRange,
   toggleDecorationInRange,
@@ -107,6 +146,7 @@ export {
 } from './kiwi-serialize'
 
 export {
+  createElement,
   renderTree,
   renderJSX,
   renderTreeNode,
@@ -128,6 +168,7 @@ export {
   Page as PageNode,
   INTRINSIC_ELEMENTS,
   isTreeNode,
+  resolveToTree,
   node,
   type TreeNode,
   type BaseProps,

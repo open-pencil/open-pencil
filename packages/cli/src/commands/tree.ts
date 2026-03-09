@@ -1,59 +1,55 @@
 import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
-import { fmtTree, nodeToTreeNode, printError, entity, formatType } from '../format'
-import type { SceneNode } from '@open-pencil/core'
+import { isAppMode, requireFile, rpc } from '../app-client'
+import { fmtTree, printError, entity, formatType } from '../format'
+import { executeRpcCommand } from '@open-pencil/core'
+
+import type { TreeResult, TreeNodeResult } from '@open-pencil/core'
+import type { TreeNode } from 'agentfmt'
+
+function toAgentfmtTree(node: TreeNodeResult, maxDepth: number, depth = 0): TreeNode {
+  const treeNode: TreeNode = {
+    header: entity(formatType(node.type), node.name, node.id)
+  }
+  if (node.children && depth < maxDepth) {
+    treeNode.children = node.children.map((c) => toAgentfmtTree(c, maxDepth, depth + 1))
+  }
+  return treeNode
+}
+
+async function getData(file: string | undefined, args: { page?: string; depth?: string }): Promise<TreeResult | { error: string }> {
+  const rpcArgs = { page: args.page, depth: args.depth ? Number(args.depth) : undefined }
+  if (isAppMode(file)) return rpc<TreeResult>('tree', rpcArgs)
+  const graph = await loadDocument(requireFile(file))
+  return executeRpcCommand(graph, 'tree', rpcArgs) as TreeResult | { error: string }
+}
 
 export default defineCommand({
   meta: { description: 'Print the node tree' },
   args: {
-    file: { type: 'positional', description: '.fig file path', required: true },
+    file: { type: 'positional', description: '.fig file path (omit to connect to running app)', required: false },
     page: { type: 'string', description: 'Page name (default: first page)' },
     depth: { type: 'string', description: 'Max depth (default: unlimited)' },
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const graph = await loadDocument(args.file)
-    const pages = graph.getPages()
+    const data = await getData(args.file, args)
     const maxDepth = args.depth ? Number(args.depth) : Infinity
 
-    const page = args.page
-      ? pages.find((p) => p.name === args.page)
-      : pages[0]
-
-    if (!page) {
-      printError(`Page "${args.page}" not found. Available: ${pages.map((p) => p.name).join(', ')}`)
+    if ('error' in data) {
+      printError(data.error)
       process.exit(1)
     }
 
     if (args.json) {
-      const buildJson = (id: string, depth: number): unknown => {
-        const node = graph.getNode(id)
-        if (!node) return null
-        const result: Record<string, unknown> = {
-          id: node.id,
-          name: node.name,
-          type: node.type,
-          x: Math.round(node.x),
-          y: Math.round(node.y),
-          width: Math.round(node.width),
-          height: Math.round(node.height)
-        }
-        if (node.childIds.length > 0 && depth < maxDepth) {
-          result.children = node.childIds.map((cid) => buildJson(cid, depth + 1)).filter(Boolean)
-        }
-        return result
-      }
-      console.log(JSON.stringify(page.childIds.map((id) => buildJson(id, 0)), null, 2))
+      console.log(JSON.stringify(data.children, null, 2))
       return
     }
 
     const root = {
-      header: entity(formatType(page.type), page.name, page.id),
-      children: page.childIds
-        .map((id) => graph.getNode(id))
-        .filter((n): n is SceneNode => n !== undefined)
-        .map((child) => nodeToTreeNode(graph, child, maxDepth))
+      header: entity(formatType(data.page.type), data.page.name, data.page.id),
+      children: data.children.map((c) => toAgentfmtTree(c, maxDepth))
     }
 
     console.log('')

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useElementSize, useWindowSize } from '@vueuse/core'
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { motion } from 'motion-v'
 import type { PanInfo } from 'motion-v'
 import { computed, ref } from 'vue'
@@ -20,6 +21,7 @@ import {
 import { useEditorStore } from '@/stores/editor'
 
 type Snap = 'closed' | 'half' | 'full'
+type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
 
@@ -35,22 +37,31 @@ const snap = computed({
   }
 })
 
+function getDrawerTab(): DrawerTab {
+  if (store.state.activeRibbonTab === 'code') return 'code'
+  if (store.state.activeRibbonTab === 'ai') return 'ai'
+  return store.state.panelMode === 'design' ? 'design' : 'layers'
+}
+
+function setDrawerTab(tab: DrawerTab) {
+  if (tab === 'code' || tab === 'ai') {
+    store.state.activeRibbonTab = tab
+    return
+  }
+  store.state.activeRibbonTab = 'panels'
+  store.state.panelMode = tab
+}
+
 const isOpen = computed(() => snap.value !== 'closed')
 
-const isPanelActive = computed(() => isOpen.value && store.state.activeRibbonTab === 'panels')
-
-function selectTab(tab: 'panels' | 'code' | 'ai', panelMode?: 'layers' | 'design') {
-  const isSameTab =
-    store.state.activeRibbonTab === tab && (!panelMode || store.state.panelMode === panelMode)
-
-  if (isSameTab && isOpen.value) {
+function toggleTab(tab: DrawerTab) {
+  if (getDrawerTab() === tab && isOpen.value) {
     snap.value = 'closed'
     targetHeight.value = snapHeight('closed')
     return
   }
 
-  store.state.activeRibbonTab = tab
-  if (panelMode) store.state.panelMode = panelMode
+  setDrawerTab(tab)
   if (!isOpen.value) {
     snap.value = 'half'
     targetHeight.value = snapHeight('half')
@@ -74,10 +85,6 @@ function onPan(_e: PointerEvent, info: PanInfo) {
   const maxHeight = snapHeight('full')
   const raw = snapHeight(snap.value) - info.offset.y
   targetHeight.value = Math.max(headerH.value, Math.min(maxHeight, raw))
-
-  if (info.offset.y < 0 && !store.state.activeRibbonTab) {
-    store.state.activeRibbonTab = 'panels'
-  }
 }
 
 function onPanEnd(_e: PointerEvent, info: PanInfo) {
@@ -111,109 +118,82 @@ const drawerTransition = {
     @pan="onPan"
     @panEnd="onPanEnd"
   >
-    <nav
-      ref="headerRef"
-      aria-label="Mobile panel navigation"
-      class="flex shrink-0 flex-col"
-      role="tablist"
-    >
-      <div class="flex w-full justify-center pt-2">
-        <div class="h-1 w-8 rounded-full bg-muted/40" />
-      </div>
-      <div class="flex w-full items-center px-2 py-2">
-        <div
-          role="tab"
-          data-test-id="mobile-ribbon-layers"
-          :aria-selected="isPanelActive && store.state.panelMode === 'layers'"
-          tabindex="0"
-          class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs outline-none transition-colors select-none"
-          :class="
-            isPanelActive && store.state.panelMode === 'layers' ? 'text-accent' : 'text-muted'
-          "
-          @click="selectTab('panels', 'layers')"
-        >
-          <icon-lucide-layers class="size-4" />
+    <TabsRoot :model-value="getDrawerTab()" class="flex min-h-0 flex-1 flex-col">
+      <nav ref="headerRef" aria-label="Mobile panel navigation" class="flex shrink-0 flex-col">
+        <div class="flex w-full justify-center pt-2">
+          <div class="h-1 w-8 rounded-full bg-muted/40" />
         </div>
+        <TabsList class="flex w-full items-center px-2 py-2">
+          <TabsTrigger
+            data-test-id="mobile-ribbon-layers"
+            value="layers"
+            class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs outline-none transition-colors select-none data-[state=active]:text-accent"
+            @click="toggleTab('layers')"
+          >
+            <icon-lucide-layers class="size-4" />
+          </TabsTrigger>
 
-        <div
-          role="tab"
-          data-test-id="mobile-ribbon-design"
-          :aria-selected="isPanelActive && store.state.panelMode === 'design'"
-          tabindex="0"
-          class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs outline-none transition-colors select-none"
-          :class="
-            isPanelActive && store.state.panelMode === 'design' ? 'text-accent' : 'text-muted'
-          "
-          @click="selectTab('panels', 'design')"
-        >
-          <icon-lucide-sliders-horizontal class="size-4" />
-        </div>
+          <TabsTrigger
+            data-test-id="mobile-ribbon-design"
+            value="design"
+            class="flex h-full cursor-pointer items-center justify-center gap-1.5 px-4 text-xs outline-none transition-colors select-none data-[state=active]:text-accent"
+            @click="toggleTab('design')"
+          >
+            <icon-lucide-sliders-horizontal class="size-4" />
+          </TabsTrigger>
 
-        <div class="flex-1" />
+          <div class="flex-1" />
 
-        <div
-          role="tab"
-          data-test-id="mobile-ribbon-code"
-          :aria-selected="isOpen && store.state.activeRibbonTab === 'code'"
-          tabindex="0"
-          class="flex h-full cursor-pointer items-center justify-center px-3 outline-none transition-colors select-none"
-          :class="isOpen && store.state.activeRibbonTab === 'code' ? 'text-accent' : 'text-muted'"
-          @click="selectTab('code')"
-        >
-          <icon-lucide-code class="size-4" />
-        </div>
+          <TabsTrigger
+            data-test-id="mobile-ribbon-code"
+            value="code"
+            class="flex h-full cursor-pointer items-center justify-center px-3 outline-none transition-colors select-none data-[state=active]:text-accent"
+            @click="toggleTab('code')"
+          >
+            <icon-lucide-code class="size-4" />
+          </TabsTrigger>
 
-        <div
-          role="tab"
-          data-test-id="mobile-ribbon-ai"
-          :aria-selected="isOpen && store.state.activeRibbonTab === 'ai'"
-          tabindex="0"
-          class="flex h-full cursor-pointer items-center justify-center px-3 outline-none transition-colors select-none"
-          :class="isOpen && store.state.activeRibbonTab === 'ai' ? 'text-accent' : 'text-muted'"
-          @click="selectTab('ai')"
-        >
-          <icon-lucide-sparkles class="size-4" />
-        </div>
+          <TabsTrigger
+            data-test-id="mobile-ribbon-ai"
+            value="ai"
+            class="flex h-full cursor-pointer items-center justify-center px-3 outline-none transition-colors select-none data-[state=active]:text-accent"
+            @click="toggleTab('ai')"
+          >
+            <icon-lucide-sparkles class="size-4" />
+          </TabsTrigger>
+        </TabsList>
+      </nav>
+
+      <div data-test-id="mobile-drawer-content" class="min-h-0 flex-1 overflow-y-auto">
+        <TabsContent value="layers" class="mt-0 h-full data-[state=inactive]:hidden">
+          <div data-test-id="mobile-drawer-layers" class="flex h-full flex-col">
+            <PagesPanel />
+            <div class="border-t border-border" />
+            <header class="shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider text-muted">
+              Layers
+            </header>
+            <LayerTree class="min-h-0 flex-1" />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="design" class="mt-0 h-full data-[state=inactive]:hidden">
+          <div data-test-id="mobile-drawer-design" class="flex h-full flex-col">
+            <DesignPanel />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="code" class="mt-0 h-full data-[state=inactive]:hidden">
+          <div data-test-id="mobile-drawer-code" class="flex h-full flex-col">
+            <CodePanel />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="ai" class="mt-0 h-full data-[state=inactive]:hidden">
+          <div data-test-id="mobile-drawer-ai" class="flex h-full flex-col">
+            <ChatPanel />
+          </div>
+        </TabsContent>
       </div>
-    </nav>
-
-    <div data-test-id="mobile-drawer-content" class="min-h-0 flex-1 overflow-y-auto">
-      <div
-        v-show="store.state.activeRibbonTab === 'panels' && store.state.panelMode === 'layers'"
-        data-test-id="mobile-drawer-layers"
-        class="flex h-full flex-col"
-      >
-        <PagesPanel />
-        <div class="border-t border-border" />
-        <header class="shrink-0 px-3 py-2 text-[11px] uppercase tracking-wider text-muted">
-          Layers
-        </header>
-        <LayerTree class="min-h-0 flex-1" />
-      </div>
-
-      <div
-        v-show="store.state.activeRibbonTab === 'panels' && store.state.panelMode === 'design'"
-        data-test-id="mobile-drawer-design"
-        class="flex h-full flex-col"
-      >
-        <DesignPanel />
-      </div>
-
-      <div
-        v-show="store.state.activeRibbonTab === 'code'"
-        data-test-id="mobile-drawer-code"
-        class="flex h-full flex-col"
-      >
-        <CodePanel />
-      </div>
-
-      <div
-        v-show="store.state.activeRibbonTab === 'ai'"
-        data-test-id="mobile-drawer-ai"
-        class="flex h-full flex-col"
-      >
-        <ChatPanel />
-      </div>
-    </div>
+    </TabsRoot>
   </motion.div>
 </template>

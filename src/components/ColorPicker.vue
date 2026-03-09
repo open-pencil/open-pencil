@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { Color } from '@open-pencil/core'
+import { colorToCSS } from '@open-pencil/core'
 import { computed } from 'vue'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'reka-ui'
 
 import HsvColorArea from './HsvColorArea.vue'
 
-import type { Color } from '@/types'
-
-const props = defineProps<{
+const { color } = defineProps<{
   color: Color
 }>()
 
@@ -14,10 +14,7 @@ const emit = defineEmits<{
   update: [color: Color]
 }>()
 
-const swatchColor = computed(() => {
-  const c = props.color
-  return `rgba(${Math.round(c.r * 255)}, ${Math.round(c.g * 255)}, ${Math.round(c.b * 255)}, ${c.a})`
-})
+const swatchColor = computed(() => colorToCSS(color))
 </script>
 
 <template>

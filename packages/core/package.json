@@ -1,13 +1,12 @@
 {
   "name": "@open-pencil/core",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "bun": "./src/index.ts",
-      "node": "./dist/index.js",
       "default": "./src/index.ts"
     }
   },
@@ -25,7 +24,16 @@
   },
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "node": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
   },
   "dependencies": {
     "@open-pencil/kiwi-wasm": "workspace:*",
@@ -34,7 +42,8 @@
     "diff": "^8.0.3",
     "fflate": "^0.8.2",
     "fzstd": "^0.1.1",
-    "yoga-layout": "^3.2.1"
+    "sucrase": "^3.35.1",
+    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",

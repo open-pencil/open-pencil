@@ -1,4 +1,3 @@
-import { collectFontKeys } from '@open-pencil/core'
 import { shallowReactive, shallowRef, computed, watch } from 'vue'
 
 import {
@@ -12,39 +11,50 @@ import {
   ZOOM_SCALE_MIN,
   ZOOM_SCALE_MAX
 } from '@/constants'
+import { loadFont } from '@/engine/fonts'
 import {
-  parseFigmaClipboard,
+  collectFontKeys,
+  computeLayout,
+  computeAllLayouts,
+  computeVectorBounds,
+  exportFigFile,
   importClipboardNodes,
   figmaNodesBounds,
+  parseFigmaClipboard,
   parseOpenPencilClipboard,
   buildFigmaClipboardHTML,
   buildOpenPencilClipboardHTML,
-  prefetchFigmaSchema
-} from '@/engine/clipboard'
-import { exportFigFile } from '@/engine/fig-export'
-import { loadFont } from '@/engine/fonts'
-import { computeLayout, computeAllLayouts, setTextMeasurer } from '@/engine/layout'
-import { renderNodesToImage } from '@/engine/render-image'
-import { SceneGraph } from '@/engine/scene-graph'
-import { renderNodesToSVG } from '@/engine/svg-export'
-import { TextEditor } from '@/engine/text-editor'
-import { UndoManager } from '@/engine/undo'
-import { computeVectorBounds } from '@/engine/vector'
-import { readFigFile, parseFigFileInWorker, getFigParseProfile, addFigParseStage, clearFigParseProfile } from '@/kiwi/fig-file'
+  prefetchFigmaSchema,
+  readFigFile,
+  parseFigFileInWorker,
+  getFigParseProfile,
+  addFigParseStage,
+  clearFigParseProfile,
+  renderNodesToImage,
+  renderNodesToSVG,
+  SceneGraph,
+  setTextMeasurer,
+  TextEditor,
+  UndoManager
+} from '@open-pencil/core'
 
-import type { ExportFormat } from '@/engine/render-image'
 import type {
-  SceneNode,
-  NodeType,
+  Color,
+  ExportFormat,
   Fill,
   LayoutMode,
-  VectorVertex,
-  VectorSegment,
+  NodeType,
+  Rect,
+  SceneNode,
+  SkiaRenderer,
+  SnapGuide,
+  VectorNetwork,
   VectorRegion,
-  VectorNetwork
-} from '@/engine/scene-graph'
-import type { SnapGuide } from '@/engine/snap'
-import type { Color, Rect } from '@/types'
+  VectorSegment,
+  Vector,
+  VectorVertex
+} from '@open-pencil/core'
+import type { CanvasKit } from 'canvaskit-wasm'
 
 export type Tool =
   | 'SELECT'
@@ -80,7 +90,7 @@ export const TOOLS: ToolDef[] = [
   { key: 'HAND', label: 'Hand', shortcut: 'H' }
 ]
 
-export const TOOL_SHORTCUTS: Record<string, Tool> = {
+export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   v: 'SELECT',
   f: 'FRAME',
   s: 'SECTION',
@@ -128,8 +138,8 @@ export function createEditorStore() {
   let autosaveTimer: ReturnType<typeof setTimeout> | undefined
   let lastWriteTime = 0
   let unwatchFile: (() => void) | null = null
-  let _ck: import('canvaskit-wasm').CanvasKit | null = null
-  let _renderer: import('@/engine/renderer').SkiaRenderer | null = null
+  let _ck: CanvasKit | null = null
+  let _renderer: SkiaRenderer | null = null
   let _textEditor: TextEditor | null = null
 
   void prefetchFigmaSchema()
@@ -170,7 +180,7 @@ export function createEditorStore() {
     penState: null as {
       vertices: VectorVertex[]
       segments: VectorSegment[]
-      dragTangent: { x: number; y: number } | null
+      dragTangent: Vector | null
       closingToFirst: boolean
     } | null,
     penCursorX: null as number | null,
@@ -208,6 +218,7 @@ export function createEditorStore() {
       if (!state.autosaveEnabled) return
       if (!fileHandle && !filePath) return
       clearTimeout(autosaveTimer)
+      // oxlint-disable-next-line typescript/no-misused-promises
       autosaveTimer = setTimeout(async () => {
         if (state.sceneVersion === savedVersion) return
         if (!state.autosaveEnabled) return
@@ -270,7 +281,7 @@ export function createEditorStore() {
 
   function switchPage(pageId: string) {
     const page = graph.getNode(pageId)
-    if (!page || page.type !== 'CANVAS') return
+    if (page?.type !== 'CANVAS') return
 
     // Save current viewport
     pageViewports.set(state.currentPageId, {
@@ -641,13 +652,14 @@ export function createEditorStore() {
       state.documentName = file.name.replace(/\.fig$/i, '')
       downloadName = file.name
       state.selectedIds = new Set()
-      const firstPage = graph.getPages()[0]
-      state.currentPageId = firstPage?.id ?? graph.rootId
+      const firstPage = graph.getPages()[0] as SceneNode | undefined
+      const pageId = firstPage?.id ?? graph.rootId
+      state.currentPageId = pageId
       state.panX = 0
       state.panY = 0
       state.zoom = 1
       state.pageColor = { ...CANVAS_BG_COLOR }
-      await loadFontsForNodes(graph.getChildren(firstPage?.id ?? graph.rootId).map((n) => n.id))
+      await loadFontsForNodes(graph.getChildren(pageId).map((n) => n.id))
       requestRender()
       void startWatchingFile()
     } catch (e) {
@@ -657,10 +669,7 @@ export function createEditorStore() {
     }
   }
 
-  function setCanvasKit(
-    ck: import('canvaskit-wasm').CanvasKit,
-    renderer: import('@/engine/renderer').SkiaRenderer
-  ) {
+  function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
     _ck = ck
     _renderer = renderer
     _textEditor = new TextEditor(ck)
@@ -814,6 +823,7 @@ export function createEditorStore() {
       unwatchFile = () => unwatch()
     } else if (fileHandle) {
       let lastModified = (await fileHandle.getFile()).lastModified
+      // oxlint-disable-next-line typescript/no-misused-promises
       const interval = setInterval(async () => {
         if (!fileHandle) {
           clearInterval(interval)
@@ -984,10 +994,9 @@ export function createEditorStore() {
   function updateNodeWithUndo(id: string, changes: Partial<SceneNode>, label = 'Update') {
     const node = graph.getNode(id)
     if (!node) return
-    const previous: Partial<SceneNode> = {}
-    for (const key of Object.keys(changes) as (keyof SceneNode)[]) {
-      ;(previous as Record<string, unknown>)[key] = node[key]
-    }
+    const previous = Object.fromEntries(
+      (Object.keys(changes) as (keyof SceneNode)[]).map((key) => [key, node[key]])
+    ) as Partial<SceneNode>
     graph.updateNode(id, changes)
     runLayoutForNode(id)
     syncIfInsideComponent(id)
@@ -1024,12 +1033,42 @@ export function createEditorStore() {
       counterAxisSizing: node.counterAxisSizing,
       primaryAxisAlign: node.primaryAxisAlign,
       counterAxisAlign: node.counterAxisAlign,
+      gridTemplateColumns: node.gridTemplateColumns,
+      gridTemplateRows: node.gridTemplateRows,
+      gridColumnGap: node.gridColumnGap,
+      gridRowGap: node.gridRowGap,
       width: node.width,
       height: node.height
     }
 
     const updates: Partial<SceneNode> = { layoutMode: mode }
-    if (mode !== 'NONE' && node.layoutMode === 'NONE') {
+    if (mode === 'GRID' && node.layoutMode !== 'GRID') {
+      const children = graph.getChildren(id)
+      const cols = Math.max(2, Math.ceil(Math.sqrt(children.length)))
+      const rows = Math.max(1, Math.ceil(children.length / cols))
+      updates.gridTemplateColumns = Array.from({ length: cols }, () => ({
+        sizing: 'FR' as const,
+        value: 1
+      }))
+      updates.gridTemplateRows = Array.from({ length: rows }, () => ({
+        sizing: 'FR' as const,
+        value: 1
+      }))
+      updates.gridColumnGap = 0
+      updates.gridRowGap = 0
+      updates.primaryAxisSizing = 'FIXED'
+      updates.counterAxisSizing = 'FIXED'
+      if (node.primaryAxisSizing === 'HUG' || node.counterAxisSizing === 'HUG') {
+        const maxChildW = Math.max(...children.map((c) => c.width), 100)
+        const maxChildH = Math.max(...children.map((c) => c.height), 100)
+        updates.width = maxChildW * cols
+        updates.height = maxChildH * rows
+      }
+      updates.paddingTop = 0
+      updates.paddingRight = 0
+      updates.paddingBottom = 0
+      updates.paddingLeft = 0
+    } else if (mode !== 'NONE' && node.layoutMode === 'NONE') {
       updates.itemSpacing = 0
       updates.paddingTop = 0
       updates.paddingRight = 0
@@ -1045,12 +1084,11 @@ export function createEditorStore() {
     if (mode !== 'NONE') computeLayout(graph, id)
     runLayoutForNode(id)
 
-    const finalState: Partial<SceneNode> = {}
     const updated = graph.getNode(id)
     if (!updated) return
-    for (const key of Object.keys(previous) as (keyof SceneNode)[]) {
-      ;(finalState as Record<string, unknown>)[key] = updated[key]
-    }
+    const finalState = Object.fromEntries(
+      (Object.keys(previous) as (keyof SceneNode)[]).map((key) => [key, updated[key]])
+    ) as Partial<SceneNode>
 
     undo.push({
       label: mode === 'NONE' ? 'Remove auto layout' : 'Add auto layout',
@@ -1094,18 +1132,21 @@ export function createEditorStore() {
 
     const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : graph.getAbsolutePosition(parentId)
 
+    const direction: LayoutMode =
+      nodes.length <= 1 ? 'VERTICAL' : (maxX - minX >= maxY - minY ? 'HORIZONTAL' : 'VERTICAL')
+
     const frame = graph.createNode('FRAME', parentId, {
       name: 'Frame',
       x: minX - parentAbs.x,
       y: minY - parentAbs.y,
       width: maxX - minX,
       height: maxY - minY,
-      layoutMode: 'VERTICAL',
+      layoutMode: direction,
       primaryAxisSizing: 'HUG',
       counterAxisSizing: 'HUG',
       primaryAxisAlign: 'MIN',
       counterAxisAlign: 'MIN',
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+      fills: []
     })
     const frameId = frame.id
 
@@ -1401,7 +1442,7 @@ export function createEditorStore() {
 
   function createInstanceFromComponent(componentId: string, x?: number, y?: number) {
     const component = graph.getNode(componentId)
-    if (!component || component.type !== 'COMPONENT') return null
+    if (component?.type !== 'COMPONENT') return null
 
     const parentId = component.parentId ?? state.currentPageId
     const instance = graph.createInstance(componentId, parentId, {
@@ -1432,7 +1473,7 @@ export function createEditorStore() {
 
   function detachInstance() {
     const node = selectedNode.value
-    if (!node || node.type !== 'INSTANCE') return
+    if (node?.type !== 'INSTANCE') return
 
     const prevComponentId = node.componentId
 
@@ -1480,7 +1521,7 @@ export function createEditorStore() {
 
   function ungroupSelected() {
     const node = selectedNode.value
-    if (!node || node.type !== 'GROUP') return
+    if (node?.type !== 'GROUP') return
 
     const parentId = node.parentId ?? state.currentPageId
     const parent = graph.getNode(parentId)
@@ -1587,7 +1628,7 @@ export function createEditorStore() {
 
   function moveToPage(pageId: string) {
     const targetPage = graph.getNode(pageId)
-    if (!targetPage || targetPage.type !== 'CANVAS') return
+    if (targetPage?.type !== 'CANVAS') return
     const ids = [...state.selectedIds]
     for (const id of ids) {
       graph.reparentNode(id, pageId)
@@ -1652,7 +1693,7 @@ export function createEditorStore() {
 
   function adoptNodesIntoSection(sectionId: string) {
     const section = graph.getNode(sectionId)
-    if (!section || section.type !== 'SECTION') return
+    if (section?.type !== 'SECTION') return
 
     const parentId = section.parentId ?? state.currentPageId
     const siblings = graph.getChildren(parentId)
@@ -1958,8 +1999,8 @@ export function createEditorStore() {
     }
   }
 
-  function commitMove(originals: Map<string, { x: number; y: number }>) {
-    const finals = new Map<string, { x: number; y: number }>()
+  function commitMove(originals: Map<string, Vector>) {
+    const finals = new Map<string, Vector>()
     for (const [id] of originals) {
       const n = graph.getNode(id)
       if (n) finals.set(id, { x: n.x, y: n.y })
@@ -2028,10 +2069,9 @@ export function createEditorStore() {
   function commitNodeUpdate(nodeId: string, previous: Partial<SceneNode>, label = 'Update') {
     const node = graph.getNode(nodeId)
     if (!node) return
-    const current: Partial<SceneNode> = {}
-    for (const key of Object.keys(previous) as (keyof SceneNode)[]) {
-      ;(current as Record<string, unknown>)[key] = node[key]
-    }
+    const current = Object.fromEntries(
+      (Object.keys(previous) as (keyof SceneNode)[]).map((key) => [key, node[key]])
+    ) as Partial<SceneNode>
     undo.push({
       label,
       forward: () => {
@@ -2082,6 +2122,21 @@ export function createEditorStore() {
     requestRepaint()
   }
 
+  function zoomToBounds(minX: number, minY: number, maxX: number, maxY: number) {
+    const padding = 80
+    const w = maxX - minX + padding * 2
+    const h = maxY - minY + padding * 2
+
+    const viewW = window.innerWidth
+    const viewH = window.innerHeight
+    const zoom = Math.min(viewW / w, viewH / h, 1)
+
+    state.zoom = zoom
+    state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
+    state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
+    requestRepaint()
+  }
+
   function zoomToFit() {
     const nodes = graph.getChildren(state.currentPageId)
     if (nodes.length === 0) return
@@ -2097,19 +2152,40 @@ export function createEditorStore() {
       maxY = Math.max(maxY, n.y + n.height)
     }
 
-    const padding = 80
-    const w = maxX - minX + padding * 2
-    const h = maxY - minY + padding * 2
+    zoomToBounds(minX, minY, maxX, maxY)
+  }
 
-    // Will be set by canvas composable
-    const viewW = 800
-    const viewH = 600
-    const zoom = Math.min(viewW / w, viewH / h, 1)
+  function zoomTo100() {
+    const viewW = window.innerWidth
+    const viewH = window.innerHeight
+    const centerX = (-state.panX + viewW / 2) / state.zoom
+    const centerY = (-state.panY + viewH / 2) / state.zoom
 
-    state.zoom = zoom
-    state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
-    state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
+    state.zoom = 1
+    state.panX = viewW / 2 - centerX
+    state.panY = viewH / 2 - centerY
     requestRepaint()
+  }
+
+  function zoomToSelection() {
+    if (state.selectedIds.size === 0) return
+
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const id of state.selectedIds) {
+      const n = graph.getNode(id)
+      if (!n) continue
+      const abs = graph.getAbsolutePosition(id)
+      minX = Math.min(minX, abs.x)
+      minY = Math.min(minY, abs.y)
+      maxX = Math.max(maxX, abs.x + n.width)
+      maxY = Math.max(maxY, abs.y + n.height)
+    }
+    if (minX === Infinity) return
+
+    zoomToBounds(minX, minY, maxX, maxY)
   }
 
   return {
@@ -2192,6 +2268,8 @@ export function createEditorStore() {
     applyZoom,
     pan,
     zoomToFit,
+    zoomTo100,
+    zoomToSelection,
     isTopLevel,
     switchPage,
     addPage,

@@ -1,7 +1,8 @@
 import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './constants'
-import { copyFills, copyStrokes, copyEffects } from './copy'
+import { copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
 
 export type { GUID, Color } from './types'
+import type { Matrix, Vector, Color, Rect } from './types'
 
 export type HandleMirroring = 'NONE' | 'ANGLE' | 'ANGLE_AND_LENGTH'
 export type WindingRule = 'NONZERO' | 'EVENODD'
@@ -18,8 +19,8 @@ export interface VectorVertex {
 export interface VectorSegment {
   start: number
   end: number
-  tangentStart: { x: number; y: number }
-  tangentEnd: { x: number; y: number }
+  tangentStart: Vector
+  tangentEnd: Vector
 }
 
 export interface VectorRegion {
@@ -57,7 +58,6 @@ export type NodeType =
   | 'CONNECTOR'
   | 'SHAPE_WITH_TEXT'
 
-import type { Color, Matrix, Rect } from './types'
 
 export type FillType =
   | 'SOLID'
@@ -124,7 +124,7 @@ export interface Stroke {
 export interface Effect {
   type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
   color: Color
-  offset: { x: number; y: number }
+  offset: Vector
   radius: number
   spread: number
   visible: boolean
@@ -159,8 +159,22 @@ export interface ArcData {
   innerRadius: number
 }
 
-export type LayoutMode = 'NONE' | 'HORIZONTAL' | 'VERTICAL'
+export type LayoutMode = 'NONE' | 'HORIZONTAL' | 'VERTICAL' | 'GRID'
 export type LayoutSizing = 'FIXED' | 'HUG' | 'FILL'
+
+export type GridTrackSizing = 'FIXED' | 'FR' | 'AUTO'
+
+export interface GridTrack {
+  sizing: GridTrackSizing
+  value: number
+}
+
+export interface GridPosition {
+  column: number
+  row: number
+  columnSpan: number
+  rowSpan: number
+}
 export type LayoutAlign = 'MIN' | 'CENTER' | 'MAX' | 'SPACE_BETWEEN'
 export type LayoutCounterAlign = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'BASELINE'
 export type LayoutWrap = 'NO_WRAP' | 'WRAP'
@@ -257,6 +271,12 @@ export interface SceneNode {
 
   isMask: boolean
   maskType: MaskType
+
+  gridTemplateColumns: GridTrack[]
+  gridTemplateRows: GridTrack[]
+  gridColumnGap: number
+  gridRowGap: number
+  gridPosition: GridPosition | null
 
   counterAxisAlignContent: 'AUTO' | 'SPACE_BETWEEN'
   itemReverseZIndex: boolean
@@ -374,6 +394,11 @@ const COLD_DEFAULTS = {
   maxHeight: null as number | null,
   isMask: false,
   maskType: 'ALPHA' as const,
+  gridTemplateColumns: [] as GridTrack[],
+  gridTemplateRows: [] as GridTrack[],
+  gridColumnGap: 0,
+  gridRowGap: 0,
+  gridPosition: null as GridPosition | null,
   counterAxisAlignContent: 'AUTO' as const,
   itemReverseZIndex: false,
   strokesIncludedInLayout: false,
@@ -448,7 +473,7 @@ export class SceneGraph {
   variableCollections = new Map<string, VariableCollection>()
   activeMode = new Map<string, string>()
   rootId: string
-  private absPosCache = new Map<string, { x: number; y: number }>()
+  private absPosCache = new Map<string, Vector>()
 
   constructor() {
     const root = createDefaultNode('FRAME', {
@@ -553,9 +578,18 @@ export class SceneGraph {
     const collection = this.variableCollections.get(collectionId)
     if (!collection) throw new Error(`Collection "${collectionId}" not found`)
     const id = generateId()
-    const defaultValue =
-      value ??
-      (type === 'COLOR' ? { ...BLACK } : type === 'FLOAT' ? 0 : type === 'BOOLEAN' ? false : '')
+    let defaultValue: VariableValue
+    if (value !== undefined) {
+      defaultValue = value
+    } else if (type === 'COLOR') {
+      defaultValue = { ...BLACK }
+    } else if (type === 'FLOAT') {
+      defaultValue = 0
+    } else if (type === 'BOOLEAN') {
+      defaultValue = false
+    } else {
+      defaultValue = ''
+    }
     const valuesByMode: Record<string, VariableValue> = {}
     for (const mode of collection.modes) {
       valuesByMode[mode.modeId] = structuredClone(defaultValue)
@@ -619,8 +653,7 @@ export class SceneGraph {
     if (!variable) return undefined
     const resolvedModeId = modeId ?? this.getActiveModeId(variable.collectionId)
     const value = variable.valuesByMode[resolvedModeId]
-    if (value === undefined) return undefined
-    if (typeof value === 'object' && value !== null && 'aliasId' in value) {
+    if (typeof value === 'object' && 'aliasId' in value) {
       const seen = visited ?? new Set<string>()
       seen.add(variableId)
       return this.resolveVariable(value.aliasId, undefined, seen)
@@ -630,7 +663,7 @@ export class SceneGraph {
 
   resolveColorVariable(variableId: string): Color | undefined {
     const value = this.resolveVariable(variableId)
-    if (value && typeof value === 'object' && 'r' in value) return value as Color
+    if (value && typeof value === 'object' && 'r' in value) return value
     return undefined
   }
 
@@ -687,7 +720,7 @@ export class SceneGraph {
     this.absPosCache.clear()
   }
 
-  getAbsolutePosition(id: string): { x: number; y: number } {
+  getAbsolutePosition(id: string): Vector {
     const cached = this.absPosCache.get(id)
     if (cached) return cached
 
@@ -976,6 +1009,11 @@ export class SceneGraph {
     'paddingRight',
     'paddingBottom',
     'paddingLeft',
+    'gridTemplateColumns',
+    'gridTemplateRows',
+    'gridColumnGap',
+    'gridRowGap',
+    'gridPosition',
     'clipsContent',
     'independentStrokeWeights',
     'borderTopWeight',
@@ -984,20 +1022,22 @@ export class SceneGraph {
     'borderLeftWeight'
   ]
 
-  private static copyProp<K extends keyof SceneNode>(
+  private static copyProp(
     target: Partial<SceneNode> | SceneNode,
     source: SceneNode,
-    key: K
+    key: keyof SceneNode
   ): void {
     const val = source[key]
     if (key === 'fills') {
-      target[key] = copyFills(source.fills) as SceneNode[K]
+      ;(target as Record<string, unknown>)[key] = copyFills(val as Fill[])
     } else if (key === 'strokes') {
-      target[key] = copyStrokes(source.strokes) as SceneNode[K]
+      ;(target as Record<string, unknown>)[key] = copyStrokes(val as Stroke[])
     } else if (key === 'effects') {
-      target[key] = copyEffects(source.effects) as SceneNode[K]
+      ;(target as Record<string, unknown>)[key] = copyEffects(val as Effect[])
+    } else if (key === 'styleRuns') {
+      ;(target as Record<string, unknown>)[key] = copyStyleRuns(val as StyleRun[])
     } else {
-      target[key] = (Array.isArray(val) ? structuredClone(val) : val) as SceneNode[K]
+      ;(target as Record<string, unknown>)[key] = Array.isArray(val) ? structuredClone(val) : val
     }
   }
 
@@ -1007,7 +1047,7 @@ export class SceneGraph {
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
     const component = this.nodes.get(componentId)
-    if (!component || component.type !== 'COMPONENT') return null
+    if (component?.type !== 'COMPONENT') return null
 
     const props: Partial<SceneNode> = { name: component.name, componentId }
     for (const key of SceneGraph.INSTANCE_SYNC_PROPS) {
@@ -1050,7 +1090,7 @@ export class SceneGraph {
 
   syncInstances(componentId: string): void {
     const component = this.nodes.get(componentId)
-    if (!component || component.type !== 'COMPONENT') return
+    if (component?.type !== 'COMPONENT') return
 
     for (const instance of this.getInstances(componentId)) {
       // Sync instance-level props (unless overridden)
@@ -1132,7 +1172,7 @@ export class SceneGraph {
 
   detachInstance(instanceId: string): void {
     const node = this.nodes.get(instanceId)
-    if (!node || node.type !== 'INSTANCE') return
+    if (node?.type !== 'INSTANCE') return
     node.type = 'FRAME'
     node.componentId = null
     node.overrides = {}

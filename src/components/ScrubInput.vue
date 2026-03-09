@@ -2,28 +2,19 @@
 import { ref, computed } from 'vue'
 import { useEventListener } from '@vueuse/core'
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: number | symbol
-    min?: number
-    max?: number
-    step?: number
-    icon?: string
-    label?: string
-    suffix?: string
-    sensitivity?: number
-    placeholder?: string
-  }>(),
-  {
-    min: -Infinity,
-    max: Infinity,
-    step: 1,
-    sensitivity: 1,
-    placeholder: 'Mixed'
-  }
-)
+const { modelValue, min = -Infinity, max = Infinity, step = 1, icon, label, suffix, sensitivity = 1, placeholder = 'Mixed' } = defineProps<{
+  modelValue: number | symbol
+  min?: number
+  max?: number
+  step?: number
+  icon?: string
+  label?: string
+  suffix?: string
+  sensitivity?: number
+  placeholder?: string
+}>()
 
-const isMixed = computed(() => typeof props.modelValue === 'symbol')
+const isMixed = computed(() => typeof modelValue === 'symbol')
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -37,7 +28,7 @@ const scrubbing = ref(false)
 let stopMove: (() => void) | undefined
 let stopUp: (() => void) | undefined
 
-const numericValue = computed(() => (isMixed.value ? 0 : (props.modelValue as number)))
+const numericValue = computed(() => (isMixed.value ? 0 : (modelValue as number)))
 const displayValue = computed(() => (isMixed.value ? '' : Math.round(numericValue.value)))
 
 function startScrub(e: PointerEvent) {
@@ -57,9 +48,9 @@ function startScrub(e: PointerEvent) {
       document.body.style.cursor = 'ew-resize'
     }
     if (hasMoved) {
-      accumulated += dx * props.step * props.sensitivity
-      const clamped = Math.round(Math.min(props.max, Math.max(props.min, accumulated)))
-      if (clamped !== props.modelValue) {
+      accumulated += dx * step * sensitivity
+      const clamped = Math.round(Math.min(max, Math.max(min, accumulated)))
+      if (clamped !== modelValue) {
         emit('update:modelValue', clamped)
       }
     }
@@ -71,8 +62,8 @@ function startScrub(e: PointerEvent) {
     stopMove?.()
     stopUp?.()
     if (hasMoved) {
-      if (props.modelValue !== valueBeforeScrub) {
-        emit('commit', props.modelValue, valueBeforeScrub)
+      if (modelValue !== valueBeforeScrub) {
+        emit('commit', modelValue, valueBeforeScrub)
       }
     } else {
       startEdit()
@@ -91,7 +82,7 @@ function commitEdit(e: Event) {
   const val = +(e.target as HTMLInputElement).value
   const previous = numericValue.value
   if (!Number.isNaN(val)) {
-    const clamped = Math.min(props.max, Math.max(props.min, val))
+    const clamped = Math.min(max, Math.max(min, val))
     emit('update:modelValue', clamped)
     if (clamped !== previous) {
       emit('commit', clamped, previous)

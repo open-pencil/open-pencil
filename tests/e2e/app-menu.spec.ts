@@ -120,7 +120,12 @@ test('Duplicate via Edit menu works', async () => {
 })
 
 test('Zoom to fit via View menu works', async () => {
+  await page.locator('[role="menubar"] [role="menuitem"]', { hasText: 'View' }).click()
+  await page.locator('[role="menu"] [role="menuitem"]', { hasText: 'Zoom in' }).click()
+  await canvas.waitForRender()
+
   const zoomBefore = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.zoom)
+  expect(zoomBefore).toBeGreaterThan(1)
 
   await page.locator('[role="menubar"] [role="menuitem"]', { hasText: 'View' }).click()
   await page.locator('[role="menu"] [role="menuitem"]', { hasText: 'Zoom to fit' }).click()

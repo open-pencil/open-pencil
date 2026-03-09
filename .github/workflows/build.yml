@@ -63,7 +63,12 @@ jobs:
 
       - name: Extract release notes
         id: changelog
-        uses: ffurrer2/extract-release-notes@v2
+        shell: bash
+        run: |
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "release_notes<<$EOF" >> "$GITHUB_OUTPUT"
+          awk '/^## /{if(found)exit; found=1; next} found{print}' CHANGELOG.md >> "$GITHUB_OUTPUT"
+          echo "$EOF" >> "$GITHUB_OUTPUT"
 
       - name: Add new contributors to release notes
         if: startsWith(github.ref, 'refs/tags/v')
@@ -142,13 +147,37 @@ jobs:
 
       - run: bun install
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: latest
+      - name: Resolve workspace dependencies
+        run: |
+          node -e "
+            const fs = require('fs');
+            const coreVersion = require('./packages/core/package.json').version;
+            for (const pkg of ['packages/cli', 'packages/mcp']) {
+              const path = pkg + '/package.json';
+              const json = JSON.parse(fs.readFileSync(path, 'utf8'));
+              for (const field of ['dependencies', 'devDependencies', 'peerDependencies']) {
+                if (!json[field]) continue;
+                for (const [name, version] of Object.entries(json[field])) {
+                  if (typeof version === 'string' && version.startsWith('workspace:')) {
+                    json[field][name] = '^' + coreVersion;
+                  }
+                }
+              }
+              fs.writeFileSync(path, JSON.stringify(json, null, 2) + '\n');
+              console.log('Resolved workspace deps in', path, '→ ^' + coreVersion);
+            }
+          "
+
+      - name: Build packages for publish
+        run: |
+          for dir in packages/core packages/mcp; do
+            if [ -f "$dir/package.json" ] && node -p "require('./$dir/package.json').scripts?.build" 2>/dev/null | grep -qv undefined; then
+              echo "Building $dir..."
+              cd "$dir" && bun run build && cd -
+            fi
+          done
 
       - name: Publish packages to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           publish_if_new() {
             local dir=$1
@@ -157,7 +186,7 @@ jobs:
             if npm view "${name}@${version}" version 2>/dev/null; then
               echo "${name}@${version} already published, skipping"
             else
-              npm publish "./$dir" --access public
+              npm publish "./$dir" --access public --provenance --ignore-scripts
             fi
           }
           publish_if_new packages/core

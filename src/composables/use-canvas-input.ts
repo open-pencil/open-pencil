@@ -11,11 +11,10 @@ import {
   DEFAULT_TEXT_WIDTH,
   DEFAULT_TEXT_HEIGHT
 } from '@/constants'
-import { computeSelectionBounds, computeSnap } from '@/engine/snap'
+import { computeSelectionBounds, computeSnap } from '@open-pencil/core'
 
-import type { NodeType, SceneNode } from '@/engine/scene-graph'
 import type { EditorStore, Tool } from '@/stores/editor'
-import type { Rect } from '@/types'
+import type { NodeType, Rect, SceneNode, Vector } from '@open-pencil/core'
 
 type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 
@@ -30,7 +29,7 @@ interface DragMove {
   type: 'move'
   startX: number
   startY: number
-  originals: Map<string, { x: number; y: number }>
+  originals: Map<string, Vector>
   duplicated?: boolean
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
@@ -151,7 +150,7 @@ function getHandlePositions(
     s: { x: mx, y: y2 },
     sw: { x: x1, y: y2 },
     w: { x: x1, y: my }
-  } as Record<HandlePosition, { x: number; y: number }>
+  } satisfies Record<HandlePosition, Vector>
 }
 
 function unrotate(
@@ -224,11 +223,9 @@ function hitTestRotationHandle(
 export function useCanvasInput(
   canvasRef: Ref<HTMLCanvasElement | null>,
   store: EditorStore,
-  hitTestSectionTitle: (cx: number, cy: number) => import('@/engine/scene-graph').SceneNode | null,
-  hitTestComponentLabel: (
-    cx: number,
-    cy: number
-  ) => import('@/engine/scene-graph').SceneNode | null,
+  hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null,
+  hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null,
+  hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
   onCursorMove?: (cx: number, cy: number) => void
 ) {
   const drag = ref<DragState | null>(null)
@@ -248,6 +245,201 @@ export function useCanvasInput(
     const sy = e.clientY - rect.top
     const { x: cx, y: cy } = store.screenToCanvas(sx, sy)
     return { sx, sy, cx, cy }
+  }
+
+  function startPanDrag(e: MouseEvent) {
+    drag.value = {
+      type: 'pan',
+      startScreenX: e.clientX,
+      startScreenY: e.clientY,
+      startPanX: store.state.panX,
+      startPanY: store.state.panY
+    }
+  }
+
+  function handleTextEditClick(cx: number, cy: number, shiftKey: boolean): boolean {
+    const editor = store.textEditor
+    const editNode = store.state.editingTextId
+      ? store.graph.getNode(store.state.editingTextId)
+      : null
+    if (!editor || !editNode) {
+      store.commitTextEdit()
+      return false
+    }
+    const abs = store.graph.getAbsolutePosition(editNode.id)
+    const localX = cx - abs.x
+    const localY = cy - abs.y
+    if (localX < 0 || localY < 0 || localX > editNode.width || localY > editNode.height) {
+      store.commitTextEdit()
+      return false
+    }
+    if (clickCount >= 3) {
+      editor.selectAll()
+    } else if (clickCount === 2) {
+      editor.selectWordAt(localX, localY)
+    } else {
+      editor.setCursorAt(localX, localY, shiftKey)
+      drag.value = { type: 'text-select', startX: cx, startY: cy } as DragState
+    }
+    store.requestRender()
+    return true
+  }
+
+  function tryStartRotation(sx: number, sy: number): boolean {
+    if (store.state.selectedIds.size !== 1) return false
+    const id = [...store.state.selectedIds][0]
+    const node = store.graph.getNode(id)
+    if (!node) return false
+    const abs = store.graph.getAbsolutePosition(id)
+    if (
+      !hitTestRotationHandle(
+        sx,
+        sy,
+        abs.x,
+        abs.y,
+        node.width,
+        node.height,
+        store.state.zoom,
+        store.state.panX,
+        store.state.panY,
+        node.rotation
+      )
+    )
+      return false
+
+    const screenCx = (abs.x + node.width / 2) * store.state.zoom + store.state.panX
+    const screenCy = (abs.y + node.height / 2) * store.state.zoom + store.state.panY
+    const startAngle = Math.atan2(sy - screenCy, sx - screenCx) * (180 / Math.PI)
+    drag.value = {
+      type: 'rotate',
+      nodeId: id,
+      centerX: screenCx,
+      centerY: screenCy,
+      startAngle,
+      origRotation: node.rotation
+    }
+    return true
+  }
+
+  function tryStartResize(sx: number, sy: number, cx: number, cy: number): boolean {
+    for (const id of store.state.selectedIds) {
+      const node = store.graph.getNode(id)
+      if (!node) continue
+      const abs = store.graph.getAbsolutePosition(id)
+      const handle = hitTestHandle(
+        sx,
+        sy,
+        abs.x,
+        abs.y,
+        node.width,
+        node.height,
+        store.state.zoom,
+        store.state.panX,
+        store.state.panY,
+        node.rotation
+      )
+      if (handle) {
+        drag.value = {
+          type: 'resize',
+          handle,
+          startX: cx,
+          startY: cy,
+          origRect: { x: node.x, y: node.y, width: node.width, height: node.height },
+          nodeId: id
+        }
+        return true
+      }
+    }
+    return false
+  }
+
+  function duplicateAndDrag(cx: number, cy: number): Map<string, Vector> {
+    const newIds: string[] = []
+    const newOriginals = new Map<string, Vector>()
+    for (const id of store.state.selectedIds) {
+      const src = store.graph.getNode(id)
+      if (!src) continue
+      const newId = store.createShape(src.type, src.x, src.y, src.width, src.height)
+      store.graph.updateNode(newId, {
+        name: src.name + ' copy',
+        fills: [...src.fills],
+        strokes: [...src.strokes],
+        effects: [...src.effects],
+        cornerRadius: src.cornerRadius,
+        opacity: src.opacity,
+        rotation: src.rotation
+      })
+      newIds.push(newId)
+      newOriginals.set(newId, { x: src.x, y: src.y })
+    }
+    store.select(newIds)
+    drag.value = {
+      type: 'move',
+      startX: cx,
+      startY: cy,
+      originals: newOriginals,
+      duplicated: true
+    }
+    store.requestRender()
+    return newOriginals
+  }
+
+  function detectAutoLayoutParent(): string | undefined {
+    if (store.state.selectedIds.size !== 1) return undefined
+    const selectedId = [...store.state.selectedIds][0]
+    const selectedNode = store.graph.getNode(selectedId)
+    if (!selectedNode?.parentId) return undefined
+    const parent = store.graph.getNode(selectedNode.parentId)
+    if (parent && parent.layoutMode !== 'NONE' && selectedNode.layoutPositioning !== 'ABSOLUTE') {
+      return parent.id
+    }
+    return undefined
+  }
+
+  function handleSelectDown(e: MouseEvent, sx: number, sy: number, cx: number, cy: number) {
+    if (store.state.editingTextId && handleTextEditClick(cx, cy, e.shiftKey)) return
+
+    if (store.state.editingTextId) store.commitTextEdit()
+
+    if (tryStartRotation(sx, sy)) return
+    if (tryStartResize(sx, sy, cx, cy)) return
+
+    const hit =
+      hitTestFrameTitle(cx, cy) ??
+      hitTestSectionTitle(cx, cy) ??
+      hitTestComponentLabel(cx, cy) ??
+      store.graph.hitTest(cx, cy, store.state.currentPageId)
+
+    if (!hit) {
+      store.clearSelection()
+      drag.value = { type: 'marquee', startX: cx, startY: cy }
+      return
+    }
+
+    if (!store.state.selectedIds.has(hit.id) && !e.shiftKey) {
+      store.select([hit.id])
+    } else if (e.shiftKey) {
+      store.select([hit.id], true)
+    }
+
+    const originals = new Map<string, Vector>()
+    for (const id of store.state.selectedIds) {
+      const n = store.graph.getNode(id)
+      if (n) originals.set(id, { x: n.x, y: n.y })
+    }
+
+    if (e.altKey && store.state.selectedIds.size > 0) {
+      duplicateAndDrag(cx, cy)
+      return
+    }
+
+    drag.value = {
+      type: 'move',
+      startX: cx,
+      startY: cy,
+      originals,
+      autoLayoutParentId: detectAutoLayoutParent()
+    }
   }
 
   function onMouseDown(e: MouseEvent) {
@@ -270,88 +462,74 @@ export function useCanvasInput(
     const tool = store.state.activeTool
 
     if (e.button === 1 || tool === 'HAND') {
-      drag.value = {
-        type: 'pan',
-        startScreenX: e.clientX,
-        startScreenY: e.clientY,
-        startPanX: store.state.panX,
-        startPanY: store.state.panY
-      }
+      startPanDrag(e)
       return
     }
 
     if (tool === 'SELECT' && e.altKey && !store.state.selectedIds.size) {
-      drag.value = {
-        type: 'pan',
-        startScreenX: e.clientX,
-        startScreenY: e.clientY,
-        startPanX: store.state.panX,
-        startPanY: store.state.panY
-      }
+      startPanDrag(e)
       return
     }
 
     if (tool === 'SELECT') {
-      if (store.state.editingTextId) {
-        const editor = store.textEditor
-        const editNode = store.graph.getNode(store.state.editingTextId)
-        if (editor && editNode) {
-          const abs = store.graph.getAbsolutePosition(editNode.id)
-          const localX = cx - abs.x
-          const localY = cy - abs.y
-          if (localX >= 0 && localY >= 0 && localX <= editNode.width && localY <= editNode.height) {
-            if (clickCount >= 3) {
-              editor.selectAll()
-            } else if (clickCount === 2) {
-              editor.selectWordAt(localX, localY)
-            } else {
-              editor.setCursorAt(localX, localY, e.shiftKey)
-              drag.value = { type: 'text-select', startX: cx, startY: cy } as DragState
-            }
-            store.requestRender()
-            return
-          }
-        }
-        store.commitTextEdit()
-      }
+      handleSelectDown(e, sx, sy, cx, cy)
+      return
+    }
 
-      // Check rotation handle (single selection only)
-      if (store.state.selectedIds.size === 1) {
-        const id = [...store.state.selectedIds][0]
-        const node = store.graph.getNode(id)
-        if (node) {
-          const abs = store.graph.getAbsolutePosition(id)
-          if (
-            hitTestRotationHandle(
-              sx,
-              sy,
-              abs.x,
-              abs.y,
-              node.width,
-              node.height,
-              store.state.zoom,
-              store.state.panX,
-              store.state.panY,
-              node.rotation
-            )
-          ) {
-            const screenCx = (abs.x + node.width / 2) * store.state.zoom + store.state.panX
-            const screenCy = (abs.y + node.height / 2) * store.state.zoom + store.state.panY
-            const startAngle = Math.atan2(sy - screenCy, sx - screenCx) * (180 / Math.PI)
-            drag.value = {
-              type: 'rotate',
-              nodeId: id,
-              centerX: screenCx,
-              centerY: screenCy,
-              startAngle,
-              origRotation: node.rotation
-            }
-            return
-          }
+    if (tool === 'PEN') {
+      store.penAddVertex(cx, cy)
+      drag.value = { type: 'pen-drag', startX: cx, startY: cy } as DragState
+      return
+    }
+
+    if (tool === 'TEXT') {
+      const nodeId = store.createShape('TEXT', cx, cy, DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_HEIGHT)
+      store.graph.updateNode(nodeId, { text: '' })
+      store.select([nodeId])
+      store.startTextEditing(nodeId)
+      store.setTool('SELECT')
+      store.requestRender()
+      return
+    }
+
+    const nodeType = TOOL_TO_NODE[tool]
+    if (!nodeType) return
+
+    const nodeId = store.createShape(nodeType, cx, cy, 0, 0)
+    store.select([nodeId])
+
+    drag.value = { type: 'draw', startX: cx, startY: cy, nodeId }
+  }
+
+  function updateHoverCursor(e: MouseEvent) {
+    const { sx, sy, cx, cy } = getCoords(e)
+    let cursor: string | null = null
+
+    if (store.state.selectedIds.size === 1) {
+      const id = [...store.state.selectedIds][0]
+      const node = store.graph.getNode(id)
+      if (node) {
+        const abs = store.graph.getAbsolutePosition(id)
+        if (
+          hitTestRotationHandle(
+            sx,
+            sy,
+            abs.x,
+            abs.y,
+            node.width,
+            node.height,
+            store.state.zoom,
+            store.state.panX,
+            store.state.panY,
+            node.rotation
+          )
+        ) {
+          cursor = 'grab'
         }
       }
+    }
 
-      // Check resize handles
+    if (!cursor) {
       for (const id of store.state.selectedIds) {
         const node = store.graph.getNode(id)
         if (!node) continue
@@ -369,119 +547,194 @@ export function useCanvasInput(
           node.rotation
         )
         if (handle) {
-          drag.value = {
-            type: 'resize',
-            handle,
-            startX: cx,
-            startY: cy,
-            origRect: { x: node.x, y: node.y, width: node.width, height: node.height },
-            nodeId: id
-          }
-          return
+          cursor = HANDLE_CURSORS[handle]
+          break
         }
       }
+    }
+    cursorOverride.value = cursor
 
-      // Hit test nodes (labels first, then body)
-      const hit =
-        hitTestSectionTitle(cx, cy) ??
-        hitTestComponentLabel(cx, cy) ??
-        store.graph.hitTest(cx, cy, store.state.currentPageId)
-      if (hit) {
-        if (!store.state.selectedIds.has(hit.id) && !e.shiftKey) {
-          store.select([hit.id])
-        } else if (e.shiftKey) {
-          store.select([hit.id], true)
-        }
+    const hit =
+      hitTestSectionTitle(cx, cy) ??
+      hitTestComponentLabel(cx, cy) ??
+      store.graph.hitTest(cx, cy, store.state.currentPageId)
+    store.setHoveredNode(hit && !store.state.selectedIds.has(hit.id) ? hit.id : null)
+  }
 
-        const originals = new Map<string, { x: number; y: number }>()
-        for (const id of store.state.selectedIds) {
-          const n = store.graph.getNode(id)
-          if (n) originals.set(id, { x: n.x, y: n.y })
-        }
+  function handlePanMove(d: DragPan, e: MouseEvent) {
+    const dx = e.clientX - d.startScreenX
+    const dy = e.clientY - d.startScreenY
+    store.state.panX = d.startPanX + dx
+    store.state.panY = d.startPanY + dy
+    store.requestRepaint()
+  }
 
-        // Alt+drag → duplicate
-        if (e.altKey && store.state.selectedIds.size > 0) {
-          const newIds: string[] = []
-          const newOriginals = new Map<string, { x: number; y: number }>()
-          for (const id of store.state.selectedIds) {
-            const src = store.graph.getNode(id)
-            if (!src) continue
-            const newId = store.createShape(src.type, src.x, src.y, src.width, src.height)
-            store.graph.updateNode(newId, {
-              name: src.name + ' copy',
-              fills: [...src.fills],
-              strokes: [...src.strokes],
-              effects: [...src.effects],
-              cornerRadius: src.cornerRadius,
-              opacity: src.opacity,
-              rotation: src.rotation
-            })
-            newIds.push(newId)
-            newOriginals.set(newId, { x: src.x, y: src.y })
-          }
-          store.select(newIds)
-          drag.value = {
-            type: 'move',
-            startX: cx,
-            startY: cy,
-            originals: newOriginals,
-            duplicated: true
-          }
-          store.requestRender()
-          return
-        }
+  function handleRotateMove(d: DragRotate, sx: number, sy: number, shiftKey: boolean) {
+    const currentAngle = Math.atan2(sy - d.centerY, sx - d.centerX) * (180 / Math.PI)
+    let rotation = d.origRotation + (currentAngle - d.startAngle)
 
-        // Detect if we're inside an auto-layout frame
-        let autoLayoutParentId: string | undefined
-        if (store.state.selectedIds.size === 1) {
-          const selectedId = [...store.state.selectedIds][0]
-          const selectedNode = store.graph.getNode(selectedId)
-          if (selectedNode?.parentId) {
-            const parent = store.graph.getNode(selectedNode.parentId)
-            if (
-              parent &&
-              parent.layoutMode !== 'NONE' &&
-              selectedNode.layoutPositioning !== 'ABSOLUTE'
-            ) {
-              autoLayoutParentId = parent.id
-            }
-          }
-        }
+    if (shiftKey) {
+      rotation = Math.round(rotation / ROTATION_SNAP_DEGREES) * ROTATION_SNAP_DEGREES
+    }
 
-        drag.value = { type: 'move', startX: cx, startY: cy, originals, autoLayoutParentId }
-      } else {
-        store.clearSelection()
-        drag.value = { type: 'marquee', startX: cx, startY: cy }
+    rotation = ((((rotation + 180) % 360) + 360) % 360) - 180
+    store.setRotationPreview({ nodeId: d.nodeId, angle: rotation })
+  }
+
+  function findDropTarget(cx: number, cy: number) {
+    let dropTarget = store.graph.hitTestFrame(
+      cx,
+      cy,
+      store.state.selectedIds,
+      store.state.currentPageId
+    )
+    const movingSection = [...store.state.selectedIds].some(
+      (id) => store.graph.getNode(id)?.type === 'SECTION'
+    )
+    if (
+      movingSection &&
+      dropTarget &&
+      dropTarget.type !== 'SECTION' &&
+      dropTarget.type !== 'CANVAS'
+    ) {
+      dropTarget = null
+    }
+    return dropTarget
+  }
+
+  function applyMoveSnap(d: DragMove, dx: number, dy: number): { dx: number; dy: number } {
+    const selectedNodes: SceneNode[] = []
+    for (const [id, orig] of d.originals) {
+      const n = store.graph.getNode(id)
+      if (n) {
+        const abs = store.graph.getAbsolutePosition(id)
+        const parentAbs = n.parentId ? store.graph.getAbsolutePosition(n.parentId) : { x: 0, y: 0 }
+        selectedNodes.push({
+          ...n,
+          x: abs.x - parentAbs.x - n.x + orig.x + dx,
+          y: abs.y - parentAbs.y - n.y + orig.y + dy
+        })
       }
-      return
     }
 
-    // Pen tool: click to add vertices
-    if (tool === 'PEN') {
-      store.penAddVertex(cx, cy)
-      drag.value = { type: 'pen-drag', startX: cx, startY: cy } as DragState
-      return
+    const bounds = computeSelectionBounds(selectedNodes)
+    if (!bounds) return { dx, dy }
+
+    const firstId = [...d.originals.keys()][0]
+    const firstNode = store.graph.getNode(firstId)
+    const parentId = firstNode?.parentId ?? store.state.currentPageId
+    const siblings = store.graph.getChildren(parentId)
+    const parentAbs = !store.isTopLevel(parentId)
+      ? store.graph.getAbsolutePosition(parentId)
+      : { x: 0, y: 0 }
+    const absTargets = siblings.map((n) => ({
+      ...n,
+      x: n.x + parentAbs.x,
+      y: n.y + parentAbs.y
+    }))
+    const absBounds = {
+      x: bounds.x + parentAbs.x,
+      y: bounds.y + parentAbs.y,
+      width: bounds.width,
+      height: bounds.height
+    }
+    const snap = computeSnap(store.state.selectedIds, absBounds, absTargets)
+    store.setSnapGuides(snap.guides)
+    return { dx: dx + snap.dx, dy: dy + snap.dy }
+  }
+
+  function handleMoveMove(d: DragMove, cx: number, cy: number) {
+    let dx = cx - d.startX
+    let dy = cy - d.startY
+
+    if (d.autoLayoutParentId && !d.brokeFromAutoLayout) {
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < AUTO_LAYOUT_BREAK_THRESHOLD) {
+        computeAutoLayoutIndicator(d, cx, cy)
+        return
+      }
+      d.brokeFromAutoLayout = true
+      store.setLayoutInsertIndicator(null)
     }
 
-    // Text tool: click to create text node
-    if (tool === 'TEXT') {
-      const nodeId = store.createShape('TEXT', cx, cy, DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_HEIGHT)
-      store.graph.updateNode(nodeId, { text: '' })
-      store.select([nodeId])
-      store.startTextEditing(nodeId)
-      store.setTool('SELECT')
+    const dropTarget = findDropTarget(cx, cy)
+    const dropParent = dropTarget ? store.graph.getNode(dropTarget.id) : null
+
+    if (dropParent && dropParent.layoutMode !== 'NONE') {
+      computeAutoLayoutIndicatorForFrame(dropParent, cx, cy)
+      store.setDropTarget(dropParent.id)
+      for (const [id, orig] of d.originals) {
+        store.graph.updateNode(id, {
+          x: Math.round(orig.x + dx),
+          y: Math.round(orig.y + dy)
+        })
+      }
       store.requestRender()
       return
     }
 
-    // Shape creation
-    const nodeType = TOOL_TO_NODE[tool]
-    if (!nodeType) return
+    store.setLayoutInsertIndicator(null)
 
-    const nodeId = store.createShape(nodeType, cx, cy, 0, 0)
-    store.select([nodeId])
+    const snapped = applyMoveSnap(d, dx, dy)
+    dx = snapped.dx
+    dy = snapped.dy
 
-    drag.value = { type: 'draw', startX: cx, startY: cy, nodeId }
+    for (const [id, orig] of d.originals) {
+      store.updateNode(id, { x: Math.round(orig.x + dx), y: Math.round(orig.y + dy) })
+    }
+
+    store.setDropTarget(dropTarget?.id ?? null)
+  }
+
+  function handleTextSelectMove(cx: number, cy: number) {
+    const editor = store.textEditor
+    const editNode = store.state.editingTextId
+      ? store.graph.getNode(store.state.editingTextId)
+      : null
+    if (editor && editNode) {
+      const abs = store.graph.getAbsolutePosition(editNode.id)
+      editor.setCursorAt(cx - abs.x, cy - abs.y, true)
+      store.requestRender()
+    }
+  }
+
+  function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean) {
+    let w = cx - d.startX
+    let h = cy - d.startY
+
+    if (shiftKey) {
+      const size = Math.max(Math.abs(w), Math.abs(h))
+      w = Math.sign(w) * size
+      h = Math.sign(h) * size
+    }
+
+    store.updateNode(d.nodeId, {
+      x: w < 0 ? d.startX + w : d.startX,
+      y: h < 0 ? d.startY + h : d.startY,
+      width: Math.abs(w),
+      height: Math.abs(h)
+    })
+  }
+
+  function handleMarqueeMove(d: DragMarquee, cx: number, cy: number) {
+    const minX = Math.min(d.startX, cx)
+    const minY = Math.min(d.startY, cy)
+    const maxX = Math.max(d.startX, cx)
+    const maxY = Math.max(d.startY, cy)
+
+    const hits: string[] = []
+    for (const node of store.graph.getChildren(store.state.currentPageId)) {
+      if (
+        node.x + node.width > minX &&
+        node.x < maxX &&
+        node.y + node.height > minY &&
+        node.y < maxY
+      ) {
+        hits.push(node.id)
+      }
+    }
+    store.select(hits)
+    store.setMarquee({ x: minX, y: minY, width: maxX - minX, height: maxY - minY })
   }
 
   function onMouseMove(e: MouseEvent) {
@@ -490,233 +743,45 @@ export function useCanvasInput(
       onCursorMove(cx, cy)
     }
 
-    // Pen tool: track cursor for preview line
     if (store.state.activeTool === 'PEN' && store.state.penState && !drag.value) {
       const { cx, cy } = getCoords(e)
       store.state.penCursorX = cx
       store.state.penCursorY = cy
 
-      // Check proximity to first vertex for closing
       const first = store.state.penState.vertices[0]
-      if (store.state.penState.vertices.length > 2 && first) {
+      if (store.state.penState.vertices.length > 2) {
         const dist = Math.hypot(cx - first.x, cy - first.y)
         store.penSetClosingToFirst(dist < PEN_CLOSE_THRESHOLD)
       }
       store.requestRepaint()
     }
 
-    // Cursor + hover highlight
     if (!drag.value && store.state.activeTool === 'SELECT') {
-      const { sx, sy, cx, cy } = getCoords(e)
-      let cursor: string | null = null
-
-      // Rotation handle cursor
-      if (store.state.selectedIds.size === 1) {
-        const id = [...store.state.selectedIds][0]
-        const node = store.graph.getNode(id)
-        if (node) {
-          const abs = store.graph.getAbsolutePosition(id)
-          if (
-            hitTestRotationHandle(
-              sx,
-              sy,
-              abs.x,
-              abs.y,
-              node.width,
-              node.height,
-              store.state.zoom,
-              store.state.panX,
-              store.state.panY,
-              node.rotation
-            )
-          ) {
-            cursor = 'grab'
-          }
-        }
-      }
-
-      if (!cursor) {
-        for (const id of store.state.selectedIds) {
-          const node = store.graph.getNode(id)
-          if (!node) continue
-          const abs = store.graph.getAbsolutePosition(id)
-          const handle = hitTestHandle(
-            sx,
-            sy,
-            abs.x,
-            abs.y,
-            node.width,
-            node.height,
-            store.state.zoom,
-            store.state.panX,
-            store.state.panY,
-            node.rotation
-          )
-          if (handle) {
-            cursor = HANDLE_CURSORS[handle]
-            break
-          }
-        }
-      }
-      cursorOverride.value = cursor
-
-      const hit =
-        hitTestSectionTitle(cx, cy) ??
-        hitTestComponentLabel(cx, cy) ??
-        store.graph.hitTest(cx, cy, store.state.currentPageId)
-      store.setHoveredNode(hit && !store.state.selectedIds.has(hit.id) ? hit.id : null)
+      updateHoverCursor(e)
     }
 
     if (!drag.value) return
     const d = drag.value
 
     if (d.type === 'pan') {
-      const dx = e.clientX - d.startScreenX
-      const dy = e.clientY - d.startScreenY
-      store.state.panX = d.startPanX + dx
-      store.state.panY = d.startPanY + dy
-      store.requestRepaint()
+      handlePanMove(d, e)
       return
     }
 
     const { cx, cy, sx, sy } = getCoords(e)
 
     if (d.type === 'rotate') {
-      const currentAngle = Math.atan2(sy - d.centerY, sx - d.centerX) * (180 / Math.PI)
-      let rotation = d.origRotation + (currentAngle - d.startAngle)
-
-      // Shift → snap to 15° increments
-      if (e.shiftKey) {
-        rotation = Math.round(rotation / ROTATION_SNAP_DEGREES) * ROTATION_SNAP_DEGREES
-      }
-
-      // Normalize to -180..180
-      rotation = ((((rotation + 180) % 360) + 360) % 360) - 180
-
-      store.setRotationPreview({ nodeId: d.nodeId, angle: rotation })
+      handleRotateMove(d, sx, sy, e.shiftKey)
       return
     }
-
     if (d.type === 'move') {
-      let dx = cx - d.startX
-      let dy = cy - d.startY
-
-      // Auto-layout: dead zone before breaking out
-      if (d.autoLayoutParentId && !d.brokeFromAutoLayout) {
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < AUTO_LAYOUT_BREAK_THRESHOLD) {
-          // Still in dead zone — compute insertion indicator within parent
-          computeAutoLayoutIndicator(d, cx, cy)
-          return
-        }
-        d.brokeFromAutoLayout = true
-        store.setLayoutInsertIndicator(null)
-      }
-
-      // Check if we're hovering over an auto-layout frame
-      let dropTarget = store.graph.hitTestFrame(
-        cx,
-        cy,
-        store.state.selectedIds,
-        store.state.currentPageId
-      )
-      // Sections can't be dropped into frames or groups
-      const movingSection = [...store.state.selectedIds].some(
-        (id) => store.graph.getNode(id)?.type === 'SECTION'
-      )
-      if (
-        movingSection &&
-        dropTarget &&
-        dropTarget.type !== 'SECTION' &&
-        dropTarget.type !== 'CANVAS'
-      ) {
-        dropTarget = null
-      }
-      const dropParent = dropTarget ? store.graph.getNode(dropTarget.id) : null
-
-      if (dropParent && dropParent.layoutMode !== 'NONE') {
-        computeAutoLayoutIndicatorForFrame(dropParent, cx, cy)
-        store.setDropTarget(dropParent.id)
-
-        // Still move the nodes freely so the user sees them floating
-        for (const [id, orig] of d.originals) {
-          store.graph.updateNode(id, {
-            x: Math.round(orig.x + dx),
-            y: Math.round(orig.y + dy)
-          })
-        }
-        store.requestRender()
-        return
-      }
-
-      store.setLayoutInsertIndicator(null)
-
-      // Compute snap using absolute positions
-      const selectedNodes: SceneNode[] = []
-      for (const [id, orig] of d.originals) {
-        const n = store.graph.getNode(id)
-        if (n) {
-          const abs = store.graph.getAbsolutePosition(id)
-          const parentAbs = n.parentId
-            ? store.graph.getAbsolutePosition(n.parentId)
-            : { x: 0, y: 0 }
-          selectedNodes.push({
-            ...n,
-            x: abs.x - parentAbs.x - n.x + orig.x + dx,
-            y: abs.y - parentAbs.y - n.y + orig.y + dy
-          })
-        }
-      }
-
-      const bounds = computeSelectionBounds(selectedNodes)
-      if (bounds) {
-        // Snap against siblings in absolute coordinates
-        const firstId = [...d.originals.keys()][0]
-        const firstNode = store.graph.getNode(firstId)
-        const parentId = firstNode?.parentId ?? store.state.currentPageId
-        const siblings = store.graph.getChildren(parentId)
-        const parentAbs = !store.isTopLevel(parentId)
-          ? store.graph.getAbsolutePosition(parentId)
-          : { x: 0, y: 0 }
-        const absTargets = siblings.map((n) => ({
-          ...n,
-          x: n.x + parentAbs.x,
-          y: n.y + parentAbs.y
-        }))
-        // Convert moving bounds to absolute coords too
-        const absBounds = {
-          x: bounds.x + parentAbs.x,
-          y: bounds.y + parentAbs.y,
-          width: bounds.width,
-          height: bounds.height
-        }
-        const snap = computeSnap(store.state.selectedIds, absBounds, absTargets)
-        dx += snap.dx
-        dy += snap.dy
-        store.setSnapGuides(snap.guides)
-      }
-
-      for (const [id, orig] of d.originals) {
-        store.updateNode(id, { x: Math.round(orig.x + dx), y: Math.round(orig.y + dy) })
-      }
-
-      store.setDropTarget(dropTarget?.id ?? null)
+      handleMoveMove(d, cx, cy)
       return
     }
-
     if (d.type === 'text-select') {
-      const editor = store.textEditor
-      const editNode = store.state.editingTextId
-        ? store.graph.getNode(store.state.editingTextId)
-        : null
-      if (editor && editNode) {
-        const abs = store.graph.getAbsolutePosition(editNode.id)
-        editor.setCursorAt(cx - abs.x, cy - abs.y, true)
-        store.requestRender()
-      }
+      handleTextSelectMove(cx, cy)
       return
     }
-
     if (d.type === 'resize') {
       applyResize(d, cx, cy, e.shiftKey)
       return
@@ -732,44 +797,41 @@ export function useCanvasInput(
     }
 
     if (d.type === 'draw') {
-      let w = cx - d.startX
-      let h = cy - d.startY
-
-      if (e.shiftKey) {
-        const size = Math.max(Math.abs(w), Math.abs(h))
-        w = Math.sign(w) * size
-        h = Math.sign(h) * size
-      }
-
-      store.updateNode(d.nodeId, {
-        x: w < 0 ? d.startX + w : d.startX,
-        y: h < 0 ? d.startY + h : d.startY,
-        width: Math.abs(w),
-        height: Math.abs(h)
-      })
+      handleDrawMove(d, cx, cy, e.shiftKey)
       return
     }
 
-    if (d.type === 'marquee') {
-      const minX = Math.min(d.startX, cx)
-      const minY = Math.min(d.startY, cy)
-      const maxX = Math.max(d.startX, cx)
-      const maxY = Math.max(d.startY, cy)
+    handleMarqueeMove(d, cx, cy)
+  }
 
-      const hits: string[] = []
-      for (const node of store.graph.getChildren(store.state.currentPageId)) {
-        if (
-          node.x + node.width > minX &&
-          node.x < maxX &&
-          node.y + node.height > minY &&
-          node.y < maxY
-        ) {
-          hits.push(node.id)
-        }
-      }
-      store.select(hits)
-      store.setMarquee({ x: minX, y: minY, width: maxX - minX, height: maxY - minY })
+  function constrainToAspectRatio(
+    handle: HandlePosition,
+    origRect: Rect,
+    width: number,
+    height: number,
+    dx: number,
+    dy: number
+  ): Rect {
+    let x = handle.includes('w') ? origRect.x + origRect.width - Math.abs(width) : origRect.x
+    const isTop = handle === 'nw' || handle === 'n' || handle === 'ne'
+    let y = isTop ? origRect.y + origRect.height - Math.abs(height) : origRect.y
+    const aspect = origRect.width / origRect.height
+
+    if (handle === 'n' || handle === 's') {
+      width = Math.abs(height) * aspect
+      x = origRect.x + (origRect.width - width) / 2
+    } else if (handle === 'e' || handle === 'w') {
+      height = Math.abs(width) / aspect
+      y = origRect.y + (origRect.height - height) / 2
+    } else if (Math.abs(dx) > Math.abs(dy)) {
+      height = (Math.abs(width) / aspect) * Math.sign(height || 1)
+      if (isTop) y = origRect.y + origRect.height - Math.abs(height)
+    } else {
+      width = Math.abs(height) * aspect * Math.sign(width || 1)
+      if (handle.includes('w')) x = origRect.x + origRect.width - Math.abs(width)
     }
+
+    return { x, y, width, height }
   }
 
   function applyResize(d: DragResize, cx: number, cy: number, constrain: boolean) {
@@ -795,30 +857,15 @@ export function useCanvasInput(
     }
 
     if (constrain && origRect.width > 0 && origRect.height > 0) {
-      const aspect = origRect.width / origRect.height
-      if (handle === 'n' || handle === 's') {
-        width = Math.abs(height) * aspect
-        x = origRect.x + (origRect.width - width) / 2
-      } else if (handle === 'e' || handle === 'w') {
-        height = Math.abs(width) / aspect
-        y = origRect.y + (origRect.height - height) / 2
-      } else {
-        if (Math.abs(dx) > Math.abs(dy)) {
-          height = (Math.abs(width) / aspect) * Math.sign(height || 1)
-          if (moveTop) y = origRect.y + origRect.height - Math.abs(height)
-        } else {
-          width = Math.abs(height) * aspect * Math.sign(width || 1)
-          if (moveLeft) x = origRect.x + origRect.width - Math.abs(width)
-        }
-      }
+      ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, dx, dy))
     }
 
     if (width < 0) {
-      x = x + width
+      x += width
       width = -width
     }
     if (height < 0) {
-      y = y + height
+      y += height
       height = -height
     }
 
@@ -830,92 +877,84 @@ export function useCanvasInput(
     })
   }
 
+  function handleMoveUp(d: DragMove) {
+    const indicator = store.state.layoutInsertIndicator
+    store.setLayoutInsertIndicator(null)
+    store.setSnapGuides([])
+
+    if (indicator) {
+      for (const id of store.state.selectedIds) {
+        store.reorderInAutoLayout(id, indicator.parentId, indicator.index)
+      }
+      store.setDropTarget(null)
+      return
+    }
+
+    const moved = [...d.originals].some(([id, orig]) => {
+      const node = store.graph.getNode(id)
+      return node && (node.x !== orig.x || node.y !== orig.y)
+    })
+
+    if (moved) {
+      store.commitMove(d.originals)
+
+      const dropId = store.state.dropTargetId
+      if (dropId) {
+        store.reparentNodes([...store.state.selectedIds], dropId)
+      } else {
+        reparentOutsideNodes()
+      }
+    }
+    store.setDropTarget(null)
+  }
+
+  function reparentOutsideNodes() {
+    for (const id of store.state.selectedIds) {
+      const node = store.graph.getNode(id)
+      if (!node?.parentId || store.isTopLevel(node.parentId)) continue
+      const parent = store.graph.getNode(node.parentId)
+      if (!parent || (parent.type !== 'FRAME' && parent.type !== 'SECTION')) continue
+      const outsideX = node.x + node.width < 0 || node.x > parent.width
+      const outsideY = node.y + node.height < 0 || node.y > parent.height
+      if (outsideX || outsideY) {
+        const grandparentId = parent.parentId ?? store.state.currentPageId
+        store.graph.reparentNode(id, grandparentId)
+      }
+    }
+  }
+
+  function handleDrawUp(d: DragDraw) {
+    const node = store.graph.getNode(d.nodeId)
+    if (node && node.width < 2 && node.height < 2) {
+      store.updateNode(d.nodeId, { width: 100, height: 100 })
+    }
+    if (node?.type === 'SECTION') {
+      store.adoptNodesIntoSection(node.id)
+    }
+    store.setTool('SELECT')
+  }
+
   function onMouseUp() {
     if (!drag.value) return
     const d = drag.value
 
-    if (d.type === 'move') {
-      const indicator = store.state.layoutInsertIndicator
-      store.setLayoutInsertIndicator(null)
-      store.setSnapGuides([])
-
-      if (indicator) {
-        // Drop into auto-layout at the indicated position
-        for (const id of store.state.selectedIds) {
-          store.reorderInAutoLayout(id, indicator.parentId, indicator.index)
-        }
-        store.setDropTarget(null)
-      } else {
-        // Check if the user actually dragged
-        const moved = [...d.originals].some(([id, orig]) => {
-          const node = store.graph.getNode(id)
-          return node && (node.x !== orig.x || node.y !== orig.y)
-        })
-
-        if (moved) {
-          store.commitMove(d.originals)
-
-          // Reparent into frame if dropped on one
-          const dropId = store.state.dropTargetId
-          if (dropId) {
-            store.reparentNodes([...store.state.selectedIds], dropId)
-          } else {
-            // Reparent to grandparent if dragged outside parent bounds
-            for (const id of store.state.selectedIds) {
-              const node = store.graph.getNode(id)
-              if (!node?.parentId || store.isTopLevel(node.parentId)) continue
-              const parent = store.graph.getNode(node.parentId)
-              if (!parent || (parent.type !== 'FRAME' && parent.type !== 'SECTION')) continue
-              const outsideX = node.x + node.width < 0 || node.x > parent.width
-              const outsideY = node.y + node.height < 0 || node.y > parent.height
-              if (outsideX || outsideY) {
-                const grandparentId = parent.parentId ?? store.state.currentPageId
-                store.graph.reparentNode(id, grandparentId)
-              }
-            }
-          }
-        }
-        store.setDropTarget(null)
-      }
-    }
-
-    if (d.type === 'text-select') {
+    if (d.type === 'move') handleMoveUp(d)
+    else if (d.type === 'text-select') {
       drag.value = null
       return
-    }
-
-    if (d.type === 'resize') {
-      store.commitResize(d.nodeId, d.origRect)
-    }
-
-    if (d.type === 'pen-drag') {
+    } else if (d.type === 'resize') store.commitResize(d.nodeId, d.origRect)
+    else if (d.type === 'pen-drag') {
       drag.value = null
       return
-    }
-
-    if (d.type === 'rotate') {
+    } else if (d.type === 'rotate') {
       const preview = store.state.rotationPreview
       if (preview) {
         store.updateNode(d.nodeId, { rotation: preview.angle })
         store.commitRotation(d.nodeId, d.origRotation)
       }
       store.setRotationPreview(null)
-    }
-
-    if (d.type === 'draw') {
-      const node = store.graph.getNode(d.nodeId)
-      if (node && node.width < 2 && node.height < 2) {
-        store.updateNode(d.nodeId, { width: 100, height: 100 })
-      }
-      if (node?.type === 'SECTION') {
-        store.adoptNodesIntoSection(node.id)
-      }
-      store.setTool('SELECT')
-    }
-
-    if (d.type === 'marquee') {
-      store.setMarquee(null)
-    }
+    } else if (d.type === 'draw') handleDrawUp(d)
+    else if (d.type === 'marquee') store.setMarquee(null)
 
     drag.value = null
     cursorOverride.value = null
@@ -1012,6 +1051,53 @@ export function useCanvasInput(
     computeAutoLayoutIndicatorForFrame(parent, cx, cy)
   }
 
+  function computeIndicatorPosition(
+    children: SceneNode[],
+    insertIndex: number,
+    parent: SceneNode,
+    parentAbs: Vector,
+    isRow: boolean
+  ): number {
+    if (children.length === 0) {
+      return isRow ? parentAbs.x + parent.paddingLeft : parentAbs.y + parent.paddingTop
+    }
+    if (insertIndex === 0) {
+      const firstAbs = store.graph.getAbsolutePosition(children[0].id)
+      return (isRow ? firstAbs.x : firstAbs.y) - parent.itemSpacing / 2
+    }
+    if (insertIndex >= children.length) {
+      const last = children[children.length - 1]
+      const lastAbs = store.graph.getAbsolutePosition(last.id)
+      return isRow
+        ? lastAbs.x + last.width + parent.itemSpacing / 2
+        : lastAbs.y + last.height + parent.itemSpacing / 2
+    }
+    const prev = children[insertIndex - 1]
+    const next = children[insertIndex]
+    const prevAbs = store.graph.getAbsolutePosition(prev.id)
+    const nextAbs = store.graph.getAbsolutePosition(next.id)
+    return isRow
+      ? (prevAbs.x + prev.width + nextAbs.x) / 2
+      : (prevAbs.y + prev.height + nextAbs.y) / 2
+  }
+
+  function filteredToRealIndex(parentId: string, insertIndex: number): number {
+    const allChildren = store.graph.getChildren(parentId)
+    let realIndex = 0
+    let filteredCount = 0
+    for (const child of allChildren) {
+      if (store.state.selectedIds.has(child.id)) continue
+      if (child.layoutPositioning === 'ABSOLUTE') {
+        realIndex++
+        continue
+      }
+      if (filteredCount === insertIndex) break
+      filteredCount++
+      realIndex++
+    }
+    return realIndex
+  }
+
   function computeAutoLayoutIndicatorForFrame(parent: SceneNode, cx: number, cy: number) {
     const children = store.graph
       .getChildren(parent.id)
@@ -1021,70 +1107,24 @@ export function useCanvasInput(
     const isRow = parent.layoutMode === 'HORIZONTAL'
 
     let insertIndex = children.length
-
     for (let i = 0; i < children.length; i++) {
-      const child = children[i]
-      const childAbs = store.graph.getAbsolutePosition(child.id)
-      const mid = isRow ? childAbs.x + child.width / 2 : childAbs.y + child.height / 2
-      const cursor = isRow ? cx : cy
-
-      if (cursor < mid) {
+      const childAbs = store.graph.getAbsolutePosition(children[i].id)
+      const mid = isRow ? childAbs.x + children[i].width / 2 : childAbs.y + children[i].height / 2
+      if ((isRow ? cx : cy) < mid) {
         insertIndex = i
         break
       }
     }
 
-    // Compute indicator position
-    let indicatorPos: number
+    const indicatorPos = computeIndicatorPosition(children, insertIndex, parent, parentAbs, isRow)
     const crossStart = isRow ? parentAbs.y + parent.paddingTop : parentAbs.x + parent.paddingLeft
     const crossLength = isRow
       ? parent.height - parent.paddingTop - parent.paddingBottom
       : parent.width - parent.paddingLeft - parent.paddingRight
 
-    if (children.length === 0) {
-      indicatorPos = isRow ? parentAbs.x + parent.paddingLeft : parentAbs.y + parent.paddingTop
-    } else if (insertIndex === 0) {
-      const first = children[0]
-      const firstAbs = store.graph.getAbsolutePosition(first.id)
-      indicatorPos = isRow
-        ? firstAbs.x - parent.itemSpacing / 2
-        : firstAbs.y - parent.itemSpacing / 2
-    } else if (insertIndex >= children.length) {
-      const last = children[children.length - 1]
-      const lastAbs = store.graph.getAbsolutePosition(last.id)
-      indicatorPos = isRow
-        ? lastAbs.x + last.width + parent.itemSpacing / 2
-        : lastAbs.y + last.height + parent.itemSpacing / 2
-    } else {
-      const prev = children[insertIndex - 1]
-      const next = children[insertIndex]
-      const prevAbs = store.graph.getAbsolutePosition(prev.id)
-      const nextAbs = store.graph.getAbsolutePosition(next.id)
-      indicatorPos = isRow
-        ? (prevAbs.x + prev.width + nextAbs.x) / 2
-        : (prevAbs.y + prev.height + nextAbs.y) / 2
-    }
-
-    // Account for the dragged node being in the children list
-    // (we filtered it out, so insertIndex is relative to the filtered list)
-    // Convert to actual childIds index
-    const allChildren = store.graph.getChildren(parent.id)
-    let realIndex = 0
-    let filteredCount = 0
-    for (let i = 0; i < allChildren.length; i++) {
-      if (store.state.selectedIds.has(allChildren[i].id)) continue
-      if (allChildren[i].layoutPositioning === 'ABSOLUTE') {
-        realIndex++
-        continue
-      }
-      if (filteredCount === insertIndex) break
-      filteredCount++
-      realIndex++
-    }
-
     store.setLayoutInsertIndicator({
       parentId: parent.id,
-      index: realIndex,
+      index: filteredToRealIndex(parent.id, insertIndex),
       x: isRow ? indicatorPos : crossStart,
       y: isRow ? crossStart : indicatorPos,
       length: crossLength,
@@ -1276,8 +1316,8 @@ export function useCanvasInput(
       const rect = canvas.getBoundingClientRect()
       pendingGesture = {
         scale: ge.scale,
-        sx: (ge.clientX ?? rect.width / 2) - rect.left,
-        sy: (ge.clientY ?? rect.height / 2) - rect.top
+        sx: ge.clientX - rect.left,
+        sy: ge.clientY - rect.top
       }
       if (!gestureRafId) {
         gestureRafId = requestAnimationFrame(flushGesture)

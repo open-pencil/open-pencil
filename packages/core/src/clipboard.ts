@@ -50,7 +50,7 @@ export async function parseFigmaClipboard(
   }
 
   const blobs: Uint8Array[] = (msg.blobs ?? []).map((b) =>
-    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes) as number[])
+    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes))
   )
 
   return { nodes: msg.nodeChanges ?? [], meta, blobs }
@@ -87,13 +87,12 @@ export function figmaNodesBounds(
 
   const parentTypes = new Map<string, string>()
   for (const nc of nodeChanges) {
-    if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     parentTypes.set(id, nc.type ?? '')
   }
 
   for (const nc of nodeChanges) {
-    if (!nc.guid || !nc.type || NON_VISUAL_TYPES.has(nc.type)) continue
+    if (!nc.type || NON_VISUAL_TYPES.has(nc.type)) continue
     const parentId = nc.parentIndex?.guid
       ? `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`
       : null
@@ -125,7 +124,6 @@ export function importClipboardNodes(
   const guidMap = new Map<string, KiwiNodeChange>()
   const parentMap = new Map<string, string>()
   for (const nc of nodeChanges) {
-    if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     guidMap.set(id, nc)
     if (nc.parentIndex?.guid) {
@@ -135,7 +133,7 @@ export function importClipboardNodes(
 
   const internalCanvasIds = new Set<string>()
   for (const [id, nc] of guidMap) {
-    if (nc.type === 'CANVAS' && (nc as unknown as Record<string, unknown>).internalOnly) {
+    if (nc.type === 'CANVAS' && nc.internalOnly) {
       internalCanvasIds.add(id)
     }
   }
@@ -210,7 +208,7 @@ export function importClipboardNodes(
   // Remap componentId from original Figma GUIDs to our node IDs
   for (const [, ourId] of created) {
     const node = graph.getNode(ourId)
-    if (!node || node.type !== 'INSTANCE' || !node.componentId) continue
+    if (node?.type !== 'INSTANCE' || !node.componentId) continue
     const ourComponentId = created.get(node.componentId)
     if (ourComponentId) graph.updateNode(ourId, { componentId: ourComponentId })
   }
@@ -225,6 +223,17 @@ export function importClipboardNodes(
   for (const figmaId of internalTopLevel) {
     const ourId = created.get(figmaId)
     if (ourId) graph.deleteNode(ourId)
+  }
+
+  // Detach orphaned instances whose components weren't in the paste data.
+  // Without the component, children can't be populated — convert to FRAME
+  // so the node at least renders its own fills/strokes/layout.
+  for (const [, ourId] of created) {
+    const node = graph.getNode(ourId)
+    if (node?.type !== 'INSTANCE') continue
+    if (node.childIds.length === 0 && (!node.componentId || !graph.getNode(node.componentId))) {
+      graph.updateNode(ourId, { type: 'FRAME', componentId: '' })
+    }
   }
 
   return createdIds

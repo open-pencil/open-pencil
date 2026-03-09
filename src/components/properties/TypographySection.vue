@@ -152,6 +152,7 @@ onMounted(async () => {
       </div>
       <div class="flex gap-0.5">
         <button
+          data-test-id="typography-bold-button"
           class="flex cursor-pointer items-center justify-center rounded border px-2 py-1 font-bold"
           :class="
             node.fontWeight >= 700

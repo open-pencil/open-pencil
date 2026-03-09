@@ -2,7 +2,7 @@ import { computed } from 'vue'
 
 import { useEditorStore } from '@/stores/editor'
 
-import type { SceneNode } from '@/engine/scene-graph'
+import type { SceneNode } from '@open-pencil/core'
 
 export const MIXED = Symbol('mixed')
 export type MixedValue<T> = T | typeof MIXED
@@ -13,7 +13,7 @@ export function useMultiProps() {
   const nodes = computed(() => store.selectedNodes.value)
   const isMulti = computed(() => nodes.value.length > 1)
   const active = computed(() => node.value || isMulti.value)
-  const activeNode = computed(() => node.value ?? nodes.value[0] ?? null)
+  const activeNode = computed(() => node.value ?? (nodes.value[0] as SceneNode | undefined) ?? null)
 
   function merged<K extends keyof SceneNode>(key: K): MixedValue<SceneNode[K]> {
     const all = nodes.value
@@ -36,5 +36,23 @@ export function useMultiProps() {
     store.requestRender()
   }
 
-  return { store, node, nodes, isMulti, active, activeNode, prop, merged, updateAllWithUndo }
+  function isArrayMixed(key: keyof SceneNode): boolean {
+    const all = nodes.value
+    if (all.length <= 1) return false
+    const first = JSON.stringify(all[0][key])
+    return all.some((n) => JSON.stringify(n[key]) !== first)
+  }
+
+  return {
+    store,
+    node,
+    nodes,
+    isMulti,
+    active,
+    activeNode,
+    prop,
+    merged,
+    updateAllWithUndo,
+    isArrayMixed
+  }
 }

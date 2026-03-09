@@ -18,6 +18,7 @@ import IconImageDown from '~icons/lucide/image-down'
 import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
+import { menuContent, menuItem } from '@/components/ui/menu'
 import { openFileDialog } from '@/composables/use-menu'
 import { useEditorStore } from '@/stores/editor'
 import { colorToCSS } from '@open-pencil/core'
@@ -27,7 +28,7 @@ import { initials } from '@/utils/text'
 import type { Component } from 'vue'
 import type { CollabState, RemotePeer } from '@/composables/use-collab'
 
-const props = defineProps<{
+const { collabState, collabPeers, pendingRoomId, followingPeer } = defineProps<{
   collabState: CollabState
   collabPeers: RemotePeer[]
   pendingRoomId?: string | null
@@ -68,7 +69,7 @@ const menuItems: MenuAction[] = [
   { icon: IconZoomIn, label: 'Zoom to fit', action: () => store.zoomToFit() }
 ]
 
-const onlineCount = computed(() => props.collabPeers.length + 1)
+const onlineCount = computed(() => collabPeers.length + 1)
 </script>
 
 <template>
@@ -114,7 +115,7 @@ const onlineCount = computed(() => props.collabPeers.length + 1)
     <!-- Center: Online badge + action toast -->
     <div class="pointer-events-auto relative mx-auto flex flex-col items-center gap-1.5">
       <!-- Online badge with peers popover -->
-      <PopoverRoot v-if="props.collabState.connected">
+      <PopoverRoot v-if="collabState.connected">
         <PopoverTrigger as-child>
           <button
             class="flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-panel/70 px-3 shadow-md backdrop-blur-xl select-none active:bg-hover"
@@ -136,33 +137,33 @@ const onlineCount = computed(() => props.collabPeers.length + 1)
               <div class="flex items-center gap-2">
                 <div
                   class="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                  :style="{ background: colorToCSS(props.collabState.localColor) }"
+                  :style="{ background: colorToCSS(collabState.localColor) }"
                 >
-                  {{ initials(props.collabState.localName || 'You') }}
+                  {{ initials(collabState.localName || 'You') }}
                 </div>
                 <span class="min-w-0 flex-1 truncate text-xs text-surface">
-                  {{ props.collabState.localName || 'You' }}
+                  {{ collabState.localName || 'You' }}
                 </span>
                 <span class="text-[10px] text-muted">you</span>
               </div>
 
               <div
-                v-for="peer in props.collabPeers"
+                v-for="peer in collabPeers"
                 :key="peer.clientId"
                 class="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-0.5 select-none active:bg-hover"
                 @click="
-                  emit('follow', props.followingPeer === peer.clientId ? null : peer.clientId)
+                  emit('follow', followingPeer === peer.clientId ? null : peer.clientId)
                 "
               >
                 <div
                   class="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
-                  :class="props.followingPeer === peer.clientId ? 'ring-2 ring-white/40' : ''"
+                  :class="followingPeer === peer.clientId ? 'ring-2 ring-white/40' : ''"
                   :style="{ background: colorToCSS(peer.color) }"
                 >
                   {{ initials(peer.name) }}
                 </div>
                 <span class="min-w-0 flex-1 truncate text-xs text-surface">{{ peer.name }}</span>
-                <span v-if="props.followingPeer === peer.clientId" class="text-[10px] text-accent"
+                <span v-if="followingPeer === peer.clientId" class="text-[10px] text-accent"
                   >following</span
                 >
               </div>
@@ -216,12 +217,18 @@ const onlineCount = computed(() => props.collabPeers.length + 1)
             :side-offset="8"
             side="bottom"
             align="end"
-            class="z-50 w-48 rounded-xl border border-border bg-panel p-1.5 shadow-xl"
+            :class="menuContent({ class: 'w-48 rounded-xl p-1.5 shadow-xl' })"
           >
             <DropdownMenuItem
               v-for="item in menuItems"
               :key="item.label"
-              class="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-none bg-transparent px-2.5 py-2 text-xs text-surface outline-none select-none active:bg-hover data-[highlighted]:bg-hover"
+              :class="
+                menuItem({
+                  justify: 'start',
+                  class:
+                    'w-full gap-2.5 rounded-lg border-none bg-transparent px-2.5 py-2 active:bg-hover'
+                })
+              "
               @click="item.action()"
             >
               <component :is="item.icon" class="size-4 text-muted" />

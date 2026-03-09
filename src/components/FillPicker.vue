@@ -18,10 +18,9 @@ import {
 
 import HsvColorArea from './HsvColorArea.vue'
 import ScrubInput from './ScrubInput.vue'
-import { colorToHexRaw, colorToRgba255, parseColor } from '@/engine/color'
+import { colorToCSS, colorToHexRaw, parseColor } from '@open-pencil/core'
 
-import type { Color } from '@/types'
-import type { Fill, GradientStop, GradientTransform } from '@/engine/scene-graph'
+import type { Color, Fill, GradientStop, GradientTransform } from '@open-pencil/core'
 
 type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 type GradientSubtype =
@@ -44,7 +43,7 @@ const DEFAULT_GRADIENT_TRANSFORMS: Record<GradientSubtype, GradientTransform> = 
   GRADIENT_DIAMOND: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 }
 }
 
-const props = defineProps<{
+const { fill } = defineProps<{
   fill: Fill
 }>()
 
@@ -55,68 +54,68 @@ const emit = defineEmits<{
 const activeStopIndex = ref(0)
 
 const fillCategory = computed<FillCategory>(() => {
-  if (props.fill.type.startsWith('GRADIENT')) return 'GRADIENT'
-  if (props.fill.type === 'IMAGE') return 'IMAGE'
+  if (fill.type.startsWith('GRADIENT')) return 'GRADIENT'
+  if (fill.type === 'IMAGE') return 'IMAGE'
   return 'SOLID'
 })
 
 const isGradient = computed(() => fillCategory.value === 'GRADIENT')
 
 const gradientSubtype = computed(() =>
-  isGradient.value ? (props.fill.type as GradientSubtype) : 'GRADIENT_LINEAR'
+  isGradient.value ? (fill.type as GradientSubtype) : 'GRADIENT_LINEAR'
 )
 
 const activeColor = computed(() => {
-  if (isGradient.value && props.fill.gradientStops?.length) {
-    const idx = Math.min(activeStopIndex.value, props.fill.gradientStops.length - 1)
-    return props.fill.gradientStops[idx].color
+  if (isGradient.value && fill.gradientStops?.length) {
+    const idx = Math.min(activeStopIndex.value, fill.gradientStops.length - 1)
+    return fill.gradientStops[idx].color
   }
-  return props.fill.color
+  return fill.color
 })
 
 function onColorUpdate(color: Color) {
-  if (isGradient.value && props.fill.gradientStops?.length) {
-    const stops = [...props.fill.gradientStops]
+  if (isGradient.value && fill.gradientStops?.length) {
+    const stops = [...fill.gradientStops]
     const idx = Math.min(activeStopIndex.value, stops.length - 1)
     stops[idx] = { ...stops[idx], color }
-    emit('update', { ...props.fill, gradientStops: stops })
+    emit('update', { ...fill, gradientStops: stops })
   } else {
-    emit('update', { ...props.fill, color })
+    emit('update', { ...fill, color })
   }
 }
 
 function setCategory(cat: FillCategory) {
   if (cat === fillCategory.value) return
   if (cat === 'SOLID') {
-    const color = props.fill.gradientStops?.length
-      ? { ...props.fill.gradientStops[0].color }
-      : props.fill.color
-    emit('update', { ...props.fill, type: 'SOLID', color })
+    const color = fill.gradientStops?.length
+      ? { ...fill.gradientStops[0].color }
+      : fill.color
+    emit('update', { ...fill, type: 'SOLID', color })
   } else if (cat === 'GRADIENT') {
     const type: GradientSubtype = 'GRADIENT_LINEAR'
-    const stops = props.fill.gradientStops?.length
-      ? props.fill.gradientStops
+    const stops = fill.gradientStops?.length
+      ? fill.gradientStops
       : [
-          { color: { ...props.fill.color }, position: 0 },
+          { color: { ...fill.color }, position: 0 },
           { color: { r: 1, g: 1, b: 1, a: 1 }, position: 1 }
         ]
     emit('update', {
-      ...props.fill,
+      ...fill,
       type,
       gradientStops: stops,
       gradientTransform: DEFAULT_GRADIENT_TRANSFORMS[type]
     })
     activeStopIndex.value = 0
   } else {
-    emit('update', { ...props.fill, type: 'IMAGE' })
+    emit('update', { ...fill, type: 'IMAGE' })
   }
 }
 
 function setGradientSubtype(type: string) {
   const subtype = type as GradientSubtype
-  if (subtype === props.fill.type) return
+  if (subtype === fill.type) return
   emit('update', {
-    ...props.fill,
+    ...fill,
     type: subtype,
     gradientTransform: DEFAULT_GRADIENT_TRANSFORMS[subtype]
   })
@@ -127,8 +126,8 @@ function selectStop(index: number) {
 }
 
 function addStop() {
-  if (!props.fill.gradientStops) return
-  const stops = [...props.fill.gradientStops]
+  if (!fill.gradientStops) return
+  const stops = [...fill.gradientStops]
   const newPos =
     stops.length >= 2
       ? (stops[stops.length - 2].position + stops[stops.length - 1].position) / 2
@@ -137,64 +136,55 @@ function addStop() {
   stops.sort((a, b) => a.position - b.position)
   const newIndex = stops.findIndex((s) => s.position === newPos)
   activeStopIndex.value = newIndex
-  emit('update', { ...props.fill, gradientStops: stops })
+  emit('update', { ...fill, gradientStops: stops })
 }
 
 function removeStop(index: number) {
-  if (!props.fill.gradientStops || props.fill.gradientStops.length <= 2) return
-  const stops = props.fill.gradientStops.filter((_, i) => i !== index)
+  if (!fill.gradientStops || fill.gradientStops.length <= 2) return
+  const stops = fill.gradientStops.filter((_, i) => i !== index)
   activeStopIndex.value = Math.min(activeStopIndex.value, stops.length - 1)
-  emit('update', { ...props.fill, gradientStops: stops })
+  emit('update', { ...fill, gradientStops: stops })
 }
 
 function updateStopPosition(index: number, value: string) {
-  if (!props.fill.gradientStops) return
+  if (!fill.gradientStops) return
   const pos = Math.max(0, Math.min(100, Number(value))) / 100
-  const stops = [...props.fill.gradientStops]
+  const stops = [...fill.gradientStops]
   stops[index] = { ...stops[index], position: pos }
-  emit('update', { ...props.fill, gradientStops: stops })
+  emit('update', { ...fill, gradientStops: stops })
 }
 
 function updateStopColor(index: number, hex: string) {
-  if (!props.fill.gradientStops) return
+  if (!fill.gradientStops) return
   const color = parseColor(hex.startsWith('#') ? hex : `#${hex}`)
   if (!color) return
-  const stops = [...props.fill.gradientStops]
+  const stops = [...fill.gradientStops]
   stops[index] = { ...stops[index], color: { ...color, a: stops[index].color.a } }
-  emit('update', { ...props.fill, gradientStops: stops })
+  emit('update', { ...fill, gradientStops: stops })
 }
 
 function updateStopOpacity(index: number, value: string) {
-  if (!props.fill.gradientStops) return
+  if (!fill.gradientStops) return
   const a = Math.max(0, Math.min(100, Number(value))) / 100
-  const stops = [...props.fill.gradientStops]
+  const stops = [...fill.gradientStops]
   stops[index] = { ...stops[index], color: { ...stops[index].color, a } }
-  emit('update', { ...props.fill, gradientStops: stops })
+  emit('update', { ...fill, gradientStops: stops })
+}
+
+function gradientStops(stops: GradientStop[]): string {
+  return stops.map((s) => `${colorToCSS(s.color)} ${s.position * 100}%`).join(', ')
 }
 
 const swatchBackground = computed(() => {
-  if (isGradient.value && props.fill.gradientStops?.length) {
-    const stops = props.fill.gradientStops
-      .map((s) => {
-        const rgba = colorToRgba255(s.color)
-        return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${s.color.a}) ${s.position * 100}%`
-      })
-      .join(', ')
-    return `linear-gradient(to right, ${stops})`
+  if (isGradient.value && fill.gradientStops?.length) {
+    return `linear-gradient(to right, ${gradientStops(fill.gradientStops)})`
   }
-  const rgba = colorToRgba255(props.fill.color)
-  return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${props.fill.color.a})`
+  return colorToCSS(fill.color)
 })
 
 const gradientBarBackground = computed(() => {
-  if (!props.fill.gradientStops?.length) return ''
-  const stops = props.fill.gradientStops
-    .map((s) => {
-      const rgba = colorToRgba255(s.color)
-      return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${s.color.a}) ${s.position * 100}%`
-    })
-    .join(', ')
-  return `linear-gradient(to right, ${stops})`
+  if (!fill.gradientStops?.length) return ''
+  return `linear-gradient(to right, ${gradientStops(fill.gradientStops)})`
 })
 
 const gradientStopBarRef = ref<HTMLDivElement | null>(null)
@@ -212,9 +202,9 @@ function onStopBarPointerMove(e: PointerEvent) {
   if (!el || draggingStopIndex.value === null || !el.hasPointerCapture(e.pointerId)) return
   const rect = el.getBoundingClientRect()
   const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-  const stops = [...(props.fill.gradientStops ?? [])]
+  const stops = [...(fill.gradientStops ?? [])]
   stops[draggingStopIndex.value] = { ...stops[draggingStopIndex.value], position: pos }
-  emit('update', { ...props.fill, gradientStops: stops })
+  emit('update', { ...fill, gradientStops: stops })
 }
 
 function onStopBarPointerUp() {
@@ -222,8 +212,7 @@ function onStopBarPointerUp() {
 }
 
 function stopSwatchColor(stop: GradientStop) {
-  const rgba = colorToRgba255(stop.color)
-  return `rgba(${rgba.r}, ${rgba.g}, ${rgba.b}, ${stop.color.a})`
+  return colorToCSS(stop.color)
 }
 </script>
 

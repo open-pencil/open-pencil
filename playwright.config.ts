@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test'
 export default defineConfig({
   testDir: './tests',
   timeout: 15_000,
-  workers: 3,
+  workers: 1,
   expect: {
     toHaveScreenshot: {
       maxDiffPixelRatio: 0.01,
@@ -18,6 +18,7 @@ export default defineConfig({
     baseURL: 'http://localhost:1420',
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2,
+    colorScheme: 'dark',
     launchOptions: {
       args: ['--enable-unsafe-swiftshader']
     }
@@ -25,7 +26,8 @@ export default defineConfig({
   projects: [
     {
       name: 'openpencil',
-      testDir: './tests/e2e'
+      testDir: './tests/e2e',
+      fullyParallel: false
     },
     {
       name: 'figma',

@@ -1,38 +1,29 @@
 import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
-import { bold, fmtList, entity, formatType } from '../format'
+import { isAppMode, requireFile, rpc } from '../app-client'
+import { bold, fmtList, entity } from '../format'
+
+import type { PageItem } from '@open-pencil/core'
+import { executeRpcCommand } from '@open-pencil/core'
+
+async function getData(file?: string): Promise<PageItem[]> {
+  if (isAppMode(file)) return rpc<PageItem[]>('pages')
+  const graph = await loadDocument(requireFile(file))
+  return executeRpcCommand(graph, 'pages', undefined) as PageItem[]
+}
 
 export default defineCommand({
   meta: { description: 'List pages in a .fig file' },
   args: {
-    file: { type: 'positional', description: '.fig file path', required: true },
+    file: { type: 'positional', description: '.fig file path (omit to connect to running app)', required: false },
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const graph = await loadDocument(args.file)
-    const pages = graph.getPages()
-
-    const countNodes = (pageId: string): number => {
-      let count = 0
-      const walk = (id: string) => {
-        count++
-        const n = graph.getNode(id)
-        if (n) for (const cid of n.childIds) walk(cid)
-      }
-      const page = graph.getNode(pageId)
-      if (page) for (const cid of page.childIds) walk(cid)
-      return count
-    }
+    const pages = await getData(args.file)
 
     if (args.json) {
-      console.log(
-        JSON.stringify(
-          pages.map((p) => ({ id: p.id, name: p.name, nodes: countNodes(p.id) })),
-          null,
-          2
-        )
-      )
+      console.log(JSON.stringify(pages, null, 2))
       return
     }
 
@@ -42,8 +33,8 @@ export default defineCommand({
     console.log(
       fmtList(
         pages.map((page) => ({
-          header: entity(formatType(page.type), page.name, page.id),
-          details: { nodes: countNodes(page.id) }
+          header: entity('page', page.name, page.id),
+          details: { nodes: page.nodes }
         })),
         { compact: true }
       )

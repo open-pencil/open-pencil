@@ -8,7 +8,7 @@ description: Drawing vector paths with bezier curves using the pen tool in OpenP
 The pen tool creates vector paths using a vector network data model, compatible with Figma's .fig format.
 ## Activating
 
-Press **P** to activate the pen tool.
+Press <kbd>P</kbd> to activate the pen tool.
 
 ## Placing Points
 
@@ -23,18 +23,18 @@ Click on the **first point** of the path to close it into a loop. Closed paths c
 
 ## Open Paths
 
-Press **Escape** to commit the current path as an open path. Open paths render as strokes only — they're not filled.
+Press <kbd>Escape</kbd> to commit the current path as an open path. Open paths render as strokes only — they're not filled.
 
 ## Vector Networks
 
-Under the hood, paths use the vector network data model instead of simple point lists. Vector networks allow more flexible topology (e.g., branching paths) and are encoded in Figma's `vectorNetworkBlob` binary format for .fig file compatibility.
+Paths in OpenPencil use vector networks — a more flexible model than simple point lists that supports branching paths and complex topology. This is the same model Figma uses, so paths round-trip perfectly in .fig files.
 
 ## Keyboard Shortcuts
 
 | Action | Mac | Windows / Linux |
 |--------|-----|-----------------|
-| Pen tool | P | P |
-| Commit open path | Escape | Escape |
+| Pen tool | <kbd>P</kbd> | <kbd>P</kbd> |
+| Commit open path | <kbd>Escape</kbd> | Escape |
 
 ## Tips
 

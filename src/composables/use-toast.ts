@@ -1,3 +1,4 @@
+import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
 
 export type ToastVariant = 'default' | 'error'
@@ -12,6 +13,7 @@ const TOAST_DURATION = 3000
 
 const toasts = ref<Toast[]>([])
 let nextId = 0
+let errorHandlersInitialized = false
 
 function show(message: string, variant: ToastVariant = 'default') {
   toasts.value.push({ id: ++nextId, message, variant })
@@ -22,10 +24,13 @@ function remove(id: number) {
 }
 
 function setupGlobalErrorHandler() {
-  window.addEventListener('error', (e) => {
+  if (errorHandlersInitialized) return
+  errorHandlersInitialized = true
+
+  useEventListener(window, 'error', (e) => {
     show(e.message || 'An unexpected error occurred', 'error')
   })
-  window.addEventListener('unhandledrejection', (e) => {
+  useEventListener(window, 'unhandledrejection', (e) => {
     const msg = e.reason instanceof Error ? e.reason.message : String(e.reason)
     show(msg || 'An unexpected error occurred', 'error')
   })

@@ -37,7 +37,7 @@ openspec/
 | editor-ui | Vue 3 panels, toolbar, color picker |
 | snap-guides | Edge/center snapping, rotation-aware |
 | rulers | Canvas rulers, selection highlight |
-| group-ungroup | ⌘G/⇧⌘G, position-based sort |
+| group-ungroup | <kbd>⌘</kbd><kbd>G</kbd> / <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd>, position-based sort |
 | desktop-app | Tauri v2, macOS menu bar |
 | testing | Playwright E2E, bun:test unit |
 | scrub-input | Drag-to-scrub numeric inputs |

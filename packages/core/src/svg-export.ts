@@ -1,4 +1,4 @@
-import { colorToHex } from './color'
+import { colorToHex, colorToHex8 } from './color'
 import { computeContentBounds } from './render-image'
 
 import { svg, renderSVGNode } from './svg-node'
@@ -36,20 +36,13 @@ function round(n: number, decimals = 2): number {
 }
 
 function formatColor(color: Color, opacity = 1): string {
-  if (opacity < 1) {
-    const hex = colorToHex(color)
-    const alpha = Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, '0')
-    return hex + alpha
-  }
-  return colorToHex(color)
+  return colorToHex8(color, opacity)
 }
 
 // --- Path data ---
 
 export function geometryBlobToSVGPath(blob: Uint8Array): string {
-  if (!blob || blob.length === 0) return ''
+  if (blob.length === 0) return ''
   const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   let o = 0
   const parts: string[] = []
@@ -308,11 +301,7 @@ function createFilterDef(effects: Effect[], ctx: SVGExportContext): { id: string
           operator: 'over'
         })
       )
-    } else if (
-      effect.type === 'LAYER_BLUR' ||
-      effect.type === 'BACKGROUND_BLUR' ||
-      effect.type === 'FOREGROUND_BLUR'
-    ) {
+    } else {
       const stdDev = round(effect.radius / 2)
       primitives.push(svg('feGaussianBlur', { stdDeviation: stdDev }))
     }
@@ -613,24 +602,24 @@ function renderTextNode(node: SceneNode, fillAttr: string | null): SVGNode {
     'text-anchor':
       node.textAlignHorizontal === 'CENTER'
         ? 'middle'
-        : node.textAlignHorizontal === 'RIGHT'
+        : (node.textAlignHorizontal === 'RIGHT'
           ? 'end'
-          : undefined,
+          : undefined),
     'text-decoration':
       node.textDecoration === 'UNDERLINE'
         ? 'underline'
-        : node.textDecoration === 'STRIKETHROUGH'
+        : (node.textDecoration === 'STRIKETHROUGH'
           ? 'line-through'
-          : undefined,
+          : undefined),
     'letter-spacing': node.letterSpacing ? round(node.letterSpacing) : undefined
   }
 
   const x =
     node.textAlignHorizontal === 'CENTER'
       ? round(node.width / 2)
-      : node.textAlignHorizontal === 'RIGHT'
+      : (node.textAlignHorizontal === 'RIGHT'
         ? round(node.width)
-        : 0
+        : 0)
   const y = node.fontSize || 14
 
   if (node.styleRuns.length > 0) {
@@ -840,7 +829,7 @@ export function renderNodesToSVG(
       ? { ...node, x: round(offsetX), y: round(offsetY) }
       : node
 
-    const rendered = renderNode(clone as SceneNode, ctx)
+    const rendered = renderNode(clone, ctx)
     if (rendered) contentNodes.push(rendered)
   }
 

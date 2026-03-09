@@ -1,57 +1,45 @@
 import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
+import { isAppMode, requireFile, rpc } from '../app-client'
 import { bold, fmtHistogram, fmtSummary, kv } from '../format'
-import type { SceneNode } from '@open-pencil/core'
+
+import type { InfoResult } from '@open-pencil/core'
+import { executeRpcCommand } from '@open-pencil/core'
+
+async function getData(file?: string): Promise<InfoResult> {
+  if (isAppMode(file)) return rpc<InfoResult>('info')
+  const graph = await loadDocument(requireFile(file))
+  return executeRpcCommand(graph, 'info', undefined) as InfoResult
+}
 
 export default defineCommand({
   meta: { description: 'Show document info (pages, node counts, fonts)' },
   args: {
-    file: { type: 'positional', description: '.fig file path', required: true },
+    file: { type: 'positional', description: '.fig file path (omit to connect to running app)', required: false },
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const graph = await loadDocument(args.file)
-    const pages = graph.getPages()
-
-    let totalNodes = 0
-    const types: Record<string, number> = {}
-    const fonts = new Set<string>()
-    const pageCounts: Record<string, number> = {}
-
-    for (const page of pages) {
-      let pageCount = 0
-      const walk = (id: string) => {
-        const node = graph.getNode(id) as SceneNode | undefined
-        if (!node) return
-        totalNodes++
-        pageCount++
-        types[node.type] = (types[node.type] ?? 0) + 1
-        if (node.fontFamily) fonts.add(node.fontFamily)
-        for (const childId of node.childIds) walk(childId)
-      }
-      for (const childId of page.childIds) walk(childId)
-      pageCounts[page.name] = pageCount
-    }
+    const data = await getData(args.file)
 
     if (args.json) {
-      console.log(JSON.stringify({ pages: pages.length, totalNodes, types, fonts: [...fonts].sort(), pageCounts }, null, 2))
+      console.log(JSON.stringify(data, null, 2))
       return
     }
 
     console.log('')
-    console.log(bold(`  ${pages.length} pages, ${totalNodes} nodes`))
+    console.log(bold(`  ${data.pages} pages, ${data.totalNodes} nodes`))
     console.log('')
 
-    const pageItems = Object.entries(pageCounts).map(([label, value]) => ({ label, value }))
+    const pageItems = Object.entries(data.pageCounts).map(([label, value]) => ({ label, value }))
     console.log(fmtHistogram(pageItems, { unit: 'nodes' }))
 
     console.log('')
-    console.log(fmtSummary(types))
+    console.log(fmtSummary(data.types))
 
-    if (fonts.size > 0) {
+    if (data.fonts.length > 0) {
       console.log('')
-      console.log(kv('Fonts', [...fonts].sort().join(', ')))
+      console.log(kv('Fonts', data.fonts.join(', ')))
     }
     console.log('')
   }

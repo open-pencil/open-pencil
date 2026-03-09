@@ -71,6 +71,7 @@ enum NodeType {
   SECTION_OVERLAY = 26;
   WASHI_TAPE = 27;
   VARIABLE = 28;
+  VARIABLE_SET = 29;
 }
 
 enum ShapeWithTextType {
@@ -898,6 +899,17 @@ message Decoration {
   uint styleID = 2;
 }
 
+message DerivedTextData {
+  Vector layoutSize = 1;
+  Baseline[] baselines = 2;
+  Glyph[] glyphs = 3;
+  Decoration[] decorations = 4;
+  FontMetaData[] fontMetaData = 6;
+  HyperlinkBox[] hyperlinkBoxes = 7;
+  int truncationStartIndex = 8;
+  float truncatedHeight = 9;
+}
+
 message VectorData {
   uint vectorNetworkBlob = 1;
   Vector normalizedSize = 2;
@@ -1480,6 +1492,13 @@ message NodeChange {
   string accessibleLabel = 304;
   bool propsAreBubbled = 305;
   VariableData variableData = 306;
+  VariableDataMap variableConsumptionMap = 307;
+  VariableSetMode[] variableSetModes = 312;
+  VariableSetID variableSetID = 313;
+  VariableResolvedDataType variableResolvedType = 314;
+  VariableDataValues variableDataValues = 315;
+  VariableScope[] variableScopes = 353;
+  DerivedTextData derivedTextData = 359;
   uint gridRowCount = 435;
   uint gridColumnCount = 436;
   float gridRowGap = 437;
@@ -1997,17 +2016,106 @@ enum VariableDataType {
   BOOLEAN = 0;
   FLOAT = 1;
   STRING = 2;
+  ALIAS = 3;
+  COLOR = 4;
+}
+
+enum VariableResolvedDataType {
+  BOOLEAN = 0;
+  FLOAT = 1;
+  STRING = 2;
+  COLOR = 4;
+}
+
+message VariableID {
+  GUID guid = 1;
+}
+
+message VariableSetID {
+  GUID guid = 1;
 }
 
 message VariableAnyValue {
   bool boolValue = 1;
   string textValue = 2;
   float floatValue = 3;
+  VariableID alias = 4;
+  Color colorValue = 5;
 }
 
 message VariableData {
   VariableAnyValue value = 1;
   VariableDataType dataType = 2;
+  VariableResolvedDataType resolvedDataType = 3;
+}
+
+message VariableSetMode {
+  GUID id = 1;
+  string name = 2;
+  string sortPosition = 3;
+}
+
+message VariableDataValuesEntry {
+  GUID modeID = 1;
+  VariableData variableData = 2;
+}
+
+message VariableDataValues {
+  VariableDataValuesEntry[] entries = 1;
+}
+
+enum VariableScope {
+  ALL_SCOPES = 0;
+  TEXT_CONTENT = 1;
+  CORNER_RADIUS = 2;
+  WIDTH_HEIGHT = 3;
+  GAP = 4;
+  ALL_FILLS = 5;
+  FRAME_FILL = 6;
+  SHAPE_FILL = 7;
+  TEXT_FILL = 8;
+  STROKE = 9;
+  STROKE_FLOAT = 10;
+  EFFECT_FLOAT = 11;
+  EFFECT_COLOR = 12;
+  OPACITY = 13;
+  FONT_FAMILY = 15;
+  FONT_SIZE = 16;
+  LINE_HEIGHT = 17;
+  LETTER_SPACING = 18;
+}
+
+enum VariableField {
+  MISSING = 0;
+  CORNER_RADIUS = 1;
+  STROKE_WEIGHT = 4;
+  STACK_SPACING = 5;
+  STACK_PADDING_LEFT = 6;
+  STACK_PADDING_TOP = 7;
+  STACK_PADDING_RIGHT = 8;
+  STACK_PADDING_BOTTOM = 9;
+  VISIBLE = 10;
+  WIDTH = 12;
+  HEIGHT = 13;
+  RECTANGLE_TOP_LEFT_CORNER_RADIUS = 14;
+  RECTANGLE_TOP_RIGHT_CORNER_RADIUS = 15;
+  RECTANGLE_BOTTOM_LEFT_CORNER_RADIUS = 16;
+  RECTANGLE_BOTTOM_RIGHT_CORNER_RADIUS = 17;
+  OPACITY = 31;
+  FONT_SIZE = 32;
+  LETTER_SPACING = 34;
+  LINE_HEIGHT = 36;
+  STACK_COUNTER_SPACING = 23;
+}
+
+message VariableDataMapEntry {
+  uint nodeField = 1;
+  VariableData variableData = 2;
+  VariableField variableField = 3;
+}
+
+message VariableDataMap {
+  VariableDataMapEntry[] entries = 1;
 }
 
 enum HTMLTag {

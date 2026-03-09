@@ -1,21 +1,25 @@
 import { describe, test, expect } from 'bun:test'
+import { readdir } from 'node:fs/promises'
+import { join } from 'node:path'
 
-const rendererSource = await Bun.file(
-  new URL('../../packages/core/src/renderer.ts', import.meta.url)
-).text()
+const rendererDir = new URL('../../packages/core/src/renderer/', import.meta.url).pathname
+const files = await readdir(rendererDir)
+const parts = await Promise.all(
+  files.filter((f) => f.endsWith('.ts')).map((f) => Bun.file(join(rendererDir, f)).text())
+)
+const rendererSource = parts.join('\n')
 
 describe('Renderer effect ordering', () => {
   test('drop shadow renders before fills', () => {
-    // In renderShape, "Effects (behind: drop shadow)" must come before "Fills"
     const behindIdx = rendererSource.indexOf("renderEffects(canvas, node, rect, hasRadius, 'behind')")
-    const fillsIdx = rendererSource.indexOf('this.drawNodeFill(canvas, node, rect, hasRadius)')
+    const fillsIdx = rendererSource.indexOf('drawNodeFill(canvas, node, rect, hasRadius)')
     expect(behindIdx).toBeGreaterThan(-1)
     expect(fillsIdx).toBeGreaterThan(-1)
     expect(behindIdx).toBeLessThan(fillsIdx)
   })
 
   test('inner shadow and blur render after strokes', () => {
-    const strokeIdx = rendererSource.indexOf('this.drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)')
+    const strokeIdx = rendererSource.indexOf('drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)')
     const frontIdx = rendererSource.indexOf("renderEffects(canvas, node, rect, hasRadius, 'front')")
     expect(strokeIdx).toBeGreaterThan(-1)
     expect(frontIdx).toBeGreaterThan(-1)
@@ -65,11 +69,11 @@ describe('Shadow spread support', () => {
   })
 
   test('makeRRectWithSpread helper exists', () => {
-    expect(rendererSource).toContain('private makeRRectWithSpread')
+    expect(rendererSource).toContain('function makeRRectWithSpread')
   })
 
   test('makeRRectWithOffset helper exists', () => {
-    expect(rendererSource).toContain('private makeRRectWithOffset')
+    expect(rendererSource).toContain('function makeRRectWithOffset')
   })
 })
 
@@ -110,7 +114,7 @@ describe('Blur effects use saveLayer pattern', () => {
   })
 
   test('applyClippedBlur clips to node shape and uses saveLayer', () => {
-    const idx = rendererSource.indexOf('private applyClippedBlur')
+    const idx = rendererSource.indexOf('function applyClippedBlur')
     const section = rendererSource.slice(idx, idx + 500)
     expect(section).toContain('clipNodeShape')
     expect(section).toContain('getCachedBlur')

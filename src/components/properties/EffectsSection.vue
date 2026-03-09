@@ -6,17 +6,14 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
 import { useMultiProps } from '@/composables/use-multi-props'
 
-import type { Color, Effect } from '@/engine/scene-graph'
+import { colorToCSS } from '@open-pencil/core'
+
+import type { Color, Effect } from '@open-pencil/core'
 
 const { store } = useNodeProps()
-const { node, nodes, isMulti, active } = useMultiProps()
+const { node, nodes, isMulti, active, isArrayMixed } = useMultiProps()
 
-const effectsAreMixed = computed(() => {
-  if (!isMulti.value) return false
-  const all = nodes.value
-  const first = JSON.stringify(all[0].effects)
-  return all.some((n) => JSON.stringify(n.effects) !== first)
-})
+const effectsAreMixed = computed(() => isArrayMixed('effects'))
 
 const expandedIndex = ref<number | null>(null)
 const effectsBeforeScrub = ref<Effect[] | null>(null)
@@ -168,9 +165,7 @@ function toggleExpand(index: number) {
         <button
           v-if="isShadow(effect.type)"
           class="size-5 shrink-0 cursor-pointer rounded border border-border"
-          :style="{
-            background: `rgba(${Math.round(effect.color.r * 255)}, ${Math.round(effect.color.g * 255)}, ${Math.round(effect.color.b * 255)}, ${effect.color.a})`
-          }"
+          :style="{ background: colorToCSS(effect.color) }"
           @click="toggleExpand(i)"
         />
         <button

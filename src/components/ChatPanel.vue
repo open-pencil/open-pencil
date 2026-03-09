@@ -2,7 +2,7 @@
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
-import APIKeySetup from '@/components/chat/APIKeySetup.vue'
+import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import { useAIChat } from '@/composables/use-chat'
@@ -31,7 +31,7 @@ function handleSubmit(text: string) {
     const c = ensureChat()
     if (c) chat.value = markRaw(c)
   }
-  chat.value?.sendMessage({ text }).catch(() => {})
+  chat.value?.sendMessage({ text }).catch(() => { /* user-facing error handled by UI */ })
 }
 
 function handleStop() {
@@ -40,8 +40,8 @@ function handleStop() {
 </script>
 
 <template>
-  <div data-test-id="chat-panel" class="flex min-w-0 flex-1 flex-col overflow-hidden">
-    <APIKeySetup v-if="!isConfigured" />
+  <div data-test-id="chat-panel" class="flex min-w-0 flex-1 select-text flex-col overflow-hidden">
+    <ProviderSetup v-if="!isConfigured" />
 
     <template v-else>
       <ScrollAreaRoot class="min-h-0 flex-1">

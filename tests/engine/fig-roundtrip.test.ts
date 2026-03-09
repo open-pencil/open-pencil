@@ -2,13 +2,17 @@ import { describe, test, expect, beforeAll, setDefaultTimeout } from 'bun:test'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-import { parseFigFile, parseFigFileInWorker } from '../../packages/core/src/kiwi/fig-file'
-import { exportFigFile } from '../../packages/core/src/fig-export'
-import { importNodeChanges } from '../../packages/core/src/kiwi/fig-import'
-import { initCodec } from '../../packages/core/src/kiwi/codec'
-import { SceneGraph } from '../../packages/core/src/scene-graph'
-
-import type { SceneNode, NodeType, Fill } from '../../packages/core/src/scene-graph'
+import {
+  parseFigFile,
+  parseFigFileInWorker,
+  exportFigFile,
+  importNodeChanges,
+  initCodec,
+  SceneGraph,
+  type SceneNode,
+  type NodeType,
+  type Fill,
+} from '@open-pencil/core'
 import { heavy } from '../helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -888,5 +892,253 @@ describe('edge cases', () => {
     }
     walk(thumb?.id ?? '')
     expect(overflows).toBe(0)
+  })
+})
+
+describe('text node export', () => {
+  test('text nodes have derivedTextData and textUserLayoutVersion', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Greeting',
+      text: 'Hello World',
+      width: 120,
+      height: 24,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 16
+    })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')!
+    expect(textNode).toBeDefined()
+    expect(textNode.type).toBe('TEXT')
+    expect(textNode.text).toBe('Hello World')
+    expect(textNode.fontFamily).toBe('Inter')
+    expect(textNode.fontSize).toBe(16)
+  })
+
+  test('text node has lines in textData', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Multiline',
+      text: 'Line 1\nLine 2\nLine 3',
+      width: 100,
+      height: 60,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 14
+    })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Multiline')!
+    expect(textNode).toBeDefined()
+    expect(textNode.text).toBe('Line 1\nLine 2\nLine 3')
+  })
+
+  test('derivedTextData fields present in raw binary', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import(
+      '../../packages/core/src/kiwi/kiwi-schema'
+    )
+    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Raw Test',
+      text: 'Check binary',
+      width: 80,
+      height: 18,
+      fontFamily: 'Roboto',
+      fontWeight: 700,
+      fontSize: 12
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const canvasData = zip['canvas.fig'] ?? zip['canvas']
+    expect(canvasData).toBeDefined()
+
+    const chunks = parseFigKiwiChunks(canvasData)
+    expect(chunks).not.toBeNull()
+    expect(chunks!.length).toBeGreaterThanOrEqual(2)
+
+    const schemaBytes = inflateSync(chunks![0])
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as { decodeMessage(data: Uint8Array): any }
+    const dataRaw = inflateSync(chunks![1])
+    const message = compiled.decodeMessage(dataRaw)
+
+    const textNc = message.nodeChanges.find((nc: any) => nc.type === 'TEXT')
+    expect(textNc).toBeDefined()
+
+    expect(textNc.textData.characters).toBe('Check binary')
+    expect(textNc.textData.lines).toBeDefined()
+    expect(textNc.textData.lines.length).toBeGreaterThanOrEqual(1)
+    expect(textNc.textData.lines[0].lineType).toBe('PLAIN')
+
+    expect(textNc.textUserLayoutVersion).toBe(3)
+
+    expect(textNc.derivedTextData).toBeDefined()
+    expect(textNc.derivedTextData.layoutSize).toBeDefined()
+    expect(textNc.derivedTextData.layoutSize.x).toBe(80)
+    expect(textNc.derivedTextData.layoutSize.y).toBe(18)
+
+    expect(textNc.derivedTextData.fontMetaData).toBeDefined()
+    expect(textNc.derivedTextData.fontMetaData.length).toBe(1)
+    expect(textNc.derivedTextData.fontMetaData[0].key.family).toBe('Roboto')
+    expect(textNc.derivedTextData.fontMetaData[0].fontWeight).toBe(700)
+    expect(textNc.derivedTextData.fontMetaData[0].fontStyle).toBe('NORMAL')
+  })
+
+  test('style runs produce multiple fontMetaData entries', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import(
+      '../../packages/core/src/kiwi/kiwi-schema'
+    )
+    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Styled',
+      text: 'Bold and Normal',
+      width: 150,
+      height: 20,
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 16,
+      styleRuns: [
+        { start: 0, length: 4, style: { fontWeight: 700 } },
+        { start: 5, length: 10, style: {} }
+      ]
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const canvasData = zip['canvas.fig'] ?? zip['canvas']
+    const chunks = parseFigKiwiChunks(canvasData)!
+    const schemaBytes = inflateSync(chunks[0])
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as { decodeMessage(data: Uint8Array): any }
+    const dataRaw = inflateSync(chunks[1])
+    const message = compiled.decodeMessage(dataRaw)
+
+    const textNc = message.nodeChanges.find((nc: any) => nc.type === 'TEXT')
+    expect(textNc.derivedTextData.fontMetaData.length).toBe(2)
+
+    const families = textNc.derivedTextData.fontMetaData.map((m: any) => m.key.style)
+    expect(families).toContain('Bold')
+    expect(families).toContain('Medium')
+  })
+
+  test('material3.fig text nodes have derivedTextData after round-trip', async () => {
+    const buf = readFileSync(resolve(FIXTURES, 'material3.fig'))
+    const original = await parseFigFile(buf.buffer as ArrayBuffer)
+
+    const textNodes = [...original.getAllNodes()].filter((n) => n.type === 'TEXT')
+    expect(textNodes.length).toBeGreaterThan(0)
+
+    const exported = await exportFigFile(original)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const reimportedText = [...reimported.getAllNodes()].filter((n) => n.type === 'TEXT')
+    expect(reimportedText.length).toBe(textNodes.length)
+
+    for (const node of reimportedText.slice(0, 10)) {
+      expect(node.text.length).toBeGreaterThan(0)
+    }
+  })
+})
+
+describe('variable roundtrip', () => {
+  test('variables and collections survive export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Design Tokens')
+    graph.createVariable('color/primary', 'COLOR', col.id, { r: 0.23, g: 0.51, b: 0.96, a: 1 })
+    graph.createVariable('spacing/base', 'FLOAT', col.id, 8)
+    graph.createVariable('visible', 'BOOLEAN', col.id, true)
+    graph.createVariable('label', 'STRING', col.id, 'Hello')
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    expect(reimported.variables.size).toBe(4)
+    expect(reimported.variableCollections.size).toBe(1)
+
+    const reimportedCol = [...reimported.variableCollections.values()][0]
+    expect(reimportedCol.name).toBe('Design Tokens')
+    expect(reimportedCol.variableIds).toHaveLength(4)
+
+    const vars = [...reimported.variables.values()]
+    const colorVar = vars.find((v) => v.name === 'color/primary')!
+    expect(colorVar.type).toBe('COLOR')
+    const colorVal = Object.values(colorVar.valuesByMode)[0] as { r: number; g: number; b: number; a: number }
+    expect(colorVal.r).toBeCloseTo(0.23, 1)
+
+    const floatVar = vars.find((v) => v.name === 'spacing/base')!
+    expect(floatVar.type).toBe('FLOAT')
+    expect(Object.values(floatVar.valuesByMode)[0]).toBe(8)
+
+    const boolVar = vars.find((v) => v.name === 'visible')!
+    expect(boolVar.type).toBe('BOOLEAN')
+    expect(Object.values(boolVar.valuesByMode)[0]).toBe(true)
+
+    const strVar = vars.find((v) => v.name === 'label')!
+    expect(strVar.type).toBe('STRING')
+    expect(Object.values(strVar.valuesByMode)[0]).toBe('Hello')
+  })
+
+  test('variable bindings survive export → re-import', async () => {
+    await initCodec()
+
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Tokens')
+    const floatVar = graph.createVariable('radius', 'FLOAT', col.id, 12)
+
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id, {
+      name: 'Bound Rect',
+      width: 100,
+      height: 100,
+      cornerRadius: 12,
+    })
+    graph.bindVariable(rect.id, 'cornerRadius', floatVar.id)
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const reimportedRect = [...reimported.getAllNodes()].find((n) => n.name === 'Bound Rect')!
+    expect(reimportedRect).toBeDefined()
+    expect(Object.keys(reimportedRect.boundVariables)).toContain('cornerRadius')
+  })
+
+  test('material3.fig variables survive round-trip', async () => {
+    const buf = readFileSync(resolve(FIXTURES, 'material3.fig'))
+    const original = await parseFigFile(buf.buffer as ArrayBuffer)
+
+    const exported = await exportFigFile(original)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    expect(reimported.variables.size).toBe(original.variables.size)
+    expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
+      [...original.variableCollections.values()].filter((c) => c.variableIds.length > 0).length
+    )
   })
 })
