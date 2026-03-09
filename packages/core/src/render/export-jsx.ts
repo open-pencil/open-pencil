@@ -191,7 +191,7 @@ function collectGridSizingProps(node: SceneNode, props: [string, unknown][]): vo
   if (node.gridTemplateRows.length > 0)
     props.push(['rows', formatTracks(node.gridTemplateRows)])
   if (node.width > 0) props.push(['w', node.width])
-  if (node.height > 0) props.push(['h', node.height])
+  if (node.gridTemplateRows.length > 0 && node.height > 0) props.push(['h', node.height])
   if (node.gridColumnGap > 0) props.push(['columnGap', node.gridColumnGap])
   if (node.gridRowGap > 0) props.push(['rowGap', node.gridRowGap])
 }
@@ -414,7 +414,8 @@ function collectTwGridClasses(node: SceneNode, classes: string[]): void {
   if (node.gridTemplateRows.length > 0)
     classes.push(`grid-rows-${gridTemplateTw(node.gridTemplateRows)}`)
   if (node.width > 0) classes.push(`w-${pxToSpacing(node.width)}`)
-  if (node.height > 0) classes.push(`h-${pxToSpacing(node.height)}`)
+  if (node.gridTemplateRows.length > 0 && node.height > 0)
+    classes.push(`h-${pxToSpacing(node.height)}`)
   if (node.gridColumnGap > 0) classes.push(`gap-x-${pxToSpacing(node.gridColumnGap)}`)
   if (node.gridRowGap > 0) classes.push(`gap-y-${pxToSpacing(node.gridRowGap)}`)
 }

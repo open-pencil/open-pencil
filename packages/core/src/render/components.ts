@@ -1,43 +1,52 @@
 import { node, type BaseProps, type TextProps, type TreeNode } from './tree'
 
-export function Frame(props: BaseProps): TreeNode {
-  return node('frame', props)
+type Child = TreeNode | string
+
+function withChildren(type: string, props: Record<string, unknown>, children: Child[]): TreeNode {
+  if (children.length > 0) {
+    return node(type, { ...props, children })
+  }
+  return node(type, props)
 }
 
-export function Text(props: TextProps): TreeNode {
-  return node('text', props)
+export function Frame(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('frame', props, children)
 }
 
-export function Rectangle(props: BaseProps): TreeNode {
-  return node('rectangle', props)
+export function Text(props: TextProps, ...children: Child[]): TreeNode {
+  return withChildren('text', props, children)
 }
 
-export function Ellipse(props: BaseProps): TreeNode {
-  return node('ellipse', props)
+export function Rectangle(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('rectangle', props, children)
 }
 
-export function Line(props: BaseProps): TreeNode {
-  return node('line', props)
+export function Ellipse(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('ellipse', props, children)
 }
 
-export function Star(props: BaseProps & { points?: number; innerRadius?: number }): TreeNode {
-  return node('star', props)
+export function Line(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('line', props, children)
 }
 
-export function Polygon(props: BaseProps & { pointCount?: number }): TreeNode {
-  return node('polygon', props)
+export function Star(props: BaseProps & { points?: number; innerRadius?: number }, ...children: Child[]): TreeNode {
+  return withChildren('star', props, children)
 }
 
-export function Vector(props: BaseProps): TreeNode {
-  return node('vector', props)
+export function Polygon(props: BaseProps & { pointCount?: number }, ...children: Child[]): TreeNode {
+  return withChildren('polygon', props, children)
 }
 
-export function Group(props: BaseProps): TreeNode {
-  return node('group', props)
+export function Vector(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('vector', props, children)
 }
 
-export function Section(props: BaseProps): TreeNode {
-  return node('section', props)
+export function Group(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('group', props, children)
+}
+
+export function Section(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('section', props, children)
 }
 
 export const View = Frame
