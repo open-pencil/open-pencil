@@ -8,11 +8,7 @@ import {
   TabsContent,
   TabsList,
   TabsRoot,
-  TabsTrigger,
-  TooltipContent,
-  TooltipPortal,
-  TooltipRoot,
-  TooltipTrigger
+  TabsTrigger
 } from 'reka-ui'
 import { ref, watch } from 'vue'
 
@@ -20,8 +16,16 @@ import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
 
-const { providerID, providerDef, apiKey, setAPIKey, customBaseURL, customModelID, customAPIType } =
-  useAIChat()
+const {
+  providerID,
+  providerDef,
+  apiKey,
+  setAPIKey,
+  customBaseURL,
+  customModelID,
+  customAPIType,
+  maxOutputTokens
+} = useAIChat()
 
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
@@ -58,32 +62,22 @@ function clearKey() {
 
 <template>
   <PopoverRoot>
-    <TooltipRoot>
-      <TooltipTrigger as-child>
-        <PopoverTrigger
-          data-test-id="provider-settings-trigger"
-          class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
-        >
-          <icon-lucide-settings class="size-3" />
-        </PopoverTrigger>
-      </TooltipTrigger>
-      <TooltipPortal>
-        <TooltipContent
-          side="top"
-          :side-offset="4"
-          class="rounded bg-surface px-2 py-1 text-[10px] text-canvas"
-        >
-          Provider settings
-        </TooltipContent>
-      </TooltipPortal>
-    </TooltipRoot>
+    <PopoverTrigger
+      data-test-id="provider-settings-trigger"
+      class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
+      title="Provider settings"
+    >
+      <icon-lucide-settings class="size-3" />
+    </PopoverTrigger>
 
     <PopoverPortal>
       <PopoverContent
         side="top"
         :side-offset="8"
         align="end"
-        class="z-50 w-64 rounded-lg border border-border bg-panel p-3 shadow-lg"
+        :collision-padding="16"
+        :avoid-collisions="true"
+        class="isolate z-[51] w-64 rounded-lg border border-border bg-panel p-3 shadow-lg"
         @interact-outside="save"
       >
         <div class="flex flex-col gap-2.5">
@@ -148,6 +142,20 @@ function clearKey() {
               <TabsContent value="completions" />
               <TabsContent value="responses" />
             </TabsRoot>
+          </div>
+
+          <!-- Max output tokens -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] text-muted">Max output tokens</label>
+            <input
+              v-model.number="maxOutputTokens"
+              type="number"
+              data-test-id="provider-settings-max-tokens"
+              :min="1024"
+              :max="128000"
+              :step="1024"
+              :class="uiInput({ size: 'sm' })"
+            />
           </div>
 
           <!-- API key -->

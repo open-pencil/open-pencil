@@ -103,6 +103,12 @@ const SYSTEM_PROMPT = dedent`
   **Row with spacer:** \`<Frame flex="row" w={380} items="center"><Text>Title</Text><Frame grow={1} /><Text>Action</Text></Frame>\`
   **Grow children:** Inner flex="row" MUST have w="fill" so grow children can divide space.
 
+  ## Size limits
+  ⚠ Keep each \`render\` call under ~40 elements. For complex designs, split into multiple calls:
+  1. Render the outer container first (with parent_id of the page)
+  2. Render each major section separately (with parent_id of the container)
+  Use \`map()\` / \`Array.from()\` for repeated items — never duplicate JSX manually.
+
   ## Forbidden patterns
   - ❌ style={{...}}, className, CSS properties
   - ❌ w/h on Text, justify="space-between", "red"/"rgb(...)" colors, percentage values
@@ -110,6 +116,7 @@ const SYSTEM_PROMPT = dedent`
   - ❌ \`as any\`, \`as const\`, TypeScript casts — JSX is parsed by sucrase, not TypeScript
   - ❌ Template literals for prop values (\`\${x}%\`) — use plain numbers or strings
   - ❌ Math.random() — use deterministic values
+  - ❌ Giant single render calls (>40 elements) — split into sections
 
   ## Color contrast rules
   - Subtle backgrounds on dark bg: at least #FFFFFF30 alpha (~19%)
@@ -143,6 +150,7 @@ const customAPIType = useLocalStorage<'completions' | 'responses'>(
   `${STORAGE_PREFIX}ai-api-type`,
   'completions'
 )
+const maxOutputTokens = useLocalStorage(`${STORAGE_PREFIX}ai-max-output-tokens`, 16384)
 const activeTab = ref<'design' | 'ai'>('design')
 
 const providerDef = computed(
@@ -168,6 +176,7 @@ watch(providerID, (id) => {
 watch(modelID, () => resetChat())
 watch(customModelID, () => resetChat())
 watch(customAPIType, () => resetChat())
+watch(maxOutputTokens, () => resetChat())
 
 function setAPIKey(key: string) {
   apiKey.value = key
@@ -238,7 +247,8 @@ function createTransport() {
   const agent = new ToolLoopAgent({
     model: createModel(),
     instructions: SYSTEM_PROMPT,
-    tools
+    tools,
+    maxOutputTokens: maxOutputTokens.value
   })
 
   return new DirectChatTransport({ agent })
@@ -274,6 +284,7 @@ export function useAIChat() {
     customBaseURL,
     customModelID,
     customAPIType,
+    maxOutputTokens,
     activeTab,
     isConfigured,
     ensureChat,

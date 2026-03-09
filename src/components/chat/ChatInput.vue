@@ -122,6 +122,9 @@ function handleSubmit(e: Event) {
           placeholder="Describe a change…"
           :class="uiInput({ class: 'min-w-0 flex-1 placeholder:text-muted' })"
           :disabled="status === 'submitted'"
+          @paste.stop
+          @copy.stop
+          @cut.stop
         />
         <TooltipRoot v-if="isStreaming">
           <TooltipTrigger as-child>
