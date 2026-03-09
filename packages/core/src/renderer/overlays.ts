@@ -28,9 +28,8 @@ import type { SceneNode, SceneGraph } from '../scene-graph'
 import type { SnapGuide } from '../snap'
 import type { TextEditor } from '../text-editor'
 import type { Rect, Vector } from '../types'
-import type { Canvas } from 'canvaskit-wasm'
-import type { SkiaRenderer } from './renderer'
-import type { RenderOverlays } from './renderer'
+import type { Canvas, Paint } from 'canvaskit-wasm'
+import type { SkiaRenderer, RenderOverlays } from './renderer'
 
 export function drawHoverHighlight(
   r: SkiaRenderer,
@@ -207,7 +206,7 @@ export function drawSelectionLabels(
   const glyphIds = r.sizeFont.getGlyphIDs(sizeText)
   const widths = r.sizeFont.getGlyphWidths(glyphIds)
   let textWidth = 0
-  for (let i = 0; i < widths.length; i++) textWidth += widths[i]
+  for (const w of widths) textWidth += w
   const pillW = textWidth + SIZE_PILL_PADDING_X * 2
   const pillH = SIZE_PILL_HEIGHT
   const pillX = smx - pillW / 2
@@ -557,23 +556,15 @@ export function drawTextEditOverlay(
   }
 }
 
-export function drawPenOverlay(
+type ToScreenFn = (x: number, y: number) => Vector
+
+function buildPenPath(
   r: SkiaRenderer,
   canvas: Canvas,
-  penState: RenderOverlays['penState']
+  penState: NonNullable<RenderOverlays['penState']>,
+  toScreen: ToScreenFn
 ): void {
-  if (!penState || penState.vertices.length === 0) return
-
   const { vertices, segments, dragTangent, cursorX, cursorY } = penState
-  const pathPaint = r.penPathPaint
-  const handlePaint = r.penHandlePaint
-  const vertexFill = r.penVertexFill
-  const vertexStroke = r.penVertexStroke
-
-  const toScreen = (x: number, y: number) => ({
-    x: x * r.zoom + r.panX,
-    y: y * r.zoom + r.panY
-  })
 
   const path = new r.ck.Path()
   for (const seg of segments) {
@@ -616,8 +607,29 @@ export function drawPenOverlay(
     }
   }
 
-  canvas.drawPath(path, pathPaint)
+  canvas.drawPath(path, r.penPathPaint)
   path.delete()
+}
+
+function drawPenHandlePoint(
+  canvas: Canvas,
+  x: number,
+  y: number,
+  vertexFill: Paint,
+  handlePaint: Paint
+): void {
+  canvas.drawCircle(x, y, PEN_HANDLE_RADIUS, vertexFill)
+  canvas.drawCircle(x, y, PEN_HANDLE_RADIUS, handlePaint)
+}
+
+function drawPenTangentHandles(
+  canvas: Canvas,
+  penState: NonNullable<RenderOverlays['penState']>,
+  toScreen: ToScreenFn,
+  handlePaint: Paint,
+  vertexFill: Paint
+): void {
+  const { vertices, segments, dragTangent } = penState
 
   for (const seg of segments) {
     const ts = seg.tangentStart
@@ -626,15 +638,13 @@ export function drawPenOverlay(
       const s = toScreen(vertices[seg.start].x, vertices[seg.start].y)
       const cp = toScreen(vertices[seg.start].x + ts.x, vertices[seg.start].y + ts.y)
       canvas.drawLine(s.x, s.y, cp.x, cp.y, handlePaint)
-      canvas.drawCircle(cp.x, cp.y, PEN_HANDLE_RADIUS, vertexFill)
-      canvas.drawCircle(cp.x, cp.y, PEN_HANDLE_RADIUS, handlePaint)
+      drawPenHandlePoint(canvas, cp.x, cp.y, vertexFill, handlePaint)
     }
     if (te.x !== 0 || te.y !== 0) {
       const e = toScreen(vertices[seg.end].x, vertices[seg.end].y)
       const cp = toScreen(vertices[seg.end].x + te.x, vertices[seg.end].y + te.y)
       canvas.drawLine(e.x, e.y, cp.x, cp.y, handlePaint)
-      canvas.drawCircle(cp.x, cp.y, PEN_HANDLE_RADIUS, vertexFill)
-      canvas.drawCircle(cp.x, cp.y, PEN_HANDLE_RADIUS, handlePaint)
+      drawPenHandlePoint(canvas, cp.x, cp.y, vertexFill, handlePaint)
     }
   }
 
@@ -643,11 +653,29 @@ export function drawPenOverlay(
     const cp1 = toScreen(last.x + dragTangent.x, last.y + dragTangent.y)
     const cp2 = toScreen(last.x - dragTangent.x, last.y - dragTangent.y)
     canvas.drawLine(cp2.x, cp2.y, cp1.x, cp1.y, handlePaint)
-    canvas.drawCircle(cp1.x, cp1.y, PEN_HANDLE_RADIUS, vertexFill)
-    canvas.drawCircle(cp1.x, cp1.y, PEN_HANDLE_RADIUS, handlePaint)
-    canvas.drawCircle(cp2.x, cp2.y, PEN_HANDLE_RADIUS, vertexFill)
-    canvas.drawCircle(cp2.x, cp2.y, PEN_HANDLE_RADIUS, handlePaint)
+    drawPenHandlePoint(canvas, cp1.x, cp1.y, vertexFill, handlePaint)
+    drawPenHandlePoint(canvas, cp2.x, cp2.y, vertexFill, handlePaint)
   }
+}
+
+export function drawPenOverlay(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  penState: RenderOverlays['penState']
+): void {
+  if (!penState || penState.vertices.length === 0) return
+
+  const { vertices } = penState
+  const vertexFill = r.penVertexFill
+  const vertexStroke = r.penVertexStroke
+
+  const toScreen: ToScreenFn = (x, y) => ({
+    x: x * r.zoom + r.panX,
+    y: y * r.zoom + r.panY
+  })
+
+  buildPenPath(r, canvas, penState, toScreen)
+  drawPenTangentHandles(canvas, penState, toScreen, r.penHandlePaint, vertexFill)
 
   for (let i = 0; i < vertices.length; i++) {
     const v = toScreen(vertices[i].x, vertices[i].y)
@@ -725,7 +753,7 @@ export function drawRemoteCursors(
         const glyphIds = font.getGlyphIDs(cursor.name)
         const widths = font.getGlyphWidths(glyphIds)
         let textWidth = 0
-        for (let i = 0; i < widths.length; i++) textWidth += widths[i]
+        for (const w of widths) textWidth += w
 
         r.auxFill.setColor(r.ck.Color4f(cr, g, b, 1))
         const bgRect = r.ck.RRectXY(

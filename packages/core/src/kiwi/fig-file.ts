@@ -90,7 +90,7 @@ export async function parseFigFile(buffer: ArrayBuffer): Promise<SceneGraph> {
   }
 
   const blobs: Uint8Array[] = (message.blobs ?? []).map((b) =>
-    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes) as number[])
+    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes))
   )
 
   const images = new Map<string, Uint8Array>()

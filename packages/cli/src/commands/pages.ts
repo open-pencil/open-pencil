@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
-import { bold, fmtList, entity, formatType } from '../format'
+import { bold, fmtList, entity } from '../format'
 
 import type { PageItem } from '@open-pencil/core'
 import { executeRpcCommand } from '@open-pencil/core'

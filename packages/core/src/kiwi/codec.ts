@@ -29,7 +29,7 @@ let compiledSchema: CompiledSchema | null = null
  */
 export async function initCodec(): Promise<void> {
   if (compiledSchema) return
-  compiledSchema = compileSchema(figmaSchema as Schema) as CompiledSchema
+  compiledSchema = compileSchema(figmaSchema) as CompiledSchema
 }
 
 export function getCompiledSchema() {
@@ -38,7 +38,7 @@ export function getCompiledSchema() {
 }
 
 export function getSchemaBytes(): Uint8Array {
-  return encodeBinarySchema(figmaSchema as Schema)
+  return encodeBinarySchema(figmaSchema)
 }
 
 /**
@@ -477,7 +477,7 @@ export function encodePaintWithVariableBinding(
   const { colorVariableBinding: _, ...basePaint } = paint
 
   const baseBytes = compiledSchema.encodePaint(basePaint)
-  const baseArray = Array.from(baseBytes) as number[]
+  const baseArray = Array.from(baseBytes)
 
   // Remove trailing 00
   if (baseArray[baseArray.length - 1] === 0) {

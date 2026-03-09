@@ -1,6 +1,5 @@
-import { SceneGraph } from './scene-graph'
-
 import type {
+  SceneGraph,
   SceneNode,
   NodeType,
   Fill,
@@ -234,11 +233,11 @@ class FigmaNodeProxy {
   set cornerRadius(v: number | typeof MIXED) {
     if (v === MIXED) return
     this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
-      cornerRadius: v as number,
-      topLeftRadius: v as number,
-      topRightRadius: v as number,
-      bottomRightRadius: v as number,
-      bottomLeftRadius: v as number,
+      cornerRadius: v,
+      topLeftRadius: v,
+      topRightRadius: v,
+      bottomRightRadius: v,
+      bottomLeftRadius: v,
       independentCorners: false
     })
   }
@@ -705,7 +704,7 @@ class FigmaNodeProxy {
   set layoutAlign(v: string) {
     const mapped = v === 'STRETCH' ? 'STRETCH' : 'AUTO'
     this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
-      layoutAlignSelf: mapped as SceneNode['layoutAlignSelf']
+      layoutAlignSelf: mapped
     })
   }
 
@@ -1101,7 +1100,7 @@ export class FigmaAPI {
 
   ungroup(node: FigmaNodeProxy): void {
     const raw = this.graph.getNode(node[INTERNAL_ID])
-    if (!raw || raw.type !== 'GROUP') return
+    if (raw?.type !== 'GROUP') return
     const parentId = raw.parentId ?? this._currentPageId
     for (const childId of [...raw.childIds]) {
       this.graph.reparentNode(childId, parentId)
@@ -1293,10 +1292,13 @@ export class FigmaAPI {
 
   notify(message: string): { cancel: () => void } {
     if (typeof console !== 'undefined') console.log(`[figma.notify] ${message}`)
+    // eslint-disable-next-line no-empty-function
     return { cancel() {} }
   }
 
+  // eslint-disable-next-line no-empty-function
   commitUndo(): void {}
+  // eslint-disable-next-line no-empty-function
   triggerUndo(): void {}
 
   exportImage?: (

@@ -20,6 +20,7 @@ const sessions = new Map<string, { server: ReturnType<typeof createServer>; tran
 
 async function getOrCreateSession(sessionId?: string) {
   if (sessionId && sessions.has(sessionId)) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by has() above
     return sessions.get(sessionId)!
   }
 
@@ -79,7 +80,7 @@ app.all('/mcp', async (c) => {
   return transport.handleRequest(c.req.raw)
 })
 
-const isBun = typeof globalThis.Bun !== 'undefined'
+const isBun = 'Bun' in globalThis
 
 if (isBun) {
   Bun.serve({ fetch: app.fetch, port, hostname: host })

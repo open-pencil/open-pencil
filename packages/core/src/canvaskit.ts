@@ -62,5 +62,5 @@ export async function getCanvasKit(options?: CanvasKitOptions): Promise<CanvasKi
     })
   }
 
-  return instance!
+  return instance
 }

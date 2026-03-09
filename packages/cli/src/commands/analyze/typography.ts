@@ -91,7 +91,7 @@ export default defineCommand({
     }
 
     console.log('')
-    console.log(fmtSummary({ 'unique styles': data.styles.length }) + ` from ${data.totalTextNodes} text nodes`)
+    console.log(fmtSummary({ 'unique styles': data.styles.length, 'text nodes': data.totalTextNodes }))
     console.log('')
   }
 })

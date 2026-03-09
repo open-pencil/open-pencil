@@ -11,9 +11,9 @@ export function parseColor(input: string): Color {
   if (!parsed) return { ...BLACK }
   const rgb = toRgb(parsed)
   return {
-    r: rgb?.r ?? 0,
-    g: rgb?.g ?? 0,
-    b: rgb?.b ?? 0,
+    r: rgb.r,
+    g: rgb.g,
+    b: rgb.b,
     a: parsed.alpha ?? 1
   }
 }
@@ -24,14 +24,14 @@ export function normalizeColor(color?: Partial<Color>): Color {
 }
 
 export function colorToHex(color: Color): string {
-  return (formatHex({ mode: 'rgb', r: color.r, g: color.g, b: color.b }) ?? '#000000').toUpperCase()
+  return formatHex({ mode: 'rgb', r: color.r, g: color.g, b: color.b }).toUpperCase()
 }
 
 export function colorToHex8(color: Color, alpha?: number): string {
   const a = alpha ?? color.a
   if (a >= 1) return colorToHex(color)
   return (
-    formatHex8({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: a }) ?? '#000000FF'
+    formatHex8({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: a })
   ).toUpperCase()
 }
 
@@ -49,7 +49,7 @@ export function colorToRgba255(color: Color) {
 }
 
 export function colorToCSS(color: Color): string {
-  return formatRgb({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a }) ?? 'rgb(0, 0, 0)'
+  return formatRgb({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a })
 }
 
 export function colorToCSSCompact(color: Color): string {

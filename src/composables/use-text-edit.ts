@@ -105,6 +105,48 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
     resetBlink()
   }
 
+  function handleHorizontalArrow(e: KeyboardEvent, editor: NonNullable<typeof store.textEditor>) {
+    const select = e.shiftKey
+    const isMeta = e.metaKey || e.ctrlKey
+    if (e.key === 'ArrowLeft') {
+      if (isMeta) editor.moveToLineStart(select)
+      else if (e.altKey) editor.moveWordLeft(select)
+      else editor.moveLeft(select)
+    } else {
+      if (isMeta) editor.moveToLineEnd(select)
+      else if (e.altKey) editor.moveWordRight(select)
+      else editor.moveRight(select)
+    }
+  }
+
+  function handleDeletion(
+    e: KeyboardEvent,
+    editor: NonNullable<typeof store.textEditor>,
+    node: SceneNode
+  ) {
+    const isMeta = e.metaKey || e.ctrlKey
+    const forward = e.key === 'Delete'
+    if (forward) {
+      if (isMeta) editor.moveToLineEnd(true)
+      else if (e.altKey) editor.moveWordRight(true)
+    } else {
+      if (isMeta) editor.moveToLineStart(true)
+      else if (e.altKey) editor.moveWordLeft(true)
+    }
+    deleteText(node, forward)
+  }
+
+  type MetaAction = (node: SceneNode) => void
+  const metaKeyActions: Partial<Record<string, MetaAction>> = {
+    a: () => store.textEditor?.selectAll(),
+    c: () => handleCopy(),
+    x: (node) => handleCut(node),
+    v: (node) => void handlePaste(node),
+    b: (node) => toggleBold(node),
+    i: (node) => toggleItalic(node),
+    u: (node) => toggleUnderline(node)
+  }
+
   function onKeyDown(e: KeyboardEvent) {
     if (isComposing) return
     const editor = store.textEditor
@@ -125,40 +167,13 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
         textChanged = true
         break
       case 'Backspace':
-        if (isMeta) {
-          editor.moveToLineStart(true)
-        } else if (e.altKey) {
-          editor.moveWordLeft(true)
-        }
-        deleteText(node, false)
-        textChanged = true
-        break
       case 'Delete':
-        if (isMeta) {
-          editor.moveToLineEnd(true)
-        } else if (e.altKey) {
-          editor.moveWordRight(true)
-        }
-        deleteText(node, true)
+        handleDeletion(e, editor, node)
         textChanged = true
         break
       case 'ArrowLeft':
-        if (isMeta) {
-          editor.moveToLineStart(e.shiftKey)
-        } else if (e.altKey) {
-          editor.moveWordLeft(e.shiftKey)
-        } else {
-          editor.moveLeft(e.shiftKey)
-        }
-        break
       case 'ArrowRight':
-        if (isMeta) {
-          editor.moveToLineEnd(e.shiftKey)
-        } else if (e.altKey) {
-          editor.moveWordRight(e.shiftKey)
-        } else {
-          editor.moveRight(e.shiftKey)
-        }
+        handleHorizontalArrow(e, editor)
         break
       case 'ArrowUp':
         editor.moveUp(e.shiftKey)
@@ -172,50 +187,14 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
       case 'End':
         editor.moveToLineEnd(e.shiftKey)
         break
-      case 'a':
-        if (isMeta) {
-          editor.selectAll()
-          break
-        }
+      default: {
+        if (!isMeta) return
+        const action = metaKeyActions[e.key]
+        if (!action) return
+        action(node)
+        e.preventDefault()
         return
-      case 'c':
-        if (isMeta) {
-          handleCopy()
-          e.preventDefault()
-        }
-        return
-      case 'x':
-        if (isMeta) {
-          handleCut(node)
-          e.preventDefault()
-        }
-        return
-      case 'v':
-        if (isMeta) {
-          void handlePaste(node)
-          e.preventDefault()
-        }
-        return
-      case 'b':
-        if (isMeta) {
-          toggleBold(node)
-          e.preventDefault()
-        }
-        return
-      case 'i':
-        if (isMeta) {
-          toggleItalic(node)
-          e.preventDefault()
-        }
-        return
-      case 'u':
-        if (isMeta) {
-          toggleUnderline(node)
-          e.preventDefault()
-        }
-        return
-      default:
-        return
+      }
     }
 
     if (!textChanged) {

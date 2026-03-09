@@ -25,14 +25,14 @@ function variableValueToKiwi(
   value: VariableValue,
   type: string
 ): { value: Record<string, unknown>; dataType: string; resolvedDataType: string } {
-  if (typeof value === 'object' && value !== null && 'aliasId' in value) {
+  if (typeof value === 'object' && 'aliasId' in value) {
     return {
       value: { alias: { guid: stringToGuid(value.aliasId) } },
       dataType: 'ALIAS',
-      resolvedDataType: type === 'COLOR' ? 'COLOR' : type === 'BOOLEAN' ? 'BOOLEAN' : type === 'STRING' ? 'STRING' : 'FLOAT'
+      resolvedDataType: { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }[type] ?? 'FLOAT'
     }
   }
-  if (type === 'COLOR' && typeof value === 'object' && value !== null && 'r' in value) {
+  if (type === 'COLOR' && typeof value === 'object' && 'r' in value) {
     return {
       value: { colorValue: { r: value.r, g: value.g, b: value.b, a: value.a } },
       dataType: 'COLOR',
@@ -165,14 +165,8 @@ export async function exportFigFile(
         if (!variable) continue
 
         const varGuid = stringToGuid(varId)
-        const resolvedType =
-          variable.type === 'COLOR'
-            ? 'COLOR'
-            : variable.type === 'BOOLEAN'
-              ? 'BOOLEAN'
-              : variable.type === 'STRING'
-                ? 'STRING'
-                : 'FLOAT'
+        const typeMap: Record<string, string> = { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }
+        const resolvedType = typeMap[variable.type] ?? 'FLOAT'
 
         const entries = Object.entries(variable.valuesByMode).map(([modeId, value]) => ({
           modeID: stringToGuid(modeId),

@@ -147,6 +147,46 @@ const noHandRolledColor = {
   },
 }
 
+const noRawConsoleFormat = {
+  meta: {
+    docs: {
+      description:
+        'Disallow hand-rolled formatting in console.log — use agentfmt helpers (bold, dim, kv, entity, fmtTree, fmtList, etc.)',
+    },
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (
+          node.callee?.type !== 'MemberExpression' ||
+          node.callee.object?.type !== 'Identifier' ||
+          node.callee.object.name !== 'console' ||
+          node.callee.property?.type !== 'Identifier' ||
+          node.callee.property.name !== 'log'
+        ) return
+        if (!node.arguments?.length) return
+
+        for (const arg of node.arguments) {
+          if (arg.type === 'TemplateLiteral' && arg.expressions?.length > 0) {
+            context.report({
+              node,
+              message: 'Use agentfmt helpers (bold, dim, kv, entity, etc.) instead of template literals in console.log.',
+            })
+            return
+          }
+          if (arg.type === 'BinaryExpression' && arg.operator === '+') {
+            context.report({
+              node,
+              message: 'Use agentfmt helpers (bold, dim, kv, entity, etc.) instead of string concatenation in console.log.',
+            })
+            return
+          }
+        }
+      },
+    }
+  },
+}
+
 const plugin = {
   meta: { name: 'open-pencil' },
   rules: {
@@ -154,6 +194,7 @@ const plugin = {
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-math-random': noMathRandom,
     'no-hand-rolled-color': noHandRolledColor,
+    'no-raw-console-format': noRawConsoleFormat,
   },
 }
 

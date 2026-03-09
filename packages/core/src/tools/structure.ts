@@ -78,7 +78,7 @@ export const groupNodes = defineTool({
       .map((id) => figma.getNodeById(id))
       .filter((n): n is FigmaNodeProxy => n !== null)
     if (nodes.length < 2) return { error: 'Need at least 2 nodes to group' }
-    const parent = nodes[0]!.parent ?? figma.currentPage
+    const parent = nodes[0].parent ?? figma.currentPage
     const group = figma.group(nodes, parent)
     return nodeSummary(group)
   }
@@ -304,7 +304,7 @@ export const arrangeNodes = defineTool({
     }
 
     if (nodes.length === 0) return { error: 'No nodes to arrange' }
-    const first = nodes[0]!
+    const first = nodes[0]
 
     if (mode === 'row') {
       let x = first.x
@@ -330,7 +330,7 @@ export const arrangeNodes = defineTool({
       let rowHeight = 0
 
       for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i]!
+        const node = nodes[i]
         if (i > 0 && i % cols === 0) {
           x = startX
           y += rowHeight + gap

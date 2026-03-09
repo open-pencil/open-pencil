@@ -59,7 +59,7 @@ function mapGridTrack(track: GridTrack): { type: GridTrackType; value: number } 
       return { type: GridTrackType.Fr, value: track.value }
     case 'FIXED':
       return { type: GridTrackType.Points, value: track.value }
-    case 'AUTO':
+    default:
       return { type: GridTrackType.Auto, value: 0 }
   }
 }
@@ -156,8 +156,7 @@ function buildYogaTree(graph: SceneGraph, frame: SceneNode): YogaNode {
   )
 
   const children = graph.getChildren(frame.id)
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i]
+  for (const child of children) {
 
     if (child.layoutPositioning === 'ABSOLUTE') continue
 
@@ -352,6 +351,7 @@ function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode
 
     const yogaChild = yogaNode.getChild(yogaIndex)
     yogaIndex++
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!yogaChild) continue
 
     graph.updateNode(child.id, {

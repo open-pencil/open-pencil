@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
-import { bold, fmtList, fmtSummary } from '../format'
+import { bold, entity, fmtList, fmtSummary } from '../format'
 import { executeRpcCommand } from '@open-pencil/core'
 
 import type { VariablesResult } from '@open-pencil/core'
@@ -38,7 +38,7 @@ export default defineCommand({
     console.log('')
 
     for (const coll of data.collections) {
-      console.log(bold(`  ${coll.name}`) + ` (${coll.modes.join(', ')})`)
+      console.log(bold(entity(coll.name, coll.modes.join(', '))))
       console.log('')
       console.log(
         fmtList(

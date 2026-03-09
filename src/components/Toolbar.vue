@@ -17,11 +17,11 @@ import IconUngroup from '~icons/lucide/ungroup'
 import IconLock from '~icons/lucide/lock'
 
 import { ACTION_TOAST_DURATION } from '@/constants'
-import { useEditorStore } from '@/stores/editor'
+import { TOOLS, useEditorStore } from '@/stores/editor'
 import { toolIcons } from '@/utils/tools'
 
 import type { Component } from 'vue'
-import type { Tool } from '@/stores/editor'
+import type { Tool, ToolDef } from '@/stores/editor'
 
 const store = useEditorStore()
 const breakpoints = useBreakpoints({ mobile: 768 })
@@ -53,6 +53,16 @@ const toolShortcuts: Record<Tool, string> = {
   PEN: 'P',
   TEXT: 'T',
   HAND: 'H'
+}
+
+function isActive(tool: ToolDef): boolean {
+  if (tool.key === store.state.activeTool) return true
+  return tool.flyout?.includes(store.state.activeTool) ?? false
+}
+
+function activeKeyForTool(tool: ToolDef): Tool {
+  if (tool.flyout?.includes(store.state.activeTool)) return store.state.activeTool
+  return tool.key
 }
 
 interface ActionItem {

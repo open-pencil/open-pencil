@@ -5,7 +5,8 @@ import {
   CJK_FALLBACK_FAMILIES_MACOS,
   CJK_FALLBACK_FAMILIES_WINDOWS,
   CJK_FALLBACK_FAMILIES_LINUX,
-  CJK_GOOGLE_FONT
+  CJK_GOOGLE_FONT,
+  GOOGLE_FONTS_API_KEY
 } from './constants'
 import type { SceneGraph } from './scene-graph'
 
@@ -58,8 +59,6 @@ export async function listFamilies(): Promise<string[]> {
 const BUNDLED_FONTS: Record<string, string> = {
   'Inter|Regular': '/Inter-Regular.ttf'
 }
-
-import { GOOGLE_FONTS_API_KEY } from './constants'
 
 const googleFontsCache = new Map<string, Record<string, string>>()
 const googleFontsFailed = new Set<string>()
@@ -136,7 +135,7 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
   }
 
   // Try local font access API first (browser only)
-  if (typeof window !== 'undefined' && window.queryLocalFonts) {
+  if (window.queryLocalFonts) {
     try {
       const fonts = await window.queryLocalFonts()
       const normalized = normalizeFontFamily(family)
@@ -261,7 +260,7 @@ export function collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[st
       fontKeys.add(`${family}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
       for (const run of node.styleRuns) {
         const f = run.style.fontFamily ?? family
-        const w = run.style.fontWeight ?? node.fontWeight ?? 400
+        const w = run.style.fontWeight ?? node.fontWeight
         const i = run.style.italic ?? node.italic
         fontKeys.add(`${f}\0${weightToStyle(w, i)}`)
       }

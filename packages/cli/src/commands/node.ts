@@ -5,7 +5,7 @@ import { isAppMode, requireFile, rpc } from '../app-client'
 import { fmtNode, printError, formatType } from '../format'
 import { executeRpcCommand, colorToHex } from '@open-pencil/core'
 
-import type { NodeResult } from '@open-pencil/core'
+import type { Color, NodeResult } from '@open-pencil/core'
 
 async function getData(file: string | undefined, id: string): Promise<NodeResult | { error: string }> {
   if (isAppMode(file)) return rpc<NodeResult>('node', { id })
@@ -47,7 +47,7 @@ export default defineCommand({
     if (data.parent) details.parent = `${data.parent.name} (${data.parent.id})`
     if (data.text) details.text = data.text
     if (data.fills.length > 0) {
-      const solid = (data.fills as Array<{ type: string; visible: boolean; color: { r: number; g: number; b: number; a: number }; opacity: number }>)
+      const solid = (data.fills as Array<{ type: string; visible: boolean; color: Color; opacity: number }>)
         .find((f) => f.type === 'SOLID' && f.visible)
       if (solid) {
         const hex = colorToHex(solid.color)

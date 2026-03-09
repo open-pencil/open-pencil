@@ -12,16 +12,109 @@ const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']
 const ALL_FORMATS = [...RASTER_FORMATS, 'SVG', 'JSX']
 const JSX_STYLES = ['openpencil', 'tailwind']
 
+interface ExportArgs {
+  file?: string
+  output?: string
+  format: string
+  scale: string
+  quality?: string
+  page?: string
+  node?: string
+  style: string
+  thumbnail?: boolean
+  width: string
+  height: string
+}
+
+async function writeAndLog(path: string, content: string | Uint8Array) {
+  await Bun.write(path, content)
+  const size = typeof content === 'string' ? content.length : content.length
+  console.log(ok(`Exported ${path} (${(size / 1024).toFixed(1)} KB)`))
+}
+
+async function exportViaApp(format: string, args: ExportArgs) {
+  if (format === 'SVG') {
+    const result = await rpc<{ svg: string }>('tool', { name: 'export_svg', args: { ids: args.node ? [args.node] : undefined } })
+    if (!result.svg) { printError('Nothing to export.'); process.exit(1) }
+    await writeAndLog(resolve(args.output ?? 'export.svg'), result.svg)
+    return
+  }
+
+  if (format === 'JSX') {
+    const result = await rpc<{ jsx: string }>('export_jsx', { nodeIds: args.node ? [args.node] : undefined, style: args.style })
+    if (!result.jsx) { printError('Nothing to export.'); process.exit(1) }
+    await writeAndLog(resolve(args.output ?? 'export.jsx'), result.jsx)
+    return
+  }
+
+  const result = await rpc<{ base64: string }>('export', {
+    nodeIds: args.node ? [args.node] : undefined,
+    scale: Number(args.scale),
+    format: format.toLowerCase()
+  })
+  const data = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))
+  const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
+  await writeAndLog(resolve(args.output ?? `export.${ext}`), data)
+}
+
+async function exportFromFile(format: string, args: ExportArgs) {
+  const file = requireFile(args.file)
+  const graph = await loadDocument(file)
+  await loadFonts(graph)
+
+  const pages = graph.getPages()
+  const page = args.page ? pages.find((p) => p.name === args.page) : pages[0]
+  if (!page) { printError(`Page "${args.page}" not found.`); process.exit(1) }
+
+  const defaultName = basename(file, extname(file))
+
+  if (format === 'JSX') {
+    const nodeIds = args.node ? [args.node] : page.childIds
+    const jsxStr = nodeIds.length === 1
+      ? sceneNodeToJSX(nodeIds[0], graph, args.style as JSXFormat)
+      : selectionToJSX(nodeIds, graph, args.style as JSXFormat)
+    if (!jsxStr) { printError('Nothing to export (empty page or no visible nodes).'); process.exit(1) }
+    await writeAndLog(resolve(args.output ?? `${defaultName}.jsx`), jsxStr)
+    return
+  }
+
+  const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
+  const output = resolve(args.output ?? `${defaultName}.${ext}`)
+
+  if (format === 'SVG') {
+    const nodeIds = args.node ? [args.node] : page.childIds
+    const svgStr = renderNodesToSVG(graph, page.id, nodeIds)
+    if (!svgStr) { printError('Nothing to export (empty page or no visible nodes).'); process.exit(1) }
+    await writeAndLog(output, svgStr)
+    return
+  }
+
+  let data: Uint8Array | null
+  if (args.thumbnail) {
+    data = await exportThumbnail(graph, page.id, Number(args.width), Number(args.height))
+  } else {
+    const nodeIds = args.node ? [args.node] : page.childIds
+    data = await exportNodes(graph, page.id, nodeIds, {
+      scale: Number(args.scale),
+      format: format as ExportFormat,
+      quality: args.quality ? Number(args.quality) : undefined
+    })
+  }
+
+  if (!data) { printError('Nothing to export (empty page or no visible nodes).'); process.exit(1) }
+  await writeAndLog(output, data)
+}
+
 export default defineCommand({
   meta: { description: 'Export a .fig file to PNG, JPG, WEBP, SVG, or JSX' },
   args: {
     file: { type: 'positional', description: '.fig file path (omit to connect to running app)', required: false },
-    output: { type: 'string', alias: 'o', description: 'Output file path (default: <name>.<format>)' },
+    output: { type: 'string', alias: 'o', description: 'Output file path (default: <name>.<format>)', required: false },
     format: { type: 'string', alias: 'f', description: 'Export format: png, jpg, webp, svg, jsx (default: png)', default: 'png' },
     scale: { type: 'string', alias: 's', description: 'Export scale (default: 1)', default: '1' },
-    quality: { type: 'string', alias: 'q', description: 'Quality 0-100 for JPG/WEBP (default: 90)' },
-    page: { type: 'string', description: 'Page name (default: first page)' },
-    node: { type: 'string', description: 'Node ID to export (default: all top-level nodes)' },
+    quality: { type: 'string', alias: 'q', description: 'Quality 0-100 for JPG/WEBP (default: 90)', required: false },
+    page: { type: 'string', description: 'Page name (default: first page)', required: false },
+    node: { type: 'string', description: 'Node ID to export (default: all top-level nodes)', required: false },
     style: { type: 'string', description: 'JSX style: openpencil, tailwind (default: openpencil)', default: 'openpencil' },
     thumbnail: { type: 'boolean', description: 'Export page thumbnail instead of full render' },
     width: { type: 'string', description: 'Thumbnail width (default: 1920)', default: '1920' },
@@ -40,114 +133,9 @@ export default defineCommand({
     }
 
     if (isAppMode(args.file)) {
-      if (format === 'SVG') {
-        const result = await rpc<{ svg: string }>('tool', { name: 'export_svg', args: { ids: args.node ? [args.node] : undefined } })
-        if (!result.svg) {
-          printError('Nothing to export.')
-          process.exit(1)
-        }
-        const output = resolve(args.output ?? 'export.svg')
-        await Bun.write(output, result.svg)
-        console.log(ok(`Exported ${output} (${(result.svg.length / 1024).toFixed(1)} KB)`))
-        return
-      }
-
-      if (format === 'JSX') {
-        const result = await rpc<{ jsx: string }>('export_jsx', {
-          nodeIds: args.node ? [args.node] : undefined,
-          style: args.style
-        })
-        if (!result.jsx) {
-          printError('Nothing to export.')
-          process.exit(1)
-        }
-        const output = resolve(args.output ?? 'export.jsx')
-        await Bun.write(output, result.jsx)
-        console.log(ok(`Exported ${output} (${(result.jsx.length / 1024).toFixed(1)} KB)`))
-        return
-      }
-
-      const result = await rpc<{ base64: string }>('export', {
-        nodeIds: args.node ? [args.node] : undefined,
-        scale: Number(args.scale),
-        format: format.toLowerCase()
-      })
-      const data = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))
-      const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
-      const output = resolve(args.output ?? `export.${ext}`)
-      await Bun.write(output, data)
-      console.log(ok(`Exported ${output} (${(data.length / 1024).toFixed(1)} KB)`))
-      return
-    }
-
-    const file = requireFile(args.file)
-    const graph = await loadDocument(file)
-    await loadFonts(graph)
-
-    const pages = graph.getPages()
-    const page = args.page
-      ? pages.find((p) => p.name === args.page)
-      : pages[0]
-
-    if (!page) {
-      printError(`Page "${args.page}" not found.`)
-      process.exit(1)
-    }
-
-    const defaultName = basename(file, extname(file))
-
-    if (format === 'JSX') {
-      const jsxFormat = args.style as JSXFormat
-      const nodeIds = args.node ? [args.node] : page.childIds
-      const jsxStr = nodeIds.length === 1
-        ? sceneNodeToJSX(nodeIds[0], graph, jsxFormat)
-        : selectionToJSX(nodeIds, graph, jsxFormat)
-
-      if (!jsxStr) {
-        printError('Nothing to export (empty page or no visible nodes).')
-        process.exit(1)
-      }
-
-      const output = resolve(args.output ?? `${defaultName}.jsx`)
-      await Bun.write(output, jsxStr)
-      console.log(ok(`Exported ${output} (${(jsxStr.length / 1024).toFixed(1)} KB)`))
-      return
-    }
-
-    const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
-    const output = resolve(args.output ?? `${defaultName}.${ext}`)
-
-    if (format === 'SVG') {
-      const nodeIds = args.node ? [args.node] : page.childIds
-      const svgStr = renderNodesToSVG(graph, page.id, nodeIds)
-      if (!svgStr) {
-        printError('Nothing to export (empty page or no visible nodes).')
-        process.exit(1)
-      }
-      await Bun.write(output, svgStr)
-      console.log(ok(`Exported ${output} (${(svgStr.length / 1024).toFixed(1)} KB)`))
-      return
-    }
-
-    let data: Uint8Array | null
-
-    if (args.thumbnail) {
-      data = await exportThumbnail(graph, page.id, Number(args.width), Number(args.height))
+      await exportViaApp(format, args)
     } else {
-      const nodeIds = args.node ? [args.node] : page.childIds
-      data = await exportNodes(graph, page.id, nodeIds, {
-        scale: Number(args.scale),
-        format,
-        quality: args.quality ? Number(args.quality) : undefined
-      })
+      await exportFromFile(format, args)
     }
-
-    if (!data) {
-      printError('Nothing to export (empty page or no visible nodes).')
-      process.exit(1)
-    }
-
-    await Bun.write(output, data)
-    console.log(ok(`Exported ${output} (${(data.length / 1024).toFixed(1)} KB)`))
   }
 })

@@ -15,6 +15,7 @@
 - Double-click on layer tree no longer toggles expand/collapse — use the chevron instead
 - Page rename input matches layer rename styling
 
+
 ### Performance
 
 - Replace `structuredClone` with typed copy helpers for fills, strokes, effects, and style runs (~24× faster in hot paths)
@@ -23,6 +24,8 @@
 
 ### Improvements
 
+- Auto-layout icons in layer tree — vertical (rows), horizontal (columns), and grid icons for auto-layout frames; components keep their purple diamond
+- Frame titles on canvas are now draggable — clicking a selected top-level frame's name label starts a drag
 - Compact layout controls — icon-based gap (↔/↕) and padding (T/R/B/L) inputs instead of text labels
 - Auto-detect horizontal vs vertical direction when wrapping in auto layout (Shift+A)
 - Fix alignment grid for vertical layouts — visual positions now match spatial axes

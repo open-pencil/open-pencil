@@ -7,6 +7,7 @@
 
 import type { FigmaAPI } from '../figma-api'
 import type { ToolDef, ParamDef, ParamType } from './schema'
+import type * as valibot from 'valibot'
 
 export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
@@ -39,7 +40,7 @@ export function toolsToAI(
   tools: ToolDef[],
   options: AIAdapterOptions,
   deps: {
-    v: typeof import('valibot')
+    v: typeof valibot
     valibotSchema: (schema: any) => any
     tool: (opts: any) => any
   }
@@ -77,7 +78,7 @@ export function toolsToAI(
   return result
 }
 
-function paramToValibot(v: typeof import('valibot'), param: ParamDef): unknown {
+function paramToValibot(v: typeof valibot, param: ParamDef): unknown {
   const typeMap: Record<ParamType, () => unknown> = {
     string: () => (param.enum ? v.picklist(param.enum as [string, ...string[]]) : v.string()),
     number: () => {

@@ -9,7 +9,7 @@ import type { AnalyzeClustersResult } from '@open-pencil/core'
 
 function calcConfidence(nodes: Array<{ width: number; height: number; childCount: number }>): number {
   if (nodes.length < 2) return 100
-  const base = nodes[0]!
+  const base = nodes[0]
   let score = 0
   for (const node of nodes.slice(1)) {
     const sizeDiff = Math.abs(node.width - base.width) + Math.abs(node.height - base.height)
@@ -24,7 +24,7 @@ function calcConfidence(nodes: Array<{ width: number; height: number; childCount
 
 function formatSignature(sig: string): string {
   const [typeSize, children] = sig.split('|')
-  const type = typeSize?.split(':')[0]
+  const type = typeSize.split(':')[0]
   if (!type) return sig
   const typeName = type.charAt(0) + type.slice(1).toLowerCase()
   if (!children) return typeName
@@ -73,7 +73,7 @@ export default defineCommand({
     console.log('')
 
     const items = data.clusters.map((c) => {
-      const first = c.nodes[0]!
+      const first = c.nodes[0]
       const confidence = calcConfidence(c.nodes)
 
       const widths = c.nodes.map((n) => n.width)
@@ -102,10 +102,11 @@ export default defineCommand({
 
     const clusteredNodes = data.clusters.reduce((sum, c) => sum + c.nodes.length, 0)
     console.log('')
-    console.log(
-      fmtSummary({ clusters: data.clusters.length }) +
-        ` from ${data.totalNodes} nodes (${clusteredNodes} clustered)`
-    )
+    console.log(fmtSummary({
+      clusters: data.clusters.length,
+      'total nodes': data.totalNodes,
+      clustered: clusteredNodes
+    }))
     console.log('')
   }
 })

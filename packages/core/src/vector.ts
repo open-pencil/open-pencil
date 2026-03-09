@@ -54,7 +54,7 @@ export function decodeVectorNetworkBlob(
     vertices.push({
       x,
       y,
-      handleMirroring: (override?.handleMirroring as HandleMirroring) ?? 'NONE'
+      handleMirroring: (override?.handleMirroring as HandleMirroring | undefined) ?? 'NONE'
     })
   }
 
@@ -301,6 +301,7 @@ function buildChains(segments: VectorSegment[], _vertexCount: number): number[][
     let current = startVertex
     const chain: number[] = []
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     while (true) {
       const segs = adj.get(current)
       if (!segs) break
@@ -367,7 +368,7 @@ export function geometryBlobToPath(
   windingRule: WindingRule
 ): Path {
   const path = new ck.Path()
-  if (!blob || !(blob.buffer instanceof ArrayBuffer)) return path
+  if (!(blob.buffer instanceof ArrayBuffer)) return path
   const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   let o = 0
 
