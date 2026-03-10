@@ -19,7 +19,6 @@ import {
   computeVectorBounds,
   exportFigFile,
   importClipboardNodes,
-  figmaNodesBounds,
   parseFigmaClipboard,
   parseOpenPencilClipboard,
   buildFigmaClipboardHTML,
@@ -182,9 +181,8 @@ export function createEditorStore() {
     } | null,
     penCursorX: null as number | null,
     penCursorY: null as number | null,
-    cursorCanvasX: 0,
-    cursorCanvasY: 0,
-    cursorOnCanvas: false,
+    cursorCanvasX: null as number | null,
+    cursorCanvasY: null as number | null,
     remoteCursors: [] as Array<{
       name: string
       color: Color
@@ -1933,6 +1931,28 @@ export function createEditorStore() {
     clipboardData.setData('text/plain', names)
   }
 
+  function centerNodesAt(nodeIds: string[], cx: number, cy: number) {
+    let minX = Infinity
+    let minY = Infinity
+    let maxX = -Infinity
+    let maxY = -Infinity
+    for (const id of nodeIds) {
+      const n = graph.getNode(id)
+      if (!n) continue
+      minX = Math.min(minX, n.x)
+      minY = Math.min(minY, n.y)
+      maxX = Math.max(maxX, n.x + n.width)
+      maxY = Math.max(maxY, n.y + n.height)
+    }
+    if (minX === Infinity) return
+    const dx = cx - (minX + maxX) / 2
+    const dy = cy - (minY + maxY) / 2
+    for (const id of nodeIds) {
+      const n = graph.getNode(id)
+      if (n) graph.updateNode(id, { x: n.x + dx, y: n.y + dy })
+    }
+  }
+
   function collectSubtrees(g: SceneGraph, rootIds: string[]): SceneNode[] {
     const result: SceneNode[] = []
     function walk(id: string) {
@@ -1963,22 +1983,19 @@ export function createEditorStore() {
 
     void parseFigmaClipboard(html).then((figma) => {
       if (figma) {
-        const bounds = figmaNodesBounds(figma.nodes)
-        const cx = cursorPos?.x ?? (-state.panX + window.innerWidth / 2) / state.zoom
-        const cy = cursorPos?.y ?? (-state.panY + window.innerHeight / 2) / state.zoom
-        const offsetX = bounds ? cx - (bounds.x + bounds.w / 2) : 0
-        const offsetY = bounds ? cy - (bounds.y + bounds.h / 2) : 0
-
         const prevSelection = new Set(state.selectedIds)
         const created = importClipboardNodes(
           figma.nodes,
           graph,
           state.currentPageId,
-          offsetX,
-          offsetY,
+          0,
+          0,
           figma.blobs
         )
         if (created.length > 0) {
+          const cx = cursorPos?.x ?? (-state.panX + window.innerWidth / 2) / state.zoom
+          const cy = cursorPos?.y ?? (-state.panY + window.innerHeight / 2) / state.zoom
+          centerNodesAt(created, cx, cy)
           computeAllLayouts(graph, state.currentPageId)
           state.selectedIds = new Set(created)
 

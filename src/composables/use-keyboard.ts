@@ -75,9 +75,8 @@ export function useKeyboard() {
     if (isEditing(e)) return
     e.preventDefault()
 
-    const cursorPos = store.state.cursorOnCanvas
-      ? { x: store.state.cursorCanvasX, y: store.state.cursorCanvasY }
-      : undefined
+    const { cursorCanvasX: ccx, cursorCanvasY: ccy } = store.state
+    const cursorPos = ccx != null && ccy != null ? { x: ccx, y: ccy } : undefined
 
     const imageFiles = extractImageFilesFromClipboard(e)
     if (imageFiles.length) {

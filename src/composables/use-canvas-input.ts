@@ -1277,11 +1277,7 @@ export function useCanvasInput(
   useEventListener(canvasRef, 'mousedown', onMouseDown)
   useEventListener(canvasRef, 'mousemove', onMouseMove)
   useEventListener(canvasRef, 'mouseup', onMouseUp)
-  useEventListener(canvasRef, 'mouseenter', () => {
-    store.state.cursorOnCanvas = true
-  })
   useEventListener(canvasRef, 'mouseleave', () => {
-    store.state.cursorOnCanvas = false
     if (!drag.value) {
       store.setHoveredNode(null)
     }
