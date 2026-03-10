@@ -184,6 +184,7 @@ export function createEditorStore() {
     penCursorY: null as number | null,
     cursorCanvasX: 0,
     cursorCanvasY: 0,
+    cursorOnCanvas: false,
     remoteCursors: [] as Array<{
       name: string
       color: Color

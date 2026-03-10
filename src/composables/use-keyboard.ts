@@ -75,19 +75,20 @@ export function useKeyboard() {
     if (isEditing(e)) return
     e.preventDefault()
 
+    const cursorPos = store.state.cursorOnCanvas
+      ? { x: store.state.cursorCanvasX, y: store.state.cursorCanvasY }
+      : undefined
+
     const imageFiles = extractImageFilesFromClipboard(e)
     if (imageFiles.length) {
-      void store.placeImageFiles(imageFiles, store.state.cursorCanvasX, store.state.cursorCanvasY)
+      const cx = cursorPos?.x ?? (-store.state.panX + window.innerWidth / 2) / store.state.zoom
+      const cy = cursorPos?.y ?? (-store.state.panY + window.innerHeight / 2) / store.state.zoom
+      void store.placeImageFiles(imageFiles, cx, cy)
       return
     }
 
     const html = e.clipboardData?.getData('text/html') ?? ''
-    if (html) {
-      store.pasteFromHTML(html, {
-        x: store.state.cursorCanvasX,
-        y: store.state.cursorCanvasY
-      })
-    }
+    if (html) store.pasteFromHTML(html, cursorPos)
   })
 
   const keys = useMagicKeys({
