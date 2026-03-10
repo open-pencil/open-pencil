@@ -226,6 +226,26 @@ function detectLayoutIssues(node: SceneNode, graph: SceneGraph, issues: Describe
     .map((id) => graph.getNode(id))
     .filter((c): c is SceneNode => c != null && c.visible && c.layoutPositioning !== 'ABSOLUTE')
 
+  // Vertical divider (thin tall rectangle) outside a flex="row" parent
+  if (isAutoLayout) {
+    for (const child of children) {
+      const isVerticalDivider = child.width <= 2 && child.height > 10 && child.type === 'RECTANGLE'
+      const isHorizontalDivider = child.height <= 2 && child.width > 10 && child.type === 'RECTANGLE'
+      if (isVerticalDivider && !isRow) {
+        issues.push({
+          message: `Vertical divider "${child.name}" (${child.width}×${child.height}) is inside a column layout — should be inside flex="row"`,
+          suggestion: 'Move the divider inside the row container it separates, or change to a horizontal divider'
+        })
+      }
+      if (isHorizontalDivider && isRow) {
+        issues.push({
+          message: `Horizontal divider "${child.name}" (${child.width}×${child.height}) is inside a row layout — should be inside flex="col"`,
+          suggestion: 'Move the divider inside the column container it separates'
+        })
+      }
+    }
+  }
+
   if (isAutoLayout) {
     const primarySizing = node.primaryAxisSizing
     const primaryDim = isRow ? node.width : node.height
@@ -242,6 +262,36 @@ function detectLayoutIssues(node: SceneNode, graph: SceneGraph, issues: Describe
           issues.push({
             message: `"${child.name}" has grow=${child.layoutGrow} but parent "${node.name}" is HUG on ${isRow ? 'horizontal' : 'vertical'} axis`,
             suggestion: `Set parent to fixed size, or remove grow from "${child.name}"`
+          })
+        }
+      }
+    }
+
+    // w and grow conflict — grow overrides width
+    for (const child of children) {
+      if (child.layoutGrow > 0 && child.layoutMode === 'NONE') {
+        const fixedDim = isRow ? child.width : child.height
+        if (fixedDim > 0 && fixedDim !== 100) {
+          issues.push({
+            message: `"${child.name}" has both fixed ${isRow ? 'width' : 'height'}=${fixedDim} and grow=${child.layoutGrow} — grow overrides the size`,
+            suggestion: 'Remove the fixed size or remove grow'
+          })
+        }
+      }
+    }
+
+    // Child Rectangle/fill overflows its parent (e.g. bar fill wider than bar bg)
+    for (const child of children) {
+      if (child.layoutPositioning === 'ABSOLUTE') continue
+      for (const grandchildId of child.childIds) {
+        const gc = graph.getNode(grandchildId)
+        if (!gc || !gc.visible) continue
+        const gcDim = isRow ? gc.width : gc.height
+        const parentDim = isRow ? child.width : child.height
+        if (gcDim > parentDim + 1 && !child.clipsContent && parentDim > 0) {
+          issues.push({
+            message: `"${gc.name}" (${Math.round(gcDim)}px) overflows parent "${child.name}" (${Math.round(parentDim)}px)`,
+            suggestion: `Reduce size or add overflow="hidden" on "${child.name}"`
           })
         }
       }

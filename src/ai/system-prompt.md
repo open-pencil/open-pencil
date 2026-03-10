@@ -133,6 +133,35 @@ Left-align body text (default for Latin/Cyrillic). Center only for hero headings
 
 No style={{}}, className, CSS. No named colors or rgb(). No percentage values. No TypeScript casts (as any, as const) — JSX is parsed by sucrase. No template literals in prop values. No Math.random(). No w/h on Text (unless fixed-width wrapping needed).
 
+## Common patterns
+
+**Progress bar / rating bar:**
+```
+<Frame name="Bar" flex="row" w="fill" gap={10} items="center">
+  <Text w={80} size={13} color="#6B7280">Label</Text>
+  <Frame grow={1} h={6} bg="#F3F4F6" rounded={3} overflow="hidden">
+    <Rectangle w={percent * maxWidth} h={6} bg="#F5C518" rounded={3} />
+  </Frame>
+  <Text w={36} size={13} weight="bold" textAlign="right" color="#111827">8.8</Text>
+</Frame>
+```
+Key rules: bar background uses `grow={1}` (no fixed `w`), `overflow="hidden"` to clip the fill. Fill width is a fraction of the bar — calculate from the score. Label is plain Text with `w`, not a Frame wrapper. Never set `h` on label containers to match the row — let items="center" handle vertical alignment.
+
+**Don't mix `w={N}` and `grow={N}`** on the same node — grow overrides width. Use one or the other.
+
+**Don't wrap Text in Frame just for sizing.** If you need `w={80}` on a label, set it directly: `<Text w={80}>`. Only wrap in Frame when you need padding, background, or nested layout.
+
+**Dividers between columns (vertical dividers):**
+A vertical divider (`w={1} h={N}`) must be a sibling inside the same `flex="row"` container as the columns it separates. Use `h="fill"` instead of fixed height so it matches the row height. Example:
+```
+<Frame flex="row" items="center">
+  <Frame grow={1}>…</Frame>
+  <Rectangle w={1} h="fill" bg="#E5E7EB" />
+  <Frame grow={1}>…</Frame>
+</Frame>
+```
+Never place vertical dividers outside their row container. Horizontal dividers (`h={1} w="fill"`) go between sections in a `flex="col"` parent.
+
 ## Icons and shapes
 
 All visual elements (Rectangle, Ellipse, Star, Polygon, Line) have **no fill by default** — they render as invisible without `bg="#hex"` or `stroke="#hex"`.
