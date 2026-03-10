@@ -165,10 +165,10 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'Google AI',
     keyPlaceholder: 'AIza…',
     keyURL: 'https://aistudio.google.com/apikey',
-    defaultModel: 'gemini-3.1-pro',
+    defaultModel: 'gemini-3.1-pro-preview',
     models: [
-      { id: 'gemini-3.1-pro', name: 'Gemini 3.1 Pro', tag: '1M context' },
-      { id: 'gemini-3-flash', name: 'Gemini 3 Flash', tag: 'Fast' }
+      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: '1M context' },
+      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', tag: 'Fast' }
     ]
   },
   {
