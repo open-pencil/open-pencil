@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 
 import { useCanvas } from '@/composables/use-canvas'
+import { useCanvasDrop } from '@/composables/use-canvas-drop'
 import { useCanvasInput } from '@/composables/use-canvas-input'
 import { useCollabInjected } from '@/composables/use-collab'
 import { useTextEdit } from '@/composables/use-text-edit'
@@ -26,6 +27,7 @@ const { cursorOverride } = useCanvasInput(
 )
 
 useTextEdit(canvasRef, store)
+const { isDraggingOver } = useCanvasDrop(canvasRef, store)
 
 watch(
   () => [...store.state.selectedIds],
@@ -54,6 +56,17 @@ const cursor = computed(() => {
         :style="{ cursor }"
         class="block size-full touch-none"
       />
+      <Transition
+        enter-active-class="transition-opacity duration-150"
+        enter-from-class="opacity-0"
+        leave-active-class="transition-opacity duration-150"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="isDraggingOver"
+          class="pointer-events-none absolute inset-0 z-40 border-2 border-dashed border-accent/60 bg-accent/5"
+        />
+      </Transition>
       <Transition leave-active-class="transition-opacity duration-300" leave-to-class="opacity-0">
         <div
           v-if="store.state.loading"

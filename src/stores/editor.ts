@@ -1702,6 +1702,91 @@ export function createEditorStore() {
     return id
   }
 
+  const IMAGE_MAX_DIMENSION = 4096
+
+  async function placeImageFiles(files: File[], cx: number, cy: number) {
+    if (!_ck) return
+
+    const ids: string[] = []
+    let offsetX = 0
+    for (const file of files) {
+      const bytes = new Uint8Array(await file.arrayBuffer())
+      const id = await placeImageBytes(bytes, cx + offsetX, cy, file.name)
+      if (id) {
+        ids.push(id)
+        const node = graph.getNode(id)
+        if (node) offsetX += node.width + 20
+      }
+    }
+    if (ids.length) {
+      select(ids)
+      requestRender()
+    }
+  }
+
+  async function placeImageBytes(
+    bytes: Uint8Array,
+    x: number,
+    y: number,
+    name = 'Image'
+  ): Promise<string | null> {
+    if (!_ck) return null
+
+    const digest = await crypto.subtle.digest('SHA-1', bytes.slice().buffer)
+    const hash = Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+
+    graph.images.set(hash, bytes)
+
+    const skImg = _ck.MakeImageFromEncoded(bytes)
+    if (!skImg) return null
+    let w = skImg.width()
+    let h = skImg.height()
+    skImg.delete()
+
+    if (w > IMAGE_MAX_DIMENSION || h > IMAGE_MAX_DIMENSION) {
+      const ratio = Math.min(IMAGE_MAX_DIMENSION / w, IMAGE_MAX_DIMENSION / h)
+      w = Math.round(w * ratio)
+      h = Math.round(h * ratio)
+    }
+
+    const displayName = name.replace(/\.[^.]+$/, '')
+    const pid = state.currentPageId
+    const fill: Fill = {
+      type: 'IMAGE',
+      imageHash: hash,
+      imageScaleMode: 'FILL',
+      color: { r: 0, g: 0, b: 0, a: 0 },
+      opacity: 1,
+      visible: true
+    }
+    const node = graph.createNode('RECTANGLE', pid, {
+      name: displayName,
+      x,
+      y,
+      width: w,
+      height: h,
+      fills: [fill]
+    })
+    const id = node.id
+    const snapshot = { ...node }
+    undo.push({
+      label: 'Place image',
+      forward: () => {
+        graph.images.set(hash, bytes)
+        graph.createNode(snapshot.type, pid, snapshot)
+      },
+      inverse: () => {
+        graph.deleteNode(id)
+        const next = new Set(state.selectedIds)
+        next.delete(id)
+        state.selectedIds = next
+      }
+    })
+    return id
+  }
+
   function adoptNodesIntoSection(sectionId: string) {
     const section = graph.getNode(sectionId)
     if (section?.type !== 'SECTION') return
@@ -2297,6 +2382,7 @@ export function createEditorStore() {
     moveToPage,
     renameNode,
     createShape,
+    placeImageFiles,
     adoptNodesIntoSection,
     duplicateSelected,
     writeCopyData,
