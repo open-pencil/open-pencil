@@ -19,7 +19,6 @@ import {
 import HsvColorArea from './HsvColorArea.vue'
 import ScrubInput from './ScrubInput.vue'
 import { useEditorStore } from '@/stores/editor'
-import { hashImageBytes } from '@/utils/image'
 import { colorToCSS, colorToHexRaw, parseColor } from '@open-pencil/core'
 
 import type {
@@ -265,7 +264,8 @@ async function onImageFileSelected(e: Event) {
   const file = input.files?.[0]
   if (!file) return
   const bytes = new Uint8Array(await file.arrayBuffer())
-  const hash = await hashImageBytes(bytes)
+  const buf = await crypto.subtle.digest('SHA-1', bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+  const hash = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
   store.graph.images.set(hash, bytes)
   emit('update', {
     ...fill,
