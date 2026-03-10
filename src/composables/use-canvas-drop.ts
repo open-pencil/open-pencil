@@ -29,7 +29,7 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, store: E
     e.preventDefault()
     isDraggingOver.value = false
 
-    const files = extractImageFiles(e)
+    const files = filterImageFiles(e.dataTransfer?.files ?? null)
     if (!files.length) return
 
     const canvas = canvasRef.value
@@ -51,23 +51,18 @@ function hasImageFiles(e: DragEvent): boolean {
   for (const item of e.dataTransfer.items) {
     if (item.kind === 'file' && ACCEPTED_TYPES.has(item.type)) return true
   }
-  return true
+  return false
 }
 
-function extractImageFiles(e: DragEvent): File[] {
-  if (!e.dataTransfer?.files) return []
+function filterImageFiles(files: FileList | null): File[] {
+  if (!files) return []
   const result: File[] = []
-  for (const file of e.dataTransfer.files) {
+  for (const file of files) {
     if (ACCEPTED_TYPES.has(file.type)) result.push(file)
   }
   return result
 }
 
 export function extractImageFilesFromClipboard(e: ClipboardEvent): File[] {
-  if (!e.clipboardData?.files) return []
-  const result: File[] = []
-  for (const file of e.clipboardData.files) {
-    if (ACCEPTED_TYPES.has(file.type)) result.push(file)
-  }
-  return result
+  return filterImageFiles(e.clipboardData?.files ?? null)
 }

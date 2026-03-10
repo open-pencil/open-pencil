@@ -1705,20 +1705,31 @@ export function createEditorStore() {
   }
 
   const IMAGE_MAX_DIMENSION = 4096
+  const IMAGE_GAP = 20
 
   async function placeImageFiles(files: File[], cx: number, cy: number) {
     if (!_ck) return
 
-    const ids: string[] = []
-    let offsetX = 0
+    const prepared: Array<{ bytes: Uint8Array; name: string; w: number; h: number }> = []
     for (const file of files) {
       const bytes = new Uint8Array(await file.arrayBuffer())
-      const id = await placeImageBytes(bytes, cx + offsetX, cy, file.name)
-      if (id) {
-        ids.push(id)
-        const node = graph.getNode(id)
-        if (node) offsetX += node.width + 20
-      }
+      const dims = decodeImageDimensions(bytes)
+      if (dims) prepared.push({ bytes, name: file.name, ...dims })
+    }
+    if (!prepared.length) return
+
+    let totalW = 0
+    for (const p of prepared) totalW += p.w
+    totalW += IMAGE_GAP * (prepared.length - 1)
+    const maxH = Math.max(...prepared.map((p) => p.h))
+
+    let curX = cx - totalW / 2
+    const topY = cy - maxH / 2
+    const ids: string[] = []
+    for (const p of prepared) {
+      const id = await placeImageNode(p.bytes, curX, topY, p.w, p.h, p.name)
+      if (id) ids.push(id)
+      curX += p.w + IMAGE_GAP
     }
     if (ids.length) {
       select(ids)
@@ -1726,32 +1737,42 @@ export function createEditorStore() {
     }
   }
 
-  async function placeImageBytes(
-    bytes: Uint8Array,
-    x: number,
-    y: number,
-    name = 'Image'
-  ): Promise<string | null> {
+  function decodeImageDimensions(bytes: Uint8Array): { w: number; h: number } | null {
     if (!_ck) return null
-
-    const digest = await crypto.subtle.digest('SHA-1', bytes.slice().buffer)
-    const hash = Array.from(new Uint8Array(digest))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-
-    graph.images.set(hash, bytes)
-
     const skImg = _ck.MakeImageFromEncoded(bytes)
     if (!skImg) return null
     let w = skImg.width()
     let h = skImg.height()
     skImg.delete()
-
     if (w > IMAGE_MAX_DIMENSION || h > IMAGE_MAX_DIMENSION) {
       const ratio = Math.min(IMAGE_MAX_DIMENSION / w, IMAGE_MAX_DIMENSION / h)
       w = Math.round(w * ratio)
       h = Math.round(h * ratio)
     }
+    return { w, h }
+  }
+
+  async function hashBytes(data: Uint8Array): Promise<string> {
+    const buf = (data.buffer as ArrayBuffer).slice(
+      data.byteOffset,
+      data.byteOffset + data.byteLength
+    )
+    const digest = await crypto.subtle.digest('SHA-1', buf)
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+
+  async function placeImageNode(
+    bytes: Uint8Array,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    name = 'Image'
+  ): Promise<string | null> {
+    const hash = await hashBytes(bytes)
+    graph.images.set(hash, bytes)
 
     const displayName = name.replace(/\.[^.]+$/, '')
     const pid = state.currentPageId
@@ -1781,6 +1802,7 @@ export function createEditorStore() {
       },
       inverse: () => {
         graph.deleteNode(id)
+        graph.images.delete(hash)
         const next = new Set(state.selectedIds)
         next.delete(id)
         state.selectedIds = next
