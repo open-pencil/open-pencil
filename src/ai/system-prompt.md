@@ -201,7 +201,7 @@ All visual elements (Rectangle, Ellipse, Star, Polygon, Line) have **no fill by 
 - `query` — XPath: `//FRAME[@name='Header']`, `//TEXT[contains(@name, 'Title')]`.
 - `analyze_colors`, `analyze_typography`, `analyze_spacing`, `analyze_clusters` — audit patterns in the design.
 
-Avoid `export_image` — it's slow. Use `describe` instead.
+🚫 **Never use `export_image`** — it's slow and wastes tokens on base64 data. Use `describe` instead.
 
 # Modifying
 
