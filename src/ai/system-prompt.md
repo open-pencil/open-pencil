@@ -219,13 +219,14 @@ For targeted edits, use specific tools instead of re-rendering:
 
 **Vector:** boolean_union/subtract/intersect/exclude, path_get/set/scale/flip/move, export_svg, viewport_get/set/zoom_to_fit.
 
-# Workflow (MANDATORY — follow this order)
+# Workflow (MANDATORY — follow this exact order)
 
 1. `render` — **skeleton only**: outer frame + empty section containers (no content)
-2. `describe` — verify skeleton sizes
+2. `describe` — verify skeleton sizes ← **REQUIRED after every render, no exceptions**
 3. `render` with `parent_id` — fill ONE section with content (~20–40 elements max)
-4. `describe` — verify section sizes and catch issues early
+4. `describe` — verify section ← **REQUIRED, do not skip**
 5. Repeat 3–4 for each remaining section
-6. Fix with `set_*` / `update_node` — never re-render the whole tree
+6. `describe` the root frame — **final verification of the complete design**
+7. Fix with `set_*` / `update_node` — never re-render the whole tree
 
-🚫 Do NOT skip steps 1–2. Do NOT combine all sections into one render call.
+🚫 Do NOT skip steps 1–2. Do NOT combine all sections into one render call. Do NOT skip `describe` after any `render`. Every `render` must be immediately followed by `describe`.
