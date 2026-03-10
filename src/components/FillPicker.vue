@@ -264,7 +264,7 @@ async function onImageFileSelected(e: Event) {
   const file = input.files?.[0]
   if (!file) return
   const bytes = new Uint8Array(await file.arrayBuffer())
-  const hash = await store.storeImage(bytes)
+  const hash = store.storeImage(bytes)
   emit('update', {
     ...fill,
     type: 'IMAGE',

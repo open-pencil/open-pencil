@@ -51,7 +51,7 @@ export {
   type SceneGraphEvents
 } from './scene-graph'
 
-export { FigmaAPI, FigmaNodeProxy, type FigmaFontName } from './figma-api'
+export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
 export { ALL_TOOLS, defineTool, toolsToAI } from './tools'
 export type { ToolDef, ParamDef, ParamType } from './tools'
 export { executeRpcCommand, ALL_RPC_COMMANDS } from './rpc'

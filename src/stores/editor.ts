@@ -25,6 +25,7 @@ import {
   buildOpenPencilClipboardHTML,
   prefetchFigmaSchema,
   readFigFile,
+  computeImageHash,
   renderNodesToImage,
   renderNodesToSVG,
   SceneGraph,
@@ -1751,19 +1752,8 @@ export function createEditorStore() {
     return { w, h }
   }
 
-  async function hashBytes(data: Uint8Array): Promise<string> {
-    const buf = (data.buffer as ArrayBuffer).slice(
-      data.byteOffset,
-      data.byteOffset + data.byteLength
-    )
-    const digest = await crypto.subtle.digest('SHA-1', buf)
-    return Array.from(new Uint8Array(digest))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-  }
-
-  async function storeImage(bytes: Uint8Array): Promise<string> {
-    const hash = await hashBytes(bytes)
+  function storeImage(bytes: Uint8Array): string {
+    const hash = computeImageHash(bytes)
     graph.images.set(hash, bytes)
     return hash
   }
@@ -1776,7 +1766,7 @@ export function createEditorStore() {
     h: number,
     name = 'Image'
   ): Promise<string | null> {
-    const hash = await storeImage(bytes)
+    const hash = storeImage(bytes)
 
     const displayName = name.replace(/\.[^.]+$/, '')
     const pid = state.currentPageId

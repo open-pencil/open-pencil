@@ -57,7 +57,7 @@ function styleNameToWeight(style: string): { weight: number; italic: boolean } {
   return { weight: map[clean] ?? 400, italic }
 }
 
-function computeImageHash(data: Uint8Array): string {
+export function computeImageHash(data: Uint8Array): string {
   let h1 = 0x811c9dc5 >>> 0
   let h2 = 0x811c9dc5 >>> 0
   let h3 = 0x811c9dc5 >>> 0
