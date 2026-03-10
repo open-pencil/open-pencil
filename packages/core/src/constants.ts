@@ -93,6 +93,7 @@ export type AIProviderID =
   | 'openai'
   | 'google'
   | 'openai-compatible'
+  | 'zai'
   | 'anthropic-compatible'
 
 export interface ModelOption {
@@ -169,6 +170,27 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     models: [
       { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: '1M context' },
       { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', tag: 'Fast' }
+    ]
+  },
+  {
+    id: 'zai',
+    name: 'Z.ai',
+    keyPlaceholder: 'API key',
+    keyURL: 'https://docs.z.ai/api-reference/introduction',
+    defaultModel: 'glm-5',
+    models: [
+      { id: 'glm-5', name: 'GLM-5' },
+      { id: 'glm-5-code', name: 'GLM-5-Code' },
+      { id: 'glm-4.7', name: 'GLM-4.7' },
+      { id: 'glm-4.7-flashx', name: 'GLM-4.7-FlashX' },
+      { id: 'glm-4.6', name: 'GLM-4.6' },
+      { id: 'glm-4.5', name: 'GLM-4.5' },
+      { id: 'glm-4.5-x', name: 'GLM-4.5-X' },
+      { id: 'glm-4.5-air', name: 'GLM-4.5-Air' },
+      { id: 'glm-4.5-airx', name: 'GLM-4.5-AirX' },
+      { id: 'glm-4-32b-0414-128k', name: 'GLM-4-32B-0414-128K' },
+      { id: 'glm-4.7-flash', name: 'GLM-4.7-Flash', tag: 'Free' },
+      { id: 'glm-4.5-flash', name: 'GLM-4.5-Flash', tag: 'Free' }
     ]
   },
   {

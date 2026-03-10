@@ -212,6 +212,13 @@ function createModel(): LanguageModel {
       const google = createGoogleGenerativeAI({ apiKey: key })
       return google(effectiveModelID)
     }
+    case 'zai': {
+      const zai = createOpenAI({
+        apiKey: key,
+        baseURL: 'https://api.z.ai/api/paas/v4'
+      })
+      return zai.chat(effectiveModelID)
+    }
     case 'openai-compatible': {
       const custom = createOpenAI({
         apiKey: key,
