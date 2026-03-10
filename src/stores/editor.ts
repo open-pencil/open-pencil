@@ -1762,6 +1762,12 @@ export function createEditorStore() {
       .join('')
   }
 
+  async function storeImage(bytes: Uint8Array): Promise<string> {
+    const hash = await hashBytes(bytes)
+    graph.images.set(hash, bytes)
+    return hash
+  }
+
   async function placeImageNode(
     bytes: Uint8Array,
     x: number,
@@ -1770,8 +1776,7 @@ export function createEditorStore() {
     h: number,
     name = 'Image'
   ): Promise<string | null> {
-    const hash = await hashBytes(bytes)
-    graph.images.set(hash, bytes)
+    const hash = await storeImage(bytes)
 
     const displayName = name.replace(/\.[^.]+$/, '')
     const pid = state.currentPageId
@@ -2443,6 +2448,7 @@ export function createEditorStore() {
     moveToPage,
     renameNode,
     createShape,
+    storeImage,
     placeImageFiles,
     adoptNodesIntoSection,
     duplicateSelected,
