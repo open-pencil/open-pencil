@@ -1,4 +1,4 @@
-import { zipSync, deflateSync } from 'fflate'
+import { zipSync, deflateSync, type Zippable } from 'fflate'
 
 import { CANVAS_BG_COLOR, IS_TAURI } from './constants'
 import { sceneNodeToKiwi, fractionalPosition, buildFigKiwi, buildFontDigestMap } from './kiwi-serialize'
@@ -46,6 +46,14 @@ function variableValueToKiwi(
     return { value: { textValue: String(value) }, dataType: 'STRING', resolvedDataType: 'STRING' }
   }
   return { value: { floatValue: Number(value) }, dataType: 'FLOAT', resolvedDataType: 'FLOAT' }
+}
+
+function collectImageEntries(graph: SceneGraph): Array<{ name: string; data: Uint8Array }> {
+  const entries: Array<{ name: string; data: Uint8Array }> = []
+  for (const [hash, data] of graph.images) {
+    entries.push({ name: `images/${hash}`, data })
+  }
+  return entries
 }
 
 const THUMBNAIL_WIDTH = 400
@@ -216,6 +224,8 @@ export async function exportFigFile(
     createdAt: new Date().toISOString()
   })
 
+  const imageEntries = collectImageEntries(graph)
+
   if (IS_TAURI) {
     const { invoke } = await import('@tauri-apps/api/core')
     return new Uint8Array(
@@ -223,15 +233,20 @@ export async function exportFigFile(
         schemaDeflated: Array.from(schemaDeflated),
         kiwiData: Array.from(kiwiData),
         thumbnailPng: Array.from(thumbnailPng),
-        metaJson
+        metaJson,
+        images: imageEntries.map(e => ({ name: e.name, data: Array.from(e.data) }))
       })
     )
   }
 
   const canvasData = buildFigKiwi(schemaDeflated, kiwiData)
-  return zipSync({
+  const zipEntries: Zippable = {
     'canvas.fig': [canvasData, { level: 0 }],
     'thumbnail.png': [thumbnailPng, { level: 0 }],
     'meta.json': new TextEncoder().encode(metaJson)
-  })
+  }
+  for (const entry of imageEntries) {
+    zipEntries[entry.name] = [entry.data, { level: 0 }]
+  }
+  return zipSync(zipEntries)
 }

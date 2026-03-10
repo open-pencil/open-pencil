@@ -342,9 +342,14 @@ export function buildFigmaClipboardHTML(nodes: SceneNode[], graph: SceneGraph): 
 
 // --- Internal copy/paste (OpenPencil ↔ OpenPencil) ---
 
+export interface OpenPencilClipboardData {
+  nodes: Array<SceneNode & { children?: SceneNode[] }>
+  images: Map<string, Uint8Array>
+}
+
 export function parseOpenPencilClipboard(
   html: string
-): Array<SceneNode & { children?: SceneNode[] }> | null {
+): OpenPencilClipboardData | null {
   const match = html.match(/<!--\(openpencil\)(.*?)\(\/openpencil\)-->/s)
   if (!match) return null
 
@@ -352,7 +357,15 @@ export function parseOpenPencilClipboard(
     const decoded = JSON.parse(new TextDecoder().decode(Uint8Array.fromBase64(match[1])))
     if (decoded.format === 'openpencil/v1' && Array.isArray(decoded.nodes)) {
       restoreTextPictures(decoded.nodes)
-      return decoded.nodes
+      const images = new Map<string, Uint8Array>()
+      if (decoded.images && typeof decoded.images === 'object') {
+        for (const [hash, b64] of Object.entries(decoded.images)) {
+          if (typeof b64 === 'string') {
+            images.set(hash, Uint8Array.fromBase64(b64))
+          }
+        }
+      }
+      return { nodes: decoded.nodes, images }
     }
   } catch {
     // Not our format
@@ -373,14 +386,36 @@ function restoreTextPictures(nodes: Array<Record<string, unknown>>): void {
 
 export type TextPictureBuilder = (node: SceneNode) => Uint8Array | null
 
+function collectImageHashes(nodes: SceneNode[], graph: SceneGraph): Set<string> {
+  const hashes = new Set<string>()
+  function walk(nodeList: SceneNode[]) {
+    for (const node of nodeList) {
+      for (const fill of node.fills) {
+        if (fill.imageHash) hashes.add(fill.imageHash)
+      }
+      walk(graph.getChildren(node.id))
+    }
+  }
+  walk(nodes)
+  return hashes
+}
+
 export function buildOpenPencilClipboardHTML(
   nodes: SceneNode[],
   graph: SceneGraph,
   textPictureBuilder?: TextPictureBuilder
 ): string {
+  const nodeTree = collectNodeTree(nodes, graph, textPictureBuilder)
+  const hashes = collectImageHashes(nodes, graph)
+  const images: Record<string, string> = {}
+  for (const hash of hashes) {
+    const bytes = graph.images.get(hash)
+    if (bytes) images[hash] = bytes.toBase64()
+  }
   const data = {
     format: 'openpencil/v1',
-    nodes: collectNodeTree(nodes, graph, textPictureBuilder)
+    nodes: nodeTree,
+    images
   }
   return `<!--(openpencil)${new TextEncoder().encode(JSON.stringify(data)).toBase64()}(/openpencil)-->`
 }

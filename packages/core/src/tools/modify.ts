@@ -617,3 +617,35 @@ export const setLayoutChild = defineTool({
     return { id: args.id, updated }
   }
 })
+
+export const setImageFill = defineTool({
+  name: 'set_image_fill',
+  mutates: true,
+  description: 'Set an image fill on a node from base64-encoded image data.',
+  params: {
+    id: { type: 'string', description: 'Node ID', required: true },
+    image_data: { type: 'string', description: 'Base64-encoded image bytes (PNG, JPEG, or WEBP)', required: true },
+    scale_mode: {
+      type: 'string',
+      description: 'Image scale mode',
+      default: 'FILL',
+      enum: ['FILL', 'FIT', 'CROP', 'TILE']
+    }
+  },
+  execute: (figma, { id, image_data, scale_mode }) => {
+    const node = figma.getNodeById(id)
+    if (!node) return { error: `Node "${id}" not found` }
+    const bytes = Uint8Array.fromBase64(image_data)
+    const image = figma.createImage(bytes)
+    const mode = (scale_mode ?? 'FILL') as 'FILL' | 'FIT' | 'CROP' | 'TILE'
+    node.fills = [{
+      type: 'IMAGE',
+      color: { r: 0, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true,
+      imageHash: image.hash,
+      imageScaleMode: mode
+    }]
+    return { id, imageHash: image.hash, scaleMode: mode }
+  }
+})

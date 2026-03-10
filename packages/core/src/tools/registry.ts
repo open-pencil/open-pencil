@@ -13,7 +13,7 @@ import {
   setFill, setStroke, setEffects, updateNode, setLayout, setConstraints,
   setRotation, setOpacity, setRadius, setMinMax, setText, setFont, setFontRange,
   setTextResize, setVisible, setBlend, setLocked, setStrokeAlign,
-  setTextProperties, setLayoutChild
+  setTextProperties, setLayoutChild, setImageFill
 } from './modify'
 import {
   deleteNode, cloneNode, renameNode, reparentNode, groupNodes, ungroupNode,
@@ -82,6 +82,7 @@ export const ALL_TOOLS: ToolDef[] = [
   setStrokeAlign,
   setTextProperties,
   setLayoutChild,
+  setImageFill,
   // Structure
   deleteNode,
   cloneNode,

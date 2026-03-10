@@ -1975,9 +1975,10 @@ export function createEditorStore() {
   }
 
   function pasteFromHTML(html: string, cursorPos?: Vector) {
-    const ownNodes = parseOpenPencilClipboard(html)
-    if (ownNodes) {
-      pasteOpenPencilNodes(ownNodes, undefined, cursorPos)
+    const own = parseOpenPencilClipboard(html)
+    if (own) {
+      for (const [hash, data] of own.images) graph.images.set(hash, data)
+      pasteOpenPencilNodes(own.nodes, undefined, cursorPos)
       return
     }
 

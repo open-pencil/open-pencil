@@ -192,7 +192,8 @@ export {
   buildFigmaClipboardHTML,
   buildOpenPencilClipboardHTML,
   prefetchFigmaSchema,
-  type TextPictureBuilder
+  type TextPictureBuilder,
+  type OpenPencilClipboardData
 } from './clipboard'
 
 export { readFigFile, parseFigFile } from './kiwi/fig-file'

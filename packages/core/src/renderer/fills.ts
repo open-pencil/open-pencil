@@ -160,23 +160,36 @@ export function applyImageFill(
   const imgH = img.height()
   const scaleMode = fill.imageScaleMode ?? 'FILL'
 
+  if (scaleMode === 'TILE') {
+    const shader = img.makeShaderCubic(
+      r.ck.TileMode.Repeat,
+      r.ck.TileMode.Repeat,
+      1 / 3,
+      1 / 3
+    )
+    r.fillPaint.setShader(shader)
+    return
+  }
+
   let sx: number, sy: number, sw: number, sh: number
-  if (scaleMode === 'FILL') {
+  if (scaleMode === 'CROP' && fill.imageTransform) {
+    const t = fill.imageTransform
+    sx = t.m02 * imgW
+    sy = t.m12 * imgH
+    sw = t.m00 * imgW
+    sh = t.m11 * imgH
+  } else if (scaleMode === 'FIT') {
+    const scale = Math.min(node.width / imgW, node.height / imgH)
+    sw = imgW
+    sh = imgH
+    sx = -(node.width / scale - imgW) / 2
+    sy = -(node.height / scale - imgH) / 2
+  } else {
     const scale = Math.max(node.width / imgW, node.height / imgH)
     sw = node.width / scale
     sh = node.height / scale
     sx = (imgW - sw) / 2
     sy = (imgH - sh) / 2
-  } else if (scaleMode === 'FIT') {
-    sw = imgW
-    sh = imgH
-    sx = 0
-    sy = 0
-  } else {
-    sx = 0
-    sy = 0
-    sw = imgW
-    sh = imgH
   }
 
   const shader = img.makeShaderCubic(

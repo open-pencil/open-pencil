@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -18,9 +18,17 @@ import {
 
 import HsvColorArea from './HsvColorArea.vue'
 import ScrubInput from './ScrubInput.vue'
+import { useEditorStore } from '@/stores/editor'
+import { hashImageBytes } from '@/utils/image'
 import { colorToCSS, colorToHexRaw, parseColor } from '@open-pencil/core'
 
-import type { Color, Fill, GradientStop, GradientTransform } from '@open-pencil/core'
+import type {
+  Color,
+  Fill,
+  GradientStop,
+  GradientTransform,
+  ImageScaleMode
+} from '@open-pencil/core'
 
 type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 type GradientSubtype =
@@ -212,6 +220,65 @@ function onStopBarPointerUp() {
 function stopSwatchColor(stop: GradientStop) {
   return colorToCSS(stop.color)
 }
+
+const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
+  { value: 'FILL', label: 'Fill' },
+  { value: 'FIT', label: 'Fit' },
+  { value: 'CROP', label: 'Crop' },
+  { value: 'TILE', label: 'Tile' }
+]
+
+const store = useEditorStore()
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const previewUrl = ref<string | null>(null)
+
+const imagePreviewUrl = computed(() => {
+  if (!fill.imageHash) return null
+  const data = store.graph.images.get(fill.imageHash)
+  if (!data) return null
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  const url = URL.createObjectURL(new Blob([data]))
+  previewUrl.value = url
+  return url
+})
+
+watch(
+  () => fill.imageHash,
+  () => {
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = null
+    }
+  }
+)
+
+onBeforeUnmount(() => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+})
+
+function pickImage() {
+  fileInputRef.value?.click()
+}
+
+async function onImageFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const hash = await hashImageBytes(bytes)
+  store.graph.images.set(hash, bytes)
+  emit('update', {
+    ...fill,
+    type: 'IMAGE',
+    imageHash: hash,
+    imageScaleMode: fill.imageScaleMode ?? 'FILL'
+  })
+  input.value = ''
+}
+
+function setScaleMode(mode: string) {
+  emit('update', { ...fill, imageScaleMode: mode as ImageScaleMode })
+}
 </script>
 
 <template>
@@ -389,13 +456,63 @@ function stopSwatchColor(stop: GradientStop) {
           </div>
         </div>
 
-        <!-- Image placeholder -->
-        <div
-          v-if="fill.type === 'IMAGE'"
-          data-test-id="fill-picker-image-placeholder"
-          class="flex h-24 items-center justify-center rounded border border-dashed border-border text-xs text-muted"
-        >
-          Image fill (coming soon)
+        <!-- Image fill -->
+        <div v-if="fill.type === 'IMAGE'" class="space-y-2">
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            class="hidden"
+            @change="onImageFileSelected"
+          />
+          <div
+            v-if="imagePreviewUrl"
+            class="flex h-24 items-center justify-center overflow-hidden rounded border border-border"
+          >
+            <img :src="imagePreviewUrl" class="max-h-full max-w-full object-contain" />
+          </div>
+          <button
+            class="flex h-7 w-full cursor-pointer items-center justify-center gap-1 rounded border border-border bg-input text-xs text-surface hover:bg-hover"
+            data-test-id="fill-picker-choose-image"
+            @click="pickImage"
+          >
+            <icon-lucide-image class="size-3" />
+            {{ fill.imageHash ? 'Replace' : 'Choose image' }}
+          </button>
+          <SelectRoot
+            :model-value="fill.imageScaleMode ?? 'FILL'"
+            @update:model-value="setScaleMode"
+          >
+            <SelectTrigger
+              class="flex h-7 w-full cursor-pointer items-center justify-between rounded border border-border bg-input px-2 text-xs text-surface"
+            >
+              <SelectValue />
+              <icon-lucide-chevron-down class="size-3 text-muted" />
+            </SelectTrigger>
+            <SelectPortal>
+              <SelectContent
+                class="z-[200] min-w-[112px] rounded-md border border-border bg-panel py-1 shadow-xl"
+                position="popper"
+                side="bottom"
+                :side-offset="4"
+                :align="'start'"
+              >
+                <SelectViewport>
+                  <SelectItem
+                    v-for="mode in IMAGE_SCALE_MODES"
+                    :key="mode.value"
+                    :value="mode.value"
+                    class="relative flex cursor-pointer items-center rounded py-1 pr-2 pl-6 text-xs text-surface outline-none data-[highlighted]:bg-accent data-[highlighted]:text-white"
+                  >
+                    <SelectItemIndicator class="absolute left-1.5">
+                      <icon-lucide-check class="size-3" />
+                    </SelectItemIndicator>
+                    <SelectItemText>{{ mode.label }}</SelectItemText>
+                  </SelectItem>
+                </SelectViewport>
+              </SelectContent>
+            </SelectPortal>
+          </SelectRoot>
         </div>
 
         <!-- HSV color area (solid mode, or editing active gradient stop) -->

@@ -132,12 +132,19 @@ async fn load_system_font(family: String, style: String) -> Result<Vec<u8>, Stri
         .map_err(|e| format!("Font load task failed: {e}"))?
 }
 
+#[derive(serde::Deserialize)]
+struct ImageEntry {
+    name: String,
+    data: Vec<u8>,
+}
+
 #[tauri::command]
 fn build_fig_file(
     schema_deflated: Vec<u8>,
     kiwi_data: Vec<u8>,
     thumbnail_png: Vec<u8>,
     meta_json: String,
+    images: Option<Vec<ImageEntry>>,
 ) -> Result<Vec<u8>, String> {
     use std::io::{Cursor, Write};
 
@@ -184,6 +191,15 @@ fn build_fig_file(
         .map_err(|e| e.to_string())?;
     zip.write_all(meta_json.as_bytes())
         .map_err(|e| e.to_string())?;
+
+    if let Some(image_entries) = images {
+        for entry in image_entries {
+            zip.start_file(&entry.name, options)
+                .map_err(|e| e.to_string())?;
+            zip.write_all(&entry.data)
+                .map_err(|e| e.to_string())?;
+        }
+    }
 
     let result = zip.finish().map_err(|e| e.to_string())?;
     Ok(result.into_inner())
