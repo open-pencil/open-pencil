@@ -544,7 +544,7 @@ function convertLayoutProps(nc: NodeChange): Pick<SceneNode, 'layoutMode' | 'ite
     counterAxisSpacing: nc.stackCounterSpacing ?? 0,
     layoutPositioning: nc.stackPositioning === 'ABSOLUTE' ? 'ABSOLUTE' : 'AUTO',
     layoutGrow: nc.stackChildPrimaryGrow ?? 0,
-    layoutAlignSelf: mapAlignSelf(nc.stackChildAlignSelf as string | undefined),
+    layoutAlignSelf: mapAlignSelf(nc.stackChildAlignSelf),
     counterAxisAlignContent: (nc.stackCounterAlignContent as string) === 'SPACE_BETWEEN' ? 'SPACE_BETWEEN' : 'AUTO',
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean

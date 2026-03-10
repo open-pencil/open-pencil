@@ -758,9 +758,9 @@ export class SkiaRenderer {
     const layoutWidth =
       maxWidth !== undefined
         ? maxWidth
-        : node.textAutoResize === 'WIDTH_AND_HEIGHT'
-          ? 1e6
-          : node.width || 1e6
+        : (node.textAutoResize === 'WIDTH_AND_HEIGHT'
+            ? 1e6
+            : node.width || 1e6)
     paragraph.layout(layoutWidth)
     const width = paragraph.getLongestLine()
     const height = paragraph.getHeight()

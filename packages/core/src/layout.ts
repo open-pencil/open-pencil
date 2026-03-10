@@ -455,29 +455,34 @@ function setSizing(
   }
 }
 
-function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode): void {
+function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode): void {
   if (frame.layoutMode === 'GRID') {
     if (frame.gridTemplateRows.length === 0) {
       graph.updateNode(frame.id, { height: yogaNode.getComputedHeight() })
     }
-  } else {
-    if (frame.primaryAxisSizing === 'HUG' || frame.counterAxisSizing === 'HUG') {
-      const computedW = yogaNode.getComputedWidth()
-      const computedH = yogaNode.getComputedHeight()
-      const updates: Partial<SceneNode> = {}
-
-      if (frame.primaryAxisSizing === 'HUG') {
-        if (frame.layoutMode === 'HORIZONTAL') updates.width = computedW
-        else updates.height = computedH
-      }
-      if (frame.counterAxisSizing === 'HUG') {
-        if (frame.layoutMode === 'HORIZONTAL') updates.height = computedH
-        else updates.width = computedW
-      }
-
-      graph.updateNode(frame.id, updates)
-    }
+    return
   }
+
+  if (frame.primaryAxisSizing !== 'HUG' && frame.counterAxisSizing !== 'HUG') return
+
+  const computedW = yogaNode.getComputedWidth()
+  const computedH = yogaNode.getComputedHeight()
+  const updates: Partial<SceneNode> = {}
+
+  if (frame.primaryAxisSizing === 'HUG') {
+    if (frame.layoutMode === 'HORIZONTAL') updates.width = computedW
+    else updates.height = computedH
+  }
+  if (frame.counterAxisSizing === 'HUG') {
+    if (frame.layoutMode === 'HORIZONTAL') updates.height = computedH
+    else updates.width = computedW
+  }
+
+  graph.updateNode(frame.id, updates)
+}
+
+function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode): void {
+  applyFrameSize(graph, frame, yogaNode)
 
   const children = graph.getChildren(frame.id)
   let yogaIndex = 0
@@ -487,10 +492,7 @@ function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!yogaChild) continue
 
-    if (child.visible && child.layoutPositioning === 'ABSOLUTE') {
-      // Absolute children keep their manual x/y — Yoga only needs them
-      // in the tree so they don't break child indexing
-    } else if (child.visible) {
+    if (child.visible && child.layoutPositioning !== 'ABSOLUTE') {
       graph.updateNode(child.id, {
         x: yogaChild.getComputedLeft(),
         y: yogaChild.getComputedTop(),
