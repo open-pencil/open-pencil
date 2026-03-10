@@ -23,6 +23,8 @@ export type TextMeasurer = (
 
 let globalTextMeasurer: TextMeasurer | null = null
 
+const GLYPH_WIDTH_FACTOR = 0.6
+
 export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
 }
@@ -343,6 +345,15 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
 
   if (needsMeasureFunc) {
     configureTextLeaf(yogaChild, child, parent)
+  } else if (isText && !globalTextMeasurer && child.textAutoResize !== 'NONE') {
+    const est = estimateTextSize(child)
+    if (child.textAutoResize === 'WIDTH_AND_HEIGHT') {
+      yogaChild.setWidth(est.width)
+      yogaChild.setHeight(est.height)
+    } else if (child.textAutoResize === 'HEIGHT') {
+      yogaChild.setWidth(child.width)
+      yogaChild.setHeight(est.height)
+    }
   } else {
     configureNonTextLeaf(yogaChild, child, isRow, stretchCross)
   }
@@ -351,6 +362,18 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
   if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
   applyMinMaxConstraints(yogaChild, child)
+}
+
+// Fallback text size estimate when CanvasKit is unavailable (headless/tests).
+// Without this, text nodes keep their 100×100 default and blow up HUG containers.
+function estimateTextSize(node: SceneNode): { width: number; height: number } {
+  const fontSize = node.fontSize || 14
+  const lineHeight = fontSize * 1.2
+  const charWidth = fontSize * GLYPH_WIDTH_FACTOR
+  return {
+    width: Math.ceil(node.text.length * charWidth),
+    height: Math.ceil(lineHeight)
+  }
 }
 
 function configureTextLeaf(

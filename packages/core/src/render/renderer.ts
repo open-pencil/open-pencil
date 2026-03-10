@@ -401,6 +401,7 @@ function applyTextOverrides(
   const fillsParent = w === 'fill' || (props.grow as number) > 0
   const isInsideAutoLayout = parentLayout !== 'NONE'
 
+  // Coupled with estimateTextSize() in layout.ts — test headless layout after changes.
   if (props.textAutoResize) {
     o.textAutoResize = TEXT_AUTO_RESIZE_MAP[props.textAutoResize as string] ?? 'NONE'
   } else if (hasExplicitWidth || (isInsideAutoLayout && fillsParent)) {

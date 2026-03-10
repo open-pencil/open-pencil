@@ -1020,7 +1020,7 @@ describe('Auto Layout', () => {
       expect(updatedArrow2.x).toBe(190)
     })
 
-    test('without measurer, text keeps its existing width', () => {
+    test('without measurer, text uses estimated size instead of 100x100 default', () => {
       const graph = new SceneGraph()
       const pid = pageId(graph)
 
@@ -1045,7 +1045,11 @@ describe('Auto Layout', () => {
       computeAllLayouts(graph)
 
       const updatedText = graph.getNode(text.id)!
-      expect(updatedText.width).toBe(200)
+      // Rough estimate: ~0.6 × fontSize × charCount, not the 100×100 default
+      expect(updatedText.width).toBeLessThan(100)
+      expect(updatedText.width).toBeGreaterThan(0)
+      expect(updatedText.height).toBeLessThan(100)
+      expect(updatedText.height).toBeGreaterThan(0)
     })
 
     test('HEIGHT auto-resize text wraps via MeasureFunc when filling parent', () => {
