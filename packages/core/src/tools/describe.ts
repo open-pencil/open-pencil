@@ -331,11 +331,58 @@ function detectLayoutIssues(node: SceneNode, graph: SceneGraph, issues: Describe
   }
 }
 
+const RADIUS_TOLERANCE = 2
+
+function detectRadiusIssues(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
+  if (node.cornerRadius <= 0 || node.layoutMode === 'NONE') return
+
+  const minPad = Math.min(node.paddingTop, node.paddingRight, node.paddingBottom, node.paddingLeft)
+  if (minPad <= 0) return
+  const expectedInner = Math.max(0, node.cornerRadius - minPad)
+
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child || !child.visible || child.cornerRadius <= 0) continue
+    if (child.layoutPositioning === 'ABSOLUTE') continue
+    if (child.cornerRadius > node.cornerRadius + RADIUS_TOLERANCE) {
+      issues.push({
+        message: `"${child.name}" radius ${child.cornerRadius} exceeds parent "${node.name}" radius ${node.cornerRadius}`,
+        suggestion: `Use rounded={${expectedInner}} (parent ${node.cornerRadius} − padding ${minPad})`
+      })
+    } else if (child.cornerRadius > expectedInner + RADIUS_TOLERANCE && expectedInner < node.cornerRadius) {
+      issues.push({
+        message: `"${child.name}" radius ${child.cornerRadius} should be ${expectedInner} (parent ${node.cornerRadius} − padding ${minPad})`,
+        suggestion: `Use rounded={${expectedInner}}`
+      })
+    }
+  }
+}
+
+const UPPERCASE_MAX_SIZE = 13
+
+function detectTypographyIssues(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child || child.type !== 'TEXT' || !child.visible) continue
+    const text = child.characters ?? child.text ?? ''
+
+    // Uppercase body text — should only be used on small labels/overlines
+    if (text === text.toUpperCase() && text.length > 1 && /[A-ZА-ЯЁ]/.test(text) && child.fontSize > UPPERCASE_MAX_SIZE) {
+      issues.push({
+        message: `"${text.slice(0, 30)}" is uppercase at ${child.fontSize}px — uppercase is for small labels (≤${UPPERCASE_MAX_SIZE}px)`,
+        suggestion: `Reduce size to ≤${UPPERCASE_MAX_SIZE}px or use mixed case`
+      })
+    }
+  }
+}
+
 function detectIssues(node: SceneNode, gridSize: number, graph: SceneGraph): DescribeIssue[] {
   const issues: DescribeIssue[] = []
   detectStructuralIssues(node, gridSize, issues)
   detectVisibilityIssues(node, graph, issues)
   detectLayoutIssues(node, graph, issues)
+  detectRadiusIssues(node, graph, issues)
+  detectTypographyIssues(node, graph, issues)
   return issues
 }
 

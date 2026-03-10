@@ -40,6 +40,14 @@ For dynamic content (variable text length, generated lists), always use flex siz
 
 Absolute-positioned children (layout="none" parent) are unconstrained — they render at x/y regardless of parent bounds. Use overflow="hidden" to clip them.
 
+## Corner radius
+
+Inner radius = outer radius − padding. A card with `rounded={20} p={12}` → children should use `rounded={8}`. If padding ≥ outer radius, inner radius = 0 (straight corners).
+
+Size hierarchy: cards/modals 16–24, buttons/inputs 8–12, chips/badges 4–8 or pill (radius = height/2). Stay consistent within each level.
+
+Elements flush against parent edge (no padding on that side) match parent's radius on the touching corners: `roundedTL={20} roundedTR={20} roundedBL={0} roundedBR={0}`.
+
 ## Chunking large designs
 
 Keep each `render` under ~40 elements. For bigger designs:
@@ -47,9 +55,55 @@ Keep each `render` under ~40 elements. For bigger designs:
 2. Add sections one at a time using parent_id
 3. Use `map()` / `Array.from()` for repeated items
 
-## Text on dark backgrounds
+## Typography
 
-Text defaults to black — always set an explicit light color on dark backgrounds. For subtle UI elements on dark surfaces, use at least ~20% alpha for fills, ~25% for borders. Opaque tinted colors (#1E1E32) look better than low-alpha white.
+### Type scale
+
+Pick 6–8 sizes from a consistent scale, not arbitrary numbers. Good base scales (ratio ~1.25):
+
+| Role | Size | Weight |
+|---|---|---|
+| Display | 32–40 | bold |
+| H1 | 24–28 | bold |
+| H2 | 20–22 | bold |
+| H3 | 17–18 | bold/medium |
+| Body | 14–15 | regular |
+| Caption | 12–13 | regular/medium |
+| Overline | 10–11 | bold, UPPERCASE |
+
+Use at most 2–3 weights per design. Regular (400) for body, medium (500) for labels, bold (700) for headings.
+
+### Hierarchy through contrast
+
+Create hierarchy by varying **one property at a time**: size OR weight OR color — not all three.
+
+Color hierarchy on light backgrounds: primary #111827 (headings), secondary #6B7280 (descriptions), tertiary #9CA3AF (hints, labels).
+
+Color hierarchy on dark backgrounds: primary #FFFFFF, secondary #FFFFFF99 (~60%), tertiary #FFFFFF66 (~40%).
+
+Subtle UI elements on dark surfaces: at least ~20% alpha for fills, ~25% for borders. Opaque tinted colors (#1E1E32) look better than low-alpha white.
+
+### Line height
+
+- Headings (display, H1–H3): 1.1–1.2× font size — tight
+- Body text, descriptions: 1.4–1.6× — readable
+- Single-line labels, buttons, chips: 1.0–1.2× — compact
+
+### Line length
+
+Body text blocks: 45–75 characters per line. If a text block is wider, constrain with `w={...}`. Too-wide lines are hard to read; too-narrow lines break rhythm.
+
+### Spacing between text elements
+
+Space after heading ≈ 0.5–1× heading font size. Space between body paragraphs ≈ 0.75–1× body font size. Keep gaps on the 4px/8px grid.
+
+### Uppercase
+
+Only for overlines and small labels (10–12px). Always pair with bold/medium weight. Never for body text or headings larger than 13px.
+
+### Alignment
+
+Left-align body text (default for Latin/Cyrillic). Center only for hero headings, buttons, empty states. Right-align numeric values in detail rows. Never justify — it creates uneven word spacing.
 
 ## Prohibited
 
