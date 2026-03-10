@@ -36,6 +36,7 @@ import {
   diffCreate, diffShow, evalCode
 } from './analyze'
 import { describe } from './describe'
+import { designToTokens, designToComponentMap, getCodegenPrompt } from './codegen'
 
 export const ALL_TOOLS: ToolDef[] = [
   // Read
@@ -136,6 +137,10 @@ export const ALL_TOOLS: ToolDef[] = [
   diffCreate,
   diffShow,
   describe,
+  // Codegen
+  designToTokens,
+  designToComponentMap,
+  getCodegenPrompt,
   // Eval
   evalCode
 ]
