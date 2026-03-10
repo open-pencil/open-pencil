@@ -94,6 +94,7 @@ export function figmaNodesBounds(
 
   const parentTypes = new Map<string, string>()
   for (const nc of nodeChanges) {
+    if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     parentTypes.set(id, nc.type ?? '')
   }
@@ -125,6 +126,7 @@ function buildClipboardMaps(nodeChanges: KiwiNodeChange[]): ClipboardImportMaps 
   const guidMap = new Map<string, KiwiNodeChange>()
   const parentMap = new Map<string, string>()
   for (const nc of nodeChanges) {
+    if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     guidMap.set(id, nc)
     if (nc.parentIndex?.guid) {

@@ -17,12 +17,12 @@ interface SymbolData {
 }
 
 interface ComponentPropRef {
-  defID: GUID
+  defID?: GUID
   componentPropNodeField: string
 }
 
 interface ComponentPropAssignment {
-  defID: GUID
+  defID?: GUID
   value: { boolValue?: boolean; textValue?: string; guidValue?: GUID }
 }
 
@@ -259,7 +259,7 @@ export function populateAndApplyOverrides(
   function assignmentsToValueMap(assignments: ComponentPropAssignment[]): Map<string, ComponentPropAssignment['value']> {
     const valueByDef = new Map<string, ComponentPropAssignment['value']>()
     for (const a of assignments) {
-      valueByDef.set(guidToString(a.defID), a.value)
+      if (a.defID) valueByDef.set(guidToString(a.defID), a.value)
     }
     return valueByDef
   }
@@ -351,6 +351,7 @@ export function populateAndApplyOverrides(
       const refs = findPropRefs(child.componentId, propRefsMap)
       if (refs) {
         for (const ref of refs) {
+          if (!ref.defID) continue
           const val = valueByDef.get(guidToString(ref.defID))
           if (!val) continue
 

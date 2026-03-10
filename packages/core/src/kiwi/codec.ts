@@ -236,7 +236,7 @@ export interface VariableDataValuesEntry {
 
 export interface NodeChange {
   [key: string]: unknown
-  guid: GUID
+  guid?: GUID
   phase?: 'CREATED' | 'REMOVED'
   parentIndex?: ParentIndex
   type?: string

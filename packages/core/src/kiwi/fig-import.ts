@@ -24,6 +24,7 @@ function buildChangeMaps(nodeChanges: NodeChange[]): ChangeMaps {
   const childrenMap = new Map<string, string[]>()
 
   for (const nc of nodeChanges) {
+    if (!nc.guid) continue
     if (nc.phase === 'REMOVED') continue
     const id = guidToString(nc.guid)
     changeMap.set(id, nc)
