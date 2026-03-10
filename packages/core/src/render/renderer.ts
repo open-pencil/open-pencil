@@ -397,7 +397,10 @@ function applyTextOverrides(
   const fillsParent = w === 'fill' || (props.grow as number) > 0
   const isInsideAutoLayout = parentLayout !== 'NONE'
 
-  // Coupled with estimateTextSize() in layout.ts — test headless layout after changes.
+  // DO NOT CHANGE these defaults without testing headless layout (no CanvasKit).
+  // WIDTH_AND_HEIGHT relies on MeasureFunc — without it, text keeps the 100×100
+  // default SceneNode size and blows up every HUG container. layout.ts has a
+  // fallback estimator, but changing this logic can silently break all JSX rendering.
   if (props.textAutoResize) {
     o.textAutoResize = TEXT_AUTO_RESIZE_MAP[props.textAutoResize as string] ?? 'NONE'
   } else if (hasExplicitWidth || (isInsideAutoLayout && fillsParent)) {

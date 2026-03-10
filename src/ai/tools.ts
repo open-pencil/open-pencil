@@ -21,17 +21,19 @@ export function createAITools(store: EditorStore) {
         }
       },
       onAfterExecute: (def) => {
-        computeAllLayouts(store.graph, store.state.currentPageId)
-        store.requestRender()
-        if (def.mutates && beforeSnapshot) {
-          const before = beforeSnapshot
-          const after = store.snapshotPage()
-          store.pushUndoEntry({
-            label: `AI: ${def.name}`,
-            forward: () => store.restorePageFromSnapshot(after),
-            inverse: () => store.restorePageFromSnapshot(before)
-          })
-          beforeSnapshot = null
+        if (def.mutates) {
+          computeAllLayouts(store.graph, store.state.currentPageId)
+          store.requestRender()
+          if (beforeSnapshot) {
+            const before = beforeSnapshot
+            const after = store.snapshotPage()
+            store.pushUndoEntry({
+              label: `AI: ${def.name}`,
+              forward: () => store.restorePageFromSnapshot(after),
+              inverse: () => store.restorePageFromSnapshot(before)
+            })
+            beforeSnapshot = null
+          }
         }
       },
       onFlashNodes: (nodeIds) => {

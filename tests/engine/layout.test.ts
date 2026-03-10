@@ -1033,7 +1033,7 @@ describe('Auto Layout', () => {
         primaryAxisAlign: 'CENTER',
       })
 
-      const text = graph.createNode('TEXT', frame.id, {
+      graph.createNode('TEXT', frame.id, {
         width: 200,
         height: 20,
         text: 'Test',
@@ -1044,7 +1044,8 @@ describe('Auto Layout', () => {
       setTextMeasurer(null)
       computeAllLayouts(graph)
 
-      const updatedText = graph.getNode(text.id)!
+      const children = graph.getChildren(frame.id)
+      const updatedText = children[0]
       // Rough estimate: ~0.6 × fontSize × charCount, not the 100×100 default
       expect(updatedText.width).toBeLessThan(100)
       expect(updatedText.width).toBeGreaterThan(0)
