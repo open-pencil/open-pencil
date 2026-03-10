@@ -1,0 +1,26 @@
+OpenPencil v0.9.0 — a lot happened since 0.7.
+
+Features:
+→ CSS Grid layout — forked Yoga with cherry-picked Grid PRs. Configure tracks (fr/px/auto), gaps, padding
+→ Tailwind CSS v4 export — Code panel toggles between OpenPencil JSX and HTML+Tailwind. Grid layouts export too: 𝚐𝚛𝚒𝚍 𝚐𝚛𝚒𝚍-𝚌𝚘𝚕𝚜-𝙽, 𝚌𝚘𝚕-𝚜𝚙𝚊𝚗-*
+→ Multi-provider AI — connect to Anthropic, OpenAI, Google AI, or any OpenAI-compatible endpoint directly, not just OpenRouter. Per-provider keys, Completions/Responses API toggle, visual verification (model sees what it built via vision)
+→ XPath queries — 𝚘𝚙𝚎𝚗-𝚙𝚎𝚗𝚌𝚒𝚕 𝚚𝚞𝚎𝚛𝚢 𝚍𝚎𝚜𝚒𝚐𝚗.𝚏𝚒𝚐 "//𝙵𝚁𝙰𝙼𝙴[@𝚠𝚒𝚍𝚝𝚑 < 𝟹𝟶𝟶]" from CLI or AI
+→ CLI-to-app RPC bridge — run 𝚋𝚞𝚗 𝚘𝚙𝚎𝚗-𝚙𝚎𝚗𝚌𝚒𝚕 𝚝𝚛𝚎𝚎 against the live editor, no file needed
+→ Undo for auto-layout reorder, layer tree reorder, and drag reparent
+→ Double-click to rename layers, auto-layout icons in layer tree, draggable frame titles on canvas, compact icon-based layout controls
+→ Shift+A auto-detects horizontal vs vertical direction. Padding auto-enables auto-layout.
+→ Figma zoom shortcuts: ⌘0/⌘1/⌘2
+→ Homebrew tap: 𝚋𝚛𝚎𝚠 𝚒𝚗𝚜𝚝𝚊𝚕𝚕 𝚘𝚙𝚎𝚗-𝚙𝚎𝚗𝚌𝚒𝚕/𝚝𝚊𝚙/𝚘𝚙𝚎𝚗-𝚙𝚎𝚗𝚌𝚒𝚕
+→ VitePress docs site at openpencil.dev — 6 locales
+
+91 AI/MCP tools now. New ones: 𝚐𝚎𝚝_𝚓𝚜𝚡, 𝚍𝚒𝚏𝚏_𝚓𝚜𝚡, 𝚍𝚎𝚜𝚌𝚛𝚒𝚋𝚎, 𝚊𝚗𝚊𝚕𝚢𝚣𝚎_*, 𝚚𝚞𝚎𝚛𝚢_𝚗𝚘𝚍𝚎𝚜, 𝚊𝚛𝚛𝚊𝚗𝚐𝚎, 𝚗𝚘𝚍𝚎_𝚝𝚘_𝚌𝚘𝚖𝚙𝚘𝚗𝚎𝚗𝚝. AI mutations get page-level undo and immediate layout recomputation.
+
+MCP and CLI became a lot more usable — updated tools, better prompts, improved output. Worth trying if you haven't recently. We also published an open-pencil skill for AI coding agents — 𝚗𝚙𝚡 𝚜𝚔𝚒𝚕𝚕𝚜 𝚊𝚍𝚍 𝚘𝚙𝚎𝚗-𝚙𝚎𝚗𝚌𝚒𝚕/𝚜𝚔𝚒𝚕𝚕𝚜@𝚘𝚙𝚎𝚗-𝚙𝚎𝚗𝚌𝚒𝚕 — so Claude Code / Cursor can work with .fig files out of the box.
+
+Big .fig compat fixes: variables/collections/bindings were lost on save — fixed. Text typography lost on Figma clipboard paste — fixed. Gradient transforms dropped on copy — fixed. Orphaned instances on paste detach to FRAME. Collab sync for reorder.
+
+Figma compatibility handles ~90% of complex files now, but the gap is still there — some edge cases in nested instances, certain effect combos, and node types we don't support yet. Closing it steadily.
+
+Performance: event bus cut render calls from 94 to 22, typed copy helpers are ~24× faster than structuredClone. Still not where we want it — raster caching and large file handling coming next.
+
+Lots of hardening behind the scenes — custom oxlint rules to catch AI-generated slop at compile time, type-aware linting with tsgo, complexity limits. Renderer split from one 3,200-line file into 10. esbuild-wasm (14 MB) swapped for sucrase (201 KB). 233 new tests.

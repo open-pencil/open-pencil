@@ -31,8 +31,7 @@ const ALIGN_MAP: Record<string, SceneNode['primaryAxisAlign']> = {
   start: 'MIN',
   end: 'MAX',
   center: 'CENTER',
-  between: 'SPACE_BETWEEN',
-  evenly: 'SPACE_EVENLY'
+  between: 'SPACE_BETWEEN'
 }
 
 const COUNTER_ALIGN_MAP: Record<string, 'MIN' | 'MAX' | 'CENTER' | 'STRETCH'> = {

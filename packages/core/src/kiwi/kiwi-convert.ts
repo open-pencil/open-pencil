@@ -224,8 +224,6 @@ function mapStackJustify(justify?: string): LayoutAlign {
       return 'MAX'
     case 'SPACE_BETWEEN':
       return 'SPACE_BETWEEN'
-    case 'SPACE_EVENLY':
-      return 'SPACE_EVENLY'
     default:
       return 'MIN'
   }

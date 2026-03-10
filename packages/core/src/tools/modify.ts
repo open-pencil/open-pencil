@@ -182,7 +182,7 @@ export const setLayout = defineTool({
       type: 'string',
       description: 'Primary axis alignment',
       default: 'MIN',
-      enum: ['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN', 'SPACE_EVENLY']
+      enum: ['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN']
     },
     counter_align: {
       type: 'string',

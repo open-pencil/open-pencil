@@ -1284,61 +1284,6 @@ describe('Auto Layout', () => {
     })
   })
 
-  describe('SPACE_EVENLY alignment', () => {
-    test('SPACE_EVENLY distributes equal gaps including edges', () => {
-      const graph = new SceneGraph()
-      const frame = autoFrame(graph, pageId(graph), {
-        width: 400,
-        height: 100,
-        primaryAxisAlign: 'SPACE_EVENLY' as const,
-      })
-      rect(graph, frame.id, 50, 50)
-      rect(graph, frame.id, 50, 50)
-
-      computeLayout(graph, frame.id)
-
-      const children = graph.getChildren(frame.id)
-      // 400 - 100 = 300 free, 3 gaps → 100 each
-      expect(children[0].x).toBe(100)
-      expect(children[1].x).toBe(250)
-    })
-
-    test('SPACE_EVENLY differs from SPACE_BETWEEN', () => {
-      const graph = new SceneGraph()
-
-      const sbFrame = autoFrame(graph, pageId(graph), {
-        width: 300,
-        height: 50,
-        primaryAxisAlign: 'SPACE_BETWEEN',
-      })
-      rect(graph, sbFrame.id, 50, 50)
-      rect(graph, sbFrame.id, 50, 50)
-      rect(graph, sbFrame.id, 50, 50)
-
-      const seFrame = autoFrame(graph, pageId(graph), {
-        width: 300,
-        height: 50,
-        primaryAxisAlign: 'SPACE_EVENLY' as const,
-      })
-      rect(graph, seFrame.id, 50, 50)
-      rect(graph, seFrame.id, 50, 50)
-      rect(graph, seFrame.id, 50, 50)
-
-      computeAllLayouts(graph)
-
-      const sbChildren = graph.getChildren(sbFrame.id)
-      const seChildren = graph.getChildren(seFrame.id)
-
-      // SPACE_BETWEEN: first at 0, last at 250
-      expect(sbChildren[0].x).toBe(0)
-      expect(sbChildren[2].x).toBe(250)
-
-      // SPACE_EVENLY: 300 - 150 = 150, 4 gaps → 37.5
-      expect(seChildren[0].x).toBeCloseTo(37.5, -1)
-      expect(seChildren[2].x).toBeCloseTo(212.5, -1)
-    })
-  })
-
   describe('layoutAlignSelf extended values', () => {
     test('layoutAlignSelf CENTER positions child at cross-axis center', () => {
       const graph = new SceneGraph()

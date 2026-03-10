@@ -548,8 +548,6 @@ function mapJustify(align: string): Justify {
       return Justify.FlexEnd
     case 'SPACE_BETWEEN':
       return Justify.SpaceBetween
-    case 'SPACE_EVENLY':
-      return Justify.SpaceEvenly
     default:
       return Justify.FlexStart
   }
