@@ -82,7 +82,12 @@ export function useKeyboard() {
     }
 
     const html = e.clipboardData?.getData('text/html') ?? ''
-    if (html) store.pasteFromHTML(html)
+    if (html) {
+      store.pasteFromHTML(html, {
+        x: store.state.cursorCanvasX,
+        y: store.state.cursorCanvasY
+      })
+    }
   })
 
   const keys = useMagicKeys({

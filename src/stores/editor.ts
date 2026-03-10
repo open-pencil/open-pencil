@@ -1931,20 +1931,20 @@ export function createEditorStore() {
     requestRender()
   }
 
-  function pasteFromHTML(html: string) {
+  function pasteFromHTML(html: string, cursorPos?: Vector) {
     const ownNodes = parseOpenPencilClipboard(html)
     if (ownNodes) {
-      pasteOpenPencilNodes(ownNodes)
+      pasteOpenPencilNodes(ownNodes, undefined, cursorPos)
       return
     }
 
     void parseFigmaClipboard(html).then((figma) => {
       if (figma) {
         const bounds = figmaNodesBounds(figma.nodes)
-        const viewCenterX = (-state.panX + window.innerWidth / 2) / state.zoom
-        const viewCenterY = (-state.panY + window.innerHeight / 2) / state.zoom
-        const offsetX = bounds ? viewCenterX - (bounds.x + bounds.w / 2) : 0
-        const offsetY = bounds ? viewCenterY - (bounds.y + bounds.h / 2) : 0
+        const cx = cursorPos?.x ?? (-state.panX + window.innerWidth / 2) / state.zoom
+        const cy = cursorPos?.y ?? (-state.panY + window.innerHeight / 2) / state.zoom
+        const offsetX = bounds ? cx - (bounds.x + bounds.w / 2) : 0
+        const offsetY = bounds ? cy - (bounds.y + bounds.h / 2) : 0
 
         const prevSelection = new Set(state.selectedIds)
         const created = importClipboardNodes(
@@ -1987,19 +1987,37 @@ export function createEditorStore() {
 
   function pasteOpenPencilNodes(
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
-    parentId?: string
+    parentId?: string,
+    cursorPos?: Vector
   ) {
     const target = parentId ?? state.currentPageId
     const prevSelection = new Set(state.selectedIds)
     const newIds: string[] = []
     const created: Array<{ id: string; parentId: string; snapshot: SceneNode }> = []
 
+    let offsetX = 20
+    let offsetY = 20
+    if (cursorPos && nodes.length > 0) {
+      let minX = Infinity
+      let minY = Infinity
+      let maxX = -Infinity
+      let maxY = -Infinity
+      for (const n of nodes) {
+        minX = Math.min(minX, n.x)
+        minY = Math.min(minY, n.y)
+        maxX = Math.max(maxX, n.x + n.width)
+        maxY = Math.max(maxY, n.y + n.height)
+      }
+      offsetX = cursorPos.x - (minX + maxX) / 2
+      offsetY = cursorPos.y - (minY + maxY) / 2
+    }
+
     function createTree(src: SceneNode & { children?: SceneNode[] }, pid: string, isTop: boolean) {
       const { id: _srcId, parentId: _srcParent, childIds: _srcChildren, ...rest } = src
       const node = graph.createNode(src.type, pid, {
         ...rest,
-        x: src.x + (isTop ? 20 : 0),
-        y: src.y + (isTop ? 20 : 0)
+        x: src.x + (isTop ? offsetX : 0),
+        y: src.y + (isTop ? offsetY : 0)
       })
       created.push({ id: node.id, parentId: pid, snapshot: { ...node } })
       if (isTop) newIds.push(node.id)
