@@ -34,7 +34,7 @@ justify/items require flex — always declare flex="row" or flex="col" before us
 
 A hug parent shrinks to fit its children. A fill child stretches to its parent. These can't be circular — if the parent hugs, at least one child must have a concrete size.
 
-Nested flex containers inside a column parent need w="fill" to stretch, otherwise they collapse to zero width.
+Nested flex containers inside a column parent need w="fill" to stretch, otherwise they collapse to zero width. ⚠ This applies to ALL intermediate containers, not just the first level. If you have `flex="col" > flex="col" > flex="row"`, EVERY level needs w="fill". A `grow={1}` child inside a HUG parent gets zero width — the parent must have a concrete size (fixed w or w="fill").
 
 There is no margin property. Padding on a container pushes all children equally from the edges. To offset a single child, wrap it in a Frame with its own padding.
 

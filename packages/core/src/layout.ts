@@ -426,8 +426,9 @@ function configureTextLeaf(
       yogaChild.setWidth(fixedWidth)
     }
     yogaChild.setMeasureFunc((width, widthMode, _height, _heightMode) => {
-      const constraintW =
-        widthMode === MeasureMode.Undefined ? fixedWidth : Math.min(width, fixedWidth || width)
+      const constraintW = fillsWidth
+        ? (widthMode === MeasureMode.Undefined ? fixedWidth : width)
+        : (widthMode === MeasureMode.Undefined ? fixedWidth : Math.min(width, fixedWidth || width))
       const cacheKey = Math.round(constraintW)
       const cached = cache.get(cacheKey)
       if (cached) return cached
