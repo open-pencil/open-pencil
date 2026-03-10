@@ -178,7 +178,6 @@ watch(providerID, (id) => {
 watch(modelID, () => resetChat())
 watch(customModelID, () => resetChat())
 watch(customAPIType, () => resetChat())
-watch(maxOutputTokens, () => resetChat())
 
 function setAPIKey(key: string) {
   apiKey.value = key

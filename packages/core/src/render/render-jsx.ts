@@ -7,30 +7,20 @@ import { resolveToTree, type TreeNode } from './tree'
 import type { SceneGraph } from '../scene-graph'
 
 /**
- * Strip TypeScript-only syntax that sucrase's JSX-only transform can't handle.
- * AI models sometimes emit `as any`, `as const`, etc.
- */
-function stripTypeAnnotations(jsx: string): string {
-  return jsx.replace(/\bas\s+(any|const|string|number|unknown)\b/g, '')
-}
-
-/**
  * Build a component function from a JSX string using sucrase.
  * Works in both Node/Bun and the browser (no native bindings).
  */
 export function buildComponent(jsxString: string): () => unknown {
-  const sanitized = stripTypeAnnotations(jsxString.trim())
-
   const code = `
     const h = React.createElement
     const Frame = 'frame', Text = 'text', Rectangle = 'rectangle', Ellipse = 'ellipse'
     const Line = 'line', Star = 'star', Polygon = 'polygon', Vector = 'vector'
     const Group = 'group', Section = 'section', View = 'frame', Rect = 'rectangle'
-    return function Component() { return ${sanitized} }
+    return function Component() { return ${jsxString.trim()} }
   `
 
   const result = transform(code, {
-    transforms: ['jsx'],
+    transforms: ['typescript', 'jsx'],
     jsxPragma: 'h',
     production: true
   })
