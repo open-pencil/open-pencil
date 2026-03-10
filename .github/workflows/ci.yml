@@ -19,7 +19,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Pull LFS files
-        run: git lfs pull
+        run: |
+          git lfs install --force
+          git lfs env
+          git lfs pull
+          head -c 4 tests/fixtures/material3.fig | xxd
 
       - uses: oven-sh/setup-bun@v2
 
