@@ -91,6 +91,7 @@ export {
   ensureNodeFont,
   ensureCJKFallback,
   getCJKFallbackFamily,
+  setCJKFallbackFamily,
   styleToWeight,
   weightToStyle
 } from './fonts'

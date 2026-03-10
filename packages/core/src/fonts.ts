@@ -331,6 +331,10 @@ export function getCJKFallbackFamily(): string | null {
   return cjkFallbackFamily
 }
 
+export function setCJKFallbackFamily(family: string): void {
+  cjkFallbackFamily = family
+}
+
 export function weightToStyle(weight: number, italic = false): string {
   let label = 'Regular'
   if (weight <= 100) label = 'Thin'
