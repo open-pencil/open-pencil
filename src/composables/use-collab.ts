@@ -46,6 +46,7 @@ export function useCollab(store: EditorStore) {
   let ydoc: Y.Doc | null = null
   let awareness: awarenessProtocol.Awareness | null = null
   let ynodes: Y.Map<Y.Map<unknown>> | null = null
+  let yimages: Y.Map<Uint8Array> | null = null
   let room: Room | null = null
   let persistence: IndexeddbPersistence | null = null
   let suppressGraphSync = false
@@ -64,6 +65,7 @@ export function useCollab(store: EditorStore) {
     ydoc = new Y.Doc()
     awareness = new awarenessProtocol.Awareness(ydoc)
     ynodes = ydoc.getMap('nodes')
+    yimages = ydoc.getMap('images')
 
     persistence = new IndexeddbPersistence(`op-room-${roomId}`, ydoc)
 
@@ -79,6 +81,19 @@ export function useCollab(store: EditorStore) {
         applyYjsToGraph(events)
       } finally {
         suppressGraphSync = false
+      }
+      store.requestRender()
+    })
+
+    yimages.observe((event) => {
+      if (suppressYjsEvents) return
+      for (const [key, change] of event.changes.keys) {
+        if (change.action === 'add' || change.action === 'update') {
+          const data = yimages?.get(key)
+          if (data) store.graph.images.set(key, new Uint8Array(data))
+        } else {
+          store.graph.images.delete(key)
+        }
       }
       store.requestRender()
     })
@@ -247,6 +262,7 @@ export function useCollab(store: EditorStore) {
       ydoc = null
     }
     ynodes = null
+    yimages = null
     state.value.connected = false
     state.value.roomId = null
     state.value.peers = []
@@ -260,6 +276,7 @@ export function useCollab(store: EditorStore) {
     if (!node) return
 
     const localYnodes = ynodes
+    const localYimages = yimages
     suppressYjsEvents = true
     ydoc.transact(() => {
       let ynode = localYnodes.get(nodeId)
@@ -268,6 +285,15 @@ export function useCollab(store: EditorStore) {
         localYnodes.set(nodeId, ynode)
       }
       syncNodePropsToYMap(node, ynode)
+
+      if (localYimages) {
+        for (const fill of node.fills) {
+          if (fill.imageHash && !localYimages.has(fill.imageHash)) {
+            const data = store.graph.images.get(fill.imageHash)
+            if (data) localYimages.set(fill.imageHash, data)
+          }
+        }
+      }
     })
     suppressYjsEvents = false
   }
@@ -285,6 +311,7 @@ export function useCollab(store: EditorStore) {
   function syncAllNodesToYjs() {
     if (!ydoc || !ynodes) return
     const localYnodes = ynodes
+    const localYimages = yimages
     suppressYjsEvents = true
     ydoc.transact(() => {
       for (const node of store.graph.getAllNodes()) {
@@ -296,6 +323,15 @@ export function useCollab(store: EditorStore) {
         syncNodePropsToYMap(node, ynode)
       }
     })
+    if (localYimages) {
+      ydoc.transact(() => {
+        for (const [hash, data] of store.graph.images) {
+          if (!localYimages.has(hash)) {
+            localYimages.set(hash, data)
+          }
+        }
+      })
+    }
     suppressYjsEvents = false
   }
 
