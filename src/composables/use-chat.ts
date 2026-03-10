@@ -249,7 +249,8 @@ function createTransport() {
     model: createModel(),
     instructions: SYSTEM_PROMPT,
     tools,
-    maxOutputTokens: maxOutputTokens.value
+    maxOutputTokens: maxOutputTokens.value,
+    prepareCall: (options) => ({ ...options, maxOutputTokens: maxOutputTokens.value })
   })
 
   return new DirectChatTransport({ agent })
