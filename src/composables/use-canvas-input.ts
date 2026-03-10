@@ -747,9 +747,11 @@ export function useCanvasInput(
   }
 
   function onMouseMove(e: MouseEvent) {
-    if (onCursorMove) {
+    {
       const { cx, cy } = getCoords(e)
-      onCursorMove(cx, cy)
+      store.state.cursorCanvasX = cx
+      store.state.cursorCanvasY = cy
+      if (onCursorMove) onCursorMove(cx, cy)
     }
 
     if (store.state.activeTool === 'PEN' && store.state.penState && !drag.value) {

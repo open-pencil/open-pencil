@@ -77,9 +77,7 @@ export function useKeyboard() {
 
     const imageFiles = extractImageFilesFromClipboard(e)
     if (imageFiles.length) {
-      const vcx = (-store.state.panX + window.innerWidth / 2) / store.state.zoom
-      const vcy = (-store.state.panY + window.innerHeight / 2) / store.state.zoom
-      void store.placeImageFiles(imageFiles, vcx, vcy)
+      void store.placeImageFiles(imageFiles, store.state.cursorCanvasX, store.state.cursorCanvasY)
       return
     }
 
