@@ -229,18 +229,33 @@ function addLoopToPath(
 ): void {
   if (loop.length === 0) return
 
-  // Region loops have pre-oriented segments — always draw forward
   const firstSeg = segments[loop[0]]
-  path.moveTo(vertices[firstSeg.start].x, vertices[firstSeg.start].y)
+
+  // Determine the starting vertex — if the loop has multiple segments,
+  // the first segment's direction is determined by which vertex connects
+  // to the second segment.
+  let current: number
+  if (loop.length === 1) {
+    current = firstSeg.start
+  } else {
+    const secondSeg = segments[loop[1]]
+    if (firstSeg.end === secondSeg.start || firstSeg.end === secondSeg.end) {
+      current = firstSeg.start
+    } else {
+      current = firstSeg.end
+    }
+  }
+
+  path.moveTo(vertices[current].x, vertices[current].y)
 
   for (const segIdx of loop) {
-    addSegmentDirected(path, segments[segIdx], vertices, true)
+    const seg = segments[segIdx]
+    const forward = seg.start === current
+    addSegmentDirected(path, seg, vertices, forward)
+    current = forward ? seg.end : seg.start
   }
 
-  const lastSeg = segments[loop[loop.length - 1]]
-  if (lastSeg.end === firstSeg.start) {
-    path.close()
-  }
+  path.close()
 }
 
 function addSegmentDirected(

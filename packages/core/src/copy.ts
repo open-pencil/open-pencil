@@ -39,7 +39,10 @@ export function copyEffect(e: Effect): Effect {
 export function copyStyleRun(r: StyleRun): StyleRun {
   return {
     ...r,
-    style: { ...r.style },
+    style: {
+      ...r.style,
+      fills: r.style.fills ? r.style.fills.map(copyFill) : undefined,
+    },
   }
 }
 

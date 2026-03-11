@@ -338,6 +338,10 @@ function convertStyleOverride(
   }
   const deco = override.textDecoration
   if (deco) style.textDecoration = mapTextDecoration(deco)
+  if (override.fillPaints) {
+    const fills = convertFills(override.fillPaints)
+    if (fills.length > 0) style.fills = fills
+  }
   return style
 }
 

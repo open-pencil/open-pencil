@@ -237,6 +237,9 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
       override.lineHeight = { value: style.lineHeight, units: 'PIXELS' }
     }
     if (style.textDecoration) override.textDecoration = style.textDecoration
+    if (style.fills && style.fills.length > 0) {
+      override.fillPaints = style.fills.map(fillToKiwiPaint)
+    }
     overrideTable.push(override as unknown as NodeChange)
   }
 

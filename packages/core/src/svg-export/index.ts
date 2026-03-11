@@ -147,6 +147,12 @@ function styleOverrideToTspanAttrs(style: CharacterStyleOverride): Record<string
   if (style.letterSpacing) attrs['letter-spacing'] = round(style.letterSpacing)
   if (style.textDecoration === 'UNDERLINE') attrs['text-decoration'] = 'underline'
   if (style.textDecoration === 'STRIKETHROUGH') attrs['text-decoration'] = 'line-through'
+  if (style.fills) {
+    const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
+    if (visibleFill) {
+      attrs.fill = formatColor(visibleFill.color, visibleFill.opacity)
+    }
+  }
   return attrs
 }
 
