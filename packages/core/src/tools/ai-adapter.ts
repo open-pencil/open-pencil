@@ -94,7 +94,7 @@ function emitToolLog(
   if (def.mutates && !error) {
     nodeAfter = captureNodeSnapshot(figma, args)
     if (nodeBefore && nodeAfter) {
-      unchangedProps = detectUnchangedProps(args, nodeBefore, nodeAfter)
+      unchangedProps = detectUnchangedProps(def.name, args, nodeBefore, nodeAfter)
     }
   }
 
@@ -197,14 +197,25 @@ const ARG_TO_NODE_PROP: Record<string, string> = {
   mode: 'blendMode'
 }
 
+/** Args that are parameters to the tool, not node properties to track */
+const SKIP_ARGS: Record<string, Set<string>> = {
+  set_effects: new Set(['type', 'color', 'offset_x', 'offset_y', 'radius', 'spread']),
+  set_fill: new Set(['type', 'color']),
+  set_stroke: new Set(['type', 'color']),
+  set_layout: new Set(['align', 'counter_align', 'padding', 'padding_horizontal', 'padding_vertical']),
+}
+
 function detectUnchangedProps(
+  toolName: string,
   args: Record<string, unknown>,
   before: Record<string, unknown>,
   after: Record<string, unknown>
 ): string[] {
+  const skipSet = SKIP_ARGS[toolName]
   const unchanged: string[] = []
   for (const [argKey, argVal] of Object.entries(args)) {
     if (argKey === 'id' || argVal === undefined) continue
+    if (skipSet?.has(argKey)) continue
     const nodeProp = ARG_TO_NODE_PROP[argKey] ?? argKey
     const beforeVal = before[nodeProp]
     const afterVal = after[nodeProp]

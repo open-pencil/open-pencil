@@ -170,8 +170,7 @@ export const setLayout = defineTool({
     id: { type: 'string', description: 'Frame node ID', required: true },
     direction: {
       type: 'string',
-      description: 'Layout direction',
-      required: true,
+      description: 'Layout direction (keeps current if omitted)',
       enum: ['HORIZONTAL', 'VERTICAL']
     },
     spacing: { type: 'number', description: 'Gap between items', default: 0, min: 0 },
@@ -195,7 +194,7 @@ export const setLayout = defineTool({
     const node = figma.getNodeById(args.id)
     if (!node) return { error: `Node "${args.id}" not found` }
 
-    node.layoutMode = args.direction as 'HORIZONTAL' | 'VERTICAL'
+    if (args.direction) node.layoutMode = args.direction as 'HORIZONTAL' | 'VERTICAL'
     node.itemSpacing = args.spacing ?? 0
     node.primaryAxisAlignItems = (args.align ?? 'MIN') as any
     node.counterAxisAlignItems = (args.counter_align ?? 'MIN') as any

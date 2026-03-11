@@ -96,7 +96,9 @@ Split into **2–3 render calls**, not 10. Example for a movie card:
 
 That's it — 3 renders total, not one per element. Each render fills a major section. Call `describe` on the root after each to verify.
 
-**Sizing rule for skeleton sections:** When a section uses `grow={1}` to fill remaining space, its children that should expand must also use `grow={1}` — not `h="fill"`. And critically: give the **fixed-height** child an explicit `h={N}` that leaves enough room. If the root is 844px and header=72, actions=116, tabbar=87, then card area = 844−72−116−87 = 569px. If photo=420 that leaves only 149px for content — too little. Plan the math before rendering.
+**Sizing rule for skeleton sections:** When a section uses `grow={1}` to fill remaining space, its children that should expand must also use `grow={1}` — not `h="fill"`. And critically: give the **fixed-height** child an explicit `h={N}` that leaves enough room.
+
+🧮 **Use `calc` for ALL layout arithmetic** — never compute sizes in your head. Call `calc("844 - 72 - 116 - 87")` → 569 to verify available space. Before rendering content into a fixed-size container, `calc` the total height of children + gaps + padding to confirm it fits. LLMs make arithmetic errors — the `calc` tool does not.
 
 ## Typography
 
@@ -193,7 +195,7 @@ All visual elements (Rectangle, Ellipse, Star, Polygon, Line) have **no fill by 
 
 # Inspecting
 
-- `describe` — semantic info: role, style, layout, children, design issues. **Primary verification tool** — call after every render.
+- `describe` — semantic info: role, style, layout, children, design issues. **Primary verification tool** — call after every render. Use `depth=2` on root to see two levels deep in one call.
 - `get_jsx` — JSX tree, same syntax as render. Read → tweak → render back.
 - `diff_jsx` — unified diff between two nodes.
 - `get_page_tree` — full hierarchy of the current page.
@@ -203,6 +205,8 @@ All visual elements (Rectangle, Ellipse, Star, Polygon, Line) have **no fill by 
 - `analyze_colors`, `analyze_typography`, `analyze_spacing`, `analyze_clusters` — audit patterns in the design.
 
 🚫 **Never use `export_image`** — it's slow and wastes tokens on base64 data. Use `describe` instead.
+
+- `calc` — arithmetic calculator. **Always use for layout math** instead of mental arithmetic: `calc("844 - 56 - 96 - 82")` → 610. Use before rendering to verify children fit, after describe to check available space, and whenever computing padding/gap/size values.
 
 # Modifying
 
@@ -222,14 +226,17 @@ For targeted edits, use specific tools instead of re-rendering:
 
 # Workflow (MANDATORY)
 
-1. `render` — skeleton (outer frame + empty sections)
-2. `describe` root — verify sizes
-3. `render` into section A (e.g. poster)
-4. `describe` root — verify
-5. `render` into section B (e.g. content)
-6. `describe` root — final check
-7. Fix with `set_*` / `update_node`
+1. `calc` — compute section heights: `calc("844 - 56 - 96 - 82")` → available space
+2. `render` — skeleton (outer frame + empty sections with calculated heights)
+3. `describe` root with `depth=2` — verify sizes at all levels
+4. `render` into section A (e.g. poster)
+5. `describe` root with `depth=2` — verify (one call shows sections + their children)
+6. `render` into section B (e.g. content)
+7. `describe` root with `depth=2` — final check, `calc` totals if content might overflow
+8. Fix with `set_*` / `update_node`
 
-Typically **3 renders + 3 describes** for a full design. `describe` always targets the **root frame** — shows all sections at once.
+Typically **3 renders + 3 describes** for a full design. `describe` the **root frame** with `depth=2` after each render — this shows sections AND their children in one call, so you can spot sizing issues without extra calls.
 
-🚫 Do NOT put everything in one render. Do NOT skip `describe` between renders.
+🧮 Before filling a fixed-height container, always `calc` the total: `calc("childH1 + childH2 + gaps * (N-1) + padTop + padBot")` and compare to available height from `describe`. This catches overflow before it happens.
+
+🚫 Do NOT put everything in one render. Do NOT skip `describe` between renders. Do NOT call `describe` on individual children when `depth=2` on the root would show the same info.

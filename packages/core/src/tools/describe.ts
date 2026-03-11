@@ -527,7 +527,15 @@ function detectRole(node: SceneNode): string {
   return 'generic'
 }
 
-function describeChild(node: SceneNode): { role: string; name: string; summary: string; id: string } {
+interface ChildDescription {
+  role: string
+  name: string
+  summary: string
+  id: string
+  children?: ChildDescription[]
+}
+
+function describeChild(node: SceneNode, graph: SceneGraph, depth: number, gridSize: number): ChildDescription {
   const role = detectRole(node)
   let summary = ''
   if (node.type === 'TEXT') {
@@ -543,19 +551,32 @@ function describeChild(node: SceneNode): { role: string; name: string; summary: 
     if (fill) summary += `, ${colorToHex(fill.color)}`
     if (node.cornerRadius > 0) summary += ', rounded'
   }
-  return { role, name: node.name, summary, id: node.id }
+  const result: ChildDescription = { role, name: node.name, summary, id: node.id }
+
+  if (depth > 0 && node.childIds.length > 0) {
+    const kids: ChildDescription[] = []
+    for (const childId of node.childIds) {
+      const child = graph.getNode(childId)
+      if (!child || !child.visible) continue
+      kids.push(describeChild(child, graph, depth - 1, gridSize))
+    }
+    if (kids.length > 0) result.children = kids
+  }
+  return result
 }
 
 export const describe = defineTool({
   name: 'describe',
   description:
-    'Semantic description of a node: role, visual style, layout, children summary, and design issues.',
+    'Semantic description of a node: role, visual style, layout, children summary, and design issues. Use depth=2 to see grandchildren (recommended for root frames).',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
+    depth: { type: 'number', description: 'How many levels of children to include (default: 1, max: 3)' },
     grid: { type: 'number', description: 'Grid size for alignment checks (default: 8)' }
   },
   execute: (figma, args) => {
     const gridSize = args.grid ?? 8
+    const depth = Math.min(args.depth ?? 1, 3)
     const raw = figma.graph.getNode(args.id)
     if (!raw) return { error: `Node "${args.id}" not found` }
 
@@ -564,11 +585,11 @@ export const describe = defineTool({
     const layout = describeLayout(raw)
     const issues = detectIssues(raw, gridSize, figma.graph)
 
-    const children: { role: string; name: string; summary: string; id: string }[] = []
+    const children: ChildDescription[] = []
     for (const childId of raw.childIds) {
       const child = figma.graph.getNode(childId)
       if (!child || !child.visible) continue
-      children.push(describeChild(child))
+      children.push(describeChild(child, figma.graph, depth - 1, gridSize))
     }
 
     const result: Record<string, unknown> = {

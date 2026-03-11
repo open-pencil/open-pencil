@@ -37,6 +37,7 @@ import {
 } from './analyze'
 import { describe } from './describe'
 import { designToTokens, designToComponentMap, getCodegenPrompt } from './codegen'
+import { calc } from './calc'
 
 export const ALL_TOOLS: ToolDef[] = [
   // Read
@@ -142,5 +143,7 @@ export const ALL_TOOLS: ToolDef[] = [
   designToComponentMap,
   getCodegenPrompt,
   // Eval
-  evalCode
+  evalCode,
+  // Utility
+  calc
 ]
