@@ -1119,16 +1119,16 @@ export class SkiaRenderer {
     drawNodeFillFn(this, canvas, node, rect, hasRadius)
   }
 
-  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): void {
-    applyFillFn(this, fill, node, graph, fillIndex)
+  applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
+    return applyFillFn(this, fill, node, graph, fillIndex)
   }
 
   applyGradientFill(fill: Fill, node: SceneNode): void {
     applyGradientFillFn(this, fill, node)
   }
 
-  applyImageFill(fill: Fill, node: SceneNode, graph: SceneGraph): void {
-    applyImageFillFn(this, fill, node, graph)
+  applyImageFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
+    return applyImageFillFn(this, fill, node, graph)
   }
 
   drawArc(canvas: Canvas, node: SceneNode, paint: Paint): void {

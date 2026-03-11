@@ -57,24 +57,25 @@ export function applyFill(
   node: SceneNode,
   graph: SceneGraph,
   fillIndex = 0
-): void {
+): boolean {
   r.fillPaint.setShader(null)
 
   if (fill.type === 'SOLID') {
     const c = r.resolveFillColor(fill, fillIndex, node, graph)
     r.fillPaint.setColor(r.ck.Color4f(c.r, c.g, c.b, c.a))
-    return
+    return true
   }
 
   if (fill.type.startsWith('GRADIENT') && fill.gradientStops && fill.gradientTransform) {
     r.applyGradientFill(fill, node)
-    return
+    return true
   }
 
   if (fill.type === 'IMAGE' && fill.imageHash) {
-    r.applyImageFill(fill, node, graph)
-    return
+    return r.applyImageFill(fill, node, graph)
   }
+
+  return false
 }
 
 export function applyGradientFill(r: SkiaRenderer, fill: Fill, node: SceneNode): void {
@@ -144,16 +145,16 @@ export function applyImageFill(
   fill: Fill,
   node: SceneNode,
   graph: SceneGraph
-): void {
+): boolean {
   const hash = fill.imageHash
-  if (!hash) return
+  if (!hash) return false
   let img = r.imageCache.get(hash)
   if (!img) {
     const data = graph.images.get(hash)
-    if (!data) return
+    if (!data) return false
     img = r.ck.MakeImageFromEncoded(data) ?? undefined
     if (img) r.imageCache.set(hash, img)
-    else return
+    else return false
   }
 
   const imgW = img.width()
@@ -168,7 +169,7 @@ export function applyImageFill(
       1 / 3
     )
     r.fillPaint.setShader(shader)
-    return
+    return true
   }
 
   let sx: number, sy: number, sw: number, sh: number
@@ -203,6 +204,7 @@ export function applyImageFill(
     )
   )
   r.fillPaint.setShader(shader)
+  return true
 }
 
 export function drawArc(r: SkiaRenderer, canvas: Canvas, node: SceneNode, paint: Paint): void {

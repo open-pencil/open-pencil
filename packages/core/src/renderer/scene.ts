@@ -172,7 +172,7 @@ export function renderSection(
   for (let fi = 0; fi < node.fills.length; fi++) {
     const fill = node.fills[fi]
     if (!fill.visible) continue
-    r.applyFill(fill, node, graph, fi)
+    if (!r.applyFill(fill, node, graph, fi)) continue
     r.fillPaint.setAlphaf(fill.opacity)
     canvas.drawRRect(rrect, r.fillPaint)
     r.fillPaint.setShader(null)
@@ -206,7 +206,7 @@ export function renderComponentSet(
   for (let fi = 0; fi < node.fills.length; fi++) {
     const fill = node.fills[fi]
     if (!fill.visible) continue
-    r.applyFill(fill, node, graph, fi)
+    if (!r.applyFill(fill, node, graph, fi)) continue
     r.fillPaint.setAlphaf(fill.opacity)
     canvas.drawRRect(rrect, r.fillPaint)
     r.fillPaint.setShader(null)
@@ -364,7 +364,7 @@ export function renderShapeUncached(
   for (let fi = 0; fi < node.fills.length; fi++) {
     const fill = node.fills[fi]
     if (!fill.visible) continue
-    r.applyFill(fill, node, graph, fi)
+    if (!r.applyFill(fill, node, graph, fi)) continue
     r.fillPaint.setAlphaf(fill.opacity)
     r.drawNodeFill(canvas, node, rect, hasRadius)
     r.fillPaint.setShader(null)
