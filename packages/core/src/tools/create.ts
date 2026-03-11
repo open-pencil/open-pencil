@@ -258,6 +258,8 @@ function createIconFrame(
     vector.name = 'path'
     vector.resize(size, size)
     frame.appendChild(vector)
+    vector.x = 0
+    vector.y = 0
 
     figma.graph.updateNode(vector.id, {
       vectorNetwork: path.vectorNetwork
