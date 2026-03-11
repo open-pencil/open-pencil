@@ -187,7 +187,42 @@ A vertical divider (`w={1} h={N}`) must be a sibling inside the same `flex="row"
 
 Never place vertical dividers outside their row container. Horizontal dividers (`h={1} w="fill"`) go between sections in a `flex="col"` parent.
 
-## Icons and shapes
+## Icons
+
+Three tools for Iconify icons (200k+ icons):
+
+- `search_icons` — find icons by keyword. Pass multiple queries at once: `queries=["heart","arrow","settings"]`.
+- `fetch_icons` — pre-download icons into cache. Batches by prefix (one HTTP request per set). Pass all names you'll need: `names=["lucide:heart","lucide:home","lucide:star"]`.
+- `insert_icon` — place one icon on the canvas. Instant if already cached by `fetch_icons`.
+
+**Workflow:** search → fetch batch → insert one by one as you build.
+
+```
+1. search_icons(queries=["heart","home","settings","star"])
+2. fetch_icons(names=["lucide:heart","lucide:home","lucide:settings","lucide:star"], size=20)
+3. render skeleton...
+4. insert_icon(name="lucide:heart", parent_id=..., color="#FFF")
+5. insert_icon(name="lucide:home", parent_id=..., color="#FFF")
+   ... (each insert_icon is instant — no network wait)
+```
+
+**Popular icon sets:**
+
+| Prefix | Style | Best for |
+|--------|-------|----------|
+| `lucide` | Outline/stroke | UI, minimal |
+| `mdi` | Filled | General purpose |
+| `heroicons` | Outline/stroke | Web apps |
+| `tabler` | Outline/stroke | Dashboards |
+| `solar` | Mixed | Modern UI |
+| `mingcute` | Filled | Apps, mobile |
+| `ri` | Filled | Web, editorial |
+| `iconoir` | Outline/stroke | Clean, minimal |
+| `ph` | Multiple weights | Versatile |
+
+⚠ Always set `color` on `insert_icon` — default is black, invisible on dark backgrounds.
+
+## Shapes
 
 All visual elements (Rectangle, Ellipse, Star, Polygon, Line) have **no fill by default** — they render as invisible without `bg="#hex"` or `stroke="#hex"`.
 
@@ -240,3 +275,7 @@ Typically **3 renders + 3 describes** for a full design. `describe` the **root f
 🧮 Before filling a fixed-height container, always `calc` the total: `calc("childH1 + childH2 + gaps * (N-1) + padTop + padBot")` and compare to available height from `describe`. This catches overflow before it happens.
 
 🚫 Do NOT put everything in one render. Do NOT skip `describe` between renders. Do NOT call `describe` on individual children when `depth=2` on the root would show the same info.
+
+## Step budget
+
+You have **50 steps** per message (each model response = 1 step). Budget your steps: a typical design needs ~3 renders + ~3 describes + icon/fix calls = ~15–25 steps. If tool results include `_warning` about remaining steps, wrap up immediately — finish critical layout, skip polish. The user can send "continue" for another 50 steps.

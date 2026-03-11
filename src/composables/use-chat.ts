@@ -4,11 +4,11 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { Chat } from '@ai-sdk/vue'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import { useLocalStorage } from '@vueuse/core'
-import { DirectChatTransport, ToolLoopAgent } from 'ai'
+import { DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
 import { computed, ref, watch } from 'vue'
 
 import SYSTEM_PROMPT from '@/ai/system-prompt.md?raw'
-import { createAITools, recordStepUsage } from '@/ai/tools'
+import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/ai/tools'
 import { useEditorStore } from '@/stores/editor'
 import { AI_PROVIDERS, DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER } from '@open-pencil/core'
 
@@ -180,13 +180,17 @@ function createTransport() {
     model: createModel(),
     instructions: SYSTEM_PROMPT,
     tools,
+    stopWhen: stepCountIs(MAX_AGENT_STEPS),
     maxOutputTokens: maxOutputTokens.value,
     providerOptions: cacheProviderOptions,
-    prepareCall: (options) => ({
-      ...options,
-      maxOutputTokens: maxOutputTokens.value,
-      providerOptions: cacheProviderOptions
-    }),
+    prepareCall: (options) => {
+      resetRunSteps()
+      return {
+        ...options,
+        maxOutputTokens: maxOutputTokens.value,
+        providerOptions: cacheProviderOptions
+      }
+    },
     onStepFinish: ({ usage }) => {
       recordStepUsage({
         inputTokens: usage.inputTokens ?? 0,

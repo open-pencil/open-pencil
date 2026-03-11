@@ -7,7 +7,7 @@ import {
 } from './read'
 import {
   createShape, render, createComponent, createInstance,
-  createPage, createVector, createSlice
+  createPage, createVector, createSlice, fetchIconsTool, insertIcon, searchIconsTool
 } from './create'
 import {
   setFill, setStroke, setEffects, updateNode, setLayout, setConstraints,
@@ -63,6 +63,9 @@ export const ALL_TOOLS: ToolDef[] = [
   createPage,
   createVector,
   createSlice,
+  fetchIconsTool,
+  insertIcon,
+  searchIconsTool,
   // Modify
   setFill,
   setStroke,

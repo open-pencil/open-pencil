@@ -1,8 +1,10 @@
 import { parseColor } from '../color'
+import { fetchIcon, fetchIcons, searchIconsBatch } from '../iconify'
 
 import { defineTool, nodeSummary } from './schema'
 
 import type { FigmaNodeProxy } from '../figma-api'
+import type { Stroke, StrokeCap, StrokeJoin } from '../scene-graph'
 
 export const createShape = defineTool({
   name: 'create_shape',
@@ -184,5 +186,160 @@ export const createSlice = defineTool({
       if (parent) parent.appendChild(node)
     }
     return nodeSummary(node)
+  }
+})
+
+const STROKE_CAP_MAP: Record<string, StrokeCap> = {
+  butt: 'NONE',
+  round: 'ROUND',
+  square: 'SQUARE'
+}
+
+const STROKE_JOIN_MAP: Record<string, StrokeJoin> = {
+  miter: 'MITER',
+  round: 'ROUND',
+  bevel: 'BEVEL'
+}
+
+export const fetchIconsTool = defineTool({
+  name: 'fetch_icons',
+  description:
+    'Pre-fetch icons from Iconify into cache. Batches by prefix (one HTTP request per set). Call this once with all needed icons, then use insert_icon to place them instantly. Popular sets: lucide (outline), mdi (filled), heroicons, tabler, solar, mingcute, ri (remix).',
+  params: {
+    names: {
+      type: 'string[]',
+      description: 'Icon names as prefix:name (e.g. ["lucide:heart", "lucide:home", "mdi:star"])',
+      required: true
+    },
+    size: { type: 'number', description: 'Icon size in pixels (default: 24)' }
+  },
+  execute: async (_figma, args) => {
+    const size = args.size ?? 24
+    try {
+      const icons = await fetchIcons(args.names, size)
+      const fetched = [...icons.keys()]
+      const notFound = args.names.filter((n) => !icons.has(n))
+      const result: Record<string, unknown> = { fetched, count: fetched.length }
+      if (notFound.length > 0) result.not_found = notFound
+      return result
+    } catch (e) {
+      return { error: (e as Error).message }
+    }
+  }
+})
+
+export const insertIcon = defineTool({
+  name: 'insert_icon',
+  mutates: true,
+  description:
+    'Insert a vector icon onto the canvas. If already cached by fetch_icons — instant, no network request. Otherwise fetches on demand.',
+  params: {
+    name: {
+      type: 'string',
+      description: 'Icon name as prefix:name (e.g. lucide:heart, mdi:home)',
+      required: true
+    },
+    size: { type: 'number', description: 'Icon size in pixels (default: 24)' },
+    color: { type: 'color', description: 'Icon color hex (replaces currentColor). Default: #000000' },
+    x: { type: 'number', description: 'X position' },
+    y: { type: 'number', description: 'Y position' },
+    parent_id: { type: 'string', description: 'Parent node ID' }
+  },
+  execute: async (figma, args) => {
+    const size = args.size ?? 24
+    const color = args.color ?? '#000000'
+
+    let icon
+    try {
+      icon = await fetchIcon(args.name, size)
+    } catch (e) {
+      return { error: (e as Error).message }
+    }
+
+    if (icon.paths.length === 0) {
+      return { error: `Icon "${args.name}" has no path data` }
+    }
+
+    const frame = figma.createFrame()
+    frame.name = `Icon / ${args.name}`
+    frame.resize(size, size)
+    frame.fills = []
+    if (args.x !== undefined) frame.x = args.x
+    if (args.y !== undefined) frame.y = args.y
+
+    if (args.parent_id) {
+      const parent = figma.getNodeById(args.parent_id)
+      if (parent) parent.appendChild(frame)
+    }
+
+    const parsedColor = parseColor(color)
+
+    for (const path of icon.paths) {
+      const vector = figma.createVector()
+      vector.name = 'path'
+      vector.resize(size, size)
+      frame.appendChild(vector)
+
+      figma.graph.updateNode(vector.id, {
+        vectorNetwork: path.vectorNetwork
+      } as Record<string, unknown>)
+
+      if (path.fill) {
+        vector.fills = [{
+          type: 'SOLID',
+          color: path.fill === 'currentColor' ? parsedColor : parseColor(path.fill),
+          opacity: 1,
+          visible: true
+        }]
+      } else {
+        vector.fills = []
+      }
+
+      if (path.stroke) {
+        const strokeColor = path.stroke === 'currentColor' ? parsedColor : parseColor(path.stroke)
+        const stroke: Stroke = {
+          color: strokeColor,
+          weight: path.strokeWidth,
+          opacity: 1,
+          visible: true,
+          align: 'CENTER',
+          cap: STROKE_CAP_MAP[path.strokeCap] ?? 'NONE',
+          join: STROKE_JOIN_MAP[path.strokeJoin] ?? 'MITER'
+        }
+        vector.strokes = [stroke]
+      }
+    }
+
+    return nodeSummary(frame)
+  }
+})
+
+export const searchIconsTool = defineTool({
+  name: 'search_icons',
+  description:
+    'Search Iconify for icons by keyword. Accepts multiple queries — all searched in parallel. Returns results keyed by query.',
+  params: {
+    queries: {
+      type: 'string[]',
+      description: 'Search keywords (e.g. ["heart", "arrow", "settings"])',
+      required: true
+    },
+    limit: { type: 'number', description: 'Max results per query (default: 20)' },
+    prefix: { type: 'string', description: 'Filter by icon set prefix (e.g. "lucide", "mdi")' }
+  },
+  execute: async (_figma, args) => {
+    try {
+      const results = await searchIconsBatch(args.queries, {
+        limit: args.limit ?? 20,
+        prefix: args.prefix
+      })
+      const output: Record<string, { icons: string[]; total: number }> = {}
+      for (const [query, result] of results) {
+        output[query] = { icons: result.icons, total: result.total }
+      }
+      return output
+    } catch (e) {
+      return { error: (e as Error).message }
+    }
   }
 })

@@ -53,7 +53,7 @@ export {
 
 export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
 export { ALL_TOOLS, defineTool, toolsToAI, buildDebugLog } from './tools'
-export type { ToolDef, ParamDef, ParamType, ToolLogEntry, ToolDebugLog, AIAdapterOptions } from './tools'
+export type { ToolDef, ParamDef, ParamType, ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './tools'
 export { executeRpcCommand, ALL_RPC_COMMANDS } from './rpc'
 export { queryByXPath, matchByXPath } from './xpath'
 export type { XPathQueryOptions } from './xpath'
@@ -138,6 +138,8 @@ export {
   type SVGExportOptions
 } from './svg-export'
 export { svg, renderSVGNode, type SVGNode } from './svg-node'
+export { parseSVGPath } from './svg-path-parse'
+export { fetchIcon, fetchIcons, searchIcons, searchIconsBatch, clearIconCache, type IconData, type IconPath, type IconSearchResult } from './iconify'
 export { exportFigFile } from './fig-export'
 export {
   FIG_KIWI_VERSION,

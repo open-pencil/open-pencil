@@ -3,7 +3,7 @@ import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewpor
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
 import { copyChatLog } from '@/ai/chat-debug'
-import { clearToolLogEntries } from '@/ai/tools'
+import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
@@ -23,6 +23,12 @@ const debugCopied = ref(false)
 
 const messages = computed(() => chat.value?.messages ?? [])
 const status = computed(() => chat.value?.status ?? 'ready')
+const showContinue = computed(() => {
+  if (status.value !== 'ready') return false
+  if (messages.value.length === 0) return false
+  const last = messages.value[messages.value.length - 1]
+  return last.role === 'assistant' && didHitStepLimit()
+})
 
 function scrollToBottom() {
   nextTick(() => {
@@ -106,6 +112,17 @@ function handleClearChat() {
                   style="animation-delay: 300ms"
                 />
               </div>
+            </div>
+
+            <!-- Continue button when step limit reached -->
+            <div v-if="showContinue" class="flex justify-center py-2">
+              <button
+                class="flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+                @click="handleSubmit('Continue where you left off')"
+              >
+                <icon-lucide-play class="size-3" />
+                Continue
+              </button>
             </div>
 
             <div ref="messagesEnd" />

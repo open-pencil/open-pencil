@@ -6,9 +6,12 @@ import { makeFigmaFromStore } from '@/automation/figma-factory'
 import { ALL_TOOLS, computeAllLayouts, toolsToAI } from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
-import type { SceneNode, ToolLogEntry } from '@open-pencil/core'
+import type { SceneNode, StepBudget, ToolLogEntry } from '@open-pencil/core'
+
+export const MAX_AGENT_STEPS = 50
 
 let _toolLogEntries: ToolLogEntry[] = []
+let _currentRunSteps = 0
 
 export interface StepUsage {
   inputTokens: number
@@ -30,6 +33,15 @@ export function getStepUsages(): StepUsage[] {
 
 export function recordStepUsage(usage: StepUsage): void {
   _stepUsages.push(usage)
+  _currentRunSteps++
+}
+
+export function resetRunSteps(): void {
+  _currentRunSteps = 0
+}
+
+export function didHitStepLimit(): boolean {
+  return _currentRunSteps >= MAX_AGENT_STEPS
 }
 
 export function clearToolLogEntries(): void {
@@ -70,7 +82,11 @@ export function createAITools(store: EditorStore) {
       },
       onToolLog: (entry) => {
         _toolLogEntries.push(entry)
-      }
+      },
+      getStepBudget: (): StepBudget => ({
+        current: _currentRunSteps,
+        max: MAX_AGENT_STEPS
+      })
     },
     { v, valibotSchema, tool }
   )

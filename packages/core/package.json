@@ -44,6 +44,7 @@
     "fzstd": "^0.1.1",
     "nanoevents": "^9.1.0",
     "sucrase": "^3.35.1",
+    "svgpath": "^2.6.0",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"
   },
   "devDependencies": {

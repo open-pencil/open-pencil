@@ -91,7 +91,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "bin": {
         "openpencil": "./src/index.ts",
       },
@@ -107,7 +107,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "dependencies": {
         "canvaskit-wasm": "^0.40.0",
         "culori": "^4.0.2",
@@ -117,6 +117,7 @@
         "fzstd": "^0.1.1",
         "nanoevents": "^9.1.0",
         "sucrase": "^3.35.1",
+        "svgpath": "^2.6.0",
         "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
       },
       "devDependencies": {
@@ -2210,6 +2211,8 @@
     "supports-color": ["supports-color@10.2.2", "", {}, "sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g=="],
 
     "supports-preserve-symlinks-flag": ["supports-preserve-symlinks-flag@1.0.0", "", {}, "sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w=="],
+
+    "svgpath": ["svgpath@2.6.0", "", {}, "sha512-OIWR6bKzXvdXYyO4DK/UWa1VA1JeKq8E+0ug2DG98Y/vOmMpfZNj+TIG988HjfYSqtcy/hFOtZq/n/j5GSESNg=="],
 
     "swrv": ["swrv@1.1.0", "", { "peerDependencies": { "vue": ">=3.2.26 < 4" } }, "sha512-pjllRDr2s0iTwiE5Isvip51dZGR7GjLH1gCSVyE8bQnbAx6xackXsFdojau+1O5u98yHF5V73HQGOFxKUXO9gQ=="],
 

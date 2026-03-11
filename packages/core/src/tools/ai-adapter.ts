@@ -37,12 +37,30 @@ export interface ToolDebugLog {
   totalResultBytes: number
 }
 
+export interface StepBudget {
+  current: number
+  max: number
+}
+
 export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
   onBeforeExecute?: (def: ToolDef) => void
   onAfterExecute?: (def: ToolDef) => void
   onFlashNodes?: (nodeIds: string[]) => void
   onToolLog?: (entry: ToolLogEntry) => void
+  getStepBudget?: () => StepBudget
+}
+
+const STEP_WARNING_THRESHOLD = 5
+
+function appendStepWarning(result: unknown, budget: StepBudget): unknown {
+  const remaining = budget.max - budget.current
+  if (remaining > STEP_WARNING_THRESHOLD) return result
+  const warning = `⚠ ${remaining} steps remaining out of ${budget.max}. Wrap up: finish critical fixes, skip polish. User can send "continue" for more steps.`
+  if (result && typeof result === 'object' && !Array.isArray(result)) {
+    return { ...result, _warning: warning }
+  }
+  return { result, _warning: warning }
 }
 
 function extractIdsFromArray(arr: unknown[]): string[] {
@@ -141,12 +159,15 @@ export function toolsToAI(
 
         options.onBeforeExecute?.(def)
         try {
-          const execResult = await def.execute(figma, args as any)
+          let execResult = await def.execute(figma, args as any)
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)
           }
           emitToolLog(options, def, args, startTime, figma, nodeBefore, execResult)
+          if (options.getStepBudget) {
+            execResult = appendStepWarning(execResult, options.getStepBudget())
+          }
           return execResult
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err)
