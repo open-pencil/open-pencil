@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
 
-export type ToastVariant = 'default' | 'error'
+export type ToastVariant = 'default' | 'warning' | 'error'
 
 export interface Toast {
   id: number

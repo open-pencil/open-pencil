@@ -4,6 +4,7 @@ import { ToastProvider, ToastRoot, ToastDescription, ToastViewport, ToastClose }
 import { useClipboard } from '@vueuse/core'
 
 import { toast } from '@/composables/use-toast'
+import { toastRoot } from '@/components/ui/toast'
 
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 </script>
@@ -15,8 +16,7 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
       :key="t.id"
       data-test-id="toast-item"
       :duration="t.variant === 'error' ? 0 : toast.TOAST_DURATION"
-      class="flex max-w-sm items-start gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-white shadow-md data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]"
-      :class="t.variant === 'error' ? 'bg-red-600' : 'bg-blue-600'"
+      :class="toastRoot({ tone: t.variant })"
       @update:open="
         (open) => {
           if (!open) toast.remove(t.id)
@@ -24,7 +24,7 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
       "
     >
       <icon-lucide-check v-if="t.variant === 'default'" class="mt-0.5 size-3 shrink-0" />
-      <icon-lucide-alert-triangle v-else class="mt-0.5 size-3 shrink-0" />
+      <icon-lucide-triangle-alert v-else class="mt-0.5 size-3 shrink-0" />
       <ToastDescription class="min-w-0 flex-1 select-text">{{ t.message }}</ToastDescription>
       <button
         v-if="t.variant === 'error'"

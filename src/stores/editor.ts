@@ -1,5 +1,6 @@
 import { shallowReactive, shallowRef, computed, watch } from 'vue'
 
+import { toast } from '@/composables/use-toast'
 import {
   IS_TAURI,
   DEFAULT_SHAPE_FILL,
@@ -2016,9 +2017,23 @@ export function createEditorStore() {
             }
           })
           void loadFontsForNodes(created)
+          warnMissingImages(created)
         }
       }
     })
+  }
+
+  function warnMissingImages(nodeIds: string[]) {
+    const allNodes = collectSubtrees(graph, nodeIds)
+    const hasMissing = allNodes.some((n) =>
+      n.fills.some((f) => f.type === 'IMAGE' && f.imageHash && !graph.images.has(f.imageHash))
+    )
+    if (hasMissing) {
+      toast.show(
+        "Some images couldn't be pasted — Figma doesn't include image data in clipboard",
+        'warning'
+      )
+    }
   }
 
   function pasteOpenPencilNodes(
