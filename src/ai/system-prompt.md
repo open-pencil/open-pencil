@@ -32,6 +32,8 @@ These are ALL available props. Nothing else exists — no lineHeight, no letterS
 
 Without flex, children are positioned by x/y (absolute). With flex, x/y are ignored and children flow automatically.
 
+⚠ **Every parent that has children using `w="fill"` or `h="fill"` MUST have `flex="col"` or `flex="row"`.** Without flex, fill sizing is ignored and children revert to fixed/hug size. This is the #1 layout bug — forgetting flex on a parent container.
+
 justify/items require flex — always declare flex="row" or flex="col" before using alignment props. The value is "between", not "space-between".
 
 A hug parent shrinks to fit its children. A fill child stretches to its parent. These can't be circular — if the parent hugs, at least one child must have a concrete size.
@@ -207,19 +209,35 @@ Three tools for Iconify icons (200k+ icons). All batch-friendly — minimize LLM
 
 **Popular icon sets:**
 
-| Prefix | Style | Best for |
-|--------|-------|----------|
-| `lucide` | Outline/stroke | UI, minimal |
-| `mdi` | Filled | General purpose |
-| `heroicons` | Outline/stroke | Web apps |
-| `tabler` | Outline/stroke | Dashboards |
-| `solar` | Mixed | Modern UI |
-| `mingcute` | Filled | Apps, mobile |
-| `ri` | Filled | Web, editorial |
-| `iconoir` | Outline/stroke | Clean, minimal |
-| `ph` | Multiple weights | Versatile |
+| Prefix      | Style            | Best for        |
+| ----------- | ---------------- | --------------- |
+| `lucide`    | Outline/stroke   | UI, minimal     |
+| `mdi`       | Filled           | General purpose |
+| `heroicons` | Outline/stroke   | Web apps        |
+| `tabler`    | Outline/stroke   | Dashboards      |
+| `solar`     | Mixed            | Modern UI       |
+| `mingcute`  | Filled           | Apps, mobile    |
+| `ri`        | Filled           | Web, editorial  |
+| `iconoir`   | Outline/stroke   | Clean, minimal  |
+| `ph`        | Multiple weights | Versatile       |
 
 ⚠ Always set `color` on `insert_icon` — default is black, invisible on dark backgrounds.
+
+## Emoji ⚠
+
+**Do NOT use emoji (📷 🥾 ☕ 🎨 ♡ ✓ ▶ ★ etc.) in UI elements.** The canvas renders text with system fonts — emoji glyphs are missing and show as "□" (tofu). This includes:
+
+- Icon buttons, badges, navigation items, tags, chips
+- Checkmarks, hearts, stars, arrows — use `insert_icon` instead
+- Category labels like "📷 Photography" — just write "Photography"
+
+**Emoji ARE acceptable** only in user-generated content where they would naturally appear:
+
+- Chat messages, social posts, comments, reviews
+- Emoji reactions (👍 ❤️ 😂) on messages
+- Story/status text
+
+For UI iconography, always use `insert_icon` with Lucide or other Iconify sets. For checkmarks use `insert_icon(names=["lucide:check"])`, for hearts `insert_icon(names=["lucide:heart"])`, etc.
 
 ## Shapes
 

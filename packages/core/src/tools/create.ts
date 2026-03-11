@@ -246,7 +246,11 @@ function createIconFrame(
 
   if (parentId) {
     const parent = figma.getNodeById(parentId)
-    if (parent) parent.appendChild(frame)
+    if (parent) {
+      parent.appendChild(frame)
+      frame.x = 0
+      frame.y = 0
+    }
   }
 
   for (const path of icon.paths) {
@@ -296,21 +300,27 @@ export const insertIcon = defineTool({
   params: {
     names: {
       type: 'string[]',
-      description: 'Icon names as prefix:name (e.g. ["lucide:heart"] or ["lucide:heart","lucide:home","lucide:star"])',
-      required: true
+      description: 'Icon names as prefix:name (e.g. ["lucide:heart"] or ["lucide:heart","lucide:home","lucide:star"])'
+    },
+    name: {
+      type: 'string',
+      description: 'Single icon name (shorthand for names with one icon)'
     },
     size: { type: 'number', description: 'Icon size in pixels (default: 24)' },
     color: { type: 'color', description: 'Icon color hex (replaces currentColor). Default: #000000' },
     parent_id: { type: 'string', description: 'Parent node ID for all icons' }
   },
   execute: async (figma, args) => {
+    const names = args.names ?? (args.name ? [args.name] : [])
+    if (names.length === 0) return { error: 'Provide "names" (array) or "name" (string)' }
+
     const size = args.size ?? 24
     const color = args.color ?? '#000000'
     const parsedColor = parseColor(color)
 
     let icons
     try {
-      icons = await fetchIcons(args.names, size)
+      icons = await fetchIcons(names, size)
     } catch (e) {
       return { error: (e as Error).message }
     }
@@ -318,7 +328,7 @@ export const insertIcon = defineTool({
     const inserted: { id: string; name: string; icon: string }[] = []
     const notFound: string[] = []
 
-    for (const name of args.names) {
+    for (const name of names) {
       const icon = icons.get(name)
       if (!icon || icon.paths.length === 0) {
         notFound.push(name)
@@ -326,6 +336,10 @@ export const insertIcon = defineTool({
       }
       const frame = createIconFrame(figma, icon, name, size, parsedColor, args.parent_id)
       inserted.push({ id: frame.id, name: frame.name, icon: name })
+    }
+
+    if (args.name && inserted.length === 1) {
+      return { id: inserted[0].id, name: inserted[0].name, type: 'FRAME' as const }
     }
 
     const result: Record<string, unknown> = { inserted }

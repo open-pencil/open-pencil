@@ -248,7 +248,7 @@ export function serializeChatLog(messages: UIMessage[]): string {
         parts.push(`  ${p.text as string}`)
       } else if (p.type === 'reasoning') {
         parts.push(
-          `  [reasoning] ${typeof p.text === 'string' ? p.text : (typeof p.content === 'string' ? p.content : '')}`
+          `  [reasoning] ${typeof p.text === 'string' ? p.text : typeof p.content === 'string' ? p.content : ''}`
         )
       } else if (
         p.type === 'tool-invocation' ||
