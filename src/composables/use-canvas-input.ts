@@ -3,11 +3,10 @@ import { ref, type Ref } from 'vue'
 
 import {
   AUTO_LAYOUT_BREAK_THRESHOLD,
+  CORNER_ROTATE_ZONE,
   HANDLE_HIT_RADIUS,
-  ROTATION_HIT_RADIUS,
   PEN_CLOSE_THRESHOLD,
   ROTATION_SNAP_DEGREES,
-  ROTATION_HIT_OFFSET,
   DEFAULT_TEXT_WIDTH,
   DEFAULT_TEXT_HEIGHT
 } from '@/constants'
@@ -198,7 +197,9 @@ function hitTestHandle(
   return null
 }
 
-function hitTestRotationHandle(
+type CornerPosition = 'nw' | 'ne' | 'se' | 'sw'
+
+function hitTestCornerRotation(
   sx: number,
   sy: number,
   absX: number,
@@ -209,15 +210,59 @@ function hitTestRotationHandle(
   panX: number,
   panY: number,
   rotation = 0
-): boolean {
-  const { x1, x2, y1, y2 } = getScreenRect(absX, absY, w, h, zoom, panX, panY)
+): CornerPosition | null {
+  const { x1, y1, x2, y2 } = getScreenRect(absX, absY, w, h, zoom, panX, panY)
   const cx = (x1 + x2) / 2
   const cy = (y1 + y2) / 2
   const ur = unrotate(sx, sy, cx, cy, rotation)
 
-  const mx = (x1 + x2) / 2
-  const rotY = y1 - ROTATION_HIT_OFFSET
-  return Math.abs(ur.sx - mx) < ROTATION_HIT_RADIUS && Math.abs(ur.sy - rotY) < ROTATION_HIT_RADIUS
+  const corners: Array<{ pos: CornerPosition; x: number; y: number }> = [
+    { pos: 'nw', x: x1, y: y1 },
+    { pos: 'ne', x: x2, y: y1 },
+    { pos: 'se', x: x2, y: y2 },
+    { pos: 'sw', x: x1, y: y2 },
+  ]
+
+  for (const { pos, x, y } of corners) {
+    const dx = Math.abs(ur.sx - x)
+    const dy = Math.abs(ur.sy - y)
+    if (
+      dx <= CORNER_ROTATE_ZONE &&
+      dy <= CORNER_ROTATE_ZONE &&
+      (dx > HANDLE_HIT_RADIUS || dy > HANDLE_HIT_RADIUS)
+    ) {
+      return pos
+    }
+  }
+  return null
+}
+
+const CORNER_BASE_ANGLES: Record<CornerPosition, number> = { nw: 0, ne: 90, se: 180, sw: 270 }
+
+import rotateCursorSvg from '@/assets/rotate-cursor.svg?raw'
+
+const rotationCursorCache = new Map<number, string>()
+
+function buildRotationCursor(angleDeg: number): string {
+  const key = Math.round(angleDeg) % 360
+  let cached = rotationCursorCache.get(key)
+  if (cached) return cached
+  let svg: string
+  if (key === 0) {
+    svg = rotateCursorSvg
+  } else {
+    svg = rotateCursorSvg.replace(
+      '<path',
+      `<g transform='translate(1002 2110) rotate(${key}) translate(-1002 -2110)'><path`
+    ).replace('</svg>', '</g></svg>')
+  }
+  cached = `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
+  rotationCursorCache.set(key, cached)
+  return cached
+}
+
+function cornerRotationCursor(corner: CornerPosition, nodeRotation = 0): string {
+  return buildRotationCursor(CORNER_BASE_ANGLES[corner] + nodeRotation)
 }
 
 export function useCanvasInput(
@@ -292,7 +337,7 @@ export function useCanvasInput(
     if (!node) return false
     const abs = store.graph.getAbsolutePosition(id)
     if (
-      !hitTestRotationHandle(
+      !hitTestCornerRotation(
         sx,
         sy,
         abs.x,
@@ -514,36 +559,34 @@ export function useCanvasInput(
     const { sx, sy, cx, cy } = getCoords(e)
     let cursor: string | null = null
 
-    if (store.state.selectedIds.size === 1) {
+    for (const id of store.state.selectedIds) {
+      const node = store.graph.getNode(id)
+      if (!node) continue
+      const abs = store.graph.getAbsolutePosition(id)
+      const handle = hitTestHandle(
+        sx,
+        sy,
+        abs.x,
+        abs.y,
+        node.width,
+        node.height,
+        store.state.zoom,
+        store.state.panX,
+        store.state.panY,
+        node.rotation
+      )
+      if (handle) {
+        cursor = HANDLE_CURSORS[handle]
+        break
+      }
+    }
+
+    if (!cursor && store.state.selectedIds.size === 1) {
       const id = [...store.state.selectedIds][0]
       const node = store.graph.getNode(id)
       if (node) {
         const abs = store.graph.getAbsolutePosition(id)
-        if (
-          hitTestRotationHandle(
-            sx,
-            sy,
-            abs.x,
-            abs.y,
-            node.width,
-            node.height,
-            store.state.zoom,
-            store.state.panX,
-            store.state.panY,
-            node.rotation
-          )
-        ) {
-          cursor = 'grab'
-        }
-      }
-    }
-
-    if (!cursor) {
-      for (const id of store.state.selectedIds) {
-        const node = store.graph.getNode(id)
-        if (!node) continue
-        const abs = store.graph.getAbsolutePosition(id)
-        const handle = hitTestHandle(
+        const corner = hitTestCornerRotation(
           sx,
           sy,
           abs.x,
@@ -555,12 +598,12 @@ export function useCanvasInput(
           store.state.panY,
           node.rotation
         )
-        if (handle) {
-          cursor = HANDLE_CURSORS[handle]
-          break
+        if (corner) {
+          cursor = cornerRotationCursor(corner, node.rotation)
         }
       }
     }
+
     cursorOverride.value = cursor
 
     const hit =

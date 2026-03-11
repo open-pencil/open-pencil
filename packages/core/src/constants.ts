@@ -10,7 +10,6 @@ export const COMPONENT_COLOR = { r: 0.592, g: 0.278, b: 1, a: 1 } satisfies Colo
 export const SNAP_COLOR = { r: 1.0, g: 0.0, b: 0.56, a: 1 } satisfies Color
 export const CANVAS_BG_COLOR = { r: 0.96, g: 0.96, b: 0.96, a: 1 } satisfies Color
 
-export const ROTATION_HANDLE_OFFSET = 20
 export const SNAP_THRESHOLD = 5
 
 export const RULER_SIZE = 20
@@ -37,8 +36,6 @@ export const DEFAULT_FONT_SIZE = 14
 export const DEFAULT_STROKE_MITER_LIMIT = 4
 export const LABEL_FONT_SIZE = 11
 export const SIZE_FONT_SIZE = 10
-
-export const ROTATION_HANDLE_RADIUS = 4
 
 export const HANDLE_HALF_SIZE = 3
 

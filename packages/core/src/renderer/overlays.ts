@@ -1,6 +1,4 @@
 import {
-  ROTATION_HANDLE_OFFSET,
-  ROTATION_HANDLE_RADIUS,
   HANDLE_HALF_SIZE,
   LABEL_OFFSET_Y,
   SIZE_PILL_PADDING_X,
@@ -152,16 +150,6 @@ export function drawNodeSelection(
   r.drawHandle(canvas, mx, y2)
   r.drawHandle(canvas, x1, my)
   r.drawHandle(canvas, x2, my)
-
-  const rotHandleY = y1 - ROTATION_HANDLE_OFFSET - ROTATION_HANDLE_RADIUS
-  r.auxStroke.setStrokeWidth(1)
-  r.auxStroke.setColor(r.selColor())
-  r.auxStroke.setPathEffect(null)
-  canvas.drawLine(mx, y1, mx, rotHandleY, r.auxStroke)
-
-  r.auxFill.setColor(r.ck.WHITE)
-  canvas.drawCircle(mx, rotHandleY, ROTATION_HANDLE_RADIUS, r.auxFill)
-  canvas.drawCircle(mx, rotHandleY, ROTATION_HANDLE_RADIUS, r.auxStroke)
 
   canvas.restore()
 }
