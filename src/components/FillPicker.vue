@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
+import { useFileDialog, useObjectUrl } from '@vueuse/core'
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -228,40 +229,27 @@ const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
 ]
 
 const store = useEditorStore()
-const fileInputRef = ref<HTMLInputElement | null>(null)
-const previewUrl = ref<string | null>(null)
 
-const imagePreviewUrl = computed(() => {
-  if (!fill.imageHash) return null
-  const data = store.graph.images.get(fill.imageHash)
-  if (!data) return null
-  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
-  const url = URL.createObjectURL(new Blob([data]))
-  previewUrl.value = url
-  return url
-})
+const imageBlob = shallowRef<Blob | null>(null)
+const imagePreviewUrl = useObjectUrl(imageBlob)
 
 watch(
   () => fill.imageHash,
-  () => {
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value)
-      previewUrl.value = null
-    }
-  }
+  (hash) => {
+    if (!hash) { imageBlob.value = null; return }
+    const data = store.graph.images.get(hash)
+    imageBlob.value = data ? new Blob([data]) : null
+  },
+  { immediate: true }
 )
 
-onBeforeUnmount(() => {
-  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+const { open: pickImage, onChange: onFileChange } = useFileDialog({
+  accept: 'image/png,image/jpeg,image/webp',
+  multiple: false,
 })
 
-function pickImage() {
-  fileInputRef.value?.click()
-}
-
-async function onImageFileSelected(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
+onFileChange(async (files) => {
+  const file = files?.[0]
   if (!file) return
   const bytes = new Uint8Array(await file.arrayBuffer())
   const hash = store.storeImage(bytes)
@@ -271,8 +259,7 @@ async function onImageFileSelected(e: Event) {
     imageHash: hash,
     imageScaleMode: fill.imageScaleMode ?? 'FILL'
   })
-  input.value = ''
-}
+})
 
 function setScaleMode(mode: string) {
   emit('update', { ...fill, imageScaleMode: mode as ImageScaleMode })
@@ -456,13 +443,6 @@ function setScaleMode(mode: string) {
 
         <!-- Image fill -->
         <div v-if="fill.type === 'IMAGE'" class="space-y-2">
-          <input
-            ref="fileInputRef"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            class="hidden"
-            @change="onImageFileSelected"
-          />
           <div
             v-if="imagePreviewUrl"
             class="flex h-24 items-center justify-center overflow-hidden rounded border border-border"
