@@ -15,6 +15,28 @@ Bun workspace with three packages:
 
 The root app (`src/`) is the Tauri/Vite desktop editor. Its `src/engine/` files are thin re-export shims from `@open-pencil/core`.
 
+### Core subpath exports
+
+`@open-pencil/core` exposes domain-specific subpath exports for targeted imports. The main `"."` entry re-exports everything for backward compatibility.
+
+| Subpath | What | Heavy dep isolated |
+|---|---|---|
+| `@open-pencil/core` | everything (barrel) | all |
+| `@open-pencil/core/scene-graph` | SceneGraph, node types, events | — |
+| `@open-pencil/core/kiwi` | .fig parse/serialize, codec, protocol | fflate, fzstd |
+| `@open-pencil/core/tools` | ToolDef, ALL_TOOLS, AI adapter | diff |
+| `@open-pencil/core/renderer` | SkiaRenderer | — |
+| `@open-pencil/core/render` | JSX-to-design renderer | sucrase |
+| `@open-pencil/core/rpc` | RPC commands for CLI | — |
+| `@open-pencil/core/figma-api` | FigmaAPI, FigmaNodeProxy | — |
+| `@open-pencil/core/canvaskit` | getCanvasKit loader | canvaskit-wasm |
+| `@open-pencil/core/layout` | computeLayout | yoga-layout |
+| `@open-pencil/core/color` | parseColor, colorToHex, etc. | — |
+| `@open-pencil/core/render-image` | renderNodesToImage | — |
+| `@open-pencil/core/profiler` | render profiling | — |
+
+Runtime `canvaskit-wasm` import exists only in `canvaskit.ts` — all other files use `import type`. CanvasKit instance is passed as a parameter everywhere.
+
 ## Commands
 
 - `bun run check` — type-aware lint + typecheck via oxlint + tsgo (run before committing)

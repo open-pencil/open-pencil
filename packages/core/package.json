@@ -3,11 +3,72 @@
   "version": "0.9.0",
   "license": "MIT",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./src/index.ts",
       "bun": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./scene-graph": {
+      "types": "./src/scene-graph.ts",
+      "bun": "./src/scene-graph.ts",
+      "default": "./src/scene-graph.ts"
+    },
+    "./kiwi": {
+      "types": "./src/kiwi/index.ts",
+      "bun": "./src/kiwi/index.ts",
+      "default": "./src/kiwi/index.ts"
+    },
+    "./tools": {
+      "types": "./src/tools/index.ts",
+      "bun": "./src/tools/index.ts",
+      "default": "./src/tools/index.ts"
+    },
+    "./renderer": {
+      "types": "./src/renderer/index.ts",
+      "bun": "./src/renderer/index.ts",
+      "default": "./src/renderer/index.ts"
+    },
+    "./render": {
+      "types": "./src/render/index.ts",
+      "bun": "./src/render/index.ts",
+      "default": "./src/render/index.ts"
+    },
+    "./rpc": {
+      "types": "./src/rpc/index.ts",
+      "bun": "./src/rpc/index.ts",
+      "default": "./src/rpc/index.ts"
+    },
+    "./figma-api": {
+      "types": "./src/figma-api.ts",
+      "bun": "./src/figma-api.ts",
+      "default": "./src/figma-api.ts"
+    },
+    "./canvaskit": {
+      "types": "./src/canvaskit.ts",
+      "bun": "./src/canvaskit.ts",
+      "default": "./src/canvaskit.ts"
+    },
+    "./layout": {
+      "types": "./src/layout.ts",
+      "bun": "./src/layout.ts",
+      "default": "./src/layout.ts"
+    },
+    "./color": {
+      "types": "./src/color.ts",
+      "bun": "./src/color.ts",
+      "default": "./src/color.ts"
+    },
+    "./render-image": {
+      "types": "./src/render-image.ts",
+      "bun": "./src/render-image.ts",
+      "default": "./src/render-image.ts"
+    },
+    "./profiler": {
+      "types": "./src/profiler/index.ts",
+      "bun": "./src/profiler/index.ts",
+      "default": "./src/profiler/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -28,8 +89,68 @@
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
-        "node": "./dist/index.js",
+        "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./scene-graph": {
+        "types": "./dist/scene-graph.d.ts",
+        "import": "./dist/scene-graph.js",
+        "default": "./dist/scene-graph.js"
+      },
+      "./kiwi": {
+        "types": "./dist/kiwi/index.d.ts",
+        "import": "./dist/kiwi/index.js",
+        "default": "./dist/kiwi/index.js"
+      },
+      "./tools": {
+        "types": "./dist/tools/index.d.ts",
+        "import": "./dist/tools/index.js",
+        "default": "./dist/tools/index.js"
+      },
+      "./renderer": {
+        "types": "./dist/renderer/index.d.ts",
+        "import": "./dist/renderer/index.js",
+        "default": "./dist/renderer/index.js"
+      },
+      "./render": {
+        "types": "./dist/render/index.d.ts",
+        "import": "./dist/render/index.js",
+        "default": "./dist/render/index.js"
+      },
+      "./rpc": {
+        "types": "./dist/rpc/index.d.ts",
+        "import": "./dist/rpc/index.js",
+        "default": "./dist/rpc/index.js"
+      },
+      "./figma-api": {
+        "types": "./dist/figma-api.d.ts",
+        "import": "./dist/figma-api.js",
+        "default": "./dist/figma-api.js"
+      },
+      "./canvaskit": {
+        "types": "./dist/canvaskit.d.ts",
+        "import": "./dist/canvaskit.js",
+        "default": "./dist/canvaskit.js"
+      },
+      "./layout": {
+        "types": "./dist/layout.d.ts",
+        "import": "./dist/layout.js",
+        "default": "./dist/layout.js"
+      },
+      "./color": {
+        "types": "./dist/color.d.ts",
+        "import": "./dist/color.js",
+        "default": "./dist/color.js"
+      },
+      "./render-image": {
+        "types": "./dist/render-image.d.ts",
+        "import": "./dist/render-image.js",
+        "default": "./dist/render-image.js"
+      },
+      "./profiler": {
+        "types": "./dist/profiler/index.d.ts",
+        "import": "./dist/profiler/index.js",
+        "default": "./dist/profiler/index.js"
       }
     },
     "main": "./dist/index.js",

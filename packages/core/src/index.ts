@@ -198,9 +198,10 @@ export {
   type OpenPencilClipboardData
 } from './clipboard'
 
-export { readFigFile, parseFigFile } from './kiwi/fig-file'
-export { importNodeChanges } from './kiwi/fig-import'
 export {
+  readFigFile,
+  parseFigFile,
+  importNodeChanges,
   initCodec,
   encodeMessage,
   decodeMessage,
@@ -208,6 +209,8 @@ export {
   decompress,
   getCompiledSchema,
   getSchemaBytes,
+  isCodecReady,
+  peekMessageType,
   createNodeChangesMessage,
   createNodeChange,
   parseVariableId,
@@ -220,10 +223,7 @@ export {
   type Effect as KiwiEffect,
   type VariableBinding,
   type ParentIndex,
-  type FigmaMessage
-} from './kiwi/codec'
-
-export {
+  type FigmaMessage,
   MESSAGE_TYPES,
   NODE_TYPES,
   NODE_PHASES,
@@ -241,4 +241,4 @@ export {
   getKiwiMessageType,
   parseVarint,
   FIG_WIRE_MAGIC
-} from './kiwi/protocol'
+} from './kiwi'
