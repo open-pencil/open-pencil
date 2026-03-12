@@ -23,6 +23,21 @@ const debugCopied = ref(false)
 
 const messages = computed(() => chat.value?.messages ?? [])
 const status = computed(() => chat.value?.status ?? 'ready')
+const isThinking = computed(() => {
+  const s = status.value
+  if (s !== 'submitted' && s !== 'streaming') return false
+  if (messages.value.length === 0) return true
+  const last = messages.value[messages.value.length - 1]
+  if (last.role !== 'assistant') return true
+  const parts = last.parts
+  if (parts.length === 0) return true
+  const lastPart = parts[parts.length - 1] as Record<string, unknown>
+  if (lastPart.type === 'step-start') return true
+  if ('toolCallId' in lastPart && lastPart.state === 'output-available') return true
+  if ('toolCallId' in lastPart && lastPart.state === 'output-error') return true
+  return s === 'submitted'
+})
+
 const showContinue = computed(() => {
   if (status.value !== 'ready') return false
   if (messages.value.length === 0) return false
@@ -87,9 +102,9 @@ function handleClearChat() {
           <div v-else data-test-id="chat-messages" class="flex flex-col gap-3">
             <ChatMessage v-for="msg in messages" :key="msg.id" :message="msg" />
 
-            <!-- Typing indicator -->
+            <!-- Thinking indicator: shown when AI is working but no visible activity -->
             <div
-              v-if="status === 'submitted'"
+              v-if="isThinking"
               data-test-id="chat-typing-indicator"
               class="flex gap-2"
             >
