@@ -25,7 +25,7 @@ export interface ToolDef {
   description: string
   mutates?: boolean
   params: Record<string, ParamDef>
-  execute: (figma: FigmaAPI, args: Record<string, any>) => unknown
+  execute: (figma: FigmaAPI, args: Record<string, unknown>) => unknown
 }
 
 type ResolvedType<T extends ParamType> = T extends 'string'

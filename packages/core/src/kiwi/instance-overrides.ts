@@ -1,5 +1,7 @@
+/* eslint-disable max-lines -- override resolution is tightly coupled, splitting would hurt readability */
 import type { SceneGraph, SceneNode, GeometryPath } from '../scene-graph'
-import { guidToString, convertOverrideToProps, resolveGeometryPaths } from './kiwi-convert'
+import { guidToString, resolveGeometryPaths } from './kiwi-convert'
+import { convertOverrideToProps } from './kiwi-convert-overrides'
 import { copyFills, copyStrokes, copyEffects, copyStyleRuns, copyGeometryPaths } from '../copy'
 import type { GUID } from './codec'
 import type { Matrix, Vector } from '../types'

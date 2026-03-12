@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- RPC commands are cohesive; splitting adds indirection */
 import { colorToHex, colorDistance as colorDist } from '../color'
 import { queryByXPath } from '../xpath'
 import type { Color } from '../types'

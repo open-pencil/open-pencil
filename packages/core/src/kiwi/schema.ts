@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- generated kiwi schema definition */
 import { parseSchema } from './kiwi-schema'
 
 const schemaText = `

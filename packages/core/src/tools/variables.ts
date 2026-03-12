@@ -1,4 +1,5 @@
 import { parseColor } from '../color'
+import type { VariableType, VariableValue } from '../scene-graph'
 
 import { defineTool } from './schema'
 
@@ -84,9 +85,9 @@ export const createVariable = defineTool({
     }
     const v = figma.createVariable(
       args.name,
-      args.type as any,
+      args.type as VariableType,
       args.collection_id,
-      parsedValue as any
+      parsedValue as VariableValue | undefined
     )
     return v
   }
@@ -113,7 +114,7 @@ export const setVariable = defineTool({
     else if (v.type === 'FLOAT') parsedValue = Number(args.value)
     else if (v.type === 'BOOLEAN') parsedValue = args.value === 'true'
     else parsedValue = args.value
-    figma.setVariableValue(args.id, args.mode, parsedValue as any)
+    figma.setVariableValue(args.id, args.mode, parsedValue as VariableValue)
     return { id: args.id, mode: args.mode, value: parsedValue }
   }
 })

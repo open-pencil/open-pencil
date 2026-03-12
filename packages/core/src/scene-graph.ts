@@ -1,7 +1,20 @@
+/* eslint-disable max-lines -- core class; instance, hit-test methods already extracted */
 import { createNanoEvents } from 'nanoevents'
 
 import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './constants'
-import { copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
+import {
+  createInstance as createInstanceFn,
+  populateInstanceChildren as populateInstanceChildrenFn,
+  syncInstances as syncInstancesFn,
+  detachInstance as detachInstanceFn,
+  getMainComponent as getMainComponentFn,
+  getInstances as getInstancesFn
+} from './scene-graph-instances'
+import {
+  hitTest as hitTestFn,
+  hitTestDeep as hitTestDeepFn,
+  hitTestFrame as hitTestFrameFn
+} from './scene-graph-hit-test'
 
 export type { GUID, Color } from './types'
 import type { Matrix, Vector, Color, Rect } from './types'
@@ -466,7 +479,7 @@ export class SceneGraph {
   rootId: string
   readonly emitter: Emitter<SceneGraphEvents> = createNanoEvents()
   private absPosCache = new Map<string, Vector>()
-  private instanceIndex = new Map<string, Set<string>>()
+  instanceIndex = new Map<string, Set<string>>()
 
   constructor() {
     const root = createDefaultNode('FRAME', {
@@ -840,104 +853,11 @@ export class SceneGraph {
   }
 
   hitTest(px: number, py: number, scopeId?: string): SceneNode | null {
-    const scope = scopeId ?? this.rootId
-    return this.hitTestChildren(px, py, scope, 0, 0, false)
+    return hitTestFn(this, px, py, scopeId)
   }
 
   hitTestDeep(px: number, py: number, scopeId?: string): SceneNode | null {
-    const scope = scopeId ?? this.rootId
-    return this.hitTestChildren(px, py, scope, 0, 0, true)
-  }
-
-  private static readonly OPAQUE_CONTAINER_TYPES = new Set<NodeType>(['COMPONENT', 'INSTANCE'])
-
-  private static hasVisibleFillOrStroke(node: SceneNode): boolean {
-    return (
-      node.fills.some((f) => f.visible) ||
-      node.strokes.some((s) => s.visible)
-    )
-  }
-
-  private static containsPoint(
-    px: number,
-    py: number,
-    ax: number,
-    ay: number,
-    node: SceneNode
-  ): boolean {
-    return px >= ax && px <= ax + node.width && py >= ay && py <= ay + node.height
-  }
-
-  private hitTestOpaqueContainer(
-    px: number,
-    py: number,
-    child: SceneNode,
-    childId: string,
-    ax: number,
-    ay: number,
-    deep: boolean
-  ): SceneNode | null {
-    if (!SceneGraph.containsPoint(px, py, ax, ay, child)) return null
-    const childHit = this.hitTestChildren(px, py, childId, ax, ay, deep)
-    if (childHit) return child
-    if (SceneGraph.hasVisibleFillOrStroke(child)) return child
-    return null
-  }
-
-  private hitTestTransparentContainer(
-    px: number,
-    py: number,
-    child: SceneNode,
-    childId: string,
-    ax: number,
-    ay: number,
-    deep: boolean
-  ): SceneNode | null {
-    const deepHit = this.hitTestChildren(px, py, childId, ax, ay, deep)
-    if (deepHit) return deepHit
-    if (child.type === 'GROUP') return null
-    if (SceneGraph.containsPoint(px, py, ax, ay, child) && SceneGraph.hasVisibleFillOrStroke(child)) return child
-    return null
-  }
-
-  private hitTestChildren(
-    px: number,
-    py: number,
-    parentId: string,
-    offsetX: number,
-    offsetY: number,
-    deep = false
-  ): SceneNode | null {
-    const parent = this.nodes.get(parentId)
-    if (!parent) return null
-
-    if (parent.clipsContent) {
-      if (!SceneGraph.containsPoint(px, py, offsetX, offsetY, parent)) return null
-    }
-
-    for (let i = parent.childIds.length - 1; i >= 0; i--) {
-      const childId = parent.childIds[i]
-      const child = this.nodes.get(childId)
-      if (!child || !child.visible) continue
-
-      const ax = offsetX + child.x
-      const ay = offsetY + child.y
-
-      if (CONTAINER_TYPES.has(child.type)) {
-        if (SceneGraph.OPAQUE_CONTAINER_TYPES.has(child.type) && !deep) {
-          const hit = this.hitTestOpaqueContainer(px, py, child, childId, ax, ay, deep)
-          if (hit) return hit
-          continue
-        }
-
-        const hit = this.hitTestTransparentContainer(px, py, child, childId, ax, ay, deep)
-        if (hit) return hit
-        continue
-      }
-
-      if (SceneGraph.containsPoint(px, py, ax, ay, child)) return child
-    }
-    return null
+    return hitTestDeepFn(this, px, py, scopeId)
   }
 
   hitTestFrame(
@@ -946,41 +866,7 @@ export class SceneGraph {
     excludeIds: Set<string>,
     scopeId?: string
   ): SceneNode | null {
-    return this.hitTestFrameChildren(px, py, scopeId ?? this.rootId, 0, 0, excludeIds)
-  }
-
-  private hitTestFrameChildren(
-    px: number,
-    py: number,
-    parentId: string,
-    offsetX: number,
-    offsetY: number,
-    excludeIds: Set<string>
-  ): SceneNode | null {
-    const parent = this.nodes.get(parentId)
-    if (!parent) return null
-
-    // Deepest matching frame wins
-    let best: SceneNode | null = null
-
-    for (const childId of parent.childIds) {
-      if (excludeIds.has(childId)) continue
-      const child = this.nodes.get(childId)
-      if (!child || !child.visible) continue
-
-      const ax = offsetX + child.x
-      const ay = offsetY + child.y
-
-      if (!CONTAINER_TYPES.has(child.type)) continue
-      if (px < ax || px > ax + child.width || py < ay || py > ay + child.height) continue
-
-      best = child
-
-      const deeper = this.hitTestFrameChildren(px, py, childId, ax, ay, excludeIds)
-      if (deeper) best = deeper
-    }
-
-    return best
+    return hitTestFrameFn(this, px, py, excludeIds, scopeId)
   }
 
   cloneTree(
@@ -1001,218 +887,32 @@ export class SceneGraph {
     return clone
   }
 
-  private static readonly INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
-    'width',
-    'height',
-    'fills',
-    'strokes',
-    'effects',
-    'opacity',
-    'cornerRadius',
-    'topLeftRadius',
-    'topRightRadius',
-    'bottomRightRadius',
-    'bottomLeftRadius',
-    'independentCorners',
-    'layoutMode',
-    'layoutWrap',
-    'primaryAxisAlign',
-    'counterAxisAlign',
-    'primaryAxisSizing',
-    'counterAxisSizing',
-    'itemSpacing',
-    'counterAxisSpacing',
-    'paddingTop',
-    'paddingRight',
-    'paddingBottom',
-    'paddingLeft',
-    'gridTemplateColumns',
-    'gridTemplateRows',
-    'gridColumnGap',
-    'gridRowGap',
-    'gridPosition',
-    'clipsContent',
-    'independentStrokeWeights',
-    'borderTopWeight',
-    'borderRightWeight',
-    'borderBottomWeight',
-    'borderLeftWeight'
-  ]
-
-  private static copyProp(
-    target: Partial<SceneNode> | SceneNode,
-    source: SceneNode,
-    key: keyof SceneNode
-  ): void {
-    const val = source[key]
-    if (key === 'fills') {
-      ;(target as Record<string, unknown>)[key] = copyFills(val as Fill[])
-    } else if (key === 'strokes') {
-      ;(target as Record<string, unknown>)[key] = copyStrokes(val as Stroke[])
-    } else if (key === 'effects') {
-      ;(target as Record<string, unknown>)[key] = copyEffects(val as Effect[])
-    } else if (key === 'styleRuns') {
-      ;(target as Record<string, unknown>)[key] = copyStyleRuns(val as StyleRun[])
-    } else {
-      ;(target as Record<string, unknown>)[key] = Array.isArray(val) ? structuredClone(val) : val
-    }
-  }
-
   createInstance(
     componentId: string,
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
-    const component = this.nodes.get(componentId)
-    if (component?.type !== 'COMPONENT') return null
-
-    const props: Partial<SceneNode> = { name: component.name, componentId }
-    for (const key of SceneGraph.INSTANCE_SYNC_PROPS) {
-      SceneGraph.copyProp(props, component, key)
-    }
-
-    const instance = this.createNode('INSTANCE', parentId, { ...props, ...overrides })
-
-    this.cloneChildrenWithMapping(component.id, instance.id)
-
-    return instance
+    return createInstanceFn(this, componentId, parentId, overrides)
   }
 
   populateInstanceChildren(instanceId: string, componentId: string): void {
-    const instance = this.nodes.get(instanceId)
-    const component = this.nodes.get(componentId)
-    if (!instance || !component || instance.type !== 'INSTANCE') return
-    this.cloneChildrenWithMapping(componentId, instanceId)
-  }
-
-  private cloneChildrenWithMapping(sourceParentId: string, destParentId: string): void {
-    const sourceParent = this.nodes.get(sourceParentId)
-    if (!sourceParent) return
-
-    for (const childId of sourceParent.childIds) {
-      const src = this.nodes.get(childId)
-      if (!src) continue
-
-      const { id: _, parentId: _p, childIds: _c, ...rest } = src
-      const clone = this.createNode(src.type, destParentId, {
-        ...rest,
-        componentId: childId
-      })
-
-      if (src.childIds.length > 0) {
-        this.cloneChildrenWithMapping(childId, clone.id)
-      }
-    }
+    populateInstanceChildrenFn(this, instanceId, componentId)
   }
 
   syncInstances(componentId: string): void {
-    const component = this.nodes.get(componentId)
-    if (component?.type !== 'COMPONENT') return
-
-    for (const instance of this.getInstances(componentId)) {
-      // Sync instance-level props (unless overridden)
-      for (const key of SceneGraph.INSTANCE_SYNC_PROPS) {
-        if (key in instance.overrides) continue
-        SceneGraph.copyProp(instance, component, key)
-      }
-
-      // Sync children: match by componentId
-      this.syncChildren(component.id, instance.id, instance.overrides)
-    }
-  }
-
-  private syncChildren(
-    compParentId: string,
-    instParentId: string,
-    overrides: Record<string, unknown>
-  ): void {
-    const compParent = this.nodes.get(compParentId)
-    const instParent = this.nodes.get(instParentId)
-    if (!compParent || !instParent) return
-
-    const instChildMap = new Map<string, SceneNode>()
-    for (const childId of instParent.childIds) {
-      const child = this.nodes.get(childId)
-      if (child?.componentId) instChildMap.set(child.componentId, child)
-    }
-
-    // Add new children from component that don't exist in instance
-    for (const compChildId of compParent.childIds) {
-      if (!instChildMap.has(compChildId)) {
-        const src = this.nodes.get(compChildId)
-        if (!src) continue
-        const { id: _, parentId: _p, childIds: _c, ...rest } = src
-        const clone = this.createNode(src.type, instParentId, {
-          ...rest,
-          componentId: compChildId
-        })
-        if (src.childIds.length > 0) {
-          this.cloneChildrenWithMapping(compChildId, clone.id)
-        }
-        instChildMap.set(compChildId, clone)
-      }
-    }
-
-    // Sync existing children
-    for (const compChildId of compParent.childIds) {
-      const compChild = this.nodes.get(compChildId)
-      const instChild = instChildMap.get(compChildId)
-      if (!compChild || !instChild) continue
-
-      for (const key of SceneGraph.INSTANCE_SYNC_PROPS) {
-        const overrideKey = `${instChild.id}:${key}`
-        if (overrideKey in overrides) continue
-        SceneGraph.copyProp(instChild, compChild, key)
-      }
-
-      for (const key of ['name', 'text', 'fontSize', 'fontWeight', 'fontFamily'] as const) {
-        const overrideKey = `${instChild.id}:${key}`
-        if (overrideKey in overrides) continue
-        SceneGraph.copyProp(instChild, compChild, key)
-      }
-
-      if (compChild.childIds.length > 0) {
-        this.syncChildren(compChildId, instChild.id, overrides)
-      }
-    }
-
-    // Reorder instance children to match component order
-    const compChildOrder = compParent.childIds
-    instParent.childIds.sort((a, b) => {
-      const nodeA = this.nodes.get(a)
-      const nodeB = this.nodes.get(b)
-      const idxA = nodeA?.componentId ? compChildOrder.indexOf(nodeA.componentId) : -1
-      const idxB = nodeB?.componentId ? compChildOrder.indexOf(nodeB.componentId) : -1
-      return idxA - idxB
-    })
+    syncInstancesFn(this, componentId)
   }
 
   detachInstance(instanceId: string): void {
-    const node = this.nodes.get(instanceId)
-    if (node?.type !== 'INSTANCE') return
-    if (node.componentId) {
-      this.instanceIndex.get(node.componentId)?.delete(instanceId)
-    }
-    node.type = 'FRAME'
-    node.componentId = null
-    node.overrides = {}
+    detachInstanceFn(this, instanceId)
   }
 
   getMainComponent(instanceId: string): SceneNode | undefined {
-    const node = this.nodes.get(instanceId)
-    if (!node?.componentId) return undefined
-    return this.nodes.get(node.componentId)
+    return getMainComponentFn(this, instanceId)
   }
 
   getInstances(componentId: string): SceneNode[] {
-    const ids = this.instanceIndex.get(componentId)
-    if (!ids) return []
-    const instances: SceneNode[] = []
-    for (const id of ids) {
-      const node = this.nodes.get(id)
-      if (node) instances.push(node)
-    }
-    return instances
+    return getInstancesFn(this, componentId)
   }
 
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {

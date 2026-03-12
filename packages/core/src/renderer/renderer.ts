@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- SkiaRenderer class; text, pen-overlay, fills, scene already extracted */
 import {
   SELECTION_COLOR,
   COMPONENT_COLOR,
@@ -26,7 +27,7 @@ import {
   RULER_TEXT_COLOR,
   DEFAULT_FONT_FAMILY
 } from '../constants'
-import { isFontLoaded, getCJKFallbackFamily } from '../fonts'
+
 import { RenderProfiler } from '../profiler'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '../scene-graph'
@@ -42,7 +43,6 @@ import type {
   Paint,
   Font,
   FontMgr,
-  FontWeight,
   TypefaceFontProvider,
   SkPicture,
   ImageFilter,
@@ -65,9 +65,11 @@ import {
   drawFlashes as drawFlashesFn,
   drawLayoutInsertIndicator as drawLayoutInsertIndicatorFn,
   drawTextEditOverlay as drawTextEditOverlayFn,
+} from './overlays'
+import {
   drawPenOverlay as drawPenOverlayFn,
   drawRemoteCursors as drawRemoteCursorsFn
-} from './overlays'
+} from './pen-overlay'
 import { drawRulers as drawRulersFn } from './rulers'
 import {
   drawSectionTitles as drawSectionTitlesFn,
@@ -115,6 +117,12 @@ import {
   getCachedMaskBlur as getCachedMaskBlurFn,
   applyClippedBlur as applyClippedBlurFn
 } from './effects'
+import {
+  measureTextNode as measureTextNodeFn,
+  isNodeFontLoaded as isNodeFontLoadedFn,
+  buildTextPicture as buildTextPictureFn,
+  buildParagraph as buildParagraphFn
+} from './text'
 
 export interface RenderOverlays {
   hoveredNodeId?: string | null
@@ -754,184 +762,23 @@ export class SkiaRenderer {
   }
 
   measureTextNode(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {
-    if (!this.fontsLoaded || !this.fontProvider || !this.isNodeFontLoaded(node)) return null
-    if (node.type !== 'TEXT' || !node.text) return null
-
-    const paragraph = this.buildParagraph(node)
-    const layoutWidth =
-      maxWidth !== undefined
-        ? maxWidth
-        : (node.textAutoResize === 'WIDTH_AND_HEIGHT'
-            ? 1e6
-            : node.width || 1e6)
-    paragraph.layout(layoutWidth)
-    const width = paragraph.getLongestLine()
-    const height = paragraph.getHeight()
-    paragraph.delete()
-    return { width: Math.ceil(width), height: Math.ceil(height) }
+    return measureTextNodeFn(this, node, maxWidth)
   }
 
   isNodeFontLoaded(node: SceneNode): boolean {
-    const families = new Set<string>()
-    families.add(node.fontFamily || DEFAULT_FONT_FAMILY)
-    for (const run of node.styleRuns) {
-      if (run.style.fontFamily) families.add(run.style.fontFamily)
-    }
-    return [...families].every((f) => isFontLoaded(f))
+    return isNodeFontLoadedFn(this, node)
   }
 
   buildTextPicture(node: SceneNode): Uint8Array | null {
-    if (!this.fontsLoaded || !this.fontProvider || !this.isNodeFontLoaded(node)) return null
-    if (node.type !== 'TEXT' || !node.text) return null
-
-    const ck = this.ck
-    const recorder = new ck.PictureRecorder()
-    const bounds = ck.LTRBRect(0, 0, node.width || 1e6, node.height || 1e6)
-    const recCanvas = recorder.beginRecording(bounds)
-
-    const paragraph = this.buildParagraph(node, undefined, { halfLeading: true })
-    recCanvas.drawParagraph(paragraph, 0, 0)
-    paragraph.delete()
-
-    const picture = recorder.finishRecordingAsPicture()
-    recorder.delete()
-
-    const bytes = picture.serialize()
-    picture.delete()
-    return bytes ?? null
+    return buildTextPictureFn(this, node)
   }
 
   buildParagraph(
     node: SceneNode,
     color?: Float32Array,
-    { halfLeading = false }: { halfLeading?: boolean } = {}
+    opts?: { halfLeading?: boolean }
   ): Paragraph {
-    const ck = this.ck
-    const baseColor = color ?? ck.BLACK
-    const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
-    const cjkFallback = getCJKFallbackFamily()
-
-    const truncateOpts = this.buildTruncateOpts(node, baseFontSize)
-
-    const fontFamilies = (primary: string) =>
-      cjkFallback ? [primary, cjkFallback] : [primary]
-
-    const paraStyle = new ck.ParagraphStyle({
-      textAlign: this.getTextAlign(node.textAlignHorizontal),
-      ...truncateOpts,
-      textStyle: {
-        color: baseColor,
-        fontFamilies: fontFamilies(node.fontFamily || DEFAULT_FONT_FAMILY),
-        fontSize: baseFontSize,
-        fontStyle: {
-          weight: { value: node.fontWeight || 400 } as FontWeight,
-          slant: node.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
-        },
-        letterSpacing: node.letterSpacing || 0,
-        decoration: this.textDecorationValue(node.textDecoration),
-        heightMultiplier: node.lineHeight ? node.lineHeight / baseFontSize : undefined,
-        halfLeading
-      }
-    })
-
-    if (!this.fontProvider) throw new Error('Font provider not initialized')
-    const builder = ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, this.fontProvider)
-
-    if (node.styleRuns.length === 0) {
-      builder.addText(node.text)
-    } else {
-      this.addStyledRuns(builder, node, baseColor, baseFontSize, fontFamilies, halfLeading)
-    }
-
-    const paragraph = builder.build()
-    paragraph.layout(node.width || 1e6)
-    builder.delete()
-    return paragraph
-  }
-
-  private buildTruncateOpts(
-    node: SceneNode,
-    baseFontSize: number
-  ): { maxLines?: number; ellipsis?: string } {
-    if (node.textTruncation !== 'ENDING') return {}
-
-    const opts: { maxLines?: number; ellipsis: string } = { ellipsis: '…' }
-    if (node.maxLines != null && node.maxLines > 0) {
-      opts.maxLines = node.maxLines
-    } else if (node.height > 0) {
-      const lineH = node.lineHeight || baseFontSize * 1.2
-      opts.maxLines = Math.max(1, Math.floor(node.height / lineH))
-    }
-    return opts
-  }
-
-  private addStyledRuns(
-    builder: ReturnType<CanvasKit['ParagraphBuilder']['MakeFromFontProvider']>,
-    node: SceneNode,
-    baseColor: Float32Array,
-    baseFontSize: number,
-    fontFamilies: (primary: string) => string[],
-    halfLeading: boolean
-  ): void {
-    const ck = this.ck
-    const text = node.text
-    let pos = 0
-
-    for (const run of node.styleRuns) {
-      if (pos < run.start) {
-        builder.addText(text.slice(pos, run.start))
-      }
-      const s = run.style
-      const runLineHeight = s.lineHeight !== undefined ? s.lineHeight : node.lineHeight
-      const runFontSize = s.fontSize ?? baseFontSize
-
-      builder.pushStyle(
-        new ck.TextStyle({
-          color: baseColor,
-          fontFamilies: fontFamilies(s.fontFamily ?? (node.fontFamily || DEFAULT_FONT_FAMILY)),
-          fontSize: runFontSize,
-          fontStyle: {
-            weight: { value: (s.fontWeight ?? node.fontWeight) || 400 } as FontWeight,
-            slant: (s.italic ?? node.italic) ? ck.FontSlant.Italic : ck.FontSlant.Upright
-          },
-          letterSpacing: s.letterSpacing ?? (node.letterSpacing || 0),
-          decoration: this.textDecorationValue(s.textDecoration ?? node.textDecoration),
-          heightMultiplier: runLineHeight ? runLineHeight / runFontSize : undefined,
-          halfLeading
-        })
-      )
-      builder.addText(text.slice(run.start, run.start + run.length))
-      builder.pop()
-      pos = run.start + run.length
-    }
-
-    if (pos < text.length) {
-      builder.addText(text.slice(pos))
-    }
-  }
-
-  private textDecorationValue(decoration: string): number {
-    switch (decoration) {
-      case 'UNDERLINE':
-        return this.ck.UnderlineDecoration
-      case 'STRIKETHROUGH':
-        return this.ck.LineThroughDecoration
-      default:
-        return this.ck.NoDecoration
-    }
-  }
-
-  private getTextAlign(align: string) {
-    switch (align) {
-      case 'CENTER':
-        return this.ck.TextAlign.Center
-      case 'RIGHT':
-        return this.ck.TextAlign.Right
-      case 'JUSTIFIED':
-        return this.ck.TextAlign.Justify
-      default:
-        return this.ck.TextAlign.Left
-    }
+    return buildParagraphFn(this, node, color, opts)
   }
 
   resolveFillColor(fill: Fill, fillIndex: number, node: SceneNode, graph: SceneGraph): Color {

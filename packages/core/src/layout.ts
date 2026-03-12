@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- layout tree building is a single recursive pass */
 import Yoga, {
   Align,
   Direction,

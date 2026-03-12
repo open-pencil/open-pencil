@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- JSX export formats share helpers and node walking logic */
 import { colorToHex8, colorToCSSCompact } from '../color'
 import { DEFAULT_FONT_FAMILY } from '../constants'
 import {

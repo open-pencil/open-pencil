@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- codec types and encode/decode logic are tightly coupled */
 /**
  * Message Encoding/Decoding for Figma Multiplayer
  *

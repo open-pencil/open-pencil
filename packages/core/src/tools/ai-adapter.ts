@@ -41,11 +41,15 @@ export function toolsToAI(
   options: AIAdapterOptions,
   deps: {
     v: typeof valibot
-    valibotSchema: (schema: any) => any
-    tool: (opts: any) => any
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- valibot schema type erasure at adapter boundary
+    valibotSchema: (schema: any) => unknown
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- Vercel AI tool() has complex overloads that can't be expressed without any
+    tool: (...args: any[]) => unknown
   }
+// eslint-disable-next-line typescript-eslint/no-explicit-any -- return type must be any to satisfy Vercel AI SDK's ToolSet which uses any internally
 ): Record<string, any> {
   const { v, valibotSchema, tool } = deps
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- matches return type
   const result: Record<string, any> = {}
 
   for (const def of tools) {
@@ -56,11 +60,12 @@ export function toolsToAI(
 
     const toolOpts: Record<string, unknown> = {
       description: def.description,
-      inputSchema: valibotSchema(v.object(shape as any)),
+      // eslint-disable-next-line typescript-eslint/no-explicit-any -- valibot v.object() requires typed ObjectEntries, but shape is built dynamically
+      inputSchema: valibotSchema(v.object(shape as Record<string, any>)),
       execute: async (args: Record<string, unknown>) => {
         options.onBeforeExecute?.(def)
         try {
-          const execResult = await def.execute(options.getFigma(), args as any)
+          const execResult = await def.execute(options.getFigma(), args)
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)
@@ -100,7 +105,8 @@ function paramToValibot(v: typeof valibot, param: ParamDef): unknown {
       const pipes: unknown[] = [v.number()]
       if (param.min !== undefined) pipes.push(v.minValue(param.min))
       if (param.max !== undefined) pipes.push(v.maxValue(param.max))
-      return pipes.length > 1 ? v.pipe(...(pipes as [any, any, ...any[]])) : v.number()
+      // eslint-disable-next-line typescript-eslint/no-explicit-any -- valibot pipe() requires specific tuple types, but pipes are built dynamically
+      return pipes.length > 1 ? v.pipe(...(pipes as [any, any, ...unknown[]])) : v.number()
     },
     boolean: () => v.boolean(),
     color: () => v.pipe(v.string(), v.description('Color value (hex like #ff0000 or #ff000080)')),
@@ -110,10 +116,12 @@ function paramToValibot(v: typeof valibot, param: ParamDef): unknown {
   let schema = typeMap[param.type]()
 
   if (param.description && param.type !== 'color') {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- valibot pipe() requires BaseSchema, but schema is dynamically typed
     schema = v.pipe(schema as any, v.description(param.description))
   }
 
   if (!param.required) {
+    // eslint-disable-next-line typescript-eslint/no-explicit-any -- valibot optional() requires BaseSchema; default value type is dynamic
     schema = v.optional(schema as any, param.default as any)
   }
 

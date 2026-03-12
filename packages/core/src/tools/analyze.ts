@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- analysis tools share helpers and collection logic */
 import { createTwoFilesPatch } from 'diff'
 
 import { colorDistance, colorToHex, parseColor } from '../color'

@@ -1,4 +1,5 @@
 import { parseColor } from '../color'
+import type { SceneNode } from '../scene-graph'
 
 import { defineTool, nodeSummary } from './schema'
 
@@ -136,7 +137,7 @@ export const createVector = defineTool({
     node.y = args.y
     if (args.name) node.name = args.name
     if (args.path) {
-      figma.graph.updateNode(node.id, { vectorNetwork: JSON.parse(args.path) } as any)
+      figma.graph.updateNode(node.id, { vectorNetwork: JSON.parse(args.path) as SceneNode['vectorNetwork'] })
     }
     if (args.fill) {
       node.fills = [{ type: 'SOLID', color: parseColor(args.fill), opacity: 1, visible: true }]
