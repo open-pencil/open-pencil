@@ -338,8 +338,10 @@ export async function searchIcons(query: string, options?: {
   const response = await fetchWithTimeout(`${ICONIFY_API}/search?${params}`)
   if (!response.ok) throw new Error(`Iconify search error: ${response.status}`)
   const data = await response.json()
+  const icons: string[] = data.icons ?? []
+  const limit = options?.limit ?? 5
   return {
-    icons: data.icons ?? [],
+    icons: icons.slice(0, limit),
     total: data.total ?? 0,
     collections: data.collections ?? {}
   }

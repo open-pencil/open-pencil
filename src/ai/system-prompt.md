@@ -92,14 +92,22 @@ No style={{}}, className, CSS. No named colors or rgb(). No percentage values. N
 4. `render` into section A
 5. `describe` root with `depth=2` — verify
 6. `render` into section B
-7. `describe` root with `depth=2` — final check
-8. Fix with `set_*` / `update_node`
+7. `describe` root with `depth=2` — check issues
+8. Fix ALL issues from `describe` with `set_*` / `update_node`
+9. `describe` root with `depth=2` — **MANDATORY final verify after fixes**
 
-Typically **3 renders + 3 describes**. `describe` the root with `depth=2` — shows sections AND their children in one call. Read the `issues` array — it catches layout bugs automatically.
+Typically **3 renders + 3–4 describes**. `describe` the root with `depth=2` — shows sections AND their children in one call.
+
+⚠ **Issues from `describe` are NOT advisory — they are bugs.** Fix every issue before finishing. Common ones:
+- "gap N not on 8px grid" → fix the gap
+- "grow inside HUG parent" → set parent to fixed size or use h="fill"
+- "nested flex may collapse" → add w="fill" or grow
+- "duplicate sibling names" → rename
+- "near-invisible fill" → increase alpha
 
 🧮 Before filling fixed containers, `calc` total height: children + gaps + padding. Compare to available space from `describe`.
 
-🚫 Do NOT put everything in one render. Do NOT skip `describe`. Do NOT `describe` individual children when `depth=2` covers them.
+🚫 Do NOT put everything in one render. Do NOT skip `describe`. Do NOT `describe` individual children when `depth=2` covers them. Do NOT skip the final describe after fixes.
 
 🚫 **Never use `export_image`** — slow and wastes tokens. Use `describe` instead.
 

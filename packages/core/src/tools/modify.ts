@@ -175,20 +175,18 @@ export const setLayout = defineTool({
       description: 'Layout direction (keeps current if omitted)',
       enum: ['HORIZONTAL', 'VERTICAL']
     },
-    spacing: { type: 'number', description: 'Gap between items', default: 0, min: 0 },
-    padding: { type: 'number', description: 'Equal padding on all sides', min: 0 },
+    spacing: { type: 'number', description: 'Gap between items (only changes if provided)', min: 0 },
+    padding: { type: 'number', description: 'Equal padding on all sides (only changes if provided)', min: 0 },
     padding_horizontal: { type: 'number', description: 'Horizontal padding', min: 0 },
     padding_vertical: { type: 'number', description: 'Vertical padding', min: 0 },
     align: {
       type: 'string',
-      description: 'Primary axis alignment',
-      default: 'MIN',
+      description: 'Primary axis alignment (only changes if provided)',
       enum: ['MIN', 'CENTER', 'MAX', 'SPACE_BETWEEN']
     },
     counter_align: {
       type: 'string',
-      description: 'Cross axis alignment',
-      default: 'MIN',
+      description: 'Cross axis alignment (only changes if provided)',
       enum: ['MIN', 'CENTER', 'MAX', 'STRETCH']
     }
   },
@@ -197,18 +195,26 @@ export const setLayout = defineTool({
     if (!node) return { error: `Node "${args.id}" not found` }
 
     if (args.direction) node.layoutMode = args.direction as 'HORIZONTAL' | 'VERTICAL'
-    node.itemSpacing = args.spacing ?? 0
-    node.primaryAxisAlignItems = args.align ?? 'MIN'
-    node.counterAxisAlignItems = args.counter_align ?? 'MIN'
+    if (args.spacing !== undefined) node.itemSpacing = args.spacing
+    if (args.align !== undefined) node.primaryAxisAlignItems = args.align
+    if (args.counter_align !== undefined) node.counterAxisAlignItems = args.counter_align
 
-    const ph = args.padding_horizontal ?? args.padding ?? 0
-    const pv = args.padding_vertical ?? args.padding ?? 0
-    node.paddingLeft = ph
-    node.paddingRight = ph
-    node.paddingTop = pv
-    node.paddingBottom = pv
+    if (args.padding !== undefined) {
+      node.paddingTop = args.padding
+      node.paddingRight = args.padding
+      node.paddingBottom = args.padding
+      node.paddingLeft = args.padding
+    }
+    if (args.padding_horizontal !== undefined) {
+      node.paddingLeft = args.padding_horizontal
+      node.paddingRight = args.padding_horizontal
+    }
+    if (args.padding_vertical !== undefined) {
+      node.paddingTop = args.padding_vertical
+      node.paddingBottom = args.padding_vertical
+    }
 
-    return { id: args.id, direction: args.direction, spacing: args.spacing ?? 0 }
+    return { id: args.id, spacing: node.itemSpacing }
   }
 })
 
