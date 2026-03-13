@@ -251,16 +251,20 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
   }
 }
 
+function safeColor(c: { r: number; g: number; b: number; a?: number }) {
+  return c.a !== undefined ? c : { r: c.r, g: c.g, b: c.b, a: 1 }
+}
+
 function fillToKiwiPaint(f: SceneNode['fills'][number]): Paint {
   const paint: Paint = {
     type: f.type,
-    color: f.color,
+    color: safeColor(f.color),
     opacity: f.opacity,
     visible: f.visible,
     blendMode: f.blendMode ?? 'NORMAL'
   }
   if (f.gradientStops) {
-    paint.stops = f.gradientStops.map((s) => ({ color: s.color, position: s.position }))
+    paint.stops = f.gradientStops.map((s) => ({ color: safeColor(s.color), position: s.position }))
   }
   if (f.gradientTransform) paint.transform = f.gradientTransform
   if (f.imageHash) paint.image = { hash: f.imageHash }
@@ -406,7 +410,7 @@ export function sceneNodeToKiwi(
   const fillPaints = node.fills.map(fillToKiwiPaint)
   const strokePaints = node.strokes.map((s) => ({
     type: 'SOLID' as const,
-    color: s.color,
+    color: safeColor(s.color),
     opacity: s.opacity,
     visible: s.visible,
     blendMode: 'NORMAL' as const
@@ -442,7 +446,7 @@ export function sceneNodeToKiwi(
   if (node.effects.length > 0) {
     nc.effects = node.effects.map((e) => ({
       type: e.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : e.type,
-      color: e.color,
+      color: safeColor(e.color),
       offset: e.offset,
       radius: e.radius,
       spread: e.spread,
