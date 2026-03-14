@@ -118,32 +118,46 @@ Write a brief plan as numbered sections: what blocks, rough dimensions, layout a
 > 4. Sidebar: news feed + stocks widget + newsletter
 > 5. Footer 3-col links
 
-## Phase 2 — Build (multiple renders)
+## Phase 2 — Skeleton (visible placeholders for every section)
 
-1. `calc` — batch all dimension arithmetic in one call
-2. **Render 1** — ONLY the page frame with nav bar and breaking news ticker. Do NOT include child containers for future sections — just nav + ticker.
-3. **Render 2–N** — each remaining section as a separate render with `parent_id` pointing to the page frame (or a content wrapper). Build sections in visual order: hero → stories → opinions → sidebar → footer.
-4. `describe` root `depth=2` — verify
-5. `batch_update` — fix layout issues
+Build the ENTIRE page with visible skeleton placeholders. Every section shows gray blocks where content will go — the page looks like a wireframe with correct proportions and spacing.
 
-**Rules for every render:**
+1. `calc` — batch all dimension arithmetic
+2. **Render 1** — page frame + nav bar + ticker (real text content)
+3. **Render 2** — hero skeleton: gray image block `<Rectangle bg="#E2E8F0" w="fill" h={420} rounded={8} />` + text placeholder lines `<Rectangle bg="#CBD5E1" w={400} h={28} rounded={4} />`
+4. **Render 3** — stories skeleton: real section header + main story card (gray image + gray text lines) + 3 sub-cards (same pattern)
+5. **Render 4** — opinions skeleton (same pattern as stories)
+6. **Render 5** — sidebar skeleton: news list (gray text lines), stocks (gray rows), newsletter (dark block with gray input)
+7. **Render 6** — footer (final content — simple enough)
+8. `describe` root `depth=2` — verify layout, proportions, spacing
+9. `batch_update` — fix ALL issues before filling real content
 
-- Rectangles with `bg="#..."` colors for image placeholders (dark blues `#1E293B`, grays `#475569`, etc.)
-- Real text: titles, descriptions, author names, timestamps — not lorem ipsum
-- Full auto-layout: flex, gap, padding, grow
-- Named image placeholders: `name="HeroImage"`, `name="StoryImg1"`, etc.
+**Skeleton card pattern:**
 
-⚠ **NEVER render empty frames.** `<Frame name="Sidebar" w={400} flex="col" gap={32} />` is WRONG — invisible, zero height. Every frame must have visible children.
-⚠ **NEVER render the entire page in one call.** Split into 5–7 section renders.
-⚠ **Do NOT pre-create wrapper frames for future content.** If you need a 2-column layout (main + sidebar), render main content first, then sidebar in a second render. Use the page frame's auto-layout to stack them, or create the wrapper WITH both columns' content in one render.
+```jsx
+<Frame name="StoryCard1" grow={1} flex="col" bg="#FFFFFF" rounded={8} overflow="hidden">
+  <Rectangle name="StoryImg1" w="fill" h={160} bg="#E2E8F0" />
+  <Frame w="fill" flex="col" gap={8} p={16}>
+    <Rectangle w={60} h={12} bg="#CBD5E1" rounded={4} />
+    <Rectangle w="fill" h={20} bg="#CBD5E1" rounded={4} />
+    <Rectangle w={180} h={14} bg="#E2E8F0" rounded={4} />
+  </Frame>
+</Frame>
+```
 
-## Phase 3 — Polish
+After Phase 2 the page looks like a complete wireframe — all sections visible, correct sizes, verified layout.
 
-1. `stock_photo` — batch ALL image placeholders in one call
-2. `describe` root `depth=1` — final structure check
-3. Fix remaining warnings with `batch_update`
+## Phase 3 — Fill content (replace skeletons with real content)
 
-Typically: 1 calc + 5–7 renders + 1 batch stock_photo + 2 describes + 1–2 batch_updates = 12–15 steps.
+For each skeleton section: `delete_node` the skeleton, then `render` real content with titles, descriptions, authors, colored tags, proper typography. Keep the same `parent_id`.
+
+## Phase 4 — Polish
+
+1. `stock_photo` — batch ALL named image placeholders in one call
+2. `describe` root `depth=1` — final check
+3. `batch_update` — fix remaining issues
+
+Typically: 1 calc + 6 skeleton renders + describe + fixes + 6 content renders + 1 stock_photo + final describe = 20-25 steps.
 
 ⚠ **Issues from `describe` have severity levels.** Fix `error` issues always. Fix `warning` issues when possible. Ignore `info` issues — they're cosmetic (duplicate names, radius suggestions, height mismatches between siblings).
 

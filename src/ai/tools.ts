@@ -82,9 +82,11 @@ export function createAITools(store: EditorStore) {
     CORE_TOOLS,
     {
       getFigma: () => makeFigmaFromStore(store),
-      onBeforeExecute: (def) => {
+      onBeforeExecute: (def, args) => {
         if (def.mutates) {
           beforeSnapshot = store.snapshotPage()
+          const targetId = (args.id ?? args.parent_id) as string | undefined
+          if (targetId) store.aiMarkActive([targetId])
         }
       },
       onAfterExecute: async (def) => {
@@ -120,9 +122,8 @@ export function createAITools(store: EditorStore) {
         }
       },
       onFlashNodes: (nodeIds) => {
-        store.flashNodes(nodeIds)
         if (nodeIds.length > 0) {
-          store.state.selectedIds = new Set(nodeIds)
+          store.aiMarkDone(nodeIds)
         }
       },
       onToolLog: (entry) => {
