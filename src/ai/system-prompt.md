@@ -123,7 +123,7 @@ Write a brief plan as numbered sections: what blocks, rough dimensions, layout a
 Build the ENTIRE page with visible skeleton placeholders. Every section shows gray blocks where content will go — the page looks like a wireframe with correct proportions and spacing.
 
 1. `calc` — batch all dimension arithmetic
-2. **Render 1** — page frame + nav bar + ticker (real text content)
+2. **Render 1** — page frame (`h="hug"`, NOT fixed height) + nav bar + ticker (real text content)
 3. **Render 2** — hero skeleton: gray image block `<Rectangle bg="#E2E8F0" w="fill" h={420} rounded={8} />` + text placeholder lines `<Rectangle bg="#CBD5E1" w={400} h={28} rounded={4} />`
 4. **Render 3** — stories skeleton: real section header + main story card (gray image + gray text lines) + 3 sub-cards (same pattern)
 5. **Render 4** — opinions skeleton (same pattern as stories)

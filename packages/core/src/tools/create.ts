@@ -59,7 +59,8 @@ export const render = defineTool({
     x: { type: 'number', description: 'X position of the root node' },
     y: { type: 'number', description: 'Y position of the root node' },
     parent_id: { type: 'string', description: 'Parent node ID to render into' },
-    replace_id: { type: 'string', description: 'Node ID to replace — new node takes its position in parent, old node is deleted' }
+    replace_id: { type: 'string', description: 'Node ID to replace — new node takes its position in parent, old node is deleted' },
+    insert_index: { type: 'number', description: 'Position among siblings (0 = first child). Omit to append at end.' }
   },
   execute: async (figma, args) => {
     const { renderJSX } = await import('../render/render-jsx.js')
@@ -87,6 +88,8 @@ export const render = defineTool({
     if (args.replace_id && replaceIndex >= 0) {
       figma.graph.reorderChild(result.id, parentId, replaceIndex)
       figma.graph.deleteNode(args.replace_id)
+    } else if (args.insert_index !== undefined) {
+      figma.graph.reorderChild(result.id, parentId, args.insert_index)
     }
 
     return { id: result.id, name: result.name, type: result.type, children: result.childIds }

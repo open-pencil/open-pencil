@@ -321,7 +321,7 @@ function hasSiblingWithGrowOrFill(children: SceneNode[], exclude: SceneNode, isR
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.layoutMode === 'NONE') return
-  if (node.primaryAxisAlign === 'SPACE_BETWEEN' || node.primaryAxisAlign === 'CENTER') return
+  if (node.primaryAxisAlign !== 'MIN') return
   if (node.layoutWrap === 'WRAP') return
   for (const child of children) {
     if (!childNeedsFill(child, node, isRow)) continue
