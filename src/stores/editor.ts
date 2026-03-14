@@ -204,7 +204,7 @@ export function createEditorStore() {
     actionToast: null as string | null,
     mobileDrawerSnap: 'closed' as 'closed' | 'half' | 'full',
     clipboardHtml: '',
-    autosaveEnabled: true
+    autosaveEnabled: false
   })
 
   const AUTOSAVE_DELAY = 3000
