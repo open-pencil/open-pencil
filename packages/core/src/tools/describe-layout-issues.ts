@@ -309,18 +309,27 @@ function childNeedsFill(child: SceneNode, parent: SceneNode, isRow: boolean): bo
     : child.height < parent.height * 0.3 && child.primaryAxisSizing !== 'FILL' && child.layoutGrow <= 0
 }
 
+function hasSiblingWithGrowOrFill(children: SceneNode[], exclude: SceneNode, isRow: boolean): boolean {
+  return children.some((c) => {
+    if (c === exclude) return false
+    if (c.layoutGrow > 0) return true
+    const sizing = isRow ? c.counterAxisSizing : c.primaryAxisSizing
+    return sizing === 'FILL'
+  })
+}
+
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.layoutMode === 'NONE') return
   if (node.primaryAxisAlign === 'SPACE_BETWEEN' || node.primaryAxisAlign === 'CENTER') return
   if (node.layoutWrap === 'WRAP') return
   for (const child of children) {
-    if (childNeedsFill(child, node, isRow)) {
-      issues.push({
-        message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
-        suggestion: 'Add w="fill" or grow={1}'
-      })
-    }
+    if (!childNeedsFill(child, node, isRow)) continue
+    if (hasSiblingWithGrowOrFill(children, child, isRow)) continue
+    issues.push({
+      message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
+      suggestion: 'Add w="fill" or grow={1}'
+    })
   }
 }
 

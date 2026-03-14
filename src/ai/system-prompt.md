@@ -4,7 +4,7 @@ After completing a design, give a **2–3 line** summary: frame size, accent col
 
 # Rendering
 
-The `render` tool takes JSX and produces design nodes. JavaScript expressions (map, ternaries, Array.from) work inside JSX.
+The `render` tool takes JSX and produces design nodes. JavaScript expressions (map, ternaries, Array.from) work inside JSX. **Each render call must have exactly ONE root element.** To add multiple siblings to the same parent, use separate render calls or wrap in a Fragment-like parent Frame.
 
 Available elements: Frame, Text, Rectangle, Ellipse, Line, Star, Polygon, Group, Section, Component, Icon.
 
@@ -104,7 +104,7 @@ stock_photo({ requests: '[{"id":"0:30","query":"wall street trading floor"},{"id
 - Only apply to leaf shapes (Rectangle/Ellipse), NOT to Frames with children
 - Use descriptive English queries: "aerial city skyline sunset", not "image1"
 - Orientation: "landscape" (default), "portrait" for tall cards, "square" for avatars
-- If Pexels key is not configured, tell the user to add it in AI chat settings
+- If Pexels key is not configured or returns 401, tell the user to add/check it in AI chat settings. Do NOT fall back to `eval` with manual gradients — leave placeholder colors as-is
 
 # Workflow (MANDATORY)
 
