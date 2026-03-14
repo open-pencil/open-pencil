@@ -976,8 +976,8 @@ export class SkiaRenderer {
     renderShapeUncachedFn(this, canvas, node, graph)
   }
 
-  renderEffects(canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean, pass: 'behind' | 'front'): void {
-    renderEffectsFn(this, canvas, node, rect, hasRadius, pass)
+  renderEffects(canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean, pass: 'behind' | 'front', shadowShapeChild?: SceneNode | null): void {
+    renderEffectsFn(this, canvas, node, rect, hasRadius, pass, shadowShapeChild)
   }
 
   renderText(canvas: Canvas, node: SceneNode): void {

@@ -268,6 +268,19 @@ function nodeHasRadius(node: SceneNode): boolean {
   )
 }
 
+/**
+ * When a container has no visible fills, Figma renders drop shadows
+ * using the shape of its children rather than its own rectangle.
+ * Returns the child to use for shadow shape, or null to use the node itself.
+ */
+function getShadowShapeChild(node: SceneNode, graph: SceneGraph): SceneNode | null {
+  if (node.fills.some((f) => f.visible)) return null
+  if (node.childIds.length === 0) return null
+  const child = graph.getNode(node.childIds[0])
+  if (!child?.visible) return null
+  return child
+}
+
 function getCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
     case 'ROUND': return r.ck.StrokeCap.Round
@@ -363,7 +376,8 @@ export function renderShapeUncached(
   const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
   const hasRadius = nodeHasRadius(node)
 
-  r.renderEffects(canvas, node, rect, hasRadius, 'behind')
+  const shadowChild = getShadowShapeChild(node, graph)
+  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
 
   for (let fi = 0; fi < node.fills.length; fi++) {
     const fill = node.fills[fi]
@@ -401,7 +415,8 @@ export function renderEffects(
   node: SceneNode,
   rect: Float32Array,
   hasRadius: boolean,
-  pass: 'behind' | 'front'
+  pass: 'behind' | 'front',
+  shadowShapeChild?: SceneNode | null
 ): void {
   for (const effect of node.effects) {
     if (!effect.visible) continue
@@ -428,6 +443,12 @@ export function renderEffects(
         r.renderText(canvas, node)
         canvas.restore()
       } else {
+        // When a container has no visible fills, Figma renders the drop
+        // shadow using the first child's shape (e.g. a rounded child
+        // inside a rectangular wrapper).
+        const shapeNode = shadowShapeChild ?? node
+        const shapeHasRadius = shadowShapeChild ? nodeHasRadius(shadowShapeChild) : hasRadius
+
         r.auxFill.setColor(
           r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
         )
@@ -435,12 +456,12 @@ export function renderEffects(
         r.auxFill.setImageFilter(null)
         canvas.save()
         canvas.translate(effect.offset.x, effect.offset.y)
-        if (node.type === 'ELLIPSE') {
-          canvas.drawOval(r.ltrb(-sp, -sp, node.width + sp, node.height + sp), r.auxFill)
-        } else if (hasRadius) {
-          canvas.drawRRect(r.makeRRectWithSpread(node, sp), r.auxFill)
+        if (shapeNode.type === 'ELLIPSE') {
+          canvas.drawOval(r.ltrb(-sp, -sp, shapeNode.width + sp, shapeNode.height + sp), r.auxFill)
+        } else if (shapeHasRadius) {
+          canvas.drawRRect(r.makeRRectWithSpread(shapeNode, sp), r.auxFill)
         } else {
-          canvas.drawRect(r.ltrb(-sp, -sp, node.width + sp, node.height + sp), r.auxFill)
+          canvas.drawRect(r.ltrb(-sp, -sp, shapeNode.width + sp, shapeNode.height + sp), r.auxFill)
         }
         canvas.restore()
         r.auxFill.setMaskFilter(null)

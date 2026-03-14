@@ -11,7 +11,7 @@ const rendererSource = parts.join('\n')
 
 describe('Renderer effect ordering', () => {
   test('drop shadow renders before fills', () => {
-    const behindIdx = rendererSource.indexOf("renderEffects(canvas, node, rect, hasRadius, 'behind')")
+    const behindIdx = rendererSource.indexOf("renderEffects(canvas, node, rect, hasRadius, 'behind'")
     const fillsIdx = rendererSource.indexOf('drawNodeFill(canvas, node, rect, hasRadius)')
     expect(behindIdx).toBeGreaterThan(-1)
     expect(fillsIdx).toBeGreaterThan(-1)
