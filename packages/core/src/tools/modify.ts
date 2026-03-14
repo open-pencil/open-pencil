@@ -307,7 +307,17 @@ export const setRadius = defineTool({
     if (args.top_right !== undefined) node.topRightRadius = args.top_right
     if (args.bottom_right !== undefined) node.bottomRightRadius = args.bottom_right
     if (args.bottom_left !== undefined) node.bottomLeftRadius = args.bottom_left
-    return { id: args.id, cornerRadius: node.cornerRadius }
+    const cr = node.cornerRadius
+    if (typeof cr === 'number') {
+      return { id: args.id, cornerRadius: cr }
+    }
+    return {
+      id: args.id,
+      topLeftRadius: node.topLeftRadius,
+      topRightRadius: node.topRightRadius,
+      bottomRightRadius: node.bottomRightRadius,
+      bottomLeftRadius: node.bottomLeftRadius
+    }
   }
 })
 
