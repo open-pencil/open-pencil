@@ -68,16 +68,17 @@ watch(
     for (const part of last.parts) {
       const p = part as Record<string, unknown>
       if (!('toolCallId' in p)) continue
-      const args = p.args as Record<string, unknown> | undefined
-      if (!args) continue
-      const targetId = (args.replace_id ?? args.parent_id) as string | undefined
+      const input = p.input as Record<string, unknown> | undefined
+      if (!input) continue
+      const targetId = (input.replace_id ?? input.parent_id) as string | undefined
       if (!targetId) continue
 
       const state = p.state as string
+      const toolType = typeof p.type === 'string' ? p.type : ''
       aiOverlayLog.push({
         ts: Date.now(),
         event: 'part',
-        tool: String(p.toolName ?? ''),
+        tool: toolType,
         state,
         targetId
       })
