@@ -29,9 +29,11 @@ const {
 } = useAIChat()
 
 const keyInput = ref('')
+const pexelsKeyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
 const customModelInput = ref(customModelID.value)
 const hasExistingKey = ref(!!apiKey.value)
+const hasExistingPexelsKey = ref(!!pexelsApiKey.value)
 
 watch(providerID, () => {
   keyInput.value = ''
@@ -46,6 +48,11 @@ function save() {
     hasExistingKey.value = true
     keyInput.value = ''
   }
+  if (pexelsKeyInput.value.trim()) {
+    pexelsApiKey.value = pexelsKeyInput.value.trim()
+    hasExistingPexelsKey.value = true
+    pexelsKeyInput.value = ''
+  }
   if (providerDef.value.supportsCustomBaseURL) {
     customBaseURL.value = baseURLInput.value.trim()
   }
@@ -58,6 +65,12 @@ function clearKey() {
   setAPIKey('')
   keyInput.value = ''
   hasExistingKey.value = false
+}
+
+function clearPexelsKey() {
+  pexelsApiKey.value = ''
+  pexelsKeyInput.value = ''
+  hasExistingPexelsKey.value = false
 }
 </script>
 
@@ -170,13 +183,28 @@ function clearKey() {
 
           <!-- Pexels stock photos -->
           <div class="flex flex-col gap-1">
-            <label class="text-[10px] text-muted">Pexels API Key (stock photos)</label>
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] text-muted">Pexels API Key (stock photos)</label>
+              <button
+                v-if="pexelsApiKey"
+                class="cursor-pointer text-[10px] text-muted hover:text-surface"
+                data-test-id="provider-settings-clear-pexels-key"
+                @click="clearPexelsKey"
+              >
+                Clear
+              </button>
+            </div>
             <input
-              v-model="pexelsApiKey"
+              v-model="pexelsKeyInput"
               type="password"
               data-test-id="provider-settings-pexels-key"
-              :placeholder="pexelsApiKey ? 'Key saved' : 'Optional — for stock_photo tool'"
+              :placeholder="
+                hasExistingPexelsKey
+                  ? 'Key saved — enter new to replace'
+                  : 'Optional — for stock_photo tool'
+              "
               :class="uiInput({ size: 'sm' })"
+              @change="save"
             />
             <a
               href="https://www.pexels.com/api/"
