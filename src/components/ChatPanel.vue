@@ -2,9 +2,7 @@
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
-import { isToolUIPart } from 'ai'
-
-import { copyChatLog } from '@/ai/chat-debug'
+import { copyChatLog, aiOverlayLog } from '@/ai/chat-debug'
 import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
@@ -68,13 +66,23 @@ watch(
 
     const pendingIds = new Set<string>()
     for (const part of last.parts) {
-      if (!isToolUIPart(part)) continue
-      const args = 'args' in part ? (part.args as Record<string, unknown>) : undefined
+      const p = part as Record<string, unknown>
+      if (!('toolCallId' in p)) continue
+      const args = p.args as Record<string, unknown> | undefined
       if (!args) continue
       const targetId = (args.replace_id ?? args.parent_id) as string | undefined
       if (!targetId) continue
 
-      if (part.state !== 'output-available' && part.state !== 'output-error') {
+      const state = p.state as string
+      aiOverlayLog.push({
+        ts: Date.now(),
+        event: 'part',
+        tool: String(p.toolName ?? ''),
+        state,
+        targetId
+      })
+
+      if (state !== 'output-available' && state !== 'output-error') {
         pendingIds.add(targetId)
       }
     }
@@ -83,6 +91,13 @@ watch(
       if (!aiHighlightedIds.has(id)) {
         aiHighlightedIds.add(id)
         store.aiMarkActive([id])
+        aiOverlayLog.push({
+          ts: Date.now(),
+          event: 'mark-active',
+          tool: '',
+          state: '',
+          targetId: id
+        })
       }
     }
 
@@ -90,6 +105,7 @@ watch(
       if (!pendingIds.has(id)) {
         aiHighlightedIds.delete(id)
         store.aiMarkDone([id])
+        aiOverlayLog.push({ ts: Date.now(), event: 'mark-done', tool: '', state: '', targetId: id })
       }
     }
   },

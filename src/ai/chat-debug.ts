@@ -4,6 +4,16 @@ import { buildDebugLog } from '@open-pencil/core'
 import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core'
 import type { UIMessage } from 'ai'
 
+export interface AiOverlayEvent {
+  ts: number
+  event: string
+  tool: string
+  state: string
+  targetId: string
+}
+
+export const aiOverlayLog: AiOverlayEvent[] = []
+
 function formatToolPart(part: Record<string, unknown>): string {
   const inv = part.toolInvocation as Record<string, unknown> | undefined
   if (inv) {
@@ -233,6 +243,17 @@ export function serializeChatLog(messages: UIMessage[]): string {
   } else {
     for (let i = 0; i < toolLog.length; i++) {
       sections.push(formatLogEntry(toolLog[i], i))
+    }
+  }
+  sections.push('')
+
+  sections.push('=== AI OVERLAY LOG ===')
+  if (aiOverlayLog.length === 0) {
+    sections.push('  (no overlay events)')
+  } else {
+    for (const e of aiOverlayLog) {
+      const time = new Date(e.ts).toISOString().slice(11, 23)
+      sections.push(`  [${time}] ${e.event} tool=${e.tool} state=${e.state} target=${e.targetId}`)
     }
   }
   sections.push('')
