@@ -295,22 +295,27 @@ function effectivelyFillsCrossAxis(child: SceneNode, parent: SceneNode, isRow: b
   return Math.abs(childCross - parentCrossContent) < 2
 }
 
+function childNeedsFill(child: SceneNode, parent: SceneNode, isRow: boolean): boolean {
+  if (child.layoutMode === 'NONE') return false
+  const crossDim = isRow ? child.width : child.height
+  const crossSizing = isRow ? child.counterAxisSizing : child.primaryAxisSizing
+  if (crossDim <= 0 && crossSizing !== 'FILL') return false
+  const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
+  if (mainSizing === 'FIXED') return false
+  if (effectivelyFillsCrossAxis(child, parent, isRow)) return false
+  if (child.childIds.length === 0) return false
+  return isRow
+    ? child.width < parent.width * 0.3 && child.counterAxisSizing !== 'FILL' && child.layoutGrow <= 0
+    : child.height < parent.height * 0.3 && child.primaryAxisSizing !== 'FILL' && child.layoutGrow <= 0
+}
+
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.layoutMode === 'NONE') return
   if (node.primaryAxisAlign === 'SPACE_BETWEEN' || node.primaryAxisAlign === 'CENTER') return
+  if (node.layoutWrap === 'WRAP') return
   for (const child of children) {
-    if (child.layoutMode === 'NONE') continue
-    const crossDim = isRow ? child.width : child.height
-    const crossSizing = isRow ? child.counterAxisSizing : child.primaryAxisSizing
-    if (crossDim <= 0 && crossSizing !== 'FILL') continue
-    const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
-    if (mainSizing === 'FIXED') continue
-    if (effectivelyFillsCrossAxis(child, node, isRow)) continue
-    const needsFill = isRow
-      ? child.width < node.width * 0.3 && child.counterAxisSizing !== 'FILL' && child.layoutGrow <= 0
-      : child.height < node.height * 0.3 && child.primaryAxisSizing !== 'FILL' && child.layoutGrow <= 0
-    if (needsFill && child.childIds.length > 0) {
+    if (childNeedsFill(child, node, isRow)) {
       issues.push({
         message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
         suggestion: 'Add w="fill" or grow={1}'

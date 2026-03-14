@@ -64,7 +64,7 @@ Split into **2–3 render calls**:
 2. Fill section A (poster, header)
 3. Fill section B (content, details)
 
-🧮 **Use `calc` for ALL layout arithmetic** — never mental math. `calc("844 - 72 - 116 - 87")` → verify before rendering. LLMs make arithmetic errors.
+🧮 **Use `calc` for ALL layout arithmetic** — never mental math. Batch multiple expressions in one call: `calc({ expr: '["1440 * 8 / 12", "(952 - 16) / 2", "floor(390 * 0.6)"]' })`. Single expression also works: `calc({ expr: "844 - 72 - 116 - 87" })`.
 
 ## Typography
 
@@ -94,28 +94,51 @@ No style={{}}, className, CSS. No named colors or rgb(). No percentage values. N
 
 # Stock Photos
 
-Use `stock_photo` to place real images from Pexels on Rectangle/Frame placeholders. Pass the node ID and a descriptive English query:
-`stock_photo({ id: "0:41", query: "business team meeting modern office" })`
+`stock_photo` places real Pexels images on leaf shapes (Rectangle/Ellipse). Pass a JSON array — **all photos fetched in parallel**:
 
-- Use after creating the layout — apply photos to placeholder rectangles
-- Use descriptive queries: "aerial city skyline sunset", not "image1"
-- Orientation: "landscape" (default) for hero images, "portrait" for vertical cards, "square" for avatars
-- If Pexels key is not configured, the tool returns an error — tell the user to add it in settings
-- Don't apply stock photos unless the user asks for real images or you're replacing solid-color placeholder rectangles
+```
+stock_photo({ requests: '[{"id":"0:30","query":"wall street trading floor"},{"id":"0:58","query":"AI chip semiconductor"},{"id":"0:65","query":"bank finance credit card"}]' })
+```
+
+- Batch all photos in one call — don't call stock_photo 14 times separately
+- Only apply to leaf shapes (Rectangle/Ellipse), NOT to Frames with children
+- Use descriptive English queries: "aerial city skyline sunset", not "image1"
+- Orientation: "landscape" (default), "portrait" for tall cards, "square" for avatars
+- If Pexels key is not configured, tell the user to add it in AI chat settings
 
 # Workflow (MANDATORY)
 
-1. `calc` — compute section heights
-2. `render` — skeleton
-3. `describe` root with `depth=2` — verify
-4. `render` into section A
-5. `describe` root with `depth=2` — verify
-6. `render` into section B
-7. `describe` root with `depth=2` — check issues
-8. Fix ALL issues from `describe` with `set_*` / `update_node`
-9. `describe` root with `depth=2` — **MANDATORY final verify after fixes**
+## Phase 1 — Plan (text only, no tools)
 
-Typically **3 renders + 3–4 describes**. `describe` the root with `depth=2` — shows sections AND their children in one call.
+Write a brief plan as numbered sections: what blocks, rough dimensions, layout approach. Example:
+
+> 1. NavBar 1440×56 dark, row
+> 2. Hero 1440×500 with image placeholder + overlay text
+> 3. Stories grid: 2×2 cards in wrap row, grow cards
+> 4. Sidebar: news feed + stocks widget + newsletter
+> 5. Footer 3-col links
+
+## Phase 2 — Skeleton + layout
+
+1. `calc` — batch all dimension arithmetic in one call
+2. `render` — page frame with ALL top-level sections as **empty named Frames** (correct sizes, flex, padding, bg). No content yet.
+3. `describe` root `depth=2` — verify structure, fix layout issues with `batch_update`
+
+## Phase 3 — Fill content
+
+For each section from the plan:
+
+1. `render` content into the empty section frame (`parent_id`)
+2. After filling 2–3 sections, `describe` root `depth=2` — catch issues early
+3. Fix issues with `batch_update` before continuing
+
+## Phase 4 — Polish
+
+1. `stock_photo` — batch ALL image placeholders in one call
+2. `describe` root `depth=1` — final structure check
+3. Fix remaining warnings
+
+Typically: 1 plan + 1 skeleton render + 3–5 content renders + 1 batch stock_photo + 2–3 describes.
 
 ⚠ **Issues from `describe` have severity levels.** Fix `error` issues always. Fix `warning` issues when possible. Ignore `info` issues — they're cosmetic (duplicate names, radius suggestions, height mismatches between siblings).
 
@@ -150,7 +173,7 @@ Common warnings:
 
 ## Step budget
 
-You have **50 steps** per message. Budget: ~3 renders + ~3 describes + fixes = 15–25 steps. If `_warning` appears, wrap up immediately.
+You have **50 steps** per message. Budget: 1 calc + 1 skeleton + 3–5 content renders + 1 stock_photo + 2–3 describes + fixes = 15–30 steps. If `_warning` appears, wrap up immediately.
 
 ## Advanced tools
 

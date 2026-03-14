@@ -1,5 +1,7 @@
 import { defineTool } from './schema'
 
+import type { FigmaAPI } from '../figma-api'
+
 const PEXELS_BASE = 'https://api.pexels.com'
 
 interface PexelsPhoto {
@@ -32,95 +34,111 @@ export function getPexelsApiKey(): string | null {
   return pexelsApiKey
 }
 
-function pickSize(
-  src: PexelsPhoto['src'],
-  targetWidth: number
-): string {
-  if (targetWidth <= 200) return src.small
-  if (targetWidth <= 400) return src.medium
-  if (targetWidth <= 800) return src.large
-  if (targetWidth <= 1600) return src.large2x
+function pickSize(src: PexelsPhoto['src'], targetDim: number): string {
+  if (targetDim <= 200) return src.small
+  if (targetDim <= 400) return src.medium
+  if (targetDim <= 800) return src.large
+  if (targetDim <= 1600) return src.large2x
   return src.original
+}
+
+interface PhotoRequest {
+  id: string
+  query: string
+  index?: number
+  orientation?: 'landscape' | 'portrait' | 'square'
+}
+
+interface PhotoResult {
+  id: string
+  photo?: { pexelsId: number; photographer: string; width: number; height: number }
+  error?: string
+}
+
+async function applyPhoto(figma: FigmaAPI, req: PhotoRequest): Promise<PhotoResult> {
+  const node = figma.getNodeById(req.id)
+  if (!node) return { id: req.id, error: `Not found` }
+
+  const children = 'children' in node ? (node as { children: unknown[] }).children : []
+  if (children.length > 0) {
+    return { id: req.id, error: `"${node.name}" has children — use a leaf shape` }
+  }
+
+  const perPage = Math.min((req.index ?? 0) + 3, 15)
+  const orient = req.orientation ?? 'landscape'
+  const url = `${PEXELS_BASE}/v1/search?query=${encodeURIComponent(req.query)}&per_page=${perPage}&orientation=${orient}`
+
+  let data: PexelsSearchResponse
+  try {
+    const resp = await fetch(url, { headers: { Authorization: pexelsApiKey ?? '' } })
+    if (!resp.ok) return { id: req.id, error: `Pexels ${resp.status}` }
+    data = await resp.json() as PexelsSearchResponse
+  } catch (err) {
+    return { id: req.id, error: `Pexels: ${err instanceof Error ? err.message : String(err)}` }
+  }
+
+  if (data.photos.length === 0) return { id: req.id, error: `No photos for "${req.query}"` }
+
+  const photo = data.photos[Math.min(req.index ?? 0, data.photos.length - 1)]
+  const imageUrl = pickSize(photo.src, Math.max(node.width, node.height))
+
+  let imageBytes: Uint8Array
+  try {
+    const imgResp = await fetch(imageUrl)
+    if (!imgResp.ok) return { id: req.id, error: `Download ${imgResp.status}` }
+    imageBytes = new Uint8Array(await imgResp.arrayBuffer())
+  } catch (err) {
+    return { id: req.id, error: `Download: ${err instanceof Error ? err.message : String(err)}` }
+  }
+
+  const image = figma.createImage(imageBytes)
+  node.fills = [{
+    type: 'IMAGE',
+    color: { r: 1, g: 1, b: 1, a: 1 },
+    imageHash: image.hash,
+    imageScaleMode: 'FILL',
+    visible: true,
+    opacity: 1
+  }]
+
+  return {
+    id: node.id,
+    photo: { pexelsId: photo.id, photographer: photo.photographer, width: photo.width, height: photo.height }
+  }
 }
 
 export const stockPhoto = defineTool({
   name: 'stock_photo',
   mutates: true,
   description:
-    'Search Pexels for a stock photo and apply it as an image fill on a node. Use descriptive English search queries. Requires Pexels API key in settings.',
+    'Search Pexels and apply stock photos to nodes. Pass a JSON array — all fetched in parallel. ' +
+    'Each item: {id, query, index?, orientation?}. Only works on leaf shapes (Rectangle/Ellipse).',
   params: {
-    id: { type: 'string', description: 'Node ID to apply the photo to', required: true },
-    query: { type: 'string', description: 'Search query (English, descriptive, e.g. "business meeting office")', required: true },
-    index: { type: 'number', description: 'Which result to use (0-based, default 0)', default: 0 },
-    orientation: {
+    requests: {
       type: 'string',
-      description: 'Photo orientation',
-      enum: ['landscape', 'portrait', 'square'],
-      default: 'landscape'
+      description:
+        'JSON array: [{"id":"0:5","query":"mountain sunset"},{"id":"0:8","query":"business team","orientation":"square"}]',
+      required: true
     }
   },
-  execute: async (figma, { id, query, index, orientation }) => {
+  execute: async (figma, { requests }) => {
     if (!pexelsApiKey) {
       return { error: 'Pexels API key not configured. Ask the user to add it in AI chat settings.' }
     }
 
-    const node = figma.getNodeById(id)
-    if (!node) return { error: `Node "${id}" not found` }
-
-    const perPage = Math.min((index ?? 0) + 3, 15)
-    const orient = orientation ?? 'landscape'
-    const url = `${PEXELS_BASE}/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&orientation=${orient}`
-
-    let data: PexelsSearchResponse
+    let reqs: PhotoRequest[]
     try {
-      const response = await fetch(url, {
-        headers: { Authorization: pexelsApiKey }
-      })
-      if (!response.ok) {
-        return { error: `Pexels API error: ${response.status} ${response.statusText}` }
-      }
-      data = await response.json() as PexelsSearchResponse
-    } catch (err) {
-      return { error: `Pexels API request failed: ${err instanceof Error ? err.message : String(err)}` }
+      const parsed = JSON.parse(String(requests))
+      reqs = Array.isArray(parsed) ? parsed : [parsed]
+    } catch {
+      return { error: 'Invalid JSON in requests' }
     }
 
-    if (data.photos.length === 0) {
-      return { error: `No photos found for "${query}"` }
-    }
+    if (reqs.length === 0) return { error: 'Empty requests array' }
 
-    const photoIndex = Math.min(index ?? 0, data.photos.length - 1)
-    const photo = data.photos[photoIndex]
-    const imageUrl = pickSize(photo.src, Math.max(node.width, node.height))
+    const results = await Promise.all(reqs.map((r) => applyPhoto(figma, r)))
+    const ok = results.filter((r) => r.photo).length
 
-    let imageBytes: Uint8Array
-    try {
-      const imgResponse = await fetch(imageUrl)
-      if (!imgResponse.ok) {
-        return { error: `Failed to download photo: ${imgResponse.status}` }
-      }
-      imageBytes = new Uint8Array(await imgResponse.arrayBuffer())
-    } catch (err) {
-      return { error: `Photo download failed: ${err instanceof Error ? err.message : String(err)}` }
-    }
-
-    const image = figma.createImage(imageBytes)
-    node.fills = [{
-      type: 'IMAGE',
-      color: { r: 1, g: 1, b: 1, a: 1 },
-      imageHash: image.hash,
-      imageScaleMode: 'FILL',
-      visible: true,
-      opacity: 1
-    }]
-
-    return {
-      id: node.id,
-      photo: {
-        pexelsId: photo.id,
-        photographer: photo.photographer,
-        width: photo.width,
-        height: photo.height
-      }
-    }
+    return { applied: ok, failed: results.length - ok, results }
   }
 })
