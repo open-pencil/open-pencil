@@ -49,14 +49,15 @@ export const getPageTree = defineTool({
 
 export const getNode = defineTool({
   name: 'get_node',
-  description: 'Get detailed properties of a node by ID.',
+  description: 'Get detailed properties of a node by ID. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.',
   params: {
-    id: { type: 'string', description: 'Node ID', required: true }
+    id: { type: 'string', description: 'Node ID', required: true },
+    depth: { type: 'number', description: 'Max depth of children to include (0 = no children). Default: unlimited' }
   },
-  execute: (figma, { id }) => {
+  execute: (figma, { id, depth }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    return nodeToResult(node)
+    return nodeToResult(node, depth)
   }
 })
 

@@ -10,7 +10,10 @@ function createMockCanvas() {
   return {
     drawParagraph: mock(() => {}),
     drawPicture: mock(() => {}),
-    drawText: mock(() => {})
+    drawText: mock(() => {}),
+    save: mock(() => {}),
+    restore: mock(() => {}),
+    clipRect: mock(() => {})
   }
 }
 
@@ -29,7 +32,11 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     fontProvider: {},
     textFont: {},
     fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
-    ck: { MakePicture: mock(() => createMockPicture()) },
+    ck: {
+      MakePicture: mock(() => createMockPicture()),
+      LTRBRect: mock((...args: number[]) => args),
+      ClipOp: { Intersect: 0 }
+    },
     DEFAULT_FONT_SIZE: 14,
     isNodeFontLoaded: mock(() => true),
     buildParagraph: mock(() => paragraph),
@@ -60,46 +67,25 @@ describe('renderText', () => {
     expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
   })
 
-  test('falls back to drawText when fonts loaded but node font NOT available', () => {
+  test('uses paragraph even when node font is NOT available (fallback to default)', () => {
     const r = createMockRenderer({ isNodeFontLoaded: mock(() => false) })
     const canvas = createMockCanvas()
 
     renderText(r, canvas as never, textNode())
 
-    expect(r.buildParagraph).not.toHaveBeenCalled()
-    expect(canvas.drawText).toHaveBeenCalledTimes(1)
-  })
-
-  test('prefers textPicture when node font is NOT available and textPicture exists', () => {
-    const r = createMockRenderer({ isNodeFontLoaded: mock(() => false) })
-    const canvas = createMockCanvas()
-    const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
-
-    renderText(r, canvas as never, node)
-
-    expect(canvas.drawPicture).toHaveBeenCalledTimes(1)
-    expect(r.buildParagraph).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.drawText).not.toHaveBeenCalled()
   })
 
-  test('prefers textPicture even when node font IS loaded', () => {
-    const r = createMockRenderer({ isNodeFontLoaded: mock(() => true) })
+  test('prefers textPicture over paragraph', () => {
+    const r = createMockRenderer()
     const canvas = createMockCanvas()
     const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
 
     renderText(r, canvas as never, node)
 
     expect(canvas.drawPicture).toHaveBeenCalledTimes(1)
-    expect(r.buildParagraph).not.toHaveBeenCalled()
-  })
-
-  test('uses drawText when fonts loaded but node font not available and no textPicture', () => {
-    const r = createMockRenderer({ isNodeFontLoaded: mock(() => false) })
-    const canvas = createMockCanvas()
-
-    renderText(r, canvas as never, textNode())
-
-    expect(canvas.drawText).toHaveBeenCalledTimes(1)
     expect(r.buildParagraph).not.toHaveBeenCalled()
   })
 

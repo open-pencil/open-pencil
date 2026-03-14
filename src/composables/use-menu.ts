@@ -1,5 +1,5 @@
-import { onUnmounted } from 'vue'
 import { useFileDialog } from '@vueuse/core'
+import { onUnmounted } from 'vue'
 
 import { IS_TAURI } from '@/constants'
 import { useEditorStore } from '@/stores/editor'

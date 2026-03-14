@@ -183,45 +183,60 @@ function describeChild(node: SceneNode, graph: SceneGraph, depth: number, gridSi
   return result
 }
 
+function describeOneNode(
+  figma: { graph: SceneGraph },
+  nodeId: string,
+  depth: number,
+  gridSize: number
+): Record<string, unknown> {
+  const raw = figma.graph.getNode(nodeId)
+  if (!raw) return { id: nodeId, error: `Node "${nodeId}" not found` }
+
+  const role = detectRole(raw)
+  const visual = describeVisual(raw)
+  const layout = describeLayout(raw)
+  const issues = detectIssues(raw, gridSize, figma.graph)
+
+  const children: ChildDescription[] = []
+  for (const childId of raw.childIds) {
+    const child = figma.graph.getNode(childId)
+    if (!child || !child.visible) continue
+    children.push(describeChild(child, figma.graph, depth - 1, gridSize))
+  }
+
+  const result: Record<string, unknown> = {
+    id: raw.id,
+    name: raw.name,
+    type: raw.type,
+    role,
+    size: `${raw.width}×${raw.height}`,
+    visual,
+  }
+  if (layout) result.layout = layout
+  if (children.length > 0) result.children = children
+  if (issues.length > 0) result.issues = issues
+  return result
+}
+
 export const describe = defineTool({
   name: 'describe',
   description:
-    'Semantic description of a node: role, visual style, layout, children summary, and design issues. Use depth=2 to see grandchildren (recommended for root frames).',
+    'Semantic description of one or more nodes. Pass `id` for a single node, or `ids` for multiple nodes in one call. Use depth=2 to see grandchildren (recommended for root frames).',
   params: {
-    id: { type: 'string', description: 'Node ID', required: true },
+    id: { type: 'string', description: 'Node ID (single node)' },
+    ids: { type: 'string[]', description: 'Node IDs (multiple nodes in one call)' },
     depth: { type: 'number', description: 'How many levels of children to include (default: 1, max: 3)' },
     grid: { type: 'number', description: 'Grid size for alignment checks (default: 8)' }
   },
   execute: (figma, args) => {
     const gridSize = args.grid ?? 8
     const depth = Math.min(args.depth ?? 1, 3)
-    const raw = figma.graph.getNode(args.id)
-    if (!raw) return { error: `Node "${args.id}" not found` }
 
-    const role = detectRole(raw)
-    const visual = describeVisual(raw)
-    const layout = describeLayout(raw)
-    const issues = detectIssues(raw, gridSize, figma.graph)
-
-    const children: ChildDescription[] = []
-    for (const childId of raw.childIds) {
-      const child = figma.graph.getNode(childId)
-      if (!child || !child.visible) continue
-      children.push(describeChild(child, figma.graph, depth - 1, gridSize))
+    if (args.ids && Array.isArray(args.ids)) {
+      return { nodes: args.ids.map((nodeId) => describeOneNode(figma, nodeId, depth, gridSize)) }
     }
 
-    const result: Record<string, unknown> = {
-      id: raw.id,
-      name: raw.name,
-      type: raw.type,
-      role,
-      size: `${raw.width}×${raw.height}`,
-      visual,
-    }
-    if (layout) result.layout = layout
-    if (children.length > 0) result.children = children
-    if (issues.length > 0) result.issues = issues
-
-    return result
+    if (!args.id) return { error: 'Provide id (string) or ids (string[])' }
+    return describeOneNode(figma, args.id, depth, gridSize)
   }
 })

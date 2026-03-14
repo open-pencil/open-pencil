@@ -287,6 +287,14 @@ function checkAbsoluteInFlex(_ctx: LayoutContext): void {
   // Not reported — describe summary already shows "positioned: ABSOLUTE".
 }
 
+function effectivelyFillsCrossAxis(child: SceneNode, parent: SceneNode, isRow: boolean): boolean {
+  const childCross = isRow ? child.height : child.width
+  const parentCrossContent = isRow
+    ? parent.height - parent.paddingTop - parent.paddingBottom
+    : parent.width - parent.paddingLeft - parent.paddingRight
+  return Math.abs(childCross - parentCrossContent) < 2
+}
+
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.layoutMode === 'NONE') return
@@ -298,6 +306,7 @@ function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
     if (crossDim <= 0 && crossSizing !== 'FILL') continue
     const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
     if (mainSizing === 'FIXED') continue
+    if (effectivelyFillsCrossAxis(child, node, isRow)) continue
     const needsFill = isRow
       ? child.width < node.width * 0.3 && child.counterAxisSizing !== 'FILL' && child.layoutGrow <= 0
       : child.height < node.height * 0.3 && child.primaryAxisSizing !== 'FILL' && child.layoutGrow <= 0

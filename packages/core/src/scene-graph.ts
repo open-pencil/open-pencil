@@ -750,6 +750,7 @@ export class SceneGraph {
     'text', 'fontSize', 'fontFamily', 'fontWeight', 'italic',
     'textAlignHorizontal', 'textAlignVertical', 'lineHeight',
     'letterSpacing', 'textDecoration', 'textCase', 'styleRuns', 'fills',
+    'width', 'height',
   ])
 
   updateNode(id: string, changes: Partial<SceneNode>): void {

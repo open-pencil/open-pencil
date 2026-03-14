@@ -566,11 +566,14 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
       return
     }
   }
-  if (r.fontsLoaded && r.fontProvider && r.isNodeFontLoaded(node)) {
+  if (r.fontsLoaded && r.fontProvider) {
     const paragraph = r.buildParagraph(node, r.fillPaint.getColor(), { halfLeading: true })
     canvas.drawParagraph(paragraph, 0, 0)
     paragraph.delete()
   } else if (r.textFont) {
+    canvas.save()
+    canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
     canvas.drawText(text, 0, node.fontSize || r.DEFAULT_FONT_SIZE, r.fillPaint, r.textFont)
+    canvas.restore()
   }
 }

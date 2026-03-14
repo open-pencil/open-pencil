@@ -11,7 +11,10 @@ const LOW_CONTRAST_THRESHOLD = 15
 const SHAPE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'STAR', 'POLYGON', 'LINE'])
 const ICON_MAX_SIZE = 48
 
+export type IssueSeverity = 'error' | 'warning' | 'info'
+
 export interface DescribeIssue {
+  severity?: IssueSeverity
   message: string
   suggestion?: string
 }
@@ -269,6 +272,22 @@ function detectSpacingIssues(node: SceneNode, graph: SceneGraph, gridSize: numbe
   }
 }
 
+const ERROR_PATTERNS = [
+  /overflow/i, /invisible/i, /no color/i, /collapses/i, /no fill and no stroke/i,
+  /dark on dark/i, /Touch target too small/i
+]
+const INFO_PATTERNS = [
+  /children named/i, /uppercase at/i, /fill.*matches parent/i,
+  /radius.*should be/i, /width while siblings/i, /height while siblings/i,
+  /icon.*width/i
+]
+
+function classifySeverity(message: string): IssueSeverity {
+  if (ERROR_PATTERNS.some((p) => p.test(message))) return 'error'
+  if (INFO_PATTERNS.some((p) => p.test(message))) return 'info'
+  return 'warning'
+}
+
 export function detectIssues(node: SceneNode, gridSize: number, graph: SceneGraph): DescribeIssue[] {
   const issues: DescribeIssue[] = []
   detectStructuralIssues(node, gridSize, graph, issues)
@@ -277,5 +296,8 @@ export function detectIssues(node: SceneNode, gridSize: number, graph: SceneGrap
   detectRadiusIssues(node, graph, issues)
   detectTypographyIssues(node, graph, issues)
   detectSpacingIssues(node, graph, gridSize, issues)
+  for (const issue of issues) {
+    issue.severity = classifySeverity(issue.message)
+  }
   return issues
 }

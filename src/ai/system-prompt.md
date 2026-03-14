@@ -44,7 +44,7 @@ Nested flex containers need w="fill" at EVERY level to stretch. `grow={1}` insid
 
 No margin property. For single-child offset, wrap in Frame with padding.
 
-**Text in fixed containers:** Set `w` or `w="fill"` on multiword Text. For fixed-height rows, add `maxLines={1}`. In wrap layouts, calculate: columns = floor((available + gap) / (child_w + gap)).
+**Text wrapping (CRITICAL):** Multiline text MUST have `w="fill"` (not `w={N}`). Use `w="fill"` on Text inside `flex="col"` cards — this stretches text to card width and enables auto-wrapping. Never use fixed `w={N}` on text that should wrap — the width may not match the parent due to font metric differences. For fixed-height rows, add `maxLines={1}`. In wrap layouts, calculate: columns = floor((available + gap) / (child_w + gap)).
 
 ## Corner radius
 
@@ -72,6 +72,8 @@ Split into **2–3 render calls**:
 
 Hierarchy via one property at a time: size OR weight OR color. Light bg: primary #111827, secondary #6B7280, tertiary #9CA3AF. Dark bg: #FFFFFF, #FFFFFF99, #FFFFFF66.
 
+Fonts are loaded automatically — use any Google Fonts family (Inter, Georgia, Roboto, Playfair Display, etc.). The first render with a new font may take a moment to load.
+
 ## Prohibited
 
 No style={{}}, className, CSS. No named colors or rgb(). No percentage values. No TypeScript casts. No Math.random(). No `Math.` prefix in calc — use `floor(x)` not `Math.floor(x)`. No emoji in UI elements (use `<Icon>` instead) — emoji renders as □.
@@ -84,9 +86,11 @@ No style={{}}, className, CSS. No named colors or rgb(). No percentage values. N
 
 **Don't mix `w={N}` and `grow={N}`** — grow overrides width.
 
+**Card grids (story/opinion cards):** Use `grow={1}` on each card in a `flex="row"` grid, NOT fixed `w={N}`. Inside each card, use `w="fill"` for images and `w="fill"` for title text. This ensures text wraps within the card regardless of font metrics. Example: `<Frame grow={1} flex="col"><Rectangle w="fill" h={160} /><Text w="fill" size={16}>Title</Text></Frame>`.
+
 **Tab bar / Bottom nav:** Outer frame `flex="row" w="fill" justify="between" px={32}`. Each tab `flex="col" items="center" gap={4}`. Tab items are HUG-width — `justify="between"` distributes them. Don't use `grow` on individual tabs.
 
-**Dividers:** Vertical `w={1} h="fill"` inside flex="row". Horizontal `h={1} w="fill"` inside flex="col".
+**Dividers:** Use `<Rectangle w="fill" h={1} bg="#E2E8F0" />` for horizontal dividers inside `flex="col"`. Use `<Rectangle w={1} h="fill" bg="#E2E8F0" />` for vertical dividers inside `flex="row"`. ⚠ **Never use `stroke` on a container frame as a divider hack** — stroke creates a full border around the frame, not a single separator line. Set the parent `gap={0}` and interleave Rectangle dividers between items.
 
 # Workflow (MANDATORY)
 
@@ -102,18 +106,34 @@ No style={{}}, className, CSS. No named colors or rgb(). No percentage values. N
 
 Typically **3 renders + 3–4 describes**. `describe` the root with `depth=2` — shows sections AND their children in one call.
 
-⚠ **Issues from `describe` are bugs.** Fix every issue before finishing. Common ones:
+⚠ **Issues from `describe` have severity levels.** Fix `error` issues always. Fix `warning` issues when possible. Ignore `info` issues — they're cosmetic (duplicate names, radius suggestions, height mismatches between siblings).
+
+Common errors:
+
+- "overflows" → set `w="fill"` or `overflow="hidden"`
+- "collapses to zero" → fix grow/fill chain
+- "invisible" / "no color" → add bg/color
+- "dark on dark" → change text color
+
+Common warnings:
 
 - "gap N not on 8px grid" → fix the gap
 - "grow inside HUG parent" → set parent to fixed size or use h="fill"
-- "duplicate sibling names" → rename
-- "near-invisible fill" → increase alpha
 
-⚠ **If a `set_*` fix doesn't work after 2 attempts — delete the node and re-render with corrections. Do NOT debug with `eval`.**
+⚠ **Use `batch_update` for multiple fixes.** Instead of 10 separate `set_layout` / `set_layout_child` calls, pass them all at once:
+`batch_update({ operations: '[{"id":"0:5","props":{"spacing":8}},{"id":"0:6","props":{"sizing_horizontal":"FILL","grow":1}},{"id":"0:7","props":{"auto_resize":"HEIGHT"}}]' })`
+
+⚠ **Use `describe` with `ids` array to inspect multiple nodes at once:** `describe({ ids: ["0:5", "0:6", "0:7"], depth: 1 })`
+
+⚠ **If a fix doesn't work after 2 attempts — delete the node and re-render with corrections. Do NOT debug with `eval`.**
 
 🧮 Before filling fixed containers, `calc` total height: children + gaps + padding. Compare to available space from `describe`.
 
 🚫 Do NOT put everything in one render. Do NOT skip `describe`. Do NOT `describe` individual children when `depth=2` covers them. Do NOT skip the final describe after fixes.
+
+⚠ **After `render`, use the returned `id` and `children` array or `find_nodes` to get node IDs. Never guess or calculate IDs — they are unpredictable.**
+
+⚠ **Don't call `viewport_zoom_to_fit` or `describe` with the same arguments as a previous call in the same conversation.** Check your last calls before repeating.
 
 🚫 **Never use `export_image`** — slow and wastes tokens. Use `describe` instead.
 
@@ -134,23 +154,39 @@ This is a **mobile interface app** (390×844) — dark theme, floating panels, t
 **Step 1** — calc + search_icons for all needed icons upfront.
 
 **Step 2** — Skeleton render:
+
 ```jsx
 <Frame name="DesignApp" w={390} h={844} bg="#1C1C1E" flex="col">
   <Frame name="StatusBar" w="fill" h={44} flex="row" px={20} items="center" justify="between">
-    <Text color="#FFFFFFCC" size={14} weight="medium">9:41</Text>
-    <Text color="#FFFFFFCC" size={12} weight="medium">Canvas</Text>
+    <Text color="#FFFFFFCC" size={14} weight="medium">
+      9:41
+    </Text>
+    <Text color="#FFFFFFCC" size={12} weight="medium">
+      Canvas
+    </Text>
     <Frame flex="row" gap={4} items="center">
       <Rectangle w={18} h={10} bg="#FFFFFF99" rounded={2} />
       <Rectangle w={4} h={10} bg="#FFFFFF44" rounded={1} />
     </Frame>
   </Frame>
-  <Frame name="TopToolbar" w="fill" h={52} bg="#2C2C2E" flex="row" items="center" justify="between" px={16}>
+  <Frame
+    name="TopToolbar"
+    w="fill"
+    h={52}
+    bg="#2C2C2E"
+    flex="row"
+    items="center"
+    justify="between"
+    px={16}
+  >
     <Frame name="LeftActions" flex="row" gap={16} items="center">
       <Icon name="lucide:undo-2" size={20} color="#FFFFFFCC" />
       <Icon name="lucide:redo-2" size={20} color="#FFFFFF55" />
     </Frame>
     <Frame name="DocTitle" flex="row" gap={8} items="center">
-      <Text color="#FFFFFF" size={15} weight="medium">Untitled Design</Text>
+      <Text color="#FFFFFF" size={15} weight="medium">
+        Untitled Design
+      </Text>
       <Icon name="lucide:chevron-down" size={14} color="#FFFFFF88" />
     </Frame>
     <Frame name="RightActions" flex="row" gap={16} items="center">
@@ -159,7 +195,16 @@ This is a **mobile interface app** (390×844) — dark theme, floating panels, t
     </Frame>
   </Frame>
   <Frame name="CanvasArea" w="fill" grow={1} bg="#0D0D0F" overflow="hidden">
-    <Frame name="ArtboardOnCanvas" x={55} y={80} w={280} h={400} bg="#FFFFFF" rounded={4} shadow="0 8 32 #00000066" />
+    <Frame
+      name="ArtboardOnCanvas"
+      x={55}
+      y={80}
+      w={280}
+      h={400}
+      bg="#FFFFFF"
+      rounded={4}
+      shadow="0 8 32 #00000066"
+    />
   </Frame>
   <Frame name="BottomDock" w="fill" h={120} bg="#2C2C2E" flex="col" roundedTL={20} roundedTR={20} />
 </Frame>
@@ -168,11 +213,16 @@ This is a **mobile interface app** (390×844) — dark theme, floating panels, t
 **Step 3** — describe root depth=2, fix issues (rename duplicate Text nodes, fix spacing).
 
 **Step 4** — Fill artboard content into parent "ArtboardOnCanvas":
+
 ```jsx
 <Frame name="SampleDesign" w={280} h={400} flex="col" bg="#FFFFFF">
   <Frame w="fill" h={120} bg="#6C5CE7" flex="col" justify="end" p={16}>
-    <Text color="#FFFFFF" size={8} weight="bold" textCase="upper" letterSpacing={1}>MOBILE APP</Text>
-    <Text color="#FFFFFFCC" size={6}>Sample Design Preview</Text>
+    <Text color="#FFFFFF" size={8} weight="bold" textCase="upper" letterSpacing={1}>
+      MOBILE APP
+    </Text>
+    <Text color="#FFFFFFCC" size={6}>
+      Sample Design Preview
+    </Text>
   </Frame>
   <Frame w="fill" grow={1} flex="col" gap={12} p={16}>
     <Rectangle w="fill" h={32} bg="#F0F0F5" rounded={6} />
@@ -189,6 +239,7 @@ This is a **mobile interface app** (390×844) — dark theme, floating panels, t
 ```
 
 **Step 5** — Fill bottom dock into parent "BottomDock":
+
 ```jsx
 <Frame name="DockContent" w="fill" h="fill" flex="col" gap={8} pt={12} pb={8} px={16}>
   <Frame name="ToolRow" w="fill" h={44} bg="#3A3A3C" rounded={22} flex="row" items="center" px={4} justify="between">
@@ -216,10 +267,26 @@ This is a **mobile interface app** (390×844) — dark theme, floating panels, t
 ```
 
 **Step 6** — Add floating overlays into "CanvasArea" (selection handles, zoom, properties):
+
 ```jsx
-<Frame name="FloatingZoom" x={12} y={540} w={44} h={120} bg="#2C2C2ECC" rounded={22} flex="col" items="center" justify="center" gap={16} py={12}>
+<Frame
+  name="FloatingZoom"
+  x={12}
+  y={540}
+  w={44}
+  h={120}
+  bg="#2C2C2ECC"
+  rounded={22}
+  flex="col"
+  items="center"
+  justify="center"
+  gap={16}
+  py={12}
+>
   <Icon name="lucide:plus" size={16} color="#FFFFFFCC" />
-  <Text color="#FFFFFF88" size={10} weight="medium">75%</Text>
+  <Text color="#FFFFFF88" size={10} weight="medium">
+    75%
+  </Text>
   <Icon name="lucide:minus" size={16} color="#FFFFFFCC" />
 </Frame>
 ```
@@ -227,6 +294,7 @@ This is a **mobile interface app** (390×844) — dark theme, floating panels, t
 **Step 7** — describe depth=2, fix remaining issues, add shadows, final describe.
 
 Key patterns in this example:
+
 - **Every multi-child Frame has `flex`** — no exceptions
 - **Named all nodes** — Tool_Select, Tool_Move, BrushSizeSlider, etc.
 - **Floating panels use x/y** — inside non-flex CanvasArea parent

@@ -56,8 +56,8 @@ export function defineTool<P extends Record<string, ParamDef>>(def: {
   return def as unknown as ToolDef
 }
 
-export function nodeToResult(node: FigmaNodeProxy): Record<string, unknown> {
-  return node.toJSON()
+export function nodeToResult(node: FigmaNodeProxy, maxDepth?: number): Record<string, unknown> {
+  return node.toJSON(maxDepth)
 }
 
 export function nodeSummary(node: FigmaNodeProxy): { id: string; name: string; type: string } {

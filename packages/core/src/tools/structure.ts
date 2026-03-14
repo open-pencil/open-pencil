@@ -346,3 +346,83 @@ export const arrangeNodes = defineTool({
     return { arranged: nodes.length, mode }
   }
 })
+
+
+interface BatchOp {
+  id: string
+  props: Record<string, unknown>
+}
+
+function str(v: unknown): string { return typeof v === 'string' ? v : '' }
+function num(v: unknown): number { return typeof v === 'number' ? v : 0 }
+
+function applyBatchProps(node: FigmaNodeProxy, p: Record<string, unknown>): string[] {
+  const updated: string[] = []
+
+  if (p.spacing !== undefined) { node.itemSpacing = num(p.spacing); updated.push('spacing') }
+  if (p.padding !== undefined) {
+    const v = num(p.padding)
+    node.paddingTop = v; node.paddingRight = v; node.paddingBottom = v; node.paddingLeft = v
+    updated.push('padding')
+  }
+  if (p.padding_horizontal !== undefined) {
+    node.paddingLeft = num(p.padding_horizontal); node.paddingRight = num(p.padding_horizontal)
+    updated.push('padding_horizontal')
+  }
+  if (p.padding_vertical !== undefined) {
+    node.paddingTop = num(p.padding_vertical); node.paddingBottom = num(p.padding_vertical)
+    updated.push('padding_vertical')
+  }
+  if (p.counter_align !== undefined) { node.counterAxisAlignItems = str(p.counter_align); updated.push('counter_align') }
+  if (p.align !== undefined) { node.primaryAxisAlignItems = str(p.align); updated.push('align') }
+  if (p.sizing_horizontal !== undefined) { node.layoutSizingHorizontal = str(p.sizing_horizontal); updated.push('sizing_horizontal') }
+  if (p.sizing_vertical !== undefined) { node.layoutSizingVertical = str(p.sizing_vertical); updated.push('sizing_vertical') }
+  if (p.grow !== undefined) { node.layoutGrow = num(p.grow); updated.push('grow') }
+  if (p.name !== undefined) { node.name = str(p.name); updated.push('name') }
+  if (p.visible !== undefined) { node.visible = Boolean(p.visible); updated.push('visible') }
+  if (p.corner_radius !== undefined) { node.cornerRadius = num(p.corner_radius); updated.push('corner_radius') }
+  if (p.opacity !== undefined) { node.opacity = num(p.opacity); updated.push('opacity') }
+  if (p.auto_resize !== undefined) { node.textAutoResize = str(p.auto_resize); updated.push('auto_resize') }
+  if (p.direction !== undefined) { node.layoutMode = str(p.direction) as 'HORIZONTAL' | 'VERTICAL'; updated.push('direction') }
+
+  return updated
+}
+
+export const batchUpdate = defineTool({
+  name: 'batch_update',
+  mutates: true,
+  description:
+    'Execute multiple modifications in one call. Each operation is {id, props} where props can include: spacing, padding, padding_horizontal, padding_vertical, counter_align, sizing_horizontal, sizing_vertical, grow, name, visible, corner_radius, auto_resize (for text), direction. Runs all updates with one layout recompute.',
+  params: {
+    operations: {
+      type: 'string',
+      description:
+        'JSON array: [{"id":"0:5","props":{"spacing":8}},{"id":"0:6","props":{"sizing_horizontal":"FILL","grow":1}}]',
+      required: true
+    }
+  },
+  execute: (figma, { operations }) => {
+    let ops: BatchOp[]
+    try {
+      ops = JSON.parse(String(operations))
+    } catch {
+      return { error: 'Invalid JSON in operations' }
+    }
+    if (!Array.isArray(ops)) return { error: 'operations must be a JSON array' }
+
+    const results: Array<{ id: string; updated: string[] }> = []
+    const errors: string[] = []
+
+    for (const op of ops) {
+      const node = figma.getNodeById(op.id)
+      if (!node) { errors.push(`Node "${op.id}" not found`); continue }
+      const updated = applyBatchProps(node, op.props)
+      if (updated.length > 0) results.push({ id: op.id, updated })
+    }
+
+    const out: Record<string, unknown> = { updated: results.length }
+    if (results.length > 0) out.results = results
+    if (errors.length > 0) out.errors = errors
+    return out
+  }
+})

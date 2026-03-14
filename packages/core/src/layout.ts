@@ -30,14 +30,18 @@ const GLYPH_WIDTH_FACTOR = 0.6
 // DO NOT REMOVE: without this, text nodes keep their 100×100 default size
 // and blow up every HUG container. The real MeasureFunc (CanvasKit) overrides
 // this when available — this is only the fallback.
-function estimateTextSize(node: SceneNode): { width: number; height: number } {
+function estimateTextSize(node: SceneNode, maxWidth?: number): { width: number; height: number } {
   const fontSize = node.fontSize || 14
   const text = node.text || ''
   const charWidth = fontSize * GLYPH_WIDTH_FACTOR
-  return {
-    width: Math.ceil(text.length * charWidth),
-    height: Math.ceil(fontSize * 1.2),
+  const singleLineWidth = Math.ceil(text.length * charWidth)
+  const lineH = (node.lineHeight ?? 0) > 0 ? (node.lineHeight as number) : Math.ceil(fontSize * 1.4)
+
+  if (maxWidth && maxWidth > 0 && singleLineWidth > maxWidth) {
+    const lines = Math.ceil(singleLineWidth / maxWidth)
+    return { width: maxWidth, height: Math.ceil(lines * lineH) }
   }
+  return { width: singleLineWidth, height: lineH }
 }
 
 export function setTextMeasurer(measurer: TextMeasurer | null): void {
@@ -365,8 +369,8 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
   } else if (isText && !globalTextMeasurer && child.textAutoResize !== 'NONE') {
     // No CanvasKit — use rough estimate so HUG containers don't inherit
     // the 100×100 default SceneNode size. See estimateTextSize above.
-    const est = estimateTextSize(child)
     if (child.textAutoResize === 'WIDTH_AND_HEIGHT') {
+      const est = estimateTextSize(child)
       yogaChild.setWidth(est.width)
       yogaChild.setHeight(est.height)
     } else if (child.textAutoResize === 'HEIGHT') {
@@ -375,6 +379,7 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
       if (!(!isRow && stretches)) {
         yogaChild.setWidth(child.width)
       }
+      const est = estimateTextSize(child, child.width)
       yogaChild.setHeight(est.height)
     }
   } else {
@@ -410,7 +415,7 @@ function configureTextLeaf(
       if (cached) return cached
 
       const measured = globalTextMeasurer?.(child, maxW)
-      const result = measured ?? estimateTextSize(child)
+      const result = measured ?? estimateTextSize(child, maxW)
       cache.set(cacheKey, result)
       return result
     })
@@ -434,7 +439,7 @@ function configureTextLeaf(
       if (cached) return cached
 
       const measured = globalTextMeasurer?.(child, constraintW)
-      const result = { width: constraintW, height: measured?.height ?? estimateTextSize(child).height }
+      const result = { width: constraintW, height: measured?.height ?? estimateTextSize(child, constraintW).height }
       cache.set(cacheKey, result)
       return result
     })
