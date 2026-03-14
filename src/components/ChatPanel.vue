@@ -2,12 +2,15 @@
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
+import { isToolUIPart } from 'ai'
+
 import { copyChatLog } from '@/ai/chat-debug'
 import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/composables/use-chat'
+import { useEditorStore } from '@/stores/editor'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
@@ -52,6 +55,46 @@ function scrollToBottom() {
 }
 
 watch(messages, scrollToBottom, { deep: true })
+
+const store = useEditorStore()
+const aiHighlightedIds = new Set<string>()
+
+watch(
+  messages,
+  (msgs) => {
+    if (msgs.length === 0) return
+    const last = msgs[msgs.length - 1]
+    if (last.role !== 'assistant') return
+
+    const pendingIds = new Set<string>()
+    for (const part of last.parts) {
+      if (!isToolUIPart(part)) continue
+      const args = 'args' in part ? (part.args as Record<string, unknown>) : undefined
+      if (!args) continue
+      const targetId = (args.replace_id ?? args.parent_id) as string | undefined
+      if (!targetId) continue
+
+      if (part.state !== 'output-available' && part.state !== 'output-error') {
+        pendingIds.add(targetId)
+      }
+    }
+
+    for (const id of pendingIds) {
+      if (!aiHighlightedIds.has(id)) {
+        aiHighlightedIds.add(id)
+        store.aiMarkActive([id])
+      }
+    }
+
+    for (const id of aiHighlightedIds) {
+      if (!pendingIds.has(id)) {
+        aiHighlightedIds.delete(id)
+        store.aiMarkDone([id])
+      }
+    }
+  },
+  { deep: true }
+)
 
 function handleSubmit(text: string) {
   if (status.value === 'streaming' || status.value === 'submitted') return
