@@ -163,6 +163,9 @@ export function toolsToAI(
           def.mutates && options.onToolLog ? captureNodeSnapshot(figma, args) : undefined
 
         options.onBeforeExecute?.(def, args)
+        if (options.onBeforeExecute && typeof requestAnimationFrame === 'function') {
+          await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+        }
         try {
           let execResult = await def.execute(options.getFigma(), args)
           if (def.mutates && options.onFlashNodes) {
