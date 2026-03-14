@@ -121,6 +121,9 @@ export function createAITools(store: EditorStore) {
       },
       onFlashNodes: (nodeIds) => {
         store.flashNodes(nodeIds)
+        if (nodeIds.length > 0) {
+          store.state.selectedIds = new Set(nodeIds)
+        }
       },
       onToolLog: (entry) => {
         runState.toolLog.push(entry)

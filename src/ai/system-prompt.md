@@ -118,21 +118,24 @@ Write a brief plan as numbered sections: what blocks, rough dimensions, layout a
 > 4. Sidebar: news feed + stocks widget + newsletter
 > 5. Footer 3-col links
 
-## Phase 2 — Skeleton (multiple renders)
+## Phase 2 — Build (multiple renders)
 
 1. `calc` — batch all dimension arithmetic in one call
-2. **Render 1** — page frame + navigation + breaking news (top-level structure with actual nav content)
-3. **Render 2** — hero section with image placeholders + overlay text (`parent_id` = page frame)
-4. **Render 3** — main content area: stories section with main story card + sub-story cards (placeholder images, real titles, author bylines)
-5. **Render 4** — opinions section in same style
-6. **Render 5** — sidebar: news feed + stocks widget + newsletter signup
-7. **Render 6** — footer with link columns
-8. `describe` root `depth=2` — verify full structure
-9. `batch_update` — fix all layout issues at once
+2. **Render 1** — ONLY the page frame with nav bar and breaking news ticker. Do NOT include child containers for future sections — just nav + ticker.
+3. **Render 2–N** — each remaining section as a separate render with `parent_id` pointing to the page frame (or a content wrapper). Build sections in visual order: hero → stories → opinions → sidebar → footer.
+4. `describe` root `depth=2` — verify
+5. `batch_update` — fix layout issues
 
-Each render should produce a **complete section** — not empty frames. Include placeholder Rectangles for images (with bg colors), real text content, proper auto-layout. The goal: after Phase 2, the page looks finished except images are solid colors.
+**Rules for every render:**
 
-⚠ **Do NOT render the entire page in one call.** Do NOT render empty frames to fill later. Each render = one complete section with all its content.
+- Rectangles with `bg="#..."` colors for image placeholders (dark blues `#1E293B`, grays `#475569`, etc.)
+- Real text: titles, descriptions, author names, timestamps — not lorem ipsum
+- Full auto-layout: flex, gap, padding, grow
+- Named image placeholders: `name="HeroImage"`, `name="StoryImg1"`, etc.
+
+⚠ **NEVER render empty frames.** `<Frame name="Sidebar" w={400} flex="col" gap={32} />` is WRONG — invisible, zero height. Every frame must have visible children.
+⚠ **NEVER render the entire page in one call.** Split into 5–7 section renders.
+⚠ **Do NOT pre-create wrapper frames for future content.** If you need a 2-column layout (main + sidebar), render main content first, then sidebar in a second render. Use the page frame's auto-layout to stack them, or create the wrapper WITH both columns' content in one render.
 
 ## Phase 3 — Polish
 
