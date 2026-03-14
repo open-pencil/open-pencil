@@ -88,13 +88,22 @@ export function createAITools(store: EditorStore) {
           beforeSnapshot = store.snapshotPage()
         }
         const targetId = (args.replace_id ?? args.parent_id) as string | undefined
-        if (targetId && store.graph.getNode(targetId)) {
+        const nodeExists = targetId ? !!store.graph.getNode(targetId) : false
+        const rendererExists = !!store.renderer
+        aiOverlayLog.push({
+          ts: Date.now(),
+          event: 'before-execute',
+          tool: def.name,
+          state: `targetId=${targetId ?? 'none'} nodeExists=${nodeExists} renderer=${rendererExists} activeNodes=${store.renderer?._aiActiveNodes.size ?? 0}`,
+          targetId: targetId ?? ''
+        })
+        if (targetId && nodeExists) {
           store.aiMarkActive([targetId])
           aiOverlayLog.push({
             ts: Date.now(),
             event: 'mark-active',
             tool: def.name,
-            state: 'before-execute',
+            state: `activeNodes=${store.renderer?._aiActiveNodes.size ?? 0} hasFlashes=${store.renderer?.hasActiveFlashes ?? false}`,
             targetId
           })
         }
@@ -132,16 +141,16 @@ export function createAITools(store: EditorStore) {
         }
       },
       onFlashNodes: (nodeIds) => {
+        aiOverlayLog.push({
+          ts: Date.now(),
+          event: 'flash-nodes',
+          tool: '',
+          state: `clearing active=${store.renderer?._aiActiveNodes.size ?? 0} flashing=${nodeIds.length}`,
+          targetId: nodeIds.join(',')
+        })
         store.renderer?.aiClearActive()
         if (nodeIds.length > 0) {
           store.aiFlashDone(nodeIds)
-          aiOverlayLog.push({
-            ts: Date.now(),
-            event: 'flash-done',
-            tool: '',
-            state: 'after-execute',
-            targetId: nodeIds.join(',')
-          })
         }
       },
       onToolLog: (entry) => {
