@@ -39,6 +39,7 @@ import {
 import { describe } from './describe'
 import { designToTokens, designToComponentMap } from './codegen'
 import { calc } from './calc'
+import { stockPhoto } from './stock-photo'
 
 /**
  * Core tools registered by default in AI chat (~30 tools, ~3K schema tokens).
@@ -66,6 +67,8 @@ export const CORE_TOOLS: ToolDef[] = [
   reparentNode,
   nodeResize,
   batchUpdate,
+  // Stock photos
+  stockPhoto,
   // Inspect & utility
   describe,
   calc,

@@ -92,6 +92,17 @@ No style={{}}, className, CSS. No named colors or rgb(). No percentage values. N
 
 **Dividers:** Use `<Rectangle w="fill" h={1} bg="#E2E8F0" />` for horizontal dividers inside `flex="col"`. Use `<Rectangle w={1} h="fill" bg="#E2E8F0" />` for vertical dividers inside `flex="row"`. ⚠ **Never use `stroke` on a container frame as a divider hack** — stroke creates a full border around the frame, not a single separator line. Set the parent `gap={0}` and interleave Rectangle dividers between items.
 
+# Stock Photos
+
+Use `stock_photo` to place real images from Pexels on Rectangle/Frame placeholders. Pass the node ID and a descriptive English query:
+`stock_photo({ id: "0:41", query: "business team meeting modern office" })`
+
+- Use after creating the layout — apply photos to placeholder rectangles
+- Use descriptive queries: "aerial city skyline sunset", not "image1"
+- Orientation: "landscape" (default) for hero images, "portrait" for vertical cards, "square" for avatars
+- If Pexels key is not configured, the tool returns an error — tell the user to add it in settings
+- Don't apply stock photos unless the user asks for real images or you're replacing solid-color placeholder rectangles
+
 # Workflow (MANDATORY)
 
 1. `calc` — compute section heights

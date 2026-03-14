@@ -24,7 +24,8 @@ const {
   customBaseURL,
   customModelID,
   customAPIType,
-  maxOutputTokens
+  maxOutputTokens,
+  pexelsApiKey
 } = useAIChat()
 
 const keyInput = ref('')
@@ -165,6 +166,25 @@ function clearKey() {
               :step="1024"
               :class="uiInput({ size: 'sm' })"
             />
+          </div>
+
+          <!-- Pexels stock photos -->
+          <div class="flex flex-col gap-1">
+            <label class="text-[10px] text-muted">Pexels API Key (stock photos)</label>
+            <input
+              v-model="pexelsApiKey"
+              type="password"
+              data-test-id="provider-settings-pexels-key"
+              :placeholder="pexelsApiKey ? 'Key saved' : 'Optional — for stock_photo tool'"
+              :class="uiInput({ size: 'sm' })"
+            />
+            <a
+              href="https://www.pexels.com/api/"
+              target="_blank"
+              class="text-[9px] text-muted underline hover:text-surface"
+            >
+              Get free Pexels API key →
+            </a>
           </div>
 
           <!-- API key -->
