@@ -480,6 +480,13 @@ export class SkiaRenderer {
     }
   }
 
+  aiFlashDone(nodeIds: string[]): void {
+    const now = performance.now()
+    for (const id of nodeIds) {
+      this._aiDoneFlashes.push({ nodeId: id, startTime: now })
+    }
+  }
+
   aiClearAll(): void {
     this._aiActiveNodes.clear()
     this._aiDoneFlashes = []

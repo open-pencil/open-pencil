@@ -77,6 +77,7 @@ export function clearToolLogEntries(): void {
 
 export function createAITools(store: EditorStore) {
   let beforeSnapshot: Map<string, SceneNode> | null = null
+  let lastActiveIds: string[] = []
 
   return toolsToAI(
     CORE_TOOLS,
@@ -85,8 +86,9 @@ export function createAITools(store: EditorStore) {
       onBeforeExecute: (def, args) => {
         if (def.mutates) {
           beforeSnapshot = store.snapshotPage()
-          const targetId = (args.id ?? args.parent_id) as string | undefined
-          if (targetId) store.aiMarkActive([targetId])
+          const targetId = (args.id ?? args.parent_id ?? args.replace_id) as string | undefined
+          lastActiveIds = targetId ? [targetId] : []
+          if (lastActiveIds.length > 0) store.aiMarkActive(lastActiveIds)
         }
       },
       onAfterExecute: async (def) => {
@@ -122,8 +124,12 @@ export function createAITools(store: EditorStore) {
         }
       },
       onFlashNodes: (nodeIds) => {
+        if (lastActiveIds.length > 0) {
+          store.aiMarkDone(lastActiveIds)
+          lastActiveIds = []
+        }
         if (nodeIds.length > 0) {
-          store.aiMarkDone(nodeIds)
+          store.aiFlashDone(nodeIds)
         }
       },
       onToolLog: (entry) => {

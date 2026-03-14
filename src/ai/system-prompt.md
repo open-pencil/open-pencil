@@ -149,7 +149,13 @@ After Phase 2 the page looks like a complete wireframe — all sections visible,
 
 ## Phase 3 — Fill content (replace skeletons with real content)
 
-For each skeleton section: `delete_node` the skeleton, then `render` real content with titles, descriptions, authors, colored tags, proper typography. Keep the same `parent_id`.
+For each skeleton section, use `render` with `replace_id` — the new content takes the skeleton's position and the skeleton is deleted atomically. No separate `delete_node` needed:
+
+```
+render({ jsx: "<Frame ...real content...", replace_id: "0:29" })
+```
+
+The skeleton stays visible until the real content appears — no visual gap.
 
 ## Phase 4 — Polish
 

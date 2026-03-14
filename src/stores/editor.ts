@@ -276,6 +276,12 @@ export function createEditorStore() {
     if (!flashRafId) pumpFlashes()
   }
 
+  function aiFlashDone(nodeIds: string[]) {
+    if (!_renderer) return
+    _renderer.aiFlashDone(nodeIds)
+    if (!flashRafId) pumpFlashes()
+  }
+
   function aiClearAll() {
     if (!_renderer) return
     _renderer.aiClearAll()
@@ -2364,6 +2370,7 @@ export function createEditorStore() {
     flashNodes,
     aiMarkActive,
     aiMarkDone,
+    aiFlashDone,
     aiClearAll,
     setTool,
     select,

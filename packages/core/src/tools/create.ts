@@ -53,20 +53,42 @@ export const render = defineTool({
   name: 'render',
   mutates: true,
   description:
-    'Render JSX to design nodes. Primary creation tool — creates entire component trees in one call. Example: <Frame name="Card" w={320} h="hug" flex="col" gap={16} p={24} bg="#FFF" rounded={16}><Text size={18} weight="bold">Title</Text></Frame>',
+    'Render JSX to design nodes. Use replace_id to swap a skeleton placeholder with real content (keeps position in parent). Example: <Frame name="Card" w={320} h="hug" flex="col" gap={16} p={24} bg="#FFF" rounded={16}><Text size={18} weight="bold">Title</Text></Frame>',
   params: {
     jsx: { type: 'string', description: 'JSX string to render', required: true },
     x: { type: 'number', description: 'X position of the root node' },
     y: { type: 'number', description: 'Y position of the root node' },
-    parent_id: { type: 'string', description: 'Parent node ID to render into' }
+    parent_id: { type: 'string', description: 'Parent node ID to render into' },
+    replace_id: { type: 'string', description: 'Node ID to replace — new node takes its position in parent, old node is deleted' }
   },
   execute: async (figma, args) => {
     const { renderJSX } = await import('../render/render-jsx.js')
+
+    let parentId = args.parent_id ?? figma.currentPageId
+    let replaceIndex = -1
+
+    if (args.replace_id) {
+      const target = figma.graph.getNode(args.replace_id)
+      if (target?.parentId) {
+        parentId = target.parentId
+        const parent = figma.graph.getNode(parentId)
+        if (parent) {
+          replaceIndex = parent.childIds.indexOf(args.replace_id)
+        }
+      }
+    }
+
     const result = await renderJSX(figma.graph, args.jsx, {
-      parentId: args.parent_id ?? figma.currentPageId,
+      parentId,
       x: args.x,
       y: args.y
     })
+
+    if (args.replace_id && replaceIndex >= 0) {
+      figma.graph.reorderChild(result.id, parentId, replaceIndex)
+      figma.graph.deleteNode(args.replace_id)
+    }
+
     return { id: result.id, name: result.name, type: result.type, children: result.childIds }
   }
 })
