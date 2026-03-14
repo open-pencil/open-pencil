@@ -1,6 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import { collectFontKeys, loadFont } from './fonts'
+import { computeAllLayouts, setTextMeasurer } from './layout'
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render-image'
 import { SkiaRenderer } from './renderer'
 import type { SceneGraph } from './scene-graph'
@@ -27,6 +28,7 @@ async function getRenderer(): Promise<{ ck: CanvasKit; renderer: SkiaRenderer }>
   renderer.viewportHeight = 1
   renderer.dpr = 1
   await renderer.loadFonts()
+  setTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
   cachedRenderer = renderer
   return { ck, renderer }
 }
@@ -44,6 +46,7 @@ export async function headlessRenderNodes(
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
   await loadNodeFonts(graph, nodeIds)
+  computeAllLayouts(graph, pageId)
   return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
     scale: options.scale ?? 1,
     format: options.format ?? 'PNG',
@@ -60,5 +63,6 @@ export async function headlessRenderThumbnail(
   const { ck, renderer } = await getRenderer()
   const page = graph.getNode(pageId)
   if (page) await loadNodeFonts(graph, page.childIds)
+  computeAllLayouts(graph, pageId)
   return renderThumbnail(ck, renderer, graph, pageId, width, height)
 }
