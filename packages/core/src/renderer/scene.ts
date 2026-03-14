@@ -95,11 +95,13 @@ function renderChildren(
     node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
   if (isClippableContainer && node.clipsContent && node.childIds.length > 0) {
     canvas.save()
-    canvas.clipRect(
-      r.ck.LTRBRect(0, 0, node.width, node.height),
-      r.ck.ClipOp.Intersect,
-      true
-    )
+    const hasRadius = node.cornerRadius > 0 || (node.independentCorners &&
+      (node.topLeftRadius > 0 || node.topRightRadius > 0 || node.bottomRightRadius > 0 || node.bottomLeftRadius > 0))
+    if (hasRadius) {
+      canvas.clipRRect(r.makeRRect(node), r.ck.ClipOp.Intersect, true)
+    } else {
+      canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, true)
+    }
     for (const childId of node.childIds) {
       r.renderNode(canvas, graph, childId, overlays, absX, absY)
     }
