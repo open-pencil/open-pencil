@@ -200,6 +200,38 @@ export function createServer(version: string, options: CreateServerOptions = {})
     }
   )
 
+  register(
+    'export_image_file',
+    {
+      description: 'Export nodes as a PNG/JPG/WEBP image file saved to disk. Returns the file path and size.',
+      inputSchema: z.object({
+        path: z.string().describe('Absolute path to save the image file (e.g. /tmp/design.png)'),
+        ids: z.array(z.string()).min(1).optional().describe('Node IDs to export. Omit to export all top-level nodes on the current page.'),
+        format: z.enum(['PNG', 'JPG', 'WEBP']).optional().describe('Image format (default: PNG)'),
+        scale: z.number().min(0.1).max(4).optional().describe('Export scale multiplier (default: 2)')
+      })
+    },
+    async ({ path: filePath, ids, format, scale }: { path: string; ids?: string[]; format?: string; scale?: number }) => {
+      try {
+        const figma = makeFigma()
+        if (!figma.exportImage) throw new Error('Image export is not available')
+
+        const nodeIds = ids && ids.length > 0
+          ? ids
+          : figma.currentPage.children.map((n: { id: string }) => n.id)
+        const fmt = ((format ?? 'PNG').toUpperCase()) as 'PNG' | 'JPG' | 'WEBP'
+        const data = await figma.exportImage(nodeIds, { scale: scale ?? 2, format: fmt })
+        if (!data || data.length === 0) throw new Error('No visible nodes to export')
+
+        const outPath = resolveAndCheckPath(filePath)
+        await writeFile(outPath, data)
+        return ok({ saved: outPath, bytes: data.length, format: fmt, scale: scale ?? 2 })
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
   for (const tool of ALL_TOOLS) {
     if (!enableEval && tool.name === 'eval') continue
     registerTool(tool)
