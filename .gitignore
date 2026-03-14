@@ -41,21 +41,3 @@ patches/skia-webgpu/
 
 Caddyfile.dev
 components.d.ts
-
-# cue:managed-ignore
-# Transient Cue runtime files (sessions, state, logs, search cache)
-# Memory (.cue/memory/) and search index (.cue/search/index.yml) are NOT ignored
-.cue/states/
-.cue/ports/
-.cue/sessions/
-.cue/logs/
-.cue/ralph-status/
-.cue/search/bun/
-.cue/search/qmd/
-.cue/state.json
-.cue/port
-.cue/ralph-loop-status.md
-.cue/ralph-recovery.json
-.cue/watchdog-prompt.txt
-.cue/watchdog-trigger
-.cue/features.json
