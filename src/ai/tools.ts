@@ -2,6 +2,7 @@ import { valibotSchema } from '@ai-sdk/valibot'
 import { tool } from 'ai'
 import * as v from 'valibot'
 
+import { aiOverlayLog } from '@/ai/chat-debug'
 import { makeFigmaFromStore } from '@/automation/figma-factory'
 import {
   CORE_TOOLS,
@@ -82,9 +83,20 @@ export function createAITools(store: EditorStore) {
     CORE_TOOLS,
     {
       getFigma: () => makeFigmaFromStore(store),
-      onBeforeExecute: (def) => {
+      onBeforeExecute: (def, args) => {
         if (def.mutates) {
           beforeSnapshot = store.snapshotPage()
+        }
+        const targetId = (args.replace_id ?? args.parent_id) as string | undefined
+        if (targetId && store.graph.getNode(targetId)) {
+          store.aiMarkActive([targetId])
+          aiOverlayLog.push({
+            ts: Date.now(),
+            event: 'mark-active',
+            tool: def.name,
+            state: 'before-execute',
+            targetId
+          })
         }
       },
       onAfterExecute: async (def) => {
@@ -120,8 +132,16 @@ export function createAITools(store: EditorStore) {
         }
       },
       onFlashNodes: (nodeIds) => {
+        store.renderer?.aiClearActive()
         if (nodeIds.length > 0) {
           store.aiFlashDone(nodeIds)
+          aiOverlayLog.push({
+            ts: Date.now(),
+            event: 'flash-done',
+            tool: '',
+            state: 'after-execute',
+            targetId: nodeIds.join(',')
+          })
         }
       },
       onToolLog: (entry) => {

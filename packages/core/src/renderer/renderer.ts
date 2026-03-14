@@ -487,6 +487,10 @@ export class SkiaRenderer {
     }
   }
 
+  aiClearActive(): void {
+    this._aiActiveNodes.clear()
+  }
+
   aiClearAll(): void {
     this._aiActiveNodes.clear()
     this._aiDoneFlashes = []

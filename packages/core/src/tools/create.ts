@@ -55,12 +55,12 @@ export const render = defineTool({
   description:
     'Render JSX to design nodes. Use replace_id to swap a skeleton placeholder with real content (keeps position in parent). Example: <Frame name="Card" w={320} h="hug" flex="col" gap={16} p={24} bg="#FFF" rounded={16}><Text size={18} weight="bold">Title</Text></Frame>',
   params: {
-    jsx: { type: 'string', description: 'JSX string to render', required: true },
+    replace_id: { type: 'string', description: 'Node ID to replace — new node takes its position in parent, old node is deleted' },
+    parent_id: { type: 'string', description: 'Parent node ID to render into' },
+    insert_index: { type: 'number', description: 'Position among siblings (0 = first child). Omit to append at end.' },
     x: { type: 'number', description: 'X position of the root node' },
     y: { type: 'number', description: 'Y position of the root node' },
-    parent_id: { type: 'string', description: 'Parent node ID to render into' },
-    replace_id: { type: 'string', description: 'Node ID to replace — new node takes its position in parent, old node is deleted' },
-    insert_index: { type: 'number', description: 'Position among siblings (0 = first child). Omit to append at end.' }
+    jsx: { type: 'string', description: 'JSX string to render', required: true },
   },
   execute: async (figma, args) => {
     const { renderJSX } = await import('../render/render-jsx.js')
