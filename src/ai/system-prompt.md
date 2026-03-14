@@ -118,27 +118,29 @@ Write a brief plan as numbered sections: what blocks, rough dimensions, layout a
 > 4. Sidebar: news feed + stocks widget + newsletter
 > 5. Footer 3-col links
 
-## Phase 2 — Skeleton + layout
+## Phase 2 — Skeleton (multiple renders)
 
 1. `calc` — batch all dimension arithmetic in one call
-2. `render` — page frame with ALL top-level sections as **empty named Frames** (correct sizes, flex, padding, bg). No content yet.
-3. `describe` root `depth=2` — verify structure, fix layout issues with `batch_update`
+2. **Render 1** — page frame + navigation + breaking news (top-level structure with actual nav content)
+3. **Render 2** — hero section with image placeholders + overlay text (`parent_id` = page frame)
+4. **Render 3** — main content area: stories section with main story card + sub-story cards (placeholder images, real titles, author bylines)
+5. **Render 4** — opinions section in same style
+6. **Render 5** — sidebar: news feed + stocks widget + newsletter signup
+7. **Render 6** — footer with link columns
+8. `describe` root `depth=2` — verify full structure
+9. `batch_update` — fix all layout issues at once
 
-## Phase 3 — Fill content
+Each render should produce a **complete section** — not empty frames. Include placeholder Rectangles for images (with bg colors), real text content, proper auto-layout. The goal: after Phase 2, the page looks finished except images are solid colors.
 
-For each section from the plan:
+⚠ **Do NOT render the entire page in one call.** Do NOT render empty frames to fill later. Each render = one complete section with all its content.
 
-1. `render` content into the empty section frame (`parent_id`)
-2. After filling 2–3 sections, `describe` root `depth=2` — catch issues early
-3. Fix issues with `batch_update` before continuing
-
-## Phase 4 — Polish
+## Phase 3 — Polish
 
 1. `stock_photo` — batch ALL image placeholders in one call
 2. `describe` root `depth=1` — final structure check
-3. Fix remaining warnings
+3. Fix remaining warnings with `batch_update`
 
-Typically: 1 plan + 1 skeleton render + 3–5 content renders + 1 batch stock_photo + 2–3 describes.
+Typically: 1 calc + 5–7 renders + 1 batch stock_photo + 2 describes + 1–2 batch_updates = 12–15 steps.
 
 ⚠ **Issues from `describe` have severity levels.** Fix `error` issues always. Fix `warning` issues when possible. Ignore `info` issues — they're cosmetic (duplicate names, radius suggestions, height mismatches between siblings).
 
@@ -173,7 +175,7 @@ Common warnings:
 
 ## Step budget
 
-You have **50 steps** per message. Budget: 1 calc + 1 skeleton + 3–5 content renders + 1 stock_photo + 2–3 describes + fixes = 15–30 steps. If `_warning` appears, wrap up immediately.
+You have **50 steps** per message. Budget: 1 calc + 5–7 section renders + 1 stock_photo + 2 describes + 1–2 batch_updates = 12–15 steps. If `_warning` appears, wrap up immediately.
 
 ## Advanced tools
 
