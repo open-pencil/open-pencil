@@ -8,6 +8,8 @@ import { cors } from 'hono/cors'
 import { WebSocketServer, type WebSocket } from 'ws'
 import { z } from 'zod'
 
+import { designPagePrompt, designSystemPrompt, refineDesignPrompt } from './verso-prompts'
+
 import {
   ALL_TOOLS,
   CODEGEN_PROMPT,
@@ -374,53 +376,14 @@ export function startServer(options: ServerOptions = {}) {
 
     // --- Verso MCP Prompts ---
 
-    mcpServer.prompt(
-      'design-page',
-      'Create a full page design using the Design Context Engine. Guides the AI through: context → structure → creation → validation.',
-      { pageType: z.string().describe('Type of page: landing, dashboard, pricing, settings, etc.'), description: z.string().describe('Description of the page to design') },
-      (args: Record<string, unknown>) => {
-        const pt = (args.pageType as string | undefined) ?? 'page'
-        const desc = (args.description as string | undefined) ?? ''
-        return {
-          messages: [{
-            role: 'user' as const,
-            content: { type: 'text' as const, text: `Design a ${pt} page: ${desc}\n\nWorkflow:\n1. Call get_design_context with taskDescription\n2. Call suggest_structure for the layout template\n3. Create the design using batch_update or render tools\n4. Call validate_design to check quality\n5. Fix any issues found\n6. Take a screenshot to verify` }
-          }]
-        }
-      }
-    )
+    mcpServer.prompt(designPagePrompt.name, designPagePrompt.description, designPagePrompt.params,
+      (args: Record<string, unknown>) => designPagePrompt.handler(args))
 
-    mcpServer.prompt(
-      'design-system',
-      'Create a complete design system with variables, components, and consistent tokens.',
-      { brandName: z.string().describe('Brand name'), primaryColor: z.string().describe('Primary color hex'), style: z.string().optional().describe('Design style: modern, classic, playful, etc.') },
-      (args: Record<string, unknown>) => {
-        const bn = (args.brandName as string | undefined) ?? 'Brand'
-        const pc = (args.primaryColor as string | undefined) ?? '#7B5EA7'
-        const st = (args.style as string | undefined) ?? 'modern'
-        return {
-          messages: [{
-            role: 'user' as const,
-            content: { type: 'text' as const, text: `Create a design system for "${bn}" with primary color ${pc} (style: ${st}).\n\nSteps:\n1. Create color variables (primary, secondary, bg, surface, text, success, warning, error)\n2. Create spacing variables (xs=4, sm=8, md=16, lg=24, xl=32)\n3. Create components: Button (primary/secondary), Input, Card, Badge\n4. Apply consistent spacing and colors via variables` }
-          }]
-        }
-      }
-    )
+    mcpServer.prompt(designSystemPrompt.name, designSystemPrompt.description, designSystemPrompt.params,
+      (args: Record<string, unknown>) => designSystemPrompt.handler(args))
 
-    mcpServer.prompt(
-      'refine-design',
-      'Improve an existing design based on the Design Context Engine validation and feedback.',
-      { feedback: z.string().describe('What to improve in the design') },
-      (args: Record<string, unknown>) => {
-        const fb = (args.feedback as string | undefined) ?? ''
-        return {
-          messages: [{
-            role: 'user' as const,
-            content: { type: 'text' as const, text: `Refine the current design: ${fb}\n\nSteps:\n1. Call validate_design to find issues\n2. Call get_design_context for improvement guidelines\n3. Fix each issue (spacing, contrast, alignment, touch targets)\n4. Re-validate to confirm improvements` }
-          }]
-        }
-      }
-    )
+    mcpServer.prompt(refineDesignPrompt.name, refineDesignPrompt.description, refineDesignPrompt.params,
+      (args: Record<string, unknown>) => refineDesignPrompt.handler(args))
 
     // --- Verso MCP Resource ---
 
