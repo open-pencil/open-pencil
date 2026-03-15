@@ -359,16 +359,16 @@ describe('hitTest', () => {
     expect(graph.hitTest(100, 100, pageId(graph))?.id).toBe(frame.id)
   })
 
-  test('group is always click-through', () => {
+  test('group returns group on hit, not child (Figma-style)', () => {
     const graph = new SceneGraph()
     const groupId = graph.createNode('GROUP', pageId(graph), {
       name: 'Group', x: 0, y: 0, width: 200, height: 200,
     }).id
-    const childId = graph.createNode('RECTANGLE', groupId, {
+    graph.createNode('RECTANGLE', groupId, {
       name: 'Child', x: 10, y: 10, width: 30, height: 30,
-    }).id
-    // Hit child through group
-    expect(graph.hitTest(20, 20, pageId(graph))?.id).toBe(childId)
+    })
+    // Hit returns group (single click selects group, dblclick enters)
+    expect(graph.hitTest(20, 20, pageId(graph))?.id).toBe(groupId)
     // Miss in group's empty area
     expect(graph.hitTest(150, 150, pageId(graph))).toBeNull()
   })
