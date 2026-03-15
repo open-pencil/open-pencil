@@ -2,11 +2,10 @@ import { parseColor } from '../color'
 import { createIconFromPaths } from '../icon-render'
 import { fetchIcons, searchIconsBatch } from '../iconify'
 
-import { detectIssues } from './describe-issues'
 import { defineTool, nodeSummary } from './schema'
 
 import type { FigmaNodeProxy } from '../figma-api'
-import type { SceneGraph, VectorNetwork } from '../scene-graph'
+import type { VectorNetwork } from '../scene-graph'
 
 export const createShape = defineTool({
   name: 'create_shape',
@@ -93,47 +92,9 @@ export const render = defineTool({
       figma.graph.reorderChild(result.id, parentId, args.insert_index)
     }
 
-    const { computeAllLayouts } = await import('../layout.js')
-    const pageId = figma.currentPageId
-    computeAllLayouts(figma.graph, pageId)
-
-    const issues = collectSubtreeIssues(figma.graph, result.id, 8)
-    const response: Record<string, unknown> = {
-      id: result.id,
-      name: result.name,
-      type: result.type,
-      children: result.childIds
-    }
-    if (issues.length > 0) response.issues = issues
-    return response
+    return { id: result.id, name: result.name, type: result.type, children: result.childIds }
   }
 })
-
-function collectSubtreeIssues(
-  graph: SceneGraph,
-  nodeId: string,
-  gridSize: number
-): Array<{ node: string; id: string; message: string; suggestion?: string; severity?: string }> {
-  const all: Array<{ node: string; id: string; message: string; suggestion?: string; severity?: string }> = []
-  const walk = (id: string) => {
-    const node = graph.getNode(id)
-    if (!node) return
-    const nodeIssues = detectIssues(node, gridSize, graph)
-    for (const issue of nodeIssues) {
-      if (issue.severity === 'info') continue
-      all.push({
-        node: node.name,
-        id: node.id,
-        message: issue.message,
-        suggestion: issue.suggestion,
-        severity: issue.severity
-      })
-    }
-    for (const childId of node.childIds) walk(childId)
-  }
-  walk(nodeId)
-  return all
-}
 
 export const createComponent = defineTool({
   name: 'create_component',
