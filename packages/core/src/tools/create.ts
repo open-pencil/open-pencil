@@ -93,6 +93,10 @@ export const render = defineTool({
       figma.graph.reorderChild(result.id, parentId, args.insert_index)
     }
 
+    const { computeAllLayouts } = await import('../layout.js')
+    const pageId = figma.currentPageId
+    computeAllLayouts(figma.graph, pageId)
+
     const issues = collectSubtreeIssues(figma.graph, result.id, 8)
     const response: Record<string, unknown> = {
       id: result.id,
