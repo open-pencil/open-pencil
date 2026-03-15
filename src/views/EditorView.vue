@@ -9,6 +9,7 @@ import { useKeyboard } from '@/composables/use-keyboard'
 import { useMenu } from '@/composables/use-menu'
 import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
 import { connectAutomation } from '@/automation/server'
+import { useVoice, VOICE_KEY } from '@/composables/use-voice'
 import { createDemoShapes } from '@/demo'
 import { useEditorStore } from '@/stores/editor'
 import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
@@ -34,6 +35,8 @@ const { disconnect: disconnectAutomation } = connectAutomation(getActiveStore)
 onUnmounted(disconnectAutomation)
 const collab = useCollab(firstTab.store)
 provide(COLLAB_KEY, collab)
+const voice = useVoice(collab)
+provide(VOICE_KEY, voice)
 
 useEventListener(
   document,
