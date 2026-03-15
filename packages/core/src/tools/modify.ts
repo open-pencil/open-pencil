@@ -229,7 +229,12 @@ export const setLayout = defineTool({
       return { error: 'Frame has no auto-layout. Pass direction ("HORIZONTAL" or "VERTICAL") to enable it.' }
     }
 
+    const wasNone = raw?.layoutMode === 'NONE'
     if (args.direction) node.layoutMode = args.direction as 'HORIZONTAL' | 'VERTICAL'
+    if (args.direction && wasNone) {
+      node.primaryAxisSizingMode = 'AUTO'
+      node.counterAxisSizingMode = 'AUTO'
+    }
     if (args.spacing !== undefined) node.itemSpacing = args.spacing
     if (args.align !== undefined) node.primaryAxisAlignItems = args.align
     if (args.counter_align !== undefined) node.counterAxisAlignItems = args.counter_align

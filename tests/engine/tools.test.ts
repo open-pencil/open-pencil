@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ALL_TOOLS, FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts } from '@open-pencil/core'
 
 function setup() {
   const graph = new SceneGraph()
@@ -215,6 +215,67 @@ describe('set_layout', () => {
     expect(node.itemSpacing).toBe(16)
     expect(node.paddingLeft).toBe(20)
     expect(node.paddingTop).toBe(20)
+  })
+
+  test('defaults to HUG sizing when enabling auto-layout', () => {
+    const { graph, figma } = setup()
+    const frame = figma.createFrame()
+    frame.resize(300, 200)
+
+    const rawBefore = graph.getNode(frame.id)!
+    expect(rawBefore.layoutMode).toBe('NONE')
+    expect(rawBefore.primaryAxisSizing).toBe('FIXED')
+    expect(rawBefore.counterAxisSizing).toBe('FIXED')
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_layout')!
+    tool.execute(figma, { id: frame.id, direction: 'VERTICAL' })
+
+    const rawAfter = graph.getNode(frame.id)!
+    expect(rawAfter.layoutMode).toBe('VERTICAL')
+    expect(rawAfter.primaryAxisSizing).toBe('HUG')
+    expect(rawAfter.counterAxisSizing).toBe('HUG')
+  })
+
+  test('preserves sizing modes when updating existing auto-layout', () => {
+    const { graph, figma } = setup()
+    const frame = figma.createFrame()
+    frame.resize(300, 200)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_layout')!
+    tool.execute(figma, { id: frame.id, direction: 'HORIZONTAL' })
+
+    // Manually set primary axis back to FIXED (user wants fixed width)
+    graph.updateNode(frame.id, { primaryAxisSizing: 'FIXED' })
+    expect(graph.getNode(frame.id)!.primaryAxisSizing).toBe('FIXED')
+
+    // Updating spacing should NOT reset sizing modes
+    tool.execute(figma, { id: frame.id, spacing: 24 })
+
+    const raw = graph.getNode(frame.id)!
+    expect(raw.primaryAxisSizing).toBe('FIXED')
+    expect(raw.counterAxisSizing).toBe('HUG')
+  })
+
+  test('HUG default enables hug-to-fit with 5 children', () => {
+    const { graph, figma } = setup()
+    const frame = figma.createFrame()
+    frame.resize(320, 100)
+
+    const tool = ALL_TOOLS.find((t) => t.name === 'set_layout')!
+    tool.execute(figma, { id: frame.id, direction: 'VERTICAL', spacing: 8, padding: 16 })
+
+    for (let i = 0; i < 5; i++) {
+      const child = figma.createRectangle()
+      child.resize(280, 50)
+      frame.appendChild(child)
+    }
+
+    computeAllLayouts(graph)
+
+    const node = graph.getNode(frame.id)!
+    expect(node.primaryAxisSizing).toBe('HUG')
+    // 16 (top pad) + 5*50 (children) + 4*8 (gaps) + 16 (bottom pad) = 314
+    expect(node.height).toBe(314)
   })
 })
 
