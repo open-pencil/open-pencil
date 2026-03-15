@@ -1,0 +1,177 @@
+# OpenPencil MCP HTTP Server — Kubernetes Deployment Template
+#
+# Installs @open-pencil/mcp from npm, runs the HTTP server behind an nginx
+# TLS-terminating sidecar that injects bearer auth.
+#
+# Deploy:
+#   export MCP_NAMESPACE=mcp
+#   export MCP_PACKAGE_VERSION=0.8.0
+#   export MCP_AUTH_SECRET=mcp-openpencil-auth      # Secret with key "bearer_token"
+#   export MCP_TLS_SECRET=mcp-openpencil-tls
+#   export MCP_NGINX_CONFIGMAP=mcp-openpencil-nginx
+#   export MCP_PVC_NAME=mcp-openpencil-data
+#   envsubst < deploy/k8s/mcp-deployment.yaml | kubectl apply -f -
+#
+# Required environment variables:
+#   MCP_NAMESPACE        - target namespace (e.g. "mcp")
+#   MCP_PACKAGE_VERSION  - @open-pencil/mcp npm version (e.g. "0.8.0")
+#   MCP_AUTH_SECRET      - name of Secret containing bearer token (key: "bearer_token")
+#   MCP_TLS_SECRET       - name of TLS Secret for nginx sidecar
+#   MCP_NGINX_CONFIGMAP  - name of ConfigMap with nginx.conf.template
+#   MCP_PVC_NAME         - name of PersistentVolumeClaim for .fig file storage
+#
+# Optional (with defaults):
+#   NODE_IMAGE      - Node.js runtime image  (default: node:22-alpine)
+#   MCP_NGINX_IMAGE - nginx sidecar image    (default: nginx:1.27-alpine)
+#                     For hardened images: dhi.io/nginx:1.29.5 (requires `docker login dhi.io`)
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-openpencil
+  namespace: ${MCP_NAMESPACE}
+  labels:
+    app: mcp-openpencil
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mcp-openpencil
+  template:
+    metadata:
+      labels:
+        app: mcp-openpencil
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+      - name: install-mcp
+        image: ${NODE_IMAGE:-node:22-alpine}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          npm install --omit=dev --prefix /opt/openpencil \
+            "@open-pencil/mcp@${MCP_PACKAGE_VERSION}"
+          test -x /opt/openpencil/node_modules/.bin/openpencil-mcp-http
+        env:
+        - { name: HOME, value: /tmp }
+        resources:
+          requests: { cpu: 50m, memory: 128Mi }
+          limits:   { cpu: 500m, memory: 1Gi }
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - { name: runtime, mountPath: /opt/openpencil }
+        - { name: app-tmp, mountPath: /tmp }
+      containers:
+      - name: mcp-openpencil
+        image: ${NODE_IMAGE:-node:22-alpine}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          exec /opt/openpencil/node_modules/.bin/openpencil-mcp-http
+        env:
+        - { name: HOST,  value: "0.0.0.0" }
+        - { name: PORT,  value: "3100" }
+        - { name: HOME,  value: /tmp }
+        - { name: OPENPENCIL_MCP_ROOT, value: /data/openpencil }
+        - name: OPENPENCIL_MCP_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ${MCP_AUTH_SECRET}
+              key: bearer_token
+        ports:
+        - { containerPort: 3100, name: mcp }
+        workingDir: /data/openpencil
+        resources:
+          requests: { cpu: 100m, memory: 128Mi }
+          limits:   { cpu: 500m, memory: 512Mi }
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - { name: runtime, mountPath: /opt/openpencil, readOnly: true }
+        - { name: files,   mountPath: /data/openpencil }
+        - { name: app-tmp, mountPath: /tmp }
+        startupProbe:
+          httpGet: { path: /health, port: 3100 }
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 24
+        readinessProbe:
+          httpGet: { path: /health, port: 3100 }
+          periodSeconds: 10
+        livenessProbe:
+          httpGet: { path: /health, port: 3100 }
+          periodSeconds: 30
+      - name: nginx-sidecar
+        image: ${MCP_NGINX_IMAGE:-nginx:1.27-alpine}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          : "${MCP_BEARER_TOKEN:?missing MCP_BEARER_TOKEN}"
+          envsubst '${MCP_BEARER_TOKEN}' \
+            < /etc/nginx/nginx.conf.template > /tmp/nginx.conf
+          exec nginx -g 'daemon off;' -c /tmp/nginx.conf
+        env:
+        - name: MCP_BEARER_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ${MCP_AUTH_SECRET}
+              key: bearer_token
+        ports:
+        - { containerPort: 8443, name: https }
+        - { containerPort: 8080, name: http }
+        securityContext:
+          runAsUser: 101
+          runAsGroup: 101
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        startupProbe:
+          tcpSocket: { port: 8443 }
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 12
+        readinessProbe:
+          tcpSocket: { port: 8443 }
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket: { port: 8443 }
+          periodSeconds: 30
+        volumeMounts:
+        - { name: nginx-tmp,    mountPath: /tmp }
+        - { name: nginx-config, mountPath: /etc/nginx/nginx.conf.template, subPath: nginx.conf.template }
+        - { name: tls,          mountPath: /tls, readOnly: true }
+        resources:
+          requests: { cpu: 10m, memory: 16Mi }
+          limits:   { cpu: 100m, memory: 64Mi }
+      volumes:
+      - { name: runtime,      emptyDir: {} }
+      - name: files
+        persistentVolumeClaim:
+          claimName: ${MCP_PVC_NAME}
+      - { name: app-tmp,      emptyDir: {} }
+      - { name: nginx-tmp,    emptyDir: {} }
+      - { name: nginx-config, configMap: { name: "${MCP_NGINX_CONFIGMAP}" } }
+      - { name: tls,          secret:    { secretName: "${MCP_TLS_SECRET}" } }

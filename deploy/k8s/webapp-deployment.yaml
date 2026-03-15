@@ -1,0 +1,141 @@
+# OpenPencil Web UI — Kubernetes Deployment Template
+#
+# Builds the PWA from a release tarball and serves it via nginx with TLS.
+#
+# Deploy:
+#   export OPENPENCIL_VERSION=0.9.0
+#   export OPENPENCIL_NAMESPACE=openpencil
+#   export TLS_SECRET_NAME=openpencil-tls
+#   export NGINX_CONFIGMAP=openpencil-nginx-config
+#   envsubst < deploy/k8s/webapp-deployment.yaml | kubectl apply -f -
+#
+# Required environment variables:
+#   OPENPENCIL_VERSION   - release tag (e.g. "0.9.0")
+#   OPENPENCIL_NAMESPACE - target namespace (e.g. "openpencil")
+#   TLS_SECRET_NAME      - name of a TLS Secret for nginx
+#   NGINX_CONFIGMAP      - name of a ConfigMap with your nginx.conf
+#
+# Optional (with defaults):
+#   BUN_IMAGE     - Bun builder image     (default: oven/bun:1.3.10-alpine)
+#   NGINX_IMAGE   - nginx serving image   (default: nginx:1.27-alpine)
+#                   For hardened images: dhi.io/nginx:1.29.5 (requires `docker login dhi.io`)
+#   BUSYBOX_IMAGE - fetch init image      (default: busybox:1.37.0)
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openpencil
+  namespace: ${OPENPENCIL_NAMESPACE}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: openpencil
+  template:
+    metadata:
+      labels:
+        app: openpencil
+    spec:
+      enableServiceLinks: false
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: fetch-source
+        image: ${BUSYBOX_IMAGE:-busybox:1.37.0}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          wget -O /tmp/src.tar.gz \
+            "https://github.com/open-pencil/open-pencil/archive/refs/tags/v${OPENPENCIL_VERSION}.tar.gz"
+          mkdir -p /src
+          tar -xzf /tmp/src.tar.gz --strip-components=1 -C /src
+          test -f /src/package.json
+        resources:
+          requests: { cpu: 10m, memory: 32Mi }
+          limits:   { cpu: 100m, memory: 128Mi }
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - { name: source,    mountPath: /src }
+        - { name: fetch-tmp, mountPath: /tmp }
+      - name: build
+        image: ${BUN_IMAGE:-oven/bun:1.3.10-alpine}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -eu
+          cd /src
+          export HOME=/tmp
+          bun install --frozen-lockfile
+          bun run build
+          cp -R dist/. /srv/
+          chmod -R a+rX /srv
+          test -f /srv/index.html
+        resources:
+          requests: { cpu: 100m, memory: 512Mi }
+          limits:   { cpu: "1", memory: 2Gi }
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        volumeMounts:
+        - { name: source,    mountPath: /src }
+        - { name: dist,      mountPath: /srv }
+        - { name: build-tmp, mountPath: /tmp }
+      containers:
+      - name: nginx
+        image: ${NGINX_IMAGE:-nginx:1.27-alpine}
+        ports:
+        - { containerPort: 8443, name: https }
+        - { containerPort: 8080, name: http }
+        securityContext:
+          runAsUser: 101
+          runAsGroup: 101
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+        startupProbe:
+          tcpSocket: { port: 8443 }
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 12
+        readinessProbe:
+          tcpSocket: { port: 8443 }
+          periodSeconds: 10
+        livenessProbe:
+          tcpSocket: { port: 8443 }
+          periodSeconds: 30
+        volumeMounts:
+        - { name: nginx-config, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf }
+        - { name: dist,         mountPath: /usr/share/nginx/html, readOnly: true }
+        - { name: tls,          mountPath: /tls,                  readOnly: true }
+        - { name: nginx-tmp,    mountPath: /tmp }
+        resources:
+          requests: { cpu: 10m, memory: 32Mi }
+          limits:   { cpu: 100m, memory: 64Mi }
+      volumes:
+      - { name: source,       emptyDir: {} }
+      - { name: dist,         emptyDir: {} }
+      - { name: fetch-tmp,    emptyDir: {} }
+      - { name: build-tmp,    emptyDir: {} }
+      - { name: nginx-config, configMap: { name: "${NGINX_CONFIGMAP}" } }
+      - { name: tls,          secret:    { secretName: "${TLS_SECRET_NAME}" } }
+      - { name: nginx-tmp,    emptyDir: {} }
