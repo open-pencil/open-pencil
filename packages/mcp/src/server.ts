@@ -363,6 +363,33 @@ export function startServer(options: ServerOptions = {}) {
       }
     )
 
+    register(
+      'get_design_prompt',
+      {
+        description: 'Get pixel-precise JSX component templates from the Verso UI Kit. Call BEFORE any render call to get the exact component specs. Returns ready-to-use JSX snippets with correct dimensions, colors, spacing, and typography.',
+        inputSchema: z.object({
+          components: z.array(z.string()).optional().describe('Specific components to get (e.g. ["button-primary", "card", "navbar"]). If omitted, returns ALL component specs.'),
+        })
+      },
+      async (args: Record<string, unknown>) => {
+        try {
+          const { UI_KIT_SPECS, getAllSpecsAsPrompt, getComponentSpec } = await import('./ui-kit-specs.ts')
+          const requested = args.components as string[] | undefined
+
+          if (!requested || requested.length === 0) {
+            return ok({ prompt: getAllSpecsAsPrompt(), availableComponents: Object.keys(UI_KIT_SPECS) })
+          }
+
+          const specs: Record<string, unknown> = {}
+          for (const name of requested) {
+            const spec = getComponentSpec(name)
+            if (spec) specs[name] = spec
+          }
+          return ok({ specs, availableComponents: Object.keys(UI_KIT_SPECS) })
+        } catch (e) { return fail(e) }
+      }
+    )
+
     // --- End Verso tools ---
 
     register(

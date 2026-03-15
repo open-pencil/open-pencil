@@ -1,9 +1,11 @@
 /**
- * Verso-specific MCP prompts with pixel-precise JSX design specs.
+ * Verso-specific MCP prompts with 3-pass workflow and UI Kit injection.
  * Shared between server.ts (HTTP) and stdio.ts (stdio transport).
  */
 
 import { z } from 'zod'
+
+import { getAllSpecsAsPrompt } from './ui-kit-specs'
 
 type MCPPromptMessage = { role: 'user'; content: { type: 'text'; text: string } }
 type MCPPromptResult = { messages: MCPPromptMessage[] }
@@ -12,11 +14,11 @@ function userMsg(text: string): MCPPromptResult {
   return { messages: [{ role: 'user', content: { type: 'text', text } }] }
 }
 
-// ─── Design Page ──────────────────────────────────────────────────
+// ─── Design Page (3-pass workflow) ────────────────────────────────
 
 export const designPagePrompt = {
   name: 'design-page',
-  description: 'Create a professional page using pixel-precise JSX specs from the Verso Design Context Engine.',
+  description: 'Create a professional page using the Verso 3-pass workflow: skeleton → content → refine. Injects pixel-precise UI Kit component specs.',
   params: {
     pageType: z.string().describe('Type of page: landing, dashboard, pricing, settings, etc.'),
     description: z.string().describe('Description of the page to design'),
@@ -24,140 +26,93 @@ export const designPagePrompt = {
   handler(args: Record<string, unknown>): MCPPromptResult {
     const pt = (args.pageType as string | undefined) ?? 'landing'
     const desc = (args.description as string | undefined) ?? ''
+    const uiKitSpecs = getAllSpecsAsPrompt()
+
     return userMsg(`Design a ${pt} page: ${desc}
 
-# VERSO DESIGN CONTEXT — PIXEL-PRECISE JSX SPECS
+# VERSO 3-PASS DESIGN WORKFLOW
 
-Follow these EXACT specs for each section. Do NOT improvise dimensions, colors, or spacing.
+You MUST follow this exact 3-pass process. Do NOT render everything in one call.
 
-## GLOBAL RULES
-- Page frame: w={1440} h="hug" bg="#0A0A0B" flex="col"
-- Max content width: 1200px, centered with px={120}
-- Section spacing: py={96} between major sections
-- Font: Inter (loaded automatically)
-- Colors: bg="#0A0A0B", text="#FFFFFF", muted="#A1A1AA", accent="#6366F1"
-- NEVER use a raw colored rectangle as a button — always Frame + Text
-- NEVER leave placeholder text — write real, compelling copy
-- NEVER skip naming nodes — every Frame and Text needs name=""
+## PASS 1 — SKELETON (structure only, no content)
 
-## 1. HERO SECTION
-\`\`\`jsx
-<Frame name="Hero" w="fill" flex="col" items="center" py={96} px={120} gap={24}>
-  <Frame name="HeroBadge" h={32} px={16} bg="#6366F122" rounded={16} flex="row" items="center" gap={8}>
-    <Ellipse w={8} h={8} bg="#6366F1" />
-    <Text name="BadgeText" size={13} weight="medium" color="#6366F1">Now in beta</Text>
-  </Frame>
-  <Text name="Headline" size={64} weight="bold" color="#FFFFFF" textAlign="center" w={800} lineHeight={72}>
-    ${desc || 'Ship faster with AI-powered design'}
-  </Text>
-  <Text name="Subtext" size={20} color="#A1A1AA" textAlign="center" w={600} lineHeight={32}>
-    The only design tool where AI understands design principles, trends, and your brand.
-  </Text>
-  <Frame name="CTARow" flex="row" gap={16} items="center">
-    <Frame name="CTAPrimary" w={200} h={48} bg="#6366F1" rounded={8} flex="row" items="center" justify="center">
-      <Text name="CTAText" size={16} weight="semibold" color="#FFFFFF">Get Started Free</Text>
-    </Frame>
-    <Frame name="CTASecondary" w={160} h={48} bg="#FFFFFF0F" rounded={8} flex="row" items="center" justify="center" stroke="#FFFFFF22" strokeWidth={1}>
-      <Text name="CTASecText" size={16} weight="medium" color="#FFFFFF">Watch Demo</Text>
-    </Frame>
-  </Frame>
-  <Text name="SocialProof" size={14} color="#71717A" textAlign="center">Trusted by 2,000+ designers</Text>
-</Frame>
+Create the page frame and ALL section containers as empty gray placeholders.
+This establishes the spatial structure before any content.
+
+\`\`\`
+calc → dimensions
+render → page frame w={1440} h="hug" bg="#0A0A0B" flex="col" with:
+  - NavBar placeholder (h={64})
+  - Hero placeholder (h={600})
+  - Features placeholder (h={500})
+  - Social proof placeholder (h={400})
+  - CTA placeholder (h={300})
+  - Footer placeholder (h={300})
+Each placeholder: <Frame name="SectionName" w="fill" h={N} bg="#111113" />
+describe depth=2 → verify all sections exist with correct heights
 \`\`\`
 
-## 2. FEATURES GRID (6 features, 3x2)
-\`\`\`jsx
-<Frame name="Features" w="fill" flex="col" items="center" py={96} px={120} gap={64}>
-  <Frame name="FeaturesHeader" flex="col" items="center" gap={16}>
-    <Text name="FeaturesOverline" size={14} weight="semibold" color="#6366F1" textCase="upper" letterSpacing={2}>Features</Text>
-    <Text name="FeaturesTitle" size={40} weight="bold" color="#FFFFFF" textAlign="center">Everything you need to design faster</Text>
-  </Frame>
-  <Frame name="FeaturesGrid" w={1200} flex="row" gap={24} wrap rowGap={24}>
-    {/* 6 cards, each w={384} or grow={1} */}
-    <Frame name="Feature1" w={384} flex="col" gap={16} p={32} bg="#FFFFFF08" rounded={16} stroke="#FFFFFF0A" strokeWidth={1}>
-      <Frame name="FeatureIcon1" w={48} h={48} bg="#6366F122" rounded={12} flex="row" items="center" justify="center">
-        <Icon name="lucide:sparkles" size={24} color="#6366F1" />
-      </Frame>
-      <Text name="FeatureTitle1" size={20} weight="semibold" color="#FFFFFF">Design Context Engine</Text>
-      <Text name="FeatureDesc1" size={15} color="#A1A1AA" lineHeight={24} w="fill">4 layers of design intelligence guide every decision.</Text>
-    </Frame>
-  </Frame>
-</Frame>
-\`\`\`
+## PASS 2 — CONTENT (fill each section using UI Kit specs)
 
-## 3. SOCIAL PROOF / TESTIMONIALS (3 cards)
-\`\`\`jsx
-<Frame name="Testimonials" w="fill" flex="col" items="center" py={96} px={120} gap={48}>
-  <Text name="TestimonialsTitle" size={40} weight="bold" color="#FFFFFF" textAlign="center">Loved by designers</Text>
-  <Frame name="TestimonialsGrid" w={1200} flex="row" gap={24}>
-    <Frame name="Testimonial1" grow={1} flex="col" gap={20} p={32} bg="#FFFFFF08" rounded={16}>
-      <Frame name="Stars1" flex="row" gap={4}>
-        {Array.from({length:5},(_,i)=><Icon key={i} name="lucide:star" size={16} color="#FBBF24"/>)}
-      </Frame>
-      <Text name="Quote1" size={16} color="#E4E4E7" lineHeight={26} w="fill" font="Georgia" italic>"This changed how we approach design entirely."</Text>
-      <Frame name="Author1" flex="row" gap={12} items="center">
-        <Ellipse name="Avatar1" w={40} h={40} bg="#6366F133" />
-        <Frame flex="col" gap={2}>
-          <Text name="AuthorName1" size={14} weight="semibold" color="#FFFFFF">Sarah Chen</Text>
-          <Text name="AuthorRole1" size={13} color="#71717A">Design Lead, Stripe</Text>
-        </Frame>
-      </Frame>
-    </Frame>
-  </Frame>
-</Frame>
-\`\`\`
+Replace each skeleton placeholder with the real content using \`replace_id\`.
+Use the EXACT component specs below — do NOT improvise dimensions or colors.
 
-## 4. CTA FINAL
-\`\`\`jsx
-<Frame name="FinalCTA" w="fill" flex="col" items="center" py={96} px={120} gap={32} bg="#6366F10D">
-  <Text name="CTAHeadline" size={48} weight="bold" color="#FFFFFF" textAlign="center" w={700}>Ready to design 10x faster?</Text>
-  <Text name="CTASubtext" size={18} color="#A1A1AA" textAlign="center" w={500}>Join thousands of designers using AI-powered context.</Text>
-  <Frame name="CTAFinalBtn" w={240} h={56} bg="#6366F1" rounded={12} flex="row" items="center" justify="center" shadow="0 4 24 #6366F166">
-    <Text name="CTAFinalText" size={18} weight="semibold" color="#FFFFFF">Start for Free</Text>
-  </Frame>
-</Frame>
-\`\`\`
+For EACH section:
+1. \`render\` with \`replace_id\` pointing to the skeleton frame
+2. \`describe\` the new content immediately
+3. \`batch_update\` to fix any layout issues
+4. Only then move to the next section
 
-## 5. FOOTER
-\`\`\`jsx
-<Frame name="Footer" w="fill" flex="col" py={64} px={120} gap={48} bg="#050506">
-  <Frame name="FooterGrid" w={1200} flex="row" gap={64}>
-    <Frame name="FooterBrand" w={300} flex="col" gap={16}>
-      <Text name="FooterLogo" size={24} weight="bold" color="#FFFFFF">Verso</Text>
-      <Text name="FooterTagline" size={14} color="#71717A" lineHeight={22} w="fill">AI-first design editor with a 4-layer Design Context Engine.</Text>
-    </Frame>
-    <Frame name="FooterCol1" grow={1} flex="col" gap={12}>
-      <Text size={13} weight="semibold" color="#A1A1AA" textCase="upper" letterSpacing={1}>Product</Text>
-      <Text size={14} color="#71717A">Features</Text>
-      <Text size={14} color="#71717A">Pricing</Text>
-      <Text size={14} color="#71717A">Changelog</Text>
-    </Frame>
-    <Frame name="FooterCol2" grow={1} flex="col" gap={12}>
-      <Text size={13} weight="semibold" color="#A1A1AA" textCase="upper" letterSpacing={1}>Resources</Text>
-      <Text size={14} color="#71717A">Documentation</Text>
-      <Text size={14} color="#71717A">MCP Tools</Text>
-    </Frame>
-    <Frame name="FooterCol3" grow={1} flex="col" gap={12}>
-      <Text size={13} weight="semibold" color="#A1A1AA" textCase="upper" letterSpacing={1}>Company</Text>
-      <Text size={14} color="#71717A">GitHub</Text>
-      <Text size={14} color="#71717A">Discord</Text>
-    </Frame>
-  </Frame>
-  <Rectangle name="FooterDivider" w="fill" h={1} bg="#FFFFFF0F" />
-  <Text name="Copyright" size={13} color="#52525B" textAlign="center">© 2026 Verso. MIT License.</Text>
-</Frame>
-\`\`\`
+## PASS 3 — REFINE (polish and verify)
 
-## WORKFLOW
-1. calc — batch all dimensions
-2. Skeleton render — page h="hug" + 5 sections as gray placeholders
-3. describe depth=2 — verify skeleton
-4. Replace each section with the JSX above using replace_id
-5. describe + batch_update after every 2 sections
-6. stock_photo — batch avatars/images
-7. Final describe + fixes
+1. \`describe\` root depth=2 — check ALL sections
+2. \`batch_update\` — fix spacing, alignment, overflow issues
+3. \`stock_photo\` — batch ALL image placeholders in one call
+4. \`validate_design\` — check contrast, spacing grid, touch targets
+5. Fix any validation issues
+6. Final \`describe\` depth=1
 
-CRITICAL: Use EXACTLY these specs. Do not change dimensions, colors, or spacing.`)
+## GLOBAL DESIGN RULES
+
+- Page: w={1440} h="hug" bg="#0A0A0B" flex="col"
+- Content max-width: 1200px → use px={120} on sections
+- Section vertical padding: py={96}
+- Accent: #6366F1 | Text: #FFFFFF | Muted: #A1A1AA | Subtle bg: #FFFFFF08
+- Font: Inter (auto-loaded)
+- Every multi-child Frame MUST have flex="col" or flex="row"
+- Every element MUST have name=""
+- NEVER use a raw Rectangle as a button — always Frame + Text
+- NEVER use placeholder text — write real, compelling copy for "${desc || 'this product'}"
+- Button min touch target: h={44}
+- Border radius: buttons=8, cards=16, badges=99
+- Card pattern: bg="#FFFFFF08" rounded={16} stroke="#FFFFFF0A" strokeWidth={1}
+
+${uiKitSpecs}
+
+## SECTION ASSEMBLY GUIDE
+
+### NavBar
+Use the \`navbar\` component spec. Replace "Brand" with the product name.
+
+### Hero
+Use the \`hero-section\` spec. Customize headline and subtext for "${desc || 'the product'}".
+
+### Features (6 cards, 3×2 grid)
+Use the \`section-header\` spec for the header.
+Use the \`card\` feature variant for each card. Use \`w={384}\` for 3-column with gap={24}.
+Icons: lucide:sparkles, lucide:zap, lucide:shield, lucide:code, lucide:layers, lucide:globe
+
+### Social Proof (3 testimonial cards)
+Use the \`card\` testimonial variant. Use \`grow={1}\` for equal-width cards.
+
+### CTA
+Use the \`cta-section\` spec.
+
+### Footer
+Use the \`footer-minimal\` spec.
+
+CRITICAL: Call \`get_design_prompt\` before rendering if you need specific component specs.
+Budget: ~15-20 tool calls total (1 calc + 1 skeleton + 6 content renders + 2 describes + 1 stock_photo + fixes).`)
   },
 }
 
@@ -175,13 +130,20 @@ export const designSystemPrompt = {
     const bn = (args.brandName as string | undefined) ?? 'Brand'
     const pc = (args.primaryColor as string | undefined) ?? '#7B5EA7'
     const st = (args.style as string | undefined) ?? 'modern'
+    const uiKitSpecs = getAllSpecsAsPrompt()
+
     return userMsg(`Create a design system for "${bn}" with primary color ${pc} (style: ${st}).
 
-Steps:
-1. Create color variables (primary, secondary, bg, surface, text, success, warning, error)
-2. Create spacing variables (xs=4, sm=8, md=16, lg=24, xl=32)
-3. Create components: Button (primary/secondary), Input, Card, Badge
-4. Apply consistent spacing and colors via variables`)
+## Workflow
+1. Create color variables: primary=${pc}, secondary, bg=#0A0A0B, surface=#FFFFFF08, text=#FFFFFF, muted=#A1A1AA, success=#16A34A, warning=#EAB308, error=#EF4444
+2. Create spacing variables: xs=4, sm=8, md=16, lg=24, xl=32, 2xl=48
+3. Create each component below as a named Component (reusable)
+4. Use variables for all colors — no hardcoded values
+
+## Component Specs
+${uiKitSpecs}
+
+Replace the accent color #6366F1 with ${pc} in all components.`)
   },
 }
 
@@ -197,10 +159,17 @@ export const refineDesignPrompt = {
     const fb = (args.feedback as string | undefined) ?? ''
     return userMsg(`Refine the current design: ${fb}
 
-Steps:
-1. Call validate_design to find issues
-2. Call get_design_context for improvement guidelines
-3. Fix each issue (spacing, contrast, alignment, touch targets)
-4. Re-validate to confirm improvements`)
+## Workflow
+1. \`describe\` root depth=2 — understand current state
+2. \`validate_design\` — find issues (contrast, spacing, touch targets)
+3. \`get_design_prompt\` — get correct component specs
+4. \`batch_update\` — fix all issues at once:
+   - Spacing: must be multiples of 4 (prefer 8, 16, 24, 32, 48)
+   - Touch targets: buttons/inputs min h={44}
+   - Contrast: text on dark bg must be #FFFFFF or #A1A1AA, never below #71717A
+   - Cards: bg="#FFFFFF08" rounded={16} stroke="#FFFFFF0A" strokeWidth={1}
+   - Buttons: always Frame + Text, never raw Rectangle
+5. Re-\`describe\` to confirm fixes
+6. \`validate_design\` — confirm 0 critical issues`)
   },
 }

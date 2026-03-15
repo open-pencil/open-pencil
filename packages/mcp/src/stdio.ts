@@ -285,6 +285,31 @@ register(
 )
 
 register(
+  'get_design_prompt',
+  {
+    description: 'Get pixel-precise JSX component templates from the Verso UI Kit. Call BEFORE any render call to get the exact component specs.',
+    inputSchema: z.object({
+      components: z.array(z.string()).optional().describe('Specific components to get. If omitted, returns ALL specs.'),
+    })
+  },
+  async (args: Record<string, unknown>) => {
+    try {
+      const { UI_KIT_SPECS, getAllSpecsAsPrompt, getComponentSpec } = await import('./ui-kit-specs.ts')
+      const requested = args.components as string[] | undefined
+      if (!requested || requested.length === 0) {
+        return ok({ prompt: getAllSpecsAsPrompt(), availableComponents: Object.keys(UI_KIT_SPECS) })
+      }
+      const specs: Record<string, unknown> = {}
+      for (const name of requested) {
+        const spec = getComponentSpec(name)
+        if (spec) specs[name] = spec
+      }
+      return ok({ specs, availableComponents: Object.keys(UI_KIT_SPECS) })
+    } catch (e) { return fail(e) }
+  }
+)
+
+register(
   'get_codegen_prompt',
   {
     description: 'Get design-to-code generation guidelines. Call before generating frontend code.',

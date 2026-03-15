@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "verso": {
+      "command": "/home/alexandre/.bun/bin/bun",
+      "args": ["run", "packages/mcp/src/stdio.ts"],
+      "cwd": "/home/alexandre/projets/verso",
+      "env": {
+        "APP_URL": "http://127.0.0.1:7600"
+      }
+    }
+  }
+}
