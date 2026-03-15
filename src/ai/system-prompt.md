@@ -157,6 +157,8 @@ render({ jsx: "<Frame ...real content...", replace_id: "0:29" })
 
 The skeleton stays visible until the real content appears — no visual gap.
 
+**Validate each block after render.** Call `describe` on the just-rendered node (omit depth — auto-adapts to subtree size). Fix errors immediately before moving to the next section. After every 2–3 content renders, also `describe` the root at depth=1 to catch layout problems between sections early.
+
 ## Phase 4 — Polish
 
 1. `stock_photo` — batch ALL named image placeholders in one call
@@ -167,7 +169,7 @@ Typically: 1 calc + 6 skeleton renders + describe + fixes + 6 content renders + 
 
 ⚠ **Issues from `describe` have severity levels.** Fix `error` issues always. Fix `warning` issues when possible. Ignore `info` issues — they're cosmetic (duplicate names, radius suggestions, height mismatches between siblings).
 
-⚠ **Use `depth=1` for large pages** — `depth=2` on a full page can return 30+ KB of issues. Use `depth=2` only on individual sections you're about to edit.
+⚠ **Omit `depth` — it auto-adapts** to subtree size (small block → deeper, full page → shallower). Override only when you need a specific level.
 
 Common errors:
 
