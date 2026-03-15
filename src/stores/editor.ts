@@ -680,7 +680,36 @@ export function createEditorStore() {
     try {
       state.loading = true
       await yieldToUI()
-      const imported = await readFigFile(file)
+
+      let imported: SceneGraph
+      const isDesignFile = file.name.endsWith('.design')
+
+      if (isDesignFile) {
+        // .design format: JSON → parse → convert to scene graph
+        const { parseDesignDocument, toGraph } = await import(
+          /* @vite-ignore */ '../../packages/format/src/index.ts'
+        )
+        const json = await file.text()
+        const doc = parseDesignDocument(json)
+        const graphNodes = toGraph(doc)
+        imported = new SceneGraph()
+        // Create a page to hold the root nodes
+        const page = imported.addPage('Page 1')
+        // Add root nodes (those with no parent) to the page
+        for (const gn of graphNodes) {
+          if (gn.parentId === null) {
+            imported.createNode(
+              (gn as { type: string }).type as NodeType,
+              page.id,
+              gn as unknown as Partial<SceneNode>,
+            )
+          }
+        }
+      } else {
+        // .fig format: binary Kiwi
+        imported = await readFigFile(file)
+      }
+
       await yieldToUI()
       graph = imported
       computeAllLayouts(graph)
@@ -689,7 +718,7 @@ export function createEditorStore() {
       pageViewports.clear()
       fileHandle = handle ?? null
       filePath = path ?? null
-      state.documentName = file.name.replace(/\.fig$/i, '')
+      state.documentName = file.name.replace(/\.(fig|design)$/i, '')
       downloadName = file.name
       state.selectedIds = new Set()
       const firstPage = graph.getPages()[0] as SceneNode | undefined
@@ -703,7 +732,7 @@ export function createEditorStore() {
       requestRender()
       void startWatchingFile()
     } catch (e) {
-      console.error('Failed to open .fig file:', e)
+      console.error('Failed to open file:', e)
       toast.show(`Failed to open file: ${e instanceof Error ? e.message : String(e)}`, 'error')
     } finally {
       state.loading = false
@@ -780,6 +809,69 @@ export function createEditorStore() {
     downloadName = filename
     state.documentName = filename.replace(/\.fig$/i, '')
     downloadBlob(new Uint8Array(data), filename, 'application/octet-stream')
+  }
+
+  async function saveAsDesignFile() {
+    try {
+      const { toDesign, serializeDesignDocument } = await import(
+        /* @vite-ignore */ '../../packages/format/src/index.ts'
+      )
+      const nodeMap = new Map<string, Record<string, unknown>>()
+      for (const node of graph.getAllNodes()) {
+        nodeMap.set(node.id, node as unknown as Record<string, unknown>)
+      }
+      const doc = toDesign({
+        name: state.documentName || 'Untitled',
+        nodeMap: nodeMap as unknown as Map<string, never>,
+      })
+      // Add designContext if present
+      if ((state as Record<string, unknown>).designContext) {
+        doc.designContext = (state as Record<string, unknown>).designContext as Record<string, unknown>
+      }
+      const json = serializeDesignDocument(doc)
+      const filename = `${state.documentName || 'Untitled'}.design`
+
+      if (IS_TAURI) {
+        const { save } = await import('@tauri-apps/plugin-dialog')
+        const { writeTextFile } = await import('@tauri-apps/plugin-fs')
+        const path = await save({
+          defaultPath: filename,
+          filters: [{ name: 'Verso design', extensions: ['design'] }]
+        })
+        if (!path) return
+        await writeTextFile(path, json)
+        toast.show(`Saved as ${path.split('/').pop()}`)
+        return
+      }
+
+      if (window.showSaveFilePicker) {
+        try {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{ description: 'Verso design', accept: { 'application/json': ['.design'] } }]
+          })
+          const writable = await handle.createWritable()
+          await writable.write(json)
+          await writable.close()
+          toast.show(`Saved as ${handle.name}`)
+          return
+        } catch (e) {
+          if ((e as Error).name === 'AbortError') return
+        }
+      }
+
+      // Fallback: download
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('Failed to save as .design:', e)
+      toast.show(`Failed to save: ${e instanceof Error ? e.message : String(e)}`, 'error')
+    }
   }
 
   async function writeFile(data: Uint8Array) {
@@ -2396,6 +2488,7 @@ export function createEditorStore() {
     saveFigFile,
     setCanvasKit,
     saveFigFileAs,
+    saveAsDesignFile,
     renderExportImage,
     exportSelection,
     updateNode,

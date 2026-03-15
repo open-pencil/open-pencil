@@ -5,7 +5,7 @@ import { IS_TAURI } from '@/constants'
 import { useEditorStore } from '@/stores/editor'
 import { openFileInNewTab, createTab, closeTab, activeTab } from '@/stores/tabs'
 
-const fileDialog = useFileDialog({ accept: '.fig', multiple: false, reset: true })
+const fileDialog = useFileDialog({ accept: '.fig,.design', multiple: false, reset: true })
 fileDialog.onChange((files) => {
   const file = files?.[0]
   if (file) void openFileInNewTab(file)
@@ -16,7 +16,7 @@ export async function openFileDialog() {
     const { open } = await import('@tauri-apps/plugin-dialog')
     const { readFile } = await import('@tauri-apps/plugin-fs')
     const path = await open({
-      filters: [{ name: 'Figma file', extensions: ['fig'] }],
+      filters: [{ name: 'Design files', extensions: ['fig', 'design'] }],
       multiple: false
     })
     if (!path) return
@@ -31,8 +31,8 @@ export async function openFileDialog() {
       const [handle] = await window.showOpenFilePicker({
         types: [
           {
-            description: 'Figma file',
-            accept: { 'application/octet-stream': ['.fig'] }
+            description: 'Design files',
+            accept: { 'application/octet-stream': ['.fig'], 'application/json': ['.design'] }
           }
         ]
       })
@@ -57,6 +57,7 @@ const MENU_ACTIONS: Partial<Record<string, () => void>> = {
   },
   save: () => void store.saveFigFile(),
   'save-as': () => void store.saveFigFileAs(),
+  'save-as-design': () => void store.saveAsDesignFile(),
   duplicate: () => store.duplicateSelected(),
   delete: () => store.deleteSelected(),
   group: () => store.groupSelected(),

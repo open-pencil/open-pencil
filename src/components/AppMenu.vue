@@ -67,7 +67,8 @@ const fileMenu: MenuItem[] = [
   { label: 'Open…', shortcut: `${mod}O`, action: () => openFileDialog() },
   { separator: true },
   { label: 'Save', shortcut: `${mod}S`, action: () => store.saveFigFile() },
-  { label: 'Save as…', shortcut: `${mod}⇧S`, action: () => store.saveFigFileAs() },
+  { label: 'Save as .fig…', shortcut: `${mod}⇧S`, action: () => store.saveFigFileAs() },
+  { label: 'Save as .design…', action: () => store.saveAsDesignFile() },
   { separator: true },
   {
     label: 'Export selection…',
