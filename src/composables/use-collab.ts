@@ -261,7 +261,7 @@ export function useCollab(store: EditorStore) {
     onDisconnectVoice?.()
     unbindGraphEvents?.()
     unbindGraphEvents = null
-    roomRef.value?.leave()
+    void roomRef.value?.leave()
     roomRef.value = null
     sendYjsUpdate = null
     sendAwareness = null

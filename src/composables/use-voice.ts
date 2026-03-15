@@ -8,9 +8,12 @@ import {
 } from '@/constants'
 
 import type { CollabReturn } from '@/composables/use-collab'
-import type { VoiceState } from '@/types'
 
-export type { VoiceState }
+export interface VoiceState {
+  inCall: boolean
+  muted: boolean
+  speaking: boolean
+}
 
 export function useVoice(collab: CollabReturn) {
   const voiceState = ref<VoiceState>({
@@ -88,11 +91,8 @@ export function useVoice(collab: CollabReturn) {
   function toggleMute() {
     if (!voiceState.value.inCall || !localStream) return
 
-    const track = localStream.getAudioTracks()[0]
-    if (!track) return
-
     const muted = !voiceState.value.muted
-    track.enabled = !muted
+    localStream.getAudioTracks()[0].enabled = !muted
     voiceState.value.muted = muted
 
     if (muted) {
@@ -104,12 +104,12 @@ export function useVoice(collab: CollabReturn) {
 
   function setupSpeakingDetection() {
     if (!localStream) return
-    const track = localStream.getAudioTracks()[0]
-    if (!track) return
 
     audioContext = new AudioContext()
     // Resume is typically instant when triggered by user gesture, but await to be safe
-    audioContext.resume().catch(() => {})
+    audioContext.resume().catch(() => {
+      /* AudioContext resume may fail if not triggered by user gesture */
+    })
 
     const source = audioContext.createMediaStreamSource(localStream)
     analyser = audioContext.createAnalyser()
@@ -130,8 +130,8 @@ export function useVoice(collab: CollabReturn) {
       analyser.getFloatTimeDomainData(timeDomainData)
 
       let sumSquares = 0
-      for (let i = 0; i < timeDomainData.length; i++) {
-        sumSquares += timeDomainData[i] * timeDomainData[i]
+      for (const sample of timeDomainData) {
+        sumSquares += sample * sample
       }
       const rms = Math.sqrt(sumSquares / timeDomainData.length)
 
@@ -164,7 +164,7 @@ export function useVoice(collab: CollabReturn) {
       speakingTimeout = null
     }
     if (audioContext) {
-      audioContext.close()
+      void audioContext.close()
       audioContext = null
     }
     analyser = null
@@ -195,7 +195,7 @@ export function useVoice(collab: CollabReturn) {
   collab.onPeerJoin((peerId) => {
     const room = collab.roomRef.value
     if (!room || !localStream || !voiceState.value.inCall) return
-    room.addStream(localStream, peerId)
+    void Promise.allSettled(room.addStream(localStream, peerId))
   })
 
   collab.onPeerLeave((peerId) => {
