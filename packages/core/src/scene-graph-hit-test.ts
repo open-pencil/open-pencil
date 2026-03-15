@@ -40,8 +40,12 @@ function hitTestTransparentContainer(
   ay: number,
   deep: boolean
 ): SceneNode | null {
-  const deepHit = hitTestChildren(graph, px, py, childId, ax, ay, deep)
-  if (deepHit) return deepHit
+  const childHit = hitTestChildren(graph, px, py, childId, ax, ay, deep)
+  if (childHit) {
+    if (!deep && child.type === 'GROUP') return child
+    if (child.locked) return child
+    return childHit
+  }
   if (child.type === 'GROUP') return null
   if (containsPoint(px, py, ax, ay, child) && hasVisibleFillOrStroke(child)) return child
   return null

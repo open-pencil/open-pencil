@@ -1082,10 +1082,18 @@ export function useCanvasInput(
     if (store.state.editingTextId) return
 
     const { cx, cy } = getCoords(e)
-    const hit =
-      hitTestSectionTitle(cx, cy) ??
-      hitTestComponentLabel(cx, cy) ??
-      store.graph.hitTestDeep(cx, cy, store.state.currentPageId)
+
+    const selectedId = store.state.selectedIds.size === 1
+      ? [...store.state.selectedIds][0]
+      : undefined
+    const selectedNode = selectedId ? store.graph.getNode(selectedId) : undefined
+    const canEnter = selectedNode && selectedId && store.graph.isContainer(selectedId) && !selectedNode.locked
+
+    const hit = canEnter
+      ? store.graph.hitTestDeep(cx, cy, selectedId)
+      : (hitTestSectionTitle(cx, cy) ??
+        hitTestComponentLabel(cx, cy) ??
+        store.graph.hitTestDeep(cx, cy, store.state.currentPageId))
     if (!hit) return
 
     if (hit.type === 'TEXT') {
