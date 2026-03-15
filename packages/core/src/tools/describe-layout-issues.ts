@@ -250,6 +250,21 @@ function checkSiblingHeightConsistency(ctx: LayoutContext): void {
   }
 }
 
+function checkChildUndersize(ctx: LayoutContext): void {
+  const { node, graph, issues } = ctx
+  if (node.layoutMode !== 'NONE') return
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child?.visible) continue
+    if (child.width > 0 && node.width > 0 && child.width < node.width * 0.3 && child.height >= node.height * 0.5) {
+      issues.push({
+        message: `"${child.name}" is ${Math.round(child.width)}px wide inside ${Math.round(node.width)}px "${node.name}" (no auto-layout)`,
+        suggestion: `Add flex="col" to "${node.name}" and w="fill" to "${child.name}"`
+      })
+    }
+  }
+}
+
 function checkCrossAxisOverflow(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.clipsContent) return
@@ -364,6 +379,7 @@ export function detectLayoutIssues(node: SceneNode, graph: SceneGraph, issues: D
   checkTextVisibility(ctx)
   checkDuplicateNames(ctx)
   checkFillWithoutFlex(ctx)
+  checkChildUndersize(ctx)
   checkAbsoluteInFlex(ctx)
 
   if (node.layoutMode === 'NONE') return

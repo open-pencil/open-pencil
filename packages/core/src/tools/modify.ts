@@ -40,8 +40,8 @@ export const setFill = defineTool({
         opacity: 1,
         visible: true,
         gradientStops: [
-          { position: 0, color: { ...c, a: 1 } },
-          { position: 1, color: { ...cEnd, a: 1 } }
+          { position: 0, color: c },
+          { position: 1, color: cEnd }
         ],
         gradientTransform: transforms[gradient] ?? transforms['top-bottom']
       }]
