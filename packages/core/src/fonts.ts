@@ -187,6 +187,35 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
 
   const bundledUrl = BUNDLED_FONTS[cacheKey]
   if (bundledUrl) {
+    // In Node/Bun headless environments, fetch('/Inter-Regular.ttf') fails because
+    // there is no web server. Resolve the font from the filesystem instead.
+    if (typeof window === 'undefined') {
+      try {
+        const { readFileSync } = await import('node:fs')
+        const { fileURLToPath } = await import('node:url')
+        const moduleDir = fileURLToPath(new URL('.', import.meta.url))
+        // The bundled font lives in the project's public/ directory, which is
+        // three levels up from packages/core/src/ at repo root, or may be
+        // co-located with the built output depending on the bundler.
+        const candidates = [
+          moduleDir + bundledUrl.slice(1),
+          moduleDir + '../public' + bundledUrl,
+          moduleDir + '../../public' + bundledUrl,
+          moduleDir + '../../../public' + bundledUrl
+        ]
+        for (const fontPath of candidates) {
+          try {
+            const data = readFileSync(fontPath)
+            const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+            return registerAndCache(family, style, buffer)
+          } catch {
+            continue
+          }
+        }
+      } catch (e) {
+        console.warn(`Filesystem font fallback failed for "${family}" ${style}:`, e)
+      }
+    }
     try {
       const response = await fetch(bundledUrl)
       const buffer = await response.arrayBuffer()
