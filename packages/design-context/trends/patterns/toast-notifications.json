@@ -1,0 +1,17 @@
+{
+  "name": "Toast Notifications",
+  "category": "component",
+  "popularity": "high",
+  "description": "Temporary, non-blocking notification messages that appear at the edge of the screen and auto-dismiss after a few seconds.",
+  "when_to_use": [
+    "Confirming successful actions (save, delete, copy)",
+    "Non-critical status updates",
+    "Background process completion notices",
+    "Undo opportunities after destructive actions"
+  ],
+  "when_not_to_use": [
+    "Critical errors requiring immediate user action",
+    "Multi-step feedback or complex messages",
+    "Permanent status indicators"
+  ]
+}

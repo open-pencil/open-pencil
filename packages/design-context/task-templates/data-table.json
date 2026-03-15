@@ -1,0 +1,41 @@
+{
+  "taskType": "data-table",
+  "guidelines": [
+    "Align numbers to the right, text to the left",
+    "Provide sorting on relevant columns",
+    "Include row actions (edit, delete) in a consistent location",
+    "Support pagination or virtual scrolling for large datasets"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["table-toolbar", "table-header", "table-body", "table-pagination"]
+  },
+  "colorGuidance": [
+    "Alternating row backgrounds for readability (subtle, 2-3% opacity difference)",
+    "Highlight selected rows with brand accent at low opacity",
+    "Status badges with semantic colors"
+  ],
+  "typographyGuidance": [
+    "Header: 12-14px, bold or medium, uppercase optional",
+    "Cell text: 13-14px, regular",
+    "Numeric data: tabular figures, monospace optional"
+  ],
+  "spacingGuidance": [
+    "Row height: 40-52px depending on density",
+    "Cell padding: 12-16px horizontal",
+    "Toolbar: 12-16px padding with 8-12px gap between actions"
+  ],
+  "commonMistakes": [
+    "Columns too wide or too narrow without resize ability",
+    "No loading state for data fetching",
+    "Missing empty state when filters return no results",
+    "Horizontal scrolling without sticky first column"
+  ],
+  "qualityChecklist": [
+    "Column widths accommodate typical content",
+    "Sort direction is visually indicated",
+    "Bulk actions work with row selection",
+    "Table is responsive or has horizontal scroll with pinned columns"
+  ]
+}

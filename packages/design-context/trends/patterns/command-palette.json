@@ -1,0 +1,17 @@
+{
+  "name": "Command Palette",
+  "category": "component",
+  "popularity": "high",
+  "description": "A keyboard-triggered search overlay (Cmd+K) that allows users to quickly find and execute actions, navigate pages, or search content.",
+  "when_to_use": [
+    "Complex applications with many features",
+    "Developer tools and productivity apps",
+    "Content management systems",
+    "Any app where power users need quick access"
+  ],
+  "when_not_to_use": [
+    "Simple consumer apps with few actions",
+    "Applications targeting non-technical audiences exclusively",
+    "Mobile-only interfaces"
+  ]
+}

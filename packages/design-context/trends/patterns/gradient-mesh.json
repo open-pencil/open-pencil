@@ -1,0 +1,17 @@
+{
+  "name": "Gradient Mesh",
+  "category": "animation",
+  "popularity": "emerging",
+  "description": "Complex multi-point gradient backgrounds that create organic, flowing color transitions often animated subtly to add visual depth.",
+  "when_to_use": [
+    "Hero section backgrounds",
+    "Brand identity and creative landing pages",
+    "Loading screens and splash pages",
+    "Abstract decorative backgrounds"
+  ],
+  "when_not_to_use": [
+    "Text-heavy content backgrounds (readability issues)",
+    "Performance-sensitive mobile applications",
+    "Conservative or corporate brand aesthetics"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Skeleton Loading",
+  "category": "animation",
+  "popularity": "high",
+  "description": "Placeholder UI that mirrors the shape of incoming content with animated shimmer effects, providing perceived performance improvements.",
+  "when_to_use": [
+    "Content feeds and list views",
+    "Card-based layouts loading from API",
+    "Profile pages and user content",
+    "Any view where content shape is predictable"
+  ],
+  "when_not_to_use": [
+    "Instant local operations",
+    "Content with unpredictable structure",
+    "Very short loading times under 200ms"
+  ]
+}

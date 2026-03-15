@@ -1,0 +1,42 @@
+{
+  "taskType": "settings",
+  "guidelines": [
+    "Organize settings into logical categories with sidebar navigation",
+    "Use appropriate controls: toggles for on/off, selects for options",
+    "Show current values and provide immediate feedback on changes",
+    "Include a save/apply mechanism with confirmation"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "horizontal",
+    "children": ["settings-nav", "settings-content"]
+  },
+  "colorGuidance": [
+    "Neutral interface with minimal color",
+    "Use brand accent sparingly for active navigation items",
+    "Destructive actions (delete account) in red"
+  ],
+  "typographyGuidance": [
+    "Section title: 20-24px, bold",
+    "Setting label: 14-16px, medium",
+    "Setting description: 13-14px, muted",
+    "Category nav: 14px, medium when active"
+  ],
+  "spacingGuidance": [
+    "24-32px between setting groups",
+    "12-16px between individual settings",
+    "250-300px sidebar width"
+  ],
+  "commonMistakes": [
+    "No search or filter for large settings pages",
+    "Unclear which settings have been modified",
+    "Destructive actions too easy to trigger accidentally",
+    "No confirmation before saving critical changes"
+  ],
+  "qualityChecklist": [
+    "Settings are grouped logically",
+    "Each setting has a clear label and description",
+    "Destructive actions require confirmation",
+    "Changes can be saved or discarded"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "category": "mobile-apps",
+  "description": "Design references and conventions for mobile application interfaces.",
+  "patterns": [
+    "Bottom tab navigation for primary sections",
+    "Pull-to-refresh for content updates",
+    "Swipe gestures for actions (delete, archive)",
+    "Bottom sheets for contextual actions",
+    "Full-screen modals for focused tasks",
+    "Floating action button for primary creation"
+  ],
+  "colorApproach": "System-aware colors (light/dark mode). Bold accent sparingly. Platform-native feel.",
+  "typographyApproach": "System fonts (SF Pro, Roboto) for native feel. Minimum 14px for readability.",
+  "exampleApps": ["Apple Health", "Google Maps", "Spotify", "Instagram"]
+}

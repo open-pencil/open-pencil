@@ -1,0 +1,17 @@
+{
+  "name": "Empty States",
+  "category": "component",
+  "popularity": "medium",
+  "description": "Purposefully designed screens for when there is no data to display, providing guidance, illustrations, and clear calls-to-action.",
+  "when_to_use": [
+    "New user onboarding with no content yet",
+    "Search results with no matches",
+    "Empty lists, tables, or feeds",
+    "Error states and offline fallbacks"
+  ],
+  "when_not_to_use": [
+    "Views that always have content",
+    "Transient loading states (use skeletons instead)",
+    "Background processes invisible to users"
+  ]
+}

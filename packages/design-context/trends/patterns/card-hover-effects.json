@@ -1,0 +1,17 @@
+{
+  "name": "Card Hover Effects",
+  "category": "animation",
+  "popularity": "medium",
+  "description": "Interactive card components that respond to mouse hover with elevation changes, color shifts, scale transforms, or content reveals.",
+  "when_to_use": [
+    "Product or feature card grids",
+    "Portfolio project showcases",
+    "Team member or testimonial cards",
+    "Interactive navigation tiles"
+  ],
+  "when_not_to_use": [
+    "Touch-only mobile interfaces (no hover)",
+    "Data tables or dense list views",
+    "Accessibility-critical interfaces where motion is distracting"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "name": "Dashboard",
+    "version": "1.0.0",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "description": "A SaaS dashboard layout with sidebar and metrics."
+  },
+  "variables": [
+    { "name": "bg-surface", "value": "#f8fafc", "type": "color" },
+    { "name": "bg-card", "value": "#ffffff", "type": "color" },
+    { "name": "sidebar-bg", "value": "#0f172a", "type": "color" },
+    { "name": "accent", "value": "#6366f1", "type": "color" }
+  ],
+  "children": [
+    {
+      "id": "frame-shell",
+      "type": "frame",
+      "name": "App Shell",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 900,
+      "layout": "horizontal",
+      "children": [
+        {
+          "id": "frame-sidebar",
+          "type": "frame",
+          "name": "Sidebar",
+          "x": 0,
+          "y": 0,
+          "width": 240,
+          "height": 900,
+          "layout": "vertical",
+          "gap": 8,
+          "padding": { "top": 24, "right": 16, "bottom": 24, "left": 16 },
+          "fill": [{ "type": "solid", "color": "$sidebar-bg" }],
+          "children": [
+            {
+              "id": "text-app-name",
+              "type": "text",
+              "name": "App Name",
+              "x": 0,
+              "y": 0,
+              "width": 208,
+              "height": 32,
+              "content": "Dashboard",
+              "fontSize": 20,
+              "fontFamily": "Inter",
+              "fontWeight": 700
+            }
+          ]
+        },
+        {
+          "id": "frame-main",
+          "type": "frame",
+          "name": "Main Content",
+          "x": 240,
+          "y": 0,
+          "width": 1200,
+          "height": 900,
+          "layout": "vertical",
+          "gap": 24,
+          "padding": { "top": 32, "right": 32, "bottom": 32, "left": 32 },
+          "fill": [{ "type": "solid", "color": "$bg-surface" }],
+          "children": [
+            {
+              "id": "frame-metrics",
+              "type": "frame",
+              "name": "Metrics Row",
+              "x": 0,
+              "y": 0,
+              "width": 1136,
+              "height": 120,
+              "layout": "horizontal",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "frame-metric-1",
+                  "type": "frame",
+                  "name": "Revenue",
+                  "x": 0,
+                  "y": 0,
+                  "width": 268,
+                  "height": 120,
+                  "cornerRadius": 12,
+                  "padding": { "top": 24, "right": 24, "bottom": 24, "left": 24 },
+                  "fill": [{ "type": "solid", "color": "$bg-card" }],
+                  "children": [
+                    {
+                      "id": "text-metric-value",
+                      "type": "text",
+                      "name": "Value",
+                      "x": 0,
+                      "y": 0,
+                      "width": 220,
+                      "height": 36,
+                      "content": "$48,290",
+                      "fontSize": 28,
+                      "fontFamily": "Inter",
+                      "fontWeight": 700
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

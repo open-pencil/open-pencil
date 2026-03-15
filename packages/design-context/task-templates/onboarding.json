@@ -1,0 +1,41 @@
+{
+  "taskType": "onboarding",
+  "guidelines": [
+    "Keep steps short and focused on one concept each",
+    "Show progress through the onboarding flow",
+    "Allow skipping for experienced users",
+    "End with a clear transition to the main application"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["progress-indicator", "step-content", "step-actions"]
+  },
+  "colorGuidance": [
+    "Clean, welcoming color palette",
+    "Progress indicator in brand accent",
+    "Illustrations with brand-consistent colors"
+  ],
+  "typographyGuidance": [
+    "Step title: 24-32px, bold",
+    "Step description: 16-18px, regular",
+    "Action buttons: 16px, medium"
+  ],
+  "spacingGuidance": [
+    "Center content vertically and horizontally",
+    "24-32px gaps between step elements",
+    "Illustration size: 200-300px"
+  ],
+  "commonMistakes": [
+    "Too many steps (keep to 3-5 maximum)",
+    "No skip option for returning users",
+    "Steps that require too much input upfront",
+    "Missing progress indicator leaving users uncertain"
+  ],
+  "qualityChecklist": [
+    "Progress is clearly visible at each step",
+    "Users can go back to previous steps",
+    "Skip option is available but not prominent",
+    "Final step transitions smoothly to the main app"
+  ]
+}

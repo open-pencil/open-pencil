@@ -1,0 +1,55 @@
+{
+  "category": "composition",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Rule of Thirds",
+      "description": "Place key elements along the lines or intersections of a 3x3 grid.",
+      "application": "Position hero text and CTAs at intersection points for visual balance.",
+      "example": "Hero headline positioned at the left-third vertical line.",
+      "anti_pattern": "Centering everything, resulting in a static, unengaging composition."
+    },
+    {
+      "name": "Visual Weight Balance",
+      "description": "Distribute visual weight evenly to avoid a lopsided composition.",
+      "application": "Balance heavy elements (images, dark colors) with lighter counterparts.",
+      "example": "Large image on the left balanced by a text block and CTA on the right.",
+      "anti_pattern": "All heavy elements clustered on one side with empty space on the other."
+    },
+    {
+      "name": "Directional Flow",
+      "description": "Guide the viewer's eye through the design in a deliberate sequence.",
+      "application": "Use arrows, lines, whitespace, and element sizing to create flow.",
+      "example": "A landing page flowing from headline to features to social proof to CTA.",
+      "anti_pattern": "A scattered layout where the eye bounces randomly between elements."
+    },
+    {
+      "name": "Figure-Ground Relationship",
+      "description": "Create clear distinction between foreground content and background.",
+      "application": "Use elevation (shadows), color contrast, or blur to separate layers.",
+      "example": "A modal dialog elevated above a dimmed background overlay.",
+      "anti_pattern": "A popup that blends into the background with no visual separation."
+    },
+    {
+      "name": "Repetition and Rhythm",
+      "description": "Repeat visual elements to create patterns that unify the design.",
+      "application": "Use consistent spacing, shapes, and colors to establish rhythm.",
+      "example": "A features grid where each card uses the same icon style and spacing.",
+      "anti_pattern": "Each feature card having completely different styling and proportions."
+    },
+    {
+      "name": "Scale and Proportion",
+      "description": "Use deliberate size relationships to establish importance.",
+      "application": "Make primary content proportionally larger than supporting content.",
+      "example": "Hero headline 3x larger than body text; hero image 50% of viewport.",
+      "anti_pattern": "All elements roughly the same size, creating visual monotony."
+    },
+    {
+      "name": "Negative Space as Design Element",
+      "description": "Treat empty space as an active composition tool, not wasted area.",
+      "application": "Use generous negative space to create focus and sophistication.",
+      "example": "A luxury brand landing page with ample whitespace around each element.",
+      "anti_pattern": "Filling every pixel with content, creating visual clutter."
+    }
+  ]
+}

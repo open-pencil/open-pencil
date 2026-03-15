@@ -1,0 +1,17 @@
+{
+  "name": "Dark Mode Patterns",
+  "category": "layout",
+  "popularity": "high",
+  "description": "Design patterns specific to dark theme implementations, including surface elevation, reduced saturation, and adapted contrast ratios.",
+  "when_to_use": [
+    "Applications offering theme switching",
+    "Developer and creative tools",
+    "Media consumption apps (video, photos)",
+    "Night-time or low-light usage scenarios"
+  ],
+  "when_not_to_use": [
+    "Print-focused designs",
+    "Brands with strictly light-only identity",
+    "Simple utility tools where theme adds no value"
+  ]
+}

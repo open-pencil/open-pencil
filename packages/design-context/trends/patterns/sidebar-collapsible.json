@@ -1,0 +1,17 @@
+{
+  "name": "Collapsible Sidebar",
+  "category": "component",
+  "popularity": "high",
+  "description": "A navigation sidebar that can collapse to icons-only or fully hidden, maximizing content area while keeping navigation accessible.",
+  "when_to_use": [
+    "SaaS application shells",
+    "Admin dashboards",
+    "Document editors and IDEs",
+    "Applications with many navigation items"
+  ],
+  "when_not_to_use": [
+    "Simple single-page marketing sites",
+    "Mobile-only applications (use bottom nav instead)",
+    "Applications with fewer than 4 navigation items"
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "taskType": "navigation",
+  "guidelines": [
+    "Limit top-level navigation items to 5-7 items",
+    "Clearly indicate the current active section",
+    "Provide consistent navigation placement across all pages",
+    "Consider mobile navigation patterns (hamburger, bottom nav)"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "horizontal",
+    "children": ["logo", "nav-links", "nav-actions"]
+  },
+  "colorGuidance": [
+    "Active link with brand accent color or underline",
+    "Navigation background: solid white, transparent, or dark depending on style",
+    "Hover states with subtle background change"
+  ],
+  "typographyGuidance": [
+    "Nav links: 14-16px, medium weight",
+    "Active link: same size, brand color or bold",
+    "Dropdown items: 14px, regular"
+  ],
+  "spacingGuidance": [
+    "Nav height: 56-72px",
+    "Link gap: 24-32px horizontal between items",
+    "Dropdown padding: 8-12px vertical per item"
+  ],
+  "commonMistakes": [
+    "Too many items causing cognitive overload",
+    "No mobile-responsive behavior",
+    "Active state indistinguishable from inactive",
+    "Dropdown menus that close too quickly on hover"
+  ],
+  "qualityChecklist": [
+    "Current page is clearly indicated in navigation",
+    "Navigation is accessible via keyboard",
+    "Mobile menu opens and closes smoothly",
+    "Logo links to home page"
+  ]
+}

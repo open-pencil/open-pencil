@@ -1,0 +1,48 @@
+{
+  "category": "psychology",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Hick's Law",
+      "description": "Decision time increases with the number of choices presented.",
+      "application": "Limit visible options; use progressive disclosure for complex choices.",
+      "example": "A pricing page with 3 tiers instead of 7 plans.",
+      "anti_pattern": "A navigation menu with 20+ top-level items."
+    },
+    {
+      "name": "Fitts's Law",
+      "description": "The time to reach a target depends on its size and distance.",
+      "application": "Make primary actions large and place them near the user's current focus.",
+      "example": "Large CTA button placed directly below the value proposition text.",
+      "anti_pattern": "A tiny 'Submit' link in the corner of a large form."
+    },
+    {
+      "name": "Miller's Law",
+      "description": "People can hold roughly 7 (plus or minus 2) items in working memory.",
+      "application": "Chunk information into groups of 5-9 related items.",
+      "example": "Navigation with 5 main categories, each with subcategories.",
+      "anti_pattern": "A flat list of 15 ungrouped settings on one page."
+    },
+    {
+      "name": "Von Restorff Effect",
+      "description": "Distinct items in a group are more memorable.",
+      "application": "Make the desired action visually distinct from alternatives.",
+      "example": "One filled primary button among outlined secondary buttons.",
+      "anti_pattern": "All action buttons styled identically, none standing out."
+    },
+    {
+      "name": "Serial Position Effect",
+      "description": "People remember the first and last items in a series best.",
+      "application": "Place the most important items at the beginning and end of lists.",
+      "example": "Most used nav items first and last in the navigation bar.",
+      "anti_pattern": "Burying the most important feature in the middle of a long menu."
+    },
+    {
+      "name": "Aesthetic-Usability Effect",
+      "description": "Users perceive aesthetically pleasing designs as more usable.",
+      "application": "Invest in visual polish; it directly impacts perceived usability.",
+      "example": "Well-styled form with subtle shadows and smooth transitions.",
+      "anti_pattern": "A functional but visually raw interface with no styling attention."
+    }
+  ]
+}

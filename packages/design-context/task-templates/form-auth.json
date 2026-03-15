@@ -1,0 +1,42 @@
+{
+  "taskType": "form-auth",
+  "guidelines": [
+    "Keep the form minimal: only essential fields",
+    "Provide clear error feedback inline with each field",
+    "Include social login options if applicable",
+    "Show password visibility toggle and strength indicator"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "horizontal",
+    "children": ["brand-panel", "form-panel"]
+  },
+  "colorGuidance": [
+    "Clean white or light form panel",
+    "Brand colors on the secondary panel or background",
+    "Error states in red, success in green"
+  ],
+  "typographyGuidance": [
+    "Form title: 24-32px, bold",
+    "Labels: 14px, medium weight",
+    "Input text: 16px, regular",
+    "Helper text: 12-14px, muted"
+  ],
+  "spacingGuidance": [
+    "16-24px gap between form fields",
+    "32px gap between field group and submit button",
+    "4-8px gap between label and input"
+  ],
+  "commonMistakes": [
+    "Too many fields on the initial sign-up form",
+    "No inline validation feedback",
+    "Forgot password link hard to find",
+    "No indication of password requirements before submission"
+  ],
+  "qualityChecklist": [
+    "Tab order is logical through all form fields",
+    "Error messages are specific and actionable",
+    "Form works with password managers",
+    "Submit button is clearly the primary action"
+  ]
+}

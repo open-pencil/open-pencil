@@ -1,0 +1,42 @@
+{
+  "taskType": "profile-page",
+  "guidelines": [
+    "Display user identity clearly: avatar, name, and role/bio",
+    "Organize profile content into logical tabs or sections",
+    "Provide easy access to edit profile actions",
+    "Show relevant activity or stats"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["profile-header", "profile-stats", "profile-tabs", "profile-content"]
+  },
+  "colorGuidance": [
+    "Neutral background with a banner or accent header area",
+    "Avatar with a subtle border or ring in brand color",
+    "Tab active indicator in brand accent"
+  ],
+  "typographyGuidance": [
+    "Username: 24-28px, bold",
+    "Bio/role: 14-16px, regular, muted",
+    "Stats numbers: 20-24px, bold",
+    "Stats labels: 12-14px, muted"
+  ],
+  "spacingGuidance": [
+    "Avatar size: 80-120px",
+    "24-32px gap between header and content",
+    "Profile header padding: 32-48px"
+  ],
+  "commonMistakes": [
+    "Avatar too small to recognize the person",
+    "No empty states for profile sections with no content",
+    "Edit button hard to find or missing",
+    "Inconsistent layout between own profile and other profiles"
+  ],
+  "qualityChecklist": [
+    "Profile loads gracefully with skeleton states",
+    "Edit actions are clearly accessible to the profile owner",
+    "Content tabs load without full page reload",
+    "Profile works with long names and bios"
+  ]
+}

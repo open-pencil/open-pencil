@@ -1,0 +1,41 @@
+{
+  "taskType": "empty-state",
+  "guidelines": [
+    "Clearly communicate why the area is empty",
+    "Provide a constructive next action",
+    "Use illustration or icon to soften the empty feeling",
+    "Keep the message encouraging and helpful"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["illustration", "title", "description", "action-button"]
+  },
+  "colorGuidance": [
+    "Muted, friendly colors for illustrations",
+    "Primary brand color for the action button",
+    "Light neutral background to maintain page consistency"
+  ],
+  "typographyGuidance": [
+    "Title: 20-24px, medium or bold",
+    "Description: 14-16px, regular, muted color",
+    "Action button text: 14-16px, medium"
+  ],
+  "spacingGuidance": [
+    "Center the content vertically and horizontally",
+    "16-24px gaps between elements",
+    "Illustration size: 120-200px"
+  ],
+  "commonMistakes": [
+    "Generic 'No data' message with no guidance",
+    "Missing call-to-action",
+    "Illustration that does not match the brand style",
+    "Empty state that looks like a broken page"
+  ],
+  "qualityChecklist": [
+    "Message explains the empty state clearly",
+    "There is an actionable next step",
+    "Visual style matches the rest of the application",
+    "Empty state is tested for different scenarios (new user, no results, error)"
+  ]
+}

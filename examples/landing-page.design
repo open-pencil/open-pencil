@@ -1,0 +1,110 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "name": "Landing Page",
+    "version": "1.0.0",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "description": "A simple product landing page with hero section."
+  },
+  "variables": [
+    { "name": "primary", "value": "#3b82f6", "type": "color" },
+    { "name": "text-primary", "value": "#0f172a", "type": "color" },
+    { "name": "text-muted", "value": "#64748b", "type": "color" },
+    { "name": "bg", "value": "#ffffff", "type": "color" }
+  ],
+  "children": [
+    {
+      "id": "frame-page",
+      "type": "frame",
+      "name": "Page",
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 900,
+      "layout": "vertical",
+      "fill": [{ "type": "solid", "color": "$bg" }],
+      "children": [
+        {
+          "id": "frame-nav",
+          "type": "frame",
+          "name": "Navigation",
+          "x": 0,
+          "y": 0,
+          "width": 1440,
+          "height": 64,
+          "layout": "horizontal",
+          "padding": { "top": 16, "right": 64, "bottom": 16, "left": 64 },
+          "children": [
+            {
+              "id": "text-logo",
+              "type": "text",
+              "name": "Logo",
+              "x": 0,
+              "y": 0,
+              "width": 120,
+              "height": 32,
+              "content": "Acme",
+              "fontSize": 24,
+              "fontFamily": "Inter",
+              "fontWeight": 700
+            }
+          ]
+        },
+        {
+          "id": "frame-hero",
+          "type": "frame",
+          "name": "Hero",
+          "x": 0,
+          "y": 64,
+          "width": 1440,
+          "height": 600,
+          "layout": "vertical",
+          "gap": 24,
+          "padding": { "top": 120, "right": 320, "bottom": 120, "left": 320 },
+          "children": [
+            {
+              "id": "text-headline",
+              "type": "text",
+              "name": "Headline",
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 72,
+              "content": "Build better products, faster",
+              "fontSize": 56,
+              "fontFamily": "Inter",
+              "fontWeight": 800,
+              "textAlign": "center"
+            },
+            {
+              "id": "text-subtext",
+              "type": "text",
+              "name": "Subtext",
+              "x": 0,
+              "y": 0,
+              "width": 600,
+              "height": 48,
+              "content": "The modern platform for teams who ship.",
+              "fontSize": 20,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "textAlign": "center"
+            },
+            {
+              "id": "rect-cta",
+              "type": "rectangle",
+              "name": "CTA Button",
+              "x": 0,
+              "y": 0,
+              "width": 200,
+              "height": 48,
+              "cornerRadius": 8,
+              "fill": [{ "type": "solid", "color": "$primary" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

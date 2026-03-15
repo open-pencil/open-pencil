@@ -1,0 +1,15 @@
+{
+  "category": "e-commerce",
+  "description": "Design references and conventions for e-commerce and online shopping interfaces.",
+  "patterns": [
+    "Product grid with image, title, price, and rating",
+    "Filter sidebar with faceted search",
+    "Product detail page with gallery, description, and add-to-cart",
+    "Shopping cart with item list, quantities, and total",
+    "Multi-step checkout flow with progress indicator",
+    "Order confirmation with summary and next steps"
+  ],
+  "colorApproach": "Minimal color palette; let product images dominate. Strong accent for buy/cart actions.",
+  "typographyApproach": "Clear pricing typography, scannable product titles, readable descriptions.",
+  "exampleApps": ["Shopify storefronts", "Apple Store", "Nike.com", "Gumroad"]
+}

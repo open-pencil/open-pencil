@@ -1,0 +1,62 @@
+{
+  "category": "accessibility",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Color Contrast",
+      "description": "Ensure a minimum contrast ratio of 4.5:1 for normal text, 3:1 for large text.",
+      "application": "Verify all text-background combinations meet WCAG AA standards.",
+      "example": "Body text #333333 on background #ffffff provides 12.6:1 contrast ratio.",
+      "anti_pattern": "Placeholder text in #cccccc on #ffffff (1.6:1 ratio)."
+    },
+    {
+      "name": "Focus Indicators",
+      "description": "All interactive elements must have visible focus indicators.",
+      "application": "Use outline or ring styles for keyboard focus states.",
+      "example": "2px blue outline offset by 2px on focused buttons and links.",
+      "anti_pattern": "Using outline: none without providing an alternative focus style."
+    },
+    {
+      "name": "Text Alternatives",
+      "description": "Provide text alternatives for non-text content.",
+      "application": "Add alt text for images, labels for icons, captions for media.",
+      "example": "Decorative images with empty alt, informative images with descriptive alt.",
+      "anti_pattern": "Icon-only buttons with no accessible label or tooltip."
+    },
+    {
+      "name": "Keyboard Navigation",
+      "description": "All functionality must be accessible via keyboard alone.",
+      "application": "Ensure tab order follows visual order; provide keyboard shortcuts.",
+      "example": "Modal dialogs that trap focus and can be closed with Escape key.",
+      "anti_pattern": "Dropdown menus that only open on mouse hover with no keyboard alternative."
+    },
+    {
+      "name": "Error Identification",
+      "description": "Clearly identify and describe errors in form inputs.",
+      "application": "Use color, icon, and text to communicate error states.",
+      "example": "Red border, error icon, and descriptive message below the invalid field.",
+      "anti_pattern": "Only changing the input border to red without any error message."
+    },
+    {
+      "name": "Motion and Animation",
+      "description": "Respect user preferences for reduced motion.",
+      "application": "Provide a reduced-motion alternative for all animations.",
+      "example": "Fade transitions that become instant transitions when prefers-reduced-motion is set.",
+      "anti_pattern": "Auto-playing animations that cannot be paused or disabled."
+    },
+    {
+      "name": "Readable Font Sizes",
+      "description": "Minimum font size of 14px for body text, 12px absolute minimum for labels.",
+      "application": "Never use font sizes below 12px for any readable content.",
+      "example": "Body text at 16px, secondary text at 14px, small labels at 12px.",
+      "anti_pattern": "Using 10px font size for important information like prices or dates."
+    },
+    {
+      "name": "Touch Target Spacing",
+      "description": "Maintain at least 8px spacing between adjacent touch targets.",
+      "application": "Add sufficient gaps between clickable items on mobile layouts.",
+      "example": "List items with 8px vertical gap between each tappable row.",
+      "anti_pattern": "Adjacent buttons touching each other with no gap, causing mis-taps."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "name": "Hello World",
+    "version": "1.0.0",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "description": "A minimal hello world design."
+  },
+  "children": [
+    {
+      "id": "frame-root",
+      "type": "frame",
+      "name": "Root",
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 300,
+      "layout": "vertical",
+      "gap": 16,
+      "padding": { "top": 32, "right": 32, "bottom": 32, "left": 32 },
+      "fill": [{ "type": "solid", "color": "#ffffff" }],
+      "children": [
+        {
+          "id": "text-hello",
+          "type": "text",
+          "name": "Greeting",
+          "x": 0,
+          "y": 0,
+          "width": 336,
+          "height": 48,
+          "content": "Hello, World!",
+          "fontSize": 32,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "textAlign": "center"
+        }
+      ]
+    }
+  ]
+}

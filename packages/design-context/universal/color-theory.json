@@ -1,0 +1,55 @@
+{
+  "category": "color-theory",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "60-30-10 Rule",
+      "description": "Use a dominant color (60%), secondary (30%), and accent (10%).",
+      "application": "Background as dominant, surfaces as secondary, CTAs as accent.",
+      "example": "White background (60%), light gray cards (30%), blue buttons (10%).",
+      "anti_pattern": "Equal distribution of 5 bright colors throughout the UI."
+    },
+    {
+      "name": "Semantic Colors",
+      "description": "Assign consistent meaning to colors: success, warning, error, info.",
+      "application": "Green for success, amber for warning, red for error, blue for info.",
+      "example": "Green checkmarks for completed items, red badges for errors.",
+      "anti_pattern": "Using red for both errors and primary actions, creating confusion."
+    },
+    {
+      "name": "Color Accessibility",
+      "description": "Never use color alone to convey information.",
+      "application": "Pair color indicators with icons, text, or patterns.",
+      "example": "Error states using red color plus an error icon and descriptive text.",
+      "anti_pattern": "A form where invalid fields only change border color with no text feedback."
+    },
+    {
+      "name": "Neutral Palette",
+      "description": "Build a comprehensive neutral scale for text, borders, and backgrounds.",
+      "application": "Create 8-10 shades from near-white to near-black.",
+      "example": "Neutrals from #fafafa through #737373 to #171717.",
+      "anti_pattern": "Using pure #000000 and #ffffff only, with no intermediate shades."
+    },
+    {
+      "name": "Color Temperature",
+      "description": "Keep color temperature consistent within a palette.",
+      "application": "Warm-tinted neutrals with warm accents, or cool with cool.",
+      "example": "Warm grays (#f5f0eb) paired with warm accent colors (#e86833).",
+      "anti_pattern": "Mixing cool blue-grays with warm orange-browns randomly."
+    },
+    {
+      "name": "Contrast Ratios",
+      "description": "Meet WCAG AA minimum contrast ratios: 4.5:1 for text, 3:1 for large text.",
+      "application": "Verify all text-background combinations with a contrast checker.",
+      "example": "#595959 text on #ffffff background (7.0:1 ratio).",
+      "anti_pattern": "#999999 text on #ffffff background (2.8:1 ratio, fails AA)."
+    },
+    {
+      "name": "Dark Mode Considerations",
+      "description": "Invert the luminance hierarchy, not just the colors, for dark themes.",
+      "application": "Use elevated surfaces instead of shadows; reduce saturation for comfort.",
+      "example": "Dark background #121212 with surfaces at #1e1e1e, #2a2a2a, #363636.",
+      "anti_pattern": "Simply inverting all colors, resulting in eye-straining neon on dark backgrounds."
+    }
+  ]
+}

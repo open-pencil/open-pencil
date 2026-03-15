@@ -1,0 +1,41 @@
+{
+  "taskType": "modal-dialog",
+  "guidelines": [
+    "Keep modal content focused on a single task",
+    "Provide a clear close mechanism (X button, overlay click, Escape key)",
+    "Use a dimmed overlay to focus attention on the modal",
+    "Place primary action on the right, secondary on the left"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["modal-header", "modal-body", "modal-footer"]
+  },
+  "colorGuidance": [
+    "White modal surface on a dark semi-transparent overlay",
+    "Destructive confirmations: red primary button",
+    "Standard actions: brand accent primary button"
+  ],
+  "typographyGuidance": [
+    "Modal title: 18-20px, bold",
+    "Body text: 14-16px, regular",
+    "Button text: 14px, medium"
+  ],
+  "spacingGuidance": [
+    "Modal width: 400-560px for simple dialogs, up to 720px for complex ones",
+    "Internal padding: 24-32px",
+    "16-24px gap between header, body, and footer"
+  ],
+  "commonMistakes": [
+    "Modal too large, covering the entire screen unnecessarily",
+    "No way to close the modal via keyboard (Escape key)",
+    "Stacking multiple modals on top of each other",
+    "Long forms inside modals that should be full pages"
+  ],
+  "qualityChecklist": [
+    "Focus is trapped inside the modal when open",
+    "Escape key closes the modal",
+    "Overlay click closes non-critical modals",
+    "Action buttons are clearly labeled"
+  ]
+}

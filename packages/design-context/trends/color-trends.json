@@ -1,0 +1,36 @@
+{
+  "category": "color-trends",
+  "version": "1.0.0",
+  "trends": [
+    {
+      "name": "Muted Pastels",
+      "description": "Desaturated pastel palettes that feel modern and approachable.",
+      "colors": ["#E8D5C4", "#C4D4E0", "#D4C4E0", "#C4E0D4"],
+      "usage": "Backgrounds, cards, and section dividers for a soft aesthetic."
+    },
+    {
+      "name": "Vibrant Gradients",
+      "description": "Bold multi-color gradients used as backgrounds and accents.",
+      "colors": ["#667eea", "#764ba2", "#f093fb", "#f5576c"],
+      "usage": "Hero backgrounds, CTAs, and brand identity elements."
+    },
+    {
+      "name": "Dark Mode Neutrals",
+      "description": "Refined dark palette with carefully elevated surface colors.",
+      "colors": ["#09090b", "#18181b", "#27272a", "#3f3f46"],
+      "usage": "Dark theme backgrounds, surfaces, and borders."
+    },
+    {
+      "name": "Monochromatic with Accent",
+      "description": "Grayscale or single-hue palette with one bold accent color.",
+      "colors": ["#fafafa", "#e5e5e5", "#737373", "#171717", "#3b82f6"],
+      "usage": "Clean interfaces where the accent color carries all the visual weight."
+    },
+    {
+      "name": "Nature-Inspired",
+      "description": "Warm earth tones and organic color palettes.",
+      "colors": ["#292524", "#78716c", "#d6d3d1", "#fef3c7", "#84cc16"],
+      "usage": "Wellness, sustainability, and lifestyle brands."
+    }
+  ]
+}

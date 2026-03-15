@@ -1,0 +1,17 @@
+{
+  "name": "Floating Action Button",
+  "category": "component",
+  "popularity": "medium",
+  "description": "A prominent circular button floating above the UI, representing the primary action on a screen, following Material Design conventions.",
+  "when_to_use": [
+    "Apps with a single primary creation action (compose, add)",
+    "Mobile interfaces where screen space is limited",
+    "Content lists where creating new items is the main action",
+    "Chat applications (new message)"
+  ],
+  "when_not_to_use": [
+    "Desktop applications with toolbar space",
+    "Pages with multiple equally important actions",
+    "Destructive actions (delete, cancel)"
+  ]
+}

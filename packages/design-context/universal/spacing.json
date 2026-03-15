@@ -1,0 +1,48 @@
+{
+  "category": "spacing",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Base Unit System",
+      "description": "Use multiples of a base unit (4px or 8px) for all spacing values.",
+      "application": "Padding, margins, and gaps should be 4, 8, 12, 16, 24, 32, 48, 64px.",
+      "example": "Card padding of 24px, gap between cards of 16px, section margin of 64px.",
+      "anti_pattern": "Using arbitrary spacing like 13px, 17px, 22px with no system."
+    },
+    {
+      "name": "Density Levels",
+      "description": "Define compact, default, and comfortable density variants.",
+      "application": "Use compact density for data-heavy views, comfortable for marketing.",
+      "example": "Table rows at 32px height (compact), 40px (default), 56px (comfortable).",
+      "anti_pattern": "Using the same loose spacing for both data tables and marketing pages."
+    },
+    {
+      "name": "Component Internal Spacing",
+      "description": "Maintain consistent padding within components of the same type.",
+      "application": "All buttons use the same vertical and horizontal padding ratio.",
+      "example": "Buttons with 12px vertical, 24px horizontal padding consistently.",
+      "anti_pattern": "Some buttons with 8px/16px padding, others with 14px/20px."
+    },
+    {
+      "name": "Section Separation",
+      "description": "Use larger spacing to separate major content sections.",
+      "application": "Section gaps should be 2-4x the intra-section spacing.",
+      "example": "Items within a section at 16px gap, sections separated by 64px.",
+      "anti_pattern": "Equal 16px spacing everywhere, making sections blend together."
+    },
+    {
+      "name": "Touch Target Sizes",
+      "description": "Interactive elements must be at least 44x44px for touch devices.",
+      "application": "Buttons, links, and controls should meet minimum touch target size.",
+      "example": "Icon buttons with 44px minimum touch area even if icon is 24px.",
+      "anti_pattern": "Small 24px icon buttons that are difficult to tap on mobile."
+    },
+    {
+      "name": "Responsive Spacing",
+      "description": "Reduce spacing proportionally on smaller viewports.",
+      "application": "Desktop padding of 64px can become 32px on tablet, 16px on mobile.",
+      "example": "Hero section padding: 96px desktop, 48px tablet, 24px mobile.",
+      "anti_pattern": "Maintaining 96px padding on mobile, wasting precious screen real estate."
+    }
+  ]
+}

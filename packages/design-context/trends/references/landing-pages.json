@@ -1,0 +1,15 @@
+{
+  "category": "landing-pages",
+  "description": "Design references and conventions for marketing and product landing pages.",
+  "patterns": [
+    "Hero section with headline, subtext, and CTA",
+    "Feature grid or bento layout",
+    "Social proof section (logos, testimonials, stats)",
+    "Pricing comparison table",
+    "FAQ accordion section",
+    "Final CTA section before footer"
+  ],
+  "colorApproach": "Bold brand colors for CTAs, neutral backgrounds, gradient accents for premium feel.",
+  "typographyApproach": "Large display fonts for headlines (48-72px), comfortable body text (18-20px).",
+  "exampleApps": ["Stripe.com", "Linear.app", "Vercel.com", "Tailwind CSS"]
+}

@@ -1,0 +1,41 @@
+{
+  "category": "anti-patterns",
+  "version": "1.0.0",
+  "patterns": [
+    {
+      "name": "Mystery Meat Navigation",
+      "description": "Icon-only navigation without labels or tooltips, forcing users to guess what each icon does.",
+      "fix": "Add text labels or persistent tooltips to all navigation icons."
+    },
+    {
+      "name": "Infinite Scroll Without Position",
+      "description": "Endless scrolling content with no way to know current position or return to a specific point.",
+      "fix": "Add a scroll position indicator, back-to-top button, or pagination option."
+    },
+    {
+      "name": "Modal Overload",
+      "description": "Stacking multiple modals or using modals for content that should be inline.",
+      "fix": "Use inline expansion, side panels, or dedicated pages for complex flows."
+    },
+    {
+      "name": "Carousel Blindness",
+      "description": "Auto-rotating carousels that users ignore because they have learned to dismiss them.",
+      "fix": "Use static content displays or user-controlled galleries instead."
+    },
+    {
+      "name": "False Affordance",
+      "description": "Elements styled like buttons or links that are not interactive, or interactive elements that do not look clickable.",
+      "fix": "Ensure visual styling matches interactivity: buttons look clickable, static text does not."
+    },
+    {
+      "name": "Form Field Overload",
+      "description": "Showing all form fields at once in a long intimidating form.",
+      "fix": "Use progressive disclosure, multi-step forms, or smart defaults to reduce visible fields."
+    },
+    {
+      "name": "Notification Fatigue",
+      "description": "Too many notifications, badges, and alerts competing for attention simultaneously.",
+      "fix": "Prioritize notifications, batch low-priority ones, and let users control frequency."
+    }
+  ]
+}

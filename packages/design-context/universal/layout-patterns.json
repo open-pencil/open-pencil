@@ -1,0 +1,55 @@
+{
+  "category": "layout-patterns",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Grid System",
+      "description": "Use a 12-column grid for flexible and consistent layouts.",
+      "application": "Constrain content to a max-width container with column-based sizing.",
+      "example": "1200px container with 12 columns, 24px gutters, sidebar spanning 3 columns.",
+      "anti_pattern": "Absolute positioning of elements without any grid alignment."
+    },
+    {
+      "name": "Content Hierarchy Zones",
+      "description": "Divide the viewport into clear zones: navigation, content, and actions.",
+      "application": "Keep navigation at the top or side, content in the center, actions contextual.",
+      "example": "Top nav bar, left sidebar for navigation, main content area, right panel for details.",
+      "anti_pattern": "Mixing navigation, content, and actions together in one undifferentiated area."
+    },
+    {
+      "name": "Responsive Breakpoints",
+      "description": "Design for key breakpoints: mobile (375), tablet (768), desktop (1024+).",
+      "application": "Stack layouts vertically on mobile, side-by-side on desktop.",
+      "example": "Two-column layout on desktop collapsing to single column on mobile.",
+      "anti_pattern": "Only designing for desktop and ignoring mobile viewport entirely."
+    },
+    {
+      "name": "Z-Pattern and F-Pattern",
+      "description": "Arrange content following natural eye scanning patterns.",
+      "application": "Place key information along the Z or F path for Western reading patterns.",
+      "example": "Logo top-left, nav top-right, hero content center-left, CTA center-right.",
+      "anti_pattern": "Important content placed bottom-right where eyes rarely reach first."
+    },
+    {
+      "name": "Container Queries",
+      "description": "Design components that adapt to their container, not just the viewport.",
+      "application": "Cards should look good in a sidebar (narrow) or main content (wide).",
+      "example": "A card component that stacks vertically when narrow, goes horizontal when wide.",
+      "anti_pattern": "Components that only work at one specific width and break elsewhere."
+    },
+    {
+      "name": "Sticky Elements",
+      "description": "Use sticky positioning for persistently needed elements like navigation.",
+      "application": "Stick navigation headers and action bars while scrolling content.",
+      "example": "A top navigation bar that stays visible when scrolling down the page.",
+      "anti_pattern": "Making everything sticky, reducing the available content area significantly."
+    },
+    {
+      "name": "Overflow Handling",
+      "description": "Plan for content overflow: truncation, scrolling, or expansion.",
+      "application": "Define how long text, many items, or large images behave in containers.",
+      "example": "Long usernames truncated with ellipsis in a fixed-width sidebar.",
+      "anti_pattern": "Text overflowing its container and overlapping adjacent elements."
+    }
+  ]
+}

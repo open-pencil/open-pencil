@@ -1,0 +1,41 @@
+{
+  "taskType": "card-component",
+  "guidelines": [
+    "Cards should be self-contained units of content",
+    "Maintain consistent card sizing within the same grid",
+    "Include a clear visual hierarchy within the card",
+    "Make the entire card clickable when it leads to a detail view"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["card-image", "card-content", "card-actions"]
+  },
+  "colorGuidance": [
+    "White or slightly elevated surface color",
+    "Subtle border or shadow for card separation",
+    "Category or status indicated with small colored badges"
+  ],
+  "typographyGuidance": [
+    "Card title: 16-18px, medium or bold",
+    "Card description: 14px, regular, muted, 2-3 lines max",
+    "Metadata: 12-13px, muted"
+  ],
+  "spacingGuidance": [
+    "Card padding: 16-24px",
+    "Gap between cards in grid: 16-24px",
+    "8-12px gap between internal elements"
+  ],
+  "commonMistakes": [
+    "Inconsistent card heights in the same row",
+    "Too much content crammed into a small card",
+    "Missing hover or focus state for interactive cards",
+    "Images with inconsistent aspect ratios"
+  ],
+  "qualityChecklist": [
+    "All cards in a row are the same height",
+    "Content truncation is handled gracefully",
+    "Interactive cards have hover and focus states",
+    "Card layout is responsive"
+  ]
+}

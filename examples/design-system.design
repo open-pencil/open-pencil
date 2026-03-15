@@ -1,0 +1,108 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "name": "Design System",
+    "version": "1.0.0",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "description": "A design system with reusable components and variables."
+  },
+  "designContext": {
+    "brand": {
+      "name": "Acme Corp",
+      "personality": "professional, modern, trustworthy"
+    },
+    "style": {
+      "borderRadius": "8px",
+      "elevation": "subtle shadows"
+    },
+    "constraints": ["WCAG AA contrast", "8px spacing grid"],
+    "audience": ["B2B SaaS users", "Developers"],
+    "rules": ["Use Inter for all UI text", "Maximum 3 font weights per page"]
+  },
+  "variables": [
+    { "name": "primary", "value": "#2563eb", "type": "color", "description": "Primary brand color" },
+    { "name": "primary-hover", "value": "#1d4ed8", "type": "color" },
+    { "name": "secondary", "value": "#64748b", "type": "color" },
+    { "name": "success", "value": "#16a34a", "type": "color" },
+    { "name": "warning", "value": "#d97706", "type": "color" },
+    { "name": "error", "value": "#dc2626", "type": "color" },
+    { "name": "bg", "value": "#ffffff", "type": "color" },
+    { "name": "text", "value": "#0f172a", "type": "color" },
+    { "name": "text-muted", "value": "#64748b", "type": "color" },
+    { "name": "border", "value": "#e2e8f0", "type": "color" },
+    { "name": "radius-sm", "value": 4, "type": "number" },
+    { "name": "radius-md", "value": 8, "type": "number" },
+    { "name": "radius-lg", "value": 12, "type": "number" }
+  ],
+  "themes": {
+    "dark": {
+      "bg": "#0f172a",
+      "text": "#f1f5f9",
+      "text-muted": "#94a3b8",
+      "border": "#334155"
+    }
+  },
+  "children": [
+    {
+      "id": "comp-button-primary",
+      "type": "frame",
+      "name": "Button / Primary",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 44,
+      "cornerRadius": "$radius-md",
+      "layout": "horizontal",
+      "padding": { "top": 12, "right": 24, "bottom": 12, "left": 24 },
+      "fill": [{ "type": "solid", "color": "$primary" }],
+      "children": [
+        {
+          "id": "text-btn-label",
+          "type": "text",
+          "name": "Label",
+          "x": 0,
+          "y": 0,
+          "width": 112,
+          "height": 20,
+          "content": "Button",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "textAlign": "center"
+        }
+      ]
+    },
+    {
+      "id": "comp-input",
+      "type": "frame",
+      "name": "Input / Default",
+      "reusable": true,
+      "x": 0,
+      "y": 60,
+      "width": 320,
+      "height": 44,
+      "cornerRadius": "$radius-md",
+      "layout": "horizontal",
+      "padding": { "top": 12, "right": 16, "bottom": 12, "left": 16 },
+      "stroke": [{ "color": "$border", "width": 1, "style": "solid", "position": "inside" }],
+      "fill": [{ "type": "solid", "color": "$bg" }],
+      "children": [
+        {
+          "id": "text-input-placeholder",
+          "type": "text",
+          "name": "Placeholder",
+          "x": 0,
+          "y": 0,
+          "width": 288,
+          "height": 20,
+          "content": "Enter text...",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 400
+        }
+      ]
+    }
+  ]
+}

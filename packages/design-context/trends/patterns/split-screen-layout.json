@@ -1,0 +1,17 @@
+{
+  "name": "Split Screen Layout",
+  "category": "layout",
+  "popularity": "medium",
+  "description": "A layout dividing the viewport into two equal or proportional halves, often pairing an image or illustration with text content.",
+  "when_to_use": [
+    "Login and signup pages (form + branding)",
+    "Product comparison views",
+    "Before/after showcases",
+    "Landing page hero sections with image and text"
+  ],
+  "when_not_to_use": [
+    "Mobile viewports where stacking is preferred",
+    "Content that requires full-width display",
+    "Complex multi-section layouts"
+  ]
+}

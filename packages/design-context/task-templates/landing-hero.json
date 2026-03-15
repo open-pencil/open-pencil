@@ -1,0 +1,41 @@
+{
+  "taskType": "landing-hero",
+  "guidelines": [
+    "Hero should immediately communicate the product value proposition",
+    "Use a clear visual hierarchy: headline > subtext > CTA",
+    "Include a single primary CTA with an optional secondary action",
+    "Consider adding a visual element (illustration, screenshot, or video)"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["headline", "subtext", "cta-group", "hero-visual"]
+  },
+  "colorGuidance": [
+    "Use brand primary color for the CTA button",
+    "Keep background neutral or use a subtle gradient",
+    "Ensure headline has maximum contrast against background"
+  ],
+  "typographyGuidance": [
+    "Headline: 48-72px, bold weight",
+    "Subtext: 18-24px, regular weight, muted color",
+    "CTA text: 16-18px, medium or bold weight"
+  ],
+  "spacingGuidance": [
+    "Generous vertical padding: 80-120px top and bottom",
+    "16-24px gap between headline and subtext",
+    "32-48px gap between subtext and CTA"
+  ],
+  "commonMistakes": [
+    "Too many CTAs competing for attention",
+    "Headline too long or not benefit-oriented",
+    "Missing visual contrast between hero and next section",
+    "Forgetting mobile responsiveness for large headlines"
+  ],
+  "qualityChecklist": [
+    "Headline clearly states the value proposition",
+    "CTA stands out visually from other elements",
+    "Layout works on both mobile and desktop viewports",
+    "Text is readable against the background"
+  ]
+}

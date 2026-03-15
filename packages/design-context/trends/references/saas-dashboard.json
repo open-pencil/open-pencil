@@ -1,0 +1,14 @@
+{
+  "category": "saas-dashboard",
+  "description": "Design references and conventions for SaaS dashboard interfaces.",
+  "patterns": [
+    "Collapsible sidebar navigation with icon + label",
+    "Top bar with search, notifications, and user avatar",
+    "Card-based KPI metrics with sparklines",
+    "Data tables with sorting, filtering, and pagination",
+    "Activity feeds and recent actions timeline"
+  ],
+  "colorApproach": "Neutral base with a single brand accent for primary actions. Use semantic colors for status indicators.",
+  "typographyApproach": "Clean sans-serif (Inter, SF Pro) with clear size hierarchy. Monospace for data values.",
+  "exampleApps": ["Linear", "Vercel Dashboard", "Stripe Dashboard", "Notion"]
+}

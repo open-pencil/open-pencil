@@ -1,0 +1,17 @@
+{
+  "name": "Bottom Navigation",
+  "category": "component",
+  "popularity": "high",
+  "description": "A navigation bar fixed to the bottom of the screen on mobile devices, providing thumb-friendly access to primary app sections.",
+  "when_to_use": [
+    "Mobile-first applications with 3-5 main sections",
+    "Social and content consumption apps",
+    "E-commerce mobile experiences",
+    "Apps requiring quick switching between views"
+  ],
+  "when_not_to_use": [
+    "Desktop-only applications",
+    "Apps with more than 5 primary destinations",
+    "Single-purpose tools with no need for section switching"
+  ]
+}

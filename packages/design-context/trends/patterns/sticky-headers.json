@@ -1,0 +1,17 @@
+{
+  "name": "Sticky Headers",
+  "category": "component",
+  "popularity": "high",
+  "description": "Navigation headers or table headers that remain fixed at the top of the viewport when scrolling, providing persistent access to navigation and context.",
+  "when_to_use": [
+    "Long scrolling pages with navigation",
+    "Data tables with many rows",
+    "Documentation and article pages",
+    "E-commerce product listing pages"
+  ],
+  "when_not_to_use": [
+    "Short pages that do not scroll",
+    "Full-screen immersive experiences",
+    "Interfaces where vertical space is critical (small mobile screens)"
+  ]
+}

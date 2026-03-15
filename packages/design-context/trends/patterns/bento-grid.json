@@ -1,0 +1,17 @@
+{
+  "name": "Bento Grid",
+  "category": "layout",
+  "popularity": "high",
+  "description": "A grid layout inspired by Japanese bento boxes, featuring cards of varying sizes arranged in an asymmetric yet balanced grid pattern.",
+  "when_to_use": [
+    "Feature showcases and product highlights",
+    "Dashboard overview sections",
+    "Portfolio and gallery layouts",
+    "SaaS landing page feature sections"
+  ],
+  "when_not_to_use": [
+    "Long-form text content",
+    "Sequential or step-by-step processes",
+    "Data-heavy tables or lists"
+  ]
+}

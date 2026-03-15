@@ -1,0 +1,17 @@
+{
+  "name": "Glassmorphism",
+  "category": "animation",
+  "popularity": "high",
+  "description": "A design style featuring frosted glass effects with background blur, transparency, and subtle borders to create depth and layering.",
+  "when_to_use": [
+    "Card overlays on vibrant backgrounds",
+    "Navigation bars and floating menus",
+    "Modal dialogs and popups",
+    "Premium or modern brand aesthetics"
+  ],
+  "when_not_to_use": [
+    "Performance-critical mobile interfaces",
+    "Text-heavy content areas where readability is paramount",
+    "Accessibility-focused applications requiring high contrast"
+  ]
+}

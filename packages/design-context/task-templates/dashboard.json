@@ -1,0 +1,41 @@
+{
+  "taskType": "dashboard",
+  "guidelines": [
+    "Provide an at-a-glance overview of key metrics",
+    "Use cards to group related information",
+    "Include navigation for deeper exploration of data",
+    "Support data refresh and real-time updates visually"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["top-bar", "metrics-row", "charts-grid", "activity-feed"]
+  },
+  "colorGuidance": [
+    "Neutral background with white or elevated cards",
+    "Use semantic colors for status: green (up), red (down), amber (warning)",
+    "Single brand accent for primary actions"
+  ],
+  "typographyGuidance": [
+    "Metric values: 24-36px, bold, monospace or tabular figures",
+    "Metric labels: 12-14px, muted color, uppercase optional",
+    "Section headers: 18-20px, medium weight"
+  ],
+  "spacingGuidance": [
+    "16-24px gaps between metric cards",
+    "24-32px section separation",
+    "Consistent 16-24px card internal padding"
+  ],
+  "commonMistakes": [
+    "Showing too many metrics without hierarchy",
+    "Missing loading and empty states for data cards",
+    "Inconsistent card heights in the same row",
+    "No responsive behavior for the metric grid"
+  ],
+  "qualityChecklist": [
+    "Key metrics are immediately visible without scrolling",
+    "Color coding is consistent and has non-color alternatives",
+    "Cards have loading skeletons defined",
+    "Layout adapts to different screen sizes"
+  ]
+}

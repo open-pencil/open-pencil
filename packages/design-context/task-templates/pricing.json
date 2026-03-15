@@ -1,0 +1,42 @@
+{
+  "taskType": "pricing",
+  "guidelines": [
+    "Highlight the recommended plan visually",
+    "Make plan comparison easy with aligned features",
+    "Include a toggle for monthly/annual billing",
+    "Add social proof or guarantees near the CTA"
+  ],
+  "suggestedStructure": {
+    "type": "frame",
+    "layout": "vertical",
+    "children": ["section-header", "billing-toggle", "pricing-cards", "faq-section"]
+  },
+  "colorGuidance": [
+    "Highlight the recommended plan with brand accent color or elevation",
+    "Use subtle background differences to distinguish plans",
+    "Green checkmarks for included features, gray for excluded"
+  ],
+  "typographyGuidance": [
+    "Price: 36-48px, bold",
+    "Plan name: 20-24px, medium weight",
+    "Feature list: 14-16px, regular",
+    "Billing period: 14px, muted"
+  ],
+  "spacingGuidance": [
+    "Equal width cards with 16-24px gaps",
+    "32px internal padding for each pricing card",
+    "12-16px gap between feature list items"
+  ],
+  "commonMistakes": [
+    "Too many plans (more than 4) causing decision paralysis",
+    "Hidden fees or unclear feature differences",
+    "CTA button not prominent on the recommended plan",
+    "Missing enterprise or custom plan option"
+  ],
+  "qualityChecklist": [
+    "Recommended plan is visually distinct",
+    "Feature comparison is scannable",
+    "Annual savings are clearly communicated",
+    "CTA text is specific (not just 'Submit')"
+  ]
+}
