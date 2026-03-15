@@ -1,7 +1,8 @@
 import { getStepUsages, getToolLogEntries } from '@/ai/tools'
-import { buildDebugLog } from '@open-pencil/core'
+import { useEditorStore } from '@/stores/editor'
+import { buildDebugLog } from '@open-pencil/core/tools'
 
-import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core'
+import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
 import type { UIMessage } from 'ai'
 
 export interface AiOverlayEvent {
@@ -246,6 +247,23 @@ export function serializeChatLog(messages: UIMessage[]): string {
     }
   }
   sections.push('')
+
+  const store = useEditorStore()
+  const deletionLog = store.graph._deletionLog
+  if (deletionLog.length > 0) {
+    sections.push('=== NODE DELETION LOG ===')
+    sections.push(`  ${deletionLog.length} deletions recorded`)
+    const topLevel = deletionLog.filter((d) => {
+      const parent = deletionLog.find((p) => p.id === d.parentId)
+      return !parent
+    })
+    for (const d of topLevel.slice(-30)) {
+      const time = new Date(d.ts).toISOString().slice(11, 23)
+      sections.push(`  [${time}] ${d.type} "${d.name}" (${d.id}) parent=${d.parentId}`)
+      sections.push(`    ${d.stack}`)
+    }
+    sections.push('')
+  }
 
   sections.push('=== AI OVERLAY LOG ===')
   if (aiOverlayLog.length === 0) {

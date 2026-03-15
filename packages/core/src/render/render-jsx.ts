@@ -12,7 +12,7 @@ import type { SceneGraph } from '../scene-graph'
  */
 export function buildComponent(jsxString: string): () => unknown {
   const code = `
-    const h = React.createElement
+    const __h = React.createElement
     const Frame = 'frame', Text = 'text', Rectangle = 'rectangle', Ellipse = 'ellipse'
     const Line = 'line', Star = 'star', Polygon = 'polygon', Vector = 'vector'
     const Group = 'group', Section = 'section', View = 'frame', Rect = 'rectangle'
@@ -22,7 +22,7 @@ export function buildComponent(jsxString: string): () => unknown {
 
   const result = transform(code, {
     transforms: ['typescript', 'jsx'],
-    jsxPragma: 'h',
+    jsxPragma: '__h',
     production: true
   })
 

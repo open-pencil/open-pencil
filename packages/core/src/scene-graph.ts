@@ -841,9 +841,22 @@ export class SceneGraph {
     this.emitter.emit('node:reordered', nodeId, parentId, idx)
   }
 
+  _deletionLog: Array<{ id: string; name: string; type: string; parentId: string; ts: number; stack: string }> = []
+
   deleteNode(id: string): void {
     const node = this.nodes.get(id)
     if (!node || id === this.rootId) return
+
+    if (this._deletionLog.length < 200) {
+      this._deletionLog.push({
+        id,
+        name: node.name,
+        type: node.type,
+        parentId: node.parentId ?? '',
+        ts: Date.now(),
+        stack: new Error().stack?.split('\n').slice(1, 5).join(' ← ') ?? ''
+      })
+    }
 
     if (node.parentId) {
       const parent = this.nodes.get(node.parentId)

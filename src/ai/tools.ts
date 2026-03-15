@@ -77,7 +77,7 @@ export function clearToolLogEntries(): void {
 }
 
 export function createAITools(store: EditorStore) {
-  let beforeSnapshot: Map<string, SceneNode> | null = null
+  const snapshotStack: Array<{ tool: string; snapshot: Map<string, SceneNode> }> = []
 
   return toolsToAI(
     CORE_TOOLS,
@@ -85,7 +85,7 @@ export function createAITools(store: EditorStore) {
       getFigma: () => makeFigmaFromStore(store),
       onBeforeExecute: (def, args) => {
         if (def.mutates) {
-          beforeSnapshot = store.snapshotPage()
+          snapshotStack.push({ tool: def.name, snapshot: store.snapshotPage() })
         }
         const targetId = (args.replace_id ?? args.parent_id) as string | undefined
         const nodeExists = targetId ? !!store.graph.getNode(targetId) : false
@@ -128,15 +128,16 @@ export function createAITools(store: EditorStore) {
           }
           computeAllLayouts(store.graph, pageId)
           store.requestRender()
-          if (beforeSnapshot) {
-            const before = beforeSnapshot
+          const entry = snapshotStack.findLast((e) => e.tool === def.name)
+          if (entry) {
+            snapshotStack.splice(snapshotStack.indexOf(entry), 1)
+            const before = entry.snapshot
             const after = store.snapshotPage()
             store.pushUndoEntry({
               label: `AI: ${def.name}`,
               forward: () => store.restorePageFromSnapshot(after),
               inverse: () => store.restorePageFromSnapshot(before)
             })
-            beforeSnapshot = null
           }
         }
       },

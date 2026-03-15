@@ -58,7 +58,13 @@ const store = useEditorStore()
 const aiActiveIds = new Set<string>()
 
 function isValidNodeId(id: string): boolean {
-  return id.includes(':') && !id.endsWith(':')
+  if (!id.includes(':') || id.endsWith(':')) return false
+  const parts = id.split(':')
+  if (parts.length !== 2) return false
+  const [a, b] = parts
+  if (a.length === 0 || b.length === 0) return false
+  if (b.length < 2) return false
+  return store.graph.getNode(id) !== undefined
 }
 
 function collectPendingTargets(parts: unknown[]): Set<string> {
