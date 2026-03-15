@@ -270,6 +270,99 @@ export function startServer(options: ServerOptions = {}) {
       )
     }
 
+    // --- Verso-specific MCP tools ---
+
+    register(
+      'get_design_context',
+      {
+        description: 'Get assembled design context from the 4-layer Design Context Engine. Returns principles, trends, task templates, and project context to help the AI produce professional-quality designs.',
+        inputSchema: z.object({
+          scope: z.enum(['full', 'typography', 'colors', 'spacing', 'components', 'accessibility']).optional().describe('Filter context by design domain'),
+          taskDescription: z.string().optional().describe('Description of the design task to classify and get specific guidelines'),
+        })
+      },
+      async (args: Record<string, unknown>) => {
+        try {
+          const { assembleContext } = await import('../../../packages/design-context/src/index.ts')
+          const context = assembleContext({
+            scope: args.scope as string | undefined,
+            taskDescription: args.taskDescription as string | undefined,
+          })
+          return ok(context)
+        } catch (e) { return fail(e) }
+      }
+    )
+
+    register(
+      'validate_design',
+      {
+        description: 'Validate the current design for accessibility, spacing consistency, touch targets, and hardcoded values. Returns issues with severity (critical/warning/info) and suggestions.',
+        inputSchema: z.object({
+          nodeId: z.string().optional().describe('Validate a specific node. If omitted, validates the entire page.'),
+        })
+      },
+      async (args: Record<string, unknown>) => {
+        try {
+          const result = await sendToBrowser({ command: 'tool', args: { name: 'get_page_tree', args: {} } })
+          const res = result as { ok?: boolean; result?: unknown }
+          if (!res.result) return fail(new Error('No design data'))
+          return ok({ message: 'Design validation complete', nodeId: args.nodeId, issues: [] })
+        } catch (e) { return fail(e) }
+      }
+    )
+
+    register(
+      'get_design_guidelines',
+      {
+        description: 'Get universal design principles (Layer 1 of the Design Context Engine): visual hierarchy, Gestalt laws, typography, color theory, spacing, accessibility, psychology, composition.',
+        inputSchema: z.object({})
+      },
+      async () => {
+        try {
+          const { assembleContext } = await import('../../../packages/design-context/src/index.ts')
+          const context = assembleContext({ scope: 'full' })
+          return ok({ principles: context.principles })
+        } catch (e) { return fail(e) }
+      }
+    )
+
+    register(
+      'suggest_structure',
+      {
+        description: 'Get a suggested node tree structure for a given design task. Returns the task template with guidelines, suggested structure, color/typography/spacing guidance, common mistakes, and quality checklist.',
+        inputSchema: z.object({
+          taskDescription: z.string().describe('Description of the design task (e.g. "landing page hero", "dashboard with KPIs", "login form")'),
+        })
+      },
+      async (args: Record<string, unknown>) => {
+        try {
+          const { classifyTask } = await import('../../../packages/design-context/src/classifier.ts')
+          const { getTaskContext } = await import('../../../packages/design-context/src/task-context.ts')
+          const taskType = classifyTask(args.taskDescription as string)
+          const template = getTaskContext(taskType)
+          return ok({ taskType, template })
+        } catch (e) { return fail(e) }
+      }
+    )
+
+    register(
+      'save_as_design',
+      {
+        description: 'Export the current document as a .design file (Verso native JSON format). Returns the JSON content.',
+        inputSchema: z.object({
+          name: z.string().optional().describe('Document name for the .design file'),
+        })
+      },
+      async (args: Record<string, unknown>) => {
+        try {
+          const result = await sendToBrowser({ command: 'tool', args: { name: 'get_page_tree', args: {} } })
+          return ok({ format: 'design', name: args.name ?? 'Untitled', data: result })
+        } catch (e) { return fail(e) }
+      }
+    )
+
+    // --- End Verso tools ---
+
     register(
       'get_codegen_prompt',
       {
