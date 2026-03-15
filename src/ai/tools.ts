@@ -2,7 +2,6 @@ import { valibotSchema } from '@ai-sdk/valibot'
 import { tool } from 'ai'
 import * as v from 'valibot'
 
-import { aiOverlayLog } from '@/ai/chat-debug'
 import { makeFigmaFromStore } from '@/automation/figma-factory'
 import {
   CORE_TOOLS,
@@ -77,35 +76,15 @@ export function clearToolLogEntries(): void {
 }
 
 export function createAITools(store: EditorStore) {
-  const snapshotStack: Array<{ tool: string; snapshot: Map<string, SceneNode> }> = []
+  let beforeSnapshot: Map<string, SceneNode> | null = null
 
   return toolsToAI(
     CORE_TOOLS,
     {
       getFigma: () => makeFigmaFromStore(store),
-      onBeforeExecute: (def, args) => {
+      onBeforeExecute: (def) => {
         if (def.mutates) {
-          snapshotStack.push({ tool: def.name, snapshot: store.snapshotPage() })
-        }
-        const targetId = (args.replace_id ?? args.parent_id) as string | undefined
-        const nodeExists = targetId ? !!store.graph.getNode(targetId) : false
-        const rendererExists = !!store.renderer
-        aiOverlayLog.push({
-          ts: Date.now(),
-          event: 'before-execute',
-          tool: def.name,
-          state: `targetId=${targetId ?? 'none'} nodeExists=${nodeExists} renderer=${rendererExists} activeNodes=${store.renderer?._aiActiveNodes.size ?? 0}`,
-          targetId: targetId ?? ''
-        })
-        if (targetId && nodeExists) {
-          store.aiMarkActive([targetId])
-          aiOverlayLog.push({
-            ts: Date.now(),
-            event: 'mark-active',
-            tool: def.name,
-            state: `activeNodes=${store.renderer?._aiActiveNodes.size ?? 0} hasFlashes=${store.renderer?.hasActiveFlashes ?? false}`,
-            targetId
-          })
+          beforeSnapshot = store.snapshotPage()
         }
       },
       onAfterExecute: async (def) => {
@@ -128,27 +107,19 @@ export function createAITools(store: EditorStore) {
           }
           computeAllLayouts(store.graph, pageId)
           store.requestRender()
-          const entry = snapshotStack.findLast((e) => e.tool === def.name)
-          if (entry) {
-            snapshotStack.splice(snapshotStack.indexOf(entry), 1)
-            const before = entry.snapshot
+          if (beforeSnapshot) {
+            const before = beforeSnapshot
             const after = store.snapshotPage()
             store.pushUndoEntry({
               label: `AI: ${def.name}`,
               forward: () => store.restorePageFromSnapshot(after),
               inverse: () => store.restorePageFromSnapshot(before)
             })
+            beforeSnapshot = null
           }
         }
       },
       onFlashNodes: (nodeIds) => {
-        aiOverlayLog.push({
-          ts: Date.now(),
-          event: 'flash-nodes',
-          tool: '',
-          state: `clearing active=${store.renderer?._aiActiveNodes.size ?? 0} flashing=${nodeIds.length}`,
-          targetId: nodeIds.join(',')
-        })
         store.renderer?.aiClearActive()
         if (nodeIds.length > 0) {
           store.aiFlashDone(nodeIds)

@@ -2,13 +2,12 @@
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
-import { copyChatLog, aiOverlayLog } from '@/ai/chat-debug'
+import { copyChatLog } from '@/ai/chat-debug'
 import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/composables/use-chat'
-import { useEditorStore } from '@/stores/editor'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
@@ -53,76 +52,6 @@ function scrollToBottom() {
 }
 
 watch(messages, scrollToBottom, { deep: true })
-
-const store = useEditorStore()
-const aiActiveIds = new Set<string>()
-
-function isValidNodeId(id: string): boolean {
-  if (!id.includes(':') || id.endsWith(':')) return false
-  const parts = id.split(':')
-  if (parts.length !== 2) return false
-  const [a, b] = parts
-  if (a.length === 0 || b.length === 0) return false
-  if (b.length < 2) return false
-  return store.graph.getNode(id) !== undefined
-}
-
-function collectPendingTargets(parts: unknown[]): Set<string> {
-  const pending = new Set<string>()
-  for (const part of parts) {
-    const p = part as Record<string, unknown>
-    if (!('toolCallId' in p)) continue
-    const input = p.input as Record<string, unknown> | undefined
-    if (!input) continue
-    const targetId = (input.replace_id ?? input.parent_id) as string | undefined
-    if (!targetId || !isValidNodeId(targetId)) continue
-    const state = p.state as string
-    if (state !== 'output-available' && state !== 'output-error') {
-      pending.add(targetId)
-    }
-  }
-  return pending
-}
-
-function syncOverlayState(pendingIds: Set<string>) {
-  for (const id of pendingIds) {
-    if (!aiActiveIds.has(id)) {
-      aiActiveIds.add(id)
-      store.aiMarkActive([id])
-      aiOverlayLog.push({
-        ts: Date.now(),
-        event: 'streaming-mark-active',
-        tool: 'chat-watch',
-        state: `renderer=${!!store.renderer} activeNodes=${store.renderer?._aiActiveNodes.size ?? 0} hasFlashes=${store.renderer?.hasActiveFlashes ?? false}`,
-        targetId: id
-      })
-    }
-  }
-  for (const id of aiActiveIds) {
-    if (!pendingIds.has(id)) {
-      aiActiveIds.delete(id)
-      store.aiMarkDone([id])
-      aiOverlayLog.push({
-        ts: Date.now(),
-        event: 'streaming-mark-done',
-        tool: 'chat-watch',
-        state: `activeNodes=${store.renderer?._aiActiveNodes.size ?? 0}`,
-        targetId: id
-      })
-    }
-  }
-}
-
-watch(
-  messages,
-  (msgs) => {
-    if (msgs.length === 0) return
-    const last = msgs[msgs.length - 1]
-    if (last.role !== 'assistant') return
-    syncOverlayState(collectPendingTargets(last.parts))
-  },
-  { deep: true }
-)
 
 function handleSubmit(text: string) {
   if (status.value === 'streaming' || status.value === 'submitted') return

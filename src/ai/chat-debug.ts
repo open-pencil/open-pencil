@@ -1,19 +1,8 @@
 import { getStepUsages, getToolLogEntries } from '@/ai/tools'
-import { useEditorStore } from '@/stores/editor'
 import { buildDebugLog } from '@open-pencil/core/tools'
 
 import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
 import type { UIMessage } from 'ai'
-
-export interface AiOverlayEvent {
-  ts: number
-  event: string
-  tool: string
-  state: string
-  targetId: string
-}
-
-export const aiOverlayLog: AiOverlayEvent[] = []
 
 function formatToolPart(part: Record<string, unknown>): string {
   const inv = part.toolInvocation as Record<string, unknown> | undefined
@@ -244,34 +233,6 @@ export function serializeChatLog(messages: UIMessage[]): string {
   } else {
     for (let i = 0; i < toolLog.length; i++) {
       sections.push(formatLogEntry(toolLog[i], i))
-    }
-  }
-  sections.push('')
-
-  const store = useEditorStore()
-  const deletionLog = store.graph._deletionLog
-  if (deletionLog.length > 0) {
-    sections.push('=== NODE DELETION LOG ===')
-    sections.push(`  ${deletionLog.length} deletions recorded`)
-    const topLevel = deletionLog.filter((d) => {
-      const parent = deletionLog.find((p) => p.id === d.parentId)
-      return !parent
-    })
-    for (const d of topLevel.slice(-30)) {
-      const time = new Date(d.ts).toISOString().slice(11, 23)
-      sections.push(`  [${time}] ${d.type} "${d.name}" (${d.id}) parent=${d.parentId}`)
-      sections.push(`    ${d.stack}`)
-    }
-    sections.push('')
-  }
-
-  sections.push('=== AI OVERLAY LOG ===')
-  if (aiOverlayLog.length === 0) {
-    sections.push('  (no overlay events)')
-  } else {
-    for (const e of aiOverlayLog) {
-      const time = new Date(e.ts).toISOString().slice(11, 23)
-      sections.push(`  [${time}] ${e.event} tool=${e.tool} state=${e.state} target=${e.targetId}`)
     }
   }
   sections.push('')

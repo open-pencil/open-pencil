@@ -246,4 +246,11 @@ export {
 } from './kiwi'
 
 export { CODEGEN_PROMPT } from './tools/prompts/codegen-prompt'
-export { setPexelsApiKey } from './tools/stock-photo'
+export {
+  setPexelsApiKey,
+  setUnsplashAccessKey,
+  registerStockPhotoProvider,
+  setActiveStockPhotoProvider,
+  getStockPhotoProviders
+} from './tools/stock-photo'
+export type { StockPhotoProvider, StockPhotoResult } from './tools/stock-photo'

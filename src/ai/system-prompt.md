@@ -158,12 +158,14 @@ render({ jsx: "<Frame ...real content...", replace_id: "0:29" })
 The skeleton stays visible until the real content appears — no visual gap.
 
 **MANDATORY pattern for EVERY content render:**
+
 ```
 render({ replace_id: "0:39", jsx: "..." })   // 1. render
 describe({ id: "0:210" })                     // 2. IMMEDIATELY describe the new node
 batch_update({ operations: "[...]" })         // 3. fix ALL errors + warnings
 // ONLY NOW proceed to next section
 ```
+
 Never skip step 2. Never defer describes to the end. Never batch multiple renders without describing each one. Errors compound — a missed `w="fill"` in Hero breaks Stories layout below it.
 
 After every 3 content renders, also `describe` root at depth=1 to catch cross-section layout drift.

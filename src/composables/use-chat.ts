@@ -14,7 +14,8 @@ import {
   AI_PROVIDERS,
   DEFAULT_AI_MODEL,
   DEFAULT_AI_PROVIDER,
-  setPexelsApiKey
+  setPexelsApiKey,
+  setUnsplashAccessKey
 } from '@open-pencil/core'
 
 import type { AIProviderID } from '@open-pencil/core'
@@ -55,6 +56,7 @@ const customAPIType = useLocalStorage<'completions' | 'responses'>(
 )
 const maxOutputTokens = useLocalStorage(`${STORAGE_PREFIX}ai-max-output-tokens`, 16384)
 const pexelsApiKey = useLocalStorage(`${STORAGE_PREFIX}pexels-api-key`, '')
+const unsplashAccessKey = useLocalStorage(`${STORAGE_PREFIX}unsplash-access-key`, '')
 const activeTab = ref<'design' | 'ai'>('design')
 
 const providerDef = computed(
@@ -79,6 +81,14 @@ watch(
   pexelsApiKey,
   (key) => {
     setPexelsApiKey(key || null)
+  },
+  { immediate: true }
+)
+
+watch(
+  unsplashAccessKey,
+  (key) => {
+    setUnsplashAccessKey(key || null)
   },
   { immediate: true }
 )
@@ -255,6 +265,7 @@ export function useAIChat() {
     customAPIType,
     maxOutputTokens,
     pexelsApiKey,
+    unsplashAccessKey,
     activeTab,
     isConfigured,
     ensureChat,
