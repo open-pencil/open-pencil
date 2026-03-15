@@ -1089,11 +1089,15 @@ export function useCanvasInput(
     const selectedNode = selectedId ? store.graph.getNode(selectedId) : undefined
     const canEnter = selectedNode && selectedId && store.graph.isContainer(selectedId) && !selectedNode.locked
 
-    const hit = canEnter
-      ? store.graph.hitTestDeep(cx, cy, selectedId)
-      : (hitTestSectionTitle(cx, cy) ??
+    let hit: SceneNode | null = null
+    if (canEnter) {
+      const abs = store.graph.getAbsolutePosition(selectedId)
+      hit = store.graph.hitTestDeep(cx - abs.x, cy - abs.y, selectedId)
+    } else {
+      hit = hitTestSectionTitle(cx, cy) ??
         hitTestComponentLabel(cx, cy) ??
-        store.graph.hitTestDeep(cx, cy, store.state.currentPageId))
+        store.graph.hitTestDeep(cx, cy, store.state.currentPageId)
+    }
     if (!hit) return
 
     if (hit.type === 'TEXT') {
