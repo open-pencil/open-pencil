@@ -167,6 +167,8 @@ Typically: 1 calc + 6 skeleton renders + describe + fixes + 6 content renders + 
 
 ⚠ **Issues from `describe` have severity levels.** Fix `error` issues always. Fix `warning` issues when possible. Ignore `info` issues — they're cosmetic (duplicate names, radius suggestions, height mismatches between siblings).
 
+⚠ **Use `depth=1` for large pages** — `depth=2` on a full page can return 30+ KB of issues. Use `depth=2` only on individual sections you're about to edit.
+
 Common errors:
 
 - "overflows" → set `w="fill"` or `overflow="hidden"`
@@ -190,7 +192,7 @@ Common warnings:
 
 🚫 Do NOT put everything in one render. Do NOT skip `describe`. Do NOT `describe` individual children when `depth=2` covers them. Do NOT skip the final describe after fixes.
 
-⚠ **After `render`, use the returned `id` and `children` array or `find_nodes` to get node IDs. Never guess or calculate IDs — they are unpredictable.**
+⚠ **Reuse IDs from render results and describe output.** Render returns `{ id, children: [...] }`. Describe at depth=2 returns every child's `id`. These ARE the IDs for `replace_id` — use them directly. Do NOT call `find_nodes` to rediscover IDs already visible in previous tool results. Save 8+ tool calls and 16+ seconds per page. Only use `find_nodes` when you genuinely lost track of an ID.
 
 ⚠ **Don't call `viewport_zoom_to_fit` or `describe` with the same arguments as a previous call in the same conversation.** Check your last calls before repeating.
 
