@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Features
+
+- Lock and visibility toggle buttons in layers panel (hover to reveal, always shown when active)
+- Figma-style selection scope — double-click to enter groups/frames/components, Escape to exit
+- Nested container navigation — each double-click goes one level deeper
+- Dashed border around entered container for visual feedback
+- Layer panel click syncs canvas scope automatically
+
+### Fixes
+
+- Locked nodes now block move, resize, rotate, and delete on canvas
+- Locked containers block double-click enter
+- Marquee selection skips locked and hidden nodes
+- COMPONENT/INSTANCE containers are now enterable via double-click
+
 ### Performance
 
 - Offload .fig parsing (unzip + Kiwi decode) to a Web Worker — main thread stays responsive during file open
