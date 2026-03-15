@@ -3,7 +3,7 @@ import { renderText } from '../../packages/core/src/renderer/scene'
 import type { SceneNode } from '../../packages/core/src/scene-graph'
 import type { SkiaRenderer } from '../../packages/core/src/renderer/renderer'
 import { initCanvasKit } from '../../packages/cli/src/headless'
-import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@open-pencil/core'
+import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@verso/core'
 import { initFontService, setCJKFallbackFamily, markFontLoaded } from '../../packages/core/src/fonts'
 
 function createMockCanvas() {

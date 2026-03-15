@@ -1,4 +1,4 @@
-import { AUTOMATION_HTTP_PORT, IS_TAURI } from '@open-pencil/core'
+import { AUTOMATION_HTTP_PORT, IS_TAURI } from '@verso/core'
 
 async function checkHealth(): Promise<boolean> {
   try {
@@ -49,6 +49,6 @@ export async function spawnMCPIfNeeded(): Promise<(() => void) | null> {
 
   await child.kill()
   throw new Error(
-    'Failed to start MCP server. Is openpencil-mcp installed? Run: npm i -g @open-pencil/mcp'
+    'Failed to start MCP server. Is openpencil-mcp installed? Run: npm i -g @verso/mcp'
   )
 }

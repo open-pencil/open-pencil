@@ -6,7 +6,7 @@ import {
   computeAllLayouts,
   headlessRenderNodes,
   headlessRenderThumbnail
-} from '@open-pencil/core'
+} from '@verso/core'
 
 export { initCanvasKit }
 

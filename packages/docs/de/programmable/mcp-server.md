@@ -7,7 +7,7 @@ Two transports: **stdio** for MCP clients, **HTTP** for everything else.
 ## Install
 
 ```sh
-bun add -g @open-pencil/mcp
+bun add -g @verso/mcp
 ```
 
 ## Stdio (Claude Code, Cursor, etc.)

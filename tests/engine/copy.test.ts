@@ -7,7 +7,7 @@ import {
   copyStyleRun,
   copyGeometryPaths
 } from '../../packages/core/src/copy'
-import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/core'
+import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@verso/core'
 
 describe('copy helpers — mutation isolation', () => {
   test('copyFill: mutating copy does not affect original', () => {

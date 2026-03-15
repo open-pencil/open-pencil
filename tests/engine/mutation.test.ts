@@ -7,15 +7,15 @@ import {
   removeStyleFromRange,
   getStyleAt,
   type StyleRun,
-} from '@open-pencil/core'
+} from '@verso/core'
 
 import {
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
   type VectorNetwork,
-} from '@open-pencil/core'
+} from '@verso/core'
 
-import { SceneGraph, UndoManager } from '@open-pencil/core'
+import { SceneGraph, UndoManager } from '@verso/core'
 
 // ---------------------------------------------------------------------------
 // toggleBoldInRange — mutation coverage

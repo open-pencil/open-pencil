@@ -24,9 +24,9 @@ import IconType from '~icons/lucide/type'
 import IconToggleLeft from '~icons/lucide/toggle-left'
 import IconX from '~icons/lucide/x'
 import ColorInput from './ColorInput.vue'
-import { colorToHexRaw, parseColor } from '@open-pencil/core'
+import { colorToHexRaw, parseColor } from '@verso/core'
 import { useEditorStore } from '@/stores/editor'
-import type { Variable, VariableCollection, VariableValue, Color } from '@open-pencil/core'
+import type { Variable, VariableCollection, VariableValue, Color } from '@verso/core'
 
 const open = defineModel<boolean>('open', { default: false })
 const store = useEditorStore()

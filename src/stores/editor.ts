@@ -31,7 +31,7 @@ import {
   setTextMeasurer,
   TextEditor,
   UndoManager
-} from '@open-pencil/core'
+} from '@verso/core'
 
 import type {
   Color,
@@ -49,7 +49,7 @@ import type {
   VectorSegment,
   Vector,
   VectorVertex
-} from '@open-pencil/core'
+} from '@verso/core'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 export type Tool =

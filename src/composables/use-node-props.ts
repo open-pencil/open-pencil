@@ -2,7 +2,7 @@ import { computed } from 'vue'
 
 import { useEditorStore } from '@/stores/editor'
 
-import type { SceneNode } from '@open-pencil/core'
+import type { SceneNode } from '@verso/core'
 
 export function useNodeProps() {
   const store = useEditorStore()

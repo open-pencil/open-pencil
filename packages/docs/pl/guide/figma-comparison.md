@@ -215,7 +215,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Code Connect | 🔲 | Łączenie komponentów projektowych z kodem |
 | Fragmenty kodu | 🟡 | Eksport JSX z podświetlaniem i kopiowaniem; brak fragmentów CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Integracja z pluginem edytora |
-| Serwer MCP | ✅ | @open-pencil/mcp z transportami stdio + HTTP; 87 narzędzi core + 3 zarządzanie plikami = 90+ total |
+| Serwer MCP | ✅ | @verso/mcp z transportami stdio + HTTP; 87 narzędzi core + 3 zarządzanie plikami = 90+ total |
 | Narzędzia CLI | ✅ | Headless CLI: info, tree, find, export, analyze, node, pages, variables, eval; serwer MCP |
 
 ## Figma Draw

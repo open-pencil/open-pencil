@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { UndoManager } from '@open-pencil/core'
+import { UndoManager } from '@verso/core'
 
 describe('UndoManager', () => {
   test('initial state', () => {

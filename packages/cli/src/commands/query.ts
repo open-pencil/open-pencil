@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
 import { fmtList, printError, bold, entity, formatType } from '../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { QueryNodeResult } from '@open-pencil/core'
+import type { QueryNodeResult } from '@verso/core'
 
 async function getData(
   file: string | undefined,

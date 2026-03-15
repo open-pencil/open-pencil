@@ -21,12 +21,12 @@ Componentes, instancias, overrides, conjuntos de componentes, variables (`COLOR`
 ### Fase 5: Integración IA & Herramientas ✅
 
 **Entregado:**
-- @open-pencil/core extraído a packages/core/ (sin dependencias DOM)
-- @open-pencil/cli con operaciones headless .fig (info, tree, find, export, analyze, eval)
+- @verso/core extraído a packages/core/ (sin dependencias DOM)
+- @verso/cli con operaciones headless .fig (info, tree, find, export, analyze, eval)
 - Comando `eval` con API Plugin compatible con Figma
 - Chat IA: conexión directa OpenRouter, 87 herramientas en `packages/core/src/tools/`, <kbd>⌘</kbd><kbd>J</kbd>
 - 49 herramientas IA/MCP adicionales portadas de figma-use (75 en total)
-- Servidor MCP (@open-pencil/mcp): stdio + HTTP, 87 herramientas core + 3 de gestión de archivos
+- Servidor MCP (@verso/mcp): stdio + HTTP, 87 herramientas core + 3 de gestión de archivos
 - Definiciones de herramientas unificadas: definir una vez en `packages/core/src/tools/` (por dominio), adaptar para chat IA (valibot), MCP (zod), CLI (eval)
 - Menú de aplicación para modo navegador
 - Autoguardado: escritura con debounce de 3s

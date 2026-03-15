@@ -21,7 +21,7 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 import { menuContent, menuItem } from '@/components/ui/menu'
 import { openFileDialog } from '@/composables/use-menu'
 import { useEditorStore } from '@/stores/editor'
-import { colorToCSS } from '@open-pencil/core'
+import { colorToCSS } from '@verso/core'
 import { toolIcons } from '@/utils/tools'
 import { initials } from '@/utils/text'
 

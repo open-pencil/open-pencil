@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../../headless'
 import { isAppMode, requireFile, rpc } from '../../app-client'
 import { bold, fmtList, fmtSummary } from '../../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { AnalyzeClustersResult } from '@open-pencil/core'
+import type { AnalyzeClustersResult } from '@verso/core'
 
 function calcConfidence(nodes: Array<{ width: number; height: number; childCount: number }>): number {
   if (nodes.length < 2) return 100

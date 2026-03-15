@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/mcp",
+  "name": "@verso/mcp",
   "version": "0.8.0",
   "license": "MIT",
   "type": "module",
@@ -27,7 +27,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.9",
     "@modelcontextprotocol/sdk": "^1.25.2",
-    "@open-pencil/core": "workspace:*",
+    "@verso/core": "workspace:*",
     "hono": "^4.11.4",
     "zod": "^4.3.6",
     "ws": "^8.19.0"

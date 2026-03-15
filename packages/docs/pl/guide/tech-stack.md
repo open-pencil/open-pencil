@@ -32,7 +32,7 @@
 {
   "canvaskit-wasm": "^0.40.0",
   "vue": "^3.5.29",
-  "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
+  "yoga-layout": "npm:@verso/yoga-layout@3.3.0-grid.2",
   "nanoevents": "^9.1.0",
   "sucrase": "^3.35.1",
   "reka-ui": "^2.8.2",
@@ -68,4 +68,4 @@ Yoga jest utrzymywana przez Metę, przetestowana na miliardach urządzeń React 
 
 | Technologia | Cel | Faza |
 |-----------|---------|-------|
-| CSS Grid w Yoga | Auto layout oparty na siatce | ✅ Obsługiwane przez [fork Yoga](https://github.com/open-pencil/yoga/tree/grid) (`@open-pencil/yoga-layout`) |
+| CSS Grid w Yoga | Auto layout oparty na siatce | ✅ Obsługiwane przez [fork Yoga](https://github.com/open-pencil/yoga/tree/grid) (`@verso/yoga-layout`) |

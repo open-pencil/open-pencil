@@ -54,9 +54,9 @@ export {
   COMPONENT_LABEL_ICON_GAP,
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
-} from '@open-pencil/core'
+} from '@verso/core'
 
-import type { Color, Fill, Stroke } from '@open-pencil/core'
+import type { Color, Fill, Stroke } from '@verso/core'
 
 export const TRYSTERO_APP_ID = 'openpencil'
 export const ROOM_ID_LENGTH = 8

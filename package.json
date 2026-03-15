@@ -1,5 +1,5 @@
 {
-  "name": "open-pencil-app",
+  "name": "verso",
   "private": true,
   "version": "0.10.0",
   "license": "MIT",
@@ -15,17 +15,17 @@
     "lint": "oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/cli/src/ packages/mcp/src/",
     "format": "oxfmt --write src/",
     "check": "bun run lint",
-    "test": "playwright test --project=openpencil",
-    "test:update": "playwright test --project=openpencil --update-snapshots",
+    "test": "playwright test --project=verso",
+    "test:update": "playwright test --project=verso --update-snapshots",
     "test:figma": "playwright test --project=figma",
     "figma:debug": "open -a Figma --args --remote-debugging-port=9222",
     "test:unit": "bun test ./tests/engine",
     "test:coverage": "bun test --coverage ./tests/engine",
     "test:dupes": "jscpd packages/core/src packages/cli/src src --min-lines 5 --min-tokens 50 --format typescript",
-    "open-pencil": "bun packages/cli/src/index.ts",
-    "docs:dev": "bun --filter @open-pencil/docs dev",
-    "docs:build": "bun --filter @open-pencil/docs build",
-    "docs:preview": "bun --filter @open-pencil/docs preview",
+    "verso": "bun packages/cli/src/index.ts",
+    "docs:dev": "bun --filter @verso/docs dev",
+    "docs:build": "bun --filter @verso/docs build",
+    "docs:preview": "bun --filter @verso/docs preview",
     "visual-compare": "bun scripts/visual-compare.ts"
   },
   "dependencies": {
@@ -34,8 +34,8 @@
     "@ai-sdk/openai": "^3.0.37",
     "@ai-sdk/valibot": "^2.0.17",
     "@ai-sdk/vue": "^3.0.105",
-    "@open-pencil/cli": "workspace:*",
-    "@open-pencil/core": "workspace:*",
+    "@verso/cli": "workspace:*",
+    "@verso/core": "workspace:*",
     "@openrouter/ai-sdk-provider": "^2.2.3",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/vue-table": "^8.21.3",
@@ -98,6 +98,6 @@
     "vite-plugin-pwa": "^1.2.0",
     "workbox-window": "^7.4.0",
     "ws": "^8.19.0",
-    "@open-pencil/mcp": "workspace:*"
+    "@verso/mcp": "workspace:*"
   }
 }

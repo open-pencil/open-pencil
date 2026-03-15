@@ -4,18 +4,18 @@
 
 ```
 packages/
-  core/              @open-pencil/core — Engine (keine DOM-Abhängigkeiten)
+  core/              @verso/core — Engine (keine DOM-Abhängigkeiten)
     src/             Szenengraph, Renderer, Layout, Codec, Kiwi, Typen
-  cli/               @open-pencil/cli — Headless-CLI für .fig-Operationen
+  cli/               @verso/cli — Headless-CLI für .fig-Operationen
     src/commands/    info, tree, find, export, eval, analyze
-  mcp/               @open-pencil/mcp — MCP-Server für KI-Werkzeuge
+  mcp/               @verso/mcp — MCP-Server für KI-Werkzeuge
     src/             stdio + HTTP (Hono) Transporte, 87 Werkzeuge
 src/
   components/        Vue SFCs (Canvas, Panels, Werkzeugleiste, Farbauswahl)
     properties/      Eigenschaftspanel-Abschnitte
   composables/       Canvas-Input, Tastenkürzel, Rendering-Hooks
   stores/            Editor-Zustand (Vue-Reaktivität)
-  engine/            Re-Export-Shims von @open-pencil/core
+  engine/            Re-Export-Shims von @verso/core
 desktop/             Tauri v2 (Rust + Konfiguration)
 tests/
   e2e/               Playwright visuelle Regression

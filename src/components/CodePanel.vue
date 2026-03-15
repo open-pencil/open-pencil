@@ -4,10 +4,10 @@ import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import { selectionToJSX } from '@open-pencil/core'
+import { selectionToJSX } from '@verso/core'
 import { useEditorStore } from '@/stores/editor'
 
-import type { JSXFormat } from '@open-pencil/core'
+import type { JSXFormat } from '@verso/core'
 
 const store = useEditorStore()
 const copied = ref(false)

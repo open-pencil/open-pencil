@@ -1,7 +1,7 @@
-import { FigmaAPI } from '@open-pencil/core'
+import { FigmaAPI } from '@verso/core'
 
 import type { EditorStore } from '@/stores/editor'
-import type { ExportFormat } from '@open-pencil/core'
+import type { ExportFormat } from '@verso/core'
 
 export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
   const api = new FigmaAPI(store.graph)

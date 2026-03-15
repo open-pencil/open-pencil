@@ -215,7 +215,7 @@ Comparación característica por característica de las capacidades de Figma Des
 | Code Connect | 🔲 | Vincular componentes de diseño a código |
 | Fragmentos de código | 🟡 | Export JSX con resaltado y copia; sin fragmentos CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Integración con plugin de editor |
-| Servidor MCP | ✅ | @open-pencil/mcp con transportes stdio + HTTP; 87 herramientas core + 3 de gestión de archivos = 90+ total |
+| Servidor MCP | ✅ | @verso/mcp con transportes stdio + HTTP; 87 herramientas core + 3 de gestión de archivos = 90+ total |
 | Herramientas CLI | ✅ | CLI headless: info, tree, find, export, analyze, node, pages, variables, eval; servidor MCP |
 
 ## Figma Draw

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { importNodeChanges, type NodeChange } from '@open-pencil/core'
+import { importNodeChanges, type NodeChange } from '@verso/core'
 
 function doc(): NodeChange {
   return {

@@ -1,0 +1,48 @@
+{
+  "category": "typography",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Type Scale",
+      "description": "Use a consistent typographic scale for heading and body sizes.",
+      "application": "Choose a scale ratio (1.25, 1.333, etc.) and derive all sizes from it.",
+      "example": "Base 16px with headings at 20, 25, 32, 40, 50px using a 1.25 ratio.",
+      "anti_pattern": "Arbitrary font sizes like 13px, 17px, 23px with no mathematical relationship."
+    },
+    {
+      "name": "Line Height",
+      "description": "Set line height between 1.4 and 1.8 for body text readability.",
+      "application": "Use 1.5 line height for body text, tighter (1.1-1.2) for headings.",
+      "example": "Body text at 16px/24px (1.5 line height) for comfortable reading.",
+      "anti_pattern": "Single-spaced body text (line-height: 1.0) making paragraphs hard to read."
+    },
+    {
+      "name": "Font Pairing",
+      "description": "Limit the design to 2-3 font families maximum.",
+      "application": "Pair a sans-serif for UI with a serif or different sans for headings.",
+      "example": "Inter for body and UI, plus a display font for hero headings.",
+      "anti_pattern": "Using 5+ different font families creating visual chaos."
+    },
+    {
+      "name": "Measure (Line Length)",
+      "description": "Keep line length between 45-75 characters for optimal readability.",
+      "application": "Constrain text containers to max-width 65ch for body content.",
+      "example": "A blog post with content constrained to 680px width.",
+      "anti_pattern": "Full-width text spanning 1440px making lines extremely long."
+    },
+    {
+      "name": "Font Weight Hierarchy",
+      "description": "Use font weight to reinforce the visual hierarchy.",
+      "application": "Bold (700) for headings, medium (500) for emphasis, regular (400) for body.",
+      "example": "Section title in bold, subheading in medium, body in regular weight.",
+      "anti_pattern": "Everything in bold or everything in regular, losing hierarchy cues."
+    },
+    {
+      "name": "Responsive Typography",
+      "description": "Adjust font sizes for different viewport sizes.",
+      "application": "Use smaller base sizes on mobile, larger on desktop.",
+      "example": "H1 at 32px on mobile scaling to 56px on desktop.",
+      "anti_pattern": "Using the same 48px heading on mobile causing text to overflow."
+    }
+  ]
+}

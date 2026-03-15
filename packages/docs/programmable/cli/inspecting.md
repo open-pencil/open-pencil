@@ -9,7 +9,7 @@ The CLI lets you explore `.fig` files without opening the editor. Every command 
 
 ::: tip Install
 ```sh
-bun add -g @open-pencil/cli
+bun add -g @verso/cli
 # or
 brew install open-pencil/tap/open-pencil
 ```

@@ -4,8 +4,8 @@ import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
 import { bold, fmtHistogram, fmtSummary, kv } from '../format'
 
-import type { InfoResult } from '@open-pencil/core'
-import { executeRpcCommand } from '@open-pencil/core'
+import type { InfoResult } from '@verso/core'
+import { executeRpcCommand } from '@verso/core'
 
 async function getData(file?: string): Promise<InfoResult> {
   if (isAppMode(file)) return rpc<InfoResult>('info')

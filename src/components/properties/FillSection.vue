@@ -18,8 +18,8 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
 import { useMultiProps } from '@/composables/use-multi-props'
 import { DEFAULT_SHAPE_FILL } from '@/constants'
-import { colorToCSS, colorToHexRaw } from '@open-pencil/core'
-import type { Fill, Variable, Color } from '@open-pencil/core'
+import { colorToCSS, colorToHexRaw } from '@verso/core'
+import type { Fill, Variable, Color } from '@verso/core'
 
 const { store } = useNodeProps()
 const { nodes, isMulti, active, activeNode, isArrayMixed } = useMultiProps()

@@ -11,7 +11,7 @@ import {
   SceneGraph,
   computeAllLayouts,
   executeRpcCommand
-} from '@open-pencil/core'
+} from '@verso/core'
 import { serve } from '@hono/node-server'
 
 import type { AddressInfo } from 'node:net'

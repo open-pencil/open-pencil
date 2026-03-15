@@ -11,7 +11,7 @@ import type {
   LayoutAlign,
   LayoutCounterAlign,
   GridTrack
-} from '@open-pencil/core'
+} from '@verso/core'
 
 const { store, node, updateProp, commitProp } = useNodeProps()
 

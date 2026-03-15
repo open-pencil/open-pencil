@@ -5,7 +5,7 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
 import { MIXED, useMultiProps } from '@/composables/use-multi-props'
 
-import type { SceneNode } from '@open-pencil/core'
+import type { SceneNode } from '@verso/core'
 
 const { store, updateProp, commitProp } = useNodeProps()
 const { node, nodes, isMulti, active, merged, updateAllWithUndo } = useMultiProps()

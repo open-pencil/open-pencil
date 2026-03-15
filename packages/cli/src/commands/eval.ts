@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { FigmaAPI } from '@open-pencil/core'
+import { FigmaAPI } from '@verso/core'
 
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
@@ -80,7 +80,7 @@ export default defineCommand({
     }
 
     if (args.write || args.output) {
-      const { exportFigFile } = await import('@open-pencil/core')
+      const { exportFigFile } = await import('@verso/core')
       const outPath = args.output ? args.output : file
       const data = await exportFigFile(graph)
       await Bun.write(outPath, new Uint8Array(data))

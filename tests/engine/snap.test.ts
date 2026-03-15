@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { computeSnap, computeSelectionBounds, type SceneNode } from '@open-pencil/core'
+import { computeSnap, computeSelectionBounds, type SceneNode } from '@verso/core'
 
 function node(overrides: Partial<SceneNode> & { id: string }): SceneNode {
   return { x: 0, y: 0, width: 100, height: 100, rotation: 0, ...overrides } as SceneNode

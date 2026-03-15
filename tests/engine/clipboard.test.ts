@@ -12,7 +12,7 @@ import {
   initCodec,
   SceneGraph,
   type SceneNode,
-} from '@open-pencil/core'
+} from '@verso/core'
 
 function makeClipboardHtml(nodeChanges: unknown[], meta = { fileKey: 'test', pasteID: 1, dataType: 'scene' }) {
   // Minimal fig-kiwi clipboard: just meta + empty figma buffer

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph, matchByXPath, queryByXPath } from '@open-pencil/core'
+import { FigmaAPI, SceneGraph, matchByXPath, queryByXPath } from '@verso/core'
 
 function setup() {
   const graph = new SceneGraph()

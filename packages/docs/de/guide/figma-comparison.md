@@ -215,7 +215,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Code Connect | 🔲 | Design-Komponenten mit Code verknüpfen |
 | Code-Snippets | 🟡 | JSX-Export mit Hervorhebung und Kopieren; keine CSS/Swift/Kotlin-Snippets |
 | Figma für VS Code | 🔲 | Editor-Plugin-Integration |
-| MCP-Server | ✅ | @open-pencil/mcp mit stdio + HTTP-Transporten; 87 Kern-Werkzeuge + 3 Dateiverwaltung = 90 gesamt |
+| MCP-Server | ✅ | @verso/mcp mit stdio + HTTP-Transporten; 87 Kern-Werkzeuge + 3 Dateiverwaltung = 90 gesamt |
 | CLI-Werkzeuge | ✅ | Headless-CLI: info, tree, find, export, analyze, node, pages, variables, eval; MCP-Server |
 
 ## Figma Draw

@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
 import { fmtList, bold, entity, formatType } from '../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { FindNodeResult } from '@open-pencil/core'
+import type { FindNodeResult } from '@verso/core'
 
 async function getData(file: string | undefined, args: { name?: string; type?: string; page?: string; limit?: string }): Promise<FindNodeResult[]> {
   const rpcArgs = { name: args.name, type: args.type, page: args.page, limit: args.limit ? Number(args.limit) : undefined }

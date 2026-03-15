@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../../headless'
 import { isAppMode, requireFile, rpc } from '../../app-client'
 import { bold, fmtHistogram, fmtList, fmtSummary } from '../../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { AnalyzeColorsResult } from '@open-pencil/core'
+import type { AnalyzeColorsResult } from '@verso/core'
 
 async function getData(file: string | undefined, args: { threshold?: string; similar?: boolean }): Promise<AnalyzeColorsResult> {
   const rpcArgs = { threshold: Number(args.threshold ?? 15), similar: args.similar }

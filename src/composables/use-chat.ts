@@ -18,9 +18,9 @@ import {
   IS_TAURI,
   setPexelsApiKey,
   setUnsplashAccessKey
-} from '@open-pencil/core'
+} from '@verso/core'
 
-import type { ACPAgentID, AIProviderID } from '@open-pencil/core'
+import type { ACPAgentID, AIProviderID } from '@verso/core'
 import type { LanguageModel, UIMessage } from 'ai'
 
 const STORAGE_PREFIX = 'open-pencil:'

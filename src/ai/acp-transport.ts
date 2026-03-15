@@ -11,7 +11,7 @@ import type {
   RequestPermissionRequest,
   RequestPermissionResponse
 } from '@agentclientprotocol/sdk'
-import type { ACPAgentDef } from '@open-pencil/core'
+import type { ACPAgentDef } from '@verso/core'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 
 type TauriChild = {

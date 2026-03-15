@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, sceneNodeToJSX, selectionToJSX } from '@open-pencil/core'
+import { SceneGraph, sceneNodeToJSX, selectionToJSX } from '@verso/core'
 
 function makeGraph() {
   const graph = new SceneGraph()

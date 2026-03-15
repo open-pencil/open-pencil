@@ -6,9 +6,9 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
 import { useMultiProps } from '@/composables/use-multi-props'
 
-import { colorToCSS } from '@open-pencil/core'
+import { colorToCSS } from '@verso/core'
 
-import type { Color, Effect } from '@open-pencil/core'
+import type { Color, Effect } from '@verso/core'
 
 const { store } = useNodeProps()
 const { node, nodes, isMulti, active, isArrayMixed } = useMultiProps()

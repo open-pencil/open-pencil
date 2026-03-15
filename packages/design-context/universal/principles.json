@@ -1,0 +1,55 @@
+{
+  "category": "principles",
+  "version": "1.0.0",
+  "rules": [
+    {
+      "name": "Visual Hierarchy",
+      "description": "Use size, color, and contrast to guide users to the most important elements first.",
+      "application": "Make primary actions larger and more prominent than secondary ones.",
+      "example": "A large CTA button in a hero section with smaller secondary links below.",
+      "anti_pattern": "All elements the same size and weight, creating a flat, confusing layout."
+    },
+    {
+      "name": "Consistency",
+      "description": "Maintain uniform patterns for similar elements across the entire design.",
+      "application": "Use the same button styles, spacing, and typography for similar interactions.",
+      "example": "All form inputs share the same height, border radius, and label placement.",
+      "anti_pattern": "Mixing rounded and square buttons randomly throughout the interface."
+    },
+    {
+      "name": "Proximity",
+      "description": "Group related items together and separate unrelated items with whitespace.",
+      "application": "Place labels near their associated inputs; group related actions together.",
+      "example": "Form field labels directly above their inputs with 4px gap.",
+      "anti_pattern": "Labels far from their inputs, causing users to guess the associations."
+    },
+    {
+      "name": "Alignment",
+      "description": "Align elements along invisible lines to create order and connection.",
+      "application": "Use a consistent grid system and align text and elements to it.",
+      "example": "Left-aligned text blocks with consistent margins creating a clean edge.",
+      "anti_pattern": "Center-aligning everything, creating a jagged, unstructured appearance."
+    },
+    {
+      "name": "Contrast",
+      "description": "Use sufficient contrast between foreground and background for readability.",
+      "application": "Ensure text meets WCAG contrast ratios against its background.",
+      "example": "Dark text (#1a1a1a) on a light background (#ffffff) for body copy.",
+      "anti_pattern": "Light gray text on a white background, making content hard to read."
+    },
+    {
+      "name": "White Space",
+      "description": "Use empty space intentionally to improve readability and focus.",
+      "application": "Add generous padding and margins around content blocks.",
+      "example": "A hero section with ample padding letting the headline breathe.",
+      "anti_pattern": "Cramming content edge-to-edge with no breathing room."
+    },
+    {
+      "name": "Simplicity",
+      "description": "Remove unnecessary elements; every component should serve a purpose.",
+      "application": "Eliminate decorative elements that do not support the user's goal.",
+      "example": "A clean checkout flow with only essential fields and clear progress.",
+      "anti_pattern": "Adding decorative borders, shadows, and icons to every element."
+    }
+  ]
+}

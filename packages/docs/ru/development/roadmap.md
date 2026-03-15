@@ -100,8 +100,8 @@
 Извлечение core, CLI, MCP-сервер, AI-инструменты, команда eval.
 
 **Реализовано:**
-- @open-pencil/core извлечён в packages/core/ (без DOM-зависимостей, Bun workspace)
-- @open-pencil/cli с headless-операциями над .fig (info, tree, find, export, analyze, node, pages, variables, eval), CPU-растеризация CanvasKit, вывод --json
+- @verso/core извлечён в packages/core/ (без DOM-зависимостей, Bun workspace)
+- @verso/cli с headless-операциями над .fig (info, tree, find, export, analyze, node, pages, variables, eval), CPU-растеризация CanvasKit, вывод --json
 - Команда `eval` с Figma-совместимым Plugin API для headless-скриптинга
 - JSX-рендерер: билдеры TreeNode (Frame, Text, Rectangle и др.), renderTreeNode/renderJsx, Tailwind-подобные shorthand-пропсы, 27 тестов
 - Обнаружение копипасты jscpd (15.6% → 0.62%), консолидация kiwi-serialize.ts
@@ -109,7 +109,7 @@
 - Исправление O(n²) → O(n) в импорте .fig (37с → 535мс на 87K узлов), оптимизация ByteBuffer
 - AI-чат: OpenRouter напрямую (без бэкенда), хранение ключей в Stronghold, 87 инструментов, разделённых по доменным файлам в `tools/`, селектор моделей, <kbd>⌘</kbd><kbd>J</kbd>, потоковый markdown, тесты Playwright с mock-транспортом
 - 49 дополнительных AI/MCP инструментов, портированных из figma-use (87 всего): гранулярные set-инструменты, операции с узлами, CRUD переменных, булевы операции, инструменты векторных путей, управление областью просмотра
-- MCP-сервер (@open-pencil/mcp): stdio + HTTP (Hono + Streamable HTTP с сессиями), 87 core-инструментов + 3 инструмента управления файлами (90 всего), работает на Bun и Node.js
+- MCP-сервер (@verso/mcp): stdio + HTTP (Hono + Streamable HTTP с сессиями), 87 core-инструментов + 3 инструмента управления файлами (90 всего), работает на Bun и Node.js
 - Унифицированные определения инструментов: определяются один раз в `packages/core/src/tools/` (по доменам), адаптируются для AI-чата (valibot), MCP (zod), CLI (eval)
 - Панель кода: экспорт sceneNodeToJsx(), подсветка Prism.js, нумерация строк, кнопка копирования, 14 тестов
 - Панель свойств реструктурирована: вкладки Design | Code | AI

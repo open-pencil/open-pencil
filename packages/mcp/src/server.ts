@@ -14,9 +14,9 @@ import {
   buildComponent,
   createElement,
   resolveToTree
-} from '@open-pencil/core'
+} from '@verso/core'
 
-import type { ParamDef, ParamType } from '@open-pencil/core'
+import type { ParamDef, ParamType } from '@verso/core'
 
 const require = createRequire(import.meta.url)
 const MCP_VERSION: string = (require('../package.json') as { version: string }).version

@@ -21,12 +21,12 @@ Komponenty, instancje, nadpisania, zestawy komponentów, zmienne (`COLOR`/FLOAT/
 ### Faza 5: Integracja AI i Narzędzia ✅
 
 **Dostarczone:**
-- @open-pencil/core wyodrębniony do packages/core/ (zero zależności DOM)
-- @open-pencil/cli z headless operacjami .fig (info, tree, find, export, analyze, eval)
+- @verso/core wyodrębniony do packages/core/ (zero zależności DOM)
+- @verso/cli z headless operacjami .fig (info, tree, find, export, analyze, eval)
 - Polecenie `eval` z API Plugin kompatybilnym z Figmą
 - Chat AI: bezpośrednie połączenie OpenRouter, 87 narzędzi w `packages/core/src/tools/`, <kbd>⌘</kbd><kbd>J</kbd>
 - 49 dodatkowych narzędzi AI/MCP przeniesionych z figma-use (75 łącznie)
-- Serwer MCP (@open-pencil/mcp): stdio + HTTP, 87 narzędzi core + 3 zarządzanie plikami
+- Serwer MCP (@verso/mcp): stdio + HTTP, 87 narzędzi core + 3 zarządzanie plikami
 - Ujednolicone definicje narzędzi: zdefiniuj raz w `packages/core/src/tools/`, adaptuj dla chatu AI (valibot), MCP (zod), CLI (eval)
 - Pasek menu dla trybu przeglądarki
 - Autozapis: zapis z debounce 3s

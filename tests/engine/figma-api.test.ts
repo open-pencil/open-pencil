@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI, SceneGraph, type Fill } from '@open-pencil/core'
+import { FigmaAPI, SceneGraph, type Fill } from '@verso/core'
 
 function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())

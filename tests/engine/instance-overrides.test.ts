@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { importNodeChanges, type NodeChange } from '@open-pencil/core'
+import { importNodeChanges, type NodeChange } from '@verso/core'
 
 const ID = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
 const SIZE = { x: 100, y: 100 }

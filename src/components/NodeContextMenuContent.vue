@@ -9,7 +9,7 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
-import { selectionToJSX, renderNodesToSVG } from '@open-pencil/core'
+import { selectionToJSX, renderNodesToSVG } from '@verso/core'
 
 import { useEditorStore } from '@/stores/editor'
 import { menuContent, menuItem, menuSeparator } from '@/components/ui/menu'

@@ -218,7 +218,7 @@
 | Сниппеты кода | 🟡 | Экспорт JSX с подсветкой синтаксиса и копированием; нет сниппетов CSS/Swift/Kotlin |
 | Экспорт Tailwind CSS v4 | ✅ | Экспорт как HTML с утилитарными классами Tailwind из панели Code, CLI или программно |
 | Figma for VS Code | 🔲 | Интеграция с редактором кода |
-| MCP-сервер | ✅ | @open-pencil/mcp с транспортами stdio + HTTP; 87 основных + 3 файловых = 90 инструментов |
+| MCP-сервер | ✅ | @verso/mcp с транспортами stdio + HTTP; 87 основных + 3 файловых = 90 инструментов |
 | CLI-инструменты | ✅ | Headless CLI: info, tree, find, export, analyze, node, pages, variables, eval; MCP-сервер со stdio + HTTP |
 
 ## Figma Draw

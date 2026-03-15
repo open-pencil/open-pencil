@@ -3,7 +3,7 @@ import {
   loadFont as loadFontCore,
   markFontLoaded,
   styleToWeight
-} from '@open-pencil/core'
+} from '@verso/core'
 
 interface TauriFontFamily {
   family: string
@@ -48,7 +48,7 @@ export async function listFamilies(): Promise<string[]> {
     return fonts.map((f) => f.family)
   }
 
-  const { listFamilies: coreList } = await import('@open-pencil/core')
+  const { listFamilies: coreList } = await import('@verso/core')
   return coreList()
 }
 

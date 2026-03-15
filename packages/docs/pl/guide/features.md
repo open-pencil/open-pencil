@@ -76,7 +76,7 @@ Zobacz [Czat AI](/programmable/ai-chat) dla konfiguracji i szczegółów dostawc
 Podłącz Claude Code, Cursor, Windsurf lub dowolnego klienta MCP do odczytu i zapisu plików `.fig` headlessly. 90+ narzędzi. Dwa transporty: stdio i HTTP.
 
 ```sh
-bun add -g @open-pencil/mcp
+bun add -g @verso/mcp
 ```
 
 ```json
@@ -111,7 +111,7 @@ open-pencil tree                     # Aktywny dokument
 open-pencil export -f png            # Zrzut ekranu canvasu
 ```
 
-Wszystkie komendy obsługują `--json`. Instalacja: `bun add -g @open-pencil/cli`
+Wszystkie komendy obsługują `--json`. Instalacja: `bun add -g @verso/cli`
 
 ## Współpraca w czasie rzeczywistym
 

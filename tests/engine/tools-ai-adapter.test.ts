@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { valibotSchema } from '@ai-sdk/valibot'
-import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@open-pencil/core'
+import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@verso/core'
 import { tool } from 'ai'
 import * as v from 'valibot'
 

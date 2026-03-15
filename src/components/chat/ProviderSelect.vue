@@ -14,7 +14,7 @@ import {
 import { computed, onMounted, ref } from 'vue'
 
 import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
-import { ACP_AGENTS, AI_PROVIDERS, AUTOMATION_HTTP_PORT, IS_TAURI } from '@open-pencil/core'
+import { ACP_AGENTS, AI_PROVIDERS, AUTOMATION_HTTP_PORT, IS_TAURI } from '@verso/core'
 import { useAIChat } from '@/composables/use-chat'
 
 const { providerID, providerDef } = useAIChat()

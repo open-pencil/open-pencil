@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@verso/core'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

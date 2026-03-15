@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../../headless'
 import { isAppMode, requireFile, rpc } from '../../app-client'
 import { bold, fmtHistogram, fmtSummary } from '../../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { AnalyzeTypographyResult } from '@open-pencil/core'
+import type { AnalyzeTypographyResult } from '@verso/core'
 
 function weightName(w: number): string {
   if (w <= 100) return 'Thin'

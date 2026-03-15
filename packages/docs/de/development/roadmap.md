@@ -21,12 +21,12 @@ Komponenten, Instanzen, Overrides, Komponenten-Sets, Variablen (`COLOR`/FLOAT/ST
 ### Phase 5: KI-Integration & Werkzeuge ✅
 
 **Geliefert:**
-- @open-pencil/core extrahiert in packages/core/ (keine DOM-Abhängigkeiten)
-- @open-pencil/cli mit headless .fig-Operationen (info, tree, find, export, analyze, node, pages, variables, eval)
+- @verso/core extrahiert in packages/core/ (keine DOM-Abhängigkeiten)
+- @verso/cli mit headless .fig-Operationen (info, tree, find, export, analyze, node, pages, variables, eval)
 - `eval`-Befehl mit Figma-kompatibler Plugin API für Headless-Skripting
 - KI-Chat: OpenRouter-Direktverbindung, 87 Werkzeuge in `packages/core/src/tools/`, Modellauswahl, <kbd>⌘</kbd><kbd>J</kbd>
 - 49 zusätzliche KI/MCP-Werkzeuge portiert von figma-use (75 gesamt)
-- MCP-Server (@open-pencil/mcp): stdio + HTTP, 87 Core-Tools + 3 Dateiverwaltungs-Tools
+- MCP-Server (@verso/mcp): stdio + HTTP, 87 Core-Tools + 3 Dateiverwaltungs-Tools
 - Vereinheitlichte Werkzeugdefinitionen: einmal in `packages/core/src/tools/` definieren, für KI-Chat (valibot), MCP (zod), CLI (eval) adaptieren
 - App-Menüleiste für Browser-Modus (Datei, Bearbeiten, Ansicht, Objekt, Text, Anordnen)
 - Automatisches Speichern: 3s Debounce nach letzter Szenenänderung

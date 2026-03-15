@@ -1,12 +1,12 @@
 import { defineCommand } from 'citty'
 import { basename, extname, resolve } from 'node:path'
 
-import { renderNodesToSVG, sceneNodeToJSX, selectionToJSX } from '@open-pencil/core'
+import { renderNodesToSVG, sceneNodeToJSX, selectionToJSX } from '@verso/core'
 
 import { loadDocument, exportNodes, exportThumbnail } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
 import { ok, printError } from '../format'
-import type { ExportFormat, JSXFormat } from '@open-pencil/core'
+import type { ExportFormat, JSXFormat } from '@verso/core'
 
 const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']
 const ALL_FORMATS = [...RASTER_FORMATS, 'SVG', 'JSX']

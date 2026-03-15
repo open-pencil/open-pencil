@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../../headless'
 import { isAppMode, requireFile, rpc } from '../../app-client'
 import { bold, kv, fmtHistogram, fmtSummary } from '../../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { AnalyzeSpacingResult } from '@open-pencil/core'
+import type { AnalyzeSpacingResult } from '@verso/core'
 
 async function getData(file?: string): Promise<AnalyzeSpacingResult> {
   if (isAppMode(file)) return rpc<AnalyzeSpacingResult>('analyze_spacing')

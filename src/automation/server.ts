@@ -13,10 +13,10 @@ import {
   computeAllLayouts,
   selectionToJSX,
   sceneNodeToJSX
-} from '@open-pencil/core'
+} from '@verso/core'
 
 import type { EditorStore } from '@/stores/editor'
-import type { ExportFormat } from '@open-pencil/core'
+import type { ExportFormat } from '@verso/core'
 
 const TOKEN_LENGTH = 32
 

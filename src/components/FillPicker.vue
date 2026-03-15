@@ -20,7 +20,7 @@ import {
 import HsvColorArea from './HsvColorArea.vue'
 import ScrubInput from './ScrubInput.vue'
 import { useEditorStore } from '@/stores/editor'
-import { colorToCSS, colorToHexRaw, parseColor } from '@open-pencil/core'
+import { colorToCSS, colorToHexRaw, parseColor } from '@verso/core'
 
 import type {
   Color,
@@ -28,7 +28,7 @@ import type {
   GradientStop,
   GradientTransform,
   ImageScaleMode
-} from '@open-pencil/core'
+} from '@verso/core'
 
 type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 type GradientSubtype =

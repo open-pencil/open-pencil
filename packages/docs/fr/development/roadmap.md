@@ -21,12 +21,12 @@ Composants, instances, surcharges, jeux de composants, variables (`COLOR`/FLOAT/
 ### Phase 5 : Intégration IA & Outils ✅
 
 **Livré :**
-- @open-pencil/core extrait dans packages/core/ (aucune dépendance DOM)
-- @open-pencil/cli avec opérations headless .fig (info, tree, find, export, analyze, eval)
+- @verso/core extrait dans packages/core/ (aucune dépendance DOM)
+- @verso/cli avec opérations headless .fig (info, tree, find, export, analyze, eval)
 - Commande `eval` avec API Plugin compatible Figma
 - Chat IA : connexion directe OpenRouter, 87 outils dans `packages/core/src/tools/`, <kbd>⌘</kbd><kbd>J</kbd>
 - 49 outils IA/MCP additionnels portés depuis figma-use (75 au total)
-- Serveur MCP (@open-pencil/mcp) : stdio + HTTP, 87 outils core + 3 gestion de fichiers
+- Serveur MCP (@verso/mcp) : stdio + HTTP, 87 outils core + 3 gestion de fichiers
 - Définitions d'outils unifiées : définir une fois dans `packages/core/src/tools/`, adapter pour chat IA (valibot), MCP (zod), CLI (eval)
 - Barre de menus pour le mode navigateur
 - Sauvegarde automatique : écriture avec debounce de 3s

@@ -4,7 +4,7 @@ import { ref, computed, watch, onUnmounted } from 'vue'
 import AppSelect from '@/components/AppSelect.vue'
 import { useEditorStore } from '@/stores/editor'
 
-import type { ExportFormat } from '@open-pencil/core'
+import type { ExportFormat } from '@verso/core'
 
 const store = useEditorStore()
 

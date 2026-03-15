@@ -100,8 +100,8 @@ Components, instances, overrides, variables, collections, modes, image export.
 Core extraction, CLI, MCP server, AI tools, eval command.
 
 **Delivered:**
-- @open-pencil/core extracted to packages/core/ (zero DOM deps, Bun workspace)
-- @open-pencil/cli with headless .fig operations (info, tree, find, export, analyze, node, pages, variables, eval), CanvasKit CPU rasterization, --json output
+- @verso/core extracted to packages/core/ (zero DOM deps, Bun workspace)
+- @verso/cli with headless .fig operations (info, tree, find, export, analyze, node, pages, variables, eval), CanvasKit CPU rasterization, --json output
 - `eval` command with Figma-compatible Plugin API for headless scripting
 - JSX renderer: TreeNode builders (Frame, Text, Rectangle, etc.), renderTreeNode/renderJsx, Tailwind-like shorthand props, 27 tests
 - jscpd copy-paste detection (15.6% → 0.62%), kiwi-serialize.ts consolidation
@@ -109,7 +109,7 @@ Core extraction, CLI, MCP server, AI tools, eval command.
 - .fig import O(n²) → O(n) fix (37s → 535ms on 87K nodes), ByteBuffer optimization
 - AI chat: OpenRouter direct (no backend), Stronghold key storage, 87 tools split across domain files in `tools/`, model selector, <kbd>⌘</kbd><kbd>J</kbd> toggle, streaming markdown, Playwright tests with mock transport
 - 49 additional AI/MCP tools ported from figma-use (87 total): granular set tools, node operations, variable CRUD, boolean operations, vector path tools, viewport control
-- MCP server (@open-pencil/mcp): stdio + HTTP (Hono + Streamable HTTP with sessions), 87 core tools + 3 file management tools (90 total), runs on Bun and Node.js
+- MCP server (@verso/mcp): stdio + HTTP (Hono + Streamable HTTP with sessions), 87 core tools + 3 file management tools (90 total), runs on Bun and Node.js
 - Unified tool definitions: define once in `packages/core/src/tools/` (split by domain), adapt for AI chat (valibot), MCP (zod), CLI (eval)
 - Code panel: sceneNodeToJsx() export, Prism.js highlighting, line numbers, copy button, 14 tests
 - Properties panel restructured: Design | Code | AI tabs

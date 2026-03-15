@@ -3,9 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
 import { bold, entity, fmtList, fmtSummary } from '../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand } from '@verso/core'
 
-import type { VariablesResult } from '@open-pencil/core'
+import type { VariablesResult } from '@verso/core'
 
 async function getData(file: string | undefined, args: { collection?: string; type?: string }): Promise<VariablesResult> {
   const rpcArgs = { collection: args.collection, type: args.type }

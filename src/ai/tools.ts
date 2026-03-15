@@ -10,10 +10,10 @@ import {
   isFontLoaded,
   loadFont,
   toolsToAI
-} from '@open-pencil/core'
+} from '@verso/core'
 
 import type { EditorStore } from '@/stores/editor'
-import type { SceneNode, StepBudget, ToolLogEntry } from '@open-pencil/core'
+import type { SceneNode, StepBudget, ToolLogEntry } from '@verso/core'
 
 export const MAX_AGENT_STEPS = 50
 

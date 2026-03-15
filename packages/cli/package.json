@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/cli",
+  "name": "@verso/cli",
   "version": "0.10.0",
   "license": "MIT",
   "type": "module",
@@ -17,7 +17,7 @@
     "provenance": true
   },
   "dependencies": {
-    "@open-pencil/core": "workspace:*",
+    "@verso/core": "workspace:*",
     "agentfmt": "^0.1.3",
     "canvaskit-wasm": "^0.40.0",
     "citty": "^0.1.6"

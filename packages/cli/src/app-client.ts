@@ -1,4 +1,4 @@
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core'
+import { AUTOMATION_HTTP_PORT } from '@verso/core'
 
 const HEALTH_URL = `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`
 const RPC_URL = `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/rpc`

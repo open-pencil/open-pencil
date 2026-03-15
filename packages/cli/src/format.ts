@@ -14,7 +14,7 @@ import {
   summary as fmtSummary
 } from 'agentfmt'
 import type { TreeNode, ListItem, NodeData } from 'agentfmt'
-import type { SceneNode, SceneGraph } from '@open-pencil/core'
+import type { SceneNode, SceneGraph } from '@verso/core'
 
 export { ok, fail, dim, bold, cyan, entity, kv, fmtTree, fmtList, fmtNode, fmtHistogram, fmtSummary }
 

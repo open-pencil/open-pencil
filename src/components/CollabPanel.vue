@@ -13,7 +13,7 @@ import {
   TooltipProvider
 } from 'reka-ui'
 
-import { colorToCSS } from '@open-pencil/core'
+import { colorToCSS } from '@verso/core'
 import { useCollabInjected } from '@/composables/use-collab'
 import { toast } from '@/composables/use-toast'
 import { initials } from '@/utils/text'

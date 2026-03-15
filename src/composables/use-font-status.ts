@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 
-import { isFontLoaded, DEFAULT_FONT_FAMILY } from '@open-pencil/core'
+import { isFontLoaded, DEFAULT_FONT_FAMILY } from '@verso/core'
 
-import type { SceneNode } from '@open-pencil/core'
+import type { SceneNode } from '@verso/core'
 
 export function useNodeFontStatus(node: () => SceneNode) {
   const missingFonts = computed(() => {

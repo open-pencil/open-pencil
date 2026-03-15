@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'bun:test'
-import { FrameStats, DrawCallCounter, PhaseTimer, GPUTimer, CaptureStack, toSpeedscopeJSON } from '@open-pencil/core'
+import { FrameStats, DrawCallCounter, PhaseTimer, GPUTimer, CaptureStack, toSpeedscopeJSON } from '@verso/core'
 
 describe('FrameStats', () => {
   it('records frames and computes rolling averages', () => {

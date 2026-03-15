@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Color } from '@open-pencil/core'
-import { colorToCSS } from '@open-pencil/core'
+import type { Color } from '@verso/core'
+import { colorToCSS } from '@verso/core'
 import { computed } from 'vue'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'reka-ui'
 

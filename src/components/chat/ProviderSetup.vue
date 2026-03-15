@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
-import { ACP_AGENTS } from '@open-pencil/core'
+import { ACP_AGENTS } from '@verso/core'
 
 const { providerID, providerDef, setAPIKey, customBaseURL, customModelID } = useAIChat()
 
