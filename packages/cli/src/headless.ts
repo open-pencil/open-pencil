@@ -1,5 +1,5 @@
 import {
-  parseFigFile,
+  parseDesignFile,
   initCanvasKit,
   type SceneGraph,
   type ExportFormat,
@@ -12,7 +12,8 @@ export { initCanvasKit }
 
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
   const data = await Bun.file(filePath).arrayBuffer()
-  const graph = await parseFigFile(data)
+  const filename = filePath.split('/').pop() ?? filePath
+  const graph = await parseDesignFile(data, filename)
   computeAllLayouts(graph)
   return graph
 }

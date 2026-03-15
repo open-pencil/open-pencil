@@ -5,7 +5,7 @@ import { IS_TAURI } from '@/constants'
 import { useEditorStore } from '@/stores/editor'
 import { openFileInNewTab, createTab, closeTab, activeTab } from '@/stores/tabs'
 
-const fileDialog = useFileDialog({ accept: '.fig', multiple: false, reset: true })
+const fileDialog = useFileDialog({ accept: '.fig,.pen', multiple: false, reset: true })
 fileDialog.onChange((files) => {
   const file = files?.[0]
   if (file) void openFileInNewTab(file)
@@ -16,7 +16,7 @@ export async function openFileDialog() {
     const { open } = await import('@tauri-apps/plugin-dialog')
     const { readFile } = await import('@tauri-apps/plugin-fs')
     const path = await open({
-      filters: [{ name: 'Figma file', extensions: ['fig'] }],
+      filters: [{ name: 'Figma file', extensions: ['fig', 'pen'] }],
       multiple: false
     })
     if (!path) return
@@ -32,7 +32,7 @@ export async function openFileDialog() {
         types: [
           {
             description: 'Figma file',
-            accept: { 'application/octet-stream': ['.fig'] }
+            accept: { 'application/octet-stream': ['.fig', '.pen'] }
           }
         ]
       })

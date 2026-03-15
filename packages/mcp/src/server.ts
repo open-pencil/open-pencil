@@ -8,7 +8,7 @@ import {
   ALL_TOOLS,
   CODEGEN_PROMPT,
   FigmaAPI,
-  parseFigFile,
+  parseDesignFile,
   computeAllLayouts,
   SceneGraph,
   headlessRenderNodes
@@ -116,13 +116,14 @@ export function createServer(version: string, options: CreateServerOptions = {})
     'open_file',
     {
       description: 'Open a .fig file for editing. Must be called before using other tools.',
-      inputSchema: z.object({ path: z.string().describe('Absolute path to a .fig file') })
+      inputSchema: z.object({ path: z.string().describe('Absolute path to a .fig or .pen file') })
     },
     async ({ path: filePath }: { path: string }) => {
       try {
         const path = resolveAndCheckPath(filePath)
         const buf = await readFile(path)
-        graph = await parseFigFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength))
+        const filename = path.split('/').pop() ?? path
+        graph = await parseDesignFile(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), filename)
         computeAllLayouts(graph)
         const pages = graph.getPages()
         currentPageId = pages[0]?.id ?? null

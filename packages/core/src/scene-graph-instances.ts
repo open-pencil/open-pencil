@@ -55,7 +55,13 @@ function copyProp(
   } else if (key === 'styleRuns') {
     ;(target as Record<string, unknown>)[key] = copyStyleRuns(val as StyleRun[])
   } else {
-    ;(target as Record<string, unknown>)[key] = Array.isArray(val) ? structuredClone(val) : val
+    if (Array.isArray(val)) {
+      ;(target as Record<string, unknown>)[key] = structuredClone(val)
+    } else if (val !== null && typeof val === 'object') {
+      ;(target as Record<string, unknown>)[key] = { ...val as Record<string, unknown> }
+    } else {
+      ;(target as Record<string, unknown>)[key] = val
+    }
   }
 }
 
@@ -67,9 +73,10 @@ function cloneChildrenWithMapping(graph: SceneGraph, sourceParentId: string, des
     const src = graph.nodes.get(childId)
     if (!src) continue
 
-    const { id: _, parentId: _p, childIds: _c, ...rest } = src
+    const { id: _, parentId: _p, childIds: _c, boundVariables: bv, ...rest } = src
     const clone = graph.createNode(src.type, destParentId, {
       ...rest,
+      boundVariables: { ...bv },
       componentId: childId
     })
 
@@ -99,9 +106,10 @@ function syncChildren(
     if (!instChildMap.has(compChildId)) {
       const src = graph.nodes.get(compChildId)
       if (!src) continue
-      const { id: _, parentId: _p, childIds: _c, ...rest } = src
+      const { id: _, parentId: _p, childIds: _c, boundVariables: bv2, ...rest } = src
       const clone = graph.createNode(src.type, instParentId, {
         ...rest,
+        boundVariables: { ...bv2 },
         componentId: compChildId
       })
       if (src.childIds.length > 0) {

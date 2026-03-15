@@ -23,7 +23,7 @@ import {
   parseFigmaClipboard,
   buildFigmaClipboardHTML,
   prefetchFigmaSchema,
-  readFigFile,
+  readDesignFile,
   computeImageHash,
   renderNodesToImage,
   renderNodesToSVG,
@@ -680,17 +680,18 @@ export function createEditorStore() {
     try {
       state.loading = true
       await yieldToUI()
-      const imported = await readFigFile(file)
+      const imported = await readDesignFile(file)
       await yieldToUI()
       graph = imported
       computeAllLayouts(graph)
       subscribeToGraph()
       undo.clear()
       pageViewports.clear()
-      fileHandle = handle ?? null
-      filePath = path ?? null
-      state.documentName = file.name.replace(/\.fig$/i, '')
-      downloadName = file.name
+      const isPen = /\.pen$/i.test(file.name)
+      fileHandle = isPen ? null : (handle ?? null)
+      filePath = isPen ? null : (path ?? null)
+      state.documentName = file.name.replace(/\.(?:fig|pen)$/i, '')
+      downloadName = isPen ? state.documentName + '.fig' : file.name
       state.selectedIds = new Set()
       const firstPage = graph.getPages()[0] as SceneNode | undefined
       const pageId = firstPage?.id ?? graph.rootId
@@ -747,7 +748,7 @@ export function createEditorStore() {
         path
           .split('/')
           .pop()
-          ?.replace(/\.fig$/i, '') ?? 'Untitled'
+          ?.replace(/\.(?:fig|pen)$/i, '') ?? 'Untitled'
       await writeFile(data)
       void startWatchingFile()
       return
@@ -766,7 +767,7 @@ export function createEditorStore() {
         })
         fileHandle = handle
         filePath = null
-        state.documentName = handle.name.replace(/\.fig$/i, '')
+        state.documentName = handle.name.replace(/\.(?:fig|pen)$/i, '')
         await writeFile(data)
         void startWatchingFile()
         return
@@ -778,7 +779,7 @@ export function createEditorStore() {
     const filename = prompt('Save as:', downloadName ?? 'Untitled.fig')
     if (!filename) return
     downloadName = filename
-    state.documentName = filename.replace(/\.fig$/i, '')
+    state.documentName = filename.replace(/\.(?:fig|pen)$/i, '')
     downloadBlob(new Uint8Array(data), filename, 'application/octet-stream')
   }
 
@@ -809,13 +810,13 @@ export function createEditorStore() {
       const bytes = await tauriRead(filePath)
       const blob = new Blob([bytes])
       const file = new File([blob], state.documentName + '.fig')
-      const imported = await readFigFile(file)
+      const imported = await readDesignFile(file)
       graph = imported
       computeAllLayouts(graph)
       subscribeToGraph()
     } else if (fileHandle) {
       const file = await fileHandle.getFile()
-      const imported = await readFigFile(file)
+      const imported = await readDesignFile(file)
       graph = imported
       computeAllLayouts(graph)
       subscribeToGraph()

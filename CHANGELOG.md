@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Features
+
+- Import Pencil Dev (.pen) files — open via File dialog, drag & drop, CLI, or MCP server
+- Design file format router — `.fig` and `.pen` detected by extension, single `readDesignFile()` entry point
+- .pen validation tool (`validatePenImport`) for property-by-property import accuracy checks
+- CLI headless export loads correct font weights and bundles Material Symbols Sharp for icon fonts
+
 ### Performance
 
 - Offload .fig parsing (unzip + Kiwi decode) to a Web Worker — main thread stays responsive during file open

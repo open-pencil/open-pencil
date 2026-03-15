@@ -200,6 +200,10 @@ export {
   type OpenPencilClipboardData
 } from './clipboard'
 
+export { readDesignFile, parseDesignFile } from './design-file'
+export { parsePenFile, readPenFile } from './pen-file'
+export { validatePenImport, formatValidationResult, type PenValidationResult, type ValidationIssue } from './pen-validate'
+
 export {
   readFigFile,
   parseFigFile,

@@ -1,0 +1,113 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "T3Um0",
+      "x": 462.7680165404179,
+      "y": 258.2749319076538,
+      "name": "Button/Large/Default",
+      "reusable": true,
+      "height": 48,
+      "fill": "$--primary",
+      "cornerRadius": "$--radius-pill",
+      "gap": 6,
+      "padding": [
+        12,
+        24
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "fd4qq",
+          "name": "plus",
+          "width": 24,
+          "height": 24,
+          "stroke": {
+            "align": "inside",
+            "thickness": 1
+          },
+          "layout": "none",
+          "children": [
+            {
+              "type": "path",
+              "id": "NWqkO",
+              "x": 6,
+              "y": 6,
+              "name": "Vector",
+              "geometry": "M7.07104 3.53555l-3.53552 0-3.53552 0m3.53552-3.53555l0 3.53555 0 3.53549",
+              "width": 12,
+              "height": 12,
+              "stroke": {
+                "align": "center",
+                "thickness": 1.5,
+                "join": "round",
+                "cap": "round",
+                "fill": "$--primary-foreground"
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "8RtfK",
+          "name": "Button",
+          "fill": "$--primary-foreground",
+          "content": "Button",
+          "lineHeight": 1.5555555555555556,
+          "textAlign": "center",
+          "textAlignVertical": "middle",
+          "fontFamily": "$--font-primary",
+          "fontSize": 14,
+          "fontWeight": "500"
+        }
+      ]
+    }
+  ],
+  "themes": {
+    "Mode": [
+      "Light",
+      "Dark"
+    ]
+  },
+  "variables": {
+    "--primary": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#FF8400"
+        },
+        {
+          "value": "#FF8400",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--radius-pill": {
+      "type": "number",
+      "value": 999
+    },
+    "--primary-foreground": {
+      "type": "color",
+      "value": [
+        {
+          "value": "#111111"
+        },
+        {
+          "value": "#111111",
+          "theme": {
+            "Mode": "Dark"
+          }
+        }
+      ]
+    },
+    "--font-primary": {
+      "type": "string",
+      "value": "JetBrains Mono"
+    }
+  }
+}
