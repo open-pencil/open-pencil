@@ -10,7 +10,13 @@ import { computed, ref, watch } from 'vue'
 import SYSTEM_PROMPT from '@/ai/system-prompt.md?raw'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/ai/tools'
 import { useEditorStore } from '@/stores/editor'
-import { AI_PROVIDERS, DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER } from '@open-pencil/core'
+import {
+  AI_PROVIDERS,
+  DEFAULT_AI_MODEL,
+  DEFAULT_AI_PROVIDER,
+  setPexelsApiKey,
+  setUnsplashAccessKey
+} from '@open-pencil/core'
 
 import type { AIProviderID } from '@open-pencil/core'
 import type { LanguageModel, UIMessage } from 'ai'
@@ -49,6 +55,8 @@ const customAPIType = useLocalStorage<'completions' | 'responses'>(
   'completions'
 )
 const maxOutputTokens = useLocalStorage(`${STORAGE_PREFIX}ai-max-output-tokens`, 16384)
+const pexelsApiKey = useLocalStorage(`${STORAGE_PREFIX}pexels-api-key`, '')
+const unsplashAccessKey = useLocalStorage(`${STORAGE_PREFIX}unsplash-access-key`, '')
 const activeTab = ref<'design' | 'ai'>('design')
 
 const providerDef = computed(
@@ -68,6 +76,22 @@ let transportDirty = false
 function markTransportDirty() {
   transportDirty = true
 }
+
+watch(
+  pexelsApiKey,
+  (key) => {
+    setPexelsApiKey(key || null)
+  },
+  { immediate: true }
+)
+
+watch(
+  unsplashAccessKey,
+  (key) => {
+    setUnsplashAccessKey(key || null)
+  },
+  { immediate: true }
+)
 
 watch(providerID, (id) => {
   const def = AI_PROVIDERS.find((p) => p.id === id)
@@ -240,6 +264,8 @@ export function useAIChat() {
     customModelID,
     customAPIType,
     maxOutputTokens,
+    pexelsApiKey,
+    unsplashAccessKey,
     activeTab,
     isConfigured,
     ensureChat,

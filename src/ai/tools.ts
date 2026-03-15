@@ -3,7 +3,14 @@ import { tool } from 'ai'
 import * as v from 'valibot'
 
 import { makeFigmaFromStore } from '@/automation/figma-factory'
-import { CORE_TOOLS, computeAllLayouts, toolsToAI } from '@open-pencil/core'
+import {
+  CORE_TOOLS,
+  collectFontKeys,
+  computeAllLayouts,
+  isFontLoaded,
+  loadFont,
+  toolsToAI
+} from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
 import type { SceneNode, StepBudget, ToolLogEntry } from '@open-pencil/core'
@@ -80,9 +87,25 @@ export function createAITools(store: EditorStore) {
           beforeSnapshot = store.snapshotPage()
         }
       },
-      onAfterExecute: (def) => {
+      onAfterExecute: async (def) => {
         if (def.mutates) {
-          computeAllLayouts(store.graph, store.state.currentPageId)
+          const pageId = store.state.currentPageId
+          const pageNode = store.graph.getNode(pageId)
+          if (pageNode) {
+            const fontKeys = collectFontKeys(store.graph, pageNode.childIds)
+            const missing = fontKeys.filter(([family]) => !isFontLoaded(family))
+            if (missing.length > 0) {
+              const results = await Promise.all(
+                missing.map(([family, style]) => loadFont(family, style))
+              )
+              if (results.some((r) => r !== null)) {
+                for (const [, node] of store.graph.nodes) {
+                  if (node.type === 'TEXT' && node.textPicture) node.textPicture = null
+                }
+              }
+            }
+          }
+          computeAllLayouts(store.graph, pageId)
           store.requestRender()
           if (beforeSnapshot) {
             const before = beforeSnapshot
@@ -97,7 +120,10 @@ export function createAITools(store: EditorStore) {
         }
       },
       onFlashNodes: (nodeIds) => {
-        store.flashNodes(nodeIds)
+        store.renderer?.aiClearActive()
+        if (nodeIds.length > 0) {
+          store.aiFlashDone(nodeIds)
+        }
       },
       onToolLog: (entry) => {
         runState.toolLog.push(entry)

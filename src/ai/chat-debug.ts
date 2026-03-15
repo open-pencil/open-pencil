@@ -1,7 +1,7 @@
 import { getStepUsages, getToolLogEntries } from '@/ai/tools'
-import { buildDebugLog } from '@open-pencil/core'
+import { buildDebugLog } from '@open-pencil/core/tools'
 
-import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core'
+import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
 import type { UIMessage } from 'ai'
 
 function formatToolPart(part: Record<string, unknown>): string {

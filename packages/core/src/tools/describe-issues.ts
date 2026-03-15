@@ -11,7 +11,10 @@ const LOW_CONTRAST_THRESHOLD = 15
 const SHAPE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'STAR', 'POLYGON', 'LINE'])
 const ICON_MAX_SIZE = 48
 
+export type IssueSeverity = 'error' | 'warning' | 'info'
+
 export interface DescribeIssue {
+  severity?: IssueSeverity
   message: string
   suggestion?: string
 }
@@ -149,6 +152,73 @@ function checkImagePlaceholder(node: SceneNode, graph: SceneGraph, issues: Descr
   }
 }
 
+function checkNestedText(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
+  if (node.type !== 'TEXT') return
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (child?.type === 'TEXT') {
+      issues.push({
+        message: `Nested Text "${child.text.slice(0, 20)}" inside "${node.text.slice(0, 20)}" — causes overflow`,
+        suggestion: 'Split into separate <Text> elements in a flex="row" wrapper'
+      })
+    }
+  }
+}
+
+function checkZeroPaddingContainer(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
+  if (!CONTAINER_TYPES.has(node.type)) return
+  if (node.layoutMode === 'NONE') return
+  if (node.childIds.length < 3) return
+  const allPad = node.paddingTop + node.paddingRight + node.paddingBottom + node.paddingLeft
+  if (allPad > 0) return
+  const hasTextChild = node.childIds.some((id) => {
+    const c = graph.getNode(id)
+    return c?.type === 'TEXT' && c.visible
+  })
+  const hasFill = node.fills.some((f) => f.visible)
+  if (hasTextChild && hasFill) {
+    issues.push({
+      message: `"${node.name}" has text content with fill but no padding`,
+      suggestion: 'Add p={16} or px={16} py={12}'
+    })
+  }
+}
+
+function checkButtonWithoutPadding(node: SceneNode, _graph: SceneGraph, issues: DescribeIssue[]): void {
+  if (!looksLikeButton(node)) return
+  if (node.layoutMode === 'NONE') return
+  const hPad = node.paddingLeft + node.paddingRight
+  if (hPad === 0 && node.childIds.length > 0) {
+    issues.push({
+      message: `Button "${node.name}" has no horizontal padding`,
+      suggestion: 'Add px={16} or px={12}'
+    })
+  }
+}
+
+function checkFlexContainerWithoutAlignment(node: SceneNode, _graph: SceneGraph, issues: DescribeIssue[]): void {
+  if (!CONTAINER_TYPES.has(node.type)) return
+  if (node.layoutMode === 'NONE') return
+  if (node.childIds.length === 0) return
+  const isRow = node.layoutMode === 'HORIZONTAL'
+  if (isRow && node.counterAxisAlign === 'MIN' && node.height > 60) {
+    const pad = node.paddingTop + node.paddingBottom
+    const contentH = node.height - pad
+    if (contentH > 50 && node.childIds.length <= 5) {
+      const maxChildH = node.childIds.reduce((max, id) => {
+        const c = _graph.getNode(id)
+        return c?.visible ? Math.max(max, c.height) : max
+      }, 0)
+      if (maxChildH > 0 && maxChildH < contentH * 0.6) {
+        issues.push({
+          message: `"${node.name}" row children top-aligned with large empty space below`,
+          suggestion: 'Add items="center" to vertically center content'
+        })
+      }
+    }
+  }
+}
+
 function detectVisibilityIssues(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
   for (const fill of node.fills) {
     if (!fill.visible || fill.type !== 'SOLID') continue
@@ -269,6 +339,22 @@ function detectSpacingIssues(node: SceneNode, graph: SceneGraph, gridSize: numbe
   }
 }
 
+const ERROR_PATTERNS = [
+  /overflow/i, /invisible/i, /no color/i, /collapses/i, /no fill and no stroke/i,
+  /dark on dark/i, /Touch target too small/i, /Nested Text/i
+]
+const INFO_PATTERNS = [
+  /children named/i, /uppercase at/i, /fill.*matches parent/i,
+  /radius.*should be/i, /width while siblings/i, /height while siblings/i,
+  /icon.*width/i
+]
+
+function classifySeverity(message: string): IssueSeverity {
+  if (ERROR_PATTERNS.some((p) => p.test(message))) return 'error'
+  if (INFO_PATTERNS.some((p) => p.test(message))) return 'info'
+  return 'warning'
+}
+
 export function detectIssues(node: SceneNode, gridSize: number, graph: SceneGraph): DescribeIssue[] {
   const issues: DescribeIssue[] = []
   detectStructuralIssues(node, gridSize, graph, issues)
@@ -277,5 +363,12 @@ export function detectIssues(node: SceneNode, gridSize: number, graph: SceneGrap
   detectRadiusIssues(node, graph, issues)
   detectTypographyIssues(node, graph, issues)
   detectSpacingIssues(node, graph, gridSize, issues)
+  checkNestedText(node, graph, issues)
+  checkZeroPaddingContainer(node, graph, issues)
+  checkButtonWithoutPadding(node, graph, issues)
+  checkFlexContainerWithoutAlignment(node, graph, issues)
+  for (const issue of issues) {
+    issue.severity = classifySeverity(issue.message)
+  }
   return issues
 }

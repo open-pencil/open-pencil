@@ -24,13 +24,19 @@ const {
   customBaseURL,
   customModelID,
   customAPIType,
-  maxOutputTokens
+  maxOutputTokens,
+  pexelsApiKey,
+  unsplashAccessKey
 } = useAIChat()
 
 const keyInput = ref('')
+const pexelsKeyInput = ref('')
+const unsplashKeyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
 const customModelInput = ref(customModelID.value)
 const hasExistingKey = ref(!!apiKey.value)
+const hasExistingPexelsKey = ref(!!pexelsApiKey.value)
+const hasExistingUnsplashKey = ref(!!unsplashAccessKey.value)
 
 watch(providerID, () => {
   keyInput.value = ''
@@ -45,6 +51,16 @@ function save() {
     hasExistingKey.value = true
     keyInput.value = ''
   }
+  if (pexelsKeyInput.value.trim()) {
+    pexelsApiKey.value = pexelsKeyInput.value.trim()
+    hasExistingPexelsKey.value = true
+    pexelsKeyInput.value = ''
+  }
+  if (unsplashKeyInput.value.trim()) {
+    unsplashAccessKey.value = unsplashKeyInput.value.trim()
+    hasExistingUnsplashKey.value = true
+    unsplashKeyInput.value = ''
+  }
   if (providerDef.value.supportsCustomBaseURL) {
     customBaseURL.value = baseURLInput.value.trim()
   }
@@ -57,6 +73,18 @@ function clearKey() {
   setAPIKey('')
   keyInput.value = ''
   hasExistingKey.value = false
+}
+
+function clearPexelsKey() {
+  pexelsApiKey.value = ''
+  pexelsKeyInput.value = ''
+  hasExistingPexelsKey.value = false
+}
+
+function clearUnsplashKey() {
+  unsplashAccessKey.value = ''
+  unsplashKeyInput.value = ''
+  hasExistingUnsplashKey.value = false
 }
 </script>
 
@@ -165,6 +193,74 @@ function clearKey() {
               :step="1024"
               :class="uiInput({ size: 'sm' })"
             />
+          </div>
+
+          <!-- Pexels stock photos -->
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] text-muted">Pexels API Key (stock photos)</label>
+              <button
+                v-if="pexelsApiKey"
+                class="cursor-pointer text-[10px] text-muted hover:text-surface"
+                data-test-id="provider-settings-clear-pexels-key"
+                @click="clearPexelsKey"
+              >
+                Clear
+              </button>
+            </div>
+            <input
+              v-model="pexelsKeyInput"
+              type="password"
+              data-test-id="provider-settings-pexels-key"
+              :placeholder="
+                hasExistingPexelsKey
+                  ? 'Key saved — enter new to replace'
+                  : 'Optional — for stock_photo tool'
+              "
+              :class="uiInput({ size: 'sm' })"
+              @change="save"
+            />
+            <a
+              href="https://www.pexels.com/api/"
+              target="_blank"
+              class="text-[9px] text-muted underline hover:text-surface"
+            >
+              Get free Pexels API key →
+            </a>
+          </div>
+
+          <!-- Unsplash stock photos -->
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] text-muted">Unsplash Access Key</label>
+              <button
+                v-if="unsplashAccessKey"
+                class="cursor-pointer text-[10px] text-muted hover:text-surface"
+                data-test-id="provider-settings-clear-unsplash-key"
+                @click="clearUnsplashKey"
+              >
+                Clear
+              </button>
+            </div>
+            <input
+              v-model="unsplashKeyInput"
+              type="password"
+              data-test-id="provider-settings-unsplash-key"
+              :placeholder="
+                hasExistingUnsplashKey
+                  ? 'Key saved — enter new to replace'
+                  : 'Optional — alternative to Pexels'
+              "
+              :class="uiInput({ size: 'sm' })"
+              @change="save"
+            />
+            <a
+              href="https://unsplash.com/oauth/applications"
+              target="_blank"
+              class="text-[9px] text-muted underline hover:text-surface"
+            >
+              Get free Unsplash access key →
+            </a>
           </div>
 
           <!-- API key -->

@@ -18,7 +18,8 @@ import {
 import {
   deleteNode, cloneNode, renameNode, reparentNode, groupNodes, ungroupNode,
   flattenNodes, nodeToComponent, nodeBounds, nodeMove, nodeResize,
-  nodeAncestors, nodeChildren, nodeTree, nodeBindings, nodeReplaceWith, arrangeNodes
+  nodeAncestors, nodeChildren, nodeTree, nodeBindings, nodeReplaceWith, arrangeNodes,
+  batchUpdate
 } from './structure'
 import {
   listVariables, listCollections, getVariable, findVariables,
@@ -38,6 +39,7 @@ import {
 import { describe } from './describe'
 import { designToTokens, designToComponentMap } from './codegen'
 import { calc } from './calc'
+import { stockPhoto } from './stock-photo'
 
 /**
  * Core tools registered by default in AI chat (~30 tools, ~3K schema tokens).
@@ -46,38 +48,27 @@ import { calc } from './calc'
 export const CORE_TOOLS: ToolDef[] = [
   // Read
   getSelection,
-  getPageTree,
   getNode,
   findNodes,
-  getCurrentPage,
-  listPages,
   getJsx,
-  selectNodes,
   // Create
   render,
-  createShape,
-  searchIconsTool,
-  insertIcon,
-  fetchIconsTool,
   // Modify
-  setFill,
-  setStroke,
-  setEffects,
   updateNode,
   setLayout,
   setLayoutChild,
   setRadius,
-  setOpacity,
+  setFill,
+  setStroke,
   setText,
-  setFont,
   setTextProperties,
-  setVisible,
   // Structure
   deleteNode,
-  cloneNode,
   reparentNode,
-  nodeMove,
   nodeResize,
+  batchUpdate,
+  // Stock photos
+  stockPhoto,
   // Inspect & utility
   describe,
   calc,
@@ -91,6 +82,10 @@ export const CORE_TOOLS: ToolDef[] = [
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
   // Read (advanced)
+  getPageTree,
+  getCurrentPage,
+  listPages,
+  selectNodes,
   queryNodes,
   getComponents,
   switchPage,
@@ -98,12 +93,20 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   listFonts,
   diffJsx,
   // Create (advanced)
+  createShape,
+  searchIconsTool,
+  insertIcon,
+  fetchIconsTool,
   createComponent,
   createInstance,
   createPage,
   createVector,
   createSlice,
   // Modify (advanced)
+  setEffects,
+  setOpacity,
+  setFont,
+  setVisible,
   setConstraints,
   setRotation,
   setMinMax,
@@ -114,6 +117,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setStrokeAlign,
   setImageFill,
   // Structure (advanced)
+  cloneNode,
+  nodeMove,
   renameNode,
   groupNodes,
   ungroupNode,

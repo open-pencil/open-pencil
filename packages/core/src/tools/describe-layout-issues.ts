@@ -250,6 +250,21 @@ function checkSiblingHeightConsistency(ctx: LayoutContext): void {
   }
 }
 
+function checkChildUndersize(ctx: LayoutContext): void {
+  const { node, graph, issues } = ctx
+  if (node.layoutMode !== 'NONE') return
+  for (const childId of node.childIds) {
+    const child = graph.getNode(childId)
+    if (!child?.visible) continue
+    if (child.width > 0 && node.width > 0 && child.width < node.width * 0.3 && child.height >= node.height * 0.5) {
+      issues.push({
+        message: `"${child.name}" is ${Math.round(child.width)}px wide inside ${Math.round(node.width)}px "${node.name}" (no auto-layout)`,
+        suggestion: `Add flex="col" to "${node.name}" and w="fill" to "${child.name}"`
+      })
+    }
+  }
+}
+
 function checkCrossAxisOverflow(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.clipsContent) return
@@ -287,26 +302,49 @@ function checkAbsoluteInFlex(_ctx: LayoutContext): void {
   // Not reported — describe summary already shows "positioned: ABSOLUTE".
 }
 
+function effectivelyFillsCrossAxis(child: SceneNode, parent: SceneNode, isRow: boolean): boolean {
+  const childCross = isRow ? child.height : child.width
+  const parentCrossContent = isRow
+    ? parent.height - parent.paddingTop - parent.paddingBottom
+    : parent.width - parent.paddingLeft - parent.paddingRight
+  return Math.abs(childCross - parentCrossContent) < 2
+}
+
+function childNeedsFill(child: SceneNode, parent: SceneNode, isRow: boolean): boolean {
+  if (child.layoutMode === 'NONE') return false
+  const crossDim = isRow ? child.width : child.height
+  const crossSizing = isRow ? child.counterAxisSizing : child.primaryAxisSizing
+  if (crossDim <= 0 && crossSizing !== 'FILL') return false
+  const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
+  if (mainSizing === 'FIXED') return false
+  if (effectivelyFillsCrossAxis(child, parent, isRow)) return false
+  if (child.childIds.length === 0) return false
+  return isRow
+    ? child.width < parent.width * 0.3 && child.counterAxisSizing !== 'FILL' && child.layoutGrow <= 0
+    : child.height < parent.height * 0.3 && child.primaryAxisSizing !== 'FILL' && child.layoutGrow <= 0
+}
+
+function hasSiblingWithGrowOrFill(children: SceneNode[], exclude: SceneNode, isRow: boolean): boolean {
+  return children.some((c) => {
+    if (c === exclude) return false
+    if (c.layoutGrow > 0) return true
+    const sizing = isRow ? c.counterAxisSizing : c.primaryAxisSizing
+    return sizing === 'FILL'
+  })
+}
+
 function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
   const { node, isRow, children, issues } = ctx
   if (node.layoutMode === 'NONE') return
-  if (node.primaryAxisAlign === 'SPACE_BETWEEN' || node.primaryAxisAlign === 'CENTER') return
+  if (node.primaryAxisAlign !== 'MIN') return
+  if (node.layoutWrap === 'WRAP') return
   for (const child of children) {
-    if (child.layoutMode === 'NONE') continue
-    const crossDim = isRow ? child.width : child.height
-    const crossSizing = isRow ? child.counterAxisSizing : child.primaryAxisSizing
-    if (crossDim <= 0 && crossSizing !== 'FILL') continue
-    const mainSizing = isRow ? child.primaryAxisSizing : child.counterAxisSizing
-    if (mainSizing === 'FIXED') continue
-    const needsFill = isRow
-      ? child.width < node.width * 0.3 && child.counterAxisSizing !== 'FILL' && child.layoutGrow <= 0
-      : child.height < node.height * 0.3 && child.primaryAxisSizing !== 'FILL' && child.layoutGrow <= 0
-    if (needsFill && child.childIds.length > 0) {
-      issues.push({
-        message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
-        suggestion: 'Add w="fill" or grow={1}'
-      })
-    }
+    if (!childNeedsFill(child, node, isRow)) continue
+    if (hasSiblingWithGrowOrFill(children, child, isRow)) continue
+    issues.push({
+      message: `Nested flex "${child.name}" may collapse — no fill or grow in "${node.name}"`,
+      suggestion: 'Add w="fill" or grow={1}'
+    })
   }
 }
 
@@ -341,6 +379,7 @@ export function detectLayoutIssues(node: SceneNode, graph: SceneGraph, issues: D
   checkTextVisibility(ctx)
   checkDuplicateNames(ctx)
   checkFillWithoutFlex(ctx)
+  checkChildUndersize(ctx)
   checkAbsoluteInFlex(ctx)
 
   if (node.layoutMode === 'NONE') return

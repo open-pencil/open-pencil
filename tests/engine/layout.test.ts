@@ -1053,6 +1053,37 @@ describe('Auto Layout', () => {
       expect(updatedText.height).toBeGreaterThan(0)
     })
 
+    test('without measurer, HEIGHT text estimates multi-line wrapping', () => {
+      const graph = new SceneGraph()
+      const pid = pageId(graph)
+
+      const frame = autoFrame(graph, pid, {
+        width: 269,
+        height: 400,
+        layoutMode: 'VERTICAL',
+        primaryAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED',
+      })
+
+      graph.createNode('TEXT', frame.id, {
+        width: 269,
+        height: 20,
+        text: 'GDP Growth Exceeds Expectations at 3.1% in Q2 Report That Nobody Expected',
+        fontSize: 15,
+        lineHeight: 22,
+        textAutoResize: 'HEIGHT' as const,
+      })
+
+      setTextMeasurer(null)
+      computeAllLayouts(graph)
+
+      const children = graph.getChildren(frame.id)
+      const updatedText = children[0]
+      // 74 chars × 15 × 0.6 = 666px single line, in 269px → ~3 lines × 22px = 66px
+      expect(updatedText.height).toBeGreaterThan(22)
+      expect(updatedText.width).toBe(269)
+    })
+
     test('text with w="fill" in flex="col" stretches to parent width', () => {
       const graph = new SceneGraph()
       const pid = pageId(graph)

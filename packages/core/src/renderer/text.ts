@@ -24,7 +24,7 @@ export function measureTextNode(
   node: SceneNode,
   maxWidth?: number
 ): { width: number; height: number } | null {
-  if (!r.fontsLoaded || !r.fontProvider || !isNodeFontLoaded(r, node)) return null
+  if (!r.fontsLoaded || !r.fontProvider) return null
   if (node.type !== 'TEXT' || !node.text) return null
 
   const paragraph = buildParagraph(r, node)
@@ -42,7 +42,7 @@ export function measureTextNode(
 }
 
 export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array | null {
-  if (!r.fontsLoaded || !r.fontProvider || !isNodeFontLoaded(r, node)) return null
+  if (!r.fontsLoaded || !r.fontProvider) return null
   if (node.type !== 'TEXT' || !node.text) return null
 
   const ck = r.ck
@@ -170,8 +170,12 @@ export function buildParagraph(
 
   const truncateOpts = buildTruncateOpts(node, baseFontSize)
 
-  const fontFamilies = (primary: string) =>
-    cjkFallback ? [primary, cjkFallback] : [primary]
+  const fontFamilies = (primary: string) => {
+    const families = [primary]
+    if (primary !== DEFAULT_FONT_FAMILY) families.push(DEFAULT_FONT_FAMILY)
+    if (cjkFallback) families.push(cjkFallback)
+    return families
+  }
 
   const paraStyle = new ck.ParagraphStyle({
     textAlign: getTextAlign(ck, node.textAlignHorizontal),

@@ -4,30 +4,45 @@ import { defineTool } from './schema'
 
 const parser = new ExprEval.Parser()
 
+function evalExpr(expr: string): { expr: string; result: number } | { expr: string; error: string } {
+  try {
+    const result = parser.evaluate(expr)
+    if (!Number.isFinite(result)) {
+      return { expr, error: `Produced ${String(result)}` }
+    }
+    return { expr, result }
+  } catch (e) {
+    return { expr, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
 export const calc = defineTool({
   name: 'calc',
   description:
-    'Arithmetic calculator. ALWAYS use this instead of mental math for layout calculations. ' +
-    'Evaluates a math expression and returns the numeric result. ' +
+    'Arithmetic calculator. ALWAYS use instead of mental math. ' +
+    'Pass one expression or a JSON array of expressions — all evaluated in one call. ' +
     'Supports: + - * / % ** ( ) min max floor ceil round abs sqrt pow. ' +
-    'Examples: "844 - 56 - 96 - 82" → 610, "floor(390 * 0.6)" → 234',
+    'Examples: "844 - 56 - 96 - 82", \'["1440 * 8 / 12", "(952 - 16) / 2", "floor(390 * 0.6)"]\'',
   params: {
     expr: {
       type: 'string',
-      description: 'Math expression, e.g. "844 - 56 - 96 - 82" or "min(300, 400 - 2 * 20)"',
+      description: 'Single expression or JSON array of expressions',
       required: true
     }
   },
   execute: (_figma, { expr }) => {
+    let exprs: string[]
     try {
-      const normalized = expr.replace(/Math\./g, '')
-      const result = parser.evaluate(normalized)
-      if (!Number.isFinite(result)) {
-        return { error: `Expression "${expr}" produced ${String(result)}` }
-      }
-      return { expr, result }
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : String(e) }
+      const parsed = JSON.parse(expr)
+      exprs = Array.isArray(parsed) ? parsed : [expr]
+    } catch {
+      exprs = [expr]
     }
+
+    if (exprs.length === 1) {
+      return evalExpr(exprs[0])
+    }
+
+    return { results: exprs.map(evalExpr) }
   }
 })

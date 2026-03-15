@@ -66,6 +66,7 @@ import {
   drawLayoutInsertIndicator as drawLayoutInsertIndicatorFn,
   drawTextEditOverlay as drawTextEditOverlayFn,
 } from './overlays'
+import { drawAiOverlays as drawAiOverlaysFn } from './ai-overlays'
 import {
   drawPenOverlay as drawPenOverlayFn,
   drawRemoteCursors as drawRemoteCursorsFn
@@ -221,6 +222,8 @@ export class SkiaRenderer {
   _culledCount = 0
   _flashes: Array<{ nodeId: string; startTime: number }> = []
   _flashPaint: Paint | null = null
+  _aiActiveNodes: Set<string> = new Set()
+  _aiDoneFlashes: Array<{ nodeId: string; startTime: number }> = []
 
   readonly DEFAULT_FONT_SIZE = DEFAULT_FONT_SIZE
   readonly COMPONENT_SET_BORDER_WIDTH = COMPONENT_SET_BORDER_WIDTH
@@ -464,8 +467,37 @@ export class SkiaRenderer {
     this._flashes.push({ nodeId, startTime: performance.now() })
   }
 
+  aiMarkActive(nodeIds: string[]): void {
+    for (const id of nodeIds) this._aiActiveNodes.add(id)
+  }
+
+  aiMarkDone(nodeIds: string[]): void {
+    const now = performance.now()
+    for (const id of nodeIds) {
+      if (this._aiActiveNodes.delete(id)) {
+        this._aiDoneFlashes.push({ nodeId: id, startTime: now })
+      }
+    }
+  }
+
+  aiFlashDone(nodeIds: string[]): void {
+    const now = performance.now()
+    for (const id of nodeIds) {
+      this._aiDoneFlashes.push({ nodeId: id, startTime: now })
+    }
+  }
+
+  aiClearActive(): void {
+    this._aiActiveNodes.clear()
+  }
+
+  aiClearAll(): void {
+    this._aiActiveNodes.clear()
+    this._aiDoneFlashes = []
+  }
+
   get hasActiveFlashes(): boolean {
-    return this._flashes.length > 0
+    return this._flashes.length > 0 || this._aiActiveNodes.size > 0 || this._aiDoneFlashes.length > 0
   }
 
   hitTestSectionTitle(graph: SceneGraph, canvasX: number, canvasY: number): SceneNode | null {
@@ -926,6 +958,7 @@ export class SkiaRenderer {
 
   private drawFlashes(canvas: Canvas, graph: SceneGraph): void {
     drawFlashesFn(this, canvas, graph)
+    drawAiOverlaysFn(this, canvas, graph)
   }
 
   private drawLayoutInsertIndicator(canvas: Canvas, indicator?: RenderOverlays['layoutInsertIndicator']): void {

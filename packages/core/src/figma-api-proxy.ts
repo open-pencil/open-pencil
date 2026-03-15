@@ -949,7 +949,7 @@ export class FigmaNodeProxy {
 
   // --- Serialization ---
 
-  toJSON(): Record<string, unknown> {
+  toJSON(maxDepth?: number, currentDepth = 0): Record<string, unknown> {
     const n = this._raw()
     const obj: Record<string, unknown> = {
       id: n.id,
@@ -973,7 +973,11 @@ export class FigmaNodeProxy {
     }
     const children = this[INTERNAL_GRAPH].getChildren(this[INTERNAL_ID])
     if (children.length > 0) {
-      obj.children = children.map((c) => this[INTERNAL_API].wrapNode(c.id).toJSON())
+      if (maxDepth !== undefined && currentDepth >= maxDepth) {
+        obj.childCount = children.length
+      } else {
+        obj.children = children.map((c) => this[INTERNAL_API].wrapNode(c.id).toJSON(maxDepth, currentDepth + 1))
+      }
     }
     return obj
   }

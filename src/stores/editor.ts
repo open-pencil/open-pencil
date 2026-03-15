@@ -264,6 +264,29 @@ export function createEditorStore() {
     if (!flashRafId) pumpFlashes()
   }
 
+  function aiMarkActive(nodeIds: string[]) {
+    if (!_renderer) return
+    _renderer.aiMarkActive(nodeIds)
+    if (!flashRafId) pumpFlashes()
+  }
+
+  function aiMarkDone(nodeIds: string[]) {
+    if (!_renderer) return
+    _renderer.aiMarkDone(nodeIds)
+    if (!flashRafId) pumpFlashes()
+  }
+
+  function aiFlashDone(nodeIds: string[]) {
+    if (!_renderer) return
+    _renderer.aiFlashDone(nodeIds)
+    if (!flashRafId) pumpFlashes()
+  }
+
+  function aiClearAll() {
+    if (!_renderer) return
+    _renderer.aiClearAll()
+  }
+
   function pumpFlashes() {
     if (!_renderer?.hasActiveFlashes) {
       flashRafId = 0
@@ -2346,6 +2369,10 @@ export function createEditorStore() {
     requestRender,
     requestRepaint,
     flashNodes,
+    aiMarkActive,
+    aiMarkDone,
+    aiFlashDone,
+    aiClearAll,
     setTool,
     select,
     clearSelection,

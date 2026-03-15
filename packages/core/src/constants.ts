@@ -80,6 +80,11 @@ export const FLASH_PADDING = 5
 export const FLASH_OVERSHOOT = 30
 export const FLASH_RADIUS = 4
 
+export const AI_ACTIVE_COLOR = { r: 0.26, g: 0.52, b: 0.96 }
+export const AI_DONE_COLOR = { r: 0.16, g: 0.73, b: 0.36 }
+export const AI_PULSE_PERIOD_MS = 1500
+export const AI_DONE_DURATION_MS = 800
+
 export const TEXT_SELECTION_COLOR = { r: 0.26, g: 0.52, b: 0.96, a: 0.3 }
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
