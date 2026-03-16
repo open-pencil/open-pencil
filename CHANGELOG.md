@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 — 2026-03-15
 
 ### Performance
 
@@ -13,10 +13,32 @@
 
 ### Features
 
-- Grid layout in AI chat — JSX renderer supports `grid`, `columns`, `rows`, `gap` props with child positioning (`colStart`, `rowStart`, `colSpan`, `rowSpan`) and auto-height grids
+- ACP agent support — use Claude Code, Codex, or Gemini CLI as AI assistants in the desktop chat panel
+- Permission confirmation dialog — ACP agents request user approval for file/shell operations, MCP design tools auto-approved
+- Unified MCP server — single HTTP + WebSocket proxy replaces Vite SSR bridge
+- Stock photo integration — `stock_photo` tool fetches images from Pexels or Unsplash and applies to design nodes. Provider adapter supports custom providers.
+- Skeleton-first AI workflow — 4-phase design process (plan → skeleton → content fill via `replace_id` → polish) for more reliable AI-generated layouts
+- Batched AI tools — `calc` accepts arrays of expressions, `stock_photo` fetches all images in parallel, `batch_update` applies multiple property changes in one call, `describe` accepts `ids` array for multi-node inspection
+- AI visual feedback — blue pulsing border on nodes being modified, green flash on completion
+- Auto-depth `describe` — adapts inspection depth to subtree size (small block → deeper, large page → shallower)
+- `set_fill` gradient support — linear gradients with `color_end` and `gradient` direction params
+- `render` tool `replace_id` — atomically swap skeleton placeholders with real content
+- MCP `export_image_file` tool for headless PNG rendering
+- Grid layout in AI chat — JSX renderer supports `grid`, `columns`, `rows`, `gap` props
 - Configurable max output tokens in AI provider settings (default 16384)
 - Z.ai AI provider with GLM-5, GLM-4.7, GLM-4.6, GLM-4.5 model families
 - MiniMax AI provider with M2.5, M2.1, M2 models
+
+### Improved .fig import fidelity
+
+- Resolve variable-bound fill colors through alias chains
+- Fix SCALE constraint resizing for auto-layout instances
+- Propagate SCALE constraints through instance clone chains
+- Skip self-referencing symbolOverrides on nodes with explicit kiwi properties
+- Fix DSD resolution for swapped instance children
+- Fix instance swap override propagation through clone chains
+- Fix component property override resolution through clone chains
+- Fix text/property overrides clobbered by second transitive sync
 
 ### Fixes
 
@@ -34,10 +56,19 @@
 - Fix paste/copy/cut intercepted by canvas in AI chat input
 - Strip TypeScript casts from AI-generated JSX (`as any`, `as const`)
 - Fix parsing complex .fig files crashing on missing GUIDs in component overrides
-- Fix headless text layout using 100×100 default size instead of estimated dimensions
+- Fix headless text layout using 100×100 default size instead of estimated dimensions — multi-line wrapping now estimated correctly
 - Fix clipboard roundtrip losing properties — clipsContent, constraints, arcData, strokeCap/Join, layoutAlignSelf, textAutoResize, autoRename now preserved in Figma Kiwi serialization
 - Fix MCP headless export crashing on `window.queryLocalFonts` in non-browser runtimes (Bun/Node)
 - Fix MCP `export_image` rendering blank text — fonts now loaded before rasterization
+- Fix text always using paragraph rendering with Inter fallback chain (no more missing-font garbling)
+- Clip children to rounded corners when `clipsContent` is true
+- Use child shape for drop shadows on transparent containers
+- Treat `FOREGROUND_BLUR` as layer blur wrapping children
+- Fix radial, angular, and diamond gradient rendering
+- Fix .fig export roundtrip: variable GUIDs colliding with document
+- Fix file open dialog not working on first click in Safari
+- Skip variable fonts from local font access, use Google Fonts instead
+- Disable autosave by default
 
 ## 0.9.0 — 2026-03-09
 

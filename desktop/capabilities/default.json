@@ -18,6 +18,17 @@
       "allow": [{ "path": "**" }]
     },
     "fs:allow-watch",
-    "fs:allow-unwatch"
+    "fs:allow-unwatch",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        { "name": "claude-agent-acp", "cmd": "claude-agent-acp", "args": true },
+        { "name": "codex-acp", "cmd": "codex-acp", "args": true },
+        { "name": "gemini", "cmd": "gemini", "args": true },
+        { "name": "openpencil-mcp", "cmd": "openpencil-mcp", "args": true }
+      ]
+    },
+    "shell:allow-stdin-write",
+    "shell:allow-kill"
   ]
 }

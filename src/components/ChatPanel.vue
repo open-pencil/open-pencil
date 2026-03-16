@@ -2,8 +2,10 @@
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
+import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/ai/acp-transport'
 import { copyChatLog } from '@/ai/chat-debug'
 import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
+import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
@@ -16,10 +18,15 @@ const IS_DEV = import.meta.env.DEV
 
 const { isConfigured, ensureChat, resetChat } = useAIChat()
 
-const existing = ensureChat()
-const chat = ref<Chat<UIMessage> | null>(existing ? markRaw(existing) : null)
+const chat = ref<Chat<UIMessage> | null>(null)
+
+ensureChat().then((c) => {
+  if (c) chat.value = markRaw(c)
+})
 const messagesEnd = ref<HTMLDivElement>()
 const debugCopied = ref(false)
+const acpLogCopied = ref(false)
+const initError = ref<string | null>(null)
 
 const messages = computed(() => chat.value?.messages ?? [])
 const status = computed(() => chat.value?.status ?? 'ready')
@@ -53,12 +60,19 @@ function scrollToBottom() {
 
 watch(messages, scrollToBottom, { deep: true })
 
-function handleSubmit(text: string) {
+async function handleSubmit(text: string) {
   if (status.value === 'streaming' || status.value === 'submitted') return
-  const c = ensureChat()
-  if (c) chat.value = markRaw(c)
-  chat.value?.sendMessage({ text }).catch(() => {
-    /* user-facing error handled by UI */
+  try {
+    initError.value = null
+    const c = await ensureChat()
+    if (c) chat.value = markRaw(c)
+  } catch (e) {
+    console.error('Failed to initialize chat:', e)
+    initError.value = e instanceof Error ? e.message : String(e)
+    return
+  }
+  chat.value?.sendMessage({ text }).catch((e: unknown) => {
+    console.error('Chat error:', e)
   })
 }
 
@@ -74,10 +88,21 @@ async function handleCopyDebug() {
   }, 1500)
 }
 
+async function handleCopyAcpLog() {
+  const text = getAcpDebugText()
+  if (!text) return
+  await navigator.clipboard.writeText(text)
+  acpLogCopied.value = true
+  setTimeout(() => {
+    acpLogCopied.value = false
+  }, 1500)
+}
+
 function handleClearChat() {
   chat.value = null
   resetChat()
   clearToolLogEntries()
+  clearAcpDebugLog()
 }
 </script>
 
@@ -144,18 +169,28 @@ function handleClearChat() {
         </ScrollAreaScrollbar>
       </ScrollAreaRoot>
 
-      <!-- Debug toolbar (dev only) -->
+      <!-- Chat toolbar -->
       <div
-        v-if="IS_DEV && messages.length > 0"
+        v-if="messages.length > 0"
         class="flex shrink-0 items-center gap-1 border-t border-border px-3 py-1"
       >
         <button
+          v-if="IS_DEV"
           class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted hover:bg-hover hover:text-surface"
           @click="handleCopyDebug"
         >
           <icon-lucide-clipboard-copy v-if="!debugCopied" class="size-3" />
           <icon-lucide-check v-else class="size-3 text-green-400" />
           {{ debugCopied ? 'Copied' : 'Copy log' }}
+        </button>
+        <button
+          v-if="IS_DEV && hasAcpDebugEntries()"
+          class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted hover:bg-hover hover:text-surface"
+          @click="handleCopyAcpLog"
+        >
+          <icon-lucide-bug v-if="!acpLogCopied" class="size-3" />
+          <icon-lucide-check v-else class="size-3 text-green-400" />
+          {{ acpLogCopied ? 'Copied' : 'ACP log' }}
         </button>
         <button
           class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-muted hover:bg-hover hover:text-surface"
@@ -166,7 +201,21 @@ function handleClearChat() {
         </button>
       </div>
 
+      <!-- Connection error banner -->
+      <div
+        v-if="initError"
+        class="flex items-center gap-2 border-t border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-400"
+      >
+        <icon-lucide-circle-alert class="size-3.5 shrink-0" />
+        <span class="min-w-0 flex-1">{{ initError }}</span>
+        <button class="shrink-0 text-red-300 hover:text-red-200" @click="initError = null">
+          <icon-lucide-x class="size-3" />
+        </button>
+      </div>
+
       <ChatInput :status="status" @submit="handleSubmit" @stop="handleStop" />
+
+      <ACPPermissionDialog />
     </template>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { provide, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, provide, ref } from 'vue'
 import { useBreakpoints, useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -9,6 +9,7 @@ import { useKeyboard } from '@/composables/use-keyboard'
 import { useMenu } from '@/composables/use-menu'
 import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
 import { connectAutomation } from '@/automation/server'
+import { spawnMCPIfNeeded } from '@/automation/spawn-mcp'
 import { createDemoShapes } from '@/demo'
 import { useEditorStore } from '@/stores/editor'
 import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
@@ -31,7 +32,18 @@ const isMobile = breakpoints.smaller('mobile')
 useKeyboard()
 useMenu()
 const { disconnect: disconnectAutomation } = connectAutomation(getActiveStore)
-onUnmounted(disconnectAutomation)
+const mcpCleanup = ref<(() => void) | null>(null)
+onMounted(async () => {
+  try {
+    mcpCleanup.value = await spawnMCPIfNeeded()
+  } catch (e) {
+    console.error(e)
+  }
+})
+onUnmounted(() => {
+  mcpCleanup.value?.()
+  disconnectAutomation()
+})
 const collab = useCollab(firstTab.store)
 provide(COLLAB_KEY, collab)
 

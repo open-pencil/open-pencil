@@ -1,7 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "import", "unicorn", "vue"],
-  "jsPlugins": ["./lint/plugin.js"],
+  "plugins": [
+    "typescript",
+    "import",
+    "unicorn",
+    "vue"
+  ],
+  "jsPlugins": [
+    "./lint/plugin.js"
+  ],
   "env": {
     "browser": true,
     "es2024": true
@@ -9,21 +16,50 @@
   "rules": {
     "no-unused-vars": "warn",
     "no-console": "off",
-    "no-restricted-imports": ["error", {
-      "paths": [
-        { "name": "@/types", "message": "Import types directly from @open-pencil/core." }
-      ],
-      "patterns": [{
-        "group": ["@/engine/*"],
-        "message": "Import from @open-pencil/core unless the module adds platform-specific logic.",
-        "allowImportNames": ["loadFont", "listFamilies", "preloadFonts"]
-      }]
-    }],
-
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@/types",
+            "message": "Import types directly from @open-pencil/core."
+          }
+        ],
+        "patterns": [
+          {
+            "group": [
+              "@/engine/*"
+            ],
+            "message": "Import from @open-pencil/core unless the module adds platform-specific logic.",
+            "allowImportNames": [
+              "loadFont",
+              "listFamilies",
+              "preloadFonts"
+            ]
+          },
+          {
+            "group": [
+              "../../packages/*",
+              "../../../packages/*"
+            ],
+            "message": "Use the workspace package name (e.g. @open-pencil/core) instead of relative paths to packages/."
+          }
+        ]
+      }
+    ],
     "no-empty-function": "error",
-    "max-lines": ["warn", { "max": 600 }],
-    "complexity": ["error", { "max": 20 }],
-
+    "max-lines": [
+      "warn",
+      {
+        "max": 600
+      }
+    ],
+    "complexity": [
+      "error",
+      {
+        "max": 20
+      }
+    ],
     "typescript/no-explicit-any": "warn",
     "typescript/no-non-null-assertion": "warn",
     "typescript/no-floating-promises": "error",
@@ -38,22 +74,18 @@
     "typescript/no-unnecessary-type-arguments": "error",
     "typescript/prefer-optional-chain": "error",
     "typescript/prefer-for-of": "error",
-
     "import/no-cycle": "error",
     "import/no-self-import": "error",
     "import/no-duplicates": "error",
     "import/no-mutable-exports": "error",
-
     "unicorn/no-instanceof-array": "error",
     "unicorn/no-typeof-undefined": "error",
     "unicorn/no-nested-ternary": "error",
-
     "unicorn/no-useless-fallback-in-spread": "error",
     "unicorn/no-length-as-slice-end": "error",
     "unicorn/no-unnecessary-await": "error",
     "unicorn/prefer-string-starts-ends-with": "error",
     "unicorn/consistent-existence-index-check": "error",
-
     "vue/no-arrow-functions-in-watch": "error",
     "vue/no-deprecated-destroyed-lifecycle": "error",
     "vue/no-export-in-script-setup": "error",
@@ -67,14 +99,16 @@
     "vue/define-emits-declaration": "error",
     "vue/define-props-destructuring": "error",
     "vue/require-typed-ref": "error",
-
-    "open-pencil/no-inline-named-types": ["error", {
-      "Vector": "x:number,y:number",
-      "Color": "a:number,b:number,g:number,r:number",
-      "GUID": "localID:number,sessionID:number",
-      "Rect": "height:number,width:number,x:number,y:number",
-      "Matrix": "m00:number,m01:number,m02:number,m10:number,m11:number,m12:number"
-    }],
+    "open-pencil/no-inline-named-types": [
+      "error",
+      {
+        "Vector": "x:number,y:number",
+        "Color": "a:number,b:number,g:number,r:number",
+        "GUID": "localID:number,sessionID:number",
+        "Rect": "height:number,width:number,x:number,y:number",
+        "Matrix": "m00:number,m01:number,m02:number,m10:number,m11:number,m12:number"
+      }
+    ],
     "open-pencil/no-structuredclone-scene-arrays": "error",
     "open-pencil/no-math-random": "error",
     "open-pencil/no-hand-rolled-color": "error",
@@ -83,28 +117,36 @@
   },
   "overrides": [
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "files": [
+        "**/*.test.ts",
+        "**/*.test.tsx"
+      ],
       "rules": {
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
         "open-pencil/no-silent-catch": "off"
       }
     },
-    
     {
-      "files": ["**/tools/ai-adapter.ts"],
+      "files": [
+        "**/tools/ai-adapter.ts"
+      ],
       "rules": {
         "typescript/no-explicit-any": "off"
       }
     },
     {
-      "files": ["**/render/render-jsx.ts"],
+      "files": [
+        "**/render/render-jsx.ts"
+      ],
       "rules": {
         "typescript/no-implied-eval": "off"
       }
     },
     {
-      "files": ["**/kiwi/kiwi-schema/**"],
+      "files": [
+        "**/kiwi/kiwi-schema/**"
+      ],
       "rules": {
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
@@ -128,11 +170,18 @@
       }
     },
     {
-      "files": ["packages/cli/src/commands/**"],
+      "files": [
+        "packages/cli/src/commands/**"
+      ],
       "rules": {
         "open-pencil/no-raw-console-format": "error"
       }
     }
   ],
-  "ignorePatterns": ["node_modules", "dist", "desktop", "*.config.*"]
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "desktop",
+    "*.config.*"
+  ]
 }

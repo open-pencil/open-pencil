@@ -11,14 +11,16 @@ import SYSTEM_PROMPT from '@/ai/system-prompt.md?raw'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/ai/tools'
 import { useEditorStore } from '@/stores/editor'
 import {
+  ACP_AGENTS,
   AI_PROVIDERS,
   DEFAULT_AI_MODEL,
   DEFAULT_AI_PROVIDER,
+  IS_TAURI,
   setPexelsApiKey,
   setUnsplashAccessKey
 } from '@open-pencil/core'
 
-import type { AIProviderID } from '@open-pencil/core'
+import type { ACPAgentID, AIProviderID } from '@open-pencil/core'
 import type { LanguageModel, UIMessage } from 'ai'
 
 const STORAGE_PREFIX = 'open-pencil:'
@@ -63,7 +65,10 @@ const providerDef = computed(
   () => AI_PROVIDERS.find((p) => p.id === providerID.value) ?? AI_PROVIDERS[0]
 )
 
+const isACPProvider = computed(() => providerID.value.startsWith('acp:'))
+
 const isConfigured = computed(() => {
+  if (isACPProvider.value) return IS_TAURI
   if (!apiKey.value) return false
   const needsBaseURL =
     providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
@@ -171,8 +176,10 @@ function createModel(): LanguageModel {
       return custom(effectiveModelID)
     }
     default: {
-      const _exhaustive: never = providerID.value
-      throw new Error(`Unknown provider: ${String(_exhaustive)}`)
+      if (providerID.value.startsWith('acp:')) {
+        throw new Error('ACP providers do not use direct API models')
+      }
+      throw new Error(`Unknown provider: ${providerID.value}`)
     }
   }
 }
@@ -194,8 +201,26 @@ function supportsAnthropicCaching(): boolean {
   )
 }
 
+let acpTransportInstance: { destroy(): Promise<void> } | null = null
+
+async function createACPTransport() {
+  const agentId = providerID.value.replace('acp:', '') as ACPAgentID
+  const agentDef = ACP_AGENTS.find((a) => a.id === agentId)
+  if (!agentDef) throw new Error(`Unknown ACP agent: ${agentId}`)
+
+  const { ACPChatTransport } = await import('@/ai/acp-transport')
+  const { homeDir } = await import('@tauri-apps/api/path')
+  await acpTransportInstance?.destroy()
+  const transport = new ACPChatTransport({ agentDef, cwd: await homeDir() })
+  acpTransportInstance = transport
+  return transport
+}
+
 function createTransport() {
   if (overrideTransport) return overrideTransport()
+
+  void acpTransportInstance?.destroy()
+  acpTransportInstance = null
 
   const tools = createAITools(useEditorStore())
   const cacheProviderOptions = supportsAnthropicCaching() ? ANTHROPIC_CACHE_CONTROL : undefined
@@ -229,14 +254,12 @@ function createTransport() {
   return new DirectChatTransport({ agent })
 }
 
-function ensureChat(): Chat<UIMessage> | null {
+async function ensureChat(): Promise<Chat<UIMessage> | null> {
   if (!isConfigured.value) return null
-  if (!chat) {
-    chat = new Chat<UIMessage>({ transport: createTransport() })
-    transportDirty = false
-  } else if (transportDirty) {
-    const messages = chat.messages
-    chat = new Chat<UIMessage>({ transport: createTransport(), messages })
+  if (!chat || transportDirty) {
+    const messages = chat?.messages
+    const transport = isACPProvider.value ? await createACPTransport() : createTransport()
+    chat = new Chat<UIMessage>({ transport, messages })
     transportDirty = false
   }
   return chat

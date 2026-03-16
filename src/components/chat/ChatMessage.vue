@@ -12,6 +12,7 @@ type ToolPart = Extract<UIMessagePart, { toolCallId: string }>
 
 function toolDisplayName(part: ToolPart): string {
   return getToolName(part)
+    .replace(/^mcp__[^_]+__/, '')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }

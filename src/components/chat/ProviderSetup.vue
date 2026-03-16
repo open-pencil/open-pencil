@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
+import { ACP_AGENTS } from '@open-pencil/core'
 
 const { providerID, providerDef, setAPIKey, customBaseURL, customModelID } = useAIChat()
+
+const isACP = computed(() => providerID.value.startsWith('acp:'))
+const acpAgent = computed(() => {
+  if (!isACP.value) return null
+  const id = providerID.value.replace('acp:', '')
+  return ACP_AGENTS.find((a) => a.id === id) ?? null
+})
 
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
@@ -30,7 +38,7 @@ function save() {
     <icon-lucide-sparkles class="mb-3 size-7 text-muted" />
     <p class="mb-5 text-center text-xs text-muted">Connect an AI provider to start chatting.</p>
 
-    <form class="flex w-full flex-col gap-2" @submit.prevent="save">
+    <form v-if="!isACP" class="flex w-full flex-col gap-2" @submit.prevent="save">
       <ProviderSelect
         test-id="provider-selector"
         trigger-class="w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface"
@@ -75,8 +83,25 @@ function save() {
       </button>
     </form>
 
+    <!-- ACP agent — no API key needed -->
+    <div v-else class="flex w-full flex-col gap-2">
+      <ProviderSelect
+        test-id="provider-selector"
+        trigger-class="w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface"
+        item-class="rounded px-2 py-1.5 text-[11px]"
+      />
+
+      <p class="text-center text-[10px] leading-relaxed text-muted">
+        Uses your existing {{ acpAgent?.name }} subscription. Make sure
+        <code class="rounded bg-input px-1 py-0.5 font-mono text-[9px]">{{
+          acpAgent?.command
+        }}</code>
+        is installed and authenticated.
+      </p>
+    </div>
+
     <a
-      v-if="providerDef.keyURL"
+      v-if="!isACP && providerDef.keyURL"
       :href="providerDef.keyURL"
       target="_blank"
       data-test-id="api-key-get-link"

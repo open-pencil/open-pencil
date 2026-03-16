@@ -1,7 +1,7 @@
 {
   "name": "open-pencil-app",
   "private": true,
-  "version": "0.9.0",
+  "version": "0.10.0",
   "license": "MIT",
   "type": "module",
   "workspaces": [
@@ -12,7 +12,7 @@
     "build": "bun run lint && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/cli/src/ packages/mcp/src/ packages/acp/src/",
+    "lint": "oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/cli/src/ packages/mcp/src/",
     "format": "oxfmt --write src/",
     "check": "bun run lint",
     "test": "playwright test --project=openpencil",
@@ -43,6 +43,7 @@
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-shell": "^2.3.5",
     "@unhead/vue": "^2.1.10",
     "@vueuse/core": "^14.2.1",
     "ai": "^6.0.105",
@@ -62,11 +63,12 @@
     "valibot": "^1.2.0",
     "vue": "^3.5.29",
     "vue-router": "^5.0.3",
-    "vue-stream-markdown": "^0.6.0",
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
-    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2"
+    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
+    "zod": "^4.3.6",
+    "vue-stream-markdown": "^0.6.5"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.14.1",
@@ -95,6 +97,7 @@
     "vite": "^8.0.0",
     "vite-plugin-pwa": "^1.2.0",
     "workbox-window": "^7.4.0",
-    "ws": "^8.19.0"
+    "ws": "^8.19.0",
+    "@open-pencil/mcp": "workspace:*"
   }
 }

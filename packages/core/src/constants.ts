@@ -89,6 +89,21 @@ export const TEXT_SELECTION_COLOR = { r: 0.26, g: 0.52, b: 0.96, a: 0.3 }
 export const TEXT_CARET_COLOR = BLACK
 export const TEXT_CARET_WIDTH = 1
 
+export type ACPAgentID = 'claude-code' | 'codex' | 'gemini-cli'
+
+export interface ACPAgentDef {
+  id: ACPAgentID
+  name: string
+  command: string
+  args: string[]
+}
+
+export const ACP_AGENTS: ACPAgentDef[] = [
+  { id: 'claude-code', name: 'Claude Code', command: 'claude-agent-acp', args: [] },
+  { id: 'codex', name: 'Codex', command: 'codex-acp', args: [] },
+  { id: 'gemini-cli', name: 'Gemini CLI', command: 'gemini', args: ['--acp'] }
+]
+
 export type AIProviderID =
   | 'openrouter'
   | 'anthropic'
@@ -98,6 +113,7 @@ export type AIProviderID =
   | 'zai'
   | 'minimax'
   | 'anthropic-compatible'
+  | `acp:${ACPAgentID}`
 
 export interface ModelOption {
   id: string

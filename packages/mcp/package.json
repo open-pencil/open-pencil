@@ -5,8 +5,7 @@
   "type": "module",
   "main": "./src/server.ts",
   "bin": {
-    "openpencil-mcp": "./dist/index.js",
-    "openpencil-mcp-http": "./dist/http.js"
+    "openpencil-mcp": "./dist/index.js"
   },
   "files": [
     "src",
@@ -29,11 +28,12 @@
     "@hono/node-server": "^1.19.9",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@open-pencil/core": "workspace:*",
-    "canvaskit-wasm": "^0.40.0",
     "hono": "^4.11.4",
-    "zod": "^3.25.0"
+    "zod": "^4.3.6",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1"
   }
 }

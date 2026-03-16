@@ -41,3 +41,4 @@ patches/skia-webgpu/
 
 Caddyfile.dev
 components.d.ts
+vue-stream-markdown/

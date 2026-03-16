@@ -25,6 +25,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-dialog = "2.6.0"
 tauri-plugin-fs = { version = "2.4.5", features = ["watch"] }
+tauri-plugin-shell = "2"
 zstd = "0.13"
 zip = { version = "2", default-features = false }
 font-kit = "0.14.3"
