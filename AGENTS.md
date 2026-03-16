@@ -68,6 +68,7 @@ The app store (`src/stores/editor.ts`) is a thin Vue wrapper: creates `shallowRe
 ## Commands
 
 - `bun run check` — type-aware lint + typecheck via oxlint + tsgo (run before committing)
+- `bun run check:vue` — vue-tsc type-check for .vue files (has pre-existing errors, fix progressively)
 - `bun run test:dupes` — jscpd copy-paste detection across all TS sources
 - `bun run format` — oxfmt with import sorting
 - `bun test ./tests/engine` — unit tests
