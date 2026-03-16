@@ -14,6 +14,7 @@
 
 - Fix `set_layout` tool not defaulting to HUG sizing when enabling auto-layout — frames now shrink/grow to fit children instead of keeping fixed dimensions
 - Normalize font family names on `.fig` export — strip optical size suffixes (e.g. "DM Sans 9pt" → "DM Sans") so Figma recognizes the font
+- TEXT nodes now default to a solid black fill — previously exported with no fill, making text invisible when opened in Figma
 - Fix save crash when COLOR variable is missing alpha channel
 - Fix console error spam on deployed web app from automation WebSocket reconnect loop
 - Fix headless CLI font fallback — bundled Inter font now ships with `@open-pencil/core` and loads without a web server
