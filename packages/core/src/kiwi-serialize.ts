@@ -2,7 +2,7 @@ export const FIG_KIWI_VERSION = 106
 
 import { deflateSync, inflateSync } from 'fflate'
 
-import { weightToStyle, getLoadedFontData } from './fonts'
+import { weightToStyle, getLoadedFontData, normalizeFontFamily } from './fonts'
 import { encodeVectorNetworkBlob } from './vector'
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './kiwi/kiwi-convert'
 
@@ -225,7 +225,7 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
     const weight = style.fontWeight ?? node.fontWeight
     const italic = style.italic ?? node.italic
     override.fontName = {
-      family: style.fontFamily ?? node.fontFamily,
+      family: normalizeFontFamily(style.fontFamily ?? node.fontFamily),
       style: weightToStyle(weight, italic),
       postscript: ''
     }
@@ -302,7 +302,7 @@ function serializeTextProps(
 ): void {
   nc.fontSize = node.fontSize
   nc.fontName = {
-    family: node.fontFamily,
+    family: normalizeFontFamily(node.fontFamily),
     style: weightToStyle(node.fontWeight, node.italic),
     postscript: ''
   }

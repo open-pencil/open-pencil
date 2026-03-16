@@ -318,6 +318,23 @@ describe('normalizeFontFamily', () => {
   test('does not strip Variable in the middle', () => {
     expect(normalizeFontFamily('Variable Sans')).toBe('Variable Sans')
   })
+
+  test('strips optical size suffix (pt)', () => {
+    expect(normalizeFontFamily('DM Sans 9pt')).toBe('DM Sans')
+    expect(normalizeFontFamily('DM Sans 14pt')).toBe('DM Sans')
+  })
+
+  test('strips optical size suffix (px)', () => {
+    expect(normalizeFontFamily('Noto Sans 12px')).toBe('Noto Sans')
+  })
+
+  test('strips optical size suffix (em)', () => {
+    expect(normalizeFontFamily('Custom Font 1em')).toBe('Custom Font')
+  })
+
+  test('does not strip size units in the middle', () => {
+    expect(normalizeFontFamily('12pt Serif')).toBe('12pt Serif')
+  })
 })
 
 describe('styleToVariant', () => {

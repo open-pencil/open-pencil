@@ -65,7 +65,7 @@ const googleFontsCache = new Map<string, Record<string, string>>()
 const googleFontsFailed = new Set<string>()
 
 export function normalizeFontFamily(family: string): string {
-  return family.replace(/\s+Variable$/i, '')
+  return family.replace(/\s+(Variable|\d+(?:pt|px|em))$/i, '')
 }
 
 async function fetchGoogleFontFiles(family: string): Promise<Record<string, string> | null> {
