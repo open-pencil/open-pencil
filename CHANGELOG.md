@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix save crash ("Missing required field 'a'") when COLOR variable values are missing the alpha channel — now defaults to 1
+
 ## 0.10.0 — 2026-03-15
 
 ### Performance

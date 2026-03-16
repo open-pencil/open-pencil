@@ -33,8 +33,9 @@ function variableValueToKiwi(
     }
   }
   if (type === 'COLOR' && typeof value === 'object' && 'r' in value) {
+    const color = value as { r: number; g: number; b: number; a?: number }
     return {
-      value: { colorValue: { r: value.r, g: value.g, b: value.b, a: value.a } },
+      value: { colorValue: { r: color.r, g: color.g, b: color.b, a: color.a ?? 1 } },
       dataType: 'COLOR',
       resolvedDataType: 'COLOR'
     }
