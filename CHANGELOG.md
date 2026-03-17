@@ -4,6 +4,8 @@
 
 ### Features
 
+- JSX editor in Code panel — write or paste OpenPencil JSX to create design nodes, with syntax highlighting, undo support, and error display
+- "Copy JSX Reference" button in JSX editor — copies the full prop/tag reference to clipboard for LLM prompts
 - Lock and visibility toggle buttons in layers panel (hover to reveal, always shown when active)
 - Figma-style selection scope — double-click to enter groups/frames/components, Escape to exit
 - Nested container navigation — each double-click goes one level deeper

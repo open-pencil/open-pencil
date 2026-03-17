@@ -4,7 +4,7 @@ import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { selectionToJSX } from '@open-pencil/core'
+import { selectionToJSX, JSX_REFERENCE } from '@open-pencil/core'
 import { useEditorStore } from '@/stores/editor'
 
 import type { JSXFormat } from '@open-pencil/core'
@@ -19,6 +19,15 @@ const applying = ref(false)
 const replaceIds = ref<string[]>([])
 const textareaRef = ref<HTMLTextAreaElement>()
 const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
+const refCopied = ref(false)
+let refCopyTimeout: ReturnType<typeof setTimeout> | undefined
+
+function copyReference() {
+  navigator.clipboard.writeText(JSX_REFERENCE)
+  refCopied.value = true
+  clearTimeout(refCopyTimeout)
+  refCopyTimeout = setTimeout(() => (refCopied.value = false), 2000)
+}
 
 function toggleFormat() {
   jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
@@ -122,7 +131,18 @@ function handleEditorKeydown(e: KeyboardEvent) {
   <!-- Editor mode -->
   <div v-if="editing" data-test-id="code-panel-editor" class="flex min-h-0 flex-1 flex-col">
     <div class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5">
-      <span class="text-[11px] text-muted">JSX Editor</span>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[11px] text-muted">JSX Editor</span>
+        <button
+          data-test-id="code-panel-copy-ref"
+          class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
+          title="Copy JSX Reference"
+          @click="copyReference"
+        >
+          <icon-lucide-check v-if="refCopied" class="size-3 text-green-400" />
+          <icon-lucide-book-open v-else class="size-3" />
+        </button>
+      </div>
       <div class="flex items-center gap-1">
         <button
           data-test-id="code-panel-apply"
