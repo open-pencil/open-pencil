@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 
 import VariablesDialog from './VariablesDialog.vue'
+import KitBrowser from './kits/KitBrowser.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
@@ -17,6 +18,7 @@ import VariablesSection from './properties/VariablesSection.vue'
 
 const store = useEditorStore()
 const variablesOpen = ref(false)
+const kitBrowserOpen = ref(false)
 
 const node = computed(() => store.selectedNode.value)
 const multiCount = computed(() => store.selectedNodes.value.length)
@@ -102,7 +104,18 @@ const isComponentType = computed(() => {
   >
     <PageSection />
     <VariablesSection @open-dialog="variablesOpen = true" />
+
+    <div class="border-t border-border px-3 py-3">
+      <button
+        data-test-id="open-kit-browser"
+        class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-transparent px-3 py-2 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-surface"
+        @click="kitBrowserOpen = true"
+      >
+        UI Kits
+      </button>
+    </div>
   </div>
 
   <VariablesDialog v-model:open="variablesOpen" />
+  <KitBrowser v-model:open="kitBrowserOpen" />
 </template>
