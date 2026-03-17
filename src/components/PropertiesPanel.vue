@@ -2,13 +2,13 @@
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 import { useAIChat } from '@/composables/use-chat'
-import { useEditorStore } from '@/stores/editor'
+import { useEditor } from '@open-pencil/vue'
 
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
 import DesignPanel from './DesignPanel.vue'
 
-const store = useEditorStore()
+const store = useEditor()
 const { activeTab } = useAIChat()
 </script>
 

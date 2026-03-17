@@ -60,7 +60,7 @@ const customAPIType = useLocalStorage<'completions' | 'responses'>(
 const maxOutputTokens = useLocalStorage(`${STORAGE_PREFIX}ai-max-output-tokens`, 16384)
 const pexelsApiKey = useLocalStorage(`${STORAGE_PREFIX}pexels-api-key`, '')
 const unsplashAccessKey = useLocalStorage(`${STORAGE_PREFIX}unsplash-access-key`, '')
-const activeTab = ref<'design' | 'ai'>('design')
+const activeTab = ref<'design' | 'code' | 'ai'>('design')
 
 const providerDef = computed(
   () => AI_PROVIDERS.find((p) => p.id === providerID.value) ?? AI_PROVIDERS[0]

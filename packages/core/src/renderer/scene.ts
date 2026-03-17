@@ -34,7 +34,7 @@ function isCulled(
 }
 
 function applyNodeTransforms(
-  r: SkiaRenderer,
+  _r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   nodeId: string,

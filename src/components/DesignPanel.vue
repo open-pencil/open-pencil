@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useEditorStore } from '@/stores/editor'
+import { useEditor } from '@open-pencil/vue'
 
 import VariablesDialog from './VariablesDialog.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
@@ -15,11 +15,11 @@ import StrokeSection from './properties/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 
-const store = useEditorStore()
+const store = useEditor()
 const variablesOpen = ref(false)
 
-const node = computed(() => store.selectedNode.value)
-const multiCount = computed(() => store.selectedNodes.value.length)
+const node = computed(() => store.getSelectedNode())
+const multiCount = computed(() => store.getSelectedNodes().length)
 const isComponentType = computed(() => {
   const t = node.value?.type
   return t === 'COMPONENT' || t === 'COMPONENT_SET' || t === 'INSTANCE'

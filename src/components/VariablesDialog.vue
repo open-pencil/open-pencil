@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, h, type Component } from 'vue'
+import { ref, computed, nextTick, h, type Component } from 'vue'
 import {
   DialogRoot,
   DialogPortal,
@@ -23,24 +23,29 @@ import IconHash from '~icons/lucide/hash'
 import IconType from '~icons/lucide/type'
 import IconToggleLeft from '~icons/lucide/toggle-left'
 import IconX from '~icons/lucide/x'
+import Tip from './Tip.vue'
 import ColorInput from './ColorInput.vue'
-import { colorToHexRaw, parseColor, randomHex } from '@open-pencil/core'
-import { useEditorStore } from '@/stores/editor'
-import type { Variable, VariableCollection, VariableValue, Color } from '@open-pencil/core'
+import { useVariables } from '@open-pencil/vue'
+import type { Variable, Color } from '@open-pencil/core'
 
 const open = defineModel<boolean>('open', { default: false })
-const store = useEditorStore()
-const searchTerm = ref('')
 
-const collections = computed(() => {
-  void store.state.sceneVersion
-  return [...store.graph.variableCollections.values()]
-})
-
-const activeTab = ref(collections.value[0]?.id ?? '')
-watch(collections, (cols) => {
-  if (!activeTab.value && cols[0]) activeTab.value = cols[0].id
-})
+const {
+  collections,
+  variables,
+  activeCollectionId,
+  activeModes,
+  searchTerm,
+  addCollection,
+  renameCollection,
+  addVariable,
+  removeVariable,
+  renameVariable,
+  updateVariableValue,
+  formatModeValue,
+  parseVariableValue,
+  shortName
+} = useVariables()
 
 const editingCollectionId = ref<string | null>(null)
 const collectionInputRefs = new Map<string, HTMLInputElement>()
@@ -67,200 +72,31 @@ function startRenameCollection(id: string) {
 function commitRenameCollection(id: string, input: HTMLInputElement) {
   if (editingCollectionId.value !== id) return
   const value = input.value.trim()
-  const collection = store.graph.variableCollections.get(id)
-  if (collection && value && value !== collection.name) {
-    const oldName = collection.name
-    store.undo.push({
-      label: 'Rename collection',
-      forward: () => {
-        store.graph.variableCollections.set(id, { ...collection, name: value })
-        store.requestRender()
-      },
-      inverse: () => {
-        store.graph.variableCollections.set(id, { ...collection, name: oldName })
-        store.requestRender()
-      }
-    })
-    store.graph.variableCollections.set(id, { ...collection, name: value })
-    store.requestRender()
+  const col = collections.value.find((c) => c.id === id)
+  if (col && value && value !== col.name) {
+    renameCollection(id, value)
   }
   editingCollectionId.value = null
 }
 
-const activeModes = computed(() => {
-  const col = store.graph.variableCollections.get(activeTab.value)
-  return col?.modes ?? []
-})
-
-const variables = computed(() => {
-  void store.state.sceneVersion
-  if (!activeTab.value) return []
-  const all = store.graph.getVariablesForCollection(activeTab.value)
-  if (!searchTerm.value) return all
-  const q = searchTerm.value.toLowerCase()
-  return all.filter((v) => v.name.toLowerCase().includes(q))
-})
-
-function formatModeValue(variable: Variable, modeId: string): string {
-  const value = variable.valuesByMode[modeId]
-  if (value === undefined) return '—'
-  if (typeof value === 'object' && 'r' in value) return colorToHexRaw(value as Color)
-  if (typeof value === 'object' && 'aliasId' in value) {
-    const aliased = store.graph.variables.get(value.aliasId)
-    return aliased ? `→ ${aliased.name}` : '→ ?'
-  }
-  return String(value)
-}
-
-function shortName(variable: Variable): string {
-  const parts = variable.name.split('/')
-  return parts[parts.length - 1] ?? variable.name
-}
-
 function commitNameEdit(variable: Variable, newName: string) {
   if (newName && newName !== variable.name) {
-    const oldName = variable.name
-    store.undo.push({
-      label: 'Rename variable',
-      forward: () => {
-        variable.name = newName
-        store.requestRender()
-      },
-      inverse: () => {
-        variable.name = oldName
-        store.requestRender()
-      }
-    })
-    variable.name = newName
-    store.requestRender()
+    renameVariable(variable.id, newName)
   }
-}
-
-function updateColorValue(variable: Variable, modeId: string, color: Color) {
-  const oldValue = structuredClone(variable.valuesByMode[modeId])
-  store.undo.push({
-    label: 'Change variable value',
-    forward: () => {
-      variable.valuesByMode[modeId] = color
-      store.requestRender()
-    },
-    inverse: () => {
-      variable.valuesByMode[modeId] = oldValue
-      store.requestRender()
-    }
-  })
-  variable.valuesByMode[modeId] = color
-  store.requestRender()
 }
 
 function commitValueEdit(variable: Variable, modeId: string, newValue: string) {
-  const oldValue = structuredClone(variable.valuesByMode[modeId])
-  let parsed: VariableValue
-  if (variable.type === 'COLOR') {
-    parsed = parseColor(newValue.startsWith('#') ? newValue : `#${newValue}`)
-  } else if (variable.type === 'FLOAT') {
-    const num = parseFloat(newValue)
-    if (isNaN(num)) return
-    parsed = num
-  } else if (variable.type === 'BOOLEAN') {
-    parsed = newValue === 'true'
-  } else {
-    parsed = newValue
+  const parsed = parseVariableValue(variable, newValue)
+  if (parsed !== undefined) {
+    updateVariableValue(variable.id, modeId, parsed)
   }
-  store.undo.push({
-    label: 'Change variable value',
-    forward: () => {
-      variable.valuesByMode[modeId] = parsed
-      store.requestRender()
-    },
-    inverse: () => {
-      variable.valuesByMode[modeId] = oldValue
-      store.requestRender()
-    }
-  })
-  variable.valuesByMode[modeId] = parsed
-  store.requestRender()
 }
 
-function addVariable() {
-  const col = store.graph.variableCollections.get(activeTab.value)
-  if (!col) return
-
-  const id = `var:${randomHex(8)}`
-  const valuesByMode: Record<string, VariableValue> = {}
-  for (const mode of col.modes) {
-    valuesByMode[mode.modeId] = { r: 0, g: 0, b: 0, a: 1 }
-  }
-
-  const variable: Variable = {
-    id,
-    name: 'New variable',
-    type: 'COLOR',
-    collectionId: col.id,
-    valuesByMode,
-    description: '',
-    hiddenFromPublishing: false
-  }
-  store.undo.push({
-    label: 'Create variable',
-    forward: () => {
-      store.graph.addVariable(variable)
-      store.requestRender()
-    },
-    inverse: () => {
-      store.graph.removeVariable(id)
-      store.requestRender()
-    }
-  })
-  store.graph.addVariable(variable)
-  store.requestRender()
-}
-
-function addCollection() {
-  const id = `col:${randomHex(8)}`
-  const collection: VariableCollection = {
-    id,
-    name: 'New collection',
-    modes: [{ modeId: 'default', name: 'Mode 1' }],
-    defaultModeId: 'default',
-    variableIds: []
-  }
-  const prevTab = activeTab.value
-  store.undo.push({
-    label: 'Create collection',
-    forward: () => {
-      store.graph.addCollection(collection)
-      activeTab.value = id
-      store.requestRender()
-    },
-    inverse: () => {
-      store.graph.removeCollection(id)
-      activeTab.value = prevTab
-      store.requestRender()
-    }
-  })
-  store.graph.addCollection(collection)
-  activeTab.value = id
-  store.requestRender()
-}
-
-function removeVariable(id: string) {
-  const variable = store.graph.variables.get(id)
-  if (!variable) return
-  const snapshot = structuredClone(variable)
-  store.undo.push({
-    label: 'Delete variable',
-    forward: () => {
-      store.graph.removeVariable(id)
-      store.requestRender()
-    },
-    inverse: () => {
-      store.graph.addVariable(snapshot)
-      store.requestRender()
-    }
-  })
-  store.graph.removeVariable(id)
-  store.requestRender()
+const VARIABLE_TYPE_ICONS: Record<string, Component> = {
+  COLOR: IconPalette,
+  FLOAT: IconHash,
+  STRING: IconType,
+  BOOLEAN: IconToggleLeft
 }
 
 const columns = computed<ColumnDef<Variable>[]>(() => {
@@ -273,12 +109,6 @@ const columns = computed<ColumnDef<Variable>[]>(() => {
     cell: ({ row }) => {
       const v = row.original
       const iconClass = 'size-3.5 shrink-0 text-muted'
-      const VARIABLE_TYPE_ICONS: Record<string, Component> = {
-        COLOR: IconPalette,
-        FLOAT: IconHash,
-        STRING: IconType,
-        BOOLEAN: IconToggleLeft
-      }
       const iconComponent = VARIABLE_TYPE_ICONS[v.type] ?? IconToggleLeft
       const icon = h(iconComponent, { class: iconClass })
 
@@ -289,7 +119,7 @@ const columns = computed<ColumnDef<Variable>[]>(() => {
           {
             defaultValue: shortName(v),
             class: 'min-w-0 flex-1',
-            onSubmit: (val: string) => commitNameEdit(v, val)
+            onSubmit: (val: string | null | undefined) => val && commitNameEdit(v, val)
           },
           () =>
             h(EditableArea, { class: 'flex' }, () => [
@@ -319,7 +149,7 @@ const columns = computed<ColumnDef<Variable>[]>(() => {
       if (v.type === 'COLOR' && value && typeof value === 'object' && 'r' in value) {
         return h(ColorInput, {
           color: value as Color,
-          onUpdate: (c: Color) => updateColorValue(v, mode.modeId, c)
+          onUpdate: (c: Color) => updateVariableValue(v.id, mode.modeId, c)
         })
       }
 
@@ -328,7 +158,7 @@ const columns = computed<ColumnDef<Variable>[]>(() => {
         {
           defaultValue: formatModeValue(v, mode.modeId),
           class: 'min-w-0 flex-1',
-          onSubmit: (val: string) => commitValueEdit(v, mode.modeId, val)
+          onSubmit: (val: string | null | undefined) => val && commitValueEdit(v, mode.modeId, val)
         },
         () =>
           h(EditableArea, { class: 'flex' }, () => [
@@ -415,7 +245,7 @@ const table = useVueTable({
         </div>
 
         <template v-else>
-          <TabsRoot v-model="activeTab" class="flex flex-1 flex-col overflow-hidden">
+          <TabsRoot v-model="activeCollectionId" class="flex flex-1 flex-col overflow-hidden">
             <!-- Top bar -->
             <div class="flex shrink-0 items-center border-b border-border">
               <TabsList class="flex flex-1 gap-0.5 overflow-x-auto px-3 py-1">
@@ -451,14 +281,15 @@ const table = useVueTable({
                     placeholder="Search"
                   />
                 </div>
-                <button
-                  data-test-id="variables-add-collection"
-                  class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
-                  title="Add collection"
-                  @click="addCollection"
-                >
-                  <icon-lucide-folder-plus class="size-3.5" />
-                </button>
+                <Tip label="Add collection">
+                  <button
+                    data-test-id="variables-add-collection"
+                    class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
+                    @click="addCollection"
+                  >
+                    <icon-lucide-folder-plus class="size-3.5" />
+                  </button>
+                </Tip>
                 <DialogClose
                   class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
                 >

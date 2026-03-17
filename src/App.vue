@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useHead } from '@unhead/vue'
+import { TooltipProvider } from 'reka-ui'
 
 import AppToast from '@/components/AppToast.vue'
-import { toast } from '@/composables/use-toast'
+import { toast } from '@/utils/toast'
 
 useHead({ titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil') })
 
@@ -13,6 +14,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <RouterView />
-  <AppToast />
+  <TooltipProvider :delay-duration="400">
+    <RouterView />
+    <AppToast />
+  </TooltipProvider>
 </template>

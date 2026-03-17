@@ -25,12 +25,14 @@ import {
   RULER_BG_COLOR,
   RULER_TICK_COLOR,
   RULER_TEXT_COLOR,
-  DEFAULT_FONT_FAMILY
+  DEFAULT_FONT_FAMILY,
+  IS_BROWSER
 } from '../constants'
 
 import { RenderProfiler } from '../profiler'
 
 import type { SceneNode, SceneGraph, Fill, Stroke } from '../scene-graph'
+import type { EditorState } from '../editor/types'
 import type { SnapGuide } from '../snap'
 import type { TextEditor } from '../text-editor'
 import type { Color, Rect, Vector } from '../types'
@@ -669,6 +671,33 @@ export class SkiaRenderer {
       }
     }
     this.worldViewport = prevViewport
+  }
+
+  renderFromEditorState(state: EditorState, graph: SceneGraph, textEditor: unknown, viewportWidth: number, viewportHeight: number, showRulers = true): void {
+    this.dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
+    this.panX = state.panX
+    this.panY = state.panY
+    this.zoom = state.zoom
+    this.viewportWidth = viewportWidth
+    this.viewportHeight = viewportHeight
+    this.showRulers = showRulers
+    this.pageColor = state.pageColor
+    this.pageId = state.currentPageId
+    this.render(graph, state.selectedIds, {
+      hoveredNodeId: state.hoveredNodeId,
+      enteredContainerId: state.enteredContainerId,
+      editingTextId: state.editingTextId,
+      textEditor: textEditor as RenderOverlays['textEditor'],
+      marquee: state.marquee,
+      snapGuides: state.snapGuides,
+      rotationPreview: state.rotationPreview,
+      dropTargetId: state.dropTargetId,
+      layoutInsertIndicator: state.layoutInsertIndicator,
+      penState: state.penState
+        ? { ...state.penState, cursorX: state.penCursorX ?? undefined, cursorY: state.penCursorY ?? undefined } as RenderOverlays['penState']
+        : null,
+      remoteCursors: state.remoteCursors
+    }, state.sceneVersion)
   }
 
   render(

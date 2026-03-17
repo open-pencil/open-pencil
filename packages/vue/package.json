@@ -1,0 +1,52 @@
+{
+  "name": "@open-pencil/vue",
+  "version": "0.10.0",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "bun": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "sideEffects": false,
+  "files": ["src", "dist"],
+  "scripts": {
+    "build": "vue-tsc --emitDeclarationOnly",
+    "prepublishOnly": "bun run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/vue"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "node": "./dist/index.js",
+        "default": "./dist/index.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0",
+    "@open-pencil/core": "workspace:*",
+    "canvaskit-wasm": ">=0.39.0"
+  },
+  "peerDependenciesMeta": {
+    "canvaskit-wasm": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@vueuse/core": "^14.2.1"
+  }
+}

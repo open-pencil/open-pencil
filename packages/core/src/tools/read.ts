@@ -1,5 +1,6 @@
 import { createTwoFilesPatch } from 'diff'
 
+import { computeBounds } from '../geometry'
 import { sceneNodeToJSX } from '../render/export-jsx'
 import { defineTool, nodeSummary, nodeToResult } from './schema'
 import { queryByXPath } from '../xpath'
@@ -165,20 +166,7 @@ export const pageBounds = defineTool({
   description: 'Get bounding box of all objects on the current page.',
   params: {},
   execute: (figma) => {
-    const page = figma.currentPage
-    let minX = Infinity
-    let minY = Infinity
-    let maxX = -Infinity
-    let maxY = -Infinity
-    for (const child of page.children) {
-      const bounds = child.absoluteBoundingBox
-      minX = Math.min(minX, bounds.x)
-      minY = Math.min(minY, bounds.y)
-      maxX = Math.max(maxX, bounds.x + bounds.width)
-      maxY = Math.max(maxY, bounds.y + bounds.height)
-    }
-    if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 }
-    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+    return computeBounds(figma.currentPage.children.map((c) => c.absoluteBoundingBox))
   }
 })
 

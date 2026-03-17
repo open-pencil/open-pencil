@@ -1,24 +1,20 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 
-import { useInlineRename } from '@/composables/use-inline-rename'
-import { useEditorStore } from '@/stores/editor'
+import Tip from '@/components/Tip.vue'
+import { useInlineRename, usePageList } from '@open-pencil/vue'
 
-const store = useEditorStore()
+const { pages, currentPageId, switchPage, addPage, renamePage } = usePageList()
 
 const DIVIDER_RE = /^[-–—*\s]+$/
-const pageInputRefs = new Map<string, HTMLInputElement>()
 
 function isDivider(page: { name: string; childIds: string[] }) {
   return page.childIds.length === 0 && DIVIDER_RE.test(page.name)
 }
 
-const pages = computed(() => {
-  void store.state.sceneVersion
-  return store.graph.getPages()
-})
+const pageInputRefs = new Map<string, HTMLInputElement>()
 
-const rename = useInlineRename((id, name) => store.renamePage(id, name))
+const rename = useInlineRename((id, name) => renamePage(id, name))
 const activeRenameId = ref<string | null>(null)
 
 function setPageInputRef(pageId: string, el: HTMLInputElement | null) {
@@ -43,14 +39,15 @@ function startRename(pg: { id: string; name: string }) {
       <span data-test-id="pages-header" class="text-[11px] tracking-wider text-muted uppercase"
         >Pages</span
       >
-      <button
-        data-test-id="pages-add"
-        class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
-        title="Add page"
-        @click="store.addPage()"
-      >
-        +
-      </button>
+      <Tip label="Add page">
+        <button
+          data-test-id="pages-add"
+          class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
+          @click="addPage()"
+        >
+          +
+        </button>
+      </Tip>
     </div>
     <div class="scrollbar-thin overflow-x-hidden overflow-y-auto px-1 pb-1">
       <div v-for="pg in pages" :key="pg.id">
@@ -80,11 +77,11 @@ function startRename(pg: { id: string; name: string }) {
           data-test-id="pages-item"
           class="flex w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 py-1 text-left text-xs"
           :class="
-            pg.id === store.state.currentPageId
+            pg.id === currentPageId
               ? 'bg-hover text-surface'
               : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
           "
-          @click="store.switchPage(pg.id)"
+          @click="switchPage(pg.id)"
           @dblclick="startRename(pg)"
         >
           <icon-lucide-file class="size-3 shrink-0" />

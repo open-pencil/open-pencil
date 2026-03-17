@@ -66,7 +66,7 @@ interface XPathNode {
 }
 
 function wrapNode(
-  graph: SceneGraph,
+  _graph: SceneGraph,
   node: SceneNode,
   parent?: XPathNode | XPathDocument | null
 ): XPathNode {

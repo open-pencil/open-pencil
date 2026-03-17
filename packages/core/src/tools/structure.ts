@@ -193,7 +193,7 @@ export const nodeAncestors = defineTool({
     let current = node.parent
     let d = 0
     while (current && (!args.depth || d < args.depth)) {
-      ancestors.push({ id: current.id, name: current.name, type: current.type })
+      ancestors.push(nodeSummary(current))
       current = current.parent
       d++
     }
@@ -212,7 +212,7 @@ export const nodeChildren = defineTool({
     if (!node) return { error: `Node "${id}" not found` }
     return {
       id,
-      children: node.children.map((c) => ({ id: c.id, name: c.name, type: c.type }))
+      children: node.children.map(nodeSummary)
     }
   }
 })

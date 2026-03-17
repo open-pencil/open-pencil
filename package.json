@@ -14,7 +14,7 @@
     "tauri": "tauri",
     "lint": "oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/cli/src/ packages/mcp/src/",
     "format": "oxfmt --write src/",
-    "check": "bun run lint",
+    "check": "bun run lint && tsgo --noEmit && vue-tsc --noEmit",
     "test": "playwright test --project=openpencil",
     "test:update": "playwright test --project=openpencil --update-snapshots",
     "test:figma": "playwright test --project=figma",
@@ -34,8 +34,11 @@
     "@ai-sdk/openai": "^3.0.37",
     "@ai-sdk/valibot": "^2.0.17",
     "@ai-sdk/vue": "^3.0.105",
+    "@atlaskit/pragmatic-drag-and-drop": "^1.7.9",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
     "@open-pencil/cli": "workspace:*",
     "@open-pencil/core": "workspace:*",
+    "@open-pencil/vue": "workspace:*",
     "@openrouter/ai-sdk-provider": "^2.2.3",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/vue-table": "^8.21.3",
@@ -46,7 +49,7 @@
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@unhead/vue": "^2.1.10",
     "@vueuse/core": "^14.2.1",
-    "ai": "^6.0.105",
+    "ai": "^6.0.116",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",
     "dedent": "^1.7.1",
@@ -63,18 +66,19 @@
     "valibot": "^1.2.0",
     "vue": "^3.5.29",
     "vue-router": "^5.0.3",
+    "vue-stream-markdown": "^0.6.5",
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
-    "zod": "^4.3.6",
-    "vue-stream-markdown": "^0.6.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.14.1",
     "@hono/node-server": "^1.19.11",
     "@iconify-json/lucide": "^1.2.94",
     "@modelcontextprotocol/sdk": "^1.27.1",
+    "@open-pencil/mcp": "workspace:*",
     "@playwright/test": "^1.58.2",
     "@tauri-apps/cli": "^2",
     "@types/culori": "^4.0.1",
@@ -96,8 +100,8 @@
     "unplugin-vue-components": "^31.0.0",
     "vite": "^8.0.0",
     "vite-plugin-pwa": "^1.2.0",
+    "vue-tsc": "^3.2.5",
     "workbox-window": "^7.4.0",
-    "ws": "^8.19.0",
-    "@open-pencil/mcp": "workspace:*"
+    "ws": "^8.19.0"
   }
 }

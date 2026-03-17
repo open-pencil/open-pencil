@@ -3,7 +3,8 @@ import { ToastProvider, ToastRoot, ToastDescription, ToastViewport, ToastClose }
 
 import { useClipboard } from '@vueuse/core'
 
-import { toast } from '@/composables/use-toast'
+import Tip from '@/components/Tip.vue'
+import { toast } from '@/utils/toast'
 import { toastRoot } from '@/components/ui/toast'
 
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
@@ -26,16 +27,16 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
       <icon-lucide-check v-if="t.variant === 'default'" class="mt-0.5 size-3 shrink-0" />
       <icon-lucide-triangle-alert v-else class="mt-0.5 size-3 shrink-0" />
       <ToastDescription class="min-w-0 flex-1 select-text">{{ t.message }}</ToastDescription>
-      <button
-        v-if="t.variant === 'error'"
-        data-test-id="toast-copy-error"
-        class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100"
-        :title="copied ? 'Copied!' : 'Copy error'"
-        @click="copy(t.message)"
-      >
-        <icon-lucide-check v-if="copied" class="size-3" />
-        <icon-lucide-copy v-else class="size-3" />
-      </button>
+      <Tip v-if="t.variant === 'error'" :label="copied ? 'Copied!' : 'Copy error'">
+        <button
+          data-test-id="toast-copy-error"
+          class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100"
+          @click="copy(t.message)"
+        >
+          <icon-lucide-check v-if="copied" class="size-3" />
+          <icon-lucide-copy v-else class="size-3" />
+        </button>
+      </Tip>
       <ToastClose
         v-if="t.variant === 'error'"
         data-test-id="toast-close"

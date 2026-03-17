@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -21,39 +22,35 @@ import IconZoomIn from '~icons/lucide/zoom-in'
 
 import { menuContent, menuItem } from '@/components/ui/menu'
 import { openFileDialog } from '@/composables/use-menu'
-import { useCollabInjected } from '@/composables/use-collab'
-import { toast } from '@/composables/use-toast'
+import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/composables/use-collab'
+import { toast } from '@/utils/toast'
 import { useEditorStore } from '@/stores/editor'
+import Tip from '@/components/Tip.vue'
 import { colorToCSS } from '@open-pencil/core'
 import { toolIcons } from '@/utils/tools'
 import { initials } from '@/utils/text'
 
 import type { Component } from 'vue'
 
-const route = useRoute()
 const router = useRouter()
 const collab = useCollabInjected()
 const store = useEditorStore()
+const { copy } = useClipboard()
 
-const collabState = computed(() => collab.state.value)
-const collabPeers = computed(() => collab.remotePeers.value)
-const followingPeer = computed(() => collab.followingPeer.value)
-const pendingRoomId = (route.params.roomId as string) || null
+const collabState = computed(() => collab?.state.value ?? DEFAULT_COLLAB_STATE)
+const collabPeers = computed(() => collab?.remotePeers.value ?? [])
+const followingPeer = computed(() => collab?.followingPeer.value ?? null)
 
 function onShare() {
+  if (!collab) return
   const roomId = collab.shareCurrentDoc()
   router.push(`/share/${roomId}`)
-  navigator.clipboard.writeText(`${window.location.origin}/share/${roomId}`)
+  copy(`${window.location.origin}/share/${roomId}`)
   toast.show('Link copied to clipboard')
 }
 
-function onJoin() {
-  if (!pendingRoomId) return
-  collab.connect(pendingRoomId)
-  router.push(`/share/${pendingRoomId}`)
-}
-
 function onDisconnect() {
+  if (!collab) return
   collab.disconnect()
   router.push('/')
 }
@@ -93,20 +90,22 @@ const onlineCount = computed(() => collabPeers.value.length + 1)
     <!-- Undo / Redo + active tool indicator -->
     <div class="pointer-events-auto flex flex-col items-start gap-1.5">
       <div class="flex gap-1.5">
-        <button
-          class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
-          title="Undo"
-          @click="store.undoAction()"
-        >
-          <icon-lucide-undo-2 class="size-3.5 text-surface" />
-        </button>
-        <button
-          class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
-          title="Redo"
-          @click="store.redoAction()"
-        >
-          <icon-lucide-redo-2 class="size-3.5 text-surface" />
-        </button>
+        <Tip label="Undo">
+          <button
+            class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
+            @click="store.undoAction()"
+          >
+            <icon-lucide-undo-2 class="size-3.5 text-surface" />
+          </button>
+        </Tip>
+        <Tip label="Redo">
+          <button
+            class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
+            @click="store.redoAction()"
+          >
+            <icon-lucide-redo-2 class="size-3.5 text-surface" />
+          </button>
+        </Tip>
       </div>
       <div
         class="flex size-8 items-center justify-center rounded-full border border-accent/20 bg-panel/70 shadow-md backdrop-blur-xl transition-colors duration-200"
@@ -164,7 +163,7 @@ const onlineCount = computed(() => collabPeers.value.length + 1)
                 v-for="peer in collabPeers"
                 :key="peer.clientId"
                 class="flex cursor-pointer items-center gap-2 rounded-md px-0.5 py-0.5 select-none active:bg-hover"
-                @click="collab.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
+                @click="collab?.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
               >
                 <div
                   class="flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"

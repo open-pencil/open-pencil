@@ -1,4 +1,5 @@
 import type { Color } from './types'
+import type { Fill, Stroke } from './scene-graph'
 
 export const IS_BROWSER = typeof window !== 'undefined'
 export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window
@@ -282,3 +283,44 @@ export const CJK_FALLBACK_FAMILIES_LINUX = [
 
 export const CJK_GOOGLE_FONT = 'Noto Sans SC'
 
+
+export const DEFAULT_SHAPE_FILL: Fill = {
+  type: 'SOLID',
+  color: { r: 0.83, g: 0.83, b: 0.83, a: 1 },
+  opacity: 1,
+  visible: true
+}
+
+export const DEFAULT_FRAME_FILL: Fill = {
+  type: 'SOLID',
+  color: { r: 1, g: 1, b: 1, a: 1 },
+  opacity: 1,
+  visible: true
+}
+
+export const SECTION_DEFAULT_FILL: Fill = {
+  type: 'SOLID',
+  color: { r: 0.37, g: 0.37, b: 0.37, a: 1 },
+  opacity: 1,
+  visible: true
+}
+
+export const SECTION_DEFAULT_STROKE: Stroke = {
+  color: { r: 0.55, g: 0.55, b: 0.55, a: 1 },
+  weight: 1,
+  opacity: 1,
+  visible: true,
+  align: 'INSIDE'
+}
+
+export const ZOOM_DIVISOR = 50
+export const ZOOM_SCALE_MIN = 0.75
+export const ZOOM_SCALE_MAX = 1.25
+
+export const PEN_CLOSE_THRESHOLD = 8
+export const ROTATION_SNAP_DEGREES = 15
+export const CORNER_ROTATE_ZONE = 16
+export const HANDLE_HIT_RADIUS = 6
+export const DEFAULT_TEXT_WIDTH = 200
+export const DEFAULT_TEXT_HEIGHT = 24
+export const AUTO_LAYOUT_BREAK_THRESHOLD = 8

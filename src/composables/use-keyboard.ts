@@ -1,10 +1,10 @@
 import { useBreakpoints, useEventListener, useMagicKeys, whenever } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { extractImageFilesFromClipboard } from '@/composables/use-canvas-drop'
 import { useAIChat } from '@/composables/use-chat'
 import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
 import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
+import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import { openFileDialog } from './use-menu'
 

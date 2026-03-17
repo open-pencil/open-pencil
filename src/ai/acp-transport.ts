@@ -1,6 +1,7 @@
 import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
 
 import SYSTEM_PROMPT from '@/ai/system-prompt.md?raw'
+import { decodeTauriStderr } from '@/utils/tauri'
 
 import { mapUpdate } from './acp-map-update'
 
@@ -219,11 +220,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
 
     command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-      const text =
-        typeof raw === 'string'
-          ? raw
-          : new TextDecoder().decode(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
-      console.error(`[ACP ${this.agentDef.id}]`, text)
+      console.error(`[ACP ${this.agentDef.id}]`, decodeTauriStderr(raw))
     })
 
     command.on('close', () => {

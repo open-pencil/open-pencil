@@ -1,5 +1,18 @@
 import { defineTool, nodeSummary } from './schema'
 
+import type { FigmaAPI } from '../figma-api'
+import type { SceneNode, VectorNetwork } from '../scene-graph'
+
+function getVectorNode(
+  figma: FigmaAPI,
+  id: string
+): { node: SceneNode; vn: VectorNetwork } | { error: string } {
+  const node = figma.graph.getNode(id)
+  if (!node) return { error: `Node "${id}" not found` }
+  if (!node.vectorNetwork) return { error: `Node "${id}" has no vector data` }
+  return { node, vn: structuredClone(node.vectorNetwork) }
+}
+
 const CHUNK_SIZE = 0x8000
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
@@ -106,10 +119,9 @@ export const pathScale = defineTool({
     factor: { type: 'number', description: 'Scale factor (e.g. 2 for double)', required: true }
   },
   execute: (figma, { id, factor }) => {
-    const raw = figma.graph.getNode(id)
-    if (!raw) return { error: `Node "${id}" not found` }
-    if (!raw.vectorNetwork) return { error: `Node "${id}" has no vector data` }
-    const vn = structuredClone(raw.vectorNetwork)
+    const result = getVectorNode(figma, id)
+    if ('error' in result) return result
+    const { node: raw, vn } = result
     const cx = raw.width / 2
     const cy = raw.height / 2
     for (const v of vn.vertices) {
@@ -142,10 +154,9 @@ export const pathFlip = defineTool({
     }
   },
   execute: (figma, { id, axis }) => {
-    const raw = figma.graph.getNode(id)
-    if (!raw) return { error: `Node "${id}" not found` }
-    if (!raw.vectorNetwork) return { error: `Node "${id}" has no vector data` }
-    const vn = structuredClone(raw.vectorNetwork)
+    const result = getVectorNode(figma, id)
+    if ('error' in result) return result
+    const { node: raw, vn } = result
     const w = raw.width
     const h = raw.height
     for (const v of vn.vertices) {
@@ -174,10 +185,9 @@ export const pathMove = defineTool({
     dy: { type: 'number', description: 'Y offset', required: true }
   },
   execute: (figma, { id, dx, dy }) => {
-    const raw = figma.graph.getNode(id)
-    if (!raw) return { error: `Node "${id}" not found` }
-    if (!raw.vectorNetwork) return { error: `Node "${id}" has no vector data` }
-    const vn = structuredClone(raw.vectorNetwork)
+    const result = getVectorNode(figma, id)
+    if ('error' in result) return result
+    const { vn } = result
     for (const v of vn.vertices) {
       v.x += dx
       v.y += dy

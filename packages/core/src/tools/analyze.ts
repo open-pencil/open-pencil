@@ -9,6 +9,27 @@ import type { Color } from '../types'
 import type { SceneNode } from '../scene-graph'
 import type { FigmaAPI } from '../figma-api'
 
+interface SizedItem {
+  width: number
+  height: number
+  childCount: number
+}
+
+export function calcClusterConfidence(nodes: SizedItem[]): number {
+  if (nodes.length < 2) return 100
+  const base = nodes[0]
+  let score = 0
+  for (const n of nodes.slice(1)) {
+    const sizeDiff = Math.abs(n.width - base.width) + Math.abs(n.height - base.height)
+    const childDiff = Math.abs(n.childCount - base.childCount)
+    if (sizeDiff <= 4 && childDiff === 0) score++
+    else if (sizeDiff <= 10 && childDiff <= 1) score += 0.8
+    else if (sizeDiff <= 20 && childDiff <= 2) score += 0.6
+    else score += 0.4
+  }
+  return Math.round((score / (nodes.length - 1)) * 100)
+}
+
 interface ColorEntry {
   hex: string
   color: Color
@@ -428,20 +449,7 @@ export const analyzeClusters = defineTool({
         const widthRange = Math.max(...widths) - Math.min(...widths)
         const heightRange = Math.max(...heights) - Math.min(...heights)
 
-        let confidence = 100
-        if (nodes.length >= 2) {
-          const base = nodes[0]
-          let score = 0
-          for (const n of nodes.slice(1)) {
-            const sizeDiff = Math.abs(n.width - base.width) + Math.abs(n.height - base.height)
-            const childDiff = Math.abs(n.childCount - base.childCount)
-            if (sizeDiff <= 4 && childDiff === 0) score++
-            else if (sizeDiff <= 10 && childDiff <= 1) score += 0.8
-            else if (sizeDiff <= 20 && childDiff <= 2) score += 0.6
-            else score += 0.4
-          }
-          confidence = Math.round((score / (nodes.length - 1)) * 100)
-        }
+        const confidence = calcClusterConfidence(nodes)
 
         return {
           signature,

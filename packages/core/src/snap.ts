@@ -1,3 +1,4 @@
+import { rotatedBBox } from './geometry'
 import type { SceneNode } from './scene-graph'
 import type { Rect } from './types'
 
@@ -17,51 +18,7 @@ export interface SnapResult {
 }
 
 function getEdges(node: SceneNode) {
-  if (node.rotation === 0) {
-    return {
-      left: node.x,
-      right: node.x + node.width,
-      centerX: node.x + node.width / 2,
-      top: node.y,
-      bottom: node.y + node.height,
-      centerY: node.y + node.height / 2
-    }
-  }
-
-  const cx = node.x + node.width / 2
-  const cy = node.y + node.height / 2
-  const rad = (node.rotation * Math.PI) / 180
-  const cos = Math.cos(rad)
-  const sin = Math.sin(rad)
-  const hw = node.width / 2
-  const hh = node.height / 2
-
-  const corners = [
-    { x: cx + -hw * cos - -hh * sin, y: cy + -hw * sin + -hh * cos },
-    { x: cx + hw * cos - -hh * sin, y: cy + hw * sin + -hh * cos },
-    { x: cx + hw * cos - hh * sin, y: cy + hw * sin + hh * cos },
-    { x: cx + -hw * cos - hh * sin, y: cy + -hw * sin + hh * cos }
-  ]
-
-  let left = Infinity,
-    right = -Infinity,
-    top = Infinity,
-    bottom = -Infinity
-  for (const c of corners) {
-    left = Math.min(left, c.x)
-    right = Math.max(right, c.x)
-    top = Math.min(top, c.y)
-    bottom = Math.max(bottom, c.y)
-  }
-
-  return {
-    left,
-    right,
-    centerX: (left + right) / 2,
-    top,
-    bottom,
-    centerY: (top + bottom) / 2
-  }
+  return rotatedBBox(node.x, node.y, node.width, node.height, node.rotation)
 }
 
 export function computeSnap(

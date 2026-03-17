@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import type { ListboxFilter } from 'reka-ui'
 import {
+  type AcceptableValue,
+  type ListboxFilter,
   ListboxContent,
   ListboxItem,
   ListboxRoot,
@@ -12,7 +13,7 @@ import {
   useFilter
 } from 'reka-ui'
 
-import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
+import { selectItem, selectTrigger } from '@/components/ui/select'
 import { panelSurface } from '@/components/ui/surface'
 import { listFamilies } from '@/engine/fonts'
 
@@ -35,21 +36,18 @@ onMounted(async () => {
 })
 
 watch(open, (isOpen) => {
-  if (isOpen) {
-    searchTerm.value = ''
-    nextTick(() => filterRef.value?.$el?.focus())
-  }
+  if (isOpen) searchTerm.value = ''
 })
 
-function onSelect(val: string) {
-  modelValue.value = val
-  emit('select', val)
+function select(family: string) {
+  modelValue.value = family
+  emit('select', family)
   open.value = false
 }
 </script>
 
 <template>
-  <PopoverRoot v-model:open="open">
+  <PopoverRoot :open="open" @update:open="(v) => (open = v)">
     <PopoverAnchor>
       <button
         data-test-id="font-picker-trigger"
@@ -71,13 +69,21 @@ function onSelect(val: string) {
         })
       "
       @open-auto-focus.prevent
+      @vue:mounted="nextTick(() => filterRef?.$el?.focus())"
     >
-      <ListboxRoot :model-value="modelValue" @update:model-value="onSelect">
+      <ListboxRoot
+        :model-value="modelValue"
+        @update:model-value="
+          (v: AcceptableValue) => {
+            if (typeof v === 'string') select(v)
+          }
+        "
+      >
         <div class="flex items-center gap-1 border-b border-border px-2 py-1">
           <icon-lucide-search class="size-3 shrink-0 text-muted" />
-          <ListboxFilter
+          <input
             ref="filterRef"
-            v-model="searchTerm"
+            :value="searchTerm"
             data-test-id="font-picker-search"
             class="min-w-0 flex-1 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
             placeholder="Search fonts…"
@@ -85,6 +91,7 @@ function onSelect(val: string) {
             autocorrect="off"
             autocapitalize="off"
             spellcheck="false"
+            @input="searchTerm = ($event.target as HTMLInputElement).value"
           />
         </div>
         <ListboxContent class="h-72 overflow-y-auto">
@@ -106,16 +113,19 @@ function onSelect(val: string) {
             </ListboxItem>
           </ListboxVirtualizer>
           <div
-            v-if="families.length === 0"
+            v-if="filtered.length === 0 && searchTerm"
+            class="px-2 py-3 text-center text-xs text-muted"
+          >
+            No fonts found
+          </div>
+          <div
+            v-else-if="filtered.length === 0"
             class="flex h-full items-center justify-center px-3 text-center text-xs text-muted"
           >
             <div>
               <p>No local fonts available.</p>
               <p class="mt-1">Use the desktop app or Chrome/Edge to access system fonts.</p>
             </div>
-          </div>
-          <div v-else-if="filtered.length === 0" class="px-2 py-3 text-center text-xs text-muted">
-            No fonts found
           </div>
         </ListboxContent>
       </ListboxRoot>

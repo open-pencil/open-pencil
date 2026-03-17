@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
+import Tip from '@/components/Tip.vue'
 import { useTabsStore, createTab } from '@/stores/tabs'
 
 const { tabs, activeTabId, switchTab, closeTab } = useTabsStore()
@@ -42,27 +43,29 @@ function onClose(e: MouseEvent, tabId: string) {
       >
         <icon-lucide-file class="size-3 shrink-0 opacity-50" />
         <span class="min-w-0 flex-1 truncate">{{ tab.name }}</span>
-        <button
-          data-test-id="tabbar-close"
-          class="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded opacity-0 transition-opacity group-hover/tab:opacity-100 hover:bg-hover data-[state=active]:opacity-100"
-          :class="tab.isActive ? 'opacity-100' : ''"
-          :title="`Close ${tab.name}`"
-          :aria-label="`Close ${tab.name}`"
-          tabindex="-1"
-          @click="onClose($event, tab.id)"
-        >
-          <icon-lucide-x class="size-3" />
-        </button>
+        <Tip :label="`Close ${tab.name}`">
+          <button
+            data-test-id="tabbar-close"
+            class="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded opacity-0 transition-opacity group-hover/tab:opacity-100 hover:bg-hover data-[state=active]:opacity-100"
+            :class="tab.isActive ? 'opacity-100' : ''"
+            :aria-label="`Close ${tab.name}`"
+            tabindex="-1"
+            @click="onClose($event, tab.id)"
+          >
+            <icon-lucide-x class="size-3" />
+          </button>
+        </Tip>
       </TabsTrigger>
     </TabsList>
-    <button
-      data-test-id="tabbar-new"
-      class="flex size-9 shrink-0 cursor-pointer items-center justify-center text-muted transition-colors hover:text-surface"
-      title="New tab"
-      aria-label="New tab"
-      @click="createTab()"
-    >
-      <icon-lucide-plus class="size-3.5" />
-    </button>
+    <Tip label="New tab">
+      <button
+        data-test-id="tabbar-new"
+        class="flex size-9 shrink-0 cursor-pointer items-center justify-center text-muted transition-colors hover:text-surface"
+        aria-label="New tab"
+        @click="createTab()"
+      >
+        <icon-lucide-plus class="size-3.5" />
+      </button>
+    </Tip>
   </TabsRoot>
 </template>

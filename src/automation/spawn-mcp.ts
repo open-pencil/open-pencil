@@ -1,3 +1,4 @@
+import { decodeTauriStderr } from '@/utils/tauri'
 import { AUTOMATION_HTTP_PORT, IS_TAURI } from '@open-pencil/core'
 
 async function checkHealth(): Promise<boolean> {
@@ -28,11 +29,7 @@ export async function spawnMCPIfNeeded(): Promise<(() => void) | null> {
   const command = Command.create('openpencil-mcp', [])
 
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
-    const text =
-      typeof raw === 'string'
-        ? raw
-        : new TextDecoder().decode(raw instanceof Uint8Array ? raw : new Uint8Array(raw))
-    console.error('[MCP]', text)
+    console.error('[MCP]', decodeTauriStderr(raw))
   })
 
   command.on('close', (data: { code: number | null }) => {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { useClipboard } from '@vueuse/core'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PopoverRoot,
@@ -14,23 +15,23 @@ import {
 } from 'reka-ui'
 
 import { colorToCSS } from '@open-pencil/core'
-import { useCollabInjected } from '@/composables/use-collab'
-import { toast } from '@/composables/use-toast'
+import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/composables/use-collab'
+import { toast } from '@/utils/toast'
 import { initials } from '@/utils/text'
 
 const route = useRoute()
 const router = useRouter()
 const collab = useCollabInjected()
+const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 
 const joinInput = ref('')
-const nameDraft = ref(collab.state.value.localName)
-const copied = ref(false)
+const nameDraft = ref(collab?.state.value.localName ?? '')
 const pendingRoomId = (route.params.roomId as string) || null
 const popoverOpen = ref(!!pendingRoomId)
 
-const state = computed(() => collab.state.value)
-const peers = computed(() => collab.remotePeers.value)
-const followingPeer = computed(() => collab.followingPeer.value)
+const state = computed(() => collab?.state.value ?? DEFAULT_COLLAB_STATE)
+const peers = computed(() => collab?.remotePeers.value ?? [])
+const followingPeer = computed(() => collab?.followingPeer.value ?? null)
 
 const shareUrl = computed(() => {
   if (!state.value.roomId) return ''
@@ -41,25 +42,22 @@ const isJoining = computed(() => !!pendingRoomId && !state.value.connected)
 
 function copyLink() {
   if (!shareUrl.value) return
-  navigator.clipboard.writeText(shareUrl.value)
+  copy(shareUrl.value)
   toast.show('Link copied to clipboard')
-  copied.value = true
-  setTimeout(() => {
-    copied.value = false
-  }, 2000)
 }
 
 function onShare() {
-  if (!nameDraft.value.trim()) return
+  if (!collab || !nameDraft.value.trim()) return
   collab.setLocalName(nameDraft.value.trim())
   const roomId = collab.shareCurrentDoc()
   router.push(`/share/${roomId}`)
-  navigator.clipboard.writeText(`${window.location.origin}/share/${roomId}`)
+  copy(`${window.location.origin}/share/${roomId}`)
   toast.show('Link copied to clipboard')
   popoverOpen.value = false
 }
 
 function onJoin() {
+  if (!collab) return
   const roomId = pendingRoomId || joinInput.value.trim().replace(/.*\/share\//, '')
   if (!roomId || !nameDraft.value.trim()) return
   collab.setLocalName(nameDraft.value.trim())
@@ -69,6 +67,7 @@ function onJoin() {
 }
 
 function onDisconnect() {
+  if (!collab) return
   collab.disconnect()
   router.push('/')
 }
@@ -110,7 +109,7 @@ function onDisconnect() {
                   : 'border-panel'
               "
               :style="{ background: colorToCSS(peer.color) }"
-              @click="collab.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
+              @click="collab?.followPeer(followingPeer === peer.clientId ? null : peer.clientId)"
             >
               {{ initials(peer.name) }}
             </div>

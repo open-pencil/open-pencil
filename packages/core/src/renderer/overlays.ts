@@ -17,11 +17,10 @@ import {
   FLASH_ATTACK_MS,
   FLASH_HOLD_MS,
   FLASH_RELEASE_MS,
-  FLASH_STROKE_WIDTH,
-  FLASH_PADDING,
-  FLASH_OVERSHOOT,
-  FLASH_RADIUS
+  FLASH_OVERSHOOT
 } from '../constants'
+import { rotatedCorners } from '../geometry'
+import { drawNodeHighlightRect } from './highlight-rect'
 import type { SceneNode, SceneGraph } from '../scene-graph'
 import type { SnapGuide } from '../snap'
 import type { TextEditor } from '../text-editor'
@@ -148,12 +147,13 @@ export function drawSelection(
   r.drawSelectionLabels(canvas, graph, selectedIds)
 }
 
-export function drawNodeSelection(
+function withNodeBounds(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   rotation: number,
-  graph: SceneGraph
+  graph: SceneGraph,
+  draw: (x1: number, y1: number, x2: number, y2: number) => void
 ): void {
   const abs = graph.getAbsolutePosition(node.id)
   const cx = (abs.x + node.width / 2) * r.zoom + r.panX
@@ -166,26 +166,32 @@ export function drawNodeSelection(
     canvas.rotate(rotation, cx, cy)
   }
 
-  const x1 = cx - hw
-  const y1 = cy - hh
-  const x2 = cx + hw
-  const y2 = cy + hh
-
-  canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
-
-  r.drawHandle(canvas, x1, y1)
-  r.drawHandle(canvas, x2, y1)
-  r.drawHandle(canvas, x1, y2)
-  r.drawHandle(canvas, x2, y2)
-
-  const mx = (x1 + x2) / 2
-  const my = (y1 + y2) / 2
-  r.drawHandle(canvas, mx, y1)
-  r.drawHandle(canvas, mx, y2)
-  r.drawHandle(canvas, x1, my)
-  r.drawHandle(canvas, x2, my)
-
+  draw(cx - hw, cy - hh, cx + hw, cy + hh)
   canvas.restore()
+}
+
+export function drawNodeSelection(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  rotation: number,
+  graph: SceneGraph
+): void {
+  withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
+    canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
+
+    r.drawHandle(canvas, x1, y1)
+    r.drawHandle(canvas, x2, y1)
+    r.drawHandle(canvas, x1, y2)
+    r.drawHandle(canvas, x2, y2)
+
+    const mx = (x1 + x2) / 2
+    const my = (y1 + y2) / 2
+    r.drawHandle(canvas, mx, y1)
+    r.drawHandle(canvas, mx, y2)
+    r.drawHandle(canvas, x1, my)
+    r.drawHandle(canvas, x2, my)
+  })
 }
 
 export function drawSelectionLabels(
@@ -308,19 +314,9 @@ export function drawNodeOutline(
   rotation: number,
   graph: SceneGraph
 ): void {
-  const abs = graph.getAbsolutePosition(node.id)
-  const cx = (abs.x + node.width / 2) * r.zoom + r.panX
-  const cy = (abs.y + node.height / 2) * r.zoom + r.panY
-  const hw = (node.width / 2) * r.zoom
-  const hh = (node.height / 2) * r.zoom
-
-  canvas.save()
-  if (rotation !== 0) {
-    canvas.rotate(rotation, cx, cy)
-  }
-
-  canvas.drawRect(r.ck.LTRBRect(cx - hw, cy - hh, cx + hw, cy + hh), r.selectionPaint)
-  canvas.restore()
+  withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
+    canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
+  })
 }
 
 export function drawGroupBounds(
@@ -383,16 +379,7 @@ export function getRotatedCorners(
   const cy = (abs.y + n.height / 2) * r.zoom + r.panY
   const hw = (n.width / 2) * r.zoom
   const hh = (n.height / 2) * r.zoom
-  const rad = (n.rotation * Math.PI) / 180
-  const cos = Math.cos(rad)
-  const sin = Math.sin(rad)
-
-  return [
-    { x: cx + -hw * cos - -hh * sin, y: cy + -hw * sin + -hh * cos },
-    { x: cx + hw * cos - -hh * sin, y: cy + hw * sin + -hh * cos },
-    { x: cx + hw * cos - hh * sin, y: cy + hw * sin + hh * cos },
-    { x: cx + -hw * cos - hh * sin, y: cy + -hw * sin + hh * cos }
-  ]
+  return rotatedCorners(cx, cy, hw, hh, n.rotation)
 }
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
@@ -447,17 +434,7 @@ export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph):
   if (r._flashes.length === 0) return
 
   const now = performance.now()
-  const ck = r.ck
   const totalMs = FLASH_ATTACK_MS + FLASH_HOLD_MS + FLASH_RELEASE_MS
-
-  if (!r._flashPaint) {
-    r._flashPaint = new ck.Paint()
-    r._flashPaint.setStyle(ck.PaintStyle.Stroke)
-    r._flashPaint.setAntiAlias(true)
-  }
-
-  const paint = r._flashPaint
-  const zoom = r.zoom
 
   for (let i = r._flashes.length - 1; i >= 0; i--) {
     const flash = r._flashes[i]
@@ -466,18 +443,6 @@ export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph):
       r._flashes.splice(i, 1)
       continue
     }
-
-    const node = graph.getNode(flash.nodeId)
-    if (!node) {
-      r._flashes.splice(i, 1)
-      continue
-    }
-
-    const abs = graph.getAbsolutePosition(flash.nodeId)
-    const cx = (abs.x + node.width / 2) * zoom + r.panX
-    const cy = (abs.y + node.height / 2) * zoom + r.panY
-    const hw = (node.width / 2) * zoom
-    const hh = (node.height / 2) * zoom
 
     let opacity: number
     let extraPad: number
@@ -496,22 +461,9 @@ export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph):
       extraPad = 0
     }
 
-    const pad = FLASH_PADDING + extraPad
-    const rad = FLASH_RADIUS
-
-    paint.setColor(ck.Color4f(FLASH_COLOR.r, FLASH_COLOR.g, FLASH_COLOR.b, opacity))
-    paint.setStrokeWidth(FLASH_STROKE_WIDTH)
-
-    canvas.save()
-    if (node.rotation !== 0) canvas.rotate(node.rotation, cx, cy)
-
-    const rect = ck.RRectXY(
-      ck.LTRBRect(cx - hw - pad, cy - hh - pad, cx + hw + pad, cy + hh + pad),
-      rad,
-      rad
-    )
-    canvas.drawRRect(rect, paint)
-    canvas.restore()
+    if (!drawNodeHighlightRect(r, canvas, graph, flash.nodeId, FLASH_COLOR, opacity, extraPad)) {
+      r._flashes.splice(i, 1)
+    }
   }
 }
 

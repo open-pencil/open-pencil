@@ -293,7 +293,7 @@ function detectTypographyIssues(node: SceneNode, graph: SceneGraph, issues: Desc
 
 const SPACING_GRID = 4
 
-function detectSpacingIssues(node: SceneNode, graph: SceneGraph, gridSize: number, issues: DescribeIssue[]): void {
+function detectSpacingIssues(node: SceneNode, graph: SceneGraph, _gridSize: number, issues: DescribeIssue[]): void {
   if (node.layoutMode === 'NONE') return
   const children = node.childIds
     .map((id) => graph.getNode(id))

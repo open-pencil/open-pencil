@@ -1,80 +1,55 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onScopeDispose } from 'vue'
 
 import AppSelect from '@/components/AppSelect.vue'
+import { iconButton } from '@/components/ui/icon-button'
+import { sectionLabel, sectionWrapper } from '@/components/ui/section'
 import { useEditorStore } from '@/stores/editor'
+import { useExport } from '@open-pencil/vue'
 
 import type { ExportFormat } from '@open-pencil/core'
 
-const store = useEditorStore()
+const editorStore = useEditorStore()
+const { settings, nodeName, addSetting, removeSetting, updateScale, updateFormat } = useExport()
 
-interface ExportSetting {
-  scale: number
-  format: ExportFormat
-}
+const SCALE_OPTIONS = [0.5, 0.75, 1, 1.5, 2, 3, 4].map((s) => ({ value: s, label: `${s}x` }))
+const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
+  { value: 'PNG', label: 'PNG' },
+  { value: 'JPG', label: 'JPG' },
+  { value: 'WEBP', label: 'WEBP' },
+  { value: 'SVG', label: 'SVG' }
+]
 
-const settings = ref<ExportSetting[]>([{ scale: 1, format: 'PNG' }])
 const previewUrl = ref<string | null>(null)
 const showPreview = ref(false)
 const exporting = ref(false)
 
-const SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
-const SCALE_OPTIONS = SCALES.map((s) => ({ value: s, label: s % 1 === 0 ? `${s}x` : `${s}x` }))
-const FORMATS: ExportFormat[] = ['PNG', 'JPG', 'WEBP', 'SVG']
-const FORMAT_OPTIONS = FORMATS.map((f) => ({ value: f, label: f }))
+const PREVIEW_WIDTH = 480
 
-const nodeName = computed(() => {
-  void store.state.sceneVersion
-  const ids = store.state.selectedIds
-  if (ids.size === 1) {
-    const id = [...ids][0]
-    return store.graph.getNode(id)?.name ?? 'Export'
-  }
-  return `${ids.size} layers`
-})
-
-function addSetting() {
-  const last = settings.value[settings.value.length - 1]
-  const nextScale = SCALES.find((s) => s > (last?.scale ?? 1)) ?? 2
-  settings.value.push({ scale: nextScale, format: last?.format ?? 'PNG' })
-}
-
-function removeSetting(index: number) {
-  settings.value.splice(index, 1)
-}
-
-async function doExport() {
+async function doExport(exportSettings: Array<{ scale: number; format: ExportFormat }>) {
   exporting.value = true
   try {
-    for (const setting of settings.value) {
-      await store.exportSelection(setting.scale, setting.format)
-    }
+    for (const s of exportSettings) await editorStore.exportSelection(s.scale, s.format)
   } finally {
     exporting.value = false
   }
 }
 
-const PREVIEW_WIDTH = 480
-
 async function updatePreview() {
   if (!showPreview.value) return
-  const ids = [...store.state.selectedIds]
+  const ids = [...editorStore.state.selectedIds]
   if (ids.length === 0) {
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value)
-      previewUrl.value = null
-    }
+    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = null
     return
   }
-
   let maxW = 0
   for (const id of ids) {
-    const node = store.graph.getNode(id)
+    const node = editorStore.getNode(id)
     if (node) maxW = Math.max(maxW, node.width)
   }
   const scale = maxW > 0 ? Math.min(PREVIEW_WIDTH / maxW, 2) : 1
-
-  const data = await store.renderExportImage(ids, scale, 'PNG')
+  const data = await editorStore.renderExportImage(ids, scale, 'PNG')
   if (data) {
     const prev = previewUrl.value
     previewUrl.value = URL.createObjectURL(new Blob([data], { type: 'image/png' }))
@@ -83,28 +58,22 @@ async function updatePreview() {
 }
 
 const previewKey = computed(
-  () => `${store.state.sceneVersion}:${[...store.state.selectedIds].sort().join(',')}`
+  () => `${editorStore.state.sceneVersion}:${[...editorStore.state.selectedIds].sort().join(',')}`
 )
 
 watch(() => showPreview.value, updatePreview, { flush: 'post' })
 watch(previewKey, updatePreview, { flush: 'post' })
 
-onUnmounted(() => {
+onScopeDispose(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
 </script>
 
 <template>
-  <div data-test-id="export-section" class="border-b border-border px-3 py-2">
+  <div data-test-id="export-section" :class="sectionWrapper()">
     <div class="flex items-center justify-between">
-      <label class="mb-1 block text-[11px] text-muted">Export</label>
-      <button
-        data-test-id="export-section-add"
-        class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-sm leading-none text-muted hover:bg-hover hover:text-surface"
-        @click="addSetting"
-      >
-        +
-      </button>
+      <label :class="sectionLabel()">Export</label>
+      <button data-test-id="export-section-add" :class="iconButton()" @click="addSetting">+</button>
     </div>
 
     <div
@@ -118,20 +87,14 @@ onUnmounted(() => {
         v-if="setting.format !== 'SVG'"
         :model-value="setting.scale"
         :options="SCALE_OPTIONS"
-        @update:model-value="setting.scale = Number($event)"
+        @update:model-value="updateScale(i, Number($event))"
       />
       <AppSelect
         :model-value="setting.format"
         :options="FORMAT_OPTIONS"
-        @update:model-value="setting.format = $event as ExportFormat"
+        @update:model-value="updateFormat(i, $event as ExportFormat)"
       />
-
-      <button
-        class="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent text-sm leading-none text-muted hover:bg-hover hover:text-surface"
-        @click="removeSetting(i)"
-      >
-        −
-      </button>
+      <button :class="iconButton({ class: 'shrink-0' })" @click="removeSetting(i)">−</button>
     </div>
 
     <button
@@ -139,7 +102,7 @@ onUnmounted(() => {
       data-test-id="export-button"
       class="mt-1.5 w-full cursor-pointer truncate rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-default disabled:opacity-50"
       :disabled="exporting"
-      @click="doExport"
+      @click="doExport(settings)"
     >
       Export {{ nodeName }}
     </button>

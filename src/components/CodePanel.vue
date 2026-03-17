@@ -2,23 +2,23 @@
 import Prism from 'prismjs'
 import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
-import { computed, ref, watch } from 'vue'
+import { useClipboard } from '@vueuse/core'
+import { computed, ref } from 'vue'
 
 import { selectionToJSX } from '@open-pencil/core'
-import { useEditorStore } from '@/stores/editor'
+import { useEditor, useSceneComputed } from '@open-pencil/vue'
 
 import type { JSXFormat } from '@open-pencil/core'
 
-const store = useEditorStore()
-const copied = ref(false)
+const store = useEditor()
+const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 const jsxFormat = ref<JSXFormat>('openpencil')
 
 function toggleFormat() {
   jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
 }
 
-const jsxCode = computed(() => {
-  void store.state.sceneVersion
+const jsxCode = useSceneComputed(() => {
   const ids = [...store.state.selectedIds]
   if (ids.length === 0) return ''
   return selectionToJSX(ids, store.graph, jsxFormat.value)
@@ -30,18 +30,9 @@ const highlightedLines = computed(() => {
   return jsxCode.value.split('\n').map((line) => Prism.highlight(line, grammar, 'jsx'))
 })
 
-let copyTimeout: ReturnType<typeof setTimeout> | undefined
-
 function copyCode() {
-  navigator.clipboard.writeText(jsxCode.value)
-  copied.value = true
-  clearTimeout(copyTimeout)
-  copyTimeout = setTimeout(() => (copied.value = false), 2000)
+  copy(jsxCode.value)
 }
-
-watch(jsxCode, () => {
-  copied.value = false
-})
 </script>
 
 <template>
@@ -101,7 +92,7 @@ watch(jsxCode, () => {
   </div>
 </template>
 
-<style>
+<style scoped>
 .token.tag {
   color: #7dd3fc;
 }

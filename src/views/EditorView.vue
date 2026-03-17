@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
+import { provideEditor } from '@open-pencil/vue'
 import { useKeyboard } from '@/composables/use-keyboard'
 import { useMenu } from '@/composables/use-menu'
 import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
@@ -31,6 +32,7 @@ const showChrome = !('no-chrome' in params)
 
 const firstTab = createTab()
 const store = useEditorStore()
+provideEditor(store)
 const breakpoints = useBreakpoints({ mobile: 768 })
 const isMobile = breakpoints.smaller('mobile')
 

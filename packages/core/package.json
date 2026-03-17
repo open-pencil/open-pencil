@@ -69,6 +69,11 @@
       "types": "./src/profiler/index.ts",
       "bun": "./src/profiler/index.ts",
       "default": "./src/profiler/index.ts"
+    },
+    "./editor": {
+      "types": "./src/editor/index.ts",
+      "bun": "./src/editor/index.ts",
+      "default": "./src/editor/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -151,6 +156,11 @@
         "types": "./dist/profiler/index.d.ts",
         "import": "./dist/profiler/index.js",
         "default": "./dist/profiler/index.js"
+      },
+      "./editor": {
+        "types": "./dist/editor/index.d.ts",
+        "import": "./dist/editor/index.js",
+        "default": "./dist/editor/index.js"
       }
     },
     "main": "./dist/index.js",

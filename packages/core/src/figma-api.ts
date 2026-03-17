@@ -8,6 +8,7 @@ import type {
 } from './scene-graph'
 import type { Rect, Vector } from './types'
 import { IS_BROWSER } from './constants'
+import { computeBounds } from './geometry'
 import { copyFills, copyStrokes, copyEffects } from './copy'
 
 import {
@@ -322,26 +323,16 @@ export class FigmaAPI implements NodeProxyHost {
       center: { x: this._viewport.x, y: this._viewport.y },
       zoom: this._viewport.zoom,
       scrollAndZoomIntoView: (nodes) => {
-        let minX = Infinity
-        let minY = Infinity
-        let maxX = -Infinity
-        let maxY = -Infinity
-        for (const node of nodes) {
-          const b = node.absoluteBoundingBox
-          minX = Math.min(minX, b.x)
-          minY = Math.min(minY, b.y)
-          maxX = Math.max(maxX, b.x + b.width)
-          maxY = Math.max(maxY, b.y + b.height)
-        }
-        if (minX === Infinity) return
+        const b = computeBounds(nodes.map((n) => n.absoluteBoundingBox))
+        if (b.width === 0 && b.height === 0 && nodes.length === 0) return
 
         const padding = 80
-        const contentW = maxX - minX + padding * 2
-        const contentH = maxY - minY + padding * 2
+        const contentW = b.width + padding * 2
+        const contentH = b.height + padding * 2
         const viewW = IS_BROWSER ? window.innerWidth : 1280
         const viewH = IS_BROWSER ? window.innerHeight : 720
         const zoom = Math.min(viewW / contentW, viewH / contentH, 1)
-        this._viewport = { x: (minX + maxX) / 2, y: (minY + maxY) / 2, zoom }
+        this._viewport = { x: b.x + b.width / 2, y: b.y + b.height / 2, zoom }
       }
     }
   }

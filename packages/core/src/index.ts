@@ -1,8 +1,23 @@
 export type { GUID, Color, Vector, Matrix, Rect } from './types'
-export { degToRad, radToDeg, rotatePoint, rotatedCorners, rotatedBBox } from './geometry'
+export { computeBounds, computeAbsoluteBounds, degToRad, radToDeg, rotatePoint, rotatedCorners, rotatedBBox } from './geometry'
 export { randomHex, randomInt, randomIndex } from './random'
 
 export * from './constants'
+
+export {
+  createDefaultEditorState,
+  createEditor,
+  EDITOR_TOOLS,
+  TOOL_SHORTCUTS
+} from './editor'
+export type {
+  Editor,
+  EditorContext,
+  EditorOptions,
+  EditorState,
+  EditorToolDef,
+  Tool
+} from './editor'
 
 export {
   SceneGraph,
@@ -53,7 +68,7 @@ export {
 } from './scene-graph'
 
 export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
-export { ALL_TOOLS, CORE_TOOLS, EXTENDED_TOOLS, defineTool, toolsToAI, buildDebugLog } from './tools'
+export { ALL_TOOLS, CORE_TOOLS, EXTENDED_TOOLS, defineTool, toolsToAI, buildDebugLog, requireNode, NodeNotFoundError, calcClusterConfidence } from './tools'
 export type { ToolDef, ParamDef, ParamType, ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './tools'
 export { executeRpcCommand, ALL_RPC_COMMANDS } from './rpc'
 export { queryByXPath, matchByXPath } from './xpath'
@@ -83,6 +98,7 @@ export { computeLayout, computeAllLayouts, setTextMeasurer } from './layout'
 export type { TextMeasurer } from './layout'
 export { getCanvasKit, getGpuBackend, type CanvasKitOptions, type GpuBackend } from './canvaskit'
 export {
+  FONT_WEIGHT_NAMES,
   collectFontKeys,
   loadFont,
   listFamilies,
@@ -157,7 +173,7 @@ export {
   sceneNodeToKiwi,
   fractionalPosition,
   mapToFigmaType
-} from './kiwi-serialize'
+} from './kiwi/kiwi-serialize'
 
 export {
   createElement,

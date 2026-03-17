@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import { loadDocument } from '../headless'
 import { isAppMode, requireFile, rpc } from '../app-client'
-import { fmtList, bold, entity, formatType } from '../format'
+import { printNodeResults } from '../format'
 import { executeRpcCommand } from '@open-pencil/core'
 
 import type { FindNodeResult } from '@open-pencil/core'
@@ -32,21 +32,6 @@ export default defineCommand({
       return
     }
 
-    if (results.length === 0) {
-      console.log('No nodes found.')
-      return
-    }
-
-    console.log('')
-    console.log(bold(`  Found ${results.length} node${results.length > 1 ? 's' : ''}`))
-    console.log('')
-    console.log(
-      fmtList(
-        results.map((n) => ({
-          header: entity(formatType(n.type), n.name, n.id)
-        }))
-      )
-    )
-    console.log('')
+    printNodeResults(results)
   }
 })

@@ -1,7 +1,7 @@
 import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
-import type { ToastVariant } from '@/composables/use-toast'
+import type { ToastVariant } from '@/utils/toast'
 
 const toast = tv({
   base: 'flex max-w-sm items-start gap-1.5 rounded-md px-2.5 py-1.5 text-xs text-white shadow-md data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]',

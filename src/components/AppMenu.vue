@@ -16,9 +16,9 @@ import {
 
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
-import { useInlineRename } from '@/composables/use-inline-rename'
+import { useInlineRename } from '@open-pencil/vue'
 import { menuContent, menuItem, menuSeparator } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { openFileDialog } from '@/composables/use-menu'
@@ -47,18 +47,24 @@ function commitRename(input: HTMLInputElement) {
 const isMac = navigator.platform.includes('Mac')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
-interface MenuItem {
+interface MenuAction {
+  separator?: false
   label: string
   shortcut?: string
   action?: () => void
-  separator?: boolean
   disabled?: boolean
   checked?: boolean
   onCheckedChange?: (checked: boolean) => void
-  sub?: MenuItem[]
+  sub?: MenuEntry[]
 }
 
-const fileMenu: MenuItem[] = [
+interface MenuSeparator {
+  separator: true
+}
+
+type MenuEntry = MenuAction | MenuSeparator
+
+const fileMenu: MenuEntry[] = [
   {
     label: 'New',
     shortcut: `${mod}N`,
@@ -89,7 +95,7 @@ const fileMenu: MenuItem[] = [
   }
 ]
 
-const editMenu: MenuItem[] = [
+const editMenu: MenuEntry[] = [
   { label: 'Undo', shortcut: `${mod}Z`, action: () => store.undoAction() },
   { label: 'Redo', shortcut: `${mod}⇧Z`, action: () => store.redoAction() },
   { separator: true },
@@ -101,7 +107,7 @@ const editMenu: MenuItem[] = [
   { label: 'Select all', shortcut: `${mod}A`, action: () => store.selectAll() }
 ]
 
-const viewMenu: MenuItem[] = [
+const viewMenu: MenuEntry[] = [
   { label: 'Zoom to 100%', shortcut: `${mod}0`, action: () => store.zoomTo100() },
   { label: 'Zoom to fit', shortcut: `${mod}1`, action: () => store.zoomToFit() },
   { label: 'Zoom to selection', shortcut: `${mod}2`, action: () => store.zoomToSelection() },
@@ -127,7 +133,7 @@ const viewMenu: MenuItem[] = [
   }
 ]
 
-const objectMenu: MenuItem[] = [
+const objectMenu: MenuEntry[] = [
   { label: 'Group', shortcut: `${mod}G`, action: () => store.groupSelected() },
   { label: 'Ungroup', shortcut: `${mod}⇧G`, action: () => store.ungroupSelected() },
   { separator: true },
@@ -146,13 +152,13 @@ const objectMenu: MenuItem[] = [
   { label: 'Send to back', shortcut: '[', action: () => store.sendToBack() }
 ]
 
-const textMenu: MenuItem[] = [
+const textMenu: MenuEntry[] = [
   { label: 'Bold', shortcut: `${mod}B` },
   { label: 'Italic', shortcut: `${mod}I` },
   { label: 'Underline', shortcut: `${mod}U` }
 ]
 
-const arrangeMenu: MenuItem[] = [
+const arrangeMenu: MenuEntry[] = [
   { label: 'Add auto layout', shortcut: '⇧A', action: () => store.wrapInAutoLayout() },
   { separator: true },
   { label: 'Align left', shortcut: '⌥A' },
@@ -195,14 +201,15 @@ const topMenus = [
         @dblclick="startRename"
         >{{ store.state.documentName }}</span
       >
-      <button
-        data-test-id="app-toggle-ui"
-        class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
-        title="Toggle UI (⌘\)"
-        @click="store.state.showUI = !store.state.showUI"
-      >
-        <icon-lucide-sidebar class="size-3.5" />
-      </button>
+      <Tip label="Toggle UI (⌘\)">
+        <button
+          data-test-id="app-toggle-ui"
+          class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
+          @click="store.state.showUI = !store.state.showUI"
+        >
+          <icon-lucide-sidebar class="size-3.5" />
+        </button>
+      </Tip>
     </div>
     <div v-if="!IS_TAURI" class="flex items-center px-1 pb-1">
       <MenubarRoot class="scrollbar-none flex items-center gap-0.5 overflow-x-auto">

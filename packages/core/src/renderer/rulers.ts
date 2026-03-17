@@ -11,6 +11,7 @@ import {
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
 } from '../constants'
+import { computeAbsoluteBounds } from '../geometry'
 import type { SceneNode, SceneGraph } from '../scene-graph'
 import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 import type { SkiaRenderer } from './renderer'
@@ -27,22 +28,12 @@ function getSelectionScreenBounds(
   graph: SceneGraph,
   selNodes: SceneNode[]
 ): SelectionScreenBounds {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
-  for (const n of selNodes) {
-    const abs = graph.getAbsolutePosition(n.id)
-    minX = Math.min(minX, abs.x)
-    minY = Math.min(minY, abs.y)
-    maxX = Math.max(maxX, abs.x + n.width)
-    maxY = Math.max(maxY, abs.y + n.height)
-  }
+  const b = computeAbsoluteBounds(selNodes, (id) => graph.getAbsolutePosition(id))
   return {
-    sx1: minX * r.zoom + r.panX,
-    sx2: maxX * r.zoom + r.panX,
-    sy1: minY * r.zoom + r.panY,
-    sy2: maxY * r.zoom + r.panY
+    sx1: b.x * r.zoom + r.panX,
+    sx2: (b.x + b.width) * r.zoom + r.panX,
+    sy1: b.y * r.zoom + r.panY,
+    sy2: (b.y + b.height) * r.zoom + r.panY
   }
 }
 

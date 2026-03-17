@@ -3,24 +3,9 @@ import { defineCommand } from 'citty'
 import { loadDocument } from '../../headless'
 import { isAppMode, requireFile, rpc } from '../../app-client'
 import { bold, fmtList, fmtSummary } from '../../format'
-import { executeRpcCommand } from '@open-pencil/core'
+import { executeRpcCommand, calcClusterConfidence } from '@open-pencil/core'
 
 import type { AnalyzeClustersResult } from '@open-pencil/core'
-
-function calcConfidence(nodes: Array<{ width: number; height: number; childCount: number }>): number {
-  if (nodes.length < 2) return 100
-  const base = nodes[0]
-  let score = 0
-  for (const node of nodes.slice(1)) {
-    const sizeDiff = Math.abs(node.width - base.width) + Math.abs(node.height - base.height)
-    const childDiff = Math.abs(node.childCount - base.childCount)
-    if (sizeDiff <= 4 && childDiff === 0) score++
-    else if (sizeDiff <= 10 && childDiff <= 1) score += 0.8
-    else if (sizeDiff <= 20 && childDiff <= 2) score += 0.6
-    else score += 0.4
-  }
-  return Math.round((score / (nodes.length - 1)) * 100)
-}
 
 function formatSignature(sig: string): string {
   const [typeSize, children] = sig.split('|')
@@ -74,7 +59,7 @@ export default defineCommand({
 
     const items = data.clusters.map((c) => {
       const first = c.nodes[0]
-      const confidence = calcConfidence(c.nodes)
+      const confidence = calcClusterConfidence(c.nodes)
 
       const widths = c.nodes.map((n) => n.width)
       const heights = c.nodes.map((n) => n.height)

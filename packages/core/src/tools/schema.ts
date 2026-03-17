@@ -56,6 +56,19 @@ export function defineTool<P extends Record<string, ParamDef>>(def: {
   return def as unknown as ToolDef
 }
 
+export class NodeNotFoundError extends Error {
+  constructor(id: string) {
+    super(`Node not found: ${id}`)
+    this.name = 'NodeNotFoundError'
+  }
+}
+
+export function requireNode(figma: FigmaAPI, id: string): ReturnType<FigmaAPI['getNodeById']> {
+  const node = figma.getNodeById(id)
+  if (!node) throw new NodeNotFoundError(id)
+  return node
+}
+
 export function nodeToResult(node: FigmaNodeProxy, maxDepth?: number): Record<string, unknown> {
   return node.toJSON(maxDepth)
 }

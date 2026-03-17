@@ -18,6 +18,27 @@ import type { SceneNode, SceneGraph } from '@open-pencil/core'
 
 export { ok, fail, dim, bold, cyan, entity, kv, fmtTree, fmtList, fmtNode, fmtHistogram, fmtSummary }
 
+export function printNodeResults(
+  results: Array<{ type: string; name: string; id: string }>,
+  formatLabel: (n: { type: string; name: string; id: string }) => string = (n) => n.name
+): void {
+  if (results.length === 0) {
+    console.log('No nodes found.')
+    return
+  }
+  console.log('')
+  console.log(bold(`  Found ${results.length} node${results.length > 1 ? 's' : ''}`))
+  console.log('')
+  console.log(
+    fmtList(
+      results.map((n) => ({
+        header: entity(formatType(n.type), formatLabel(n), n.id)
+      }))
+    )
+  )
+  console.log('')
+}
+
 const TYPE_LABELS: Record<string, string> = {
   FRAME: 'frame',
   RECTANGLE: 'rect',

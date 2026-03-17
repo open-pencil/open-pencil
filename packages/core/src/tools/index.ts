@@ -1,6 +1,7 @@
 export { ALL_TOOLS, CORE_TOOLS, EXTENDED_TOOLS } from './registry'
 export { exportImage } from './vector'
-export { defineTool, nodeToResult, nodeSummary } from './schema'
+export { defineTool, nodeToResult, nodeSummary, requireNode, NodeNotFoundError } from './schema'
 export type { ToolDef, ParamDef, ParamType } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './ai-adapter'
+export { calcClusterConfidence } from './analyze'

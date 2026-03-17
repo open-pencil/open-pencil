@@ -1,20 +1,16 @@
 <script setup lang="ts">
-import type { Color } from '@open-pencil/core'
-import { colorToCSS } from '@open-pencil/core'
 import { computed } from 'vue'
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'reka-ui'
+import { colorToCSS } from '@open-pencil/core'
 
 import HsvColorArea from './HsvColorArea.vue'
 
-const { color } = defineProps<{
-  color: Color
-}>()
+import type { Color } from '@open-pencil/core'
 
-const emit = defineEmits<{
-  update: [color: Color]
-}>()
+const { color } = defineProps<{ color: Color }>()
+const emit = defineEmits<{ update: [color: Color] }>()
 
-const swatchColor = computed(() => colorToCSS(color))
+const swatchBg = computed(() => colorToCSS(color))
 </script>
 
 <template>
@@ -23,7 +19,7 @@ const swatchColor = computed(() => colorToCSS(color))
       <button
         data-test-id="color-picker-swatch"
         class="size-5 shrink-0 cursor-pointer rounded border border-border p-0"
-        :style="{ background: swatchColor }"
+        :style="{ background: swatchBg }"
       />
     </PopoverTrigger>
 

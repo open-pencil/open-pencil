@@ -12,9 +12,9 @@ import {
   ROOM_ID_CHARS,
   YJS_JSON_FIELDS
 } from '@/constants'
+import { randomIndex } from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
-import { randomIndex } from '@open-pencil/core'
 import type { Color, SceneNode } from '@open-pencil/core'
 import type { Room } from 'trystero'
 
@@ -32,6 +32,14 @@ export interface CollabState {
   peers: RemotePeer[]
   localName: string
   localColor: Color
+}
+
+export const DEFAULT_COLLAB_STATE: CollabState = {
+  connected: false,
+  roomId: null,
+  peers: [],
+  localName: '',
+  localColor: { r: 0.5, g: 0.5, b: 0.5, a: 1 }
 }
 
 export function useCollab(store: EditorStore) {

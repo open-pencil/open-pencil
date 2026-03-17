@@ -841,6 +841,21 @@ export class SceneGraph {
     this.emitter.emit('node:reordered', nodeId, parentId, idx)
   }
 
+  insertChildAt(childId: string, parentId: string, index: number): void {
+    const oldParent = this.getNode(this.getNode(childId)?.parentId ?? '')
+    if (oldParent) {
+      oldParent.childIds = oldParent.childIds.filter((id) => id !== childId)
+    }
+    const newParent = this.getNode(parentId)
+    if (!newParent) return
+    newParent.childIds = newParent.childIds.filter((id) => id !== childId)
+    newParent.childIds.splice(index, 0, childId)
+    const node = this.getNode(childId)
+    if (node) node.parentId = parentId
+    this.clearAbsPosCache()
+    this.emitter.emit('node:reordered', childId, parentId, index)
+  }
+
   deleteNode(id: string): void {
     const node = this.nodes.get(id)
     if (!node || id === this.rootId) return

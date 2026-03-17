@@ -4,11 +4,11 @@ import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui
 import { Markdown } from 'vue-stream-markdown'
 import 'vue-stream-markdown/index.css'
 
-import type { UIMessage, UIMessagePart } from 'ai'
+import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
 
 const { message } = defineProps<{ message: UIMessage }>()
 
-type ToolPart = Extract<UIMessagePart, { toolCallId: string }>
+type ToolPart = Extract<UIMessagePart<UIDataTypes, UITools>, { toolCallId: string }>
 
 function toolDisplayName(part: ToolPart): string {
   return getToolName(part)
@@ -32,7 +32,7 @@ function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
   return 'pending'
 }
 
-function partKey(part: UIMessagePart, index: number): string {
+function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): string {
   if ('toolCallId' in part) return part.toolCallId
   return `part-${index}`
 }
