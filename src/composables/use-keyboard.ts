@@ -167,15 +167,15 @@ export function useKeyboard() {
 
   // --- Shift (no mod) ---
   whenever(
-    computed(() => keys['shift+digit1'].value && !keys['meta'].value && !keys['control'].value),
+    computed(() => keys['shift+digit1'].value && !keys['meta'].value && !keys['control'].value && !isEditingNow()),
     () => store.zoomToFit()
   )
   whenever(
-    computed(() => keys['shift+digit2'].value && !keys['meta'].value && !keys['control'].value),
+    computed(() => keys['shift+digit2'].value && !keys['meta'].value && !keys['control'].value && !isEditingNow()),
     () => store.zoomToSelection()
   )
   whenever(
-    computed(() => keys['shift+keya'].value && !keys['meta'].value && !keys['control'].value),
+    computed(() => keys['shift+keya'].value && !keys['meta'].value && !keys['control'].value && !isEditingNow()),
     () => {
       const node = store.selectedNode.value
       if (node?.type === 'FRAME' && store.selectedNodes.value.length === 1) {
@@ -187,6 +187,12 @@ export function useKeyboard() {
   )
 
   // --- Plain keys (no modifiers) ---
+  // Guard: ignore plain-key shortcuts when focus is inside an input or textarea
+  function isEditingNow(): boolean {
+    const el = document.activeElement
+    return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+  }
+
   function plain(key: string): ComputedRef<boolean> {
     return computed(
       () =>
@@ -194,7 +200,8 @@ export function useKeyboard() {
         !keys['meta'].value &&
         !keys['control'].value &&
         !keys['shift'].value &&
-        !keys['alt'].value
+        !keys['alt'].value &&
+        !isEditingNow()
     )
   }
 

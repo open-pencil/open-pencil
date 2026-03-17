@@ -79,11 +79,12 @@ export const render = defineTool({
       }
     }
 
-    const result = await renderJSX(figma.graph, args.jsx, {
+    const results = await renderJSX(figma.graph, args.jsx, {
       parentId,
       x: args.x,
       y: args.y
     })
+    const result = results[0]
 
     if (args.replace_id && replaceIndex >= 0) {
       figma.graph.reorderChild(result.id, parentId, replaceIndex)

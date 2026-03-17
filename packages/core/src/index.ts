@@ -191,7 +191,8 @@ export {
   type RenderResult,
   sceneNodeToJSX,
   selectionToJSX,
-  type JSXFormat
+  type JSXFormat,
+  JSX_REFERENCE
 } from './render'
 export {
   parseFigmaClipboard,

@@ -2084,6 +2084,60 @@ export function createEditorStore() {
     }
   }
 
+  async function renderJSXWithUndo(jsxString: string, replaceNodeIds?: string[]) {
+    const { renderJSX } = await import('@open-pencil/core/render')
+    const pageId = state.currentPageId
+    const prevSelection = new Set(state.selectedIds)
+    const replacing = replaceNodeIds && replaceNodeIds.length > 0
+
+    let oldSnapshots: SceneNode[] = []
+    let insertParentId = pageId
+    let insertIndex = -1
+
+    if (replacing) {
+      const first = graph.getNode(replaceNodeIds[0])
+      if (first?.parentId) {
+        insertParentId = first.parentId
+        const parent = graph.getNode(insertParentId)
+        if (parent) insertIndex = parent.childIds.indexOf(replaceNodeIds[0])
+      }
+      oldSnapshots = collectSubtrees(graph, replaceNodeIds)
+      for (const id of [...replaceNodeIds].reverse()) graph.deleteNode(id)
+    }
+
+    const results = await renderJSX(graph, jsxString, { parentId: insertParentId })
+    const rootIds = results.map((r) => r.id)
+
+    if (insertIndex >= 0) {
+      for (let i = rootIds.length - 1; i >= 0; i--) {
+        graph.reorderChild(rootIds[i], insertParentId, insertIndex)
+      }
+    }
+
+    computeAllLayouts(graph, pageId)
+    const newSnapshots = collectSubtrees(graph, rootIds)
+    state.selectedIds = new Set(rootIds)
+    requestRender()
+
+    const oldRootIds = replacing ? replaceNodeIds.filter((id) => oldSnapshots.some((n) => n.id === id)) : []
+
+    undo.push({
+      label: 'Render JSX',
+      forward: () => {
+        for (const id of [...oldRootIds].reverse()) graph.deleteNode(id)
+        for (const s of newSnapshots) graph.createNode(s.type, s.parentId ?? pageId, { ...s, childIds: [] })
+        computeAllLayouts(graph, pageId)
+        state.selectedIds = new Set(rootIds)
+      },
+      inverse: () => {
+        for (const id of [...rootIds].reverse()) graph.deleteNode(id)
+        for (const s of oldSnapshots) graph.createNode(s.type, s.parentId ?? pageId, { ...s, childIds: [] })
+        computeAllLayouts(graph, pageId)
+        state.selectedIds = prevSelection
+      }
+    })
+  }
+
   function deleteSelected() {
     const entries: Array<{ id: string; parentId: string; snapshot: SceneNode; index: number }> = []
     for (const id of state.selectedIds) {
@@ -2452,6 +2506,7 @@ export function createEditorStore() {
     duplicateSelected,
     writeCopyData,
     pasteFromHTML,
+    renderJSXWithUndo,
     mobileCopy,
     mobileCut,
     mobilePaste,
