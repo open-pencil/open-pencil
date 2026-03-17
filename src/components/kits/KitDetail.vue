@@ -103,11 +103,8 @@ const accentColor = computed(() => KIT_ACCENTS[kit.name] ?? '#6366F1')
         >
           {{ kit.displayName }}
         </span>
-        <!-- Subtle noise overlay -->
-        <div
-          class="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style="background-image: url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"
-        />
+        <!-- Subtle noise texture -->
+        <div class="pointer-events-none absolute inset-0 bg-white/[0.02] mix-blend-overlay" />
       </div>
 
       <!-- Kit info -->
