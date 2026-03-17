@@ -1,14 +1,33 @@
 import { shallowReactive, shallowRef, computed } from 'vue'
-import type { KitMeta, KitComponent, KitRegistry } from '../../packages/format/src/kit-schema'
+import type { KitMeta, KitComponent } from '../../packages/format/src/kit-schema'
+
+// Load all kit.json files at build time via Vite's import.meta.glob
+const kitModules = import.meta.glob<{ default: KitMeta }>(
+  '../../design-kits/installed/*/kit.json',
+  { eager: true }
+)
+
+function loadInstalledKits(): KitMeta[] {
+  const kits: KitMeta[] = []
+  for (const [, mod] of Object.entries(kitModules)) {
+    kits.push(mod.default)
+  }
+  return kits
+}
 
 export type KitMode = 'unitaire' | 'global'
 
 export function createKitStore() {
+  const allKits = loadInstalledKits()
+
   const state = shallowReactive({
     mode: 'global' as KitMode,
-    activeKitIds: new Set<string>(),
-    installedKits: [] as KitMeta[],
-    registryLoaded: false,
+    activeKitIds: new Set<string>(
+      // Auto-activate shadcn by default
+      allKits.find(k => k.name === 'shadcn') ? ['shadcn'] : []
+    ),
+    installedKits: allKits,
+    registryLoaded: true,
   })
 
   const activeKits = computed(() =>
@@ -30,7 +49,6 @@ export function createKitStore() {
   function setMode(mode: KitMode) {
     state.mode = mode
     if (mode === 'unitaire' && state.activeKitIds.size > 1) {
-      // Keep only the first active kit
       const first = state.activeKitIds.values().next().value
       state.activeKitIds = new Set(first ? [first] : [])
     }
@@ -64,32 +82,6 @@ export function createKitStore() {
     return activeComponents.value.filter(c => c.tags.includes(tag))
   }
 
-  async function loadRegistry() {
-    try {
-      const response = await fetch('/design-kits/registry.json')
-      const registry: KitRegistry = await response.json()
-
-      const kits: KitMeta[] = []
-      for (const entry of registry.kits) {
-        const kitResponse = await fetch(`/design-kits/installed/${entry.name}/kit.json`)
-        const kitMeta: KitMeta = await kitResponse.json()
-        kits.push(kitMeta)
-      }
-
-      state.installedKits = kits
-      state.registryLoaded = true
-
-      // Auto-activate shadcn if it exists and nothing is active
-      if (state.activeKitIds.size === 0) {
-        const shadcn = kits.find(k => k.name === 'shadcn')
-        if (shadcn) activateKit(shadcn.name)
-      }
-    } catch {
-      // Registry not available yet — that's fine
-      state.registryLoaded = true
-    }
-  }
-
   return {
     state,
     activeKits,
@@ -101,7 +93,6 @@ export function createKitStore() {
     isKitActive,
     getComponentsByContext,
     getComponentsByTag,
-    loadRegistry,
   }
 }
 
