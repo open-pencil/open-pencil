@@ -5,7 +5,7 @@ import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
 import { toolCursor, useCanvas, useCanvasDrop, useCanvasInput, useTextEdit } from '@open-pencil/vue'
 import { useCollabInjected } from '@/composables/use-collab'
 import { useEditorStore } from '@/stores/editor'
-import NodeContextMenuContent from './NodeContextMenuContent.vue'
+import CanvasMenu from './CanvasMenu.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
@@ -103,7 +103,7 @@ function onContextMenu(e: MouseEvent) {
     </ContextMenuTrigger>
 
     <ContextMenuPortal>
-      <NodeContextMenuContent />
+      <CanvasMenu />
     </ContextMenuPortal>
   </ContextMenuRoot>
 </template>

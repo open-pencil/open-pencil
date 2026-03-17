@@ -13,6 +13,7 @@ export { useNodeProps, useNodeProps as useMultiProps, MIXED } from './composable
 export type { MixedValue } from './composables/use-node-props'
 export { useInlineRename } from './composables/use-inline-rename'
 export { useLayerDrag } from './composables/use-layer-drag'
+export { useSelectionState } from './composables/use-selection-state'
 export { useNodeFontStatus } from './composables/use-font-status'
 export { toast } from './toast'
 export type { Toast, ToastVariant } from './toast'

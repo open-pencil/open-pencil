@@ -6,7 +6,7 @@ import { useInlineRename, useLayerDrag } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/stores/editor'
 import LayerRow from './LayerRow.vue'
-import NodeContextMenuContent from './NodeContextMenuContent.vue'
+import CanvasMenu from './CanvasMenu.vue'
 
 const INDENT_PER_LEVEL = 16
 
@@ -160,7 +160,7 @@ function toggleExpand(id: string) {
       </div>
     </ContextMenuTrigger>
     <ContextMenuPortal>
-      <NodeContextMenuContent />
+      <CanvasMenu />
     </ContextMenuPortal>
   </ContextMenuRoot>
 </template>

@@ -7,6 +7,8 @@ import {
 } from '../clipboard'
 import { collectFontKeys } from '../fonts'
 import { computeImageHash } from '../figma-api'
+import { renderNodesToSVG } from '../svg-export'
+import { selectionToJSX } from '../render'
 
 import type { Fill, SceneGraph, SceneNode } from '../scene-graph'
 import type { Vector } from '../types'
@@ -279,6 +281,19 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
+  function copySelectionAsText(ids: string[]): string {
+    return ids.map((id) => ctx.graph.getNode(id)?.name ?? id).join('\n')
+  }
+
+  function copySelectionAsSVG(ids: string[]): string | null {
+    const nodeIds = ids.length > 0 ? ids : ctx.graph.getChildren(ctx.state.currentPageId).map((n) => n.id)
+    return renderNodesToSVG(ctx.graph, ctx.state.currentPageId, nodeIds)
+  }
+
+  function copySelectionAsJSX(ids: string[]): string | null {
+    return ids.length > 0 ? selectionToJSX(ids, ctx.graph) : null
+  }
+
   return {
     collectSubtrees,
     centerNodesAt,
@@ -289,6 +304,9 @@ export function createClipboardActions(ctx: EditorContext) {
     warnMissingImages,
     deleteSelected,
     storeImage,
-    placeImageFiles
+    placeImageFiles,
+    copySelectionAsText,
+    copySelectionAsSVG,
+    copySelectionAsJSX
   }
 }

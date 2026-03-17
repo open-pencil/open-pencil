@@ -254,6 +254,9 @@ export function createEditor(options?: EditorOptions) {
     storeImage: clipboard.storeImage,
     placeImageFiles: clipboard.placeImageFiles,
     loadFontsForNodes: clipboard.loadFontsForNodes,
+    copySelectionAsText: clipboard.copySelectionAsText,
+    copySelectionAsSVG: clipboard.copySelectionAsSVG,
+    copySelectionAsJSX: clipboard.copySelectionAsJSX,
 
     // Components — bridge functions
     createComponentFromSelection: () =>
