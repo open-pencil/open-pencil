@@ -1,0 +1,576 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "CommandBar",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#0F172A",
+    "card": "#1E293B",
+    "text": "#F1F5F9",
+    "muted": "#94A3B8",
+    "primary": "#3B82F6",
+    "border": "#334155",
+    "radius": 8
+  },
+  "children": [
+    {
+      "id": "command-bar-default",
+      "name": "CommandBar / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 360,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 12,
+      "shadow": { "color": "rgba(0,0,0,0.5)", "offsetX": 0, "offsetY": 16, "blur": 48 },
+      "children": [
+        {
+          "id": "cb-search-area",
+          "name": "SearchArea",
+          "type": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 560,
+          "height": 52,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "cb-search-icon",
+              "name": "SearchIcon",
+              "type": "ellipse",
+              "x": 20,
+              "y": 18,
+              "width": 16,
+              "height": 16,
+              "fill": "transparent",
+              "stroke": "#94A3B8",
+              "strokeWidth": 2
+            },
+            {
+              "id": "cb-search-text",
+              "name": "SearchText",
+              "type": "text",
+              "x": 48,
+              "y": 16,
+              "width": 460,
+              "height": 20,
+              "text": "Type a command or search...",
+              "fontSize": 15,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cb-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "x": 0,
+          "y": 52,
+          "width": 560,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "cb-section-label",
+          "name": "SectionLabel",
+          "type": "text",
+          "x": 20,
+          "y": 64,
+          "width": 520,
+          "height": 16,
+          "text": "Suggestions",
+          "fontSize": 11,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#94A3B8"
+        },
+        {
+          "id": "cb-result-1",
+          "name": "Result1",
+          "type": "frame",
+          "x": 8,
+          "y": 88,
+          "width": 544,
+          "height": 40,
+          "fill": "#334155",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cb-r1-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#3B82F6",
+              "cornerRadius": 4
+            },
+            {
+              "id": "cb-r1-text",
+              "name": "Text",
+              "type": "text",
+              "x": 44,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Go to Dashboard",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "cb-r1-shortcut",
+              "name": "Shortcut",
+              "type": "text",
+              "x": 480,
+              "y": 12,
+              "width": 52,
+              "height": 16,
+              "text": "Ctrl+D",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cb-result-2",
+          "name": "Result2",
+          "type": "frame",
+          "x": 8,
+          "y": 132,
+          "width": 544,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cb-r2-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "cb-r2-text",
+              "name": "Text",
+              "type": "text",
+              "x": 44,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Create New Project",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "cb-r2-shortcut",
+              "name": "Shortcut",
+              "type": "text",
+              "x": 480,
+              "y": 12,
+              "width": 52,
+              "height": 16,
+              "text": "Ctrl+N",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cb-result-3",
+          "name": "Result3",
+          "type": "frame",
+          "x": 8,
+          "y": 176,
+          "width": 544,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cb-r3-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "cb-r3-text",
+              "name": "Text",
+              "type": "text",
+              "x": 44,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Invite Team Member",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            }
+          ]
+        },
+        {
+          "id": "cb-result-4",
+          "name": "Result4",
+          "type": "frame",
+          "x": 8,
+          "y": 220,
+          "width": 544,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cb-r4-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "cb-r4-text",
+              "name": "Text",
+              "type": "text",
+              "x": 44,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Open Settings",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "cb-r4-shortcut",
+              "name": "Shortcut",
+              "type": "text",
+              "x": 480,
+              "y": 12,
+              "width": 52,
+              "height": 16,
+              "text": "Ctrl+,",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cb-footer",
+          "name": "Footer",
+          "type": "frame",
+          "x": 0,
+          "y": 320,
+          "width": 560,
+          "height": 40,
+          "fill": "#0F172A",
+          "cornerRadius": [0, 0, 12, 12],
+          "children": [
+            {
+              "id": "cb-footer-hint",
+              "name": "Hint",
+              "type": "text",
+              "x": 20,
+              "y": 12,
+              "width": 520,
+              "height": 16,
+              "text": "Press Enter to select, Esc to close",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "command-bar-categories",
+      "name": "CommandBar / WithCategories",
+      "type": "frame",
+      "reusable": true,
+      "x": 600,
+      "y": 0,
+      "width": 560,
+      "height": 360,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 12,
+      "shadow": { "color": "rgba(0,0,0,0.5)", "offsetX": 0, "offsetY": 16, "blur": 48 },
+      "children": [
+        {
+          "id": "cbc-search-area",
+          "name": "SearchArea",
+          "type": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 560,
+          "height": 52,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "cbc-search-text",
+              "name": "SearchText",
+              "type": "text",
+              "x": 20,
+              "y": 16,
+              "width": 460,
+              "height": 20,
+              "text": "Search commands...",
+              "fontSize": 15,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cbc-tabs",
+          "name": "CategoryTabs",
+          "type": "frame",
+          "x": 0,
+          "y": 52,
+          "width": 560,
+          "height": 36,
+          "fill": "#0F172A",
+          "children": [
+            {
+              "id": "cbc-tab-all",
+              "name": "TabAll",
+              "type": "frame",
+              "x": 8,
+              "y": 4,
+              "width": 48,
+              "height": 28,
+              "fill": "#3B82F6",
+              "cornerRadius": 6,
+              "children": [
+                {
+                  "id": "cbc-tab-all-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 0,
+                  "y": 6,
+                  "width": 48,
+                  "height": 16,
+                  "text": "All",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 500,
+                  "fill": "#FFFFFF",
+                  "textAlign": "center"
+                }
+              ]
+            },
+            {
+              "id": "cbc-tab-pages",
+              "name": "TabPages",
+              "type": "text",
+              "x": 68,
+              "y": 10,
+              "width": 52,
+              "height": 16,
+              "text": "Pages",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#94A3B8"
+            },
+            {
+              "id": "cbc-tab-actions",
+              "name": "TabActions",
+              "type": "text",
+              "x": 132,
+              "y": 10,
+              "width": 56,
+              "height": 16,
+              "text": "Actions",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#94A3B8"
+            },
+            {
+              "id": "cbc-tab-settings",
+              "name": "TabSettings",
+              "type": "text",
+              "x": 200,
+              "y": 10,
+              "width": 60,
+              "height": 16,
+              "text": "Settings",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cbc-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "x": 0,
+          "y": 88,
+          "width": 560,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "cbc-result-1",
+          "name": "Result1",
+          "type": "frame",
+          "x": 8,
+          "y": 96,
+          "width": 544,
+          "height": 40,
+          "fill": "#334155",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cbc-r1-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Dashboard Overview",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "cbc-r1-cat",
+              "name": "Category",
+              "type": "text",
+              "x": 460,
+              "y": 12,
+              "width": 72,
+              "height": 16,
+              "text": "Page",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cbc-result-2",
+          "name": "Result2",
+          "type": "frame",
+          "x": 8,
+          "y": 140,
+          "width": 544,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cbc-r2-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Create Invoice",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "cbc-r2-cat",
+              "name": "Category",
+              "type": "text",
+              "x": 460,
+              "y": 12,
+              "width": 72,
+              "height": 16,
+              "text": "Action",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "cbc-result-3",
+          "name": "Result3",
+          "type": "frame",
+          "x": 8,
+          "y": 184,
+          "width": 544,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "children": [
+            {
+              "id": "cbc-r3-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 12,
+              "width": 400,
+              "height": 16,
+              "text": "Notification Preferences",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "cbc-r3-cat",
+              "name": "Category",
+              "type": "text",
+              "x": 460,
+              "y": 12,
+              "width": 72,
+              "height": 16,
+              "text": "Settings",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

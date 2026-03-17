@@ -1,0 +1,75 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "MagneticButton",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "primary": "#A855F7",
+    "text": "#FAFAFA",
+    "surface": "#18181B",
+    "radius": 12
+  },
+  "children": [
+    {
+      "id": "magnetic-button-default",
+      "name": "MagneticButton / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 180,
+      "height": 48,
+      "fill": "#A855F7",
+      "cornerRadius": 12,
+      "shadow": { "color": "rgba(168,85,247,0.4)", "offsetX": 0, "offsetY": 4, "blur": 16 },
+      "children": [
+        {
+          "id": "default-label",
+          "name": "Label",
+          "type": "text",
+          "x": 0,
+          "y": 14,
+          "width": 180,
+          "height": 20,
+          "text": "Hover Me",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#FAFAFA",
+          "textAlign": "center"
+        }
+      ]
+    },
+    {
+      "id": "magnetic-button-large",
+      "name": "MagneticButton / Large",
+      "type": "frame",
+      "reusable": true,
+      "x": 220,
+      "y": 0,
+      "width": 240,
+      "height": 56,
+      "fill": "#A855F7",
+      "cornerRadius": 12,
+      "shadow": { "color": "rgba(168,85,247,0.5)", "offsetX": 0, "offsetY": 6, "blur": 24 },
+      "children": [
+        {
+          "id": "large-label",
+          "name": "Label",
+          "type": "text",
+          "x": 0,
+          "y": 16,
+          "width": 240,
+          "height": 24,
+          "text": "Get Started",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "fill": "#FAFAFA",
+          "textAlign": "center"
+        }
+      ]
+    }
+  ]
+}

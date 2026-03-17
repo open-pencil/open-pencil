@@ -1,0 +1,283 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "PieChart",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "card": "#1E293B",
+    "text": "#E2E8F0",
+    "muted": "#64748B",
+    "series": ["#818CF8", "#34D399", "#FBBF24", "#F87171", "#38BDF8"],
+    "radius": 4
+  },
+  "children": [
+    {
+      "id": "pie-chart-pie",
+      "name": "PieChart / Pie",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 400,
+      "fill": "#1E293B",
+      "cornerRadius": 4,
+      "children": [
+        {
+          "id": "pie-title",
+          "name": "Title",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 360,
+          "height": 20,
+          "text": "Traffic Sources",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#E2E8F0"
+        },
+        {
+          "id": "pie-circle-bg",
+          "name": "PieBackground",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "pie-segment-2",
+          "name": "Segment2",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#34D399",
+          "opacity": 0.85
+        },
+        {
+          "id": "pie-segment-3",
+          "name": "Segment3",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#FBBF24",
+          "opacity": 0.7
+        },
+        {
+          "id": "pie-segment-4",
+          "name": "Segment4",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#F87171",
+          "opacity": 0.45
+        },
+        {
+          "id": "pie-segment-5",
+          "name": "Segment5",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#38BDF8",
+          "opacity": 0.2
+        },
+        {
+          "id": "pie-label-1",
+          "name": "Label1",
+          "type": "text",
+          "x": 170,
+          "y": 90,
+          "width": 60,
+          "height": 16,
+          "text": "35%",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#FFFFFF",
+          "textAlign": "center"
+        },
+        {
+          "id": "pie-label-2",
+          "name": "Label2",
+          "type": "text",
+          "x": 230,
+          "y": 140,
+          "width": 60,
+          "height": 16,
+          "text": "25%",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#FFFFFF",
+          "textAlign": "center"
+        },
+        {
+          "id": "pie-label-3",
+          "name": "Label3",
+          "type": "text",
+          "x": 200,
+          "y": 200,
+          "width": 60,
+          "height": 16,
+          "text": "20%",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#FFFFFF",
+          "textAlign": "center"
+        },
+        {
+          "id": "pie-legend",
+          "name": "Legend",
+          "type": "frame",
+          "x": 20,
+          "y": 284,
+          "width": 360,
+          "height": 100,
+          "fill": "transparent",
+          "children": [
+            { "id": "pie-l1-dot", "name": "Dot1", "type": "rectangle", "x": 0, "y": 0, "width": 12, "height": 12, "fill": "#818CF8", "cornerRadius": 2 },
+            { "id": "pie-l1-text", "name": "Text1", "type": "text", "x": 18, "y": 0, "width": 80, "height": 14, "text": "Direct (35%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "pie-l2-dot", "name": "Dot2", "type": "rectangle", "x": 0, "y": 20, "width": 12, "height": 12, "fill": "#34D399", "cornerRadius": 2 },
+            { "id": "pie-l2-text", "name": "Text2", "type": "text", "x": 18, "y": 20, "width": 80, "height": 14, "text": "Organic (25%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "pie-l3-dot", "name": "Dot3", "type": "rectangle", "x": 0, "y": 40, "width": 12, "height": 12, "fill": "#FBBF24", "cornerRadius": 2 },
+            { "id": "pie-l3-text", "name": "Text3", "type": "text", "x": 18, "y": 40, "width": 80, "height": 14, "text": "Referral (20%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "pie-l4-dot", "name": "Dot4", "type": "rectangle", "x": 180, "y": 0, "width": 12, "height": 12, "fill": "#F87171", "cornerRadius": 2 },
+            { "id": "pie-l4-text", "name": "Text4", "type": "text", "x": 198, "y": 0, "width": 80, "height": 14, "text": "Social (12%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "pie-l5-dot", "name": "Dot5", "type": "rectangle", "x": 180, "y": 20, "width": 12, "height": 12, "fill": "#38BDF8", "cornerRadius": 2 },
+            { "id": "pie-l5-text", "name": "Text5", "type": "text", "x": 198, "y": 20, "width": 80, "height": 14, "text": "Other (8%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pie-chart-donut",
+      "name": "PieChart / Donut",
+      "type": "frame",
+      "reusable": true,
+      "x": 440,
+      "y": 0,
+      "width": 400,
+      "height": 400,
+      "fill": "#1E293B",
+      "cornerRadius": 4,
+      "children": [
+        {
+          "id": "donut-title",
+          "name": "Title",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 360,
+          "height": 20,
+          "text": "Browser Share",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#E2E8F0"
+        },
+        {
+          "id": "donut-outer",
+          "name": "OuterRing",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "donut-seg-2",
+          "name": "Segment2",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#34D399",
+          "opacity": 0.8
+        },
+        {
+          "id": "donut-seg-3",
+          "name": "Segment3",
+          "type": "ellipse",
+          "x": 100,
+          "y": 60,
+          "width": 200,
+          "height": 200,
+          "fill": "#FBBF24",
+          "opacity": 0.5
+        },
+        {
+          "id": "donut-hole",
+          "name": "CenterHole",
+          "type": "ellipse",
+          "x": 140,
+          "y": 100,
+          "width": 120,
+          "height": 120,
+          "fill": "#1E293B"
+        },
+        {
+          "id": "donut-center-value",
+          "name": "CenterValue",
+          "type": "text",
+          "x": 150,
+          "y": 140,
+          "width": 100,
+          "height": 32,
+          "text": "1.2M",
+          "fontSize": 24,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "fill": "#E2E8F0",
+          "textAlign": "center"
+        },
+        {
+          "id": "donut-center-label",
+          "name": "CenterLabel",
+          "type": "text",
+          "x": 150,
+          "y": 172,
+          "width": 100,
+          "height": 16,
+          "text": "Total visits",
+          "fontSize": 12,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#64748B",
+          "textAlign": "center"
+        },
+        {
+          "id": "donut-legend",
+          "name": "Legend",
+          "type": "frame",
+          "x": 20,
+          "y": 284,
+          "width": 360,
+          "height": 80,
+          "fill": "transparent",
+          "children": [
+            { "id": "don-l1-dot", "name": "Dot1", "type": "rectangle", "x": 0, "y": 0, "width": 12, "height": 12, "fill": "#818CF8", "cornerRadius": 2 },
+            { "id": "don-l1-text", "name": "Text1", "type": "text", "x": 18, "y": 0, "width": 100, "height": 14, "text": "Chrome (48%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "don-l2-dot", "name": "Dot2", "type": "rectangle", "x": 0, "y": 20, "width": 12, "height": 12, "fill": "#34D399", "cornerRadius": 2 },
+            { "id": "don-l2-text", "name": "Text2", "type": "text", "x": 18, "y": 20, "width": 100, "height": 14, "text": "Safari (28%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "don-l3-dot", "name": "Dot3", "type": "rectangle", "x": 0, "y": 40, "width": 12, "height": 12, "fill": "#FBBF24", "cornerRadius": 2 },
+            { "id": "don-l3-text", "name": "Text3", "type": "text", "x": 18, "y": 40, "width": 100, "height": 14, "text": "Firefox (24%)", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "LuxuryHero",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "headline": { "type": "string", "default": "Timeless Elegance" },
+    "subtext": { "type": "string", "default": "Crafted with precision and an unwavering commitment to detail." },
+    "ctaLabel": { "type": "string", "default": "Discover More" },
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "accentGold": { "type": "color", "default": "#C9A96E" },
+    "mutedColor": { "type": "color", "default": "#737373" }
+  },
+  "children": [
+    {
+      "id": "luxury-hero-centered",
+      "name": "LuxuryHero / Centered",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 32 },
+      "children": [
+        {
+          "id": "centered-eyebrow",
+          "name": "Eyebrow",
+          "type": "text",
+          "text": "INTRODUCING",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "letterSpacing": 4,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }]
+        },
+        {
+          "id": "centered-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "Timeless Elegance",
+          "fontSize": 64,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "centered-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "Crafted with precision and an unwavering commitment to detail.",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "maxWidth": 560,
+          "fills": [{ "type": "solid", "color": "#737373" }]
+        },
+        {
+          "id": "centered-cta",
+          "name": "CTA Button",
+          "type": "frame",
+          "width": 220,
+          "height": 56,
+          "radius": 8,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+          "children": [
+            {
+              "id": "centered-cta-label",
+              "name": "CTA Label",
+              "type": "text",
+              "text": "Discover More",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fills": [{ "type": "solid", "color": "#0A0A0A" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "luxury-hero-split",
+      "name": "LuxuryHero / SplitImage",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 0 },
+      "children": [
+        {
+          "id": "split-left",
+          "name": "Content",
+          "type": "frame",
+          "width": 560,
+          "height": 720,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 28, "paddingLeft": 80 },
+          "children": [
+            {
+              "id": "split-eyebrow",
+              "name": "Eyebrow",
+              "type": "text",
+              "text": "COLLECTION",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "letterSpacing": 4,
+              "fills": [{ "type": "solid", "color": "#C9A96E" }]
+            },
+            {
+              "id": "split-headline",
+              "name": "Headline",
+              "type": "text",
+              "text": "Refined by\nDesign",
+              "fontSize": 56,
+              "fontFamily": "Playfair Display",
+              "fontWeight": 700,
+              "lineHeight": 1.1,
+              "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+            },
+            {
+              "id": "split-subtext",
+              "name": "Subtext",
+              "type": "text",
+              "text": "Where sophistication meets substance. Every element intentionally placed.",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "maxWidth": 400,
+              "fills": [{ "type": "solid", "color": "#737373" }]
+            },
+            {
+              "id": "split-cta",
+              "name": "CTA Button",
+              "type": "frame",
+              "width": 200,
+              "height": 52,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#C9A96E" }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                {
+                  "id": "split-cta-label",
+                  "name": "CTA Label",
+                  "type": "text",
+                  "text": "Explore",
+                  "fontSize": 15,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fills": [{ "type": "solid", "color": "#0A0A0A" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "split-right",
+          "name": "Image Placeholder",
+          "type": "rectangle",
+          "width": 720,
+          "height": 720,
+          "fills": [{ "type": "solid", "color": "#141414" }]
+        }
+      ]
+    },
+    {
+      "id": "luxury-hero-editorial",
+      "name": "LuxuryHero / Editorial",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "flexEnd", "gap": 24, "paddingLeft": 80, "paddingBottom": 80 },
+      "children": [
+        {
+          "id": "editorial-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "The Art of\nLess",
+          "fontSize": 72,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "lineHeight": 1.05,
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "editorial-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "width": 64,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }]
+        },
+        {
+          "id": "editorial-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "A curated experience that speaks through restraint.",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 300,
+          "maxWidth": 480,
+          "fills": [{ "type": "solid", "color": "#737373" }]
+        },
+        {
+          "id": "editorial-cta",
+          "name": "CTA Link",
+          "type": "text",
+          "text": "View Collection  \u2192",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "letterSpacing": 2,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Avatar", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "avatar.bg": { "type": "color", "value": "#191D24" },
+    "avatar.border": { "type": "color", "value": "#661AE6" },
+    "avatar.text": { "type": "color", "value": "#FFFFFF" },
+    "avatar.placeholder": { "type": "color", "value": "#2A303C" }
+  },
+  "children": [
+    {
+      "id": "daisy-avatar-circle",
+      "name": "Avatar / Circle",
+      "type": "frame",
+      "reusable": true,
+      "width": 64,
+      "height": 64,
+      "fill": "#2A303C",
+      "cornerRadius": 32,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-avatar-circle-initials",
+          "name": "Initials",
+          "type": "text",
+          "content": "AB",
+          "fontSize": 22,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-avatar-rounded",
+      "name": "Avatar / Rounded",
+      "type": "frame",
+      "reusable": true,
+      "width": 64,
+      "height": 64,
+      "fill": "#2A303C",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-avatar-rounded-initials",
+          "name": "Initials",
+          "type": "text",
+          "content": "CD",
+          "fontSize": 22,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-avatar-group",
+      "name": "Avatar / Group",
+      "type": "frame",
+      "reusable": true,
+      "width": 180,
+      "height": 64,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": -16,
+      "children": [
+        {
+          "id": "daisy-avatar-group-1",
+          "name": "Avatar 1",
+          "type": "frame",
+          "width": 64,
+          "height": 64,
+          "fill": "#661AE6",
+          "cornerRadius": 32,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-avatar-group-1-text",
+              "name": "Initials",
+              "type": "text",
+              "content": "A",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-avatar-group-2",
+          "name": "Avatar 2",
+          "type": "frame",
+          "width": 64,
+          "height": 64,
+          "fill": "#D926AA",
+          "cornerRadius": 32,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-avatar-group-2-text",
+              "name": "Initials",
+              "type": "text",
+              "content": "B",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-avatar-group-3",
+          "name": "Avatar 3",
+          "type": "frame",
+          "width": 64,
+          "height": 64,
+          "fill": "#1FB2A5",
+          "cornerRadius": 32,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-avatar-group-3-text",
+              "name": "Initials",
+              "type": "text",
+              "content": "C",
+              "fontSize": 22,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-avatar-group-count",
+          "name": "Count",
+          "type": "frame",
+          "width": 64,
+          "height": 64,
+          "fill": "#2A303C",
+          "cornerRadius": 32,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-avatar-group-count-text",
+              "name": "Count",
+              "type": "text",
+              "content": "+5",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#A6ADBB"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

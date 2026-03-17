@@ -1,0 +1,255 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "StartupHero",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "headline": { "type": "string", "default": "Ship faster, look better." },
+    "subtext": { "type": "string", "default": "The landing page kit for indie hackers who care about design." },
+    "ctaLabel": { "type": "string", "default": "Get Started Free" },
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "primaryColor": { "type": "color", "default": "#FF6B35" }
+  },
+  "children": [
+    {
+      "id": "startup-hero-centered",
+      "name": "StartupHero / CenteredBold",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 28 },
+      "children": [
+        {
+          "id": "cb-badge",
+          "name": "Badge",
+          "type": "frame",
+          "width": 200,
+          "height": 32,
+          "radius": 14,
+          "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+          "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center", "gap": 8 },
+          "children": [
+            { "id": "cb-badge-dot", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fills": [{ "type": "solid", "color": "#10B981" }] },
+            { "id": "cb-badge-text", "name": "Badge Text", "type": "text", "text": "Now in Public Beta", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 500, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+          ]
+        },
+        {
+          "id": "cb-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "Ship faster,\nlook better.",
+          "fontSize": 72,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "lineHeight": 1.05,
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "cb-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "The landing page kit for indie hackers who care about design.",
+          "fontSize": 20,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "maxWidth": 520,
+          "fills": [{ "type": "solid", "color": "#888888" }]
+        },
+        {
+          "id": "cb-cta-row",
+          "name": "CTA Row",
+          "type": "frame",
+          "width": 400,
+          "height": 56,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center", "gap": 16 },
+          "children": [
+            {
+              "id": "cb-cta-primary",
+              "name": "Primary CTA",
+              "type": "frame",
+              "width": 200,
+              "height": 56,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#FF6B35" }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "cb-cta-p-label", "name": "Label", "type": "text", "text": "Get Started Free", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+              ]
+            },
+            {
+              "id": "cb-cta-secondary",
+              "name": "Secondary CTA",
+              "type": "frame",
+              "width": 160,
+              "height": 56,
+              "radius": 14,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "cb-cta-s-label", "name": "Label", "type": "text", "text": "See Demo", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 500, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "startup-hero-screenshot",
+      "name": "StartupHero / WithScreenshot",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 880,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 48, "paddingTop": 80, "paddingBottom": 80 },
+      "children": [
+        {
+          "id": "ss-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "Build something\npeople want.",
+          "fontSize": 64,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "lineHeight": 1.1,
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "ss-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "From idea to launch in record time. No design degree required.",
+          "fontSize": 18,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#888888" }]
+        },
+        {
+          "id": "ss-cta",
+          "name": "CTA Button",
+          "type": "frame",
+          "width": 220,
+          "height": 56,
+          "radius": 14,
+          "fills": [{ "type": "solid", "color": "#FF6B35" }],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+          "children": [
+            { "id": "ss-cta-label", "name": "Label", "type": "text", "text": "Start Building", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+          ]
+        },
+        {
+          "id": "ss-screenshot",
+          "name": "Screenshot Placeholder",
+          "type": "frame",
+          "width": 1000,
+          "height": 560,
+          "radius": 14,
+          "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+          "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center" },
+          "children": [
+            { "id": "ss-placeholder-text", "name": "Placeholder", "type": "text", "text": "Product Screenshot", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "startup-hero-waitlist",
+      "name": "StartupHero / Waitlist",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 32 },
+      "children": [
+        {
+          "id": "wl-badge",
+          "name": "Badge",
+          "type": "frame",
+          "width": 180,
+          "height": 32,
+          "radius": 14,
+          "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+          "strokes": [{ "type": "solid", "color": "#7C3AED", "width": 1 }],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+          "children": [
+            { "id": "wl-badge-text", "name": "Badge Text", "type": "text", "text": "Coming Soon", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#7C3AED" }] }
+          ]
+        },
+        {
+          "id": "wl-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "The future of\nbuilding products.",
+          "fontSize": 56,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "lineHeight": 1.1,
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "wl-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "Join 2,400+ founders on the waitlist. Be first to launch.",
+          "fontSize": 18,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#888888" }]
+        },
+        {
+          "id": "wl-input-row",
+          "name": "Email Input Row",
+          "type": "frame",
+          "width": 480,
+          "height": 56,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "gap": 12 },
+          "children": [
+            {
+              "id": "wl-email-input",
+              "name": "Email Input",
+              "type": "frame",
+              "width": 320,
+              "height": 56,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "paddingLeft": 20 },
+              "children": [
+                { "id": "wl-email-placeholder", "name": "Placeholder", "type": "text", "text": "you@startup.com", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "wl-submit-btn",
+              "name": "Submit Button",
+              "type": "frame",
+              "width": 148,
+              "height": 56,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#FF6B35" }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "wl-submit-label", "name": "Label", "type": "text", "text": "Join Waitlist", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

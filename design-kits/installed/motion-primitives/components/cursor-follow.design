@@ -1,0 +1,104 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "CursorFollow",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#09090B",
+    "surface": "#18181B",
+    "primary": "#A855F7",
+    "accent": "#F472B6",
+    "text": "#FAFAFA",
+    "radius": 12
+  },
+  "children": [
+    {
+      "id": "cursor-follow-default",
+      "name": "CursorFollow / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 320,
+      "fill": "#09090B",
+      "stroke": "#27272A",
+      "strokeWidth": 1,
+      "cornerRadius": 12,
+      "children": [
+        {
+          "id": "cf-label",
+          "name": "Label",
+          "type": "text",
+          "x": 0,
+          "y": 24,
+          "width": 480,
+          "height": 20,
+          "text": "Move your cursor around this area",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#71717A",
+          "textAlign": "center"
+        },
+        {
+          "id": "cf-cursor-ring",
+          "name": "CursorRing",
+          "type": "ellipse",
+          "x": 210,
+          "y": 140,
+          "width": 48,
+          "height": 48,
+          "fill": "transparent",
+          "stroke": "#A855F7",
+          "strokeWidth": 2,
+          "opacity": 0.6
+        },
+        {
+          "id": "cf-cursor-dot",
+          "name": "CursorDot",
+          "type": "ellipse",
+          "x": 226,
+          "y": 156,
+          "width": 16,
+          "height": 16,
+          "fill": "#A855F7"
+        },
+        {
+          "id": "cf-trail-1",
+          "name": "Trail1",
+          "type": "ellipse",
+          "x": 190,
+          "y": 170,
+          "width": 10,
+          "height": 10,
+          "fill": "#F472B6",
+          "opacity": 0.4
+        },
+        {
+          "id": "cf-trail-2",
+          "name": "Trail2",
+          "type": "ellipse",
+          "x": 175,
+          "y": 185,
+          "width": 8,
+          "height": 8,
+          "fill": "#F472B6",
+          "opacity": 0.2
+        },
+        {
+          "id": "cf-trail-3",
+          "name": "Trail3",
+          "type": "ellipse",
+          "x": 162,
+          "y": 198,
+          "width": 6,
+          "height": 6,
+          "fill": "#F472B6",
+          "opacity": 0.1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "MetricCard",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#0F172A",
+    "card": "#1E293B",
+    "text": "#F1F5F9",
+    "muted": "#94A3B8",
+    "primary": "#3B82F6",
+    "success": "#22C55E",
+    "border": "#334155",
+    "radius": 8
+  },
+  "children": [
+    {
+      "id": "metric-card-default",
+      "name": "MetricCard / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 140,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "mc-default-label",
+          "name": "Label",
+          "type": "text",
+          "x": 20,
+          "y": 20,
+          "width": 240,
+          "height": 16,
+          "text": "Total Revenue",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "fill": "#94A3B8"
+        },
+        {
+          "id": "mc-default-value",
+          "name": "Value",
+          "type": "text",
+          "x": 20,
+          "y": 48,
+          "width": 240,
+          "height": 36,
+          "text": "$45,231.89",
+          "fontSize": 30,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "fill": "#F1F5F9"
+        },
+        {
+          "id": "mc-default-trend",
+          "name": "Trend",
+          "type": "text",
+          "x": 20,
+          "y": 100,
+          "width": 240,
+          "height": 16,
+          "text": "+20.1% from last month",
+          "fontSize": 12,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#22C55E"
+        }
+      ]
+    },
+    {
+      "id": "metric-card-with-chart",
+      "name": "MetricCard / WithChart",
+      "type": "frame",
+      "reusable": true,
+      "x": 320,
+      "y": 0,
+      "width": 280,
+      "height": 140,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "mc-chart-label",
+          "name": "Label",
+          "type": "text",
+          "x": 20,
+          "y": 20,
+          "width": 140,
+          "height": 16,
+          "text": "Active Users",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "fill": "#94A3B8"
+        },
+        {
+          "id": "mc-chart-value",
+          "name": "Value",
+          "type": "text",
+          "x": 20,
+          "y": 48,
+          "width": 140,
+          "height": 36,
+          "text": "2,350",
+          "fontSize": 30,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "fill": "#F1F5F9"
+        },
+        {
+          "id": "mc-chart-trend",
+          "name": "Trend",
+          "type": "text",
+          "x": 20,
+          "y": 100,
+          "width": 140,
+          "height": 16,
+          "text": "+180.1% from last month",
+          "fontSize": 12,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#22C55E"
+        },
+        {
+          "id": "mc-sparkline",
+          "name": "Sparkline",
+          "type": "frame",
+          "x": 170,
+          "y": 40,
+          "width": 90,
+          "height": 60,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "mc-bar-1",
+              "name": "Bar1",
+              "type": "rectangle",
+              "x": 0,
+              "y": 40,
+              "width": 10,
+              "height": 20,
+              "fill": "#3B82F6",
+              "cornerRadius": 2,
+              "opacity": 0.5
+            },
+            {
+              "id": "mc-bar-2",
+              "name": "Bar2",
+              "type": "rectangle",
+              "x": 16,
+              "y": 28,
+              "width": 10,
+              "height": 32,
+              "fill": "#3B82F6",
+              "cornerRadius": 2,
+              "opacity": 0.6
+            },
+            {
+              "id": "mc-bar-3",
+              "name": "Bar3",
+              "type": "rectangle",
+              "x": 32,
+              "y": 20,
+              "width": 10,
+              "height": 40,
+              "fill": "#3B82F6",
+              "cornerRadius": 2,
+              "opacity": 0.7
+            },
+            {
+              "id": "mc-bar-4",
+              "name": "Bar4",
+              "type": "rectangle",
+              "x": 48,
+              "y": 12,
+              "width": 10,
+              "height": 48,
+              "fill": "#3B82F6",
+              "cornerRadius": 2,
+              "opacity": 0.8
+            },
+            {
+              "id": "mc-bar-5",
+              "name": "Bar5",
+              "type": "rectangle",
+              "x": 64,
+              "y": 4,
+              "width": 10,
+              "height": 56,
+              "fill": "#3B82F6",
+              "cornerRadius": 2,
+              "opacity": 1.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "metric-card-comparison",
+      "name": "MetricCard / Comparison",
+      "type": "frame",
+      "reusable": true,
+      "x": 640,
+      "y": 0,
+      "width": 280,
+      "height": 140,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "mc-comp-label",
+          "name": "Label",
+          "type": "text",
+          "x": 20,
+          "y": 20,
+          "width": 240,
+          "height": 16,
+          "text": "Subscriptions",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "fill": "#94A3B8"
+        },
+        {
+          "id": "mc-comp-current",
+          "name": "CurrentValue",
+          "type": "text",
+          "x": 20,
+          "y": 48,
+          "width": 120,
+          "height": 36,
+          "text": "1,234",
+          "fontSize": 30,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "fill": "#F1F5F9"
+        },
+        {
+          "id": "mc-comp-previous",
+          "name": "PreviousValue",
+          "type": "text",
+          "x": 150,
+          "y": 56,
+          "width": 110,
+          "height": 20,
+          "text": "vs 980 last month",
+          "fontSize": 12,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#94A3B8"
+        },
+        {
+          "id": "mc-comp-bar-current",
+          "name": "BarCurrent",
+          "type": "rectangle",
+          "x": 20,
+          "y": 100,
+          "width": 160,
+          "height": 8,
+          "fill": "#3B82F6",
+          "cornerRadius": 4
+        },
+        {
+          "id": "mc-comp-bar-previous",
+          "name": "BarPrevious",
+          "type": "rectangle",
+          "x": 20,
+          "y": 114,
+          "width": 120,
+          "height": 8,
+          "fill": "#334155",
+          "cornerRadius": 4
+        }
+      ]
+    }
+  ]
+}

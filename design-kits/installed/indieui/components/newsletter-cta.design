@@ -1,0 +1,194 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "NewsletterCta",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "heading": { "type": "string", "default": "Stay in the loop" },
+    "subtext": { "type": "string", "default": "Get product updates, tips, and behind-the-scenes content." },
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "surfaceColor": { "type": "color", "default": "#1A1A2E" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "mutedColor": { "type": "color", "default": "#888888" },
+    "primaryColor": { "type": "color", "default": "#FF6B35" },
+    "borderColor": { "type": "color", "default": "#2A2A2A" }
+  },
+  "children": [
+    {
+      "id": "newsletter-inline",
+      "name": "NewsletterCta / Inline",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 360,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 28 },
+      "children": [
+        {
+          "id": "nl-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "Stay in the loop",
+          "fontSize": 32,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "nl-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "Get product updates, tips, and behind-the-scenes content. No spam, ever.",
+          "fontSize": 16,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#888888" }]
+        },
+        {
+          "id": "nl-input-row",
+          "name": "Input Row",
+          "type": "frame",
+          "width": 480,
+          "height": 52,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "gap": 12 },
+          "children": [
+            {
+              "id": "nl-input",
+              "name": "Email Input",
+              "type": "frame",
+              "width": 320,
+              "height": 52,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "paddingLeft": 20 },
+              "children": [
+                { "id": "nl-placeholder", "name": "Placeholder", "type": "text", "text": "you@email.com", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "nl-submit",
+              "name": "Subscribe Button",
+              "type": "frame",
+              "width": 148,
+              "height": 52,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#FF6B35" }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "nl-submit-label", "name": "Label", "type": "text", "text": "Subscribe", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "nl-privacy",
+          "name": "Privacy Note",
+          "type": "text",
+          "text": "Unsubscribe anytime. No spam.",
+          "fontSize": 12,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 400,
+          "fills": [{ "type": "solid", "color": "#888888" }]
+        }
+      ]
+    },
+    {
+      "id": "newsletter-floating",
+      "name": "NewsletterCta / Floating",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 400,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center" },
+      "children": [
+        {
+          "id": "fl-card",
+          "name": "Floating Card",
+          "type": "frame",
+          "width": 640,
+          "height": 280,
+          "radius": 14,
+          "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+          "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 24, "padding": 48 },
+          "children": [
+            {
+              "id": "fl-emoji",
+              "name": "Emoji",
+              "type": "text",
+              "text": "\u2709\uFE0F",
+              "fontSize": 36
+            },
+            {
+              "id": "fl-heading",
+              "name": "Heading",
+              "type": "text",
+              "text": "Join 5,000+ builders",
+              "fontSize": 24,
+              "fontFamily": "Space Grotesk",
+              "fontWeight": 700,
+              "textAlign": "center",
+              "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+            },
+            {
+              "id": "fl-subtext",
+              "name": "Subtext",
+              "type": "text",
+              "text": "Weekly insights on shipping products, growing audiences, and indie hacking.",
+              "fontSize": 14,
+              "fontFamily": "Space Grotesk",
+              "fontWeight": 400,
+              "textAlign": "center",
+              "maxWidth": 480,
+              "fills": [{ "type": "solid", "color": "#888888" }]
+            },
+            {
+              "id": "fl-input-row",
+              "name": "Input Row",
+              "type": "frame",
+              "width": 440,
+              "height": 48,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center", "gap": 12 },
+              "children": [
+                {
+                  "id": "fl-input",
+                  "name": "Email Input",
+                  "type": "frame",
+                  "width": 296,
+                  "height": 48,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+                  "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "paddingLeft": 16 },
+                  "children": [
+                    { "id": "fl-placeholder", "name": "Placeholder", "type": "text", "text": "Enter your email", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                {
+                  "id": "fl-submit",
+                  "name": "Subscribe Button",
+                  "type": "frame",
+                  "width": 132,
+                  "height": 48,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#FF6B35" }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                  "children": [
+                    { "id": "fl-submit-label", "name": "Label", "type": "text", "text": "Subscribe", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -14,6 +14,7 @@ import IconPackage from '~icons/lucide/package'
 import IconChevronDown from '~icons/lucide/chevron-down'
 import { useKitStore } from '@/stores/kit-store'
 import KitCard from './KitCard.vue'
+import KitDetail from './KitDetail.vue'
 import KitModeToggle from './KitModeToggle.vue'
 import ActiveKitsBar from './ActiveKitsBar.vue'
 import type { KitMeta } from '../../../packages/format/src/kit-schema'
@@ -22,6 +23,7 @@ const open = defineModel<boolean>('open', { default: false })
 const store = useKitStore()
 const searchTerm = ref('')
 const collapsedCategories = ref(new Set<string>())
+const selectedKit = ref<KitMeta | null>(null)
 
 const filteredKits = computed(() => {
   if (!searchTerm.value) return store.state.installedKits
@@ -52,6 +54,8 @@ function categoryLabel(cat: string): string {
       return 'Dashboard & Data'
     case 'effects':
       return 'Effets & Animations'
+    case 'landing':
+      return 'Landing Pages'
     default:
       return cat
   }
@@ -120,8 +124,21 @@ function isCategoryCollapsed(label: string): boolean {
         <!-- Active kits bar (global mode only) -->
         <ActiveKitsBar v-if="store.state.mode === 'global'" />
 
-        <!-- Content -->
-        <div class="flex-1 overflow-y-auto px-5 py-4" data-test-id="kit-browser-content">
+        <!-- Detail view -->
+        <KitDetail
+          v-if="selectedKit"
+          :kit="selectedKit"
+          class="flex-1 overflow-hidden"
+          data-test-id="kit-browser-detail"
+          @back="selectedKit = null"
+        />
+
+        <!-- Grid view -->
+        <div
+          v-else
+          class="flex-1 overflow-y-auto px-5 py-4"
+          data-test-id="kit-browser-content"
+        >
           <!-- Empty state -->
           <div
             v-if="filteredKits.length === 0"
@@ -163,7 +180,12 @@ function isCategoryCollapsed(label: string): boolean {
                 v-if="!isCategoryCollapsed(label)"
                 class="grid grid-cols-2 gap-4 sm:grid-cols-3"
               >
-                <KitCard v-for="kit in kits" :key="kit.name" :kit="kit" />
+                <KitCard
+                  v-for="kit in kits"
+                  :key="kit.name"
+                  :kit="kit"
+                  @select="selectedKit = $event"
+                />
               </div>
             </div>
           </div>

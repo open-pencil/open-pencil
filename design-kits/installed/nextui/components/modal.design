@@ -1,0 +1,368 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Modal", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "modal.bg": { "type": "color", "value": "#18181B" },
+    "modal.overlay": { "type": "color", "value": "#00000088" },
+    "modal.text": { "type": "color", "value": "#ECEDEE" },
+    "modal.muted": { "type": "color", "value": "#9BA1A6" },
+    "modal.border": { "type": "color", "value": "#3F3F46" },
+    "modal.primary": { "type": "color", "value": "#006FEE" },
+    "modal.danger": { "type": "color", "value": "#F31260" },
+    "modal.radius": { "type": "number", "value": 14 }
+  },
+  "children": [
+    {
+      "id": "nextui-modal-default",
+      "name": "Modal / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 500,
+      "height": 360,
+      "fill": "#00000088",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-modal-default-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 420,
+          "height": 280,
+          "fill": "#18181B",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "nextui-modal-default-header",
+              "name": "Header",
+              "type": "frame",
+              "width": 420,
+              "height": 60,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "padding": [16, 24],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-modal-default-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Modal Title",
+                  "fontSize": 18,
+                  "fontWeight": "600",
+                  "fill": "#ECEDEE"
+                },
+                {
+                  "id": "nextui-modal-default-close",
+                  "name": "Close",
+                  "type": "text",
+                  "content": "\u2715",
+                  "fontSize": 16,
+                  "fontWeight": "400",
+                  "fill": "#9BA1A6"
+                }
+              ]
+            },
+            {
+              "id": "nextui-modal-default-divider1",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 420,
+              "height": 1,
+              "fill": "#3F3F46"
+            },
+            {
+              "id": "nextui-modal-default-body",
+              "name": "Body",
+              "type": "frame",
+              "width": 420,
+              "height": 140,
+              "layout": "vertical",
+              "alignItems": "flex-start",
+              "justifyContent": "flex-start",
+              "padding": [20, 24],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-modal-default-body-text",
+                  "name": "Content",
+                  "type": "text",
+                  "content": "This is the modal body content. You can place any elements here including forms, text, and other components.",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#9BA1A6"
+                }
+              ]
+            },
+            {
+              "id": "nextui-modal-default-divider2",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 420,
+              "height": 1,
+              "fill": "#3F3F46"
+            },
+            {
+              "id": "nextui-modal-default-footer",
+              "name": "Footer",
+              "type": "frame",
+              "width": 420,
+              "height": 68,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-end",
+              "padding": [14, 24],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "nextui-modal-default-cancel",
+                  "name": "Cancel",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 40,
+                  "fill": "#F3126022",
+                  "cornerRadius": 12,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-modal-default-cancel-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Close",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#F31260"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-modal-default-confirm",
+                  "name": "Confirm",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 40,
+                  "fill": "#006FEE",
+                  "cornerRadius": 12,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-modal-default-confirm-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Action",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-modal-scrollable",
+      "name": "Modal / Scrollable",
+      "type": "frame",
+      "reusable": true,
+      "width": 500,
+      "height": 480,
+      "fill": "#00000088",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-modal-scrollable-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 420,
+          "height": 400,
+          "fill": "#18181B",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "nextui-modal-scrollable-header",
+              "name": "Header",
+              "type": "frame",
+              "width": 420,
+              "height": 60,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "padding": [16, 24],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-modal-scrollable-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Scrollable Modal",
+                  "fontSize": 18,
+                  "fontWeight": "600",
+                  "fill": "#ECEDEE"
+                },
+                {
+                  "id": "nextui-modal-scrollable-close",
+                  "name": "Close",
+                  "type": "text",
+                  "content": "\u2715",
+                  "fontSize": 16,
+                  "fontWeight": "400",
+                  "fill": "#9BA1A6"
+                }
+              ]
+            },
+            {
+              "id": "nextui-modal-scrollable-divider1",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 420,
+              "height": 1,
+              "fill": "#3F3F46"
+            },
+            {
+              "id": "nextui-modal-scrollable-body",
+              "name": "Body",
+              "type": "frame",
+              "width": 420,
+              "height": 260,
+              "layout": "vertical",
+              "alignItems": "flex-start",
+              "justifyContent": "flex-start",
+              "padding": [20, 24],
+              "gap": 16,
+              "children": [
+                {
+                  "id": "nextui-modal-scrollable-p1",
+                  "name": "Paragraph 1",
+                  "type": "text",
+                  "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam pulvinar risus non risus hendrerit venenatis.",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#9BA1A6"
+                },
+                {
+                  "id": "nextui-modal-scrollable-p2",
+                  "name": "Paragraph 2",
+                  "type": "text",
+                  "content": "Pellentesque sit amet hendrerit risus, sed porttitor quam. Magna exercitation reprehenderit magna aute tempor.",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#9BA1A6"
+                },
+                {
+                  "id": "nextui-modal-scrollable-p3",
+                  "name": "Paragraph 3",
+                  "type": "text",
+                  "content": "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#9BA1A6"
+                }
+              ]
+            },
+            {
+              "id": "nextui-modal-scrollable-divider2",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 420,
+              "height": 1,
+              "fill": "#3F3F46"
+            },
+            {
+              "id": "nextui-modal-scrollable-footer",
+              "name": "Footer",
+              "type": "frame",
+              "width": 420,
+              "height": 68,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-end",
+              "padding": [14, 24],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "nextui-modal-scrollable-cancel",
+                  "name": "Cancel",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 40,
+                  "fill": "#F3126022",
+                  "cornerRadius": 12,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-modal-scrollable-cancel-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Close",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#F31260"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-modal-scrollable-confirm",
+                  "name": "Confirm",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 40,
+                  "fill": "#006FEE",
+                  "cornerRadius": 12,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-modal-scrollable-confirm-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Accept",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

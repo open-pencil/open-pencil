@@ -1,0 +1,331 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Navbar", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "navbar.bg": { "type": "color", "value": "#18181B" },
+    "navbar.bgFloat": { "type": "color", "value": "#18181BCC" },
+    "navbar.text": { "type": "color", "value": "#ECEDEE" },
+    "navbar.muted": { "type": "color", "value": "#9BA1A6" },
+    "navbar.primary": { "type": "color", "value": "#006FEE" },
+    "navbar.border": { "type": "color", "value": "#3F3F46" },
+    "navbar.radius": { "type": "number", "value": 14 }
+  },
+  "children": [
+    {
+      "id": "nextui-navbar-default",
+      "name": "Navbar / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 960,
+      "height": 64,
+      "fill": "#18181B",
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "padding": [12, 24],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-navbar-default-brand",
+          "name": "Brand",
+          "type": "frame",
+          "width": 120,
+          "height": 40,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-navbar-default-logo",
+              "name": "Logo",
+              "type": "frame",
+              "width": 32,
+              "height": 32,
+              "fill": "#006FEE",
+              "cornerRadius": 8,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 0],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-navbar-default-logo-text",
+                  "name": "Logo Text",
+                  "type": "text",
+                  "content": "N",
+                  "fontSize": 18,
+                  "fontWeight": "700",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "id": "nextui-navbar-default-brand-name",
+              "name": "Brand Name",
+              "type": "text",
+              "content": "NextUI",
+              "fontSize": 18,
+              "fontWeight": "700",
+              "fill": "#ECEDEE"
+            }
+          ]
+        },
+        {
+          "id": "nextui-navbar-default-links",
+          "name": "Links",
+          "type": "frame",
+          "width": 400,
+          "height": 40,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 24,
+          "children": [
+            {
+              "id": "nextui-navbar-default-link1",
+              "name": "Link Active",
+              "type": "text",
+              "content": "Features",
+              "fontSize": 15,
+              "fontWeight": "600",
+              "fill": "#006FEE"
+            },
+            {
+              "id": "nextui-navbar-default-link2",
+              "name": "Link",
+              "type": "text",
+              "content": "Pricing",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#9BA1A6"
+            },
+            {
+              "id": "nextui-navbar-default-link3",
+              "name": "Link",
+              "type": "text",
+              "content": "About",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#9BA1A6"
+            },
+            {
+              "id": "nextui-navbar-default-link4",
+              "name": "Link",
+              "type": "text",
+              "content": "Blog",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#9BA1A6"
+            }
+          ]
+        },
+        {
+          "id": "nextui-navbar-default-actions",
+          "name": "Actions",
+          "type": "frame",
+          "width": 180,
+          "height": 40,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-navbar-default-login",
+              "name": "Login",
+              "type": "text",
+              "content": "Login",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#9BA1A6"
+            },
+            {
+              "id": "nextui-navbar-default-signup",
+              "name": "Sign Up",
+              "type": "frame",
+              "width": 100,
+              "height": 36,
+              "fill": "#006FEE",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-navbar-default-signup-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Sign Up",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-navbar-floating",
+      "name": "Navbar / Floating",
+      "type": "frame",
+      "reusable": true,
+      "width": 960,
+      "height": 80,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [8, 24],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-navbar-floating-bar",
+          "name": "Bar",
+          "type": "frame",
+          "width": 900,
+          "height": 56,
+          "fill": "#18181BCC",
+          "cornerRadius": 14,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [8, 20],
+          "gap": 0,
+          "children": [
+            {
+              "id": "nextui-navbar-floating-brand",
+              "name": "Brand",
+              "type": "frame",
+              "width": 120,
+              "height": 40,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [0, 0],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "nextui-navbar-floating-logo",
+                  "name": "Logo",
+                  "type": "frame",
+                  "width": 28,
+                  "height": 28,
+                  "fill": "#9353D3",
+                  "cornerRadius": 8,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [0, 0],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-navbar-floating-logo-text",
+                      "name": "Logo Text",
+                      "type": "text",
+                      "content": "N",
+                      "fontSize": 16,
+                      "fontWeight": "700",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-navbar-floating-brand-name",
+                  "name": "Brand Name",
+                  "type": "text",
+                  "content": "NextUI",
+                  "fontSize": 16,
+                  "fontWeight": "700",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-navbar-floating-links",
+              "name": "Links",
+              "type": "frame",
+              "width": 360,
+              "height": 40,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 0],
+              "gap": 20,
+              "children": [
+                {
+                  "id": "nextui-navbar-floating-link1",
+                  "name": "Link Active",
+                  "type": "text",
+                  "content": "Home",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#ECEDEE"
+                },
+                {
+                  "id": "nextui-navbar-floating-link2",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Features",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#9BA1A6"
+                },
+                {
+                  "id": "nextui-navbar-floating-link3",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Pricing",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#9BA1A6"
+                },
+                {
+                  "id": "nextui-navbar-floating-link4",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Docs",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#9BA1A6"
+                }
+              ]
+            },
+            {
+              "id": "nextui-navbar-floating-actions",
+              "name": "Actions",
+              "type": "frame",
+              "width": 100,
+              "height": 36,
+              "fill": "#9353D3",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-navbar-floating-cta-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Get Started",
+                  "fontSize": 13,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

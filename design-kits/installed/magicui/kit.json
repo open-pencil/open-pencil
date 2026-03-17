@@ -1,0 +1,20 @@
+{
+  "name": "magicui",
+  "displayName": "Magic UI",
+  "description": "50+ free and open-source animated components for design engineers. Trending in AI/SaaS landing pages.",
+  "version": "1.0.0",
+  "author": "magicui-design",
+  "license": "MIT",
+  "category": "effects",
+  "tags": ["effects", "animations", "ai", "saas", "trending", "magic"],
+  "style": {
+    "aesthetic": "premium-glow",
+    "radius": "large",
+    "density": "comfortable",
+    "colorScheme": "vibrant"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 16
+  }
+}

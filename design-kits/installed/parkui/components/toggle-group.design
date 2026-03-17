@@ -1,0 +1,222 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "ToggleGroup",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "togglegroup.bg": { "type": "color", "value": "#1C1917" },
+    "togglegroup.activeBg": { "type": "color", "value": "#E7E5E4" },
+    "togglegroup.activeText": { "type": "color", "value": "#0C0A09" },
+    "togglegroup.text": { "type": "color", "value": "#A8A29E" },
+    "togglegroup.border": { "type": "color", "value": "#292524" }
+  },
+  "children": [
+    {
+      "id": "parkui-togglegroup-default",
+      "name": "ToggleGroup / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 40,
+      "fill": "#1C1917",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [4, 4],
+      "gap": 4,
+      "children": [
+        {
+          "id": "parkui-tg-default-opt1",
+          "name": "OptionActive",
+          "type": "frame",
+          "width": 100,
+          "height": 32,
+          "fill": "#E7E5E4",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-default-opt1-t", "name": "Label", "type": "text", "content": "Daily", "fontSize": 14, "fontWeight": "600", "fill": "#0C0A09" }
+          ]
+        },
+        {
+          "id": "parkui-tg-default-opt2",
+          "name": "Option",
+          "type": "frame",
+          "width": 100,
+          "height": 32,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-default-opt2-t", "name": "Label", "type": "text", "content": "Weekly", "fontSize": 14, "fontWeight": "500", "fill": "#A8A29E" }
+          ]
+        },
+        {
+          "id": "parkui-tg-default-opt3",
+          "name": "Option",
+          "type": "frame",
+          "width": 100,
+          "height": 32,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-default-opt3-t", "name": "Label", "type": "text", "content": "Monthly", "fontSize": 14, "fontWeight": "500", "fill": "#A8A29E" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-togglegroup-outline",
+      "name": "ToggleGroup / Outline",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 40,
+      "fill": "transparent",
+      "cornerRadius": 8,
+      "stroke": "#292524",
+      "strokeWidth": 1,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [4, 4],
+      "gap": 4,
+      "children": [
+        {
+          "id": "parkui-tg-outline-opt1",
+          "name": "OptionActive",
+          "type": "frame",
+          "width": 100,
+          "height": 32,
+          "fill": "#292524",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-outline-opt1-t", "name": "Label", "type": "text", "content": "Grid", "fontSize": 14, "fontWeight": "600", "fill": "#FAFAF9" }
+          ]
+        },
+        {
+          "id": "parkui-tg-outline-opt2",
+          "name": "Option",
+          "type": "frame",
+          "width": 100,
+          "height": 32,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-outline-opt2-t", "name": "Label", "type": "text", "content": "List", "fontSize": 14, "fontWeight": "500", "fill": "#A8A29E" }
+          ]
+        },
+        {
+          "id": "parkui-tg-outline-opt3",
+          "name": "Option",
+          "type": "frame",
+          "width": 100,
+          "height": 32,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-outline-opt3-t", "name": "Label", "type": "text", "content": "Board", "fontSize": 14, "fontWeight": "500", "fill": "#A8A29E" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-togglegroup-compact",
+      "name": "ToggleGroup / Compact",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 32,
+      "fill": "#1C1917",
+      "cornerRadius": 6,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [2, 2],
+      "gap": 2,
+      "children": [
+        {
+          "id": "parkui-tg-compact-opt1",
+          "name": "OptionActive",
+          "type": "frame",
+          "width": 64,
+          "height": 28,
+          "fill": "#E7E5E4",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [4, 8],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-compact-opt1-t", "name": "Label", "type": "text", "content": "S", "fontSize": 12, "fontWeight": "600", "fill": "#0C0A09" }
+          ]
+        },
+        {
+          "id": "parkui-tg-compact-opt2",
+          "name": "Option",
+          "type": "frame",
+          "width": 64,
+          "height": 28,
+          "fill": "transparent",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [4, 8],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-compact-opt2-t", "name": "Label", "type": "text", "content": "M", "fontSize": 12, "fontWeight": "500", "fill": "#A8A29E" }
+          ]
+        },
+        {
+          "id": "parkui-tg-compact-opt3",
+          "name": "Option",
+          "type": "frame",
+          "width": 64,
+          "height": 28,
+          "fill": "transparent",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [4, 8],
+          "gap": 0,
+          "children": [
+            { "id": "parkui-tg-compact-opt3-t", "name": "Label", "type": "text", "content": "L", "fontSize": 12, "fontWeight": "500", "fill": "#A8A29E" }
+          ]
+        }
+      ]
+    }
+  ]
+}

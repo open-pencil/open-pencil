@@ -1,0 +1,101 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "BrandStrip",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "mutedColor": { "type": "color", "default": "#737373" },
+    "borderColor": { "type": "color", "default": "#262626" }
+  },
+  "children": [
+    {
+      "id": "brand-strip-logos",
+      "name": "BrandStrip / Logos",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 200,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 40 },
+      "children": [
+        {
+          "id": "bs-label",
+          "name": "Label",
+          "type": "text",
+          "text": "TRUSTED BY",
+          "fontSize": 11,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "letterSpacing": 4,
+          "fills": [{ "type": "solid", "color": "#737373" }]
+        },
+        {
+          "id": "bs-logos-row",
+          "name": "Logos Row",
+          "type": "frame",
+          "width": 960,
+          "height": 48,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 64 },
+          "children": [
+            { "id": "bs-logo-1", "name": "Logo 1", "type": "rectangle", "width": 120, "height": 40, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bs-logo-2", "name": "Logo 2", "type": "rectangle", "width": 120, "height": 40, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bs-logo-3", "name": "Logo 3", "type": "rectangle", "width": 120, "height": 40, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bs-logo-4", "name": "Logo 4", "type": "rectangle", "width": 120, "height": 40, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bs-logo-5", "name": "Logo 5", "type": "rectangle", "width": 120, "height": 40, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brand-strip-dividers",
+      "name": "BrandStrip / WithDividers",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 200,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 0 },
+      "children": [
+        {
+          "id": "bsd-top-divider",
+          "name": "Top Divider",
+          "type": "rectangle",
+          "width": 1080,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#262626" }]
+        },
+        {
+          "id": "bsd-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 1080,
+          "height": 120,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 0 },
+          "children": [
+            { "id": "bsd-logo-1", "name": "Logo 1", "type": "rectangle", "width": 100, "height": 36, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bsd-div-1", "name": "Divider", "type": "rectangle", "width": 1, "height": 48, "fills": [{ "type": "solid", "color": "#262626" }] },
+            { "id": "bsd-logo-2", "name": "Logo 2", "type": "rectangle", "width": 100, "height": 36, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bsd-div-2", "name": "Divider", "type": "rectangle", "width": 1, "height": 48, "fills": [{ "type": "solid", "color": "#262626" }] },
+            { "id": "bsd-logo-3", "name": "Logo 3", "type": "rectangle", "width": 100, "height": 36, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bsd-div-3", "name": "Divider", "type": "rectangle", "width": 1, "height": 48, "fills": [{ "type": "solid", "color": "#262626" }] },
+            { "id": "bsd-logo-4", "name": "Logo 4", "type": "rectangle", "width": 100, "height": 36, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] },
+            { "id": "bsd-div-4", "name": "Divider", "type": "rectangle", "width": 1, "height": 48, "fills": [{ "type": "solid", "color": "#262626" }] },
+            { "id": "bsd-logo-5", "name": "Logo 5", "type": "rectangle", "width": 100, "height": 36, "radius": 4, "fills": [{ "type": "solid", "color": "#141414" }] }
+          ]
+        },
+        {
+          "id": "bsd-bottom-divider",
+          "name": "Bottom Divider",
+          "type": "rectangle",
+          "width": 1080,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#262626" }]
+        }
+      ]
+    }
+  ]
+}

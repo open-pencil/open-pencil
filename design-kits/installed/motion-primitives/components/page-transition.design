@@ -1,0 +1,209 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "PageTransition",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#09090B",
+    "surface": "#18181B",
+    "text": "#FAFAFA",
+    "primary": "#A855F7",
+    "border": "#27272A",
+    "radius": 12
+  },
+  "children": [
+    {
+      "id": "page-transition-slide",
+      "name": "PageTransition / Slide",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 320,
+      "fill": "#09090B",
+      "cornerRadius": 12,
+      "clip": true,
+      "children": [
+        {
+          "id": "slide-page-outgoing",
+          "name": "OutgoingPage",
+          "type": "frame",
+          "x": -120,
+          "y": 0,
+          "width": 480,
+          "height": 320,
+          "fill": "#18181B",
+          "opacity": 0.4,
+          "children": [
+            {
+              "id": "slide-out-header",
+              "name": "Header",
+              "type": "rectangle",
+              "x": 24,
+              "y": 24,
+              "width": 200,
+              "height": 20,
+              "fill": "#27272A",
+              "cornerRadius": 4
+            },
+            {
+              "id": "slide-out-body-1",
+              "name": "BodyLine1",
+              "type": "rectangle",
+              "x": 24,
+              "y": 64,
+              "width": 432,
+              "height": 12,
+              "fill": "#27272A",
+              "cornerRadius": 4
+            },
+            {
+              "id": "slide-out-body-2",
+              "name": "BodyLine2",
+              "type": "rectangle",
+              "x": 24,
+              "y": 88,
+              "width": 360,
+              "height": 12,
+              "fill": "#27272A",
+              "cornerRadius": 4
+            }
+          ]
+        },
+        {
+          "id": "slide-page-incoming",
+          "name": "IncomingPage",
+          "type": "frame",
+          "x": 240,
+          "y": 0,
+          "width": 480,
+          "height": 320,
+          "fill": "#18181B",
+          "opacity": 0.9,
+          "children": [
+            {
+              "id": "slide-in-header",
+              "name": "Header",
+              "type": "rectangle",
+              "x": 24,
+              "y": 24,
+              "width": 180,
+              "height": 20,
+              "fill": "#A855F7",
+              "cornerRadius": 4
+            },
+            {
+              "id": "slide-in-body-1",
+              "name": "BodyLine1",
+              "type": "rectangle",
+              "x": 24,
+              "y": 64,
+              "width": 400,
+              "height": 12,
+              "fill": "#27272A",
+              "cornerRadius": 4
+            },
+            {
+              "id": "slide-in-body-2",
+              "name": "BodyLine2",
+              "type": "rectangle",
+              "x": 24,
+              "y": 88,
+              "width": 320,
+              "height": 12,
+              "fill": "#27272A",
+              "cornerRadius": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "page-transition-fade",
+      "name": "PageTransition / Fade",
+      "type": "frame",
+      "reusable": true,
+      "x": 520,
+      "y": 0,
+      "width": 480,
+      "height": 320,
+      "fill": "#09090B",
+      "cornerRadius": 12,
+      "clip": true,
+      "children": [
+        {
+          "id": "fade-page-outgoing",
+          "name": "OutgoingPage",
+          "type": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 480,
+          "height": 320,
+          "fill": "#18181B",
+          "opacity": 0.25,
+          "children": [
+            {
+              "id": "fade-out-header",
+              "name": "Header",
+              "type": "rectangle",
+              "x": 24,
+              "y": 24,
+              "width": 200,
+              "height": 20,
+              "fill": "#27272A",
+              "cornerRadius": 4
+            },
+            {
+              "id": "fade-out-content",
+              "name": "Content",
+              "type": "rectangle",
+              "x": 24,
+              "y": 64,
+              "width": 432,
+              "height": 200,
+              "fill": "#27272A",
+              "cornerRadius": 8
+            }
+          ]
+        },
+        {
+          "id": "fade-page-incoming",
+          "name": "IncomingPage",
+          "type": "frame",
+          "x": 0,
+          "y": 0,
+          "width": 480,
+          "height": 320,
+          "fill": "#18181B",
+          "opacity": 0.75,
+          "children": [
+            {
+              "id": "fade-in-header",
+              "name": "Header",
+              "type": "rectangle",
+              "x": 24,
+              "y": 24,
+              "width": 160,
+              "height": 20,
+              "fill": "#A855F7",
+              "cornerRadius": 4
+            },
+            {
+              "id": "fade-in-content",
+              "name": "Content",
+              "type": "rectangle",
+              "x": 24,
+              "y": 64,
+              "width": 432,
+              "height": 200,
+              "fill": "#27272A",
+              "cornerRadius": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

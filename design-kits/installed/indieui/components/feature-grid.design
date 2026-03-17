@@ -1,0 +1,231 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "FeatureGrid",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "surfaceColor": { "type": "color", "default": "#1A1A2E" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "mutedColor": { "type": "color", "default": "#888888" },
+    "borderColor": { "type": "color", "default": "#2A2A2A" }
+  },
+  "children": [
+    {
+      "id": "feature-grid-icon-cards",
+      "name": "FeatureGrid / IconCards",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 48, "paddingTop": 96, "paddingBottom": 96 },
+      "children": [
+        {
+          "id": "ic-heading-group",
+          "name": "Heading Group",
+          "type": "frame",
+          "width": 600,
+          "height": 80,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "center", "gap": 12 },
+          "children": [
+            { "id": "ic-heading", "name": "Heading", "type": "text", "text": "Everything you need to ship", "fontSize": 36, "fontFamily": "Space Grotesk", "fontWeight": 700, "textAlign": "center", "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+            { "id": "ic-subheading", "name": "Subheading", "type": "text", "text": "Built for speed, designed for conversion.", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#888888" }] }
+          ]
+        },
+        {
+          "id": "ic-grid",
+          "name": "Grid",
+          "type": "frame",
+          "width": 1040,
+          "height": 400,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "flexStart", "gap": 24 },
+          "children": [
+            {
+              "id": "ic-card-1",
+              "name": "Feature Card 1",
+              "type": "frame",
+              "width": 244,
+              "height": 200,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 16, "padding": 28 },
+              "children": [
+                { "id": "ic-c1-icon", "name": "Icon Placeholder", "type": "text", "text": "\u26A1", "fontSize": 28 },
+                { "id": "ic-c1-title", "name": "Title", "type": "text", "text": "Lightning Fast", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "ic-c1-desc", "name": "Description", "type": "text", "text": "Sub-second load times. Your users won't wait.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "ic-card-2",
+              "name": "Feature Card 2",
+              "type": "frame",
+              "width": 244,
+              "height": 200,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 16, "padding": 28 },
+              "children": [
+                { "id": "ic-c2-icon", "name": "Icon Placeholder", "type": "text", "text": "\uD83C\uDFA8", "fontSize": 28 },
+                { "id": "ic-c2-title", "name": "Title", "type": "text", "text": "Beautiful UI", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "ic-c2-desc", "name": "Description", "type": "text", "text": "Pixel-perfect components that just look right.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "ic-card-3",
+              "name": "Feature Card 3",
+              "type": "frame",
+              "width": 244,
+              "height": 200,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 16, "padding": 28 },
+              "children": [
+                { "id": "ic-c3-icon", "name": "Icon Placeholder", "type": "text", "text": "\uD83D\uDD12", "fontSize": 28 },
+                { "id": "ic-c3-title", "name": "Title", "type": "text", "text": "Secure by Default", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "ic-c3-desc", "name": "Description", "type": "text", "text": "Enterprise-grade security without the enterprise price.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "ic-card-4",
+              "name": "Feature Card 4",
+              "type": "frame",
+              "width": 244,
+              "height": 200,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 16, "padding": 28 },
+              "children": [
+                { "id": "ic-c4-icon", "name": "Icon Placeholder", "type": "text", "text": "\uD83D\uDE80", "fontSize": 28 },
+                { "id": "ic-c4-title", "name": "Title", "type": "text", "text": "Ship in Days", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "ic-c4-desc", "name": "Description", "type": "text", "text": "From zero to production in days, not months.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feature-grid-bento",
+      "name": "FeatureGrid / BentoStyle",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 48, "paddingTop": 96, "paddingBottom": 96 },
+      "children": [
+        {
+          "id": "bn-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "Packed with features",
+          "fontSize": 36,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "bn-grid",
+          "name": "Bento Grid",
+          "type": "frame",
+          "width": 1040,
+          "height": 440,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 16 },
+          "children": [
+            {
+              "id": "bn-row-1",
+              "name": "Row 1",
+              "type": "frame",
+              "width": 1040,
+              "height": 210,
+              "fills": [],
+              "layout": { "mode": "horizontal", "gap": 16 },
+              "children": [
+                {
+                  "id": "bn-big-card",
+                  "name": "Big Feature",
+                  "type": "frame",
+                  "width": 680,
+                  "height": 210,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+                  "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                  "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "flexEnd", "gap": 8, "padding": 32 },
+                  "children": [
+                    { "id": "bn-bc-title", "name": "Title", "type": "text", "text": "AI-Powered Analytics", "fontSize": 22, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "bn-bc-desc", "name": "Description", "type": "text", "text": "Understand your users with zero setup. Smart insights, automatically.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                {
+                  "id": "bn-small-card-1",
+                  "name": "Small Feature 1",
+                  "type": "frame",
+                  "width": 344,
+                  "height": 210,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+                  "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                  "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "flexEnd", "gap": 8, "padding": 32 },
+                  "children": [
+                    { "id": "bn-sc1-title", "name": "Title", "type": "text", "text": "Real-time Sync", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "bn-sc1-desc", "name": "Description", "type": "text", "text": "Instant updates across all devices.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "bn-row-2",
+              "name": "Row 2",
+              "type": "frame",
+              "width": 1040,
+              "height": 210,
+              "fills": [],
+              "layout": { "mode": "horizontal", "gap": 16 },
+              "children": [
+                {
+                  "id": "bn-small-card-2",
+                  "name": "Small Feature 2",
+                  "type": "frame",
+                  "width": 344,
+                  "height": 210,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+                  "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                  "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "flexEnd", "gap": 8, "padding": 32 },
+                  "children": [
+                    { "id": "bn-sc2-title", "name": "Title", "type": "text", "text": "Team Collab", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "bn-sc2-desc", "name": "Description", "type": "text", "text": "Work together, ship together.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                {
+                  "id": "bn-big-card-2",
+                  "name": "Big Feature 2",
+                  "type": "frame",
+                  "width": 680,
+                  "height": 210,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+                  "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                  "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "flexEnd", "gap": 8, "padding": 32 },
+                  "children": [
+                    { "id": "bn-bc2-title", "name": "Title", "type": "text", "text": "One-Click Deploy", "fontSize": 22, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "bn-bc2-desc", "name": "Description", "type": "text", "text": "Push to production with confidence. Automatic rollbacks included.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

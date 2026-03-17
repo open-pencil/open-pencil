@@ -1,0 +1,257 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Card", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "card.bg": { "type": "color", "value": "#2A303C" },
+    "card.text": { "type": "color", "value": "#FFFFFF" },
+    "card.muted": { "type": "color", "value": "#A6ADBB" },
+    "card.primary": { "type": "color", "value": "#661AE6" },
+    "card.radius": { "type": "number", "value": 24 }
+  },
+  "children": [
+    {
+      "id": "daisy-card-default",
+      "name": "Card / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 220,
+      "fill": "#2A303C",
+      "cornerRadius": 24,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "daisy-card-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Card Title",
+          "fontSize": 20,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        },
+        {
+          "id": "daisy-card-default-body",
+          "name": "Body",
+          "type": "text",
+          "content": "This is a versatile card component with generous padding and rounded corners for a friendly appearance.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#A6ADBB"
+        },
+        {
+          "id": "daisy-card-default-actions",
+          "name": "Actions",
+          "type": "frame",
+          "width": 272,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "daisy-card-default-btn",
+              "name": "Button",
+              "type": "frame",
+              "width": 100,
+              "height": 44,
+              "fill": "#661AE6",
+              "cornerRadius": 16,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [10, 20],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "daisy-card-default-btn-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Action",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daisy-card-image",
+      "name": "Card / Image Top",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 360,
+      "fill": "#2A303C",
+      "cornerRadius": 24,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-card-image-placeholder",
+          "name": "Image",
+          "type": "rectangle",
+          "width": 320,
+          "height": 180,
+          "fill": "#191D24"
+        },
+        {
+          "id": "daisy-card-image-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 320,
+          "height": 180,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [20, 24],
+          "gap": 12,
+          "children": [
+            {
+              "id": "daisy-card-image-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Featured Card",
+              "fontSize": 20,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            },
+            {
+              "id": "daisy-card-image-body",
+              "name": "Body",
+              "type": "text",
+              "content": "A card with an image at the top for visual emphasis.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A6ADBB"
+            },
+            {
+              "id": "daisy-card-image-actions",
+              "name": "Actions",
+              "type": "frame",
+              "width": 272,
+              "height": 44,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-end",
+              "padding": [0, 0],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "daisy-card-image-btn",
+                  "name": "Button",
+                  "type": "frame",
+                  "width": 100,
+                  "height": 44,
+                  "fill": "#661AE6",
+                  "cornerRadius": 16,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [10, 20],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "daisy-card-image-btn-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "View",
+                      "fontSize": 14,
+                      "fontWeight": "600",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daisy-card-glass",
+      "name": "Card / Glass",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 220,
+      "fill": "#2A303C66",
+      "cornerRadius": 24,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "daisy-card-glass-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Glass Card",
+          "fontSize": 20,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        },
+        {
+          "id": "daisy-card-glass-body",
+          "name": "Body",
+          "type": "text",
+          "content": "A translucent card with a glass morphism effect for modern UI designs.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#A6ADBB"
+        },
+        {
+          "id": "daisy-card-glass-actions",
+          "name": "Actions",
+          "type": "frame",
+          "width": 272,
+          "height": 44,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "daisy-card-glass-btn",
+              "name": "Button",
+              "type": "frame",
+              "width": 100,
+              "height": 44,
+              "fill": "#661AE6",
+              "cornerRadius": 16,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [10, 20],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "daisy-card-glass-btn-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Explore",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

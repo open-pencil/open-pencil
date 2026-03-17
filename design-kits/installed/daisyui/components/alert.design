@@ -1,0 +1,218 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Alert", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "alert.info": { "type": "color", "value": "#3ABFF8" },
+    "alert.success": { "type": "color", "value": "#36D399" },
+    "alert.warning": { "type": "color", "value": "#FBBD23" },
+    "alert.error": { "type": "color", "value": "#F87272" },
+    "alert.text": { "type": "color", "value": "#FFFFFF" },
+    "alert.radius": { "type": "number", "value": 16 }
+  },
+  "children": [
+    {
+      "id": "daisy-alert-info",
+      "name": "Alert / Info",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 64,
+      "fill": "#3ABFF8",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [16, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "daisy-alert-info-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 28,
+          "height": 28,
+          "fill": "#FFFFFF33",
+          "cornerRadius": 14,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-alert-info-icon-text",
+              "name": "Icon Symbol",
+              "type": "text",
+              "content": "i",
+              "fontSize": 16,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-alert-info-text",
+          "name": "Message",
+          "type": "text",
+          "content": "New software update available.",
+          "fontSize": 15,
+          "fontWeight": "500",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-alert-success",
+      "name": "Alert / Success",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 64,
+      "fill": "#36D399",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [16, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "daisy-alert-success-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 28,
+          "height": 28,
+          "fill": "#FFFFFF33",
+          "cornerRadius": 14,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-alert-success-icon-text",
+              "name": "Icon Symbol",
+              "type": "text",
+              "content": "\u2713",
+              "fontSize": 16,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-alert-success-text",
+          "name": "Message",
+          "type": "text",
+          "content": "Your purchase has been confirmed!",
+          "fontSize": 15,
+          "fontWeight": "500",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-alert-warning",
+      "name": "Alert / Warning",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 64,
+      "fill": "#FBBD23",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [16, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "daisy-alert-warning-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 28,
+          "height": 28,
+          "fill": "#FFFFFF33",
+          "cornerRadius": 14,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-alert-warning-icon-text",
+              "name": "Icon Symbol",
+              "type": "text",
+              "content": "!",
+              "fontSize": 16,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-alert-warning-text",
+          "name": "Message",
+          "type": "text",
+          "content": "Warning: Invalid email address!",
+          "fontSize": 15,
+          "fontWeight": "500",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-alert-error",
+      "name": "Alert / Error",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 64,
+      "fill": "#F87272",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [16, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "daisy-alert-error-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 28,
+          "height": 28,
+          "fill": "#FFFFFF33",
+          "cornerRadius": 14,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-alert-error-icon-text",
+              "name": "Icon Symbol",
+              "type": "text",
+              "content": "\u2717",
+              "fontSize": 16,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-alert-error-text",
+          "name": "Message",
+          "type": "text",
+          "content": "Error! Task failed successfully.",
+          "fontSize": 15,
+          "fontWeight": "500",
+          "fill": "#FFFFFF"
+        }
+      ]
+    }
+  ]
+}

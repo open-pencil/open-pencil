@@ -1,0 +1,506 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Treemap",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "card": "#1E293B",
+    "text": "#E2E8F0",
+    "muted": "#64748B",
+    "series": ["#818CF8", "#34D399", "#FBBF24", "#F87171", "#38BDF8", "#A78BFA"],
+    "radius": 4
+  },
+  "children": [
+    {
+      "id": "treemap-default",
+      "name": "Treemap / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 400,
+      "fill": "#1E293B",
+      "cornerRadius": 4,
+      "children": [
+        {
+          "id": "tm-title",
+          "name": "Title",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 300,
+          "height": 20,
+          "text": "Disk Usage",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#E2E8F0"
+        },
+        {
+          "id": "tm-container",
+          "name": "Container",
+          "type": "frame",
+          "x": 20,
+          "y": 48,
+          "width": 520,
+          "height": 332,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "tm-block-1",
+              "name": "Block1",
+              "type": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 300,
+              "height": 200,
+              "fill": "#818CF8",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tm-b1-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 12,
+                  "y": 12,
+                  "width": 200,
+                  "height": 16,
+                  "text": "Documents",
+                  "fontSize": 13,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "id": "tm-b1-size",
+                  "name": "Size",
+                  "type": "text",
+                  "x": 12,
+                  "y": 32,
+                  "width": 200,
+                  "height": 14,
+                  "text": "45.2 GB",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fill": "rgba(255,255,255,0.7)"
+                }
+              ]
+            },
+            {
+              "id": "tm-block-2",
+              "name": "Block2",
+              "type": "frame",
+              "x": 304,
+              "y": 0,
+              "width": 216,
+              "height": 120,
+              "fill": "#34D399",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tm-b2-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 12,
+                  "y": 12,
+                  "width": 180,
+                  "height": 16,
+                  "text": "Photos",
+                  "fontSize": 13,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "id": "tm-b2-size",
+                  "name": "Size",
+                  "type": "text",
+                  "x": 12,
+                  "y": 32,
+                  "width": 180,
+                  "height": 14,
+                  "text": "28.1 GB",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fill": "rgba(255,255,255,0.7)"
+                }
+              ]
+            },
+            {
+              "id": "tm-block-3",
+              "name": "Block3",
+              "type": "frame",
+              "x": 304,
+              "y": 124,
+              "width": 216,
+              "height": 76,
+              "fill": "#FBBF24",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tm-b3-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 12,
+                  "y": 12,
+                  "width": 180,
+                  "height": 16,
+                  "text": "Videos",
+                  "fontSize": 13,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "id": "tm-b3-size",
+                  "name": "Size",
+                  "type": "text",
+                  "x": 12,
+                  "y": 32,
+                  "width": 180,
+                  "height": 14,
+                  "text": "15.8 GB",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fill": "rgba(255,255,255,0.7)"
+                }
+              ]
+            },
+            {
+              "id": "tm-block-4",
+              "name": "Block4",
+              "type": "frame",
+              "x": 0,
+              "y": 204,
+              "width": 200,
+              "height": 128,
+              "fill": "#F87171",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tm-b4-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 12,
+                  "y": 12,
+                  "width": 160,
+                  "height": 16,
+                  "text": "Applications",
+                  "fontSize": 13,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "id": "tm-b4-size",
+                  "name": "Size",
+                  "type": "text",
+                  "x": 12,
+                  "y": 32,
+                  "width": 160,
+                  "height": 14,
+                  "text": "12.4 GB",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fill": "rgba(255,255,255,0.7)"
+                }
+              ]
+            },
+            {
+              "id": "tm-block-5",
+              "name": "Block5",
+              "type": "frame",
+              "x": 204,
+              "y": 204,
+              "width": 160,
+              "height": 128,
+              "fill": "#38BDF8",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tm-b5-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 12,
+                  "y": 12,
+                  "width": 136,
+                  "height": 16,
+                  "text": "Music",
+                  "fontSize": 13,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "id": "tm-b5-size",
+                  "name": "Size",
+                  "type": "text",
+                  "x": 12,
+                  "y": 32,
+                  "width": 136,
+                  "height": 14,
+                  "text": "8.6 GB",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fill": "rgba(255,255,255,0.7)"
+                }
+              ]
+            },
+            {
+              "id": "tm-block-6",
+              "name": "Block6",
+              "type": "frame",
+              "x": 368,
+              "y": 204,
+              "width": 152,
+              "height": 128,
+              "fill": "#A78BFA",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tm-b6-label",
+                  "name": "Label",
+                  "type": "text",
+                  "x": 12,
+                  "y": 12,
+                  "width": 128,
+                  "height": 16,
+                  "text": "Other",
+                  "fontSize": 13,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "id": "tm-b6-size",
+                  "name": "Size",
+                  "type": "text",
+                  "x": 12,
+                  "y": 32,
+                  "width": 128,
+                  "height": 14,
+                  "text": "5.9 GB",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fill": "rgba(255,255,255,0.7)"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treemap-nested",
+      "name": "Treemap / Nested",
+      "type": "frame",
+      "reusable": true,
+      "x": 600,
+      "y": 0,
+      "width": 560,
+      "height": 400,
+      "fill": "#1E293B",
+      "cornerRadius": 4,
+      "children": [
+        {
+          "id": "tmn-title",
+          "name": "Title",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 300,
+          "height": 20,
+          "text": "Project Structure",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#E2E8F0"
+        },
+        {
+          "id": "tmn-container",
+          "name": "Container",
+          "type": "frame",
+          "x": 20,
+          "y": 48,
+          "width": 520,
+          "height": 332,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "tmn-parent-1",
+              "name": "Parent1",
+              "type": "frame",
+              "x": 0,
+              "y": 0,
+              "width": 320,
+              "height": 332,
+              "fill": "rgba(129,140,248,0.1)",
+              "stroke": "#818CF8",
+              "strokeWidth": 1,
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tmn-p1-label",
+                  "name": "ParentLabel",
+                  "type": "text",
+                  "x": 8,
+                  "y": 6,
+                  "width": 100,
+                  "height": 14,
+                  "text": "src/",
+                  "fontSize": 11,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#818CF8"
+                },
+                {
+                  "id": "tmn-child-1",
+                  "name": "Child1",
+                  "type": "frame",
+                  "x": 4,
+                  "y": 24,
+                  "width": 200,
+                  "height": 148,
+                  "fill": "#818CF8",
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-c1-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 180, "height": 14, "text": "components/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-c1-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 180, "height": 12, "text": "142 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                },
+                {
+                  "id": "tmn-child-2",
+                  "name": "Child2",
+                  "type": "frame",
+                  "x": 208,
+                  "y": 24,
+                  "width": 108,
+                  "height": 148,
+                  "fill": "#34D399",
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-c2-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 92, "height": 14, "text": "stores/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-c2-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 92, "height": 12, "text": "38 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                },
+                {
+                  "id": "tmn-child-3",
+                  "name": "Child3",
+                  "type": "frame",
+                  "x": 4,
+                  "y": 176,
+                  "width": 152,
+                  "height": 148,
+                  "fill": "#FBBF24",
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-c3-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 136, "height": 14, "text": "utils/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-c3-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 136, "height": 12, "text": "24 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                },
+                {
+                  "id": "tmn-child-4",
+                  "name": "Child4",
+                  "type": "frame",
+                  "x": 160,
+                  "y": 176,
+                  "width": 156,
+                  "height": 148,
+                  "fill": "#F87171",
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-c4-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 140, "height": 14, "text": "composables/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-c4-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 140, "height": 12, "text": "18 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "tmn-parent-2",
+              "name": "Parent2",
+              "type": "frame",
+              "x": 324,
+              "y": 0,
+              "width": 196,
+              "height": 332,
+              "fill": "rgba(56,189,248,0.1)",
+              "stroke": "#38BDF8",
+              "strokeWidth": 1,
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "id": "tmn-p2-label",
+                  "name": "ParentLabel",
+                  "type": "text",
+                  "x": 8,
+                  "y": 6,
+                  "width": 100,
+                  "height": 14,
+                  "text": "packages/",
+                  "fontSize": 11,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fill": "#38BDF8"
+                },
+                {
+                  "id": "tmn-pkg-1",
+                  "name": "Pkg1",
+                  "type": "frame",
+                  "x": 4,
+                  "y": 24,
+                  "width": 188,
+                  "height": 100,
+                  "fill": "#38BDF8",
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-pk1-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 172, "height": 14, "text": "core/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-pk1-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 172, "height": 12, "text": "86 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                },
+                {
+                  "id": "tmn-pkg-2",
+                  "name": "Pkg2",
+                  "type": "frame",
+                  "x": 4,
+                  "y": 128,
+                  "width": 188,
+                  "height": 80,
+                  "fill": "#A78BFA",
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-pk2-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 172, "height": 14, "text": "mcp/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-pk2-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 172, "height": 12, "text": "52 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                },
+                {
+                  "id": "tmn-pkg-3",
+                  "name": "Pkg3",
+                  "type": "frame",
+                  "x": 4,
+                  "y": 212,
+                  "width": 188,
+                  "height": 112,
+                  "fill": "#34D399",
+                  "opacity": 0.7,
+                  "cornerRadius": 4,
+                  "children": [
+                    { "id": "tmn-pk3-label", "name": "Label", "type": "text", "x": 8, "y": 8, "width": 172, "height": 14, "text": "design-context/", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 500, "fill": "#FFFFFF" },
+                    { "id": "tmn-pk3-size", "name": "Size", "type": "text", "x": 8, "y": 26, "width": 172, "height": 12, "text": "39 files", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "rgba(255,255,255,0.6)" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

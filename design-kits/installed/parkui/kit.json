@@ -1,0 +1,20 @@
+{
+  "name": "parkui",
+  "displayName": "Park UI",
+  "description": "Beautifully designed components built on Ark UI primitives. Styled, accessible, and production-ready.",
+  "version": "1.0.0",
+  "author": "park-ui",
+  "license": "MIT",
+  "category": "general",
+  "tags": ["ark-ui", "styled", "accessible", "react", "vue"],
+  "style": {
+    "aesthetic": "modern-minimal",
+    "radius": "medium",
+    "density": "comfortable",
+    "colorScheme": "neutral"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 22
+  }
+}

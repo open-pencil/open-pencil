@@ -2,23 +2,18 @@
   "$schema": "./registry-schema.json",
   "version": "1.0.0",
   "kits": [
-    {
-      "name": "shadcn",
-      "path": "installed/shadcn",
-      "category": "general",
-      "version": "1.0.0"
-    },
-    {
-      "name": "aceternity",
-      "path": "installed/aceternity",
-      "category": "effects",
-      "version": "1.0.0"
-    },
-    {
-      "name": "tremor",
-      "path": "installed/tremor",
-      "category": "dashboard",
-      "version": "1.0.0"
-    }
+    { "name": "shadcn", "path": "installed/shadcn", "category": "general", "version": "1.0.0" },
+    { "name": "radix", "path": "installed/radix", "category": "general", "version": "1.0.0" },
+    { "name": "daisyui", "path": "installed/daisyui", "category": "general", "version": "1.0.0" },
+    { "name": "nextui", "path": "installed/nextui", "category": "general", "version": "1.0.0" },
+    { "name": "parkui", "path": "installed/parkui", "category": "general", "version": "1.0.0" },
+    { "name": "aceternity", "path": "installed/aceternity", "category": "effects", "version": "1.0.0" },
+    { "name": "magicui", "path": "installed/magicui", "category": "effects", "version": "1.0.0" },
+    { "name": "motion-primitives", "path": "installed/motion-primitives", "category": "effects", "version": "1.0.0" },
+    { "name": "tremor", "path": "installed/tremor", "category": "dashboard", "version": "1.0.0" },
+    { "name": "saasui", "path": "installed/saasui", "category": "dashboard", "version": "1.0.0" },
+    { "name": "nivo", "path": "installed/nivo", "category": "dashboard", "version": "1.0.0" },
+    { "name": "luxeui", "path": "installed/luxeui", "category": "landing", "version": "1.0.0" },
+    { "name": "indieui", "path": "installed/indieui", "category": "landing", "version": "1.0.0" }
   ]
 }

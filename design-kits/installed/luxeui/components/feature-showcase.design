@@ -1,0 +1,308 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "FeatureShowcase",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "surfaceColor": { "type": "color", "default": "#141414" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "mutedColor": { "type": "color", "default": "#737373" },
+    "accentGold": { "type": "color", "default": "#C9A96E" }
+  },
+  "children": [
+    {
+      "id": "feature-showcase-alternating",
+      "name": "FeatureShowcase / Alternating",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 960,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 120, "paddingTop": 120, "paddingBottom": 120 },
+      "children": [
+        {
+          "id": "alt-row-1",
+          "name": "Feature Row 1",
+          "type": "frame",
+          "width": 1080,
+          "height": 320,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 80 },
+          "children": [
+            {
+              "id": "alt-row1-image",
+              "name": "Image Placeholder",
+              "type": "rectangle",
+              "width": 480,
+              "height": 320,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }]
+            },
+            {
+              "id": "alt-row1-content",
+              "name": "Content",
+              "type": "frame",
+              "width": 440,
+              "height": 200,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 20 },
+              "children": [
+                {
+                  "id": "alt-row1-label",
+                  "name": "Label",
+                  "type": "text",
+                  "text": "01",
+                  "fontSize": 14,
+                  "fontFamily": "Inter",
+                  "fontWeight": 500,
+                  "letterSpacing": 2,
+                  "fills": [{ "type": "solid", "color": "#C9A96E" }]
+                },
+                {
+                  "id": "alt-row1-title",
+                  "name": "Title",
+                  "type": "text",
+                  "text": "Meticulous Craftsmanship",
+                  "fontSize": 32,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "alt-row1-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "text": "Every detail is considered, every element refined to perfection. Our process ensures nothing is left to chance.",
+                  "fontSize": 16,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "lineHeight": 1.6,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "alt-row-2",
+          "name": "Feature Row 2",
+          "type": "frame",
+          "width": 1080,
+          "height": 320,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 80 },
+          "children": [
+            {
+              "id": "alt-row2-content",
+              "name": "Content",
+              "type": "frame",
+              "width": 440,
+              "height": 200,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 20 },
+              "children": [
+                {
+                  "id": "alt-row2-label",
+                  "name": "Label",
+                  "type": "text",
+                  "text": "02",
+                  "fontSize": 14,
+                  "fontFamily": "Inter",
+                  "fontWeight": 500,
+                  "letterSpacing": 2,
+                  "fills": [{ "type": "solid", "color": "#C9A96E" }]
+                },
+                {
+                  "id": "alt-row2-title",
+                  "name": "Title",
+                  "type": "text",
+                  "text": "Enduring Quality",
+                  "fontSize": 32,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "alt-row2-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "text": "Built to stand the test of time. Premium materials and timeless design principles create lasting impressions.",
+                  "fontSize": 16,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "lineHeight": 1.6,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                }
+              ]
+            },
+            {
+              "id": "alt-row2-image",
+              "name": "Image Placeholder",
+              "type": "rectangle",
+              "width": 480,
+              "height": 320,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feature-showcase-grid",
+      "name": "FeatureShowcase / Grid",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 800,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 64, "paddingTop": 120, "paddingBottom": 120 },
+      "children": [
+        {
+          "id": "grid-heading",
+          "name": "Section Heading",
+          "type": "text",
+          "text": "What Sets Us Apart",
+          "fontSize": 40,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "grid-row",
+          "name": "Grid Row",
+          "type": "frame",
+          "width": 1080,
+          "height": 400,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "flexStart", "justifyContent": "spaceBetween", "gap": 48 },
+          "children": [
+            {
+              "id": "grid-card-1",
+              "name": "Feature Card 1",
+              "type": "frame",
+              "width": 320,
+              "height": 400,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 24 },
+              "children": [
+                {
+                  "id": "grid-card1-img",
+                  "name": "Image",
+                  "type": "rectangle",
+                  "width": 320,
+                  "height": 240,
+                  "radius": 8,
+                  "fills": [{ "type": "solid", "color": "#141414" }]
+                },
+                {
+                  "id": "grid-card1-title",
+                  "name": "Title",
+                  "type": "text",
+                  "text": "Precision",
+                  "fontSize": 24,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "grid-card1-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "text": "Every pixel, every curve, deliberate and purposeful.",
+                  "fontSize": 15,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                }
+              ]
+            },
+            {
+              "id": "grid-card-2",
+              "name": "Feature Card 2",
+              "type": "frame",
+              "width": 320,
+              "height": 400,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 24 },
+              "children": [
+                {
+                  "id": "grid-card2-img",
+                  "name": "Image",
+                  "type": "rectangle",
+                  "width": 320,
+                  "height": 240,
+                  "radius": 8,
+                  "fills": [{ "type": "solid", "color": "#141414" }]
+                },
+                {
+                  "id": "grid-card2-title",
+                  "name": "Title",
+                  "type": "text",
+                  "text": "Heritage",
+                  "fontSize": 24,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "grid-card2-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "text": "Rooted in tradition, refined for the modern era.",
+                  "fontSize": 15,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                }
+              ]
+            },
+            {
+              "id": "grid-card-3",
+              "name": "Feature Card 3",
+              "type": "frame",
+              "width": 320,
+              "height": 400,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 24 },
+              "children": [
+                {
+                  "id": "grid-card3-img",
+                  "name": "Image",
+                  "type": "rectangle",
+                  "width": 320,
+                  "height": 240,
+                  "radius": 8,
+                  "fills": [{ "type": "solid", "color": "#141414" }]
+                },
+                {
+                  "id": "grid-card3-title",
+                  "name": "Title",
+                  "type": "text",
+                  "text": "Excellence",
+                  "fontSize": 24,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "grid-card3-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "text": "An uncompromising standard in every interaction.",
+                  "fontSize": 15,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

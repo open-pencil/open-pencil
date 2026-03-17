@@ -1,0 +1,129 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Card",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "card.bg": { "type": "color", "value": "#1C1917" },
+    "card.border": { "type": "color", "value": "#292524" },
+    "card.text": { "type": "color", "value": "#FAFAF9" },
+    "card.muted": { "type": "color", "value": "#A8A29E" },
+    "card.radius": { "type": "number", "value": 8 }
+  },
+  "children": [
+    {
+      "id": "parkui-card-default",
+      "name": "Card / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 180,
+      "fill": "#1C1917",
+      "cornerRadius": 8,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-card-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Card Title",
+          "fontSize": 18,
+          "fontWeight": "600",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-card-default-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "This is a description of the card content that provides additional context.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#A8A29E"
+        }
+      ]
+    },
+    {
+      "id": "parkui-card-outlined",
+      "name": "Card / Outlined",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 180,
+      "fill": "transparent",
+      "cornerRadius": 8,
+      "stroke": "#292524",
+      "strokeWidth": 1,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-card-outlined-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Card Title",
+          "fontSize": 18,
+          "fontWeight": "600",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-card-outlined-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "This is a description of the card content that provides additional context.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#A8A29E"
+        }
+      ]
+    },
+    {
+      "id": "parkui-card-elevated",
+      "name": "Card / Elevated",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 180,
+      "fill": "#1C1917",
+      "cornerRadius": 8,
+      "shadow": {
+        "color": "#00000040",
+        "offsetX": 0,
+        "offsetY": 4,
+        "blur": 16
+      },
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-card-elevated-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Card Title",
+          "fontSize": 18,
+          "fontWeight": "600",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-card-elevated-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "This is a description of the card content that provides additional context.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#A8A29E"
+        }
+      ]
+    }
+  ]
+}

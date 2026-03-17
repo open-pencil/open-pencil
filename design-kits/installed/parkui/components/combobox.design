@@ -1,0 +1,322 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Combobox",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "combobox.bg": { "type": "color", "value": "#1C1917" },
+    "combobox.border": { "type": "color", "value": "#292524" },
+    "combobox.text": { "type": "color", "value": "#FAFAF9" },
+    "combobox.muted": { "type": "color", "value": "#A8A29E" },
+    "combobox.highlight": { "type": "color", "value": "#292524" }
+  },
+  "children": [
+    {
+      "id": "parkui-combobox-default",
+      "name": "Combobox / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 260,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "parkui-combobox-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Framework",
+          "fontSize": 14,
+          "fontWeight": "500",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-combobox-default-input",
+          "name": "InputField",
+          "type": "frame",
+          "width": 320,
+          "height": 40,
+          "fill": "#1C1917",
+          "cornerRadius": 8,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [8, 12],
+          "gap": 8,
+          "children": [
+            {
+              "id": "parkui-combobox-default-value",
+              "name": "Value",
+              "type": "text",
+              "content": "Search...",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            },
+            {
+              "id": "parkui-combobox-default-chevron",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25be",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            }
+          ]
+        },
+        {
+          "id": "parkui-combobox-default-dropdown",
+          "name": "Dropdown",
+          "type": "frame",
+          "width": 320,
+          "height": 192,
+          "fill": "#1C1917",
+          "cornerRadius": 8,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [4, 4],
+          "gap": 2,
+          "children": [
+            {
+              "id": "parkui-combobox-default-opt1",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "#292524",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-opt1-t", "name": "Text", "type": "text", "content": "React", "fontSize": 14, "fontWeight": "500", "fill": "#FAFAF9" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-default-opt2",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-opt2-t", "name": "Text", "type": "text", "content": "Vue", "fontSize": 14, "fontWeight": "400", "fill": "#FAFAF9" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-default-opt3",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-opt3-t", "name": "Text", "type": "text", "content": "Svelte", "fontSize": 14, "fontWeight": "400", "fill": "#FAFAF9" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-default-opt4",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-opt4-t", "name": "Text", "type": "text", "content": "Solid", "fontSize": 14, "fontWeight": "400", "fill": "#FAFAF9" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-combobox-tags",
+      "name": "Combobox / With Tags",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 260,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "parkui-combobox-tags-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Technologies",
+          "fontSize": 14,
+          "fontWeight": "500",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-combobox-tags-input",
+          "name": "InputField",
+          "type": "frame",
+          "width": 320,
+          "height": 44,
+          "fill": "#1C1917",
+          "cornerRadius": 8,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [6, 8],
+          "gap": 6,
+          "children": [
+            {
+              "id": "parkui-combobox-tags-tag1",
+              "name": "Tag",
+              "type": "frame",
+              "width": 64,
+              "height": 28,
+              "fill": "#292524",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [4, 8],
+              "gap": 4,
+              "children": [
+                { "id": "parkui-combobox-tag1-t", "name": "Text", "type": "text", "content": "React", "fontSize": 12, "fontWeight": "500", "fill": "#FAFAF9" },
+                { "id": "parkui-combobox-tag1-x", "name": "Remove", "type": "text", "content": "\u00d7", "fontSize": 12, "fontWeight": "400", "fill": "#A8A29E" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-tags-tag2",
+              "name": "Tag",
+              "type": "frame",
+              "width": 48,
+              "height": 28,
+              "fill": "#292524",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [4, 8],
+              "gap": 4,
+              "children": [
+                { "id": "parkui-combobox-tag2-t", "name": "Text", "type": "text", "content": "Vue", "fontSize": 12, "fontWeight": "500", "fill": "#FAFAF9" },
+                { "id": "parkui-combobox-tag2-x", "name": "Remove", "type": "text", "content": "\u00d7", "fontSize": 12, "fontWeight": "400", "fill": "#A8A29E" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-tags-search",
+              "name": "SearchInput",
+              "type": "text",
+              "content": "Add more...",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            }
+          ]
+        },
+        {
+          "id": "parkui-combobox-tags-dropdown",
+          "name": "Dropdown",
+          "type": "frame",
+          "width": 320,
+          "height": 156,
+          "fill": "#1C1917",
+          "cornerRadius": 8,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [4, 4],
+          "gap": 2,
+          "children": [
+            {
+              "id": "parkui-combobox-tags-opt1",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-tags-opt1-t", "name": "Text", "type": "text", "content": "Svelte", "fontSize": 14, "fontWeight": "400", "fill": "#FAFAF9" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-tags-opt2",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-tags-opt2-t", "name": "Text", "type": "text", "content": "Solid", "fontSize": 14, "fontWeight": "400", "fill": "#FAFAF9" }
+              ]
+            },
+            {
+              "id": "parkui-combobox-tags-opt3",
+              "name": "Option",
+              "type": "frame",
+              "width": 312,
+              "height": 36,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 8,
+              "children": [
+                { "id": "parkui-combobox-tags-opt3-t", "name": "Text", "type": "text", "content": "Angular", "fontSize": 14, "fontWeight": "400", "fill": "#FAFAF9" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

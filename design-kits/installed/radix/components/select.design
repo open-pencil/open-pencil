@@ -1,0 +1,363 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Select", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "select.bg": { "type": "color", "value": "#1C1C1F" },
+    "select.trigger": { "type": "color", "value": "#2E2E32" },
+    "select.text": { "type": "color", "value": "#EDEDEF" },
+    "select.muted": { "type": "color", "value": "#8B8B8E" },
+    "select.highlight": { "type": "color", "value": "#3E63DD" },
+    "select.radius": { "type": "number", "value": 6 }
+  },
+  "children": [
+    {
+      "id": "radix-select-default",
+      "name": "Select / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": 260,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "radix-select-default-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 240,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [8, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-select-default-trigger-text",
+              "name": "Value",
+              "type": "text",
+              "content": "Select an option...",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-select-default-trigger-icon",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 10,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        },
+        {
+          "id": "radix-select-default-dropdown",
+          "name": "Dropdown",
+          "type": "frame",
+          "width": 240,
+          "height": 200,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [4, 4],
+          "gap": 2,
+          "children": [
+            {
+              "id": "radix-select-default-item1",
+              "name": "Item 1",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "fill": "#3E63DD",
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-default-item1-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Option One",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "id": "radix-select-default-item2",
+              "name": "Item 2",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-default-item2-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Option Two",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            },
+            {
+              "id": "radix-select-default-item3",
+              "name": "Item 3",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-default-item3-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Option Three",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            },
+            {
+              "id": "radix-select-default-item4",
+              "name": "Item 4",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-default-item4-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Option Four",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-select-groups",
+      "name": "Select / With Groups",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": 320,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "radix-select-groups-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 240,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [8, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-select-groups-trigger-text",
+              "name": "Value",
+              "type": "text",
+              "content": "Select a fruit...",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-select-groups-trigger-icon",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 10,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        },
+        {
+          "id": "radix-select-groups-dropdown",
+          "name": "Dropdown",
+          "type": "frame",
+          "width": 240,
+          "height": 260,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [4, 4],
+          "gap": 2,
+          "children": [
+            {
+              "id": "radix-select-groups-label1",
+              "name": "Group Label",
+              "type": "text",
+              "content": "Fruits",
+              "fontSize": 12,
+              "fontWeight": "500",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-select-groups-item1",
+              "name": "Apple",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-groups-item1-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Apple",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            },
+            {
+              "id": "radix-select-groups-item2",
+              "name": "Banana",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-groups-item2-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Banana",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            },
+            {
+              "id": "radix-select-groups-separator",
+              "name": "Separator",
+              "type": "rectangle",
+              "width": 232,
+              "height": 1,
+              "fill": "#2E2E32"
+            },
+            {
+              "id": "radix-select-groups-label2",
+              "name": "Group Label",
+              "type": "text",
+              "content": "Vegetables",
+              "fontSize": 12,
+              "fontWeight": "500",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-select-groups-item3",
+              "name": "Carrot",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-groups-item3-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Carrot",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            },
+            {
+              "id": "radix-select-groups-item4",
+              "name": "Potato",
+              "type": "frame",
+              "width": 232,
+              "height": 36,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-select-groups-item4-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Potato",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "StatsDisplay",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "mutedColor": { "type": "color", "default": "#737373" },
+    "accentGold": { "type": "color", "default": "#C9A96E" },
+    "borderColor": { "type": "color", "default": "#262626" }
+  },
+  "children": [
+    {
+      "id": "stats-inline",
+      "name": "StatsDisplay / Inline",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 240,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center", "gap": 0 },
+      "children": [
+        {
+          "id": "inline-stat-1",
+          "name": "Stat 1",
+          "type": "frame",
+          "width": 260,
+          "height": 120,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 12 },
+          "children": [
+            { "id": "inline-s1-num", "name": "Number", "type": "text", "text": "98%", "fontSize": 36, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+            { "id": "inline-s1-label", "name": "Label", "type": "text", "text": "Client Satisfaction", "fontSize": 13, "fontFamily": "Inter", "fontWeight": 400, "letterSpacing": 1, "fills": [{ "type": "solid", "color": "#737373" }] }
+          ]
+        },
+        { "id": "inline-div-1", "name": "Divider", "type": "rectangle", "width": 1, "height": 64, "fills": [{ "type": "solid", "color": "#262626" }] },
+        {
+          "id": "inline-stat-2",
+          "name": "Stat 2",
+          "type": "frame",
+          "width": 260,
+          "height": 120,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 12 },
+          "children": [
+            { "id": "inline-s2-num", "name": "Number", "type": "text", "text": "12+", "fontSize": 36, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+            { "id": "inline-s2-label", "name": "Label", "type": "text", "text": "Years of Excellence", "fontSize": 13, "fontFamily": "Inter", "fontWeight": 400, "letterSpacing": 1, "fills": [{ "type": "solid", "color": "#737373" }] }
+          ]
+        },
+        { "id": "inline-div-2", "name": "Divider", "type": "rectangle", "width": 1, "height": 64, "fills": [{ "type": "solid", "color": "#262626" }] },
+        {
+          "id": "inline-stat-3",
+          "name": "Stat 3",
+          "type": "frame",
+          "width": 260,
+          "height": 120,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 12 },
+          "children": [
+            { "id": "inline-s3-num", "name": "Number", "type": "text", "text": "500+", "fontSize": 36, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+            { "id": "inline-s3-label", "name": "Label", "type": "text", "text": "Premium Clients", "fontSize": 13, "fontFamily": "Inter", "fontWeight": 400, "letterSpacing": 1, "fills": [{ "type": "solid", "color": "#737373" }] }
+          ]
+        },
+        { "id": "inline-div-3", "name": "Divider", "type": "rectangle", "width": 1, "height": 64, "fills": [{ "type": "solid", "color": "#262626" }] },
+        {
+          "id": "inline-stat-4",
+          "name": "Stat 4",
+          "type": "frame",
+          "width": 260,
+          "height": 120,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 12 },
+          "children": [
+            { "id": "inline-s4-num", "name": "Number", "type": "text", "text": "24/7", "fontSize": 36, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+            { "id": "inline-s4-label", "name": "Label", "type": "text", "text": "Concierge Support", "fontSize": 13, "fontFamily": "Inter", "fontWeight": 400, "letterSpacing": 1, "fills": [{ "type": "solid", "color": "#737373" }] }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stats-large-numbers",
+      "name": "StatsDisplay / LargeNumbers",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 480,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 64, "paddingTop": 120, "paddingBottom": 120 },
+      "children": [
+        {
+          "id": "lg-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "By the Numbers",
+          "fontSize": 36,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "lg-stats-row",
+          "name": "Stats Row",
+          "type": "frame",
+          "width": 960,
+          "height": 160,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 48 },
+          "children": [
+            {
+              "id": "lg-stat-1",
+              "name": "Stat 1",
+              "type": "frame",
+              "width": 280,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "center", "gap": 16 },
+              "children": [
+                { "id": "lg-s1-num", "name": "Number", "type": "text", "text": "10M+", "fontSize": 72, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#C9A96E" }] },
+                { "id": "lg-s1-label", "name": "Label", "type": "text", "text": "Revenue Generated", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "lg-stat-2",
+              "name": "Stat 2",
+              "type": "frame",
+              "width": 280,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "center", "gap": 16 },
+              "children": [
+                { "id": "lg-s2-num", "name": "Number", "type": "text", "text": "4.9", "fontSize": 72, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#C9A96E" }] },
+                { "id": "lg-s2-label", "name": "Label", "type": "text", "text": "Average Rating", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "lg-stat-3",
+              "name": "Stat 3",
+              "type": "frame",
+              "width": 280,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "center", "gap": 16 },
+              "children": [
+                { "id": "lg-s3-num", "name": "Number", "type": "text", "text": "50+", "fontSize": 72, "fontFamily": "Playfair Display", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#C9A96E" }] },
+                { "id": "lg-s3-label", "name": "Label", "type": "text", "text": "Countries Served", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

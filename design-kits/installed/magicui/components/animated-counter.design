@@ -1,0 +1,85 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "AnimatedCounter",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "counter.bg": { "type": "color", "value": "#111827" },
+    "counter.text": { "type": "color", "value": "#F9FAFB" },
+    "counter.muted": { "type": "color", "value": "#9CA3AF" },
+    "counter.accent": { "type": "color", "value": "#8B5CF6" }
+  },
+  "children": [
+    {
+      "id": "magicui-counter-default",
+      "name": "AnimatedCounter / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 120,
+      "fill": "#111827",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [24, 24],
+      "gap": 4,
+      "children": [
+        {
+          "id": "magicui-counter-default-number",
+          "name": "Number",
+          "type": "text",
+          "content": "2,847",
+          "fontSize": 36,
+          "fontWeight": "700",
+          "fill": "#F9FAFB"
+        },
+        {
+          "id": "magicui-counter-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Active Users",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#9CA3AF"
+        }
+      ]
+    },
+    {
+      "id": "magicui-counter-large",
+      "name": "AnimatedCounter / Large",
+      "type": "frame",
+      "reusable": true,
+      "width": 280,
+      "height": 160,
+      "fill": "#111827",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [32, 32],
+      "gap": 8,
+      "children": [
+        {
+          "id": "magicui-counter-large-number",
+          "name": "Number",
+          "type": "text",
+          "content": "1,000,000+",
+          "fontSize": 48,
+          "fontWeight": "700",
+          "fill": "#F9FAFB"
+        },
+        {
+          "id": "magicui-counter-large-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Downloads this month",
+          "fontSize": 16,
+          "fontWeight": "400",
+          "fill": "#9CA3AF"
+        }
+      ]
+    }
+  ]
+}

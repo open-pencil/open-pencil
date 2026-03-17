@@ -1,0 +1,20 @@
+{
+  "name": "motion-primitives",
+  "displayName": "Motion Primitives",
+  "description": "Ready-to-use animated components and interaction primitives for React. Built on Framer Motion.",
+  "version": "1.0.0",
+  "author": "motion-primitives",
+  "license": "MIT",
+  "category": "effects",
+  "tags": ["animations", "motion", "framer", "interactions", "transitions"],
+  "style": {
+    "aesthetic": "modern-minimal",
+    "radius": "large",
+    "density": "comfortable",
+    "colorScheme": "neutral"
+  },
+  "stats": {
+    "componentCount": 7,
+    "variantCount": 14
+  }
+}

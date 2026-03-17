@@ -1,0 +1,20 @@
+{
+  "name": "saasui",
+  "displayName": "SaasUI",
+  "description": "A complete component library for SaaS products. Sidebar navigation, metric cards, activity feeds, and data tables.",
+  "version": "1.0.0",
+  "author": "saas-ui",
+  "license": "MIT",
+  "category": "dashboard",
+  "tags": ["saas", "dashboard", "sidebar", "admin", "data"],
+  "style": {
+    "aesthetic": "modern-minimal",
+    "radius": "medium",
+    "density": "comfortable",
+    "colorScheme": "neutral"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 18
+  }
+}

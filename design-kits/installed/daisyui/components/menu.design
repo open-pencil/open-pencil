@@ -1,0 +1,384 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Menu", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "menu.bg": { "type": "color", "value": "#2A303C" },
+    "menu.text": { "type": "color", "value": "#FFFFFF" },
+    "menu.muted": { "type": "color", "value": "#A6ADBB" },
+    "menu.active": { "type": "color", "value": "#661AE6" },
+    "menu.border": { "type": "color", "value": "#191D24" },
+    "menu.radius": { "type": "number", "value": 16 }
+  },
+  "children": [
+    {
+      "id": "daisy-menu-default",
+      "name": "Menu / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": 240,
+      "fill": "#2A303C",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [8, 8],
+      "gap": 4,
+      "children": [
+        {
+          "id": "daisy-menu-default-item1",
+          "name": "Item Active",
+          "type": "frame",
+          "width": 224,
+          "height": 44,
+          "fill": "#661AE6",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-default-item1-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Dashboard",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-default-item2",
+          "name": "Item",
+          "type": "frame",
+          "width": 224,
+          "height": 44,
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-default-item2-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Projects",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-default-item3",
+          "name": "Item",
+          "type": "frame",
+          "width": 224,
+          "height": 44,
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-default-item3-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Team",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-default-item4",
+          "name": "Item",
+          "type": "frame",
+          "width": 224,
+          "height": 44,
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-default-item4-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daisy-menu-horizontal",
+      "name": "Menu / Horizontal",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 52,
+      "fill": "#2A303C",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [4, 8],
+      "gap": 4,
+      "children": [
+        {
+          "id": "daisy-menu-horizontal-item1",
+          "name": "Item Active",
+          "type": "frame",
+          "width": 110,
+          "height": 44,
+          "fill": "#661AE6",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-horizontal-item1-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Dashboard",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-horizontal-item2",
+          "name": "Item",
+          "type": "frame",
+          "width": 90,
+          "height": 44,
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-horizontal-item2-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Projects",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-horizontal-item3",
+          "name": "Item",
+          "type": "frame",
+          "width": 70,
+          "height": 44,
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-horizontal-item3-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Team",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-horizontal-item4",
+          "name": "Item",
+          "type": "frame",
+          "width": 90,
+          "height": 44,
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [10, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-horizontal-item4-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daisy-menu-bordered",
+      "name": "Menu / Bordered",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": 240,
+      "fill": "#2A303C",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [8, 8],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-menu-bordered-item1",
+          "name": "Item Active",
+          "type": "frame",
+          "width": 224,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-bordered-item1-bar",
+              "name": "Active Bar",
+              "type": "rectangle",
+              "width": 3,
+              "height": 24,
+              "fill": "#661AE6",
+              "cornerRadius": 2
+            },
+            {
+              "id": "daisy-menu-bordered-item1-text",
+              "name": "Label",
+              "type": "text",
+              "content": "  Dashboard",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-bordered-sep1",
+          "name": "Separator",
+          "type": "rectangle",
+          "width": 208,
+          "height": 1,
+          "fill": "#191D24"
+        },
+        {
+          "id": "daisy-menu-bordered-item2",
+          "name": "Item",
+          "type": "frame",
+          "width": 224,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-bordered-item2-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Projects",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-bordered-sep2",
+          "name": "Separator",
+          "type": "rectangle",
+          "width": 208,
+          "height": 1,
+          "fill": "#191D24"
+        },
+        {
+          "id": "daisy-menu-bordered-item3",
+          "name": "Item",
+          "type": "frame",
+          "width": 224,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-bordered-item3-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Team",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-menu-bordered-sep3",
+          "name": "Separator",
+          "type": "rectangle",
+          "width": 208,
+          "height": 1,
+          "fill": "#191D24"
+        },
+        {
+          "id": "daisy-menu-bordered-item4",
+          "name": "Item",
+          "type": "frame",
+          "width": 224,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-menu-bordered-item4-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#A6ADBB"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

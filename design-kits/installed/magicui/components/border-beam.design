@@ -1,0 +1,134 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "BorderBeam",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "borderbeam.bg": { "type": "color", "value": "#111827" },
+    "borderbeam.border": { "type": "color", "value": "#1F2937" },
+    "borderbeam.glow": { "type": "color", "value": "#8B5CF6" },
+    "borderbeam.text": { "type": "color", "value": "#F9FAFB" },
+    "borderbeam.muted": { "type": "color", "value": "#9CA3AF" }
+  },
+  "children": [
+    {
+      "id": "magicui-borderbeam-default",
+      "name": "BorderBeam / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 200,
+      "fill": "#111827",
+      "cornerRadius": 12,
+      "stroke": "#8B5CF6",
+      "strokeWidth": 2,
+      "shadow": {
+        "color": "#8B5CF630",
+        "offsetX": 0,
+        "offsetY": 0,
+        "blur": 24
+      },
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "magicui-borderbeam-default-badge",
+          "name": "Badge",
+          "type": "frame",
+          "width": 80,
+          "height": 24,
+          "fill": "#8B5CF620",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [4, 12],
+          "gap": 0,
+          "children": [
+            { "id": "magicui-bb-d-badge-t", "name": "BadgeText", "type": "text", "content": "Featured", "fontSize": 11, "fontWeight": "600", "fill": "#A78BFA" }
+          ]
+        },
+        {
+          "id": "magicui-borderbeam-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Animated Border Card",
+          "fontSize": 20,
+          "fontWeight": "700",
+          "fill": "#F9FAFB"
+        },
+        {
+          "id": "magicui-borderbeam-default-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "A card component with a glowing animated border that traces the perimeter.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#9CA3AF"
+        }
+      ]
+    },
+    {
+      "id": "magicui-borderbeam-subtle",
+      "name": "BorderBeam / Subtle",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 200,
+      "fill": "#111827",
+      "cornerRadius": 12,
+      "stroke": "#1F2937",
+      "strokeWidth": 1,
+      "shadow": {
+        "color": "#8B5CF615",
+        "offsetX": 0,
+        "offsetY": 0,
+        "blur": 16
+      },
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "magicui-borderbeam-subtle-glow",
+          "name": "GlowSegment",
+          "type": "frame",
+          "width": 60,
+          "height": 2,
+          "fill": "#A78BFA",
+          "cornerRadius": 1,
+          "shadow": {
+            "color": "#A78BFA60",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 8
+          }
+        },
+        {
+          "id": "magicui-borderbeam-subtle-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Subtle Glow Card",
+          "fontSize": 20,
+          "fontWeight": "700",
+          "fill": "#F9FAFB"
+        },
+        {
+          "id": "magicui-borderbeam-subtle-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "A more subtle variant with a softer animated border glow effect.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#9CA3AF"
+        }
+      ]
+    }
+  ]
+}

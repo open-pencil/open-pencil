@@ -1,0 +1,193 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "SparkleText",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "sparkle.text": { "type": "color", "value": "#F9FAFB" },
+    "sparkle.star": { "type": "color", "value": "#A78BFA" },
+    "sparkle.star2": { "type": "color", "value": "#22D3EE" },
+    "sparkle.bg": { "type": "color", "value": "#030712" }
+  },
+  "children": [
+    {
+      "id": "magicui-sparkle-default",
+      "name": "SparkleText / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 60,
+      "fill": "#030712",
+      "cornerRadius": 12,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 0,
+      "children": [
+        {
+          "id": "magicui-sparkle-d-star1",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 6,
+          "height": 6,
+          "fill": "#A78BFA",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-sparkle-d-star2",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#22D3EE",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-sparkle-d-text",
+          "name": "Text",
+          "type": "text",
+          "content": "Build magical interfaces",
+          "fontSize": 20,
+          "fontWeight": "600",
+          "fill": "#F9FAFB"
+        },
+        {
+          "id": "magicui-sparkle-d-star3",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#A78BFA",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-sparkle-d-star4",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 3,
+          "height": 3,
+          "fill": "#22D3EE80",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-sparkle-d-star5",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 7,
+          "height": 7,
+          "fill": "#8B5CF690",
+          "cornerRadius": 4
+        },
+        {
+          "id": "magicui-sparkle-d-star6",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#A78BFA70",
+          "cornerRadius": 2
+        }
+      ]
+    },
+    {
+      "id": "magicui-sparkle-heading",
+      "name": "SparkleText / Heading",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 80,
+      "fill": "#030712",
+      "cornerRadius": 12,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [16, 32],
+      "gap": 0,
+      "children": [
+        {
+          "id": "magicui-sparkle-h-star1",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 8,
+          "height": 8,
+          "fill": "#A78BFA",
+          "cornerRadius": 4
+        },
+        {
+          "id": "magicui-sparkle-h-star2",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#22D3EE",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-sparkle-h-star3",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 6,
+          "height": 6,
+          "fill": "#8B5CF6",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-sparkle-h-text",
+          "name": "HeadingText",
+          "type": "text",
+          "content": "The Future of Design",
+          "fontSize": 32,
+          "fontWeight": "700",
+          "fill": "#F9FAFB"
+        },
+        {
+          "id": "magicui-sparkle-h-star4",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 7,
+          "height": 7,
+          "fill": "#A78BFA",
+          "cornerRadius": 4
+        },
+        {
+          "id": "magicui-sparkle-h-star5",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#22D3EE90",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-sparkle-h-star6",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 9,
+          "height": 9,
+          "fill": "#8B5CF680",
+          "cornerRadius": 5
+        },
+        {
+          "id": "magicui-sparkle-h-star7",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#A78BFA60",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-sparkle-h-star8",
+          "name": "Sparkle",
+          "type": "frame",
+          "width": 6,
+          "height": 6,
+          "fill": "#22D3EE70",
+          "cornerRadius": 3
+        }
+      ]
+    }
+  ]
+}

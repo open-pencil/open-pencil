@@ -1,0 +1,256 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Particles",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "particles.bg": { "type": "color", "value": "#030712" },
+    "particles.dot": { "type": "color", "value": "#9CA3AF" },
+    "particles.line": { "type": "color", "value": "#1F2937" },
+    "particles.glow": { "type": "color", "value": "#8B5CF6" }
+  },
+  "children": [
+    {
+      "id": "magicui-particles-default",
+      "name": "Particles / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "#030712",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "magicui-particles-d-p1",
+          "name": "Particle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#9CA3AF60",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p2",
+          "name": "Particle",
+          "type": "frame",
+          "width": 3,
+          "height": 3,
+          "fill": "#9CA3AF40",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p3",
+          "name": "Particle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#9CA3AF80",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-particles-d-p4",
+          "name": "Particle",
+          "type": "frame",
+          "width": 3,
+          "height": 3,
+          "fill": "#9CA3AF50",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p5",
+          "name": "Particle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#9CA3AF70",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p6",
+          "name": "Particle",
+          "type": "frame",
+          "width": 2,
+          "height": 2,
+          "fill": "#9CA3AF30",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-particles-d-p7",
+          "name": "Particle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#9CA3AF60",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-particles-d-p8",
+          "name": "Particle",
+          "type": "frame",
+          "width": 3,
+          "height": 3,
+          "fill": "#9CA3AF45",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p9",
+          "name": "Particle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#9CA3AF55",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p10",
+          "name": "Particle",
+          "type": "frame",
+          "width": 3,
+          "height": 3,
+          "fill": "#9CA3AF65",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p11",
+          "name": "Particle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#9CA3AF35",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-d-p12",
+          "name": "Particle",
+          "type": "frame",
+          "width": 2,
+          "height": 2,
+          "fill": "#9CA3AF50",
+          "cornerRadius": 1
+        }
+      ]
+    },
+    {
+      "id": "magicui-particles-connected",
+      "name": "Particles / Connected",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "#030712",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "magicui-particles-c-line1",
+          "name": "ConnectionLine",
+          "type": "frame",
+          "width": 120,
+          "height": 1,
+          "fill": "#1F293780",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-particles-c-p1",
+          "name": "Particle",
+          "type": "frame",
+          "width": 6,
+          "height": 6,
+          "fill": "#8B5CF680",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-particles-c-line2",
+          "name": "ConnectionLine",
+          "type": "frame",
+          "width": 80,
+          "height": 1,
+          "fill": "#1F293760",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-particles-c-p2",
+          "name": "Particle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#06B6D480",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-particles-c-line3",
+          "name": "ConnectionLine",
+          "type": "frame",
+          "width": 100,
+          "height": 1,
+          "fill": "#1F293770",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-particles-c-p3",
+          "name": "Particle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#A78BFA70",
+          "cornerRadius": 2
+        },
+        {
+          "id": "magicui-particles-c-line4",
+          "name": "ConnectionLine",
+          "type": "frame",
+          "width": 90,
+          "height": 1,
+          "fill": "#1F293750",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-particles-c-p4",
+          "name": "Particle",
+          "type": "frame",
+          "width": 6,
+          "height": 6,
+          "fill": "#22D3EE70",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-particles-c-line5",
+          "name": "ConnectionLine",
+          "type": "frame",
+          "width": 110,
+          "height": 1,
+          "fill": "#1F293765",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-particles-c-p5",
+          "name": "Particle",
+          "type": "frame",
+          "width": 5,
+          "height": 5,
+          "fill": "#8B5CF660",
+          "cornerRadius": 3
+        },
+        {
+          "id": "magicui-particles-c-p6",
+          "name": "Particle",
+          "type": "frame",
+          "width": 4,
+          "height": 4,
+          "fill": "#06B6D460",
+          "cornerRadius": 2
+        }
+      ]
+    }
+  ]
+}

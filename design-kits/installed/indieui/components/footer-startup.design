@@ -1,0 +1,245 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "FooterStartup",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "surfaceColor": { "type": "color", "default": "#1A1A2E" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "mutedColor": { "type": "color", "default": "#888888" },
+    "primaryColor": { "type": "color", "default": "#FF6B35" },
+    "borderColor": { "type": "color", "default": "#2A2A2A" }
+  },
+  "children": [
+    {
+      "id": "footer-minimal",
+      "name": "FooterStartup / Minimal",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 200,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 24 },
+      "children": [
+        {
+          "id": "fmin-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "width": 1040,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#2A2A2A" }]
+        },
+        {
+          "id": "fmin-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 1040,
+          "height": 48,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+          "children": [
+            {
+              "id": "fmin-brand",
+              "name": "Brand",
+              "type": "text",
+              "text": "indie ui",
+              "fontSize": 18,
+              "fontFamily": "Space Grotesk",
+              "fontWeight": 700,
+              "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+            },
+            {
+              "id": "fmin-links",
+              "name": "Links",
+              "type": "frame",
+              "width": 360,
+              "height": 20,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center", "gap": 28 },
+              "children": [
+                { "id": "fmin-l1", "name": "Link", "type": "text", "text": "Docs", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fmin-l2", "name": "Link", "type": "text", "text": "Blog", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fmin-l3", "name": "Link", "type": "text", "text": "Twitter", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fmin-l4", "name": "Link", "type": "text", "text": "GitHub", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "fmin-copyright",
+              "name": "Copyright",
+              "type": "text",
+              "text": "\u00A9 2026 Indie UI",
+              "fontSize": 13,
+              "fontFamily": "Space Grotesk",
+              "fontWeight": 400,
+              "fills": [{ "type": "solid", "color": "#888888" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "footer-with-newsletter",
+      "name": "FooterStartup / WithNewsletter",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 400,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 0, "paddingTop": 56, "paddingBottom": 40, "paddingLeft": 120, "paddingRight": 120 },
+      "children": [
+        {
+          "id": "fwn-divider-top",
+          "name": "Divider",
+          "type": "rectangle",
+          "width": 1040,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#2A2A2A" }]
+        },
+        {
+          "id": "fwn-main",
+          "name": "Main Row",
+          "type": "frame",
+          "width": 1040,
+          "height": 200,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "flexStart", "justifyContent": "spaceBetween" },
+          "children": [
+            {
+              "id": "fwn-brand-col",
+              "name": "Brand Column",
+              "type": "frame",
+              "width": 320,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 16 },
+              "children": [
+                { "id": "fwn-brand", "name": "Brand", "type": "text", "text": "indie ui", "fontSize": 22, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "fwn-desc", "name": "Description", "type": "text", "text": "Ship fast. Look good. Convert better.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                {
+                  "id": "fwn-social-row",
+                  "name": "Social Links",
+                  "type": "frame",
+                  "width": 160,
+                  "height": 32,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "gap": 16 },
+                  "children": [
+                    { "id": "fwn-social-1", "name": "Twitter", "type": "rectangle", "width": 32, "height": 32, "radius": 8, "fills": [{ "type": "solid", "color": "#1A1A2E" }] },
+                    { "id": "fwn-social-2", "name": "GitHub", "type": "rectangle", "width": 32, "height": 32, "radius": 8, "fills": [{ "type": "solid", "color": "#1A1A2E" }] },
+                    { "id": "fwn-social-3", "name": "Discord", "type": "rectangle", "width": 32, "height": 32, "radius": 8, "fills": [{ "type": "solid", "color": "#1A1A2E" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "fwn-col-1",
+              "name": "Product Column",
+              "type": "frame",
+              "width": 140,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 14 },
+              "children": [
+                { "id": "fwn-c1-title", "name": "Title", "type": "text", "text": "Product", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "fwn-c1-l1", "name": "Link", "type": "text", "text": "Features", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fwn-c1-l2", "name": "Link", "type": "text", "text": "Pricing", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fwn-c1-l3", "name": "Link", "type": "text", "text": "Changelog", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fwn-c1-l4", "name": "Link", "type": "text", "text": "Docs", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "fwn-col-2",
+              "name": "Company Column",
+              "type": "frame",
+              "width": 140,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 14 },
+              "children": [
+                { "id": "fwn-c2-title", "name": "Title", "type": "text", "text": "Company", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "fwn-c2-l1", "name": "Link", "type": "text", "text": "About", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fwn-c2-l2", "name": "Link", "type": "text", "text": "Blog", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fwn-c2-l3", "name": "Link", "type": "text", "text": "Privacy", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                { "id": "fwn-c2-l4", "name": "Link", "type": "text", "text": "Terms", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "fwn-newsletter",
+              "name": "Newsletter Column",
+              "type": "frame",
+              "width": 280,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 14 },
+              "children": [
+                { "id": "fwn-nl-title", "name": "Title", "type": "text", "text": "Newsletter", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "fwn-nl-desc", "name": "Description", "type": "text", "text": "Get updates straight to your inbox.", "fontSize": 13, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+                {
+                  "id": "fwn-nl-input-row",
+                  "name": "Input Row",
+                  "type": "frame",
+                  "width": 280,
+                  "height": 44,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "gap": 8 },
+                  "children": [
+                    {
+                      "id": "fwn-nl-input",
+                      "name": "Email Input",
+                      "type": "frame",
+                      "width": 180,
+                      "height": 44,
+                      "radius": 14,
+                      "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+                      "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                      "layout": { "mode": "horizontal", "alignItems": "center", "paddingLeft": 14 },
+                      "children": [
+                        { "id": "fwn-nl-placeholder", "name": "Placeholder", "type": "text", "text": "Email", "fontSize": 13, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                      ]
+                    },
+                    {
+                      "id": "fwn-nl-btn",
+                      "name": "Button",
+                      "type": "frame",
+                      "width": 92,
+                      "height": 44,
+                      "radius": 14,
+                      "fills": [{ "type": "solid", "color": "#FF6B35" }],
+                      "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                      "children": [
+                        { "id": "fwn-nl-btn-label", "name": "Label", "type": "text", "text": "Join", "fontSize": 13, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fwn-divider-bottom",
+          "name": "Divider",
+          "type": "rectangle",
+          "width": 1040,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#1A1A1A" }]
+        },
+        {
+          "id": "fwn-bottom",
+          "name": "Bottom Row",
+          "type": "frame",
+          "width": 1040,
+          "height": 24,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+          "children": [
+            { "id": "fwn-copyright", "name": "Copyright", "type": "text", "text": "\u00A9 2026 Indie UI. Built with love.", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+            { "id": "fwn-status", "name": "Status", "type": "text", "text": "All systems operational", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#10B981" }] }
+          ]
+        }
+      ]
+    }
+  ]
+}

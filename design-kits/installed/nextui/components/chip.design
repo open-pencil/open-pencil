@@ -1,0 +1,108 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Chip", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "chip.primary": { "type": "color", "value": "#006FEE" },
+    "chip.primaryLight": { "type": "color", "value": "#006FEE22" },
+    "chip.success": { "type": "color", "value": "#17C964" },
+    "chip.border": { "type": "color", "value": "#3F3F46" },
+    "chip.text": { "type": "color", "value": "#ECEDEE" },
+    "chip.radius": { "type": "number", "value": 20 }
+  },
+  "children": [
+    {
+      "id": "nextui-chip-solid",
+      "name": "Chip / Solid",
+      "type": "frame",
+      "reusable": true,
+      "width": 80,
+      "height": 28,
+      "fill": "#006FEE",
+      "cornerRadius": 14,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [4, 12],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-chip-solid-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Active",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "nextui-chip-bordered",
+      "name": "Chip / Bordered",
+      "type": "frame",
+      "reusable": true,
+      "width": 80,
+      "height": 28,
+      "cornerRadius": 14,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [4, 12],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-chip-bordered-border",
+          "name": "Border",
+          "type": "rectangle",
+          "width": 80,
+          "height": 28,
+          "fill": "#3F3F46",
+          "cornerRadius": 14
+        },
+        {
+          "id": "nextui-chip-bordered-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Pending",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "fill": "#ECEDEE"
+        }
+      ]
+    },
+    {
+      "id": "nextui-chip-dot",
+      "name": "Chip / Dot",
+      "type": "frame",
+      "reusable": true,
+      "width": 100,
+      "height": 28,
+      "fill": "#17C96422",
+      "cornerRadius": 14,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [4, 12],
+      "gap": 6,
+      "children": [
+        {
+          "id": "nextui-chip-dot-indicator",
+          "name": "Dot",
+          "type": "ellipse",
+          "width": 8,
+          "height": 8,
+          "fill": "#17C964"
+        },
+        {
+          "id": "nextui-chip-dot-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Online",
+          "fontSize": 12,
+          "fontWeight": "600",
+          "fill": "#17C964"
+        }
+      ]
+    }
+  ]
+}

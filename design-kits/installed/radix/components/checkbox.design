@@ -1,0 +1,88 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Checkbox", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "checkbox.bg": { "type": "color", "value": "#3E63DD" },
+    "checkbox.border": { "type": "color", "value": "#2E2E32" },
+    "checkbox.check": { "type": "color", "value": "#FFFFFF" },
+    "checkbox.text": { "type": "color", "value": "#EDEDEF" },
+    "checkbox.radius": { "type": "number", "value": 4 }
+  },
+  "children": [
+    {
+      "id": "radix-checkbox-default",
+      "name": "Checkbox / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 20,
+      "height": 20,
+      "fill": "#3E63DD",
+      "cornerRadius": 4,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-checkbox-default-check",
+          "name": "Checkmark",
+          "type": "text",
+          "content": "\u2713",
+          "fontSize": 14,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "radix-checkbox-labeled",
+      "name": "Checkbox / With Label",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 24,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 8,
+      "children": [
+        {
+          "id": "radix-checkbox-labeled-box",
+          "name": "Box",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "#3E63DD",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-checkbox-labeled-check",
+              "name": "Checkmark",
+              "type": "text",
+              "content": "\u2713",
+              "fontSize": 14,
+              "fontWeight": "700",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "radix-checkbox-labeled-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Accept terms and conditions",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#EDEDEF"
+        }
+      ]
+    }
+  ]
+}

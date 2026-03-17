@@ -1,0 +1,198 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "EmptyState",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "card": "#1E293B",
+    "text": "#F1F5F9",
+    "muted": "#94A3B8",
+    "primary": "#3B82F6",
+    "border": "#334155",
+    "radius": 8
+  },
+  "children": [
+    {
+      "id": "empty-state-default",
+      "name": "EmptyState / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 280,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "es-icon-circle",
+          "name": "IconCircle",
+          "type": "ellipse",
+          "x": 200,
+          "y": 40,
+          "width": 80,
+          "height": 80,
+          "fill": "#0F172A",
+          "stroke": "#334155",
+          "strokeWidth": 1
+        },
+        {
+          "id": "es-icon-inner",
+          "name": "IconInner",
+          "type": "rectangle",
+          "x": 224,
+          "y": 64,
+          "width": 32,
+          "height": 32,
+          "fill": "#334155",
+          "cornerRadius": 4
+        },
+        {
+          "id": "es-title",
+          "name": "Title",
+          "type": "text",
+          "x": 40,
+          "y": 140,
+          "width": 400,
+          "height": 24,
+          "text": "No projects yet",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#F1F5F9",
+          "textAlign": "center"
+        },
+        {
+          "id": "es-description",
+          "name": "Description",
+          "type": "text",
+          "x": 80,
+          "y": 172,
+          "width": 320,
+          "height": 40,
+          "text": "Get started by creating your first project. It only takes a few seconds.",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#94A3B8",
+          "textAlign": "center"
+        }
+      ]
+    },
+    {
+      "id": "empty-state-with-action",
+      "name": "EmptyState / WithAction",
+      "type": "frame",
+      "reusable": true,
+      "x": 520,
+      "y": 0,
+      "width": 480,
+      "height": 320,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "esa-icon-circle",
+          "name": "IconCircle",
+          "type": "ellipse",
+          "x": 200,
+          "y": 36,
+          "width": 80,
+          "height": 80,
+          "fill": "#0F172A",
+          "stroke": "#334155",
+          "strokeWidth": 1
+        },
+        {
+          "id": "esa-icon-inner",
+          "name": "IconInner",
+          "type": "rectangle",
+          "x": 224,
+          "y": 60,
+          "width": 32,
+          "height": 32,
+          "fill": "#3B82F6",
+          "cornerRadius": 4
+        },
+        {
+          "id": "esa-title",
+          "name": "Title",
+          "type": "text",
+          "x": 40,
+          "y": 136,
+          "width": 400,
+          "height": 24,
+          "text": "No data available",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#F1F5F9",
+          "textAlign": "center"
+        },
+        {
+          "id": "esa-description",
+          "name": "Description",
+          "type": "text",
+          "x": 80,
+          "y": 168,
+          "width": 320,
+          "height": 40,
+          "text": "Start importing your data or connect a data source to see analytics here.",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#94A3B8",
+          "textAlign": "center"
+        },
+        {
+          "id": "esa-cta",
+          "name": "CTAButton",
+          "type": "frame",
+          "x": 168,
+          "y": 232,
+          "width": 144,
+          "height": 40,
+          "fill": "#3B82F6",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "esa-cta-label",
+              "name": "Label",
+              "type": "text",
+              "x": 0,
+              "y": 10,
+              "width": 144,
+              "height": 20,
+              "text": "Import Data",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fill": "#FFFFFF",
+              "textAlign": "center"
+            }
+          ]
+        },
+        {
+          "id": "esa-secondary",
+          "name": "SecondaryLink",
+          "type": "text",
+          "x": 168,
+          "y": 284,
+          "width": 144,
+          "height": 16,
+          "text": "Learn more",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "fill": "#3B82F6",
+          "textAlign": "center"
+        }
+      ]
+    }
+  ]
+}

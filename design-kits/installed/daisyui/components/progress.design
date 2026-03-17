@@ -1,0 +1,91 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Progress", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "progress.track": { "type": "color", "value": "#191D24" },
+    "progress.primary": { "type": "color", "value": "#661AE6" },
+    "progress.secondary": { "type": "color", "value": "#D926AA" },
+    "progress.base": { "type": "color", "value": "#2A303C" },
+    "progress.radius": { "type": "number", "value": 8 }
+  },
+  "children": [
+    {
+      "id": "daisy-progress-default",
+      "name": "Progress / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 16,
+      "fill": "#191D24",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-progress-default-fill",
+          "name": "Fill",
+          "type": "rectangle",
+          "width": 208,
+          "height": 16,
+          "fill": "#2A303C",
+          "cornerRadius": 8
+        }
+      ]
+    },
+    {
+      "id": "daisy-progress-primary",
+      "name": "Progress / Primary",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 16,
+      "fill": "#191D24",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-progress-primary-fill",
+          "name": "Fill",
+          "type": "rectangle",
+          "width": 224,
+          "height": 16,
+          "fill": "#661AE6",
+          "cornerRadius": 8
+        }
+      ]
+    },
+    {
+      "id": "daisy-progress-secondary",
+      "name": "Progress / Secondary",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 16,
+      "fill": "#191D24",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-progress-secondary-fill",
+          "name": "Fill",
+          "type": "rectangle",
+          "width": 128,
+          "height": 16,
+          "fill": "#D926AA",
+          "cornerRadius": 8
+        }
+      ]
+    }
+  ]
+}

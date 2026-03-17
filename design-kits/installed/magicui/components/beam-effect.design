@@ -1,0 +1,230 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "BeamEffect",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "beam.bg": { "type": "color", "value": "#030712" },
+    "beam.primary": { "type": "color", "value": "#8B5CF6" },
+    "beam.accent": { "type": "color", "value": "#06B6D4" },
+    "beam.glow1": { "type": "color", "value": "#A78BFA" },
+    "beam.glow2": { "type": "color", "value": "#22D3EE" }
+  },
+  "children": [
+    {
+      "id": "magicui-beam-default",
+      "name": "BeamEffect / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 240,
+      "fill": "#030712",
+      "cornerRadius": 12,
+      "layout": "horizontal",
+      "alignItems": "flex-end",
+      "justifyContent": "center",
+      "padding": [0, 32],
+      "gap": 24,
+      "children": [
+        {
+          "id": "magicui-beam-d-line1",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 160,
+          "fill": "#8B5CF640",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-d-line2",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 200,
+          "fill": "#8B5CF660",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-d-line3",
+          "name": "BeamBright",
+          "type": "frame",
+          "width": 3,
+          "height": 220,
+          "fill": "#A78BFA",
+          "cornerRadius": 2,
+          "shadow": {
+            "color": "#A78BFA40",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 12
+          }
+        },
+        {
+          "id": "magicui-beam-d-line4",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 180,
+          "fill": "#8B5CF650",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-d-line5",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 140,
+          "fill": "#8B5CF630",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-d-line6",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 190,
+          "fill": "#8B5CF645",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-d-line7",
+          "name": "BeamBright",
+          "type": "frame",
+          "width": 3,
+          "height": 210,
+          "fill": "#A78BFA",
+          "cornerRadius": 2,
+          "shadow": {
+            "color": "#A78BFA40",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 12
+          }
+        },
+        {
+          "id": "magicui-beam-d-line8",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 150,
+          "fill": "#8B5CF635",
+          "cornerRadius": 1
+        }
+      ]
+    },
+    {
+      "id": "magicui-beam-colorful",
+      "name": "BeamEffect / Colorful",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 240,
+      "fill": "#030712",
+      "cornerRadius": 12,
+      "layout": "horizontal",
+      "alignItems": "flex-end",
+      "justifyContent": "center",
+      "padding": [0, 32],
+      "gap": 24,
+      "children": [
+        {
+          "id": "magicui-beam-c-line1",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 160,
+          "fill": "#8B5CF660",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-c-line2",
+          "name": "BeamCyan",
+          "type": "frame",
+          "width": 3,
+          "height": 200,
+          "fill": "#22D3EE",
+          "cornerRadius": 2,
+          "shadow": {
+            "color": "#22D3EE40",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 12
+          }
+        },
+        {
+          "id": "magicui-beam-c-line3",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 170,
+          "fill": "#06B6D450",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-c-line4",
+          "name": "BeamPurple",
+          "type": "frame",
+          "width": 3,
+          "height": 220,
+          "fill": "#A78BFA",
+          "cornerRadius": 2,
+          "shadow": {
+            "color": "#A78BFA40",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 12
+          }
+        },
+        {
+          "id": "magicui-beam-c-line5",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 140,
+          "fill": "#8B5CF640",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-c-line6",
+          "name": "BeamCyan",
+          "type": "frame",
+          "width": 3,
+          "height": 190,
+          "fill": "#06B6D4",
+          "cornerRadius": 2,
+          "shadow": {
+            "color": "#06B6D440",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 12
+          }
+        },
+        {
+          "id": "magicui-beam-c-line7",
+          "name": "Beam",
+          "type": "frame",
+          "width": 2,
+          "height": 180,
+          "fill": "#A78BFA50",
+          "cornerRadius": 1
+        },
+        {
+          "id": "magicui-beam-c-line8",
+          "name": "BeamPurple",
+          "type": "frame",
+          "width": 3,
+          "height": 210,
+          "fill": "#8B5CF6",
+          "cornerRadius": 2,
+          "shadow": {
+            "color": "#8B5CF640",
+            "offsetX": 0,
+            "offsetY": 0,
+            "blur": 12
+          }
+        }
+      ]
+    }
+  ]
+}

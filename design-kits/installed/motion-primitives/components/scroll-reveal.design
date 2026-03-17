@@ -1,0 +1,229 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "ScrollReveal",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#09090B",
+    "surface": "#18181B",
+    "text": "#FAFAFA",
+    "muted": "#71717A",
+    "primary": "#A855F7",
+    "border": "#27272A",
+    "radius": 12
+  },
+  "children": [
+    {
+      "id": "scroll-reveal-default",
+      "name": "ScrollReveal / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 400,
+      "height": 600,
+      "fill": "#09090B",
+      "clip": true,
+      "cornerRadius": 12,
+      "children": [
+        {
+          "id": "sr-visible-section",
+          "name": "VisibleSection",
+          "type": "frame",
+          "x": 24,
+          "y": 24,
+          "width": 352,
+          "height": 160,
+          "fill": "#18181B",
+          "cornerRadius": 12,
+          "opacity": 1.0,
+          "children": [
+            {
+              "id": "sr-visible-title",
+              "name": "Title",
+              "type": "text",
+              "x": 20,
+              "y": 20,
+              "width": 312,
+              "height": 24,
+              "text": "Fully Visible",
+              "fontSize": 18,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fill": "#FAFAFA"
+            },
+            {
+              "id": "sr-visible-body",
+              "name": "Body",
+              "type": "text",
+              "x": 20,
+              "y": 56,
+              "width": 312,
+              "height": 40,
+              "text": "This section has scrolled into full view.",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#71717A"
+            }
+          ]
+        },
+        {
+          "id": "sr-entering-section",
+          "name": "EnteringSection",
+          "type": "frame",
+          "x": 24,
+          "y": 208,
+          "width": 352,
+          "height": 160,
+          "fill": "#18181B",
+          "cornerRadius": 12,
+          "opacity": 0.5,
+          "children": [
+            {
+              "id": "sr-entering-title",
+              "name": "Title",
+              "type": "text",
+              "x": 20,
+              "y": 20,
+              "width": 312,
+              "height": 24,
+              "text": "Entering View",
+              "fontSize": 18,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fill": "#FAFAFA"
+            }
+          ]
+        },
+        {
+          "id": "sr-hidden-section",
+          "name": "HiddenSection",
+          "type": "frame",
+          "x": 24,
+          "y": 392,
+          "width": 352,
+          "height": 160,
+          "fill": "#18181B",
+          "cornerRadius": 12,
+          "opacity": 0.1,
+          "children": [
+            {
+              "id": "sr-hidden-title",
+              "name": "Title",
+              "type": "text",
+              "x": 20,
+              "y": 20,
+              "width": 312,
+              "height": 24,
+              "text": "Not Yet Visible",
+              "fontSize": 18,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fill": "#FAFAFA"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scroll-reveal-parallax",
+      "name": "ScrollReveal / Parallax",
+      "type": "frame",
+      "reusable": true,
+      "x": 440,
+      "y": 0,
+      "width": 400,
+      "height": 600,
+      "fill": "#09090B",
+      "clip": true,
+      "cornerRadius": 12,
+      "children": [
+        {
+          "id": "parallax-bg-layer",
+          "name": "BackgroundLayer",
+          "type": "rectangle",
+          "x": 0,
+          "y": -40,
+          "width": 400,
+          "height": 300,
+          "fill": "#18181B",
+          "opacity": 0.6
+        },
+        {
+          "id": "parallax-mid-layer",
+          "name": "MidLayer",
+          "type": "frame",
+          "x": 40,
+          "y": 80,
+          "width": 320,
+          "height": 200,
+          "fill": "#27272A",
+          "cornerRadius": 12,
+          "opacity": 0.8,
+          "children": [
+            {
+              "id": "parallax-mid-text",
+              "name": "Text",
+              "type": "text",
+              "x": 24,
+              "y": 24,
+              "width": 272,
+              "height": 24,
+              "text": "Mid Layer (Medium Speed)",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#FAFAFA"
+            }
+          ]
+        },
+        {
+          "id": "parallax-fg-layer",
+          "name": "ForegroundLayer",
+          "type": "frame",
+          "x": 24,
+          "y": 320,
+          "width": 352,
+          "height": 240,
+          "fill": "#18181B",
+          "stroke": "#A855F7",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 1.0,
+          "children": [
+            {
+              "id": "parallax-fg-title",
+              "name": "Title",
+              "type": "text",
+              "x": 24,
+              "y": 24,
+              "width": 304,
+              "height": 24,
+              "text": "Foreground (Fastest)",
+              "fontSize": 18,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fill": "#FAFAFA"
+            },
+            {
+              "id": "parallax-fg-body",
+              "name": "Body",
+              "type": "text",
+              "x": 24,
+              "y": 60,
+              "width": 304,
+              "height": 40,
+              "text": "Layers move at different speeds to create depth.",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#71717A"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

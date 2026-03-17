@@ -1,0 +1,408 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Dialog", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "dialog.bg": { "type": "color", "value": "#1C1C1F" },
+    "dialog.overlay": { "type": "color", "value": "#00000088" },
+    "dialog.text": { "type": "color", "value": "#EDEDEF" },
+    "dialog.muted": { "type": "color", "value": "#8B8B8E" },
+    "dialog.border": { "type": "color", "value": "#2E2E32" },
+    "dialog.focus": { "type": "color", "value": "#3E63DD" },
+    "dialog.danger": { "type": "color", "value": "#E5484D" },
+    "dialog.radius": { "type": "number", "value": 6 }
+  },
+  "children": [
+    {
+      "id": "radix-dialog-default",
+      "name": "Dialog / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "#00000088",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-dialog-default-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 400,
+          "height": 240,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [24, 24],
+          "gap": 16,
+          "children": [
+            {
+              "id": "radix-dialog-default-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Dialog Title",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-dialog-default-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "This is a description of the dialog content that provides context to the user.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-dialog-default-actions",
+              "name": "Actions",
+              "type": "frame",
+              "width": 352,
+              "height": 36,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-end",
+              "padding": [0, 0],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "radix-dialog-default-cancel",
+                  "name": "Cancel",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 36,
+                  "fill": "#2E2E32",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "radix-dialog-default-cancel-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Cancel",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#EDEDEF"
+                    }
+                  ]
+                },
+                {
+                  "id": "radix-dialog-default-confirm",
+                  "name": "Confirm",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 36,
+                  "fill": "#3E63DD",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "radix-dialog-default-confirm-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Confirm",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-dialog-form",
+      "name": "Dialog / Form",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 400,
+      "fill": "#00000088",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-dialog-form-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 400,
+          "height": 320,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [24, 24],
+          "gap": 16,
+          "children": [
+            {
+              "id": "radix-dialog-form-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Edit Profile",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-dialog-form-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Make changes to your profile here.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-dialog-form-field1",
+              "name": "Field Name",
+              "type": "frame",
+              "width": 352,
+              "height": 36,
+              "fill": "#111113",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-dialog-form-field1-text",
+                  "name": "Placeholder",
+                  "type": "text",
+                  "content": "Name",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-dialog-form-field2",
+              "name": "Field Email",
+              "type": "frame",
+              "width": 352,
+              "height": 36,
+              "fill": "#111113",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-dialog-form-field2-text",
+                  "name": "Placeholder",
+                  "type": "text",
+                  "content": "Email",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-dialog-form-actions",
+              "name": "Actions",
+              "type": "frame",
+              "width": 352,
+              "height": 36,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-end",
+              "padding": [0, 0],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "radix-dialog-form-cancel",
+                  "name": "Cancel",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 36,
+                  "fill": "#2E2E32",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "radix-dialog-form-cancel-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Cancel",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#EDEDEF"
+                    }
+                  ]
+                },
+                {
+                  "id": "radix-dialog-form-save",
+                  "name": "Save",
+                  "type": "frame",
+                  "width": 100,
+                  "height": 36,
+                  "fill": "#3E63DD",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "radix-dialog-form-save-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Save Changes",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-dialog-alert",
+      "name": "Dialog / Alert Dialog",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 300,
+      "fill": "#00000088",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-dialog-alert-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 400,
+          "height": 220,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [24, 24],
+          "gap": 16,
+          "children": [
+            {
+              "id": "radix-dialog-alert-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Are you sure?",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-dialog-alert-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "This action cannot be undone. This will permanently delete your account and remove your data.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            },
+            {
+              "id": "radix-dialog-alert-actions",
+              "name": "Actions",
+              "type": "frame",
+              "width": 352,
+              "height": 36,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-end",
+              "padding": [0, 0],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "radix-dialog-alert-cancel",
+                  "name": "Cancel",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 36,
+                  "fill": "#2E2E32",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "radix-dialog-alert-cancel-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Cancel",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#EDEDEF"
+                    }
+                  ]
+                },
+                {
+                  "id": "radix-dialog-alert-delete",
+                  "name": "Delete",
+                  "type": "frame",
+                  "width": 80,
+                  "height": 36,
+                  "fill": "#E5484D",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [8, 16],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "radix-dialog-alert-delete-text",
+                      "name": "Label",
+                      "type": "text",
+                      "content": "Delete",
+                      "fontSize": 14,
+                      "fontWeight": "500",
+                      "fill": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

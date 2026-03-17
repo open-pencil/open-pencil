@@ -1,0 +1,162 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Input", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "input.bg": { "type": "color", "value": "#27272A" },
+    "input.text": { "type": "color", "value": "#ECEDEE" },
+    "input.placeholder": { "type": "color", "value": "#71717A" },
+    "input.label": { "type": "color", "value": "#9BA1A6" },
+    "input.border": { "type": "color", "value": "#3F3F46" },
+    "input.focus": { "type": "color", "value": "#006FEE" },
+    "input.radius": { "type": "number", "value": 12 }
+  },
+  "children": [
+    {
+      "id": "nextui-input-default",
+      "name": "Input / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 64,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-input-default-field",
+          "name": "Field",
+          "type": "frame",
+          "width": 320,
+          "height": 56,
+          "fill": "#27272A",
+          "cornerRadius": 12,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [8, 14],
+          "gap": 2,
+          "children": [
+            {
+              "id": "nextui-input-default-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Email",
+              "fontSize": 12,
+              "fontWeight": "500",
+              "fill": "#9BA1A6"
+            },
+            {
+              "id": "nextui-input-default-value",
+              "name": "Value",
+              "type": "text",
+              "content": "user@example.com",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#ECEDEE"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-input-bordered",
+      "name": "Input / Bordered",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 64,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "nextui-input-bordered-field",
+          "name": "Field",
+          "type": "frame",
+          "width": 320,
+          "height": 56,
+          "cornerRadius": 12,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [8, 14],
+          "gap": 2,
+          "children": [
+            {
+              "id": "nextui-input-bordered-border",
+              "name": "Border",
+              "type": "rectangle",
+              "width": 320,
+              "height": 56,
+              "fill": "#3F3F46",
+              "cornerRadius": 12
+            },
+            {
+              "id": "nextui-input-bordered-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Username",
+              "fontSize": 12,
+              "fontWeight": "500",
+              "fill": "#9BA1A6"
+            },
+            {
+              "id": "nextui-input-bordered-placeholder",
+              "name": "Placeholder",
+              "type": "text",
+              "content": "Enter your username",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#71717A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-input-underlined",
+      "name": "Input / Underlined",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 56,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-end",
+      "padding": [0, 0],
+      "gap": 2,
+      "children": [
+        {
+          "id": "nextui-input-underlined-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Password",
+          "fontSize": 12,
+          "fontWeight": "500",
+          "fill": "#9BA1A6"
+        },
+        {
+          "id": "nextui-input-underlined-value",
+          "name": "Value",
+          "type": "text",
+          "content": "Enter your password",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#71717A"
+        },
+        {
+          "id": "nextui-input-underlined-line",
+          "name": "Underline",
+          "type": "rectangle",
+          "width": 320,
+          "height": 2,
+          "fill": "#006FEE"
+        }
+      ]
+    }
+  ]
+}

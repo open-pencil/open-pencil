@@ -1,0 +1,456 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Dropdown", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "dropdown.bg": { "type": "color", "value": "#18181B" },
+    "dropdown.text": { "type": "color", "value": "#ECEDEE" },
+    "dropdown.muted": { "type": "color", "value": "#9BA1A6" },
+    "dropdown.hover": { "type": "color", "value": "#27272A" },
+    "dropdown.primary": { "type": "color", "value": "#006FEE" },
+    "dropdown.danger": { "type": "color", "value": "#F31260" },
+    "dropdown.border": { "type": "color", "value": "#3F3F46" },
+    "dropdown.radius": { "type": "number", "value": 14 }
+  },
+  "children": [
+    {
+      "id": "nextui-dropdown-default",
+      "name": "Dropdown / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": 260,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "nextui-dropdown-default-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 120,
+          "height": 40,
+          "fill": "#27272A",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 16],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-dropdown-default-trigger-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Actions",
+              "fontSize": 14,
+              "fontWeight": "500",
+              "fill": "#ECEDEE"
+            },
+            {
+              "id": "nextui-dropdown-default-trigger-icon",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 10,
+              "fontWeight": "400",
+              "fill": "#9BA1A6"
+            }
+          ]
+        },
+        {
+          "id": "nextui-dropdown-default-menu",
+          "name": "Menu",
+          "type": "frame",
+          "width": 220,
+          "height": 208,
+          "fill": "#18181B",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [6, 6],
+          "gap": 2,
+          "children": [
+            {
+              "id": "nextui-dropdown-default-item1",
+              "name": "Item",
+              "type": "frame",
+              "width": 208,
+              "height": 40,
+              "fill": "#27272A",
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 14],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-dropdown-default-item1-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "New file",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-dropdown-default-item2",
+              "name": "Item",
+              "type": "frame",
+              "width": 208,
+              "height": 40,
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 14],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-dropdown-default-item2-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Copy link",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-dropdown-default-item3",
+              "name": "Item",
+              "type": "frame",
+              "width": 208,
+              "height": 40,
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 14],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-dropdown-default-item3-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Edit file",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-dropdown-default-sep",
+              "name": "Separator",
+              "type": "rectangle",
+              "width": 196,
+              "height": 1,
+              "fill": "#3F3F46"
+            },
+            {
+              "id": "nextui-dropdown-default-item4",
+              "name": "Item Danger",
+              "type": "frame",
+              "width": 208,
+              "height": 40,
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 14],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-dropdown-default-item4-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Delete file",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#F31260"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-dropdown-icons",
+      "name": "Dropdown / With Icons",
+      "type": "frame",
+      "reusable": true,
+      "width": 260,
+      "height": 280,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "nextui-dropdown-icons-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 120,
+          "height": 40,
+          "fill": "#27272A",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 16],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-dropdown-icons-trigger-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Options",
+              "fontSize": 14,
+              "fontWeight": "500",
+              "fill": "#ECEDEE"
+            },
+            {
+              "id": "nextui-dropdown-icons-trigger-icon",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 10,
+              "fontWeight": "400",
+              "fill": "#9BA1A6"
+            }
+          ]
+        },
+        {
+          "id": "nextui-dropdown-icons-menu",
+          "name": "Menu",
+          "type": "frame",
+          "width": 240,
+          "height": 228,
+          "fill": "#18181B",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [6, 6],
+          "gap": 2,
+          "children": [
+            {
+              "id": "nextui-dropdown-icons-item1",
+              "name": "Item",
+              "type": "frame",
+              "width": 228,
+              "height": 44,
+              "fill": "#27272A",
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [10, 14],
+              "gap": 10,
+              "children": [
+                {
+                  "id": "nextui-dropdown-icons-item1-icon",
+                  "name": "Icon",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 24,
+                  "fill": "#006FEE33",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [0, 0],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-dropdown-icons-item1-icon-sym",
+                      "name": "Symbol",
+                      "type": "text",
+                      "content": "+",
+                      "fontSize": 14,
+                      "fontWeight": "600",
+                      "fill": "#006FEE"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-dropdown-icons-item1-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "New project",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-dropdown-icons-item2",
+              "name": "Item",
+              "type": "frame",
+              "width": 228,
+              "height": 44,
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [10, 14],
+              "gap": 10,
+              "children": [
+                {
+                  "id": "nextui-dropdown-icons-item2-icon",
+                  "name": "Icon",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 24,
+                  "fill": "#9353D333",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [0, 0],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-dropdown-icons-item2-icon-sym",
+                      "name": "Symbol",
+                      "type": "text",
+                      "content": "\u270E",
+                      "fontSize": 12,
+                      "fontWeight": "400",
+                      "fill": "#9353D3"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-dropdown-icons-item2-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Edit project",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-dropdown-icons-item3",
+              "name": "Item",
+              "type": "frame",
+              "width": 228,
+              "height": 44,
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [10, 14],
+              "gap": 10,
+              "children": [
+                {
+                  "id": "nextui-dropdown-icons-item3-icon",
+                  "name": "Icon",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 24,
+                  "fill": "#17C96433",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [0, 0],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-dropdown-icons-item3-icon-sym",
+                      "name": "Symbol",
+                      "type": "text",
+                      "content": "\u2197",
+                      "fontSize": 12,
+                      "fontWeight": "400",
+                      "fill": "#17C964"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-dropdown-icons-item3-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Share project",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#ECEDEE"
+                }
+              ]
+            },
+            {
+              "id": "nextui-dropdown-icons-sep",
+              "name": "Separator",
+              "type": "rectangle",
+              "width": 216,
+              "height": 1,
+              "fill": "#3F3F46"
+            },
+            {
+              "id": "nextui-dropdown-icons-item4",
+              "name": "Item Danger",
+              "type": "frame",
+              "width": 228,
+              "height": 44,
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [10, 14],
+              "gap": 10,
+              "children": [
+                {
+                  "id": "nextui-dropdown-icons-item4-icon",
+                  "name": "Icon",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 24,
+                  "fill": "#F3126033",
+                  "cornerRadius": 6,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [0, 0],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "nextui-dropdown-icons-item4-icon-sym",
+                      "name": "Symbol",
+                      "type": "text",
+                      "content": "\u2717",
+                      "fontSize": 12,
+                      "fontWeight": "400",
+                      "fill": "#F31260"
+                    }
+                  ]
+                },
+                {
+                  "id": "nextui-dropdown-icons-item4-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Delete project",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#F31260"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

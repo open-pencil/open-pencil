@@ -1,0 +1,420 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Testimonial",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "surfaceColor": { "type": "color", "default": "#141414" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "mutedColor": { "type": "color", "default": "#737373" },
+    "accentGold": { "type": "color", "default": "#C9A96E" },
+    "borderColor": { "type": "color", "default": "#262626" }
+  },
+  "children": [
+    {
+      "id": "testimonial-large-quote",
+      "name": "Testimonial / LargeQuote",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 600,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 40, "paddingLeft": 160, "paddingRight": 160 },
+      "children": [
+        {
+          "id": "lq-quotemark",
+          "name": "Quote Mark",
+          "type": "text",
+          "text": "\u201C",
+          "fontSize": 96,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }]
+        },
+        {
+          "id": "lq-quote",
+          "name": "Quote Text",
+          "type": "text",
+          "text": "An experience that transcends the ordinary. Every interaction feels considered, every detail intentional.",
+          "fontSize": 28,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "textAlign": "center",
+          "lineHeight": 1.5,
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "lq-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "width": 48,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }]
+        },
+        {
+          "id": "lq-author",
+          "name": "Author",
+          "type": "text",
+          "text": "Alexandra Chen, Creative Director",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "letterSpacing": 2,
+          "fills": [{ "type": "solid", "color": "#737373" }]
+        }
+      ]
+    },
+    {
+      "id": "testimonial-card-grid",
+      "name": "Testimonial / CardGrid",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 680,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 56, "paddingTop": 120, "paddingBottom": 120 },
+      "children": [
+        {
+          "id": "cg-heading",
+          "name": "Section Heading",
+          "type": "text",
+          "text": "Voices of Distinction",
+          "fontSize": 36,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "cg-row",
+          "name": "Cards Row",
+          "type": "frame",
+          "width": 1080,
+          "height": 320,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "stretch", "gap": 32 },
+          "children": [
+            {
+              "id": "cg-card-1",
+              "name": "Testimonial Card 1",
+              "type": "frame",
+              "width": 340,
+              "height": 320,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }],
+              "strokes": [{ "type": "solid", "color": "#262626", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "spaceBetween", "gap": 24, "padding": 36 },
+              "children": [
+                {
+                  "id": "cg-card1-quote",
+                  "name": "Quote",
+                  "type": "text",
+                  "text": "\u201CExquisite attention to detail in every aspect of the experience.\u201D",
+                  "fontSize": 18,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 400,
+                  "fontStyle": "italic",
+                  "lineHeight": 1.6,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "cg-card1-author-row",
+                  "name": "Author Row",
+                  "type": "frame",
+                  "width": 268,
+                  "height": 48,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "gap": 16 },
+                  "children": [
+                    {
+                      "id": "cg-card1-avatar",
+                      "name": "Avatar",
+                      "type": "ellipse",
+                      "width": 40,
+                      "height": 40,
+                      "fills": [{ "type": "solid", "color": "#262626" }]
+                    },
+                    {
+                      "id": "cg-card1-author-info",
+                      "name": "Author Info",
+                      "type": "frame",
+                      "width": 200,
+                      "height": 40,
+                      "fills": [],
+                      "layout": { "mode": "vertical", "gap": 4 },
+                      "children": [
+                        {
+                          "id": "cg-card1-name",
+                          "name": "Name",
+                          "type": "text",
+                          "text": "James Whitmore",
+                          "fontSize": 14,
+                          "fontFamily": "Inter",
+                          "fontWeight": 600,
+                          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                        },
+                        {
+                          "id": "cg-card1-role",
+                          "name": "Role",
+                          "type": "text",
+                          "text": "CEO, Whitmore & Co.",
+                          "fontSize": 12,
+                          "fontFamily": "Inter",
+                          "fontWeight": 400,
+                          "fills": [{ "type": "solid", "color": "#737373" }]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "cg-card-2",
+              "name": "Testimonial Card 2",
+              "type": "frame",
+              "width": 340,
+              "height": 320,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }],
+              "strokes": [{ "type": "solid", "color": "#262626", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "spaceBetween", "gap": 24, "padding": 36 },
+              "children": [
+                {
+                  "id": "cg-card2-quote",
+                  "name": "Quote",
+                  "type": "text",
+                  "text": "\u201CThe finest digital experience we\u2019ve encountered. Truly unmatched.\u201D",
+                  "fontSize": 18,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 400,
+                  "fontStyle": "italic",
+                  "lineHeight": 1.6,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "cg-card2-author-row",
+                  "name": "Author Row",
+                  "type": "frame",
+                  "width": 268,
+                  "height": 48,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "gap": 16 },
+                  "children": [
+                    {
+                      "id": "cg-card2-avatar",
+                      "name": "Avatar",
+                      "type": "ellipse",
+                      "width": 40,
+                      "height": 40,
+                      "fills": [{ "type": "solid", "color": "#262626" }]
+                    },
+                    {
+                      "id": "cg-card2-author-info",
+                      "name": "Author Info",
+                      "type": "frame",
+                      "width": 200,
+                      "height": 40,
+                      "fills": [],
+                      "layout": { "mode": "vertical", "gap": 4 },
+                      "children": [
+                        {
+                          "id": "cg-card2-name",
+                          "name": "Name",
+                          "type": "text",
+                          "text": "Sophia Laurent",
+                          "fontSize": 14,
+                          "fontFamily": "Inter",
+                          "fontWeight": 600,
+                          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                        },
+                        {
+                          "id": "cg-card2-role",
+                          "name": "Role",
+                          "type": "text",
+                          "text": "Design Lead, Maison Noir",
+                          "fontSize": 12,
+                          "fontFamily": "Inter",
+                          "fontWeight": 400,
+                          "fills": [{ "type": "solid", "color": "#737373" }]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "cg-card-3",
+              "name": "Testimonial Card 3",
+              "type": "frame",
+              "width": 340,
+              "height": 320,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }],
+              "strokes": [{ "type": "solid", "color": "#262626", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "spaceBetween", "gap": 24, "padding": 36 },
+              "children": [
+                {
+                  "id": "cg-card3-quote",
+                  "name": "Quote",
+                  "type": "text",
+                  "text": "\u201CRefined, elegant, and effortlessly sophisticated. A masterclass.\u201D",
+                  "fontSize": 18,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 400,
+                  "fontStyle": "italic",
+                  "lineHeight": 1.6,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "cg-card3-author-row",
+                  "name": "Author Row",
+                  "type": "frame",
+                  "width": 268,
+                  "height": 48,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "gap": 16 },
+                  "children": [
+                    {
+                      "id": "cg-card3-avatar",
+                      "name": "Avatar",
+                      "type": "ellipse",
+                      "width": 40,
+                      "height": 40,
+                      "fills": [{ "type": "solid", "color": "#262626" }]
+                    },
+                    {
+                      "id": "cg-card3-author-info",
+                      "name": "Author Info",
+                      "type": "frame",
+                      "width": 200,
+                      "height": 40,
+                      "fills": [],
+                      "layout": { "mode": "vertical", "gap": 4 },
+                      "children": [
+                        {
+                          "id": "cg-card3-name",
+                          "name": "Name",
+                          "type": "text",
+                          "text": "Marcus Sterling",
+                          "fontSize": 14,
+                          "fontFamily": "Inter",
+                          "fontWeight": 600,
+                          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                        },
+                        {
+                          "id": "cg-card3-role",
+                          "name": "Role",
+                          "type": "text",
+                          "text": "Founder, Sterling Capital",
+                          "fontSize": 12,
+                          "fontFamily": "Inter",
+                          "fontWeight": 400,
+                          "fills": [{ "type": "solid", "color": "#737373" }]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testimonial-slider",
+      "name": "Testimonial / Slider",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 480,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 48 },
+      "children": [
+        {
+          "id": "slider-quote",
+          "name": "Quote",
+          "type": "text",
+          "text": "\u201CThe epitome of digital luxury. Nothing else compares.\u201D",
+          "fontSize": 32,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 400,
+          "fontStyle": "italic",
+          "textAlign": "center",
+          "maxWidth": 720,
+          "lineHeight": 1.5,
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "slider-author-row",
+          "name": "Author Row",
+          "type": "frame",
+          "width": 300,
+          "height": 48,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center", "gap": 16 },
+          "children": [
+            {
+              "id": "slider-avatar",
+              "name": "Avatar",
+              "type": "ellipse",
+              "width": 48,
+              "height": 48,
+              "fills": [{ "type": "solid", "color": "#262626" }]
+            },
+            {
+              "id": "slider-author-info",
+              "name": "Author Info",
+              "type": "frame",
+              "width": 200,
+              "height": 40,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 4 },
+              "children": [
+                {
+                  "id": "slider-name",
+                  "name": "Name",
+                  "type": "text",
+                  "text": "Victoria Ashford",
+                  "fontSize": 14,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "slider-role",
+                  "name": "Role",
+                  "type": "text",
+                  "text": "Art Director, The Collective",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "slider-dots",
+          "name": "Navigation Dots",
+          "type": "frame",
+          "width": 80,
+          "height": 8,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center", "gap": 12 },
+          "children": [
+            { "id": "slider-dot-1", "name": "Dot Active", "type": "ellipse", "width": 8, "height": 8, "fills": [{ "type": "solid", "color": "#C9A96E" }] },
+            { "id": "slider-dot-2", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fills": [{ "type": "solid", "color": "#262626" }] },
+            { "id": "slider-dot-3", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fills": [{ "type": "solid", "color": "#262626" }] }
+          ]
+        }
+      ]
+    }
+  ]
+}

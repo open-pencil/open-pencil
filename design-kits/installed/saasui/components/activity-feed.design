@@ -1,0 +1,522 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "ActivityFeed",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#0F172A",
+    "card": "#1E293B",
+    "text": "#F1F5F9",
+    "muted": "#94A3B8",
+    "primary": "#3B82F6",
+    "border": "#334155",
+    "radius": 8
+  },
+  "children": [
+    {
+      "id": "activity-feed-default",
+      "name": "ActivityFeed / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 380,
+      "height": 400,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "af-header",
+          "name": "Header",
+          "type": "text",
+          "x": 20,
+          "y": 20,
+          "width": 340,
+          "height": 24,
+          "text": "Recent Activity",
+          "fontSize": 16,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#F1F5F9"
+        },
+        {
+          "id": "af-item-1",
+          "name": "ActivityItem1",
+          "type": "frame",
+          "x": 20,
+          "y": 60,
+          "width": 340,
+          "height": 64,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "af-1-avatar",
+              "name": "Avatar",
+              "type": "ellipse",
+              "x": 0,
+              "y": 8,
+              "width": 40,
+              "height": 40,
+              "fill": "#3B82F6"
+            },
+            {
+              "id": "af-1-name",
+              "name": "Name",
+              "type": "text",
+              "x": 52,
+              "y": 8,
+              "width": 240,
+              "height": 18,
+              "text": "Sarah Chen created a new project",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "af-1-time",
+              "name": "Time",
+              "type": "text",
+              "x": 52,
+              "y": 30,
+              "width": 240,
+              "height": 16,
+              "text": "2 minutes ago",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "af-divider-1",
+          "name": "Divider1",
+          "type": "rectangle",
+          "x": 20,
+          "y": 128,
+          "width": 340,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "af-item-2",
+          "name": "ActivityItem2",
+          "type": "frame",
+          "x": 20,
+          "y": 140,
+          "width": 340,
+          "height": 64,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "af-2-avatar",
+              "name": "Avatar",
+              "type": "ellipse",
+              "x": 0,
+              "y": 8,
+              "width": 40,
+              "height": 40,
+              "fill": "#22C55E"
+            },
+            {
+              "id": "af-2-name",
+              "name": "Name",
+              "type": "text",
+              "x": 52,
+              "y": 8,
+              "width": 240,
+              "height": 18,
+              "text": "Alex Rivera deployed v2.1.0",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "af-2-time",
+              "name": "Time",
+              "type": "text",
+              "x": 52,
+              "y": 30,
+              "width": 240,
+              "height": 16,
+              "text": "15 minutes ago",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "af-divider-2",
+          "name": "Divider2",
+          "type": "rectangle",
+          "x": 20,
+          "y": 208,
+          "width": 340,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "af-item-3",
+          "name": "ActivityItem3",
+          "type": "frame",
+          "x": 20,
+          "y": 220,
+          "width": 340,
+          "height": 64,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "af-3-avatar",
+              "name": "Avatar",
+              "type": "ellipse",
+              "x": 0,
+              "y": 8,
+              "width": 40,
+              "height": 40,
+              "fill": "#EAB308"
+            },
+            {
+              "id": "af-3-name",
+              "name": "Name",
+              "type": "text",
+              "x": 52,
+              "y": 8,
+              "width": 240,
+              "height": 18,
+              "text": "Jordan Lee updated billing settings",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "af-3-time",
+              "name": "Time",
+              "type": "text",
+              "x": 52,
+              "y": 30,
+              "width": 240,
+              "height": 16,
+              "text": "1 hour ago",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "af-divider-3",
+          "name": "Divider3",
+          "type": "rectangle",
+          "x": 20,
+          "y": 288,
+          "width": 340,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "af-item-4",
+          "name": "ActivityItem4",
+          "type": "frame",
+          "x": 20,
+          "y": 300,
+          "width": 340,
+          "height": 64,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "af-4-avatar",
+              "name": "Avatar",
+              "type": "ellipse",
+              "x": 0,
+              "y": 8,
+              "width": 40,
+              "height": 40,
+              "fill": "#EF4444"
+            },
+            {
+              "id": "af-4-name",
+              "name": "Name",
+              "type": "text",
+              "x": 52,
+              "y": 8,
+              "width": 240,
+              "height": 18,
+              "text": "Taylor Kim reported a bug",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "af-4-time",
+              "name": "Time",
+              "type": "text",
+              "x": 52,
+              "y": 30,
+              "width": 240,
+              "height": 16,
+              "text": "3 hours ago",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "activity-feed-compact",
+      "name": "ActivityFeed / Compact",
+      "type": "frame",
+      "reusable": true,
+      "x": 420,
+      "y": 0,
+      "width": 380,
+      "height": 280,
+      "fill": "#1E293B",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "cornerRadius": 8,
+      "children": [
+        {
+          "id": "afc-header",
+          "name": "Header",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 340,
+          "height": 20,
+          "text": "Recent Activity",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#F1F5F9"
+        },
+        {
+          "id": "afc-item-1",
+          "name": "CompactItem1",
+          "type": "frame",
+          "x": 20,
+          "y": 48,
+          "width": 340,
+          "height": 36,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "afc-1-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 0,
+              "y": 10,
+              "width": 8,
+              "height": 8,
+              "fill": "#3B82F6"
+            },
+            {
+              "id": "afc-1-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 4,
+              "width": 260,
+              "height": 16,
+              "text": "Sarah Chen created a new project",
+              "fontSize": 13,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "afc-1-time",
+              "name": "Time",
+              "type": "text",
+              "x": 16,
+              "y": 22,
+              "width": 260,
+              "height": 14,
+              "text": "2 min ago",
+              "fontSize": 11,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "afc-item-2",
+          "name": "CompactItem2",
+          "type": "frame",
+          "x": 20,
+          "y": 88,
+          "width": 340,
+          "height": 36,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "afc-2-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 0,
+              "y": 10,
+              "width": 8,
+              "height": 8,
+              "fill": "#22C55E"
+            },
+            {
+              "id": "afc-2-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 4,
+              "width": 260,
+              "height": 16,
+              "text": "Alex Rivera deployed v2.1.0",
+              "fontSize": 13,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "afc-2-time",
+              "name": "Time",
+              "type": "text",
+              "x": 16,
+              "y": 22,
+              "width": 260,
+              "height": 14,
+              "text": "15 min ago",
+              "fontSize": 11,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "afc-item-3",
+          "name": "CompactItem3",
+          "type": "frame",
+          "x": 20,
+          "y": 128,
+          "width": 340,
+          "height": 36,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "afc-3-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 0,
+              "y": 10,
+              "width": 8,
+              "height": 8,
+              "fill": "#EAB308"
+            },
+            {
+              "id": "afc-3-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 4,
+              "width": 260,
+              "height": 16,
+              "text": "Jordan Lee updated billing",
+              "fontSize": 13,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "afc-3-time",
+              "name": "Time",
+              "type": "text",
+              "x": 16,
+              "y": 22,
+              "width": 260,
+              "height": 14,
+              "text": "1 hr ago",
+              "fontSize": 11,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "afc-item-4",
+          "name": "CompactItem4",
+          "type": "frame",
+          "x": 20,
+          "y": 168,
+          "width": 340,
+          "height": 36,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "afc-4-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 0,
+              "y": 10,
+              "width": 8,
+              "height": 8,
+              "fill": "#EF4444"
+            },
+            {
+              "id": "afc-4-text",
+              "name": "Text",
+              "type": "text",
+              "x": 16,
+              "y": 4,
+              "width": 260,
+              "height": 16,
+              "text": "Taylor Kim reported a bug",
+              "fontSize": 13,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#F1F5F9"
+            },
+            {
+              "id": "afc-4-time",
+              "name": "Time",
+              "type": "text",
+              "x": 16,
+              "y": 22,
+              "width": 260,
+              "height": 14,
+              "text": "3 hrs ago",
+              "fontSize": 11,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "afc-view-all",
+          "name": "ViewAll",
+          "type": "text",
+          "x": 20,
+          "y": 228,
+          "width": 340,
+          "height": 16,
+          "text": "View all activity",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 500,
+          "fill": "#3B82F6"
+        }
+      ]
+    }
+  ]
+}

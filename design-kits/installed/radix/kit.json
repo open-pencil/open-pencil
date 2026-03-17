@@ -1,0 +1,20 @@
+{
+  "name": "radix",
+  "displayName": "Radix UI",
+  "description": "Unstyled, accessible UI primitives for building high\u2011quality design systems.",
+  "version": "1.0.0",
+  "author": "radix-ui",
+  "license": "MIT",
+  "category": "general",
+  "tags": ["accessible", "headless", "primitives", "react", "a11y"],
+  "style": {
+    "aesthetic": "modern-minimal",
+    "radius": "medium",
+    "density": "comfortable",
+    "colorScheme": "monochrome"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 20
+  }
+}

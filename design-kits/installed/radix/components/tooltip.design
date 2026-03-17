@@ -1,0 +1,248 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Tooltip", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "tooltip.bg": { "type": "color", "value": "#EDEDEF" },
+    "tooltip.text": { "type": "color", "value": "#111113" },
+    "tooltip.radius": { "type": "number", "value": 4 }
+  },
+  "children": [
+    {
+      "id": "radix-tooltip-top",
+      "name": "Tooltip / Top",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 80,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "flex-end",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-tooltip-top-pill",
+          "name": "Pill",
+          "type": "frame",
+          "width": 120,
+          "height": 32,
+          "fill": "#EDEDEF",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tooltip-top-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Tooltip text",
+              "fontSize": 13,
+              "fontWeight": "500",
+              "fill": "#111113"
+            }
+          ]
+        },
+        {
+          "id": "radix-tooltip-top-arrow",
+          "name": "Arrow",
+          "type": "frame",
+          "width": 10,
+          "height": 5,
+          "fill": "#EDEDEF",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": []
+        },
+        {
+          "id": "radix-tooltip-top-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 36,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 8],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tooltip-top-trigger-icon",
+              "name": "Icon",
+              "type": "text",
+              "content": "?",
+              "fontSize": 14,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-tooltip-bottom",
+      "name": "Tooltip / Bottom",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 80,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-tooltip-bottom-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 36,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 8],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tooltip-bottom-trigger-icon",
+              "name": "Icon",
+              "type": "text",
+              "content": "?",
+              "fontSize": 14,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            }
+          ]
+        },
+        {
+          "id": "radix-tooltip-bottom-arrow",
+          "name": "Arrow",
+          "type": "frame",
+          "width": 10,
+          "height": 5,
+          "fill": "#EDEDEF",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": []
+        },
+        {
+          "id": "radix-tooltip-bottom-pill",
+          "name": "Pill",
+          "type": "frame",
+          "width": 120,
+          "height": 32,
+          "fill": "#EDEDEF",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tooltip-bottom-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Tooltip text",
+              "fontSize": 13,
+              "fontWeight": "500",
+              "fill": "#111113"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-tooltip-right",
+      "name": "Tooltip / Right",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 40,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-tooltip-right-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 36,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 8],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tooltip-right-trigger-icon",
+              "name": "Icon",
+              "type": "text",
+              "content": "?",
+              "fontSize": 14,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            }
+          ]
+        },
+        {
+          "id": "radix-tooltip-right-arrow",
+          "name": "Arrow",
+          "type": "frame",
+          "width": 5,
+          "height": 10,
+          "fill": "#EDEDEF",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": []
+        },
+        {
+          "id": "radix-tooltip-right-pill",
+          "name": "Pill",
+          "type": "frame",
+          "width": 120,
+          "height": 32,
+          "fill": "#EDEDEF",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [6, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tooltip-right-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Tooltip text",
+              "fontSize": 13,
+              "fontWeight": "500",
+              "fill": "#111113"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

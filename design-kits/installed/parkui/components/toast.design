@@ -1,0 +1,156 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Toast",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "toast.bg": { "type": "color", "value": "#1C1917" },
+    "toast.border": { "type": "color", "value": "#292524" },
+    "toast.text": { "type": "color", "value": "#FAFAF9" },
+    "toast.muted": { "type": "color", "value": "#A8A29E" },
+    "toast.info": { "type": "color", "value": "#D6D3D1" },
+    "toast.success": { "type": "color", "value": "#4ADE80" },
+    "toast.error": { "type": "color", "value": "#F87171" }
+  },
+  "children": [
+    {
+      "id": "parkui-toast-info",
+      "name": "Toast / Info",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 72,
+      "fill": "#1C1917",
+      "cornerRadius": 8,
+      "stroke": "#292524",
+      "strokeWidth": 1,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "parkui-toast-info-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "#D6D3D1",
+          "cornerRadius": 10
+        },
+        {
+          "id": "parkui-toast-info-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 280,
+          "height": 44,
+          "fill": "transparent",
+          "cornerRadius": 0,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 2,
+          "children": [
+            { "id": "parkui-toast-info-title", "name": "Title", "type": "text", "content": "Information", "fontSize": 14, "fontWeight": "600", "fill": "#FAFAF9" },
+            { "id": "parkui-toast-info-desc", "name": "Description", "type": "text", "content": "Your changes have been saved.", "fontSize": 13, "fontWeight": "400", "fill": "#A8A29E" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-toast-success",
+      "name": "Toast / Success",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 72,
+      "fill": "#1C1917",
+      "cornerRadius": 8,
+      "stroke": "#292524",
+      "strokeWidth": 1,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "parkui-toast-success-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "#4ADE80",
+          "cornerRadius": 10
+        },
+        {
+          "id": "parkui-toast-success-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 280,
+          "height": 44,
+          "fill": "transparent",
+          "cornerRadius": 0,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 2,
+          "children": [
+            { "id": "parkui-toast-success-title", "name": "Title", "type": "text", "content": "Success", "fontSize": 14, "fontWeight": "600", "fill": "#FAFAF9" },
+            { "id": "parkui-toast-success-desc", "name": "Description", "type": "text", "content": "Your account has been created.", "fontSize": 13, "fontWeight": "400", "fill": "#A8A29E" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-toast-error",
+      "name": "Toast / Error",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 72,
+      "fill": "#1C1917",
+      "cornerRadius": 8,
+      "stroke": "#292524",
+      "strokeWidth": 1,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "parkui-toast-error-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "#F87171",
+          "cornerRadius": 10
+        },
+        {
+          "id": "parkui-toast-error-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 280,
+          "height": 44,
+          "fill": "transparent",
+          "cornerRadius": 0,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 2,
+          "children": [
+            { "id": "parkui-toast-error-title", "name": "Title", "type": "text", "content": "Error", "fontSize": 14, "fontWeight": "600", "fill": "#FAFAF9" },
+            { "id": "parkui-toast-error-desc", "name": "Description", "type": "text", "content": "Something went wrong. Please try again.", "fontSize": 13, "fontWeight": "400", "fill": "#A8A29E" }
+          ]
+        }
+      ]
+    }
+  ]
+}

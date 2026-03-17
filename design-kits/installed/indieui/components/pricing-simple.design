@@ -1,0 +1,279 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "PricingSimple",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "surfaceColor": { "type": "color", "default": "#1A1A2E" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "mutedColor": { "type": "color", "default": "#888888" },
+    "primaryColor": { "type": "color", "default": "#FF6B35" },
+    "secondaryColor": { "type": "color", "default": "#7C3AED" },
+    "borderColor": { "type": "color", "default": "#2A2A2A" }
+  },
+  "children": [
+    {
+      "id": "pricing-two-tier",
+      "name": "PricingSimple / TwoTier",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 48, "paddingTop": 96, "paddingBottom": 96 },
+      "children": [
+        {
+          "id": "tt-heading-group",
+          "name": "Heading",
+          "type": "frame",
+          "width": 500,
+          "height": 80,
+          "fills": [],
+          "layout": { "mode": "vertical", "alignItems": "center", "gap": 12 },
+          "children": [
+            { "id": "tt-heading", "name": "Heading", "type": "text", "text": "Simple, honest pricing", "fontSize": 36, "fontFamily": "Space Grotesk", "fontWeight": 700, "textAlign": "center", "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+            { "id": "tt-subheading", "name": "Subheading", "type": "text", "text": "No surprises. Cancel anytime.", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+          ]
+        },
+        {
+          "id": "tt-cards",
+          "name": "Cards Row",
+          "type": "frame",
+          "width": 720,
+          "height": 460,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "stretch", "gap": 24 },
+          "children": [
+            {
+              "id": "tt-starter",
+              "name": "Starter Plan",
+              "type": "frame",
+              "width": 348,
+              "height": 460,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "spaceBetween", "gap": 20, "padding": 32 },
+              "children": [
+                {
+                  "id": "tt-st-header",
+                  "name": "Header",
+                  "type": "frame",
+                  "width": 284,
+                  "height": 100,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 12 },
+                  "children": [
+                    { "id": "tt-st-name", "name": "Plan Name", "type": "text", "text": "Starter", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    {
+                      "id": "tt-st-price-row",
+                      "name": "Price",
+                      "type": "frame",
+                      "width": 200,
+                      "height": 48,
+                      "fills": [],
+                      "layout": { "mode": "horizontal", "alignItems": "baseline", "gap": 4 },
+                      "children": [
+                        { "id": "tt-st-price", "name": "Price", "type": "text", "text": "$19", "fontSize": 44, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                        { "id": "tt-st-period", "name": "Period", "type": "text", "text": "/mo", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "tt-st-features",
+                  "name": "Features",
+                  "type": "frame",
+                  "width": 284,
+                  "height": 180,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 14 },
+                  "children": [
+                    { "id": "tt-stf1", "name": "Feature", "type": "text", "text": "\u2713  3 projects", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-stf2", "name": "Feature", "type": "text", "text": "\u2713  Basic analytics", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-stf3", "name": "Feature", "type": "text", "text": "\u2713  Community support", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-stf4", "name": "Feature", "type": "text", "text": "\u2713  Custom domain", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+                  ]
+                },
+                {
+                  "id": "tt-st-cta",
+                  "name": "CTA",
+                  "type": "frame",
+                  "width": 284,
+                  "height": 52,
+                  "radius": 14,
+                  "fills": [],
+                  "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                  "children": [
+                    { "id": "tt-st-cta-label", "name": "Label", "type": "text", "text": "Get Started", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "tt-pro",
+              "name": "Pro Plan",
+              "type": "frame",
+              "width": 348,
+              "height": 460,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#FF6B35", "width": 2 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "spaceBetween", "gap": 20, "padding": 32 },
+              "children": [
+                {
+                  "id": "tt-pro-header",
+                  "name": "Header",
+                  "type": "frame",
+                  "width": 284,
+                  "height": 100,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 12 },
+                  "children": [
+                    {
+                      "id": "tt-pro-name-row",
+                      "name": "Name Row",
+                      "type": "frame",
+                      "width": 284,
+                      "height": 28,
+                      "fills": [],
+                      "layout": { "mode": "horizontal", "alignItems": "center", "gap": 12 },
+                      "children": [
+                        { "id": "tt-pro-name", "name": "Plan Name", "type": "text", "text": "Pro", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                        {
+                          "id": "tt-pro-badge",
+                          "name": "Most Popular Badge",
+                          "type": "frame",
+                          "width": 110,
+                          "height": 24,
+                          "radius": 12,
+                          "fills": [{ "type": "solid", "color": "#FF6B35" }],
+                          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                          "children": [
+                            { "id": "tt-pro-badge-text", "name": "Badge", "type": "text", "text": "Most popular", "fontSize": 11, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "tt-pro-price-row",
+                      "name": "Price",
+                      "type": "frame",
+                      "width": 200,
+                      "height": 48,
+                      "fills": [],
+                      "layout": { "mode": "horizontal", "alignItems": "baseline", "gap": 4 },
+                      "children": [
+                        { "id": "tt-pro-price", "name": "Price", "type": "text", "text": "$49", "fontSize": 44, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                        { "id": "tt-pro-period", "name": "Period", "type": "text", "text": "/mo", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "tt-pro-features",
+                  "name": "Features",
+                  "type": "frame",
+                  "width": 284,
+                  "height": 180,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 14 },
+                  "children": [
+                    { "id": "tt-pf1", "name": "Feature", "type": "text", "text": "\u2713  Unlimited projects", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-pf2", "name": "Feature", "type": "text", "text": "\u2713  Advanced analytics", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-pf3", "name": "Feature", "type": "text", "text": "\u2713  Priority support", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-pf4", "name": "Feature", "type": "text", "text": "\u2713  Team collaboration", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tt-pf5", "name": "Feature", "type": "text", "text": "\u2713  API access", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+                  ]
+                },
+                {
+                  "id": "tt-pro-cta",
+                  "name": "CTA",
+                  "type": "frame",
+                  "width": 284,
+                  "height": 52,
+                  "radius": 14,
+                  "fills": [{ "type": "solid", "color": "#FF6B35" }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                  "children": [
+                    { "id": "tt-pro-cta-label", "name": "Label", "type": "text", "text": "Go Pro", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pricing-single-highlight",
+      "name": "PricingSimple / SingleHighlight",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 600,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 40 },
+      "children": [
+        { "id": "sh-heading", "name": "Heading", "type": "text", "text": "One plan. Everything included.", "fontSize": 36, "fontFamily": "Space Grotesk", "fontWeight": 700, "textAlign": "center", "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+        {
+          "id": "sh-card",
+          "name": "Price Card",
+          "type": "frame",
+          "width": 480,
+          "height": 380,
+          "radius": 14,
+          "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+          "strokes": [{ "type": "solid", "color": "#FF6B35", "width": 2 }],
+          "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 24, "padding": 40 },
+          "children": [
+            {
+              "id": "sh-price-row",
+              "name": "Price",
+              "type": "frame",
+              "width": 200,
+              "height": 56,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "baseline", "justifyContent": "center", "gap": 4 },
+              "children": [
+                { "id": "sh-price", "name": "Price", "type": "text", "text": "$29", "fontSize": 56, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "sh-period", "name": "Period", "type": "text", "text": "/mo", "fontSize": 18, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "sh-features",
+              "name": "Features",
+              "type": "frame",
+              "width": 300,
+              "height": 140,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "center", "gap": 12 },
+              "children": [
+                { "id": "sh-f1", "name": "Feature", "type": "text", "text": "\u2713  Unlimited everything", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "sh-f2", "name": "Feature", "type": "text", "text": "\u2713  Priority support", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "sh-f3", "name": "Feature", "type": "text", "text": "\u2713  All future updates", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "sh-f4", "name": "Feature", "type": "text", "text": "\u2713  Cancel anytime", "fontSize": 15, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+              ]
+            },
+            {
+              "id": "sh-cta",
+              "name": "CTA",
+              "type": "frame",
+              "width": 300,
+              "height": 52,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#FF6B35" }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "sh-cta-label", "name": "Label", "type": "text", "text": "Start Free Trial", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

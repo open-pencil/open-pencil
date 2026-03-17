@@ -1,0 +1,99 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "ShimmerButton",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "shimmer.bg": { "type": "color", "value": "#8B5CF6" },
+    "shimmer.text": { "type": "color", "value": "#F9FAFB" },
+    "shimmer.glow": { "type": "color", "value": "#A78BFA" },
+    "shimmer.border": { "type": "color", "value": "#1F2937" }
+  },
+  "children": [
+    {
+      "id": "magicui-shimmer-default",
+      "name": "ShimmerButton / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 48,
+      "fill": "#8B5CF6",
+      "cornerRadius": 12,
+      "shadow": {
+        "color": "#8B5CF640",
+        "offsetX": 0,
+        "offsetY": 0,
+        "blur": 20
+      },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "magicui-shimmer-default-shimmer",
+          "name": "ShimmerOverlay",
+          "type": "frame",
+          "width": 60,
+          "height": 48,
+          "fill": "#A78BFA40",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-shimmer-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Get Started",
+          "fontSize": 16,
+          "fontWeight": "600",
+          "fill": "#F9FAFB"
+        }
+      ]
+    },
+    {
+      "id": "magicui-shimmer-outline",
+      "name": "ShimmerButton / Outline",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 48,
+      "fill": "transparent",
+      "cornerRadius": 12,
+      "stroke": "#8B5CF6",
+      "strokeWidth": 1,
+      "shadow": {
+        "color": "#8B5CF620",
+        "offsetX": 0,
+        "offsetY": 0,
+        "blur": 16
+      },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "magicui-shimmer-outline-shimmer",
+          "name": "ShimmerOverlay",
+          "type": "frame",
+          "width": 60,
+          "height": 48,
+          "fill": "#8B5CF610",
+          "cornerRadius": 0
+        },
+        {
+          "id": "magicui-shimmer-outline-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Learn More",
+          "fontSize": 16,
+          "fontWeight": "600",
+          "fill": "#A78BFA"
+        }
+      ]
+    }
+  ]
+}

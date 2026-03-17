@@ -1,0 +1,271 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "StaggerReveal",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#09090B",
+    "surface": "#18181B",
+    "text": "#FAFAFA",
+    "muted": "#71717A",
+    "border": "#27272A",
+    "radius": 12
+  },
+  "children": [
+    {
+      "id": "stagger-reveal-fade-up",
+      "name": "StaggerReveal / FadeUp",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 680,
+      "height": 180,
+      "fill": "#09090B",
+      "children": [
+        {
+          "id": "fade-up-item-1",
+          "name": "Item1",
+          "type": "frame",
+          "x": 0,
+          "y": 20,
+          "width": 152,
+          "height": 152,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 0.2,
+          "children": [
+            {
+              "id": "fade-up-item-1-label",
+              "name": "Label",
+              "type": "text",
+              "x": 16,
+              "y": 64,
+              "width": 120,
+              "height": 24,
+              "text": "Item 1",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#FAFAFA",
+              "textAlign": "center"
+            }
+          ]
+        },
+        {
+          "id": "fade-up-item-2",
+          "name": "Item2",
+          "type": "frame",
+          "x": 176,
+          "y": 12,
+          "width": 152,
+          "height": 152,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 0.5,
+          "children": [
+            {
+              "id": "fade-up-item-2-label",
+              "name": "Label",
+              "type": "text",
+              "x": 16,
+              "y": 64,
+              "width": 120,
+              "height": 24,
+              "text": "Item 2",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#FAFAFA",
+              "textAlign": "center"
+            }
+          ]
+        },
+        {
+          "id": "fade-up-item-3",
+          "name": "Item3",
+          "type": "frame",
+          "x": 352,
+          "y": 4,
+          "width": 152,
+          "height": 152,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 0.8,
+          "children": [
+            {
+              "id": "fade-up-item-3-label",
+              "name": "Label",
+              "type": "text",
+              "x": 16,
+              "y": 64,
+              "width": 120,
+              "height": 24,
+              "text": "Item 3",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#FAFAFA",
+              "textAlign": "center"
+            }
+          ]
+        },
+        {
+          "id": "fade-up-item-4",
+          "name": "Item4",
+          "type": "frame",
+          "x": 528,
+          "y": 0,
+          "width": 152,
+          "height": 152,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 1.0,
+          "children": [
+            {
+              "id": "fade-up-item-4-label",
+              "name": "Label",
+              "type": "text",
+              "x": 16,
+              "y": 64,
+              "width": 120,
+              "height": 24,
+              "text": "Item 4",
+              "fontSize": 16,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#FAFAFA",
+              "textAlign": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stagger-reveal-scale",
+      "name": "StaggerReveal / Scale",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 220,
+      "width": 680,
+      "height": 180,
+      "fill": "#09090B",
+      "children": [
+        {
+          "id": "scale-item-1",
+          "name": "Item1",
+          "type": "frame",
+          "x": 24,
+          "y": 32,
+          "width": 112,
+          "height": 112,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 0.15,
+          "children": [
+            {
+              "id": "scale-item-1-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 44,
+              "y": 44,
+              "width": 24,
+              "height": 24,
+              "fill": "#A855F7"
+            }
+          ]
+        },
+        {
+          "id": "scale-item-2",
+          "name": "Item2",
+          "type": "frame",
+          "x": 184,
+          "y": 20,
+          "width": 132,
+          "height": 132,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 0.45,
+          "children": [
+            {
+              "id": "scale-item-2-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 54,
+              "y": 54,
+              "width": 24,
+              "height": 24,
+              "fill": "#A855F7"
+            }
+          ]
+        },
+        {
+          "id": "scale-item-3",
+          "name": "Item3",
+          "type": "frame",
+          "x": 356,
+          "y": 12,
+          "width": 144,
+          "height": 144,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 0.75,
+          "children": [
+            {
+              "id": "scale-item-3-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 60,
+              "y": 60,
+              "width": 24,
+              "height": 24,
+              "fill": "#A855F7"
+            }
+          ]
+        },
+        {
+          "id": "scale-item-4",
+          "name": "Item4",
+          "type": "frame",
+          "x": 528,
+          "y": 4,
+          "width": 152,
+          "height": 152,
+          "fill": "#18181B",
+          "stroke": "#27272A",
+          "strokeWidth": 1,
+          "cornerRadius": 12,
+          "opacity": 1.0,
+          "children": [
+            {
+              "id": "scale-item-4-dot",
+              "name": "Dot",
+              "type": "ellipse",
+              "x": 64,
+              "y": 64,
+              "width": 24,
+              "height": 24,
+              "fill": "#A855F7"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "FooterLuxury",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "mutedColor": { "type": "color", "default": "#737373" },
+    "borderColor": { "type": "color", "default": "#262626" },
+    "accentGold": { "type": "color", "default": "#C9A96E" }
+  },
+  "children": [
+    {
+      "id": "footer-minimal",
+      "name": "FooterLuxury / Minimal",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 200,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 24 },
+      "children": [
+        {
+          "id": "fmin-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "width": 1080,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#262626" }]
+        },
+        {
+          "id": "fmin-content",
+          "name": "Content Row",
+          "type": "frame",
+          "width": 1080,
+          "height": 48,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+          "children": [
+            {
+              "id": "fmin-brand",
+              "name": "Brand",
+              "type": "text",
+              "text": "LUXE",
+              "fontSize": 16,
+              "fontFamily": "Playfair Display",
+              "fontWeight": 700,
+              "letterSpacing": 4,
+              "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+            },
+            {
+              "id": "fmin-links",
+              "name": "Links",
+              "type": "frame",
+              "width": 400,
+              "height": 20,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center", "gap": 32 },
+              "children": [
+                { "id": "fmin-link-1", "name": "Link", "type": "text", "text": "Privacy", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fmin-link-2", "name": "Link", "type": "text", "text": "Terms", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fmin-link-3", "name": "Link", "type": "text", "text": "Contact", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "fmin-copyright",
+              "name": "Copyright",
+              "type": "text",
+              "text": "\u00A9 2026 Luxe. All rights reserved.",
+              "fontSize": 12,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fills": [{ "type": "solid", "color": "#737373" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "footer-editorial",
+      "name": "FooterLuxury / Editorial",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 400,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 0, "paddingTop": 64, "paddingBottom": 48, "paddingLeft": 100, "paddingRight": 100 },
+      "children": [
+        {
+          "id": "fed-top-divider",
+          "name": "Top Divider",
+          "type": "rectangle",
+          "width": 1080,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#262626" }]
+        },
+        {
+          "id": "fed-main",
+          "name": "Main Content",
+          "type": "frame",
+          "width": 1080,
+          "height": 200,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "flexStart", "justifyContent": "spaceBetween" },
+          "children": [
+            {
+              "id": "fed-brand-col",
+              "name": "Brand Column",
+              "type": "frame",
+              "width": 280,
+              "height": 120,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 16 },
+              "children": [
+                { "id": "fed-brand-name", "name": "Brand", "type": "text", "text": "LUXE", "fontSize": 24, "fontFamily": "Playfair Display", "fontWeight": 700, "letterSpacing": 6, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "fed-brand-desc", "name": "Description", "type": "text", "text": "Refined experiences for the discerning few.", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "fed-col-1",
+              "name": "Column 1",
+              "type": "frame",
+              "width": 160,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 16 },
+              "children": [
+                { "id": "fed-c1-title", "name": "Title", "type": "text", "text": "COMPANY", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 3, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "fed-c1-l1", "name": "Link", "type": "text", "text": "About", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fed-c1-l2", "name": "Link", "type": "text", "text": "Careers", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fed-c1-l3", "name": "Link", "type": "text", "text": "Press", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "fed-col-2",
+              "name": "Column 2",
+              "type": "frame",
+              "width": 160,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 16 },
+              "children": [
+                { "id": "fed-c2-title", "name": "Title", "type": "text", "text": "SUPPORT", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 3, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "fed-c2-l1", "name": "Link", "type": "text", "text": "Help Center", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fed-c2-l2", "name": "Link", "type": "text", "text": "Privacy", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fed-c2-l3", "name": "Link", "type": "text", "text": "Terms", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "fed-col-3",
+              "name": "Column 3",
+              "type": "frame",
+              "width": 160,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 16 },
+              "children": [
+                { "id": "fed-c3-title", "name": "Title", "type": "text", "text": "CONNECT", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 3, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "fed-c3-l1", "name": "Link", "type": "text", "text": "Instagram", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fed-c3-l2", "name": "Link", "type": "text", "text": "LinkedIn", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "fed-c3-l3", "name": "Link", "type": "text", "text": "Twitter", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fed-bottom-divider",
+          "name": "Bottom Divider",
+          "type": "rectangle",
+          "width": 1080,
+          "height": 1,
+          "fills": [{ "type": "solid", "color": "#1A1A1A" }]
+        },
+        {
+          "id": "fed-bottom-row",
+          "name": "Bottom Row",
+          "type": "frame",
+          "width": 1080,
+          "height": 24,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+          "children": [
+            { "id": "fed-copyright", "name": "Copyright", "type": "text", "text": "\u00A9 2026 Luxe. Designed with intention.", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+          ]
+        }
+      ]
+    }
+  ]
+}

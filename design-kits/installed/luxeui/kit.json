@@ -1,0 +1,20 @@
+{
+  "name": "luxeui",
+  "displayName": "Luxe UI",
+  "description": "Luxury-grade landing page components with premium animations, refined typography, and sophisticated color palettes.",
+  "version": "1.0.0",
+  "author": "luxe-ui",
+  "license": "MIT",
+  "category": "landing",
+  "tags": ["luxury", "premium", "landing", "elegant", "refined", "typography"],
+  "style": {
+    "aesthetic": "modern-bold",
+    "radius": "medium",
+    "density": "spacious",
+    "colorScheme": "monochrome"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 18
+  }
+}

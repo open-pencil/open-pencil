@@ -1,0 +1,20 @@
+{
+  "name": "daisyui",
+  "displayName": "DaisyUI",
+  "description": "The most popular Tailwind CSS component library with multiple built-in themes.",
+  "version": "1.0.0",
+  "author": "daisyui",
+  "license": "MIT",
+  "category": "general",
+  "tags": ["tailwind", "themes", "colorful", "components", "css"],
+  "style": {
+    "aesthetic": "playful",
+    "radius": "large",
+    "density": "comfortable",
+    "colorScheme": "vibrant"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 24
+  }
+}

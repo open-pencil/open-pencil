@@ -1,0 +1,170 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Marquee",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "marquee.bg": { "type": "color", "value": "#030712" },
+    "marquee.cardBg": { "type": "color", "value": "#111827" },
+    "marquee.border": { "type": "color", "value": "#1F2937" },
+    "marquee.text": { "type": "color", "value": "#F9FAFB" },
+    "marquee.muted": { "type": "color", "value": "#9CA3AF" }
+  },
+  "children": [
+    {
+      "id": "magicui-marquee-horizontal",
+      "name": "Marquee / Horizontal",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": 120,
+      "fill": "#030712",
+      "cornerRadius": 0,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 16,
+      "children": [
+        {
+          "id": "magicui-marquee-h-card1",
+          "name": "Card",
+          "type": "frame",
+          "width": 200,
+          "height": 96,
+          "fill": "#111827",
+          "cornerRadius": 12,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [16, 16],
+          "gap": 4,
+          "children": [
+            { "id": "magicui-mq-h-c1-name", "name": "Name", "type": "text", "content": "Sarah Chen", "fontSize": 14, "fontWeight": "600", "fill": "#F9FAFB" },
+            { "id": "magicui-mq-h-c1-text", "name": "Text", "type": "text", "content": "Magic UI made our landing page shine.", "fontSize": 13, "fontWeight": "400", "fill": "#9CA3AF" }
+          ]
+        },
+        {
+          "id": "magicui-marquee-h-card2",
+          "name": "Card",
+          "type": "frame",
+          "width": 200,
+          "height": 96,
+          "fill": "#111827",
+          "cornerRadius": 12,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [16, 16],
+          "gap": 4,
+          "children": [
+            { "id": "magicui-mq-h-c2-name", "name": "Name", "type": "text", "content": "Alex Rivera", "fontSize": 14, "fontWeight": "600", "fill": "#F9FAFB" },
+            { "id": "magicui-mq-h-c2-text", "name": "Text", "type": "text", "content": "The animations feel so premium.", "fontSize": 13, "fontWeight": "400", "fill": "#9CA3AF" }
+          ]
+        },
+        {
+          "id": "magicui-marquee-h-card3",
+          "name": "Card",
+          "type": "frame",
+          "width": 200,
+          "height": 96,
+          "fill": "#111827",
+          "cornerRadius": 12,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [16, 16],
+          "gap": 4,
+          "children": [
+            { "id": "magicui-mq-h-c3-name", "name": "Name", "type": "text", "content": "Jordan Park", "fontSize": 14, "fontWeight": "600", "fill": "#F9FAFB" },
+            { "id": "magicui-mq-h-c3-text", "name": "Text", "type": "text", "content": "Best component library for SaaS.", "fontSize": 13, "fontWeight": "400", "fill": "#9CA3AF" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "magicui-marquee-vertical",
+      "name": "Marquee / Vertical",
+      "type": "frame",
+      "reusable": true,
+      "width": 220,
+      "height": 400,
+      "fill": "#030712",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 16,
+      "children": [
+        {
+          "id": "magicui-marquee-v-card1",
+          "name": "Card",
+          "type": "frame",
+          "width": 200,
+          "height": 96,
+          "fill": "#111827",
+          "cornerRadius": 12,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [16, 16],
+          "gap": 4,
+          "children": [
+            { "id": "magicui-mq-v-c1-name", "name": "Name", "type": "text", "content": "Emily Zhang", "fontSize": 14, "fontWeight": "600", "fill": "#F9FAFB" },
+            { "id": "magicui-mq-v-c1-text", "name": "Text", "type": "text", "content": "Shipped our site 3x faster.", "fontSize": 13, "fontWeight": "400", "fill": "#9CA3AF" }
+          ]
+        },
+        {
+          "id": "magicui-marquee-v-card2",
+          "name": "Card",
+          "type": "frame",
+          "width": 200,
+          "height": 96,
+          "fill": "#111827",
+          "cornerRadius": 12,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [16, 16],
+          "gap": 4,
+          "children": [
+            { "id": "magicui-mq-v-c2-name", "name": "Name", "type": "text", "content": "Marcus Li", "fontSize": 14, "fontWeight": "600", "fill": "#F9FAFB" },
+            { "id": "magicui-mq-v-c2-text", "name": "Text", "type": "text", "content": "Our conversion rate went up 40%.", "fontSize": 13, "fontWeight": "400", "fill": "#9CA3AF" }
+          ]
+        },
+        {
+          "id": "magicui-marquee-v-card3",
+          "name": "Card",
+          "type": "frame",
+          "width": 200,
+          "height": 96,
+          "fill": "#111827",
+          "cornerRadius": 12,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "center",
+          "padding": [16, 16],
+          "gap": 4,
+          "children": [
+            { "id": "magicui-mq-v-c3-name", "name": "Name", "type": "text", "content": "Priya Patel", "fontSize": 14, "fontWeight": "600", "fill": "#F9FAFB" },
+            { "id": "magicui-mq-v-c3-text", "name": "Text", "type": "text", "content": "The glow effects are next level.", "fontSize": 13, "fontWeight": "400", "fill": "#9CA3AF" }
+          ]
+        }
+      ]
+    }
+  ]
+}

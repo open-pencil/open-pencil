@@ -1,0 +1,203 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "AnimatedCard",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#18181B",
+    "text": "#FAFAFA",
+    "muted": "#71717A",
+    "primary": "#A855F7",
+    "border": "#27272A",
+    "radius": 12
+  },
+  "children": [
+    {
+      "id": "animated-card-tilt",
+      "name": "AnimatedCard / Tilt",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 240,
+      "fill": "#18181B",
+      "stroke": "#27272A",
+      "strokeWidth": 1,
+      "cornerRadius": 12,
+      "rotation": 3,
+      "shadow": { "color": "rgba(168,85,247,0.15)", "offsetX": 0, "offsetY": 8, "blur": 24 },
+      "children": [
+        {
+          "id": "tilt-image-placeholder",
+          "name": "ImagePlaceholder",
+          "type": "rectangle",
+          "x": 16,
+          "y": 16,
+          "width": 288,
+          "height": 120,
+          "fill": "#27272A",
+          "cornerRadius": 8
+        },
+        {
+          "id": "tilt-title",
+          "name": "Title",
+          "type": "text",
+          "x": 16,
+          "y": 148,
+          "width": 288,
+          "height": 24,
+          "text": "Tilt Card Title",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#FAFAFA"
+        },
+        {
+          "id": "tilt-description",
+          "name": "Description",
+          "type": "text",
+          "x": 16,
+          "y": 180,
+          "width": 288,
+          "height": 40,
+          "text": "Hover to see the 3D tilt effect with perspective transform.",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#71717A"
+        }
+      ]
+    },
+    {
+      "id": "animated-card-flip",
+      "name": "AnimatedCard / Flip",
+      "type": "frame",
+      "reusable": true,
+      "x": 360,
+      "y": 0,
+      "width": 320,
+      "height": 240,
+      "fill": "#A855F7",
+      "cornerRadius": 12,
+      "shadow": { "color": "rgba(0,0,0,0.3)", "offsetX": 0, "offsetY": 4, "blur": 24 },
+      "children": [
+        {
+          "id": "flip-front-label",
+          "name": "FrontLabel",
+          "type": "text",
+          "x": 16,
+          "y": 100,
+          "width": 288,
+          "height": 24,
+          "text": "Front Side",
+          "fontSize": 20,
+          "fontFamily": "Inter",
+          "fontWeight": 700,
+          "fill": "#FAFAFA",
+          "textAlign": "center"
+        },
+        {
+          "id": "flip-hint",
+          "name": "Hint",
+          "type": "text",
+          "x": 16,
+          "y": 132,
+          "width": 288,
+          "height": 20,
+          "text": "Click to flip",
+          "fontSize": 13,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "rgba(255,255,255,0.7)",
+          "textAlign": "center"
+        }
+      ]
+    },
+    {
+      "id": "animated-card-expand",
+      "name": "AnimatedCard / Expand",
+      "type": "frame",
+      "reusable": true,
+      "x": 720,
+      "y": 0,
+      "width": 320,
+      "height": 360,
+      "fill": "#18181B",
+      "stroke": "#27272A",
+      "strokeWidth": 1,
+      "cornerRadius": 12,
+      "shadow": { "color": "rgba(0,0,0,0.3)", "offsetX": 0, "offsetY": 4, "blur": 24 },
+      "children": [
+        {
+          "id": "expand-image",
+          "name": "ImagePlaceholder",
+          "type": "rectangle",
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 180,
+          "fill": "#27272A",
+          "cornerRadius": [12, 12, 0, 0]
+        },
+        {
+          "id": "expand-title",
+          "name": "Title",
+          "type": "text",
+          "x": 16,
+          "y": 196,
+          "width": 288,
+          "height": 24,
+          "text": "Expandable Card",
+          "fontSize": 18,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#FAFAFA"
+        },
+        {
+          "id": "expand-body",
+          "name": "Body",
+          "type": "text",
+          "x": 16,
+          "y": 228,
+          "width": 288,
+          "height": 60,
+          "text": "This card expands on click to reveal more content. The height animates smoothly with spring physics.",
+          "fontSize": 14,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "fill": "#71717A"
+        },
+        {
+          "id": "expand-cta",
+          "name": "CTA",
+          "type": "frame",
+          "x": 16,
+          "y": 304,
+          "width": 288,
+          "height": 40,
+          "fill": "#A855F7",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "expand-cta-label",
+              "name": "Label",
+              "type": "text",
+              "x": 0,
+              "y": 10,
+              "width": 288,
+              "height": 20,
+              "text": "Learn More",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fill": "#FAFAFA",
+              "textAlign": "center"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

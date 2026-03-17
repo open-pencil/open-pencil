@@ -1,0 +1,208 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Globe",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "globe.bg": { "type": "color", "value": "#030712" },
+    "globe.grid": { "type": "color", "value": "#1F2937" },
+    "globe.accent": { "type": "color", "value": "#8B5CF6" },
+    "globe.dot": { "type": "color", "value": "#06B6D4" }
+  },
+  "children": [
+    {
+      "id": "magicui-globe-default",
+      "name": "Globe / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 320,
+      "fill": "#030712",
+      "cornerRadius": 160,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "magicui-globe-default-outer",
+          "name": "OuterRing",
+          "type": "frame",
+          "width": 300,
+          "height": 300,
+          "fill": "transparent",
+          "cornerRadius": 150,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "magicui-globe-default-hline1",
+              "name": "HorizontalLine1",
+              "type": "frame",
+              "width": 280,
+              "height": 1,
+              "fill": "#1F293780",
+              "cornerRadius": 0
+            },
+            {
+              "id": "magicui-globe-default-inner",
+              "name": "InnerEllipse",
+              "type": "frame",
+              "width": 200,
+              "height": 280,
+              "fill": "transparent",
+              "cornerRadius": 100,
+              "stroke": "#1F2937",
+              "strokeWidth": 1
+            },
+            {
+              "id": "magicui-globe-default-hline2",
+              "name": "HorizontalLine2",
+              "type": "frame",
+              "width": 260,
+              "height": 1,
+              "fill": "#1F293780",
+              "cornerRadius": 0
+            },
+            {
+              "id": "magicui-globe-default-meridian",
+              "name": "Meridian",
+              "type": "frame",
+              "width": 140,
+              "height": 280,
+              "fill": "transparent",
+              "cornerRadius": 70,
+              "stroke": "#1F2937",
+              "strokeWidth": 1
+            },
+            {
+              "id": "magicui-globe-default-hline3",
+              "name": "HorizontalLine3",
+              "type": "frame",
+              "width": 240,
+              "height": 1,
+              "fill": "#1F293780",
+              "cornerRadius": 0
+            },
+            {
+              "id": "magicui-globe-default-glow",
+              "name": "GlowAccent",
+              "type": "frame",
+              "width": 80,
+              "height": 80,
+              "fill": "#8B5CF620",
+              "cornerRadius": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "magicui-globe-dots",
+      "name": "Globe / With Dots",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 320,
+      "fill": "#030712",
+      "cornerRadius": 160,
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "magicui-globe-dots-outer",
+          "name": "OuterRing",
+          "type": "frame",
+          "width": 300,
+          "height": 300,
+          "fill": "transparent",
+          "cornerRadius": 150,
+          "stroke": "#1F2937",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "magicui-globe-dots-grid",
+              "name": "GridLines",
+              "type": "frame",
+              "width": 200,
+              "height": 280,
+              "fill": "transparent",
+              "cornerRadius": 100,
+              "stroke": "#1F293760",
+              "strokeWidth": 1
+            },
+            {
+              "id": "magicui-globe-dot1",
+              "name": "Dot",
+              "type": "frame",
+              "width": 8,
+              "height": 8,
+              "fill": "#06B6D4",
+              "cornerRadius": 4
+            },
+            {
+              "id": "magicui-globe-dot2",
+              "name": "Dot",
+              "type": "frame",
+              "width": 6,
+              "height": 6,
+              "fill": "#8B5CF6",
+              "cornerRadius": 3
+            },
+            {
+              "id": "magicui-globe-dot3",
+              "name": "Dot",
+              "type": "frame",
+              "width": 8,
+              "height": 8,
+              "fill": "#06B6D4",
+              "cornerRadius": 4
+            },
+            {
+              "id": "magicui-globe-dot4",
+              "name": "Dot",
+              "type": "frame",
+              "width": 6,
+              "height": 6,
+              "fill": "#A78BFA",
+              "cornerRadius": 3
+            },
+            {
+              "id": "magicui-globe-dot5",
+              "name": "Dot",
+              "type": "frame",
+              "width": 10,
+              "height": 10,
+              "fill": "#22D3EE",
+              "cornerRadius": 5
+            },
+            {
+              "id": "magicui-globe-dots-glow",
+              "name": "GlowAccent",
+              "type": "frame",
+              "width": 100,
+              "height": 100,
+              "fill": "#06B6D415",
+              "cornerRadius": 50
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Input",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "input.bg": { "type": "color", "value": "#1C1917" },
+    "input.border": { "type": "color", "value": "#292524" },
+    "input.text": { "type": "color", "value": "#FAFAF9" },
+    "input.placeholder": { "type": "color", "value": "#A8A29E" },
+    "input.radius": { "type": "number", "value": 8 }
+  },
+  "children": [
+    {
+      "id": "parkui-input-default",
+      "name": "Input / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 68,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 6,
+      "children": [
+        {
+          "id": "parkui-input-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Label",
+          "fontSize": 14,
+          "fontWeight": "500",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-input-default-field",
+          "name": "Field",
+          "type": "frame",
+          "width": 320,
+          "height": 40,
+          "fill": "#1C1917",
+          "cornerRadius": 8,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [8, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "parkui-input-default-placeholder",
+              "name": "Placeholder",
+              "type": "text",
+              "content": "Enter value...",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-input-addon",
+      "name": "Input / With Addon",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 68,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 6,
+      "children": [
+        {
+          "id": "parkui-input-addon-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Website",
+          "fontSize": 14,
+          "fontWeight": "500",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-input-addon-row",
+          "name": "InputRow",
+          "type": "frame",
+          "width": 320,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 8,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "parkui-input-addon-prefix",
+              "name": "Prefix",
+              "type": "frame",
+              "width": 72,
+              "height": 40,
+              "fill": "#292524",
+              "cornerRadius": 8,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "parkui-input-addon-prefix-text",
+                  "name": "PrefixText",
+                  "type": "text",
+                  "content": "https://",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#A8A29E"
+                }
+              ]
+            },
+            {
+              "id": "parkui-input-addon-field",
+              "name": "Field",
+              "type": "frame",
+              "width": 248,
+              "height": 40,
+              "fill": "#1C1917",
+              "cornerRadius": 8,
+              "stroke": "#292524",
+              "strokeWidth": 1,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "flex-start",
+              "padding": [8, 12],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "parkui-input-addon-placeholder",
+                  "name": "Placeholder",
+                  "type": "text",
+                  "content": "example.com",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#A8A29E"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-input-textarea",
+      "name": "Input / Textarea",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 132,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 6,
+      "children": [
+        {
+          "id": "parkui-input-textarea-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Message",
+          "fontSize": 14,
+          "fontWeight": "500",
+          "fill": "#FAFAF9"
+        },
+        {
+          "id": "parkui-input-textarea-field",
+          "name": "TextareaField",
+          "type": "frame",
+          "width": 320,
+          "height": 104,
+          "fill": "#1C1917",
+          "cornerRadius": 8,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "horizontal",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [12, 12],
+          "gap": 0,
+          "children": [
+            {
+              "id": "parkui-input-textarea-placeholder",
+              "name": "Placeholder",
+              "type": "text",
+              "content": "Type your message here...",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Drawer",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "drawer.bg": { "type": "color", "value": "#1C1917" },
+    "drawer.overlay": { "type": "color", "value": "#0C0A0980" },
+    "drawer.border": { "type": "color", "value": "#292524" },
+    "drawer.text": { "type": "color", "value": "#FAFAF9" },
+    "drawer.muted": { "type": "color", "value": "#A8A29E" }
+  },
+  "children": [
+    {
+      "id": "parkui-drawer-right",
+      "name": "Drawer / Right",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 600,
+      "fill": "#0C0A0980",
+      "cornerRadius": 0,
+      "layout": "horizontal",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-end",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "parkui-drawer-right-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 360,
+          "height": 600,
+          "fill": "#1C1917",
+          "cornerRadius": 0,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [24, 24],
+          "gap": 16,
+          "children": [
+            {
+              "id": "parkui-drawer-right-header",
+              "name": "Header",
+              "type": "frame",
+              "width": 312,
+              "height": 48,
+              "fill": "transparent",
+              "cornerRadius": 0,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "padding": [0, 0],
+              "gap": 8,
+              "children": [
+                {
+                  "id": "parkui-drawer-right-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Drawer Title",
+                  "fontSize": 18,
+                  "fontWeight": "600",
+                  "fill": "#FAFAF9"
+                },
+                {
+                  "id": "parkui-drawer-right-close",
+                  "name": "CloseButton",
+                  "type": "frame",
+                  "width": 32,
+                  "height": 32,
+                  "fill": "transparent",
+                  "cornerRadius": 8,
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "justifyContent": "center",
+                  "padding": [0, 0],
+                  "gap": 0,
+                  "children": [
+                    {
+                      "id": "parkui-drawer-right-close-icon",
+                      "name": "CloseIcon",
+                      "type": "text",
+                      "content": "\u00d7",
+                      "fontSize": 20,
+                      "fontWeight": "400",
+                      "fill": "#A8A29E"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "parkui-drawer-right-content",
+              "name": "Content",
+              "type": "text",
+              "content": "Drawer content goes here. This panel slides in from the right side of the screen.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "parkui-drawer-bottom",
+      "name": "Drawer / Bottom",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 400,
+      "fill": "#0C0A0980",
+      "cornerRadius": 0,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-end",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "parkui-drawer-bottom-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 480,
+          "height": 240,
+          "fill": "#1C1917",
+          "cornerRadius": 12,
+          "stroke": "#292524",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [24, 24],
+          "gap": 16,
+          "children": [
+            {
+              "id": "parkui-drawer-bottom-handle",
+              "name": "Handle",
+              "type": "frame",
+              "width": 480,
+              "height": 20,
+              "fill": "transparent",
+              "cornerRadius": 0,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 0],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "parkui-drawer-bottom-handle-bar",
+                  "name": "HandleBar",
+                  "type": "frame",
+                  "width": 48,
+                  "height": 4,
+                  "fill": "#57534E",
+                  "cornerRadius": 2
+                }
+              ]
+            },
+            {
+              "id": "parkui-drawer-bottom-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Bottom Drawer",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#FAFAF9"
+            },
+            {
+              "id": "parkui-drawer-bottom-content",
+              "name": "Content",
+              "type": "text",
+              "content": "This drawer slides up from the bottom of the screen.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A8A29E"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

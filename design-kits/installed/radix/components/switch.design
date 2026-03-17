@@ -1,0 +1,111 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Switch", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "switch.track": { "type": "color", "value": "#2E2E32" },
+    "switch.trackActive": { "type": "color", "value": "#3E63DD" },
+    "switch.thumb": { "type": "color", "value": "#EDEDEF" },
+    "switch.text": { "type": "color", "value": "#EDEDEF" },
+    "switch.muted": { "type": "color", "value": "#8B8B8E" }
+  },
+  "children": [
+    {
+      "id": "radix-switch-default",
+      "name": "Switch / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 44,
+      "height": 24,
+      "fill": "#3E63DD",
+      "cornerRadius": 12,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-end",
+      "padding": [2, 2],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-switch-default-thumb",
+          "name": "Thumb",
+          "type": "ellipse",
+          "width": 20,
+          "height": 20,
+          "fill": "#EDEDEF"
+        }
+      ]
+    },
+    {
+      "id": "radix-switch-small",
+      "name": "Switch / Small",
+      "type": "frame",
+      "reusable": true,
+      "width": 36,
+      "height": 20,
+      "fill": "#2E2E32",
+      "cornerRadius": 10,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [2, 2],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-switch-small-thumb",
+          "name": "Thumb",
+          "type": "ellipse",
+          "width": 16,
+          "height": 16,
+          "fill": "#EDEDEF"
+        }
+      ]
+    },
+    {
+      "id": "radix-switch-labeled",
+      "name": "Switch / With Label",
+      "type": "frame",
+      "reusable": true,
+      "width": 200,
+      "height": 24,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 12,
+      "children": [
+        {
+          "id": "radix-switch-labeled-track",
+          "name": "Track",
+          "type": "frame",
+          "width": 44,
+          "height": 24,
+          "fill": "#3E63DD",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [2, 2],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-switch-labeled-thumb",
+              "name": "Thumb",
+              "type": "ellipse",
+              "width": 20,
+              "height": 20,
+              "fill": "#EDEDEF"
+            }
+          ]
+        },
+        {
+          "id": "radix-switch-labeled-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Airplane Mode",
+          "fontSize": 14,
+          "fontWeight": "500",
+          "fill": "#EDEDEF"
+        }
+      ]
+    }
+  ]
+}

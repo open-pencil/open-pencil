@@ -1,0 +1,149 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "CtaBanner",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "headline": { "type": "string", "default": "Begin Your Journey" },
+    "subtext": { "type": "string", "default": "Experience the difference that refined design makes." },
+    "ctaLabel": { "type": "string", "default": "Get Started" },
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "accentGold": { "type": "color", "default": "#C9A96E" }
+  },
+  "children": [
+    {
+      "id": "cta-banner-minimal",
+      "name": "CtaBanner / Minimal",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 400,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 32 },
+      "children": [
+        {
+          "id": "min-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "Begin Your Journey",
+          "fontSize": 40,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "min-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "Experience the difference that refined design makes.",
+          "fontSize": 16,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#737373" }]
+        },
+        {
+          "id": "min-cta",
+          "name": "CTA Button",
+          "type": "frame",
+          "width": 200,
+          "height": 52,
+          "radius": 8,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+          "children": [
+            {
+              "id": "min-cta-label",
+              "name": "Label",
+              "type": "text",
+              "text": "Get Started",
+              "fontSize": 15,
+              "fontFamily": "Inter",
+              "fontWeight": 600,
+              "fills": [{ "type": "solid", "color": "#0A0A0A" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cta-banner-gradient",
+      "name": "CtaBanner / Gradient",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 400,
+      "fills": [{ "type": "gradient", "gradient": { "type": "linear", "stops": [{ "color": "#141414", "position": 0 }, { "color": "#0A0A0A", "position": 1 }] } }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 32 },
+      "children": [
+        {
+          "id": "grad-divider-top",
+          "name": "Top Accent",
+          "type": "rectangle",
+          "width": 80,
+          "height": 2,
+          "fills": [{ "type": "solid", "color": "#C9A96E" }]
+        },
+        {
+          "id": "grad-headline",
+          "name": "Headline",
+          "type": "text",
+          "text": "Elevate Your Experience",
+          "fontSize": 44,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "grad-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "text": "Join those who demand nothing less than extraordinary.",
+          "fontSize": 16,
+          "fontFamily": "Inter",
+          "fontWeight": 400,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#737373" }]
+        },
+        {
+          "id": "grad-cta-row",
+          "name": "CTA Row",
+          "type": "frame",
+          "width": 400,
+          "height": 52,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center", "gap": 24 },
+          "children": [
+            {
+              "id": "grad-cta-primary",
+              "name": "Primary CTA",
+              "type": "frame",
+              "width": 180,
+              "height": 52,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#C9A96E" }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "grad-cta-p-label", "name": "Label", "type": "text", "text": "Start Now", "fontSize": 15, "fontFamily": "Inter", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#0A0A0A" }] }
+              ]
+            },
+            {
+              "id": "grad-cta-secondary",
+              "name": "Secondary CTA",
+              "type": "text",
+              "text": "Learn More  \u2192",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fills": [{ "type": "solid", "color": "#C9A96E" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

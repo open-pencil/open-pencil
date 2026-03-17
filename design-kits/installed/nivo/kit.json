@@ -1,0 +1,20 @@
+{
+  "name": "nivo",
+  "displayName": "Nivo Charts",
+  "description": "Rich set of data visualization components built on D3. Bar, line, pie, heatmap, and more.",
+  "version": "1.0.0",
+  "author": "plouc",
+  "license": "MIT",
+  "category": "dashboard",
+  "tags": ["charts", "d3", "visualization", "data", "graphs"],
+  "style": {
+    "aesthetic": "clean-data",
+    "radius": "small",
+    "density": "compact",
+    "colorScheme": "vibrant"
+  },
+  "stats": {
+    "componentCount": 7,
+    "variantCount": 14
+  }
+}

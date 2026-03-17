@@ -1,0 +1,258 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "FaqSection",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "surfaceColor": { "type": "color", "default": "#1A1A2E" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "mutedColor": { "type": "color", "default": "#888888" },
+    "borderColor": { "type": "color", "default": "#2A2A2A" }
+  },
+  "children": [
+    {
+      "id": "faq-accordion",
+      "name": "FaqSection / Accordion",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 48, "paddingTop": 96, "paddingBottom": 96 },
+      "children": [
+        {
+          "id": "acc-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "Frequently Asked Questions",
+          "fontSize": 36,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "acc-list",
+          "name": "FAQ List",
+          "type": "frame",
+          "width": 720,
+          "height": 440,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 0 },
+          "children": [
+            {
+              "id": "acc-item-1",
+              "name": "FAQ Item 1",
+              "type": "frame",
+              "width": 720,
+              "height": 110,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1, "side": "bottom" }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 12, "paddingTop": 24, "paddingBottom": 24 },
+              "children": [
+                {
+                  "id": "acc-q1-row",
+                  "name": "Question Row",
+                  "type": "frame",
+                  "width": 720,
+                  "height": 24,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+                  "children": [
+                    { "id": "acc-q1", "name": "Question", "type": "text", "text": "How do I get started?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "acc-q1-icon", "name": "Toggle", "type": "text", "text": "+", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                { "id": "acc-a1", "name": "Answer", "type": "text", "text": "Sign up for a free account, pick a template, and start customizing. It takes less than 5 minutes.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.6, "maxWidth": 640, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "acc-item-2",
+              "name": "FAQ Item 2",
+              "type": "frame",
+              "width": 720,
+              "height": 110,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1, "side": "bottom" }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 12, "paddingTop": 24, "paddingBottom": 24 },
+              "children": [
+                {
+                  "id": "acc-q2-row",
+                  "name": "Question Row",
+                  "type": "frame",
+                  "width": 720,
+                  "height": 24,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+                  "children": [
+                    { "id": "acc-q2", "name": "Question", "type": "text", "text": "Can I cancel anytime?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "acc-q2-icon", "name": "Toggle", "type": "text", "text": "+", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                { "id": "acc-a2", "name": "Answer", "type": "text", "text": "Yes! No contracts, no commitments. Cancel with one click from your dashboard.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.6, "maxWidth": 640, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "acc-item-3",
+              "name": "FAQ Item 3",
+              "type": "frame",
+              "width": 720,
+              "height": 110,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1, "side": "bottom" }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 12, "paddingTop": 24, "paddingBottom": 24 },
+              "children": [
+                {
+                  "id": "acc-q3-row",
+                  "name": "Question Row",
+                  "type": "frame",
+                  "width": 720,
+                  "height": 24,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+                  "children": [
+                    { "id": "acc-q3", "name": "Question", "type": "text", "text": "Do you offer a free trial?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "acc-q3-icon", "name": "Toggle", "type": "text", "text": "+", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                { "id": "acc-a3", "name": "Answer", "type": "text", "text": "Absolutely. Every plan comes with a 14-day free trial. No credit card required.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.6, "maxWidth": 640, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "acc-item-4",
+              "name": "FAQ Item 4",
+              "type": "frame",
+              "width": 720,
+              "height": 110,
+              "fills": [],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "justifyContent": "center", "gap": 12, "paddingTop": 24, "paddingBottom": 24 },
+              "children": [
+                {
+                  "id": "acc-q4-row",
+                  "name": "Question Row",
+                  "type": "frame",
+                  "width": 720,
+                  "height": 24,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+                  "children": [
+                    { "id": "acc-q4", "name": "Question", "type": "text", "text": "Is there a team plan?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "acc-q4-icon", "name": "Toggle", "type": "text", "text": "+", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                { "id": "acc-a4", "name": "Answer", "type": "text", "text": "Yes! The Pro plan includes team collaboration. Invite unlimited team members.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.6, "maxWidth": 640, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "faq-two-column",
+      "name": "FaqSection / TwoColumn",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "horizontal", "alignItems": "flexStart", "justifyContent": "center", "gap": 80, "paddingTop": 96, "paddingBottom": 96, "paddingLeft": 120, "paddingRight": 120 },
+      "children": [
+        {
+          "id": "tc-left",
+          "name": "Left Column",
+          "type": "frame",
+          "width": 360,
+          "height": 400,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 16 },
+          "children": [
+            { "id": "tc-heading", "name": "Heading", "type": "text", "text": "Got questions?\nWe have answers.", "fontSize": 36, "fontFamily": "Space Grotesk", "fontWeight": 700, "lineHeight": 1.2, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+            { "id": "tc-subtext", "name": "Subtext", "type": "text", "text": "Can't find what you're looking for? Reach out to our support team.", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] },
+            {
+              "id": "tc-contact-btn",
+              "name": "Contact Button",
+              "type": "frame",
+              "width": 160,
+              "height": 44,
+              "radius": 14,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+              "children": [
+                { "id": "tc-contact-label", "name": "Label", "type": "text", "text": "Contact Us", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 500, "fills": [{ "type": "solid", "color": "#EAEAEA" }] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tc-right",
+          "name": "Right Column",
+          "type": "frame",
+          "width": 520,
+          "height": 480,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 24 },
+          "children": [
+            {
+              "id": "tc-faq-1",
+              "name": "FAQ 1",
+              "type": "frame",
+              "width": 520,
+              "height": 100,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1, "side": "bottom" }],
+              "layout": { "mode": "vertical", "gap": 8, "paddingBottom": 24 },
+              "children": [
+                { "id": "tc-q1", "name": "Question", "type": "text", "text": "What tech stack do you support?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "tc-a1", "name": "Answer", "type": "text", "text": "React, Next.js, Vue, Svelte, and plain HTML. Works with any framework.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "tc-faq-2",
+              "name": "FAQ 2",
+              "type": "frame",
+              "width": 520,
+              "height": 100,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1, "side": "bottom" }],
+              "layout": { "mode": "vertical", "gap": 8, "paddingBottom": 24 },
+              "children": [
+                { "id": "tc-q2", "name": "Question", "type": "text", "text": "Can I use it for client projects?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "tc-a2", "name": "Answer", "type": "text", "text": "Yes, the license covers unlimited personal and client projects.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "tc-faq-3",
+              "name": "FAQ 3",
+              "type": "frame",
+              "width": 520,
+              "height": 100,
+              "fills": [],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1, "side": "bottom" }],
+              "layout": { "mode": "vertical", "gap": 8, "paddingBottom": 24 },
+              "children": [
+                { "id": "tc-q3", "name": "Question", "type": "text", "text": "Do I get future updates?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "tc-a3", "name": "Answer", "type": "text", "text": "Yes, all plans include free updates for as long as your subscription is active.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            },
+            {
+              "id": "tc-faq-4",
+              "name": "FAQ 4",
+              "type": "frame",
+              "width": 520,
+              "height": 80,
+              "fills": [],
+              "layout": { "mode": "vertical", "gap": 8 },
+              "children": [
+                { "id": "tc-q4", "name": "Question", "type": "text", "text": "How fast is the support?", "fontSize": 16, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                { "id": "tc-a4", "name": "Answer", "type": "text", "text": "We respond within 24 hours on weekdays. Pro users get priority support.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

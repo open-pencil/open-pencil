@@ -1,0 +1,117 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Button", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "button.primary": { "type": "color", "value": "#661AE6" },
+    "button.secondary": { "type": "color", "value": "#D926AA" },
+    "button.accent": { "type": "color", "value": "#1FB2A5" },
+    "button.neutral": { "type": "color", "value": "#191D24" },
+    "button.text": { "type": "color", "value": "#FFFFFF" },
+    "button.radius": { "type": "number", "value": 16 }
+  },
+  "children": [
+    {
+      "id": "daisy-button-primary",
+      "name": "Button / Primary",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 48,
+      "fill": "#661AE6",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "daisy-button-primary-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Primary",
+          "fontSize": 16,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-button-secondary",
+      "name": "Button / Secondary",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 48,
+      "fill": "#D926AA",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "daisy-button-secondary-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Secondary",
+          "fontSize": 16,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-button-accent",
+      "name": "Button / Accent",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 48,
+      "fill": "#1FB2A5",
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "daisy-button-accent-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Accent",
+          "fontSize": 16,
+          "fontWeight": "700",
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "daisy-button-ghost",
+      "name": "Button / Ghost",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 48,
+      "cornerRadius": 16,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [12, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "daisy-button-ghost-text",
+          "name": "Label",
+          "type": "text",
+          "content": "Ghost",
+          "fontSize": 16,
+          "fontWeight": "700",
+          "fill": "#EDEDEF"
+        }
+      ]
+    }
+  ]
+}

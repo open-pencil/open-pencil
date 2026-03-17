@@ -1,0 +1,368 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "LineChart",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "card": "#1E293B",
+    "text": "#E2E8F0",
+    "muted": "#64748B",
+    "axis": "#475569",
+    "series1": "#818CF8",
+    "series2": "#34D399",
+    "radius": 4
+  },
+  "children": [
+    {
+      "id": "line-chart-default",
+      "name": "LineChart / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 360,
+      "fill": "#1E293B",
+      "cornerRadius": 4,
+      "children": [
+        {
+          "id": "lc-title",
+          "name": "Title",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 300,
+          "height": 20,
+          "text": "User Growth",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#E2E8F0"
+        },
+        {
+          "id": "lc-axis-line-x",
+          "name": "XAxisLine",
+          "type": "rectangle",
+          "x": 60,
+          "y": 296,
+          "width": 480,
+          "height": 1,
+          "fill": "#475569"
+        },
+        {
+          "id": "lc-axis-line-y",
+          "name": "YAxisLine",
+          "type": "rectangle",
+          "x": 60,
+          "y": 56,
+          "width": 1,
+          "height": 240,
+          "fill": "#475569"
+        },
+        {
+          "id": "lc-point-1",
+          "name": "Point1",
+          "type": "ellipse",
+          "x": 96,
+          "y": 240,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lc-point-2",
+          "name": "Point2",
+          "type": "ellipse",
+          "x": 176,
+          "y": 200,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lc-point-3",
+          "name": "Point3",
+          "type": "ellipse",
+          "x": 256,
+          "y": 160,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lc-point-4",
+          "name": "Point4",
+          "type": "ellipse",
+          "x": 336,
+          "y": 120,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lc-point-5",
+          "name": "Point5",
+          "type": "ellipse",
+          "x": 416,
+          "y": 100,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lc-point-6",
+          "name": "Point6",
+          "type": "ellipse",
+          "x": 496,
+          "y": 72,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lc-line-segment",
+          "name": "LineConnector",
+          "type": "rectangle",
+          "x": 100,
+          "y": 75,
+          "width": 400,
+          "height": 2,
+          "fill": "#818CF8",
+          "opacity": 0.6,
+          "rotation": -22
+        },
+        {
+          "id": "lc-x-labels",
+          "name": "XLabels",
+          "type": "frame",
+          "x": 60,
+          "y": 304,
+          "width": 480,
+          "height": 16,
+          "fill": "transparent",
+          "children": [
+            { "id": "lc-xl-1", "name": "L1", "type": "text", "x": 28, "y": 0, "width": 40, "height": 14, "text": "Jan", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B", "textAlign": "center" },
+            { "id": "lc-xl-2", "name": "L2", "type": "text", "x": 108, "y": 0, "width": 40, "height": 14, "text": "Feb", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B", "textAlign": "center" },
+            { "id": "lc-xl-3", "name": "L3", "type": "text", "x": 188, "y": 0, "width": 40, "height": 14, "text": "Mar", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B", "textAlign": "center" },
+            { "id": "lc-xl-4", "name": "L4", "type": "text", "x": 268, "y": 0, "width": 40, "height": 14, "text": "Apr", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B", "textAlign": "center" },
+            { "id": "lc-xl-5", "name": "L5", "type": "text", "x": 348, "y": 0, "width": 40, "height": 14, "text": "May", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B", "textAlign": "center" },
+            { "id": "lc-xl-6", "name": "L6", "type": "text", "x": 428, "y": 0, "width": 40, "height": 14, "text": "Jun", "fontSize": 11, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B", "textAlign": "center" }
+          ]
+        },
+        {
+          "id": "lc-legend",
+          "name": "Legend",
+          "type": "frame",
+          "x": 20,
+          "y": 332,
+          "width": 200,
+          "height": 16,
+          "fill": "transparent",
+          "children": [
+            { "id": "lc-leg-dot", "name": "Dot", "type": "rectangle", "x": 0, "y": 2, "width": 12, "height": 12, "fill": "#818CF8", "cornerRadius": 2 },
+            { "id": "lc-leg-label", "name": "Label", "type": "text", "x": 18, "y": 0, "width": 80, "height": 16, "text": "Users", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "line-chart-area",
+      "name": "LineChart / AreaFill",
+      "type": "frame",
+      "reusable": true,
+      "x": 600,
+      "y": 0,
+      "width": 560,
+      "height": 360,
+      "fill": "#1E293B",
+      "cornerRadius": 4,
+      "children": [
+        {
+          "id": "lca-title",
+          "name": "Title",
+          "type": "text",
+          "x": 20,
+          "y": 16,
+          "width": 300,
+          "height": 20,
+          "text": "Traffic Overview",
+          "fontSize": 15,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#E2E8F0"
+        },
+        {
+          "id": "lca-area-fill",
+          "name": "AreaFill",
+          "type": "rectangle",
+          "x": 60,
+          "y": 100,
+          "width": 480,
+          "height": 196,
+          "fill": "#818CF8",
+          "opacity": 0.1
+        },
+        {
+          "id": "lca-area-fill-2",
+          "name": "AreaFill2",
+          "type": "rectangle",
+          "x": 60,
+          "y": 160,
+          "width": 480,
+          "height": 136,
+          "fill": "#34D399",
+          "opacity": 0.1
+        },
+        {
+          "id": "lca-line-1",
+          "name": "Line1",
+          "type": "rectangle",
+          "x": 60,
+          "y": 100,
+          "width": 480,
+          "height": 2,
+          "fill": "#818CF8",
+          "rotation": -5
+        },
+        {
+          "id": "lca-line-2",
+          "name": "Line2",
+          "type": "rectangle",
+          "x": 60,
+          "y": 160,
+          "width": 480,
+          "height": 2,
+          "fill": "#34D399",
+          "rotation": -3
+        },
+        {
+          "id": "lca-point-s1-1",
+          "name": "S1P1",
+          "type": "ellipse",
+          "x": 96,
+          "y": 180,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lca-point-s1-2",
+          "name": "S1P2",
+          "type": "ellipse",
+          "x": 196,
+          "y": 140,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lca-point-s1-3",
+          "name": "S1P3",
+          "type": "ellipse",
+          "x": 296,
+          "y": 108,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lca-point-s1-4",
+          "name": "S1P4",
+          "type": "ellipse",
+          "x": 396,
+          "y": 88,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lca-point-s1-5",
+          "name": "S1P5",
+          "type": "ellipse",
+          "x": 496,
+          "y": 72,
+          "width": 8,
+          "height": 8,
+          "fill": "#818CF8"
+        },
+        {
+          "id": "lca-point-s2-1",
+          "name": "S2P1",
+          "type": "ellipse",
+          "x": 96,
+          "y": 240,
+          "width": 8,
+          "height": 8,
+          "fill": "#34D399"
+        },
+        {
+          "id": "lca-point-s2-2",
+          "name": "S2P2",
+          "type": "ellipse",
+          "x": 196,
+          "y": 208,
+          "width": 8,
+          "height": 8,
+          "fill": "#34D399"
+        },
+        {
+          "id": "lca-point-s2-3",
+          "name": "S2P3",
+          "type": "ellipse",
+          "x": 296,
+          "y": 176,
+          "width": 8,
+          "height": 8,
+          "fill": "#34D399"
+        },
+        {
+          "id": "lca-point-s2-4",
+          "name": "S2P4",
+          "type": "ellipse",
+          "x": 396,
+          "y": 152,
+          "width": 8,
+          "height": 8,
+          "fill": "#34D399"
+        },
+        {
+          "id": "lca-point-s2-5",
+          "name": "S2P5",
+          "type": "ellipse",
+          "x": 496,
+          "y": 136,
+          "width": 8,
+          "height": 8,
+          "fill": "#34D399"
+        },
+        {
+          "id": "lca-axis-x",
+          "name": "XAxisLine",
+          "type": "rectangle",
+          "x": 60,
+          "y": 296,
+          "width": 480,
+          "height": 1,
+          "fill": "#475569"
+        },
+        {
+          "id": "lca-legend",
+          "name": "Legend",
+          "type": "frame",
+          "x": 20,
+          "y": 332,
+          "width": 300,
+          "height": 16,
+          "fill": "transparent",
+          "children": [
+            { "id": "lca-leg1-dot", "name": "Dot1", "type": "rectangle", "x": 0, "y": 2, "width": 12, "height": 12, "fill": "#818CF8", "cornerRadius": 2 },
+            { "id": "lca-leg1-label", "name": "Label1", "type": "text", "x": 18, "y": 0, "width": 60, "height": 16, "text": "Direct", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" },
+            { "id": "lca-leg2-dot", "name": "Dot2", "type": "rectangle", "x": 100, "y": 2, "width": 12, "height": 12, "fill": "#34D399", "cornerRadius": 2 },
+            { "id": "lca-leg2-label", "name": "Label2", "type": "text", "x": 118, "y": 0, "width": 60, "height": 16, "text": "Organic", "fontSize": 12, "fontFamily": "Inter", "fontWeight": 400, "fill": "#64748B" }
+          ]
+        }
+      ]
+    }
+  ]
+}

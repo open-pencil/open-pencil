@@ -1,0 +1,20 @@
+{
+  "name": "nextui",
+  "displayName": "NextUI",
+  "description": "Beautiful, fast, and modern React UI library with first-class dark mode support.",
+  "version": "1.0.0",
+  "author": "nextui-org",
+  "license": "MIT",
+  "category": "general",
+  "tags": ["react", "modern", "dark-mode", "glass", "animations"],
+  "style": {
+    "aesthetic": "modern-bold",
+    "radius": "large",
+    "density": "comfortable",
+    "colorScheme": "vibrant"
+  },
+  "stats": {
+    "componentCount": 7,
+    "variantCount": 18
+  }
+}

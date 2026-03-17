@@ -1,0 +1,278 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Card", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "card.bg": { "type": "color", "value": "#18181B" },
+    "card.bgBlur": { "type": "color", "value": "#18181B99" },
+    "card.text": { "type": "color", "value": "#ECEDEE" },
+    "card.muted": { "type": "color", "value": "#9BA1A6" },
+    "card.border": { "type": "color", "value": "#3F3F46" },
+    "card.radius": { "type": "number", "value": 14 }
+  },
+  "children": [
+    {
+      "id": "nextui-card-default",
+      "name": "Card / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 340,
+      "height": 220,
+      "fill": "#18181B",
+      "cornerRadius": 14,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [20, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "nextui-card-default-header",
+          "name": "Header",
+          "type": "frame",
+          "width": 300,
+          "height": 28,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "nextui-card-default-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Card Title",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#ECEDEE"
+            }
+          ]
+        },
+        {
+          "id": "nextui-card-default-body",
+          "name": "Body",
+          "type": "text",
+          "content": "Make beautiful websites regardless of your design experience. Modern and clean design with smooth edges.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#9BA1A6"
+        },
+        {
+          "id": "nextui-card-default-footer",
+          "name": "Footer",
+          "type": "frame",
+          "width": 300,
+          "height": 44,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-card-default-btn",
+              "name": "Button",
+              "type": "frame",
+              "width": 100,
+              "height": 40,
+              "fill": "#006FEE",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 20],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-card-default-btn-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Action",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-card-blurred",
+      "name": "Card / Blurred",
+      "type": "frame",
+      "reusable": true,
+      "width": 340,
+      "height": 220,
+      "fill": "#18181B99",
+      "cornerRadius": 14,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [20, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "nextui-card-blurred-header",
+          "name": "Header",
+          "type": "frame",
+          "width": 300,
+          "height": 28,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "nextui-card-blurred-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Blurred Card",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#ECEDEE"
+            }
+          ]
+        },
+        {
+          "id": "nextui-card-blurred-body",
+          "name": "Body",
+          "type": "text",
+          "content": "A translucent card with background blur effect for a modern glass morphism look.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#9BA1A6"
+        },
+        {
+          "id": "nextui-card-blurred-footer",
+          "name": "Footer",
+          "type": "frame",
+          "width": 300,
+          "height": 44,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-card-blurred-btn",
+              "name": "Button",
+              "type": "frame",
+              "width": 100,
+              "height": 40,
+              "fill": "#9353D3",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 20],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-card-blurred-btn-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Explore",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nextui-card-shadow",
+      "name": "Card / Shadow",
+      "type": "frame",
+      "reusable": true,
+      "width": 340,
+      "height": 220,
+      "fill": "#18181B",
+      "cornerRadius": 14,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [20, 20],
+      "gap": 12,
+      "children": [
+        {
+          "id": "nextui-card-shadow-header",
+          "name": "Header",
+          "type": "frame",
+          "width": 300,
+          "height": 28,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "nextui-card-shadow-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Shadow Card",
+              "fontSize": 18,
+              "fontWeight": "600",
+              "fill": "#ECEDEE"
+            }
+          ]
+        },
+        {
+          "id": "nextui-card-shadow-body",
+          "name": "Body",
+          "type": "text",
+          "content": "A card with elevated shadow for depth and emphasis. Perfect for featured content sections.",
+          "fontSize": 14,
+          "fontWeight": "400",
+          "fill": "#9BA1A6"
+        },
+        {
+          "id": "nextui-card-shadow-footer",
+          "name": "Footer",
+          "type": "frame",
+          "width": 300,
+          "height": 44,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-end",
+          "padding": [0, 0],
+          "gap": 8,
+          "children": [
+            {
+              "id": "nextui-card-shadow-btn",
+              "name": "Button",
+              "type": "frame",
+              "width": 100,
+              "height": 40,
+              "fill": "#006FEE",
+              "cornerRadius": 12,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 20],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "nextui-card-shadow-btn-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Details",
+                  "fontSize": 14,
+                  "fontWeight": "600",
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

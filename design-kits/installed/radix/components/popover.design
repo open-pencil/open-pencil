@@ -1,0 +1,175 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Popover", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "popover.bg": { "type": "color", "value": "#1C1C1F" },
+    "popover.text": { "type": "color", "value": "#EDEDEF" },
+    "popover.muted": { "type": "color", "value": "#8B8B8E" },
+    "popover.border": { "type": "color", "value": "#2E2E32" },
+    "popover.radius": { "type": "number", "value": 6 }
+  },
+  "children": [
+    {
+      "id": "radix-popover-default",
+      "name": "Popover / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 200,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 4,
+      "children": [
+        {
+          "id": "radix-popover-default-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 120,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-popover-default-trigger-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Open Popover",
+              "fontSize": 14,
+              "fontWeight": "500",
+              "fill": "#EDEDEF"
+            }
+          ]
+        },
+        {
+          "id": "radix-popover-default-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 300,
+          "height": 140,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [16, 16],
+          "gap": 12,
+          "children": [
+            {
+              "id": "radix-popover-default-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Popover Content",
+              "fontSize": 15,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-popover-default-body",
+              "name": "Body",
+              "type": "text",
+              "content": "Place any content here. This is a flexible container for additional UI elements.",
+              "fontSize": 13,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-popover-arrow",
+      "name": "Popover / With Arrow",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": 210,
+      "layout": "vertical",
+      "alignItems": "flex-start",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-popover-arrow-trigger",
+          "name": "Trigger",
+          "type": "frame",
+          "width": 120,
+          "height": 36,
+          "fill": "#2E2E32",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [8, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-popover-arrow-trigger-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Open Popover",
+              "fontSize": 14,
+              "fontWeight": "500",
+              "fill": "#EDEDEF"
+            }
+          ]
+        },
+        {
+          "id": "radix-popover-arrow-pointer",
+          "name": "Arrow",
+          "type": "frame",
+          "width": 12,
+          "height": 6,
+          "fill": "#1C1C1F",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": []
+        },
+        {
+          "id": "radix-popover-arrow-panel",
+          "name": "Panel",
+          "type": "frame",
+          "width": 300,
+          "height": 140,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [16, 16],
+          "gap": 12,
+          "children": [
+            {
+              "id": "radix-popover-arrow-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Popover Content",
+              "fontSize": 15,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-popover-arrow-body",
+              "name": "Body",
+              "type": "text",
+              "content": "This popover includes a directional arrow pointing to the trigger element.",
+              "fontSize": 13,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

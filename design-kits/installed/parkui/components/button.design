@@ -1,0 +1,123 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Button",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "button.bg": { "type": "color", "value": "#E7E5E4" },
+    "button.text": { "type": "color", "value": "#0C0A09" },
+    "button.border": { "type": "color", "value": "#292524" },
+    "button.radius": { "type": "number", "value": 8 },
+    "button.height": { "type": "number", "value": 40 }
+  },
+  "children": [
+    {
+      "id": "parkui-btn-solid",
+      "name": "Button / Solid",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 40,
+      "fill": "#E7E5E4",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [8, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-btn-solid-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Button",
+          "fontSize": 14,
+          "fontWeight": "600",
+          "fill": "#0C0A09"
+        }
+      ]
+    },
+    {
+      "id": "parkui-btn-outline",
+      "name": "Button / Outline",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 40,
+      "fill": "transparent",
+      "cornerRadius": 8,
+      "stroke": "#292524",
+      "strokeWidth": 1,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [8, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-btn-outline-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Button",
+          "fontSize": 14,
+          "fontWeight": "600",
+          "fill": "#FAFAF9"
+        }
+      ]
+    },
+    {
+      "id": "parkui-btn-ghost",
+      "name": "Button / Ghost",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 40,
+      "fill": "transparent",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [8, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-btn-ghost-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Button",
+          "fontSize": 14,
+          "fontWeight": "600",
+          "fill": "#FAFAF9"
+        }
+      ]
+    },
+    {
+      "id": "parkui-btn-link",
+      "name": "Button / Link",
+      "type": "frame",
+      "reusable": true,
+      "width": 160,
+      "height": 40,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [8, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "parkui-btn-link-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Button",
+          "fontSize": 14,
+          "fontWeight": "600",
+          "fill": "#D6D3D1",
+          "textDecoration": "underline"
+        }
+      ]
+    }
+  ]
+}

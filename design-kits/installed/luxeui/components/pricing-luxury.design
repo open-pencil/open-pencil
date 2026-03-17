@@ -1,0 +1,411 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "PricingLuxury",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0A0A0A" },
+    "surfaceColor": { "type": "color", "default": "#141414" },
+    "textColor": { "type": "color", "default": "#F5F5F5" },
+    "mutedColor": { "type": "color", "default": "#737373" },
+    "accentGold": { "type": "color", "default": "#C9A96E" },
+    "accentSilver": { "type": "color", "default": "#A0A0A0" },
+    "accentRose": { "type": "color", "default": "#BE7B7B" },
+    "borderColor": { "type": "color", "default": "#262626" }
+  },
+  "children": [
+    {
+      "id": "pricing-tier-cards",
+      "name": "PricingLuxury / TierCards",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 800,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 64, "paddingTop": 120, "paddingBottom": 120 },
+      "children": [
+        {
+          "id": "tc-heading",
+          "name": "Section Heading",
+          "type": "text",
+          "text": "Select Your Tier",
+          "fontSize": 40,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "textAlign": "center",
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "tc-cards-row",
+          "name": "Cards Row",
+          "type": "frame",
+          "width": 1080,
+          "height": 520,
+          "fills": [],
+          "layout": { "mode": "horizontal", "alignItems": "stretch", "justifyContent": "center", "gap": 32 },
+          "children": [
+            {
+              "id": "tc-silver",
+              "name": "Silver Tier",
+              "type": "frame",
+              "width": 320,
+              "height": 520,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }],
+              "strokes": [{ "type": "solid", "color": "#A0A0A0", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 24, "padding": 40 },
+              "children": [
+                {
+                  "id": "tc-silver-label",
+                  "name": "Tier Label",
+                  "type": "text",
+                  "text": "SILVER",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "letterSpacing": 4,
+                  "fills": [{ "type": "solid", "color": "#A0A0A0" }]
+                },
+                {
+                  "id": "tc-silver-price",
+                  "name": "Price",
+                  "type": "text",
+                  "text": "$49",
+                  "fontSize": 48,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "tc-silver-period",
+                  "name": "Period",
+                  "type": "text",
+                  "text": "per month",
+                  "fontSize": 14,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                },
+                {
+                  "id": "tc-silver-divider",
+                  "name": "Divider",
+                  "type": "rectangle",
+                  "width": 240,
+                  "height": 1,
+                  "fills": [{ "type": "solid", "color": "#262626" }]
+                },
+                {
+                  "id": "tc-silver-features",
+                  "name": "Features",
+                  "type": "frame",
+                  "width": 240,
+                  "height": 160,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 16 },
+                  "children": [
+                    { "id": "tc-sf1", "name": "Feature 1", "type": "text", "text": "Essential access", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-sf2", "name": "Feature 2", "type": "text", "text": "Standard support", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-sf3", "name": "Feature 3", "type": "text", "text": "5 projects", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+                  ]
+                },
+                {
+                  "id": "tc-silver-cta",
+                  "name": "CTA",
+                  "type": "frame",
+                  "width": 240,
+                  "height": 48,
+                  "radius": 8,
+                  "fills": [],
+                  "strokes": [{ "type": "solid", "color": "#A0A0A0", "width": 1 }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                  "children": [
+                    { "id": "tc-silver-cta-label", "name": "Label", "type": "text", "text": "Choose Silver", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#A0A0A0" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "tc-gold",
+              "name": "Gold Tier",
+              "type": "frame",
+              "width": 320,
+              "height": 520,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }],
+              "strokes": [{ "type": "solid", "color": "#C9A96E", "width": 2 }],
+              "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 24, "padding": 40 },
+              "children": [
+                {
+                  "id": "tc-gold-label",
+                  "name": "Tier Label",
+                  "type": "text",
+                  "text": "GOLD",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "letterSpacing": 4,
+                  "fills": [{ "type": "solid", "color": "#C9A96E" }]
+                },
+                {
+                  "id": "tc-gold-price",
+                  "name": "Price",
+                  "type": "text",
+                  "text": "$99",
+                  "fontSize": 48,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "tc-gold-period",
+                  "name": "Period",
+                  "type": "text",
+                  "text": "per month",
+                  "fontSize": 14,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                },
+                {
+                  "id": "tc-gold-divider",
+                  "name": "Divider",
+                  "type": "rectangle",
+                  "width": 240,
+                  "height": 1,
+                  "fills": [{ "type": "solid", "color": "#C9A96E" }]
+                },
+                {
+                  "id": "tc-gold-features",
+                  "name": "Features",
+                  "type": "frame",
+                  "width": 240,
+                  "height": 160,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 16 },
+                  "children": [
+                    { "id": "tc-gf1", "name": "Feature 1", "type": "text", "text": "Premium access", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-gf2", "name": "Feature 2", "type": "text", "text": "Priority support", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-gf3", "name": "Feature 3", "type": "text", "text": "Unlimited projects", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-gf4", "name": "Feature 4", "type": "text", "text": "Advanced analytics", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+                  ]
+                },
+                {
+                  "id": "tc-gold-cta",
+                  "name": "CTA",
+                  "type": "frame",
+                  "width": 240,
+                  "height": 48,
+                  "radius": 8,
+                  "fills": [{ "type": "solid", "color": "#C9A96E" }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                  "children": [
+                    { "id": "tc-gold-cta-label", "name": "Label", "type": "text", "text": "Choose Gold", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#0A0A0A" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "tc-rose",
+              "name": "Rose Tier",
+              "type": "frame",
+              "width": 320,
+              "height": 520,
+              "radius": 8,
+              "fills": [{ "type": "solid", "color": "#141414" }],
+              "strokes": [{ "type": "solid", "color": "#BE7B7B", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "spaceBetween", "gap": 24, "padding": 40 },
+              "children": [
+                {
+                  "id": "tc-rose-label",
+                  "name": "Tier Label",
+                  "type": "text",
+                  "text": "ROS\u00C9",
+                  "fontSize": 12,
+                  "fontFamily": "Inter",
+                  "fontWeight": 600,
+                  "letterSpacing": 4,
+                  "fills": [{ "type": "solid", "color": "#BE7B7B" }]
+                },
+                {
+                  "id": "tc-rose-price",
+                  "name": "Price",
+                  "type": "text",
+                  "text": "$199",
+                  "fontSize": 48,
+                  "fontFamily": "Playfair Display",
+                  "fontWeight": 700,
+                  "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+                },
+                {
+                  "id": "tc-rose-period",
+                  "name": "Period",
+                  "type": "text",
+                  "text": "per month",
+                  "fontSize": 14,
+                  "fontFamily": "Inter",
+                  "fontWeight": 400,
+                  "fills": [{ "type": "solid", "color": "#737373" }]
+                },
+                {
+                  "id": "tc-rose-divider",
+                  "name": "Divider",
+                  "type": "rectangle",
+                  "width": 240,
+                  "height": 1,
+                  "fills": [{ "type": "solid", "color": "#262626" }]
+                },
+                {
+                  "id": "tc-rose-features",
+                  "name": "Features",
+                  "type": "frame",
+                  "width": 240,
+                  "height": 160,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 16 },
+                  "children": [
+                    { "id": "tc-rf1", "name": "Feature 1", "type": "text", "text": "Everything in Gold", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-rf2", "name": "Feature 2", "type": "text", "text": "Dedicated concierge", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-rf3", "name": "Feature 3", "type": "text", "text": "White-glove onboarding", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] },
+                    { "id": "tc-rf4", "name": "Feature 4", "type": "text", "text": "Custom integrations", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#737373" }] }
+                  ]
+                },
+                {
+                  "id": "tc-rose-cta",
+                  "name": "CTA",
+                  "type": "frame",
+                  "width": 240,
+                  "height": 48,
+                  "radius": 8,
+                  "fills": [],
+                  "strokes": [{ "type": "solid", "color": "#BE7B7B", "width": 1 }],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                  "children": [
+                    { "id": "tc-rose-cta-label", "name": "Label", "type": "text", "text": "Choose Ros\u00E9", "fontSize": 14, "fontFamily": "Inter", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#BE7B7B" }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pricing-comparison-table",
+      "name": "PricingLuxury / ComparisonTable",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 720,
+      "fills": [{ "type": "solid", "color": "#0A0A0A" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "center", "gap": 56, "paddingTop": 120, "paddingBottom": 120 },
+      "children": [
+        {
+          "id": "ct-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "Compare Plans",
+          "fontSize": 40,
+          "fontFamily": "Playfair Display",
+          "fontWeight": 700,
+          "fills": [{ "type": "solid", "color": "#F5F5F5" }]
+        },
+        {
+          "id": "ct-table",
+          "name": "Table",
+          "type": "frame",
+          "width": 960,
+          "height": 400,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 0 },
+          "children": [
+            {
+              "id": "ct-header-row",
+              "name": "Header Row",
+              "type": "frame",
+              "width": 960,
+              "height": 56,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center" },
+              "children": [
+                { "id": "ct-h-feature", "name": "Feature Header", "type": "text", "text": "Feature", "width": 320, "fontSize": 12, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 2, "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "ct-h-silver", "name": "Silver Header", "type": "text", "text": "SILVER", "width": 213, "fontSize": 12, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 2, "textAlign": "center", "fills": [{ "type": "solid", "color": "#A0A0A0" }] },
+                { "id": "ct-h-gold", "name": "Gold Header", "type": "text", "text": "GOLD", "width": 213, "fontSize": 12, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 2, "textAlign": "center", "fills": [{ "type": "solid", "color": "#C9A96E" }] },
+                { "id": "ct-h-rose", "name": "Rose Header", "type": "text", "text": "ROS\u00C9", "width": 214, "fontSize": 12, "fontFamily": "Inter", "fontWeight": 600, "letterSpacing": 2, "textAlign": "center", "fills": [{ "type": "solid", "color": "#BE7B7B" }] }
+              ]
+            },
+            {
+              "id": "ct-divider-top",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 960,
+              "height": 1,
+              "fills": [{ "type": "solid", "color": "#262626" }]
+            },
+            {
+              "id": "ct-row-1",
+              "name": "Row 1",
+              "type": "frame",
+              "width": 960,
+              "height": 52,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center" },
+              "children": [
+                { "id": "ct-r1-f", "name": "Feature", "type": "text", "text": "Projects", "width": 320, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "ct-r1-s", "name": "Silver", "type": "text", "text": "5", "width": 213, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "ct-r1-g", "name": "Gold", "type": "text", "text": "Unlimited", "width": 213, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "ct-r1-r", "name": "Rose", "type": "text", "text": "Unlimited", "width": 214, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#737373" }] }
+              ]
+            },
+            {
+              "id": "ct-divider-1",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 960,
+              "height": 1,
+              "fills": [{ "type": "solid", "color": "#1A1A1A" }]
+            },
+            {
+              "id": "ct-row-2",
+              "name": "Row 2",
+              "type": "frame",
+              "width": 960,
+              "height": 52,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center" },
+              "children": [
+                { "id": "ct-r2-f", "name": "Feature", "type": "text", "text": "Priority support", "width": 320, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "ct-r2-s", "name": "Silver", "type": "text", "text": "\u2014", "width": 213, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "ct-r2-g", "name": "Gold", "type": "text", "text": "\u2713", "width": 213, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#C9A96E" }] },
+                { "id": "ct-r2-r", "name": "Rose", "type": "text", "text": "\u2713", "width": 214, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#BE7B7B" }] }
+              ]
+            },
+            {
+              "id": "ct-divider-2",
+              "name": "Divider",
+              "type": "rectangle",
+              "width": 960,
+              "height": 1,
+              "fills": [{ "type": "solid", "color": "#1A1A1A" }]
+            },
+            {
+              "id": "ct-row-3",
+              "name": "Row 3",
+              "type": "frame",
+              "width": 960,
+              "height": 52,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "center" },
+              "children": [
+                { "id": "ct-r3-f", "name": "Feature", "type": "text", "text": "Dedicated concierge", "width": 320, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#F5F5F5" }] },
+                { "id": "ct-r3-s", "name": "Silver", "type": "text", "text": "\u2014", "width": 213, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "ct-r3-g", "name": "Gold", "type": "text", "text": "\u2014", "width": 213, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#737373" }] },
+                { "id": "ct-r3-r", "name": "Rose", "type": "text", "text": "\u2713", "width": 214, "fontSize": 14, "fontFamily": "Inter", "fontWeight": 400, "textAlign": "center", "fills": [{ "type": "solid", "color": "#BE7B7B" }] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

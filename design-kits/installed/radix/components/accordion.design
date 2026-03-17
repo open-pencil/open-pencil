@@ -1,0 +1,343 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Accordion", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "accordion.bg": { "type": "color", "value": "#1C1C1F" },
+    "accordion.text": { "type": "color", "value": "#EDEDEF" },
+    "accordion.muted": { "type": "color", "value": "#8B8B8E" },
+    "accordion.border": { "type": "color", "value": "#2E2E32" },
+    "accordion.radius": { "type": "number", "value": 6 }
+  },
+  "children": [
+    {
+      "id": "radix-accordion-default",
+      "name": "Accordion / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 280,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-accordion-default-item1",
+          "name": "Item 1 (Expanded)",
+          "type": "frame",
+          "width": 360,
+          "height": 120,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-accordion-default-item1-header",
+              "name": "Header",
+              "type": "frame",
+              "width": 360,
+              "height": 48,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "padding": [12, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-accordion-default-item1-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Is it accessible?",
+                  "fontSize": 15,
+                  "fontWeight": "500",
+                  "fill": "#EDEDEF"
+                },
+                {
+                  "id": "radix-accordion-default-item1-chevron",
+                  "name": "Chevron",
+                  "type": "text",
+                  "content": "\u25B2",
+                  "fontSize": 12,
+                  "fontWeight": "400",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-accordion-default-item1-content",
+              "name": "Content",
+              "type": "frame",
+              "width": 360,
+              "height": 56,
+              "layout": "horizontal",
+              "alignItems": "flex-start",
+              "justifyContent": "flex-start",
+              "padding": [0, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-accordion-default-item1-body",
+                  "name": "Body",
+                  "type": "text",
+                  "content": "Yes. It adheres to the WAI-ARIA design pattern.",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-accordion-default-item1-sep",
+              "name": "Separator",
+              "type": "rectangle",
+              "width": 360,
+              "height": 1,
+              "fill": "#2E2E32"
+            }
+          ]
+        },
+        {
+          "id": "radix-accordion-default-item2",
+          "name": "Item 2 (Collapsed)",
+          "type": "frame",
+          "width": 360,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-accordion-default-item2-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Is it styled?",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-accordion-default-item2-chevron",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 12,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        },
+        {
+          "id": "radix-accordion-default-sep2",
+          "name": "Separator",
+          "type": "rectangle",
+          "width": 360,
+          "height": 1,
+          "fill": "#2E2E32"
+        },
+        {
+          "id": "radix-accordion-default-item3",
+          "name": "Item 3 (Collapsed)",
+          "type": "frame",
+          "width": 360,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-accordion-default-item3-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Can it be animated?",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-accordion-default-item3-chevron",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 12,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-accordion-bordered",
+      "name": "Accordion / Bordered",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": 280,
+      "fill": "#1C1C1F",
+      "cornerRadius": 6,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-accordion-bordered-item1",
+          "name": "Item 1 (Expanded)",
+          "type": "frame",
+          "width": 360,
+          "height": 120,
+          "layout": "vertical",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-accordion-bordered-item1-header",
+              "name": "Header",
+              "type": "frame",
+              "width": 360,
+              "height": 48,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "padding": [12, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-accordion-bordered-item1-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "What is Radix?",
+                  "fontSize": 15,
+                  "fontWeight": "500",
+                  "fill": "#EDEDEF"
+                },
+                {
+                  "id": "radix-accordion-bordered-item1-chevron",
+                  "name": "Chevron",
+                  "type": "text",
+                  "content": "\u25B2",
+                  "fontSize": 12,
+                  "fontWeight": "400",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-accordion-bordered-item1-content",
+              "name": "Content",
+              "type": "frame",
+              "width": 360,
+              "height": 56,
+              "layout": "horizontal",
+              "alignItems": "flex-start",
+              "justifyContent": "flex-start",
+              "padding": [0, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-accordion-bordered-item1-body",
+                  "name": "Body",
+                  "type": "text",
+                  "content": "A set of unstyled, accessible UI components for React.",
+                  "fontSize": 14,
+                  "fontWeight": "400",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-accordion-bordered-item1-sep",
+              "name": "Separator",
+              "type": "rectangle",
+              "width": 360,
+              "height": 1,
+              "fill": "#2E2E32"
+            }
+          ]
+        },
+        {
+          "id": "radix-accordion-bordered-item2",
+          "name": "Item 2 (Collapsed)",
+          "type": "frame",
+          "width": 360,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-accordion-bordered-item2-title",
+              "name": "Title",
+              "type": "text",
+              "content": "How to install?",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-accordion-bordered-item2-chevron",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 12,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        },
+        {
+          "id": "radix-accordion-bordered-sep2",
+          "name": "Separator",
+          "type": "rectangle",
+          "width": 360,
+          "height": 1,
+          "fill": "#2E2E32"
+        },
+        {
+          "id": "radix-accordion-bordered-item3",
+          "name": "Item 3 (Collapsed)",
+          "type": "frame",
+          "width": 360,
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [12, 16],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-accordion-bordered-item3-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Is it composable?",
+              "fontSize": 15,
+              "fontWeight": "500",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-accordion-bordered-item3-chevron",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25BC",
+              "fontSize": 12,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

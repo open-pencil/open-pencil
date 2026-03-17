@@ -1,0 +1,298 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Tabs", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "tabs.bg": { "type": "color", "value": "#1C1C1F" },
+    "tabs.text": { "type": "color", "value": "#EDEDEF" },
+    "tabs.muted": { "type": "color", "value": "#8B8B8E" },
+    "tabs.active": { "type": "color", "value": "#3E63DD" },
+    "tabs.border": { "type": "color", "value": "#2E2E32" },
+    "tabs.radius": { "type": "number", "value": 6 }
+  },
+  "children": [
+    {
+      "id": "radix-tabs-default",
+      "name": "Tabs / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 200,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-tabs-default-list",
+          "name": "Tab List",
+          "type": "frame",
+          "width": 400,
+          "height": 40,
+          "fill": "#111113",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [4, 4],
+          "gap": 4,
+          "children": [
+            {
+              "id": "radix-tabs-default-tab1",
+              "name": "Tab Active",
+              "type": "frame",
+              "width": 100,
+              "height": 32,
+              "fill": "#1C1C1F",
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [6, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-tabs-default-tab1-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Account",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#EDEDEF"
+                }
+              ]
+            },
+            {
+              "id": "radix-tabs-default-tab2",
+              "name": "Tab Inactive",
+              "type": "frame",
+              "width": 100,
+              "height": 32,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [6, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-tabs-default-tab2-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Password",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-tabs-default-tab3",
+              "name": "Tab Inactive",
+              "type": "frame",
+              "width": 100,
+              "height": 32,
+              "cornerRadius": 4,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [6, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-tabs-default-tab3-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Settings",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "radix-tabs-default-content",
+          "name": "Content Panel",
+          "type": "frame",
+          "width": 400,
+          "height": 160,
+          "fill": "#1C1C1F",
+          "cornerRadius": 6,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [16, 16],
+          "gap": 8,
+          "children": [
+            {
+              "id": "radix-tabs-default-content-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Account Settings",
+              "fontSize": 16,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-tabs-default-content-body",
+              "name": "Body",
+              "type": "text",
+              "content": "Manage your account settings and preferences here.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "radix-tabs-underline",
+      "name": "Tabs / Underline",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 200,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "radix-tabs-underline-list",
+          "name": "Tab List",
+          "type": "frame",
+          "width": 400,
+          "height": 42,
+          "layout": "horizontal",
+          "alignItems": "stretch",
+          "justifyContent": "flex-start",
+          "padding": [0, 0],
+          "gap": 0,
+          "children": [
+            {
+              "id": "radix-tabs-underline-tab1",
+              "name": "Tab Active",
+              "type": "frame",
+              "width": 120,
+              "height": 42,
+              "layout": "vertical",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-tabs-underline-tab1-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Account",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#EDEDEF"
+                },
+                {
+                  "id": "radix-tabs-underline-tab1-line",
+                  "name": "Underline",
+                  "type": "rectangle",
+                  "width": 88,
+                  "height": 2,
+                  "fill": "#3E63DD"
+                }
+              ]
+            },
+            {
+              "id": "radix-tabs-underline-tab2",
+              "name": "Tab Inactive",
+              "type": "frame",
+              "width": 120,
+              "height": 42,
+              "layout": "vertical",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-tabs-underline-tab2-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Password",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            },
+            {
+              "id": "radix-tabs-underline-tab3",
+              "name": "Tab Inactive",
+              "type": "frame",
+              "width": 120,
+              "height": 42,
+              "layout": "vertical",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [8, 16],
+              "gap": 0,
+              "children": [
+                {
+                  "id": "radix-tabs-underline-tab3-text",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Settings",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "fill": "#8B8B8E"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "radix-tabs-underline-border",
+          "name": "Border",
+          "type": "rectangle",
+          "width": 400,
+          "height": 1,
+          "fill": "#2E2E32"
+        },
+        {
+          "id": "radix-tabs-underline-content",
+          "name": "Content Panel",
+          "type": "frame",
+          "width": 400,
+          "height": 157,
+          "layout": "vertical",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [16, 16],
+          "gap": 8,
+          "children": [
+            {
+              "id": "radix-tabs-underline-content-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Account Settings",
+              "fontSize": 16,
+              "fontWeight": "600",
+              "fill": "#EDEDEF"
+            },
+            {
+              "id": "radix-tabs-underline-content-body",
+              "name": "Body",
+              "type": "text",
+              "content": "Manage your account settings and preferences here.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#8B8B8E"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

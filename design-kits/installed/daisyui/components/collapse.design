@@ -1,0 +1,147 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Collapse", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "collapse.bg": { "type": "color", "value": "#2A303C" },
+    "collapse.text": { "type": "color", "value": "#FFFFFF" },
+    "collapse.muted": { "type": "color", "value": "#A6ADBB" },
+    "collapse.radius": { "type": "number", "value": 16 }
+  },
+  "children": [
+    {
+      "id": "daisy-collapse-default",
+      "name": "Collapse / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 140,
+      "fill": "#2A303C",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-collapse-default-header",
+          "name": "Header",
+          "type": "frame",
+          "width": 400,
+          "height": 56,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "flex-start",
+          "padding": [16, 20],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-collapse-default-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Click to open/close",
+              "fontSize": 16,
+              "fontWeight": "600",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "id": "daisy-collapse-default-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 400,
+          "height": 84,
+          "layout": "horizontal",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [0, 20],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-collapse-default-body",
+              "name": "Body",
+              "type": "text",
+              "content": "This is the content area of the collapse component. It can contain any type of content.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A6ADBB"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "daisy-collapse-icon",
+      "name": "Collapse / With Icon",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": 140,
+      "fill": "#2A303C",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "alignItems": "stretch",
+      "justifyContent": "flex-start",
+      "padding": [0, 0],
+      "gap": 0,
+      "children": [
+        {
+          "id": "daisy-collapse-icon-header",
+          "name": "Header",
+          "type": "frame",
+          "width": 400,
+          "height": 56,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "padding": [16, 20],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-collapse-icon-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Click to expand",
+              "fontSize": 16,
+              "fontWeight": "600",
+              "fill": "#FFFFFF"
+            },
+            {
+              "id": "daisy-collapse-icon-chevron",
+              "name": "Chevron",
+              "type": "text",
+              "content": "\u25B2",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A6ADBB"
+            }
+          ]
+        },
+        {
+          "id": "daisy-collapse-icon-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 400,
+          "height": 84,
+          "layout": "horizontal",
+          "alignItems": "flex-start",
+          "justifyContent": "flex-start",
+          "padding": [0, 20],
+          "gap": 0,
+          "children": [
+            {
+              "id": "daisy-collapse-icon-body",
+              "name": "Body",
+              "type": "text",
+              "content": "Expandable content block with a toggle icon for better visual indication of the collapse state.",
+              "fontSize": 14,
+              "fontWeight": "400",
+              "fill": "#A6ADBB"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

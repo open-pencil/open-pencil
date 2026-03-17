@@ -1,0 +1,20 @@
+{
+  "name": "indieui",
+  "displayName": "Indie UI",
+  "description": "Startup-focused landing page components. Ship fast with conversion-optimized sections and bold personality.",
+  "version": "1.0.0",
+  "author": "indie-ui",
+  "license": "MIT",
+  "category": "landing",
+  "tags": ["startup", "indie", "landing", "conversion", "bold", "ship-fast"],
+  "style": {
+    "aesthetic": "playful",
+    "radius": "large",
+    "density": "comfortable",
+    "colorScheme": "vibrant"
+  },
+  "stats": {
+    "componentCount": 8,
+    "variantCount": 20
+  }
+}

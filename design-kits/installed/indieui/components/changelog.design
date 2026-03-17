@@ -1,0 +1,290 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Changelog",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bgColor": { "type": "color", "default": "#0F0F0F" },
+    "surfaceColor": { "type": "color", "default": "#1A1A2E" },
+    "textColor": { "type": "color", "default": "#EAEAEA" },
+    "mutedColor": { "type": "color", "default": "#888888" },
+    "primaryColor": { "type": "color", "default": "#FF6B35" },
+    "secondaryColor": { "type": "color", "default": "#7C3AED" },
+    "successColor": { "type": "color", "default": "#10B981" },
+    "borderColor": { "type": "color", "default": "#2A2A2A" }
+  },
+  "children": [
+    {
+      "id": "changelog-timeline",
+      "name": "Changelog / Timeline",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 800,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "flexStart", "gap": 48, "paddingTop": 96, "paddingBottom": 96 },
+      "children": [
+        {
+          "id": "tl-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "What's new",
+          "fontSize": 36,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "tl-entries",
+          "name": "Timeline Entries",
+          "type": "frame",
+          "width": 640,
+          "height": 520,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 0 },
+          "children": [
+            {
+              "id": "tl-entry-1",
+              "name": "Entry 1",
+              "type": "frame",
+              "width": 640,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "flexStart", "gap": 24 },
+              "children": [
+                {
+                  "id": "tl-e1-dot-col",
+                  "name": "Dot Column",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 160,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "alignItems": "center", "gap": 0 },
+                  "children": [
+                    { "id": "tl-e1-dot", "name": "Dot", "type": "ellipse", "width": 12, "height": 12, "fills": [{ "type": "solid", "color": "#FF6B35" }] },
+                    { "id": "tl-e1-line", "name": "Line", "type": "rectangle", "width": 2, "height": 148, "fills": [{ "type": "solid", "color": "#2A2A2A" }] }
+                  ]
+                },
+                {
+                  "id": "tl-e1-content",
+                  "name": "Content",
+                  "type": "frame",
+                  "width": 580,
+                  "height": 140,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 8 },
+                  "children": [
+                    { "id": "tl-e1-date", "name": "Date", "type": "text", "text": "March 15, 2026", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 500, "fills": [{ "type": "solid", "color": "#888888" }] },
+                    { "id": "tl-e1-version", "name": "Version", "type": "text", "text": "v2.4.0", "fontSize": 22, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tl-e1-desc", "name": "Description", "type": "text", "text": "AI-powered analytics dashboard, team workspaces, and 15 new component variants.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] },
+                    {
+                      "id": "tl-e1-badge",
+                      "name": "Badge",
+                      "type": "frame",
+                      "width": 60,
+                      "height": 22,
+                      "radius": 11,
+                      "fills": [{ "type": "solid", "color": "#10B981" }],
+                      "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" },
+                      "children": [
+                        { "id": "tl-e1-badge-text", "name": "Badge Text", "type": "text", "text": "New", "fontSize": 11, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "tl-entry-2",
+              "name": "Entry 2",
+              "type": "frame",
+              "width": 640,
+              "height": 160,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "flexStart", "gap": 24 },
+              "children": [
+                {
+                  "id": "tl-e2-dot-col",
+                  "name": "Dot Column",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 160,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "alignItems": "center", "gap": 0 },
+                  "children": [
+                    { "id": "tl-e2-dot", "name": "Dot", "type": "ellipse", "width": 12, "height": 12, "fills": [{ "type": "solid", "color": "#7C3AED" }] },
+                    { "id": "tl-e2-line", "name": "Line", "type": "rectangle", "width": 2, "height": 148, "fills": [{ "type": "solid", "color": "#2A2A2A" }] }
+                  ]
+                },
+                {
+                  "id": "tl-e2-content",
+                  "name": "Content",
+                  "type": "frame",
+                  "width": 580,
+                  "height": 120,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 8 },
+                  "children": [
+                    { "id": "tl-e2-date", "name": "Date", "type": "text", "text": "February 28, 2026", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 500, "fills": [{ "type": "solid", "color": "#888888" }] },
+                    { "id": "tl-e2-version", "name": "Version", "type": "text", "text": "v2.3.0", "fontSize": 22, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tl-e2-desc", "name": "Description", "type": "text", "text": "Dark mode support, performance improvements, and bug fixes across all components.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "tl-entry-3",
+              "name": "Entry 3",
+              "type": "frame",
+              "width": 640,
+              "height": 140,
+              "fills": [],
+              "layout": { "mode": "horizontal", "alignItems": "flexStart", "gap": 24 },
+              "children": [
+                {
+                  "id": "tl-e3-dot-col",
+                  "name": "Dot Column",
+                  "type": "frame",
+                  "width": 24,
+                  "height": 12,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "alignItems": "center" },
+                  "children": [
+                    { "id": "tl-e3-dot", "name": "Dot", "type": "ellipse", "width": 12, "height": 12, "fills": [{ "type": "solid", "color": "#2A2A2A" }] }
+                  ]
+                },
+                {
+                  "id": "tl-e3-content",
+                  "name": "Content",
+                  "type": "frame",
+                  "width": 580,
+                  "height": 120,
+                  "fills": [],
+                  "layout": { "mode": "vertical", "gap": 8 },
+                  "children": [
+                    { "id": "tl-e3-date", "name": "Date", "type": "text", "text": "January 10, 2026", "fontSize": 12, "fontFamily": "Space Grotesk", "fontWeight": 500, "fills": [{ "type": "solid", "color": "#888888" }] },
+                    { "id": "tl-e3-version", "name": "Version", "type": "text", "text": "v2.2.0", "fontSize": 22, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "tl-e3-desc", "name": "Description", "type": "text", "text": "Initial public launch with 8 core components and full documentation.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.5, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "changelog-card-list",
+      "name": "Changelog / CardList",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 800,
+      "fills": [{ "type": "solid", "color": "#0F0F0F" }],
+      "layout": { "mode": "vertical", "alignItems": "center", "justifyContent": "flexStart", "gap": 32, "paddingTop": 96, "paddingBottom": 96 },
+      "children": [
+        {
+          "id": "cl-heading",
+          "name": "Heading",
+          "type": "text",
+          "text": "Changelog",
+          "fontSize": 36,
+          "fontFamily": "Space Grotesk",
+          "fontWeight": 700,
+          "fills": [{ "type": "solid", "color": "#EAEAEA" }]
+        },
+        {
+          "id": "cl-cards",
+          "name": "Cards",
+          "type": "frame",
+          "width": 720,
+          "height": 520,
+          "fills": [],
+          "layout": { "mode": "vertical", "gap": 20 },
+          "children": [
+            {
+              "id": "cl-card-1",
+              "name": "Changelog Card 1",
+              "type": "frame",
+              "width": 720,
+              "height": 160,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 12, "padding": 28 },
+              "children": [
+                {
+                  "id": "cl-c1-header",
+                  "name": "Header",
+                  "type": "frame",
+                  "width": 664,
+                  "height": 28,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+                  "children": [
+                    { "id": "cl-c1-version", "name": "Version", "type": "text", "text": "v2.4.0", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "cl-c1-date", "name": "Date", "type": "text", "text": "Mar 15, 2026", "fontSize": 13, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                { "id": "cl-c1-desc", "name": "Description", "type": "text", "text": "AI analytics, team workspaces, and 15 new component variants. Major performance improvements across the board.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.6, "fills": [{ "type": "solid", "color": "#888888" }] },
+                {
+                  "id": "cl-c1-tags",
+                  "name": "Tags",
+                  "type": "frame",
+                  "width": 300,
+                  "height": 24,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "gap": 8 },
+                  "children": [
+                    { "id": "cl-c1-tag1", "name": "Tag", "type": "frame", "width": 68, "height": 24, "radius": 12, "fills": [{ "type": "solid", "color": "#10B981" }], "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" }, "children": [{ "id": "cl-c1-t1-text", "name": "Text", "type": "text", "text": "Feature", "fontSize": 11, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }] },
+                    { "id": "cl-c1-tag2", "name": "Tag", "type": "frame", "width": 90, "height": 24, "radius": 12, "fills": [{ "type": "solid", "color": "#7C3AED" }], "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" }, "children": [{ "id": "cl-c1-t2-text", "name": "Text", "type": "text", "text": "Improvement", "fontSize": 11, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }] }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "cl-card-2",
+              "name": "Changelog Card 2",
+              "type": "frame",
+              "width": 720,
+              "height": 140,
+              "radius": 14,
+              "fills": [{ "type": "solid", "color": "#1A1A2E" }],
+              "strokes": [{ "type": "solid", "color": "#2A2A2A", "width": 1 }],
+              "layout": { "mode": "vertical", "alignItems": "flexStart", "gap": 12, "padding": 28 },
+              "children": [
+                {
+                  "id": "cl-c2-header",
+                  "name": "Header",
+                  "type": "frame",
+                  "width": 664,
+                  "height": 28,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "spaceBetween" },
+                  "children": [
+                    { "id": "cl-c2-version", "name": "Version", "type": "text", "text": "v2.3.1", "fontSize": 20, "fontFamily": "Space Grotesk", "fontWeight": 700, "fills": [{ "type": "solid", "color": "#EAEAEA" }] },
+                    { "id": "cl-c2-date", "name": "Date", "type": "text", "text": "Feb 28, 2026", "fontSize": 13, "fontFamily": "Space Grotesk", "fontWeight": 400, "fills": [{ "type": "solid", "color": "#888888" }] }
+                  ]
+                },
+                { "id": "cl-c2-desc", "name": "Description", "type": "text", "text": "Bug fixes and stability improvements. Resolved edge cases in pricing and FAQ components.", "fontSize": 14, "fontFamily": "Space Grotesk", "fontWeight": 400, "lineHeight": 1.6, "fills": [{ "type": "solid", "color": "#888888" }] },
+                {
+                  "id": "cl-c2-tags",
+                  "name": "Tags",
+                  "type": "frame",
+                  "width": 100,
+                  "height": 24,
+                  "fills": [],
+                  "layout": { "mode": "horizontal", "gap": 8 },
+                  "children": [
+                    { "id": "cl-c2-tag1", "name": "Tag", "type": "frame", "width": 56, "height": 24, "radius": 12, "fills": [{ "type": "solid", "color": "#FF6B35" }], "layout": { "mode": "horizontal", "alignItems": "center", "justifyContent": "center" }, "children": [{ "id": "cl-c2-t1-text", "name": "Text", "type": "text", "text": "Bugfix", "fontSize": 11, "fontFamily": "Space Grotesk", "fontWeight": 600, "fills": [{ "type": "solid", "color": "#FFFFFF" }] }] }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

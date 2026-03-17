@@ -1,0 +1,376 @@
+{
+  "version": "0.1.0",
+  "meta": {
+    "name": "Sidebar",
+    "generator": "verso-kit/1.0.0"
+  },
+  "variables": {
+    "bg": "#0F172A",
+    "surface": "#1E293B",
+    "text": "#F1F5F9",
+    "muted": "#94A3B8",
+    "primary": "#3B82F6",
+    "border": "#334155",
+    "radius": 8
+  },
+  "children": [
+    {
+      "id": "sidebar-default",
+      "name": "Sidebar / Default",
+      "type": "frame",
+      "reusable": true,
+      "x": 0,
+      "y": 0,
+      "width": 240,
+      "height": 640,
+      "fill": "#0F172A",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "children": [
+        {
+          "id": "sidebar-logo",
+          "name": "Logo",
+          "type": "frame",
+          "x": 16,
+          "y": 16,
+          "width": 208,
+          "height": 40,
+          "fill": "transparent",
+          "children": [
+            {
+              "id": "sidebar-logo-icon",
+              "name": "LogoIcon",
+              "type": "rectangle",
+              "x": 0,
+              "y": 4,
+              "width": 32,
+              "height": 32,
+              "fill": "#3B82F6",
+              "cornerRadius": 8
+            },
+            {
+              "id": "sidebar-logo-text",
+              "name": "LogoText",
+              "type": "text",
+              "x": 44,
+              "y": 8,
+              "width": 120,
+              "height": 24,
+              "text": "SaasApp",
+              "fontSize": 18,
+              "fontFamily": "Inter",
+              "fontWeight": 700,
+              "fill": "#F1F5F9"
+            }
+          ]
+        },
+        {
+          "id": "sidebar-nav-1",
+          "name": "NavItem1",
+          "type": "frame",
+          "x": 8,
+          "y": 80,
+          "width": 224,
+          "height": 40,
+          "fill": "#1E293B",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "nav-1-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#3B82F6",
+              "cornerRadius": 4
+            },
+            {
+              "id": "nav-1-label",
+              "name": "Label",
+              "type": "text",
+              "x": 44,
+              "y": 10,
+              "width": 160,
+              "height": 20,
+              "text": "Dashboard",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 500,
+              "fill": "#F1F5F9"
+            }
+          ]
+        },
+        {
+          "id": "sidebar-nav-2",
+          "name": "NavItem2",
+          "type": "frame",
+          "x": 8,
+          "y": 124,
+          "width": 224,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "nav-2-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "nav-2-label",
+              "name": "Label",
+              "type": "text",
+              "x": 44,
+              "y": 10,
+              "width": 160,
+              "height": 20,
+              "text": "Analytics",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "sidebar-nav-3",
+          "name": "NavItem3",
+          "type": "frame",
+          "x": 8,
+          "y": 168,
+          "width": 224,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "nav-3-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "nav-3-label",
+              "name": "Label",
+              "type": "text",
+              "x": 44,
+              "y": 10,
+              "width": 160,
+              "height": 20,
+              "text": "Customers",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "sidebar-nav-4",
+          "name": "NavItem4",
+          "type": "frame",
+          "x": 8,
+          "y": 212,
+          "width": 224,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "nav-4-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "nav-4-label",
+              "name": "Label",
+              "type": "text",
+              "x": 44,
+              "y": 10,
+              "width": 160,
+              "height": 20,
+              "text": "Settings",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        },
+        {
+          "id": "sidebar-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "x": 16,
+          "y": 272,
+          "width": 208,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "sidebar-section-label",
+          "name": "SectionLabel",
+          "type": "text",
+          "x": 20,
+          "y": 288,
+          "width": 200,
+          "height": 16,
+          "text": "WORKSPACE",
+          "fontSize": 11,
+          "fontFamily": "Inter",
+          "fontWeight": 600,
+          "fill": "#94A3B8",
+          "letterSpacing": 1.2
+        },
+        {
+          "id": "sidebar-nav-5",
+          "name": "NavItem5",
+          "type": "frame",
+          "x": 8,
+          "y": 316,
+          "width": 224,
+          "height": 40,
+          "fill": "transparent",
+          "cornerRadius": 8,
+          "children": [
+            {
+              "id": "nav-5-icon",
+              "name": "Icon",
+              "type": "rectangle",
+              "x": 12,
+              "y": 10,
+              "width": 20,
+              "height": 20,
+              "fill": "#334155",
+              "cornerRadius": 4
+            },
+            {
+              "id": "nav-5-label",
+              "name": "Label",
+              "type": "text",
+              "x": 44,
+              "y": 10,
+              "width": 160,
+              "height": 20,
+              "text": "Team Members",
+              "fontSize": 14,
+              "fontFamily": "Inter",
+              "fontWeight": 400,
+              "fill": "#94A3B8"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sidebar-collapsed",
+      "name": "Sidebar / Collapsed",
+      "type": "frame",
+      "reusable": true,
+      "x": 280,
+      "y": 0,
+      "width": 64,
+      "height": 640,
+      "fill": "#0F172A",
+      "stroke": "#334155",
+      "strokeWidth": 1,
+      "children": [
+        {
+          "id": "collapsed-logo-icon",
+          "name": "LogoIcon",
+          "type": "rectangle",
+          "x": 16,
+          "y": 20,
+          "width": 32,
+          "height": 32,
+          "fill": "#3B82F6",
+          "cornerRadius": 8
+        },
+        {
+          "id": "collapsed-nav-1",
+          "name": "NavIcon1",
+          "type": "rectangle",
+          "x": 20,
+          "y": 84,
+          "width": 24,
+          "height": 24,
+          "fill": "#3B82F6",
+          "cornerRadius": 6
+        },
+        {
+          "id": "collapsed-nav-2",
+          "name": "NavIcon2",
+          "type": "rectangle",
+          "x": 20,
+          "y": 128,
+          "width": 24,
+          "height": 24,
+          "fill": "#334155",
+          "cornerRadius": 6
+        },
+        {
+          "id": "collapsed-nav-3",
+          "name": "NavIcon3",
+          "type": "rectangle",
+          "x": 20,
+          "y": 172,
+          "width": 24,
+          "height": 24,
+          "fill": "#334155",
+          "cornerRadius": 6
+        },
+        {
+          "id": "collapsed-nav-4",
+          "name": "NavIcon4",
+          "type": "rectangle",
+          "x": 20,
+          "y": 216,
+          "width": 24,
+          "height": 24,
+          "fill": "#334155",
+          "cornerRadius": 6
+        },
+        {
+          "id": "collapsed-divider",
+          "name": "Divider",
+          "type": "rectangle",
+          "x": 12,
+          "y": 264,
+          "width": 40,
+          "height": 1,
+          "fill": "#334155"
+        },
+        {
+          "id": "collapsed-nav-5",
+          "name": "NavIcon5",
+          "type": "rectangle",
+          "x": 20,
+          "y": 284,
+          "width": 24,
+          "height": 24,
+          "fill": "#334155",
+          "cornerRadius": 6
+        }
+      ]
+    }
+  ]
+}
