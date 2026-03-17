@@ -5,7 +5,7 @@
 
 import { z } from 'zod'
 
-import { getAllSpecsAsPrompt } from './ui-kit-specs'
+import { getAllSpecsAsPrompt, getComponentNames } from './ui-kit-specs'
 
 type MCPPromptMessage = { role: 'user'; content: { type: 'text'; text: string } }
 type MCPPromptResult = { messages: MCPPromptMessage[] }
@@ -89,29 +89,29 @@ For EACH section:
 
 ${uiKitSpecs}
 
-## SECTION ASSEMBLY GUIDE
+## UI KITS & COMPONENT SELECTION
 
-### NavBar
-Use the \`navbar\` component spec. Replace "Brand" with the product name.
+Multiple UI Kits are available. Use \`suggest_components\` to find the best component for each section.
+Use \`get_component_spec\` to get the exact .design spec before rendering.
 
-### Hero
-Use the \`hero-section\` spec. Customize headline and subtext for "${desc || 'the product'}".
+Available components: ${getComponentNames().filter(n => n.includes('/')).join(', ')}
 
-### Features (6 cards, 3×2 grid)
-Use the \`section-header\` spec for the header.
-Use the \`card\` feature variant for each card. Use \`w={384}\` for 3-column with gap={24}.
-Icons: lucide:sparkles, lucide:zap, lucide:shield, lucide:code, lucide:layers, lucide:globe
+### Kit selection strategy (Mode Global)
+- **Structural elements** (nav, footer, separator) → prefer shadcn (reliable, clean)
+- **Hero & feature sections** → prefer aceternity if available (spotlight, glowing cards)
+- **Data & metrics** → prefer tremor if available (KPI cards, charts)
+- **Buttons & forms** → prefer shadcn (accessible, standard)
+- **Effects & animation** → prefer aceternity (shimmer, moving border)
 
-### Social Proof (3 testimonial cards)
-Use the \`card\` testimonial variant. Use \`grow={1}\` for equal-width cards.
+### Section Assembly
 
-### CTA
-Use the \`cta-section\` spec.
+For each section:
+1. Call \`suggest_components\` with the section type to get kit recommendations
+2. Call \`get_component_spec\` for the recommended component
+3. Use the returned .design tree as your template
+4. Customize text content for "${desc || 'the product'}"
 
-### Footer
-Use the \`footer-minimal\` spec.
-
-CRITICAL: Call \`get_design_prompt\` before rendering if you need specific component specs.
+CRITICAL: Call \`get_design_prompt\` or \`get_component_spec\` before rendering to get specs.
 Budget: ~15-20 tool calls total (1 calc + 1 skeleton + 6 content renders + 2 describes + 1 stock_photo + fixes).`)
   },
 }
@@ -162,14 +162,19 @@ export const refineDesignPrompt = {
 ## Workflow
 1. \`describe\` root depth=2 — understand current state
 2. \`validate_design\` — find issues (contrast, spacing, touch targets)
-3. \`get_design_prompt\` — get correct component specs
+3. \`get_design_prompt\` — get correct component specs from active kits
 4. \`batch_update\` — fix all issues at once:
    - Spacing: must be multiples of 4 (prefer 8, 16, 24, 32, 48)
    - Touch targets: buttons/inputs min h={44}
    - Contrast: text on dark bg must be #FFFFFF or #A1A1AA, never below #71717A
    - Cards: bg="#FFFFFF08" rounded={16} stroke="#FFFFFF0A" strokeWidth={1}
    - Buttons: always Frame + Text, never raw Rectangle
-5. Re-\`describe\` to confirm fixes
-6. \`validate_design\` — confirm 0 critical issues`)
+5. **Inter-kit coherence check** (if multiple kits used):
+   - Verify consistent border-radius across components from different kits
+   - Verify color palette harmony (accent colors should complement each other)
+   - Verify spacing consistency (gap/padding patterns should be uniform)
+   - Verify typography scale consistency across kit components
+6. Re-\`describe\` to confirm fixes
+7. \`validate_design\` — confirm 0 critical issues`)
   },
 }

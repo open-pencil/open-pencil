@@ -6,11 +6,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT = join(__dirname, "..");
 
+export interface KitContextEntry {
+  kitName: string;
+  kitDisplayName: string;
+  category: string;
+  components: Array<{ id: string; name: string; usageContext: string[] }>;
+}
+
 export interface AssembledContext {
   universal: Record<string, unknown>[];
   trends: Record<string, unknown>[];
   references: Record<string, unknown>[];
   taskTemplate: Record<string, unknown> | null;
+  activeKits: KitContextEntry[];
 }
 
 export interface AssembleOptions {
@@ -22,6 +30,8 @@ export interface AssembleOptions {
   referenceCategory?: string;
   /** Task template type to include */
   taskType?: string;
+  /** Active UI Kit names to include in context */
+  activeKitNames?: string[];
 }
 
 function loadJsonDir(dir: string, filter?: string[]): Record<string, unknown>[] {
@@ -74,10 +84,40 @@ export function assembleContext(options?: AssembleOptions): AssembledContext {
     }
   }
 
+  // Load active kit context
+  const activeKits: KitContextEntry[] = [];
+  if (options?.activeKitNames && options.activeKitNames.length > 0) {
+    const kitsRoot = join(ROOT, "..", "design-kits", "installed");
+    for (const kitName of options.activeKitNames) {
+      try {
+        const kitJson = readFileSync(join(kitsRoot, kitName, "kit.json"), "utf-8");
+        const kit = JSON.parse(kitJson) as {
+          name: string;
+          displayName: string;
+          category: string;
+          components: Array<{ id: string; name: string; usageContext: string[] }>;
+        };
+        activeKits.push({
+          kitName: kit.name,
+          kitDisplayName: kit.displayName,
+          category: kit.category,
+          components: kit.components.map((c) => ({
+            id: c.id,
+            name: c.name,
+            usageContext: c.usageContext,
+          })),
+        });
+      } catch {
+        // Kit not found, skip
+      }
+    }
+  }
+
   return {
     universal,
     trends,
     references,
     taskTemplate,
+    activeKits,
   };
 }
