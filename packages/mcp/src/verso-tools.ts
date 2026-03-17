@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { CODEGEN_PROMPT } from '@verso/core'
 
 import { designPagePrompt, designSystemPrompt, refineDesignPrompt } from './verso-prompts'
+import { registerKitTools } from './kit-tools'
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -205,6 +206,9 @@ export function registerVersoTools({ register, sendToBrowser, mcpServer }: Regis
 
   mcpServer.prompt(refineDesignPrompt.name, refineDesignPrompt.description, refineDesignPrompt.params,
     (args: Record<string, unknown>) => refineDesignPrompt.handler(args))
+
+  // --- UI Kit tools ---
+  registerKitTools({ register, ok, fail })
 
   // --- Verso MCP Resource ---
   mcpServer.resource(
