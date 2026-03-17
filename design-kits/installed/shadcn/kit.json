@@ -1,0 +1,224 @@
+{
+  "name": "shadcn",
+  "displayName": "shadcn/ui",
+  "description": "Beautifully designed components built with Radix UI and Tailwind CSS.",
+  "version": "1.0.0",
+  "author": "shadcn",
+  "license": "MIT",
+  "category": "general",
+  "tags": ["accessible", "customizable", "headless", "tailwind", "react"],
+  "style": {
+    "aesthetic": "modern-minimal",
+    "radius": "medium",
+    "density": "comfortable",
+    "colorScheme": "neutral"
+  },
+  "compatibility": {
+    "frameworks": ["react", "vue", "html"],
+    "exportFormats": ["react-tailwind", "html-css", "vue3"]
+  },
+  "components": [
+    {
+      "id": "button",
+      "name": "Button",
+      "file": "components/button.design",
+      "variants": ["primary", "secondary", "ghost", "destructive", "outline", "link"],
+      "sizes": ["sm", "md", "lg"],
+      "description": "A button component with multiple variants and sizes.",
+      "tags": ["interactive", "cta", "form"],
+      "usageContext": ["hero-cta", "form-submit", "nav-action", "card-action", "dialog-action"]
+    },
+    {
+      "id": "input",
+      "name": "Input",
+      "file": "components/input.design",
+      "variants": ["default", "error", "disabled", "with-icon"],
+      "sizes": ["md", "lg"],
+      "description": "A text input field with validation states.",
+      "tags": ["interactive", "form"],
+      "usageContext": ["form-field", "search-bar", "login-form"]
+    },
+    {
+      "id": "card",
+      "name": "Card",
+      "file": "components/card.design",
+      "variants": ["default", "elevated", "glass", "bordered", "interactive"],
+      "description": "A container for grouping related content.",
+      "tags": ["container", "layout"],
+      "usageContext": ["feature-card", "pricing-card", "stat-card", "profile-card", "content-card"]
+    },
+    {
+      "id": "badge",
+      "name": "Badge",
+      "file": "components/badge.design",
+      "variants": ["default", "secondary", "destructive", "outline"],
+      "sizes": ["sm", "md"],
+      "description": "A small label for status or categorization.",
+      "tags": ["display", "status"],
+      "usageContext": ["status-indicator", "tag", "label", "notification-count"]
+    },
+    {
+      "id": "nav",
+      "name": "Navbar",
+      "file": "components/nav.design",
+      "variants": ["default", "transparent", "bordered"],
+      "description": "A top navigation bar with logo, links, and actions.",
+      "tags": ["navigation", "layout"],
+      "usageContext": ["page-nav", "app-header", "landing-nav"]
+    },
+    {
+      "id": "separator",
+      "name": "Separator",
+      "file": "components/separator.design",
+      "variants": ["horizontal", "vertical"],
+      "description": "A visual divider between sections.",
+      "tags": ["layout", "divider"],
+      "usageContext": ["section-divider", "list-separator", "sidebar-divider"]
+    },
+    {
+      "id": "stat-card",
+      "name": "Stat Card",
+      "file": "components/stat-card.design",
+      "variants": ["default", "with-trend", "with-sparkline"],
+      "description": "A card displaying a key metric with optional trend indicator.",
+      "tags": ["data", "display", "dashboard"],
+      "usageContext": ["dashboard-kpi", "stat-row", "overview-metric"]
+    },
+    {
+      "id": "section-header",
+      "name": "Section Header",
+      "file": "components/section-header.design",
+      "variants": ["with-badge", "without-badge"],
+      "description": "A section title with optional badge and description.",
+      "tags": ["layout", "typography"],
+      "usageContext": ["page-section", "feature-section", "content-section"]
+    },
+    {
+      "id": "footer",
+      "name": "Footer",
+      "file": "components/footer.design",
+      "variants": ["minimal", "fat", "centered"],
+      "description": "A page footer with links and branding.",
+      "tags": ["navigation", "layout"],
+      "usageContext": ["page-footer", "landing-footer"]
+    },
+    {
+      "id": "hero-section",
+      "name": "Hero Section",
+      "file": "components/hero-section.design",
+      "variants": ["centered", "split", "with-image"],
+      "description": "A hero section with headline, description, and CTA.",
+      "tags": ["layout", "landing"],
+      "usageContext": ["landing-hero", "page-hero", "product-hero"]
+    },
+    {
+      "id": "feature-card",
+      "name": "Feature Card",
+      "file": "components/feature-card.design",
+      "variants": ["icon-top", "icon-left", "large"],
+      "description": "A card highlighting a product feature with icon and text.",
+      "tags": ["display", "landing"],
+      "usageContext": ["feature-grid", "benefit-list", "service-card"]
+    },
+    {
+      "id": "cta-section",
+      "name": "CTA Section",
+      "file": "components/cta-section.design",
+      "variants": ["simple", "with-image", "gradient-bg"],
+      "description": "A call-to-action section with heading and buttons.",
+      "tags": ["landing", "conversion"],
+      "usageContext": ["page-cta", "newsletter-signup", "trial-prompt"]
+    },
+    {
+      "id": "avatar",
+      "name": "Avatar",
+      "file": "components/avatar.design",
+      "variants": ["image", "initials", "icon"],
+      "sizes": ["sm", "md", "lg"],
+      "description": "A user avatar with image, initials, or icon fallback.",
+      "tags": ["display", "user"],
+      "usageContext": ["user-profile", "comment-author", "team-member"]
+    },
+    {
+      "id": "dialog",
+      "name": "Dialog",
+      "file": "components/dialog.design",
+      "variants": ["default", "destructive", "form"],
+      "sizes": ["sm", "md", "lg"],
+      "description": "A modal dialog for confirmations and forms.",
+      "tags": ["overlay", "interactive"],
+      "usageContext": ["confirmation", "form-modal", "detail-view"]
+    },
+    {
+      "id": "table",
+      "name": "Table",
+      "file": "components/table.design",
+      "variants": ["default", "striped", "compact"],
+      "description": "A data table with headers and rows.",
+      "tags": ["data", "display"],
+      "usageContext": ["data-list", "admin-table", "comparison-table"]
+    },
+    {
+      "id": "tabs",
+      "name": "Tabs",
+      "file": "components/tabs.design",
+      "variants": ["default", "underline", "pills"],
+      "description": "Tab navigation for switching between views.",
+      "tags": ["navigation", "interactive"],
+      "usageContext": ["content-tabs", "settings-tabs", "filter-tabs"]
+    },
+    {
+      "id": "toast",
+      "name": "Toast",
+      "file": "components/toast.design",
+      "variants": ["success", "error", "warning", "info"],
+      "description": "A temporary notification message.",
+      "tags": ["feedback", "notification"],
+      "usageContext": ["action-feedback", "error-notification", "status-update"]
+    },
+    {
+      "id": "dropdown",
+      "name": "Dropdown",
+      "file": "components/dropdown.design",
+      "variants": ["default", "with-icons", "with-sections"],
+      "description": "A dropdown menu with selectable items.",
+      "tags": ["interactive", "navigation"],
+      "usageContext": ["action-menu", "select-menu", "user-menu"]
+    },
+    {
+      "id": "alert",
+      "name": "Alert",
+      "file": "components/alert.design",
+      "variants": ["info", "success", "warning", "error"],
+      "description": "An inline alert message with icon and text.",
+      "tags": ["feedback", "display"],
+      "usageContext": ["form-error", "page-notice", "status-banner"]
+    },
+    {
+      "id": "pricing-card",
+      "name": "Pricing Card",
+      "file": "components/pricing-card.design",
+      "variants": ["default", "popular", "enterprise"],
+      "description": "A pricing tier card with features list and CTA.",
+      "tags": ["landing", "conversion"],
+      "usageContext": ["pricing-table", "plan-selection"]
+    },
+    {
+      "id": "social-proof",
+      "name": "Social Proof",
+      "file": "components/social-proof.design",
+      "variants": ["logos", "avatars", "testimonial-quote"],
+      "description": "Social proof elements: logos, avatar stacks, or testimonials.",
+      "tags": ["landing", "trust"],
+      "usageContext": ["logo-bar", "testimonial-section", "user-count"]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "stats": {
+    "componentCount": 21,
+    "variantCount": 87,
+    "downloads": 0,
+    "rating": 0
+  }
+}

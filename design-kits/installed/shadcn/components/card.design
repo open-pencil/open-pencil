@@ -1,0 +1,230 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Card", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "card.bg": { "type": "color", "value": "#09090B" },
+    "card.fg": { "type": "color", "value": "#FAFAFA" },
+    "card.muted": { "type": "color", "value": "#A1A1AA" },
+    "card.border": { "type": "color", "value": "#27272A" },
+    "card.elevated.bg": { "type": "color", "value": "#18181B" },
+    "card.glass.bg": { "type": "color", "value": "rgba(24,24,27,0.6)" },
+    "card.radius": { "type": "number", "value": 12 }
+  },
+  "children": [
+    {
+      "id": "card-default",
+      "name": "Card / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$card.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$card.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "card-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Card Title",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$card.fg"
+        },
+        {
+          "id": "card-default-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "This is a card description with some helpful context about the content.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$card.muted"
+        },
+        {
+          "id": "card-default-footer",
+          "name": "Footer",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "justifyContent": "start",
+          "gap": 8,
+          "children": [
+            {
+              "id": "card-default-action",
+              "name": "Action",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 36,
+              "fill": "#FAFAFA",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 16, 0, 16],
+              "children": [
+                {
+                  "id": "card-default-action-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Continue",
+                  "fontSize": 14,
+                  "fontWeight": 500,
+                  "fill": "#09090B"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "card-elevated",
+      "name": "Card / Elevated",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$card.elevated.bg",
+      "cornerRadius": 12,
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "shadow": { "x": 0, "y": 4, "blur": 24, "color": "rgba(0,0,0,0.3)" },
+      "children": [
+        {
+          "id": "card-elevated-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Elevated Card",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$card.fg"
+        },
+        {
+          "id": "card-elevated-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "This card uses an elevated surface with a shadow for added depth.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$card.muted"
+        }
+      ]
+    },
+    {
+      "id": "card-glass",
+      "name": "Card / Glass",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$card.glass.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "rgba(250,250,250,0.1)", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "card-glass-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Glass Card",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$card.fg"
+        },
+        {
+          "id": "card-glass-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "A frosted glass effect card with translucent background.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$card.muted"
+        }
+      ]
+    },
+    {
+      "id": "card-bordered",
+      "name": "Card / Bordered",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "transparent",
+      "cornerRadius": 12,
+      "stroke": { "color": "$card.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "card-bordered-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Bordered Card",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$card.fg"
+        },
+        {
+          "id": "card-bordered-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "A transparent card with a visible border outline.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$card.muted"
+        }
+      ]
+    },
+    {
+      "id": "card-interactive",
+      "name": "Card / Interactive",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$card.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$card.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "card-interactive-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Interactive Card",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$card.fg"
+        },
+        {
+          "id": "card-interactive-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Hover and click to interact with this card.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$card.muted"
+        },
+        {
+          "id": "card-interactive-arrow",
+          "name": "Arrow",
+          "type": "text",
+          "content": "→",
+          "fontSize": 16,
+          "fontWeight": 500,
+          "fill": "$card.fg"
+        }
+      ]
+    }
+  ]
+}

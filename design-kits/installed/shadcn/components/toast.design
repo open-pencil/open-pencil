@@ -1,0 +1,276 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Toast", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "toast.bg": { "type": "color", "value": "#09090B" },
+    "toast.fg": { "type": "color", "value": "#FAFAFA" },
+    "toast.muted": { "type": "color", "value": "#A1A1AA" },
+    "toast.border": { "type": "color", "value": "#27272A" },
+    "toast.success": { "type": "color", "value": "#22C55E" },
+    "toast.error": { "type": "color", "value": "#EF4444" },
+    "toast.warning": { "type": "color", "value": "#EAB308" },
+    "toast.info": { "type": "color", "value": "#3B82F6" }
+  },
+  "children": [
+    {
+      "id": "toast-success",
+      "name": "Toast / Success",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": "fit_content",
+      "fill": "$toast.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$toast.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [12, 16, 12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "toast-success-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$toast.success",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "toast-success-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 2,
+          "children": [
+            {
+              "id": "toast-success-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Changes saved",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$toast.fg"
+            },
+            {
+              "id": "toast-success-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Your changes have been saved successfully.",
+              "fontSize": 13,
+              "fontWeight": 400,
+              "fill": "$toast.muted"
+            }
+          ]
+        },
+        {
+          "id": "toast-success-close",
+          "name": "Close",
+          "type": "text",
+          "content": "x",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$toast.muted"
+        }
+      ]
+    },
+    {
+      "id": "toast-error",
+      "name": "Toast / Error",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": "fit_content",
+      "fill": "$toast.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$toast.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [12, 16, 12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "toast-error-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$toast.error",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "toast-error-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 2,
+          "children": [
+            {
+              "id": "toast-error-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Something went wrong",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$toast.fg"
+            },
+            {
+              "id": "toast-error-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "There was a problem with your request. Please try again.",
+              "fontSize": 13,
+              "fontWeight": 400,
+              "fill": "$toast.muted"
+            }
+          ]
+        },
+        {
+          "id": "toast-error-close",
+          "name": "Close",
+          "type": "text",
+          "content": "x",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$toast.muted"
+        }
+      ]
+    },
+    {
+      "id": "toast-warning",
+      "name": "Toast / Warning",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": "fit_content",
+      "fill": "$toast.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$toast.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [12, 16, 12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "toast-warning-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$toast.warning",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "toast-warning-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 2,
+          "children": [
+            {
+              "id": "toast-warning-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Heads up",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$toast.fg"
+            },
+            {
+              "id": "toast-warning-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Your trial will expire in 3 days. Upgrade to continue.",
+              "fontSize": 13,
+              "fontWeight": 400,
+              "fill": "$toast.muted"
+            }
+          ]
+        },
+        {
+          "id": "toast-warning-close",
+          "name": "Close",
+          "type": "text",
+          "content": "x",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$toast.muted"
+        }
+      ]
+    },
+    {
+      "id": "toast-info",
+      "name": "Toast / Info",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": "fit_content",
+      "fill": "$toast.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$toast.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [12, 16, 12, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "toast-info-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$toast.info",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "toast-info-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 2,
+          "children": [
+            {
+              "id": "toast-info-title",
+              "name": "Title",
+              "type": "text",
+              "content": "New update available",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$toast.fg"
+            },
+            {
+              "id": "toast-info-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Version 2.4.0 is now available with new features.",
+              "fontSize": 13,
+              "fontWeight": 400,
+              "fill": "$toast.muted"
+            }
+          ]
+        },
+        {
+          "id": "toast-info-close",
+          "name": "Close",
+          "type": "text",
+          "content": "x",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$toast.muted"
+        }
+      ]
+    }
+  ]
+}

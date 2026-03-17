@@ -1,0 +1,309 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "SocialProof", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "social.bg": { "type": "color", "value": "#09090B" },
+    "social.fg": { "type": "color", "value": "#FAFAFA" },
+    "social.muted": { "type": "color", "value": "#A1A1AA" },
+    "social.border": { "type": "color", "value": "#27272A" },
+    "social.logo.bg": { "type": "color", "value": "#27272A" },
+    "social.avatar.bg": { "type": "color", "value": "#27272A" },
+    "social.avatar.border": { "type": "color", "value": "#09090B" }
+  },
+  "children": [
+    {
+      "id": "social-logos",
+      "name": "SocialProof / Logos",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [48, 32, 48, 32],
+      "gap": 32,
+      "children": [
+        {
+          "id": "social-logos-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Trusted by industry leaders",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$social.muted"
+        },
+        {
+          "id": "social-logos-row",
+          "name": "Logos",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "gap": 48,
+          "children": [
+            {
+              "id": "social-logo-1",
+              "name": "Logo 1",
+              "type": "frame",
+              "width": 120,
+              "height": 40,
+              "fill": "$social.logo.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "children": [
+                { "id": "social-logo-1-text", "name": "Name", "type": "text", "content": "Vercel", "fontSize": 14, "fontWeight": 600, "fill": "$social.muted" }
+              ]
+            },
+            {
+              "id": "social-logo-2",
+              "name": "Logo 2",
+              "type": "frame",
+              "width": 120,
+              "height": 40,
+              "fill": "$social.logo.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "children": [
+                { "id": "social-logo-2-text", "name": "Name", "type": "text", "content": "Stripe", "fontSize": 14, "fontWeight": 600, "fill": "$social.muted" }
+              ]
+            },
+            {
+              "id": "social-logo-3",
+              "name": "Logo 3",
+              "type": "frame",
+              "width": 120,
+              "height": 40,
+              "fill": "$social.logo.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "children": [
+                { "id": "social-logo-3-text", "name": "Name", "type": "text", "content": "GitHub", "fontSize": 14, "fontWeight": 600, "fill": "$social.muted" }
+              ]
+            },
+            {
+              "id": "social-logo-4",
+              "name": "Logo 4",
+              "type": "frame",
+              "width": 120,
+              "height": 40,
+              "fill": "$social.logo.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "children": [
+                { "id": "social-logo-4-text", "name": "Name", "type": "text", "content": "Linear", "fontSize": 14, "fontWeight": 600, "fill": "$social.muted" }
+              ]
+            },
+            {
+              "id": "social-logo-5",
+              "name": "Logo 5",
+              "type": "frame",
+              "width": 120,
+              "height": 40,
+              "fill": "$social.logo.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "children": [
+                { "id": "social-logo-5-text", "name": "Name", "type": "text", "content": "Notion", "fontSize": 14, "fontWeight": 600, "fill": "$social.muted" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "social-avatars",
+      "name": "SocialProof / Avatars",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": "fit_content",
+      "layout": "horizontal",
+      "alignItems": "center",
+      "gap": 12,
+      "children": [
+        {
+          "id": "social-avatar-stack",
+          "name": "Avatar Stack",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 40,
+          "layout": "horizontal",
+          "gap": -12,
+          "children": [
+            {
+              "id": "social-av-1",
+              "name": "Avatar 1",
+              "type": "frame",
+              "width": 40,
+              "height": 40,
+              "fill": "#3F3F46",
+              "cornerRadius": 9999,
+              "stroke": { "color": "$social.avatar.border", "width": 2 }
+            },
+            {
+              "id": "social-av-2",
+              "name": "Avatar 2",
+              "type": "frame",
+              "width": 40,
+              "height": 40,
+              "fill": "#52525B",
+              "cornerRadius": 9999,
+              "stroke": { "color": "$social.avatar.border", "width": 2 }
+            },
+            {
+              "id": "social-av-3",
+              "name": "Avatar 3",
+              "type": "frame",
+              "width": 40,
+              "height": 40,
+              "fill": "#71717A",
+              "cornerRadius": 9999,
+              "stroke": { "color": "$social.avatar.border", "width": 2 }
+            },
+            {
+              "id": "social-av-4",
+              "name": "Avatar 4",
+              "type": "frame",
+              "width": 40,
+              "height": 40,
+              "fill": "#A1A1AA",
+              "cornerRadius": 9999,
+              "stroke": { "color": "$social.avatar.border", "width": 2 }
+            },
+            {
+              "id": "social-av-count",
+              "name": "Count",
+              "type": "frame",
+              "width": 40,
+              "height": 40,
+              "fill": "$social.avatar.bg",
+              "cornerRadius": 9999,
+              "stroke": { "color": "$social.avatar.border", "width": 2 },
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "children": [
+                { "id": "social-av-count-text", "name": "Count", "type": "text", "content": "+99", "fontSize": 12, "fontWeight": 600, "fill": "$social.fg" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "social-avatar-text",
+          "name": "Text",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 2,
+          "children": [
+            {
+              "id": "social-avatar-count-label",
+              "name": "Count",
+              "type": "text",
+              "content": "2,000+ developers",
+              "fontSize": 14,
+              "fontWeight": 600,
+              "fill": "$social.fg"
+            },
+            {
+              "id": "social-avatar-sub",
+              "name": "Subtitle",
+              "type": "text",
+              "content": "already building with us",
+              "fontSize": 13,
+              "fontWeight": 400,
+              "fill": "$social.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "social-testimonial",
+      "name": "SocialProof / Testimonial Quote",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": "fit_content",
+      "fill": "$social.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$social.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [32, 32, 32, 32],
+      "gap": 20,
+      "children": [
+        {
+          "id": "social-test-quote",
+          "name": "Quote",
+          "type": "text",
+          "content": "\"This component library saved us weeks of development time. The quality and attention to detail is outstanding.\"",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$social.fg"
+        },
+        {
+          "id": "social-test-author",
+          "name": "Author",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "gap": 12,
+          "children": [
+            {
+              "id": "social-test-avatar",
+              "name": "Avatar",
+              "type": "frame",
+              "width": 40,
+              "height": 40,
+              "fill": "$social.avatar.bg",
+              "cornerRadius": 9999
+            },
+            {
+              "id": "social-test-info",
+              "name": "Info",
+              "type": "frame",
+              "width": "fit_content",
+              "height": "fit_content",
+              "layout": "vertical",
+              "gap": 2,
+              "children": [
+                {
+                  "id": "social-test-name",
+                  "name": "Name",
+                  "type": "text",
+                  "content": "Sarah Chen",
+                  "fontSize": 14,
+                  "fontWeight": 600,
+                  "fill": "$social.fg"
+                },
+                {
+                  "id": "social-test-role",
+                  "name": "Role",
+                  "type": "text",
+                  "content": "CTO at TechCorp",
+                  "fontSize": 13,
+                  "fontWeight": 400,
+                  "fill": "$social.muted"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

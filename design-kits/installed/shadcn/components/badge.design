@@ -1,0 +1,118 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Badge", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "badge.default.bg": { "type": "color", "value": "#FAFAFA" },
+    "badge.default.fg": { "type": "color", "value": "#09090B" },
+    "badge.secondary.bg": { "type": "color", "value": "#27272A" },
+    "badge.secondary.fg": { "type": "color", "value": "#FAFAFA" },
+    "badge.destructive.bg": { "type": "color", "value": "#DC2626" },
+    "badge.destructive.fg": { "type": "color", "value": "#FAFAFA" },
+    "badge.outline.border": { "type": "color", "value": "#27272A" },
+    "badge.outline.fg": { "type": "color", "value": "#FAFAFA" },
+    "badge.radius": { "type": "number", "value": 9999 }
+  },
+  "children": [
+    {
+      "id": "badge-default",
+      "name": "Badge / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 22,
+      "fill": "$badge.default.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 10, 0, 10],
+      "children": [
+        {
+          "id": "badge-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Badge",
+          "fontSize": 12,
+          "fontWeight": 500,
+          "fill": "$badge.default.fg"
+        }
+      ]
+    },
+    {
+      "id": "badge-secondary",
+      "name": "Badge / Secondary",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 22,
+      "fill": "$badge.secondary.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 10, 0, 10],
+      "children": [
+        {
+          "id": "badge-secondary-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Secondary",
+          "fontSize": 12,
+          "fontWeight": 500,
+          "fill": "$badge.secondary.fg"
+        }
+      ]
+    },
+    {
+      "id": "badge-destructive",
+      "name": "Badge / Destructive",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 22,
+      "fill": "$badge.destructive.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 10, 0, 10],
+      "children": [
+        {
+          "id": "badge-destructive-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Destructive",
+          "fontSize": 12,
+          "fontWeight": 500,
+          "fill": "$badge.destructive.fg"
+        }
+      ]
+    },
+    {
+      "id": "badge-outline",
+      "name": "Badge / Outline",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 22,
+      "fill": "transparent",
+      "cornerRadius": 9999,
+      "stroke": { "color": "$badge.outline.border", "width": 1 },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 10, 0, 10],
+      "children": [
+        {
+          "id": "badge-outline-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Outline",
+          "fontSize": 12,
+          "fontWeight": 500,
+          "fill": "$badge.outline.fg"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Nav", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "nav.bg": { "type": "color", "value": "#09090B" },
+    "nav.fg": { "type": "color", "value": "#FAFAFA" },
+    "nav.muted": { "type": "color", "value": "#A1A1AA" },
+    "nav.border": { "type": "color", "value": "#27272A" },
+    "nav.height": { "type": "number", "value": 64 }
+  },
+  "children": [
+    {
+      "id": "nav-default",
+      "name": "Nav / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 64,
+      "fill": "$nav.bg",
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "padding": [0, 32, 0, 32],
+      "children": [
+        {
+          "id": "nav-default-logo",
+          "name": "Logo",
+          "type": "text",
+          "content": "Acme Inc",
+          "fontSize": 18,
+          "fontWeight": 700,
+          "fill": "$nav.fg"
+        },
+        {
+          "id": "nav-default-links",
+          "name": "Links",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "gap": 32,
+          "children": [
+            {
+              "id": "nav-default-link1",
+              "name": "Link",
+              "type": "text",
+              "content": "Features",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            },
+            {
+              "id": "nav-default-link2",
+              "name": "Link",
+              "type": "text",
+              "content": "Pricing",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            },
+            {
+              "id": "nav-default-link3",
+              "name": "Link",
+              "type": "text",
+              "content": "Docs",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            }
+          ]
+        },
+        {
+          "id": "nav-default-cta",
+          "name": "CTA",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 36,
+          "fill": "#FAFAFA",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "nav-default-cta-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Sign Up",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "#09090B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nav-transparent",
+      "name": "Nav / Transparent",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 64,
+      "fill": "transparent",
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "padding": [0, 32, 0, 32],
+      "children": [
+        {
+          "id": "nav-transparent-logo",
+          "name": "Logo",
+          "type": "text",
+          "content": "Acme Inc",
+          "fontSize": 18,
+          "fontWeight": 700,
+          "fill": "$nav.fg"
+        },
+        {
+          "id": "nav-transparent-links",
+          "name": "Links",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "gap": 32,
+          "children": [
+            {
+              "id": "nav-transparent-link1",
+              "name": "Link",
+              "type": "text",
+              "content": "Features",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            },
+            {
+              "id": "nav-transparent-link2",
+              "name": "Link",
+              "type": "text",
+              "content": "Pricing",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            },
+            {
+              "id": "nav-transparent-link3",
+              "name": "Link",
+              "type": "text",
+              "content": "Docs",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            }
+          ]
+        },
+        {
+          "id": "nav-transparent-cta",
+          "name": "CTA",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 36,
+          "fill": "#FAFAFA",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "nav-transparent-cta-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Get Started",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "#09090B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nav-bordered",
+      "name": "Nav / Bordered",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 64,
+      "fill": "$nav.bg",
+      "stroke": { "color": "$nav.border", "width": 1, "side": "bottom" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "padding": [0, 32, 0, 32],
+      "children": [
+        {
+          "id": "nav-bordered-logo",
+          "name": "Logo",
+          "type": "text",
+          "content": "Acme Inc",
+          "fontSize": 18,
+          "fontWeight": 700,
+          "fill": "$nav.fg"
+        },
+        {
+          "id": "nav-bordered-links",
+          "name": "Links",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "gap": 32,
+          "children": [
+            {
+              "id": "nav-bordered-link1",
+              "name": "Link",
+              "type": "text",
+              "content": "Features",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            },
+            {
+              "id": "nav-bordered-link2",
+              "name": "Link",
+              "type": "text",
+              "content": "Pricing",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            },
+            {
+              "id": "nav-bordered-link3",
+              "name": "Link",
+              "type": "text",
+              "content": "About",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$nav.muted"
+            }
+          ]
+        },
+        {
+          "id": "nav-bordered-cta",
+          "name": "CTA",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 36,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "stroke": { "color": "$nav.border", "width": 1 },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "nav-bordered-cta-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Log In",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$nav.fg"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

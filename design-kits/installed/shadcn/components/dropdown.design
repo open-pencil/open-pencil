@@ -1,0 +1,406 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Dropdown", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "dropdown.bg": { "type": "color", "value": "#09090B" },
+    "dropdown.fg": { "type": "color", "value": "#FAFAFA" },
+    "dropdown.muted": { "type": "color", "value": "#A1A1AA" },
+    "dropdown.border": { "type": "color", "value": "#27272A" },
+    "dropdown.hover": { "type": "color", "value": "#27272A" },
+    "dropdown.separator": { "type": "color", "value": "#27272A" },
+    "dropdown.radius": { "type": "number", "value": 8 }
+  },
+  "children": [
+    {
+      "id": "dropdown-default",
+      "name": "Dropdown / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 220,
+      "height": "fit_content",
+      "fill": "$dropdown.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$dropdown.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "vertical",
+      "padding": [4, 4, 4, 4],
+      "gap": 2,
+      "children": [
+        {
+          "id": "dropdown-d-item1",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "fill": "$dropdown.hover",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "dropdown-d-item1-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Profile",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.fg"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-d-item2",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "dropdown-d-item2-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.fg"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-d-item3",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "dropdown-d-item3-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Keyboard Shortcuts",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.fg"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-d-sep",
+          "name": "Separator",
+          "type": "frame",
+          "width": "fill",
+          "height": 1,
+          "fill": "$dropdown.separator"
+        },
+        {
+          "id": "dropdown-d-item4",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "dropdown-d-item4-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Log Out",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dropdown-with-icons",
+      "name": "Dropdown / With Icons",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": "fit_content",
+      "fill": "$dropdown.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$dropdown.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "vertical",
+      "padding": [4, 4, 4, 4],
+      "gap": 2,
+      "children": [
+        {
+          "id": "dropdown-i-item1",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "fill": "$dropdown.hover",
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "gap": 10,
+          "children": [
+            {
+              "id": "dropdown-i-item1-icon",
+              "name": "Icon",
+              "type": "frame",
+              "width": 16,
+              "height": 16,
+              "fill": "$dropdown.muted",
+              "cornerRadius": 3
+            },
+            {
+              "id": "dropdown-i-item1-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Edit",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.fg"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-i-item2",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "gap": 10,
+          "children": [
+            {
+              "id": "dropdown-i-item2-icon",
+              "name": "Icon",
+              "type": "frame",
+              "width": 16,
+              "height": 16,
+              "fill": "$dropdown.muted",
+              "cornerRadius": 3
+            },
+            {
+              "id": "dropdown-i-item2-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Duplicate",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.fg"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-i-item3",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "gap": 10,
+          "children": [
+            {
+              "id": "dropdown-i-item3-icon",
+              "name": "Icon",
+              "type": "frame",
+              "width": 16,
+              "height": 16,
+              "fill": "$dropdown.muted",
+              "cornerRadius": 3
+            },
+            {
+              "id": "dropdown-i-item3-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Archive",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$dropdown.fg"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-i-sep",
+          "name": "Separator",
+          "type": "frame",
+          "width": "fill",
+          "height": 1,
+          "fill": "$dropdown.separator"
+        },
+        {
+          "id": "dropdown-i-item4",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "gap": 10,
+          "children": [
+            {
+              "id": "dropdown-i-item4-icon",
+              "name": "Icon",
+              "type": "frame",
+              "width": 16,
+              "height": 16,
+              "fill": "#EF4444",
+              "cornerRadius": 3
+            },
+            {
+              "id": "dropdown-i-item4-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Delete",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "#EF4444"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dropdown-with-sections",
+      "name": "Dropdown / With Sections",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": "fit_content",
+      "fill": "$dropdown.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$dropdown.border", "width": 1 },
+      "shadow": { "x": 0, "y": 4, "blur": 16, "color": "rgba(0,0,0,0.3)" },
+      "layout": "vertical",
+      "padding": [4, 4, 4, 4],
+      "gap": 2,
+      "children": [
+        {
+          "id": "dropdown-s-label1",
+          "name": "Section Label",
+          "type": "frame",
+          "width": "fill",
+          "height": 28,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "dropdown-s-label1-text",
+              "name": "Label",
+              "type": "text",
+              "content": "My Account",
+              "fontSize": 12,
+              "fontWeight": 500,
+              "fill": "$dropdown.muted"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-s-item1",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dropdown-s-item1-label", "name": "Label", "type": "text", "content": "Profile", "fontSize": 14, "fontWeight": 400, "fill": "$dropdown.fg" }
+          ]
+        },
+        {
+          "id": "dropdown-s-item2",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dropdown-s-item2-label", "name": "Label", "type": "text", "content": "Billing", "fontSize": 14, "fontWeight": 400, "fill": "$dropdown.fg" }
+          ]
+        },
+        {
+          "id": "dropdown-s-sep",
+          "name": "Separator",
+          "type": "frame",
+          "width": "fill",
+          "height": 1,
+          "fill": "$dropdown.separator"
+        },
+        {
+          "id": "dropdown-s-label2",
+          "name": "Section Label",
+          "type": "frame",
+          "width": "fill",
+          "height": 28,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "dropdown-s-label2-text",
+              "name": "Label",
+              "type": "text",
+              "content": "Team",
+              "fontSize": 12,
+              "fontWeight": 500,
+              "fill": "$dropdown.muted"
+            }
+          ]
+        },
+        {
+          "id": "dropdown-s-item3",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dropdown-s-item3-label", "name": "Label", "type": "text", "content": "Invite Members", "fontSize": 14, "fontWeight": 400, "fill": "$dropdown.fg" }
+          ]
+        },
+        {
+          "id": "dropdown-s-item4",
+          "name": "Item",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "cornerRadius": 4,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dropdown-s-item4-label", "name": "Label", "type": "text", "content": "Team Settings", "fontSize": 14, "fontWeight": 400, "fill": "$dropdown.fg" }
+          ]
+        }
+      ]
+    }
+  ]
+}

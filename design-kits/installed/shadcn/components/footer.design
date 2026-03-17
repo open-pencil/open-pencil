@@ -1,0 +1,355 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Footer", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "footer.bg": { "type": "color", "value": "#09090B" },
+    "footer.fg": { "type": "color", "value": "#FAFAFA" },
+    "footer.muted": { "type": "color", "value": "#71717A" },
+    "footer.border": { "type": "color", "value": "#27272A" }
+  },
+  "children": [
+    {
+      "id": "footer-minimal",
+      "name": "Footer / Minimal",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$footer.bg",
+      "stroke": { "color": "$footer.border", "width": 1, "side": "top" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "space-between",
+      "padding": [24, 32, 24, 32],
+      "children": [
+        {
+          "id": "footer-min-copy",
+          "name": "Copyright",
+          "type": "text",
+          "content": "© 2026 Acme Inc. All rights reserved.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$footer.muted"
+        },
+        {
+          "id": "footer-min-links",
+          "name": "Links",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 24,
+          "children": [
+            {
+              "id": "footer-min-link1",
+              "name": "Link",
+              "type": "text",
+              "content": "Privacy",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            },
+            {
+              "id": "footer-min-link2",
+              "name": "Link",
+              "type": "text",
+              "content": "Terms",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "footer-fat",
+      "name": "Footer / Fat",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$footer.bg",
+      "stroke": { "color": "$footer.border", "width": 1, "side": "top" },
+      "layout": "vertical",
+      "padding": [48, 32, 32, 32],
+      "gap": 40,
+      "children": [
+        {
+          "id": "footer-fat-cols",
+          "name": "Columns",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "justifyContent": "space-between",
+          "children": [
+            {
+              "id": "footer-fat-brand",
+              "name": "Brand",
+              "type": "frame",
+              "width": 240,
+              "height": "fit_content",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "id": "footer-fat-logo",
+                  "name": "Logo",
+                  "type": "text",
+                  "content": "Acme Inc",
+                  "fontSize": 18,
+                  "fontWeight": 700,
+                  "fill": "$footer.fg"
+                },
+                {
+                  "id": "footer-fat-tagline",
+                  "name": "Tagline",
+                  "type": "text",
+                  "content": "Build something amazing with our open-source components.",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                }
+              ]
+            },
+            {
+              "id": "footer-fat-col1",
+              "name": "Product",
+              "type": "frame",
+              "width": "fit_content",
+              "height": "fit_content",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "id": "footer-fat-col1-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Product",
+                  "fontSize": 14,
+                  "fontWeight": 600,
+                  "fill": "$footer.fg"
+                },
+                {
+                  "id": "footer-fat-col1-l1",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Features",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                },
+                {
+                  "id": "footer-fat-col1-l2",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Pricing",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                },
+                {
+                  "id": "footer-fat-col1-l3",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Changelog",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                }
+              ]
+            },
+            {
+              "id": "footer-fat-col2",
+              "name": "Company",
+              "type": "frame",
+              "width": "fit_content",
+              "height": "fit_content",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "id": "footer-fat-col2-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Company",
+                  "fontSize": 14,
+                  "fontWeight": 600,
+                  "fill": "$footer.fg"
+                },
+                {
+                  "id": "footer-fat-col2-l1",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "About",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                },
+                {
+                  "id": "footer-fat-col2-l2",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Blog",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                },
+                {
+                  "id": "footer-fat-col2-l3",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Careers",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                }
+              ]
+            },
+            {
+              "id": "footer-fat-col3",
+              "name": "Legal",
+              "type": "frame",
+              "width": "fit_content",
+              "height": "fit_content",
+              "layout": "vertical",
+              "gap": 12,
+              "children": [
+                {
+                  "id": "footer-fat-col3-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Legal",
+                  "fontSize": 14,
+                  "fontWeight": 600,
+                  "fill": "$footer.fg"
+                },
+                {
+                  "id": "footer-fat-col3-l1",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Privacy",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                },
+                {
+                  "id": "footer-fat-col3-l2",
+                  "name": "Link",
+                  "type": "text",
+                  "content": "Terms",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$footer.muted"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "footer-fat-bottom",
+          "name": "Bottom Bar",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "footer-fat-copy",
+              "name": "Copyright",
+              "type": "text",
+              "content": "© 2026 Acme Inc. All rights reserved.",
+              "fontSize": 13,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "footer-centered",
+      "name": "Footer / Centered",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$footer.bg",
+      "stroke": { "color": "$footer.border", "width": 1, "side": "top" },
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [32, 32, 32, 32],
+      "gap": 16,
+      "children": [
+        {
+          "id": "footer-centered-logo",
+          "name": "Logo",
+          "type": "text",
+          "content": "Acme Inc",
+          "fontSize": 18,
+          "fontWeight": 700,
+          "fill": "$footer.fg"
+        },
+        {
+          "id": "footer-centered-links",
+          "name": "Links",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 24,
+          "children": [
+            {
+              "id": "footer-centered-l1",
+              "name": "Link",
+              "type": "text",
+              "content": "Features",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            },
+            {
+              "id": "footer-centered-l2",
+              "name": "Link",
+              "type": "text",
+              "content": "Pricing",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            },
+            {
+              "id": "footer-centered-l3",
+              "name": "Link",
+              "type": "text",
+              "content": "Docs",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            },
+            {
+              "id": "footer-centered-l4",
+              "name": "Link",
+              "type": "text",
+              "content": "Blog",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$footer.muted"
+            }
+          ]
+        },
+        {
+          "id": "footer-centered-copy",
+          "name": "Copyright",
+          "type": "text",
+          "content": "© 2026 Acme Inc. All rights reserved.",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$footer.muted"
+        }
+      ]
+    }
+  ]
+}

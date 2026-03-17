@@ -1,0 +1,268 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Tabs", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "tabs.bg": { "type": "color", "value": "#18181B" },
+    "tabs.fg": { "type": "color", "value": "#FAFAFA" },
+    "tabs.muted": { "type": "color", "value": "#71717A" },
+    "tabs.active.bg": { "type": "color", "value": "#09090B" },
+    "tabs.active.fg": { "type": "color", "value": "#FAFAFA" },
+    "tabs.border": { "type": "color", "value": "#27272A" },
+    "tabs.underline": { "type": "color", "value": "#FAFAFA" },
+    "tabs.pill.bg": { "type": "color", "value": "#27272A" }
+  },
+  "children": [
+    {
+      "id": "tabs-default",
+      "name": "Tabs / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "$tabs.bg",
+      "cornerRadius": 8,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [4, 4, 4, 4],
+      "gap": 2,
+      "children": [
+        {
+          "id": "tabs-default-t1",
+          "name": "Tab Active",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 32,
+          "fill": "$tabs.active.bg",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-default-t1-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Overview",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.active.fg"
+            }
+          ]
+        },
+        {
+          "id": "tabs-default-t2",
+          "name": "Tab",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 32,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-default-t2-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Analytics",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.muted"
+            }
+          ]
+        },
+        {
+          "id": "tabs-default-t3",
+          "name": "Tab",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 32,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-default-t3-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tabs-underline",
+      "name": "Tabs / Underline",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": "fit_content",
+      "stroke": { "color": "$tabs.border", "width": 1, "side": "bottom" },
+      "layout": "horizontal",
+      "gap": 0,
+      "children": [
+        {
+          "id": "tabs-underline-t1",
+          "name": "Tab Active",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 40,
+          "stroke": { "color": "$tabs.underline", "width": 2, "side": "bottom" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-underline-t1-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Overview",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.fg"
+            }
+          ]
+        },
+        {
+          "id": "tabs-underline-t2",
+          "name": "Tab",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 40,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-underline-t2-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Analytics",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.muted"
+            }
+          ]
+        },
+        {
+          "id": "tabs-underline-t3",
+          "name": "Tab",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 40,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-underline-t3-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tabs-pills",
+      "name": "Tabs / Pills",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": "fit_content",
+      "layout": "horizontal",
+      "gap": 8,
+      "children": [
+        {
+          "id": "tabs-pills-t1",
+          "name": "Tab Active",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 36,
+          "fill": "$tabs.pill.bg",
+          "cornerRadius": 9999,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-pills-t1-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Overview",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.fg"
+            }
+          ]
+        },
+        {
+          "id": "tabs-pills-t2",
+          "name": "Tab",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 36,
+          "fill": "transparent",
+          "cornerRadius": 9999,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-pills-t2-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Analytics",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.muted"
+            }
+          ]
+        },
+        {
+          "id": "tabs-pills-t3",
+          "name": "Tab",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 36,
+          "fill": "transparent",
+          "cornerRadius": 9999,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "tabs-pills-t3-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Settings",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$tabs.muted"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

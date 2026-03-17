@@ -1,0 +1,185 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Button", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "btn.primary.bg": { "type": "color", "value": "#FAFAFA" },
+    "btn.primary.fg": { "type": "color", "value": "#09090B" },
+    "btn.secondary.bg": { "type": "color", "value": "#27272A" },
+    "btn.secondary.fg": { "type": "color", "value": "#FAFAFA" },
+    "btn.ghost.bg": { "type": "color", "value": "transparent" },
+    "btn.ghost.fg": { "type": "color", "value": "#FAFAFA" },
+    "btn.destructive.bg": { "type": "color", "value": "#DC2626" },
+    "btn.destructive.fg": { "type": "color", "value": "#FAFAFA" },
+    "btn.outline.bg": { "type": "color", "value": "transparent" },
+    "btn.outline.fg": { "type": "color", "value": "#FAFAFA" },
+    "btn.outline.border": { "type": "color", "value": "#27272A" },
+    "btn.link.fg": { "type": "color", "value": "#FAFAFA" },
+    "btn.radius": { "type": "number", "value": 6 },
+    "btn.sm.height": { "type": "number", "value": 32 },
+    "btn.md.height": { "type": "number", "value": 40 },
+    "btn.lg.height": { "type": "number", "value": 48 },
+    "btn.sm.fontSize": { "type": "number", "value": 13 },
+    "btn.md.fontSize": { "type": "number", "value": 14 },
+    "btn.lg.fontSize": { "type": "number", "value": 16 }
+  },
+  "children": [
+    {
+      "id": "btn-primary-md",
+      "name": "Button / Primary / md",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "$btn.primary.bg",
+      "cornerRadius": 6,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 16, 0, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "btn-primary-md-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Get Started",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$btn.primary.fg"
+        }
+      ]
+    },
+    {
+      "id": "btn-secondary-md",
+      "name": "Button / Secondary / md",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "$btn.secondary.bg",
+      "cornerRadius": 6,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 16, 0, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "btn-secondary-md-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Learn More",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$btn.secondary.fg"
+        }
+      ]
+    },
+    {
+      "id": "btn-ghost-md",
+      "name": "Button / Ghost / md",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "$btn.ghost.bg",
+      "cornerRadius": 6,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 16, 0, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "btn-ghost-md-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Cancel",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$btn.ghost.fg"
+        }
+      ]
+    },
+    {
+      "id": "btn-destructive-md",
+      "name": "Button / Destructive / md",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "$btn.destructive.bg",
+      "cornerRadius": 6,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 16, 0, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "btn-destructive-md-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Delete",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$btn.destructive.fg"
+        }
+      ]
+    },
+    {
+      "id": "btn-outline-md",
+      "name": "Button / Outline / md",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "$btn.outline.bg",
+      "cornerRadius": 6,
+      "stroke": { "color": "$btn.outline.border", "width": 1 },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 16, 0, 16],
+      "gap": 8,
+      "children": [
+        {
+          "id": "btn-outline-md-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Sign In",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$btn.outline.fg"
+        }
+      ]
+    },
+    {
+      "id": "btn-link-md",
+      "name": "Button / Link / md",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 40,
+      "fill": "transparent",
+      "cornerRadius": 0,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 4, 0, 4],
+      "gap": 8,
+      "children": [
+        {
+          "id": "btn-link-md-label",
+          "name": "Label",
+          "type": "text",
+          "content": "View details",
+          "fontSize": 14,
+          "fontWeight": 500,
+          "fill": "$btn.link.fg",
+          "textDecoration": "underline"
+        }
+      ]
+    }
+  ]
+}

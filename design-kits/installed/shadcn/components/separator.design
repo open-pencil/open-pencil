@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Separator", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "separator.color": { "type": "color", "value": "#27272A" }
+  },
+  "children": [
+    {
+      "id": "separator-horizontal",
+      "name": "Separator / Horizontal",
+      "type": "frame",
+      "reusable": true,
+      "width": "fill",
+      "height": 1,
+      "fill": "$separator.color"
+    },
+    {
+      "id": "separator-vertical",
+      "name": "Separator / Vertical",
+      "type": "frame",
+      "reusable": true,
+      "width": 1,
+      "height": "fill",
+      "fill": "$separator.color"
+    }
+  ]
+}

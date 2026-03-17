@@ -1,0 +1,262 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "HeroSection", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "hero.bg": { "type": "color", "value": "#09090B" },
+    "hero.fg": { "type": "color", "value": "#FAFAFA" },
+    "hero.muted": { "type": "color", "value": "#A1A1AA" },
+    "hero.primary.bg": { "type": "color", "value": "#FAFAFA" },
+    "hero.primary.fg": { "type": "color", "value": "#09090B" },
+    "hero.secondary.bg": { "type": "color", "value": "#27272A" },
+    "hero.secondary.fg": { "type": "color", "value": "#FAFAFA" }
+  },
+  "children": [
+    {
+      "id": "hero-centered",
+      "name": "HeroSection / Centered",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$hero.bg",
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [96, 32, 96, 32],
+      "gap": 24,
+      "children": [
+        {
+          "id": "hero-centered-badge",
+          "name": "Badge",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 24,
+          "fill": "$hero.secondary.bg",
+          "cornerRadius": 9999,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "hero-centered-badge-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Introducing v2.0",
+              "fontSize": 12,
+              "fontWeight": 500,
+              "fill": "$hero.secondary.fg"
+            }
+          ]
+        },
+        {
+          "id": "hero-centered-headline",
+          "name": "Headline",
+          "type": "text",
+          "content": "Build beautiful apps at lightning speed",
+          "fontSize": 56,
+          "fontWeight": 700,
+          "fill": "$hero.fg"
+        },
+        {
+          "id": "hero-centered-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "An open-source UI component library built with Radix and Tailwind CSS. Accessible, customizable, and production-ready.",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "fill": "$hero.muted"
+        },
+        {
+          "id": "hero-centered-actions",
+          "name": "Actions",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 12,
+          "children": [
+            {
+              "id": "hero-centered-cta",
+              "name": "Primary CTA",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 48,
+              "fill": "$hero.primary.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 24, 0, 24],
+              "children": [
+                {
+                  "id": "hero-centered-cta-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Get Started",
+                  "fontSize": 16,
+                  "fontWeight": 500,
+                  "fill": "$hero.primary.fg"
+                }
+              ]
+            },
+            {
+              "id": "hero-centered-secondary",
+              "name": "Secondary CTA",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 48,
+              "fill": "$hero.secondary.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 24, 0, 24],
+              "children": [
+                {
+                  "id": "hero-centered-secondary-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "View on GitHub",
+                  "fontSize": 16,
+                  "fontWeight": 500,
+                  "fill": "$hero.secondary.fg"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hero-split",
+      "name": "HeroSection / Split",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$hero.bg",
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [64, 32, 64, 32],
+      "gap": 64,
+      "children": [
+        {
+          "id": "hero-split-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 560,
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 24,
+          "children": [
+            {
+              "id": "hero-split-headline",
+              "name": "Headline",
+              "type": "text",
+              "content": "The modern way to build for the web",
+              "fontSize": 48,
+              "fontWeight": 700,
+              "fill": "$hero.fg"
+            },
+            {
+              "id": "hero-split-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Create stunning interfaces with pre-built components that are accessible, customizable, and performant out of the box.",
+              "fontSize": 18,
+              "fontWeight": 400,
+              "fill": "$hero.muted"
+            },
+            {
+              "id": "hero-split-cta",
+              "name": "CTA",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 48,
+              "fill": "$hero.primary.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 24, 0, 24],
+              "children": [
+                {
+                  "id": "hero-split-cta-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Start Building",
+                  "fontSize": 16,
+                  "fontWeight": 500,
+                  "fill": "$hero.primary.fg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hero-split-image",
+          "name": "Image Placeholder",
+          "type": "rectangle",
+          "width": 560,
+          "height": 400,
+          "fill": "#18181B",
+          "cornerRadius": 12
+        }
+      ]
+    },
+    {
+      "id": "hero-with-image",
+      "name": "HeroSection / With Image",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$hero.bg",
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [80, 32, 64, 32],
+      "gap": 48,
+      "children": [
+        {
+          "id": "hero-img-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 720,
+          "height": "fit_content",
+          "layout": "vertical",
+          "alignItems": "center",
+          "gap": 20,
+          "children": [
+            {
+              "id": "hero-img-headline",
+              "name": "Headline",
+              "type": "text",
+              "content": "Design. Develop. Deploy.",
+              "fontSize": 56,
+              "fontWeight": 700,
+              "fill": "$hero.fg"
+            },
+            {
+              "id": "hero-img-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Everything you need to ship beautiful products, from design system to production code.",
+              "fontSize": 18,
+              "fontWeight": 400,
+              "fill": "$hero.muted"
+            }
+          ]
+        },
+        {
+          "id": "hero-img-image",
+          "name": "Image Placeholder",
+          "type": "rectangle",
+          "width": 960,
+          "height": 540,
+          "fill": "#18181B",
+          "cornerRadius": 12
+        }
+      ]
+    }
+  ]
+}

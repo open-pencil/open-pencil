@@ -1,0 +1,197 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "FeatureCard", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "feature.bg": { "type": "color", "value": "#09090B" },
+    "feature.fg": { "type": "color", "value": "#FAFAFA" },
+    "feature.muted": { "type": "color", "value": "#A1A1AA" },
+    "feature.border": { "type": "color", "value": "#27272A" },
+    "feature.icon.bg": { "type": "color", "value": "#27272A" },
+    "feature.icon.fg": { "type": "color", "value": "#FAFAFA" },
+    "feature.radius": { "type": "number", "value": 12 }
+  },
+  "children": [
+    {
+      "id": "feature-icon-top",
+      "name": "FeatureCard / Icon Top",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$feature.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$feature.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "feature-top-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 48,
+          "height": 48,
+          "fill": "$feature.icon.bg",
+          "cornerRadius": 10,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "feature-top-icon-glyph",
+              "name": "Glyph",
+              "type": "text",
+              "content": "⚡",
+              "fontSize": 20,
+              "fontWeight": 400,
+              "fill": "$feature.icon.fg"
+            }
+          ]
+        },
+        {
+          "id": "feature-top-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Lightning Fast",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$feature.fg"
+        },
+        {
+          "id": "feature-top-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Optimized for performance. Built on modern standards with zero runtime overhead.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$feature.muted"
+        }
+      ]
+    },
+    {
+      "id": "feature-icon-left",
+      "name": "FeatureCard / Icon Left",
+      "type": "frame",
+      "reusable": true,
+      "width": 400,
+      "height": "fit_content",
+      "fill": "$feature.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$feature.border", "width": 1 },
+      "layout": "horizontal",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "feature-left-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 48,
+          "height": 48,
+          "fill": "$feature.icon.bg",
+          "cornerRadius": 10,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "feature-left-icon-glyph",
+              "name": "Glyph",
+              "type": "text",
+              "content": "🔒",
+              "fontSize": 20,
+              "fontWeight": 400,
+              "fill": "$feature.icon.fg"
+            }
+          ]
+        },
+        {
+          "id": "feature-left-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "id": "feature-left-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Secure by Default",
+              "fontSize": 16,
+              "fontWeight": 600,
+              "fill": "$feature.fg"
+            },
+            {
+              "id": "feature-left-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Enterprise-grade security built into every layer of the stack.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$feature.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "feature-large",
+      "name": "FeatureCard / Large",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": "fit_content",
+      "fill": "$feature.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$feature.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [32, 32, 32, 32],
+      "gap": 20,
+      "children": [
+        {
+          "id": "feature-large-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 56,
+          "height": 56,
+          "fill": "$feature.icon.bg",
+          "cornerRadius": 12,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "feature-large-icon-glyph",
+              "name": "Glyph",
+              "type": "text",
+              "content": "🎨",
+              "fontSize": 24,
+              "fontWeight": 400,
+              "fill": "$feature.icon.fg"
+            }
+          ]
+        },
+        {
+          "id": "feature-large-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Beautiful by Design",
+          "fontSize": 22,
+          "fontWeight": 700,
+          "fill": "$feature.fg"
+        },
+        {
+          "id": "feature-large-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Every component is carefully crafted with attention to detail, ensuring consistent aesthetics across your entire application.",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$feature.muted"
+        }
+      ]
+    }
+  ]
+}

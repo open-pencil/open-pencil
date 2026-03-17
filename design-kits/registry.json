@@ -1,5 +1,12 @@
 {
   "$schema": "./registry-schema.json",
   "version": "1.0.0",
-  "kits": []
+  "kits": [
+    {
+      "name": "shadcn",
+      "path": "installed/shadcn",
+      "category": "general",
+      "version": "1.0.0"
+    }
+  ]
 }

@@ -1,0 +1,152 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Avatar", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "avatar.bg": { "type": "color", "value": "#27272A" },
+    "avatar.fg": { "type": "color", "value": "#FAFAFA" },
+    "avatar.border": { "type": "color", "value": "#3F3F46" },
+    "avatar.sm": { "type": "number", "value": 32 },
+    "avatar.md": { "type": "number", "value": 40 },
+    "avatar.lg": { "type": "number", "value": 48 }
+  },
+  "children": [
+    {
+      "id": "avatar-image-sm",
+      "name": "Avatar / Image / sm",
+      "type": "frame",
+      "reusable": true,
+      "width": 32,
+      "height": 32,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "stroke": { "color": "$avatar.border", "width": 1 },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center"
+    },
+    {
+      "id": "avatar-image-md",
+      "name": "Avatar / Image / md",
+      "type": "frame",
+      "reusable": true,
+      "width": 40,
+      "height": 40,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "stroke": { "color": "$avatar.border", "width": 1 },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center"
+    },
+    {
+      "id": "avatar-image-lg",
+      "name": "Avatar / Image / lg",
+      "type": "frame",
+      "reusable": true,
+      "width": 48,
+      "height": 48,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "stroke": { "color": "$avatar.border", "width": 1 },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center"
+    },
+    {
+      "id": "avatar-initials-sm",
+      "name": "Avatar / Initials / sm",
+      "type": "frame",
+      "reusable": true,
+      "width": 32,
+      "height": 32,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "children": [
+        {
+          "id": "avatar-initials-sm-text",
+          "name": "Initials",
+          "type": "text",
+          "content": "JD",
+          "fontSize": 12,
+          "fontWeight": 600,
+          "fill": "$avatar.fg"
+        }
+      ]
+    },
+    {
+      "id": "avatar-initials-md",
+      "name": "Avatar / Initials / md",
+      "type": "frame",
+      "reusable": true,
+      "width": 40,
+      "height": 40,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "children": [
+        {
+          "id": "avatar-initials-md-text",
+          "name": "Initials",
+          "type": "text",
+          "content": "JD",
+          "fontSize": 14,
+          "fontWeight": 600,
+          "fill": "$avatar.fg"
+        }
+      ]
+    },
+    {
+      "id": "avatar-initials-lg",
+      "name": "Avatar / Initials / lg",
+      "type": "frame",
+      "reusable": true,
+      "width": 48,
+      "height": 48,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "children": [
+        {
+          "id": "avatar-initials-lg-text",
+          "name": "Initials",
+          "type": "text",
+          "content": "JD",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "fill": "$avatar.fg"
+        }
+      ]
+    },
+    {
+      "id": "avatar-icon-md",
+      "name": "Avatar / Icon / md",
+      "type": "frame",
+      "reusable": true,
+      "width": 40,
+      "height": 40,
+      "fill": "$avatar.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "children": [
+        {
+          "id": "avatar-icon-md-glyph",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$avatar.fg",
+          "cornerRadius": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "StatCard", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "stat.bg": { "type": "color", "value": "#09090B" },
+    "stat.fg": { "type": "color", "value": "#FAFAFA" },
+    "stat.muted": { "type": "color", "value": "#A1A1AA" },
+    "stat.border": { "type": "color", "value": "#27272A" },
+    "stat.positive": { "type": "color", "value": "#22C55E" },
+    "stat.negative": { "type": "color", "value": "#EF4444" },
+    "stat.radius": { "type": "number", "value": 12 }
+  },
+  "children": [
+    {
+      "id": "stat-default",
+      "name": "StatCard / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": "fit_content",
+      "fill": "$stat.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$stat.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "stat-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Total Revenue",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$stat.muted"
+        },
+        {
+          "id": "stat-default-value",
+          "name": "Value",
+          "type": "text",
+          "content": "$45,231.89",
+          "fontSize": 28,
+          "fontWeight": 700,
+          "fill": "$stat.fg"
+        }
+      ]
+    },
+    {
+      "id": "stat-with-trend",
+      "name": "StatCard / With Trend",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": "fit_content",
+      "fill": "$stat.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$stat.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "stat-trend-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Active Users",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$stat.muted"
+        },
+        {
+          "id": "stat-trend-row",
+          "name": "Value Row",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "children": [
+            {
+              "id": "stat-trend-value",
+              "name": "Value",
+              "type": "text",
+              "content": "2,350",
+              "fontSize": 28,
+              "fontWeight": 700,
+              "fill": "$stat.fg"
+            },
+            {
+              "id": "stat-trend-badge",
+              "name": "Trend",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 22,
+              "fill": "rgba(34,197,94,0.15)",
+              "cornerRadius": 9999,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "padding": [0, 8, 0, 8],
+              "gap": 2,
+              "children": [
+                {
+                  "id": "stat-trend-arrow",
+                  "name": "Arrow",
+                  "type": "text",
+                  "content": "↑",
+                  "fontSize": 12,
+                  "fontWeight": 500,
+                  "fill": "$stat.positive"
+                },
+                {
+                  "id": "stat-trend-pct",
+                  "name": "Percentage",
+                  "type": "text",
+                  "content": "12.5%",
+                  "fontSize": 12,
+                  "fontWeight": 500,
+                  "fill": "$stat.positive"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stat-with-sparkline",
+      "name": "StatCard / With Sparkline",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": "fit_content",
+      "fill": "$stat.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$stat.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "stat-spark-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Page Views",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$stat.muted"
+        },
+        {
+          "id": "stat-spark-value",
+          "name": "Value",
+          "type": "text",
+          "content": "573,489",
+          "fontSize": 28,
+          "fontWeight": 700,
+          "fill": "$stat.fg"
+        },
+        {
+          "id": "stat-spark-chart",
+          "name": "Sparkline Placeholder",
+          "type": "rectangle",
+          "width": 192,
+          "height": 32,
+          "fill": "#27272A",
+          "cornerRadius": 4
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,504 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "PricingCard", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "pricing.bg": { "type": "color", "value": "#09090B" },
+    "pricing.fg": { "type": "color", "value": "#FAFAFA" },
+    "pricing.muted": { "type": "color", "value": "#A1A1AA" },
+    "pricing.border": { "type": "color", "value": "#27272A" },
+    "pricing.popular.border": { "type": "color", "value": "#FAFAFA" },
+    "pricing.popular.badge.bg": { "type": "color", "value": "#FAFAFA" },
+    "pricing.popular.badge.fg": { "type": "color", "value": "#09090B" },
+    "pricing.check": { "type": "color", "value": "#22C55E" },
+    "pricing.radius": { "type": "number", "value": 12 }
+  },
+  "children": [
+    {
+      "id": "pricing-default",
+      "name": "PricingCard / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$pricing.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$pricing.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [32, 24, 32, 24],
+      "gap": 24,
+      "children": [
+        {
+          "id": "pricing-default-header",
+          "name": "Header",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "id": "pricing-default-name",
+              "name": "Plan Name",
+              "type": "text",
+              "content": "Starter",
+              "fontSize": 20,
+              "fontWeight": 600,
+              "fill": "$pricing.fg"
+            },
+            {
+              "id": "pricing-default-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Perfect for side projects and small teams.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$pricing.muted"
+            }
+          ]
+        },
+        {
+          "id": "pricing-default-price",
+          "name": "Price",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "baseline",
+          "gap": 4,
+          "children": [
+            {
+              "id": "pricing-default-amount",
+              "name": "Amount",
+              "type": "text",
+              "content": "$9",
+              "fontSize": 40,
+              "fontWeight": 700,
+              "fill": "$pricing.fg"
+            },
+            {
+              "id": "pricing-default-period",
+              "name": "Period",
+              "type": "text",
+              "content": "/month",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$pricing.muted"
+            }
+          ]
+        },
+        {
+          "id": "pricing-default-features",
+          "name": "Features",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "id": "pricing-default-f1",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-d-f1-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-d-f1-text", "name": "Text", "type": "text", "content": "Up to 3 projects", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-default-f2",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-d-f2-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-d-f2-text", "name": "Text", "type": "text", "content": "1 GB storage", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-default-f3",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-d-f3-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-d-f3-text", "name": "Text", "type": "text", "content": "Community support", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pricing-default-cta",
+          "name": "CTA",
+          "type": "frame",
+          "width": "fill",
+          "height": 44,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "stroke": { "color": "$pricing.border", "width": 1 },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "pricing-default-cta-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Get Started",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$pricing.fg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pricing-popular",
+      "name": "PricingCard / Popular",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$pricing.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$pricing.popular.border", "width": 2 },
+      "layout": "vertical",
+      "padding": [32, 24, 32, 24],
+      "gap": 24,
+      "children": [
+        {
+          "id": "pricing-popular-header",
+          "name": "Header",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "justifyContent": "space-between",
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "pricing-popular-name",
+              "name": "Plan Name",
+              "type": "text",
+              "content": "Pro",
+              "fontSize": 20,
+              "fontWeight": 600,
+              "fill": "$pricing.fg"
+            },
+            {
+              "id": "pricing-popular-badge",
+              "name": "Badge",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 22,
+              "fill": "$pricing.popular.badge.bg",
+              "cornerRadius": 9999,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 10, 0, 10],
+              "children": [
+                {
+                  "id": "pricing-popular-badge-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Popular",
+                  "fontSize": 12,
+                  "fontWeight": 500,
+                  "fill": "$pricing.popular.badge.fg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pricing-popular-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "For growing teams that need more power and flexibility.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$pricing.muted"
+        },
+        {
+          "id": "pricing-popular-price",
+          "name": "Price",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "baseline",
+          "gap": 4,
+          "children": [
+            {
+              "id": "pricing-popular-amount",
+              "name": "Amount",
+              "type": "text",
+              "content": "$29",
+              "fontSize": 40,
+              "fontWeight": 700,
+              "fill": "$pricing.fg"
+            },
+            {
+              "id": "pricing-popular-period",
+              "name": "Period",
+              "type": "text",
+              "content": "/month",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$pricing.muted"
+            }
+          ]
+        },
+        {
+          "id": "pricing-popular-features",
+          "name": "Features",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "id": "pricing-pop-f1",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-p-f1-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-p-f1-text", "name": "Text", "type": "text", "content": "Unlimited projects", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-pop-f2",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-p-f2-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-p-f2-text", "name": "Text", "type": "text", "content": "50 GB storage", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-pop-f3",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-p-f3-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-p-f3-text", "name": "Text", "type": "text", "content": "Priority support", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-pop-f4",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-p-f4-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-p-f4-text", "name": "Text", "type": "text", "content": "Advanced analytics", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pricing-popular-cta",
+          "name": "CTA",
+          "type": "frame",
+          "width": "fill",
+          "height": 44,
+          "fill": "#FAFAFA",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "pricing-popular-cta-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Upgrade to Pro",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "#09090B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pricing-enterprise",
+      "name": "PricingCard / Enterprise",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "$pricing.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$pricing.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [32, 24, 32, 24],
+      "gap": 24,
+      "children": [
+        {
+          "id": "pricing-enterprise-header",
+          "name": "Header",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "id": "pricing-enterprise-name",
+              "name": "Plan Name",
+              "type": "text",
+              "content": "Enterprise",
+              "fontSize": 20,
+              "fontWeight": 600,
+              "fill": "$pricing.fg"
+            },
+            {
+              "id": "pricing-enterprise-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "For large organizations with custom requirements.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$pricing.muted"
+            }
+          ]
+        },
+        {
+          "id": "pricing-enterprise-price",
+          "name": "Price",
+          "type": "text",
+          "content": "Custom",
+          "fontSize": 40,
+          "fontWeight": 700,
+          "fill": "$pricing.fg"
+        },
+        {
+          "id": "pricing-enterprise-features",
+          "name": "Features",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "id": "pricing-ent-f1",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-e-f1-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-e-f1-text", "name": "Text", "type": "text", "content": "Everything in Pro", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-ent-f2",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-e-f2-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-e-f2-text", "name": "Text", "type": "text", "content": "Unlimited storage", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-ent-f3",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-e-f3-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-e-f3-text", "name": "Text", "type": "text", "content": "SSO & SAML", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            },
+            {
+              "id": "pricing-ent-f4",
+              "name": "Feature",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                { "id": "pricing-e-f4-check", "name": "Check", "type": "text", "content": "✓", "fontSize": 14, "fontWeight": 600, "fill": "$pricing.check" },
+                { "id": "pricing-e-f4-text", "name": "Text", "type": "text", "content": "Dedicated account manager", "fontSize": 14, "fontWeight": 400, "fill": "$pricing.muted" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pricing-enterprise-cta",
+          "name": "CTA",
+          "type": "frame",
+          "width": "fill",
+          "height": 44,
+          "fill": "transparent",
+          "cornerRadius": 6,
+          "stroke": { "color": "$pricing.border", "width": 1 },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "pricing-enterprise-cta-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Contact Sales",
+              "fontSize": 14,
+              "fontWeight": 500,
+              "fill": "$pricing.fg"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

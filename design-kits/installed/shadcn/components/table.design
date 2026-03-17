@@ -1,0 +1,292 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Table", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "table.bg": { "type": "color", "value": "#09090B" },
+    "table.fg": { "type": "color", "value": "#FAFAFA" },
+    "table.muted": { "type": "color", "value": "#A1A1AA" },
+    "table.border": { "type": "color", "value": "#27272A" },
+    "table.header.bg": { "type": "color", "value": "#18181B" },
+    "table.stripe.bg": { "type": "color", "value": "#0F0F12" },
+    "table.row.height": { "type": "number", "value": 48 }
+  },
+  "children": [
+    {
+      "id": "table-default",
+      "name": "Table / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "fill": "$table.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$table.border", "width": 1 },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "table-default-header",
+          "name": "Header Row",
+          "type": "frame",
+          "width": "fill",
+          "height": 44,
+          "fill": "$table.header.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            {
+              "id": "table-default-h1",
+              "name": "Col Header",
+              "type": "text",
+              "content": "Name",
+              "fontSize": 13,
+              "fontWeight": 500,
+              "fill": "$table.muted",
+              "width": 200
+            },
+            {
+              "id": "table-default-h2",
+              "name": "Col Header",
+              "type": "text",
+              "content": "Status",
+              "fontSize": 13,
+              "fontWeight": 500,
+              "fill": "$table.muted",
+              "width": 120
+            },
+            {
+              "id": "table-default-h3",
+              "name": "Col Header",
+              "type": "text",
+              "content": "Role",
+              "fontSize": 13,
+              "fontWeight": 500,
+              "fill": "$table.muted",
+              "width": 140
+            },
+            {
+              "id": "table-default-h4",
+              "name": "Col Header",
+              "type": "text",
+              "content": "Amount",
+              "fontSize": 13,
+              "fontWeight": 500,
+              "fill": "$table.muted",
+              "width": 100
+            }
+          ]
+        },
+        {
+          "id": "table-default-row1",
+          "name": "Row 1",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-d-r1c1", "name": "Cell", "type": "text", "content": "Olivia Martin", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 200 },
+            { "id": "table-d-r1c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 14, "fontWeight": 400, "fill": "#22C55E", "width": 120 },
+            { "id": "table-d-r1c3", "name": "Cell", "type": "text", "content": "Admin", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 140 },
+            { "id": "table-d-r1c4", "name": "Cell", "type": "text", "content": "$1,999.00", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-default-row2",
+          "name": "Row 2",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-d-r2c1", "name": "Cell", "type": "text", "content": "Jackson Lee", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 200 },
+            { "id": "table-d-r2c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 14, "fontWeight": 400, "fill": "#22C55E", "width": 120 },
+            { "id": "table-d-r2c3", "name": "Cell", "type": "text", "content": "Member", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 140 },
+            { "id": "table-d-r2c4", "name": "Cell", "type": "text", "content": "$39.00", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-default-row3",
+          "name": "Row 3",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-d-r3c1", "name": "Cell", "type": "text", "content": "Isabella Nguyen", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 200 },
+            { "id": "table-d-r3c2", "name": "Cell", "type": "text", "content": "Inactive", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 120 },
+            { "id": "table-d-r3c3", "name": "Cell", "type": "text", "content": "Viewer", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 140 },
+            { "id": "table-d-r3c4", "name": "Cell", "type": "text", "content": "$299.00", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-striped",
+      "name": "Table / Striped",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "fill": "$table.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$table.border", "width": 1 },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "table-striped-header",
+          "name": "Header Row",
+          "type": "frame",
+          "width": "fill",
+          "height": 44,
+          "fill": "$table.header.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-s-h1", "name": "Col", "type": "text", "content": "Invoice", "fontSize": 13, "fontWeight": 500, "fill": "$table.muted", "width": 160 },
+            { "id": "table-s-h2", "name": "Col", "type": "text", "content": "Status", "fontSize": 13, "fontWeight": 500, "fill": "$table.muted", "width": 160 },
+            { "id": "table-s-h3", "name": "Col", "type": "text", "content": "Method", "fontSize": 13, "fontWeight": 500, "fill": "$table.muted", "width": 160 },
+            { "id": "table-s-h4", "name": "Col", "type": "text", "content": "Amount", "fontSize": 13, "fontWeight": 500, "fill": "$table.muted", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-striped-row1",
+          "name": "Row 1",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "fill": "$table.stripe.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-s-r1c1", "name": "Cell", "type": "text", "content": "INV001", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 160 },
+            { "id": "table-s-r1c2", "name": "Cell", "type": "text", "content": "Paid", "fontSize": 14, "fontWeight": 400, "fill": "#22C55E", "width": 160 },
+            { "id": "table-s-r1c3", "name": "Cell", "type": "text", "content": "Credit Card", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 160 },
+            { "id": "table-s-r1c4", "name": "Cell", "type": "text", "content": "$250.00", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-striped-row2",
+          "name": "Row 2",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-s-r2c1", "name": "Cell", "type": "text", "content": "INV002", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 160 },
+            { "id": "table-s-r2c2", "name": "Cell", "type": "text", "content": "Pending", "fontSize": 14, "fontWeight": 400, "fill": "#EAB308", "width": 160 },
+            { "id": "table-s-r2c3", "name": "Cell", "type": "text", "content": "PayPal", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 160 },
+            { "id": "table-s-r2c4", "name": "Cell", "type": "text", "content": "$150.00", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-striped-row3",
+          "name": "Row 3",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "fill": "$table.stripe.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "table-s-r3c1", "name": "Cell", "type": "text", "content": "INV003", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 160 },
+            { "id": "table-s-r3c2", "name": "Cell", "type": "text", "content": "Paid", "fontSize": 14, "fontWeight": 400, "fill": "#22C55E", "width": 160 },
+            { "id": "table-s-r3c3", "name": "Cell", "type": "text", "content": "Bank Transfer", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 160 },
+            { "id": "table-s-r3c4", "name": "Cell", "type": "text", "content": "$350.00", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "table-compact",
+      "name": "Table / Compact",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "fill": "$table.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$table.border", "width": 1 },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "table-compact-header",
+          "name": "Header Row",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "fill": "$table.header.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "table-c-h1", "name": "Col", "type": "text", "content": "Name", "fontSize": 12, "fontWeight": 500, "fill": "$table.muted", "width": 180 },
+            { "id": "table-c-h2", "name": "Col", "type": "text", "content": "Email", "fontSize": 12, "fontWeight": 500, "fill": "$table.muted", "width": 240 },
+            { "id": "table-c-h3", "name": "Col", "type": "text", "content": "Amount", "fontSize": 12, "fontWeight": 500, "fill": "$table.muted", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-compact-row1",
+          "name": "Row 1",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "table-c-r1c1", "name": "Cell", "type": "text", "content": "Liam Johnson", "fontSize": 13, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "table-c-r1c2", "name": "Cell", "type": "text", "content": "liam@example.com", "fontSize": 13, "fontWeight": 400, "fill": "$table.muted", "width": 240 },
+            { "id": "table-c-r1c3", "name": "Cell", "type": "text", "content": "$250.00", "fontSize": 13, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-compact-row2",
+          "name": "Row 2",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "table-c-r2c1", "name": "Cell", "type": "text", "content": "Emma Wilson", "fontSize": 13, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "table-c-r2c2", "name": "Cell", "type": "text", "content": "emma@example.com", "fontSize": 13, "fontWeight": 400, "fill": "$table.muted", "width": 240 },
+            { "id": "table-c-r2c3", "name": "Cell", "type": "text", "content": "$150.00", "fontSize": 13, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        },
+        {
+          "id": "table-compact-row3",
+          "name": "Row 3",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "table-c-r3c1", "name": "Cell", "type": "text", "content": "Noah Brown", "fontSize": 13, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "table-c-r3c2", "name": "Cell", "type": "text", "content": "noah@example.com", "fontSize": 13, "fontWeight": 400, "fill": "$table.muted", "width": 240 },
+            { "id": "table-c-r3c3", "name": "Cell", "type": "text", "content": "$350.00", "fontSize": 13, "fontWeight": 500, "fill": "$table.fg", "width": 100 }
+          ]
+        }
+      ]
+    }
+  ]
+}

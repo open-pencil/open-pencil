@@ -1,0 +1,232 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Alert", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "alert.bg": { "type": "color", "value": "#09090B" },
+    "alert.fg": { "type": "color", "value": "#FAFAFA" },
+    "alert.muted": { "type": "color", "value": "#A1A1AA" },
+    "alert.border": { "type": "color", "value": "#27272A" },
+    "alert.info": { "type": "color", "value": "#3B82F6" },
+    "alert.success": { "type": "color", "value": "#22C55E" },
+    "alert.warning": { "type": "color", "value": "#EAB308" },
+    "alert.error": { "type": "color", "value": "#EF4444" }
+  },
+  "children": [
+    {
+      "id": "alert-info",
+      "name": "Alert / Info",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": "fit_content",
+      "fill": "$alert.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$alert.info", "width": 1 },
+      "layout": "horizontal",
+      "padding": [16, 16, 16, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "alert-info-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$alert.info",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "alert-info-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 4,
+          "children": [
+            {
+              "id": "alert-info-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Information",
+              "fontSize": 14,
+              "fontWeight": 600,
+              "fill": "$alert.fg"
+            },
+            {
+              "id": "alert-info-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Your account has been updated with the latest security settings.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$alert.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alert-success",
+      "name": "Alert / Success",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": "fit_content",
+      "fill": "$alert.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$alert.success", "width": 1 },
+      "layout": "horizontal",
+      "padding": [16, 16, 16, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "alert-success-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$alert.success",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "alert-success-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 4,
+          "children": [
+            {
+              "id": "alert-success-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Success",
+              "fontSize": 14,
+              "fontWeight": 600,
+              "fill": "$alert.fg"
+            },
+            {
+              "id": "alert-success-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Your payment has been processed and your order is confirmed.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$alert.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alert-warning",
+      "name": "Alert / Warning",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": "fit_content",
+      "fill": "$alert.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$alert.warning", "width": 1 },
+      "layout": "horizontal",
+      "padding": [16, 16, 16, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "alert-warning-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$alert.warning",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "alert-warning-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 4,
+          "children": [
+            {
+              "id": "alert-warning-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Warning",
+              "fontSize": 14,
+              "fontWeight": 600,
+              "fill": "$alert.fg"
+            },
+            {
+              "id": "alert-warning-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Your storage is almost full. Consider upgrading your plan.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$alert.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "alert-error",
+      "name": "Alert / Error",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": "fit_content",
+      "fill": "$alert.bg",
+      "cornerRadius": 8,
+      "stroke": { "color": "$alert.error", "width": 1 },
+      "layout": "horizontal",
+      "padding": [16, 16, 16, 16],
+      "gap": 12,
+      "children": [
+        {
+          "id": "alert-error-icon",
+          "name": "Icon",
+          "type": "frame",
+          "width": 20,
+          "height": 20,
+          "fill": "$alert.error",
+          "cornerRadius": 9999
+        },
+        {
+          "id": "alert-error-content",
+          "name": "Content",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 4,
+          "children": [
+            {
+              "id": "alert-error-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Error",
+              "fontSize": 14,
+              "fontWeight": 600,
+              "fill": "$alert.fg"
+            },
+            {
+              "id": "alert-error-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "There was an error connecting to the database. Please contact support.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$alert.muted"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,248 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "CTASection", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "cta.bg": { "type": "color", "value": "#09090B" },
+    "cta.fg": { "type": "color", "value": "#FAFAFA" },
+    "cta.muted": { "type": "color", "value": "#A1A1AA" },
+    "cta.border": { "type": "color", "value": "#27272A" },
+    "cta.primary.bg": { "type": "color", "value": "#FAFAFA" },
+    "cta.primary.fg": { "type": "color", "value": "#09090B" },
+    "cta.gradient.from": { "type": "color", "value": "#18181B" },
+    "cta.gradient.to": { "type": "color", "value": "#09090B" }
+  },
+  "children": [
+    {
+      "id": "cta-simple",
+      "name": "CTASection / Simple",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$cta.bg",
+      "stroke": { "color": "$cta.border", "width": 1 },
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [64, 32, 64, 32],
+      "gap": 24,
+      "children": [
+        {
+          "id": "cta-simple-heading",
+          "name": "Heading",
+          "type": "text",
+          "content": "Ready to get started?",
+          "fontSize": 36,
+          "fontWeight": 700,
+          "fill": "$cta.fg"
+        },
+        {
+          "id": "cta-simple-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Join thousands of developers building with our components.",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$cta.muted"
+        },
+        {
+          "id": "cta-simple-btn",
+          "name": "CTA Button",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 48,
+          "fill": "$cta.primary.bg",
+          "cornerRadius": 6,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 32, 0, 32],
+          "children": [
+            {
+              "id": "cta-simple-btn-label",
+              "name": "Label",
+              "type": "text",
+              "content": "Start Free Trial",
+              "fontSize": 16,
+              "fontWeight": 500,
+              "fill": "$cta.primary.fg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cta-with-image",
+      "name": "CTASection / With Image",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$cta.bg",
+      "cornerRadius": 16,
+      "stroke": { "color": "$cta.border", "width": 1 },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "padding": [48, 48, 48, 48],
+      "gap": 48,
+      "children": [
+        {
+          "id": "cta-img-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 520,
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 24,
+          "children": [
+            {
+              "id": "cta-img-heading",
+              "name": "Heading",
+              "type": "text",
+              "content": "Ship your next project faster",
+              "fontSize": 32,
+              "fontWeight": 700,
+              "fill": "$cta.fg"
+            },
+            {
+              "id": "cta-img-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Our component library gives you everything you need to build production-ready applications.",
+              "fontSize": 16,
+              "fontWeight": 400,
+              "fill": "$cta.muted"
+            },
+            {
+              "id": "cta-img-btn",
+              "name": "CTA Button",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 44,
+              "fill": "$cta.primary.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 24, 0, 24],
+              "children": [
+                {
+                  "id": "cta-img-btn-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Get Started Now",
+                  "fontSize": 14,
+                  "fontWeight": 500,
+                  "fill": "$cta.primary.fg"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cta-img-image",
+          "name": "Image Placeholder",
+          "type": "rectangle",
+          "width": 480,
+          "height": 320,
+          "fill": "#18181B",
+          "cornerRadius": 12
+        }
+      ]
+    },
+    {
+      "id": "cta-gradient",
+      "name": "CTASection / Gradient Background",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$cta.gradient.from",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [72, 32, 72, 32],
+      "gap": 24,
+      "children": [
+        {
+          "id": "cta-grad-heading",
+          "name": "Heading",
+          "type": "text",
+          "content": "Start building today",
+          "fontSize": 40,
+          "fontWeight": 700,
+          "fill": "$cta.fg"
+        },
+        {
+          "id": "cta-grad-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Free for open source. Premium plans for teams and enterprises.",
+          "fontSize": 18,
+          "fontWeight": 400,
+          "fill": "$cta.muted"
+        },
+        {
+          "id": "cta-grad-actions",
+          "name": "Actions",
+          "type": "frame",
+          "width": "fit_content",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 12,
+          "children": [
+            {
+              "id": "cta-grad-primary",
+              "name": "Primary",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 48,
+              "fill": "$cta.primary.bg",
+              "cornerRadius": 6,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 32, 0, 32],
+              "children": [
+                {
+                  "id": "cta-grad-primary-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Sign Up Free",
+                  "fontSize": 16,
+                  "fontWeight": 500,
+                  "fill": "$cta.primary.fg"
+                }
+              ]
+            },
+            {
+              "id": "cta-grad-secondary",
+              "name": "Secondary",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 48,
+              "fill": "transparent",
+              "cornerRadius": 6,
+              "stroke": { "color": "$cta.border", "width": 1 },
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 32, 0, 32],
+              "children": [
+                {
+                  "id": "cta-grad-secondary-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Talk to Sales",
+                  "fontSize": 16,
+                  "fontWeight": 500,
+                  "fill": "$cta.fg"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

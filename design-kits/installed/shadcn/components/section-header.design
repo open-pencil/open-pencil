@@ -1,0 +1,98 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "SectionHeader", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "section.fg": { "type": "color", "value": "#FAFAFA" },
+    "section.muted": { "type": "color", "value": "#A1A1AA" },
+    "section.badge.bg": { "type": "color", "value": "#27272A" },
+    "section.badge.fg": { "type": "color", "value": "#FAFAFA" }
+  },
+  "children": [
+    {
+      "id": "section-header-with-badge",
+      "name": "SectionHeader / With Badge",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "layout": "vertical",
+      "alignItems": "center",
+      "gap": 16,
+      "children": [
+        {
+          "id": "section-badge",
+          "name": "Badge",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 24,
+          "fill": "$section.badge.bg",
+          "cornerRadius": 9999,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            {
+              "id": "section-badge-label",
+              "name": "Label",
+              "type": "text",
+              "content": "New Release",
+              "fontSize": 12,
+              "fontWeight": 500,
+              "fill": "$section.badge.fg"
+            }
+          ]
+        },
+        {
+          "id": "section-badge-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Ship faster with components",
+          "fontSize": 36,
+          "fontWeight": 700,
+          "fill": "$section.fg"
+        },
+        {
+          "id": "section-badge-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Beautifully designed components built with Radix UI and Tailwind CSS. Accessible. Customizable. Open Source.",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$section.muted"
+        }
+      ]
+    },
+    {
+      "id": "section-header-no-badge",
+      "name": "SectionHeader / Without Badge",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "layout": "vertical",
+      "alignItems": "center",
+      "gap": 12,
+      "children": [
+        {
+          "id": "section-no-badge-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Everything you need",
+          "fontSize": 36,
+          "fontWeight": 700,
+          "fill": "$section.fg"
+        },
+        {
+          "id": "section-no-badge-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "A complete set of tools and features to build modern web applications.",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$section.muted"
+        }
+      ]
+    }
+  ]
+}
