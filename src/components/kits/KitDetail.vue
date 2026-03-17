@@ -10,12 +10,11 @@ const { kit } = defineProps<{ kit: KitMeta }>()
 const emit = defineEmits<{ back: [] }>()
 
 const store = useKitStore()
-const isActive = computed(() => store.isKitActive(kit.name))
+const isSelected = computed(() => store.isKitSelected(kit.name))
 const activeFilter = ref('All')
 
-function toggleKit() {
-  if (isActive.value) store.deactivateKit(kit.name)
-  else store.activateKit(kit.name)
+function selectThisKit() {
+  store.selectKit(kit.name)
 }
 
 // Per-kit distinctive gradient (matches KitCard)
@@ -118,20 +117,29 @@ const accentColor = computed(() => KIT_ACCENTS[kit.name] ?? '#6366F1')
             {{ kit.displayName }}
           </h2>
 
+          <!-- Unitaire: select button. Global: always active label -->
           <button
+            v-if="store.state.mode === 'unitaire'"
             class="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all"
             :class="
-              isActive
+              isSelected
                 ? 'border-none bg-accent text-white shadow-[0_0_12px_rgba(var(--accent-rgb,99,102,241),0.35)]'
                 : 'border border-border bg-transparent text-muted hover:border-accent/50 hover:text-surface'
             "
             :data-test-id="`kit-detail-toggle-${kit.name}`"
-            @click="toggleKit"
+            @click="selectThisKit"
           >
-            <IconCheck v-if="isActive" class="size-3.5" />
+            <IconCheck v-if="isSelected" class="size-3.5" />
             <IconPlus v-else class="size-3.5" />
-            {{ isActive ? 'Activated' : 'Add Kit' }}
+            {{ isSelected ? 'Sélectionné' : 'Utiliser ce kit' }}
           </button>
+          <span
+            v-else
+            class="flex shrink-0 items-center gap-1.5 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent"
+          >
+            <span class="size-1.5 animate-pulse rounded-full bg-accent" />
+            Actif (mode global)
+          </span>
         </div>
 
         <!-- Description -->

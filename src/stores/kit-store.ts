@@ -11,7 +11,6 @@ function loadInstalledKits(): KitMeta[] {
   const kits: KitMeta[] = []
   for (const [, mod] of Object.entries(kitModules)) {
     const kit = mod.default
-    // Ensure components array exists
     if (!Array.isArray(kit.components)) kit.components = []
     kits.push(kit)
   }
@@ -25,17 +24,21 @@ export function createKitStore() {
 
   const state = shallowReactive({
     mode: 'global' as KitMode,
-    activeKitIds: new Set<string>(
-      // Auto-activate shadcn by default
-      allKits.find(k => k.name === 'shadcn') ? ['shadcn'] : []
-    ),
+    /** In unitaire mode: the single selected kit name. Ignored in global mode. */
+    selectedKitId: 'shadcn' as string | null,
     installedKits: allKits,
-    registryLoaded: true,
   })
 
-  const activeKits = computed(() =>
-    state.installedKits.filter(k => state.activeKitIds.has(k.name))
-  )
+  /**
+   * Active kits depend on the mode:
+   * - Global: ALL installed kits are active (AI picks from context)
+   * - Unitaire: only the user-selected kit is active
+   */
+  const activeKits = computed(() => {
+    if (state.mode === 'global') return state.installedKits
+    if (!state.selectedKitId) return []
+    return state.installedKits.filter(k => k.name === state.selectedKitId)
+  })
 
   const activeComponents = computed(() => {
     const components: Array<KitComponent & { kitName: string }> = []
@@ -51,30 +54,24 @@ export function createKitStore() {
 
   function setMode(mode: KitMode) {
     state.mode = mode
-    if (mode === 'unitaire' && state.activeKitIds.size > 1) {
-      const first = state.activeKitIds.values().next().value
-      state.activeKitIds = new Set(first ? [first] : [])
+    // When switching to unitaire, default to shadcn if nothing selected
+    if (mode === 'unitaire' && !state.selectedKitId) {
+      state.selectedKitId = allKits.find(k => k.name === 'shadcn')?.name ?? allKits[0]?.name ?? null
     }
   }
 
-  function activateKit(kitName: string) {
-    if (state.mode === 'unitaire') {
-      state.activeKitIds = new Set([kitName])
-    } else {
-      const next = new Set(state.activeKitIds)
-      next.add(kitName)
-      state.activeKitIds = next
-    }
-  }
-
-  function deactivateKit(kitName: string) {
-    const next = new Set(state.activeKitIds)
-    next.delete(kitName)
-    state.activeKitIds = next
+  /** In unitaire mode: select this kit (replaces previous). In global mode: no-op. */
+  function selectKit(kitName: string) {
+    state.selectedKitId = kitName
   }
 
   function isKitActive(kitName: string): boolean {
-    return state.activeKitIds.has(kitName)
+    if (state.mode === 'global') return true
+    return state.selectedKitId === kitName
+  }
+
+  function isKitSelected(kitName: string): boolean {
+    return state.selectedKitId === kitName
   }
 
   function getComponentsByContext(usageContext: string): Array<KitComponent & { kitName: string }> {
@@ -91,9 +88,9 @@ export function createKitStore() {
     activeComponents,
     totalComponentCount,
     setMode,
-    activateKit,
-    deactivateKit,
+    selectKit,
     isKitActive,
+    isKitSelected,
     getComponentsByContext,
     getComponentsByTag,
   }

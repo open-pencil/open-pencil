@@ -121,8 +121,8 @@ function isCategoryCollapsed(label: string): boolean {
           </div>
         </div>
 
-        <!-- Active kits bar (global mode only) -->
-        <ActiveKitsBar v-if="store.state.mode === 'global'" />
+        <!-- Active kits bar -->
+        <ActiveKitsBar />
 
         <!-- Detail view -->
         <KitDetail
