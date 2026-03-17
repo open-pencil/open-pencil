@@ -489,6 +489,31 @@ describe('page tools', () => {
 
     expect(figma.currentPage.name).toBe('Page 2')
   })
+
+  test('switch_page persists across separate FigmaAPI instances (RPC simulation)', () => {
+    const { graph } = setup()
+    const switchPage = ALL_TOOLS.find((t) => t.name === 'switch_page')!
+    const getCurrentPage = ALL_TOOLS.find((t) => t.name === 'get_current_page')!
+    const createPage = ALL_TOOLS.find((t) => t.name === 'create_page')!
+
+    let currentPageId = graph.getPages()[0].id
+
+    function rpcCall(tool: (typeof ALL_TOOLS)[number], args: Record<string, unknown>) {
+      const figma = new FigmaAPI(graph)
+      figma.currentPage = figma.wrapNode(currentPageId)
+      const result = tool.execute(figma, args)
+      if (figma.currentPageId !== currentPageId) {
+        currentPageId = figma.currentPageId
+      }
+      return result
+    }
+
+    rpcCall(createPage, { name: 'Second' })
+    rpcCall(switchPage, { page: 'Second' })
+    const result = rpcCall(getCurrentPage, {}) as { id: string; name: string }
+
+    expect(result.name).toBe('Second')
+  })
 })
 
 describe('eval', () => {

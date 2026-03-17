@@ -76,6 +76,11 @@ export function connectAutomation(getStore: () => EditorStore) {
     if (!def) throw new Error(`Unknown tool: ${toolName}`)
     const figma = makeFigma()
     const result = await def.execute(figma, toolArgs)
+
+    if (figma.currentPageId !== store.state.currentPageId) {
+      void store.switchPage(figma.currentPageId)
+    }
+
     if (def.mutates) {
       computeAllLayouts(store.graph, store.state.currentPageId)
       store.requestRender()
