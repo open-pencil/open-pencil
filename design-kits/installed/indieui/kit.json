@@ -6,7 +6,14 @@
   "author": "indie-ui",
   "license": "MIT",
   "category": "landing",
-  "tags": ["startup", "indie", "landing", "conversion", "bold", "ship-fast"],
+  "tags": [
+    "startup",
+    "indie",
+    "landing",
+    "conversion",
+    "bold",
+    "ship-fast"
+  ],
   "style": {
     "aesthetic": "playful",
     "radius": "large",
@@ -15,6 +22,157 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 20
+    "variantCount": 18,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "changelog",
+      "name": "Changelog",
+      "file": "components/changelog.design",
+      "variants": [
+        "timeline",
+        "cardlist"
+      ],
+      "description": "A changelog component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "changelog-default"
+      ]
+    },
+    {
+      "id": "faq-section",
+      "name": "FaqSection",
+      "file": "components/faq-section.design",
+      "variants": [
+        "accordion",
+        "twocolumn"
+      ],
+      "description": "A faqsection component.",
+      "tags": [
+        "landing",
+        "content"
+      ],
+      "usageContext": [
+        "faq-section-default"
+      ]
+    },
+    {
+      "id": "feature-grid",
+      "name": "FeatureGrid",
+      "file": "components/feature-grid.design",
+      "variants": [
+        "iconcards",
+        "bentostyle"
+      ],
+      "description": "A featuregrid component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "feature-grid-default"
+      ]
+    },
+    {
+      "id": "footer-startup",
+      "name": "FooterStartup",
+      "file": "components/footer-startup.design",
+      "variants": [
+        "minimal",
+        "withnewsletter"
+      ],
+      "description": "A footerstartup component.",
+      "tags": [
+        "navigation",
+        "layout"
+      ],
+      "usageContext": [
+        "footer-startup-default"
+      ]
+    },
+    {
+      "id": "newsletter-cta",
+      "name": "NewsletterCta",
+      "file": "components/newsletter-cta.design",
+      "variants": [
+        "inline",
+        "floating"
+      ],
+      "description": "A newslettercta component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "newsletter-cta-default"
+      ]
+    },
+    {
+      "id": "pricing-simple",
+      "name": "PricingSimple",
+      "file": "components/pricing-simple.design",
+      "variants": [
+        "twotier",
+        "singlehighlight"
+      ],
+      "description": "A pricingsimple component.",
+      "tags": [
+        "landing",
+        "conversion"
+      ],
+      "usageContext": [
+        "pricing-simple-default"
+      ]
+    },
+    {
+      "id": "social-proof",
+      "name": "SocialProof",
+      "file": "components/social-proof.design",
+      "variants": [
+        "avatarstack",
+        "tweetwall",
+        "metricbar"
+      ],
+      "description": "A socialproof component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "social-proof-default"
+      ]
+    },
+    {
+      "id": "startup-hero",
+      "name": "StartupHero",
+      "file": "components/startup-hero.design",
+      "variants": [
+        "centeredbold",
+        "withscreenshot",
+        "waitlist"
+      ],
+      "description": "A startuphero component.",
+      "tags": [
+        "landing",
+        "layout"
+      ],
+      "usageContext": [
+        "startup-hero-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

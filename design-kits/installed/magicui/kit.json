@@ -6,7 +6,14 @@
   "author": "magicui-design",
   "license": "MIT",
   "category": "effects",
-  "tags": ["effects", "animations", "ai", "saas", "trending", "magic"],
+  "tags": [
+    "effects",
+    "animations",
+    "ai",
+    "saas",
+    "trending",
+    "magic"
+  ],
   "style": {
     "aesthetic": "premium-glow",
     "radius": "large",
@@ -15,6 +22,159 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 16
+    "variantCount": 16,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "animated-counter",
+      "name": "AnimatedCounter",
+      "file": "components/animated-counter.design",
+      "variants": [
+        "default",
+        "large"
+      ],
+      "description": "A animatedcounter component.",
+      "tags": [
+        "display",
+        "data"
+      ],
+      "usageContext": [
+        "animated-counter-default"
+      ]
+    },
+    {
+      "id": "beam-effect",
+      "name": "BeamEffect",
+      "file": "components/beam-effect.design",
+      "variants": [
+        "default",
+        "colorful"
+      ],
+      "description": "A beameffect component.",
+      "tags": [
+        "effects",
+        "decoration"
+      ],
+      "usageContext": [
+        "beam-effect-default"
+      ]
+    },
+    {
+      "id": "border-beam",
+      "name": "BorderBeam",
+      "file": "components/border-beam.design",
+      "variants": [
+        "default",
+        "subtle"
+      ],
+      "description": "A borderbeam component.",
+      "tags": [
+        "effects",
+        "decoration"
+      ],
+      "usageContext": [
+        "border-beam-default"
+      ]
+    },
+    {
+      "id": "globe",
+      "name": "Globe",
+      "file": "components/globe.design",
+      "variants": [
+        "default",
+        "with-dots"
+      ],
+      "description": "A globe component.",
+      "tags": [
+        "effects",
+        "decoration"
+      ],
+      "usageContext": [
+        "globe-default"
+      ]
+    },
+    {
+      "id": "marquee",
+      "name": "Marquee",
+      "file": "components/marquee.design",
+      "variants": [
+        "horizontal",
+        "vertical"
+      ],
+      "description": "A marquee component.",
+      "tags": [
+        "effects",
+        "display"
+      ],
+      "usageContext": [
+        "marquee-default"
+      ]
+    },
+    {
+      "id": "particles",
+      "name": "Particles",
+      "file": "components/particles.design",
+      "variants": [
+        "default",
+        "connected"
+      ],
+      "description": "A particles component.",
+      "tags": [
+        "effects",
+        "decoration"
+      ],
+      "usageContext": [
+        "particles-default"
+      ]
+    },
+    {
+      "id": "shimmer-button",
+      "name": "ShimmerButton",
+      "file": "components/shimmer-button.design",
+      "variants": [
+        "default",
+        "outline"
+      ],
+      "description": "A shimmerbutton component.",
+      "tags": [
+        "interactive",
+        "cta"
+      ],
+      "usageContext": [
+        "shimmer-button-default"
+      ]
+    },
+    {
+      "id": "sparkle-text",
+      "name": "SparkleText",
+      "file": "components/sparkle-text.design",
+      "variants": [
+        "default",
+        "heading"
+      ],
+      "description": "A sparkletext component.",
+      "tags": [
+        "effects",
+        "typography"
+      ],
+      "usageContext": [
+        "sparkle-text-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

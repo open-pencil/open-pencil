@@ -6,7 +6,13 @@
   "author": "park-ui",
   "license": "MIT",
   "category": "general",
-  "tags": ["ark-ui", "styled", "accessible", "react", "vue"],
+  "tags": [
+    "ark-ui",
+    "styled",
+    "accessible",
+    "react",
+    "vue"
+  ],
   "style": {
     "aesthetic": "modern-minimal",
     "radius": "medium",
@@ -15,6 +21,161 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 22
+    "variantCount": 22,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "button",
+      "name": "Button",
+      "file": "components/button.design",
+      "variants": [
+        "solid",
+        "outline",
+        "ghost",
+        "link"
+      ],
+      "description": "A button component.",
+      "tags": [
+        "interactive",
+        "cta"
+      ],
+      "usageContext": [
+        "button-default"
+      ]
+    },
+    {
+      "id": "card",
+      "name": "Card",
+      "file": "components/card.design",
+      "variants": [
+        "default",
+        "outlined",
+        "elevated"
+      ],
+      "description": "A card component.",
+      "tags": [
+        "container",
+        "layout"
+      ],
+      "usageContext": [
+        "card-default"
+      ]
+    },
+    {
+      "id": "combobox",
+      "name": "Combobox",
+      "file": "components/combobox.design",
+      "variants": [
+        "default",
+        "with-tags"
+      ],
+      "description": "A combobox component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "combobox-default"
+      ]
+    },
+    {
+      "id": "date-picker",
+      "name": "DatePicker",
+      "file": "components/date-picker.design",
+      "variants": [
+        "default",
+        "range"
+      ],
+      "description": "A datepicker component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "date-picker-default"
+      ]
+    },
+    {
+      "id": "drawer",
+      "name": "Drawer",
+      "file": "components/drawer.design",
+      "variants": [
+        "right",
+        "bottom"
+      ],
+      "description": "A drawer component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "drawer-default"
+      ]
+    },
+    {
+      "id": "input",
+      "name": "Input",
+      "file": "components/input.design",
+      "variants": [
+        "default",
+        "with-addon",
+        "textarea"
+      ],
+      "description": "A input component.",
+      "tags": [
+        "interactive",
+        "form"
+      ],
+      "usageContext": [
+        "input-default"
+      ]
+    },
+    {
+      "id": "toast",
+      "name": "Toast",
+      "file": "components/toast.design",
+      "variants": [
+        "info",
+        "success",
+        "error"
+      ],
+      "description": "A toast component.",
+      "tags": [
+        "feedback",
+        "notification"
+      ],
+      "usageContext": [
+        "toast-default"
+      ]
+    },
+    {
+      "id": "toggle-group",
+      "name": "ToggleGroup",
+      "file": "components/toggle-group.design",
+      "variants": [
+        "default",
+        "outline",
+        "compact"
+      ],
+      "description": "A togglegroup component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "toggle-group-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

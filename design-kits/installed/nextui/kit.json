@@ -6,7 +6,13 @@
   "author": "nextui-org",
   "license": "MIT",
   "category": "general",
-  "tags": ["react", "modern", "dark-mode", "glass", "animations"],
+  "tags": [
+    "react",
+    "modern",
+    "dark-mode",
+    "glass",
+    "animations"
+  ],
   "style": {
     "aesthetic": "modern-bold",
     "radius": "large",
@@ -15,6 +21,145 @@
   },
   "stats": {
     "componentCount": 7,
-    "variantCount": 18
+    "variantCount": 19,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "button",
+      "name": "Button",
+      "file": "components/button.design",
+      "variants": [
+        "solid",
+        "bordered",
+        "flat",
+        "ghost"
+      ],
+      "description": "A button component.",
+      "tags": [
+        "interactive",
+        "cta"
+      ],
+      "usageContext": [
+        "button-default"
+      ]
+    },
+    {
+      "id": "card",
+      "name": "Card",
+      "file": "components/card.design",
+      "variants": [
+        "default",
+        "blurred",
+        "shadow"
+      ],
+      "description": "A card component.",
+      "tags": [
+        "container",
+        "layout"
+      ],
+      "usageContext": [
+        "card-default"
+      ]
+    },
+    {
+      "id": "chip",
+      "name": "Chip",
+      "file": "components/chip.design",
+      "variants": [
+        "solid",
+        "bordered",
+        "dot"
+      ],
+      "description": "A chip component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "chip-default"
+      ]
+    },
+    {
+      "id": "dropdown",
+      "name": "Dropdown",
+      "file": "components/dropdown.design",
+      "variants": [
+        "default",
+        "with-icons"
+      ],
+      "description": "A dropdown component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "dropdown-default"
+      ]
+    },
+    {
+      "id": "input",
+      "name": "Input",
+      "file": "components/input.design",
+      "variants": [
+        "default",
+        "bordered",
+        "underlined"
+      ],
+      "description": "A input component.",
+      "tags": [
+        "interactive",
+        "form"
+      ],
+      "usageContext": [
+        "input-default"
+      ]
+    },
+    {
+      "id": "modal",
+      "name": "Modal",
+      "file": "components/modal.design",
+      "variants": [
+        "default",
+        "scrollable"
+      ],
+      "description": "A modal component.",
+      "tags": [
+        "overlay",
+        "interactive"
+      ],
+      "usageContext": [
+        "modal-default"
+      ]
+    },
+    {
+      "id": "navbar",
+      "name": "Navbar",
+      "file": "components/navbar.design",
+      "variants": [
+        "default",
+        "floating"
+      ],
+      "description": "A navbar component.",
+      "tags": [
+        "navigation",
+        "layout"
+      ],
+      "usageContext": [
+        "navbar-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

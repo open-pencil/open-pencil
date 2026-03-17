@@ -6,7 +6,13 @@
   "author": "motion-primitives",
   "license": "MIT",
   "category": "effects",
-  "tags": ["animations", "motion", "framer", "interactions", "transitions"],
+  "tags": [
+    "animations",
+    "motion",
+    "framer",
+    "interactions",
+    "transitions"
+  ],
   "style": {
     "aesthetic": "modern-minimal",
     "radius": "large",
@@ -15,6 +21,137 @@
   },
   "stats": {
     "componentCount": 7,
-    "variantCount": 14
+    "variantCount": 14,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "animated-card",
+      "name": "AnimatedCard",
+      "file": "components/animated-card.design",
+      "variants": [
+        "tilt",
+        "flip",
+        "expand"
+      ],
+      "description": "A animatedcard component.",
+      "tags": [
+        "container",
+        "layout"
+      ],
+      "usageContext": [
+        "animated-card-default"
+      ]
+    },
+    {
+      "id": "cursor-follow",
+      "name": "CursorFollow",
+      "file": "components/cursor-follow.design",
+      "variants": [
+        "default"
+      ],
+      "description": "A cursorfollow component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "cursor-follow-default"
+      ]
+    },
+    {
+      "id": "magnetic-button",
+      "name": "MagneticButton",
+      "file": "components/magnetic-button.design",
+      "variants": [
+        "default",
+        "large"
+      ],
+      "description": "A magneticbutton component.",
+      "tags": [
+        "interactive",
+        "cta"
+      ],
+      "usageContext": [
+        "magnetic-button-default"
+      ]
+    },
+    {
+      "id": "page-transition",
+      "name": "PageTransition",
+      "file": "components/page-transition.design",
+      "variants": [
+        "slide",
+        "fade"
+      ],
+      "description": "A pagetransition component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "page-transition-default"
+      ]
+    },
+    {
+      "id": "scroll-reveal",
+      "name": "ScrollReveal",
+      "file": "components/scroll-reveal.design",
+      "variants": [
+        "default",
+        "parallax"
+      ],
+      "description": "A scrollreveal component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "scroll-reveal-default"
+      ]
+    },
+    {
+      "id": "stagger-reveal",
+      "name": "StaggerReveal",
+      "file": "components/stagger-reveal.design",
+      "variants": [
+        "fadeup",
+        "scale"
+      ],
+      "description": "A staggerreveal component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "stagger-reveal-default"
+      ]
+    },
+    {
+      "id": "text-reveal",
+      "name": "TextReveal",
+      "file": "components/text-reveal.design",
+      "variants": [
+        "wordbyword",
+        "character"
+      ],
+      "description": "A textreveal component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "text-reveal-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

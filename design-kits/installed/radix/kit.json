@@ -1,12 +1,18 @@
 {
   "name": "radix",
   "displayName": "Radix UI",
-  "description": "Unstyled, accessible UI primitives for building high\u2011quality design systems.",
+  "description": "Unstyled, accessible UI primitives for building high‑quality design systems.",
   "version": "1.0.0",
   "author": "radix-ui",
   "license": "MIT",
   "category": "general",
-  "tags": ["accessible", "headless", "primitives", "react", "a11y"],
+  "tags": [
+    "accessible",
+    "headless",
+    "primitives",
+    "react",
+    "a11y"
+  ],
   "style": {
     "aesthetic": "modern-minimal",
     "radius": "medium",
@@ -15,6 +21,161 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 20
+    "variantCount": 19,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "accordion",
+      "name": "Accordion",
+      "file": "components/accordion.design",
+      "variants": [
+        "default",
+        "bordered"
+      ],
+      "description": "A accordion component.",
+      "tags": [
+        "interactive",
+        "layout"
+      ],
+      "usageContext": [
+        "accordion-default"
+      ]
+    },
+    {
+      "id": "checkbox",
+      "name": "Checkbox",
+      "file": "components/checkbox.design",
+      "variants": [
+        "default",
+        "with-label"
+      ],
+      "description": "A checkbox component.",
+      "tags": [
+        "interactive",
+        "form"
+      ],
+      "usageContext": [
+        "checkbox-default"
+      ]
+    },
+    {
+      "id": "dialog",
+      "name": "Dialog",
+      "file": "components/dialog.design",
+      "variants": [
+        "default",
+        "form",
+        "alert-dialog"
+      ],
+      "description": "A dialog component.",
+      "tags": [
+        "overlay",
+        "interactive"
+      ],
+      "usageContext": [
+        "dialog-default"
+      ]
+    },
+    {
+      "id": "popover",
+      "name": "Popover",
+      "file": "components/popover.design",
+      "variants": [
+        "default",
+        "with-arrow"
+      ],
+      "description": "A popover component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "popover-default"
+      ]
+    },
+    {
+      "id": "select",
+      "name": "Select",
+      "file": "components/select.design",
+      "variants": [
+        "default",
+        "with-groups"
+      ],
+      "description": "A select component.",
+      "tags": [
+        "interactive",
+        "form"
+      ],
+      "usageContext": [
+        "select-default"
+      ]
+    },
+    {
+      "id": "switch",
+      "name": "Switch",
+      "file": "components/switch.design",
+      "variants": [
+        "default",
+        "small",
+        "with-label"
+      ],
+      "description": "A switch component.",
+      "tags": [
+        "interactive",
+        "form"
+      ],
+      "usageContext": [
+        "switch-default"
+      ]
+    },
+    {
+      "id": "tabs",
+      "name": "Tabs",
+      "file": "components/tabs.design",
+      "variants": [
+        "default",
+        "underline"
+      ],
+      "description": "A tabs component.",
+      "tags": [
+        "navigation",
+        "interactive"
+      ],
+      "usageContext": [
+        "tabs-default"
+      ]
+    },
+    {
+      "id": "tooltip",
+      "name": "Tooltip",
+      "file": "components/tooltip.design",
+      "variants": [
+        "top",
+        "bottom",
+        "right"
+      ],
+      "description": "A tooltip component.",
+      "tags": [
+        "overlay",
+        "display"
+      ],
+      "usageContext": [
+        "tooltip-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

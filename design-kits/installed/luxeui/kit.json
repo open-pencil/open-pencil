@@ -6,7 +6,14 @@
   "author": "luxe-ui",
   "license": "MIT",
   "category": "landing",
-  "tags": ["luxury", "premium", "landing", "elegant", "refined", "typography"],
+  "tags": [
+    "luxury",
+    "premium",
+    "landing",
+    "elegant",
+    "refined",
+    "typography"
+  ],
   "style": {
     "aesthetic": "modern-bold",
     "radius": "medium",
@@ -15,6 +22,157 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 18
+    "variantCount": 18,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "brand-strip",
+      "name": "BrandStrip",
+      "file": "components/brand-strip.design",
+      "variants": [
+        "logos",
+        "withdividers"
+      ],
+      "description": "A brandstrip component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "brand-strip-default"
+      ]
+    },
+    {
+      "id": "cta-banner",
+      "name": "CtaBanner",
+      "file": "components/cta-banner.design",
+      "variants": [
+        "minimal",
+        "gradient"
+      ],
+      "description": "A ctabanner component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "cta-banner-default"
+      ]
+    },
+    {
+      "id": "feature-showcase",
+      "name": "FeatureShowcase",
+      "file": "components/feature-showcase.design",
+      "variants": [
+        "alternating",
+        "grid"
+      ],
+      "description": "A featureshowcase component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "feature-showcase-default"
+      ]
+    },
+    {
+      "id": "footer-luxury",
+      "name": "FooterLuxury",
+      "file": "components/footer-luxury.design",
+      "variants": [
+        "minimal",
+        "editorial"
+      ],
+      "description": "A footerluxury component.",
+      "tags": [
+        "navigation",
+        "layout"
+      ],
+      "usageContext": [
+        "footer-luxury-default"
+      ]
+    },
+    {
+      "id": "luxury-hero",
+      "name": "LuxuryHero",
+      "file": "components/luxury-hero.design",
+      "variants": [
+        "centered",
+        "splitimage",
+        "editorial"
+      ],
+      "description": "A luxuryhero component.",
+      "tags": [
+        "landing",
+        "layout"
+      ],
+      "usageContext": [
+        "luxury-hero-default"
+      ]
+    },
+    {
+      "id": "pricing-luxury",
+      "name": "PricingLuxury",
+      "file": "components/pricing-luxury.design",
+      "variants": [
+        "tiercards",
+        "comparisontable"
+      ],
+      "description": "A pricingluxury component.",
+      "tags": [
+        "landing",
+        "conversion"
+      ],
+      "usageContext": [
+        "pricing-luxury-default"
+      ]
+    },
+    {
+      "id": "stats-display",
+      "name": "StatsDisplay",
+      "file": "components/stats-display.design",
+      "variants": [
+        "inline",
+        "largenumbers"
+      ],
+      "description": "A statsdisplay component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "stats-display-default"
+      ]
+    },
+    {
+      "id": "testimonial",
+      "name": "Testimonial",
+      "file": "components/testimonial.design",
+      "variants": [
+        "largequote",
+        "cardgrid",
+        "slider"
+      ],
+      "description": "A testimonial component.",
+      "tags": [
+        "landing",
+        "trust"
+      ],
+      "usageContext": [
+        "testimonial-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

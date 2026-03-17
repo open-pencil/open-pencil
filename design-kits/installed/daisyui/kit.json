@@ -6,7 +6,13 @@
   "author": "daisyui",
   "license": "MIT",
   "category": "general",
-  "tags": ["tailwind", "themes", "colorful", "components", "css"],
+  "tags": [
+    "tailwind",
+    "themes",
+    "colorful",
+    "components",
+    "css"
+  ],
   "style": {
     "aesthetic": "playful",
     "radius": "large",
@@ -15,6 +21,168 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 24
+    "variantCount": 26,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "alert",
+      "name": "Alert",
+      "file": "components/alert.design",
+      "variants": [
+        "info",
+        "success",
+        "warning",
+        "error"
+      ],
+      "description": "A alert component.",
+      "tags": [
+        "feedback",
+        "display"
+      ],
+      "usageContext": [
+        "alert-default"
+      ]
+    },
+    {
+      "id": "avatar",
+      "name": "Avatar",
+      "file": "components/avatar.design",
+      "variants": [
+        "circle",
+        "rounded",
+        "group"
+      ],
+      "description": "A avatar component.",
+      "tags": [
+        "display",
+        "user"
+      ],
+      "usageContext": [
+        "avatar-default"
+      ]
+    },
+    {
+      "id": "badge",
+      "name": "Badge",
+      "file": "components/badge.design",
+      "variants": [
+        "primary",
+        "secondary",
+        "accent",
+        "outline"
+      ],
+      "description": "A badge component.",
+      "tags": [
+        "display",
+        "status"
+      ],
+      "usageContext": [
+        "badge-default"
+      ]
+    },
+    {
+      "id": "button",
+      "name": "Button",
+      "file": "components/button.design",
+      "variants": [
+        "primary",
+        "secondary",
+        "accent",
+        "ghost"
+      ],
+      "description": "A button component.",
+      "tags": [
+        "interactive",
+        "cta"
+      ],
+      "usageContext": [
+        "button-default"
+      ]
+    },
+    {
+      "id": "card",
+      "name": "Card",
+      "file": "components/card.design",
+      "variants": [
+        "default",
+        "image-top",
+        "glass"
+      ],
+      "description": "A card component.",
+      "tags": [
+        "container",
+        "layout"
+      ],
+      "usageContext": [
+        "card-default"
+      ]
+    },
+    {
+      "id": "collapse",
+      "name": "Collapse",
+      "file": "components/collapse.design",
+      "variants": [
+        "default",
+        "with-icon"
+      ],
+      "description": "A collapse component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "collapse-default"
+      ]
+    },
+    {
+      "id": "menu",
+      "name": "Menu",
+      "file": "components/menu.design",
+      "variants": [
+        "default",
+        "horizontal",
+        "bordered"
+      ],
+      "description": "A menu component.",
+      "tags": [
+        "navigation",
+        "interactive"
+      ],
+      "usageContext": [
+        "menu-default"
+      ]
+    },
+    {
+      "id": "progress",
+      "name": "Progress",
+      "file": "components/progress.design",
+      "variants": [
+        "default",
+        "primary",
+        "secondary"
+      ],
+      "description": "A progress component.",
+      "tags": [
+        "display",
+        "feedback"
+      ],
+      "usageContext": [
+        "progress-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

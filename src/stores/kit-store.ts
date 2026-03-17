@@ -10,7 +10,10 @@ const kitModules = import.meta.glob<{ default: KitMeta }>(
 function loadInstalledKits(): KitMeta[] {
   const kits: KitMeta[] = []
   for (const [, mod] of Object.entries(kitModules)) {
-    kits.push(mod.default)
+    const kit = mod.default
+    // Ensure components array exists
+    if (!Array.isArray(kit.components)) kit.components = []
+    kits.push(kit)
   }
   return kits
 }

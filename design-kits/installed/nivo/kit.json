@@ -6,7 +6,13 @@
   "author": "plouc",
   "license": "MIT",
   "category": "dashboard",
-  "tags": ["charts", "d3", "visualization", "data", "graphs"],
+  "tags": [
+    "charts",
+    "d3",
+    "visualization",
+    "data",
+    "graphs"
+  ],
   "style": {
     "aesthetic": "clean-data",
     "radius": "small",
@@ -15,6 +21,139 @@
   },
   "stats": {
     "componentCount": 7,
-    "variantCount": 14
+    "variantCount": 13,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "bar-chart",
+      "name": "BarChart",
+      "file": "components/bar-chart.design",
+      "variants": [
+        "vertical",
+        "grouped"
+      ],
+      "description": "A barchart component.",
+      "tags": [
+        "data",
+        "visualization"
+      ],
+      "usageContext": [
+        "bar-chart-default"
+      ]
+    },
+    {
+      "id": "funnel-chart",
+      "name": "FunnelChart",
+      "file": "components/funnel-chart.design",
+      "variants": [
+        "default",
+        "horizontal"
+      ],
+      "description": "A funnelchart component.",
+      "tags": [
+        "data",
+        "visualization"
+      ],
+      "usageContext": [
+        "funnel-chart-default"
+      ]
+    },
+    {
+      "id": "heatmap",
+      "name": "Heatmap",
+      "file": "components/heatmap.design",
+      "variants": [
+        "default",
+        "calendar"
+      ],
+      "description": "A heatmap component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "heatmap-default"
+      ]
+    },
+    {
+      "id": "line-chart",
+      "name": "LineChart",
+      "file": "components/line-chart.design",
+      "variants": [
+        "default",
+        "areafill"
+      ],
+      "description": "A linechart component.",
+      "tags": [
+        "data",
+        "visualization"
+      ],
+      "usageContext": [
+        "line-chart-default"
+      ]
+    },
+    {
+      "id": "pie-chart",
+      "name": "PieChart",
+      "file": "components/pie-chart.design",
+      "variants": [
+        "pie",
+        "donut"
+      ],
+      "description": "A piechart component.",
+      "tags": [
+        "data",
+        "visualization"
+      ],
+      "usageContext": [
+        "pie-chart-default"
+      ]
+    },
+    {
+      "id": "radar-chart",
+      "name": "RadarChart",
+      "file": "components/radar-chart.design",
+      "variants": [
+        "default"
+      ],
+      "description": "A radarchart component.",
+      "tags": [
+        "data",
+        "visualization"
+      ],
+      "usageContext": [
+        "radar-chart-default"
+      ]
+    },
+    {
+      "id": "treemap",
+      "name": "Treemap",
+      "file": "components/treemap.design",
+      "variants": [
+        "default",
+        "nested"
+      ],
+      "description": "A treemap component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "treemap-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }

@@ -6,7 +6,13 @@
   "author": "saas-ui",
   "license": "MIT",
   "category": "dashboard",
-  "tags": ["saas", "dashboard", "sidebar", "admin", "data"],
+  "tags": [
+    "saas",
+    "dashboard",
+    "sidebar",
+    "admin",
+    "data"
+  ],
   "style": {
     "aesthetic": "modern-minimal",
     "radius": "medium",
@@ -15,6 +21,157 @@
   },
   "stats": {
     "componentCount": 8,
-    "variantCount": 18
+    "variantCount": 18,
+    "downloads": 0,
+    "rating": 0
+  },
+  "components": [
+    {
+      "id": "activity-feed",
+      "name": "ActivityFeed",
+      "file": "components/activity-feed.design",
+      "variants": [
+        "default",
+        "compact"
+      ],
+      "description": "A activityfeed component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "activity-feed-default"
+      ]
+    },
+    {
+      "id": "command-bar",
+      "name": "CommandBar",
+      "file": "components/command-bar.design",
+      "variants": [
+        "default",
+        "withcategories"
+      ],
+      "description": "A commandbar component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "command-bar-default"
+      ]
+    },
+    {
+      "id": "data-table",
+      "name": "DataTable",
+      "file": "components/data-table.design",
+      "variants": [
+        "default",
+        "withactions"
+      ],
+      "description": "A datatable component.",
+      "tags": [
+        "data",
+        "display"
+      ],
+      "usageContext": [
+        "data-table-default"
+      ]
+    },
+    {
+      "id": "empty-state",
+      "name": "EmptyState",
+      "file": "components/empty-state.design",
+      "variants": [
+        "default",
+        "withaction"
+      ],
+      "description": "A emptystate component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "empty-state-default"
+      ]
+    },
+    {
+      "id": "metric-card",
+      "name": "MetricCard",
+      "file": "components/metric-card.design",
+      "variants": [
+        "default",
+        "withchart",
+        "comparison"
+      ],
+      "description": "A metriccard component.",
+      "tags": [
+        "container",
+        "layout"
+      ],
+      "usageContext": [
+        "metric-card-default"
+      ]
+    },
+    {
+      "id": "onboarding-card",
+      "name": "OnboardingCard",
+      "file": "components/onboarding-card.design",
+      "variants": [
+        "default",
+        "withprogress"
+      ],
+      "description": "A onboardingcard component.",
+      "tags": [
+        "container",
+        "layout"
+      ],
+      "usageContext": [
+        "onboarding-card-default"
+      ]
+    },
+    {
+      "id": "sidebar",
+      "name": "Sidebar",
+      "file": "components/sidebar.design",
+      "variants": [
+        "default",
+        "collapsed"
+      ],
+      "description": "A sidebar component.",
+      "tags": [
+        "navigation",
+        "layout"
+      ],
+      "usageContext": [
+        "sidebar-default"
+      ]
+    },
+    {
+      "id": "stat-row",
+      "name": "StatRow",
+      "file": "components/stat-row.design",
+      "variants": [
+        "3col",
+        "4col",
+        "withsparklines"
+      ],
+      "description": "A statrow component.",
+      "tags": [
+        "display"
+      ],
+      "usageContext": [
+        "stat-row-default"
+      ]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "compatibility": {
+    "frameworks": [
+      "react",
+      "vue",
+      "html"
+    ],
+    "exportFormats": [
+      "react-tailwind",
+      "html-css"
+    ]
   }
 }
