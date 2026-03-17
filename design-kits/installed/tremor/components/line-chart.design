@@ -1,0 +1,205 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "LineChart", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "chart.bg": { "type": "color", "value": "#111113" },
+    "chart.fg": { "type": "color", "value": "#FAFAFA" },
+    "chart.muted": { "type": "color", "value": "#A1A1AA" },
+    "chart.border": { "type": "color", "value": "#27272A" },
+    "chart.grid": { "type": "color", "value": "#1E1E22" },
+    "chart.line": { "type": "color", "value": "#6366F1" },
+    "chart.area": { "type": "color", "value": "rgba(99,102,241,0.15)" },
+    "chart.dot": { "type": "color", "value": "#818CF8" }
+  },
+  "children": [
+    {
+      "id": "line-chart-default",
+      "name": "Line Chart / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "$chart.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$chart.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "line-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "User Growth",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "fill": "$chart.fg"
+        },
+        {
+          "id": "line-default-area",
+          "name": "Chart Area",
+          "type": "frame",
+          "width": "fill",
+          "height": "fill",
+          "layout": "horizontal",
+          "gap": 0,
+          "children": [
+            {
+              "id": "line-default-yaxis",
+              "name": "Y Axis",
+              "type": "frame",
+              "width": 36,
+              "height": "fill",
+              "layout": "vertical",
+              "justifyContent": "space-between",
+              "children": [
+                { "id": "line-y4", "name": "Y Label", "type": "text", "content": "8k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "line-y3", "name": "Y Label", "type": "text", "content": "6k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "line-y2", "name": "Y Label", "type": "text", "content": "4k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "line-y1", "name": "Y Label", "type": "text", "content": "2k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "line-y0", "name": "Y Label", "type": "text", "content": "0", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+              ]
+            },
+            {
+              "id": "line-default-plot",
+              "name": "Plot Area",
+              "type": "frame",
+              "width": "fill",
+              "height": "fill",
+              "children": [
+                { "id": "line-grid1", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 0 },
+                { "id": "line-grid2", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 50 },
+                { "id": "line-grid3", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 100 },
+                { "id": "line-grid4", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 150 },
+                { "id": "line-grid5", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 200 },
+                { "id": "line-dot1", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 0, "y": 160 },
+                { "id": "line-dot2", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 60, "y": 130 },
+                { "id": "line-dot3", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 120, "y": 140 },
+                { "id": "line-dot4", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 180, "y": 80 },
+                { "id": "line-dot5", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 240, "y": 60 },
+                { "id": "line-dot6", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 300, "y": 30 },
+                { "id": "line-dot7", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 360, "y": 10 },
+                { "id": "line-seg1", "name": "Line Segment", "type": "rectangle", "width": 62, "height": 2, "fill": "$chart.line", "x": 4, "y": 164, "rotation": 26 },
+                { "id": "line-seg2", "name": "Line Segment", "type": "rectangle", "width": 62, "height": 2, "fill": "$chart.line", "x": 64, "y": 134, "rotation": -9 },
+                { "id": "line-seg3", "name": "Line Segment", "type": "rectangle", "width": 62, "height": 2, "fill": "$chart.line", "x": 124, "y": 144, "rotation": 45 },
+                { "id": "line-seg4", "name": "Line Segment", "type": "rectangle", "width": 62, "height": 2, "fill": "$chart.line", "x": 184, "y": 84, "rotation": 18 },
+                { "id": "line-seg5", "name": "Line Segment", "type": "rectangle", "width": 62, "height": 2, "fill": "$chart.line", "x": 244, "y": 64, "rotation": 26 },
+                { "id": "line-seg6", "name": "Line Segment", "type": "rectangle", "width": 62, "height": 2, "fill": "$chart.line", "x": 304, "y": 34, "rotation": 18 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "line-default-xaxis",
+          "name": "X Axis",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "justifyContent": "space-between",
+          "padding": [0, 0, 0, 36],
+          "children": [
+            { "id": "line-x1", "name": "X Label", "type": "text", "content": "Mon", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "line-x2", "name": "X Label", "type": "text", "content": "Tue", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "line-x3", "name": "X Label", "type": "text", "content": "Wed", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "line-x4", "name": "X Label", "type": "text", "content": "Thu", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "line-x5", "name": "X Label", "type": "text", "content": "Fri", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "line-x6", "name": "X Label", "type": "text", "content": "Sat", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "line-x7", "name": "X Label", "type": "text", "content": "Sun", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "line-chart-area",
+      "name": "Line Chart / Area",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "$chart.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$chart.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "area-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Website Traffic",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "fill": "$chart.fg"
+        },
+        {
+          "id": "area-chart-area",
+          "name": "Chart Area",
+          "type": "frame",
+          "width": "fill",
+          "height": "fill",
+          "layout": "horizontal",
+          "gap": 0,
+          "children": [
+            {
+              "id": "area-yaxis",
+              "name": "Y Axis",
+              "type": "frame",
+              "width": 36,
+              "height": "fill",
+              "layout": "vertical",
+              "justifyContent": "space-between",
+              "children": [
+                { "id": "area-y4", "name": "Y Label", "type": "text", "content": "20k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "area-y3", "name": "Y Label", "type": "text", "content": "15k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "area-y2", "name": "Y Label", "type": "text", "content": "10k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "area-y1", "name": "Y Label", "type": "text", "content": "5k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "area-y0", "name": "Y Label", "type": "text", "content": "0", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+              ]
+            },
+            {
+              "id": "area-plot",
+              "name": "Plot Area",
+              "type": "frame",
+              "width": "fill",
+              "height": "fill",
+              "children": [
+                { "id": "area-grid1", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 0 },
+                { "id": "area-grid2", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 50 },
+                { "id": "area-grid3", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 100 },
+                { "id": "area-grid4", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 150 },
+                { "id": "area-grid5", "name": "Grid Line", "type": "rectangle", "width": "fill", "height": 1, "fill": "$chart.grid", "y": 200 },
+                { "id": "area-fill", "name": "Area Fill", "type": "rectangle", "width": "fill", "height": 140, "fill": "$chart.area", "y": 60, "cornerRadius": [4, 4, 0, 0] },
+                { "id": "area-dot1", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 0, "y": 140 },
+                { "id": "area-dot2", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 72, "y": 100 },
+                { "id": "area-dot3", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 144, "y": 120 },
+                { "id": "area-dot4", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 216, "y": 70 },
+                { "id": "area-dot5", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 288, "y": 60 },
+                { "id": "area-dot6", "name": "Data Point", "type": "ellipse", "width": 8, "height": 8, "fill": "$chart.dot", "x": 360, "y": 80 }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "area-xaxis",
+          "name": "X Axis",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "justifyContent": "space-between",
+          "padding": [0, 0, 0, 36],
+          "children": [
+            { "id": "area-x1", "name": "X Label", "type": "text", "content": "Jan", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "area-x2", "name": "X Label", "type": "text", "content": "Feb", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "area-x3", "name": "X Label", "type": "text", "content": "Mar", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "area-x4", "name": "X Label", "type": "text", "content": "Apr", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "area-x5", "name": "X Label", "type": "text", "content": "May", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+            { "id": "area-x6", "name": "X Label", "type": "text", "content": "Jun", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+          ]
+        }
+      ]
+    }
+  ]
+}

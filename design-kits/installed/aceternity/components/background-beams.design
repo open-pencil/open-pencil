@@ -1,0 +1,281 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "BackgroundBeams", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "glow.primary": { "type": "color", "value": "#6366F1" },
+    "glow.secondary": { "type": "color", "value": "#8B5CF6" },
+    "glow.accent": { "type": "color", "value": "#EC4899" },
+    "bg.dark": { "type": "color", "value": "#0A0A0F" },
+    "text.primary": { "type": "color", "value": "#FAFAFA" },
+    "text.muted": { "type": "color", "value": "#A1A1AA" },
+    "beam.opacity": { "type": "number", "value": 0.15 }
+  },
+  "children": [
+    {
+      "id": "background-beams-default",
+      "name": "BackgroundBeams / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 640,
+      "fill": "$bg.dark",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "clipContent": true,
+      "children": [
+        {
+          "id": "beam-1",
+          "name": "Beam 1",
+          "type": "rectangle",
+          "width": 2,
+          "height": 900,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.3, "color": "#6366F130" },
+              { "offset": 0.7, "color": "#8B5CF630" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": 35
+        },
+        {
+          "id": "beam-2",
+          "name": "Beam 2",
+          "type": "rectangle",
+          "width": 2,
+          "height": 1000,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.2, "color": "#EC489920" },
+              { "offset": 0.8, "color": "#6366F120" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": -25
+        },
+        {
+          "id": "beam-3",
+          "name": "Beam 3",
+          "type": "rectangle",
+          "width": 1,
+          "height": 800,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.4, "color": "#8B5CF625" },
+              { "offset": 0.6, "color": "#6366F125" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": 50
+        },
+        {
+          "id": "beam-4",
+          "name": "Beam 4",
+          "type": "rectangle",
+          "width": 1,
+          "height": 950,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.3, "color": "#3B82F618" },
+              { "offset": 0.7, "color": "#6366F118" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": -40
+        },
+        {
+          "id": "beam-5",
+          "name": "Beam 5",
+          "type": "rectangle",
+          "width": 2,
+          "height": 850,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.5, "color": "#8B5CF620" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": 15
+        },
+        {
+          "id": "beams-default-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 640,
+          "height": "fit_content",
+          "layout": "vertical",
+          "alignItems": "center",
+          "gap": 24,
+          "children": [
+            {
+              "id": "beams-default-headline",
+              "name": "Headline",
+              "type": "text",
+              "content": "Ready to get started?",
+              "fontSize": 48,
+              "fontWeight": 700,
+              "fill": "$text.primary",
+              "textAlign": "center"
+            },
+            {
+              "id": "beams-default-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Join thousands of developers building beautiful interfaces with Aceternity UI components.",
+              "fontSize": 18,
+              "fontWeight": 400,
+              "fill": "$text.muted",
+              "textAlign": "center"
+            },
+            {
+              "id": "beams-default-cta",
+              "name": "CTA",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 48,
+              "fill": "$glow.primary",
+              "cornerRadius": 10,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "center",
+              "padding": [0, 32, 0, 32],
+              "children": [
+                {
+                  "id": "beams-default-cta-label",
+                  "name": "Label",
+                  "type": "text",
+                  "content": "Get Started Free",
+                  "fontSize": 16,
+                  "fontWeight": 600,
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "background-beams-subtle",
+      "name": "BackgroundBeams / Subtle",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 480,
+      "fill": "$bg.dark",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "clipContent": true,
+      "children": [
+        {
+          "id": "beam-subtle-1",
+          "name": "Beam 1",
+          "type": "rectangle",
+          "width": 1,
+          "height": 700,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.5, "color": "#6366F110" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": 30
+        },
+        {
+          "id": "beam-subtle-2",
+          "name": "Beam 2",
+          "type": "rectangle",
+          "width": 1,
+          "height": 750,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.5, "color": "#8B5CF610" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": -20
+        },
+        {
+          "id": "beam-subtle-3",
+          "name": "Beam 3",
+          "type": "rectangle",
+          "width": 1,
+          "height": 600,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0.5, 0],
+            "to": [0.5, 1],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.5, "color": "#6366F10D" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "rotation": 45
+        },
+        {
+          "id": "beams-subtle-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 600,
+          "height": "fit_content",
+          "layout": "vertical",
+          "alignItems": "center",
+          "gap": 20,
+          "children": [
+            {
+              "id": "beams-subtle-headline",
+              "name": "Headline",
+              "type": "text",
+              "content": "Elegant simplicity",
+              "fontSize": 40,
+              "fontWeight": 700,
+              "fill": "$text.primary",
+              "textAlign": "center"
+            },
+            {
+              "id": "beams-subtle-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Subtle background effects that enhance without distracting from your core content.",
+              "fontSize": 16,
+              "fontWeight": 400,
+              "fill": "$text.muted",
+              "textAlign": "center"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

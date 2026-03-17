@@ -1,0 +1,137 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "Spotlight", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "spotlight.color": { "type": "color", "value": "#6366F1" },
+    "spotlight.subtle": { "type": "color", "value": "#8B5CF620" },
+    "bg.dark": { "type": "color", "value": "#0A0A0F" },
+    "text.primary": { "type": "color", "value": "#FAFAFA" },
+    "text.muted": { "type": "color", "value": "#A1A1AA" }
+  },
+  "children": [
+    {
+      "id": "spotlight-default",
+      "name": "Spotlight / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 600,
+      "fill": "$bg.dark",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "children": [
+        {
+          "id": "spotlight-default-glow",
+          "name": "Spotlight Glow",
+          "type": "ellipse",
+          "width": 600,
+          "height": 600,
+          "fill": {
+            "type": "radial-gradient",
+            "center": [0.5, 0.4],
+            "radius": 0.5,
+            "stops": [
+              { "offset": 0, "color": "#6366F140" },
+              { "offset": 0.5, "color": "#8B5CF620" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "opacity": 0.8
+        },
+        {
+          "id": "spotlight-default-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 720,
+          "height": "fit_content",
+          "layout": "vertical",
+          "alignItems": "center",
+          "gap": 24,
+          "children": [
+            {
+              "id": "spotlight-default-headline",
+              "name": "Headline",
+              "type": "text",
+              "content": "Spotlight your best features",
+              "fontSize": 56,
+              "fontWeight": 700,
+              "fill": "$text.primary"
+            },
+            {
+              "id": "spotlight-default-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Draw attention to what matters most with dynamic spotlight effects that follow user interaction.",
+              "fontSize": 18,
+              "fontWeight": 400,
+              "fill": "$text.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "spotlight-subtle",
+      "name": "Spotlight / Subtle",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": 600,
+      "fill": "$bg.dark",
+      "layout": "vertical",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "children": [
+        {
+          "id": "spotlight-subtle-glow",
+          "name": "Spotlight Glow",
+          "type": "ellipse",
+          "width": 800,
+          "height": 800,
+          "fill": {
+            "type": "radial-gradient",
+            "center": [0.5, 0.4],
+            "radius": 0.6,
+            "stops": [
+              { "offset": 0, "color": "#6366F118" },
+              { "offset": 0.6, "color": "#8B5CF60D" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "opacity": 0.6
+        },
+        {
+          "id": "spotlight-subtle-content",
+          "name": "Content",
+          "type": "frame",
+          "width": 720,
+          "height": "fit_content",
+          "layout": "vertical",
+          "alignItems": "center",
+          "gap": 24,
+          "children": [
+            {
+              "id": "spotlight-subtle-headline",
+              "name": "Headline",
+              "type": "text",
+              "content": "Subtle elegance",
+              "fontSize": 48,
+              "fontWeight": 700,
+              "fill": "$text.primary"
+            },
+            {
+              "id": "spotlight-subtle-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "A softer spotlight for sections that need gentle emphasis without overwhelming the content.",
+              "fontSize": 18,
+              "fontWeight": 400,
+              "fill": "$text.muted"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

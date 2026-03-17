@@ -1,0 +1,346 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "BentoGrid", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "glow.primary": { "type": "color", "value": "#6366F1" },
+    "glow.secondary": { "type": "color", "value": "#8B5CF6" },
+    "glow.accent": { "type": "color", "value": "#EC4899" },
+    "glow.blue": { "type": "color", "value": "#3B82F6" },
+    "bg.dark": { "type": "color", "value": "#0A0A0F" },
+    "bg.card": { "type": "color", "value": "#111118" },
+    "border.subtle": { "type": "color", "value": "#FFFFFF0A" },
+    "text.primary": { "type": "color", "value": "#FAFAFA" },
+    "text.muted": { "type": "color", "value": "#A1A1AA" }
+  },
+  "children": [
+    {
+      "id": "bento-grid-default",
+      "name": "BentoGrid / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 1280,
+      "height": "fit_content",
+      "fill": "$bg.dark",
+      "layout": "vertical",
+      "padding": [64, 32, 64, 32],
+      "gap": 16,
+      "children": [
+        {
+          "id": "bento-grid-row1",
+          "name": "Row 1",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 16,
+          "children": [
+            {
+              "id": "bento-grid-cell-1",
+              "name": "Cell Large",
+              "type": "frame",
+              "width": 790,
+              "height": 320,
+              "fill": "$bg.card",
+              "cornerRadius": 16,
+              "stroke": { "color": "$border.subtle", "width": 1 },
+              "layout": "vertical",
+              "padding": [32, 32, 32, 32],
+              "gap": 16,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "bento-grid-cell-1-icon",
+                  "name": "Icon",
+                  "type": "rectangle",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$glow.primary",
+                  "cornerRadius": 10,
+                  "opacity": 0.8
+                },
+                {
+                  "id": "bento-grid-cell-1-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Lightning Fast Performance",
+                  "fontSize": 24,
+                  "fontWeight": 600,
+                  "fill": "$text.primary"
+                },
+                {
+                  "id": "bento-grid-cell-1-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "content": "Optimized rendering pipeline delivers smooth 60fps animations and instant interactions.",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$text.muted"
+                }
+              ]
+            },
+            {
+              "id": "bento-grid-cell-2",
+              "name": "Cell Small 1",
+              "type": "frame",
+              "width": 390,
+              "height": 320,
+              "fill": "$bg.card",
+              "cornerRadius": 16,
+              "stroke": { "color": "$border.subtle", "width": 1 },
+              "layout": "vertical",
+              "padding": [32, 32, 32, 32],
+              "gap": 16,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "bento-grid-cell-2-icon",
+                  "name": "Icon",
+                  "type": "rectangle",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$glow.secondary",
+                  "cornerRadius": 10,
+                  "opacity": 0.8
+                },
+                {
+                  "id": "bento-grid-cell-2-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Type Safe",
+                  "fontSize": 20,
+                  "fontWeight": 600,
+                  "fill": "$text.primary"
+                },
+                {
+                  "id": "bento-grid-cell-2-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "content": "Full TypeScript support with intellisense.",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$text.muted"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bento-grid-row2",
+          "name": "Row 2",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 16,
+          "children": [
+            {
+              "id": "bento-grid-cell-3",
+              "name": "Cell Small 2",
+              "type": "frame",
+              "width": 390,
+              "height": 280,
+              "fill": "$bg.card",
+              "cornerRadius": 16,
+              "stroke": { "color": "$border.subtle", "width": 1 },
+              "layout": "vertical",
+              "padding": [32, 32, 32, 32],
+              "gap": 16,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "bento-grid-cell-3-icon",
+                  "name": "Icon",
+                  "type": "rectangle",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$glow.accent",
+                  "cornerRadius": 10,
+                  "opacity": 0.8
+                },
+                {
+                  "id": "bento-grid-cell-3-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Accessible",
+                  "fontSize": 20,
+                  "fontWeight": 600,
+                  "fill": "$text.primary"
+                },
+                {
+                  "id": "bento-grid-cell-3-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "content": "WCAG 2.1 compliant out of the box.",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$text.muted"
+                }
+              ]
+            },
+            {
+              "id": "bento-grid-cell-4",
+              "name": "Cell Medium",
+              "type": "frame",
+              "width": 390,
+              "height": 280,
+              "fill": "$bg.card",
+              "cornerRadius": 16,
+              "stroke": { "color": "$border.subtle", "width": 1 },
+              "layout": "vertical",
+              "padding": [32, 32, 32, 32],
+              "gap": 16,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "bento-grid-cell-4-icon",
+                  "name": "Icon",
+                  "type": "rectangle",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "$glow.blue",
+                  "cornerRadius": 10,
+                  "opacity": 0.8
+                },
+                {
+                  "id": "bento-grid-cell-4-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Dark Mode",
+                  "fontSize": 20,
+                  "fontWeight": 600,
+                  "fill": "$text.primary"
+                },
+                {
+                  "id": "bento-grid-cell-4-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "content": "Beautiful dark theme with perfect contrast.",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$text.muted"
+                }
+              ]
+            },
+            {
+              "id": "bento-grid-cell-5",
+              "name": "Cell Small 3",
+              "type": "frame",
+              "width": 390,
+              "height": 280,
+              "fill": "$bg.card",
+              "cornerRadius": 16,
+              "stroke": { "color": "$border.subtle", "width": 1 },
+              "layout": "vertical",
+              "padding": [32, 32, 32, 32],
+              "gap": 16,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "id": "bento-grid-cell-5-icon",
+                  "name": "Icon",
+                  "type": "rectangle",
+                  "width": 40,
+                  "height": 40,
+                  "fill": "#10B981",
+                  "cornerRadius": 10,
+                  "opacity": 0.8
+                },
+                {
+                  "id": "bento-grid-cell-5-title",
+                  "name": "Title",
+                  "type": "text",
+                  "content": "Responsive",
+                  "fontSize": 20,
+                  "fontWeight": 600,
+                  "fill": "$text.primary"
+                },
+                {
+                  "id": "bento-grid-cell-5-desc",
+                  "name": "Description",
+                  "type": "text",
+                  "content": "Adapts seamlessly to any screen size.",
+                  "fontSize": 14,
+                  "fontWeight": 400,
+                  "fill": "$text.muted"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bento-grid-row3",
+          "name": "Row 3",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "gap": 16,
+          "children": [
+            {
+              "id": "bento-grid-cell-6",
+              "name": "Cell Wide",
+              "type": "frame",
+              "width": "fill",
+              "height": 200,
+              "fill": "$bg.card",
+              "cornerRadius": 16,
+              "stroke": { "color": "$border.subtle", "width": 1 },
+              "layout": "horizontal",
+              "padding": [32, 40, 32, 40],
+              "gap": 32,
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "bento-grid-cell-6-icon",
+                  "name": "Icon",
+                  "type": "rectangle",
+                  "width": 56,
+                  "height": 56,
+                  "fill": {
+                    "type": "linear-gradient",
+                    "from": [0, 0],
+                    "to": [1, 1],
+                    "stops": [
+                      { "offset": 0, "color": "$glow.primary" },
+                      { "offset": 1, "color": "$glow.accent" }
+                    ]
+                  },
+                  "cornerRadius": 14
+                },
+                {
+                  "id": "bento-grid-cell-6-content",
+                  "name": "Content",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fit_content",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "id": "bento-grid-cell-6-title",
+                      "name": "Title",
+                      "type": "text",
+                      "content": "Open Source & Community Driven",
+                      "fontSize": 24,
+                      "fontWeight": 600,
+                      "fill": "$text.primary"
+                    },
+                    {
+                      "id": "bento-grid-cell-6-desc",
+                      "name": "Description",
+                      "type": "text",
+                      "content": "Built in the open with contributions from developers around the world. MIT licensed, free forever.",
+                      "fontSize": 14,
+                      "fontWeight": 400,
+                      "fill": "$text.muted"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

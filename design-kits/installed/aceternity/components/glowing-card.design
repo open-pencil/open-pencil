@@ -1,0 +1,211 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "GlowingCard", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "glow.primary": { "type": "color", "value": "#6366F1" },
+    "glow.secondary": { "type": "color", "value": "#8B5CF6" },
+    "glow.blue": { "type": "color", "value": "#3B82F6" },
+    "glow.accent": { "type": "color", "value": "#EC4899" },
+    "card.bg": { "type": "color", "value": "#111118" },
+    "card.fg": { "type": "color", "value": "#FAFAFA" },
+    "card.muted": { "type": "color", "value": "#A1A1AA" },
+    "card.border": { "type": "color", "value": "#FFFFFF0A" }
+  },
+  "children": [
+    {
+      "id": "glowing-card-default",
+      "name": "GlowingCard / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "transparent",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "padding": [2, 2, 2, 2],
+      "children": [
+        {
+          "id": "glowing-card-default-glow",
+          "name": "Glow Border",
+          "type": "rectangle",
+          "width": 320,
+          "height": 240,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0, 0],
+            "to": [1, 1],
+            "stops": [
+              { "offset": 0, "color": "$glow.primary" },
+              { "offset": 0.5, "color": "$glow.secondary" },
+              { "offset": 1, "color": "$glow.accent" }
+            ]
+          },
+          "cornerRadius": 16,
+          "opacity": 0.4
+        },
+        {
+          "id": "glowing-card-default-inner",
+          "name": "Inner Card",
+          "type": "frame",
+          "width": 316,
+          "height": "fit_content",
+          "fill": "$card.bg",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "padding": [24, 24, 24, 24],
+          "gap": 12,
+          "children": [
+            {
+              "id": "glowing-card-default-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Premium Feature",
+              "fontSize": 20,
+              "fontWeight": 600,
+              "fill": "$card.fg"
+            },
+            {
+              "id": "glowing-card-default-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Experience the next level of design with animated gradient borders that bring your cards to life.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$card.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glowing-card-blue",
+      "name": "GlowingCard / Blue",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "transparent",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "padding": [2, 2, 2, 2],
+      "children": [
+        {
+          "id": "glowing-card-blue-glow",
+          "name": "Glow Border",
+          "type": "rectangle",
+          "width": 320,
+          "height": 240,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0, 0],
+            "to": [1, 1],
+            "stops": [
+              { "offset": 0, "color": "$glow.blue" },
+              { "offset": 0.5, "color": "$glow.primary" },
+              { "offset": 1, "color": "#06B6D4" }
+            ]
+          },
+          "cornerRadius": 16,
+          "opacity": 0.4
+        },
+        {
+          "id": "glowing-card-blue-inner",
+          "name": "Inner Card",
+          "type": "frame",
+          "width": 316,
+          "height": "fit_content",
+          "fill": "$card.bg",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "padding": [24, 24, 24, 24],
+          "gap": 12,
+          "children": [
+            {
+              "id": "glowing-card-blue-title",
+              "name": "Title",
+              "type": "text",
+              "content": "Cloud Integration",
+              "fontSize": 20,
+              "fontWeight": 600,
+              "fill": "$card.fg"
+            },
+            {
+              "id": "glowing-card-blue-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Seamlessly connect your services with our cloud-native architecture and real-time sync.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$card.muted"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glowing-card-purple",
+      "name": "GlowingCard / Purple",
+      "type": "frame",
+      "reusable": true,
+      "width": 320,
+      "height": "fit_content",
+      "fill": "transparent",
+      "cornerRadius": 16,
+      "layout": "vertical",
+      "padding": [2, 2, 2, 2],
+      "children": [
+        {
+          "id": "glowing-card-purple-glow",
+          "name": "Glow Border",
+          "type": "rectangle",
+          "width": 320,
+          "height": 240,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0, 0],
+            "to": [1, 1],
+            "stops": [
+              { "offset": 0, "color": "$glow.secondary" },
+              { "offset": 0.5, "color": "$glow.accent" },
+              { "offset": 1, "color": "#A855F7" }
+            ]
+          },
+          "cornerRadius": 16,
+          "opacity": 0.4
+        },
+        {
+          "id": "glowing-card-purple-inner",
+          "name": "Inner Card",
+          "type": "frame",
+          "width": 316,
+          "height": "fit_content",
+          "fill": "$card.bg",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "padding": [24, 24, 24, 24],
+          "gap": 12,
+          "children": [
+            {
+              "id": "glowing-card-purple-title",
+              "name": "Title",
+              "type": "text",
+              "content": "AI-Powered",
+              "fontSize": 20,
+              "fontWeight": 600,
+              "fill": "$card.fg"
+            },
+            {
+              "id": "glowing-card-purple-desc",
+              "name": "Description",
+              "type": "text",
+              "content": "Leverage intelligent automation and machine learning to supercharge your workflow.",
+              "fontSize": 14,
+              "fontWeight": 400,
+              "fill": "$card.muted"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

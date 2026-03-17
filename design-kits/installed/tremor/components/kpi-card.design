@@ -1,0 +1,209 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "KPICard", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "kpi.bg": { "type": "color", "value": "#111113" },
+    "kpi.fg": { "type": "color", "value": "#FAFAFA" },
+    "kpi.muted": { "type": "color", "value": "#A1A1AA" },
+    "kpi.border": { "type": "color", "value": "#27272A" },
+    "kpi.increase": { "type": "color", "value": "#22C55E" },
+    "kpi.decrease": { "type": "color", "value": "#EF4444" },
+    "kpi.sparkline": { "type": "color", "value": "#6366F1" },
+    "kpi.radius": { "type": "number", "value": 12 }
+  },
+  "children": [
+    {
+      "id": "kpi-default",
+      "name": "KPI Card / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 280,
+      "height": "fit_content",
+      "fill": "$kpi.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$kpi.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "kpi-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Total Revenue",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$kpi.muted"
+        },
+        {
+          "id": "kpi-default-value",
+          "name": "Value",
+          "type": "text",
+          "content": "$45,231.89",
+          "fontSize": 36,
+          "fontWeight": 700,
+          "fontFamily": "JetBrains Mono",
+          "fill": "$kpi.fg"
+        }
+      ]
+    },
+    {
+      "id": "kpi-with-trend",
+      "name": "KPI Card / With Trend",
+      "type": "frame",
+      "reusable": true,
+      "width": 280,
+      "height": "fit_content",
+      "fill": "$kpi.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$kpi.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 8,
+      "children": [
+        {
+          "id": "kpi-trend-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Active Users",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$kpi.muted"
+        },
+        {
+          "id": "kpi-trend-value",
+          "name": "Value",
+          "type": "text",
+          "content": "2,350",
+          "fontSize": 36,
+          "fontWeight": 700,
+          "fontFamily": "JetBrains Mono",
+          "fill": "$kpi.fg"
+        },
+        {
+          "id": "kpi-trend-indicator",
+          "name": "Trend Indicator",
+          "type": "frame",
+          "width": "fit_content",
+          "height": 24,
+          "fill": "rgba(34,197,94,0.15)",
+          "cornerRadius": 9999,
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 10, 0, 10],
+          "gap": 4,
+          "children": [
+            {
+              "id": "kpi-trend-arrow",
+              "name": "Arrow",
+              "type": "text",
+              "content": "\u2191",
+              "fontSize": 12,
+              "fontWeight": 600,
+              "fill": "$kpi.increase"
+            },
+            {
+              "id": "kpi-trend-pct",
+              "name": "Percentage",
+              "type": "text",
+              "content": "+12.5%",
+              "fontSize": 12,
+              "fontWeight": 600,
+              "fill": "$kpi.increase"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kpi-with-sparkline",
+      "name": "KPI Card / With Sparkline",
+      "type": "frame",
+      "reusable": true,
+      "width": 280,
+      "height": "fit_content",
+      "fill": "$kpi.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$kpi.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 12,
+      "children": [
+        {
+          "id": "kpi-spark-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Page Views",
+          "fontSize": 13,
+          "fontWeight": 400,
+          "fill": "$kpi.muted"
+        },
+        {
+          "id": "kpi-spark-row",
+          "name": "Value Row",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "justifyContent": "space-between",
+          "children": [
+            {
+              "id": "kpi-spark-value",
+              "name": "Value",
+              "type": "text",
+              "content": "573,489",
+              "fontSize": 36,
+              "fontWeight": 700,
+              "fontFamily": "JetBrains Mono",
+              "fill": "$kpi.fg"
+            },
+            {
+              "id": "kpi-spark-trend",
+              "name": "Trend",
+              "type": "frame",
+              "width": "fit_content",
+              "height": 24,
+              "fill": "rgba(239,68,68,0.15)",
+              "cornerRadius": 9999,
+              "layout": "horizontal",
+              "alignItems": "center",
+              "padding": [0, 10, 0, 10],
+              "gap": 4,
+              "children": [
+                {
+                  "id": "kpi-spark-arrow",
+                  "name": "Arrow",
+                  "type": "text",
+                  "content": "\u2193",
+                  "fontSize": 12,
+                  "fontWeight": 600,
+                  "fill": "$kpi.decrease"
+                },
+                {
+                  "id": "kpi-spark-pct",
+                  "name": "Percentage",
+                  "type": "text",
+                  "content": "-3.2%",
+                  "fontSize": 12,
+                  "fontWeight": 600,
+                  "fill": "$kpi.decrease"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "kpi-sparkline-chart",
+          "name": "Sparkline Placeholder",
+          "type": "rectangle",
+          "width": 232,
+          "height": 32,
+          "fill": "$kpi.sparkline",
+          "opacity": 0.2,
+          "cornerRadius": 4
+        }
+      ]
+    }
+  ]
+}

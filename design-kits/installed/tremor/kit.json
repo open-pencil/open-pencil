@@ -1,0 +1,84 @@
+{
+  "name": "tremor",
+  "displayName": "Tremor",
+  "description": "React components for dashboards and data visualization. KPI cards, charts, tables, and metrics.",
+  "version": "1.0.0",
+  "author": "tremor",
+  "license": "Apache-2.0",
+  "category": "dashboard",
+  "tags": ["dashboard", "analytics", "charts", "data", "metrics"],
+  "style": {
+    "aesthetic": "clean-data",
+    "radius": "medium",
+    "density": "comfortable",
+    "colorScheme": "neutral"
+  },
+  "compatibility": {
+    "frameworks": ["react", "vue", "html"],
+    "exportFormats": ["react-tailwind", "html-css"]
+  },
+  "components": [
+    {
+      "id": "kpi-card",
+      "name": "KPI Card",
+      "file": "components/kpi-card.design",
+      "variants": ["default", "with-trend", "with-sparkline"],
+      "description": "A card displaying a key performance indicator with value, label, and optional trend.",
+      "tags": ["data", "display", "dashboard"],
+      "usageContext": ["dashboard-kpi", "stat-row", "overview-metric"]
+    },
+    {
+      "id": "bar-chart",
+      "name": "Bar Chart",
+      "file": "components/bar-chart.design",
+      "variants": ["default", "horizontal"],
+      "description": "Bar chart placeholder with axes and bars for data visualization.",
+      "tags": ["data", "chart", "visualization"],
+      "usageContext": ["dashboard-chart", "analytics-view", "data-comparison"]
+    },
+    {
+      "id": "line-chart",
+      "name": "Line Chart",
+      "file": "components/line-chart.design",
+      "variants": ["default", "area"],
+      "description": "Line chart placeholder with axes and line for trend visualization.",
+      "tags": ["data", "chart", "visualization"],
+      "usageContext": ["dashboard-chart", "trend-view", "analytics-view"]
+    },
+    {
+      "id": "donut-chart",
+      "name": "Donut Chart",
+      "file": "components/donut-chart.design",
+      "variants": ["default"],
+      "description": "Donut/pie chart placeholder for proportion visualization.",
+      "tags": ["data", "chart", "visualization"],
+      "usageContext": ["dashboard-chart", "distribution-view"]
+    },
+    {
+      "id": "data-table",
+      "name": "Data Table",
+      "file": "components/data-table.design",
+      "variants": ["default", "compact"],
+      "description": "Data table with sticky headers, sortable columns, and alternating rows.",
+      "tags": ["data", "display", "table"],
+      "usageContext": ["data-list", "admin-table", "report-view"]
+    },
+    {
+      "id": "badge-metrics",
+      "name": "Badge Metrics",
+      "file": "components/badge-metrics.design",
+      "variants": ["increase", "decrease", "neutral"],
+      "description": "Small metric badge showing value change with directional indicator.",
+      "tags": ["data", "display", "status"],
+      "usageContext": ["dashboard-kpi", "stat-row", "table-cell"]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "stats": {
+    "componentCount": 6,
+    "variantCount": 12,
+    "downloads": 0,
+    "rating": 0
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "name": "aceternity",
+  "displayName": "Aceternity UI",
+  "description": "Premium effects and animations for modern web interfaces. Glowing cards, spotlight effects, moving borders, and more.",
+  "version": "1.0.0",
+  "author": "aceternity",
+  "license": "MIT",
+  "category": "effects",
+  "tags": ["effects", "animations", "glow", "premium", "modern"],
+  "style": {
+    "aesthetic": "premium-glow",
+    "radius": "large",
+    "density": "comfortable",
+    "colorScheme": "vibrant"
+  },
+  "compatibility": {
+    "frameworks": ["react", "vue", "html"],
+    "exportFormats": ["react-tailwind", "html-css"]
+  },
+  "components": [
+    {
+      "id": "glowing-card",
+      "name": "Glowing Card",
+      "file": "components/glowing-card.design",
+      "variants": ["default", "blue", "purple"],
+      "description": "Card with animated gradient border glow effect.",
+      "tags": ["container", "effects", "landing"],
+      "usageContext": ["feature-card", "pricing-card", "content-card"]
+    },
+    {
+      "id": "spotlight",
+      "name": "Spotlight",
+      "file": "components/spotlight.design",
+      "variants": ["default", "subtle"],
+      "description": "Background spotlight effect that follows cursor position.",
+      "tags": ["background", "effects"],
+      "usageContext": ["landing-hero", "page-hero", "feature-section"]
+    },
+    {
+      "id": "moving-border",
+      "name": "Moving Border",
+      "file": "components/moving-border.design",
+      "variants": ["default", "button"],
+      "description": "Element with a continuously animated border gradient.",
+      "tags": ["effects", "interactive"],
+      "usageContext": ["hero-cta", "feature-card", "stat-card"]
+    },
+    {
+      "id": "text-generate",
+      "name": "Text Generate",
+      "file": "components/text-generate.design",
+      "variants": ["default"],
+      "description": "Text that appears letter by letter with a glow effect.",
+      "tags": ["typography", "effects", "animation"],
+      "usageContext": ["landing-hero", "page-hero", "section-title"]
+    },
+    {
+      "id": "bento-grid",
+      "name": "Bento Grid",
+      "file": "components/bento-grid.design",
+      "variants": ["default"],
+      "description": "Asymmetric grid layout for showcasing features.",
+      "tags": ["layout", "landing"],
+      "usageContext": ["feature-grid", "showcase", "content-section"]
+    },
+    {
+      "id": "background-beams",
+      "name": "Background Beams",
+      "file": "components/background-beams.design",
+      "variants": ["default", "subtle"],
+      "description": "Decorative background beams with gradient lines.",
+      "tags": ["background", "effects", "decoration"],
+      "usageContext": ["landing-hero", "page-hero", "cta-section"]
+    },
+    {
+      "id": "shimmer-button",
+      "name": "Shimmer Button",
+      "file": "components/shimmer-button.design",
+      "variants": ["default", "large"],
+      "description": "Button with a shimmer/shine animation effect.",
+      "tags": ["interactive", "effects", "cta"],
+      "usageContext": ["hero-cta", "form-submit", "page-cta"]
+    }
+  ],
+  "tokens": "tokens.json",
+  "preview": "preview.png",
+  "stats": {
+    "componentCount": 7,
+    "variantCount": 14,
+    "downloads": 0,
+    "rating": 0
+  }
+}

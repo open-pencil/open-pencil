@@ -1,0 +1,207 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "DonutChart", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "donut.bg": { "type": "color", "value": "#111113" },
+    "donut.fg": { "type": "color", "value": "#FAFAFA" },
+    "donut.muted": { "type": "color", "value": "#A1A1AA" },
+    "donut.border": { "type": "color", "value": "#27272A" },
+    "donut.center": { "type": "color", "value": "#111113" },
+    "donut.color1": { "type": "color", "value": "#6366F1" },
+    "donut.color2": { "type": "color", "value": "#8B5CF6" },
+    "donut.color3": { "type": "color", "value": "#EC4899" },
+    "donut.color4": { "type": "color", "value": "#F59E0B" }
+  },
+  "children": [
+    {
+      "id": "donut-chart-default",
+      "name": "Donut Chart / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 240,
+      "height": 340,
+      "fill": "$donut.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$donut.border", "width": 1 },
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [24, 24, 24, 24],
+      "gap": 20,
+      "children": [
+        {
+          "id": "donut-ring-container",
+          "name": "Donut Ring",
+          "type": "frame",
+          "width": 160,
+          "height": 160,
+          "alignItems": "center",
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "donut-outer",
+              "name": "Outer Ring",
+              "type": "ellipse",
+              "width": 160,
+              "height": 160,
+              "fill": "$donut.color1",
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "donut-segment2",
+              "name": "Segment 2",
+              "type": "ellipse",
+              "width": 160,
+              "height": 160,
+              "fill": "$donut.color2",
+              "opacity": 0.7,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "id": "donut-inner",
+              "name": "Inner Circle",
+              "type": "ellipse",
+              "width": 96,
+              "height": 96,
+              "fill": "$donut.center",
+              "x": 32,
+              "y": 32
+            },
+            {
+              "id": "donut-center-value",
+              "name": "Center Value",
+              "type": "text",
+              "content": "67%",
+              "fontSize": 28,
+              "fontWeight": 700,
+              "fontFamily": "JetBrains Mono",
+              "fill": "$donut.fg",
+              "x": 52,
+              "y": 62
+            }
+          ]
+        },
+        {
+          "id": "donut-legend",
+          "name": "Legend",
+          "type": "frame",
+          "width": "fill",
+          "height": "fit_content",
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "id": "donut-legend1",
+              "name": "Legend Item",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "children": [
+                {
+                  "id": "donut-legend1-left",
+                  "name": "Label Group",
+                  "type": "frame",
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "gap": 8,
+                  "children": [
+                    { "id": "donut-dot1", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fill": "$donut.color1" },
+                    { "id": "donut-label1", "name": "Label", "type": "text", "content": "Direct", "fontSize": 12, "fontWeight": 400, "fill": "$donut.muted" }
+                  ]
+                },
+                { "id": "donut-val1", "name": "Value", "type": "text", "content": "67%", "fontSize": 12, "fontWeight": 600, "fill": "$donut.fg" }
+              ]
+            },
+            {
+              "id": "donut-legend2",
+              "name": "Legend Item",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "children": [
+                {
+                  "id": "donut-legend2-left",
+                  "name": "Label Group",
+                  "type": "frame",
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "gap": 8,
+                  "children": [
+                    { "id": "donut-dot2", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fill": "$donut.color2" },
+                    { "id": "donut-label2", "name": "Label", "type": "text", "content": "Organic", "fontSize": 12, "fontWeight": 400, "fill": "$donut.muted" }
+                  ]
+                },
+                { "id": "donut-val2", "name": "Value", "type": "text", "content": "18%", "fontSize": 12, "fontWeight": 600, "fill": "$donut.fg" }
+              ]
+            },
+            {
+              "id": "donut-legend3",
+              "name": "Legend Item",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "children": [
+                {
+                  "id": "donut-legend3-left",
+                  "name": "Label Group",
+                  "type": "frame",
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "gap": 8,
+                  "children": [
+                    { "id": "donut-dot3", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fill": "$donut.color3" },
+                    { "id": "donut-label3", "name": "Label", "type": "text", "content": "Referral", "fontSize": 12, "fontWeight": 400, "fill": "$donut.muted" }
+                  ]
+                },
+                { "id": "donut-val3", "name": "Value", "type": "text", "content": "10%", "fontSize": 12, "fontWeight": 600, "fill": "$donut.fg" }
+              ]
+            },
+            {
+              "id": "donut-legend4",
+              "name": "Legend Item",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "justifyContent": "space-between",
+              "children": [
+                {
+                  "id": "donut-legend4-left",
+                  "name": "Label Group",
+                  "type": "frame",
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "layout": "horizontal",
+                  "alignItems": "center",
+                  "gap": 8,
+                  "children": [
+                    { "id": "donut-dot4", "name": "Dot", "type": "ellipse", "width": 8, "height": 8, "fill": "$donut.color4" },
+                    { "id": "donut-label4", "name": "Label", "type": "text", "content": "Social", "fontSize": 12, "fontWeight": 400, "fill": "$donut.muted" }
+                  ]
+                },
+                { "id": "donut-val4", "name": "Value", "type": "text", "content": "5%", "fontSize": 12, "fontWeight": 600, "fill": "$donut.fg" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

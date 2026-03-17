@@ -1,0 +1,267 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "BarChart", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "chart.bg": { "type": "color", "value": "#111113" },
+    "chart.fg": { "type": "color", "value": "#FAFAFA" },
+    "chart.muted": { "type": "color", "value": "#A1A1AA" },
+    "chart.border": { "type": "color", "value": "#27272A" },
+    "chart.grid": { "type": "color", "value": "#1E1E22" },
+    "chart.color1": { "type": "color", "value": "#6366F1" },
+    "chart.color2": { "type": "color", "value": "#8B5CF6" },
+    "chart.color3": { "type": "color", "value": "#EC4899" },
+    "chart.color4": { "type": "color", "value": "#F59E0B" },
+    "chart.color5": { "type": "color", "value": "#14B8A6" }
+  },
+  "children": [
+    {
+      "id": "bar-chart-default",
+      "name": "Bar Chart / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "$chart.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$chart.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "bar-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Monthly Revenue",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "fill": "$chart.fg"
+        },
+        {
+          "id": "bar-default-area",
+          "name": "Chart Area",
+          "type": "frame",
+          "width": "fill",
+          "height": "fill",
+          "layout": "horizontal",
+          "gap": 0,
+          "children": [
+            {
+              "id": "bar-default-yaxis",
+              "name": "Y Axis",
+              "type": "frame",
+              "width": 40,
+              "height": "fill",
+              "layout": "vertical",
+              "justifyContent": "space-between",
+              "children": [
+                { "id": "bar-y5", "name": "Y Label", "type": "text", "content": "50k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "bar-y4", "name": "Y Label", "type": "text", "content": "40k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "bar-y3", "name": "Y Label", "type": "text", "content": "30k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "bar-y2", "name": "Y Label", "type": "text", "content": "20k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "bar-y1", "name": "Y Label", "type": "text", "content": "10k", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" },
+                { "id": "bar-y0", "name": "Y Label", "type": "text", "content": "0", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+              ]
+            },
+            {
+              "id": "bar-default-plot",
+              "name": "Plot Area",
+              "type": "frame",
+              "width": "fill",
+              "height": "fill",
+              "layout": "horizontal",
+              "alignItems": "end",
+              "justifyContent": "space-around",
+              "gap": 12,
+              "children": [
+                {
+                  "id": "bar-default-col1",
+                  "name": "Bar Column",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fill",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "justifyContent": "end",
+                  "gap": 8,
+                  "children": [
+                    { "id": "bar-d-b1", "name": "Bar", "type": "rectangle", "width": 36, "height": 120, "fill": "$chart.color1", "cornerRadius": [4, 4, 0, 0] },
+                    { "id": "bar-d-l1", "name": "X Label", "type": "text", "content": "Jan", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+                  ]
+                },
+                {
+                  "id": "bar-default-col2",
+                  "name": "Bar Column",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fill",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "justifyContent": "end",
+                  "gap": 8,
+                  "children": [
+                    { "id": "bar-d-b2", "name": "Bar", "type": "rectangle", "width": 36, "height": 160, "fill": "$chart.color2", "cornerRadius": [4, 4, 0, 0] },
+                    { "id": "bar-d-l2", "name": "X Label", "type": "text", "content": "Feb", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+                  ]
+                },
+                {
+                  "id": "bar-default-col3",
+                  "name": "Bar Column",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fill",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "justifyContent": "end",
+                  "gap": 8,
+                  "children": [
+                    { "id": "bar-d-b3", "name": "Bar", "type": "rectangle", "width": 36, "height": 90, "fill": "$chart.color3", "cornerRadius": [4, 4, 0, 0] },
+                    { "id": "bar-d-l3", "name": "X Label", "type": "text", "content": "Mar", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+                  ]
+                },
+                {
+                  "id": "bar-default-col4",
+                  "name": "Bar Column",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fill",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "justifyContent": "end",
+                  "gap": 8,
+                  "children": [
+                    { "id": "bar-d-b4", "name": "Bar", "type": "rectangle", "width": 36, "height": 200, "fill": "$chart.color4", "cornerRadius": [4, 4, 0, 0] },
+                    { "id": "bar-d-l4", "name": "X Label", "type": "text", "content": "Apr", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+                  ]
+                },
+                {
+                  "id": "bar-default-col5",
+                  "name": "Bar Column",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fill",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "justifyContent": "end",
+                  "gap": 8,
+                  "children": [
+                    { "id": "bar-d-b5", "name": "Bar", "type": "rectangle", "width": 36, "height": 140, "fill": "$chart.color5", "cornerRadius": [4, 4, 0, 0] },
+                    { "id": "bar-d-l5", "name": "X Label", "type": "text", "content": "May", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+                  ]
+                },
+                {
+                  "id": "bar-default-col6",
+                  "name": "Bar Column",
+                  "type": "frame",
+                  "width": "fill",
+                  "height": "fill",
+                  "layout": "vertical",
+                  "alignItems": "center",
+                  "justifyContent": "end",
+                  "gap": 8,
+                  "children": [
+                    { "id": "bar-d-b6", "name": "Bar", "type": "rectangle", "width": 36, "height": 180, "fill": "$chart.color1", "cornerRadius": [4, 4, 0, 0] },
+                    { "id": "bar-d-l6", "name": "X Label", "type": "text", "content": "Jun", "fontSize": 11, "fontWeight": 400, "fill": "$chart.muted" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bar-chart-horizontal",
+      "name": "Bar Chart / Horizontal",
+      "type": "frame",
+      "reusable": true,
+      "width": 480,
+      "height": 320,
+      "fill": "$chart.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$chart.border", "width": 1 },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "bar-horiz-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Revenue by Category",
+          "fontSize": 16,
+          "fontWeight": 600,
+          "fill": "$chart.fg"
+        },
+        {
+          "id": "bar-horiz-area",
+          "name": "Chart Area",
+          "type": "frame",
+          "width": "fill",
+          "height": "fill",
+          "layout": "vertical",
+          "gap": 12,
+          "justifyContent": "center",
+          "children": [
+            {
+              "id": "bar-horiz-row1",
+              "name": "Bar Row",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "gap": 12,
+              "children": [
+                { "id": "bar-h-l1", "name": "Label", "type": "text", "content": "SaaS", "fontSize": 12, "fontWeight": 400, "fill": "$chart.muted", "width": 60 },
+                { "id": "bar-h-b1", "name": "Bar", "type": "rectangle", "width": 300, "height": 24, "fill": "$chart.color1", "cornerRadius": [0, 4, 4, 0] }
+              ]
+            },
+            {
+              "id": "bar-horiz-row2",
+              "name": "Bar Row",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "gap": 12,
+              "children": [
+                { "id": "bar-h-l2", "name": "Label", "type": "text", "content": "API", "fontSize": 12, "fontWeight": 400, "fill": "$chart.muted", "width": 60 },
+                { "id": "bar-h-b2", "name": "Bar", "type": "rectangle", "width": 220, "height": 24, "fill": "$chart.color2", "cornerRadius": [0, 4, 4, 0] }
+              ]
+            },
+            {
+              "id": "bar-horiz-row3",
+              "name": "Bar Row",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "gap": 12,
+              "children": [
+                { "id": "bar-h-l3", "name": "Label", "type": "text", "content": "Support", "fontSize": 12, "fontWeight": 400, "fill": "$chart.muted", "width": 60 },
+                { "id": "bar-h-b3", "name": "Bar", "type": "rectangle", "width": 160, "height": 24, "fill": "$chart.color3", "cornerRadius": [0, 4, 4, 0] }
+              ]
+            },
+            {
+              "id": "bar-horiz-row4",
+              "name": "Bar Row",
+              "type": "frame",
+              "width": "fill",
+              "height": "fit_content",
+              "layout": "horizontal",
+              "alignItems": "center",
+              "gap": 12,
+              "children": [
+                { "id": "bar-h-l4", "name": "Label", "type": "text", "content": "Other", "fontSize": 12, "fontWeight": 400, "fill": "$chart.muted", "width": 60 },
+                { "id": "bar-h-b4", "name": "Bar", "type": "rectangle", "width": 90, "height": 24, "fill": "$chart.color4", "cornerRadius": [0, 4, 4, 0] }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

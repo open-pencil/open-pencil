@@ -1,0 +1,119 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "BadgeMetrics", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "badge.increase.bg": { "type": "color", "value": "rgba(34,197,94,0.15)" },
+    "badge.increase.fg": { "type": "color", "value": "#22C55E" },
+    "badge.decrease.bg": { "type": "color", "value": "rgba(239,68,68,0.15)" },
+    "badge.decrease.fg": { "type": "color", "value": "#EF4444" },
+    "badge.neutral.bg": { "type": "color", "value": "rgba(161,161,170,0.15)" },
+    "badge.neutral.fg": { "type": "color", "value": "#A1A1AA" }
+  },
+  "children": [
+    {
+      "id": "badge-increase",
+      "name": "Badge Metrics / Increase",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 28,
+      "fill": "$badge.increase.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 12, 0, 12],
+      "gap": 4,
+      "children": [
+        {
+          "id": "badge-inc-arrow",
+          "name": "Arrow",
+          "type": "text",
+          "content": "\u2191",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fill": "$badge.increase.fg"
+        },
+        {
+          "id": "badge-inc-value",
+          "name": "Value",
+          "type": "text",
+          "content": "+12.5%",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fill": "$badge.increase.fg"
+        }
+      ]
+    },
+    {
+      "id": "badge-decrease",
+      "name": "Badge Metrics / Decrease",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 28,
+      "fill": "$badge.decrease.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 12, 0, 12],
+      "gap": 4,
+      "children": [
+        {
+          "id": "badge-dec-arrow",
+          "name": "Arrow",
+          "type": "text",
+          "content": "\u2193",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fill": "$badge.decrease.fg"
+        },
+        {
+          "id": "badge-dec-value",
+          "name": "Value",
+          "type": "text",
+          "content": "-3.2%",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fill": "$badge.decrease.fg"
+        }
+      ]
+    },
+    {
+      "id": "badge-neutral",
+      "name": "Badge Metrics / Neutral",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 28,
+      "fill": "$badge.neutral.bg",
+      "cornerRadius": 9999,
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 12, 0, 12],
+      "gap": 4,
+      "children": [
+        {
+          "id": "badge-neu-arrow",
+          "name": "Arrow",
+          "type": "text",
+          "content": "\u2192",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fill": "$badge.neutral.fg"
+        },
+        {
+          "id": "badge-neu-value",
+          "name": "Value",
+          "type": "text",
+          "content": "0.0%",
+          "fontSize": 13,
+          "fontWeight": 600,
+          "fill": "$badge.neutral.fg"
+        }
+      ]
+    }
+  ]
+}

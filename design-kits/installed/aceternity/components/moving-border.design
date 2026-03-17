@@ -1,0 +1,110 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "MovingBorder", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "glow.primary": { "type": "color", "value": "#6366F1" },
+    "glow.secondary": { "type": "color", "value": "#8B5CF6" },
+    "glow.accent": { "type": "color", "value": "#EC4899" },
+    "bg.dark": { "type": "color", "value": "#0A0A0F" },
+    "bg.card": { "type": "color", "value": "#111118" },
+    "text.primary": { "type": "color", "value": "#FAFAFA" },
+    "text.muted": { "type": "color", "value": "#A1A1AA" }
+  },
+  "children": [
+    {
+      "id": "moving-border-default",
+      "name": "MovingBorder / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 360,
+      "height": "fit_content",
+      "fill": "$bg.card",
+      "cornerRadius": 16,
+      "stroke": {
+        "color": "$glow.primary",
+        "width": 2
+      },
+      "shadow": { "x": 0, "y": 0, "blur": 20, "color": "#6366F133" },
+      "layout": "vertical",
+      "padding": [24, 24, 24, 24],
+      "gap": 16,
+      "children": [
+        {
+          "id": "moving-border-default-icon",
+          "name": "Icon Placeholder",
+          "type": "rectangle",
+          "width": 48,
+          "height": 48,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0, 0],
+            "to": [1, 1],
+            "stops": [
+              { "offset": 0, "color": "$glow.primary" },
+              { "offset": 1, "color": "$glow.secondary" }
+            ]
+          },
+          "cornerRadius": 12
+        },
+        {
+          "id": "moving-border-default-title",
+          "name": "Title",
+          "type": "text",
+          "content": "Animated Borders",
+          "fontSize": 20,
+          "fontWeight": 600,
+          "fill": "$text.primary"
+        },
+        {
+          "id": "moving-border-default-desc",
+          "name": "Description",
+          "type": "text",
+          "content": "Continuously animated gradient borders that create a mesmerizing visual effect on any element.",
+          "fontSize": 14,
+          "fontWeight": 400,
+          "fill": "$text.muted"
+        }
+      ]
+    },
+    {
+      "id": "moving-border-button",
+      "name": "MovingBorder / Button",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 48,
+      "fill": "$bg.dark",
+      "cornerRadius": 10,
+      "stroke": {
+        "color": "$glow.secondary",
+        "width": 2
+      },
+      "shadow": { "x": 0, "y": 0, "blur": 16, "color": "#8B5CF633" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 28, 0, 28],
+      "gap": 8,
+      "children": [
+        {
+          "id": "moving-border-button-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Explore Now",
+          "fontSize": 15,
+          "fontWeight": 500,
+          "fill": "$text.primary"
+        },
+        {
+          "id": "moving-border-button-arrow",
+          "name": "Arrow",
+          "type": "text",
+          "content": "\u2192",
+          "fontSize": 16,
+          "fontWeight": 500,
+          "fill": "$glow.secondary"
+        }
+      ]
+    }
+  ]
+}

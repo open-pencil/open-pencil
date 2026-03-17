@@ -1,0 +1,79 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "TextGenerate", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "glow.primary": { "type": "color", "value": "#6366F1" },
+    "glow.secondary": { "type": "color", "value": "#8B5CF6" },
+    "bg.dark": { "type": "color", "value": "#0A0A0F" },
+    "text.primary": { "type": "color", "value": "#FAFAFA" },
+    "text.muted": { "type": "color", "value": "#A1A1AA" },
+    "text.dim": { "type": "color", "value": "#3F3F46" }
+  },
+  "children": [
+    {
+      "id": "text-generate-default",
+      "name": "TextGenerate / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 800,
+      "height": "fit_content",
+      "fill": "$bg.dark",
+      "layout": "vertical",
+      "alignItems": "center",
+      "padding": [64, 40, 64, 40],
+      "gap": 24,
+      "children": [
+        {
+          "id": "text-generate-default-headline",
+          "name": "Headline",
+          "type": "text",
+          "content": "Build interfaces that feel alive",
+          "fontSize": 52,
+          "fontWeight": 700,
+          "fill": "$text.primary",
+          "textAlign": "center"
+        },
+        {
+          "id": "text-generate-default-overlay",
+          "name": "Generation Overlay",
+          "type": "rectangle",
+          "width": 720,
+          "height": 64,
+          "fill": {
+            "type": "linear-gradient",
+            "from": [0, 0.5],
+            "to": [1, 0.5],
+            "stops": [
+              { "offset": 0, "color": "transparent" },
+              { "offset": 0.4, "color": "#6366F130" },
+              { "offset": 0.6, "color": "#8B5CF630" },
+              { "offset": 1, "color": "transparent" }
+            ]
+          },
+          "cornerRadius": 8,
+          "opacity": 0.6
+        },
+        {
+          "id": "text-generate-default-subtext",
+          "name": "Subtext",
+          "type": "text",
+          "content": "Every letter appears with purpose, creating a sense of intelligence and dynamism that captivates your audience.",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$text.muted",
+          "textAlign": "center"
+        },
+        {
+          "id": "text-generate-default-dimtext",
+          "name": "Dim Preview",
+          "type": "text",
+          "content": "The remaining text waits to be revealed...",
+          "fontSize": 16,
+          "fontWeight": 400,
+          "fill": "$text.dim",
+          "textAlign": "center"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "ShimmerButton", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "glow.primary": { "type": "color", "value": "#6366F1" },
+    "glow.secondary": { "type": "color", "value": "#8B5CF6" },
+    "glow.accent": { "type": "color", "value": "#EC4899" },
+    "bg.dark": { "type": "color", "value": "#0A0A0F" },
+    "text.primary": { "type": "color", "value": "#FAFAFA" }
+  },
+  "children": [
+    {
+      "id": "shimmer-button-default",
+      "name": "ShimmerButton / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 44,
+      "fill": {
+        "type": "linear-gradient",
+        "from": [0, 0.5],
+        "to": [1, 0.5],
+        "stops": [
+          { "offset": 0, "color": "$glow.primary" },
+          { "offset": 0.5, "color": "$glow.secondary" },
+          { "offset": 1, "color": "$glow.primary" }
+        ]
+      },
+      "cornerRadius": 10,
+      "shadow": { "x": 0, "y": 0, "blur": 20, "color": "#6366F140" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 28, 0, 28],
+      "gap": 8,
+      "children": [
+        {
+          "id": "shimmer-button-default-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Get Started",
+          "fontSize": 15,
+          "fontWeight": 600,
+          "fill": "$text.primary"
+        }
+      ]
+    },
+    {
+      "id": "shimmer-button-large",
+      "name": "ShimmerButton / Large",
+      "type": "frame",
+      "reusable": true,
+      "width": "fit_content",
+      "height": 56,
+      "fill": {
+        "type": "linear-gradient",
+        "from": [0, 0.5],
+        "to": [1, 0.5],
+        "stops": [
+          { "offset": 0, "color": "$glow.primary" },
+          { "offset": 0.3, "color": "$glow.secondary" },
+          { "offset": 0.7, "color": "$glow.accent" },
+          { "offset": 1, "color": "$glow.primary" }
+        ]
+      },
+      "cornerRadius": 12,
+      "shadow": { "x": 0, "y": 0, "blur": 28, "color": "#8B5CF640" },
+      "layout": "horizontal",
+      "alignItems": "center",
+      "justifyContent": "center",
+      "padding": [0, 40, 0, 40],
+      "gap": 10,
+      "children": [
+        {
+          "id": "shimmer-button-large-label",
+          "name": "Label",
+          "type": "text",
+          "content": "Start Building Now",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$text.primary"
+        },
+        {
+          "id": "shimmer-button-large-arrow",
+          "name": "Arrow",
+          "type": "text",
+          "content": "\u2192",
+          "fontSize": 18,
+          "fontWeight": 600,
+          "fill": "$text.primary"
+        }
+      ]
+    }
+  ]
+}

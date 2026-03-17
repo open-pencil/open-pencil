@@ -7,6 +7,18 @@
       "path": "installed/shadcn",
       "category": "general",
       "version": "1.0.0"
+    },
+    {
+      "name": "aceternity",
+      "path": "installed/aceternity",
+      "category": "effects",
+      "version": "1.0.0"
+    },
+    {
+      "name": "tremor",
+      "path": "installed/tremor",
+      "category": "dashboard",
+      "version": "1.0.0"
     }
   ]
 }

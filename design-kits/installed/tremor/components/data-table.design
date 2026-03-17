@@ -1,0 +1,218 @@
+{
+  "version": "0.1.0",
+  "meta": { "name": "DataTable", "generator": "verso-kit/1.0.0" },
+  "variables": {
+    "table.bg": { "type": "color", "value": "#111113" },
+    "table.fg": { "type": "color", "value": "#FAFAFA" },
+    "table.muted": { "type": "color", "value": "#A1A1AA" },
+    "table.border": { "type": "color", "value": "#27272A" },
+    "table.header.bg": { "type": "color", "value": "#18181B" },
+    "table.stripe.bg": { "type": "color", "value": "#0F0F12" },
+    "table.positive": { "type": "color", "value": "#22C55E" },
+    "table.negative": { "type": "color", "value": "#EF4444" }
+  },
+  "children": [
+    {
+      "id": "data-table-default",
+      "name": "Data Table / Default",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "fill": "$table.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$table.border", "width": 1 },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "dt-default-header",
+          "name": "Header Row",
+          "type": "frame",
+          "width": "fill",
+          "height": 44,
+          "fill": "$table.header.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "dt-d-h1", "name": "Col Header", "type": "text", "content": "Name", "fontSize": 13, "fontWeight": 600, "fill": "$table.muted", "width": 180 },
+            { "id": "dt-d-h2", "name": "Col Header", "type": "text", "content": "Status", "fontSize": 13, "fontWeight": 600, "fill": "$table.muted", "width": 120 },
+            { "id": "dt-d-h3", "name": "Col Header", "type": "text", "content": "Revenue", "fontSize": 13, "fontWeight": 600, "fill": "$table.muted", "width": 140 },
+            { "id": "dt-d-h4", "name": "Col Header", "type": "text", "content": "Growth", "fontSize": 13, "fontWeight": 600, "fill": "$table.muted", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-default-row1",
+          "name": "Row 1",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "fill": "$table.stripe.bg",
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "dt-d-r1c1", "name": "Cell", "type": "text", "content": "Acme Corp", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-d-r1c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 14, "fontWeight": 400, "fill": "$table.positive", "width": 120 },
+            { "id": "dt-d-r1c3", "name": "Cell", "type": "text", "content": "$128,430", "fontSize": 14, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-d-r1c4", "name": "Cell", "type": "text", "content": "+12.5%", "fontSize": 14, "fontWeight": 500, "fill": "$table.positive", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-default-row2",
+          "name": "Row 2",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "dt-d-r2c1", "name": "Cell", "type": "text", "content": "Globex Inc", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-d-r2c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 14, "fontWeight": 400, "fill": "$table.positive", "width": 120 },
+            { "id": "dt-d-r2c3", "name": "Cell", "type": "text", "content": "$94,210", "fontSize": 14, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-d-r2c4", "name": "Cell", "type": "text", "content": "+8.1%", "fontSize": 14, "fontWeight": 500, "fill": "$table.positive", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-default-row3",
+          "name": "Row 3",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "fill": "$table.stripe.bg",
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "dt-d-r3c1", "name": "Cell", "type": "text", "content": "Stark Labs", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-d-r3c2", "name": "Cell", "type": "text", "content": "Inactive", "fontSize": 14, "fontWeight": 400, "fill": "$table.muted", "width": 120 },
+            { "id": "dt-d-r3c3", "name": "Cell", "type": "text", "content": "$67,890", "fontSize": 14, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-d-r3c4", "name": "Cell", "type": "text", "content": "-3.2%", "fontSize": 14, "fontWeight": 500, "fill": "$table.negative", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-default-row4",
+          "name": "Row 4",
+          "type": "frame",
+          "width": "fill",
+          "height": 48,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 16, 0, 16],
+          "children": [
+            { "id": "dt-d-r4c1", "name": "Cell", "type": "text", "content": "Wayne Ent.", "fontSize": 14, "fontWeight": 500, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-d-r4c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 14, "fontWeight": 400, "fill": "$table.positive", "width": 120 },
+            { "id": "dt-d-r4c3", "name": "Cell", "type": "text", "content": "$215,600", "fontSize": 14, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-d-r4c4", "name": "Cell", "type": "text", "content": "+21.3%", "fontSize": 14, "fontWeight": 500, "fill": "$table.positive", "width": 120 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data-table-compact",
+      "name": "Data Table / Compact",
+      "type": "frame",
+      "reusable": true,
+      "width": 640,
+      "height": "fit_content",
+      "fill": "$table.bg",
+      "cornerRadius": 12,
+      "stroke": { "color": "$table.border", "width": 1 },
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "dt-compact-header",
+          "name": "Header Row",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "fill": "$table.header.bg",
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dt-c-h1", "name": "Col Header", "type": "text", "content": "Name", "fontSize": 12, "fontWeight": 600, "fill": "$table.muted", "width": 180 },
+            { "id": "dt-c-h2", "name": "Col Header", "type": "text", "content": "Status", "fontSize": 12, "fontWeight": 600, "fill": "$table.muted", "width": 120 },
+            { "id": "dt-c-h3", "name": "Col Header", "type": "text", "content": "Revenue", "fontSize": 12, "fontWeight": 600, "fill": "$table.muted", "width": 140 },
+            { "id": "dt-c-h4", "name": "Col Header", "type": "text", "content": "Growth", "fontSize": 12, "fontWeight": 600, "fill": "$table.muted", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-compact-row1",
+          "name": "Row 1",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "fill": "$table.stripe.bg",
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dt-c-r1c1", "name": "Cell", "type": "text", "content": "Acme Corp", "fontSize": 12, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-c-r1c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 12, "fontWeight": 400, "fill": "$table.positive", "width": 120 },
+            { "id": "dt-c-r1c3", "name": "Cell", "type": "text", "content": "$128,430", "fontSize": 12, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-c-r1c4", "name": "Cell", "type": "text", "content": "+12.5%", "fontSize": 12, "fontWeight": 500, "fill": "$table.positive", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-compact-row2",
+          "name": "Row 2",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dt-c-r2c1", "name": "Cell", "type": "text", "content": "Globex Inc", "fontSize": 12, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-c-r2c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 12, "fontWeight": 400, "fill": "$table.positive", "width": 120 },
+            { "id": "dt-c-r2c3", "name": "Cell", "type": "text", "content": "$94,210", "fontSize": 12, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-c-r2c4", "name": "Cell", "type": "text", "content": "+8.1%", "fontSize": 12, "fontWeight": 500, "fill": "$table.positive", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-compact-row3",
+          "name": "Row 3",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "fill": "$table.stripe.bg",
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dt-c-r3c1", "name": "Cell", "type": "text", "content": "Stark Labs", "fontSize": 12, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-c-r3c2", "name": "Cell", "type": "text", "content": "Inactive", "fontSize": 12, "fontWeight": 400, "fill": "$table.muted", "width": 120 },
+            { "id": "dt-c-r3c3", "name": "Cell", "type": "text", "content": "$67,890", "fontSize": 12, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-c-r3c4", "name": "Cell", "type": "text", "content": "-3.2%", "fontSize": 12, "fontWeight": 500, "fill": "$table.negative", "width": 120 }
+          ]
+        },
+        {
+          "id": "dt-compact-row4",
+          "name": "Row 4",
+          "type": "frame",
+          "width": "fill",
+          "height": 36,
+          "stroke": { "color": "$table.border", "width": 1, "side": "top" },
+          "layout": "horizontal",
+          "alignItems": "center",
+          "padding": [0, 12, 0, 12],
+          "children": [
+            { "id": "dt-c-r4c1", "name": "Cell", "type": "text", "content": "Wayne Ent.", "fontSize": 12, "fontWeight": 400, "fill": "$table.fg", "width": 180 },
+            { "id": "dt-c-r4c2", "name": "Cell", "type": "text", "content": "Active", "fontSize": 12, "fontWeight": 400, "fill": "$table.positive", "width": 120 },
+            { "id": "dt-c-r4c3", "name": "Cell", "type": "text", "content": "$215,600", "fontSize": 12, "fontWeight": 500, "fontFamily": "JetBrains Mono", "fill": "$table.fg", "width": 140 },
+            { "id": "dt-c-r4c4", "name": "Cell", "type": "text", "content": "+21.3%", "fontSize": 12, "fontWeight": 500, "fill": "$table.positive", "width": 120 }
+          ]
+        }
+      ]
+    }
+  ]
+}
