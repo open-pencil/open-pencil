@@ -41,7 +41,7 @@ const categories = computed(() => {
   for (const kit of filteredKits.value) {
     const label = categoryLabel(kit.category)
     if (!cats.has(label)) cats.set(label, [])
-    cats.get(label)!.push(kit)
+    cats.get(label)?.push(kit)
   }
   return cats
 })

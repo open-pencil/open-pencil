@@ -9,7 +9,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
-import type { KitMeta, KitRegistry, KitComponent, KitTokens } from '../../../packages/format/src/kit-schema'
+import type { KitMeta, KitRegistry, KitTokens } from '../../../packages/format/src/kit-schema'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const KITS_ROOT = resolve(__dirname, '../../../design-kits')
@@ -18,20 +18,20 @@ const KITS_ROOT = resolve(__dirname, '../../../design-kits')
 // Helpers
 // ---------------------------------------------------------------------------
 
-function readJSON<T>(path: string): T {
-  return JSON.parse(readFileSync(path, 'utf-8')) as T
+function readJSON(path: string): Record<string, unknown> {
+  return JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>
 }
 
 function loadRegistry(): KitRegistry {
   const registryPath = resolve(KITS_ROOT, 'registry.json')
   if (!existsSync(registryPath)) return { version: '1.0.0', kits: [] }
-  return readJSON<KitRegistry>(registryPath)
+  return readJSON(registryPath) as KitRegistry
 }
 
 function loadKitMeta(kitName: string): KitMeta | null {
   const kitPath = resolve(KITS_ROOT, 'installed', kitName, 'kit.json')
   if (!existsSync(kitPath)) return null
-  return readJSON<KitMeta>(kitPath)
+  return readJSON(kitPath) as KitMeta
 }
 
 function loadKitTokens(kitName: string): KitTokens | null {
@@ -39,13 +39,13 @@ function loadKitTokens(kitName: string): KitTokens | null {
   if (!meta) return null
   const tokensPath = resolve(KITS_ROOT, 'installed', kitName, meta.tokens)
   if (!existsSync(tokensPath)) return null
-  return readJSON<KitTokens>(tokensPath)
+  return readJSON(tokensPath) as KitTokens
 }
 
 function loadComponentDesign(kitName: string, componentFile: string): Record<string, unknown> | null {
   const filePath = resolve(KITS_ROOT, 'installed', kitName, componentFile)
   if (!existsSync(filePath)) return null
-  return readJSON<Record<string, unknown>>(filePath)
+  return readJSON(filePath)
 }
 
 /**
@@ -194,7 +194,7 @@ export function registerKitTools({ register, ok, fail }: RegisterKitToolsOptions
         let children = (design.children ?? []) as Array<Record<string, unknown>>
         if (variant || size) {
           children = children.filter(child => {
-            const name = (child.name as string ?? '').toLowerCase()
+            const name = (String(child.name ?? '')).toLowerCase()
             const matchVariant = !variant || name.includes(variant.toLowerCase())
             const matchSize = !size || name.includes(size.toLowerCase())
             return matchVariant && matchSize
@@ -263,7 +263,7 @@ export function registerKitTools({ register, ok, fail }: RegisterKitToolsOptions
             const tagMatches = comp.tags.filter(t => taskDescription.toLowerCase().includes(t))
 
             if (matched.length > 0 || tagMatches.length > 0 || !elementType) {
-              const relevance = matched.length >= 2 ? 'high' : matched.length === 1 ? 'medium' : 'low'
+              const relevance = matched.length >= 2 ? 'high' : (matched.length === 1 ? 'medium' : 'low')
               suggestions.push({
                 kitName: meta.name,
                 kitDisplayName: meta.displayName,
@@ -324,7 +324,8 @@ export function registerKitTools({ register, ok, fail }: RegisterKitToolsOptions
         const tokens = loadKitTokens(kitId) ?? {}
 
         // Merge overrides into variables
-        const variables = { ...(design.variables as Record<string, unknown> ?? {}) }
+        const designVars = (design.variables ?? {}) as Record<string, unknown>
+        const variables = { ...designVars }
         if (overrides) {
           for (const [key, value] of Object.entries(overrides)) {
             if (key in variables) {
@@ -337,7 +338,7 @@ export function registerKitTools({ register, ok, fail }: RegisterKitToolsOptions
         let children = (design.children ?? []) as Array<Record<string, unknown>>
         if (variant || size) {
           children = children.filter(child => {
-            const name = (child.name as string ?? '').toLowerCase()
+            const name = (String(child.name ?? '')).toLowerCase()
             const matchVariant = !variant || name.includes(variant.toLowerCase())
             const matchSize = !size || name.includes(size.toLowerCase())
             return matchVariant && matchSize

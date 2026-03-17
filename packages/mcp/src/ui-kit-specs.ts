@@ -53,6 +53,48 @@ interface DesignChild {
   [key: string]: unknown
 }
 
+function buildTextAttrs(node: DesignChild): string[] {
+  const attrs: string[] = [`name="${node.name ?? 'Text'}"`]
+  if (node.fontSize) attrs.push(`size={${JSON.stringify(node.fontSize)}}`)
+  if (node.fontWeight) attrs.push(`weight="${node.fontWeight}"`)
+  if (node.fill) attrs.push(`color="${node.fill}"`)
+  return attrs
+}
+
+function pushSizeAttrs(attrs: string[], node: DesignChild): void {
+  if (node.width && node.width !== 'fit_content') {
+    attrs.push(node.width === 'fill' ? 'w="fill"' : `w={${node.width}}`)
+  }
+  if (node.height && node.height !== 'fit_content') {
+    attrs.push(`h={${node.height}}`)
+  }
+}
+
+function pushLayoutAttrs(attrs: string[], node: DesignChild): void {
+  if (node.layout) attrs.push(`flex="${node.layout === 'horizontal' ? 'row' : 'col'}"`)
+  if (node.alignItems) attrs.push(`items="${node.alignItems}"`)
+  if (node.justifyContent && node.justifyContent !== 'start') attrs.push(`justify="${node.justifyContent}"`)
+  if (node.gap) attrs.push(`gap={${node.gap}}`)
+  if (node.padding) {
+    if (node.padding.length === 4) attrs.push(`p={[${node.padding.join(',')}]}`)
+    else if (node.padding.length === 2) attrs.push(`py={${node.padding[0]}} px={${node.padding[1]}}`)
+  }
+}
+
+function buildFrameAttrs(node: DesignChild, tag: string): string[] {
+  const attrs: string[] = [`name="${node.name ?? tag}"`]
+  pushSizeAttrs(attrs, node)
+  if (node.fill && node.fill !== 'transparent') attrs.push(`bg="${node.fill}"`)
+  if (node.cornerRadius) attrs.push(`rounded={${node.cornerRadius}}`)
+  pushLayoutAttrs(attrs, node)
+  if (node.stroke) {
+    const s = node.stroke
+    if (s.fill) attrs.push(`stroke="${String(s.fill)}"`)
+    if (s.thickness) attrs.push(`strokeWidth={${String(s.thickness)}}`)
+  }
+  return attrs
+}
+
 /**
  * Convert a .design node tree to a simplified JSX-like representation.
  */
@@ -61,44 +103,14 @@ function designNodeToJsx(node: DesignChild, indent: number = 0): string {
   const type = node.type ?? 'frame'
 
   if (type === 'text') {
-    const attrs: string[] = [`name="${node.name ?? 'Text'}"`]
-    if (node.fontSize) attrs.push(`size={${JSON.stringify(node.fontSize)}}`)
-    if (node.fontWeight) attrs.push(`weight="${node.fontWeight}"`)
-    if (node.fill) attrs.push(`color="${node.fill}"`)
-    const content = node.content ?? 'Text'
-    return `${pad}<Text ${attrs.join(' ')}>${content}</Text>`
+    const attrs = buildTextAttrs(node)
+    return `${pad}<Text ${attrs.join(' ')}>${node.content ?? 'Text'}</Text>`
   }
 
-  // Frame/rectangle/ellipse
-  const tag = type === 'ellipse' ? 'Ellipse' : type === 'rectangle' ? 'Rectangle' : 'Frame'
-  const attrs: string[] = [`name="${node.name ?? tag}"`]
-
-  if (node.width && node.width !== 'fit_content') {
-    attrs.push(node.width === 'fill' ? 'w="fill"' : `w={${node.width}}`)
-  }
-  if (node.height && node.height !== 'fit_content') {
-    attrs.push(`h={${node.height}}`)
-  }
-  if (node.fill && node.fill !== 'transparent') attrs.push(`bg="${node.fill}"`)
-  if (node.cornerRadius) attrs.push(`rounded={${node.cornerRadius}}`)
-  if (node.layout) attrs.push(`flex="${node.layout === 'horizontal' ? 'row' : 'col'}"`)
-  if (node.alignItems) attrs.push(`items="${node.alignItems}"`)
-  if (node.justifyContent && node.justifyContent !== 'start') attrs.push(`justify="${node.justifyContent}"`)
-  if (node.gap) attrs.push(`gap={${node.gap}}`)
-  if (node.padding) {
-    if (node.padding.length === 4) {
-      attrs.push(`p={[${node.padding.join(',')}]}`)
-    } else if (node.padding.length === 2) {
-      attrs.push(`py={${node.padding[0]}} px={${node.padding[1]}}`)
-    }
-  }
-  if (node.stroke) {
-    const s = node.stroke as Record<string, unknown>
-    if (s.fill) attrs.push(`stroke="${s.fill}"`)
-    if (s.thickness) attrs.push(`strokeWidth={${s.thickness}}`)
-  }
-
+  const tag = type === 'ellipse' ? 'Ellipse' : (type === 'rectangle' ? 'Rectangle' : 'Frame')
+  const attrs = buildFrameAttrs(node, tag)
   const children = node.children ?? []
+
   if (children.length === 0) {
     return `${pad}<${tag} ${attrs.join(' ')} />`
   }
@@ -166,8 +178,8 @@ function loadKitSpecs(): Record<string, ComponentSpec> {
         }
       }
     }
-  } catch {
-    // If kit loading fails, return empty — fallback will handle it
+  } catch (e) {
+    console.warn('Failed to load kit specs:', e instanceof Error ? e.message : e)
   }
 
   return specs
@@ -237,7 +249,7 @@ export function getAllSpecsAsPrompt(): string {
     if (key.includes('/')) {
       const kit = spec.kit ?? 'Default'
       if (!byKit.has(kit)) byKit.set(kit, [])
-      byKit.get(kit)!.push([key, spec])
+      byKit.get(kit)?.push([key, spec])
     }
   }
 
