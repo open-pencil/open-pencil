@@ -166,6 +166,13 @@ function removeVariable(id: string) {
   store.removeVariable(id)
 }
 
+const VARIABLE_TYPE_ICONS: Record<string, Component> = {
+  COLOR: IconPalette,
+  FLOAT: IconHash,
+  STRING: IconType,
+  BOOLEAN: IconToggleLeft
+}
+
 const columns = computed<ColumnDef<Variable>[]>(() => {
   const nameCol: ColumnDef<Variable> = {
     id: 'name',
@@ -176,12 +183,6 @@ const columns = computed<ColumnDef<Variable>[]>(() => {
     cell: ({ row }) => {
       const v = row.original
       const iconClass = 'size-3.5 shrink-0 text-muted'
-      const VARIABLE_TYPE_ICONS: Record<string, Component> = {
-        COLOR: IconPalette,
-        FLOAT: IconHash,
-        STRING: IconType,
-        BOOLEAN: IconToggleLeft
-      }
       const iconComponent = VARIABLE_TYPE_ICONS[v.type] ?? IconToggleLeft
       const icon = h(iconComponent, { class: iconClass })
 
@@ -455,4 +456,3 @@ const table = useVueTable({
     </DialogPortal>
   </DialogRoot>
 </template>
-emplate>

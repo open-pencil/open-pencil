@@ -39,8 +39,13 @@ export { LayerTreeRoot, LayerTreeItem, useLayerTree } from './LayerTree'
 
 export { EditorMenuRoot } from './EditorMenu'
 
+export { ColorPickerRoot } from './ColorPicker'
+export { ColorInputRoot } from './ColorInput'
+export { FontPickerRoot } from './FontPicker'
+export { ImageFillControlsRoot } from './ImageFillControls'
+
 export { FillPickerRoot } from './FillPicker'
-export { GradientEditorRoot } from './GradientEditor'
+export { GradientEditorRoot, GradientEditorBar, GradientEditorStop } from './GradientEditor'
 export { ExportControlsRoot } from './ExportControls'
 export { TypographyControlsRoot } from './TypographyControls'
 
@@ -58,5 +63,9 @@ export { default as PageList } from './components/PageList.vue'
 export { default as LayerTree } from './components/LayerTree.vue'
 export { default as ToolSelector } from './components/ToolSelector.vue'
 export { default as NodeProperties } from './components/NodeProperties.vue'
+
+export { PageControlsRoot } from './PageControls'
+export { VariablesIndicatorRoot } from './VariablesIndicator'
+export { VariablesEditorRoot } from './VariablesEditor'
 
 export { toolCursor } from './utils/tool-cursor'
