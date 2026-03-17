@@ -301,7 +301,7 @@ export function registerKitTools({ register, ok, fail }: RegisterKitToolsOptions
         componentId: z.string().describe('Component ID'),
         variant: z.string().optional().describe('Variant to use'),
         size: z.string().optional().describe('Size to use'),
-        overrides: z.record(z.string()).optional().describe('Variable overrides (e.g. {"btn.primary.bg": "#FF0000"})'),
+        overrides: z.string().optional().describe('JSON string of variable overrides (e.g. \'{"btn.primary.bg": "#FF0000"}\')'),
       })
     },
     async (args: Record<string, unknown>) => {
@@ -310,7 +310,8 @@ export function registerKitTools({ register, ok, fail }: RegisterKitToolsOptions
         const componentId = args.componentId as string
         const variant = args.variant as string | undefined
         const size = args.size as string | undefined
-        const overrides = args.overrides as Record<string, string> | undefined
+        const rawOverrides = args.overrides as string | undefined
+        const overrides = rawOverrides ? JSON.parse(rawOverrides) as Record<string, string> : undefined
 
         const meta = loadKitMeta(kitId)
         if (!meta) return fail(new Error(`Kit "${kitId}" not found`))
