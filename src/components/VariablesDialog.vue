@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, h, type Component } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   DialogRoot,
   DialogPortal,
@@ -28,6 +29,7 @@ import { colorToHexRaw, parseColor, randomHex } from '@open-pencil/core'
 import { useEditorStore } from '@/stores/editor'
 import type { Variable, VariableCollection, VariableValue, Color } from '@open-pencil/core'
 
+const { t } = useI18n()
 const open = defineModel<boolean>('open', { default: false })
 const store = useEditorStore()
 const searchTerm = ref('')
@@ -393,7 +395,7 @@ const table = useVueTable({
       >
         <div v-if="collections.length === 0" class="flex flex-1 flex-col">
           <div class="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-            <DialogTitle class="text-sm font-semibold text-surface">Local variables</DialogTitle>
+            <DialogTitle class="text-sm font-semibold text-surface">{{ t('dialogs.variables.localVariables') }}</DialogTitle>
             <DialogClose
               class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
             >
@@ -402,13 +404,13 @@ const table = useVueTable({
           </div>
           <div class="flex flex-1 items-center justify-center">
             <div class="text-center">
-              <p class="text-sm text-muted">No variable collections</p>
+              <p class="text-sm text-muted">{{ t('dialogs.variables.noCollections') }}</p>
               <button
                 data-test-id="variables-create-collection"
                 class="mt-2 cursor-pointer rounded bg-hover px-3 py-1.5 text-xs text-surface hover:bg-border"
                 @click="addCollection"
               >
-                Create collection
+                {{ t('dialogs.variables.createCollection') }}
               </button>
             </div>
           </div>
@@ -444,19 +446,19 @@ const table = useVueTable({
               <div class="flex items-center gap-1.5 px-3">
                 <div class="flex items-center gap-1 rounded border border-border px-2 py-0.5">
                   <icon-lucide-search class="size-3 text-muted" />
-                  <input
-                    v-model="searchTerm"
-                    data-test-id="variables-search-input"
-                    class="w-24 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
-                    placeholder="Search"
-                  />
+<input
+                     v-model="searchTerm"
+                     data-test-id="variables-search-input"
+                     class="w-24 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
+                     :placeholder="t('dialogs.variables.searchPlaceholder')"
+                   />
                 </div>
-                <button
-                  data-test-id="variables-add-collection"
-                  class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
-                  title="Add collection"
-                  @click="addCollection"
-                >
+<button
+                   data-test-id="variables-add-collection"
+                   class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
+                   :title="t('dialogs.variables.addCollection')"
+                   @click="addCollection"
+                 >
                   <icon-lucide-folder-plus class="size-3.5" />
                 </button>
                 <DialogClose
@@ -536,14 +538,14 @@ const table = useVueTable({
               </div>
 
               <!-- Footer -->
-              <button
-                data-test-id="variables-add-variable"
-                class="flex w-full shrink-0 cursor-pointer items-center gap-1.5 border-t border-border bg-transparent px-4 py-2 text-xs text-muted hover:bg-hover hover:text-surface"
-                @click="addVariable"
-              >
-                <icon-lucide-plus class="size-3.5" />
-                Create variable
-              </button>
+<button
+                 data-test-id="variables-add-variable"
+                 class="flex w-full shrink-0 cursor-pointer items-center gap-1.5 border-t border-border bg-transparent px-4 py-2 text-xs text-muted hover:bg-hover hover:text-surface"
+                 @click="addVariable"
+               >
+                 <icon-lucide-plus class="size-3.5" />
+                 {{ t('dialogs.variables.createVariable') }}
+               </button>
             </TabsContent>
           </TabsRoot>
         </template>

@@ -12,11 +12,13 @@ import {
   SelectViewport
 } from 'reka-ui'
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { selectContent, selectItem, selectTrigger } from '@/components/ui/select'
 import { ACP_AGENTS, AI_PROVIDERS, AUTOMATION_HTTP_PORT, IS_TAURI } from '@open-pencil/core'
 import { useAIChat } from '@/composables/use-chat'
 
+const { t } = useI18n()
 const { providerID, providerDef } = useAIChat()
 
 const mcpAvailable = ref(false)
@@ -84,7 +86,7 @@ const { triggerClass, itemClass, testId } = defineProps<{
         <SelectViewport>
           <template v-if="acpAgents.length">
             <SelectGroup>
-              <SelectLabel class="px-2 py-1 text-[10px] text-muted">Your agents</SelectLabel>
+              <SelectLabel class="px-2 py-1 text-[10px] text-muted">{{ t('chat.yourAgents') }}</SelectLabel>
               <SelectItem
                 v-for="agent in acpAgents"
                 :key="agent.id"
@@ -98,7 +100,7 @@ const { triggerClass, itemClass, testId } = defineProps<{
           </template>
           <SelectGroup>
             <SelectLabel v-if="acpAgents.length" class="px-2 py-1 text-[10px] text-muted">
-              API key
+              {{ t('chat.apiKeyLabel') }}
             </SelectLabel>
             <SelectItem
               v-for="provider in AI_PROVIDERS"

@@ -17,14 +17,17 @@ import {
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useInlineRename } from '@/composables/use-inline-rename'
 import { menuContent, menuItem, menuSeparator } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { openFileDialog } from '@/composables/use-menu'
 import { useEditorStore } from '@/stores/editor'
+import LanguageSelector from './LanguageSelector.vue'
 
 const store = useEditorStore()
+const { t } = useI18n()
 
 const DOCUMENT_NAME_ID = 'document-name'
 const rename = useInlineRename<'document-name'>((_id, name) => {
@@ -60,17 +63,17 @@ interface MenuItem {
 
 const fileMenu: MenuItem[] = [
   {
-    label: 'New',
+    label: t('menu.file.new'),
     shortcut: `${mod}N`,
     action: () => import('@/stores/tabs').then((m) => m.createTab())
   },
-  { label: 'Open…', shortcut: `${mod}O`, action: () => openFileDialog() },
+  { label: t('menu.file.open'), shortcut: `${mod}O`, action: () => openFileDialog() },
   { separator: true },
-  { label: 'Save', shortcut: `${mod}S`, action: () => store.saveFigFile() },
-  { label: 'Save as…', shortcut: `${mod}⇧S`, action: () => store.saveFigFileAs() },
+  { label: t('menu.file.save'), shortcut: `${mod}S`, action: () => store.saveFigFile() },
+  { label: t('menu.file.saveAs'), shortcut: `${mod}⇧S`, action: () => store.saveFigFileAs() },
   { separator: true },
   {
-    label: 'Export selection…',
+    label: t('menu.file.exportSelection'),
     shortcut: `${mod}⇧E`,
     action: () => {
       if (store.state.selectedIds.size > 0) store.exportSelection(1, 'PNG')
@@ -79,7 +82,7 @@ const fileMenu: MenuItem[] = [
   },
   { separator: true },
   {
-    label: 'Auto-save to local file',
+    label: t('menu.file.autoSave'),
     get checked() {
       return store.state.autosaveEnabled
     },
@@ -90,34 +93,34 @@ const fileMenu: MenuItem[] = [
 ]
 
 const editMenu: MenuItem[] = [
-  { label: 'Undo', shortcut: `${mod}Z`, action: () => store.undoAction() },
-  { label: 'Redo', shortcut: `${mod}⇧Z`, action: () => store.redoAction() },
+  { label: t('menu.edit.undo'), shortcut: `${mod}Z`, action: () => store.undoAction() },
+  { label: t('menu.edit.redo'), shortcut: `${mod}⇧Z`, action: () => store.redoAction() },
   { separator: true },
-  { label: 'Copy', shortcut: `${mod}C` },
-  { label: 'Paste', shortcut: `${mod}V` },
-  { label: 'Duplicate', shortcut: `${mod}D`, action: () => store.duplicateSelected() },
-  { label: 'Delete', shortcut: '⌫', action: () => store.deleteSelected() },
+  { label: t('menu.edit.copy'), shortcut: `${mod}C` },
+  { label: t('menu.edit.paste'), shortcut: `${mod}V` },
+  { label: t('menu.edit.duplicate'), shortcut: `${mod}D`, action: () => store.duplicateSelected() },
+  { label: t('menu.edit.delete'), shortcut: '⌫', action: () => store.deleteSelected() },
   { separator: true },
-  { label: 'Select all', shortcut: `${mod}A`, action: () => store.selectAll() }
+  { label: t('menu.edit.selectAll'), shortcut: `${mod}A`, action: () => store.selectAll() }
 ]
 
 const viewMenu: MenuItem[] = [
-  { label: 'Zoom to 100%', shortcut: `${mod}0`, action: () => store.zoomTo100() },
-  { label: 'Zoom to fit', shortcut: `${mod}1`, action: () => store.zoomToFit() },
-  { label: 'Zoom to selection', shortcut: `${mod}2`, action: () => store.zoomToSelection() },
+  { label: t('menu.view.zoomTo100'), shortcut: `${mod}0`, action: () => store.zoomTo100() },
+  { label: t('menu.view.zoomToFit'), shortcut: `${mod}1`, action: () => store.zoomToFit() },
+  { label: t('menu.view.zoomToSelection'), shortcut: `${mod}2`, action: () => store.zoomToSelection() },
   {
-    label: 'Zoom in',
+    label: t('menu.view.zoomIn'),
     shortcut: `${mod}=`,
     action: () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2)
   },
   {
-    label: 'Zoom out',
+    label: t('menu.view.zoomOut'),
     shortcut: `${mod}-`,
     action: () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2)
   },
   { separator: true },
   {
-    label: 'Performance profiler',
+    label: t('menu.view.performanceProfiler'),
     get checked() {
       return store.renderer?.profiler.hudVisible ?? false
     },
@@ -128,49 +131,49 @@ const viewMenu: MenuItem[] = [
 ]
 
 const objectMenu: MenuItem[] = [
-  { label: 'Group', shortcut: `${mod}G`, action: () => store.groupSelected() },
-  { label: 'Ungroup', shortcut: `${mod}⇧G`, action: () => store.ungroupSelected() },
+  { label: t('menu.object.group'), shortcut: `${mod}G`, action: () => store.groupSelected() },
+  { label: t('menu.object.ungroup'), shortcut: `${mod}⇧G`, action: () => store.ungroupSelected() },
   { separator: true },
   {
-    label: 'Create component',
+    label: t('menu.object.createComponent'),
     shortcut: `${mod}⌥K`,
     action: () => store.createComponentFromSelection()
   },
   {
-    label: 'Create component set',
+    label: t('menu.object.createComponentSet'),
     action: () => store.createComponentSetFromComponents()
   },
-  { label: 'Detach instance', action: () => store.detachInstance() },
+  { label: t('menu.object.detachInstance'), action: () => store.detachInstance() },
   { separator: true },
-  { label: 'Bring to front', shortcut: ']', action: () => store.bringToFront() },
-  { label: 'Send to back', shortcut: '[', action: () => store.sendToBack() }
+  { label: t('menu.object.bringToFront'), shortcut: ']', action: () => store.bringToFront() },
+  { label: t('menu.object.sendToBack'), shortcut: '[', action: () => store.sendToBack() }
 ]
 
 const textMenu: MenuItem[] = [
-  { label: 'Bold', shortcut: `${mod}B` },
-  { label: 'Italic', shortcut: `${mod}I` },
-  { label: 'Underline', shortcut: `${mod}U` }
+  { label: t('menu.text.bold'), shortcut: `${mod}B` },
+  { label: t('menu.text.italic'), shortcut: `${mod}I` },
+  { label: t('menu.text.underline'), shortcut: `${mod}U` }
 ]
 
 const arrangeMenu: MenuItem[] = [
-  { label: 'Add auto layout', shortcut: '⇧A', action: () => store.wrapInAutoLayout() },
+  { label: t('menu.arrange.addAutoLayout'), shortcut: '⇧A', action: () => store.wrapInAutoLayout() },
   { separator: true },
-  { label: 'Align left', shortcut: '⌥A' },
-  { label: 'Align center', shortcut: '⌥H' },
-  { label: 'Align right', shortcut: '⌥D' },
+  { label: t('menu.arrange.alignLeft'), shortcut: '⌥A' },
+  { label: t('menu.arrange.alignCenter'), shortcut: '⌥H' },
+  { label: t('menu.arrange.alignRight'), shortcut: '⌥D' },
   { separator: true },
-  { label: 'Align top', shortcut: '⌥W' },
-  { label: 'Align middle', shortcut: '⌥V' },
-  { label: 'Align bottom', shortcut: '⌥S' }
+  { label: t('menu.arrange.alignTop'), shortcut: '⌥W' },
+  { label: t('menu.arrange.alignMiddle'), shortcut: '⌥V' },
+  { label: t('menu.arrange.alignBottom'), shortcut: '⌥S' }
 ]
 
 const topMenus = [
-  { label: 'File', items: fileMenu },
-  { label: 'Edit', items: editMenu },
-  { label: 'View', items: viewMenu },
-  { label: 'Object', items: objectMenu },
-  { label: 'Text', items: textMenu },
-  { label: 'Arrange', items: arrangeMenu }
+  { label: t('menu.file.label'), items: fileMenu },
+  { label: t('menu.edit.label'), items: editMenu },
+  { label: t('menu.view.label'), items: viewMenu },
+  { label: t('menu.object.label'), items: objectMenu },
+  { label: t('menu.text.label'), items: textMenu },
+  { label: t('menu.arrange.label'), items: arrangeMenu }
 ]
 </script>
 
@@ -269,6 +272,19 @@ const topMenus = [
                   }}</span>
                 </MenubarItem>
               </template>
+            </MenubarContent>
+          </MenubarPortal>
+        </MenubarMenu>
+        <MenubarMenu>
+          <MenubarTrigger
+            data-test-id="menubar-language"
+            class="flex cursor-pointer items-center rounded px-2 py-1 text-xs text-muted transition-colors select-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
+          >
+            {{ t('menu.language.label') }}
+          </MenubarTrigger>
+          <MenubarPortal>
+            <MenubarContent :side-offset="4" :class="menuContent({ class: 'min-w-36' })">
+              <LanguageSelector />
             </MenubarContent>
           </MenubarPortal>
         </MenubarMenu>

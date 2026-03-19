@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AppSelect from '@/components/AppSelect.vue'
 import FontPicker from '@/components/FontPicker.vue'
@@ -10,21 +11,22 @@ import { loadFont } from '@/engine/fonts'
 
 const { store, node, updateProp, commitProp } = useNodeProps()
 const { missingFonts, hasMissingFonts } = useNodeFontStatus(() => node.value)
+const { t } = useI18n()
 
-const WEIGHTS = [
-  { value: 100, label: 'Thin' },
-  { value: 200, label: 'ExtraLight' },
-  { value: 300, label: 'Light' },
-  { value: 400, label: 'Regular' },
-  { value: 500, label: 'Medium' },
-  { value: 600, label: 'SemiBold' },
-  { value: 700, label: 'Bold' },
-  { value: 800, label: 'ExtraBold' },
-  { value: 900, label: 'Black' }
-]
+const WEIGHTS = computed(() => [
+  { value: 100, label: t('properties.typography.thin') },
+  { value: 200, label: t('properties.typography.extraLight') },
+  { value: 300, label: t('properties.typography.light') },
+  { value: 400, label: t('properties.typography.regular') },
+  { value: 500, label: t('properties.typography.medium') },
+  { value: 600, label: t('properties.typography.semiBold') },
+  { value: 700, label: t('properties.typography.bold') },
+  { value: 800, label: t('properties.typography.extraBold') },
+  { value: 900, label: t('properties.typography.black') }
+])
 
 const currentWeightLabel = computed(
-  () => WEIGHTS.find((w) => w.value === node.value.fontWeight)?.label ?? 'Regular'
+  () => WEIGHTS.value.find((w) => w.value === node.value.fontWeight)?.label ?? t('properties.typography.regular')
 )
 
 type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT'
@@ -36,7 +38,7 @@ async function selectFamily(family: string) {
 }
 
 async function selectWeight(weight: number) {
-  const label = WEIGHTS.find((w) => w.value === weight)?.label ?? 'Regular'
+  const label = WEIGHTS.value.find((w) => w.value === weight)?.label ?? t('properties.typography.regular')
   await loadFont(node.value.fontFamily, label)
   store.updateNodeWithUndo(node.value.id, { fontWeight: weight }, 'Change font weight')
   store.requestRender()
@@ -74,7 +76,7 @@ onMounted(async () => {
 
 <template>
   <div v-if="node" data-test-id="typography-section" class="border-b border-border px-3 py-2">
-    <label class="mb-1.5 block text-[11px] text-muted">Typography</label>
+    <label class="mb-1.5 block text-[11px] text-muted">{{ t('properties.typography.title') }}</label>
 
     <div class="mb-1.5 flex items-center gap-1.5">
       <FontPicker class="min-w-0 flex-1" :model-value="node.fontFamily" @select="selectFamily" />

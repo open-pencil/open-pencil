@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "ファイル",
+      "new": "新規作成",
+      "open": "開く…",
+      "save": "保存",
+      "saveAs": "名前を付けて保存…",
+      "exportSelection": "選択範囲をエクスポート…",
+      "autoSave": "ローカルファイルに自動保存"
+    },
+    "edit": {
+      "label": "編集",
+      "undo": "元に戻す",
+      "redo": "やり直し",
+      "copy": "コピー",
+      "paste": "貼り付け",
+      "duplicate": "複製",
+      "delete": "削除",
+      "selectAll": "すべて選択"
+    },
+    "view": {
+      "label": "表示",
+      "zoomTo100": "100%にズーム",
+      "zoomToFit": "画面に合わせる",
+      "zoomToSelection": "選択範囲にズーム",
+      "zoomIn": "拡大",
+      "zoomOut": "縮小",
+      "performanceProfiler": "パフォーマンスプロファイラー"
+    },
+    "object": {
+      "label": "オブジェクト",
+      "group": "グループ化",
+      "ungroup": "グループ解除",
+      "createComponent": "コンポーネントを作成",
+      "createComponentSet": "コンポーネントセットを作成",
+      "detachInstance": "インスタンスをデタッチ",
+      "bringToFront": "最前面へ",
+      "sendToBack": "最背面へ"
+    },
+    "text": {
+      "label": "テキスト",
+      "bold": "太字",
+      "italic": "斜体",
+      "underline": "下線"
+    },
+    "arrange": {
+      "label": "配置",
+      "addAutoLayout": "オートレイアウトを追加",
+      "alignLeft": "左揃え",
+      "alignCenter": "中央揃え",
+      "alignRight": "右揃え",
+      "alignTop": "上揃え",
+      "alignMiddle": "垂直方向の中央揃え",
+      "alignBottom": "下揃え"
+    },
+    "language": {
+      "label": "言語"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "移動",
+      "frame": "フレーム",
+      "section": "セクション",
+      "rectangle": "長方形",
+      "ellipse": "楕円",
+      "line": "ライン",
+      "polygon": "多角形",
+      "star": "星形",
+      "pen": "ペン",
+      "text": "テキスト",
+      "hand": "ハンド"
+    },
+    "action": {
+      "copy": "コピー",
+      "paste": "貼り付け",
+      "cut": "切り取り",
+      "duplicate": "複製",
+      "delete": "削除",
+      "front": "最前面へ",
+      "back": "最背面へ",
+      "group": "グループ化",
+      "ungroup": "グループ解除",
+      "lock": "ロック",
+      "unlock": "ロック解除"
+    }
+  },
+  "panels": {
+    "design": "デザイン",
+    "code": "コード",
+    "ai": "AI",
+    "layers": {
+      "title": "レイヤー"
+    },
+    "pages": {
+      "title": "ページ",
+      "addPage": "ページを追加"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "外観",
+      "opacity": "不透明度",
+      "cornerRadius": "角丸",
+      "blendMode": "ブレンドモード",
+      "individualCorners": "個別の角丸"
+    },
+    "fill": {
+      "title": "塗り",
+      "solid": "単色",
+      "gradient": "グラデーション",
+      "linear": "線形",
+      "radial": "円形",
+      "angular": "角度",
+      "diamond": "菱形",
+      "image": "画像",
+      "addFill": "塗りを追加"
+    },
+    "stroke": {
+      "title": "ストローク",
+      "width": "幅",
+      "position": "位置",
+      "inside": "内側",
+      "center": "中央",
+      "outside": "外側",
+      "all": "すべて",
+      "custom": "カスタム",
+      "addStroke": "ストロークを追加"
+    },
+    "effects": {
+      "title": "エフェクト",
+      "dropShadow": "ドロップシャドウ",
+      "innerShadow": "インナーシャドウ",
+      "layerBlur": "レイヤーブラー",
+      "backgroundBlur": "背景ブラー",
+      "foregroundBlur": "前景ブラー",
+      "addEffect": "エフェクトを追加",
+      "clickToAdd": "+をクリックして混合エフェクトを置換",
+      "x": "X",
+      "y": "Y",
+      "blur": "ブラー",
+      "spread": "スプレッド"
+    },
+    "typography": {
+      "title": "タイポグラフィ",
+      "font": "フォント",
+      "size": "サイズ",
+      "weight": "ウェイト",
+      "lineHeight": "行の高さ",
+      "letterSpacing": "文字間隔",
+      "textAlign": "テキスト揃え",
+      "decoration": "装飾",
+      "bold": "太字",
+      "italic": "斜体",
+      "underline": "下線",
+      "strikethrough": "取り消し線",
+      "alignLeft": "左揃え",
+      "alignCenter": "中央揃え",
+      "alignRight": "右揃え",
+      "alignJustify": "両端揃え",
+      "thin": "Thin",
+      "extraLight": "Extra Light",
+      "light": "Light",
+      "regular": "Regular",
+      "medium": "Medium",
+      "semiBold": "Semi Bold",
+      "extraBold": "Extra Bold",
+      "black": "Black"
+    },
+    "layout": {
+      "title": "レイアウト",
+      "width": "幅",
+      "height": "高さ",
+      "autoLayout": "オートレイアウト",
+      "removeAutoLayout": "オートレイアウトを削除",
+      "horizontal": "水平",
+      "vertical": "垂直",
+      "grid": "グリッド",
+      "fixed": "固定",
+      "hug": "Hug",
+      "fill": "Fill",
+      "columns": "列",
+      "rows": "行",
+      "addColumn": "列を追加",
+      "addRow": "行を追加",
+      "removeColumn": "列を削除",
+      "removeRow": "行を削除",
+      "gap": "間隔",
+      "padding": "パディング",
+      "top": "上",
+      "right": "右",
+      "bottom": "下",
+      "left": "左",
+      "wrap": "折り返し",
+      "align": "整列",
+      "spaceBetween": "均等配置",
+      "constraints": "制約",
+      "leftRight": "左右",
+      "topBottom": "上下",
+      "scale": "スケール",
+      "center": "中央",
+      "clipContent": "コンテンツをクリップ"
+    },
+    "position": {
+      "title": "位置",
+      "rotation": "回転",
+      "flip": "反転",
+      "flipHorizontal": "左右反転",
+      "flipVertical": "上下反転",
+      "alignLeft": "左揃え",
+      "alignCenterH": "水平方向の中央揃え",
+      "alignRight": "右揃え",
+      "alignTop": "上揃え",
+      "alignCenterV": "垂直方向の中央揃え",
+      "alignBottom": "下揃え"
+    },
+    "page": {
+      "title": "ページ",
+      "background": "背景"
+    },
+    "variables": {
+      "title": "変数",
+      "collections": "コレクション",
+      "variables": "変数",
+      "openDialog": "変数ダイアログを開く",
+      "noLocalVariables": "ローカル変数なし"
+    },
+    "export": {
+      "title": "エクスポート",
+      "scale": "スケール",
+      "format": "形式",
+      "export": "エクスポート",
+      "addExport": "エクスポートを追加",
+      "layers": "レイヤー",
+      "preview": "プレビュー",
+      "renderingPreview": "プレビューをレンダリング中…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "変数",
+      "createVariable": "変数を作成",
+      "renameCollection": "コレクション名を変更",
+      "renameVariable": "変数名を変更",
+      "changeValue": "変数値を変更",
+      "addMode": "モードを追加",
+      "deleteMode": "モードを削除",
+      "deleteVariable": "変数を削除",
+      "search": "変数を検索…",
+      "localVariables": "ローカル変数",
+      "noCollections": "変数コレクションなし",
+      "createCollection": "コレクションを作成",
+      "addCollection": "コレクションを追加",
+      "searchPlaceholder": "検索",
+      "name": "名前"
+    },
+    "confirm": {
+      "title": "確認",
+      "ok": "OK",
+      "cancel": "キャンセル",
+      "delete": "削除",
+      "areYouSure": "実行してもよろしいですか？",
+      "cannotUndo": "この操作は元に戻せません"
+    },
+    "permission": {
+      "title": "権限リクエスト",
+      "allow": "許可",
+      "deny": "拒否",
+      "agentRequests": "エージェントが権限を要求しています...",
+      "isRequesting": "権限を要求しています。"
+    }
+  },
+  "contextMenu": {
+    "copy": "コピー",
+    "paste": "貼り付け",
+    "pasteHere": "ここに貼り付け",
+    "duplicate": "複製",
+    "delete": "削除",
+    "group": "グループ化",
+    "ungroup": "グループ解除",
+    "bringToFront": "最前面へ",
+    "sendToBack": "最背面へ",
+    "lock": "ロック",
+    "unlock": "ロック解除",
+    "show": "表示",
+    "hide": "非表示",
+    "toggleVisibility": "表示/非表示",
+    "createComponent": "コンポーネントを作成",
+    "createInstance": "インスタンスを作成",
+    "goToMainComponent": "メインコンポーネントへ移動",
+    "moveToPage": "ページに移動",
+    "copyPasteAs": "コピー/貼り付け形式",
+    "copyAsText": "テキストとしてコピー",
+    "copyAsSVG": "SVGとしてコピー",
+    "copyAsPNG": "PNGとしてコピー",
+    "copyAsJSX": "JSXとしてコピー",
+    "selectAll": "すべて選択",
+    "export": "エクスポート…"
+  },
+  "chat": {
+    "placeholder": "AIにデザインを依頼...",
+    "send": "送信",
+    "cancel": "キャンセル",
+    "selectProvider": "プロバイダーを選択",
+    "apiKey": "APIキー",
+    "connect": "接続",
+    "disconnect": "切断",
+    "connected": "接続済み",
+    "notConnected": "未接続",
+    "thinking": "思考中...",
+    "emptyState": "作成または変更したい内容を説明してください。",
+    "continue": "続行",
+    "clear": "クリア",
+    "describeChange": "変更内容を説明…",
+    "stopGenerating": "生成を停止",
+    "sendMessage": "メッセージを送信",
+    "yourAgents": "あなたのエージェント",
+    "apiKeyLabel": "APIキー",
+    "maxOutputTokens": "最大出力トークン",
+    "clearKey": "クリア",
+    "keySaved": "キー保存済み — 新しいキーを入力して置換",
+    "optionalStock": "オプション — stock_photoツール用",
+    "optionalAlternative": "オプション — Pexelsの代替",
+    "getFreePexels": "無料Pexels APIキーを取得 →",
+    "getFreeUnsplash": "無料Unsplashアクセスキーを取得 →",
+    "baseURL": "ベースURL",
+    "modelId": "モデルID",
+    "apiType": "APIタイプ",
+    "completions": "完了",
+    "responses": "レスポンス",
+    "getApiKey": "APIキーを取得 →",
+    "done": "完了",
+    "providerSettings": "プロバイダー設定",
+    "aiProvider": "AIプロバイダー",
+    "pexelsApiKey": "Pexels APIキー（ストックフォト）",
+    "unsplashAccessKey": "Unsplashアクセスキー",
+    "connectProvider": "AIプロバイダーに接続してチャットを開始。",
+    "getApiKeyLink": "{provider} APIキーを取得 →",
+    "oneKeyModels": "すべてのプロバイダーの100以上のモデルに1つのキーでアクセス。",
+    "usesSubscription": "既存の{agent}サブスクリプションを使用します。次を確認してください",
+    "isInstalledAuth": "がインストールされ、認証されています。"
+  },
+  "toast": {
+    "saved": "保存しました",
+    "exported": "エクスポートしました",
+    "copied": "コピーしました",
+    "failed": "失敗しました",
+    "error": "エラー"
+  },
+  "tooltips": {
+    "toggleUI": "UIを切り替え",
+    "addPage": "ページを追加",
+    "zoomLevel": "ズームレベル",
+    "lock": "ロック",
+    "unlock": "ロック解除",
+    "show": "表示",
+    "hide": "非表示",
+    "copied": "コピーしました！",
+    "copyError": "エラーをコピー",
+    "solid": "単色",
+    "gradient": "グラデーション",
+    "image": "画像",
+    "addStop": "ストップを追加",
+    "chooseImage": "画像を選択",
+    "replaceImage": "置換",
+    "stops": "ストップ"
+  },
+  "errors": {
+    "failedToSave": "保存に失敗しました",
+    "failedToExport": "エクスポートに失敗しました",
+    "connectionError": "接続エラー",
+    "invalidApiKey": "無効なAPIキー"
+  },
+  "empty": {
+    "noSelection": "選択なし",
+    "noPages": "ページなし",
+    "selectLayerJSX": "レイヤーを選択してJSXコードを表示",
+    "noLocalFonts": "ローカルフォントはありません。",
+    "useDesktopFonts": "デスクトップアプリまたはChrome/Edgeを使用してシステムフォントにアクセスしてください。",
+    "noFontsFound": "フォントが見つかりません"
+  },
+  "fontPicker": {
+    "searchFonts": "フォントを検索…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "コピー",
+    "copied": "コピーしました"
+  },
+  "safari": {
+    "banner": "Safariはファイルサポートが制限されています。完全な機能を使用するにはChromeをご利用ください。"
+  }
+}

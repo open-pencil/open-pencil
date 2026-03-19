@@ -4,6 +4,10 @@
 
 ### Features
 
+- **Internationalization (i18n)** — Multi-language support with 9 languages: English (default), Simplified Chinese, Traditional Chinese, French, Korean, Japanese, German, Italian, Russian
+- Auto-detect system/browser language on first visit
+- Language selector in App menu (File > Language)
+- Language preference persisted in localStorage
 - Lock and visibility toggle buttons in layers panel (hover to reveal, always shown when active)
 - Figma-style selection scope — double-click to enter groups/frames/components, Escape to exit
 - Nested container navigation — each double-click goes one level deeper

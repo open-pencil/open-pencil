@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "文件",
+      "new": "新建",
+      "open": "打开…",
+      "save": "保存",
+      "saveAs": "另存为…",
+      "exportSelection": "导出所选…",
+      "autoSave": "自动保存到本地文件"
+    },
+    "edit": {
+      "label": "编辑",
+      "undo": "撤销",
+      "redo": "重做",
+      "copy": "复制",
+      "paste": "粘贴",
+      "duplicate": "复制副本",
+      "delete": "删除",
+      "selectAll": "全选"
+    },
+    "view": {
+      "label": "视图",
+      "zoomTo100": "缩放到 100%",
+      "zoomToFit": "适合画布",
+      "zoomToSelection": "缩放到所选",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "performanceProfiler": "性能分析器"
+    },
+    "object": {
+      "label": "对象",
+      "group": "编组",
+      "ungroup": "取消编组",
+      "createComponent": "创建组件",
+      "createComponentSet": "创建组件集",
+      "detachInstance": "分离实例",
+      "bringToFront": "置于顶层",
+      "sendToBack": "置于底层"
+    },
+    "text": {
+      "label": "文本",
+      "bold": "粗体",
+      "italic": "斜体",
+      "underline": "下划线"
+    },
+    "arrange": {
+      "label": "排列",
+      "addAutoLayout": "添加自动布局",
+      "alignLeft": "左对齐",
+      "alignCenter": "居中对齐",
+      "alignRight": "右对齐",
+      "alignTop": "顶部对齐",
+      "alignMiddle": "垂直居中",
+      "alignBottom": "底部对齐"
+    },
+    "language": {
+      "label": "语言"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "移动",
+      "frame": "画框",
+      "section": "区域",
+      "rectangle": "矩形",
+      "ellipse": "椭圆",
+      "line": "线条",
+      "polygon": "多边形",
+      "star": "星形",
+      "pen": "钢笔",
+      "text": "文本",
+      "hand": "平移"
+    },
+    "action": {
+      "copy": "复制",
+      "paste": "粘贴",
+      "cut": "剪切",
+      "duplicate": "复制副本",
+      "delete": "删除",
+      "front": "置于顶层",
+      "back": "置于底层",
+      "group": "编组",
+      "ungroup": "取消编组",
+      "lock": "锁定",
+      "unlock": "解锁"
+    }
+  },
+  "panels": {
+    "design": "设计",
+    "code": "代码",
+    "ai": "AI",
+    "layers": {
+      "title": "图层"
+    },
+    "pages": {
+      "title": "页面",
+      "addPage": "添加页面"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "外观",
+      "opacity": "不透明度",
+      "cornerRadius": "圆角",
+      "blendMode": "混合模式",
+      "individualCorners": "独立圆角"
+    },
+    "fill": {
+      "title": "填充",
+      "solid": "纯色",
+      "gradient": "渐变",
+      "linear": "线性",
+      "radial": "径向",
+      "angular": "角度",
+      "diamond": "菱形",
+      "image": "图片",
+      "addFill": "添加填充"
+    },
+    "stroke": {
+      "title": "描边",
+      "width": "宽度",
+      "position": "位置",
+      "inside": "内部",
+      "center": "居中",
+      "outside": "外部",
+      "all": "全部",
+      "custom": "自定义",
+      "addStroke": "添加描边"
+    },
+    "effects": {
+      "title": "效果",
+      "dropShadow": "投影",
+      "innerShadow": "内阴影",
+      "layerBlur": "图层模糊",
+      "backgroundBlur": "背景模糊",
+      "foregroundBlur": "前景模糊",
+      "addEffect": "添加效果",
+      "clickToAdd": "点击 + 替换混合效果",
+      "x": "X",
+      "y": "Y",
+      "blur": "模糊",
+      "spread": "扩展"
+    },
+    "typography": {
+      "title": "排版",
+      "font": "字体",
+      "size": "大小",
+      "weight": "字重",
+      "lineHeight": "行高",
+      "letterSpacing": "字距",
+      "textAlign": "对齐",
+      "decoration": "装饰",
+      "bold": "粗体",
+      "italic": "斜体",
+      "underline": "下划线",
+      "strikethrough": "删除线",
+      "alignLeft": "左对齐",
+      "alignCenter": "居中",
+      "alignRight": "右对齐",
+      "alignJustify": "两端对齐",
+      "thin": "细体",
+      "extraLight": "特细",
+      "light": "轻体",
+      "regular": "常规",
+      "medium": "中等",
+      "semiBold": "半粗",
+      "extraBold": "特粗",
+      "black": "黑体"
+    },
+    "layout": {
+      "title": "布局",
+      "width": "宽度",
+      "height": "高度",
+      "autoLayout": "自动布局",
+      "removeAutoLayout": "移除自动布局",
+      "horizontal": "水平",
+      "vertical": "垂直",
+      "grid": "网格",
+      "fixed": "固定",
+      "hug": "紧凑",
+      "fill": "填充",
+      "columns": "列",
+      "rows": "行",
+      "addColumn": "添加列",
+      "addRow": "添加行",
+      "removeColumn": "移除列",
+      "removeRow": "移除行",
+      "gap": "间距",
+      "padding": "内边距",
+      "top": "上",
+      "right": "右",
+      "bottom": "下",
+      "left": "左",
+      "wrap": "换行",
+      "align": "对齐",
+      "spaceBetween": "两端分布",
+      "constraints": "约束",
+      "leftRight": "左右",
+      "topBottom": "上下",
+      "scale": "缩放",
+      "center": "居中",
+      "clipContent": "裁剪内容"
+    },
+    "position": {
+      "title": "位置",
+      "rotation": "旋转",
+      "flip": "翻转",
+      "flipHorizontal": "水平翻转",
+      "flipVertical": "垂直翻转",
+      "alignLeft": "左对齐",
+      "alignCenterH": "水平居中",
+      "alignRight": "右对齐",
+      "alignTop": "顶部对齐",
+      "alignCenterV": "垂直居中",
+      "alignBottom": "底部对齐"
+    },
+    "page": {
+      "title": "页面",
+      "background": "背景"
+    },
+    "variables": {
+      "title": "变量",
+      "collections": "集合",
+      "variables": "变量",
+      "openDialog": "打开变量对话框",
+      "noLocalVariables": "无本地变量"
+    },
+    "export": {
+      "title": "导出",
+      "scale": "缩放",
+      "format": "格式",
+      "export": "导出",
+      "addExport": "添加导出",
+      "layers": "图层",
+      "preview": "预览",
+      "renderingPreview": "正在渲染预览…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "变量",
+      "createVariable": "创建变量",
+      "renameCollection": "重命名集合",
+      "renameVariable": "重命名变量",
+      "changeValue": "更改变量值",
+      "addMode": "添加模式",
+      "deleteMode": "删除模式",
+      "deleteVariable": "删除变量",
+      "search": "搜索变量…",
+      "localVariables": "本地变量",
+      "noCollections": "无变量集合",
+      "createCollection": "创建集合",
+      "addCollection": "添加集合",
+      "searchPlaceholder": "搜索",
+      "name": "名称"
+    },
+    "confirm": {
+      "title": "确认",
+      "ok": "确定",
+      "cancel": "取消",
+      "delete": "删除",
+      "areYouSure": "确定要执行此操作吗？",
+      "cannotUndo": "此操作无法撤销"
+    },
+    "permission": {
+      "title": "权限请求",
+      "allow": "允许",
+      "deny": "拒绝",
+      "agentRequests": "代理请求权限以...",
+      "isRequesting": "正在请求权限。"
+    }
+  },
+  "contextMenu": {
+    "copy": "复制",
+    "paste": "粘贴",
+    "pasteHere": "粘贴到此处",
+    "duplicate": "复制副本",
+    "delete": "删除",
+    "group": "编组",
+    "ungroup": "取消编组",
+    "bringToFront": "置于顶层",
+    "sendToBack": "置于底层",
+    "lock": "锁定",
+    "unlock": "解锁",
+    "show": "显示",
+    "hide": "隐藏",
+    "toggleVisibility": "切换可见性",
+    "createComponent": "创建组件",
+    "createInstance": "创建实例",
+    "goToMainComponent": "转到主组件",
+    "moveToPage": "移至页面",
+    "copyPasteAs": "复制/粘贴为",
+    "copyAsText": "复制为文本",
+    "copyAsSVG": "复制为 SVG",
+    "copyAsPNG": "复制为 PNG",
+    "copyAsJSX": "复制为 JSX",
+    "selectAll": "全选",
+    "export": "导出…"
+  },
+  "chat": {
+    "placeholder": "让 AI 设计...",
+    "send": "发送",
+    "cancel": "取消",
+    "selectProvider": "选择提供商",
+    "apiKey": "API 密钥",
+    "connect": "连接",
+    "disconnect": "断开连接",
+    "connected": "已连接",
+    "notConnected": "未连接",
+    "thinking": "思考中...",
+    "emptyState": "描述您想要创建或更改的内容。",
+    "continue": "继续",
+    "clear": "清除",
+    "describeChange": "描述更改…",
+    "stopGenerating": "停止生成",
+    "sendMessage": "发送消息",
+    "yourAgents": "您的代理",
+    "apiKeyLabel": "API 密钥",
+    "maxOutputTokens": "最大输出令牌",
+    "clearKey": "清除",
+    "keySaved": "密钥已保存 — 输入新密钥以替换",
+    "optionalStock": "可选 — 用于 stock_photo 工具",
+    "optionalAlternative": "可选 — Pexels 的替代方案",
+    "getFreePexels": "获取免费 Pexels API 密钥 →",
+    "getFreeUnsplash": "获取免费 Unsplash 访问密钥 →",
+    "baseURL": "基础 URL",
+    "modelId": "模型 ID",
+    "apiType": "API 类型",
+    "completions": "完成",
+    "responses": "响应",
+    "getApiKey": "获取 API 密钥 →",
+    "done": "完成",
+    "providerSettings": "提供商设置",
+    "aiProvider": "AI 提供商",
+    "pexelsApiKey": "Pexels API 密钥（库存照片）",
+    "unsplashAccessKey": "Unsplash 访问密钥",
+    "connectProvider": "连接 AI 提供商以开始聊天。",
+    "getApiKeyLink": "获取 {provider} API 密钥 →",
+    "oneKeyModels": "一把密钥访问所有提供商的 100+ 模型。",
+    "usesSubscription": "使用您现有的 {agent} 订阅。请确保",
+    "isInstalledAuth": "已安装并已认证。"
+  },
+  "toast": {
+    "saved": "已保存",
+    "exported": "已导出",
+    "copied": "已复制",
+    "failed": "失败",
+    "error": "错误"
+  },
+  "tooltips": {
+    "toggleUI": "切换界面",
+    "addPage": "添加页面",
+    "zoomLevel": "缩放级别",
+    "lock": "锁定",
+    "unlock": "解锁",
+    "show": "显示",
+    "hide": "隐藏",
+    "copied": "已复制！",
+    "copyError": "复制错误",
+    "solid": "纯色",
+    "gradient": "渐变",
+    "image": "图片",
+    "addStop": "添加停止点",
+    "chooseImage": "选择图片",
+    "replaceImage": "替换",
+    "stops": "停止点"
+  },
+  "errors": {
+    "failedToSave": "保存失败",
+    "failedToExport": "导出失败",
+    "connectionError": "连接错误",
+    "invalidApiKey": "无效的 API 密钥"
+  },
+  "empty": {
+    "noSelection": "未选择任何对象",
+    "noPages": "无页面",
+    "selectLayerJSX": "选择图层以查看其 JSX 代码",
+    "noLocalFonts": "无本地字体可用。",
+    "useDesktopFonts": "使用桌面应用或 Chrome/Edge 访问系统字体。",
+    "noFontsFound": "未找到字体"
+  },
+  "fontPicker": {
+    "searchFonts": "搜索字体…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "复制",
+    "copied": "已复制"
+  },
+  "safari": {
+    "banner": "Safari 文件支持有限。请使用 Chrome 以获得完整功能。"
+  }
+}

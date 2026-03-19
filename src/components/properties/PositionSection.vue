@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
@@ -7,6 +8,7 @@ import { useMultiProps } from '@/composables/use-multi-props'
 
 const { store, updateProp, commitProp } = useNodeProps()
 const { node, nodes, isMulti, active, prop: multiProp } = useMultiProps()
+const { t } = useI18n()
 
 const xValue = computed(() =>
   isMulti.value ? multiProp('x').value : Math.round(node.value?.x ?? 0)
@@ -125,7 +127,7 @@ function rotate90() {
 
 <template>
   <div v-if="active" data-test-id="position-section" class="border-b border-border px-3 py-2">
-    <label class="mb-1.5 block text-[11px] text-muted">Position</label>
+    <label class="mb-1.5 block text-[11px] text-muted">{{ t('properties.position.title') }}</label>
 
     <!-- Alignment buttons -->
     <div class="mb-1.5 flex gap-2">
@@ -133,7 +135,7 @@ function rotate90() {
         <button
           class="flex size-7 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           data-test-id="position-align-left"
-          title="Align left"
+          :title="t('properties.position.alignLeft')"
           @click="alignHorizontal('left')"
         >
           <icon-lucide-align-horizontal-justify-start class="size-3.5" />
@@ -141,7 +143,7 @@ function rotate90() {
         <button
           class="flex size-7 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           data-test-id="position-align-center-h"
-          title="Align center horizontally"
+          :title="t('properties.position.alignCenterH')"
           @click="alignHorizontal('center')"
         >
           <icon-lucide-align-horizontal-justify-center class="size-3.5" />
@@ -149,7 +151,7 @@ function rotate90() {
         <button
           class="flex size-7 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           data-test-id="position-align-right"
-          title="Align right"
+          :title="t('properties.position.alignRight')"
           @click="alignHorizontal('right')"
         >
           <icon-lucide-align-horizontal-justify-end class="size-3.5" />
@@ -159,7 +161,7 @@ function rotate90() {
         <button
           class="flex size-7 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           data-test-id="position-align-top"
-          title="Align top"
+          :title="t('properties.position.alignTop')"
           @click="alignVertical('top')"
         >
           <icon-lucide-align-vertical-justify-start class="size-3.5" />
@@ -167,7 +169,7 @@ function rotate90() {
         <button
           class="flex size-7 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           data-test-id="position-align-center-v"
-          title="Align center vertically"
+          :title="t('properties.position.alignCenterV')"
           @click="alignVertical('center')"
         >
           <icon-lucide-align-vertical-justify-center class="size-3.5" />
@@ -175,7 +177,7 @@ function rotate90() {
         <button
           class="flex size-7 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           data-test-id="position-align-bottom"
-          title="Align bottom"
+          :title="t('properties.position.alignBottom')"
           @click="alignVertical('bottom')"
         >
           <icon-lucide-align-vertical-justify-end class="size-3.5" />

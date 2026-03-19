@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AppSelect from '@/components/AppSelect.vue'
 import { menuContent, menuItem } from '@/components/ui/menu'
@@ -21,13 +22,14 @@ type StrokeSides = 'ALL' | 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CUSTOM'
 
 const { store } = useNodeProps()
 const { nodes, isMulti, active, activeNode, targetNodes, isArrayMixed, updateArrayItem, removeArrayItem, toggleArrayVisibility } = useMultiProps()
+const { t } = useI18n()
 
 const strokesAreMixed = computed(() => isArrayMixed('strokes'))
 
 const ALIGN_OPTIONS: { value: Stroke['align']; label: string }[] = [
-  { value: 'INSIDE', label: 'Inside' },
-  { value: 'CENTER', label: 'Center' },
-  { value: 'OUTSIDE', label: 'Outside' }
+  { value: 'INSIDE', label: t('properties.stroke.inside') },
+  { value: 'CENTER', label: t('properties.stroke.center') },
+  { value: 'OUTSIDE', label: t('properties.stroke.outside') }
 ]
 
 const currentAlign = computed<Stroke['align']>(() => {
@@ -168,12 +170,12 @@ function updateBorderWeight(side: 'top' | 'right' | 'bottom' | 'left', value: nu
 }
 
 const SIDE_OPTIONS: { value: StrokeSides; label: string }[] = [
-  { value: 'ALL', label: 'All' },
-  { value: 'TOP', label: 'Top' },
-  { value: 'BOTTOM', label: 'Bottom' },
-  { value: 'LEFT', label: 'Left' },
-  { value: 'RIGHT', label: 'Right' },
-  { value: 'CUSTOM', label: 'Custom' }
+  { value: 'ALL', label: t('properties.stroke.all') },
+  { value: 'TOP', label: t('properties.layout.top') },
+  { value: 'BOTTOM', label: t('properties.layout.bottom') },
+  { value: 'LEFT', label: t('properties.layout.left') },
+  { value: 'RIGHT', label: t('properties.layout.right') },
+  { value: 'CUSTOM', label: t('properties.stroke.custom') }
 ]
 
 const BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const
@@ -192,7 +194,7 @@ const borderWeights = computed(() => {
 <template>
   <div v-if="active" data-test-id="stroke-section" class="border-b border-border px-3 py-2">
     <div class="flex items-center justify-between">
-      <label class="mb-1 block text-[11px] text-muted">Stroke</label>
+      <label class="mb-1 block text-[11px] text-muted">{{ t('properties.stroke.title') }}</label>
       <button
         data-test-id="stroke-section-add"
         class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-sm leading-none text-muted hover:bg-hover hover:text-surface"

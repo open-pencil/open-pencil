@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { ListboxFilter } from 'reka-ui'
 import {
   ListboxContent,
@@ -16,6 +17,7 @@ import { selectContent, selectItem, selectTrigger } from '@/components/ui/select
 import { panelSurface } from '@/components/ui/surface'
 import { listFamilies } from '@/engine/fonts'
 
+const { t } = useI18n()
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
 
@@ -80,7 +82,7 @@ function onSelect(val: string) {
             v-model="searchTerm"
             data-test-id="font-picker-search"
             class="min-w-0 flex-1 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
-            placeholder="Search fonts…"
+            :placeholder="t('fontPicker.searchFonts')"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="off"
@@ -110,12 +112,12 @@ function onSelect(val: string) {
             class="flex h-full items-center justify-center px-3 text-center text-xs text-muted"
           >
             <div>
-              <p>No local fonts available.</p>
-              <p class="mt-1">Use the desktop app or Chrome/Edge to access system fonts.</p>
+              <p>{{ t('empty.noLocalFonts') }}</p>
+              <p class="mt-1">{{ t('empty.useDesktopFonts') }}</p>
             </div>
           </div>
           <div v-else-if="filtered.length === 0" class="px-2 py-3 text-center text-xs text-muted">
-            No fonts found
+            {{ t('empty.noFontsFound') }}
           </div>
         </ListboxContent>
       </ListboxRoot>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AppSelect from '@/components/AppSelect.vue'
 import { useEditorStore } from '@/stores/editor'
@@ -7,6 +8,7 @@ import { useEditorStore } from '@/stores/editor'
 import type { ExportFormat } from '@open-pencil/core'
 
 const store = useEditorStore()
+const { t } = useI18n()
 
 interface ExportSetting {
   scale: number
@@ -28,9 +30,9 @@ const nodeName = computed(() => {
   const ids = store.state.selectedIds
   if (ids.size === 1) {
     const id = [...ids][0]
-    return store.graph.getNode(id)?.name ?? 'Export'
+    return store.graph.getNode(id)?.name ?? t('properties.export.export')
   }
-  return `${ids.size} layers`
+  return `${ids.size} ${t('properties.export.layers')}`
 })
 
 function addSetting() {
@@ -97,10 +99,11 @@ onUnmounted(() => {
 <template>
   <div data-test-id="export-section" class="border-b border-border px-3 py-2">
     <div class="flex items-center justify-between">
-      <label class="mb-1 block text-[11px] text-muted">Export</label>
+      <label class="mb-1 block text-[11px] text-muted">{{ t('properties.export.title') }}</label>
       <button
         data-test-id="export-section-add"
         class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-sm leading-none text-muted hover:bg-hover hover:text-surface"
+        :title="t('properties.export.addExport')"
         @click="addSetting"
       >
         +
@@ -141,7 +144,7 @@ onUnmounted(() => {
       :disabled="exporting"
       @click="doExport"
     >
-      Export {{ nodeName }}
+      {{ t('properties.export.export') }} {{ nodeName }}
     </button>
 
     <button
@@ -152,7 +155,7 @@ onUnmounted(() => {
     >
       <icon-lucide-chevron-down v-if="showPreview" class="size-3" />
       <icon-lucide-chevron-right v-else class="size-3" />
-      Preview
+      {{ t('properties.export.preview') }}
     </button>
 
     <div v-if="showPreview && previewUrl" class="mt-1 overflow-hidden rounded border border-border">
@@ -169,7 +172,7 @@ onUnmounted(() => {
       v-else-if="showPreview"
       class="mt-1 rounded border border-border px-3 py-2 text-[11px] text-muted"
     >
-      Rendering preview…
+      {{ t('properties.export.renderingPreview') }}
     </div>
   </div>
 </template>

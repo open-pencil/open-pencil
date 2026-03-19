@@ -3,12 +3,14 @@ import Prism from 'prismjs'
 import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { selectionToJSX } from '@open-pencil/core'
 import { useEditorStore } from '@/stores/editor'
 
 import type { JSXFormat } from '@open-pencil/core'
 
+const { t } = useI18n()
 const store = useEditorStore()
 const copied = ref(false)
 const jsxFormat = ref<JSXFormat>('openpencil')
@@ -50,7 +52,7 @@ watch(jsxCode, () => {
     data-test-id="code-panel-empty"
     class="flex flex-1 items-center justify-center px-4 text-center"
   >
-    <span class="text-xs text-muted">Select a layer to see its JSX code</span>
+    <span class="text-xs text-muted">{{ t('empty.selectLayerJSX') }}</span>
   </div>
 
   <div v-else data-test-id="code-panel" class="flex min-h-0 flex-1 flex-col">
@@ -59,7 +61,7 @@ watch(jsxCode, () => {
       class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5"
     >
       <div class="flex items-center gap-1.5">
-        <span class="text-[11px] text-muted">JSX</span>
+        <span class="text-[11px] text-muted">{{ t('codePanel.jsx') }}</span>
         <button
           data-test-id="code-panel-format-toggle"
           class="rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
@@ -75,7 +77,7 @@ watch(jsxCode, () => {
       >
         <icon-lucide-check v-if="copied" class="size-3 text-green-400" />
         <icon-lucide-copy v-else class="size-3" />
-        {{ copied ? 'Copied' : 'Copy' }}
+        {{ copied ? t('codePanel.copied') : t('codePanel.copy') }}
       </button>
     </div>
 

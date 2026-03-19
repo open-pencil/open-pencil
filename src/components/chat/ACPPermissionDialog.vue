@@ -10,6 +10,7 @@ import {
   AlertDialogTitle
 } from 'reka-ui'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import {
   currentPermission,
@@ -17,6 +18,7 @@ import {
   respondToPermission
 } from '@/ai/acp-permission'
 
+const { t } = useI18n()
 const open = computed(() => currentPermission.value !== null)
 
 interface ToolCallInfo {
@@ -63,11 +65,11 @@ function handleDismiss() {
         @escape-key-down="handleDismiss"
       >
         <AlertDialogTitle class="text-sm font-semibold text-surface">
-          Permission Request
+          {{ t('dialogs.permission.title') }}
         </AlertDialogTitle>
 
         <AlertDialogDescription class="mt-2 text-xs text-muted">
-          <span class="font-medium text-surface">{{ toolName }}</span> is requesting permission.
+          <span class="font-medium text-surface">{{ toolName }}</span> {{ t('dialogs.permission.isRequesting') }}
         </AlertDialogDescription>
 
         <pre

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   PopoverRoot,
   PopoverTrigger,
@@ -23,6 +24,7 @@ import type { Fill, Variable, Color } from '@open-pencil/core'
 
 const { store } = useNodeProps()
 const { nodes, isMulti, active, activeNode, targetNodes, isArrayMixed, updateArrayItem, removeArrayItem, toggleArrayVisibility } = useMultiProps()
+const { t } = useI18n()
 
 const fillsAreMixed = computed(() => isArrayMixed('fills'))
 
@@ -89,10 +91,11 @@ const filteredVariables = computed(() => {
 <template>
   <div v-if="active" data-test-id="fill-section" class="border-b border-border px-3 py-2">
     <div class="flex items-center justify-between">
-      <label class="mb-1 block text-[11px] text-muted">Fill</label>
+      <label class="mb-1 block text-[11px] text-muted">{{ t('properties.fill.title') }}</label>
       <button
         data-test-id="fill-section-add"
         class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-sm leading-none text-muted hover:bg-hover hover:text-surface"
+        :title="t('properties.fill.addFill')"
         @click="add"
       >
         +

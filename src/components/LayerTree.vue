@@ -2,6 +2,7 @@
 import { nextTick, onUnmounted, ref, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { TreeRoot, TreeItem, ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
+import { useI18n } from 'vue-i18n'
 
 import { useInlineRename } from '@/composables/use-inline-rename'
 
@@ -24,6 +25,7 @@ import { useEditorStore } from '@/stores/editor'
 import NodeContextMenuContent from './NodeContextMenuContent.vue'
 
 const store = useEditorStore()
+const { t } = useI18n()
 const rename = useInlineRename((id, name) => store.renameNode(id, name))
 
 interface LayerNode {
@@ -435,7 +437,7 @@ function updateDropTarget(ev: PointerEvent) {
                 >
                   <span
                     class="flex size-4 items-center justify-center rounded hover:bg-white/15"
-                    :title="item.value.locked ? 'Unlock' : 'Lock'"
+                    :title="item.value.locked ? t('tooltips.unlock') : t('tooltips.lock')"
                     @pointerdown.stop
                     @click.stop="toggleNodeLock(item.value.id)"
                   >
@@ -460,7 +462,7 @@ function updateDropTarget(ev: PointerEvent) {
                   </span>
                   <span
                     class="flex size-4 items-center justify-center rounded hover:bg-white/15"
-                    :title="item.value.visible ? 'Hide' : 'Show'"
+                    :title="item.value.visible ? t('tooltips.hide') : t('tooltips.show')"
                     @pointerdown.stop
                     @click.stop="toggleNodeVisibility(item.value.id)"
                   >

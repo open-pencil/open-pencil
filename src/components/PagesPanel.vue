@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useInlineRename } from '@/composables/use-inline-rename'
 import { useEditorStore } from '@/stores/editor'
 
 const store = useEditorStore()
+const { t } = useI18n()
 
 const DIVIDER_RE = /^[-–—*\s]+$/
 const pageInputRefs = new Map<string, HTMLInputElement>()
@@ -41,12 +43,12 @@ function startRename(pg: { id: string; name: string }) {
   <div data-test-id="pages-panel" class="flex min-h-0 flex-1 flex-col">
     <div class="flex shrink-0 items-center justify-between px-3 py-1.5">
       <span data-test-id="pages-header" class="text-[11px] tracking-wider text-muted uppercase"
-        >Pages</span
+        >{{ t('panels.pages.title') }}</span
       >
       <button
         data-test-id="pages-add"
         class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
-        title="Add page"
+        :title="t('panels.pages.addPage')"
         @click="store.addPage()"
       >
         +

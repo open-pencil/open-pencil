@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "Datei",
+      "new": "Neu",
+      "open": "Öffnen…",
+      "save": "Speichern",
+      "saveAs": "Speichern unter…",
+      "exportSelection": "Auswahl exportieren…",
+      "autoSave": "Automatisch in lokale Datei speichern"
+    },
+    "edit": {
+      "label": "Bearbeiten",
+      "undo": "Rückgängig",
+      "redo": "Wiederholen",
+      "copy": "Kopieren",
+      "paste": "Einfügen",
+      "duplicate": "Duplizieren",
+      "delete": "Löschen",
+      "selectAll": "Alles auswählen"
+    },
+    "view": {
+      "label": "Ansicht",
+      "zoomTo100": "Auf 100% zoomen",
+      "zoomToFit": "Anpassen",
+      "zoomToSelection": "Auf Auswahl zoomen",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern",
+      "performanceProfiler": "Leistungs-Profiler"
+    },
+    "object": {
+      "label": "Objekt",
+      "group": "Gruppieren",
+      "ungroup": "Gruppierung aufheben",
+      "createComponent": "Komponente erstellen",
+      "createComponentSet": "Komponentensatz erstellen",
+      "detachInstance": "Instanz lösen",
+      "bringToFront": "Nach vorne",
+      "sendToBack": "Nach hinten"
+    },
+    "text": {
+      "label": "Text",
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "underline": "Unterstrichen"
+    },
+    "arrange": {
+      "label": "Anordnen",
+      "addAutoLayout": "Auto-Layout hinzufügen",
+      "alignLeft": "Links ausrichten",
+      "alignCenter": "Zentrieren",
+      "alignRight": "Rechts ausrichten",
+      "alignTop": "Oben ausrichten",
+      "alignMiddle": "Vertikal zentrieren",
+      "alignBottom": "Unten ausrichten"
+    },
+    "language": {
+      "label": "Sprache"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "Verschieben",
+      "frame": "Frame",
+      "section": "Abschnitt",
+      "rectangle": "Rechteck",
+      "ellipse": "Ellipse",
+      "line": "Linie",
+      "polygon": "Polygon",
+      "star": "Stern",
+      "pen": "Stift",
+      "text": "Text",
+      "hand": "Hand"
+    },
+    "action": {
+      "copy": "Kopieren",
+      "paste": "Einfügen",
+      "cut": "Ausschneiden",
+      "duplicate": "Duplizieren",
+      "delete": "Löschen",
+      "front": "Nach vorne",
+      "back": "Nach hinten",
+      "group": "Gruppieren",
+      "ungroup": "Gruppierung aufheben",
+      "lock": "Sperren",
+      "unlock": "Entsperren"
+    }
+  },
+  "panels": {
+    "design": "Design",
+    "code": "Code",
+    "ai": "KI",
+    "layers": {
+      "title": "Ebenen"
+    },
+    "pages": {
+      "title": "Seiten",
+      "addPage": "Seite hinzufügen"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "Erscheinungsbild",
+      "opacity": "Deckkraft",
+      "cornerRadius": "Eckenradius",
+      "blendMode": "Füllmethode",
+      "individualCorners": "Individuelle Ecken"
+    },
+    "fill": {
+      "title": "Füllung",
+      "solid": "Einfarbig",
+      "gradient": "Verlauf",
+      "linear": "Linear",
+      "radial": "Radial",
+      "angular": "Winkel",
+      "diamond": "Diamant",
+      "image": "Bild",
+      "addFill": "Füllung hinzufügen"
+    },
+    "stroke": {
+      "title": "Kontur",
+      "width": "Breite",
+      "position": "Position",
+      "inside": "Innen",
+      "center": "Mitte",
+      "outside": "Außen",
+      "all": "Alle",
+      "custom": "Benutzerdefiniert",
+      "addStroke": "Kontur hinzufügen"
+    },
+    "effects": {
+      "title": "Effekte",
+      "dropShadow": "Schlagschatten",
+      "innerShadow": "Innenschatten",
+      "layerBlur": "Ebenenschärfe",
+      "backgroundBlur": "Hintergrundunschärfe",
+      "foregroundBlur": "Vordergrundunschärfe",
+      "addEffect": "Effekt hinzufügen",
+      "clickToAdd": "+ klicken um gemischte Effekte zu ersetzen",
+      "x": "X",
+      "y": "Y",
+      "blur": "Unschärfe",
+      "spread": "Ausbreitung"
+    },
+    "typography": {
+      "title": "Typografie",
+      "font": "Schriftart",
+      "size": "Größe",
+      "weight": "Stärke",
+      "lineHeight": "Zeilenhöhe",
+      "letterSpacing": "Buchstabenabstand",
+      "textAlign": "Textausrichtung",
+      "decoration": "Dekoration",
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "underline": "Unterstrichen",
+      "strikethrough": "Durchgestrichen",
+      "alignLeft": "Links ausrichten",
+      "alignCenter": "Zentrieren",
+      "alignRight": "Rechts ausrichten",
+      "alignJustify": "Blocksatz",
+      "thin": "Dünn",
+      "extraLight": "Extra leicht",
+      "light": "Leicht",
+      "regular": "Normal",
+      "medium": "Medium",
+      "semiBold": "Halbfett",
+      "extraBold": "Extra fett",
+      "black": "Schwarz"
+    },
+    "layout": {
+      "title": "Layout",
+      "width": "Breite",
+      "height": "Höhe",
+      "autoLayout": "Auto-Layout",
+      "removeAutoLayout": "Auto-Layout entfernen",
+      "horizontal": "Horizontal",
+      "vertical": "Vertikal",
+      "grid": "Raster",
+      "fixed": "Fest",
+      "hug": "Anpassen",
+      "fill": "Füllen",
+      "columns": "Spalten",
+      "rows": "Zeilen",
+      "addColumn": "Spalte hinzufügen",
+      "addRow": "Zeile hinzufügen",
+      "removeColumn": "Spalte entfernen",
+      "removeRow": "Zeile entfernen",
+      "gap": "Abstand",
+      "padding": "Innenabstand",
+      "top": "Oben",
+      "right": "Rechts",
+      "bottom": "Unten",
+      "left": "Links",
+      "wrap": "Umbruch",
+      "align": "Ausrichtung",
+      "spaceBetween": "Raum dazwischen",
+      "constraints": "Einschränkungen",
+      "leftRight": "Links-Rechts",
+      "topBottom": "Oben-Unten",
+      "scale": "Skalieren",
+      "center": "Zentrieren",
+      "clipContent": "Inhalt beschneiden"
+    },
+    "position": {
+      "title": "Position",
+      "rotation": "Drehung",
+      "flip": "Spiegeln",
+      "flipHorizontal": "Horizontal spiegeln",
+      "flipVertical": "Vertikal spiegeln",
+      "alignLeft": "Links ausrichten",
+      "alignCenterH": "Horizontal zentrieren",
+      "alignRight": "Rechts ausrichten",
+      "alignTop": "Oben ausrichten",
+      "alignCenterV": "Vertikal zentrieren",
+      "alignBottom": "Unten ausrichten"
+    },
+    "page": {
+      "title": "Seite",
+      "background": "Hintergrund"
+    },
+    "variables": {
+      "title": "Variablen",
+      "collections": "Sammlungen",
+      "variables": "Variablen",
+      "openDialog": "Variablendialog öffnen",
+      "noLocalVariables": "Keine lokalen Variablen"
+    },
+    "export": {
+      "title": "Exportieren",
+      "scale": "Skalierung",
+      "format": "Format",
+      "export": "Exportieren",
+      "addExport": "Export hinzufügen",
+      "layers": "Ebenen",
+      "preview": "Vorschau",
+      "renderingPreview": "Vorschau wird gerendert…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "Variablen",
+      "createVariable": "Variable erstellen",
+      "renameCollection": "Sammlung umbenennen",
+      "renameVariable": "Variable umbenennen",
+      "changeValue": "Variablenwert ändern",
+      "addMode": "Modus hinzufügen",
+      "deleteMode": "Modus löschen",
+      "deleteVariable": "Variable löschen",
+      "search": "Variablen suchen…",
+      "localVariables": "Lokale Variablen",
+      "noCollections": "Keine Variablensammlungen",
+      "createCollection": "Sammlung erstellen",
+      "addCollection": "Sammlung hinzufügen",
+      "searchPlaceholder": "Suchen",
+      "name": "Name"
+    },
+    "confirm": {
+      "title": "Bestätigen",
+      "ok": "OK",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "areYouSure": "Sind Sie sicher?",
+      "cannotUndo": "Diese Aktion kann nicht rückgängig gemacht werden"
+    },
+    "permission": {
+      "title": "Berechtigungsanfrage",
+      "allow": "Erlauben",
+      "deny": "Ablehnen",
+      "agentRequests": "Der Agent fordert Berechtigung an...",
+      "isRequesting": "fordert Berechtigung an."
+    }
+  },
+  "contextMenu": {
+    "copy": "Kopieren",
+    "paste": "Einfügen",
+    "pasteHere": "Hier einfügen",
+    "duplicate": "Duplizieren",
+    "delete": "Löschen",
+    "group": "Gruppieren",
+    "ungroup": "Gruppierung aufheben",
+    "bringToFront": "Nach vorne",
+    "sendToBack": "Nach hinten",
+    "lock": "Sperren",
+    "unlock": "Entsperren",
+    "show": "Anzeigen",
+    "hide": "Ausblenden",
+    "toggleVisibility": "Sichtbarkeit umschalten",
+    "createComponent": "Komponente erstellen",
+    "createInstance": "Instanz erstellen",
+    "goToMainComponent": "Zur Hauptkomponente",
+    "moveToPage": "Auf Seite verschieben",
+    "copyPasteAs": "Kopieren/Einfügen als",
+    "copyAsText": "Als Text kopieren",
+    "copyAsSVG": "Als SVG kopieren",
+    "copyAsPNG": "Als PNG kopieren",
+    "copyAsJSX": "Als JSX kopieren",
+    "selectAll": "Alles auswählen",
+    "export": "Exportieren…"
+  },
+  "chat": {
+    "placeholder": "KI Design erstellen lassen...",
+    "send": "Senden",
+    "cancel": "Abbrechen",
+    "selectProvider": "Anbieter auswählen",
+    "apiKey": "API-Schlüssel",
+    "connect": "Verbinden",
+    "disconnect": "Trennen",
+    "connected": "Verbunden",
+    "notConnected": "Nicht verbunden",
+    "thinking": "Denke nach...",
+    "emptyState": "Beschreiben Sie, was Sie erstellen oder ändern möchten.",
+    "continue": "Fortsetzen",
+    "clear": "Löschen",
+    "describeChange": "Eine Änderung beschreiben…",
+    "stopGenerating": "Generierung stoppen",
+    "sendMessage": "Nachricht senden",
+    "yourAgents": "Ihre Agenten",
+    "apiKeyLabel": "API-Schlüssel",
+    "maxOutputTokens": "Max. Ausgabe-Tokens",
+    "clearKey": "Löschen",
+    "keySaved": "Schlüssel gespeichert — neuen eingeben zum Ersetzen",
+    "optionalStock": "Optional — für stock_photo-Tool",
+    "optionalAlternative": "Optional — Alternative zu Pexels",
+    "getFreePexels": "Kostenlosen Pexels API-Schlüssel erhalten →",
+    "getFreeUnsplash": "Kostenlosen Unsplash Zugangsschlüssel erhalten →",
+    "baseURL": "Basis-URL",
+    "modelId": "Modell-ID",
+    "apiType": "API-Typ",
+    "completions": "Vervollständigungen",
+    "responses": "Antworten",
+    "getApiKey": "API-Schlüssel erhalten →",
+    "done": "Fertig",
+    "providerSettings": "Anbietereinstellungen",
+    "aiProvider": "KI-Anbieter",
+    "pexelsApiKey": "Pexels API-Schlüssel (Stock-Fotos)",
+    "unsplashAccessKey": "Unsplash Zugangsschlüssel",
+    "connectProvider": "Verbinden Sie einen KI-Anbieter, um zu chatten.",
+    "getApiKeyLink": "{provider} API-Schlüssel erhalten →",
+    "oneKeyModels": "Ein Schlüssel für 100+ Modelle aller Anbieter.",
+    "usesSubscription": "Verwendet Ihr bestehendes {agent}-Abonnement. Stellen Sie sicher, dass",
+    "isInstalledAuth": "installiert und authentifiziert ist."
+  },
+  "toast": {
+    "saved": "Gespeichert",
+    "exported": "Exportiert",
+    "copied": "Kopiert",
+    "failed": "Fehlgeschlagen",
+    "error": "Fehler"
+  },
+  "tooltips": {
+    "toggleUI": "UI umschalten",
+    "addPage": "Seite hinzufügen",
+    "zoomLevel": "Zoomstufe",
+    "lock": "Sperren",
+    "unlock": "Entsperren",
+    "show": "Anzeigen",
+    "hide": "Ausblenden",
+    "copied": "Kopiert!",
+    "copyError": "Fehler kopieren",
+    "solid": "Einfarbig",
+    "gradient": "Verlauf",
+    "image": "Bild",
+    "addStop": "Stopp hinzufügen",
+    "chooseImage": "Bild auswählen",
+    "replaceImage": "Ersetzen",
+    "stops": "Stopps"
+  },
+  "errors": {
+    "failedToSave": "Speichern fehlgeschlagen",
+    "failedToExport": "Export fehlgeschlagen",
+    "connectionError": "Verbindungsfehler",
+    "invalidApiKey": "Ungültiger API-Schlüssel"
+  },
+  "empty": {
+    "noSelection": "Keine Auswahl",
+    "noPages": "Keine Seiten",
+    "selectLayerJSX": "Ebene auswählen, um JSX-Code zu sehen",
+    "noLocalFonts": "Keine lokalen Schriften verfügbar.",
+    "useDesktopFonts": "Verwenden Sie die Desktop-App oder Chrome/Edge für Systemschriften.",
+    "noFontsFound": "Keine Schriften gefunden"
+  },
+  "fontPicker": {
+    "searchFonts": "Schriften suchen…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "Kopieren",
+    "copied": "Kopiert"
+  },
+  "safari": {
+    "banner": "Safari hat eingeschränkte Dateiunterstützung. Verwenden Sie Chrome für alle Funktionen."
+  }
+}

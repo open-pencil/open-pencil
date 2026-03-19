@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/ai/acp-transport'
 import { copyChatLog } from '@/ai/chat-debug'
@@ -15,6 +16,7 @@ import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 
 const IS_DEV = import.meta.env.DEV
+const { t } = useI18n()
 
 const { isConfigured, ensureChat, resetChat } = useAIChat()
 
@@ -120,7 +122,7 @@ function handleClearChat() {
             class="flex h-full flex-col items-center justify-center gap-3 text-muted"
           >
             <icon-lucide-message-circle class="size-8 opacity-50" />
-            <p class="text-center text-xs">Describe what you want to create or change.</p>
+            <p class="text-center text-xs">{{ t('chat.emptyState') }}</p>
           </div>
 
           <!-- Messages -->

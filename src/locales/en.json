@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "File",
+      "new": "New",
+      "open": "Open…",
+      "save": "Save",
+      "saveAs": "Save as…",
+      "exportSelection": "Export selection…",
+      "autoSave": "Auto-save to local file"
+    },
+    "edit": {
+      "label": "Edit",
+      "undo": "Undo",
+      "redo": "Redo",
+      "copy": "Copy",
+      "paste": "Paste",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "selectAll": "Select all"
+    },
+    "view": {
+      "label": "View",
+      "zoomTo100": "Zoom to 100%",
+      "zoomToFit": "Zoom to fit",
+      "zoomToSelection": "Zoom to selection",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "performanceProfiler": "Performance profiler"
+    },
+    "object": {
+      "label": "Object",
+      "group": "Group",
+      "ungroup": "Ungroup",
+      "createComponent": "Create component",
+      "createComponentSet": "Create component set",
+      "detachInstance": "Detach instance",
+      "bringToFront": "Bring to front",
+      "sendToBack": "Send to back"
+    },
+    "text": {
+      "label": "Text",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline"
+    },
+    "arrange": {
+      "label": "Arrange",
+      "addAutoLayout": "Add auto layout",
+      "alignLeft": "Align left",
+      "alignCenter": "Align center",
+      "alignRight": "Align right",
+      "alignTop": "Align top",
+      "alignMiddle": "Align middle",
+      "alignBottom": "Align bottom"
+    },
+    "language": {
+      "label": "Language"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "Move",
+      "frame": "Frame",
+      "section": "Section",
+      "rectangle": "Rectangle",
+      "ellipse": "Ellipse",
+      "line": "Line",
+      "polygon": "Polygon",
+      "star": "Star",
+      "pen": "Pen",
+      "text": "Text",
+      "hand": "Hand"
+    },
+    "action": {
+      "copy": "Copy",
+      "paste": "Paste",
+      "cut": "Cut",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "front": "Front",
+      "back": "Back",
+      "group": "Group",
+      "ungroup": "Ungroup",
+      "lock": "Lock",
+      "unlock": "Unlock"
+    }
+  },
+  "panels": {
+    "design": "Design",
+    "code": "Code",
+    "ai": "AI",
+    "layers": {
+      "title": "Layers"
+    },
+    "pages": {
+      "title": "Pages",
+      "addPage": "Add page"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "Appearance",
+      "opacity": "Opacity",
+      "cornerRadius": "Corner radius",
+      "blendMode": "Blend mode",
+      "individualCorners": "Individual corners"
+    },
+    "fill": {
+      "title": "Fill",
+      "solid": "Solid",
+      "gradient": "Gradient",
+      "linear": "Linear",
+      "radial": "Radial",
+      "angular": "Angular",
+      "diamond": "Diamond",
+      "image": "Image",
+      "addFill": "Add fill"
+    },
+    "stroke": {
+      "title": "Stroke",
+      "width": "Width",
+      "position": "Position",
+      "inside": "Inside",
+      "center": "Center",
+      "outside": "Outside",
+      "all": "All",
+      "custom": "Custom",
+      "addStroke": "Add stroke"
+    },
+    "effects": {
+      "title": "Effects",
+      "dropShadow": "Drop shadow",
+      "innerShadow": "Inner shadow",
+      "layerBlur": "Layer blur",
+      "backgroundBlur": "Background blur",
+      "foregroundBlur": "Foreground blur",
+      "addEffect": "Add effect",
+      "clickToAdd": "Click + to replace mixed effects",
+      "x": "X",
+      "y": "Y",
+      "blur": "Blur",
+      "spread": "Spread"
+    },
+    "typography": {
+      "title": "Typography",
+      "font": "Font",
+      "size": "Size",
+      "weight": "Weight",
+      "lineHeight": "Line height",
+      "letterSpacing": "Letter spacing",
+      "textAlign": "Text align",
+      "decoration": "Decoration",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strikethrough": "Strikethrough",
+      "alignLeft": "Align left",
+      "alignCenter": "Align center",
+      "alignRight": "Align right",
+      "alignJustify": "Justify",
+      "thin": "Thin",
+      "extraLight": "Extra Light",
+      "light": "Light",
+      "regular": "Regular",
+      "medium": "Medium",
+      "semiBold": "Semi Bold",
+      "extraBold": "Extra Bold",
+      "black": "Black"
+    },
+    "layout": {
+      "title": "Layout",
+      "width": "Width",
+      "height": "Height",
+      "autoLayout": "Auto layout",
+      "removeAutoLayout": "Remove auto layout",
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "grid": "Grid",
+      "fixed": "Fixed",
+      "hug": "Hug",
+      "fill": "Fill",
+      "columns": "Columns",
+      "rows": "Rows",
+      "addColumn": "Add column",
+      "addRow": "Add row",
+      "removeColumn": "Remove column",
+      "removeRow": "Remove row",
+      "gap": "Gap",
+      "padding": "Padding",
+      "top": "Top",
+      "right": "Right",
+      "bottom": "Bottom",
+      "left": "Left",
+      "wrap": "Wrap",
+      "align": "Alignment",
+      "spaceBetween": "Space between",
+      "constraints": "Constraints",
+      "leftRight": "Left & Right",
+      "topBottom": "Top & Bottom",
+      "scale": "Scale",
+      "center": "Center",
+      "clipContent": "Clip content"
+    },
+    "position": {
+      "title": "Position",
+      "rotation": "Rotation",
+      "flip": "Flip",
+      "flipHorizontal": "Flip horizontal",
+      "flipVertical": "Flip vertical",
+      "alignLeft": "Align left",
+      "alignCenterH": "Align center horizontally",
+      "alignRight": "Align right",
+      "alignTop": "Align top",
+      "alignCenterV": "Align center vertically",
+      "alignBottom": "Align bottom"
+    },
+    "page": {
+      "title": "Page",
+      "background": "Background"
+    },
+    "variables": {
+      "title": "Variables",
+      "collections": "collections",
+      "variables": "variables",
+      "openDialog": "Open variables dialog",
+      "noLocalVariables": "No local variables"
+    },
+    "export": {
+      "title": "Export",
+      "scale": "Scale",
+      "format": "Format",
+      "export": "Export",
+      "addExport": "Add export",
+      "layers": "layers",
+      "preview": "Preview",
+      "renderingPreview": "Rendering preview…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "Variables",
+      "createVariable": "Create variable",
+      "renameCollection": "Rename collection",
+      "renameVariable": "Rename variable",
+      "changeValue": "Change variable value",
+      "addMode": "Add mode",
+      "deleteMode": "Delete mode",
+      "deleteVariable": "Delete variable",
+      "search": "Search variables…",
+      "localVariables": "Local variables",
+      "noCollections": "No variable collections",
+      "createCollection": "Create collection",
+      "addCollection": "Add collection",
+      "searchPlaceholder": "Search",
+      "name": "Name"
+    },
+    "confirm": {
+      "title": "Confirm",
+      "ok": "OK",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "areYouSure": "Are you sure?",
+      "cannotUndo": "This action cannot be undone"
+    },
+    "permission": {
+      "title": "Permission Request",
+      "allow": "Allow",
+      "deny": "Deny",
+      "agentRequests": "The agent requests permission to...",
+      "isRequesting": "is requesting permission."
+    }
+  },
+  "contextMenu": {
+    "copy": "Copy",
+    "paste": "Paste",
+    "pasteHere": "Paste here",
+    "duplicate": "Duplicate",
+    "delete": "Delete",
+    "group": "Group",
+    "ungroup": "Ungroup",
+    "bringToFront": "Bring to front",
+    "sendToBack": "Send to back",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "show": "Show",
+    "hide": "Hide",
+    "toggleVisibility": "Toggle visibility",
+    "createComponent": "Create component",
+    "createInstance": "Create instance",
+    "goToMainComponent": "Go to main component",
+    "moveToPage": "Move to page",
+    "copyPasteAs": "Copy/Paste as",
+    "copyAsText": "Copy as text",
+    "copyAsSVG": "Copy as SVG",
+    "copyAsPNG": "Copy as PNG",
+    "copyAsJSX": "Copy as JSX",
+    "selectAll": "Select all",
+    "export": "Export…"
+  },
+  "chat": {
+    "placeholder": "Ask AI to design...",
+    "send": "Send",
+    "cancel": "Cancel",
+    "selectProvider": "Select a provider",
+    "apiKey": "API Key",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connected": "Connected",
+    "notConnected": "Not connected",
+    "thinking": "Thinking...",
+    "emptyState": "Describe what you want to create or change.",
+    "continue": "Continue",
+    "clear": "Clear",
+    "describeChange": "Describe a change…",
+    "stopGenerating": "Stop generating",
+    "sendMessage": "Send message",
+    "yourAgents": "Your agents",
+    "apiKeyLabel": "API key",
+    "maxOutputTokens": "Max output tokens",
+    "clearKey": "Clear",
+    "keySaved": "Key saved — enter new to replace",
+    "optionalStock": "Optional — for stock_photo tool",
+    "optionalAlternative": "Optional — alternative to Pexels",
+    "getFreePexels": "Get free Pexels API key →",
+    "getFreeUnsplash": "Get free Unsplash access key →",
+    "baseURL": "Base URL",
+    "modelId": "Model ID",
+    "apiType": "API Type",
+    "completions": "Completions",
+    "responses": "Responses",
+    "getApiKey": "Get API key →",
+    "done": "Done",
+    "providerSettings": "Provider settings",
+    "aiProvider": "AI Provider",
+    "pexelsApiKey": "Pexels API Key (stock photos)",
+    "unsplashAccessKey": "Unsplash Access Key",
+    "connectProvider": "Connect an AI provider to start chatting.",
+    "getApiKeyLink": "Get an {provider} API key →",
+    "oneKeyModels": "One key for 100+ models from all providers.",
+    "usesSubscription": "Uses your existing {agent} subscription. Make sure",
+    "isInstalledAuth": "is installed and authenticated."
+  },
+  "toast": {
+    "saved": "Saved",
+    "exported": "Exported",
+    "copied": "Copied",
+    "failed": "Failed",
+    "error": "Error"
+  },
+  "tooltips": {
+    "toggleUI": "Toggle UI",
+    "addPage": "Add page",
+    "zoomLevel": "Zoom level",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "show": "Show",
+    "hide": "Hide",
+    "copied": "Copied!",
+    "copyError": "Copy error",
+    "solid": "Solid",
+    "gradient": "Gradient",
+    "image": "Image",
+    "addStop": "Add stop",
+    "chooseImage": "Choose image",
+    "replaceImage": "Replace",
+    "stops": "Stops"
+  },
+  "errors": {
+    "failedToSave": "Failed to save",
+    "failedToExport": "Failed to export",
+    "connectionError": "Connection error",
+    "invalidApiKey": "Invalid API key"
+  },
+  "empty": {
+    "noSelection": "No selection",
+    "noPages": "No pages",
+    "selectLayerJSX": "Select a layer to see its JSX code",
+    "noLocalFonts": "No local fonts available.",
+    "useDesktopFonts": "Use the desktop app or Chrome/Edge to access system fonts.",
+    "noFontsFound": "No fonts found"
+  },
+  "fontPicker": {
+    "searchFonts": "Search fonts…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "Copy",
+    "copied": "Copied"
+  },
+  "safari": {
+    "banner": "Safari has limited file support. Use Chrome for full functionality."
+  }
+}

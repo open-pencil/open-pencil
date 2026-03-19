@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import AppSelect from '@/components/AppSelect.vue'
 import ColorInput from '@/components/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
@@ -12,6 +13,7 @@ import type { Color, Effect } from '@open-pencil/core'
 
 const { store } = useNodeProps()
 const { node, nodes, isMulti, active, isArrayMixed } = useMultiProps()
+const { t } = useI18n()
 
 const effectsAreMixed = computed(() => isArrayMixed('effects'))
 
@@ -20,16 +22,15 @@ const effectsBeforeScrub = ref<Effect[] | null>(null)
 
 type EffectType = Effect['type']
 
-const EFFECT_LABELS: Record<string, string> = {
-  DROP_SHADOW: 'Drop shadow',
-  INNER_SHADOW: 'Inner shadow',
-  LAYER_BLUR: 'Layer blur',
-  BACKGROUND_BLUR: 'Background blur',
-  FOREGROUND_BLUR: 'Foreground blur'
-}
+const EFFECT_TYPES: EffectType[] = ['DROP_SHADOW', 'INNER_SHADOW', 'LAYER_BLUR', 'BACKGROUND_BLUR', 'FOREGROUND_BLUR']
 
-const EFFECT_TYPES = Object.keys(EFFECT_LABELS) as EffectType[]
-const EFFECT_OPTIONS = EFFECT_TYPES.map((t) => ({ value: t, label: EFFECT_LABELS[t] }))
+const EFFECT_OPTIONS = computed(() => [
+  { value: 'DROP_SHADOW', label: t('properties.effects.dropShadow') },
+  { value: 'INNER_SHADOW', label: t('properties.effects.innerShadow') },
+  { value: 'LAYER_BLUR', label: t('properties.effects.layerBlur') },
+  { value: 'BACKGROUND_BLUR', label: t('properties.effects.backgroundBlur') },
+  { value: 'FOREGROUND_BLUR', label: t('properties.effects.foregroundBlur') }
+])
 
 function isShadow(type: string) {
   return type === 'DROP_SHADOW' || type === 'INNER_SHADOW'
@@ -142,17 +143,18 @@ function toggleExpand(index: number) {
 <template>
   <div v-if="active" data-test-id="effects-section" class="border-b border-border px-3 py-2">
     <div class="flex items-center justify-between">
-      <label class="mb-1 block text-[11px] text-muted">Effects</label>
+      <label class="mb-1 block text-[11px] text-muted">{{ t('properties.effects.title') }}</label>
       <button
         data-test-id="effects-section-add"
         class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-sm leading-none text-muted hover:bg-hover hover:text-surface"
+        :title="t('properties.effects.addEffect')"
         @click="add"
       >
         +
       </button>
     </div>
 
-    <p v-if="effectsAreMixed" class="text-[11px] text-muted">Click + to replace mixed effects</p>
+    <p v-if="effectsAreMixed" class="text-[11px] text-muted">{{ t('properties.effects.clickToAdd') }}</p>
 
     <div
       v-for="(effect, i) in effectsAreMixed ? [] : ((node ?? nodes[0])?.effects ?? [])"

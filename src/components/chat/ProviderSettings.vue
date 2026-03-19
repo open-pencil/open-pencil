@@ -11,11 +11,13 @@ import {
   TabsTrigger
 } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import ProviderSelect from '@/components/chat/ProviderSelect.vue'
 import { uiInput } from '@/components/ui/input'
 import { useAIChat } from '@/composables/use-chat'
 
+const { t } = useI18n()
 const {
   providerID,
   providerDef,
@@ -95,7 +97,7 @@ function clearUnsplashKey() {
     <PopoverTrigger
       data-test-id="provider-settings-trigger"
       class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
-      title="Provider settings"
+      :title="t('chat.providerSettings')"
     >
       <icon-lucide-settings class="size-3" />
     </PopoverTrigger>
@@ -120,13 +122,13 @@ function clearUnsplashKey() {
         "
       >
         <div class="flex flex-col gap-2.5">
-          <h3 class="text-[11px] font-semibold text-surface">AI Provider</h3>
+          <h3 class="text-[11px] font-semibold text-surface">{{ t('chat.aiProvider') }}</h3>
 
           <ProviderSelect test-id="provider-settings-provider" />
 
           <!-- Max output tokens -->
           <div v-if="!isACP" class="flex flex-col gap-1">
-            <label class="text-[10px] text-muted">Max output tokens</label>
+            <label class="text-[10px] text-muted">{{ t('chat.maxOutputTokens') }}</label>
             <input
               v-model.number="maxOutputTokens"
               type="number"
@@ -141,14 +143,14 @@ function clearUnsplashKey() {
           <!-- Pexels stock photos -->
           <div class="flex flex-col gap-1">
             <div class="flex items-center justify-between">
-              <label class="text-[10px] text-muted">Pexels API Key (stock photos)</label>
+              <label class="text-[10px] text-muted">{{ t('chat.pexelsApiKey') }}</label>
               <button
                 v-if="pexelsApiKey"
                 class="cursor-pointer text-[10px] text-muted hover:text-surface"
                 data-test-id="provider-settings-clear-pexels-key"
                 @click="clearPexelsKey"
               >
-                Clear
+                {{ t('chat.clearKey') }}
               </button>
             </div>
             <input
@@ -157,8 +159,8 @@ function clearUnsplashKey() {
               data-test-id="provider-settings-pexels-key"
               :placeholder="
                 hasExistingPexelsKey
-                  ? 'Key saved — enter new to replace'
-                  : 'Optional — for stock_photo tool'
+                  ? t('chat.keySaved')
+                  : t('chat.optionalStock')
               "
               :class="uiInput({ size: 'sm' })"
               @change="save"
@@ -168,21 +170,21 @@ function clearUnsplashKey() {
               target="_blank"
               class="text-[9px] text-muted underline hover:text-surface"
             >
-              Get free Pexels API key →
+              {{ t('chat.getFreePexels') }}
             </a>
           </div>
 
           <!-- Unsplash stock photos -->
           <div class="flex flex-col gap-1">
             <div class="flex items-center justify-between">
-              <label class="text-[10px] text-muted">Unsplash Access Key</label>
+              <label class="text-[10px] text-muted">{{ t('chat.unsplashAccessKey') }}</label>
               <button
                 v-if="unsplashAccessKey"
                 class="cursor-pointer text-[10px] text-muted hover:text-surface"
                 data-test-id="provider-settings-clear-unsplash-key"
                 @click="clearUnsplashKey"
               >
-                Clear
+                {{ t('chat.clearKey') }}
               </button>
             </div>
             <input
@@ -191,8 +193,8 @@ function clearUnsplashKey() {
               data-test-id="provider-settings-unsplash-key"
               :placeholder="
                 hasExistingUnsplashKey
-                  ? 'Key saved — enter new to replace'
-                  : 'Optional — alternative to Pexels'
+                  ? t('chat.keySaved')
+                  : t('chat.optionalAlternative')
               "
               :class="uiInput({ size: 'sm' })"
               @change="save"
@@ -202,14 +204,14 @@ function clearUnsplashKey() {
               target="_blank"
               class="text-[9px] text-muted underline hover:text-surface"
             >
-              Get free Unsplash access key →
+              {{ t('chat.getFreeUnsplash') }}
             </a>
           </div>
 
           <template v-if="!isACP">
             <!-- Base URL (OpenAI-compatible only) -->
             <div v-if="providerDef.supportsCustomBaseURL" class="flex flex-col gap-1">
-              <label class="text-[10px] text-muted">Base URL</label>
+              <label class="text-[10px] text-muted">{{ t('chat.baseURL') }}</label>
               <input
                 v-model="baseURLInput"
                 type="text"
@@ -222,7 +224,7 @@ function clearUnsplashKey() {
 
             <!-- Custom model ID (OpenAI-compatible only) -->
             <div v-if="providerDef.supportsCustomModel" class="flex flex-col gap-1">
-              <label class="text-[10px] text-muted">Model ID</label>
+              <label class="text-[10px] text-muted">{{ t('chat.modelId') }}</label>
               <input
                 v-model="customModelInput"
                 type="text"
@@ -235,7 +237,7 @@ function clearUnsplashKey() {
 
             <!-- API type (OpenAI-compatible only) -->
             <div v-if="providerID === 'openai-compatible'" class="flex flex-col gap-1">
-              <label class="text-[10px] text-muted">API Type</label>
+              <label class="text-[10px] text-muted">{{ t('chat.apiType') }}</label>
               <TabsRoot
                 :model-value="customAPIType"
                 data-test-id="provider-settings-api-type"
@@ -252,13 +254,13 @@ function clearUnsplashKey() {
                     value="completions"
                     class="flex-1 rounded px-2 py-1 text-[10px] text-muted data-[state=active]:bg-hover data-[state=active]:text-surface"
                   >
-                    Completions
+                    {{ t('chat.completions') }}
                   </TabsTrigger>
                   <TabsTrigger
                     value="responses"
                     class="flex-1 rounded px-2 py-1 text-[10px] text-muted data-[state=active]:bg-hover data-[state=active]:text-surface"
                   >
-                    Responses
+                    {{ t('chat.responses') }}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="completions" />
@@ -269,14 +271,14 @@ function clearUnsplashKey() {
             <!-- API key -->
             <div class="flex flex-col gap-1">
               <div class="flex items-center justify-between">
-                <label class="text-[10px] text-muted">API Key</label>
+                <label class="text-[10px] text-muted">{{ t('chat.apiKey') }}</label>
                 <button
                   v-if="apiKey"
                   class="cursor-pointer text-[10px] text-muted hover:text-surface"
                   data-test-id="provider-settings-clear-key"
                   @click="clearKey"
                 >
-                  Clear
+                  {{ t('chat.clearKey') }}
                 </button>
               </div>
               <input
@@ -284,7 +286,7 @@ function clearUnsplashKey() {
                 type="password"
                 data-test-id="provider-settings-api-key"
                 :placeholder="
-                  hasExistingKey ? 'Key saved — enter new to replace' : providerDef.keyPlaceholder
+                  hasExistingKey ? t('chat.keySaved') : providerDef.keyPlaceholder
                 "
                 :class="uiInput({ size: 'sm' })"
                 @change="save"
@@ -295,7 +297,7 @@ function clearUnsplashKey() {
                 target="_blank"
                 class="text-[9px] text-muted underline hover:text-surface"
               >
-                Get API key →
+                {{ t('chat.getApiKey') }}
               </a>
             </div>
           </template>
@@ -305,7 +307,7 @@ function clearUnsplashKey() {
             data-test-id="provider-settings-done"
             @click="save"
           >
-            Done
+            {{ t('chat.done') }}
           </PopoverClose>
         </div>
       </PopoverContent>

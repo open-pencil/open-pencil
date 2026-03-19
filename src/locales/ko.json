@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "파일",
+      "new": "새로 만들기",
+      "open": "열기…",
+      "save": "저장",
+      "saveAs": "다른 이름으로 저장…",
+      "exportSelection": "선택 항목 내보내기…",
+      "autoSave": "로컬 파일에 자동 저장"
+    },
+    "edit": {
+      "label": "편집",
+      "undo": "실행 취소",
+      "redo": "다시 실행",
+      "copy": "복사",
+      "paste": "붙여넣기",
+      "duplicate": "복제",
+      "delete": "삭제",
+      "selectAll": "모두 선택"
+    },
+    "view": {
+      "label": "보기",
+      "zoomTo100": "100%로 확대",
+      "zoomToFit": "화면에 맞추기",
+      "zoomToSelection": "선택 항목에 맞추기",
+      "zoomIn": "확대",
+      "zoomOut": "축소",
+      "performanceProfiler": "성능 프로파일러"
+    },
+    "object": {
+      "label": "객체",
+      "group": "그룹화",
+      "ungroup": "그룹 해제",
+      "createComponent": "컴포넌트 생성",
+      "createComponentSet": "컴포넌트 세트 생성",
+      "detachInstance": "인스턴스 분리",
+      "bringToFront": "맨 앞으로",
+      "sendToBack": "맨 뒤로"
+    },
+    "text": {
+      "label": "텍스트",
+      "bold": "굵게",
+      "italic": "기울임",
+      "underline": "밑줄"
+    },
+    "arrange": {
+      "label": "정렬",
+      "addAutoLayout": "자동 레이아웃 추가",
+      "alignLeft": "왼쪽 정렬",
+      "alignCenter": "가운데 정렬",
+      "alignRight": "오른쪽 정렬",
+      "alignTop": "위쪽 정렬",
+      "alignMiddle": "수직 가운데 정렬",
+      "alignBottom": "아래쪽 정렬"
+    },
+    "language": {
+      "label": "언어"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "이동",
+      "frame": "프레임",
+      "section": "섹션",
+      "rectangle": "사각형",
+      "ellipse": "타원",
+      "line": "선",
+      "polygon": "다각형",
+      "star": "별",
+      "pen": "펜",
+      "text": "텍스트",
+      "hand": "손"
+    },
+    "action": {
+      "copy": "복사",
+      "paste": "붙여넣기",
+      "cut": "잘라내기",
+      "duplicate": "복제",
+      "delete": "삭제",
+      "front": "맨 앞으로",
+      "back": "맨 뒤로",
+      "group": "그룹화",
+      "ungroup": "그룹 해제",
+      "lock": "잠금",
+      "unlock": "잠금 해제"
+    }
+  },
+  "panels": {
+    "design": "디자인",
+    "code": "코드",
+    "ai": "AI",
+    "layers": {
+      "title": "레이어"
+    },
+    "pages": {
+      "title": "페이지",
+      "addPage": "페이지 추가"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "모양",
+      "opacity": "불투명도",
+      "cornerRadius": "모서리 반경",
+      "blendMode": "혼합 모드",
+      "individualCorners": "개별 모서리"
+    },
+    "fill": {
+      "title": "채우기",
+      "solid": "단색",
+      "gradient": "그라데이션",
+      "linear": "선형",
+      "radial": "방사형",
+      "angular": "각도",
+      "diamond": "다이아몬드",
+      "image": "이미지",
+      "addFill": "채우기 추가"
+    },
+    "stroke": {
+      "title": "스트로크",
+      "width": "너비",
+      "position": "위치",
+      "inside": "내부",
+      "center": "중앙",
+      "outside": "외부",
+      "all": "전체",
+      "custom": "사용자 지정",
+      "addStroke": "스트로크 추가"
+    },
+    "effects": {
+      "title": "효과",
+      "dropShadow": "그림자",
+      "innerShadow": "내부 그림자",
+      "layerBlur": "레이어 블러",
+      "backgroundBlur": "배경 블러",
+      "foregroundBlur": "전경 블러",
+      "addEffect": "효과 추가",
+      "clickToAdd": "+를 클릭하여 혼합 효과 교체",
+      "x": "X",
+      "y": "Y",
+      "blur": "블러",
+      "spread": "확산"
+    },
+    "typography": {
+      "title": "타이포그래피",
+      "font": "글꼴",
+      "size": "크기",
+      "weight": "굵기",
+      "lineHeight": "줄 높이",
+      "letterSpacing": "자간",
+      "textAlign": "텍스트 정렬",
+      "decoration": "장식",
+      "bold": "굵게",
+      "italic": "기울임",
+      "underline": "밑줄",
+      "strikethrough": "취소선",
+      "alignLeft": "왼쪽 정렬",
+      "alignCenter": "가운데 정렬",
+      "alignRight": "오른쪽 정렬",
+      "alignJustify": "양쪽 정렬",
+      "thin": "얇게",
+      "extraLight": "매우 얇게",
+      "light": "가볍게",
+      "regular": "보통",
+      "medium": "중간",
+      "semiBold": "약간 굵게",
+      "extraBold": "매우 굵게",
+      "black": "매우 두껍게"
+    },
+    "layout": {
+      "title": "레이아웃",
+      "width": "너비",
+      "height": "높이",
+      "autoLayout": "자동 레이아웃",
+      "removeAutoLayout": "자동 레이아웃 제거",
+      "horizontal": "수평",
+      "vertical": "수직",
+      "grid": "그리드",
+      "fixed": "고정",
+      "hug": "Hug",
+      "fill": "채우기",
+      "columns": "열",
+      "rows": "행",
+      "addColumn": "열 추가",
+      "addRow": "행 추가",
+      "removeColumn": "열 제거",
+      "removeRow": "행 제거",
+      "gap": "간격",
+      "padding": "패딩",
+      "top": "위",
+      "right": "오른쪽",
+      "bottom": "아래",
+      "left": "왼쪽",
+      "wrap": "줄 바꿈",
+      "align": "정렬",
+      "spaceBetween": "공간 분배",
+      "constraints": "제약",
+      "leftRight": "좌우",
+      "topBottom": "상하",
+      "scale": "스케일",
+      "center": "중앙",
+      "clipContent": "콘텐츠 자르기"
+    },
+    "position": {
+      "title": "위치",
+      "rotation": "회전",
+      "flip": "뒤집기",
+      "flipHorizontal": "수평 뒤집기",
+      "flipVertical": "수직 뒤집기",
+      "alignLeft": "왼쪽 정렬",
+      "alignCenterH": "수평 중앙 정렬",
+      "alignRight": "오른쪽 정렬",
+      "alignTop": "위쪽 정렬",
+      "alignCenterV": "수직 중앙 정렬",
+      "alignBottom": "아래쪽 정렬"
+    },
+    "page": {
+      "title": "페이지",
+      "background": "배경"
+    },
+    "variables": {
+      "title": "변수",
+      "collections": "컬렉션",
+      "variables": "변수",
+      "openDialog": "변수 대화상자 열기",
+      "noLocalVariables": "로컬 변수 없음"
+    },
+    "export": {
+      "title": "내보내기",
+      "scale": "스케일",
+      "format": "형식",
+      "export": "내보내기",
+      "addExport": "내보내기 추가",
+      "layers": "레이어",
+      "preview": "미리보기",
+      "renderingPreview": "미리보기 렌더링 중…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "변수",
+      "createVariable": "변수 생성",
+      "renameCollection": "컬렉션 이름 변경",
+      "renameVariable": "변수 이름 변경",
+      "changeValue": "변수 값 변경",
+      "addMode": "모드 추가",
+      "deleteMode": "모드 삭제",
+      "deleteVariable": "변수 삭제",
+      "search": "변수 검색…",
+      "localVariables": "로컬 변수",
+      "noCollections": "변수 컬렉션 없음",
+      "createCollection": "컬렉션 생성",
+      "addCollection": "컬렉션 추가",
+      "searchPlaceholder": "검색",
+      "name": "이름"
+    },
+    "confirm": {
+      "title": "확인",
+      "ok": "확인",
+      "cancel": "취소",
+      "delete": "삭제",
+      "areYouSure": "실행하시겠습니까?",
+      "cannotUndo": "이 작업은 실행 취소할 수 없습니다"
+    },
+    "permission": {
+      "title": "권한 요청",
+      "allow": "허용",
+      "deny": "거부",
+      "agentRequests": "에이전트가 권한을 요청합니다...",
+      "isRequesting": "권한을 요청하고 있습니다."
+    }
+  },
+  "contextMenu": {
+    "copy": "복사",
+    "paste": "붙여넣기",
+    "pasteHere": "여기에 붙여넣기",
+    "duplicate": "복제",
+    "delete": "삭제",
+    "group": "그룹화",
+    "ungroup": "그룹 해제",
+    "bringToFront": "맨 앞으로",
+    "sendToBack": "맨 뒤로",
+    "lock": "잠금",
+    "unlock": "잠금 해제",
+    "show": "표시",
+    "hide": "숨기기",
+    "toggleVisibility": "표시/숨기기 전환",
+    "createComponent": "컴포넌트 생성",
+    "createInstance": "인스턴스 생성",
+    "goToMainComponent": "메인 컴포넌트로 이동",
+    "moveToPage": "페이지로 이동",
+    "copyPasteAs": "복사/붙여넣기 형식",
+    "copyAsText": "텍스트로 복사",
+    "copyAsSVG": "SVG로 복사",
+    "copyAsPNG": "PNG로 복사",
+    "copyAsJSX": "JSX로 복사",
+    "selectAll": "모두 선택",
+    "export": "내보내기…"
+  },
+  "chat": {
+    "placeholder": "AI에게 디자인 요청...",
+    "send": "전송",
+    "cancel": "취소",
+    "selectProvider": "공급자 선택",
+    "apiKey": "API 키",
+    "connect": "연결",
+    "disconnect": "연결 해제",
+    "connected": "연결됨",
+    "notConnected": "연결 안 됨",
+    "thinking": "생각 중...",
+    "emptyState": "만들거나 변경할 내용을 설명하세요.",
+    "continue": "계속",
+    "clear": "지우기",
+    "describeChange": "변경 사항 설명…",
+    "stopGenerating": "생성 중지",
+    "sendMessage": "메시지 보내기",
+    "yourAgents": "나의 에이전트",
+    "apiKeyLabel": "API 키",
+    "maxOutputTokens": "최대 출력 토큰",
+    "clearKey": "지우기",
+    "keySaved": "키 저장됨 — 새 키를 입력하여 교체",
+    "optionalStock": "선택 사항 — stock_photo 도구용",
+    "optionalAlternative": "선택 사항 — Pexels 대안",
+    "getFreePexels": "무료 Pexels API 키 받기 →",
+    "getFreeUnsplash": "무료 Unsplash 액세스 키 받기 →",
+    "baseURL": "기본 URL",
+    "modelId": "모델 ID",
+    "apiType": "API 유형",
+    "completions": "완성",
+    "responses": "응답",
+    "getApiKey": "API 키 받기 →",
+    "done": "완료",
+    "providerSettings": "공급자 설정",
+    "aiProvider": "AI 공급자",
+    "pexelsApiKey": "Pexels API 키 (스톡 사진)",
+    "unsplashAccessKey": "Unsplash 액세스 키",
+    "connectProvider": "채팅을 시작하려면 AI 공급자를 연결하세요.",
+    "getApiKeyLink": "{provider} API 키 받기 →",
+    "oneKeyModels": "하나의 키로 모든 공급자의 100개 이상의 모델에 액세스.",
+    "usesSubscription": "기존 {agent} 구독을 사용합니다. 다음을 확인하세요",
+    "isInstalledAuth": "설치 및 인증되었습니다."
+  },
+  "toast": {
+    "saved": "저장됨",
+    "exported": "내보내기 완료",
+    "copied": "복사됨",
+    "failed": "실패",
+    "error": "오류"
+  },
+  "tooltips": {
+    "toggleUI": "UI 전환",
+    "addPage": "페이지 추가",
+    "zoomLevel": "확대/축소 수준",
+    "lock": "잠금",
+    "unlock": "잠금 해제",
+    "show": "표시",
+    "hide": "숨기기",
+    "copied": "복사됨!",
+    "copyError": "오류 복사",
+    "solid": "단색",
+    "gradient": "그라데이션",
+    "image": "이미지",
+    "addStop": "중지점 추가",
+    "chooseImage": "이미지 선택",
+    "replaceImage": "교체",
+    "stops": "중지점"
+  },
+  "errors": {
+    "failedToSave": "저장 실패",
+    "failedToExport": "내보내기 실패",
+    "connectionError": "연결 오류",
+    "invalidApiKey": "잘못된 API 키"
+  },
+  "empty": {
+    "noSelection": "선택 없음",
+    "noPages": "페이지 없음",
+    "selectLayerJSX": "레이어를 선택하여 JSX 코드 보기",
+    "noLocalFonts": "로컬 글꼴을 사용할 수 없습니다.",
+    "useDesktopFonts": "데스크톱 앱 또는 Chrome/Edge를 사용하여 시스템 글꼴에 액세스하세요.",
+    "noFontsFound": "글꼴을 찾을 수 없음"
+  },
+  "fontPicker": {
+    "searchFonts": "글꼴 검색…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "복사",
+    "copied": "복사됨"
+  },
+  "safari": {
+    "banner": "Safari는 파일 지원이 제한적입니다. 모든 기능을 사용하려면 Chrome을 사용하세요."
+  }
+}

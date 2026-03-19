@@ -2,10 +2,12 @@
 import { ToastProvider, ToastRoot, ToastDescription, ToastViewport, ToastClose } from 'reka-ui'
 
 import { useClipboard } from '@vueuse/core'
+import { useI18n } from 'vue-i18n'
 
 import { toast } from '@/composables/use-toast'
 import { toastRoot } from '@/components/ui/toast'
 
+const { t: tl } = useI18n()
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 </script>
 
@@ -30,7 +32,7 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
         v-if="t.variant === 'error'"
         data-test-id="toast-copy-error"
         class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100"
-        :title="copied ? 'Copied!' : 'Copy error'"
+        :title="copied ? tl('tooltips.copied') : tl('tooltips.copyError')"
         @click="copy(t.message)"
       >
         <icon-lucide-check v-if="copied" class="size-3" />

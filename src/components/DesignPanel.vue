@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { useEditorStore } from '@/stores/editor'
 
@@ -16,6 +17,7 @@ import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 
 const store = useEditorStore()
+const { t } = useI18n()
 const variablesOpen = ref(false)
 
 const node = computed(() => store.selectedNode.value)
@@ -73,14 +75,14 @@ const isComponentType = computed(() => {
         class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
         @click="store.goToMainComponent()"
       >
-        Go to Main Component
+        {{ t('menu.object.createComponent') }}
       </button>
       <button
         data-test-id="design-detach-instance"
         class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
         @click="store.detachInstance()"
       >
-        Detach Instance
+        {{ t('menu.object.detachInstance') }}
       </button>
     </div>
 

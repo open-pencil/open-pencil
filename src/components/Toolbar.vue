@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   DropdownMenuRoot,
   DropdownMenuTrigger,
@@ -33,21 +34,22 @@ import type { Component } from 'vue'
 import type { Tool, ToolDef } from '@/stores/editor'
 
 const store = useEditorStore()
+const { t } = useI18n()
 const breakpoints = useBreakpoints({ mobile: 768 })
 const isMobile = breakpoints.smaller('mobile')
 
 const toolLabels: Record<Tool, string> = {
-  SELECT: 'Move',
-  FRAME: 'Frame',
-  SECTION: 'Section',
-  RECTANGLE: 'Rectangle',
-  ELLIPSE: 'Ellipse',
-  LINE: 'Line',
-  POLYGON: 'Polygon',
-  STAR: 'Star',
-  PEN: 'Pen',
-  TEXT: 'Text',
-  HAND: 'Hand'
+  SELECT: t('toolbar.tool.select'),
+  FRAME: t('toolbar.tool.frame'),
+  SECTION: t('toolbar.tool.section'),
+  RECTANGLE: t('toolbar.tool.rectangle'),
+  ELLIPSE: t('toolbar.tool.ellipse'),
+  LINE: t('toolbar.tool.line'),
+  POLYGON: t('toolbar.tool.polygon'),
+  STAR: t('toolbar.tool.star'),
+  PEN: t('toolbar.tool.pen'),
+  TEXT: t('toolbar.tool.text'),
+  HAND: t('toolbar.tool.hand')
 }
 
 const toolShortcuts: Record<Tool, string> = {
@@ -81,19 +83,19 @@ interface ActionItem {
 }
 
 const editActions: ActionItem[] = [
-  { icon: IconCopy, label: 'Copy', action: () => store.mobileCopy() },
-  { icon: IconClipboard, label: 'Paste', action: () => store.mobilePaste() },
-  { icon: IconScissors, label: 'Cut', action: () => store.mobileCut() },
-  { icon: IconCopyPlus, label: 'Duplicate', action: () => store.duplicateSelected() },
-  { icon: IconTrash2, label: 'Delete', action: () => store.deleteSelected() }
+  { icon: IconCopy, label: t('toolbar.action.copy'), action: () => store.mobileCopy() },
+  { icon: IconClipboard, label: t('toolbar.action.paste'), action: () => store.mobilePaste() },
+  { icon: IconScissors, label: t('toolbar.action.cut'), action: () => store.mobileCut() },
+  { icon: IconCopyPlus, label: t('toolbar.action.duplicate'), action: () => store.duplicateSelected() },
+  { icon: IconTrash2, label: t('toolbar.action.delete'), action: () => store.deleteSelected() }
 ]
 
 const arrangeActions: ActionItem[] = [
-  { icon: IconArrowUpToLine, label: 'Front', action: () => store.bringToFront() },
-  { icon: IconArrowDownToLine, label: 'Back', action: () => store.sendToBack() },
-  { icon: IconGroup, label: 'Group', action: () => store.groupSelected() },
-  { icon: IconUngroup, label: 'Ungroup', action: () => store.ungroupSelected() },
-  { icon: IconLock, label: 'Lock', action: () => store.toggleLock() }
+  { icon: IconArrowUpToLine, label: t('toolbar.action.front'), action: () => store.bringToFront() },
+  { icon: IconArrowDownToLine, label: t('toolbar.action.back'), action: () => store.sendToBack() },
+  { icon: IconGroup, label: t('toolbar.action.group'), action: () => store.groupSelected() },
+  { icon: IconUngroup, label: t('toolbar.action.ungroup'), action: () => store.ungroupSelected() },
+  { icon: IconLock, label: t('toolbar.action.lock'), action: () => store.toggleLock() }
 ]
 
 const CATEGORY_COUNT = 3

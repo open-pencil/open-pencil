@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AppSelect from '@/components/AppSelect.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
@@ -14,6 +15,7 @@ import type {
 } from '@open-pencil/core'
 
 const { store, node, updateProp, commitProp } = useNodeProps()
+const { t } = useI18n()
 
 const showIndividualPadding = ref(false)
 
@@ -97,16 +99,16 @@ function commitUniformPadding(_value: number, previous: number) {
 }
 
 const widthSizingOptions = computed(() => {
-  const options: { value: LayoutSizing; label: string }[] = [{ value: 'FIXED', label: 'Fixed' }]
-  if (isFlex.value) options.push({ value: 'HUG', label: 'Hug' })
-  if (isInAutoLayout.value || isFlex.value) options.push({ value: 'FILL', label: 'Fill' })
+  const options: { value: LayoutSizing; label: string }[] = [{ value: 'FIXED', label: t('properties.layout.fixed') }]
+  if (isFlex.value) options.push({ value: 'HUG', label: t('properties.layout.hug') })
+  if (isInAutoLayout.value || isFlex.value) options.push({ value: 'FILL', label: t('properties.layout.fill') })
   return options
 })
 
 const heightSizingOptions = computed(() => {
-  const options: { value: LayoutSizing; label: string }[] = [{ value: 'FIXED', label: 'Fixed' }]
-  if (isFlex.value) options.push({ value: 'HUG', label: 'Hug' })
-  if (isInAutoLayout.value || isFlex.value) options.push({ value: 'FILL', label: 'Fill' })
+  const options: { value: LayoutSizing; label: string }[] = [{ value: 'FIXED', label: t('properties.layout.fixed') }]
+  if (isFlex.value) options.push({ value: 'HUG', label: t('properties.layout.hug') })
+  if (isInAutoLayout.value || isFlex.value) options.push({ value: 'FILL', label: t('properties.layout.fill') })
   return options
 })
 
@@ -185,7 +187,7 @@ function trackLabel(track: GridTrack): string {
 
 <template>
   <div v-if="node" data-test-id="layout-section" class="border-b border-border px-3 py-2">
-    <label class="mb-1.5 block text-[11px] text-muted">Layout</label>
+    <label class="mb-1.5 block text-[11px] text-muted">{{ t('properties.layout.title') }}</label>
     <div class="flex gap-1.5">
       <div class="flex min-w-0 flex-1 items-center gap-1">
         <ScrubInput
@@ -223,12 +225,12 @@ function trackLabel(track: GridTrack): string {
 
   <div v-if="node.type === 'FRAME'" class="border-b border-border px-3 py-2">
     <div class="flex items-center justify-between">
-      <label class="mb-1.5 block text-[11px] text-muted">Auto layout</label>
+      <label class="mb-1.5 block text-[11px] text-muted">{{ t('properties.layout.autoLayout') }}</label>
       <button
         v-if="node.layoutMode === 'NONE'"
         class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
         data-test-id="layout-add-auto"
-        title="Add auto layout (Shift+A)"
+        :title="t('menu.arrange.addAutoLayout') + ' (Shift+A)'"
         @click="store.setLayoutMode(node.id, 'VERTICAL')"
       >
         +
@@ -237,7 +239,7 @@ function trackLabel(track: GridTrack): string {
         v-else
         class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
         data-test-id="layout-remove-auto"
-        title="Remove auto layout"
+        :title="t('properties.layout.removeAutoLayout')"
         @click="store.setLayoutMode(node.id, 'NONE')"
       >
         −
@@ -255,7 +257,7 @@ function trackLabel(track: GridTrack): string {
               ? 'border-accent bg-accent/10 text-accent'
               : 'border-border text-muted hover:bg-hover hover:text-surface'
           "
-          title="Horizontal layout"
+          :title="t('properties.layout.horizontal')"
           @click="store.setLayoutMode(node.id, 'HORIZONTAL')"
         >
           <icon-lucide-arrow-right class="size-3.5" />
@@ -268,7 +270,7 @@ function trackLabel(track: GridTrack): string {
               ? 'border-accent bg-accent/10 text-accent'
               : 'border-border text-muted hover:bg-hover hover:text-surface'
           "
-          title="Vertical layout"
+          :title="t('properties.layout.vertical')"
           @click="store.setLayoutMode(node.id, 'VERTICAL')"
         >
           <icon-lucide-arrow-down class="size-3.5" />
@@ -281,7 +283,7 @@ function trackLabel(track: GridTrack): string {
               ? 'border-accent bg-accent/10 text-accent'
               : 'border-border text-muted hover:bg-hover hover:text-surface'
           "
-          title="Grid layout"
+          :title="t('properties.layout.grid')"
           @click="store.setLayoutMode(node.id, 'GRID')"
         >
           <icon-lucide-layout-grid class="size-3.5" />
@@ -295,7 +297,7 @@ function trackLabel(track: GridTrack): string {
               ? 'border-accent bg-accent/10 text-accent'
               : 'border-border text-muted hover:bg-hover hover:text-surface'
           "
-          title="Wrap"
+          :title="t('properties.layout.wrap')"
           @click="updateProp('layoutWrap', node.layoutWrap === 'WRAP' ? 'NO_WRAP' : 'WRAP')"
         >
           <icon-lucide-wrap-text class="size-3.5" />
@@ -307,10 +309,10 @@ function trackLabel(track: GridTrack): string {
         <!-- Column tracks -->
         <div class="mt-2">
           <div class="mb-1 flex items-center justify-between">
-            <label class="text-[11px] text-muted">Columns</label>
+            <label class="text-[11px] text-muted">{{ t('properties.layout.columns') }}</label>
             <button
               class="cursor-pointer rounded border-none bg-transparent px-1 text-xs leading-none text-muted hover:bg-hover hover:text-surface"
-              title="Add column"
+              :title="t('properties.layout.addColumn')"
               @click="addTrack('gridTemplateColumns')"
             >
               +
@@ -346,7 +348,7 @@ function trackLabel(track: GridTrack): string {
               <button
                 v-if="node.gridTemplateColumns.length > 1"
                 class="cursor-pointer rounded border-none bg-transparent px-0.5 text-xs text-muted hover:text-surface"
-                title="Remove column"
+                :title="t('properties.layout.removeColumn')"
                 @click="removeTrack('gridTemplateColumns', i)"
               >
                 ×
@@ -358,10 +360,10 @@ function trackLabel(track: GridTrack): string {
         <!-- Row tracks -->
         <div class="mt-2">
           <div class="mb-1 flex items-center justify-between">
-            <label class="text-[11px] text-muted">Rows</label>
+            <label class="text-[11px] text-muted">{{ t('properties.layout.rows') }}</label>
             <button
               class="cursor-pointer rounded border-none bg-transparent px-1 text-xs leading-none text-muted hover:bg-hover hover:text-surface"
-              title="Add row"
+              :title="t('properties.layout.addRow')"
               @click="addTrack('gridTemplateRows')"
             >
               +
@@ -393,7 +395,7 @@ function trackLabel(track: GridTrack): string {
               <button
                 v-if="node.gridTemplateRows.length > 1"
                 class="cursor-pointer rounded border-none bg-transparent px-0.5 text-xs text-muted hover:text-surface"
-                title="Remove row"
+                :title="t('properties.layout.removeRow')"
                 @click="removeTrack('gridTemplateRows', i)"
               >
                 ×
@@ -496,7 +498,7 @@ function trackLabel(track: GridTrack): string {
 
       <!-- Alignment (flex only) -->
       <div v-if="isFlex" class="mt-2">
-        <label class="mb-1 block text-[11px] text-muted">Alignment</label>
+        <label class="mb-1 block text-[11px] text-muted">{{ t('properties.layout.align') }}</label>
         <div data-test-id="layout-alignment-grid" class="grid w-fit grid-cols-3 gap-0.5">
           <button
             v-for="cell in alignGrid"
@@ -531,7 +533,7 @@ function trackLabel(track: GridTrack): string {
           )
         "
       />
-      Clip content
+      {{ t('properties.layout.clipContent') }}
     </label>
   </div>
 </template>

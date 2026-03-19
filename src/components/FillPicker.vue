@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFileDialog, useObjectUrl } from '@vueuse/core'
 import {
   PopoverRoot,
@@ -30,6 +31,7 @@ import type {
   ImageScaleMode
 } from '@open-pencil/core'
 
+const { t } = useI18n()
 type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 type GradientSubtype =
   | 'GRADIENT_LINEAR'
@@ -291,7 +293,7 @@ function setScaleMode(mode: string) {
             class="flex size-6 cursor-pointer items-center justify-center rounded border-none p-0 text-muted transition-colors hover:bg-hover hover:text-surface"
             :class="{ 'bg-hover text-surface': fillCategory === 'SOLID' }"
             data-test-id="fill-picker-tab-solid"
-            title="Solid"
+            :title="t('tooltips.solid')"
             @click="setCategory('SOLID')"
           >
             <svg class="size-3.5" viewBox="0 0 16 16">
@@ -302,7 +304,7 @@ function setScaleMode(mode: string) {
             class="flex size-6 cursor-pointer items-center justify-center rounded border-none p-0 text-muted transition-colors hover:bg-hover hover:text-surface"
             :class="{ 'bg-hover text-surface': fillCategory === 'GRADIENT' }"
             data-test-id="fill-picker-tab-gradient"
-            title="Gradient"
+            :title="t('tooltips.gradient')"
             @click="setCategory('GRADIENT')"
           >
             <svg class="size-3.5" viewBox="0 0 16 16">
@@ -319,7 +321,7 @@ function setScaleMode(mode: string) {
             class="flex size-6 cursor-pointer items-center justify-center rounded border-none p-0 text-muted transition-colors hover:bg-hover hover:text-surface"
             :class="{ 'bg-hover text-surface': fillCategory === 'IMAGE' }"
             data-test-id="fill-picker-tab-image"
-            title="Image"
+            :title="t('tooltips.image')"
             @click="setCategory('IMAGE')"
           >
             <icon-lucide-image class="size-3.5" />
@@ -387,11 +389,11 @@ function setScaleMode(mode: string) {
         <!-- Gradient stops list -->
         <div v-if="isGradient && fill.gradientStops?.length" class="mb-2">
           <div class="mb-1 flex items-center justify-between">
-            <span class="text-[11px] text-muted">Stops</span>
+            <span class="text-[11px] text-muted">{{ t('tooltips.stops') }}</span>
             <button
               class="flex size-4 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-surface"
               data-test-id="fill-picker-add-stop"
-              title="Add stop"
+              :title="t('tooltips.addStop')"
               @click="addStop"
             >
               <icon-lucide-plus class="size-3" />
@@ -458,7 +460,7 @@ function setScaleMode(mode: string) {
             @click="pickImage"
           >
             <icon-lucide-image class="size-3" />
-            {{ fill.imageHash ? 'Replace' : 'Choose image' }}
+            {{ fill.imageHash ? t('tooltips.replaceImage') : t('tooltips.chooseImage') }}
           </button>
           <SelectRoot
             :model-value="fill.imageScaleMode ?? 'FILL'"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import ScrubInput from '@/components/ScrubInput.vue'
 import { useNodeProps } from '@/composables/use-node-props'
@@ -9,6 +10,7 @@ import type { SceneNode } from '@open-pencil/core'
 
 const { store, updateProp, commitProp } = useNodeProps()
 const { node, nodes, isMulti, active, merged, updateAllWithUndo } = useMultiProps()
+const { t } = useI18n()
 
 const CORNER_RADIUS_TYPES = new Set([
   'RECTANGLE',
@@ -150,12 +152,12 @@ const cornerRadiusValue = computed(() => {
 <template>
   <div v-if="active" data-test-id="appearance-section" class="border-b border-border px-3 py-2">
     <div class="mb-1.5 flex items-center justify-between">
-      <label class="text-[11px] text-muted">Appearance</label>
+      <label class="text-[11px] text-muted">{{ t('properties.appearance.title') }}</label>
       <button
         data-test-id="appearance-visibility"
         class="flex cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 text-muted hover:bg-hover hover:text-surface"
         :class="{ 'text-accent': visibilityState === 'hidden' }"
-        title="Toggle visibility"
+        :title="t('contextMenu.toggleVisibility')"
         @click="toggleVisibility"
       >
         <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
@@ -193,7 +195,7 @@ const cornerRadiusValue = computed(() => {
           data-test-id="independent-corners-toggle"
           class="flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
           :class="{ '!border-accent !text-accent': independentCorners === true }"
-          title="Independent corner radii"
+          :title="t('properties.appearance.individualCorners')"
           @click="toggleIndependentCorners"
         >
           <svg

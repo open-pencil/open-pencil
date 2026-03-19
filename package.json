@@ -62,13 +62,14 @@
     "trystero": "^0.22.0",
     "valibot": "^1.2.0",
     "vue": "^3.5.29",
+    "vue-i18n": "^11.3.0",
     "vue-router": "^5.0.3",
+    "vue-stream-markdown": "^0.6.5",
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
-    "zod": "^4.3.6",
-    "vue-stream-markdown": "^0.6.5"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.14.1",

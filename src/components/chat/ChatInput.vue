@@ -14,6 +14,7 @@ import {
   TooltipTrigger
 } from 'reka-ui'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import ProviderSettings from '@/components/chat/ProviderSettings.vue'
 import { uiButton } from '@/components/ui/button'
@@ -23,6 +24,7 @@ import { useAIChat } from '@/composables/use-chat'
 
 import { ACP_AGENTS } from '@open-pencil/core'
 
+const { t } = useI18n()
 const { providerID, providerDef, modelID, customModelID } = useAIChat()
 
 const { status } = defineProps<{
@@ -130,17 +132,17 @@ function handleSubmit(e: Event) {
 
       <!-- Input form -->
       <form class="flex gap-1.5" @submit="handleSubmit">
-        <input
-          v-model="input"
-          type="text"
-          data-test-id="chat-input"
-          placeholder="Describe a change…"
-          :class="uiInput({ class: 'min-w-0 flex-1 placeholder:text-muted' })"
-          :disabled="isStreaming"
-          @paste.stop
-          @copy.stop
-          @cut.stop
-        />
+<input
+           v-model="input"
+           type="text"
+           data-test-id="chat-input"
+           :placeholder="t('chat.describeChange')"
+           :class="uiInput({ class: 'min-w-0 flex-1 placeholder:text-muted' })"
+           :disabled="isStreaming"
+           @paste.stop
+           @copy.stop
+           @cut.stop
+         />
         <TooltipRoot v-if="isStreaming">
           <TooltipTrigger as-child>
             <button
@@ -159,15 +161,15 @@ function handleSubmit(e: Event) {
               <icon-lucide-square class="size-3" />
             </button>
           </TooltipTrigger>
-          <TooltipPortal>
-            <TooltipContent
-              side="top"
-              :side-offset="4"
-              class="rounded bg-surface px-2 py-1 text-[10px] text-canvas"
-            >
-              Stop generating
-            </TooltipContent>
-          </TooltipPortal>
+<TooltipPortal>
+             <TooltipContent
+               side="top"
+               :side-offset="4"
+               class="rounded bg-surface px-2 py-1 text-[10px] text-canvas"
+             >
+               {{ t('chat.stopGenerating') }}
+             </TooltipContent>
+           </TooltipPortal>
         </TooltipRoot>
         <TooltipRoot v-else>
           <TooltipTrigger as-child>
@@ -187,15 +189,15 @@ function handleSubmit(e: Event) {
               <icon-lucide-send class="size-3" />
             </button>
           </TooltipTrigger>
-          <TooltipPortal>
-            <TooltipContent
-              side="top"
-              :side-offset="4"
-              class="rounded bg-surface px-2 py-1 text-[10px] text-canvas"
-            >
-              Send message
-            </TooltipContent>
-          </TooltipPortal>
+<TooltipPortal>
+             <TooltipContent
+               side="top"
+               :side-offset="4"
+               class="rounded bg-surface px-2 py-1 text-[10px] text-canvas"
+             >
+               {{ t('chat.sendMessage') }}
+             </TooltipContent>
+           </TooltipPortal>
         </TooltipRoot>
       </form>
     </div>

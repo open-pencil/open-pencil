@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "Файл",
+      "new": "Новый",
+      "open": "Открыть…",
+      "save": "Сохранить",
+      "saveAs": "Сохранить как…",
+      "exportSelection": "Экспортировать выбранное…",
+      "autoSave": "Автосохранение в локальный файл"
+    },
+    "edit": {
+      "label": "Редактирование",
+      "undo": "Отменить",
+      "redo": "Повторить",
+      "copy": "Копировать",
+      "paste": "Вставить",
+      "duplicate": "Дублировать",
+      "delete": "Удалить",
+      "selectAll": "Выбрать все"
+    },
+    "view": {
+      "label": "Вид",
+      "zoomTo100": "Масштаб 100%",
+      "zoomToFit": "По размеру",
+      "zoomToSelection": "По выделению",
+      "zoomIn": "Увеличить",
+      "zoomOut": "Уменьшить",
+      "performanceProfiler": "Профилировщик производительности"
+    },
+    "object": {
+      "label": "Объект",
+      "group": "Сгруппировать",
+      "ungroup": "Разгруппировать",
+      "createComponent": "Создать компонент",
+      "createComponentSet": "Создать набор компонентов",
+      "detachInstance": "Отсоединить экземпляр",
+      "bringToFront": "На передний план",
+      "sendToBack": "На задний план"
+    },
+    "text": {
+      "label": "Текст",
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "underline": "Подчёркнутый"
+    },
+    "arrange": {
+      "label": "Упорядочить",
+      "addAutoLayout": "Добавить авто-макет",
+      "alignLeft": "По левому краю",
+      "alignCenter": "По центру",
+      "alignRight": "По правому краю",
+      "alignTop": "По верхнему краю",
+      "alignMiddle": "По центру по вертикали",
+      "alignBottom": "По нижнему краю"
+    },
+    "language": {
+      "label": "Язык"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "Переместить",
+      "frame": "Рамка",
+      "section": "Секция",
+      "rectangle": "Прямоугольник",
+      "ellipse": "Эллипс",
+      "line": "Линия",
+      "polygon": "Многоугольник",
+      "star": "Звезда",
+      "pen": "Перо",
+      "text": "Текст",
+      "hand": "Рука"
+    },
+    "action": {
+      "copy": "Копировать",
+      "paste": "Вставить",
+      "cut": "Вырезать",
+      "duplicate": "Дублировать",
+      "delete": "Удалить",
+      "front": "На передний план",
+      "back": "На задний план",
+      "group": "Сгруппировать",
+      "ungroup": "Разгруппировать",
+      "lock": "Заблокировать",
+      "unlock": "Разблокировать"
+    }
+  },
+  "panels": {
+    "design": "Дизайн",
+    "code": "Код",
+    "ai": "ИИ",
+    "layers": {
+      "title": "Слои"
+    },
+    "pages": {
+      "title": "Страницы",
+      "addPage": "Добавить страницу"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "Внешний вид",
+      "opacity": "Непрозрачность",
+      "cornerRadius": "Радиус углов",
+      "blendMode": "Режим наложения",
+      "individualCorners": "Отдельные углы"
+    },
+    "fill": {
+      "title": "Заливка",
+      "solid": "Сплошной цвет",
+      "gradient": "Градиент",
+      "linear": "Линейный",
+      "radial": "Радиальный",
+      "angular": "Угловой",
+      "diamond": "Ромб",
+      "image": "Изображение",
+      "addFill": "Добавить заливку"
+    },
+    "stroke": {
+      "title": "Обводка",
+      "width": "Ширина",
+      "position": "Положение",
+      "inside": "Внутри",
+      "center": "По центру",
+      "outside": "Снаружи",
+      "all": "Все",
+      "custom": "Пользовательский",
+      "addStroke": "Добавить обводку"
+    },
+    "effects": {
+      "title": "Эффекты",
+      "dropShadow": "Тень",
+      "innerShadow": "Внутренняя тень",
+      "layerBlur": "Размытие слоя",
+      "backgroundBlur": "Размытие фона",
+      "foregroundBlur": "Размытие переднего плана",
+      "addEffect": "Добавить эффект",
+      "clickToAdd": "Нажмите + для замены смешанных эффектов",
+      "x": "X",
+      "y": "Y",
+      "blur": "Размытие",
+      "spread": "Расширение"
+    },
+    "typography": {
+      "title": "Типографика",
+      "font": "Шрифт",
+      "size": "Размер",
+      "weight": "Насыщенность",
+      "lineHeight": "Межстрочный интервал",
+      "letterSpacing": "Межбуквенный интервал",
+      "textAlign": "Выравнивание текста",
+      "decoration": "Оформление",
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "underline": "Подчёркнутый",
+      "strikethrough": "Зачёркнутый",
+      "alignLeft": "По левому краю",
+      "alignCenter": "По центру",
+      "alignRight": "По правому краю",
+      "alignJustify": "По ширине",
+      "thin": "Тонкий",
+      "extraLight": "Очень светлый",
+      "light": "Светлый",
+      "regular": "Обычный",
+      "medium": "Средний",
+      "semiBold": "Полужирный",
+      "extraBold": "Очень жирный",
+      "black": "Чёрный"
+    },
+    "layout": {
+      "title": "Макет",
+      "width": "Ширина",
+      "height": "Высота",
+      "autoLayout": "Авто-макет",
+      "removeAutoLayout": "Удалить авто-макет",
+      "horizontal": "Горизонтальный",
+      "vertical": "Вертикальный",
+      "grid": "Сетка",
+      "fixed": "Фиксированный",
+      "hug": "По содержимому",
+      "fill": "Заполнить",
+      "columns": "Столбцы",
+      "rows": "Строки",
+      "addColumn": "Добавить столбец",
+      "addRow": "Добавить строку",
+      "removeColumn": "Удалить столбец",
+      "removeRow": "Удалить строку",
+      "gap": "Отступ",
+      "padding": "Внутренний отступ",
+      "top": "Сверху",
+      "right": "Справа",
+      "bottom": "Снизу",
+      "left": "Слева",
+      "wrap": "Перенос",
+      "align": "Выравнивание",
+      "spaceBetween": "Равномерно",
+      "constraints": "Ограничения",
+      "leftRight": "Слева-Справа",
+      "topBottom": "Сверху-Снизу",
+      "scale": "Масштаб",
+      "center": "По центру",
+      "clipContent": "Обрезать содержимое"
+    },
+    "position": {
+      "title": "Позиция",
+      "rotation": "Поворот",
+      "flip": "Отразить",
+      "flipHorizontal": "Отразить по горизонтали",
+      "flipVertical": "Отразить по вертикали",
+      "alignLeft": "По левому краю",
+      "alignCenterH": "По центру по горизонтали",
+      "alignRight": "По правому краю",
+      "alignTop": "По верхнему краю",
+      "alignCenterV": "По центру по вертикали",
+      "alignBottom": "По нижнему краю"
+    },
+    "page": {
+      "title": "Страница",
+      "background": "Фон"
+    },
+    "variables": {
+      "title": "Переменные",
+      "collections": "коллекции",
+      "variables": "переменные",
+      "openDialog": "Открыть диалог переменных",
+      "noLocalVariables": "Нет локальных переменных"
+    },
+    "export": {
+      "title": "Экспорт",
+      "scale": "Масштаб",
+      "format": "Формат",
+      "export": "Экспортировать",
+      "addExport": "Добавить экспорт",
+      "layers": "слои",
+      "preview": "Предпросмотр",
+      "renderingPreview": "Рендеринг предпросмотра…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "Переменные",
+      "createVariable": "Создать переменную",
+      "renameCollection": "Переименовать коллекцию",
+      "renameVariable": "Переименовать переменную",
+      "changeValue": "Изменить значение переменной",
+      "addMode": "Добавить режим",
+      "deleteMode": "Удалить режим",
+      "deleteVariable": "Удалить переменную",
+      "search": "Поиск переменных…",
+      "localVariables": "Локальные переменные",
+      "noCollections": "Нет коллекций переменных",
+      "createCollection": "Создать коллекцию",
+      "addCollection": "Добавить коллекцию",
+      "searchPlaceholder": "Поиск",
+      "name": "Имя"
+    },
+    "confirm": {
+      "title": "Подтверждение",
+      "ok": "ОК",
+      "cancel": "Отмена",
+      "delete": "Удалить",
+      "areYouSure": "Вы уверены?",
+      "cannotUndo": "Это действие нельзя отменить"
+    },
+    "permission": {
+      "title": "Запрос разрешения",
+      "allow": "Разрешить",
+      "deny": "Отклонить",
+      "agentRequests": "Агент запрашивает разрешение на...",
+      "isRequesting": "запрашивает разрешение."
+    }
+  },
+  "contextMenu": {
+    "copy": "Копировать",
+    "paste": "Вставить",
+    "pasteHere": "Вставить сюда",
+    "duplicate": "Дублировать",
+    "delete": "Удалить",
+    "group": "Сгруппировать",
+    "ungroup": "Разгруппировать",
+    "bringToFront": "На передний план",
+    "sendToBack": "На задний план",
+    "lock": "Заблокировать",
+    "unlock": "Разблокировать",
+    "show": "Показать",
+    "hide": "Скрыть",
+    "toggleVisibility": "Переключить видимость",
+    "createComponent": "Создать компонент",
+    "createInstance": "Создать экземпляр",
+    "goToMainComponent": "Перейти к основному компоненту",
+    "moveToPage": "Переместить на страницу",
+    "copyPasteAs": "Копировать/Вставить как",
+    "copyAsText": "Копировать как текст",
+    "copyAsSVG": "Копировать как SVG",
+    "copyAsPNG": "Копировать как PNG",
+    "copyAsJSX": "Копировать как JSX",
+    "selectAll": "Выбрать все",
+    "export": "Экспортировать…"
+  },
+  "chat": {
+    "placeholder": "Попросите ИИ спроектировать...",
+    "send": "Отправить",
+    "cancel": "Отмена",
+    "selectProvider": "Выберите провайдера",
+    "apiKey": "API-ключ",
+    "connect": "Подключить",
+    "disconnect": "Отключить",
+    "connected": "Подключено",
+    "notConnected": "Не подключено",
+    "thinking": "Думаю...",
+    "emptyState": "Опишите, что хотите создать или изменить.",
+    "continue": "Продолжить",
+    "clear": "Очистить",
+    "describeChange": "Опишите изменение…",
+    "stopGenerating": "Остановить генерацию",
+    "sendMessage": "Отправить сообщение",
+    "yourAgents": "Ваши агенты",
+    "apiKeyLabel": "API-ключ",
+    "maxOutputTokens": "Макс. выходных токенов",
+    "clearKey": "Очистить",
+    "keySaved": "Ключ сохранён — введите новый для замены",
+    "optionalStock": "Опционально — для инструмента stock_photo",
+    "optionalAlternative": "Опционально — альтернатива Pexels",
+    "getFreePexels": "Получить бесплатный API-ключ Pexels →",
+    "getFreeUnsplash": "Получить бесплатный ключ доступа Unsplash →",
+    "baseURL": "Базовый URL",
+    "modelId": "ID модели",
+    "apiType": "Тип API",
+    "completions": "Завершения",
+    "responses": "Ответы",
+    "getApiKey": "Получить API-ключ →",
+    "done": "Готово",
+    "providerSettings": "Настройки провайдера",
+    "aiProvider": "AI-провайдер",
+    "pexelsApiKey": "API-ключ Pexels (стоковые фото)",
+    "unsplashAccessKey": "Ключ доступа Unsplash",
+    "connectProvider": "Подключите AI-провайдера, чтобы начать чат.",
+    "getApiKeyLink": "Получить API-ключ {provider} →",
+    "oneKeyModels": "Один ключ для 100+ моделей от всех провайдеров.",
+    "usesSubscription": "Использует вашу существующую подписку {agent}. Убедитесь, что",
+    "isInstalledAuth": "установлен и аутентифицирован."
+  },
+  "toast": {
+    "saved": "Сохранено",
+    "exported": "Экспортировано",
+    "copied": "Скопировано",
+    "failed": "Ошибка",
+    "error": "Ошибка"
+  },
+  "tooltips": {
+    "toggleUI": "Переключить интерфейс",
+    "addPage": "Добавить страницу",
+    "zoomLevel": "Уровень масштаба",
+    "lock": "Заблокировать",
+    "unlock": "Разблокировать",
+    "show": "Показать",
+    "hide": "Скрыть",
+    "copied": "Скопировано!",
+    "copyError": "Копировать ошибку",
+    "solid": "Сплошной цвет",
+    "gradient": "Градиент",
+    "image": "Изображение",
+    "addStop": "Добавить стоп",
+    "chooseImage": "Выбрать изображение",
+    "replaceImage": "Заменить",
+    "stops": "Стопы"
+  },
+  "errors": {
+    "failedToSave": "Не удалось сохранить",
+    "failedToExport": "Не удалось экспортировать",
+    "connectionError": "Ошибка подключения",
+    "invalidApiKey": "Неверный API-ключ"
+  },
+  "empty": {
+    "noSelection": "Ничего не выбрано",
+    "noPages": "Нет страниц",
+    "selectLayerJSX": "Выберите слой, чтобы увидеть JSX-код",
+    "noLocalFonts": "Нет локальных шрифтов.",
+    "useDesktopFonts": "Используйте десктопное приложение или Chrome/Edge для доступа к системным шрифтам.",
+    "noFontsFound": "Шрифты не найдены"
+  },
+  "fontPicker": {
+    "searchFonts": "Поиск шрифтов…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "Копировать",
+    "copied": "Скопировано"
+  },
+  "safari": {
+    "banner": "Safari имеет ограниченную поддержку файлов. Используйте Chrome для полной функциональности."
+  }
+}

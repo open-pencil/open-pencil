@@ -1,0 +1,405 @@
+{
+  "language": {
+    "en": "English",
+    "zhCN": "简体中文",
+    "zhTW": "繁體中文",
+    "fr": "Français",
+    "ko": "한국어",
+    "ja": "日本語",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "ru": "Русский"
+  },
+  "menu": {
+    "file": {
+      "label": "File",
+      "new": "Nuovo",
+      "open": "Apri…",
+      "save": "Salva",
+      "saveAs": "Salva come…",
+      "exportSelection": "Esporta selezione…",
+      "autoSave": "Salvataggio automatico su file locale"
+    },
+    "edit": {
+      "label": "Modifica",
+      "undo": "Annulla",
+      "redo": "Ripeti",
+      "copy": "Copia",
+      "paste": "Incolla",
+      "duplicate": "Duplica",
+      "delete": "Elimina",
+      "selectAll": "Seleziona tutto"
+    },
+    "view": {
+      "label": "Visualizza",
+      "zoomTo100": "Zoom al 100%",
+      "zoomToFit": "Adatta",
+      "zoomToSelection": "Zoom su selezione",
+      "zoomIn": "Ingrandisci",
+      "zoomOut": "Riduci",
+      "performanceProfiler": "Profilatore prestazioni"
+    },
+    "object": {
+      "label": "Oggetto",
+      "group": "Raggruppa",
+      "ungroup": "Separa",
+      "createComponent": "Crea componente",
+      "createComponentSet": "Crea set di componenti",
+      "detachInstance": "Distacca istanza",
+      "bringToFront": "Porta in primo piano",
+      "sendToBack": "Porta in secondo piano"
+    },
+    "text": {
+      "label": "Testo",
+      "bold": "Grassetto",
+      "italic": "Corsivo",
+      "underline": "Sottolineato"
+    },
+    "arrange": {
+      "label": "Disponi",
+      "addAutoLayout": "Aggiungi layout automatico",
+      "alignLeft": "Allinea a sinistra",
+      "alignCenter": "Centra",
+      "alignRight": "Allinea a destra",
+      "alignTop": "Allinea in alto",
+      "alignMiddle": "Centra verticalmente",
+      "alignBottom": "Allinea in basso"
+    },
+    "language": {
+      "label": "Lingua"
+    }
+  },
+  "toolbar": {
+    "tool": {
+      "select": "Sposta",
+      "frame": "Frame",
+      "section": "Sezione",
+      "rectangle": "Rettangolo",
+      "ellipse": "Ellisse",
+      "line": "Linea",
+      "polygon": "Poligono",
+      "star": "Stella",
+      "pen": "Penna",
+      "text": "Testo",
+      "hand": "Mano"
+    },
+    "action": {
+      "copy": "Copia",
+      "paste": "Incolla",
+      "cut": "Taglia",
+      "duplicate": "Duplica",
+      "delete": "Elimina",
+      "front": "Porta avanti",
+      "back": "Porta indietro",
+      "group": "Raggruppa",
+      "ungroup": "Separa",
+      "lock": "Blocca",
+      "unlock": "Sblocca"
+    }
+  },
+  "panels": {
+    "design": "Design",
+    "code": "Codice",
+    "ai": "IA",
+    "layers": {
+      "title": "Livelli"
+    },
+    "pages": {
+      "title": "Pagine",
+      "addPage": "Aggiungi pagina"
+    }
+  },
+  "properties": {
+    "appearance": {
+      "title": "Aspetto",
+      "opacity": "Opacità",
+      "cornerRadius": "Raggio angoli",
+      "blendMode": "Modalità fusione",
+      "individualCorners": "Angoli individuali"
+    },
+    "fill": {
+      "title": "Riempimento",
+      "solid": "Tinta unita",
+      "gradient": "Gradiente",
+      "linear": "Lineare",
+      "radial": "Radiale",
+      "angular": "Angolare",
+      "diamond": "Diamante",
+      "image": "Immagine",
+      "addFill": "Aggiungi riempimento"
+    },
+    "stroke": {
+      "title": "Tratto",
+      "width": "Larghezza",
+      "position": "Posizione",
+      "inside": "Interno",
+      "center": "Centro",
+      "outside": "Esterno",
+      "all": "Tutti",
+      "custom": "Personalizzato",
+      "addStroke": "Aggiungi tratto"
+    },
+    "effects": {
+      "title": "Effetti",
+      "dropShadow": "Ombra esterna",
+      "innerShadow": "Ombra interna",
+      "layerBlur": "Sfocatura livello",
+      "backgroundBlur": "Sfocatura sfondo",
+      "foregroundBlur": "Sfocatura primo piano",
+      "addEffect": "Aggiungi effetto",
+      "clickToAdd": "Clicca + per sostituire effetti misti",
+      "x": "X",
+      "y": "Y",
+      "blur": "Sfocatura",
+      "spread": "Diffusione"
+    },
+    "typography": {
+      "title": "Tipografia",
+      "font": "Carattere",
+      "size": "Dimensione",
+      "weight": "Peso",
+      "lineHeight": "Altezza riga",
+      "letterSpacing": "Spaziatura lettere",
+      "textAlign": "Allineamento testo",
+      "decoration": "Decorazione",
+      "bold": "Grassetto",
+      "italic": "Corsivo",
+      "underline": "Sottolineato",
+      "strikethrough": "Barrato",
+      "alignLeft": "Allinea a sinistra",
+      "alignCenter": "Centra",
+      "alignRight": "Allinea a destra",
+      "alignJustify": "Giustifica",
+      "thin": "Sottile",
+      "extraLight": "Extra leggero",
+      "light": "Leggero",
+      "regular": "Normale",
+      "medium": "Medio",
+      "semiBold": "Semi grassetto",
+      "extraBold": "Extra grassetto",
+      "black": "Nero"
+    },
+    "layout": {
+      "title": "Layout",
+      "width": "Larghezza",
+      "height": "Altezza",
+      "autoLayout": "Layout automatico",
+      "removeAutoLayout": "Rimuovi layout automatico",
+      "horizontal": "Orizzontale",
+      "vertical": "Verticale",
+      "grid": "Griglia",
+      "fixed": "Fisso",
+      "hug": "Adatta",
+      "fill": "Riempi",
+      "columns": "Colonne",
+      "rows": "Righe",
+      "addColumn": "Aggiungi colonna",
+      "addRow": "Aggiungi riga",
+      "removeColumn": "Rimuovi colonna",
+      "removeRow": "Rimuovi riga",
+      "gap": "Spaziatura",
+      "padding": "Padding",
+      "top": "Alto",
+      "right": "Destra",
+      "bottom": "Basso",
+      "left": "Sinistra",
+      "wrap": "A capo",
+      "align": "Allineamento",
+      "spaceBetween": "Spazio tra",
+      "constraints": "Vincoli",
+      "leftRight": "Sinistra-Destra",
+      "topBottom": "Alto-Basso",
+      "scale": "Scala",
+      "center": "Centro",
+      "clipContent": "Ritaglia contenuto"
+    },
+    "position": {
+      "title": "Posizione",
+      "rotation": "Rotazione",
+      "flip": "Specchia",
+      "flipHorizontal": "Specchia orizzontalmente",
+      "flipVertical": "Specchia verticalmente",
+      "alignLeft": "Allinea a sinistra",
+      "alignCenterH": "Centra orizzontalmente",
+      "alignRight": "Allinea a destra",
+      "alignTop": "Allinea in alto",
+      "alignCenterV": "Centra verticalmente",
+      "alignBottom": "Allinea in basso"
+    },
+    "page": {
+      "title": "Pagina",
+      "background": "Sfondo"
+    },
+    "variables": {
+      "title": "Variabili",
+      "collections": "collezioni",
+      "variables": "variabili",
+      "openDialog": "Apri dialogo variabili",
+      "noLocalVariables": "Nessuna variabile locale"
+    },
+    "export": {
+      "title": "Esportazione",
+      "scale": "Scala",
+      "format": "Formato",
+      "export": "Esporta",
+      "addExport": "Aggiungi esportazione",
+      "layers": "livelli",
+      "preview": "Anteprima",
+      "renderingPreview": "Rendering anteprima…"
+    }
+  },
+  "dialogs": {
+    "variables": {
+      "title": "Variabili",
+      "createVariable": "Crea variabile",
+      "renameCollection": "Rinomina collezione",
+      "renameVariable": "Rinomina variabile",
+      "changeValue": "Cambia valore variabile",
+      "addMode": "Aggiungi modalità",
+      "deleteMode": "Elimina modalità",
+      "deleteVariable": "Elimina variabile",
+      "search": "Cerca variabili…",
+      "localVariables": "Variabili locali",
+      "noCollections": "Nessuna collezione variabili",
+      "createCollection": "Crea collezione",
+      "addCollection": "Aggiungi collezione",
+      "searchPlaceholder": "Cerca",
+      "name": "Nome"
+    },
+    "confirm": {
+      "title": "Conferma",
+      "ok": "OK",
+      "cancel": "Annulla",
+      "delete": "Elimina",
+      "areYouSure": "Sei sicuro?",
+      "cannotUndo": "Questa azione non può essere annullata"
+    },
+    "permission": {
+      "title": "Richiesta autorizzazione",
+      "allow": "Consenti",
+      "deny": "Nega",
+      "agentRequests": "L'agente richiede l'autorizzazione a...",
+      "isRequesting": "richiede l'autorizzazione."
+    }
+  },
+  "contextMenu": {
+    "copy": "Copia",
+    "paste": "Incolla",
+    "pasteHere": "Incolla qui",
+    "duplicate": "Duplica",
+    "delete": "Elimina",
+    "group": "Raggruppa",
+    "ungroup": "Separa",
+    "bringToFront": "Porta in primo piano",
+    "sendToBack": "Porta in secondo piano",
+    "lock": "Blocca",
+    "unlock": "Sblocca",
+    "show": "Mostra",
+    "hide": "Nascondi",
+    "toggleVisibility": "Attiva/disattiva visibilità",
+    "createComponent": "Crea componente",
+    "createInstance": "Crea istanza",
+    "goToMainComponent": "Vai al componente principale",
+    "moveToPage": "Sposta in pagina",
+    "copyPasteAs": "Copia/Incolla come",
+    "copyAsText": "Copia come testo",
+    "copyAsSVG": "Copia come SVG",
+    "copyAsPNG": "Copia come PNG",
+    "copyAsJSX": "Copia come JSX",
+    "selectAll": "Seleziona tutto",
+    "export": "Esporta…"
+  },
+  "chat": {
+    "placeholder": "Chiedi all'IA di progettare...",
+    "send": "Invia",
+    "cancel": "Annulla",
+    "selectProvider": "Seleziona un provider",
+    "apiKey": "Chiave API",
+    "connect": "Connetti",
+    "disconnect": "Disconnetti",
+    "connected": "Connesso",
+    "notConnected": "Non connesso",
+    "thinking": "Pensando...",
+    "emptyState": "Descrivi cosa vuoi creare o modificare.",
+    "continue": "Continua",
+    "clear": "Cancella",
+    "describeChange": "Descrivi una modifica…",
+    "stopGenerating": "Ferma generazione",
+    "sendMessage": "Invia messaggio",
+    "yourAgents": "I tuoi agenti",
+    "apiKeyLabel": "Chiave API",
+    "maxOutputTokens": "Token output max",
+    "clearKey": "Cancella",
+    "keySaved": "Chiave salvata — inserisci nuova per sostituire",
+    "optionalStock": "Opzionale — per strumento stock_photo",
+    "optionalAlternative": "Opzionale — alternativa a Pexels",
+    "getFreePexels": "Ottieni chiave API Pexels gratuita →",
+    "getFreeUnsplash": "Ottieni chiave accesso Unsplash gratuita →",
+    "baseURL": "URL base",
+    "modelId": "ID modello",
+    "apiType": "Tipo API",
+    "completions": "Completamenti",
+    "responses": "Risposte",
+    "getApiKey": "Ottieni chiave API →",
+    "done": "Fatto",
+    "providerSettings": "Impostazioni provider",
+    "aiProvider": "Provider IA",
+    "pexelsApiKey": "Chiave API Pexels (foto stock)",
+    "unsplashAccessKey": "Chiave accesso Unsplash",
+    "connectProvider": "Connetti un provider IA per iniziare a chattare.",
+    "getApiKeyLink": "Ottieni chiave API {provider} →",
+    "oneKeyModels": "Una chiave per 100+ modelli da tutti i provider.",
+    "usesSubscription": "Usa il tuo abbonamento {agent} esistente. Assicurati che",
+    "isInstalledAuth": "sia installato e autenticato."
+  },
+  "toast": {
+    "saved": "Salvato",
+    "exported": "Esportato",
+    "copied": "Copiato",
+    "failed": "Fallito",
+    "error": "Errore"
+  },
+  "tooltips": {
+    "toggleUI": "Attiva/disattiva UI",
+    "addPage": "Aggiungi pagina",
+    "zoomLevel": "Livello zoom",
+    "lock": "Blocca",
+    "unlock": "Sblocca",
+    "show": "Mostra",
+    "hide": "Nascondi",
+    "copied": "Copiato!",
+    "copyError": "Copia errore",
+    "solid": "Tinta unita",
+    "gradient": "Gradiente",
+    "image": "Immagine",
+    "addStop": "Aggiungi stop",
+    "chooseImage": "Scegli immagine",
+    "replaceImage": "Sostituisci",
+    "stops": "Stop"
+  },
+  "errors": {
+    "failedToSave": "Salvataggio fallito",
+    "failedToExport": "Esportazione fallita",
+    "connectionError": "Errore di connessione",
+    "invalidApiKey": "Chiave API non valida"
+  },
+  "empty": {
+    "noSelection": "Nessuna selezione",
+    "noPages": "Nessuna pagina",
+    "selectLayerJSX": "Seleziona un livello per vedere il codice JSX",
+    "noLocalFonts": "Nessun carattere locale disponibile.",
+    "useDesktopFonts": "Usa l'app desktop o Chrome/Edge per accedere ai caratteri di sistema.",
+    "noFontsFound": "Nessun carattere trovato"
+  },
+  "fontPicker": {
+    "searchFonts": "Cerca caratteri…"
+  },
+  "codePanel": {
+    "jsx": "JSX",
+    "copy": "Copia",
+    "copied": "Copiato"
+  },
+  "safari": {
+    "banner": "Safari ha un supporto file limitato. Usa Chrome per tutte le funzionalità."
+  }
+}
