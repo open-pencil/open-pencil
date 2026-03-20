@@ -200,8 +200,14 @@ export function useKeyboard() {
 
   whenever(plain('bracketright'), () => store.bringToFront())
   whenever(plain('bracketleft'), () => store.sendToBack())
-  whenever(plain('backspace'), () => store.deleteSelected())
-  whenever(plain('delete'), () => store.deleteSelected())
+  whenever(plain('backspace'), () => {
+    if (store.state.editingTextId) return
+    store.deleteSelected()
+  })
+  whenever(plain('delete'), () => {
+    if (store.state.editingTextId) return
+    store.deleteSelected()
+  })
   whenever(plain('enter'), () => {
     if (store.state.penState) store.penCommit(false)
   })
