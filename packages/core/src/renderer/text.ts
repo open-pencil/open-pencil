@@ -51,7 +51,19 @@ export function buildTextPicture(r: TextRenderer, node: SceneNode): Uint8Array |
   const recCanvas = recorder.beginRecording(bounds)
 
   const paragraph = buildParagraph(r, node, undefined, { halfLeading: true })
-  recCanvas.drawParagraph(paragraph, 0, 0)
+  paragraph.layout(node.width || 1e6)
+
+  // textAlignVertical 지원: 텍스트 높이와 노드 높이 차이로 Y offset 계산
+  let yOffset = 0
+  const nodeHeight = node.height || 0
+  const textHeight = paragraph.getHeight()
+  if (node.textAlignVertical === 'CENTER' && nodeHeight > textHeight) {
+    yOffset = (nodeHeight - textHeight) / 2
+  } else if (node.textAlignVertical === 'BOTTOM' && nodeHeight > textHeight) {
+    yOffset = nodeHeight - textHeight
+  }
+
+  recCanvas.drawParagraph(paragraph, 0, yOffset)
   paragraph.delete()
 
   const picture = recorder.finishRecordingAsPicture()

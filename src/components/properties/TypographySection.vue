@@ -28,6 +28,7 @@ const currentWeightLabel = computed(
 )
 
 type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT'
+type TextVAlign = 'TOP' | 'CENTER' | 'BOTTOM'
 
 async function selectFamily(family: string) {
   await loadFont(family, currentWeightLabel.value)
@@ -44,6 +45,11 @@ async function selectWeight(weight: number) {
 
 function setAlign(align: TextAlign) {
   store.updateNodeWithUndo(node.value.id, { textAlignHorizontal: align }, 'Change text alignment')
+  store.requestRender()
+}
+
+function setVAlign(align: TextVAlign) {
+  store.updateNodeWithUndo(node.value.id, { textAlignVertical: align }, 'Change vertical text alignment')
   store.requestRender()
 }
 
@@ -148,6 +154,24 @@ onMounted(async () => {
           <icon-lucide-align-left v-if="align === 'LEFT'" class="size-3.5" />
           <icon-lucide-align-center v-else-if="align === 'CENTER'" class="size-3.5" />
           <icon-lucide-align-right v-else class="size-3.5" />
+        </button>
+      </div>
+      <div class="flex gap-0.5">
+        <button
+          v-for="valign in ['TOP', 'CENTER', 'BOTTOM'] as TextVAlign[]"
+          :key="valign"
+          class="flex cursor-pointer items-center justify-center rounded border px-2 py-1"
+          :class="
+            node.textAlignVertical === valign
+              ? 'border-accent bg-accent text-white'
+              : 'border-border bg-input text-muted hover:bg-hover hover:text-surface'
+          "
+          :title="valign === 'TOP' ? 'Align Top' : valign === 'CENTER' ? 'Align Middle' : 'Align Bottom'"
+          @click="setVAlign(valign)"
+        >
+          <icon-lucide-align-start-vertical v-if="valign === 'TOP'" class="size-3.5" />
+          <icon-lucide-align-center-vertical v-else-if="valign === 'CENTER'" class="size-3.5" />
+          <icon-lucide-align-end-vertical v-else class="size-3.5" />
         </button>
       </div>
       <div class="flex gap-0.5">

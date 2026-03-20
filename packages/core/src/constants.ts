@@ -258,9 +258,9 @@ export const AUTOMATION_WS_PORT = 7601
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [
+  'Apple SD Gothic Neo',
   'PingFang SC',
   'Hiragino Sans',
-  'Apple SD Gothic Neo',
   'Heiti SC'
 ]
 
@@ -280,5 +280,5 @@ export const CJK_FALLBACK_FAMILIES_LINUX = [
   'Droid Sans Fallback'
 ]
 
-export const CJK_GOOGLE_FONT = 'Noto Sans SC'
+export const CJK_GOOGLE_FONT = 'Noto Sans KR'
 
