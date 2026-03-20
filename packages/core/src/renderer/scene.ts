@@ -568,12 +568,26 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
   }
   if (r.fontsLoaded && r.fontProvider) {
     const paragraph = r.buildParagraph(node, r.fillPaint.getColor(), { halfLeading: true })
-    canvas.drawParagraph(paragraph, 0, 0)
+    // textAlignVertical 지원
+    let yOff = 0
+    const tH = paragraph.getHeight()
+    if (node.textAlignVertical === 'CENTER' && node.height > tH) {
+      yOff = (node.height - tH) / 2
+    } else if (node.textAlignVertical === 'BOTTOM' && node.height > tH) {
+      yOff = node.height - tH
+    }
+    canvas.drawParagraph(paragraph, 0, yOff)
     paragraph.delete()
   } else if (r.textFont) {
     canvas.save()
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
-    canvas.drawText(text, 0, node.fontSize || r.DEFAULT_FONT_SIZE, r.fillPaint, r.textFont)
+    let textY = node.fontSize || r.DEFAULT_FONT_SIZE
+    if (node.textAlignVertical === 'CENTER') {
+      textY = (node.height + textY) / 2
+    } else if (node.textAlignVertical === 'BOTTOM') {
+      textY = node.height
+    }
+    canvas.drawText(text, 0, textY, r.fillPaint, r.textFont)
     canvas.restore()
   }
 }

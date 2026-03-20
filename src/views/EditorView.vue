@@ -12,6 +12,7 @@ import { connectAutomation } from '@/automation/server'
 import { spawnMCPIfNeeded } from '@/automation/spawn-mcp'
 import { IS_TAURI } from '@/constants'
 import { createDemoShapes } from '@/demo'
+import { createCareerNoteTemplate } from '@/careernote-template'
 import { useEditorStore } from '@/stores/editor'
 import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
 
@@ -34,11 +35,17 @@ const store = useEditorStore()
 const breakpoints = useBreakpoints({ mobile: 768 })
 const isMobile = breakpoints.smaller('mobile')
 
+const isCareerNote = !!route.meta.careernote
+
 if (route.meta.demo && !('test' in params)) {
   createDemoShapes(firstTab.store)
 }
 
-useHead({ title: route.meta.demo ? 'Demo' : undefined })
+if (isCareerNote) {
+  createCareerNoteTemplate(firstTab.store)
+}
+
+useHead({ title: isCareerNote ? 'CareerNote Portfolio Editor' : (route.meta.demo ? 'Demo' : undefined) })
 useKeyboard()
 useMenu()
 
@@ -76,8 +83,27 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
-    <SafariBanner />
-    <TabBar />
+    <template v-if="isCareerNote">
+      <!-- CareerNote 커스텀 헤더 -->
+      <div class="flex h-10 shrink-0 items-center justify-between border-b border-border bg-panel px-3">
+        <div class="flex items-center gap-2">
+          <div class="flex size-6 items-center justify-center rounded bg-[#00A3FF] text-[10px] font-bold text-white">CN</div>
+          <span class="text-sm font-semibold text-surface">Portfolio Editor</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="rounded-md bg-[#00A3FF] px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-[#0090E0]"
+            @click="store.exportSelection(2, 'PNG')"
+          >
+            PNG 내보내기
+          </button>
+        </div>
+      </div>
+    </template>
+    <template v-else>
+      <SafariBanner />
+      <TabBar />
+    </template>
 
     <!-- Desktop layout -->
     <SplitterGroup
@@ -107,6 +133,7 @@ onUnmounted(() => {
       </SplitterResizeHandle>
       <SplitterPanel :default-size="18" :min-size="10" :max-size="30" class="flex flex-col">
         <div
+          v-if="!isCareerNote"
           class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
         >
           <CollabPanel />

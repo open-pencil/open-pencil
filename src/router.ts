@@ -7,7 +7,8 @@ const router = createRouter({
   routes: [
     { path: '/', component: EditorView },
     { path: '/demo', component: EditorView, meta: { demo: true } },
-    { path: '/share/:roomId', component: EditorView }
+    { path: '/share/:roomId', component: EditorView },
+    { path: '/careernote', component: EditorView, meta: { careernote: true } },
   ]
 })
 
