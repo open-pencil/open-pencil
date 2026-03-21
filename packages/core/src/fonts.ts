@@ -6,7 +6,7 @@ import {
   CJK_FALLBACK_FAMILIES_MACOS,
   CJK_FALLBACK_FAMILIES_WINDOWS,
   CJK_FALLBACK_FAMILIES_LINUX,
-  CJK_GOOGLE_FONT,
+  CJK_GOOGLE_FONTS,
   GOOGLE_FONTS_API_KEY
 } from './constants'
 import type { SceneGraph } from './scene-graph'
@@ -309,8 +309,8 @@ export function collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[st
   return [...fontKeys].map((k) => k.split('\0') as [string, string])
 }
 
-let cjkFallbackFamily: string | null = null
-let cjkFallbackPromise: Promise<string | null> | null = null
+let cjkFallbackFamilies: string[] = []
+let cjkFallbackPromise: Promise<string[]> | null = null
 
 function getCJKCandidates(): string[] {
   if (typeof navigator === 'undefined') return [...CJK_FALLBACK_FAMILIES_LINUX]
@@ -320,37 +320,53 @@ function getCJKCandidates(): string[] {
   return CJK_FALLBACK_FAMILIES_LINUX
 }
 
-export async function ensureCJKFallback(): Promise<string | null> {
-  if (cjkFallbackFamily) return cjkFallbackFamily
+export async function ensureCJKFallback(): Promise<string[]> {
+  if (cjkFallbackFamilies.length > 0) return cjkFallbackFamilies
   if (cjkFallbackPromise) return cjkFallbackPromise
 
   cjkFallbackPromise = (async () => {
+    // Try local system fonts first
     for (const family of getCJKCandidates()) {
       const buffer = await findLocalFont(family)
       if (buffer && registerAndCache(family, 'Regular', buffer)) {
-        cjkFallbackFamily = family
-        return family
+        cjkFallbackFamilies.push(family)
       }
     }
 
-    const data = await loadFont(CJK_GOOGLE_FONT, 'Regular')
-    if (data) {
-      cjkFallbackFamily = CJK_GOOGLE_FONT
-      return CJK_GOOGLE_FONT
+    // Load all CJK Google Fonts in parallel for full coverage
+    if (cjkFallbackFamilies.length === 0) {
+      const results = await Promise.allSettled(
+        CJK_GOOGLE_FONTS.map(async (family) => {
+          const data = await loadFont(family, 'Regular')
+          return data ? family : null
+        })
+      )
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
+          cjkFallbackFamilies.push(result.value)
+        }
+      }
     }
 
-    return null
+    return cjkFallbackFamilies
   })()
 
   return cjkFallbackPromise
 }
 
+/** @deprecated Use getCJKFallbackFamilies() instead */
 export function getCJKFallbackFamily(): string | null {
-  return cjkFallbackFamily
+  return cjkFallbackFamilies[0] ?? null
+}
+
+export function getCJKFallbackFamilies(): string[] {
+  return cjkFallbackFamilies
 }
 
 export function setCJKFallbackFamily(family: string): void {
-  cjkFallbackFamily = family
+  if (!cjkFallbackFamilies.includes(family)) {
+    cjkFallbackFamilies.push(family)
+  }
 }
 
 export function weightToStyle(weight: number, italic = false): string {

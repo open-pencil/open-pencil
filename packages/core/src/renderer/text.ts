@@ -1,5 +1,5 @@
 import { DEFAULT_FONT_SIZE, DEFAULT_FONT_FAMILY } from '../constants'
-import { isFontLoaded, getCJKFallbackFamily } from '../fonts'
+import { isFontLoaded, getCJKFallbackFamilies } from '../fonts'
 
 import type { SceneNode } from '../scene-graph'
 import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
@@ -166,14 +166,14 @@ export function buildParagraph(
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
-  const cjkFallback = getCJKFallbackFamily()
+  const cjkFallbacks = getCJKFallbackFamilies()
 
   const truncateOpts = buildTruncateOpts(node, baseFontSize)
 
   const fontFamilies = (primary: string) => {
     const families = [primary]
     if (primary !== DEFAULT_FONT_FAMILY) families.push(DEFAULT_FONT_FAMILY)
-    if (cjkFallback) families.push(cjkFallback)
+    families.push(...cjkFallbacks)
     return families
   }
 
