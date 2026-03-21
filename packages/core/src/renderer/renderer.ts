@@ -416,8 +416,8 @@ export class SkiaRenderer {
     this.fontsLoaded = true
     this.invalidateAllPictures()
 
-    void ensureCJKFallback().then((family) => {
-      if (family) this.invalidateAllPictures()
+    void ensureCJKFallback().then((families) => {
+      if (families.length > 0) this.invalidateAllPictures()
     })
   }
 

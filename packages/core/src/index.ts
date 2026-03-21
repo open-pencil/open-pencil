@@ -94,6 +94,7 @@ export {
   ensureNodeFont,
   ensureCJKFallback,
   getCJKFallbackFamily,
+  getCJKFallbackFamilies,
   setCJKFallbackFamily,
   styleToWeight,
   weightToStyle,
