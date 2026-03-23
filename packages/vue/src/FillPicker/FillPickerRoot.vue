@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
-import { useFillPicker } from '../shared/useFillPicker'
+import { useFillPicker } from '../FillPicker/useFillPicker'
 
 import type { Fill } from '@open-pencil/core'
 

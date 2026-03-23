@@ -1,9 +1,8 @@
-import { computed, h, type Component } from 'vue'
 import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'reka-ui'
-import type { ColumnDef } from '@tanstack/vue-table'
+import { computed, h, type Component } from 'vue'
 
 import type { Color, Variable, VariableValue } from '@open-pencil/core'
-
+import type { ColumnDef } from '@tanstack/vue-table'
 import type { ComputedRef } from 'vue'
 
 interface VariablesTableOptions {
@@ -54,7 +53,8 @@ export function useVariablesTable(options: VariablesTableOptions) {
             {
               defaultValue: options.shortName(variable),
               class: 'min-w-0 flex-1',
-              onSubmit: (value: string | null | undefined) => value && commitNameEdit(variable, value)
+              onSubmit: (value: string | null | undefined) =>
+                value && commitNameEdit(variable, value)
             },
             () =>
               h(EditableArea, { class: 'flex' }, () => [

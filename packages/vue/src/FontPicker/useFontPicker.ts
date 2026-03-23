@@ -1,5 +1,5 @@
-import { computed, onMounted, ref, watch } from 'vue'
 import { useFilter } from 'reka-ui'
+import { computed, onMounted, ref, watch } from 'vue'
 
 export interface UseFontPickerOptions {
   modelValue: { value: string }

@@ -25,7 +25,12 @@ export function usePropScrub(editor: Editor) {
     }
   }
 
-  function commitProp(nodes: SceneNode[], key: string, _value: number | string, previous: number | string) {
+  function commitProp(
+    nodes: SceneNode[],
+    key: string,
+    _value: number | string,
+    previous: number | string
+  ) {
     if (nodes.length > 1) {
       for (const n of nodes) {
         const prev = previousValues.get(n.id)?.[key] ?? previous
@@ -34,7 +39,8 @@ export function usePropScrub(editor: Editor) {
       previousValues.clear()
     } else {
       const n = nodes[0]
-      if (n) editor.commitNodeUpdate(n.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
+      if (n)
+        editor.commitNodeUpdate(n.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
     }
   }
 

@@ -11,7 +11,7 @@ const TOOL_CURSORS: Record<Tool, string> = {
   STAR: 'crosshair',
   TEXT: 'text',
   PEN: 'crosshair',
-  HAND: 'grab',
+  HAND: 'grab'
 }
 
 export function toolCursor(tool: Tool, override?: string | null): string {

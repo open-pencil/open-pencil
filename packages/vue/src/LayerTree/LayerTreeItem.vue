@@ -45,11 +45,36 @@ defineExpose({ rowEl })
       :is-selected="isSelected"
       :is-dragging="isDragging"
       :pad-left="padLeft"
-      :select="(additive: boolean) => { emit('select', node.id, additive); ctx.select(node.id, additive) }"
-      :toggle-expand="() => { emit('toggleExpand', node.id); ctx.toggleExpand(node.id) }"
-      :toggle-visibility="() => { emit('toggleVisibility', node.id); ctx.toggleVisibility(node.id) }"
-      :toggle-lock="() => { emit('toggleLock', node.id); ctx.toggleLock(node.id) }"
-      :rename="(name: string) => { emit('rename', node.id, name); ctx.rename(node.id, name) }"
+      :select="
+        (additive: boolean) => {
+          emit('select', node.id, additive)
+          ctx.select(node.id, additive)
+        }
+      "
+      :toggle-expand="
+        () => {
+          emit('toggleExpand', node.id)
+          ctx.toggleExpand(node.id)
+        }
+      "
+      :toggle-visibility="
+        () => {
+          emit('toggleVisibility', node.id)
+          ctx.toggleVisibility(node.id)
+        }
+      "
+      :toggle-lock="
+        () => {
+          emit('toggleLock', node.id)
+          ctx.toggleLock(node.id)
+        }
+      "
+      :rename="
+        (name: string) => {
+          emit('rename', node.id, name)
+          ctx.rename(node.id, name)
+        }
+      "
     />
   </div>
 </template>

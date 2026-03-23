@@ -1,7 +1,6 @@
+import type { DragMove } from './types'
 import type { SceneNode, Vector } from '@open-pencil/core'
 import type { Editor } from '@open-pencil/core/editor'
-
-import type { DragMove } from './types'
 
 export function computeIndicatorPosition(
   children: SceneNode[],
@@ -74,7 +73,14 @@ export function computeAutoLayoutIndicatorForFrame(
     }
   }
 
-  const indicatorPos = computeIndicatorPosition(children, insertIndex, parent, parentAbs, isRow, editor)
+  const indicatorPos = computeIndicatorPosition(
+    children,
+    insertIndex,
+    parent,
+    parentAbs,
+    isRow,
+    editor
+  )
   const crossStart = isRow ? parentAbs.y + parent.paddingTop : parentAbs.x + parent.paddingLeft
   const crossLength = isRow
     ? parent.height - parent.paddingTop - parent.paddingBottom
@@ -90,12 +96,7 @@ export function computeAutoLayoutIndicatorForFrame(
   })
 }
 
-export function computeAutoLayoutIndicator(
-  d: DragMove,
-  cx: number,
-  cy: number,
-  editor: Editor
-) {
+export function computeAutoLayoutIndicator(d: DragMove, cx: number, cy: number, editor: Editor) {
   if (!d.autoLayoutParentId) return
   const parent = editor.graph.getNode(d.autoLayoutParentId)
   if (!parent || parent.layoutMode === 'NONE') return

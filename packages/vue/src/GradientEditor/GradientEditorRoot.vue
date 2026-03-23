@@ -87,7 +87,10 @@ function updateStopColor(index: number, hex: string) {
 
 function updateStopOpacity(index: number, opacity: number) {
   const s = [...stops.value]
-  s[index] = { ...s[index], color: { ...s[index].color, a: Math.max(0, Math.min(1, opacity / 100)) } }
+  s[index] = {
+    ...s[index],
+    color: { ...s[index].color, a: Math.max(0, Math.min(1, opacity / 100)) }
+  }
   emitStops(s)
 }
 

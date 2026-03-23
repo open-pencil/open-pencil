@@ -1,9 +1,9 @@
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core'
-import type { Vector } from '@open-pencil/core'
-
-import type { CornerPosition, HandlePosition } from './types'
 
 import rotateCursorSvg from '../assets/rotate-cursor.svg?raw'
+
+import type { CornerPosition, HandlePosition } from './types'
+import type { Vector } from '@open-pencil/core'
 
 export const HANDLE_CURSORS: Record<HandlePosition, string> = {
   nw: 'nwse-resize',

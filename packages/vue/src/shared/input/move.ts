@@ -1,9 +1,10 @@
 import { AUTO_LAYOUT_BREAK_THRESHOLD, computeSelectionBounds, computeSnap } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/core'
-import type { Editor } from '@open-pencil/core/editor'
+
+import { computeAutoLayoutIndicator, computeAutoLayoutIndicatorForFrame } from './auto-layout'
 
 import type { DragMove, DragState } from './types'
-import { computeAutoLayoutIndicator, computeAutoLayoutIndicatorForFrame } from './auto-layout'
+import type { SceneNode } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core/editor'
 
 export function detectAutoLayoutParent(editor: Editor): string | undefined {
   if (editor.state.selectedIds.size !== 1) return undefined

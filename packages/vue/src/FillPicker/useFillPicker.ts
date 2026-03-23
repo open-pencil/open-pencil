@@ -1,4 +1,5 @@
 import { computed, type Ref } from 'vue'
+
 import { colorToCSS } from '@open-pencil/core'
 
 import type { Fill, GradientStop } from '@open-pencil/core'
@@ -18,10 +19,7 @@ function gradientCSS(stops: GradientStop[]): string {
   return stops.map((s) => `${colorToCSS(s.color)} ${s.position * 100}%`).join(', ')
 }
 
-export function useFillPicker(
-  fill: Ref<Fill>,
-  onUpdate: (fill: Fill) => void
-) {
+export function useFillPicker(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
   const category = computed(() => FILL_CATEGORY[fill.value.type] ?? 'SOLID')
 
   function toSolid() {

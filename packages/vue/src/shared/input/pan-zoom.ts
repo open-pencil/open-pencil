@@ -1,9 +1,8 @@
 import { useEventListener } from '@vueuse/core'
-import type { Ref } from 'vue'
-
-import type { Editor } from '@open-pencil/core/editor'
 
 import type { DragState } from './types'
+import type { Editor } from '@open-pencil/core/editor'
+import type { Ref } from 'vue'
 
 export function setupPanZoom(
   canvasRef: Ref<HTMLCanvasElement | null>,

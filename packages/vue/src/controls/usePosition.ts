@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 
-import { useEditor } from './editorContext'
-import { usePropScrub } from './usePropScrub'
-import { useSceneComputed } from './useSceneComputed'
+import { useEditor } from '../context/editorContext'
+import { useSceneComputed } from '../internal/useSceneComputed'
+import { usePropScrub } from '../controls/usePropScrub'
 
 import type { SceneNode } from '@open-pencil/core'
 

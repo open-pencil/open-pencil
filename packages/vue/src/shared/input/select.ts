@@ -1,15 +1,15 @@
-import type { SceneNode } from '@open-pencil/core'
-import type { Editor } from '@open-pencil/core/editor'
-
-import type { DragState } from './types'
 import {
   HANDLE_CURSORS,
   hitTestHandle,
   hitTestCornerRotation,
   cornerRotationCursor
 } from './geometry'
-import { tryStartResize } from './resize'
 import { duplicateAndDrag, detectAutoLayoutParent } from './move'
+import { tryStartResize } from './resize'
+
+import type { DragState } from './types'
+import type { SceneNode } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core/editor'
 
 export interface HitTestFns {
   hitTestInScope: (cx: number, cy: number, deep: boolean) => SceneNode | null
@@ -19,9 +19,16 @@ export interface HitTestFns {
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
 }
 
-export function resolveHit(cx: number, cy: number, editor: Editor, fns: HitTestFns): SceneNode | null {
+export function resolveHit(
+  cx: number,
+  cy: number,
+  editor: Editor,
+  fns: HitTestFns
+): SceneNode | null {
   const titleHit =
-    fns.hitTestFrameTitle(cx, cy) ?? fns.hitTestSectionTitle(cx, cy) ?? fns.hitTestComponentLabel(cx, cy)
+    fns.hitTestFrameTitle(cx, cy) ??
+    fns.hitTestSectionTitle(cx, cy) ??
+    fns.hitTestComponentLabel(cx, cy)
   if (titleHit) return titleHit
 
   const hit = fns.hitTestInScope(cx, cy, false)
@@ -90,8 +97,7 @@ export function handleSelectDown(
   const originals = new Map<string, { x: number; y: number; parentId: string }>()
   for (const id of editor.state.selectedIds) {
     const n = editor.graph.getNode(id)
-    if (n)
-      originals.set(id, { x: n.x, y: n.y, parentId: n.parentId ?? editor.state.currentPageId })
+    if (n) originals.set(id, { x: n.x, y: n.y, parentId: n.parentId ?? editor.state.currentPageId })
   }
 
   if (e.altKey && editor.state.selectedIds.size > 0) {
@@ -165,7 +171,9 @@ export function updateHoverCursor(
   }
 
   const hit =
-    fns.hitTestSectionTitle(cx, cy) ?? fns.hitTestComponentLabel(cx, cy) ?? fns.hitTestInScope(cx, cy, false)
+    fns.hitTestSectionTitle(cx, cy) ??
+    fns.hitTestComponentLabel(cx, cy) ??
+    fns.hitTestInScope(cx, cy, false)
   editor.setHoveredNode(hit && !editor.state.selectedIds.has(hit.id) ? hit.id : null)
 
   return cursor

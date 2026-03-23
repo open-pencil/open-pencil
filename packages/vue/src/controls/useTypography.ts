@@ -1,11 +1,12 @@
 import { computed } from 'vue'
+
 import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/core'
 
-import type { SceneNode, TextDecoration } from '@open-pencil/core'
+import { useEditor } from '../context/editorContext'
+import { useSceneComputed } from '../internal/useSceneComputed'
+import { useNodeFontStatus } from '../shared/useFontStatus'
 
-import { useEditor } from './editorContext'
-import { useNodeFontStatus } from './useFontStatus'
-import { useSceneComputed } from './useSceneComputed'
+import type { SceneNode, TextDecoration } from '@open-pencil/core'
 
 type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT'
 
@@ -29,8 +30,8 @@ export function useTypography(options: UseTypographyOptions = {}) {
   const fontWeight = computed(() => node.value?.fontWeight ?? 400)
   const fontSize = computed(() => node.value?.fontSize ?? 16)
 
-  const currentWeightLabel = computed(() =>
-    FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
+  const currentWeightLabel = computed(
+    () => FONT_WEIGHT_NAMES[node.value?.fontWeight ?? 400] ?? 'Regular'
   )
 
   const activeFormatting = computed(() => {
@@ -63,7 +64,11 @@ export function useTypography(options: UseTypographyOptions = {}) {
 
   function setAlign(align: TextAlign) {
     if (!node.value) return
-    editor.updateNodeWithUndo(node.value.id, { textAlignHorizontal: align }, 'Change text alignment')
+    editor.updateNodeWithUndo(
+      node.value.id,
+      { textAlignHorizontal: align },
+      'Change text alignment'
+    )
   }
 
   function toggleBold() {
@@ -105,7 +110,11 @@ export function useTypography(options: UseTypographyOptions = {}) {
 
   function commitProp(key: string, _value: number | string, previous: number | string) {
     if (node.value) {
-      editor.commitNodeUpdate(node.value.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
+      editor.commitNodeUpdate(
+        node.value.id,
+        { [key]: previous } as Partial<SceneNode>,
+        `Change ${key}`
+      )
     }
   }
 

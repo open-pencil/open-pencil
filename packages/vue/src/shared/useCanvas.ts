@@ -1,9 +1,9 @@
 import { useRafFn, useResizeObserver } from '@vueuse/core'
 import { onMounted, onScopeDispose, type Ref } from 'vue'
 
-import { useViewportKind } from '../viewport/useViewportKind'
-
 import { getCanvasKit, getGpuBackend, SkiaRenderer } from '@open-pencil/core'
+
+import { useViewportKind } from '../viewport/useViewportKind'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { CanvasKit } from 'canvaskit-wasm'
@@ -133,7 +133,10 @@ export function useCanvas(
     options?.onReady?.()
   }
 
-  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+  const params =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams()
   const noRulersParam = params.has('no-rulers')
   const { isMobile } = useViewportKind()
 

@@ -9,17 +9,21 @@ import {
   degToRad
 } from '@open-pencil/core'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core'
+import { handleDrawMove, handleDrawUp } from '../shared/input/draw'
+import { hitTestCornerRotation } from '../shared/input/geometry'
+import { handleMoveMove, handleMoveUp } from '../shared/input/move'
+import { setupPanZoom } from '../shared/input/pan-zoom'
+import { applyResize } from '../shared/input/resize'
+import {
+  handleSelectDown,
+  updateHoverCursor,
+  type HitTestFns
+} from '../shared/input/select'
+import { TOOL_TO_NODE } from '../shared/input/types'
 
-import type { DragMarquee, DragPan, DragRotate, DragState } from './input/types'
-import { TOOL_TO_NODE } from './input/types'
-import { hitTestCornerRotation } from './input/geometry'
-import { setupPanZoom } from './input/pan-zoom'
-import { applyResize } from './input/resize'
-import { handleMoveMove, handleMoveUp } from './input/move'
-import { handleSelectDown, updateHoverCursor, type HitTestFns } from './input/select'
-import { handleDrawMove, handleDrawUp } from './input/draw'
+import type { DragMarquee, DragPan, DragRotate, DragState } from '../shared/input/types'
+import type { SceneNode } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core/editor'
 
 export function useCanvasInput(
   canvasRef: Ref<HTMLCanvasElement | null>,
@@ -272,8 +276,16 @@ export function useCanvasInput(
 
     if (tool === 'SELECT') {
       handleSelectDown(
-        e, sx, sy, cx, cy, editor, hitFns,
-        tryStartRotation, handleTextEditClick, setDrag
+        e,
+        sx,
+        sy,
+        cx,
+        cy,
+        editor,
+        hitFns,
+        tryStartRotation,
+        handleTextEditClick,
+        setDrag
       )
       return
     }

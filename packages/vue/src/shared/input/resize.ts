@@ -1,8 +1,8 @@
-import type { Rect } from '@open-pencil/core'
-import type { Editor } from '@open-pencil/core/editor'
+import { hitTestHandle } from './geometry'
 
 import type { DragResize, HandlePosition } from './types'
-import { hitTestHandle } from './geometry'
+import type { Rect } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core/editor'
 
 export function constrainToAspectRatio(
   handle: HandlePosition,

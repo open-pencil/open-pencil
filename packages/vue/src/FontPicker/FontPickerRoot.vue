@@ -13,7 +13,7 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 
-import { useFontPicker } from '../shared/useFontPicker'
+import { useFontPicker } from '../FontPicker/useFontPicker'
 
 const props = defineProps<{
   listFamilies: () => Promise<string[]>
@@ -21,6 +21,7 @@ const props = defineProps<{
   contentClass?: string
   itemClass?: string
   searchClass?: string
+  viewportClass?: string
   emptyClass?: string
   emptySearchText?: string
   emptyFontsText?: string
@@ -31,6 +32,10 @@ const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
 
 const inputRef = ref<HTMLInputElement | null>(null)
+
+function setInputRef(el: HTMLInputElement | null) {
+  inputRef.value = el
+}
 
 const { searchTerm, open, filtered, select } = useFontPicker({
   modelValue,
@@ -67,7 +72,7 @@ const { searchTerm, open, filtered, select } = useFontPicker({
         @open-auto-focus.prevent
         @vue:mounted="nextTick(() => inputRef?.focus())"
       >
-        <slot name="search" :search-term="searchTerm">
+        <slot name="search" :search-term="searchTerm" :set-input-ref="setInputRef">
           <ComboboxInput
             ref="inputRef"
             v-model="searchTerm"
@@ -80,7 +85,7 @@ const { searchTerm, open, filtered, select } = useFontPicker({
           />
         </slot>
 
-        <ComboboxViewport class="max-h-72 overflow-y-auto">
+        <ComboboxViewport :class="viewportClass ?? 'max-h-72 overflow-y-auto'">
           <ComboboxVirtualizer
             v-slot="{ option }"
             :options="filtered"
@@ -88,7 +93,11 @@ const { searchTerm, open, filtered, select } = useFontPicker({
             :estimate-size="36"
           >
             <slot name="item" :family="option" :selected="option === modelValue">
-              <ComboboxItem :value="option" :class="itemClass" :style="{ fontFamily: `'${option}', sans-serif` }">
+              <ComboboxItem
+                :value="option"
+                :class="itemClass"
+                :style="{ fontFamily: `'${option}', sans-serif` }"
+              >
                 <ComboboxItemIndicator>
                   <slot name="indicator" :selected="option === modelValue" />
                 </ComboboxItemIndicator>

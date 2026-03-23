@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
-import { useEditor } from './editorContext'
-import { useSceneComputed } from './useSceneComputed'
+import { useEditor } from '../context/editorContext'
+import { useSceneComputed } from '../internal/useSceneComputed'
 
 export function usePageList() {
   const editor = useEditor()

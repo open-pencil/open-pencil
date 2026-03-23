@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { usePageList } from '../shared/usePageList'
+import { usePageList } from '../PageList/usePageList'
 
 const props = defineProps<{
   dividerPattern?: RegExp

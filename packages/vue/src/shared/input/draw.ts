@@ -1,8 +1,13 @@
+import type { DragDraw } from './types'
 import type { Editor } from '@open-pencil/core/editor'
 
-import type { DragDraw } from './types'
-
-export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean, editor: Editor) {
+export function handleDrawMove(
+  d: DragDraw,
+  cx: number,
+  cy: number,
+  shiftKey: boolean,
+  editor: Editor
+) {
   let w = cx - d.startX
   let h = cy - d.startY
 

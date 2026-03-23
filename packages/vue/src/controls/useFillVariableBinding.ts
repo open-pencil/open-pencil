@@ -1,7 +1,7 @@
-import { computed, ref } from 'vue'
 import { useFilter } from 'reka-ui'
+import { computed, ref } from 'vue'
 
-import { useEditor } from './editorContext'
+import { useEditor } from '../context/editorContext'
 
 import type { Variable } from '@open-pencil/core'
 

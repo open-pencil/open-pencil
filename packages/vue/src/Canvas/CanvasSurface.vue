@@ -5,7 +5,14 @@ const { canvasRef } = useCanvasContext()
 </script>
 
 <template>
-  <canvas :ref="(el) => { canvasRef = el as HTMLCanvasElement | null }" v-bind="$attrs" />
+  <canvas
+    :ref="
+      (el) => {
+        canvasRef = el as HTMLCanvasElement | null
+      }
+    "
+    v-bind="$attrs"
+  />
 </template>
 
 <script lang="ts">

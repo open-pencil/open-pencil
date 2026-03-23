@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import { useSelectionState } from '../shared/useSelectionState'
+import { useSelectionState } from '../selection/useSelectionState'
 
 export function useSelectionCapabilities() {
   const {
@@ -32,7 +32,9 @@ export function useSelectionCapabilities() {
   const canCreateInstance = computed(() => selectedNode.value?.type === 'COMPONENT')
   const canMoveToPage = computed(() => hasSelection.value && editor.graph.getPages().length > 1)
   const canPaste = computed(() => true)
-  const canSelectAll = computed(() => editor.graph.getChildren(editor.state.currentPageId).length > 0)
+  const canSelectAll = computed(
+    () => editor.graph.getChildren(editor.state.currentPageId).length > 0
+  )
   const canUndo = computed(() => editor.undo.canUndo)
   const canRedo = computed(() => editor.undo.canRedo)
   const canZoomToSelection = computed(() => hasSelection.value)

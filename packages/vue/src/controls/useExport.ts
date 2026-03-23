@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
-import { useEditor } from './editorContext'
-import { useSceneComputed } from './useSceneComputed'
+import { useEditor } from '../context/editorContext'
+import { useSceneComputed } from '../internal/useSceneComputed'
 
 import type { ExportFormat } from '@open-pencil/core'
 

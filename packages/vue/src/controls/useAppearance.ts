@@ -1,12 +1,12 @@
 import { computed } from 'vue'
 
-import { useEditor } from './editorContext'
-import { MIXED } from './useNodeProps'
-import { usePropScrub } from './usePropScrub'
-import { useSceneComputed } from './useSceneComputed'
+import { useEditor } from '../context/editorContext'
+import { useSceneComputed } from '../internal/useSceneComputed'
+import { MIXED } from '../controls/useNodeProps'
+import { usePropScrub } from '../controls/usePropScrub'
 
+import type { MixedValue } from '../controls/useNodeProps'
 import type { SceneNode } from '@open-pencil/core'
-import type { MixedValue } from './useNodeProps'
 
 const CORNER_RADIUS_TYPES = new Set([
   'RECTANGLE',
@@ -132,7 +132,8 @@ export function useAppearance() {
       }
     } else {
       const n = node.value
-      if (n) editor.commitNodeUpdate(n.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
+      if (n)
+        editor.commitNodeUpdate(n.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
     }
   }
 

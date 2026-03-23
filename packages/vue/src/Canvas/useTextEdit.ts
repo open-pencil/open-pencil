@@ -9,8 +9,8 @@ import {
   toggleItalicInRange
 } from '@open-pencil/core'
 
-import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core'
+import type { Editor } from '@open-pencil/core/editor'
 
 const CARET_BLINK_MS = 530
 

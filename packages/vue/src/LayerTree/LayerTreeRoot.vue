@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useEditor } from '../shared/editorContext'
+import { useEditor } from '../context/editorContext'
 import { provideLayerTree } from './context'
 
 import type { LayerNode } from './context'

@@ -1,4 +1,5 @@
 import { computed, ref, type Ref } from 'vue'
+
 import { colorToCSS, parseColor } from '@open-pencil/core'
 
 import type { Color, Fill, GradientStop, GradientTransform } from '@open-pencil/core'
@@ -23,10 +24,7 @@ const DEFAULT_TRANSFORMS: Record<GradientSubtype, GradientTransform> = {
   GRADIENT_DIAMOND: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 }
 }
 
-export function useGradientStops(
-  fill: Ref<Fill>,
-  onUpdate: (fill: Fill) => void
-) {
+export function useGradientStops(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
   const activeStopIndex = ref(0)
   const stops = computed(() => fill.value.gradientStops ?? [])
   const subtype = computed(() => fill.value.type as GradientSubtype)
@@ -87,7 +85,10 @@ export function useGradientStops(
 
   function updateStopOpacity(index: number, opacity: number) {
     const s = [...stops.value]
-    s[index] = { ...s[index], color: { ...s[index].color, a: Math.max(0, Math.min(1, opacity / 100)) } }
+    s[index] = {
+      ...s[index],
+      color: { ...s[index].color, a: Math.max(0, Math.min(1, opacity / 100)) }
+    }
     emitStops(s)
   }
 

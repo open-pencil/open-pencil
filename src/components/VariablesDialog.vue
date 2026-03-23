@@ -14,7 +14,7 @@ import {
 } from 'reka-ui'
 import { FlexRender } from '@tanstack/vue-table'
 
-import { VariablesEditorRoot } from '@open-pencil/vue'
+import { useVariablesEditor } from '@open-pencil/vue'
 
 import IconHash from '~icons/lucide/hash'
 import IconPalette from '~icons/lucide/palette'
@@ -34,16 +34,16 @@ const variableTypeIcons: Record<string, Component> = {
   STRING: IconType,
   BOOLEAN: IconToggleLeft
 }
+
+const ctx = useVariablesEditor({
+  colorInput: ColorInput,
+  icons: variableTypeIcons,
+  fallbackIcon: IconToggleLeft,
+  deleteIcon: IconX
+})
 </script>
 
 <template>
-  <VariablesEditorRoot
-    v-slot="ctx"
-    :color-input="ColorInput"
-    :icons="variableTypeIcons"
-    :fallback-icon="IconToggleLeft"
-    :delete-icon="IconX"
-  >
     <DialogRoot v-model:open="open">
       <DialogPortal>
         <DialogOverlay :class="cls.overlay" />
@@ -198,5 +198,4 @@ const variableTypeIcons: Record<string, Component> = {
         </DialogContent>
       </DialogPortal>
     </DialogRoot>
-  </VariablesEditorRoot>
 </template>

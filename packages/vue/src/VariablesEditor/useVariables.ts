@@ -1,8 +1,9 @@
 import { ref, computed, watch } from 'vue'
+
 import { colorToHexRaw, parseColor, randomHex } from '@open-pencil/core'
 
-import { useEditor } from './editorContext'
-import { useSceneComputed } from './useSceneComputed'
+import { useEditor } from '../context/editorContext'
+import { useSceneComputed } from '../internal/useSceneComputed'
 
 import type { Color, Variable, VariableCollection, VariableValue } from '@open-pencil/core'
 

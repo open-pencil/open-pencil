@@ -1,12 +1,16 @@
-import { onScopeDispose, ref, watchEffect, type Ref } from 'vue'
-import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
-import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine'
 import {
   attachInstruction,
   extractInstruction,
   type Instruction,
   type ItemMode
 } from '@atlaskit/pragmatic-drag-and-drop-hitbox/tree-item'
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine'
+import {
+  draggable,
+  dropTargetForElements,
+  monitorForElements
+} from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
+import { onScopeDispose, ref, watchEffect, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 
@@ -22,46 +26,45 @@ type TreeInstruction = Extract<
   { type: 'reorder-above' | 'reorder-below' | 'make-child' }
 >
 
-export function useLayerDrag(
-  editor: Editor,
-  indentPerLevel = 16
-) {
+export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
   const draggingId = ref<string | null>(null)
   const instruction = ref<TreeInstruction | null>(null)
   const instructionTargetId = ref<string | null>(null)
 
-  function setupItem(
-    el: Ref<HTMLElement | null>,
-    item: () => DragItem
-  ) {
+  function setupItem(el: Ref<HTMLElement | null>, item: () => DragItem) {
     watchEffect((onCleanup) => {
       const element = el.value
       if (!element) return
 
       const data = item()
 
-      const mode: ItemMode = data.hasChildren
-        ? 'expanded'
-        : 'standard'
+      const mode: ItemMode = data.hasChildren ? 'expanded' : 'standard'
 
       const cleanup = combine(
         draggable({
           element,
           getInitialData: () => ({ id: data.id }),
-          onDragStart: () => { draggingId.value = data.id },
-          onDrop: () => { draggingId.value = null }
+          onDragStart: () => {
+            draggingId.value = data.id
+          },
+          onDrop: () => {
+            draggingId.value = null
+          }
         }),
         dropTargetForElements({
           element,
           getData: ({ input, element: el }) =>
-            attachInstruction({ id: data.id }, {
-              input,
-              element: el,
-              indentPerLevel,
-              currentLevel: data.level,
-              mode,
-              block: []
-            }),
+            attachInstruction(
+              { id: data.id },
+              {
+                input,
+                element: el,
+                indentPerLevel,
+                currentLevel: data.level,
+                mode,
+                block: []
+              }
+            ),
           canDrop: ({ source }) => source.data.id !== data.id,
           onDrag: ({ self }) => {
             const inst = extractInstruction(self.data) as TreeInstruction | null
