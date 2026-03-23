@@ -67,12 +67,22 @@ const COMPONENT_TYPES = new Set(['COMPONENT', 'COMPONENT_SET', 'INSTANCE'])
 
 function toggleNodeVisibility(id: string) {
   const node = store.graph.getNode(id)
-  if (node) store.updateNodeWithUndo(id, { visible: !node.visible }, node.visible ? 'Hide layer' : 'Show layer')
+  if (node)
+    store.updateNodeWithUndo(
+      id,
+      { visible: !node.visible },
+      node.visible ? 'Hide layer' : 'Show layer'
+    )
 }
 
 function toggleNodeLock(id: string) {
   const node = store.graph.getNode(id)
-  if (node) store.updateNodeWithUndo(id, { locked: !node.locked }, node.locked ? 'Unlock layer' : 'Lock layer')
+  if (node)
+    store.updateNodeWithUndo(
+      id,
+      { locked: !node.locked },
+      node.locked ? 'Unlock layer' : 'Lock layer'
+    )
 }
 
 function buildTree(parentId: string): LayerNode[] {
@@ -443,9 +453,7 @@ function updateDropTarget(ev: PointerEvent) {
                       v-if="item.value.locked"
                       class="size-3"
                       :class="
-                        store.state.selectedIds.has(item.value.id)
-                          ? 'text-white'
-                          : 'text-surface'
+                        store.state.selectedIds.has(item.value.id) ? 'text-white' : 'text-surface'
                       "
                     />
                     <icon-lucide-unlock
@@ -468,9 +476,7 @@ function updateDropTarget(ev: PointerEvent) {
                       v-if="!item.value.visible"
                       class="size-3"
                       :class="
-                        store.state.selectedIds.has(item.value.id)
-                          ? 'text-white'
-                          : 'text-surface'
+                        store.state.selectedIds.has(item.value.id) ? 'text-white' : 'text-surface'
                       "
                     />
                     <icon-lucide-eye

@@ -403,3 +403,165 @@ describe('hitTest', () => {
     expect(graph.hitTest(450, 150, pageId(graph))).toBeNull()
   })
 })
+
+describe('getComponentsGroupedByPage', () => {
+  test('empty document returns empty array', () => {
+    const graph = new SceneGraph()
+    expect(graph.getComponentsGroupedByPage()).toEqual([])
+  })
+
+  test('one component on default page', () => {
+    const graph = new SceneGraph()
+    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Button' })
+    const result = graph.getComponentsGroupedByPage()
+    expect(result).toHaveLength(1)
+    expect(result[0].page.id).toBe(pageId(graph))
+    expect(result[0].components).toHaveLength(1)
+    expect(result[0].components[0].id).toBe(comp.id)
+  })
+
+  test('components on two pages', () => {
+    const graph = new SceneGraph()
+    const comp1 = graph.createNode('COMPONENT', pageId(graph), { name: 'A' })
+    const page2 = graph.addPage('Page 2')
+    const comp2 = graph.createNode('COMPONENT', page2.id, { name: 'B' })
+    const result = graph.getComponentsGroupedByPage()
+    expect(result).toHaveLength(2)
+    expect(result[0].components[0].id).toBe(comp1.id)
+    expect(result[1].page.id).toBe(page2.id)
+    expect(result[1].components[0].id).toBe(comp2.id)
+  })
+
+  test('component nested inside a frame is found', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), { name: 'Container' })
+    const comp = graph.createNode('COMPONENT', frame.id, { name: 'Nested' })
+    const result = graph.getComponentsGroupedByPage()
+    expect(result).toHaveLength(1)
+    expect(result[0].components[0].id).toBe(comp.id)
+  })
+
+  test('COMPONENT_SET appears but not its children', () => {
+    const graph = new SceneGraph()
+    const set = graph.createNode('COMPONENT_SET', pageId(graph), { name: 'ButtonSet' })
+    graph.createNode('COMPONENT', set.id, { name: 'Button/Primary' })
+    graph.createNode('COMPONENT', set.id, { name: 'Button/Secondary' })
+    const result = graph.getComponentsGroupedByPage()
+    expect(result).toHaveLength(1)
+    expect(result[0].components).toHaveLength(1)
+    expect(result[0].components[0].id).toBe(set.id)
+  })
+
+  test('INSTANCE nodes are excluded', () => {
+    const graph = new SceneGraph()
+    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Comp' })
+    graph.createInstance(comp.id, pageId(graph))
+    const result = graph.getComponentsGroupedByPage()
+    expect(result).toHaveLength(1)
+    expect(result[0].components).toHaveLength(1)
+    expect(result[0].components[0].type).toBe('COMPONENT')
+  })
+
+  test('page with only rectangles is omitted', () => {
+    const graph = new SceneGraph()
+    rect(graph, 'R1')
+    rect(graph, 'R2')
+    expect(graph.getComponentsGroupedByPage()).toEqual([])
+  })
+
+  test('component inside an instance is not found', () => {
+    const graph = new SceneGraph()
+    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Comp' })
+    graph.createNode('RECTANGLE', comp.id, { name: 'Child' })
+    const inst = graph.createInstance(comp.id, pageId(graph))
+    if (inst) {
+      graph.createNode('COMPONENT', inst.id, { name: 'NestedInInstance' })
+    }
+    const result = graph.getComponentsGroupedByPage()
+    expect(result[0].components).toHaveLength(1)
+    expect(result[0].components[0].name).toBe('Comp')
+  })
+})
+
+describe('getImageUsages', () => {
+  const imgBytes = new Uint8Array([0x89, 0x50, 0x4E, 0x47])
+
+  function addImageFill(graph: SceneGraph, nodeId: string, hash: string) {
+    const node = graph.getNode(nodeId)
+    if (!node) return
+    graph.updateNode(nodeId, {
+      fills: [{ type: 'IMAGE', imageHash: hash, imageScaleMode: 'FILL', color: { r: 0, g: 0, b: 0, a: 0 }, opacity: 1, visible: true }]
+    })
+  }
+
+  test('no images returns empty map', () => {
+    const graph = new SceneGraph()
+    expect(graph.getImageUsages().size).toBe(0)
+  })
+
+  test('one image used by one node', () => {
+    const graph = new SceneGraph()
+    graph.images.set('hash1', imgBytes)
+    const r = rect(graph, 'Photo')
+    addImageFill(graph, r, 'hash1')
+    const usages = graph.getImageUsages()
+    expect(usages.size).toBe(1)
+    const entry = usages.get('hash1')
+    expect(entry?.nodeIds).toHaveLength(1)
+    expect(entry?.names).toEqual(['Photo'])
+  })
+
+  test('one image used by 3 nodes', () => {
+    const graph = new SceneGraph()
+    graph.images.set('hash1', imgBytes)
+    const r1 = rect(graph, 'A')
+    const r2 = rect(graph, 'B')
+    const r3 = rect(graph, 'C')
+    addImageFill(graph, r1, 'hash1')
+    addImageFill(graph, r2, 'hash1')
+    addImageFill(graph, r3, 'hash1')
+    const entry = graph.getImageUsages().get('hash1')
+    expect(entry?.nodeIds).toHaveLength(3)
+    expect(entry?.names).toEqual(['A', 'B', 'C'])
+  })
+
+  test('image stored but not referenced', () => {
+    const graph = new SceneGraph()
+    graph.images.set('unused', imgBytes)
+    rect(graph, 'Plain')
+    const entry = graph.getImageUsages().get('unused')
+    expect(entry?.nodeIds).toHaveLength(0)
+  })
+
+  test('two different images', () => {
+    const graph = new SceneGraph()
+    graph.images.set('h1', imgBytes)
+    graph.images.set('h2', imgBytes)
+    const r1 = rect(graph, 'A')
+    const r2 = rect(graph, 'B')
+    addImageFill(graph, r1, 'h1')
+    addImageFill(graph, r2, 'h2')
+    const usages = graph.getImageUsages()
+    expect(usages.size).toBe(2)
+    expect(usages.get('h1')?.nodeIds).toHaveLength(1)
+    expect(usages.get('h2')?.nodeIds).toHaveLength(1)
+  })
+
+  test('node with SOLID + IMAGE fill counts only IMAGE', () => {
+    const graph = new SceneGraph()
+    graph.images.set('hash1', imgBytes)
+    const r = rect(graph, 'Mixed')
+    const node = graph.getNode(r)
+    if (node) {
+      graph.updateNode(r, {
+        fills: [
+          { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true },
+          { type: 'IMAGE', imageHash: 'hash1', imageScaleMode: 'FILL', color: { r: 0, g: 0, b: 0, a: 0 }, opacity: 1, visible: true }
+        ]
+      })
+    }
+    const entry = graph.getImageUsages().get('hash1')
+    expect(entry?.nodeIds).toHaveLength(1)
+    expect(entry?.names).toEqual(['Mixed'])
+  })
+})

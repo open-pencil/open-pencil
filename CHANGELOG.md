@@ -4,6 +4,7 @@
 
 ### Features
 
+- Assets tab in left panel — browse, search, and insert components and images with thumbnail previews, variant expansion, instance counts, drag-to-canvas, and context menu
 - Lock and visibility toggle buttons in layers panel (hover to reveal, always shown when active)
 - Figma-style selection scope — double-click to enter groups/frames/components, Escape to exit
 - Nested container navigation — each double-click goes one level deeper

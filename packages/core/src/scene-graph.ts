@@ -926,6 +926,46 @@ export class SceneGraph {
     return getInstancesFn(this, componentId)
   }
 
+  getComponentsGroupedByPage(): Array<{ page: SceneNode; components: SceneNode[] }> {
+    const result: Array<{ page: SceneNode; components: SceneNode[] }> = []
+    for (const page of this.getPages()) {
+      const components: SceneNode[] = []
+      const stack = [...page.childIds]
+      while (stack.length > 0) {
+        const id = stack.pop()
+        if (!id) continue
+        const node = this.nodes.get(id)
+        if (!node) continue
+        if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
+          components.push(node)
+        } else if (node.type !== 'INSTANCE' && CONTAINER_TYPES.has(node.type)) {
+          stack.push(...node.childIds)
+        }
+      }
+      if (components.length > 0) result.push({ page, components })
+    }
+    return result
+  }
+
+  getImageUsages(): Map<string, { hash: string; nodeIds: string[]; names: string[] }> {
+    const usages = new Map<string, { hash: string; nodeIds: string[]; names: string[] }>()
+    for (const hash of this.images.keys()) {
+      usages.set(hash, { hash, nodeIds: [], names: [] })
+    }
+    for (const node of this.nodes.values()) {
+      if (node.type === 'CANVAS') continue
+      for (const fill of node.fills) {
+        if (fill.type !== 'IMAGE' || !fill.imageHash) continue
+        const entry = usages.get(fill.imageHash)
+        if (entry && !entry.nodeIds.includes(node.id)) {
+          entry.nodeIds.push(node.id)
+          entry.names.push(node.name)
+        }
+      }
+    }
+    return usages
+  }
+
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)

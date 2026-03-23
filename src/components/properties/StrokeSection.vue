@@ -20,7 +20,17 @@ import type { Color, SceneNode, Stroke } from '@open-pencil/core'
 type StrokeSides = 'ALL' | 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CUSTOM'
 
 const { store } = useNodeProps()
-const { nodes, isMulti, active, activeNode, targetNodes, isArrayMixed, updateArrayItem, removeArrayItem, toggleArrayVisibility } = useMultiProps()
+const {
+  nodes,
+  isMulti,
+  active,
+  activeNode,
+  targetNodes,
+  isArrayMixed,
+  updateArrayItem,
+  removeArrayItem,
+  toggleArrayVisibility
+} = useMultiProps()
 
 const strokesAreMixed = computed(() => isArrayMixed('strokes'))
 
@@ -67,7 +77,12 @@ function updateWeight(index: number, weight: number) {
 }
 
 function updateOpacity(index: number, opacity: number) {
-  updateArrayItem('strokes', index, { opacity: Math.max(0, Math.min(1, opacity / 100)) }, 'Change stroke')
+  updateArrayItem(
+    'strokes',
+    index,
+    { opacity: Math.max(0, Math.min(1, opacity / 100)) },
+    'Change stroke'
+  )
 }
 
 function updateAlign(align: Stroke['align']) {

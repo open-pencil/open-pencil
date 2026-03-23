@@ -22,7 +22,17 @@ import { colorToCSS, colorToHexRaw } from '@open-pencil/core'
 import type { Fill, Variable, Color } from '@open-pencil/core'
 
 const { store } = useNodeProps()
-const { nodes, isMulti, active, activeNode, targetNodes, isArrayMixed, updateArrayItem, removeArrayItem, toggleArrayVisibility } = useMultiProps()
+const {
+  nodes,
+  isMulti,
+  active,
+  activeNode,
+  targetNodes,
+  isArrayMixed,
+  updateArrayItem,
+  removeArrayItem,
+  toggleArrayVisibility
+} = useMultiProps()
 
 const fillsAreMixed = computed(() => isArrayMixed('fills'))
 
@@ -60,7 +70,12 @@ function updateFill(index: number, fill: Fill) {
 }
 
 function updateOpacity(index: number, opacity: number) {
-  updateArrayItem('fills', index, { opacity: Math.max(0, Math.min(1, opacity / 100)) }, 'Change fill')
+  updateArrayItem(
+    'fills',
+    index,
+    { opacity: Math.max(0, Math.min(1, opacity / 100)) },
+    'Change fill'
+  )
 }
 
 function toggleVisibility(index: number) {
@@ -69,7 +84,9 @@ function toggleVisibility(index: number) {
 
 function add() {
   for (const n of targetNodes()) {
-    const fills = isMulti.value ? [{ ...DEFAULT_SHAPE_FILL }] : [...n.fills, { ...DEFAULT_SHAPE_FILL }]
+    const fills = isMulti.value
+      ? [{ ...DEFAULT_SHAPE_FILL }]
+      : [...n.fills, { ...DEFAULT_SHAPE_FILL }]
     store.updateNodeWithUndo(n.id, { fills }, isMulti.value ? 'Set fill' : 'Add fill')
   }
 }

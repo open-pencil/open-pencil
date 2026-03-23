@@ -146,6 +146,8 @@ export {
 } from './svg-export'
 export { svg, renderSVGNode, type SVGNode } from './svg-node'
 export { parseSVGPath } from './svg-path-parse'
+export { parseSVGFile, extractPaths } from './svg-import'
+export { createIconFromPaths } from './icon-render'
 export { fetchIcon, fetchIcons, searchIcons, searchIconsBatch, clearIconCache, type IconData, type IconPath, type IconSearchResult } from './iconify'
 export { exportFigFile, compressFigData, compressFigDataSync } from './fig-export'
 export {

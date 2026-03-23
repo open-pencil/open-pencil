@@ -497,9 +497,7 @@ export function useCanvasInput(
 
   function resolveHit(cx: number, cy: number): SceneNode | null {
     const titleHit =
-      hitTestFrameTitle(cx, cy) ??
-      hitTestSectionTitle(cx, cy) ??
-      hitTestComponentLabel(cx, cy)
+      hitTestFrameTitle(cx, cy) ?? hitTestSectionTitle(cx, cy) ?? hitTestComponentLabel(cx, cy)
     if (titleHit) return titleHit
 
     const hit = hitTestInScope(cx, cy, false)
@@ -681,9 +679,7 @@ export function useCanvasInput(
     cursorOverride.value = cursor
 
     const hit =
-      hitTestSectionTitle(cx, cy) ??
-      hitTestComponentLabel(cx, cy) ??
-      hitTestInScope(cx, cy, false)
+      hitTestSectionTitle(cx, cy) ?? hitTestComponentLabel(cx, cy) ?? hitTestInScope(cx, cy, false)
     store.setHoveredNode(hit && !store.state.selectedIds.has(hit.id) ? hit.id : null)
   }
 
@@ -1161,12 +1157,11 @@ export function useCanvasInput(
 
     const { cx, cy } = getCoords(e)
 
-    const selectedId = store.state.selectedIds.size === 1
-      ? [...store.state.selectedIds][0]
-      : undefined
+    const selectedId =
+      store.state.selectedIds.size === 1 ? [...store.state.selectedIds][0] : undefined
     const selectedNode = selectedId ? store.graph.getNode(selectedId) : undefined
-    const canEnter = selectedNode && selectedId
-      && store.graph.isContainer(selectedId) && !selectedNode.locked
+    const canEnter =
+      selectedNode && selectedId && store.graph.isContainer(selectedId) && !selectedNode.locked
 
     if (canEnter) {
       store.enterContainer(selectedId)
@@ -1180,9 +1175,8 @@ export function useCanvasInput(
       return
     }
 
-    const hit = hitTestSectionTitle(cx, cy) ??
-      hitTestComponentLabel(cx, cy) ??
-      hitTestInScope(cx, cy, true)
+    const hit =
+      hitTestSectionTitle(cx, cy) ?? hitTestComponentLabel(cx, cy) ?? hitTestInScope(cx, cy, true)
     if (!hit) return
 
     if (hit.type === 'TEXT') {

@@ -1,9 +1,22 @@
 <script setup lang="ts">
-import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import {
+  SplitterGroup,
+  SplitterPanel,
+  SplitterResizeHandle,
+  TabsContent,
+  TabsList,
+  TabsRoot,
+  TabsTrigger
+} from 'reka-ui'
+
+import { useEditorStore } from '@/stores/editor'
 
 import AppMenu from './AppMenu.vue'
+import AssetsPanel from './AssetsPanel.vue'
 import LayerTree from './LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
+
+const store = useEditorStore()
 </script>
 
 <template>
@@ -28,13 +41,33 @@ import PagesPanel from './PagesPanel.vue'
         />
       </SplitterResizeHandle>
       <SplitterPanel :default-size="70" :min-size="20" class="flex flex-col overflow-hidden">
-        <header
-          data-test-id="layers-header"
-          class="shrink-0 px-3 py-2 text-[11px] tracking-wider text-muted uppercase"
-        >
-          Layers
-        </header>
-        <LayerTree data-test-id="layers-tree" />
+        <TabsRoot v-model="store.state.leftPanelTab" class="flex min-h-0 flex-1 flex-col">
+          <TabsList data-test-id="layers-header" class="flex shrink-0 items-center gap-2 px-3 py-2">
+            <TabsTrigger
+              value="layers"
+              class="text-[11px] tracking-wider text-muted uppercase hover:text-surface data-[state=active]:font-semibold data-[state=active]:text-surface"
+            >
+              Layers
+            </TabsTrigger>
+            <TabsTrigger
+              value="assets"
+              class="text-[11px] tracking-wider text-muted uppercase hover:text-surface data-[state=active]:font-semibold data-[state=active]:text-surface"
+            >
+              Assets
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent
+            value="layers"
+            class="flex min-h-0 flex-1 flex-col"
+            :force-mount="true"
+            :hidden="store.state.leftPanelTab !== 'layers'"
+          >
+            <LayerTree data-test-id="layers-tree" />
+          </TabsContent>
+          <TabsContent value="assets" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <AssetsPanel />
+          </TabsContent>
+        </TabsRoot>
       </SplitterPanel>
     </SplitterGroup>
   </aside>

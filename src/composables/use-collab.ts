@@ -12,9 +12,9 @@ import {
   ROOM_ID_CHARS,
   YJS_JSON_FIELDS
 } from '@/constants'
+import { randomIndex } from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
-import { randomIndex } from '@open-pencil/core'
 import type { Color, SceneNode } from '@open-pencil/core'
 import type { Room } from 'trystero'
 

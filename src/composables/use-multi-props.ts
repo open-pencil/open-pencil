@@ -79,7 +79,11 @@ export function useMultiProps() {
       if (!items[index]) continue
       const arr = [...n[key]]
       arr[index] = { ...arr[index], visible: !items[index].visible }
-      store.updateNodeWithUndo(n.id, { [key]: arr } as Partial<SceneNode>, `Toggle ${key} visibility`)
+      store.updateNodeWithUndo(
+        n.id,
+        { [key]: arr } as Partial<SceneNode>,
+        `Toggle ${key} visibility`
+      )
     }
   }
 

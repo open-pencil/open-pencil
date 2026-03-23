@@ -30,7 +30,9 @@ import {
   SceneGraph,
   setTextMeasurer,
   TextEditor,
-  UndoManager
+  UndoManager,
+  parseSVGFile,
+  createIconFromPaths
 } from '@open-pencil/core'
 
 import type {
@@ -205,7 +207,8 @@ export function createEditorStore() {
     mobileDrawerSnap: 'closed' as 'closed' | 'half' | 'full',
     clipboardHtml: '',
     autosaveEnabled: false,
-    enteredContainerId: null as string | null
+    enteredContainerId: null as string | null,
+    leftPanelTab: 'layers' as 'layers' | 'assets'
   })
 
   const AUTOSAVE_DELAY = 3000
@@ -712,6 +715,8 @@ export function createEditorStore() {
       subscribeToGraph()
       undo.clear()
       pageViewports.clear()
+      for (const url of _imageBlobCache.values()) URL.revokeObjectURL(url)
+      _imageBlobCache.clear()
       fileHandle = handle ?? null
       filePath = path ?? null
       state.documentName = file.name.replace(/\.fig$/i, '')
@@ -918,6 +923,25 @@ export function createEditorStore() {
       nodeIds.length > 0 ? nodeIds : graph.getChildren(state.currentPageId).map((n) => n.id)
     if (ids.length === 0) return null
     return renderNodesToImage(_ck, _renderer, graph, state.currentPageId, ids, { scale, format })
+  }
+
+  function renderComponentThumbnail(nodeId: string, size = 48): string | null {
+    if (!_ck || !_renderer) return null
+    const node = graph.getNode(nodeId)
+    if (!node || node.width <= 0 || node.height <= 0) return null
+    let pageNode: SceneNode | undefined = node
+    while (pageNode && pageNode.type !== 'CANVAS') {
+      pageNode = pageNode.parentId ? graph.getNode(pageNode.parentId) : undefined
+    }
+    if (!pageNode) return null
+    const maxDim = Math.max(node.width, node.height, 1)
+    const scale = Math.min(size / maxDim, 2)
+    const bytes = renderNodesToImage(_ck, _renderer, graph, pageNode.id, [nodeId], {
+      scale,
+      format: 'PNG' as ExportFormat
+    })
+    if (!bytes) return null
+    return URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: 'image/png' }))
   }
 
   function exportImageExtension(format: ExportFormat): string {
@@ -1522,11 +1546,16 @@ export function createEditorStore() {
     })
   }
 
-  function createInstanceFromComponent(componentId: string, x?: number, y?: number) {
+  function createInstanceFromComponent(
+    componentId: string,
+    x?: number,
+    y?: number,
+    targetPageId?: string
+  ) {
     const component = graph.getNode(componentId)
     if (component?.type !== 'COMPONENT') return null
 
-    const parentId = component.parentId ?? state.currentPageId
+    const parentId = targetPageId ?? component.parentId ?? state.currentPageId
     const instance = graph.createInstance(componentId, parentId, {
       x: x ?? component.x + component.width + 40,
       y: y ?? component.y
@@ -1571,29 +1600,31 @@ export function createEditorStore() {
     })
   }
 
-  function goToMainComponent() {
-    const node = selectedNode.value
-    if (!node?.componentId) return
-    const main = graph.getMainComponent(node.id)
-    if (!main) return
-
-    // Find which page the main component is on
-    let current: SceneNode | undefined = main
+  function focusNode(nodeId: string) {
+    const node = graph.getNode(nodeId)
+    if (!node) return
+    let current: SceneNode | undefined = node
     while (current && current.type !== 'CANVAS') {
       current = current.parentId ? graph.getNode(current.parentId) : undefined
     }
     if (current && current.id !== state.currentPageId) {
       void switchPage(current.id)
     }
-
-    state.selectedIds = new Set([main.id])
-
-    const abs = graph.getAbsolutePosition(main.id)
-    const viewW = 800
-    const viewH = 600
-    state.panX = viewW / 2 - (abs.x + main.width / 2) * state.zoom
-    state.panY = viewH / 2 - (abs.y + main.height / 2) * state.zoom
+    state.selectedIds = new Set([nodeId])
+    const abs = graph.getAbsolutePosition(nodeId)
+    const viewW = window.innerWidth
+    const viewH = window.innerHeight
+    state.panX = viewW / 2 - (abs.x + node.width / 2) * state.zoom
+    state.panY = viewH / 2 - (abs.y + node.height / 2) * state.zoom
     requestRender()
+  }
+
+  function goToMainComponent() {
+    const node = selectedNode.value
+    if (!node?.componentId) return
+    const main = graph.getMainComponent(node.id)
+    if (!main) return
+    focusNode(main.id)
   }
 
   function ungroupSelected() {
@@ -1791,6 +1822,44 @@ export function createEditorStore() {
     }
   }
 
+  const _imageBlobCache = new Map<string, string>()
+
+  function imageBlobUrl(hash: string): string | null {
+    const cached = _imageBlobCache.get(hash)
+    if (cached) {
+      if (graph.images.has(hash)) return cached
+      URL.revokeObjectURL(cached)
+      _imageBlobCache.delete(hash)
+      return null
+    }
+    const bytes = graph.images.get(hash)
+    if (!bytes) return null
+    const mime = detectImageMime(bytes)
+    const url = URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: mime }))
+    _imageBlobCache.set(hash, url)
+    return url
+  }
+
+  function detectImageMime(bytes: Uint8Array): string {
+    if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)
+      return 'image/png'
+    if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'image/jpeg'
+    if (
+      bytes[0] === 0x52 &&
+      bytes[1] === 0x49 &&
+      bytes[2] === 0x46 &&
+      bytes[3] === 0x46 &&
+      bytes[8] === 0x57 &&
+      bytes[9] === 0x45 &&
+      bytes[10] === 0x42 &&
+      bytes[11] === 0x50
+    )
+      return 'image/webp'
+    if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70)
+      return 'image/avif'
+    return 'image/png'
+  }
+
   function decodeImageDimensions(bytes: Uint8Array): { w: number; h: number } | null {
     if (!_ck) return null
     const skImg = _ck.MakeImageFromEncoded(bytes)
@@ -1804,6 +1873,89 @@ export function createEditorStore() {
       h = Math.round(h * ratio)
     }
     return { w, h }
+  }
+
+  function placeSVGFile(svgText: string, x: number, y: number, name = 'SVG') {
+    const iconData = parseSVGFile(svgText)
+    if (iconData.paths.length === 0) return null
+    const w = iconData.width
+    const h = iconData.height
+    const color: Color = { r: 0, g: 0, b: 0, a: 1 }
+    const displayName = name.replace(/\.svg$/i, '')
+    const svgBytes = new TextEncoder().encode(svgText)
+    const svgHash = storeImage(svgBytes)
+    const frame = createIconFromPaths(
+      graph,
+      iconData,
+      displayName,
+      Math.max(w, h),
+      color,
+      state.currentPageId,
+      { x: x - w / 2, y: y - h / 2, width: w, height: h }
+    )
+    state.selectedIds = new Set([frame.id])
+    const frameId = frame.id
+    const childSnapshots = graph.getChildren(frame.id).map((c) => structuredClone(c))
+    const frameSnapshot = structuredClone(frame)
+    undo.push({
+      label: 'Place SVG',
+      forward: () => {
+        graph.images.set(svgHash, svgBytes)
+        const f = graph.createNode('FRAME', state.currentPageId, { ...frameSnapshot, childIds: [] })
+        for (const child of childSnapshots) {
+          graph.createNode(child.type, f.id, child)
+        }
+        state.selectedIds = new Set([frameId])
+      },
+      inverse: () => {
+        graph.deleteNode(frameId)
+        graph.images.delete(svgHash)
+        state.selectedIds = new Set()
+      }
+    })
+    requestRender()
+    return frameId
+  }
+
+  function placeImageFromHash(hash: string, x: number, y: number): string | null {
+    const bytes = graph.images.get(hash)
+    if (!bytes) return null
+    const dims = decodeImageDimensions(bytes)
+    const w = dims?.w ?? 200
+    const h = dims?.h ?? 200
+    const fill: Fill = {
+      type: 'IMAGE',
+      imageHash: hash,
+      imageScaleMode: 'FILL',
+      color: { r: 0, g: 0, b: 0, a: 0 },
+      opacity: 1,
+      visible: true
+    }
+    const node = graph.createNode('RECTANGLE', state.currentPageId, {
+      name: 'Image',
+      x: x - w / 2,
+      y: y - h / 2,
+      width: w,
+      height: h,
+      fills: [fill]
+    })
+    state.selectedIds = new Set([node.id])
+    const nodeId = node.id
+    const snapshot = structuredClone(node)
+    undo.push({
+      label: 'Place image',
+      forward: () => {
+        graph.images.set(hash, bytes)
+        graph.createNode('RECTANGLE', state.currentPageId, snapshot)
+        state.selectedIds = new Set([nodeId])
+      },
+      inverse: () => {
+        graph.deleteNode(nodeId)
+        state.selectedIds = new Set()
+      }
+    })
+    requestRender()
+    return nodeId
   }
 
   function storeImage(bytes: Uint8Array): string {
@@ -2038,8 +2190,9 @@ export function createEditorStore() {
           figma.blobs
         )
         if (created.length > 0) {
-          const cx = cursorPos?.x ?? (-state.panX + window.innerWidth / 2) / state.zoom
-          const cy = cursorPos?.y ?? (-state.panY + window.innerHeight / 2) / state.zoom
+          const center = canvasViewportCenter()
+          const cx = cursorPos?.x ?? center.x
+          const cy = cursorPos?.y ?? center.y
           centerNodesAt(created, cx, cy)
           computeAllLayouts(graph, state.currentPageId)
           state.selectedIds = new Set(created)
@@ -2293,6 +2446,15 @@ export function createEditorStore() {
     }
   }
 
+  function canvasViewportCenter() {
+    const el = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')
+    if (el) {
+      const rect = el.getBoundingClientRect()
+      return screenToCanvas(rect.width / 2, rect.height / 2)
+    }
+    return screenToCanvas(window.innerWidth / 2, window.innerHeight / 2)
+  }
+
   function applyZoom(delta: number, centerX: number, centerY: number) {
     const factor = Math.min(
       ZOOM_SCALE_MAX,
@@ -2438,6 +2600,12 @@ export function createEditorStore() {
     createInstanceFromComponent,
     detachInstance,
     goToMainComponent,
+    focusNode,
+    canvasViewportCenter,
+    renderComponentThumbnail,
+    imageBlobUrl,
+    placeSVGFile,
+    placeImageFromHash,
     bringToFront,
     sendToBack,
     toggleProfiler,
