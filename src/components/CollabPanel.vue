@@ -10,12 +10,14 @@ import { usePopoverUI } from '@/components/ui/popover'
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/composables/use-collab'
 import { toast } from '@/utils/toast'
 import { initials } from '@/utils/text'
+import { useI18n } from '@open-pencil/vue'
 
 const route = useRoute()
 const router = useRouter()
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
 const collab = useCollabInjected()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
+const { dialogs } = useI18n()
 
 const joinInput = ref('')
 const nameDraft = ref(collab?.state.value.localName ?? '')
@@ -120,7 +122,7 @@ function onDisconnect() {
           "
         >
           <icon-lucide-share-2 class="size-3.5" />
-          {{ state.connected ? 'Connected' : isJoining ? 'Join room' : 'Share' }}
+          {{ state.connected ? dialogs.connected : isJoining ? dialogs.joinRoom : dialogs.share }}
         </button>
       </PopoverTrigger>
 
@@ -134,7 +136,7 @@ function onDisconnect() {
         >
           <!-- Connected state -->
           <template v-if="state.connected">
-            <div class="mb-3 text-xs font-medium text-surface">Room link</div>
+            <div class="mb-3 text-xs font-medium text-surface">{{ dialogs.roomLink }}</div>
             <div class="mb-3 flex items-center gap-1.5">
               <input
                 :value="shareUrl"
@@ -169,18 +171,18 @@ function onDisconnect() {
 
           <!-- Joining via /share/ link -->
           <template v-else-if="isJoining">
-            <div class="mb-1 text-xs font-medium text-surface">Join collaboration</div>
+            <div class="mb-1 text-xs font-medium text-surface">{{ dialogs.joinCollaboration }}</div>
             <div class="mb-3 text-[11px] text-muted">
               Someone shared this file with you. Enter your name to join.
             </div>
 
             <div class="mb-3">
-              <label class="mb-1 block text-xs text-muted">Your name</label>
+              <label class="mb-1 block text-xs text-muted">{{ dialogs.yourName }}</label>
               <input
                 v-model="nameDraft"
                 data-test-id="collab-name-input"
                 class="w-full rounded border border-border bg-input px-2 py-1 text-xs text-surface"
-                placeholder="Enter your name"
+                :placeholder="dialogs.enterYourName"
                 autofocus
                 @keydown.enter="onJoin"
               />
@@ -200,12 +202,12 @@ function onDisconnect() {
           <!-- Not connected: share or join -->
           <template v-else>
             <div class="mb-3">
-              <label class="mb-1 block text-xs text-muted">Your name</label>
+              <label class="mb-1 block text-xs text-muted">{{ dialogs.yourName }}</label>
               <input
                 v-model="nameDraft"
                 data-test-id="collab-name-input"
                 class="w-full rounded border border-border bg-input px-2 py-1 text-xs text-surface"
-                placeholder="Enter your name"
+                :placeholder="dialogs.enterYourName"
                 @keydown.enter="onShare"
               />
             </div>
@@ -217,12 +219,12 @@ function onDisconnect() {
               @click="onShare"
             >
               <icon-lucide-share-2 class="size-3.5" />
-              Share this file
+              {{ dialogs.shareThisFile }}
             </button>
 
             <div class="mb-2 flex items-center gap-2">
               <div class="h-px flex-1 bg-border" />
-              <span class="text-[11px] text-muted">or join a room</span>
+              <span class="text-[11px] text-muted">{{ dialogs.orJoinRoom }}</span>
               <div class="h-px flex-1 bg-border" />
             </div>
 
@@ -231,7 +233,7 @@ function onDisconnect() {
                 v-model="joinInput"
                 data-test-id="collab-join-input"
                 class="min-w-0 flex-1 rounded border border-border bg-input px-2 py-1 text-xs text-surface"
-                placeholder="Paste room link or ID"
+                :placeholder="dialogs.pasteRoomLinkOrId"
                 @keydown.enter="onJoin"
               />
               <button
