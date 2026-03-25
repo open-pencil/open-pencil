@@ -371,9 +371,10 @@ function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): 
     width: 100,
     height: 100,
     rotation: 0,
-    fills: type === 'TEXT'
-      ? [{ type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
-      : [],
+    fills:
+      type === 'TEXT'
+        ? [{ type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+        : [],
     strokes: [],
     effects: [],
     opacity: 1,

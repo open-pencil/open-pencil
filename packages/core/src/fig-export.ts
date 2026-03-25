@@ -304,6 +304,13 @@ export function compressFigData(
     return compressViaWorker(schemaDeflated, kiwiData, thumbnailPng, metaJson, imageEntries)
   }
   return Promise.resolve(
-    compressFigDataSync(schemaDeflated, kiwiData, thumbnailPng, metaJson, imageEntries, figKiwiVersion)
+    compressFigDataSync(
+      schemaDeflated,
+      kiwiData,
+      thumbnailPng,
+      metaJson,
+      imageEntries,
+      figKiwiVersion
+    )
   )
 }

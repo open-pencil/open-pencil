@@ -95,7 +95,7 @@ export function useKeyboard() {
   })
 
   // Spacebar hold → temporary Hand tool (Figma-style canvas pan)
-  let toolBeforeSpace: (typeof store.state.activeTool) | null = null
+  let toolBeforeSpace: typeof store.state.activeTool | null = null
 
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e)) return

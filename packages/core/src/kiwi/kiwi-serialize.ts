@@ -304,10 +304,10 @@ function resolveTextAutoResize(node: SceneNode, graph: SceneGraph): SceneNode['t
   if (node.textAutoResize === 'NONE') return 'NONE'
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   if (
-    parent
-    && parent.layoutMode !== 'NONE'
-    && parent.layoutMode !== 'GRID'
-    && node.layoutPositioning !== 'ABSOLUTE'
+    parent &&
+    parent.layoutMode !== 'NONE' &&
+    parent.layoutMode !== 'GRID' &&
+    node.layoutPositioning !== 'ABSOLUTE'
   ) {
     return 'NONE'
   }
@@ -418,10 +418,7 @@ function serializeVariableBindings(
   if (entries.length > 0) nc.variableConsumptionMap = { entries }
 }
 
-function computeExportTransform(
-  node: SceneNode,
-  graph: SceneGraph
-): Matrix {
+function computeExportTransform(node: SceneNode, graph: SceneGraph): Matrix {
   const sx = node.flipX ? -1 : 1
   const cos = Math.cos((node.rotation * Math.PI) / 180)
   const sin = Math.sin((node.rotation * Math.PI) / 180)
@@ -429,15 +426,18 @@ function computeExportTransform(
   // Auto-layout children should have (0,0) transform — Figma computes
   // their positions from the layout engine at render time.
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
-  const isAutoLayoutChild = parent
-    && parent.layoutMode !== 'NONE'
-    && parent.layoutMode !== 'GRID'
-    && node.layoutPositioning !== 'ABSOLUTE'
+  const isAutoLayoutChild =
+    parent &&
+    parent.layoutMode !== 'NONE' &&
+    parent.layoutMode !== 'GRID' &&
+    node.layoutPositioning !== 'ABSOLUTE'
 
   return {
-    m00: cos * sx, m01: -sin,
+    m00: cos * sx,
+    m01: -sin,
     m02: isAutoLayoutChild ? 0 : node.x,
-    m10: sin * sx, m11: cos,
+    m10: sin * sx,
+    m11: cos,
     m12: isAutoLayoutChild ? 0 : node.y
   }
 }
@@ -477,7 +477,7 @@ export function sceneNodeToKiwi(
     size: { x: node.width, y: node.height },
     transform: computeExportTransform(node, graph),
     strokeWeight: node.strokes.length > 0 ? node.strokes[0].weight : 1,
-    strokeAlign: node.strokes.length > 0 ? node.strokes[0].align : 'INSIDE',
+    strokeAlign: node.strokes.length > 0 ? node.strokes[0].align : 'INSIDE'
   }
 
   if (node.independentStrokeWeights) {

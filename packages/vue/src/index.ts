@@ -86,3 +86,16 @@ export type { ScrubInputContext } from './ScrubInput'
 export { TypographyControlsRoot } from './TypographyControls'
 export { ToolbarRoot, ToolbarItem, useToolbar } from './Toolbar'
 export type { ToolbarContext } from './Toolbar'
+
+/** Internationalization. */
+export { useI18n } from './i18n'
+export { locale, localeSetting, setLocale, AVAILABLE_LOCALES } from './i18n'
+export type { Locale } from './i18n'
+export {
+  menuMessages,
+  commandMessages,
+  toolMessages,
+  panelMessages,
+  pageMessages,
+  dialogMessages
+} from './i18n'

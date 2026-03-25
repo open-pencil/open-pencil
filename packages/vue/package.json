@@ -47,6 +47,9 @@
     }
   },
   "dependencies": {
-    "@vueuse/core": "^14.2.1"
+    "@nanostores/i18n": "^1.2.2",
+    "@nanostores/vue": "^1.1.0",
+    "@vueuse/core": "^14.2.1",
+    "nanostores": "^1.2.0"
   }
 }
