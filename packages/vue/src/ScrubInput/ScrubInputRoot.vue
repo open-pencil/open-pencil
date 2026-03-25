@@ -93,8 +93,8 @@ function commitEdit(e: Event) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') commitEdit(e)
-  else if (e.key === 'Escape') editing.value = false
+  if (e.code === 'Enter') commitEdit(e)
+  else if (e.code === 'Escape') editing.value = false
 }
 
 const ctx = {

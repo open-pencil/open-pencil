@@ -55,12 +55,12 @@ export function useInlineRename<T extends string>(
   }
 
   function onKeydown(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
+    if (e.code === 'Enter') {
       ;(e.target as HTMLInputElement).blur()
       return
     }
 
-    if (e.key === 'Escape') {
+    if (e.code === 'Escape') {
       cancel()
     }
   }

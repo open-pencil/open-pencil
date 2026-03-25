@@ -14,6 +14,7 @@
 
 ### Fixes
 
+- Fix shortcuts, now work on non-English keyboard layouts.
 - Fix imported `.fig` file open and page-switch regressions — loaded documents now keep graph/store state in sync, remap imported canvas/page children correctly, and recompute imported auto-layout descendants when switching pages
 - Fix first canvas render happening before fonts load — wait for fonts before the initial draw to avoid Safari and text measurement glitches
 - Preserve `fig-kiwi` version on `.fig` roundtrip — imports keep the original header version instead of rewriting everything to a hardcoded value; new files default to version 101
