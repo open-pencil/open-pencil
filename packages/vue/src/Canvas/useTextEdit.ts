@@ -115,11 +115,11 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
   function handleHorizontalArrow(e: KeyboardEvent, editor: NonNullable<typeof store.textEditor>) {
     const select = e.shiftKey
     const isMeta = e.metaKey || e.ctrlKey
-    if (e.key === 'ArrowLeft') {
+    if (e.code === 'ArrowLeft') {
       if (isMeta) editor.moveToLineStart(select)
       else if (e.altKey) editor.moveWordLeft(select)
       else editor.moveLeft(select)
-    } else {
+    } else if (e.code === 'ArrowRight') {
       if (isMeta) editor.moveToLineEnd(select)
       else if (e.altKey) editor.moveWordRight(select)
       else editor.moveRight(select)
@@ -132,7 +132,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
     node: SceneNode
   ) {
     const isMeta = e.metaKey || e.ctrlKey
-    const forward = e.key === 'Delete'
+    const forward = e.code === 'Delete'
     if (forward) {
       if (isMeta) editor.moveToLineEnd(true)
       else if (e.altKey) editor.moveWordRight(true)
@@ -145,13 +145,13 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
 
   type MetaAction = (node: SceneNode) => void
   const metaKeyActions: Partial<Record<string, MetaAction>> = {
-    a: () => store.textEditor?.selectAll(),
-    c: () => handleCopy(),
-    x: (node) => handleCut(node),
-    v: (node) => void handlePaste(node),
-    b: (node) => toggleBold(node),
-    i: (node) => toggleItalic(node),
-    u: (node) => toggleUnderline(node)
+    KeyA: () => store.textEditor?.selectAll(),
+    KeyC: () => handleCopy(),
+    KeyX: (node) => handleCut(node),
+    KeyV: (node) => void handlePaste(node),
+    KeyB: (node) => toggleBold(node),
+    KeyI: (node) => toggleItalic(node),
+    KeyU: (node) => toggleUnderline(node)
   }
 
   function onKeyDown(e: KeyboardEvent) {
@@ -163,7 +163,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
     const isMeta = e.metaKey || e.ctrlKey
     let textChanged = false
 
-    switch (e.key) {
+    switch (e.code) {
       case 'Escape':
         store.commitTextEdit()
         canvasRef.value?.focus()
@@ -196,7 +196,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
         break
       default: {
         if (!isMeta) return
-        const action = metaKeyActions[e.key]
+        const action = metaKeyActions[e.code]
         if (!action) return
         action(node)
         e.preventDefault()
