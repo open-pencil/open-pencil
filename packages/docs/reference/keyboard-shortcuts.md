@@ -117,6 +117,7 @@ Full Figma-compatible shortcut map. ✅ = implemented.
 | <kbd>Shift</kbd>+Drag (resize) | Maintain aspect ratio | ✅ |
 | <kbd>Shift</kbd>+Drag (rotate) | Snap to 15° | ✅ |
 | Middle mouse drag | Pan | ✅ |
+| <kbd>Space</kbd>+Drag| Pan | ✅ |
 | Scroll | Pan | ✅ |
 | <kbd>Ctrl</kbd>+Scroll / Pinch | Zoom | ✅ |
 | Double-click text | Edit text inline | ✅ |
