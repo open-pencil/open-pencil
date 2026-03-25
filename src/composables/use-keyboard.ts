@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { extractImageFilesFromClipboard } from '@/composables/use-canvas-drop'
 import { useAIChat } from '@/composables/use-chat'
-import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
+import { TOOL_SHORTCUTS, useEditorStore, type Tool } from '@/stores/editor'
 import { closeTab, createTab, activeTab as activeTabRef } from '@/stores/tabs'
 
 import { openFileDialog } from './use-menu'
@@ -34,7 +34,7 @@ const PREVENT_MOD_ONLY = new Set([
   'KeyG'
 ])
 const PREVENT_SHIFT_ONLY = new Set(['Digit1', 'Digit2', 'KeyA'])
-const PREVENT_PLAIN_KEY = new Set(['[', ']'])
+const PREVENT_PLAIN_KEY = new Set(['BracketLeft', 'BracketRight'])
 const PREVENT_DELETE_KEY = new Set(['Backspace', 'Delete'])
 
 function shouldPreventDefault(e: KeyboardEvent, hasPenState: boolean): boolean {
@@ -46,10 +46,10 @@ function shouldPreventDefault(e: KeyboardEvent, hasPenState: boolean): boolean {
     if (!e.shiftKey && !e.altKey && PREVENT_MOD_ONLY.has(e.code)) return true
   } else {
     if (e.shiftKey && PREVENT_SHIFT_ONLY.has(e.code)) return true
-    if (!e.shiftKey && PREVENT_PLAIN_KEY.has(e.key)) return true
+    if (!e.shiftKey && PREVENT_PLAIN_KEY.has(e.code)) return true
   }
 
-  return PREVENT_DELETE_KEY.has(e.key) || (e.key === 'Enter' && hasPenState)
+  return PREVENT_DELETE_KEY.has(e.code) || (e.code === 'Enter' && hasPenState)
 }
 
 export function useKeyboard() {
@@ -90,6 +90,26 @@ export function useKeyboard() {
     if (html) store.pasteFromHTML(html, cursorPos)
   })
 
+  // Space hold-to-pan: temporarily switch to HAND while Space is held,
+  // without losing object/node selections
+  let toolBeforeSpace: string | null = null
+
+  useEventListener(window, 'keydown', (e: KeyboardEvent) => {
+    if (isEditing(e)) return
+    if (e.code === 'Space' && !e.repeat && toolBeforeSpace === null) {
+      e.preventDefault()
+      toolBeforeSpace = store.state.activeTool
+      store.setTool('HAND')
+    }
+  })
+
+  useEventListener(window, 'keyup', (e: KeyboardEvent) => {
+    if (e.code === 'Space' && toolBeforeSpace !== null) {
+      store.setTool(toolBeforeSpace as Tool)
+      toolBeforeSpace = null
+    }
+  })
+
   const keys = useMagicKeys({
     passive: false,
     onEventFired(e) {
@@ -97,8 +117,12 @@ export function useKeyboard() {
       if (isEditing(e)) return
 
       if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-        const tool = TOOL_SHORTCUTS[e.key.toLowerCase()]
+        // Space is handled by hold-to-pan above
+        if (e.code === 'Space') return
+        const tool = TOOL_SHORTCUTS[e.code]
         if (tool) {
+          // Permanent tool switch cancels space-hold
+          toolBeforeSpace = null
           store.setTool(tool)
           return
         }
@@ -198,14 +222,14 @@ export function useKeyboard() {
     )
   }
 
-  whenever(plain('bracketright'), () => store.bringToFront())
-  whenever(plain('bracketleft'), () => store.sendToBack())
-  whenever(plain('backspace'), () => store.deleteSelected())
-  whenever(plain('delete'), () => store.deleteSelected())
-  whenever(plain('enter'), () => {
+  whenever(plain('BracketRight'), () => store.bringToFront())
+  whenever(plain('BracketLeft'), () => store.sendToBack())
+  whenever(plain('Backspace'), () => store.deleteSelected())
+  whenever(plain('Delete'), () => store.deleteSelected())
+  whenever(plain('Enter'), () => {
     if (store.state.penState) store.penCommit(false)
   })
-  whenever(plain('escape'), () => {
+  whenever(plain('Escape'), () => {
     if (store.state.penState) {
       store.penCancel()
       return

@@ -20,6 +20,7 @@
 - Locked containers block double-click enter
 - Marquee selection skips locked and hidden nodes
 - COMPONENT/INSTANCE containers are now enterable via double-click
+- Fix hotkeys, now work on non-English keyboard layouts.
 
 ## 0.10.0 — 2026-03-15
 

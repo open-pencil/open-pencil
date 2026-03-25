@@ -102,9 +102,9 @@ function commitEdit(e: Event) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') {
+  if (e.code === 'Enter') {
     commitEdit(e)
-  } else if (e.key === 'Escape') {
+  } else if (e.code === 'Escape') {
     editing.value = false
   }
 }
