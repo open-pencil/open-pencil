@@ -34,6 +34,7 @@
 - Locked containers block double-click enter
 - Marquee selection skips locked and hidden nodes
 - COMPONENT/INSTANCE containers are now enterable via double-click
+- Replaced the alignment and reflection icons with the correct ones
 
 ## 0.10.0 — 2026-03-15
 
