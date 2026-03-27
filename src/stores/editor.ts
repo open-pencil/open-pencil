@@ -790,7 +790,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       if (v > hi) hi = v
     }
 
-    const target = align === 'min' ? lo : align === 'max' ? hi : (lo + hi) / 2
+    const target = align === 'min' ? lo : (align === 'max' ? hi : (lo + hi) / 2)
     for (const i of indices) {
       es.vertices[i] = { ...es.vertices[i], [prop]: target }
     }
