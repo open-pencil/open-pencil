@@ -49,10 +49,26 @@ export function useAppMenu(mod: string) {
         {
           label: t.value.exportSelection,
           shortcut: `${mod}⇧E`,
-          action: () => {
-            void store.exportSelection(1, 'PNG')
-          },
-          disabled: store.state.selectedIds.size === 0
+          sub: [
+            {
+              label: 'PNG',
+              action: () => {
+                void store.exportSelection(1, 'png')
+              }
+            },
+            {
+              label: 'SVG',
+              action: () => {
+                void store.exportSelection(1, 'svg')
+              }
+            },
+            {
+              label: '.fig',
+              action: () => {
+                void store.exportSelection(1, 'fig')
+              }
+            }
+          ]
         },
         { separator: true as const },
         {

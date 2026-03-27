@@ -74,6 +74,11 @@
       "types": "./src/editor/index.ts",
       "bun": "./src/editor/index.ts",
       "default": "./src/editor/index.ts"
+    },
+    "./io": {
+      "types": "./src/io/index.ts",
+      "bun": "./src/io/index.ts",
+      "default": "./src/io/index.ts"
     }
   },
   "main": "./src/index.ts",
@@ -161,6 +166,11 @@
         "types": "./dist/editor/index.d.ts",
         "import": "./dist/editor/index.js",
         "default": "./dist/editor/index.js"
+      },
+      "./io": {
+        "types": "./dist/io/index.d.ts",
+        "import": "./dist/io/index.js",
+        "default": "./dist/io/index.js"
       }
     },
     "main": "./dist/index.js",

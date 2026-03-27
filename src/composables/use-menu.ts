@@ -80,7 +80,7 @@ const MENU_ACTIONS: Partial<Record<string, () => void>> = {
   'zoom-fit': () => store.zoomToFit(),
   'zoom-selection': () => store.zoomToSelection(),
   export: () => {
-    if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'PNG')
+    if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
   }
 }
 

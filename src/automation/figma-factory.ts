@@ -1,7 +1,6 @@
 import { FigmaAPI } from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
-import type { ExportFormat } from '@open-pencil/core'
 
 export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
   const api = new FigmaAPI(store.graph)
@@ -17,6 +16,6 @@ export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
     zoom: store.state.zoom
   }
   api.exportImage = (nodeIds, opts) =>
-    store.renderExportImage(nodeIds, opts.scale ?? 1, (opts.format ?? 'PNG') as ExportFormat)
+    store.renderExportImage(nodeIds, opts.scale ?? 1, opts.format ?? 'PNG')
   return api
 }

@@ -2,16 +2,17 @@ import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { renderNodesToSVG, sceneNodeToJSX, selectionToJSX } from '@open-pencil/core'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core'
 
 import { isAppMode, requireFile, rpc } from '../app-client'
 import { ok, printError } from '../format'
-import { loadDocument, exportNodes, exportThumbnail } from '../headless'
+import { loadDocument } from '../headless'
 
-import type { ExportFormat, JSXFormat } from '@open-pencil/core'
+import type { RasterExportFormat } from '@open-pencil/core'
 
+const io = new IORegistry(BUILTIN_IO_FORMATS)
 const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']
-const ALL_FORMATS = [...RASTER_FORMATS, 'SVG', 'JSX']
+const ALL_FORMATS = [...RASTER_FORMATS, 'SVG', 'JSX', 'FIG']
 const JSX_STYLES = ['openpencil', 'tailwind']
 
 interface ExportArgs {
@@ -48,17 +49,9 @@ async function exportViaApp(format: string, args: ExportArgs) {
     return
   }
 
-  if (format === 'JSX') {
-    const result = await rpc<{ jsx: string }>('export_jsx', {
-      nodeIds: args.node ? [args.node] : undefined,
-      style: args.style
-    })
-    if (!result.jsx) {
-      printError('Nothing to export.')
-      process.exit(1)
-    }
-    await writeAndLog(resolve(args.output ?? 'export.jsx'), result.jsx)
-    return
+  if (format === 'JSX' || format === 'FIG') {
+    printError(`${format} export is only available in file mode right now.`)
+    process.exit(1)
   }
 
   const result = await rpc<{ base64: string }>('export', {
@@ -71,6 +64,15 @@ async function exportViaApp(format: string, args: ExportArgs) {
   await writeAndLog(resolve(args.output ?? `export.${ext}`), data)
 }
 
+function exportFileName(defaultName: string, extension: string, scale?: number): string {
+  return scale ? `${defaultName}@${scale}x.${extension}` : `${defaultName}.${extension}`
+}
+
+function targetLabel(pageName?: string, nodeId?: string): string {
+  if (nodeId) return `node ${nodeId}`
+  return pageName ? `page "${pageName}"` : 'first page'
+}
+
 async function exportFromFile(format: string, args: ExportArgs) {
   const file = requireFile(args.file)
   const graph = await loadDocument(file)
@@ -78,65 +80,62 @@ async function exportFromFile(format: string, args: ExportArgs) {
   const pages = graph.getPages()
   const page = args.page ? pages.find((p) => p.name === args.page) : pages[0]
   if (!page) {
-    printError(`Page "${args.page}" not found.`)
+    const available = pages.map((p) => `"${p.name}"`).join(', ')
+    printError(
+      args.page
+        ? `Page "${args.page}" not found. Available pages: ${available || 'none'}.`
+        : 'Document has no pages.'
+    )
     process.exit(1)
   }
 
   const defaultName = basename(file, extname(file))
 
-  if (format === 'JSX') {
-    const nodeIds = args.node ? [args.node] : page.childIds
-    const jsxStr =
-      nodeIds.length === 1
-        ? sceneNodeToJSX(nodeIds[0], graph, args.style as JSXFormat)
-        : selectionToJSX(nodeIds, graph, args.style as JSXFormat)
-    if (!jsxStr) {
-      printError('Nothing to export (empty page or no visible nodes).')
-      process.exit(1)
-    }
-    await writeAndLog(resolve(args.output ?? `${defaultName}.jsx`), jsxStr)
-    return
-  }
-
-  const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
-  const output = resolve(args.output ?? `${defaultName}.${ext}`)
-
-  if (format === 'SVG') {
-    const nodeIds = args.node ? [args.node] : page.childIds
-    const svgStr = renderNodesToSVG(graph, page.id, nodeIds)
-    if (!svgStr) {
-      printError('Nothing to export (empty page or no visible nodes).')
-      process.exit(1)
-    }
-    await writeAndLog(output, svgStr)
-    return
-  }
-
-  let data: Uint8Array | null
-  if (args.thumbnail) {
-    data = await exportThumbnail(graph, page.id, Number(args.width), Number(args.height))
-  } else {
-    const nodeIds = args.node ? [args.node] : page.childIds
-    data = await exportNodes(graph, page.id, nodeIds, {
-      scale: Number(args.scale),
-      format: format as ExportFormat,
-      quality: args.quality ? Number(args.quality) : undefined
-    })
-  }
-
-  if (!data) {
-    printError('Nothing to export (empty page or no visible nodes).')
+  if (args.page && args.node) {
+    printError('--page and --node cannot be used together.')
     process.exit(1)
   }
-  await writeAndLog(output, data)
+
+  const target = args.node
+    ? { scope: 'node' as const, nodeId: args.node }
+    : { scope: 'page' as const, pageId: page.id }
+
+  if (args.thumbnail) {
+    printError('Thumbnail export is not supported by the shared file export path yet.')
+    process.exit(1)
+  }
+
+  const formatId = format.toLowerCase()
+  let options: { format?: string; scale?: number; quality?: number } | undefined
+  if (format === 'JSX') {
+    options = { format: args.style }
+  } else if (format === 'PNG' || format === 'JPG' || format === 'WEBP') {
+    options = {
+      format,
+      scale: Number(args.scale),
+      quality: args.quality ? Number(args.quality) : undefined
+    }
+  }
+
+  const result = await io.exportContent(formatId, { graph, target }, options)
+  const output = resolve(
+    args.output ??
+      exportFileName(
+        defaultName,
+        result.extension,
+        format === 'PNG' || format === 'JPG' || format === 'WEBP' ? Number(args.scale) : undefined
+      )
+  )
+  await writeAndLog(output, result.data as string | Uint8Array)
+  console.log(ok(`Target: ${targetLabel(args.page, args.node)}`))
 }
 
 export default defineCommand({
-  meta: { description: 'Export a .fig file to PNG, JPG, WEBP, SVG, or JSX' },
+  meta: { description: 'Export a document to PNG, JPG, WEBP, SVG, JSX, or .fig' },
   args: {
     file: {
       type: 'positional',
-      description: '.fig file path (omit to connect to running app)',
+      description: 'Document file path (omit to connect to running app)',
       required: false
     },
     output: {
@@ -148,7 +147,7 @@ export default defineCommand({
     format: {
       type: 'string',
       alias: 'f',
-      description: 'Export format: png, jpg, webp, svg, jsx (default: png)',
+      description: 'Export format: png, jpg, webp, svg, jsx, fig (default: png)',
       default: 'png'
     },
     scale: { type: 'string', alias: 's', description: 'Export scale (default: 1)', default: '1' },
@@ -158,10 +157,14 @@ export default defineCommand({
       description: 'Quality 0-100 for JPG/WEBP (default: 90)',
       required: false
     },
-    page: { type: 'string', description: 'Page name (default: first page)', required: false },
+    page: {
+      type: 'string',
+      description: 'Export a specific page by name (default: first page)',
+      required: false
+    },
     node: {
       type: 'string',
-      description: 'Node ID to export (default: all top-level nodes)',
+      description: 'Export a specific node by ID (cannot be combined with --page)',
       required: false
     },
     style: {
@@ -174,9 +177,9 @@ export default defineCommand({
     height: { type: 'string', description: 'Thumbnail height (default: 1080)', default: '1080' }
   },
   async run({ args }) {
-    const format = args.format.toUpperCase() as ExportFormat | 'JSX'
+    const format = args.format.toUpperCase() as RasterExportFormat | 'SVG' | 'JSX' | 'FIG'
     if (!ALL_FORMATS.includes(format)) {
-      printError(`Invalid format "${args.format}". Use png, jpg, webp, svg, or jsx.`)
+      printError(`Invalid format "${args.format}". Use png, jpg, webp, svg, jsx, or fig.`)
       process.exit(1)
     }
 

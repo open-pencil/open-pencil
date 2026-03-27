@@ -81,7 +81,7 @@ const menuItems: MenuAction[] = [
   {
     icon: IconImageDown,
     label: 'Export…',
-    action: () => store.exportSelection(1, 'PNG')
+    action: () => store.exportSelection(1, 'png')
   },
   { icon: IconZoomIn, label: 'Zoom to fit', action: () => getCommand('view.zoomFit').run() }
 ]

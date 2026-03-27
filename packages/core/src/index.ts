@@ -217,6 +217,7 @@ export {
   renderNodesToImage,
   renderThumbnail,
   computeContentBounds,
+  type RasterExportFormat,
   type ExportFormat
 } from './render-image'
 export { initCanvasKit, headlessRenderNodes, headlessRenderThumbnail } from './headless-render'
@@ -340,6 +341,8 @@ export {
   parseVarint,
   FIG_WIRE_MAGIC
 } from './kiwi'
+
+export * from './io'
 
 export { CODEGEN_PROMPT } from './tools/prompts/codegen-prompt'
 export {

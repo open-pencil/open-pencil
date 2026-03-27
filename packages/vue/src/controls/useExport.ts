@@ -1,22 +1,22 @@
 import { ref } from 'vue'
 
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core'
 import { useEditor } from '@open-pencil/vue/context/editorContext'
 import { useSceneComputed } from '@open-pencil/vue/internal/useSceneComputed'
 
-import type { ExportFormat } from '@open-pencil/core'
+export type ExportFormatId = 'png' | 'jpg' | 'webp' | 'svg' | 'fig'
 
 /**
  * Single export preset row managed by {@link useExport}.
  */
 interface ExportSetting {
-  /** Export scale multiplier. */
   scale: number
-  /** Output file format. */
-  format: ExportFormat
+  format: ExportFormatId
 }
 
 const SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
-const FORMATS: ExportFormat[] = ['PNG', 'JPG', 'WEBP', 'SVG']
+const FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'fig']
+const io = new IORegistry(BUILTIN_IO_FORMATS)
 
 /**
  * Returns selection-aware export settings for export panel UIs.
@@ -27,9 +27,12 @@ const FORMATS: ExportFormat[] = ['PNG', 'JPG', 'WEBP', 'SVG']
 export function useExport() {
   const editor = useEditor()
 
-  const settings = ref<ExportSetting[]>([{ scale: 1, format: 'PNG' }])
+  const settings = ref<ExportSetting[]>([{ scale: 1, format: 'png' }])
 
   const selectedIds = useSceneComputed(() => [...editor.state.selectedIds])
+
+  const formatSupportsScale = (format: ExportFormatId) =>
+    io.getFormat(format)?.exportOptions?.scale ?? false
 
   const nodeName = useSceneComputed(() => {
     const ids = editor.state.selectedIds
@@ -43,7 +46,7 @@ export function useExport() {
   function addSetting() {
     const last = settings.value[settings.value.length - 1]
     const nextScale = SCALES.find((s) => s > (last?.scale ?? 1)) ?? 2
-    settings.value.push({ scale: nextScale, format: last?.format ?? 'PNG' })
+    settings.value.push({ scale: nextScale, format: last?.format ?? 'png' })
   }
 
   function removeSetting(index: number) {
@@ -54,7 +57,7 @@ export function useExport() {
     settings.value[index] = { ...settings.value[index], scale }
   }
 
-  function updateFormat(index: number, format: ExportFormat) {
+  function updateFormat(index: number, format: ExportFormatId) {
     settings.value[index] = { ...settings.value[index], format }
   }
 
@@ -68,6 +71,7 @@ export function useExport() {
     addSetting,
     removeSetting,
     updateScale,
-    updateFormat
+    updateFormat,
+    formatSupportsScale
   }
 }

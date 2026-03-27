@@ -9,6 +9,7 @@ import {
 } from './figma-api-proxy'
 import { computeBounds } from './geometry'
 
+import type { RasterExportFormat } from './render-image'
 import type {
   SceneGraph,
   NodeType,
@@ -385,6 +386,6 @@ export class FigmaAPI implements NodeProxyHost {
 
   exportImage?: (
     nodeIds: string[],
-    options: { scale?: number; format?: 'PNG' | 'JPG' | 'WEBP'; quality?: number }
+    options: { scale?: number; format?: RasterExportFormat; quality?: number }
   ) => Promise<Uint8Array | null>
 }

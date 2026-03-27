@@ -6,6 +6,7 @@ import { loadFont } from '@/engine/fonts'
 import { toast } from '@/utils/toast'
 import {
   breakAtVertex,
+  BUILTIN_IO_FORMATS,
   cloneVectorNetwork,
   computeAccurateBounds,
   createDefaultEditorState,
@@ -14,12 +15,12 @@ import {
   exportFigFile,
   findAllHandles,
   findOppositeHandle,
+  IORegistry,
   mirrorHandle,
   nearestPointOnNetwork,
   readFigFile,
   removeVertex,
   renderNodesToImage,
-  renderNodesToSVG,
   SceneGraph,
   splitSegmentAt,
   prefetchFigmaSchema
@@ -27,8 +28,10 @@ import {
 
 import type {
   EditorState,
-  ExportFormat,
+  ExportRequest,
   Fill,
+  IOFormatAdapter,
+  RasterExportFormat,
   Rect,
   SceneNode,
   Vector,
@@ -104,6 +107,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
   })
 
   const editor = createEditor({ graph, state, loadFont, skipInitialGraphSetup: !!initialGraph })
+  const io = new IORegistry(BUILTIN_IO_FORMATS)
 
   if (initialGraph) {
     editor.subscribeToGraph()
@@ -790,7 +794,9 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       if (v > hi) hi = v
     }
 
-    const target = align === 'min' ? lo : (align === 'max' ? hi : (lo + hi) / 2)
+    let target = (lo + hi) / 2
+    if (align === 'min') target = lo
+    else if (align === 'max') target = hi
     for (const i of indices) {
       es.vertices[i] = { ...es.vertices[i], [prop]: target }
     }
@@ -1034,7 +1040,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
   async function renderExportImage(
     nodeIds: string[],
     scale: number,
-    format: ExportFormat
+    format: RasterExportFormat
   ): Promise<Uint8Array | null> {
     const renderer = editor.renderer
     if (!renderer) return null
@@ -1047,59 +1053,71 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     })
   }
 
-  function exportImageExtension(format: ExportFormat): string {
-    switch (format) {
-      case 'JPG':
-        return '.jpg'
-      case 'WEBP':
-        return '.webp'
-      default:
-        return '.png'
+  function getExportBaseName(target: ExportRequest['target']): string {
+    if (target.scope === 'node') {
+      return editor.graph.getNode(target.nodeId)?.name ?? 'Export'
     }
+    if (target.scope === 'selection' && target.nodeIds.length === 1) {
+      return editor.graph.getNode(target.nodeIds[0])?.name ?? 'Export'
+    }
+    if (target.scope === 'page') {
+      return editor.graph.getNode(target.pageId)?.name ?? 'Page'
+    }
+    return 'Export'
   }
 
-  function exportImageMime(format: ExportFormat): string {
-    switch (format) {
-      case 'JPG':
-        return 'image/jpeg'
-      case 'WEBP':
-        return 'image/webp'
-      default:
-        return 'image/png'
-    }
-  }
-
-  async function exportSelection(scale: number, format: ExportFormat) {
+  function getSelectionExportTarget(): ExportRequest['target'] {
     const ids = [...state.selectedIds]
+    if (ids.length > 0) return { scope: 'selection', nodeIds: ids }
+    return { scope: 'page', pageId: state.currentPageId }
+  }
 
-    if (format === 'SVG') {
-      const nodeIds =
-        ids.length > 0 ? ids : editor.graph.getChildren(state.currentPageId).map((n) => n.id)
-      const svgStr = renderNodesToSVG(editor.graph, state.currentPageId, nodeIds)
-      if (!svgStr) {
-        console.error('Export failed: renderNodesToSVG returned null')
-        return
+  function listSelectionExportFormats(): IOFormatAdapter[] {
+    return io.listExportFormats(state.selectedIds.size > 0 ? 'selection' : 'page')
+  }
+
+  async function exportTarget(
+    target: ExportRequest['target'],
+    formatId: string,
+    options?: { scale?: number; quality?: number; jsxFormat?: 'openpencil' | 'tailwind' }
+  ) {
+    const format = io.getFormat(formatId)
+    if (!format) throw new Error(`Unknown export format: ${formatId}`)
+
+    let exportOptions: unknown
+    if (formatId === 'png' || formatId === 'jpg' || formatId === 'webp') {
+      exportOptions = {
+        format: formatId.toUpperCase(),
+        scale: options?.scale ?? 1,
+        quality: options?.quality
       }
-      const svgData = new TextEncoder().encode(svgStr)
-      const node = ids.length === 1 ? editor.graph.getNode(ids[0]) : undefined
-      const fileName = `${node?.name ?? 'Export'}.svg`
-      await saveExportedFile(svgData, fileName, 'SVG', '.svg', 'image/svg+xml')
-      return
+    } else if (formatId === 'jsx') {
+      exportOptions = { format: options?.jsxFormat ?? 'openpencil' }
     }
 
-    const data = await renderExportImage(ids, scale, format)
-    if (!data) {
-      console.error(
-        `Export failed: renderExportImage returned null for format=${format} scale=${scale}`
-      )
-      return
-    }
+    const result = await io.exportContent(
+      formatId,
+      { graph: editor.graph, target },
+      exportOptions,
+      editor.renderer ? { canvasKit: editor.renderer.ck, renderer: editor.renderer } : undefined
+    )
 
-    const node = ids.length === 1 ? editor.graph.getNode(ids[0]) : undefined
-    const baseName = node?.name ?? 'Export'
-    const ext = exportImageExtension(format)
-    const fileName = `${baseName}@${scale}x${ext}`
-    await saveExportedFile(new Uint8Array(data), fileName, format, ext, exportImageMime(format))
+    const baseName = getExportBaseName(target)
+    const fileName =
+      formatId === 'png' || formatId === 'jpg' || formatId === 'webp'
+        ? `${baseName}@${options?.scale ?? 1}x.${result.extension}`
+        : `${baseName}.${result.extension}`
+
+    const bytes =
+      typeof result.data === 'string'
+        ? new TextEncoder().encode(result.data)
+        : new Uint8Array(result.data)
+
+    await saveExportedFile(bytes, fileName, format.label, `.${result.extension}`, result.mimeType)
+  }
+
+  async function exportSelection(scale: number, formatId: 'png' | 'jpg' | 'webp' | 'svg' | 'fig') {
+    await exportTarget(getSelectionExportTarget(), formatId, { scale })
   }
 
   async function saveExportedFile(
@@ -1205,6 +1223,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     saveFigFile,
     saveFigFileAs,
     renderExportImage,
+    listSelectionExportFormats,
+    exportTarget,
     exportSelection,
     mobileCopy,
     mobileCut,

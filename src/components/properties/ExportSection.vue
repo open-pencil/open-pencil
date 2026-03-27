@@ -7,18 +7,27 @@ import { sectionLabel, sectionWrapper } from '@/components/ui/section'
 import { useEditorStore } from '@/stores/editor'
 import { useExport, useI18n } from '@open-pencil/vue'
 
-import type { ExportFormat } from '@open-pencil/core'
+import type { ExportFormatId } from '@open-pencil/vue/controls/useExport'
 
 const editorStore = useEditorStore()
 const { panels } = useI18n()
-const { settings, nodeName, addSetting, removeSetting, updateScale, updateFormat } = useExport()
+const {
+  settings,
+  nodeName,
+  addSetting,
+  removeSetting,
+  updateScale,
+  updateFormat,
+  formatSupportsScale
+} = useExport()
 
 const SCALE_OPTIONS = [0.5, 0.75, 1, 1.5, 2, 3, 4].map((s) => ({ value: s, label: `${s}x` }))
-const FORMAT_OPTIONS: { value: ExportFormat; label: string }[] = [
-  { value: 'PNG', label: 'PNG' },
-  { value: 'JPG', label: 'JPG' },
-  { value: 'WEBP', label: 'WEBP' },
-  { value: 'SVG', label: 'SVG' }
+const FORMAT_OPTIONS: { value: ExportFormatId; label: string }[] = [
+  { value: 'png', label: 'PNG' },
+  { value: 'jpg', label: 'JPG' },
+  { value: 'webp', label: 'WEBP' },
+  { value: 'svg', label: 'SVG' },
+  { value: 'fig', label: '.fig' }
 ]
 
 const previewUrl = ref<string | null>(null)
@@ -27,7 +36,7 @@ const exporting = ref(false)
 
 const PREVIEW_WIDTH = 480
 
-async function doExport(exportSettings: Array<{ scale: number; format: ExportFormat }>) {
+async function doExport(exportSettings: Array<{ scale: number; format: ExportFormatId }>) {
   exporting.value = true
   try {
     for (const s of exportSettings) await editorStore.exportSelection(s.scale, s.format)
@@ -85,15 +94,15 @@ onScopeDispose(() => {
       class="flex items-center gap-1.5 py-0.5"
     >
       <AppSelect
-        v-if="setting.format !== 'SVG'"
         :model-value="setting.scale"
         :options="SCALE_OPTIONS"
+        :disabled="!formatSupportsScale(setting.format)"
         @update:model-value="updateScale(i, Number($event))"
       />
       <AppSelect
         :model-value="setting.format"
         :options="FORMAT_OPTIONS"
-        @update:model-value="updateFormat(i, $event as ExportFormat)"
+        @update:model-value="updateFormat(i, $event as ExportFormatId)"
       />
       <button :class="iconButton({ ui: { base: 'shrink-0' } })" @click="removeSetting(i)">−</button>
     </div>

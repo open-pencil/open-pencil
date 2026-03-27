@@ -2,7 +2,8 @@ import type { SkiaRenderer } from './renderer'
 import type { SceneGraph } from './scene-graph'
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
-export type ExportFormat = 'PNG' | 'JPG' | 'WEBP' | 'SVG'
+export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
+export type ExportFormat = RasterExportFormat | 'SVG'
 
 interface RenderOptions {
   scale: number

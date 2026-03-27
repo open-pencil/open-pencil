@@ -520,14 +520,12 @@ function solveMergedTangents(
   const toRA = { x: vR.x - vA.x, y: vR.y - vA.y }
   const toRB = { x: vR.x - vB.x, y: vR.y - vB.y }
   const inner = { x: b1 * toRA.x + b2 * toRB.x, y: b1 * toRA.y + b2 * toRB.y }
-  const c =
-    Math.abs(inner.x) > Math.abs(inner.y)
-      ? (inner.x !== 0
-        ? rhs.x / inner.x
-        : 1)
-      : (inner.y !== 0
-        ? rhs.y / inner.y
-        : 1)
+  let c = 1
+  if (Math.abs(inner.x) > Math.abs(inner.y)) {
+    if (inner.x !== 0) c = rhs.x / inner.x
+  } else if (inner.y !== 0) {
+    c = rhs.y / inner.y
+  }
   return {
     tangentStart: { x: c * toRA.x, y: c * toRA.y },
     tangentEnd: { x: c * toRB.x, y: c * toRB.y }

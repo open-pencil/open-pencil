@@ -17,7 +17,7 @@ import {
 } from '@open-pencil/core'
 
 import type { EditorStore } from '@/stores/editor'
-import type { ExportFormat } from '@open-pencil/core'
+import type { RasterExportFormat } from '@open-pencil/core'
 
 export function connectAutomation(getStore: () => EditorStore) {
   const token = randomHex(32)
@@ -96,7 +96,7 @@ export function connectAutomation(getStore: () => EditorStore) {
     const data = await store.renderExportImage(
       nodeIds,
       exportArgs?.scale ?? 1,
-      (exportArgs?.format ?? 'PNG') as ExportFormat
+      (exportArgs?.format ?? 'PNG') as RasterExportFormat
     )
     if (!data) throw new Error('Export failed')
     let binary = ''

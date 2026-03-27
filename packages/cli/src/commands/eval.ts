@@ -28,7 +28,7 @@ export default defineCommand({
   args: {
     file: {
       type: 'positional',
-      description: '.fig file path (omit to connect to running app)',
+      description: 'Document file path (omit to connect to running app)',
       required: false
     },
     code: { type: 'string', alias: 'c', description: 'JavaScript code to execute' },
@@ -89,10 +89,11 @@ export default defineCommand({
     }
 
     if (args.write || args.output) {
-      const { exportFigFile } = await import('@open-pencil/core')
+      const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core')
+      const io = new IORegistry(BUILTIN_IO_FORMATS)
       const outPath = args.output ? args.output : file
-      const data = await exportFigFile(graph)
-      await Bun.write(outPath, new Uint8Array(data))
+      const result = await io.writeDocument('fig', graph)
+      await Bun.write(outPath, result.data as Uint8Array)
       if (!args.quiet) {
         console.error(`Written to ${outPath}`)
       }

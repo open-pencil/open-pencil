@@ -2,6 +2,7 @@ import { cloneVectorNetwork } from '../scene-graph'
 import { defineTool, nodeSummary } from './schema'
 
 import type { FigmaAPI } from '../figma-api'
+import type { RasterExportFormat } from '../render-image'
 import type { SceneNode, VectorNetwork } from '../scene-graph'
 
 function getVectorNode(
@@ -304,7 +305,7 @@ export const exportImage = defineTool({
     }
     const ids =
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((n) => n.id)
-    const format = (args.format ?? 'PNG').toUpperCase() as 'PNG' | 'JPG' | 'WEBP'
+    const format = (args.format ?? 'PNG').toUpperCase() as RasterExportFormat
     const data = await figma.exportImage(ids, {
       scale: args.scale ?? 1,
       format

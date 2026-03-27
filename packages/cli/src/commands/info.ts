@@ -19,7 +19,7 @@ export default defineCommand({
   args: {
     file: {
       type: 'positional',
-      description: '.fig file path (omit to connect to running app)',
+      description: 'Document file path (omit to connect to running app)',
       required: false
     },
     json: { type: 'boolean', description: 'Output as JSON' }

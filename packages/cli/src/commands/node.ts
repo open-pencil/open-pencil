@@ -22,7 +22,7 @@ export default defineCommand({
   args: {
     file: {
       type: 'positional',
-      description: '.fig file path (omit to connect to running app)',
+      description: 'Document file path (omit to connect to running app)',
       required: false
     },
     id: { type: 'string', description: 'Node ID', required: true },

@@ -1,36 +1,18 @@
 import {
-  parseFigFile,
-  initCanvasKit,
-  type SceneGraph,
-  type ExportFormat,
+  BUILTIN_IO_FORMATS,
+  IORegistry,
   computeAllLayouts,
-  headlessRenderNodes,
-  headlessRenderThumbnail
+  initCanvasKit,
+  type SceneGraph
 } from '@open-pencil/core'
 
 export { initCanvasKit }
 
+const io = new IORegistry(BUILTIN_IO_FORMATS)
+
 export async function loadDocument(filePath: string): Promise<SceneGraph> {
-  const data = await Bun.file(filePath).arrayBuffer()
-  const graph = await parseFigFile(data)
+  const bytes = new Uint8Array(await Bun.file(filePath).arrayBuffer())
+  const { graph } = await io.readDocument({ name: filePath, data: bytes })
   computeAllLayouts(graph)
   return graph
-}
-
-export async function exportNodes(
-  graph: SceneGraph,
-  pageId: string,
-  nodeIds: string[],
-  options: { scale?: number; format?: ExportFormat; quality?: number }
-): Promise<Uint8Array | null> {
-  return headlessRenderNodes(graph, pageId, nodeIds, options)
-}
-
-export async function exportThumbnail(
-  graph: SceneGraph,
-  pageId: string,
-  width: number,
-  height: number
-): Promise<Uint8Array | null> {
-  return headlessRenderThumbnail(graph, pageId, width, height)
 }

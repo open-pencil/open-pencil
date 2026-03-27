@@ -15,6 +15,10 @@
 - Resume pen drawing from existing open path endpoints — click an endpoint to continue the curve
 - Close open paths by dragging one endpoint to the other
 - Align selected anchor points relative to each other in vector edit mode — the standard alignment buttons in the position panel now operate on selected vertices when 2 or more are selected
+- Unified core IO format registry — `.fig` is now modeled as the native document format alongside shared export adapters for PNG, JPG, WEBP, SVG, and JSX
+- Export selection or current page as `.fig` from the app export UI and app menu
+- New CLI commands: `open-pencil convert` for document conversion and `open-pencil formats` to inspect readable/writable/exportable formats
+- CLI export now supports `.fig` output and routes PNG/JPG/WEBP/SVG/JSX/`.fig` through the shared IO layer
 
 ### Fixes
 
