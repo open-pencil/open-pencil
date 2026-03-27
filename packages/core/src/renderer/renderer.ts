@@ -107,19 +107,11 @@ import {
   buildParagraph as buildParagraphFn
 } from './text'
 
-import type { EditorState } from '../editor/types'
-import type {
-  SceneNode,
-  SceneGraph,
-  Fill,
-  Stroke,
-  VectorVertex,
-  VectorRegion
-} from '../scene-graph'
+import type { EditorState, NodeEditState, PenState } from '../editor/types'
+import type { SceneNode, SceneGraph, Fill, Stroke } from '../scene-graph'
 import type { SnapGuide } from '../snap'
 import type { TextEditor } from '../text-editor'
 import type { Color, Rect, Vector } from '../types'
-import type { NodeEditOverlayState } from './node-edit-overlay'
 import type {
   Image as CKImage,
   Path,
@@ -151,36 +143,8 @@ export interface RenderOverlays {
     length: number
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
-  penState?: {
-    vertices: Vector[]
-    segments: Array<{
-      start: number
-      end: number
-      tangentStart: Vector
-      tangentEnd: Vector
-    }>
-    dragTangent: Vector | null
-    oppositeDragTangent?: Vector | null
-    closingToFirst: boolean
-    pendingClose?: boolean
-    cursorX?: number
-    cursorY?: number
-  } | null
-  nodeEditState?: {
-    nodeId: string
-    vertices: VectorVertex[]
-    segments: Array<{
-      start: number
-      end: number
-      tangentStart: Vector
-      tangentEnd: Vector
-    }>
-    regions: VectorRegion[]
-    selectedVertexIndices: Set<number>
-    /** Set of selected handles as "segIdx:tangentField" strings */
-    selectedHandles?: Set<string>
-    hoveredHandleInfo?: { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' } | null
-  } | null
+  penState?: (PenState & { cursorX?: number; cursorY?: number }) | null
+  nodeEditState?: NodeEditState | null
   remoteCursors?: Array<{
     name: string
     color: Color
@@ -1105,7 +1069,7 @@ export class SkiaRenderer {
     graph: SceneGraph,
     editState: RenderOverlays['nodeEditState']
   ): void {
-    drawNodeEditOverlayFn(this, canvas, graph, editState as NodeEditOverlayState | null)
+    drawNodeEditOverlayFn(this, canvas, graph, editState)
   }
 
   private drawPenOverlay(canvas: Canvas, penState: RenderOverlays['penState']): void {

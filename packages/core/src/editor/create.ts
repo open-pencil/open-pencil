@@ -8,6 +8,7 @@ import { UndoManager } from '../undo'
 import { createAlignmentActions } from './alignment'
 import { createClipboardActions } from './clipboard'
 import { createComponentActions } from './components'
+import { createNodeEditActions } from './node-edit'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
 import { createSelectionActions } from './selection'
@@ -36,6 +37,7 @@ export function createDefaultEditorState(pageId: string): EditorState {
     hoveredNodeId: null,
     editingTextId: null,
     penState: null,
+    nodeEditState: null,
     penCursorX: null,
     penCursorY: null,
     remoteCursors: [],
@@ -191,6 +193,7 @@ export function createEditor(options?: EditorOptions) {
   const undoActions = createUndoActions(ctx)
   const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
+  const nodeEdit = createNodeEditActions(ctx)
   const variables = createVariableActions(ctx)
   const alignment = createAlignmentActions(ctx)
 
@@ -251,6 +254,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Nodes (update, layout)
     ...nodes,
+
+    // Vector node edit
+    ...nodeEdit,
 
     // Alignment (align, flip, rotate)
     ...alignment,

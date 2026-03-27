@@ -25,7 +25,7 @@ import {
 } from '@open-pencil/vue/shared/input/select'
 import { TOOL_TO_NODE } from '@open-pencil/vue/shared/input/types'
 
-import type { SceneNode, Vector, VectorSegment } from '@open-pencil/core'
+import type { HandleField, NodeEditState, SceneNode, Vector } from '@open-pencil/core'
 import type { Editor } from '@open-pencil/core/editor'
 import type {
   DragMarquee,
@@ -34,15 +34,6 @@ import type {
   DragState
 } from '@open-pencil/vue/shared/input/types'
 
-type NodeEditState = {
-  segments: VectorSegment[]
-  vertices: Vector[]
-  hoveredHandleInfo: {
-    segmentIndex: number
-    tangentField: 'tangentStart' | 'tangentEnd'
-  } | null
-}
-
 type NodeEditMethods = Partial<{
   nodeEditBendHandle: (
     vertexIndex: number,
@@ -50,7 +41,7 @@ type NodeEditMethods = Partial<{
     dy: number,
     independent: boolean,
     targetSegmentIndex: number | null,
-    targetTangentField: 'tangentStart' | 'tangentEnd' | null
+    targetTangentField: HandleField | null
   ) => void
   nodeEditZeroVertexHandles: (vertexIndex: number) => void
   nodeEditConnectEndpoints: (a: number, b: number) => void
@@ -397,9 +388,7 @@ export function useCanvasInput(
       editor.state.penCursorY = null
 
       // In node edit mode with pen tool: click curve to add point, click vertex to remove
-      const nodeEditState = (
-        editor.state as Editor['state'] & { nodeEditState?: NodeEditState | null }
-      ).nodeEditState
+      const nodeEditState = editor.state.nodeEditState
       if (nodeEditState) {
         handlePenNodeEditDown(e, cx, cy, editor)
         return
@@ -489,9 +478,7 @@ export function useCanvasInput(
     }
 
     // Track hovered handle in node edit mode
-    const nodeEditState = (
-      editor.state as Editor['state'] & { nodeEditState?: NodeEditState | null }
-    ).nodeEditState
+    const nodeEditState = editor.state.nodeEditState
     if (!drag.value && nodeEditState) {
       const { cx, cy } = getCoords(e)
       const hit = hitTestEditHandle(editor, cx, cy)
@@ -692,8 +679,7 @@ export function useCanvasInput(
     }
     if (d.type === 'edit-node') {
       // Check if a single endpoint was dragged onto another endpoint → connect
-      const es = (editor.state as Editor['state'] & { nodeEditState?: NodeEditState | null })
-        .nodeEditState
+      const es = editor.state.nodeEditState
       if (es && d.origPositions.size === 1) {
         const [draggedIdx] = d.origPositions.keys()
         if (isEndpoint(draggedIdx, es.segments)) {

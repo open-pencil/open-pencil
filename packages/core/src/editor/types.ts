@@ -1,5 +1,13 @@
 import type { SkiaRenderer } from '../renderer/renderer'
-import type { SceneGraph, VectorSegment, VectorVertex } from '../scene-graph'
+import type {
+  Fill,
+  SceneGraph,
+  SceneNode,
+  VectorNetwork,
+  VectorRegion,
+  VectorSegment,
+  VectorVertex
+} from '../scene-graph'
 import type { SnapGuide } from '../snap'
 import type { TextEditor } from '../text-editor'
 import type { Color, Rect, Vector } from '../types'
@@ -52,6 +60,42 @@ export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
   KeyH: 'HAND'
 }
 
+export type HandleField = 'tangentStart' | 'tangentEnd'
+
+export interface HandleRef {
+  segmentIndex: number
+  tangentField: HandleField
+}
+
+export interface NodeEditState {
+  nodeId: string
+  origNetwork: VectorNetwork
+  origBounds: Rect
+  vertices: VectorVertex[]
+  segments: VectorSegment[]
+  regions: VectorRegion[]
+  selectedVertexIndices: Set<number>
+  draggedHandleInfo: {
+    vertexIndex: number
+    handleType: HandleField
+    segmentIndex: number
+  } | null
+  selectedHandles: Set<string>
+  hoveredHandleInfo: HandleRef | null
+}
+
+export interface PenState {
+  vertices: VectorVertex[]
+  segments: VectorSegment[]
+  dragTangent: Vector | null
+  oppositeDragTangent: Vector | null
+  pendingClose?: boolean
+  closingToFirst: boolean
+  resumingNodeId?: string
+  resumedFills?: Fill[]
+  resumedStrokes?: SceneNode['strokes']
+}
+
 export interface EditorState {
   activeTool: Tool
   currentPageId: string
@@ -70,14 +114,8 @@ export interface EditorState {
   } | null
   hoveredNodeId: string | null
   editingTextId: string | null
-  penState: {
-    vertices: VectorVertex[]
-    segments: VectorSegment[]
-    dragTangent: Vector | null
-    oppositeDragTangent: Vector | null
-    pendingClose?: boolean
-    closingToFirst: boolean
-  } | null
+  penState: PenState | null
+  nodeEditState: NodeEditState | null
   penCursorX: number | null
   penCursorY: number | null
   remoteCursors: Array<{

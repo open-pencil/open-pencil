@@ -19,6 +19,10 @@ export type {
   EditorOptions,
   EditorState,
   EditorToolDef,
+  HandleField,
+  HandleRef,
+  NodeEditState,
+  PenState,
   Tool
 } from './editor'
 

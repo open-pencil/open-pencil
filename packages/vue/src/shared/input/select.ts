@@ -8,20 +8,14 @@ import { duplicateAndDrag, detectAutoLayoutParent } from './move'
 import { tryStartResize } from './resize'
 
 import type { DragEditHandle, DragEditNode, DragState } from './types'
-import type { SceneNode, Vector, VectorSegment, VectorVertex } from '@open-pencil/core'
+import type {
+  HandleField,
+  NodeEditState,
+  SceneNode,
+  Vector,
+  VectorSegment
+} from '@open-pencil/core'
 import type { Editor } from '@open-pencil/core/editor'
-
-type NodeEditState = {
-  nodeId: string
-  vertices: VectorVertex[]
-  segments: VectorSegment[]
-  selectedVertexIndices: Set<number>
-  selectedHandles: Set<string>
-  hoveredHandleInfo: {
-    segmentIndex: number
-    tangentField: 'tangentStart' | 'tangentEnd'
-  } | null
-}
 
 type NodeEditEditor = Partial<{
   nodeEditSelectVertex: (vertexIndex: number, addToSelection: boolean) => void
@@ -31,7 +25,7 @@ type NodeEditEditor = Partial<{
   nodeEditAddVertex: (cx: number, cy: number) => void
   nodeEditSetHandle: (
     segmentIndex: number,
-    tangentField: 'tangentStart' | 'tangentEnd',
+    tangentField: HandleField,
     newTangent: Vector,
     options?: {
       breakMirroring?: boolean
@@ -42,10 +36,7 @@ type NodeEditEditor = Partial<{
 }>
 
 function getNodeEditState(editor: Editor): NodeEditState | null {
-  return (
-    (editor.state as Editor['state'] & { nodeEditState?: NodeEditState | null }).nodeEditState ??
-    null
-  )
+  return editor.state.nodeEditState
 }
 
 export interface HitTestFns {

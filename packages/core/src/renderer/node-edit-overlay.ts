@@ -2,25 +2,20 @@ import { computeAccurateBounds } from '../bezier-math'
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '../constants'
 import { vectorNetworkToPath } from '../vector'
 
+import type { NodeEditState } from '../editor'
 import type { VectorVertex, VectorSegment, VectorRegion, SceneGraph } from '../scene-graph'
 import type { Vector } from '../types'
-import type { SkiaRenderer, RenderOverlays } from './renderer'
+import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
 type ToScreenFn = (x: number, y: number) => Vector
 
-type HandleInfo =
-  | { segmentIndex: number; tangentField: 'tangentStart' | 'tangentEnd' }
-  | null
-  | undefined
+type HandleInfo = NodeEditState['hoveredHandleInfo']
 
-export interface NodeEditOverlayState {
-  nodeId: string
-  vertices: VectorVertex[]
-  segments: VectorSegment[]
-  regions: VectorRegion[]
-  selectedVertexIndices: Set<number>
-  selectedHandles?: Set<string>
+export interface NodeEditOverlayState extends Pick<
+  NodeEditState,
+  'nodeId' | 'vertices' | 'segments' | 'regions' | 'selectedVertexIndices' | 'selectedHandles'
+> {
   hoveredHandleInfo?: HandleInfo
 }
 
@@ -55,7 +50,7 @@ export function drawNodeEditOverlay(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
-  editState: RenderOverlays['nodeEditState']
+  editState: NodeEditState | null | undefined
 ): void {
   if (!editState) return
   const { segments, selectedVertexIndices } = editState
@@ -71,7 +66,7 @@ export function drawNodeEditOverlay(
     y: y * r.zoom + r.panY
   })
 
-  const selectedHandles = editState.selectedHandles ?? new Set<string>()
+  const selectedHandles = editState.selectedHandles
   const hovered = editState.hoveredHandleInfo ?? null
   const handleVisibleVertices = computeHandleVisibleVertices(
     selectedVertexIndices,
