@@ -5,6 +5,7 @@ import { deflateSync, inflateSync } from 'fflate'
 import { getLoadedFontData, normalizeFontFamily, weightToStyle } from '../fonts'
 import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '../vector'
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
+import { sceneNodeToKiwiWithContext, type KiwiNodeChange } from './node-export'
 
 import type { SceneGraph, SceneNode, CharacterStyleOverride } from '../scene-graph'
 import type { Color, GUID, Matrix } from '../types'
@@ -54,8 +55,6 @@ export async function buildFontDigestMap(graph: SceneGraph): Promise<Map<string,
   return result
 }
 
-type KiwiNodeChange = NodeChange & Record<string, unknown>
-
 export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
   const header = new TextDecoder().decode(binary.slice(0, 8))
   if (header !== 'fig-kiwi') return null
@@ -77,7 +76,7 @@ export function decompressFigKiwiData(compressed: Uint8Array): Uint8Array {
   try {
     return inflateSync(compressed)
   } catch {
-    throw new Error('Failed to decompress fig-kiwi data (try async variant for Zstd)')
+    throw new Error('Failed to decompress fig-kiwi data')
   }
 }
 
@@ -458,105 +457,28 @@ export function sceneNodeToKiwi(
   fontDigestMap?: Map<string, Uint8Array>,
   varIdToGuid?: Map<string, GUID>
 ): KiwiNodeChange[] {
-  const localID = localIdCounter.value++
-  const guid = { sessionID: 1, localID }
-  nodeIdToGuid?.set(node.id, guid)
-
-  const fillPaints = node.fills.map(fillToKiwiPaint)
-  const strokePaints = node.strokes.map((s) => ({
-    type: 'SOLID' as const,
-    color: safeColor(s.color),
-    opacity: s.opacity,
-    visible: s.visible,
-    blendMode: 'NORMAL' as const
-  }))
-
-  const nc: KiwiNodeChange = {
-    guid,
-    parentIndex: { guid: parentGuid, position: fractionalPosition(childIndex) },
-    type: mapToFigmaType(node.type),
-    name: node.name,
-    visible: node.visible,
-    opacity: node.opacity,
-    phase: 'CREATED',
-    size: { x: node.width, y: node.height },
-    transform: computeExportTransform(node, graph),
-    strokeWeight: node.strokes.length > 0 ? node.strokes[0].weight : 1,
-    strokeAlign: node.strokes.length > 0 ? node.strokes[0].align : 'INSIDE'
-  }
-
-  if (node.independentStrokeWeights) {
-    nc.borderStrokeWeightsIndependent = true
-    nc.borderTopWeight = node.borderTopWeight
-    nc.borderRightWeight = node.borderRightWeight
-    nc.borderBottomWeight = node.borderBottomWeight
-    nc.borderLeftWeight = node.borderLeftWeight
-  }
-
-  if (fillPaints.length > 0) nc.fillPaints = fillPaints
-  if (strokePaints.length > 0) nc.strokePaints = strokePaints
-
-  serializeCornerRadii(node, nc)
-
-  if (node.effects.length > 0) {
-    nc.effects = node.effects.map((e) => ({
-      type: e.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : e.type,
-      color: safeColor(e.color),
-      offset: e.offset,
-      radius: e.radius,
-      spread: e.spread,
-      visible: e.visible
-    }))
-  }
-
-  if (node.type === 'TEXT') serializeTextProps(node, nc, graph, fontDigestMap)
-
-  nc.frameMaskDisabled = !node.clipsContent
-
-  if (node.horizontalConstraint !== 'MIN') nc.horizontalConstraint = node.horizontalConstraint
-  if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
-
-  if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
-  if (node.strokeJoin !== 'MITER') nc.strokeJoin = node.strokeJoin
-  if (node.strokeMiterLimit !== 28.96) nc.miterLimit = node.strokeMiterLimit
-  if (node.dashPattern.length > 0) nc.dashPattern = node.dashPattern
-
-  if (node.arcData) {
-    nc.arcData = {
-      startingAngle: node.arcData.startingAngle,
-      endingAngle: node.arcData.endingAngle,
-      innerRadius: node.arcData.innerRadius
-    }
-  }
-
-  if (!node.autoRename) nc.autoRename = false
-
-  serializeLayoutProps(node, nc)
-  serializeGeometry(node, nc, blobs)
-  serializeVariableBindings(node, nc, graph, varIdToGuid)
-
-  const result: KiwiNodeChange[] = [nc]
-  const children = graph.getChildren(node.id)
-  for (let i = 0; i < children.length; i++) {
-    result.push(
-      ...sceneNodeToKiwi(
-        children[i],
-        guid,
-        i,
-        localIdCounter,
-        graph,
-        blobs,
-        nodeIdToGuid,
-        fontDigestMap,
-        varIdToGuid
-      )
-    )
-  }
-
-  return result
+  return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
+    graph,
+    blobs,
+    nodeIdToGuid,
+    fontDigestMap,
+    varIdToGuid,
+    fractionalPosition,
+    mapToFigmaType,
+    fillToKiwiPaint,
+    safeColor,
+    computeExportTransform,
+    serializeCornerRadii,
+    serializeTextProps,
+    serializeLayoutProps,
+    serializeGeometry,
+    serializeVariableBindings,
+    sceneNodeToKiwi: sceneNodeToKiwiWithContext
+  })
 }
 
 const IDENTITY_TRANSFORM = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+const DEFAULT_STROKE_WEIGHT = 1
 
 export function makeDocumentNodeChange(guid: GUID): NodeChange & Record<string, unknown> {
   return {
@@ -567,7 +489,7 @@ export function makeDocumentNodeChange(guid: GUID): NodeChange & Record<string, 
     opacity: 1,
     phase: 'CREATED',
     transform: { ...IDENTITY_TRANSFORM },
-    strokeWeight: 1,
+    strokeWeight: DEFAULT_STROKE_WEIGHT,
     strokeAlign: 'CENTER',
     strokeJoin: 'MITER',
     documentColorProfile: 'SRGB'
@@ -590,7 +512,7 @@ export function makeCanvasNodeChange(
     opacity: 1,
     phase: 'CREATED',
     transform: { ...IDENTITY_TRANSFORM },
-    strokeWeight: 1,
+    strokeWeight: DEFAULT_STROKE_WEIGHT,
     strokeAlign: 'CENTER',
     strokeJoin: 'MITER',
     ...extra

@@ -220,6 +220,25 @@ export type LayoutCounterAlign = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'BASELIN
 export type LayoutAlignSelf = 'AUTO' | 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'BASELINE'
 export type LayoutWrap = 'NO_WRAP' | 'WRAP'
 
+export interface PluginDataEntry {
+  pluginId: string
+  key: string
+  value: string
+}
+
+export interface SharedPluginDataEntry {
+  namespace: string
+  key: string
+  value: string
+}
+
+export interface PluginRelaunchDataEntry {
+  pluginId: string
+  command: string
+  message: string
+  isDeleted: boolean
+}
+
 export interface SceneNode {
   id: string
   type: NodeType
@@ -334,6 +353,10 @@ export interface SceneNode {
   overrides: Record<string, unknown>
 
   boundVariables: Record<string, string>
+
+  pluginData: PluginDataEntry[]
+  sharedPluginData: SharedPluginDataEntry[]
+  pluginRelaunchData: PluginRelaunchDataEntry[]
 
   internalOnly: boolean
 
@@ -471,6 +494,9 @@ function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): 
     componentId: null,
     overrides: {},
     boundVariables: {},
+    pluginData: [],
+    sharedPluginData: [],
+    pluginRelaunchData: [],
     internalOnly: false,
     flipX: false,
     flipY: false,

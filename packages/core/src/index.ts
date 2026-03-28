@@ -95,6 +95,18 @@ export type {
 export { executeRpcCommand, ALL_RPC_COMMANDS } from './rpc'
 export { queryByXPath, matchByXPath } from './xpath'
 export type { XPathQueryOptions } from './xpath'
+export {
+  okhclToRGBA,
+  serializeOkHCLPayload,
+  parseOkHCLPayload,
+  setNodeFillOkHCL,
+  setNodeStrokeOkHCL,
+  getNodeOkHCLPayloads,
+  getFillOkHCL,
+  getStrokeOkHCL,
+  type OkHCLColor,
+  type OkHCLPayload
+} from './okhcl'
 export type {
   InfoResult,
   PageItem,

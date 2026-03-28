@@ -1,6 +1,7 @@
 import { normalizeColor } from './color'
 import { copyFills, copyStrokes, copyEffects } from './copy'
 import { FONT_WEIGHT_NAMES } from './fonts'
+import { getFillOkHCL, getStrokeOkHCL, setNodeFillOkHCL, setNodeStrokeOkHCL } from './okhcl'
 
 /* eslint-disable max-lines -- Figma Plugin API proxy; FigmaAPI already in separate file */
 import type {
@@ -13,6 +14,7 @@ import type {
   LayoutMode
 } from './scene-graph'
 import type { Rect } from './types'
+import type { OkHCLColor, OkHCLPayload } from './okhcl'
 
 const MIXED = Symbol('mixed')
 
@@ -42,6 +44,8 @@ export function styleNameToWeight(style: string): { weight: number; italic: bool
 export const INTERNAL_ID = Symbol('id')
 export const INTERNAL_GRAPH = Symbol('graph')
 export const INTERNAL_API = Symbol('api')
+
+const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
 
 export interface NodeProxyHost {
   wrapNode(id: string): FigmaNodeProxy
@@ -931,6 +935,70 @@ export class FigmaNodeProxy {
   findAllWithCriteria(criteria: { types?: string[] }): FigmaNodeProxy[] {
     const types = criteria.types ? new Set(criteria.types) : null
     return this.findAll((node) => !types || types.has(node.type))
+  }
+
+  // --- Plugin data ---
+
+  getPluginData(key: string): string {
+    return this._raw().pluginData.find(
+      (entry) => entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && entry.key === key
+    )?.value ?? ''
+  }
+
+  setPluginData(key: string, value: string): void {
+    const node = this._raw()
+    const pluginData = node.pluginData.filter(
+      (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && entry.key === key)
+    )
+    if (value !== '') {
+      pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_DATA_NAMESPACE, key, value })
+    }
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { pluginData })
+  }
+
+  getPluginDataKeys(): string[] {
+    return this._raw().pluginData
+      .filter((entry) => entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE)
+      .map((entry) => entry.key)
+  }
+
+  getSharedPluginData(namespace: string, key: string): string {
+    return this._raw().sharedPluginData.find(
+      (entry) => entry.namespace === namespace && entry.key === key
+    )?.value ?? ''
+  }
+
+  setSharedPluginData(namespace: string, key: string, value: string): void {
+    const node = this._raw()
+    const sharedPluginData = node.sharedPluginData.filter(
+      (entry) => !(entry.namespace === namespace && entry.key === key)
+    )
+    if (value !== '') {
+      sharedPluginData.push({ namespace, key, value })
+    }
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { sharedPluginData })
+  }
+
+  getSharedPluginDataKeys(namespace: string): string[] {
+    return this._raw().sharedPluginData
+      .filter((entry) => entry.namespace === namespace)
+      .map((entry) => entry.key)
+  }
+
+  getFillOkHCL(index = 0): OkHCLPayload | null {
+    return getFillOkHCL(this._raw(), index)
+  }
+
+  setFillOkHCL(color: OkHCLColor, index = 0): void {
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], setNodeFillOkHCL(this._raw(), index, color))
+  }
+
+  getStrokeOkHCL(index = 0): OkHCLPayload | null {
+    return getStrokeOkHCL(this._raw(), index)
+  }
+
+  setStrokeOkHCL(color: OkHCLColor, index = 0): void {
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], setNodeStrokeOkHCL(this._raw(), index, color))
   }
 
   // --- Serialization ---

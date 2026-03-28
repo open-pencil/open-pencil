@@ -31,7 +31,10 @@ import type {
   GeometryPath,
   StyleRun,
   CharacterStyleOverride,
-  WindingRule
+  WindingRule,
+  PluginDataEntry,
+  SharedPluginDataEntry,
+  PluginRelaunchDataEntry
 } from '../scene-graph'
 import type { Color, Matrix, Vector } from '../types'
 import type { NodeChange, Paint, Effect as KiwiEffect, GUID } from './codec'
@@ -486,6 +489,41 @@ function extractBoundVariables(nc: NodeChange): Record<string, string> {
   return bindings
 }
 
+function extractPluginData(nc: NodeChange): PluginDataEntry[] {
+  return (nc.pluginData ?? []).map((entry) => ({
+    pluginId: entry.pluginID,
+    key: entry.key,
+    value: entry.value
+  }))
+}
+
+function extractSharedPluginData(nc: NodeChange): SharedPluginDataEntry[] {
+  return extractPluginData(nc).map((entry) => {
+    const slashIndex = entry.key.indexOf('/')
+    if (slashIndex === -1) {
+      return {
+        namespace: entry.pluginId,
+        key: entry.key,
+        value: entry.value
+      }
+    }
+    return {
+      namespace: entry.key.slice(0, slashIndex),
+      key: entry.key.slice(slashIndex + 1),
+      value: entry.value
+    }
+  })
+}
+
+function extractPluginRelaunchData(nc: NodeChange): PluginRelaunchDataEntry[] {
+  return (nc.pluginRelaunchData ?? []).map((entry) => ({
+    pluginId: entry.pluginID,
+    command: entry.command,
+    message: entry.message,
+    isDeleted: entry.isDeleted
+  }))
+}
+
 function convertTransformProps(
   nc: NodeChange
 ): Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'> {
@@ -702,6 +740,9 @@ export function nodeChangeToProps(
     expanded: true,
     autoRename: (nc.autoRename ?? true) as boolean,
     boundVariables: extractBoundVariables(nc),
+    pluginData: extractPluginData(nc),
+    sharedPluginData: extractSharedPluginData(nc),
+    pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc)
   }
