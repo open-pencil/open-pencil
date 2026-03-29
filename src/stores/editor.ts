@@ -1186,14 +1186,14 @@ export function createEditorStore(initialGraph?: SceneGraph) {
 
   // ─── Mobile clipboard ─────────────────────────────────────────
 
-  function mobileCopy() {
+  async function mobileCopy() {
     const transfer = new DataTransfer()
-    editor.writeCopyData(transfer)
+    await editor.writeCopyData(transfer)
     state.clipboardHtml = transfer.getData('text/html')
   }
 
-  function mobileCut() {
-    mobileCopy()
+  async function mobileCut() {
+    await mobileCopy()
     editor.deleteSelected()
   }
 

@@ -946,7 +946,7 @@ describe('text node export', () => {
     expect(textNc.textData.lines.length).toBeGreaterThanOrEqual(1)
     expect(textNc.textData.lines[0].lineType).toBe('PLAIN')
 
-    expect(textNc.textUserLayoutVersion).toBe(3)
+    expect(textNc.textUserLayoutVersion).toBe(4)
 
     expect(textNc.derivedTextData).toBeDefined()
     expect(textNc.derivedTextData.layoutSize).toBeDefined()

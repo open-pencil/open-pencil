@@ -598,7 +598,7 @@ describe('buildFigmaClipboardHTML', () => {
     await initCodec()
   })
 
-  it('encodes a simple frame without throwing', () => {
+  it('encodes a simple frame without throwing', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, {
@@ -607,12 +607,12 @@ describe('buildFigmaClipboardHTML', () => {
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
     })
 
-    const html = buildFigmaClipboardHTML([frame], graph)
+    const html = await buildFigmaClipboardHTML([frame], graph)
     expect(html).toContain('figmeta')
     expect(html).toContain('figma')
   })
 
-  it('encodes text nodes with style runs', () => {
+  it('encodes text nodes with style runs', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const text = graph.createNode('TEXT', page.id, {
@@ -628,11 +628,17 @@ describe('buildFigmaClipboardHTML', () => {
       ],
     })
 
-    const html = buildFigmaClipboardHTML([text], graph)
+    const html = await buildFigmaClipboardHTML([text], graph)
     expect(html).toContain('figmeta')
+
+    const parsed = await parseFigmaClipboard(html)
+    const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
+    expect(textNode?.textUserLayoutVersion).toBe(4)
+    expect(textNode?.derivedTextData?.glyphs).toBeDefined()
+    expect(textNode?.derivedTextData?.baselines?.length).toBeGreaterThan(0)
   })
 
-  it('encodes auto-layout frames', () => {
+  it('encodes auto-layout frames', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, {
@@ -649,7 +655,7 @@ describe('buildFigmaClipboardHTML', () => {
       x: 0, y: 0, width: 50, height: 50,
     })
 
-    const html = buildFigmaClipboardHTML([frame], graph)
+    const html = await buildFigmaClipboardHTML([frame], graph)
     expect(html).toContain('figmeta')
   })
 
@@ -682,7 +688,7 @@ describe('buildFigmaClipboardHTML', () => {
       fontSize: 14,
     })
 
-    const html = buildFigmaClipboardHTML([frame], graph)
+    const html = await buildFigmaClipboardHTML([frame], graph)
     expect(html).not.toBeNull()
 
     const parsed = await parseFigmaClipboard(html!)
@@ -767,7 +773,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
   })
 
   it('Figma format: preserves node count, clipsContent, constraints, arcData, layoutAlignSelf', async () => {
-    const html = buildFigmaClipboardHTML(topLevelNodes, graph)
+    const html = await buildFigmaClipboardHTML(topLevelNodes, graph)
     expect(html).not.toBeNull()
 
     const parsed = await parseFigmaClipboard(html!)

@@ -1,7 +1,13 @@
 import { resolveRGBAForPreview } from '../color/management'
+import { getCanvasKit } from '../canvaskit'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '../constants'
 import { resolveNodeTextDirection } from '../text/direction'
-import { getArabicFallbackFamilies, getCJKFallbackFamilies, isFontLoaded } from '../text/fonts'
+import {
+  getArabicFallbackFamilies,
+  getCJKFallbackFamilies,
+  getFontProvider,
+  isFontLoaded
+} from '../text/fonts'
 
 import type { SceneNode } from '../scene-graph'
 import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
@@ -10,6 +16,23 @@ interface TextRenderer {
   ck: CanvasKit
   fontProvider: TypefaceFontProvider | null
   fontsLoaded: boolean
+}
+
+export interface ClipboardShapedGlyph {
+  glyphIndex: number
+  firstCharacter: number
+  x: number
+  y: number
+  advance: number
+}
+
+export interface ClipboardShapedText {
+  lineHeight: number
+  lineAscent: number
+  lineWidth: number
+  baseline: number
+  glyphs: ClipboardShapedGlyph[]
+  logicalIndexToCharacterOffsetMap: number[]
 }
 
 export function isNodeFontLoaded(_r: TextRenderer, node: SceneNode): boolean {
@@ -223,4 +246,61 @@ export function buildParagraph(
   }
   builder.delete()
   return paragraph
+}
+
+export async function shapeTextForClipboard(node: SceneNode): Promise<ClipboardShapedText | null> {
+  const ck = await getCanvasKit()
+  const fontProvider = getFontProvider()
+  if (!fontProvider) return null
+
+  const paragraph = buildParagraph({ ck, fontProvider, fontsLoaded: true }, node)
+  const shapedLines = paragraph.getShapedLines()
+  const lineMetrics = paragraph.getLineMetrics()
+  const firstLine = shapedLines[0]
+  const firstMetrics = lineMetrics[0]
+
+  const glyphs: ClipboardShapedGlyph[] = []
+  const logicalIndexToCharacterOffsetMap = Array.from({ length: node.text.length + 1 }, () => 0)
+
+  for (const run of firstLine.runs) {
+    const positions = run.positions
+    for (let i = 0; i < run.glyphs.length; i++) {
+      const x = positions[i * 2] ?? 0
+      const y = positions[i * 2 + 1] ?? firstLine.baseline
+      const nextX = positions[(i + 1) * 2] ?? x
+      const firstCharacter = run.offsets[i] ?? i
+      glyphs.push({
+        glyphIndex: i,
+        firstCharacter,
+        x,
+        y,
+        advance: nextX - x
+      })
+      if (firstCharacter >= 0 && firstCharacter < logicalIndexToCharacterOffsetMap.length) {
+        logicalIndexToCharacterOffsetMap[firstCharacter] = x
+      }
+    }
+    const finalOffset = run.offsets[run.offsets.length - 1]
+    const finalX = positions[positions.length - 2] ?? firstMetrics.width
+    if (finalOffset >= 0 && finalOffset < logicalIndexToCharacterOffsetMap.length) {
+      logicalIndexToCharacterOffsetMap[finalOffset] = finalX
+    }
+  }
+
+  for (let i = 1; i < logicalIndexToCharacterOffsetMap.length; i++) {
+    if (logicalIndexToCharacterOffsetMap[i] === 0) {
+      logicalIndexToCharacterOffsetMap[i] = logicalIndexToCharacterOffsetMap[i - 1]
+    }
+  }
+
+  paragraph.delete()
+
+  return {
+    lineHeight: firstMetrics.height,
+    lineAscent: Math.abs(firstMetrics.ascent),
+    lineWidth: firstMetrics.width,
+    baseline: firstMetrics.baseline,
+    glyphs,
+    logicalIndexToCharacterOffsetMap
+  }
 }

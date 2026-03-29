@@ -116,11 +116,11 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function writeCopyData(clipboardData: DataTransfer, selectedNodes: SceneNode[]) {
+  async function writeCopyData(clipboardData: DataTransfer, selectedNodes: SceneNode[]) {
     if (selectedNodes.length === 0) return
 
     const names = selectedNodes.map((n) => n.name).join('\n')
-    const html = buildFigmaClipboardHTML(selectedNodes, ctx.graph)
+    const html = await buildFigmaClipboardHTML(selectedNodes, ctx.graph)
     if (html) clipboardData.setData('text/html', html)
     clipboardData.setData('text/plain', names)
   }

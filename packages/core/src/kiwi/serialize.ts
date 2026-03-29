@@ -2,6 +2,7 @@ export const FIG_KIWI_DEFAULT_VERSION = 101
 
 import { deflateSync, inflateSync } from 'fflate'
 
+import { getGlyphOutlineCommandsSync } from '../clipboard-text-outlines'
 import { getLoadedFontData, normalizeFontFamily, weightToStyle } from '../text/fonts'
 import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '../vector'
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
@@ -206,9 +207,42 @@ function buildDerivedTextData(
     )
   }
 
+  const style = weightToStyle(node.fontWeight, node.italic)
+  const glyphCommandLists = getGlyphOutlineCommandsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
+  const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
+  const glyphAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
+
+  const glyphs = glyphCommandLists.map((commands, index) => ({
+    commands,
+    position: { x: index * glyphAdvance, y: lineHeight },
+    fontSize: node.fontSize,
+    firstCharacter: index,
+    advance: glyphAdvance,
+    rotation: 0
+  }))
+
+  const logicalIndexToCharacterOffsetMap = Array.from({ length: node.text.length + 1 }, (_, index) =>
+    index * glyphAdvance
+  )
+
   return {
     layoutSize: { x: node.width, y: node.height },
-    fontMetaData: fontMeta
+    baselines: [
+      {
+        firstCharacter: 0,
+        endCharacter: Math.max(node.text.length - 1, 0),
+        position: { x: 0, y: lineHeight },
+        width: node.width,
+        lineHeight,
+        lineAscent: Math.max(lineHeight - (node.fontSize * 0.2), 0)
+      }
+    ],
+    glyphs,
+    fontMetaData: fontMeta,
+    logicalIndexToCharacterOffsetMap,
+    derivedLines: [{ directionality: 'LTR' }],
+    truncationStartIndex: -1,
+    truncatedHeight: -1
   }
 }
 
@@ -341,7 +375,7 @@ function serializeTextProps(
   const autoResize = resolveTextAutoResize(node, graph)
   if (autoResize !== 'NONE') nc.textAutoResize = autoResize
   nc.textAlignHorizontal = node.textAlignHorizontal
-  nc.textUserLayoutVersion = 3
+  nc.textUserLayoutVersion = 4
   if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap)
   // Figma needs explicit lineHeight to compute text bounding boxes.
   // Without it (and without baselines/glyphs data), text gets 0 height.
