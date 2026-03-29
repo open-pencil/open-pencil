@@ -320,6 +320,22 @@ export interface NodeChange {
   }
   derivedTextData?: {
     layoutSize?: Vector
+    baselines?: Array<{
+      firstCharacter: number
+      endCharacter: number
+      position: Vector
+      width: number
+      lineHeight: number
+      lineAscent: number
+    }>
+    glyphs?: Array<{
+      commands: Array<string | number>
+      position: Vector
+      fontSize: number
+      firstCharacter: number
+      advance: number
+      rotation: number
+    }>
     fontMetaData?: Array<{
       key: { family: string; style: string; postscript?: string }
       fontLineHeight: number
@@ -327,6 +343,8 @@ export interface NodeChange {
       fontStyle?: string
       fontWeight?: number
     }>
+    logicalIndexToCharacterOffsetMap?: number[]
+    derivedLines?: Array<{ directionality: 'LTR' | 'RTL' }>
     truncationStartIndex?: number
     truncatedHeight?: number
   }

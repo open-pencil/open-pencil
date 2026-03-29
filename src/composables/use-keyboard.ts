@@ -65,13 +65,13 @@ export function useKeyboard() {
   useEventListener(window, 'copy', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
-    if (e.clipboardData) store.writeCopyData(e.clipboardData)
+    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
   })
 
   useEventListener(window, 'cut', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
-    if (e.clipboardData) store.writeCopyData(e.clipboardData)
+    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
     store.deleteSelected()
   })
 

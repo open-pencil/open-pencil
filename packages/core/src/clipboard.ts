@@ -10,8 +10,10 @@ import {
   parseFigKiwiChunks,
   decompressFigKiwiDataAsync,
   makeDocumentNodeChange,
-  makeCanvasNodeChange
+  makeCanvasNodeChange,
+  buildFontDigestMap
 } from './kiwi/serialize'
+import { buildDerivedTextDataV4 } from './kiwi/serialize-clipboard-v4'
 import { randomInt } from './random'
 
 import type { NodeChange as KiwiNodeChange } from './kiwi/codec'
@@ -285,9 +287,13 @@ export function importClipboardNodes(
   return createdIds
 }
 
-export function buildFigmaClipboardHTML(nodes: SceneNode[], graph: SceneGraph): string | null {
+export async function buildFigmaClipboardHTML(
+  nodes: SceneNode[],
+  graph: SceneGraph
+): Promise<string | null> {
   const compiled = getCompiledSchema()
   const schemaDeflated = deflateSync(getSchemaBytes())
+  const fontDigestMap = await buildFontDigestMap(graph)
 
   const docGuid = { sessionID: 0, localID: 0 }
   const canvasGuid = { sessionID: 0, localID: 1 }
@@ -298,10 +304,33 @@ export function buildFigmaClipboardHTML(nodes: SceneNode[], graph: SceneGraph): 
     makeCanvasNodeChange(canvasGuid, docGuid, '!', 'Page 1')
   ]
 
+  const exportedTextNodes: SceneNode[] = []
+  const collectTextNodes = (node: SceneNode) => {
+    if (node.type === 'TEXT') exportedTextNodes.push(node)
+    for (const childId of node.childIds) {
+      const child = graph.getNode(childId)
+      if (child) collectTextNodes(child)
+    }
+  }
+
   const blobs: Uint8Array[] = []
   for (let i = 0; i < nodes.length; i++) {
-    nodeChanges.push(...sceneNodeToKiwi(nodes[i], canvasGuid, i, localIdCounter, graph, blobs))
+    collectTextNodes(nodes[i])
+    nodeChanges.push(
+      ...sceneNodeToKiwi(nodes[i], canvasGuid, i, localIdCounter, graph, blobs, undefined, fontDigestMap)
+    )
   }
+
+  const textNodeQueue = [...exportedTextNodes]
+  await Promise.all(
+    nodeChanges.map(async (change) => {
+      if (change.type !== 'TEXT') return
+      const source = textNodeQueue.shift()
+      if (!source) return
+      change.textUserLayoutVersion = 4
+      change.derivedTextData = await buildDerivedTextDataV4(source, fontDigestMap)
+    })
+  )
 
   const msg: Record<string, unknown> = {
     type: 'NODE_CHANGES',
