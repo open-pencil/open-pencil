@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.11.0 — 2026-03-30
+
 ### Features
 
 - Lock and visibility toggle buttons in layers panel (hover to reveal, always shown when active)
@@ -11,6 +13,7 @@
 - Layer panel click syncs canvas scope automatically
 - Vue SDK internationalization primitives — `useI18n()`, locale detection, persisted locale selection, lazy-loaded locale JSON files, and exported locale metadata for custom editor shells
 - Vue SDK docs and public API audit — documented advanced exports (`useOkHCL()`, variables helpers, viewport and locale APIs), aligned docs with the actual `provideEditor()` injection model, and expanded release-ready SDK guidance
+- npm release pipeline now publishes `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` together on version tags
 - App language picker in the menu bar — switch UI locale without reloading
 - Added a vector curve editor and improved drawing experience with the pen tool
 - Resume pen drawing from existing open path endpoints — click an endpoint to continue the curve
