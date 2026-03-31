@@ -11,7 +11,8 @@ const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: Comp
   fr: () => import('../locales/fr.json'),
   it: () => import('../locales/it.json'),
   pl: () => import('../locales/pl.json'),
-  ru: () => import('../locales/ru.json')
+  ru: () => import('../locales/ru.json'),
+  'zh-CN': () => import('../locales/zh-CN.json')
 }
 
 export const i18n = createI18n<Locale, 'en'>(locale, {
