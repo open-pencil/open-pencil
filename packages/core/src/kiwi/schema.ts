@@ -314,6 +314,7 @@ enum StackAlign {
   CENTER = 1;
   MAX = 2;
   BASELINE = 3;
+  STRETCH = 4;
 }
 
 enum StackCounterAlign {
@@ -341,6 +342,11 @@ enum StackSize {
 enum StackPositioning {
   AUTO = 0;
   ABSOLUTE = 1;
+}
+
+enum StackWrap {
+  NO_WRAP = 0;
+  WRAP = 1;
 }
 
 enum ConnectionType {
@@ -1506,6 +1512,8 @@ message NodeChange {
   float gridColumnGap = 438;
   GridTrackSize[] gridColumnSizes = 474;
   GridTrackSize[] gridRowSizes = 475;
+  StackWrap stackWrap = 476;
+  float stackCounterSpacing = 477;
 }
 
 message VideoPlayback {
