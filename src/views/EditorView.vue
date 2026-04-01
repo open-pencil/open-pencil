@@ -42,7 +42,7 @@ useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
 useMenu()
 
-const collab = useCollab(firstTab.store)
+const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
 
 useEventListener(
@@ -58,11 +58,12 @@ const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 
 onMounted(async () => {
-  if (import.meta.env.DEV || IS_TAURI) {
-    automationCleanup.value = connectAutomation(getActiveStore).disconnect
-  }
   try {
-    mcpCleanup.value = await spawnMCPIfNeeded()
+    const mcp = await spawnMCPIfNeeded()
+    mcpCleanup.value = mcp?.disconnect ?? null
+    if (import.meta.env.DEV || IS_TAURI) {
+      automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
+    }
   } catch (e) {
     console.error(e)
   }

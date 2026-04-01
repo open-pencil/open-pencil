@@ -25,8 +25,7 @@ export async function getAppToken(): Promise<string> {
   return cachedToken
 }
 
-export async function rpc<T = unknown>(command: string, args: unknown = {}): Promise<T> {
-  const token = await getAppToken()
+async function doRpc<T>(token: string, command: string, args: unknown): Promise<T> {
   const res = await fetch(RPC_URL, {
     method: 'POST',
     headers: {
@@ -47,6 +46,19 @@ export async function rpc<T = unknown>(command: string, args: unknown = {}): Pro
   const body = (await res.json()) as { ok?: boolean; result?: T; error?: string }
   if (body.ok === false) throw new Error(body.error ?? 'RPC failed')
   return body.result as T
+}
+
+export async function rpc<T = unknown>(command: string, args: unknown = {}): Promise<T> {
+  let token = await getAppToken()
+  try {
+    return await doRpc<T>(token, command, args)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (!message.includes('Unauthorized')) throw error
+    cachedToken = null
+    token = await getAppToken()
+    return doRpc<T>(token, command, args)
+  }
 }
 
 export function isAppMode(file?: string): boolean {

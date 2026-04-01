@@ -1,3 +1,4 @@
+import type { Effect, Stroke } from './scene-graph'
 import type { Rect, Vector } from './types'
 
 export function degToRad(degrees: number): number {
@@ -81,6 +82,39 @@ export function computeBounds(items: Iterable<Rect>): Rect {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
+function strokeOverflow(strokes?: Stroke[]): number {
+  let overflow = 0
+  for (const stroke of strokes ?? []) {
+    if (!stroke.visible) continue
+    let extra = 0
+    if (stroke.align === 'OUTSIDE') extra = stroke.weight
+    else if (stroke.align === 'CENTER') extra = stroke.weight / 2
+    overflow = Math.max(overflow, extra)
+  }
+  return overflow
+}
+
+function effectOverflow(effects?: Effect[]) {
+  let left = 0
+  let right = 0
+  let top = 0
+  let bottom = 0
+
+  for (const effect of effects ?? []) {
+    if (!effect.visible) continue
+    if (effect.type !== 'DROP_SHADOW' && effect.type !== 'LAYER_BLUR' && effect.type !== 'FOREGROUND_BLUR') {
+      continue
+    }
+    const blurSpread = effect.radius + effect.spread
+    left = Math.max(left, blurSpread + Math.max(0, -effect.offset.x))
+    right = Math.max(right, blurSpread + Math.max(0, effect.offset.x))
+    top = Math.max(top, blurSpread + Math.max(0, -effect.offset.y))
+    bottom = Math.max(bottom, blurSpread + Math.max(0, effect.offset.y))
+  }
+
+  return { left, right, top, bottom }
+}
+
 export function computeAbsoluteBounds(
   nodes: Iterable<{ id: string; width: number; height: number }>,
   getAbsolutePosition: (id: string) => Vector
@@ -96,6 +130,37 @@ export function computeAbsoluteBounds(
     maxX = Math.max(maxX, abs.x + n.width)
     maxY = Math.max(maxY, abs.y + n.height)
   }
+  if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+}
+
+export function computeVisualBounds(
+  nodes: Iterable<{
+    id: string
+    width: number
+    height: number
+    rotation?: number
+    strokes?: Stroke[]
+    effects?: Effect[]
+  }>,
+  getAbsolutePosition: (id: string) => Vector
+): Rect {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity
+
+  for (const n of nodes) {
+    const abs = getAbsolutePosition(n.id)
+    const bbox = rotatedBBox(abs.x, abs.y, n.width, n.height, n.rotation ?? 0)
+    const stroke = strokeOverflow(n.strokes)
+    const effects = effectOverflow(n.effects)
+    minX = Math.min(minX, bbox.left - stroke - effects.left)
+    minY = Math.min(minY, bbox.top - stroke - effects.top)
+    maxX = Math.max(maxX, bbox.right + stroke + effects.right)
+    maxY = Math.max(maxY, bbox.bottom + stroke + effects.bottom)
+  }
+
   if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }

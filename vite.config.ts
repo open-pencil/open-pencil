@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { resolve } from 'path'
 
 import { defineConfig } from 'vite'
@@ -11,10 +12,13 @@ import { copyFileSync, existsSync, mkdirSync } from 'fs'
 
 import { automationPlugin } from './src/automation/vite-plugin'
 
+const devAutomationAuthToken = randomUUID()
+
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST
+const devAutomationCorsOrigin = host ? `http://${host}:1420` : 'http://localhost:1420'
 
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
@@ -25,6 +29,11 @@ export default defineConfig(async () => ({
       mermaid: resolve(__dirname, 'src/shims/mermaid.ts'),
       'beautiful-mermaid': resolve(__dirname, 'src/shims/mermaid.ts')
     }
+  },
+  define: {
+    __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(
+      command === 'serve' ? devAutomationAuthToken : null
+    )
   },
   plugins: [
     {
@@ -55,7 +64,7 @@ export default defineConfig(async () => ({
     tailwindcss(),
     Icons({ compiler: 'vue3' }),
     Components({ resolvers: [IconsResolver({ prefix: 'icon' })] }),
-    automationPlugin(),
+    automationPlugin(command === 'serve' ? devAutomationAuthToken : null, devAutomationCorsOrigin),
     vue(),
     VitePWA({
       registerType: 'autoUpdate',

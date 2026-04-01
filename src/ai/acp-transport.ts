@@ -206,7 +206,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
 
     const stdoutChunks: Uint8Array[] = []
-    let stdoutResolver: ((chunk: Uint8Array) => void) | null = null
+    let stdoutResolver: ((chunk: Uint8Array | null) => void) | null = null
+    let stdoutClosed = false
+    let stdoutClosedError: Error | null = null
 
     command.stdout.on('data', (raw: Uint8Array | number[]) => {
       const chunk = raw instanceof Uint8Array ? raw : new Uint8Array(raw)
@@ -224,6 +226,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     })
 
     command.on('close', () => {
+      stdoutClosed = true
+      stdoutClosedError = this.destroying ? null : new Error('Agent process exited unexpectedly.')
+      if (stdoutResolver) {
+        const resolve = stdoutResolver
+        stdoutResolver = null
+        resolve(null)
+      }
       if (this.destroying || !this.session) return
       this.session.dead = true
       this.session = null
@@ -238,12 +247,20 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           controller.enqueue(buffered)
           return
         }
-        await new Promise<void>((resolve) => {
-          stdoutResolver = (chunk) => {
-            controller.enqueue(chunk)
-            resolve()
-          }
+        if (stdoutClosed) {
+          if (stdoutClosedError) controller.error(stdoutClosedError)
+          else controller.close()
+          return
+        }
+        const chunk = await new Promise<Uint8Array | null>((resolve) => {
+          stdoutResolver = resolve
         })
+        if (chunk) {
+          controller.enqueue(chunk)
+          return
+        }
+        if (stdoutClosedError) controller.error(stdoutClosedError)
+        else controller.close()
       }
     })
 
@@ -270,6 +287,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
+    const { getAutomationAuthToken } = await import('@/automation/spawn-mcp')
+    const automationAuthToken = await getAutomationAuthToken()
 
     await connection.initialize({
       protocolVersion: PROTOCOL_VERSION,
@@ -285,7 +304,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
             type: 'http' as const,
             name: 'open-pencil',
             url: 'http://127.0.0.1:7600/mcp',
-            headers: []
+            headers: automationAuthToken
+              ? [{ name: 'Authorization', value: `Bearer ${automationAuthToken}` }]
+              : []
           }
         ]
       })

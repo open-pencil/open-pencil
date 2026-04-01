@@ -1,3 +1,6 @@
+import { computeVisualBounds } from '../../../geometry'
+import { extractExportGraph } from '../../subgraph'
+
 import type { RenderColorSpace } from '@open-pencil/core/color-management'
 import type { SkiaRenderer } from '@open-pencil/core/renderer'
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
@@ -13,27 +16,50 @@ interface RenderOptions {
   colorSpace?: RenderColorSpace
 }
 
+function findPageId(graph: SceneGraph, nodeId: string): string | null {
+  let current = graph.getNode(nodeId)
+  while (current?.parentId) {
+    const parent = graph.getNode(current.parentId)
+    if (!parent) return null
+    if (parent.type === 'CANVAS') return parent.id
+    current = parent
+  }
+  return current?.type === 'CANVAS' ? current.id : null
+}
+
+function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
+  return nodeIds.every((nodeId) => findPageId(graph, nodeId) === pageId)
+}
+
+function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
+  const node = graph.getNode(nodeId)
+  if (!node) return false
+  if (node.blendMode !== 'NORMAL' && node.blendMode !== 'PASS_THROUGH') return true
+  if (node.effects.some((effect) => effect.visible && effect.type === 'BACKGROUND_BLUR')) {
+    return true
+  }
+  return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
+}
+
 export function computeContentBounds(
   graph: SceneGraph,
   nodeIds: string[]
 ): { minX: number; minY: number; maxX: number; maxY: number } | null {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
+  const nodes = nodeIds
+    .map((id) => graph.getNode(id))
+    .filter(
+      (node): node is NonNullable<ReturnType<SceneGraph['getNode']>> => !!node && node.visible
+    )
 
-  for (const id of nodeIds) {
-    const node = graph.getNode(id)
-    if (!node || !node.visible) continue
-    const abs = graph.getAbsolutePosition(id)
-    minX = Math.min(minX, abs.x)
-    minY = Math.min(minY, abs.y)
-    maxX = Math.max(maxX, abs.x + node.width)
-    maxY = Math.max(maxY, abs.y + node.height)
+  if (nodes.length === 0) return null
+
+  const bounds = computeVisualBounds(nodes, (id) => graph.getAbsolutePosition(id))
+  return {
+    minX: bounds.x,
+    minY: bounds.y,
+    maxX: bounds.x + bounds.width,
+    maxY: bounds.y + bounds.height
   }
-
-  if (!isFinite(minX)) return null
-  return { minX, minY, maxX, maxY }
 }
 
 function ckImageFormat(ck: CanvasKit, format: ExportFormat) {
@@ -50,7 +76,7 @@ function ckImageFormat(ck: CanvasKit, format: ExportFormat) {
 function renderToSurface(
   ck: CanvasKit,
   renderer: SkiaRenderer,
-  graph: SceneGraph,
+  renderGraph: SceneGraph,
   pageId: string,
   width: number,
   height: number,
@@ -64,7 +90,7 @@ function renderToSurface(
   try {
     const canvas = surface.getCanvas()
     setup(canvas)
-    renderer.renderSceneToCanvas(canvas, graph, pageId)
+    renderer.renderSceneToCanvas(canvas, renderGraph, pageId)
     surface.flush()
     const image = surface.makeImageSnapshot()
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
@@ -83,6 +109,10 @@ export function renderNodesToImage(
   nodeIds: string[],
   options: RenderOptions
 ): Uint8Array | null {
+  if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
+    throw new Error('Raster export selection must stay on a single page')
+  }
+
   const bounds = computeContentBounds(graph, nodeIds)
   if (!bounds) return null
 
@@ -94,12 +124,20 @@ export function renderNodesToImage(
   const pixelH = Math.ceil(contentH * options.scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
+  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
+  if (!extracted.pageId) return null
+
+  const renderGraph = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
+    ? graph
+    : extracted.graph
+  const renderPageId = renderGraph === graph ? pageId : extracted.pageId
+
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(
     ck,
     renderer,
-    graph,
-    pageId,
+    renderGraph,
+    renderPageId,
     pixelW,
     pixelH,
     options.format,

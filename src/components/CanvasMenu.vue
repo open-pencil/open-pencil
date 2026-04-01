@@ -26,8 +26,14 @@ function ids() {
   return [...selectedIds.value]
 }
 
-function execCommand(cmd: string) {
-  window.document.execCommand(cmd)
+function execCommand(cmd: 'copy' | 'cut' | 'paste') {
+  try {
+    if (window.document.execCommand(cmd)) return
+  } catch (error) {
+    console.warn(`Clipboard command ${cmd} failed`, error)
+  }
+
+  toast.show('Clipboard access is blocked in this browser context', 'error')
 }
 
 async function clipboardWrite(text: string | null, label: string) {
@@ -37,6 +43,10 @@ async function clipboardWrite(text: string | null, label: string) {
 }
 
 async function copyAsPNG() {
+  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    toast.show('PNG clipboard export is not available in this browser', 'error')
+    return
+  }
   const data = await store.renderExportImage([...selectedIds.value], 2, 'PNG')
   if (!data) return
   const blob = new Blob([data], { type: 'image/png' })

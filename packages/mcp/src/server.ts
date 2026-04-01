@@ -80,12 +80,17 @@ export function startServer(options: ServerOptions = {}) {
   const pending = new Map<string, PendingRequest>()
   let browserWs: WebSocket | null = null
   let browserToken: string | null = null
+  let browserRegistered = false
+
+  function currentRpcToken(): string | null {
+    return authToken ?? browserToken
+  }
 
   // --- WebSocket: browser connects here ---
 
   function sendToBrowser(body: Record<string, unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      if (!browserWs || browserWs.readyState !== browserWs.OPEN) {
+      if (!browserWs || browserWs.readyState !== browserWs.OPEN || !browserRegistered) {
         reject(new Error('OpenPencil app is not connected'))
         return
       }
@@ -99,7 +104,7 @@ export function startServer(options: ServerOptions = {}) {
     })
   }
 
-  function handleBrowserMessage(data: string) {
+  function handleBrowserMessage(data: string, ws: WebSocket) {
     try {
       const msg = JSON.parse(data) as {
         type: string
@@ -110,9 +115,20 @@ export function startServer(options: ServerOptions = {}) {
         ok?: boolean
       }
       if (msg.type === 'register' && msg.token) {
+        if (authToken && msg.token !== authToken) {
+          ws.close()
+          return
+        }
+        if (browserWs && browserWs !== ws && browserWs.readyState === WebSocket.OPEN) {
+          browserWs.close()
+          rejectAllPending('Browser reconnected')
+        }
+        browserWs = ws
         browserToken = msg.token
+        browserRegistered = true
         return
       }
+      if (!browserRegistered || browserWs !== ws) return
       if (msg.type === 'response' && msg.id) {
         const req = pending.get(msg.id)
         if (!req) return
@@ -140,14 +156,10 @@ export function startServer(options: ServerOptions = {}) {
   const wss = new WebSocketServer({ port: wsPort, host: '127.0.0.1' })
 
   wss.on('connection', (ws) => {
-    if (browserWs && browserWs.readyState === WebSocket.OPEN) browserWs.close()
-    rejectAllPending('Browser reconnected')
-    browserWs = ws
-    browserToken = null
-
     ws.on('message', (raw) => {
       handleBrowserMessage(
-        typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8')
+        typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8'),
+        ws
       )
     })
 
@@ -155,6 +167,7 @@ export function startServer(options: ServerOptions = {}) {
       if (browserWs === ws) {
         browserWs = null
         browserToken = null
+        browserRegistered = false
         rejectAllPending('Browser disconnected')
       }
     })
@@ -201,24 +214,24 @@ export function startServer(options: ServerOptions = {}) {
         exposeHeaders: ['mcp-session-id', 'mcp-protocol-version']
       })
     )
-  } else {
-    app.use('*', cors())
   }
 
   app.get('/health', (c) =>
     c.json({
-      status: browserWs ? 'ok' : 'no_app',
-      ...(browserWs && browserToken ? { token: browserToken } : {})
+      status: browserWs && browserRegistered ? 'ok' : 'no_app',
+      authRequired: authToken !== null,
+      ...(currentRpcToken() ? { token: currentRpcToken() } : {})
     })
   )
 
   app.use('/rpc', async (c, next) => {
-    if (!browserWs || !browserToken) {
+    const rpcToken = currentRpcToken()
+    if (!browserWs || !browserRegistered || !rpcToken) {
       return c.json({ error: 'OpenPencil app is not connected. Is a document open?' }, 503)
     }
     const auth = c.req.header('authorization')
     const provided = auth?.startsWith('Bearer ') ? auth.slice(7) : null
-    if (provided !== browserToken) {
+    if (provided !== rpcToken) {
       return c.json({ error: 'Unauthorized' }, 401)
     }
     return next()
@@ -242,8 +255,22 @@ export function startServer(options: ServerOptions = {}) {
   // --- MCP Streamable HTTP ---
 
   type MCPTransport = { handleRequest: (r: Request) => Promise<Response> }
-  const mcpSessions = new Map<string, MCPTransport>()
+  interface MCPSession {
+    transport: MCPTransport
+    lastSeen: number
+  }
+  const mcpSessions = new Map<string, MCPSession>()
   const MAX_MCP_SESSIONS = 10
+  const MCP_SESSION_TTL_MS = 15 * 60_000
+
+  function cleanupExpiredMCPSessions() {
+    const now = Date.now()
+    for (const [id, session] of mcpSessions) {
+      if (now - session.lastSeen > MCP_SESSION_TTL_MS) {
+        mcpSessions.delete(id)
+      }
+    }
+  }
 
   function createMCPSession(id: string): MCPTransport {
     const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
@@ -297,7 +324,7 @@ export function startServer(options: ServerOptions = {}) {
       sessionIdGenerator: () => id
     })
     void mcpServer.connect(transport)
-    mcpSessions.set(id, transport)
+    mcpSessions.set(id, { transport, lastSeen: Date.now() })
     return transport
   }
 
@@ -311,6 +338,7 @@ export function startServer(options: ServerOptions = {}) {
         return c.json({ error: 'Unauthorized' }, 401)
       }
     }
+    cleanupExpiredMCPSessions()
     const sessionId = c.req.header('mcp-session-id') ?? undefined
     const existing = sessionId ? mcpSessions.get(sessionId) : undefined
     if (!existing && mcpSessions.size >= MAX_MCP_SESSIONS) {
@@ -319,7 +347,14 @@ export function startServer(options: ServerOptions = {}) {
         { status: 503, headers: { 'Retry-After': '5' } }
       )
     }
-    const transport = existing ?? createMCPSession(sessionId ?? randomUUID())
+    const transport = existing?.transport ?? createMCPSession(sessionId ?? randomUUID())
+    const resolvedSessionId =
+      sessionId ??
+      [...mcpSessions.entries()].find(([, entry]) => entry.transport === transport)?.[0]
+    if (resolvedSessionId) {
+      const session = mcpSessions.get(resolvedSessionId)
+      if (session) session.lastSeen = Date.now()
+    }
     const response = await transport.handleRequest(c.req.raw)
     if (c.req.method === 'DELETE' && sessionId) {
       mcpSessions.delete(sessionId)

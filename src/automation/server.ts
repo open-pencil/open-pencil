@@ -19,8 +19,8 @@ import {
 import type { EditorStore } from '@/stores/editor'
 import type { RasterExportFormat } from '@open-pencil/core'
 
-export function connectAutomation(getStore: () => EditorStore) {
-  const token = randomHex(32)
+export function connectAutomation(getStore: () => EditorStore, authToken: string | null = null) {
+  const token = authToken ?? randomHex(32)
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
 

@@ -38,12 +38,17 @@ export async function headlessRenderNodes(
   options: { scale?: number; format?: ExportFormat; quality?: number } = {}
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
-  await renderer.prepareForExport(graph, pageId, nodeIds)
-  return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
-    scale: options.scale ?? 1,
-    format: options.format ?? 'PNG',
-    quality: options.quality
-  })
+  renderer.invalidateAllPictures()
+  const restoreTextMeasurer = await renderer.prepareForExport(graph, pageId, nodeIds)
+  try {
+    return renderNodesToImage(ck, renderer, graph, pageId, nodeIds, {
+      scale: options.scale ?? 1,
+      format: options.format ?? 'PNG',
+      quality: options.quality
+    })
+  } finally {
+    restoreTextMeasurer()
+  }
 }
 
 export async function headlessRenderThumbnail(
@@ -53,7 +58,14 @@ export async function headlessRenderThumbnail(
   height: number
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
+  renderer.invalidateAllPictures()
   const page = graph.getNode(pageId)
-  if (page) await renderer.prepareForExport(graph, pageId, page.childIds)
-  return renderThumbnail(ck, renderer, graph, pageId, width, height)
+  const restoreTextMeasurer = page
+    ? await renderer.prepareForExport(graph, pageId, page.childIds)
+    : () => undefined
+  try {
+    return renderThumbnail(ck, renderer, graph, pageId, width, height)
+  } finally {
+    restoreTextMeasurer()
+  }
 }

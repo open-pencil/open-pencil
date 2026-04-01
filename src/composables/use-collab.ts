@@ -42,7 +42,11 @@ export const DEFAULT_COLLAB_STATE: CollabState = {
   localColor: { r: 0.5, g: 0.5, b: 0.5, a: 1 }
 }
 
-export function useCollab(store: EditorStore) {
+export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
+  const getStore = () =>
+    typeof storeOrGetter === 'function'
+      ? (storeOrGetter as () => EditorStore)()
+      : storeOrGetter
   const storedName = useLocalStorage('op-collab-name', '')
   const state = ref<CollabState>({
     connected: false,
@@ -58,9 +62,11 @@ export function useCollab(store: EditorStore) {
   let yimages: Y.Map<Uint8Array> | null = null
   let room: Room | null = null
   let persistence: IndexeddbPersistence | null = null
+  let connectedStore: EditorStore | null = null
   let suppressGraphSync = false
   let suppressYjsEvents = false
   let unbindGraphEvents: (() => void) | null = null
+  let stopZoomWatch: (() => void) | null = null
   let sendYjsUpdate: ((data: Uint8Array, peerId?: string) => void) | null = null
   let sendAwareness: ((data: Uint8Array, peerId?: string) => void) | null = null
   let sendSyncStep1: ((data: Uint8Array, peerId?: string) => void) | null = null
@@ -70,6 +76,8 @@ export function useCollab(store: EditorStore) {
   function connect(roomId: string) {
     if (room) disconnect()
 
+    const store = getStore()
+    connectedStore = store
     state.value.roomId = roomId
     ydoc = new Y.Doc()
     awareness = new awarenessProtocol.Awareness(ydoc)
@@ -203,7 +211,7 @@ export function useCollab(store: EditorStore) {
     state.value.connected = true
     broadcastAwareness()
 
-    watch(
+    stopZoomWatch = watch(
       () => store.state.zoom,
       (zoom) => {
         if (!awareness) return
@@ -251,8 +259,11 @@ export function useCollab(store: EditorStore) {
   }
 
   function disconnect() {
+    const store = connectedStore ?? getStore()
     unbindGraphEvents?.()
     unbindGraphEvents = null
+    stopZoomWatch?.()
+    stopZoomWatch = null
     void room?.leave()
     room = null
     sendYjsUpdate = null
@@ -276,11 +287,14 @@ export function useCollab(store: EditorStore) {
     state.value.connected = false
     state.value.roomId = null
     state.value.peers = []
+    followingPeer.value = null
     store.state.remoteCursors = []
     store.requestRender()
+    connectedStore = null
   }
 
   function syncNodeToYjs(nodeId: string) {
+    const store = connectedStore ?? getStore()
     if (!ydoc || !ynodes) return
     const node = store.graph.getNode(nodeId)
     if (!node) return
@@ -319,6 +333,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function syncAllNodesToYjs() {
+    const store = connectedStore ?? getStore()
     if (!ydoc || !ynodes) return
     const localYnodes = ynodes
     const localYimages = yimages
@@ -346,6 +361,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function applyYjsToGraph(events: Y.YEvent<Y.Map<unknown>>[]) {
+    const store = connectedStore ?? getStore()
     if (!ynodes) return
     const localYnodes = ynodes
     for (const event of events) {
@@ -377,6 +393,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function applyYnodeToGraph(nodeId: string, ynode: Y.Map<unknown>) {
+    const store = connectedStore ?? getStore()
     const existing = store.graph.getNode(nodeId)
     const props: Record<string, unknown> = {}
 
@@ -415,6 +432,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function updateCursor(x: number, y: number, pageId: string) {
+    const store = connectedStore ?? getStore()
     if (!awareness) return
     awareness.setLocalStateField('cursor', { x, y, pageId, zoom: store.state.zoom })
   }
@@ -425,6 +443,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function updatePeersList() {
+    const store = connectedStore ?? getStore()
     if (!awareness) return
     const states = awareness.getStates()
     const peers: RemotePeer[] = []
@@ -492,6 +511,7 @@ export function useCollab(store: EditorStore) {
   }
 
   function tickFollow() {
+    const store = connectedStore ?? getStore()
     if (!followingPeer.value || !awareness) return
     const peerState = awareness.getStates().get(followingPeer.value)
     if (!peerState?.cursor) {

@@ -64,11 +64,13 @@ export function closeTab(tabId: string) {
   const idx = tabsRef.value.findIndex((t) => t.id === tabId)
   if (idx === -1) return
 
+  const closingTab = tabsRef.value[idx]
   const wasActive = activeTabId.value === tabId
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
   if (tabsRef.value.length === 0) {
     createTab()
+    closingTab.store.dispose()
     return
   }
 
@@ -76,18 +78,20 @@ export function closeTab(tabId: string) {
     const newIdx = Math.min(idx, tabsRef.value.length - 1)
     activateTab(tabsRef.value[newIdx])
   }
+
+  closingTab.store.dispose()
 }
 
 export async function openFileInNewTab(
   file: File,
-  _handle?: FileSystemFileHandle,
-  _path?: string
+  handle?: FileSystemFileHandle,
+  path?: string
 ): Promise<void> {
   const current = activeTab.value
   const isUntouched =
     current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
   const bytes = new Uint8Array(await file.arrayBuffer())
-  const { graph: imported } = await io.readDocument({
+  const { graph: imported, sourceFormat } = await io.readDocument({
     name: file.name,
     mimeType: file.type || undefined,
     data: bytes
@@ -98,6 +102,7 @@ export async function openFileInNewTab(
     current.store.replaceGraph(imported)
     current.store.undo.clear()
     current.store.state.documentName = documentName
+    current.store.setDocumentSource(file.name, sourceFormat, handle, path)
     current.store.state.selectedIds = new Set()
     const pageId = current.store.graph.getPages()[0]?.id ?? current.store.graph.rootId
     await current.store.switchPage(pageId)
@@ -106,6 +111,7 @@ export async function openFileInNewTab(
     createTab(store)
     store.undo.clear()
     store.state.documentName = documentName
+    store.setDocumentSource(file.name, sourceFormat, handle, path)
     store.state.selectedIds = new Set()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)

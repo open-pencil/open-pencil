@@ -3,6 +3,7 @@ import { tool } from 'ai'
 import * as v from 'valibot'
 
 import { makeFigmaFromStore } from '@/automation/figma-factory'
+import { getActiveEditorStore } from '@/stores/editor'
 import {
   CORE_TOOLS,
   collectFontKeys,
@@ -46,37 +47,48 @@ class RunState {
   clear(): void {
     this.toolLog = []
     this.stepUsages = []
+    this.currentSteps = 0
   }
 }
 
-export const runState = new RunState()
+const runStates = new WeakMap<EditorStore, RunState>()
 
-export function getToolLogEntries(): ToolLogEntry[] {
-  return runState.toolLog
+function getRunState(store?: EditorStore): RunState {
+  const target = store ?? getActiveEditorStore()
+  const existing = runStates.get(target)
+  if (existing) return existing
+  const created = new RunState()
+  runStates.set(target, created)
+  return created
 }
 
-export function getStepUsages(): StepUsage[] {
-  return runState.stepUsages
+export function getToolLogEntries(store?: EditorStore): ToolLogEntry[] {
+  return getRunState(store).toolLog
 }
 
-export function recordStepUsage(usage: StepUsage): void {
-  runState.recordStep(usage)
+export function getStepUsages(store?: EditorStore): StepUsage[] {
+  return getRunState(store).stepUsages
 }
 
-export function resetRunSteps(): void {
-  runState.resetSteps()
+export function recordStepUsage(usage: StepUsage, store?: EditorStore): void {
+  getRunState(store).recordStep(usage)
 }
 
-export function didHitStepLimit(): boolean {
-  return runState.hitLimit()
+export function resetRunSteps(store?: EditorStore): void {
+  getRunState(store).resetSteps()
 }
 
-export function clearToolLogEntries(): void {
-  runState.clear()
+export function didHitStepLimit(store?: EditorStore): boolean {
+  return getRunState(store).hitLimit()
+}
+
+export function clearToolLogEntries(store?: EditorStore): void {
+  getRunState(store).clear()
 }
 
 export function createAITools(store: EditorStore) {
   let beforeSnapshot: Map<string, SceneNode> | null = null
+  const runState = getRunState(store)
 
   return toolsToAI(
     CORE_TOOLS,

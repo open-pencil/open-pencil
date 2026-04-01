@@ -851,6 +851,27 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     return new Promise((r) => requestAnimationFrame(() => r()))
   }
 
+  function setDocumentSource(
+    fileName: string,
+    sourceFormat: string,
+    handle?: FileSystemFileHandle,
+    path?: string
+  ) {
+    stopWatchingFile()
+    fileHandle = sourceFormat === 'fig' ? (handle ?? null) : null
+    filePath = sourceFormat === 'fig' ? (path ?? null) : null
+    downloadName = sourceFormat === 'fig' ? fileName : fileName.replace(/\.[^.]+$/i, '.fig')
+    savedVersion = state.sceneVersion
+    if (sourceFormat === 'fig' && (fileHandle || filePath)) {
+      void startWatchingFile()
+    }
+  }
+
+  function dispose() {
+    stopWatchingFile()
+    ;(debouncedAutosave as typeof debouncedAutosave & { cancel?: () => void }).cancel?.()
+  }
+
   async function openFigFile(file: File, handle?: FileSystemFileHandle, path?: string) {
     try {
       state.loading = true
@@ -859,16 +880,13 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       await yieldToUI()
       editor.replaceGraph(imported)
       editor.undo.clear()
-      fileHandle = handle ?? null
-      filePath = path ?? null
       state.documentName = file.name.replace(/\.fig$/i, '')
-      downloadName = file.name
+      setDocumentSource(file.name, 'fig', handle, path)
       state.selectedIds = new Set()
       const firstPage = editor.graph.getPages()[0] as SceneNode | undefined
       const pageId = firstPage?.id ?? editor.graph.rootId
       await editor.switchPage(pageId)
       editor.requestRender()
-      void startWatchingFile()
     } catch (e) {
       console.error('Failed to open .fig file:', e)
       toast.show(`Failed to open file: ${e instanceof Error ? e.message : String(e)}`, 'error')
@@ -1235,6 +1253,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     openFigFile,
     saveFigFile,
     saveFigFileAs,
+    setDocumentSource,
+    dispose,
     renderExportImage,
     listSelectionExportFormats,
     exportTarget,

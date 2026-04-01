@@ -33,7 +33,7 @@ import {
   DEFAULT_FONT_FAMILY,
   IS_BROWSER
 } from '../constants'
-import { computeAbsoluteBounds } from '../geometry'
+import { computeVisualBounds } from '../geometry'
 import { RenderProfiler } from '../profiler'
 import { drawAiOverlays as drawAiOverlaysFn } from './ai-overlays'
 import {
@@ -473,16 +473,23 @@ export class SkiaRenderer {
    * Collects all font family+weight pairs used by `nodeIds`, loads them,
    * wires up the text measurer for Yoga layout, and recomputes layout.
    */
-  async prepareForExport(graph: SceneGraph, pageId: string, nodeIds: string[]): Promise<void> {
+  async prepareForExport(
+    graph: SceneGraph,
+    pageId: string,
+    nodeIds: string[]
+  ): Promise<() => void> {
     const { collectFontKeys, loadFont } = await import('../fonts')
-    const { setTextMeasurer, computeAllLayouts } = await import('../layout')
+    const { getTextMeasurer, setTextMeasurer, computeAllLayouts } = await import('../layout')
 
+    const previousTextMeasurer = getTextMeasurer()
     setTextMeasurer((node, maxWidth) => this.measureTextNode(node, maxWidth))
 
     const fontKeys = collectFontKeys(graph, nodeIds)
     await Promise.all(fontKeys.map(([family, style]) => loadFont(family, style)))
 
     computeAllLayouts(graph, pageId)
+
+    return () => setTextMeasurer(previousTextMeasurer)
   }
 
   replaceSurface(surface: Surface): void {
@@ -902,7 +909,7 @@ export class SkiaRenderer {
       : []
     const sceneBounds =
       sceneNodes.length > 0
-        ? computeAbsoluteBounds(sceneNodes, (id) => graph.getAbsolutePosition(id))
+        ? computeVisualBounds(sceneNodes, (id) => graph.getAbsolutePosition(id))
         : { x: 0, y: 0, width: 1, height: 1 }
     const padding = 1024
     const bounds = this.ck.LTRBRect(

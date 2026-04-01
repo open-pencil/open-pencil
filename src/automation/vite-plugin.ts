@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import type { Plugin } from 'vite'
 
 // TODO: production — bundle MCP server as Tauri sidecar or spawn via shell plugin
-export function automationPlugin(): Plugin {
+export function automationPlugin(authToken: string | null, corsOrigin: string): Plugin {
   let child: ReturnType<typeof spawn> | null = null
 
   return {
@@ -13,7 +13,13 @@ export function automationPlugin(): Plugin {
 
       child = spawn('bun', ['run', 'packages/mcp/src/index.ts'], {
         stdio: ['ignore', 'inherit', 'pipe'],
-        env: { ...process.env, PORT: '7600', WS_PORT: '7601' }
+        env: {
+          ...process.env,
+          PORT: '7600',
+          WS_PORT: '7601',
+          ...(authToken ? { OPENPENCIL_MCP_AUTH_TOKEN: authToken } : {}),
+          OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin
+        }
       })
 
       child.stderr?.on('data', (data: Buffer) => {

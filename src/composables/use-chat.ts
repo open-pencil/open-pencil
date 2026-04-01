@@ -9,7 +9,7 @@ import { computed, ref, watch } from 'vue'
 
 import SYSTEM_PROMPT from '@/ai/system-prompt.md?raw'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/ai/tools'
-import { useEditorStore } from '@/stores/editor'
+import { getActiveEditorStore } from '@/stores/editor'
 import {
   ACP_AGENTS,
   AI_PROVIDERS,
@@ -78,9 +78,13 @@ const isConfigured = computed(() => {
 })
 
 let transportDirty = false
+let currentChatStore: ReturnType<typeof getActiveEditorStore> | null = null
+let currentChatMessages = new WeakMap<ReturnType<typeof getActiveEditorStore>, UIMessage[]>()
 
 function markTransportDirty() {
   transportDirty = true
+  currentChatStore = null
+  currentChatMessages = new WeakMap()
 }
 
 watch(
@@ -217,13 +221,13 @@ async function createACPTransport() {
   return transport
 }
 
-function createTransport() {
+function createTransport(store: ReturnType<typeof getActiveEditorStore>) {
   if (overrideTransport) return overrideTransport()
 
   void acpTransportInstance?.destroy()
   acpTransportInstance = null
 
-  const tools = createAITools(useEditorStore())
+  const tools = createAITools(store)
   const cacheProviderOptions = supportsAnthropicCaching() ? ANTHROPIC_CACHE_CONTROL : undefined
 
   const agent = new ToolLoopAgent({
@@ -234,7 +238,7 @@ function createTransport() {
     maxOutputTokens: maxOutputTokens.value,
     providerOptions: cacheProviderOptions,
     prepareCall: (options) => {
-      resetRunSteps()
+      resetRunSteps(store)
       return {
         ...options,
         maxOutputTokens: maxOutputTokens.value,
@@ -242,13 +246,16 @@ function createTransport() {
       }
     },
     onStepFinish: ({ usage }) => {
-      recordStepUsage({
-        inputTokens: usage.inputTokens ?? 0,
-        outputTokens: usage.outputTokens ?? 0,
-        cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? 0,
-        cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? 0,
-        timestamp: Date.now()
-      })
+      recordStepUsage(
+        {
+          inputTokens: usage.inputTokens ?? 0,
+          outputTokens: usage.outputTokens ?? 0,
+          cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? 0,
+          cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? 0,
+          timestamp: Date.now()
+        },
+        store
+      )
     }
   })
 
@@ -257,17 +264,28 @@ function createTransport() {
 
 async function ensureChat(): Promise<Chat<UIMessage> | null> {
   if (!isConfigured.value) return null
-  if (!chat || transportDirty) {
-    const messages = chat?.messages
-    const transport = isACPProvider.value ? await createACPTransport() : createTransport()
+
+  const store = getActiveEditorStore()
+  if (currentChatStore && chat) {
+    currentChatMessages.set(currentChatStore, chat.messages)
+  }
+
+  if (!chat || transportDirty || currentChatStore !== store) {
+    const messages = currentChatMessages.get(store)
+    const transport = isACPProvider.value ? await createACPTransport() : createTransport(store)
     chat = new Chat<UIMessage>({ transport, messages })
+    currentChatStore = store
     transportDirty = false
   }
   return chat
 }
 
 function resetChat() {
+  if (currentChatStore) {
+    currentChatMessages.delete(currentChatStore)
+  }
   chat = null
+  currentChatStore = null
   transportDirty = false
 }
 

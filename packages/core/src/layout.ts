@@ -46,6 +46,10 @@ function estimateTextSize(node: SceneNode, maxWidth?: number): { width: number; 
   return { width: singleLineWidth, height: lineH }
 }
 
+export function getTextMeasurer(): TextMeasurer | null {
+  return globalTextMeasurer
+}
+
 export function setTextMeasurer(measurer: TextMeasurer | null): void {
   globalTextMeasurer = measurer
 }
@@ -183,7 +187,11 @@ function buildGridTree(
       root.insertChild(yogaChild, root.getChildCount())
     } else {
       const yogaChild = createGridChildNode(child)
-      if (child.layoutMode === 'GRID' || child.layoutMode === 'HORIZONTAL' || child.layoutMode === 'VERTICAL') {
+      if (
+        child.layoutMode === 'GRID' ||
+        child.layoutMode === 'HORIZONTAL' ||
+        child.layoutMode === 'VERTICAL'
+      ) {
         const childDirection = resolveNodeLayoutDirection(child, direction)
         yogaChild.setDirection(childDirection === 'RTL' ? Direction.RTL : Direction.LTR)
       }

@@ -5,6 +5,7 @@ import { computed, markRaw, nextTick, ref, watch } from 'vue'
 import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/ai/acp-transport'
 import { copyChatLog } from '@/ai/chat-debug'
 import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
+import { activeTab } from '@/stores/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
@@ -61,6 +62,13 @@ function scrollToBottom() {
 }
 
 watch(messages, scrollToBottom, { deep: true })
+watch(
+  () => activeTab.value?.id,
+  async () => {
+    const nextChat = await ensureChat()
+    chat.value = nextChat ? markRaw(nextChat) : null
+  }
+)
 
 async function handleSubmit(text: string) {
   if (status.value === 'streaming' || status.value === 'submitted') return

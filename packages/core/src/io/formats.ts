@@ -28,6 +28,17 @@ function ensureSingleNode(target: ExportRequest['target']): string | null {
   return null
 }
 
+function findPageId(graph: ExportRequest['graph'], nodeId: string): string | null {
+  let current = graph.getNode(nodeId)
+  while (current?.parentId) {
+    const parent = graph.getNode(current.parentId)
+    if (!parent) return null
+    if (parent.type === 'CANVAS') return parent.id
+    current = parent
+  }
+  return current?.type === 'CANVAS' ? current.id : null
+}
+
 function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: string[] } | null {
   switch (request.target.scope) {
     case 'document': {
@@ -42,14 +53,12 @@ function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: 
     case 'selection': {
       const first = request.target.nodeIds[0]
       if (!first) return null
-      const node = request.graph.getNode(first)
-      if (!node) return null
-      let current = node.parentId ? request.graph.getNode(node.parentId) : undefined
-      while (current && current.type !== 'CANVAS') {
-        current = current.parentId ? request.graph.getNode(current.parentId) : undefined
+      const pageId = findPageId(request.graph, first)
+      if (!pageId) return null
+      if (!request.target.nodeIds.every((nodeId) => findPageId(request.graph, nodeId) === pageId)) {
+        throw new Error('Export selection must stay on a single page')
       }
-      if (!current) return null
-      return { pageId: current.id, nodeIds: request.target.nodeIds }
+      return { pageId, nodeIds: request.target.nodeIds }
     }
     case 'node':
       return resolveExportNodes({
@@ -114,7 +123,7 @@ function rasterFormat(format: RasterExportFormat): IOFormatAdapter {
     exportOptions: {
       scale: true,
       quality: format !== 'PNG',
-      colorSpace: true
+      colorSpace: false
     },
     async exportContent(request, options?: RasterExportOptions, context?: IOContext) {
       const data = await renderRaster(
@@ -122,8 +131,7 @@ function rasterFormat(format: RasterExportFormat): IOFormatAdapter {
         {
           format,
           scale: options?.scale,
-          quality: options?.quality,
-          colorSpace: options?.colorSpace
+          quality: options?.quality
         },
         context
       )
