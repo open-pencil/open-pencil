@@ -194,6 +194,31 @@ test('clicking outside rename input commits', async () => {
   canvas.assertNoErrors()
 })
 
+test('clearing a layer name falls back to the default node name', async () => {
+  await canvas.drawRect(980, 600, 50, 50)
+  await canvas.waitForRender()
+
+  const row = layerRows().filter({ hasText: 'Rectangle' }).last()
+  const countBefore = await layerRows().count()
+
+  await row.dblclick()
+
+  const input = page.locator('[data-test-id="layers-item-input"]')
+  await expect(input).toBeVisible()
+  await input.clear()
+  await input.press('Enter')
+
+  await canvas.waitForRender()
+
+  const countAfter = await layerRows().count()
+  expect(countAfter).toBe(countBefore)
+
+  const names = await getLayerNames()
+  expect(names.filter((name) => name === 'Rectangle').length).toBeGreaterThan(0)
+
+  canvas.assertNoErrors()
+})
+
 test('double-click does not toggle tree expand', async () => {
   const rowCountBefore = await layerRows().count()
 

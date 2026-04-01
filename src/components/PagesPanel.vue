@@ -72,7 +72,7 @@ function handlePageDblClick(
               class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-xs text-surface outline-none"
               :value="pg.name"
               @blur="rename.commit(pg.id, $event.target as HTMLInputElement)"
-              @keydown="rename.onKeydown"
+              @keydown.stop="rename.onKeydown"
             />
           </div>
           <div

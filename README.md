@@ -24,11 +24,12 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 
 - **Opens `.fig` and `.pen` files** — read and write native Figma files, open Pencil documents, copy & paste nodes between apps
 - **AI builds designs** — describe what you want in chat, 90+ tools create and modify nodes. Connect OpenRouter, Anthropic, OpenAI, Google AI, Z.ai, MiniMax, or compatible endpoints
-- **Fully programmable** — headless CLI, Figma Plugin API via `eval`, MCP server for AI agents
+- **Fully programmable** — headless CLI, XPath queries, Figma Plugin API via `eval`, MCP server for AI agents, and desktop agent integrations for Claude Code, Codex, and Gemini CLI
+- **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
+- **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
 - **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
-- **Tailwind CSS export** — export any selection as HTML with Tailwind v4 utility classes
 - **~7 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 
 ## CLI
@@ -99,15 +100,16 @@ open-pencil lint design.fig --rule color-contrast
 open-pencil lint design.fig --list-rules
 ```
 
-### Analyze design tokens
+### Analyze and extract design tokens
 
-Audit an entire design system from the terminal — find inconsistencies, extract the real palette, spot components waiting to be extracted:
+Audit an entire design system from the terminal — find inconsistencies, extract the real palette, and spot components waiting to be extracted:
 
 ```sh
 open-pencil analyze colors design.fig
 open-pencil analyze typography design.fig
 open-pencil analyze spacing design.fig
 open-pencil analyze clusters design.fig
+open-pencil variables design.fig
 ```
 
 ```
@@ -220,13 +222,13 @@ OpenPencil is the alternative: open source (MIT), reads .fig files natively, eve
 
 ## Roadmap
 
+- 100% Figma compatibility — full import/export fidelity, rendering parity, and broader automated compatibility coverage
 - Prototyping — frame transitions, interaction triggers, overlay management, preview mode
 - Shader effects (SkSL) — custom visual effects via GPU shaders
 - Raster tile caching — instant zoom/pan for complex documents
 - Component libraries — publish, share, and consume design systems across files
 - CI tools — design linting, code export, visual regression in pipelines
 - Grid child positioning UI — column/row span controls, grid overlay on canvas
-- Skewing and OkHCL color support
 - Windows code signing (Azure Authenticode certificates)
 
 ## Contributing

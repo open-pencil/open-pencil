@@ -1,3 +1,8 @@
+import {
+  resolveNodeFillColor,
+  resolveNodeStrokeColor,
+  type ResolvedRenderColor
+} from '../color-management'
 /* eslint-disable max-lines -- SkiaRenderer class; text, pen-overlay, fills, scene already extracted */
 import {
   SELECTION_COLOR,
@@ -30,7 +35,6 @@ import {
 } from '../constants'
 import { computeAbsoluteBounds } from '../geometry'
 import { RenderProfiler } from '../profiler'
-import { resolveNodeFillColor, resolveNodeStrokeColor, type ResolvedRenderColor } from '../color-management'
 import { drawAiOverlays as drawAiOverlaysFn } from './ai-overlays'
 import {
   getCachedDropShadow as getCachedDropShadowFn,
@@ -570,25 +574,28 @@ export class SkiaRenderer {
           const widths = font.getGlyphWidths(glyphIds)
           let textW = 0
           for (const w of widths) textW += w
+
           const pillW =
             Math.min(textW + SECTION_TITLE_PADDING_X * 2, child.width * this.zoom) / this.zoom
           const pillH = SECTION_TITLE_HEIGHT / this.zoom
           const gap = SECTION_TITLE_GAP / this.zoom
+          const localX = canvasX - ax
+          const localY = canvasY - ay
 
-          const pillX = ax
-          let pillY: number
-          if (insideSection) {
-            pillY = ay + gap
-          } else {
-            pillY = ay - pillH - gap
+          let hitX = localX
+          let hitY = localY
+          if (child.rotation !== 0) {
+            const rad = (-child.rotation * Math.PI) / 180
+            const cos = Math.cos(rad)
+            const sin = Math.sin(rad)
+            hitX = localX * cos - localY * sin
+            hitY = localX * sin + localY * cos
           }
 
-          if (
-            canvasX >= pillX &&
-            canvasX <= pillX + pillW &&
-            canvasY >= pillY &&
-            canvasY <= pillY + pillH
-          ) {
+          const pillX = 0
+          const pillY = insideSection ? gap : -pillH - gap
+
+          if (hitX >= pillX && hitX <= pillX + pillW && hitY >= pillY && hitY <= pillY + pillH) {
             result = child
             return
           }
@@ -687,16 +694,23 @@ export class SkiaRenderer {
 
     const labelW = textW / this.zoom
     const labelH = LABEL_FONT_SIZE / this.zoom
-    const gap = LABEL_OFFSET_Y / this.zoom
-    const labelX = abs.x
-    const labelY = abs.y - gap - labelH
+    const localX = canvasX - abs.x
+    const localY = canvasY - abs.y
 
-    if (
-      canvasX >= labelX &&
-      canvasX <= labelX + labelW &&
-      canvasY >= labelY &&
-      canvasY <= labelY + labelH
-    ) {
+    let hitX = localX
+    let hitY = localY
+    if (node.rotation !== 0) {
+      const rad = (-node.rotation * Math.PI) / 180
+      const cos = Math.cos(rad)
+      const sin = Math.sin(rad)
+      hitX = localX * cos - localY * sin
+      hitY = localX * sin + localY * cos
+    }
+
+    const labelX = 0
+    const labelY = -LABEL_OFFSET_Y / this.zoom - labelH
+
+    if (hitX >= labelX && hitX <= labelX + labelW && hitY >= labelY && hitY <= labelY + labelH) {
       return node
     }
 
@@ -1095,8 +1109,13 @@ export class SkiaRenderer {
     drawNodeSelectionFn(this, canvas, node, rotation, graph)
   }
 
-  drawSelectionLabels(canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>): void {
-    drawSelectionLabelsFn(this, canvas, graph, selectedIds)
+  drawSelectionLabels(
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>,
+    overlays?: RenderOverlays
+  ): void {
+    drawSelectionLabelsFn(this, canvas, graph, selectedIds, overlays)
   }
 
   drawParentFrameOutlines(canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>): void {

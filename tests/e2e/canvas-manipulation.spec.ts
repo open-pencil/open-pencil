@@ -181,3 +181,136 @@ test('hover highlight changes canvas rendering', async () => {
   expect(Buffer.compare(noHoverShot, hoverShot)).not.toBe(0)
   canvas.assertNoErrors()
 })
+
+async function setupFrameChild(rotation: number) {
+  await canvas.clearCanvas()
+
+  const setup = await page.evaluate((frameRotation) => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const frameId = store.createShape('FRAME', 180, 160, 240, 160)
+    if (!frameId) return null
+    store.updateNode(frameId, { rotation: frameRotation })
+    const rectId = store.createShape('RECTANGLE', 245, 205, 60, 40)
+    if (!rectId) return null
+    store.graph.reparentNode(rectId, frameId)
+    store.updateNode(rectId, { x: 65, y: 45 })
+    store.select([])
+    store.requestRender()
+    return { frameId, rectId }
+  }, rotation)
+
+  expect(setup).not.toBeNull()
+  await canvas.waitForRender()
+
+  const state = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const pageId = store.state.currentPageId
+    const pageNode = store.graph.getNode(pageId)
+    const frame = pageNode?.childIds
+      .map((id: string) => store.graph.getNode(id))
+      .find((node: { type: string } | undefined) => node?.type === 'FRAME')
+    if (!frame) return null
+    const child = frame.childIds
+      .map((childId: string) => store.graph.getNode(childId))
+      .find((node: { type: string } | undefined) => node?.type === 'RECTANGLE')
+    if (!child) return null
+    const abs = store.graph.getAbsolutePosition(frame.id)
+    const cx = abs.x + frame.width / 2
+    const cy = abs.y + frame.height / 2
+    const childCx = abs.x + child.x + child.width / 2
+    const childCy = abs.y + child.y + child.height / 2
+    const rad = (frame.rotation * Math.PI) / 180
+    const dx = childCx - cx
+    const dy = childCy - cy
+    return {
+      childId: child.id,
+      hitX: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
+      hitY: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
+      missX: abs.x + 20,
+      missY: abs.y + 20,
+    }
+  })
+
+  expect(state).not.toBeNull()
+  return state!
+}
+
+test('frame children keep correct hover and click hit area without rotation', async () => {
+  const state = await setupFrameChild(0)
+
+  await canvas.hover(state.hitX, state.hitY)
+  const hoveredId = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.hoveredNodeId)
+  expect(hoveredId).toBe(state.childId)
+
+  await canvas.click(state.hitX, state.hitY)
+  await canvas.waitForRender()
+  const selected = await getSelectedNode(page)
+  expect(selected?.id).toBe(state.childId)
+
+  await canvas.hover(state.missX, state.missY)
+  const hoveredMiss = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.hoveredNodeId)
+  expect(hoveredMiss).not.toBe(state.childId)
+  canvas.assertNoErrors()
+})
+
+test('rotated frame children keep correct hover and click hit area', async () => {
+  const state = await setupFrameChild(35)
+
+  await canvas.hover(state.hitX, state.hitY)
+  const hoveredId = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.hoveredNodeId)
+  expect(hoveredId).toBe(state.childId)
+
+  await canvas.click(state.hitX, state.hitY)
+  await canvas.waitForRender()
+  const selected = await getSelectedNode(page)
+  expect(selected?.id).toBe(state.childId)
+
+  await canvas.hover(state.missX, state.missY)
+  const hoveredMiss = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.hoveredNodeId)
+  expect(hoveredMiss).not.toBe(state.childId)
+  canvas.assertNoErrors()
+})
+
+ test('rotation drag exposes live rotation preview state', async () => {
+  await canvas.clearCanvas()
+  await canvas.drawRect(200, 200, 100, 100)
+  await canvas.click(250, 250)
+  await canvas.waitForRender()
+
+  const viewport = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const id = [...store.state.selectedIds][0]
+    const n = store.graph.getNode(id)
+    if (!n) return null
+    const abs = store.graph.getAbsolutePosition(id)
+    const zoom = store.state.zoom
+    const panX = store.state.panX
+    const panY = store.state.panY
+    const cx = (abs.x + n.width / 2) * zoom + panX
+    const topMidY = abs.y * zoom + panY
+    return { cx, topMidY }
+  })
+  expect(viewport).not.toBeNull()
+
+  const box = await page.locator('canvas').boundingBox()
+  if (!box) throw new Error('No canvas')
+
+  const rx = box.x + viewport!.cx
+  const ry = box.y + viewport!.topMidY - 24
+
+  await page.mouse.move(rx, ry)
+  await canvas.waitForRender()
+  await page.mouse.down()
+  await page.mouse.move(rx + 60, ry + 60, { steps: 15 })
+  await canvas.waitForRender()
+
+  const preview = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.rotationPreview)
+  expect(preview).not.toBeNull()
+
+  await page.mouse.up()
+  await canvas.waitForRender()
+
+  const clearedPreview = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.rotationPreview)
+  expect(clearedPreview).toBeNull()
+  canvas.assertNoErrors()
+})

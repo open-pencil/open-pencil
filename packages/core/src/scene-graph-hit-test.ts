@@ -1,3 +1,5 @@
+import { degToRad } from './geometry'
+
 import type { SceneGraph, SceneNode, NodeType } from './scene-graph'
 
 const CONTAINER_TYPES = new Set<NodeType>([
@@ -16,7 +18,21 @@ function hasVisibleFillOrStroke(node: SceneNode): boolean {
 }
 
 function containsPoint(px: number, py: number, ax: number, ay: number, node: SceneNode): boolean {
-  return px >= ax && px <= ax + node.width && py >= ay && py <= ay + node.height
+  if (node.rotation === 0) {
+    return px >= ax && px <= ax + node.width && py >= ay && py <= ay + node.height
+  }
+
+  const cx = ax + node.width / 2
+  const cy = ay + node.height / 2
+  const dx = px - cx
+  const dy = py - cy
+  const rad = degToRad(-node.rotation)
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const localX = dx * cos - dy * sin + node.width / 2
+  const localY = dx * sin + dy * cos + node.height / 2
+
+  return localX >= 0 && localX <= node.width && localY >= 0 && localY <= node.height
 }
 
 function hitTestOpaqueContainer(

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix inline layer rename so clearing the name falls back to the default node name, and Backspace/Delete inside rename inputs no longer delete the layer
+- Fix rotated frame hit testing, hover highlights, and selection overlays so child hover/click areas, frame title labels, and size pills stay aligned during rotation and live rotation preview
+
 ## 0.11.2 — 2026-03-30
 
 ### Fixes

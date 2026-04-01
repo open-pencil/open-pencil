@@ -1,10 +1,14 @@
 import { computeAbsoluteBounds } from '../geometry'
 import { computeLayout } from '../layout'
 
-import type { LayoutMode, SceneNode } from '../scene-graph'
+import type { LayoutMode, NodeType, SceneNode } from '../scene-graph'
 import type { EditorContext } from './types'
 
 export function createStructureActions(ctx: EditorContext) {
+  function defaultNodeName(type: NodeType): string {
+    return type.charAt(0) + type.slice(1).toLowerCase()
+  }
+
   function isTopLevel(parentId: string | null): boolean {
     return !parentId || parentId === ctx.graph.rootId || parentId === ctx.state.currentPageId
   }
@@ -376,7 +380,10 @@ export function createStructureActions(ctx: EditorContext) {
   }
 
   function renameNode(id: string, name: string) {
-    ctx.graph.updateNode(id, { name })
+    const node = ctx.graph.getNode(id)
+    if (!node) return
+    const trimmedName = name.trim()
+    ctx.graph.updateNode(id, { name: trimmedName || defaultNodeName(node.type) })
   }
 
   return {

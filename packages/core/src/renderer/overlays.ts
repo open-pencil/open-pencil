@@ -1,11 +1,5 @@
 import {
   HANDLE_HALF_SIZE,
-  LABEL_OFFSET_Y,
-  SIZE_PILL_PADDING_X,
-  SIZE_PILL_PADDING_Y,
-  SIZE_PILL_HEIGHT,
-  SIZE_PILL_RADIUS,
-  SIZE_PILL_TEXT_OFFSET_Y,
   MARQUEE_FILL_ALPHA,
   SELECTION_DASH_ALPHA,
   LAYOUT_INDICATOR_STROKE,
@@ -28,6 +22,21 @@ import type { Rect, Vector } from '../types'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import type { Canvas } from 'canvaskit-wasm'
 
+function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
+  const chain: SceneNode[] = []
+  let current = node
+
+  for (;;) {
+    chain.unshift(current)
+    if (!current.parentId) break
+    const parent = graph.getNode(current.parentId)
+    if (!parent || parent.id === graph.rootId || parent.type === 'CANVAS') break
+    current = parent
+  }
+
+  return chain
+}
+
 export function drawHoverHighlight(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -38,22 +47,23 @@ export function drawHoverHighlight(
   const node = graph.getNode(hoveredNodeId)
   if (!node) return
 
-  const abs = graph.getAbsolutePosition(node.id)
-  const sx = abs.x * r.zoom + r.panX
-  const sy = abs.y * r.zoom + r.panY
-
   r.auxStroke.setStrokeWidth(1 / r.zoom)
   r.auxStroke.setColor(r.isComponentType(node.type) ? r.compColor() : r.selColor())
   r.auxStroke.setPathEffect(null)
 
+  const chain = getNodeTransformChain(graph, node)
+
   canvas.save()
-  canvas.translate(sx, sy)
-  if (node.rotation !== 0) {
-    const cx = (node.width / 2) * r.zoom
-    const cy = (node.height / 2) * r.zoom
-    canvas.rotate(node.rotation, cx, cy)
-  }
+  canvas.translate(r.panX, r.panY)
   canvas.scale(r.zoom, r.zoom)
+
+  for (const item of chain) {
+    canvas.translate(item.x, item.y)
+    if (item.rotation !== 0) {
+      canvas.rotate(item.rotation, item.width / 2, item.height / 2)
+    }
+  }
+
   r.strokeNodeShape(canvas, node, r.auxStroke)
   canvas.restore()
 }
@@ -115,7 +125,7 @@ export function drawSelection(
     const rotation =
       overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
     r.drawNodeSelection(canvas, node, rotation, graph)
-    r.drawSelectionLabels(canvas, graph, selectedIds)
+    r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
 
     r.selectionPaint.setColor(r.selColor())
     return
@@ -144,7 +154,7 @@ export function drawSelection(
   if (nodes.length === 0) return
   r.drawGroupBounds(canvas, nodes, graph)
 
-  r.drawSelectionLabels(canvas, graph, selectedIds)
+  r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
 }
 
 function withNodeBounds(
@@ -192,82 +202,6 @@ export function drawNodeSelection(
     r.drawHandle(canvas, x1, my)
     r.drawHandle(canvas, x2, my)
   })
-}
-
-export function drawSelectionLabels(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  graph: SceneGraph,
-  selectedIds: Set<string>
-): void {
-  if (!r.labelFont || !r.sizeFont) return
-
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  const nodes: SceneNode[] = []
-
-  for (const id of selectedIds) {
-    const node = graph.getNode(id)
-    if (!node) continue
-    nodes.push(node)
-    const abs = graph.getAbsolutePosition(id)
-    minX = Math.min(minX, abs.x)
-    minY = Math.min(minY, abs.y)
-    maxX = Math.max(maxX, abs.x + node.width)
-    maxY = Math.max(maxY, abs.y + node.height)
-  }
-
-  if (nodes.length === 0) return
-
-  const sx1 = minX * r.zoom + r.panX
-  const sy1 = minY * r.zoom + r.panY
-  const sx2 = maxX * r.zoom + r.panX
-  const sy2 = maxY * r.zoom + r.panY
-  const smx = (sx1 + sx2) / 2
-
-  if (nodes.length === 1) {
-    const node = nodes[0]
-    const parentNode = node.parentId ? graph.getNode(node.parentId) : null
-    const isTopLevel = !parentNode || parentNode.type === 'CANVAS' || parentNode.type === 'SECTION'
-    if (node.type === 'FRAME' && isTopLevel) {
-      r.auxFill.setColor(r.selColor())
-      canvas.drawText(node.name, sx1, sy1 - LABEL_OFFSET_Y, r.auxFill, r.labelFont)
-    }
-  }
-
-  const w = Math.round(maxX - minX)
-  const h = Math.round(maxY - minY)
-  const sizeText = `${w} × ${h}`
-  const glyphIds = r.sizeFont.getGlyphIDs(sizeText)
-  const widths = r.sizeFont.getGlyphWidths(glyphIds)
-  let textWidth = 0
-  for (const w of widths) textWidth += w
-  const pillW = textWidth + SIZE_PILL_PADDING_X * 2
-  const pillH = SIZE_PILL_HEIGHT
-  const pillX = smx - pillW / 2
-  const pillY = sy2 + SIZE_PILL_PADDING_Y
-
-  const allComponents = nodes.length > 0 && nodes.every((n) => r.isComponentType(n.type))
-  const pillColor = allComponents ? r.compColor() : r.selColor()
-
-  r.auxFill.setColor(pillColor)
-  const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH),
-    SIZE_PILL_RADIUS,
-    SIZE_PILL_RADIUS
-  )
-  canvas.drawRRect(rrect, r.auxFill)
-
-  r.auxFill.setColor(r.ck.WHITE)
-  canvas.drawText(
-    sizeText,
-    pillX + SIZE_PILL_PADDING_X,
-    pillY + SIZE_PILL_TEXT_OFFSET_Y,
-    r.auxFill,
-    r.sizeFont
-  )
 }
 
 export function drawParentFrameOutlines(
@@ -376,6 +310,8 @@ export function getRotatedCorners(r: SkiaRenderer, n: SceneNode, abs: Vector): V
   const hh = (n.height / 2) * r.zoom
   return rotatedCorners(cx, cy, hw, hh, n.rotation)
 }
+
+export { drawSelectionLabels } from './selection-labels'
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
   r.auxFill.setColor(r.ck.WHITE)

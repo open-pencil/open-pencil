@@ -257,6 +257,33 @@ describe('hitTest — frame with children', () => {
     expect(hit).not.toBeNull()
     expect(hit!.id).toBe(child.id)
   })
+
+  test('rotated frame scope hit test finds children using rotated local bounds', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const frame = graph.createNode('FRAME', page, {
+      name: 'RotatedFrame',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 120,
+      rotation: 45
+    })
+    const child = graph.createNode('RECTANGLE', frame.id, {
+      name: 'InnerRect',
+      x: 60,
+      y: 30,
+      width: 80,
+      height: 40
+    })
+
+    const hitInside = graph.hitTest(100, 60, frame.id)
+    expect(hitInside).not.toBeNull()
+    expect(hitInside!.id).toBe(child.id)
+
+    const hitOutside = graph.hitTest(10, 10, frame.id)
+    expect(hitOutside).toBeNull()
+  })
 })
 
 describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {

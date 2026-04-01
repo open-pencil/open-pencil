@@ -73,26 +73,29 @@ function drawSectionTitle(
 
   const pillW = Math.min(textWidth + SECTION_TITLE_PADDING_X * 2, maxPillW)
   const pillH = SECTION_TITLE_HEIGHT
-  const pillX = screenX
-  const pillY = nested ? screenY + SECTION_TITLE_GAP : screenY - pillH - SECTION_TITLE_GAP
-
-  if (node.fills.length > 0 && node.fills[0].visible) {
-    const c = r.resolveFillColor(node.fills[0], 0, node, graph)
-    r.auxFill.setColor(r.ck.Color4f(c.r, c.g, c.b, node.fills[0].opacity))
-  } else {
-    r.auxFill.setColor(r.ck.Color4f(0.37, 0.37, 0.37, 1))
-  }
-  const pillRect = r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH)
-  canvas.drawRRect(r.ck.RRectXY(pillRect, SECTION_TITLE_RADIUS, SECTION_TITLE_RADIUS), r.auxFill)
+  const localPillX = 0
+  const localPillY = nested ? SECTION_TITLE_GAP : -pillH - SECTION_TITLE_GAP
 
   const pillColor =
     node.fills.length > 0 && node.fills[0].visible
       ? r.resolveFillColor(node.fills[0], 0, node, graph)
       : { r: 0.37, g: 0.37, b: 0.37, a: 1 }
+
+  canvas.save()
+  canvas.translate(screenX, screenY)
+  if (node.rotation !== 0) {
+    canvas.rotate(node.rotation, 0, 0)
+  }
+
+  r.auxFill.setColor(r.ck.Color4f(pillColor.r, pillColor.g, pillColor.b, pillColor.a))
+  const pillRect = r.ck.LTRBRect(localPillX, localPillY, localPillX + pillW, localPillY + pillH)
+  canvas.drawRRect(r.ck.RRectXY(pillRect, SECTION_TITLE_RADIUS, SECTION_TITLE_RADIUS), r.auxFill)
+
   const lum = 0.299 * pillColor.r + 0.587 * pillColor.g + 0.114 * pillColor.b
   r.auxFill.setColor(lum > 0.5 ? r.ck.BLACK : r.ck.WHITE)
-  const textY = pillY + pillH * 0.7
-  canvas.drawText(displayText, pillX + SECTION_TITLE_PADDING_X, textY, r.auxFill, font)
+  const textY = localPillY + pillH * 0.7
+  canvas.drawText(displayText, localPillX + SECTION_TITLE_PADDING_X, textY, r.auxFill, font)
+  canvas.restore()
 }
 
 export function drawComponentLabels(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
