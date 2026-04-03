@@ -164,6 +164,14 @@ describe('mapUpdate', () => {
 })
 
 describe('formatConnectionError', () => {
+  const claudeAgent = {
+    id: 'claude-code',
+    name: 'Claude Code',
+    command: 'claude-agent-acp',
+    args: [],
+    installCommand: 'bun add -g @agentclientprotocol/claude-agent-acp'
+  } as const
+
   test('ECONNREFUSED maps to MCP not running', () => {
     const msg = formatConnectionError(new Error('connect ECONNREFUSED 127.0.0.1:7600'))
     expect(msg).toBe('MCP server is not running. Make sure the editor is open.')
@@ -177,6 +185,13 @@ describe('formatConnectionError', () => {
   test('timeout maps to timeout message', () => {
     const msg = formatConnectionError(new Error('Request timeout after 30s'))
     expect(msg).toBe('MCP server did not respond in time.')
+  })
+
+  test('ENOENT maps to install instructions', () => {
+    const msg = formatConnectionError(new Error('spawn claude-agent-acp ENOENT'), claudeAgent)
+    expect(msg).toBe(
+      '"claude-agent-acp" is not installed. Install it with: bun add -g @agentclientprotocol/claude-agent-acp'
+    )
   })
 
   test('other errors pass through', () => {

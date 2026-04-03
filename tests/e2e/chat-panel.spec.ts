@@ -41,7 +41,14 @@ async function injectMockTransport(page: Page) {
         const lastUser = [...messages].reverse().find((m) => m.role === 'user')
         const text = lastUser?.parts?.find((p) => p.type === 'text')?.text ?? ''
         const msgId = `mock-msg-${++msgCounter}`
-        const wantsTool = text.toLowerCase().includes('frame') || text.toLowerCase().includes('rectangle')
+        const lowerText = text.toLowerCase()
+        const wantsTool = lowerText.includes('frame') || lowerText.includes('rectangle')
+
+        if (lowerText.includes('missing agent')) {
+          throw new Error(
+            '"claude-agent-acp" is not installed. Install it with: bun add -g @agentclientprotocol/claude-agent-acp',
+          )
+        }
 
         return new ReadableStream({
           start(controller) {
@@ -198,4 +205,15 @@ test('switching tabs preserves chat', async () => {
 
   await chatTab().click()
   await expect(page.getByText('Hello there', { exact: true })).toBeVisible()
+})
+
+test('transport errors show an actionable banner', async () => {
+  await chatInput().fill('Trigger missing agent error')
+  await chatInput().press('Enter')
+
+  await expect(
+    page.getByText('Install it with: bun add -g @agentclientprotocol/claude-agent-acp', {
+      exact: false,
+    }),
+  ).toBeVisible({ timeout: 5000 })
 })

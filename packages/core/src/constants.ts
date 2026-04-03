@@ -98,12 +98,31 @@ export interface ACPAgentDef {
   name: string
   command: string
   args: string[]
+  installCommand?: string
 }
 
 export const ACP_AGENTS: ACPAgentDef[] = [
-  { id: 'claude-code', name: 'Claude Code', command: 'claude-agent-acp', args: [] },
-  { id: 'codex', name: 'Codex', command: 'codex-acp', args: [] },
-  { id: 'gemini-cli', name: 'Gemini CLI', command: 'gemini', args: ['--acp'] }
+  {
+    id: 'claude-code',
+    name: 'Claude Code',
+    command: 'claude-agent-acp',
+    args: [],
+    installCommand: 'bun add -g @agentclientprotocol/claude-agent-acp'
+  },
+  {
+    id: 'codex',
+    name: 'Codex',
+    command: 'codex-acp',
+    args: [],
+    installCommand: 'bun add -g @zed-industries/codex-acp'
+  },
+  {
+    id: 'gemini-cli',
+    name: 'Gemini CLI',
+    command: 'gemini',
+    args: ['--acp'],
+    installCommand: 'bun add -g @google/gemini-cli'
+  }
 ]
 
 export type AIProviderID =

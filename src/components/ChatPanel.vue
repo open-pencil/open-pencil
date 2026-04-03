@@ -81,8 +81,10 @@ async function handleSubmit(text: string) {
     initError.value = e instanceof Error ? e.message : String(e)
     return
   }
-  chat.value?.sendMessage({ text }).catch((e: unknown) => {
+  const pendingMessage = chat.value?.sendMessage({ text })
+  void pendingMessage?.catch((e: unknown) => {
     console.error('Chat error:', e)
+    initError.value = e instanceof Error ? e.message : String(e)
   })
 }
 

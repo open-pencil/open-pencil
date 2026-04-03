@@ -158,7 +158,7 @@ Use Claude Code, Codex, or Gemini CLI directly in the chat panel. The agent conn
 
 **Setup (Claude Code):**
 
-1. Install the ACP adapter: `npm i -g @zed-industries/claude-agent-acp`
+1. Install the ACP adapter: `bun add -g @agentclientprotocol/claude-agent-acp`
 2. Add MCP permission to `~/.claude/settings.json`:
    ```json
    {

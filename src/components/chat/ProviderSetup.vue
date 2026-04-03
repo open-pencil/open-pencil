@@ -86,11 +86,21 @@ function save() {
       <ProviderSelectField test-id="provider-selector" />
 
       <p class="text-center text-[10px] leading-relaxed text-muted">
-        Uses your existing {{ acpAgent?.name }} subscription. Make sure
-        <code class="rounded bg-input px-1 py-0.5 font-mono text-[9px]">{{
-          acpAgent?.command
-        }}</code>
-        is installed and authenticated.
+        Uses your existing {{ acpAgent?.name }} subscription.
+        <template v-if="acpAgent?.installCommand">
+          Install it with
+          <code class="rounded bg-input px-1 py-0.5 font-mono text-[9px]">{{
+            acpAgent.installCommand
+          }}</code>
+          and sign in before sending your first message.
+        </template>
+        <template v-else>
+          Make sure
+          <code class="rounded bg-input px-1 py-0.5 font-mono text-[9px]">{{
+            acpAgent?.command
+          }}</code>
+          is installed and authenticated.
+        </template>
       </p>
     </div>
 

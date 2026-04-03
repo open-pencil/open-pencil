@@ -28,7 +28,25 @@ interface ACPSession {
   dead: boolean
 }
 
-export function formatConnectionError(e: unknown): string {
+function isMissingCommandError(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes('enoent') ||
+    normalized.includes('not found') ||
+    normalized.includes('no such file') ||
+    normalized.includes('program not found')
+  )
+}
+
+function missingCommandMessage(agentDef?: ACPAgentDef): string {
+  if (!agentDef) return 'ACP agent CLI is not installed.'
+  if (!agentDef.installCommand) {
+    return `"${agentDef.command}" is not installed. Install it and restart OpenPencil.`
+  }
+  return `"${agentDef.command}" is not installed. Install it with: ${agentDef.installCommand}`
+}
+
+export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): string {
   const msg = e instanceof Error ? e.message : String(e)
   if (
     msg.includes('ECONNREFUSED') ||
@@ -39,6 +57,9 @@ export function formatConnectionError(e: unknown): string {
   }
   if (msg.includes('timeout') || msg.includes('Timeout') || msg.includes('ETIMEDOUT')) {
     return 'MCP server did not respond in time.'
+  }
+  if (isMissingCommandError(msg)) {
+    return missingCommandMessage(agentDef)
   }
   return msg
 }
@@ -180,7 +201,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
             finish(result.stopReason === 'end_turn' ? 'stop' : 'other')
           })
           .catch((e) => {
-            finish('error', formatConnectionError(e))
+            finish('error', formatConnectionError(e, this.agentDef))
           })
       }
     })
@@ -238,7 +259,12 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       this.session = null
     })
 
-    const child = await command.spawn()
+    let child: TauriChild
+    try {
+      child = await command.spawn()
+    } catch (e) {
+      throw new Error(formatConnectionError(e, this.agentDef))
+    }
 
     const output = new ReadableStream<Uint8Array>({
       async pull(controller) {
@@ -312,7 +338,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       })
     } catch (e) {
       await child.kill()
-      throw new Error(formatConnectionError(e))
+      throw new Error(formatConnectionError(e, this.agentDef))
     }
 
     const session: ACPSession = {
