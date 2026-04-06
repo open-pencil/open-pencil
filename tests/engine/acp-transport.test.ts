@@ -169,7 +169,7 @@ describe('formatConnectionError', () => {
     name: 'Claude Code',
     command: 'claude-agent-acp',
     args: [],
-    installCommand: 'bun add -g @agentclientprotocol/claude-agent-acp'
+    installCommand: 'npm i -g @agentclientprotocol/claude-agent-acp'
   } as const
 
   test('ECONNREFUSED maps to MCP not running', () => {
@@ -190,7 +190,7 @@ describe('formatConnectionError', () => {
   test('ENOENT maps to install instructions', () => {
     const msg = formatConnectionError(new Error('spawn claude-agent-acp ENOENT'), claudeAgent)
     expect(msg).toBe(
-      '"claude-agent-acp" is not installed. Install it with: bun add -g @agentclientprotocol/claude-agent-acp'
+      '"claude-agent-acp" is not installed. Install it with: npm i -g @agentclientprotocol/claude-agent-acp'
     )
   })
 

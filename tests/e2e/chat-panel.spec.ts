@@ -46,7 +46,7 @@ async function injectMockTransport(page: Page) {
 
         if (lowerText.includes('missing agent')) {
           throw new Error(
-            '"claude-agent-acp" is not installed. Install it with: bun add -g @agentclientprotocol/claude-agent-acp',
+            '"claude-agent-acp" is not installed. Install it with: npm i -g @agentclientprotocol/claude-agent-acp',
           )
         }
 
@@ -207,12 +207,12 @@ test('switching tabs preserves chat', async () => {
   await expect(page.getByText('Hello there', { exact: true })).toBeVisible()
 })
 
-test('transport errors show an actionable banner', async () => {
+test('transport errors show an actionable toast', async () => {
   await chatInput().fill('Trigger missing agent error')
   await chatInput().press('Enter')
 
   await expect(
-    page.getByText('Install it with: bun add -g @agentclientprotocol/claude-agent-acp', {
+    page.getByText('Install it with: npm i -g @agentclientprotocol/claude-agent-acp', {
       exact: false,
     }),
   ).toBeVisible({ timeout: 5000 })

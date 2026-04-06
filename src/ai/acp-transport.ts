@@ -30,12 +30,7 @@ interface ACPSession {
 
 function isMissingCommandError(message: string): boolean {
   const normalized = message.toLowerCase()
-  return (
-    normalized.includes('enoent') ||
-    normalized.includes('not found') ||
-    normalized.includes('no such file') ||
-    normalized.includes('program not found')
-  )
+  return normalized.includes('enoent') || normalized.includes('program not found')
 }
 
 function missingCommandMessage(agentDef?: ACPAgentDef): string {

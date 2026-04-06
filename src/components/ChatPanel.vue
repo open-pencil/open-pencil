@@ -11,6 +11,7 @@ import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/composables/use-chat'
+import { toast } from '@/utils/toast'
 import { useI18n } from '@open-pencil/vue'
 
 import type { Chat } from '@ai-sdk/vue'
@@ -29,7 +30,6 @@ ensureChat().then((c) => {
 const messagesEnd = ref<HTMLDivElement>()
 const debugCopied = ref(false)
 const acpLogCopied = ref(false)
-const initError = ref<string | null>(null)
 
 const messages = computed(() => chat.value?.messages ?? [])
 const status = computed(() => chat.value?.status ?? 'ready')
@@ -73,18 +73,16 @@ watch(
 async function handleSubmit(text: string) {
   if (status.value === 'streaming' || status.value === 'submitted') return
   try {
-    initError.value = null
     const c = await ensureChat()
     if (c) chat.value = markRaw(c)
   } catch (e) {
     console.error('Failed to initialize chat:', e)
-    initError.value = e instanceof Error ? e.message : String(e)
+    toast.show(e instanceof Error ? e.message : String(e), 'error')
     return
   }
-  const pendingMessage = chat.value?.sendMessage({ text })
-  void pendingMessage?.catch((e: unknown) => {
+  chat.value?.sendMessage({ text }).catch((e: unknown) => {
     console.error('Chat error:', e)
-    initError.value = e instanceof Error ? e.message : String(e)
+    toast.show(e instanceof Error ? e.message : String(e), 'error')
   })
 }
 
@@ -210,18 +208,6 @@ function handleClearChat() {
         >
           <icon-lucide-trash-2 class="size-3" />
           Clear
-        </button>
-      </div>
-
-      <!-- Connection error banner -->
-      <div
-        v-if="initError"
-        class="flex items-center gap-2 border-t border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-400"
-      >
-        <icon-lucide-circle-alert class="size-3.5 shrink-0" />
-        <span class="min-w-0 flex-1">{{ initError }}</span>
-        <button class="shrink-0 text-red-300 hover:text-red-200" @click="initError = null">
-          <icon-lucide-x class="size-3" />
         </button>
       </div>
 
