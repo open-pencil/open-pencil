@@ -130,7 +130,7 @@ const noHandRolledColor = {
   },
   create(context) {
     const file = context.filename ?? context.getFilename?.()
-    if (file?.endsWith('color.ts') || file?.endsWith('color.js')) return {}
+    if (file?.includes('/color') && /(?:color\.ts|color\/index\.ts)$/.test(file)) return {}
 
     return {
       TemplateLiteral(node) {
