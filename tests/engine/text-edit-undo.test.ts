@@ -3,6 +3,7 @@ import { describe, test, expect } from 'bun:test'
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 
+import type { StyleRun } from '@open-pencil/core'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
 
 function setup() {
@@ -116,5 +117,59 @@ describe('text edit undo', () => {
 
     undo.undo()
     expect(graph.getNode(textNode.id)!.text).toBe('Hello')
+  })
+
+  test('undo restores styleRuns when they changed during editing', () => {
+    const { graph, undo, textEditor, textNode, actions } = setup()
+
+    const boldRun: StyleRun = { start: 0, length: 5, style: { fontWeight: 700 } }
+    graph.updateNode(textNode.id, { styleRuns: [boldRun] })
+
+    actions.startTextEditing(textNode.id)
+
+    textEditor.insert(' World', textNode)
+    const newRuns: StyleRun[] = [
+      { start: 0, length: 5, style: { fontWeight: 700 } },
+      { start: 5, length: 6, style: { fontWeight: 400 } },
+    ]
+    graph.updateNode(textNode.id, { text: textEditor.state!.text, styleRuns: newRuns })
+
+    actions.commitTextEdit()
+
+    expect(graph.getNode(textNode.id)!.styleRuns).toEqual(newRuns)
+    expect(undo.canUndo).toBe(true)
+
+    undo.undo()
+    expect(graph.getNode(textNode.id)!.text).toBe('Hello')
+    expect(graph.getNode(textNode.id)!.styleRuns).toEqual([boldRun])
+
+    undo.redo()
+    expect(graph.getNode(textNode.id)!.text).toBe('Hello World')
+    expect(graph.getNode(textNode.id)!.styleRuns).toEqual(newRuns)
+  })
+
+  test('undo entry is pushed when only styleRuns changed', () => {
+    const { graph, undo, textNode, actions } = setup()
+
+    actions.startTextEditing(textNode.id)
+
+    const newRuns: StyleRun[] = [{ start: 0, length: 5, style: { fontWeight: 700 } }]
+    graph.updateNode(textNode.id, { styleRuns: newRuns })
+
+    actions.commitTextEdit()
+
+    expect(undo.canUndo).toBe(true)
+
+    undo.undo()
+    expect(graph.getNode(textNode.id)!.styleRuns).toEqual([])
+  })
+
+  test('no undo entry when neither text nor styleRuns changed', () => {
+    const { undo, actions, textNode } = setup()
+
+    actions.startTextEditing(textNode.id)
+    actions.commitTextEdit()
+
+    expect(undo.canUndo).toBe(false)
   })
 })

@@ -1,7 +1,9 @@
+import type { SceneNode } from '../scene-graph'
 import type { EditorContext } from './types'
 
 export function createTextActions(ctx: EditorContext) {
   let textBeforeEdit: string | null = null
+  let styleRunsBeforeEdit: SceneNode['styleRuns'] | null = null
 
   function startTextEditing(nodeId: string) {
     const te = ctx.getTextEditor()
@@ -9,6 +11,7 @@ export function createTextActions(ctx: EditorContext) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     textBeforeEdit = node.text
+    styleRunsBeforeEdit = structuredClone(node.styleRuns)
     ctx.state.editingTextId = nodeId
     if (te) {
       te.setRenderer(ctx.getRenderer())
@@ -22,28 +25,37 @@ export function createTextActions(ctx: EditorContext) {
     if (!te?.isActive) {
       ctx.state.editingTextId = null
       textBeforeEdit = null
+      styleRunsBeforeEdit = null
       return
     }
     const result = te.stop()
     if (!result) {
       ctx.state.editingTextId = null
       textBeforeEdit = null
+      styleRunsBeforeEdit = null
       ctx.requestRender()
       return
     }
     const prevText = textBeforeEdit ?? ''
+    const prevRuns = styleRunsBeforeEdit ?? []
     const newText = result.text
-    ctx.graph.updateNode(result.nodeId, { text: newText })
+    const node = ctx.graph.getNode(result.nodeId)
+    const newRuns = node ? structuredClone(node.styleRuns) : []
+    ctx.graph.updateNode(result.nodeId, { text: newText, styleRuns: newRuns })
     ctx.state.editingTextId = null
     textBeforeEdit = null
-    if (prevText !== newText) {
+    styleRunsBeforeEdit = null
+
+    const textChanged = prevText !== newText
+    const runsChanged = JSON.stringify(prevRuns) !== JSON.stringify(newRuns)
+    if (textChanged || runsChanged) {
       ctx.undo.push({
         label: 'Edit text',
         forward: () => {
-          ctx.graph.updateNode(result.nodeId, { text: newText })
+          ctx.graph.updateNode(result.nodeId, { text: newText, styleRuns: newRuns })
         },
         inverse: () => {
-          ctx.graph.updateNode(result.nodeId, { text: prevText })
+          ctx.graph.updateNode(result.nodeId, { text: prevText, styleRuns: prevRuns })
         }
       })
     }
