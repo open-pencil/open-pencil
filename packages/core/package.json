@@ -144,7 +144,7 @@
     "assets"
   ],
   "scripts": {
-    "build": "bunx tsgo && bunx fix-esm-import-path dist",
+    "build": "bunx tsdown --config tsdown.config.ts",
     "prepublishOnly": "bun run build"
   },
   "repository": {

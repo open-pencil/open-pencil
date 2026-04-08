@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.11.6 — 2026-04-08
+
+### Fixes
+
+- Switch `@open-pencil/core` build from `tsgo` + `fix-esm-import-path` to `tsdown` — fixes bare directory imports that broke Node.js and Bun consumers
+
 ## 0.11.5 — 2026-04-08
 
 ### Fixes

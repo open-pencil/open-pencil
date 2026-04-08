@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/mcp",
-  "version": "0.11.5",
+  "version": "0.11.6",
   "license": "MIT",
   "type": "module",
   "main": "./dist/server.js",
