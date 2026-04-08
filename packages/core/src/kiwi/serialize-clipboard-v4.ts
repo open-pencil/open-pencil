@@ -1,5 +1,5 @@
 import { getGlyphOutlineCommandsSync } from '../clipboard-text-outlines'
-import { normalizeFontFamily, weightToStyle } from '../fonts'
+import { normalizeFontFamily, weightToStyle } from '../text/fonts'
 
 import type { SceneNode } from '../scene-graph'
 import type { NodeChange } from './codec'

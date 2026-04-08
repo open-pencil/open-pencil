@@ -160,7 +160,7 @@ export async function fetchBundledFont(url: string): Promise<ArrayBuffer | null>
   }
   const { readFile } = await import('node:fs/promises')
   const { fileURLToPath } = await import('node:url')
-  const assetPath = fileURLToPath(new URL(`../assets${url}`, import.meta.url))
+  const assetPath = fileURLToPath(new URL(`../../assets${url}`, import.meta.url))
   const buf = await readFile(assetPath)
   return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 }
