@@ -1,5 +1,5 @@
 import { useEventListener, useMagicKeys, whenever } from '@vueuse/core'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 
 import { useAIChat } from '@/composables/use-chat'
 import { TOOL_SHORTCUTS, useEditorStore } from '@/stores/editor'
@@ -32,8 +32,6 @@ export function useKeyboard() {
   const { runCommand } = useEditorCommands()
 
   // ─── App-level actions ─────────────────────────────────────
-  // Commands that need app store state (nodeEditState, tabs, etc.)
-  // and can't live in the SDK's useEditorCommands.
 
   function hasNodeEditSelection() {
     return (
@@ -150,52 +148,11 @@ export function useKeyboard() {
     if (html) store.pasteFromHTML(html, cursorPos)
   })
 
-  // ─── Space hold → temporary Hand tool ──────────────────────
-
-  let toolBeforeSpace: typeof store.state.activeTool | null = null
-
-  useEventListener(window, 'keydown', (e: KeyboardEvent) => {
-    if (isEditing(e)) return
-    if (
-      e.code === 'Space' &&
-      !e.metaKey &&
-      !e.ctrlKey &&
-      !e.altKey &&
-      !e.repeat &&
-      toolBeforeSpace === null
-    ) {
-      if (store.state.activeTool !== 'HAND') {
-        toolBeforeSpace = store.state.activeTool
-        store.setTool('HAND')
-      }
-      e.preventDefault()
-    }
-  })
-
-  useEventListener(window, 'keyup', (e: KeyboardEvent) => {
-    if (e.code === 'Space' && toolBeforeSpace !== null) {
-      store.setTool(toolBeforeSpace)
-      toolBeforeSpace = null
-      e.preventDefault()
-    }
-  })
-
-  // ─── Raw keydown: tool switch, nudge, preventDefault ───────
+  // ─── Nudge (raw keydown for repeat events) ─────────────────
 
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e) || store.state.editingTextId) return
     if (e.metaKey || e.ctrlKey || e.altKey) return
-
-    if (e.code === 'Space') return
-
-    const tool = TOOL_SHORTCUTS[e.code]
-    if (tool && !e.shiftKey) {
-      toolBeforeSpace = null
-      store.setTool(tool)
-      e.preventDefault()
-      return
-    }
-
     const delta = NUDGE_DELTAS[e.code]
     if (delta && store.state.selectedIds.size > 0) {
       const step = e.shiftKey ? 10 : 1
@@ -204,7 +161,7 @@ export function useKeyboard() {
     }
   })
 
-  // ─── useMagicKeys for modifier combos ──────────────────────
+  // ─── useMagicKeys ──────────────────────────────────────────
 
   const keys = useMagicKeys({
     passive: false,
@@ -214,8 +171,11 @@ export function useKeyboard() {
       if (e.code === 'Backspace' || e.code === 'Delete') e.preventDefault()
       if (e.code === 'BracketLeft' || e.code === 'BracketRight') e.preventDefault()
       if (e.code === 'Enter' && store.state.penState) e.preventDefault()
+      if (e.code === 'Space') e.preventDefault()
     }
   })
+
+  // ─── Helpers ───────────────────────────────────────────────
 
   function mod(combo: string): ComputedRef<boolean> {
     const hasShift = combo.includes('shift')
@@ -244,6 +204,34 @@ export function useKeyboard() {
         (allowAlt || !keys['alt'].value) &&
         !store.state.editingTextId
     )
+  }
+
+  // ─── Space hold → temporary Hand tool ──────────────────────
+
+  let toolBeforeSpace: typeof store.state.activeTool | null = null
+
+  const spaceHeld = computed(
+    () => keys['Space'].value && !keys['meta'].value && !keys['control'].value && !keys['alt'].value
+  )
+
+  watch(spaceHeld, (held) => {
+    if (held && toolBeforeSpace === null && store.state.activeTool !== 'HAND') {
+      toolBeforeSpace = store.state.activeTool
+      store.setTool('HAND')
+    } else if (!held && toolBeforeSpace !== null) {
+      store.setTool(toolBeforeSpace)
+      toolBeforeSpace = null
+    }
+  })
+
+  // ─── Tool shortcuts (plain single keys) ────────────────────
+
+  for (const [code, tool] of Object.entries(TOOL_SHORTCUTS)) {
+    if (!tool) continue
+    whenever(plain(code), () => {
+      toolBeforeSpace = null
+      store.setTool(tool)
+    })
   }
 
   // ─── Shortcut → action mapping ─────────────────────────────
