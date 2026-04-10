@@ -142,7 +142,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
           <div class="flex items-center justify-between">
             <label class="mb-1.5 block text-[11px] text-muted">{{ panels.autoLayout }}</label>
             <Tip v-if="ctx.node.layoutMode === 'NONE'" :label="panels.addAutoLayout">
-              <button
+              <button tabindex="0"
                 class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
                 data-test-id="layout-add-auto"
                 @click="ctx.editor.setLayoutMode(ctx.node.id, 'VERTICAL')"
@@ -151,7 +151,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
               </button>
             </Tip>
             <Tip v-else :label="panels.removeAutoLayout">
-              <button
+              <button tabindex="0"
                 class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
                 data-test-id="layout-remove-auto"
                 @click="ctx.editor.setLayoutMode(ctx.node.id, 'NONE')"
@@ -163,7 +163,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
 
           <template v-if="ctx.node.layoutMode !== 'NONE'">
             <div class="mt-1.5 flex gap-0.5">
-              <button
+              <button tabindex="0"
                 v-for="dir in [
                   { mode: 'HORIZONTAL', test: 'horizontal' },
                   { mode: 'VERTICAL', test: 'vertical' },
@@ -183,7 +183,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
                 <icon-lucide-arrow-down v-else-if="dir.mode === 'VERTICAL'" class="size-3.5" />
                 <icon-lucide-layout-grid v-else class="size-3.5" />
               </button>
-              <button
+              <button tabindex="0"
                 v-if="ctx.isFlex"
                 data-test-id="layout-direction-wrap"
                 class="flex cursor-pointer items-center justify-center rounded border px-2 py-1"
@@ -223,7 +223,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
                   <label class="text-[11px] text-muted">{{
                     trackProp === 'gridTemplateColumns' ? panels.columns : panels.rows
                   }}</label>
-                  <button
+                  <button tabindex="0"
                     class="cursor-pointer rounded border-none bg-transparent px-1 text-xs leading-none text-muted hover:bg-hover hover:text-surface"
                     @click="ctx.addTrack(trackProp)"
                   >
@@ -258,7 +258,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
                         })
                       "
                     />
-                    <button
+                    <button tabindex="0"
                       v-if="ctx.node[trackProp].length > 1"
                       class="cursor-pointer rounded border-none bg-transparent px-0.5 text-xs text-muted hover:text-surface"
                       @click="ctx.removeTrack(trackProp, i)"
@@ -297,7 +297,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
                   @update:model-value="ctx.updateProp('itemSpacing', $event)"
                   @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
                 />
-                <button
+                <button tabindex="0"
                   class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-transparent text-muted hover:bg-hover hover:text-surface"
                   @click="ctx.toggleIndividualPadding"
                 >
@@ -346,7 +346,7 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
             <div v-if="ctx.isFlex" class="mt-2">
               <label class="mb-1 block text-[11px] text-muted">{{ panels.alignment }}</label>
               <div data-test-id="layout-alignment-grid" class="grid w-fit grid-cols-3 gap-0.5">
-                <button
+                <button tabindex="0"
                   v-for="cell in ctx.alignGrid"
                   :key="`${cell.primary}-${cell.counter}`"
                   class="flex size-6 cursor-pointer items-center justify-center rounded border text-[11px]"

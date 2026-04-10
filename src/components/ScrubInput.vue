@@ -21,7 +21,7 @@ const emit = defineEmits<{
 
 <template>
   <ScrubInputRoot
-    v-slot="{ editing, startScrub, placeholder: ph }"
+    v-slot="{ editing, startScrub, startEdit, placeholder: ph }"
     :model-value="modelValue"
     :min="min"
     :max="max"
@@ -33,9 +33,11 @@ const emit = defineEmits<{
   >
     <div
       data-test-id="scrub-input"
-      class="group flex h-[26px] min-w-0 flex-1 items-center rounded border border-border bg-input focus-within:border-accent"
+      :tabindex="editing ? undefined : 0"
+      class="group flex h-[26px] min-w-0 flex-1 items-center rounded border border-border bg-input focus-within:border-accent focus:border-accent"
       :style="{ cursor: editing ? 'auto' : 'ew-resize' }"
       @pointerdown="!editing && startScrub($event)"
+      @focus="!editing && startEdit()"
     >
       <span
         class="flex shrink-0 items-center justify-center self-stretch px-[5px] text-muted select-none [&>*]:pointer-events-none"

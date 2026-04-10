@@ -131,7 +131,7 @@ onScopeDispose(() => {
   <div data-test-id="export-section" :class="sectionCls.wrapper">
     <div class="flex items-center justify-between">
       <label :class="sectionCls.label">{{ panels.export }}</label>
-      <button data-test-id="export-section-add" :class="useIconButtonUI().base" @click="addSetting">
+      <button tabindex="0" data-test-id="export-section-add" :class="useIconButtonUI().base" @click="addSetting">
         +
       </button>
     </div>
@@ -154,12 +154,12 @@ onScopeDispose(() => {
         :options="FORMAT_OPTIONS"
         @update:model-value="updateFormat(i, $event as ExportFormatId)"
       />
-      <button :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="removeSetting(i)">
+      <button tabindex="0" :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="removeSetting(i)">
         −
       </button>
     </div>
 
-    <button
+    <button tabindex="0"
       v-if="activeSettings.length > 0"
       data-test-id="export-button"
       class="mt-1.5 w-full cursor-pointer truncate rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-default disabled:opacity-50"
@@ -169,7 +169,7 @@ onScopeDispose(() => {
       {{ panels.export }} {{ activeName }}
     </button>
 
-    <button
+    <button tabindex="0"
       v-if="activeSettings.length > 0"
       data-test-id="export-preview-toggle"
       class="mt-1 flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent px-0 py-1 text-[11px] text-muted hover:text-surface"

@@ -71,14 +71,14 @@ const { panels } = useI18n()
       v-if="node.type === 'INSTANCE'"
       class="flex flex-col gap-1 border-b border-border px-3 py-2"
     >
-      <button
+      <button tabindex="0"
         data-test-id="design-go-to-component"
         class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
         @click="goToMainComponent.run()"
       >
         {{ panels.goToMainComponent }}
       </button>
-      <button
+      <button tabindex="0"
         data-test-id="design-detach-instance"
         class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
         @click="detachInstance.run()"

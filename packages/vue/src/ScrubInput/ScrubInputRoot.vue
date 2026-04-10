@@ -78,7 +78,13 @@ function startScrub(e: PointerEvent) {
 
 function startEdit() {
   editing.value = true
-  requestAnimationFrame(() => inputRef.value?.select())
+  requestAnimationFrame(() => {
+    const input = inputRef.value
+    if (input) {
+      input.focus()
+      input.select()
+    }
+  })
 }
 
 function commitEdit(e: Event) {

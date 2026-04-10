@@ -28,7 +28,7 @@ const { panels } = useI18n()
     <div class="flex items-center justify-between">
       <label class="text-[11px] font-medium text-surface">{{ panels.variables }}</label>
       <Tip :label="panels.openVariables">
-        <button
+        <button tabindex="0"
           data-test-id="variables-section-open"
           class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
           @click="emit('openDialog')"

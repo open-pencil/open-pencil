@@ -49,6 +49,7 @@ function handleAlign(
           <Tip :label="panels.alignLeft">
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
+              tabindex="0"
               data-test-id="position-align-left"
               @click="handleAlign(align, 'horizontal', 'min')"
             >
@@ -58,6 +59,7 @@ function handleAlign(
           <Tip :label="panels.alignCenterHorizontally">
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
+              tabindex="0"
               data-test-id="position-align-center-h"
               @click="handleAlign(align, 'horizontal', 'center')"
             >
@@ -67,6 +69,7 @@ function handleAlign(
           <Tip :label="panels.alignRight">
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
+              tabindex="0"
               data-test-id="position-align-right"
               @click="handleAlign(align, 'horizontal', 'max')"
             >
@@ -78,6 +81,7 @@ function handleAlign(
           <Tip :label="panels.alignTop">
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
+              tabindex="0"
               data-test-id="position-align-top"
               @click="handleAlign(align, 'vertical', 'min')"
             >
@@ -87,6 +91,7 @@ function handleAlign(
           <Tip :label="panels.alignCenterVertically">
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
+              tabindex="0"
               data-test-id="position-align-center-v"
               @click="handleAlign(align, 'vertical', 'center')"
             >
@@ -96,6 +101,7 @@ function handleAlign(
           <Tip :label="panels.alignBottom">
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
+              tabindex="0"
               data-test-id="position-align-bottom"
               @click="handleAlign(align, 'vertical', 'max')"
             >
@@ -154,6 +160,7 @@ function handleAlign(
         <Tip :label="panels.flipHorizontal">
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
+            tabindex="0"
             data-test-id="position-flip-horizontal"
             @click="flip('horizontal')"
           >
@@ -163,6 +170,7 @@ function handleAlign(
         <Tip :label="panels.flipVertical">
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
+            tabindex="0"
             data-test-id="position-flip-vertical"
             @click="flip('vertical')"
           >
@@ -172,6 +180,7 @@ function handleAlign(
         <Tip :label="panels.rotate90">
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
+            tabindex="0"
             data-test-id="position-rotate-90"
             @click="rotate(90)"
           >

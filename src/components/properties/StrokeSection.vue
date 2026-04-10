@@ -55,7 +55,7 @@ function onToggleSides(activeNode: SceneNode) {
     <div data-test-id="stroke-section" :class="sectionCls.wrapper">
       <div class="flex items-center justify-between">
         <label :class="sectionCls.label">{{ panels.stroke }}</label>
-        <button
+        <button tabindex="0"
           data-test-id="stroke-section-add"
           :class="useIconButtonUI().base"
           @click="add(strokeCtx.defaultStroke)"
@@ -133,7 +133,7 @@ function onToggleSides(activeNode: SceneNode) {
           </template>
         </ScrubInput>
         <Tip :label="panels.strokeSides">
-          <button
+          <button tabindex="0"
             data-test-id="stroke-sides-toggle"
             class="flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-input text-muted hover:bg-hover hover:text-surface"
             :class="{ '!border-accent !text-accent': expandedSides }"

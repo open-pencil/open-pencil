@@ -126,7 +126,7 @@ const { panels, dialogs } = useI18n()
       v-else-if="activeNodeId && bindingApi.getBoundVariable(activeNodeId, index)"
       :label="panels.detachVariable"
     >
-      <button
+      <button tabindex="0"
         :data-test-id="unbindTestId"
         class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-violet-400 hover:text-surface"
         @click="bindingApi.unbindVariable(activeNodeId, index)"
@@ -135,7 +135,7 @@ const { panels, dialogs } = useI18n()
       </button>
     </Tip>
 
-    <button
+    <button tabindex="0"
       :data-test-id="visibilityTestId"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
       @click="emit('toggleVisibility')"
@@ -144,7 +144,7 @@ const { panels, dialogs } = useI18n()
       <icon-lucide-eye-off v-else class="size-3.5" />
     </button>
 
-    <button :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="emit('remove')">
+    <button tabindex="0" :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="emit('remove')">
       −
     </button>
   </div>

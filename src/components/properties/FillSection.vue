@@ -24,7 +24,7 @@ const sectionCls = useSectionUI()
     <div data-test-id="fill-section" :class="sectionCls.wrapper">
       <div class="flex items-center justify-between">
         <label :class="sectionCls.label">{{ panels.fill }}</label>
-        <button
+        <button tabindex="0"
           data-test-id="fill-section-add"
           :class="useIconButtonUI().base"
           @click="add({ ...fillCtx.defaultFill })"

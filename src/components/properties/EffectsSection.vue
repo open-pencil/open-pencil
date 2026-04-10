@@ -24,7 +24,7 @@ const sectionCls = useSectionUI()
     <div data-test-id="effects-section" :class="sectionCls.wrapper">
       <div class="flex items-center justify-between">
         <label :class="sectionCls.label">{{ panels.effects }}</label>
-        <button
+        <button tabindex="0"
           data-test-id="effects-section-add"
           :class="useIconButtonUI().base"
           @click="add(effectsCtx.createDefaultEffect())"
@@ -42,13 +42,13 @@ const sectionCls = useSectionUI()
         :data-test-index="i"
       >
         <div class="group flex items-center gap-1.5 py-0.5">
-          <button
+          <button tabindex="0"
             v-if="effectsCtx.isShadow(effect.type)"
             class="size-5 shrink-0 cursor-pointer rounded border border-border"
             :style="{ background: colorToCSS(effect.color) }"
             @click="effectsCtx.toggleExpand(i)"
           />
-          <button
+          <button tabindex="0"
             v-else
             class="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-input"
             @click="effectsCtx.toggleExpand(i)"
@@ -64,7 +64,7 @@ const sectionCls = useSectionUI()
             "
           />
 
-          <button
+          <button tabindex="0"
             :data-test-id="`effect-visibility-${i}`"
             class="cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
             @click="toggleVisibility(i)"
@@ -72,7 +72,7 @@ const sectionCls = useSectionUI()
             <icon-lucide-eye v-if="effect.visible" class="size-3.5" />
             <icon-lucide-eye-off v-else class="size-3.5" />
           </button>
-          <button :class="useIconButtonUI().base" @click="effectsCtx.handleRemove(remove, i)">
+          <button tabindex="0" :class="useIconButtonUI().base" @click="effectsCtx.handleRemove(remove, i)">
             −
           </button>
         </div>
