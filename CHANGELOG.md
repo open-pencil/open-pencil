@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Fix color picker dragging flooding the undo stack — fill/stroke/effect color and opacity drags now collapse into a single undo entry per interaction via debounced batching in `PropertyListRoot`
+
 ## 0.11.6 — 2026-04-08
 
 ### Fixes
