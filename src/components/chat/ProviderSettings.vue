@@ -95,14 +95,13 @@ function clearUnsplashKey() {
 
 <template>
   <PopoverRoot>
-    <Tip label="Provider settings">
       <PopoverTrigger
         data-test-id="provider-settings-trigger"
         class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
+        title="Provider settings"
       >
         <icon-lucide-settings class="size-3" />
       </PopoverTrigger>
-    </Tip>
 
     <PopoverPortal>
       <PopoverContent
