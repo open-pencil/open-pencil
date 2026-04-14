@@ -86,8 +86,8 @@ export interface PenNode {
   stroke?: PenStroke
   effect?: PenEffect | PenEffect[]
   layout?: string
-  gap?: number
-  padding?: number | number[]
+  gap?: number | string
+  padding?: number | string | (number | string)[]
   justifyContent?: string
   alignItems?: string
   children?: PenNode[]
@@ -380,19 +380,22 @@ export function applyCornerRadius(
   node.cornerRadius = parseSize(radius, 0, ctx).value
 }
 
-export function applyPadding(node: SceneNode, padding: PenNode['padding']): void {
+export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?: VarContext): void {
   if (padding === undefined) return
+  const resolve = (v: number | string): number =>
+    typeof v === 'string' ? (isVarRef(v) && ctx ? ctx.resolveNumber(v) : (Number(v) || 0)) : v
   if (Array.isArray(padding)) {
-    node.paddingTop = padding[0] ?? 0
-    node.paddingRight = padding[1] ?? 0
-    node.paddingBottom = padding[2] ?? 0
-    node.paddingLeft = padding[3] ?? 0
+    node.paddingTop = resolve(padding[0] ?? 0)
+    node.paddingRight = resolve(padding[1] ?? 0)
+    node.paddingBottom = resolve(padding[2] ?? 0)
+    node.paddingLeft = resolve(padding[3] ?? 0)
     return
   }
-  node.paddingTop = padding
-  node.paddingRight = padding
-  node.paddingBottom = padding
-  node.paddingLeft = padding
+  const resolved = resolve(padding)
+  node.paddingTop = resolved
+  node.paddingRight = resolved
+  node.paddingBottom = resolved
+  node.paddingLeft = resolved
 }
 
 export function parseSize(value: number | string | undefined, fallback: number, ctx?: VarContext) {

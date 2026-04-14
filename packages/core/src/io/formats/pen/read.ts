@@ -81,12 +81,15 @@ function applyAutoLayout(
   layoutMode: LayoutMode,
   pen: PenNode,
   widthSizing: LayoutSizing,
-  heightSizing: LayoutSizing
+  heightSizing: LayoutSizing,
+  ctx?: VarContext
 ): void {
   overrides.layoutMode = layoutMode
   overrides.primaryAxisAlign = mapJustifyContent(pen.justifyContent)
   overrides.counterAxisAlign = mapAlignItems(pen.alignItems)
-  overrides.itemSpacing = pen.gap ?? 0
+  overrides.itemSpacing = typeof pen.gap === 'string' && isVarRef(pen.gap) && ctx
+    ? ctx.resolveNumber(pen.gap)
+    : (pen.gap ?? 0) as number
 
   if (layoutMode === 'VERTICAL') {
     overrides.primaryAxisSizing = heightSizing
@@ -236,7 +239,7 @@ function createSceneNode(
       parentLayout === 'NONE' && w.sizing === 'FILL' ? ('FIXED' as LayoutSizing) : w.sizing
     const heightSizing =
       parentLayout === 'NONE' && h.sizing === 'FILL' ? ('FIXED' as LayoutSizing) : h.sizing
-    applyAutoLayout(overrides, layout, pen, widthSizing, heightSizing)
+    applyAutoLayout(overrides, layout, pen, widthSizing, heightSizing, ctx)
   }
 
   const node = graph.createNode(mapNodeType(pen), parentId, overrides)
@@ -245,7 +248,7 @@ function createSceneNode(
   if (pen.stroke) node.strokes = convertStroke(pen.stroke, ctx, node)
   node.effects = convertEffects(pen.effect)
   applyCornerRadius(node, pen.cornerRadius, ctx)
-  applyPadding(node, pen.padding)
+  applyPadding(node, pen.padding, ctx)
 
   if (isTextLike) {
     applyTextProps(node, pen, ctx)
