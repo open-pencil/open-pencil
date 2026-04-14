@@ -1,20 +1,15 @@
-import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core'
+import {
+  CORNER_ROTATE_ZONE,
+  getAbsoluteRotation,
+  getWorldHandles,
+  HANDLE_HIT_RADIUS
+} from '@open-pencil/core'
 
+import resizeCursorSvg from '../assets/resize-cursor.svg?raw'
 import rotateCursorSvg from '../assets/rotate-cursor.svg?raw'
 
 import type { CornerPosition, HandlePosition } from './types'
-import type { Vector } from '@open-pencil/core'
-
-export const HANDLE_CURSORS: Record<HandlePosition, string> = {
-  nw: 'nwse-resize',
-  n: 'ns-resize',
-  ne: 'nesw-resize',
-  e: 'ew-resize',
-  se: 'nwse-resize',
-  s: 'ns-resize',
-  sw: 'nesw-resize',
-  w: 'ew-resize'
-}
+import type { Vector, SceneGraph, SceneNode } from '@open-pencil/core'
 
 export function getScreenRect(
   absX: number,
@@ -77,67 +72,106 @@ export function unrotate(
   }
 }
 
-export function hitTestHandle(
-  sx: number,
-  sy: number,
-  absX: number,
-  absY: number,
-  w: number,
-  h: number,
-  zoom: number,
-  panX: number,
-  panY: number,
-  rotation = 0
-): HandlePosition | null {
-  const { x1, y1, x2, y2 } = getScreenRect(absX, absY, w, h, zoom, panX, panY)
-  const cx = (x1 + x2) / 2
-  const cy = (y1 + y2) / 2
-  const ur = unrotate(sx, sy, cx, cy, rotation)
+function getCursorAngleFromHandle(handle: HandlePosition, rotation: number): number {
+  const map: Record<HandlePosition, [number, number]> = {
+    nw: [1, 1],
+    ne: [-1, 1],
+    se: [-1, -1],
+    sw: [1, -1],
 
-  const handles = getHandlePositions(absX, absY, w, h, zoom, panX, panY)
-  for (const [pos, pt] of Object.entries(handles)) {
-    if (Math.abs(ur.sx - pt.x) < HANDLE_HIT_RADIUS && Math.abs(ur.sy - pt.y) < HANDLE_HIT_RADIUS) {
-      return pos as HandlePosition
-    }
+    n: [0, 1],
+    e: [1, 0],
+    s: [0, -1],
+    w: [-1, 0]
   }
-  return null
+
+  const [bx, by] = map[handle]
+
+  const baseAngle = (Math.atan2(by, bx) * 180) / Math.PI
+
+  const angle = baseAngle - rotation
+
+  return (angle + 360) % 360
 }
 
-export function hitTestCornerRotation(
-  sx: number,
-  sy: number,
-  absX: number,
-  absY: number,
-  w: number,
-  h: number,
-  zoom: number,
-  panX: number,
-  panY: number,
-  rotation = 0
-): CornerPosition | null {
-  const { x1, y1, x2, y2 } = getScreenRect(absX, absY, w, h, zoom, panX, panY)
-  const cx = (x1 + x2) / 2
-  const cy = (y1 + y2) / 2
-  const ur = unrotate(sx, sy, cx, cy, rotation)
+export function getHitHandleByMatrix(
+  cx: number,
+  cy: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  zoom = 1
+): {
+  handle: HandlePosition
+  rotation: number
+} | null {
+  const handles = getWorldHandles(node, graph)
 
-  const corners: Array<{ pos: CornerPosition; x: number; y: number }> = [
-    { pos: 'nw', x: x1, y: y1 },
-    { pos: 'ne', x: x2, y: y1 },
-    { pos: 'se', x: x2, y: y2 },
-    { pos: 'sw', x: x1, y: y2 }
-  ]
+  const CORNER_R = HANDLE_HIT_RADIUS / zoom
 
-  for (const { pos, x, y } of corners) {
-    const dx = Math.abs(ur.sx - x)
-    const dy = Math.abs(ur.sy - y)
-    if (
-      dx <= CORNER_ROTATE_ZONE &&
-      dy <= CORNER_ROTATE_ZONE &&
-      (dx > HANDLE_HIT_RADIUS || dy > HANDLE_HIT_RADIUS)
-    ) {
-      return pos
+  const rotation = getAbsoluteRotation(node, graph)
+  for (const key in handles) {
+    const handleKey = key as HandlePosition
+    const p = handles[handleKey]
+
+    if (!p) continue
+
+    const dx = cx - p.x
+    const dy = cy - p.y
+
+    if (dx * dx + dy * dy <= CORNER_R * CORNER_R) {
+      const angle = getCursorAngleFromHandle(handleKey, rotation)
+
+      return {
+        handle: handleKey,
+        rotation: angle
+      }
     }
   }
+
+  return null
+}
+export function hitTestCornerRotationByMatrix(
+  cx: number,
+  cy: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  zoom: number = 1
+): CornerPosition | null {
+  const handles = getWorldHandles(node, graph)
+
+  const HANDLE_R = HANDLE_HIT_RADIUS / zoom
+  const ROTATE_R = CORNER_ROTATE_ZONE / zoom
+
+  const corners: Array<{ key: CornerPosition; p: { x: number; y: number } }> = [
+    { key: 'nw', p: handles.nw },
+    { key: 'ne', p: handles.ne },
+    { key: 'se', p: handles.se },
+    { key: 'sw', p: handles.sw }
+  ]
+
+  for (const { key, p } of corners) {
+    const dx = cx - p.x
+    const dy = cy - p.y
+    const d = Math.hypot(dx, dy)
+
+    if (d > HANDLE_R && d <= ROTATE_R) {
+      switch (key) {
+        case 'nw':
+          if (dx < 0 && dy < 0) return key
+          break
+        case 'ne':
+          if (dx > 0 && dy < 0) return key
+          break
+        case 'se':
+          if (dx > 0 && dy > 0) return key
+          break
+        case 'sw':
+          if (dx < 0 && dy > 0) return key
+          break
+      }
+    }
+  }
+
   return null
 }
 
@@ -166,5 +200,17 @@ export function buildRotationCursor(angleDeg: number): string {
 }
 
 export function cornerRotationCursor(corner: CornerPosition, nodeRotation = 0): string {
-  return buildRotationCursor(CORNER_BASE_ANGLES[corner] + nodeRotation)
+  return buildRotationCursor(CORNER_BASE_ANGLES[corner] - nodeRotation)
+}
+
+export function buildResizeCursor(angleDeg: number): string {
+  const normalized = ((Math.round(angleDeg) % 360) + 360) % 360
+
+  let svg = resizeCursorSvg
+    .replace(
+      '<path',
+      `<g transform='translate(512 512) rotate(${normalized}) translate(-512 -512)'><path`
+    )
+    .replace('</svg>', '</g></svg>')
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 12 12, auto`
 }

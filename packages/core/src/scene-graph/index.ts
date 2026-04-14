@@ -17,6 +17,8 @@ import {
 } from './instances'
 
 export type { GUID, Color } from '../types'
+import { getAbsolutePosition } from '@open-pencil/core/canvas/coordinate'
+
 import type { Matrix, Vector, Color, Rect } from '../types'
 import type { Emitter } from 'nanoevents'
 
@@ -753,15 +755,9 @@ export class SceneGraph {
     const cached = this.absPosCache.get(id)
     if (cached) return cached
 
-    let ax = 0
-    let ay = 0
-    let current = this.nodes.get(id)
-    while (current && current.id !== this.rootId && current.type !== 'CANVAS') {
-      ax += current.x
-      ay += current.y
-      current = current.parentId ? this.nodes.get(current.parentId) : undefined
-    }
-    const result = { x: ax, y: ay }
+    const node = this.getNode(id)
+
+    const result = getAbsolutePosition(node!, this)
     this.absPosCache.set(id, result)
     return result
   }

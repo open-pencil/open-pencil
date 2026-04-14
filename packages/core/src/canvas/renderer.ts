@@ -835,7 +835,7 @@ export class SkiaRenderer {
       const pageNode = graph.getNode(this.pageId ?? graph.rootId)
       if (pageNode) {
         for (const childId of pageNode.childIds) {
-          this.renderNode(canvas, graph, childId, overlays, 0, 0)
+          this.renderNode(canvas, graph, childId, overlays)
         }
       }
       p.endPhase('render:volatile')
@@ -921,7 +921,7 @@ export class SkiaRenderer {
     const recCanvas = recorder.beginRecording(bounds)
     if (pageNode) {
       for (const childId of pageNode.childIds) {
-        this.renderNode(recCanvas, graph, childId, {}, 0, 0)
+        this.renderNode(recCanvas, graph, childId, {})
       }
     }
     this.scenePicture = recorder.finishRecordingAsPicture()
@@ -1201,15 +1201,8 @@ export class SkiaRenderer {
     drawComponentLabelsFn(this, canvas, graph)
   }
 
-  renderNode(
-    canvas: Canvas,
-    graph: SceneGraph,
-    nodeId: string,
-    overlays: RenderOverlays,
-    parentAbsX = 0,
-    parentAbsY = 0
-  ): void {
-    renderNodeFn(this, canvas, graph, nodeId, overlays, parentAbsX, parentAbsY)
+  renderNode(canvas: Canvas, graph: SceneGraph, nodeId: string, overlays: RenderOverlays): void {
+    renderNodeFn(this, canvas, graph, nodeId, overlays)
   }
 
   renderSection(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {

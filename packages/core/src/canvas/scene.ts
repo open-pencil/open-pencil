@@ -80,9 +80,7 @@ function renderChildren(
   canvas: Canvas,
   graph: SceneGraph,
   node: SceneNode,
-  overlays: RenderOverlays,
-  absX: number,
-  absY: number
+  overlays: RenderOverlays
 ): void {
   const isClippableContainer =
     node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
@@ -101,12 +99,12 @@ function renderChildren(
       canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, true)
     }
     for (const childId of node.childIds) {
-      r.renderNode(canvas, graph, childId, overlays, absX, absY)
+      r.renderNode(canvas, graph, childId, overlays)
     }
     canvas.restore()
   } else {
     for (const childId of node.childIds) {
-      r.renderNode(canvas, graph, childId, overlays, absX, absY)
+      r.renderNode(canvas, graph, childId, overlays)
     }
   }
 }
@@ -154,7 +152,7 @@ export function renderNode(
 
   applyNodeTransforms(r, canvas, node, nodeId, overlays)
   renderNodeContent(r, canvas, graph, node, nodeId, overlays)
-  renderChildren(r, canvas, graph, node, overlays, absX, absY)
+  renderChildren(r, canvas, graph, node, overlays)
 
   if (layerBlur) {
     canvas.restore()

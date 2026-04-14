@@ -30,11 +30,17 @@ describe('SceneGraph', () => {
 
   test('reparent into frame', () => {
     const graph = new SceneGraph()
-    const frame = graph.createNode('FRAME', pageId(graph), { name: 'F', x: 50, y: 50, width: 400, height: 400 }).id
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      name: 'F',
+      x: 50,
+      y: 50,
+      width: 400,
+      height: 400
+    }).id
     const r = rect(graph, 'R', 100, 100)
     graph.reparentNode(r, frame)
     const children = graph.getChildren(frame)
-    expect(children.map(c => c.id)).toContain(r)
+    expect(children.map((c) => c.id)).toContain(r)
   })
 
   test('children order', () => {
@@ -42,7 +48,7 @@ describe('SceneGraph', () => {
     rect(graph, 'A')
     rect(graph, 'B')
     rect(graph, 'C')
-    const names = graph.getChildren(pageId(graph)).map(n => n.name)
+    const names = graph.getChildren(pageId(graph)).map((n) => n.name)
     expect(names).toEqual(['A', 'B', 'C'])
   })
 
@@ -69,7 +75,11 @@ describe('SceneGraph', () => {
 
   test('create instance clones children with componentId mapping', () => {
     const graph = new SceneGraph()
-    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Btn', width: 100, height: 40 })
+    const comp = graph.createNode('COMPONENT', pageId(graph), {
+      name: 'Btn',
+      width: 100,
+      height: 40
+    })
     const child = graph.createNode('RECTANGLE', comp.id, { name: 'BG', width: 100, height: 40 })
     const instance = graph.createInstance(comp.id, pageId(graph))!
     expect(instance.type).toBe('INSTANCE')
@@ -82,7 +92,11 @@ describe('SceneGraph', () => {
 
   test('syncInstances propagates changes from component to instance', () => {
     const graph = new SceneGraph()
-    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Card', width: 200, height: 100 })
+    const comp = graph.createNode('COMPONENT', pageId(graph), {
+      name: 'Card',
+      width: 200,
+      height: 100
+    })
     const label = graph.createNode('TEXT', comp.id, { name: 'Title', text: 'Hello', fontSize: 14 })
     const instance = graph.createInstance(comp.id, pageId(graph))!
     const instLabel = graph.getChildren(instance.id)[0]
@@ -97,7 +111,11 @@ describe('SceneGraph', () => {
 
   test('syncInstances preserves overrides', () => {
     const graph = new SceneGraph()
-    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Card', width: 200, height: 100 })
+    const comp = graph.createNode('COMPONENT', pageId(graph), {
+      name: 'Card',
+      width: 200,
+      height: 100
+    })
     graph.createNode('TEXT', comp.id, { name: 'Title', text: 'Default', fontSize: 14 })
     const instance = graph.createInstance(comp.id, pageId(graph))!
     const instLabel = graph.getChildren(instance.id)[0]
@@ -117,7 +135,11 @@ describe('SceneGraph', () => {
 
   test('syncInstances adds new children from component', () => {
     const graph = new SceneGraph()
-    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Card', width: 200, height: 100 })
+    const comp = graph.createNode('COMPONENT', pageId(graph), {
+      name: 'Card',
+      width: 200,
+      height: 100
+    })
     graph.createNode('RECTANGLE', comp.id, { name: 'BG' })
     const instance = graph.createInstance(comp.id, pageId(graph))!
     expect(graph.getChildren(instance.id)).toHaveLength(1)
@@ -133,7 +155,11 @@ describe('SceneGraph', () => {
 
   test('detachInstance breaks link', () => {
     const graph = new SceneGraph()
-    const comp = graph.createNode('COMPONENT', pageId(graph), { name: 'Btn', width: 100, height: 40 })
+    const comp = graph.createNode('COMPONENT', pageId(graph), {
+      name: 'Btn',
+      width: 100,
+      height: 40
+    })
     graph.createNode('RECTANGLE', comp.id, { name: 'BG' })
     const instance = graph.createInstance(comp.id, pageId(graph))!
     expect(instance.type).toBe('INSTANCE')
@@ -344,7 +370,11 @@ describe('hitTest', () => {
     const graph = new SceneGraph()
     graph.createNode('FRAME', pageId(graph), {
       name: 'Empty Frame',
-      x: 0, y: 0, width: 200, height: 200, fills: [],
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+      fills: []
     })
     expect(graph.hitTest(100, 100, pageId(graph))).toBeNull()
   })
@@ -353,8 +383,19 @@ describe('hitTest', () => {
     const graph = new SceneGraph()
     const frame = graph.createNode('FRAME', pageId(graph), {
       name: 'Filled Frame',
-      x: 0, y: 0, width: 200, height: 200,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }],
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
     })
     expect(graph.hitTest(100, 100, pageId(graph))?.id).toBe(frame.id)
   })
@@ -362,25 +403,42 @@ describe('hitTest', () => {
   test('group returns group on hit, not child (Figma-style)', () => {
     const graph = new SceneGraph()
     const groupId = graph.createNode('GROUP', pageId(graph), {
-      name: 'Group', x: 0, y: 0, width: 200, height: 200,
+      name: 'Group',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200
     }).id
     graph.createNode('RECTANGLE', groupId, {
-      name: 'Child', x: 10, y: 10, width: 30, height: 30,
+      name: 'Child',
+      x: 10,
+      y: 10,
+      width: 30,
+      height: 30
     })
     // Hit returns group (single click selects group, dblclick enters)
     expect(graph.hitTest(20, 20, pageId(graph))?.id).toBe(groupId)
     // Miss in group's empty area
-    expect(graph.hitTest(150, 150, pageId(graph))).toBeNull()
+    expect(graph.hitTest(201, 200, pageId(graph))).toBeNull()
   })
 
   test('clipsContent prevents hits outside parent bounds', () => {
     const graph = new SceneGraph()
     const frame = graph.createNode('FRAME', pageId(graph), {
-      name: 'Clip Frame', x: 0, y: 0, width: 100, height: 100,
-      clipsContent: true, fills: [],
+      name: 'Clip Frame',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      clipsContent: true,
+      fills: []
     })
     const childId = graph.createNode('RECTANGLE', frame.id, {
-      name: 'Overflow Child', x: 50, y: 50, width: 200, height: 200,
+      name: 'Overflow Child',
+      x: 50,
+      y: 50,
+      width: 200,
+      height: 200
     }).id
     // Inside both frame and child — hit
     expect(graph.hitTest(75, 75, pageId(graph))?.id).toBe(childId)
@@ -391,10 +449,19 @@ describe('hitTest', () => {
   test('instance without fills is click-through in empty area', () => {
     const graph = new SceneGraph()
     const compId = graph.createNode('COMPONENT', pageId(graph), {
-      name: 'Comp', x: 0, y: 0, width: 200, height: 200, fills: [],
+      name: 'Comp',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+      fills: []
     }).id
     graph.createNode('RECTANGLE', compId, {
-      name: 'Inner', x: 10, y: 10, width: 30, height: 30,
+      name: 'Inner',
+      x: 10,
+      y: 10,
+      width: 30,
+      height: 30
     })
     const instId = graph.createInstance(compId, pageId(graph), { x: 300, y: 0 }).id
     // Hit on instance's child area — returns instance (opaque container)

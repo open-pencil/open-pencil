@@ -1,3 +1,4 @@
+import { getAbsolutePosition, getWorldMatrix } from '../canvas/coordinate'
 import {
   LABEL_OFFSET_Y,
   SIZE_PILL_PADDING_X,
@@ -6,7 +7,7 @@ import {
   SIZE_PILL_RADIUS,
   SIZE_PILL_TEXT_OFFSET_Y
 } from '../constants'
-import { degToRad, rotatePoint, rotatedCorners } from '../geometry'
+import { rotatedCorners } from '../geometry'
 
 import type { SceneNode, SceneGraph } from '../scene-graph'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
@@ -33,7 +34,7 @@ function accumulateSelectionBounds(
     const node = graph.getNode(id)
     if (!node) continue
     nodes.push(node)
-    const abs = graph.getAbsolutePosition(id)
+    const abs = getAbsolutePosition(node, graph)
     const rotation = getOverlayRotation(node, overlays)
     if (rotation !== 0) {
       const corners = rotatedCorners(abs.x, abs.y, node.width, node.height, rotation)
@@ -66,32 +67,30 @@ function drawSingleFrameTitle(
   const isTopLevel = !parentNode || parentNode.type === 'CANVAS' || parentNode.type === 'SECTION'
   if (node.type !== 'FRAME' || !isTopLevel) return
 
-  const abs = graph.getAbsolutePosition(node.id)
-  const rotation = getOverlayRotation(node, overlays)
-  const anchor =
-    rotation === 0
-      ? { x: abs.x, y: abs.y }
-      : rotatePoint(
-          abs.x,
-          abs.y,
-          abs.x + node.width / 2,
-          abs.y + node.height / 2,
-          degToRad(rotation)
-        )
-  const labelX = anchor.x * r.zoom + r.panX
-  const labelY = anchor.y * r.zoom + r.panY - LABEL_OFFSET_Y
+  const overlayRotation = getOverlayRotation(node, overlays) // degrees
+
+  const world = getWorldMatrix({ ...node, rotation: overlayRotation }, graph)
+
+  // World -> screen (pan + zoom)
+  const view = r.ck.Matrix.multiply(
+    r.ck.Matrix.translated(r.panX, r.panY),
+    r.ck.Matrix.scaled(r.zoom, r.zoom)
+  )
+
+  const m = r.ck.Matrix.multiply(view, world)
 
   r.auxFill.setColor(r.selColor())
+
   canvas.save()
-  canvas.translate(labelX, labelY)
-  if (rotation !== 0) {
-    canvas.rotate(rotation, 0, LABEL_OFFSET_Y)
-  }
-  canvas.drawText(node.name, 0, 0, r.auxFill, labelFont)
+  canvas.concat(m)
+
+  // After concat(m), local (0,0) is node's top-left in screen space (after rotation etc.)
+  canvas.drawText(node.name, 0, -LABEL_OFFSET_Y, r.auxFill, labelFont)
+
   canvas.restore()
 }
 
-function drawSingleSelectionSize(
+export function drawSingleSelectionSize(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
@@ -103,41 +102,56 @@ function drawSingleSelectionSize(
   const glyphIds = sizeFont.getGlyphIDs(sizeText)
   const widths = sizeFont.getGlyphWidths(glyphIds)
   let textWidth = 0
-  for (const width of widths) textWidth += width
+  for (const w of widths) textWidth += w
+
   const pillW = textWidth + SIZE_PILL_PADDING_X * 2
   const pillH = SIZE_PILL_HEIGHT
   const pillColor = r.isComponentType(node.type) ? r.compColor() : r.selColor()
-  const abs = graph.getAbsolutePosition(node.id)
-  const rotation = getOverlayRotation(node, overlays)
-  const cx = (abs.x + node.width / 2) * r.zoom + r.panX
-  const cy = (abs.y + node.height / 2) * r.zoom + r.panY
-  const localY = (node.height * r.zoom) / 2 + SIZE_PILL_PADDING_Y
+  const overlayRotation = getOverlayRotation(node, overlays)
+  const world = getWorldMatrix({ ...node, rotation: overlayRotation }, graph)
+  const view = r.ck.Matrix.multiply(
+    r.ck.Matrix.translated(r.panX, r.panY),
+    r.ck.Matrix.scaled(r.zoom, r.zoom)
+  )
+
+  // Local -> screen matrix.
+  const m = r.ck.Matrix.multiply(view, world)
+
+  // Node center in local space.
+  const localCX = node.width / 2
+  const localCY = node.height / 2
+
+  // Pill placement in local space (below the node, centered).
+  const localX = -pillW / 2
+  const localY = localCY + SIZE_PILL_PADDING_Y
 
   canvas.save()
-  canvas.translate(cx, cy)
-  if (rotation !== 0) {
-    canvas.rotate(rotation, 0, 0)
-  }
+  canvas.concat(m)
 
+  // Move origin to node center (still in local space).
+  canvas.translate(localCX, localCY)
+
+  // Pill background.
   r.auxFill.setColor(pillColor)
   const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(-pillW / 2, localY, pillW / 2, localY + pillH),
+    r.ck.LTRBRect(localX, localY, localX + pillW, localY + pillH),
     SIZE_PILL_RADIUS,
     SIZE_PILL_RADIUS
   )
   canvas.drawRRect(rrect, r.auxFill)
 
+  // Text.
   r.auxFill.setColor(r.ck.WHITE)
   canvas.drawText(
     sizeText,
-    -pillW / 2 + SIZE_PILL_PADDING_X,
+    localX + SIZE_PILL_PADDING_X,
     localY + SIZE_PILL_TEXT_OFFSET_Y,
     r.auxFill,
     sizeFont
   )
+
   canvas.restore()
 }
-
 function drawMultiSelectionSize(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -192,7 +206,6 @@ export function drawSelectionLabels(
   const labelFont = r.labelFont
   const sizeFont = r.sizeFont
   if (!labelFont || !sizeFont) return
-
   const activeOverlays = overlays ?? {}
   const { nodes, minX, minY, maxX, maxY } = accumulateSelectionBounds(
     graph,

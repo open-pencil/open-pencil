@@ -43,7 +43,7 @@ describe('hitTest — group behavior', () => {
 
   test('hitTest with scope=group returns child', () => {
     const { graph, group } = setup()
-    const hit = graph.hitTest(10, 10, group.id)
+    const hit = graph.hitTest(110, 110, group.id)
     expect(hit).not.toBeNull()
     expect(hit!.name).toBe('Rect')
   })
@@ -91,21 +91,21 @@ describe('hitTest — nested groups', () => {
 
   test('click from page scope returns GroupA', () => {
     const { graph, page } = setup()
-    const hit = graph.hitTest(160, 160, page)
+    const hit = graph.hitTest(100, 100, page)
     expect(hit).not.toBeNull()
     expect(hit!.name).toBe('GroupA')
   })
 
   test('click with scope=GroupA returns GroupB', () => {
     const { graph, groupA } = setup()
-    const hit = graph.hitTest(60, 60, groupA.id)
+    const hit = graph.hitTest(150, 150, groupA.id)
     expect(hit).not.toBeNull()
     expect(hit!.name).toBe('GroupB')
   })
 
   test('click with scope=GroupB returns DeepRect', () => {
     const { graph, groupB } = setup()
-    const hit = graph.hitTest(10, 10, groupB.id)
+    const hit = graph.hitTest(160, 160, groupB.id)
     expect(hit).not.toBeNull()
     expect(hit!.name).toBe('DeepRect')
   })
@@ -253,7 +253,7 @@ describe('hitTest — frame with children', () => {
       height: 40
     })
 
-    const hit = graph.hitTest(20, 20, frame.id)
+    const hit = graph.hitTest(70, 70, frame.id)
     expect(hit).not.toBeNull()
     expect(hit!.id).toBe(child.id)
   })
@@ -277,11 +277,13 @@ describe('hitTest — frame with children', () => {
       height: 40
     })
 
-    const hitInside = graph.hitTest(100, 60, frame.id)
+    // point that is inside rotated frame bounds and child bounds
+    const hitInside = graph.hitTest(193, 111, frame.id)
     expect(hitInside).not.toBeNull()
     expect(hitInside!.id).toBe(child.id)
 
-    const hitOutside = graph.hitTest(10, 10, frame.id)
+    // point that would be inside if frame were not rotated
+    const hitOutside = graph.hitTest(160, 130, frame.id)
     expect(hitOutside).toBeNull()
   })
 })
@@ -374,7 +376,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
       height: 20
     })
 
-    const hit = graph.hitTestDeep(5, 5, inst.id)
+    const hit = graph.hitTestDeep(55, 55, inst.id)
     expect(hit).not.toBeNull()
     expect(hit!.id).toBe(child.id)
   })
@@ -402,12 +404,15 @@ describe('hitTest — absolute position and scope offset', () => {
     const abs = graph.getAbsolutePosition(frame.id)
     expect(abs.x).toBe(200)
     expect(abs.y).toBe(300)
+    const abs2 = graph.getAbsolutePosition(child.id)
+    expect(abs2.x).toBe(250)
+    expect(abs2.y).toBe(360)
 
-    const hit = graph.hitTest(50, 60, frame.id)
+    const hit = graph.hitTest(250, 360, frame.id)
     expect(hit).not.toBeNull()
     expect(hit!.id).toBe(child.id)
 
-    const missHit = graph.hitTest(250, 360, frame.id)
+    const missHit = graph.hitTest(50, 60, frame.id)
     expect(missHit).toBeNull()
   })
 })

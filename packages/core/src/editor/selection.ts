@@ -101,6 +101,8 @@ export function createSelectionActions(ctx: EditorContext) {
   }
 
   function hitTestAtPoint(cx: number, cy: number, deep = false): SceneNode | null {
+    const renderer = ctx.getRenderer()
+    if (!renderer) return null
     const scopeId = ctx.state.enteredContainerId
     if (scopeId) {
       const scopeNode = ctx.graph.getNode(scopeId)

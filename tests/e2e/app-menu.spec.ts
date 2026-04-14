@@ -93,9 +93,7 @@ test('Undo via Edit menu works', async () => {
   await page.locator('[role="menu"] [role="menuitem"]', { hasText: 'Undo' }).click()
   await canvas.waitForRender()
 
-  const afterUndo = await page.evaluate(
-    () => window.__OPEN_PENCIL_STORE__!.state.selectedIds.size
-  )
+  const afterUndo = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.selectedIds.size)
   expect(afterUndo).toBe(0)
 })
 

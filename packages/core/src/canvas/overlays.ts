@@ -1,25 +1,28 @@
+import { getWorldMatrix } from '@open-pencil/core/canvas/coordinate'
+
+import Matrix from '../canvas/matrix'
 import {
+  FLASH_ATTACK_MS,
+  FLASH_COLOR,
+  FLASH_HOLD_MS,
+  FLASH_OVERSHOOT,
+  FLASH_RELEASE_MS,
   HANDLE_HALF_SIZE,
+  LAYOUT_INDICATOR_STROKE,
   MARQUEE_FILL_ALPHA,
   SELECTION_DASH_ALPHA,
-  LAYOUT_INDICATOR_STROKE,
-  TEXT_SELECTION_COLOR,
   TEXT_CARET_COLOR,
   TEXT_CARET_WIDTH,
-  FLASH_COLOR,
-  FLASH_ATTACK_MS,
-  FLASH_HOLD_MS,
-  FLASH_RELEASE_MS,
-  FLASH_OVERSHOOT
+  TEXT_SELECTION_COLOR
 } from '../constants'
 import { rotatedCorners } from '../geometry'
 import { drawNodeHighlightRect } from './highlight-rect'
 
-import type { SceneNode, SceneGraph } from '../scene-graph'
-import type { SnapGuide } from '../scene-graph/snap'
+import type { SceneGraph, SceneNode } from '../scene-graph'
 import type { TextEditor } from '../text/editor'
 import type { Rect, Vector } from '../types'
-import type { SkiaRenderer, RenderOverlays } from './renderer'
+import type { RenderOverlays, SkiaRenderer } from './renderer'
+import type { SnapGuide } from '@open-pencil/core'
 import type { Canvas } from 'canvaskit-wasm'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
@@ -120,11 +123,11 @@ export function drawSelection(
 
     const useComponentColor = r.isComponentType(node.type)
     r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
-    r.selectionPaint.setStrokeWidth(1)
+    r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
-    const rotation =
+    const _rotation =
       overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
-    r.drawNodeSelection(canvas, node, rotation, graph)
+    r.drawNodeSelection(canvas, node, _rotation, graph)
     r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
 
     r.selectionPaint.setColor(r.selColor())
@@ -165,18 +168,20 @@ function withNodeBounds(
   graph: SceneGraph,
   draw: (x1: number, y1: number, x2: number, y2: number) => void
 ): void {
-  const abs = graph.getAbsolutePosition(node.id)
-  const cx = (abs.x + node.width / 2) * r.zoom + r.panX
-  const cy = (abs.y + node.height / 2) * r.zoom + r.panY
-  const hw = (node.width / 2) * r.zoom
-  const hh = (node.height / 2) * r.zoom
+  const worldMatrix = getWorldMatrix(
+    {
+      ...node,
+      rotation
+    },
+    graph
+  )
 
   canvas.save()
-  if (rotation !== 0) {
-    canvas.rotate(rotation, cx, cy)
-  }
+  canvas.translate(r.panX, r.panY)
+  canvas.scale(r.zoom, r.zoom)
+  canvas.concat(worldMatrix)
+  draw(0, 0, node.width, node.height)
 
-  draw(cx - hw, cy - hh, cx + hw, cy + hh)
   canvas.restore()
 }
 
@@ -190,17 +195,24 @@ export function drawNodeSelection(
   withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
     canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
 
-    r.drawHandle(canvas, x1, y1)
-    r.drawHandle(canvas, x2, y1)
-    r.drawHandle(canvas, x1, y2)
-    r.drawHandle(canvas, x2, y2)
+    const drawHandle = (x: number, y: number) => {
+      r.drawHandle(canvas, x, y)
+    }
 
+    // corners
+    drawHandle(x1, y1)
+    drawHandle(x2, y1)
+    drawHandle(x1, y2)
+    drawHandle(x2, y2)
+
+    // center
     const mx = (x1 + x2) / 2
     const my = (y1 + y2) / 2
-    r.drawHandle(canvas, mx, y1)
-    r.drawHandle(canvas, mx, y2)
-    r.drawHandle(canvas, x1, my)
-    r.drawHandle(canvas, x2, my)
+
+    drawHandle(mx, y1)
+    drawHandle(mx, y2)
+    drawHandle(x1, my)
+    drawHandle(x2, my)
   })
 }
 
@@ -214,29 +226,41 @@ export function drawParentFrameOutlines(
   for (const id of selectedIds) {
     const node = graph.getNode(id)
     if (!node?.parentId) continue
-    const nodeParent = graph.getNode(node.parentId)
-    if (!nodeParent || nodeParent.type === 'CANVAS') continue
-    if (drawn.has(node.parentId) || selectedIds.has(node.parentId)) continue
 
-    const parent = nodeParent
+    const parent = graph.getNode(node.parentId)
+    if (!parent || parent.type === 'CANVAS') continue
+    if (drawn.has(parent.id) || selectedIds.has(parent.id)) continue
 
     const grandparent = parent.parentId ? graph.getNode(parent.parentId) : null
     if (!grandparent || grandparent.type === 'CANVAS') continue
 
-    drawn.add(node.parentId)
+    drawn.add(parent.id)
 
-    const abs = graph.getAbsolutePosition(parent.id)
-    const x = abs.x * r.zoom + r.panX
-    const y = abs.y * r.zoom + r.panY
-    const w = parent.width * r.zoom
-    const h = parent.height * r.zoom
+    const world = getWorldMatrix(parent, graph)
 
-    canvas.save()
-    if (parent.rotation !== 0) {
-      canvas.rotate(parent.rotation, x + w / 2, y + h / 2)
-    }
-    canvas.drawRect(r.ck.LTRBRect(x, y, x + w, y + h), r.parentOutlinePaint)
-    canvas.restore()
+    const view = Matrix.multiply(Matrix.translated(r.panX, r.panY), Matrix.scaled(r.zoom, r.zoom))
+
+    const m = Matrix.multiply(view, world)
+
+    const pts = Matrix.mapPoints(m, [
+      0,
+      0,
+      parent.width,
+      0,
+      parent.width,
+      parent.height,
+      0,
+      parent.height
+    ])
+
+    const path = new r.ck.Path()
+    path.moveTo(pts[0], pts[1])
+    path.lineTo(pts[2], pts[3])
+    path.lineTo(pts[4], pts[5])
+    path.lineTo(pts[6], pts[7])
+    path.close()
+
+    canvas.drawPath(path, r.parentOutlinePaint)
   }
 }
 
@@ -316,10 +340,10 @@ export { drawSelectionLabels } from './selection-labels'
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
   r.auxFill.setColor(r.ck.WHITE)
   const rect = r.ck.LTRBRect(
-    x - HANDLE_HALF_SIZE,
-    y - HANDLE_HALF_SIZE,
-    x + HANDLE_HALF_SIZE,
-    y + HANDLE_HALF_SIZE
+    x - HANDLE_HALF_SIZE / r.zoom,
+    y - HANDLE_HALF_SIZE / r.zoom,
+    x + HANDLE_HALF_SIZE / r.zoom,
+    y + HANDLE_HALF_SIZE / r.zoom
   )
   canvas.drawRect(rect, r.auxFill)
   canvas.drawRect(rect, r.selectionPaint)

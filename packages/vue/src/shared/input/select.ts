@@ -1,14 +1,21 @@
 import {
-  HANDLE_CURSORS,
-  hitTestHandle,
-  hitTestCornerRotation,
-  cornerRotationCursor
+  getAbsoluteRotation,
+  SceneNode,
+  Vector,
+  VectorSegment,
+  VectorVertex
+} from '@open-pencil/core'
+
+import {
+  cornerRotationCursor,
+  getHitHandleByMatrix,
+  hitTestCornerRotationByMatrix,
+  buildResizeCursor
 } from './geometry'
 import { duplicateAndDrag, detectAutoLayoutParent } from './move'
 import { tryStartResize } from './resize'
 
 import type { DragEditHandle, DragEditNode, DragState } from './types'
-import type { SceneNode, Vector, VectorSegment, VectorVertex } from '@open-pencil/core'
 import type { Editor } from '@open-pencil/core/editor'
 
 type NodeEditState = {
@@ -348,13 +355,11 @@ export function handleNodeEditMove(
 
 export function handleSelectDown(
   e: MouseEvent,
-  sx: number,
-  sy: number,
   cx: number,
   cy: number,
   editor: Editor,
   fns: HitTestFns,
-  tryStartRotation: (sx: number, sy: number) => boolean,
+  tryStartRotation: (cx: number, cy: number) => boolean,
   handleTextEditClick: (cx: number, cy: number, shiftKey: boolean) => boolean,
   setDrag: (d: DragState) => void
 ) {
@@ -368,13 +373,13 @@ export function handleSelectDown(
 
   if (editor.state.editingTextId) editor.commitTextEdit()
 
-  const resizeDrag = tryStartResize(sx, sy, cx, cy, editor)
+  if (tryStartRotation(cx, cy)) return
+
+  const resizeDrag = tryStartResize(cx, cy, editor)
   if (resizeDrag) {
     setDrag(resizeDrag)
     return
   }
-
-  if (tryStartRotation(sx, sy)) return
 
   const hit = resolveHit(cx, cy, editor, fns)
   if (!hit) {
@@ -405,7 +410,6 @@ export function handleSelectDown(
     setDrag(result.drag)
     return
   }
-
   setDrag({
     type: 'move',
     startX: cx,
@@ -418,8 +422,6 @@ export function handleSelectDown(
 }
 
 export function updateHoverCursor(
-  sx: number,
-  sy: number,
   cx: number,
   cy: number,
   editor: Editor,
@@ -435,21 +437,10 @@ export function updateHoverCursor(
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
     if (!node) continue
-    const abs = editor.graph.getAbsolutePosition(id)
-    const handle = hitTestHandle(
-      sx,
-      sy,
-      abs.x,
-      abs.y,
-      node.width,
-      node.height,
-      editor.state.zoom,
-      editor.state.panX,
-      editor.state.panY,
-      node.rotation
-    )
-    if (handle) {
-      cursor = HANDLE_CURSORS[handle]
+
+    const handHit = getHitHandleByMatrix(cx, cy, node, editor.graph, editor?.renderer?.zoom!)
+    if (handHit?.handle) {
+      cursor = buildResizeCursor(handHit?.rotation)
       break
     }
   }
@@ -458,21 +449,16 @@ export function updateHoverCursor(
     const id = [...editor.state.selectedIds][0]
     const node = editor.graph.getNode(id)
     if (node) {
-      const abs = editor.graph.getAbsolutePosition(id)
-      const corner = hitTestCornerRotation(
-        sx,
-        sy,
-        abs.x,
-        abs.y,
-        node.width,
-        node.height,
-        editor.state.zoom,
-        editor.state.panX,
-        editor.state.panY,
-        node.rotation
+      const corner = hitTestCornerRotationByMatrix(
+        cx,
+        cy,
+        node,
+        editor.graph,
+        editor?.renderer?.zoom!
       )
       if (corner) {
-        cursor = cornerRotationCursor(corner, node.rotation)
+        const abRotation = getAbsoluteRotation(node, editor.graph)
+        cursor = cornerRotationCursor(corner, abRotation)
       }
     }
   }

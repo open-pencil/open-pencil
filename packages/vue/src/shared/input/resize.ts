@@ -1,6 +1,5 @@
 import { cloneVectorNetwork } from '@open-pencil/core'
-
-import { hitTestHandle } from './geometry'
+import { getHitHandleByMatrix } from '@open-pencil/vue/shared/input/geometry'
 
 import type { DragResize, HandlePosition } from './types'
 import type { Rect, SceneNode } from '@open-pencil/core'
@@ -45,26 +44,32 @@ export function applyResize(
 ) {
   const { handle, origRect } = d
   let { x, y, width, height } = origRect
+
   const dx = cx - d.startX
   const dy = cy - d.startY
+
+  const origX = origRect.x
+  const origY = origRect.y
+  const origW = origRect.width
+  const origH = origRect.height
 
   const moveLeft = handle.includes('w')
   const moveRight = handle.includes('e')
   const moveTop = handle === 'nw' || handle === 'n' || handle === 'ne'
   const moveBottom = handle === 'sw' || handle === 's' || handle === 'se'
 
-  if (moveRight) width = origRect.width + dx
+  if (moveRight) width = origW + dx
   if (moveLeft) {
-    x = origRect.x + dx
-    width = origRect.width - dx
+    x = origX + dx
+    width = origW - dx
   }
-  if (moveBottom) height = origRect.height + dy
+  if (moveBottom) height = origH + dy
   if (moveTop) {
-    y = origRect.y + dy
-    height = origRect.height - dy
+    y = origY + dy
+    height = origH - dy
   }
 
-  if (constrain && origRect.width > 0 && origRect.height > 0) {
+  if (constrain && origW > 0 && origH > 0) {
     ;({ x, y, width, height } = constrainToAspectRatio(handle, origRect, width, height, dx, dy))
   }
 
@@ -79,25 +84,23 @@ export function applyResize(
 
   const newW = Math.round(Math.max(1, width))
   const newH = Math.round(Math.max(1, height))
+  const newX = Math.round(x)
+  const newY = Math.round(y)
+
   const changes: Partial<SceneNode> = {
-    x: Math.round(x),
-    y: Math.round(y),
+    x: newX,
+    y: newY,
     width: newW,
     height: newH
   }
 
-  // Scale vectorNetwork vertices + tangents proportionally
-  if (d.origVectorNetwork && origRect.width > 0 && origRect.height > 0) {
-    const sx = newW / origRect.width
-    const sy = newH / origRect.height
+  if (d.origVectorNetwork && origW > 0 && origH > 0) {
+    const sx = newW / origW
+    const sy = newH / origH
     if (sx !== 1 || sy !== 1) {
       const vn = d.origVectorNetwork
       changes.vectorNetwork = {
-        vertices: vn.vertices.map((v) => ({
-          ...v,
-          x: v.x * sx,
-          y: v.y * sy
-        })),
+        vertices: vn.vertices.map((v) => ({ ...v, x: v.x * sx, y: v.y * sy })),
         segments: vn.segments.map((s) => ({
           ...s,
           tangentStart: { x: s.tangentStart.x * sx, y: s.tangentStart.y * sy },
@@ -110,34 +113,15 @@ export function applyResize(
 
   editor.updateNode(d.nodeId, changes)
 }
-
-export function tryStartResize(
-  sx: number,
-  sy: number,
-  cx: number,
-  cy: number,
-  editor: Editor
-): DragResize | null {
+export function tryStartResize(cx: number, cy: number, editor: Editor): DragResize | null {
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
     if (!node || node.locked) continue
-    const abs = editor.graph.getAbsolutePosition(id)
-    const handle = hitTestHandle(
-      sx,
-      sy,
-      abs.x,
-      abs.y,
-      node.width,
-      node.height,
-      editor.state.zoom,
-      editor.state.panX,
-      editor.state.panY,
-      node.rotation
-    )
-    if (handle) {
+    const handleResult = getHitHandleByMatrix(cx, cy, node, editor.graph, editor?.renderer?.zoom)
+    if (handleResult?.handle) {
       return {
         type: 'resize',
-        handle,
+        handle: handleResult?.handle,
         startX: cx,
         startY: cy,
         origRect: { x: node.x, y: node.y, width: node.width, height: node.height },

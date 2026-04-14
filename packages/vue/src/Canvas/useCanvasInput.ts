@@ -8,8 +8,9 @@ import {
   DEFAULT_TEXT_HEIGHT,
   degToRad
 } from '@open-pencil/core'
+import { getAbsolutePositionFull } from '@open-pencil/core/canvas/coordinate'
 import { handleDrawMove, handleDrawUp } from '@open-pencil/vue/shared/input/draw'
-import { hitTestCornerRotation } from '@open-pencil/vue/shared/input/geometry'
+import { hitTestCornerRotationByMatrix } from '@open-pencil/vue/shared/input/geometry'
 import { handleMoveMove, handleMoveUp } from '@open-pencil/vue/shared/input/move'
 import { setupPanZoom } from '@open-pencil/vue/shared/input/pan-zoom'
 import { applyResize } from '@open-pencil/vue/shared/input/resize'
@@ -120,6 +121,9 @@ export function useCanvasInput(
 
   function hitTestInScope(cx: number, cy: number, deep: boolean): SceneNode | null {
     const scopeId = editor.state.enteredContainerId
+
+    const renderer = editor.renderer
+    if (!renderer) return null
     if (scopeId) {
       if (!editor.graph.getNode(scopeId)) {
         editor.state.enteredContainerId = null
@@ -192,37 +196,27 @@ export function useCanvasInput(
     return true
   }
 
-  function tryStartRotation(sx: number, sy: number): boolean {
+  function tryStartRotation(cx: number, cy: number): boolean {
     if (editor.state.selectedIds.size !== 1) return false
     const id = [...editor.state.selectedIds][0]
     const node = editor.graph.getNode(id)
     if (!node || node.locked) return false
-    const abs = editor.graph.getAbsolutePosition(id)
-    if (
-      !hitTestCornerRotation(
-        sx,
-        sy,
-        abs.x,
-        abs.y,
-        node.width,
-        node.height,
-        editor.state.zoom,
-        editor.state.panX,
-        editor.state.panY,
-        node.rotation
-      )
-    )
-      return false
 
-    const screenCx = (abs.x + node.width / 2) * editor.state.zoom + editor.state.panX
-    const screenCy = (abs.y + node.height / 2) * editor.state.zoom + editor.state.panY
-    const startAngle = Math.atan2(sy - screenCy, sx - screenCx) * (180 / Math.PI)
+    if (editor.state.selectedIds.size > 1) {
+      return false
+    }
+    const abs = getAbsolutePositionFull(node, editor.graph)
+
+    if (!hitTestCornerRotationByMatrix(cx, cy, node, editor.graph, editor.renderer?.zoom!)) {
+      return false
+    }
+    const startAngle = Math.atan2(cy - abs.centerY, cx - abs.centerX) * (180 / Math.PI)
     drag.value = {
       type: 'rotate',
       nodeId: id,
-      centerX: screenCx,
-      centerY: screenCy,
-      startAngle,
+      centerX: abs.centerX,
+      centerY: abs.centerY,
+      startAngle: startAngle,
       origRotation: node.rotation
     }
     return true
@@ -238,7 +232,11 @@ export function useCanvasInput(
 
   function handleRotateMove(d: DragRotate, sx: number, sy: number, shiftKey: boolean) {
     const currentAngle = Math.atan2(sy - d.centerY, sx - d.centerX) * (180 / Math.PI)
-    let rotation = d.origRotation + (currentAngle - d.startAngle)
+
+    let delta = currentAngle - d.startAngle
+
+    delta = ((((delta + 180) % 360) + 360) % 360) - 180
+    let rotation = d.origRotation + delta
 
     if (shiftKey) {
       rotation = Math.round(rotation / ROTATION_SNAP_DEGREES) * ROTATION_SNAP_DEGREES
@@ -376,18 +374,7 @@ export function useCanvasInput(
     }
 
     if (tool === 'SELECT') {
-      handleSelectDown(
-        e,
-        sx,
-        sy,
-        cx,
-        cy,
-        editor,
-        hitFns,
-        tryStartRotation,
-        handleTextEditClick,
-        setDrag
-      )
+      handleSelectDown(e, cx, cy, editor, hitFns, tryStartRotation, handleTextEditClick, setDrag)
       return
     }
 
@@ -514,8 +501,8 @@ export function useCanvasInput(
     }
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
-      const { sx, sy, cx, cy } = getCoords(e)
-      cursorOverride.value = updateHoverCursor(sx, sy, cx, cy, editor, hitFns)
+      const { cx, cy } = getCoords(e)
+      cursorOverride.value = updateHoverCursor(cx, cy, editor, hitFns)
     }
 
     if (!drag.value) return
@@ -526,10 +513,10 @@ export function useCanvasInput(
       return
     }
 
-    const { cx, cy, sx, sy } = getCoords(e)
+    const { cx, cy } = getCoords(e)
 
     if (d.type === 'rotate') {
-      handleRotateMove(d, sx, sy, e.shiftKey)
+      handleRotateMove(d, cx, cy, e.shiftKey)
       return
     }
     if (d.type === 'move') {
@@ -811,7 +798,6 @@ export function useCanvasInput(
   })
 
   setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp)
-
   return {
     drag,
     cursorOverride
