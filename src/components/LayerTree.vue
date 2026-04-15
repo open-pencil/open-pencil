@@ -66,7 +66,10 @@ function onLayerRightClick(e: MouseEvent) {
                 @select="
                   (e: CustomEvent) => {
                     e.preventDefault()
-                    selectNode(!!e.detail.originalEvent?.shiftKey)
+                    const orig = e.detail.originalEvent as
+                      | (MouseEvent & { metaKey?: boolean; ctrlKey?: boolean })
+                      | undefined
+                    selectNode(!!(orig?.shiftKey || orig?.metaKey || orig?.ctrlKey))
                   }
                 "
                 @toggle="
