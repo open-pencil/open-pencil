@@ -11,11 +11,19 @@
     "dialog:allow-open",
     {
       "identifier": "fs:allow-read-file",
-      "allow": [{ "path": "**" }]
+      "allow": [
+        { "path": "**" },
+        { "path": "$HOME/**" },
+        { "path": "/**" }
+      ]
     },
     {
       "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "**" }]
+      "allow": [
+        { "path": "**" },
+        { "path": "$HOME/**" },
+        { "path": "/**" }
+      ]
     },
     "fs:allow-watch",
     "fs:allow-unwatch",

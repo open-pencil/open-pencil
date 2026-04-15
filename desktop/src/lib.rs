@@ -5,7 +5,27 @@ use tauri::{
 
 use font_kit::source::SystemSource;
 use serde::Serialize;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
+
+/// Stores an absolute file path passed on the command line at launch
+/// (e.g. `OpenPencil ~/proj/foo.fig`). Consumed by the frontend on
+/// first EditorView mount via the `take_pending_open` command. Once
+/// taken, the slot is empty for the remainder of the process —
+/// preventing accidental re-open if the user navigates away and back.
+struct PendingOpen(Mutex<Option<String>>);
+
+#[tauri::command]
+fn take_pending_open(state: tauri::State<PendingOpen>) -> Option<String> {
+    state.0.lock().ok().and_then(|mut g| g.take())
+}
+
+fn pending_open_from_argv() -> Option<String> {
+    std::env::args().skip(1).find(|arg| {
+        let lower = arg.to_lowercase();
+        (lower.ends_with(".fig") || lower.ends_with(".pen"))
+            && std::path::Path::new(arg).exists()
+    })
+}
 
 #[derive(Serialize, Clone)]
 struct FontFamily {
@@ -217,10 +237,12 @@ fn show_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(PendingOpen(Mutex::new(pending_open_from_argv())))
         .invoke_handler(tauri::generate_handler![
             build_fig_file,
             list_system_fonts,
-            load_system_font
+            load_system_font,
+            take_pending_open
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

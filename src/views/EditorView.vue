@@ -7,14 +7,14 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useViewportKind } from '@open-pencil/vue'
 import { useKeyboard } from '@/composables/use-keyboard'
-import { useMenu } from '@/composables/use-menu'
+import { useMenu, openFileFromPath } from '@/composables/use-menu'
 import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
 import { connectAutomation } from '@/automation/server'
 import { spawnMCPIfNeeded } from '@/automation/spawn-mcp'
-import { IS_TAURI } from '@/constants'
 import { createDemoShapes } from '@/demo'
 import { useEditorStore } from '@/stores/editor'
 import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
+import { tauriReady } from '@/utils/tauri-ready'
 
 import CollabPanel from '@/components/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -58,14 +58,26 @@ const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 
 onMounted(async () => {
+  const isTauri = await tauriReady()
   try {
     const mcp = await spawnMCPIfNeeded()
     mcpCleanup.value = mcp?.disconnect ?? null
-    if (import.meta.env.DEV || IS_TAURI) {
+    if (import.meta.env.DEV || isTauri) {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
     console.error(e)
+  }
+  // Auto-open file passed as CLI arg (e.g. `OpenPencil ~/proj/foo.fig`).
+  // Stored in a Rust state at launch and consumed once here.
+  if (isTauri) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const pending = await invoke<string | null>('take_pending_open')
+      if (pending) await openFileFromPath(pending)
+    } catch (e) {
+      console.error('CLI open-file failed:', e)
+    }
   }
 })
 
