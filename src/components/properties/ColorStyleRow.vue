@@ -15,6 +15,7 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 
+import { ref } from 'vue'
 import { colorToCSS } from '@open-pencil/core'
 import { useI18n } from '@open-pencil/vue'
 
@@ -48,6 +49,7 @@ const emit = defineEmits<{
 }>()
 
 const { panels, dialogs } = useI18n()
+const varPopoverOpen = ref(false)
 </script>
 
 <template>
@@ -71,8 +73,9 @@ const { panels, dialogs } = useI18n()
         bindingApi.colorVariables.value.length > 0 &&
         !bindingApi.getBoundVariable(activeNodeId, index)
       "
+      @update:open="varPopoverOpen = $event"
     >
-      <Tip :label="panels.applyVariable">
+      <Tip :label="panels.applyVariable" :disabled="varPopoverOpen">
         <PopoverTrigger
           class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
         >

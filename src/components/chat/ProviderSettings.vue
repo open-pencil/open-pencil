@@ -19,6 +19,7 @@ import { useAIChat } from '@/composables/use-chat'
 import { openExternalLink } from '@/utils/external-link'
 
 const cls = usePopoverUI({ content: 'isolate z-[51] w-64 p-3' })
+const popoverOpen = ref(false)
 
 const {
   providerID,
@@ -95,8 +96,8 @@ function clearUnsplashKey() {
 </script>
 
 <template>
-  <PopoverRoot>
-    <Tip label="Provider settings">
+  <PopoverRoot @update:open="popoverOpen = $event">
+    <Tip label="Provider settings" :disabled="popoverOpen">
       <PopoverTrigger
         data-test-id="provider-settings-trigger"
         class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"

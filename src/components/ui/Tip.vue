@@ -5,14 +5,15 @@ import { useTooltipUI } from '@/components/ui/tooltip'
 
 const cls = useTooltipUI({ content: 'animate-in zoom-in-95 fade-in' })
 
-const { side = 'top' } = defineProps<{
+const { side = 'top', disabled = false } = defineProps<{
   label: string
   side?: 'top' | 'bottom' | 'left' | 'right'
+  disabled?: boolean
 }>()
 </script>
 
 <template>
-  <TooltipRoot>
+  <TooltipRoot :open="disabled ? false : undefined">
     <TooltipTrigger as-child>
       <slot />
     </TooltipTrigger>
