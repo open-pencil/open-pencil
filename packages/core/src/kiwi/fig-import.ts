@@ -52,7 +52,7 @@ function buildVariableColorResolver(
     const val = entry.variableData.value
     if (!val) return null
     if (val.colorValue) return val.colorValue
-    if (val.alias) return resolve(val.alias.guid, depth + 1)
+    if (val.alias?.guid) return resolve(val.alias.guid, depth + 1)
     return null
   }
 }

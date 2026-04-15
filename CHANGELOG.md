@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Features
+
+- Add stdio transport for MCP server — `openpencil-mcp` now works as a proper stdio MCP server for Claude Code, Cursor, etc. HTTP server available as `openpencil-mcp-http`.
+
+### Fixes
+
+- Fix color picker dragging flooding the undo stack — fill/stroke/effect color and opacity drags now collapse into a single undo entry per interaction via debounced batching in `PropertyListRoot`
+- Fix .fig import crash on alias variables without a GUID
+
 ## 0.11.6 — 2026-04-08
 
 ### Fixes

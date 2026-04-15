@@ -32,7 +32,7 @@ Or run from source without installing:
   "mcpServers": {
     "open-pencil": {
       "command": "bun",
-      "args": ["/path/to/open-pencil/packages/mcp/src/index.ts"]
+      "args": ["/path/to/open-pencil/packages/mcp/src/stdio.ts"]
     }
   }
 }
@@ -42,7 +42,7 @@ Or run from source without installing:
   "mcpServers": {
     "open-pencil": {
       "command": "npx",
-      "args": ["tsx", "/path/to/open-pencil/packages/mcp/src/index.ts"]
+      "args": ["tsx", "/path/to/open-pencil/packages/mcp/src/stdio.ts"]
     }
   }
 }
@@ -57,7 +57,7 @@ For browser extensions, scripts, CI, or any HTTP client:
 openpencil-mcp-http
 ```
 
-Or from source: `bun packages/mcp/src/http.ts` / `npx tsx packages/mcp/src/http.ts`
+Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/index.ts`
 
 Security defaults (HTTP transport):
 
@@ -67,7 +67,7 @@ Security defaults (HTTP transport):
 - CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin
 - Optional auth token: `OPENPENCIL_MCP_AUTH_TOKEN` (client sends `Authorization: Bearer <token>` or `x-mcp-token`)
 
-Server starts on port 3100 (override with `PORT` env var). Endpoints:
+Server starts on port 7600 (override with `PORT` env var). Endpoints:
 
 - `GET /health` — server status
 - `POST /mcp` — MCP Streamable HTTP (SSE). Sessions via `mcp-session-id` header.

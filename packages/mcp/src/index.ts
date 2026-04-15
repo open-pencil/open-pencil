@@ -17,7 +17,7 @@ const { app, httpPort } = startServer({
 
 serve({ fetch: app.fetch, port: httpPort, hostname: host })
 
-console.log(`OpenPencil MCP server`)
-console.log(`  HTTP:  http://${host}:${httpPort}`)
-console.log(`  WS:    ws://${host}:${wsPort}`)
-console.log(`  MCP:   http://${host}:${httpPort}/mcp`)
+process.stderr.write(`OpenPencil MCP server\n`)
+process.stderr.write(`  HTTP:  http://${host}:${httpPort}\n`)
+process.stderr.write(`  WS:    ws://${host}:${wsPort}\n`)
+process.stderr.write(`  MCP:   http://${host}:${httpPort}/mcp\n`)

@@ -19,10 +19,12 @@ import {
 import type { ParamDef, ParamType } from '@open-pencil/core'
 
 const require = createRequire(import.meta.url)
-const MCP_VERSION: string = (require('../package.json') as { version: string }).version
+export const MCP_VERSION: string = (require('../package.json') as { version: string }).version
 
-type MCPContent = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }
-type MCPResult = { content: MCPContent[]; isError?: boolean }
+export type MCPContent =
+  | { type: 'text'; text: string }
+  | { type: 'image'; data: string; mimeType: string }
+export type MCPResult = { content: MCPContent[]; isError?: boolean }
 
 const RPC_TIMEOUT = 30_000
 
@@ -32,13 +34,88 @@ interface PendingRequest {
   timer: ReturnType<typeof setTimeout>
 }
 
-function ok(data: unknown): MCPResult {
+export function ok(data: unknown): MCPResult {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
 }
 
-function fail(e: unknown): MCPResult {
+export function fail(e: unknown): MCPResult {
   const msg = e instanceof Error ? e.message : String(e)
   return { content: [{ type: 'text', text: JSON.stringify({ error: msg }) }], isError: true }
+}
+
+export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
+
+export interface RegisterToolsOptions {
+  enableEval: boolean
+  sendRpc: RpcSender
+}
+
+export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions) {
+  const { enableEval, sendRpc } = options
+  const register = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
+
+  for (const def of ALL_TOOLS) {
+    if (!enableEval && def.name === 'eval') continue
+    const shape: Record<string, z.ZodType> = {}
+    for (const [key, param] of Object.entries(def.params)) {
+      shape[key] = paramToZod(param)
+    }
+    register(
+      def.name,
+      { description: def.description, inputSchema: z.object(shape) },
+      async (args: Record<string, unknown>) => {
+        try {
+          const result = await sendRpc({ command: 'tool', args: { name: def.name, args } })
+          const res = result as { ok?: boolean; result?: unknown; error?: string }
+          if (res.ok === false) return fail(new Error(res.error))
+          const r = res.result as Record<string, unknown> | undefined
+          if (r && 'base64' in r && 'mimeType' in r) {
+            return {
+              content: [
+                {
+                  type: 'image' as const,
+                  data: r.base64 as string,
+                  mimeType: r.mimeType as string
+                }
+              ]
+            }
+          }
+          return ok(r)
+        } catch (e) {
+          return fail(e)
+        }
+      }
+    )
+  }
+
+  register(
+    'save_file',
+    {
+      description:
+        'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
+      inputSchema: z.object({})
+    },
+    async () => {
+      try {
+        const result = await sendRpc({ command: 'save_file' })
+        const res = result as { ok?: boolean; error?: string }
+        if (res.ok === false) return fail(new Error(res.error))
+        return ok({ saved: true })
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  register(
+    'get_codegen_prompt',
+    {
+      description:
+        'Get design-to-code generation guidelines. Call before generating frontend code.',
+      inputSchema: z.object({})
+    },
+    async () => ok({ prompt: CODEGEN_PROMPT })
+  )
 }
 
 export function paramToZod(param: ParamDef): z.ZodType {
@@ -274,70 +351,7 @@ export function startServer(options: ServerOptions = {}) {
 
   function createMCPSession(id: string): MCPTransport {
     const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-    const register = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
-
-    for (const def of ALL_TOOLS) {
-      if (!enableEval && def.name === 'eval') continue
-      const shape: Record<string, z.ZodType> = {}
-      for (const [key, param] of Object.entries(def.params)) {
-        shape[key] = paramToZod(param)
-      }
-      register(
-        def.name,
-        { description: def.description, inputSchema: z.object(shape) },
-        async (args: Record<string, unknown>) => {
-          try {
-            const result = await sendToBrowser({ command: 'tool', args: { name: def.name, args } })
-            const res = result as { ok?: boolean; result?: unknown; error?: string }
-            if (res.ok === false) return fail(new Error(res.error))
-            const r = res.result as Record<string, unknown> | undefined
-            if (r && 'base64' in r && 'mimeType' in r) {
-              return {
-                content: [
-                  {
-                    type: 'image' as const,
-                    data: r.base64 as string,
-                    mimeType: r.mimeType as string
-                  }
-                ]
-              }
-            }
-            return ok(r)
-          } catch (e) {
-            return fail(e)
-          }
-        }
-      )
-    }
-
-    register(
-      'save_file',
-      {
-        description:
-          'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
-        inputSchema: z.object({})
-      },
-      async () => {
-        try {
-          const result = await sendToBrowser({ command: 'save_file' })
-          const res = result as { ok?: boolean; error?: string }
-          if (res.ok === false) return fail(new Error(res.error))
-          return ok({ saved: true })
-        } catch (e) {
-          return fail(e)
-        }
-      }
-    )
-
-    register(
-      'get_codegen_prompt',
-      {
-        description:
-          'Get design-to-code generation guidelines. Call before generating frontend code.',
-        inputSchema: z.object({})
-      },
-      async () => ok({ prompt: CODEGEN_PROMPT })
-    )
+    registerTools(mcpServer, { enableEval, sendRpc: sendToBrowser })
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: () => id

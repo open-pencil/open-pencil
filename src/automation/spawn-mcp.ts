@@ -65,7 +65,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   runtimeAutomationAuthToken = authToken
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const command = Command.create('openpencil-mcp', [], {
+  const command = Command.create('openpencil-mcp-http', [], {
     env: {
       OPENPENCIL_MCP_AUTH_TOKEN: authToken,
       OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
@@ -95,6 +95,6 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
 
   await child.kill()
   throw new Error(
-    'Failed to start MCP server. Is openpencil-mcp installed? Run: npm i -g @open-pencil/mcp'
+    'Failed to start MCP server. Is openpencil-mcp-http installed? Run: npm i -g @open-pencil/mcp'
   )
 }

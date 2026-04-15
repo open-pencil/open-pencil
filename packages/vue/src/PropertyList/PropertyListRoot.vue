@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import { useEditor } from '@open-pencil/vue/context/editorContext'
 import { useNodeProps } from '@open-pencil/vue/controls/useNodeProps'
+import { useUndoBatch } from '@open-pencil/vue/controls/useUndoBatch'
 import { useSceneComputed } from '@open-pencil/vue/internal/useSceneComputed'
 import { providePropertyList } from './context'
 
@@ -26,6 +27,7 @@ const emit = defineEmits<{
 
 const editor = useEditor()
 const { isArrayMixed } = useNodeProps()
+const batch = useUndoBatch(editor.undo)
 
 const selectedNodes = useSceneComputed(() => {
   void editor.state.sceneVersion
@@ -52,6 +54,7 @@ function targetNodes(): SceneNode[] {
 }
 
 function add(defaults: ArrayItemType) {
+  batch.flush()
   emit('add', defaults)
   for (const n of targetNodes()) {
     const arr = isMulti.value ? [defaults] : [...n[propKey], defaults]
@@ -64,6 +67,7 @@ function add(defaults: ArrayItemType) {
 }
 
 function remove(index: number) {
+  batch.flush()
   emit('remove', index)
   for (const n of targetNodes()) {
     editor.updateNodeWithUndo(
@@ -78,7 +82,11 @@ function remove(index: number) {
 
 function update(index: number, item: ArrayItemType) {
   emit('update', index, item)
-  for (const n of targetNodes()) {
+  const nodes = targetNodes()
+  if (nodes.length === 0) return
+  const key = `update:${propKey}:${index}:${nodes.map((n) => n.id).join(',')}`
+  batch.ensure(key, `Change ${propKey}`)
+  for (const n of nodes) {
     const arr = [...n[propKey]] as ArrayItemType[]
     arr[index] = item
     editor.updateNodeWithUndo(n.id, { [propKey]: arr } as Partial<SceneNode>, `Change ${propKey}`)
@@ -87,7 +95,11 @@ function update(index: number, item: ArrayItemType) {
 
 function patch(index: number, changes: Record<string, unknown>) {
   emit('patch', index, changes)
-  for (const n of targetNodes()) {
+  const nodes = targetNodes()
+  if (nodes.length === 0) return
+  const key = `patch:${propKey}:${index}:${nodes.map((n) => n.id).join(',')}`
+  batch.ensure(key, `Change ${propKey}`)
+  for (const n of nodes) {
     const arr = [...n[propKey]] as ArrayItemType[]
     arr[index] = { ...arr[index], ...changes } as ArrayItemType
     editor.updateNodeWithUndo(n.id, { [propKey]: arr } as Partial<SceneNode>, `Change ${propKey}`)
@@ -95,6 +107,7 @@ function patch(index: number, changes: Record<string, unknown>) {
 }
 
 function toggleVisibility(index: number) {
+  batch.flush()
   emit('toggleVisibility', index)
   const nodes = targetNodes()
   if (nodes.length === 0) return

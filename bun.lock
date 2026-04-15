@@ -47,7 +47,7 @@
         "y-indexeddb": "^9.0.12",
         "y-protocols": "^1.0.7",
         "yjs": "^13.6.29",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
+        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
         "zod": "^4.3.6",
       },
       "devDependencies": {
@@ -88,7 +88,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.11.3",
+      "version": "0.11.6",
       "bin": {
         "openpencil": "./src/index.ts",
       },
@@ -104,7 +104,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.11.3",
+      "version": "0.11.6",
       "dependencies": {
         "@iconify/utils": "^3.1.0",
         "canvaskit-wasm": "^0.40.0",
@@ -118,7 +118,7 @@
         "opentype.js": "^1.3.4",
         "sucrase": "^3.35.1",
         "svgpath": "^2.6.0",
-        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
+        "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
       },
       "devDependencies": {
         "@types/culori": "^4.0.1",
@@ -139,7 +139,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.11.3",
+      "version": "0.11.6",
       "bin": {
         "openpencil-mcp": "./dist/index.js",
       },
@@ -158,7 +158,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.11.3",
+      "version": "0.11.6",
       "dependencies": {
         "@nanostores/i18n": "^1.2.2",
         "@nanostores/vue": "^1.1.0",
@@ -2577,7 +2577,7 @@
 
     "yjs": ["yjs@13.6.30", "", { "dependencies": { "lib0": "^0.2.99" } }, "sha512-vv/9h42eCMC81ZHDFswuu/MKzkl/vyq1BhaNGfHyOonwlG4CJbQF4oiBBJPvfdeCt/PlVDWh7Nov9D34YY09uQ=="],
 
-    "yoga-layout": ["@open-pencil/yoga-layout@3.3.0-grid.2", "", {}, "sha512-BFaOZ2iXD/v3Y805j5PN/biIKCFEOB/U3Wg8d7gG7FR4NK/hrp199/vMbNr7/BOfH/Xuu6JariSFNKll9zQSBw=="],
+    "yoga-layout": ["@open-pencil/yoga-layout@3.3.0-grid.3", "", {}, "sha512-L1mWkFxQIGFYULih376hVel5lLU+E8UYIaX/5VR1cBbtk7oeF4HDpfGttZ5BSH9ofnOpxeOh2V5yv2ZgOKc5Yw=="],
 
     "zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 

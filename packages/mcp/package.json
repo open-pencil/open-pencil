@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./dist/server.js",
   "bin": {
-    "openpencil-mcp": "./dist/index.js"
+    "openpencil-mcp": "./dist/stdio.js",
+    "openpencil-mcp-http": "./dist/index.js"
   },
   "files": [
     "dist"

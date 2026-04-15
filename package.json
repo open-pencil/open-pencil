@@ -72,7 +72,7 @@
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
-    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
+    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
