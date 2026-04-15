@@ -1,4 +1,4 @@
-import { useEventListener, useMagicKeys, whenever } from '@vueuse/core'
+import { useActiveElement, useEventListener, useMagicKeys, whenever } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
 import { useAIChat } from '@/composables/use-chat'
@@ -18,6 +18,10 @@ function isEditing(e: Event) {
   return e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
 }
 
+function isInputElement(el: EventTarget | null | undefined): boolean {
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+}
+
 const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowUp: [0, -1],
   ArrowDown: [0, 1],
@@ -30,6 +34,8 @@ export function useKeyboard() {
   const store = useEditorStore()
   const { isMobile } = useViewportKind()
   const { runCommand } = useEditorCommands()
+  const activeElement = useActiveElement()
+  const inputFocused = computed(() => isInputElement(activeElement.value))
 
   // ─── App-level actions ─────────────────────────────────────
 
@@ -189,7 +195,11 @@ export function useKeyboard() {
 
   function shift(key: string): ComputedRef<boolean> {
     return computed(
-      () => keys[`shift+${key}`].value && !keys['meta'].value && !keys['control'].value
+      () =>
+        !inputFocused.value &&
+        keys[`shift+${key}`].value &&
+        !keys['meta'].value &&
+        !keys['control'].value
     )
   }
 
@@ -197,6 +207,7 @@ export function useKeyboard() {
     const allowAlt = options?.allowAlt ?? false
     return computed(
       () =>
+        !inputFocused.value &&
         keys[key].value &&
         !keys['meta'].value &&
         !keys['control'].value &&
@@ -211,7 +222,12 @@ export function useKeyboard() {
   let toolBeforeSpace: typeof store.state.activeTool | null = null
 
   const spaceHeld = computed(
-    () => keys['Space'].value && !keys['meta'].value && !keys['control'].value && !keys['alt'].value
+    () =>
+      !inputFocused.value &&
+      keys['Space'].value &&
+      !keys['meta'].value &&
+      !keys['control'].value &&
+      !keys['alt'].value
   )
 
   watch(spaceHeld, (held) => {
