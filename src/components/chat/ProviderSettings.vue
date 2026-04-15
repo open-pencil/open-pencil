@@ -16,7 +16,7 @@ import ProviderSelectField from '@/components/chat/ProviderSelectField.vue'
 import { useInputUI } from '@/components/ui/input'
 import { usePopoverUI } from '@/components/ui/popover'
 import { useAIChat } from '@/composables/use-chat'
-import { openExternalLink } from '@/composables/use-external-link'
+import { openExternalLink } from '@/utils/external-link'
 
 const cls = usePopoverUI({ content: 'isolate z-[51] w-64 p-3' })
 
@@ -298,7 +298,7 @@ function clearUnsplashKey() {
                 v-if="providerDef.keyURL"
                 type="button"
                 class="cursor-pointer text-[9px] text-muted underline hover:text-surface"
-                @click="openExternalLink(providerDef.keyURL!)"
+                @click="openExternalLink(providerDef.keyURL as string)"
               >
                 Get API key →
               </button>

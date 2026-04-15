@@ -41,5 +41,4 @@ interface Window {
   // The assignment in EditorView.vue is type-safe; test code uses `!` assertion.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   __OPEN_PENCIL_STORE__?: any
-  __mocked_window_open?: (url?: string | URL, target?: string) => Window | null
 }

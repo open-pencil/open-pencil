@@ -232,7 +232,7 @@ test('"Get API key" link opens external URL via window.open', async () => {
   const openedUrls: string[] = []
   await page.exposeFunction('mockWindowOpen', (url: string) => openedUrls.push(url))
   await page.evaluate(() => {
-    window.__mocked_window_open = window.open
+    ;(window as any).__savedOpen = window.open
     window.open = (url: string | URL) => {
       ;(window as any).mockWindowOpen(String(url))
       return null
@@ -248,6 +248,6 @@ test('"Get API key" link opens external URL via window.open', async () => {
 
   // Restore
   await page.evaluate(() => {
-    window.open = window.__mocked_window_open
+    window.open = (window as any).__savedOpen
   })
 })
