@@ -1,5 +1,6 @@
 import { decodeTauriStderr } from '@/utils/tauri'
-import { AUTOMATION_HTTP_PORT, IS_TAURI, randomHex } from '@open-pencil/core'
+import { tauriReady } from '@/utils/tauri-ready'
+import { AUTOMATION_HTTP_PORT, randomHex } from '@open-pencil/core'
 
 interface AutomationHealth {
   status: 'ok' | 'no_app'
@@ -46,7 +47,8 @@ export async function getAutomationAuthToken(): Promise<string | null> {
 }
 
 export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null> {
-  if (import.meta.env.DEV || !IS_TAURI) {
+  const isTauri = await tauriReady()
+  if (import.meta.env.DEV || !isTauri) {
     return DEV_AUTOMATION_AUTH_TOKEN
       ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN }
       : null
