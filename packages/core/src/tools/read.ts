@@ -227,6 +227,33 @@ export const listFonts = defineTool({
   }
 })
 
+export const listAvailableFonts = defineTool({
+  name: 'list_available_fonts',
+  description:
+    'List font families the host can render (system fonts on desktop plus any bundled fonts). ' +
+    'Use this to discover what fonts are available to set on a text node — distinct from list_fonts ' +
+    'which only reports families currently used in the page.',
+  params: {
+    family: { type: 'string', description: 'Filter by family name (substring, case-insensitive)' }
+  },
+  execute: async (figma, args) => {
+    if (!figma.listAvailableFontFamilies) {
+      return {
+        count: 0,
+        fonts: [],
+        note: 'Host did not provide a font enumeration capability (likely a non-desktop runtime).'
+      }
+    }
+    let families = await figma.listAvailableFontFamilies()
+    if (args.family) {
+      const q = args.family.toLowerCase()
+      families = families.filter((f) => f.toLowerCase().includes(q))
+    }
+    families.sort((a, b) => a.localeCompare(b))
+    return { count: families.length, fonts: families }
+  }
+})
+
 export const queryNodes = defineTool({
   name: 'query_nodes',
   description: `Query nodes using XPath selectors. Node types are element names (FRAME, TEXT, RECTANGLE, ELLIPSE, etc.). Attributes: name, width, height, x, y, visible, opacity, cornerRadius, fontSize, fontFamily, fontWeight, layoutMode, itemSpacing, paddingTop/Right/Bottom/Left, strokeWeight, rotation, locked, blendMode, text, lineHeight, letterSpacing.

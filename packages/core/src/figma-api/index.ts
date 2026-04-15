@@ -385,4 +385,12 @@ export class FigmaAPI implements NodeProxyHost {
     nodeIds: string[],
     options: { scale?: number; format?: RasterExportFormat; quality?: number }
   ) => Promise<Uint8Array | null>
+
+  /**
+   * Returns every font family the host can render — system fonts on
+   * desktop (via font-kit) plus any bundled fonts the host registers.
+   * Optional because pure browser/test contexts have no enumeration
+   * surface; tools that depend on this should fall back gracefully.
+   */
+  listAvailableFontFamilies?: () => Promise<string[]>
 }
