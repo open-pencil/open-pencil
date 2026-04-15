@@ -1,5 +1,5 @@
 import { prefetchFigmaSchema } from '../clipboard'
-import { CANVAS_BG_COLOR, IS_BROWSER } from '../constants'
+import { getDefaultCanvasBgColor, IS_BROWSER } from '../constants'
 import { computeAllLayouts, computeLayout, setTextMeasurer } from '../layout'
 import { SceneGraph } from '../scene-graph'
 import { UndoManager } from '../scene-graph/undo'
@@ -42,7 +42,7 @@ export function createDefaultEditorState(pageId: string): EditorState {
     remoteCursors: [],
     documentName: 'Untitled',
     panX: 0,
-    pageColor: { ...CANVAS_BG_COLOR },
+    pageColor: { ...getDefaultCanvasBgColor() },
     panY: 0,
     zoom: 1,
     renderVersion: 0,

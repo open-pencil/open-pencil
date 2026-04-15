@@ -11,6 +11,28 @@ export const SELECTION_COLOR = { r: 0.23, g: 0.51, b: 0.96, a: 1 } satisfies Col
 export const COMPONENT_COLOR = { r: 0.592, g: 0.278, b: 1, a: 1 } satisfies Color
 export const SNAP_COLOR = { r: 1.0, g: 0.0, b: 0.56, a: 1 } satisfies Color
 export const CANVAS_BG_COLOR = { r: 0.96, g: 0.96, b: 0.96, a: 1 } satisfies Color
+export const CANVAS_BG_COLOR_DARK = { r: 0.173, g: 0.173, b: 0.173, a: 1 } satisfies Color // #2c2c2c, Figma-ish dark canvas
+
+/**
+ * Returns the canvas background to initialize new pages with. Defers
+ * to the OS `prefers-color-scheme` so users on a dark desktop don't
+ * get a white flash every time they open a document.
+ *
+ * NOTE: this is deliberately the runtime/new-page path only. The
+ * `.fig` serialization path continues to write the static light
+ * `CANVAS_BG_COLOR` so files stay portable — a dark-theme user saving
+ * a file must not force darkness on recipients.
+ */
+export function getDefaultCanvasBgColor(): Color {
+  if (
+    IS_BROWSER &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  ) {
+    return CANVAS_BG_COLOR_DARK
+  }
+  return CANVAS_BG_COLOR
+}
 
 export const SNAP_THRESHOLD = 5
 

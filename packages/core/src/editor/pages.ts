@@ -1,4 +1,4 @@
-import { CANVAS_BG_COLOR } from '../constants'
+import { getDefaultCanvasBgColor } from '../constants'
 import { computeAllLayouts } from '../layout'
 import { collectFontKeys } from '../text/fonts'
 
@@ -40,7 +40,7 @@ export function createPageActions(ctx: EditorContext) {
       ctx.state.panX = 0
       ctx.state.panY = 0
       ctx.state.zoom = 1
-      ctx.state.pageColor = { ...CANVAS_BG_COLOR }
+      ctx.state.pageColor = { ...getDefaultCanvasBgColor() }
     }
 
     const toLoad = collectFontKeys(
