@@ -16,7 +16,7 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
       v-for="t in toast.toasts.value"
       :key="t.id"
       data-test-id="toast-item"
-      :duration="t.variant === 'error' ? 0 : toast.TOAST_DURATION"
+      :duration="t.variant === 'error' ? toast.ERROR_TOAST_DURATION : toast.TOAST_DURATION"
       :class="useToastUI({ tone: t.variant }).base"
       @update:open="
         (open) => {
@@ -26,7 +26,9 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
     >
       <icon-lucide-check v-if="t.variant === 'default'" class="mt-0.5 size-3 shrink-0" />
       <icon-lucide-triangle-alert v-else class="mt-0.5 size-3 shrink-0" />
-      <ToastDescription class="min-w-0 flex-1 select-text">{{ t.message }}</ToastDescription>
+      <ToastDescription class="min-w-0 flex-1 select-text">
+        {{ t.message }}<span v-if="t.count > 1" class="ml-1.5 opacity-70">×{{ t.count }}</span>
+      </ToastDescription>
       <Tip v-if="t.variant === 'error'" :label="copied ? 'Copied!' : 'Copy error'">
         <button
           data-test-id="toast-copy-error"
