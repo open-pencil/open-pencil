@@ -52,6 +52,13 @@ export async function listFamilies(): Promise<string[]> {
   return coreList()
 }
 
+export async function listFonts(): Promise<TauriFontFamily[]> {
+  if (IS_TAURI) {
+    return getTauriFonts()
+  }
+  return []
+}
+
 export async function loadFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
   if (IS_TAURI) {
     try {

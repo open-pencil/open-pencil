@@ -38,6 +38,7 @@
             "allowImportNames": [
               "loadFont",
               "listFamilies",
+              "listFonts",
               "preloadFonts"
             ]
           },

@@ -1,7 +1,14 @@
 import { IS_BROWSER } from '../constants'
 import { computeBounds } from '../geometry'
 import { copyFills, copyStrokes, copyEffects } from '../scene-graph/copy'
-import { FigmaNodeProxy, INTERNAL_ID, MIXED, type FigmaFontName, type NodeProxyHost } from './proxy'
+import {
+  FigmaNodeProxy,
+  INTERNAL_ID,
+  MIXED,
+  type FigmaFont,
+  type FigmaFontName,
+  type NodeProxyHost
+} from './proxy'
 
 import type { RasterExportFormat } from '../io/formats/raster'
 import type {
@@ -15,7 +22,7 @@ import type {
 import type { Rect, Vector } from '../types'
 
 export { FigmaNodeProxy } from './proxy'
-export type { FigmaFontName } from './proxy'
+export type { FigmaFont, FigmaFontName } from './proxy'
 
 export function computeImageHash(data: Uint8Array): string {
   let h1 = 0x811c9dc5 >>> 0
@@ -370,6 +377,12 @@ export class FigmaAPI implements NodeProxyHost {
     // No-op: we don't gate text editing on font loading
   }
 
+  async listAvailableFontsAsync(): Promise<FigmaFont[]> {
+    // Default: pure browser / test contexts have no enumeration surface.
+    // Desktop hosts override this to return system + bundled fonts.
+    return []
+  }
+
   notify(message: string): { cancel: () => void } {
     if (typeof console !== 'undefined') console.log(`[figma.notify] ${message}`)
     // eslint-disable-next-line no-empty-function
@@ -385,12 +398,4 @@ export class FigmaAPI implements NodeProxyHost {
     nodeIds: string[],
     options: { scale?: number; format?: RasterExportFormat; quality?: number }
   ) => Promise<Uint8Array | null>
-
-  /**
-   * Returns every font family the host can render — system fonts on
-   * desktop (via font-kit) plus any bundled fonts the host registers.
-   * Optional because pure browser/test contexts have no enumeration
-   * surface; tools that depend on this should fall back gracefully.
-   */
-  listAvailableFontFamilies?: () => Promise<string[]>
 }

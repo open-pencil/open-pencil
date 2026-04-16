@@ -237,14 +237,8 @@ export const listAvailableFonts = defineTool({
     family: { type: 'string', description: 'Filter by family name (substring, case-insensitive)' }
   },
   execute: async (figma, args) => {
-    if (!figma.listAvailableFontFamilies) {
-      return {
-        count: 0,
-        fonts: [],
-        note: 'Host did not provide a font enumeration capability (likely a non-desktop runtime).'
-      }
-    }
-    let families = await figma.listAvailableFontFamilies()
+    const fonts = await figma.listAvailableFontsAsync()
+    let families = Array.from(new Set(fonts.map((f) => f.fontName.family)))
     if (args.family) {
       const q = args.family.toLowerCase()
       families = families.filter((f) => f.toLowerCase().includes(q))

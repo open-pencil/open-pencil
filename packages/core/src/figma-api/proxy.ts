@@ -19,6 +19,7 @@ import type { Rect } from '../types'
 const MIXED = Symbol('mixed')
 
 export type FigmaFontName = { family: string; style: string }
+export type FigmaFont = { fontName: FigmaFontName }
 
 export function weightToStyleName(weight: number, italic: boolean): string {
   const base = FONT_WEIGHT_NAMES[weight] ?? 'Regular'

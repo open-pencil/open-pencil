@@ -1,6 +1,6 @@
 import { FigmaAPI } from '@open-pencil/core'
 
-import { listFamilies } from '@/engine/fonts'
+import { listFonts } from '@/engine/fonts'
 import type { EditorStore } from '@/stores/editor'
 
 export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
@@ -18,6 +18,11 @@ export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
   }
   api.exportImage = (nodeIds, opts) =>
     store.renderExportImage(nodeIds, opts.scale ?? 1, opts.format ?? 'PNG')
-  api.listAvailableFontFamilies = () => listFamilies()
+  api.listAvailableFontsAsync = async () => {
+    const fonts = await listFonts()
+    return fonts.flatMap(({ family, styles }) =>
+      styles.map((style) => ({ fontName: { family, style } }))
+    )
+  }
   return api
 }
