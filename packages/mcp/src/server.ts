@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
+import { writeFile, mkdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
+import { resolve, dirname, sep as osSep } from 'node:path'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
@@ -54,7 +55,40 @@ export interface RegisterToolsOptions {
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions) {
   const { enableEval, mcpRoot, sendRpc } = options
+  const resolvedRoot = mcpRoot ? resolve(mcpRoot) : null
   const register = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
+
+  /** Write tool output to disk if the tool returned file data and a valid path was given. */
+  async function maybeWriteFile(
+    toolName: string,
+    args: Record<string, unknown>,
+    r: Record<string, unknown>
+  ): Promise<MCPResult | null> {
+    const filePath = typeof args.path === 'string' ? args.path : null
+    if (!filePath || !resolvedRoot) return null
+
+    const sep = resolvedRoot.endsWith('/') || resolvedRoot.endsWith('\\') ? '' : osSep
+    const resolved = resolve(filePath)
+    if (!resolved.startsWith(resolvedRoot + sep) && resolved !== resolvedRoot) {
+      return fail(new Error(`Path is outside the allowed root: ${resolvedRoot}`))
+    }
+
+    await mkdir(dirname(resolved), { recursive: true })
+
+    if (toolName === 'export_svg' && typeof r.svg === 'string') {
+      await writeFile(resolved, r.svg, 'utf8')
+      return ok({ written: resolved, byteLength: Buffer.byteLength(r.svg, 'utf8') })
+    }
+    if (toolName === 'export_image' && typeof r.base64 === 'string') {
+      await writeFile(resolved, Buffer.from(r.base64, 'base64'))
+      return ok({ written: resolved, byteLength: r.byteLength ?? null })
+    }
+    if (toolName === 'get_jsx' && typeof r.jsx === 'string') {
+      await writeFile(resolved, r.jsx, 'utf8')
+      return ok({ written: resolved, byteLength: Buffer.byteLength(r.jsx, 'utf8') })
+    }
+    return null
+  }
 
   for (const def of ALL_TOOLS) {
     if (!enableEval && def.name === 'eval') continue
@@ -72,6 +106,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as Record<string, unknown> | undefined
           if (r && 'base64' in r && 'mimeType' in r) {
+            const saved = await maybeWriteFile(def.name, args, r)
+            if (saved) return saved
             return {
               content: [
                 {
@@ -81,6 +117,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
                 }
               ]
             }
+          }
+          if (r) {
+            const saved = await maybeWriteFile(def.name, args, r)
+            if (saved) return saved
           }
           return ok(r)
         } catch (e) {
@@ -158,7 +198,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: { path: string }) => {
         try {
           const resolvedPath = resolve(args.path)
-          const sep = resolvedRoot.endsWith('/') || resolvedRoot.endsWith('\\') ? '' : '/'
+          const sep = resolvedRoot.endsWith('/') || resolvedRoot.endsWith('\\') ? '' : osSep
           if (!resolvedPath.startsWith(resolvedRoot + sep) && resolvedPath !== resolvedRoot) {
             return fail(new Error(`Path is outside the allowed root: ${resolvedRoot}`))
           }

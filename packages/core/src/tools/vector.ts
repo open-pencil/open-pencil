@@ -263,6 +263,11 @@ export const exportSvg = defineTool({
     ids: {
       type: 'string[]',
       description: 'Node IDs to export. Omit to export all top-level nodes on the current page.'
+    },
+    path: {
+      type: 'string',
+      description:
+        'Optional absolute file path to write the SVG to. Only honoured when OPENPENCIL_MCP_ROOT is set and the path is inside it.'
     }
   },
   execute: async (figma, args) => {
@@ -297,6 +302,11 @@ export const exportImage = defineTool({
       default: 1,
       min: 0.1,
       max: 4
+    },
+    path: {
+      type: 'string',
+      description:
+        'Optional absolute file path to write the image to. Only honoured when OPENPENCIL_MCP_ROOT is set and the path is inside it.'
     }
   },
   execute: async (figma, args) => {
