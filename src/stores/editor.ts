@@ -869,6 +869,24 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     }
   }
 
+  /**
+   * Pre-set the save path for a brand-new document that has not been written
+   * to disk yet. Skips the file watcher (the file does not exist).
+   * `saveFigFile` will write to this path directly without showing a dialog.
+   * Call `startWatchingCurrentFile()` after the first write to enable reload-on-change.
+   */
+  function setPlannedFilePath(path: string) {
+    stopWatchingFile()
+    fileHandle = null
+    filePath = path
+    downloadName = path.split(/[\\/]/).pop() ?? 'Untitled.fig'
+    state.documentName = downloadName.replace(/\.fig$/i, '')
+  }
+
+  function startWatchingCurrentFile() {
+    void startWatchingFile()
+  }
+
   function dispose() {
     stopWatchingFile()
     ;(debouncedAutosave as typeof debouncedAutosave & { cancel?: () => void }).cancel?.()
@@ -1256,6 +1274,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     saveFigFile,
     saveFigFileAs,
     setDocumentSource,
+    setPlannedFilePath,
+    startWatchingCurrentFile,
     dispose,
     renderExportImage,
     listSelectionExportFormats,

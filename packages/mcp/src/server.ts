@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { createRequire } from 'node:module'
+import { resolve } from 'node:path'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
@@ -47,11 +48,12 @@ export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 
 export interface RegisterToolsOptions {
   enableEval: boolean
+  mcpRoot: string | null
   sendRpc: RpcSender
 }
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions) {
-  const { enableEval, sendRpc } = options
+  const { enableEval, mcpRoot, sendRpc } = options
   const register = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
 
   for (const def of ALL_TOOLS) {
@@ -107,6 +109,70 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     }
   )
 
+  if (mcpRoot !== null) {
+    const resolvedRoot = resolve(mcpRoot)
+
+    register(
+      'new_document',
+      {
+        description: `Create a new empty document in a new tab. Optionally provide a file path inside the allowed root (${resolvedRoot}) to pre-set the save location so subsequent saves go directly to disk without a dialog.`,
+        inputSchema: z.object({
+          path: z
+            .string()
+            .describe(
+              `Optional absolute path for the new file (e.g. ${resolvedRoot}${osSep}design.fig). Must be inside ${resolvedRoot}. Sets the save location without writing anything yet.`
+            )
+            .optional()
+        })
+      },
+      async (args: { path?: string }) => {
+        try {
+          let resolvedPath: string | undefined
+          if (args.path) {
+            resolvedPath = resolve(args.path)
+            const sep = resolvedRoot.endsWith('/') || resolvedRoot.endsWith('\\') ? '' : osSep
+            if (!resolvedPath.startsWith(resolvedRoot + sep) && resolvedPath !== resolvedRoot) {
+              return fail(new Error(`Path is outside the allowed root: ${resolvedRoot}`))
+            }
+          }
+          const result = await sendRpc({ command: 'new_document', args: { path: resolvedPath } })
+          const res = result as { ok?: boolean; error?: string }
+          if (res.ok === false) return fail(new Error(res.error))
+          return ok({ created: true })
+        } catch (e) {
+          return fail(e)
+        }
+      }
+    )
+
+    register(
+      'open_file',
+      {
+        description: `Open a design file (.fig or .pen) from a path inside the allowed root (${resolvedRoot}). Opens in a new tab (or replaces an untouched blank tab).`,
+        inputSchema: z.object({
+          path: z
+            .string()
+            .describe(`Absolute path to the .fig / .pen file. Must be inside ${resolvedRoot}`)
+        })
+      },
+      async (args: { path: string }) => {
+        try {
+          const resolvedPath = resolve(args.path)
+          const sep = resolvedRoot.endsWith('/') || resolvedRoot.endsWith('\\') ? '' : '/'
+          if (!resolvedPath.startsWith(resolvedRoot + sep) && resolvedPath !== resolvedRoot) {
+            return fail(new Error(`Path is outside the allowed root: ${resolvedRoot}`))
+          }
+          const result = await sendRpc({ command: 'open_file', args: { path: resolvedPath } })
+          const res = result as { ok?: boolean; error?: string }
+          if (res.ok === false) return fail(new Error(res.error))
+          return ok({ opened: true })
+        } catch (e) {
+          return fail(e)
+        }
+      }
+    )
+  }
+
   register(
     'get_codegen_prompt',
     {
@@ -143,6 +209,7 @@ export interface ServerOptions {
   httpPort?: number
   wsPort?: number
   enableEval?: boolean
+  mcpRoot?: string | null
   authToken?: string | null
   corsOrigin?: string | null
 }
@@ -151,6 +218,7 @@ export function startServer(options: ServerOptions = {}) {
   const httpPort = options.httpPort ?? 7600
   const wsPort = options.wsPort ?? 7601
   const enableEval = options.enableEval ?? false
+  const mcpRoot = options.mcpRoot ?? null
   const authToken = options.authToken ?? null
   const corsOrigin = options.corsOrigin ?? null
 
@@ -203,6 +271,12 @@ export function startServer(options: ServerOptions = {}) {
         browserWs = ws
         browserToken = msg.token
         browserRegistered = true
+        // Notify any connected stdio clients that the browser is now available
+        for (const client of stdioClients) {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'register', token: browserToken }))
+          }
+        }
         return
       }
       if (!browserRegistered || browserWs !== ws) return
@@ -230,17 +304,77 @@ export function startServer(options: ServerOptions = {}) {
     }
   }
 
+  // Non-browser WebSocket clients (stdio bridge connections)
+  const stdioClients = new Set<WebSocket>()
+
   const wss = new WebSocketServer({ port: wsPort, host: '127.0.0.1' })
 
   wss.on('connection', (ws) => {
+    // Assume stdio client until we see a register message (browser sends register on connect)
+    stdioClients.add(ws)
+
+    // If browser is already connected, tell this new stdio client immediately
+    if (browserRegistered && browserToken) {
+      ws.send(JSON.stringify({ type: 'register', token: browserToken }))
+    }
+
     ws.on('message', (raw) => {
-      handleBrowserMessage(
-        typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8'),
-        ws
-      )
+      const data = typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8')
+      try {
+        const msg = JSON.parse(data) as { type: string; id?: string; token?: string }
+        if (msg.type === 'register') {
+          // Browser identifies itself — remove from stdio set and handle normally
+          stdioClients.delete(ws)
+          handleBrowserMessage(data, ws)
+          return
+        }
+        if (msg.type === 'request' && msg.id) {
+          // Stdio client sending a tool request — relay to browser and route response back
+          if (!browserWs || !browserRegistered) {
+            ws.send(
+              JSON.stringify({
+                type: 'response',
+                id: msg.id,
+                ok: false,
+                error: 'OpenPencil app is not connected'
+              })
+            )
+            return
+          }
+          const id = msg.id
+          const timer = setTimeout(() => {
+            pending.delete(id)
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({ type: 'response', id, ok: false, error: 'RPC timeout (30s)' })
+              )
+            }
+          }, RPC_TIMEOUT)
+          pending.set(id, {
+            resolve: (value) => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'response', id, ...(value as object) }))
+              }
+            },
+            reject: (err) => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'response', id, ok: false, error: err.message }))
+              }
+            },
+            timer
+          })
+          browserWs.send(data)
+          return
+        }
+        // Any other message (e.g. response from browser) — handle normally
+        handleBrowserMessage(data, ws)
+      } catch (e) {
+        console.warn('Malformed WS message from client:', e)
+      }
     })
 
     ws.on('close', () => {
+      stdioClients.delete(ws)
       if (browserWs === ws) {
         browserWs = null
         browserToken = null
@@ -351,7 +485,7 @@ export function startServer(options: ServerOptions = {}) {
 
   function createMCPSession(id: string): MCPTransport {
     const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-    registerTools(mcpServer, { enableEval, sendRpc: sendToBrowser })
+    registerTools(mcpServer, { enableEval, mcpRoot, sendRpc: sendToBrowser })
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: () => id

@@ -5,12 +5,21 @@
 ### Features
 
 - Add stdio transport for MCP server — `openpencil-mcp` now works as a proper stdio MCP server for Claude Code, Cursor, etc. HTTP server available as `openpencil-mcp-http`.
+- Add `open_file` MCP tool — opens a .fig or .pen file from disk into a new tab without user interaction
+- Add `new_document` MCP tool — creates an empty document; accepts an optional `path` to write the file immediately at a specific location without a save dialog
+- Add optional `path` output parameter to `export_image`, `export_svg`, and `get_jsx` MCP tools — writes output directly to disk to avoid large base64/JSX payloads in the AI context
+- Scope MCP file operations to `OPENPENCIL_MCP_ROOT` (defaults to current working directory) — paths outside the root are rejected server-side
 
 ### Fixes
 
 - Fix color picker dragging flooding the undo stack — fill/stroke/effect color and opacity drags now collapse into a single undo entry per interaction via debounced batching in `PropertyListRoot`
 - Fix .fig import crash on alias variables without a GUID
 - Fix external links in AI panel blocked by Tauri ACL — use opener plugin instead of shell
+- Fix `eval` tool discarding return value when code ends with an expression statement — last expression is now promoted to `return` (REPL-style), so agents can read the result directly
+- Fix stdio MCP server crash on startup when `OPENPENCIL_MCP_ROOT` is unset
+- Fix MCP "app not connected" error encouraging AI to self-resolve — message now instructs the agent to stop and inform the user (#208)
+- Fix `fs:allow-watch` Tauri permission missing path scope, causing errors when opening files via MCP
+- Fix `fs:allow-mkdir` missing from Tauri capabilities, causing `new_document` to fail when the target directory did not exist
 
 ## 0.11.6 — 2026-04-08
 

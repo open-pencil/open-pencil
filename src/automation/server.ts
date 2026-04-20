@@ -1,4 +1,5 @@
 import { makeFigmaFromStore } from '@/automation/figma-factory'
+import { createTab, openFileInNewTab } from '@/stores/tabs'
 /**
  * Browser-side automation handler.
  *
@@ -8,6 +9,7 @@ import { makeFigmaFromStore } from '@/automation/figma-factory'
 import {
   ALL_TOOLS,
   AUTOMATION_WS_PORT,
+  IS_TAURI,
   executeRpcCommand,
   renderTreeNode,
   computeAllLayouts,
@@ -126,6 +128,43 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     return { ok: true }
   }
 
+  async function handleNewDocument(_store: EditorStore, args: unknown): Promise<unknown> {
+    const path = (args as { path?: string }).path
+    const tab = createTab()
+    if (path) {
+      tab.store.setPlannedFilePath(path)
+      if (IS_TAURI) {
+        const { mkdir } = await import('@tauri-apps/plugin-fs')
+        const dir = path.replace(/[\\/][^\\/]+$/, '')
+        await mkdir(dir, { recursive: true })
+      }
+      await tab.store.saveFigFile()
+      tab.store.startWatchingCurrentFile()
+    }
+    return { ok: true }
+  }
+
+  async function handleOpenFile(_store: EditorStore, args: unknown): Promise<unknown> {
+    const path = (args as { path?: string }).path
+    if (!path) throw new Error('Missing "path" in args')
+    const name = path.split(/[\\/]/).pop() ?? 'file.fig'
+
+    if (IS_TAURI) {
+      const { readFile } = await import('@tauri-apps/plugin-fs')
+      const bytes = await readFile(path)
+      const file = new File([bytes], name)
+      await openFileInNewTab(file, undefined, path)
+    } else {
+      const response = await fetch(path)
+      if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`)
+      const blob = await response.blob()
+      const file = new File([blob], name, { type: 'application/octet-stream' })
+      await openFileInNewTab(file, undefined, path)
+    }
+
+    return { ok: true }
+  }
+
   async function handleSelection(store: EditorStore): Promise<unknown> {
     const ids = [...store.state.selectedIds]
     const nodes = ids
@@ -151,7 +190,9 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     export_jsx: handleExportJsx,
     selection: handleSelection,
 
-    save_file: handleSaveFile
+    save_file: handleSaveFile,
+    new_document: handleNewDocument,
+    open_file: handleOpenFile
   }
 
   async function handleRequest(_id: string, command: string, args: unknown): Promise<unknown> {
