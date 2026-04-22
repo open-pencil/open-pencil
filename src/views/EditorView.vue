@@ -65,7 +65,11 @@ onMounted(async () => {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
-    console.error(e)
+    console.warn('[MCP]', e)
+    if (IS_TAURI) {
+      const { toast } = await import('@/utils/toast')
+      toast.warning('MCP server failed to start. Install with: npm i -g @open-pencil/mcp')
+    }
   }
 })
 
