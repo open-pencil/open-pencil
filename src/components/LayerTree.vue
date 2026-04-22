@@ -24,6 +24,16 @@ function onLayerRightClick(e: MouseEvent) {
   if (!row?.dataset.nodeId) return
   if (!store.state.selectedIds.has(row.dataset.nodeId)) store.select([row.dataset.nodeId])
 }
+
+function isAdditiveSelect(e: CustomEvent): boolean {
+  const mouseEvent = e.detail?.originalEvent as MouseEvent | undefined
+  return !!(mouseEvent?.shiftKey || mouseEvent?.metaKey || mouseEvent?.ctrlKey)
+}
+
+function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
+  e.preventDefault()
+  select(isAdditiveSelect(e))
+}
 </script>
 
 <template>
@@ -63,12 +73,7 @@ function onLayerRightClick(e: MouseEvent) {
                 :value="item.value"
                 :level="item.level"
                 as-child
-                @select="
-                  (e: CustomEvent) => {
-                    e.preventDefault()
-                    selectNode(!!e.detail.originalEvent?.shiftKey)
-                  }
-                "
+                @select="(e: CustomEvent) => onTreeSelect(e, selectNode)"
                 @toggle="
                   (e: CustomEvent) => {
                     if (e.detail.originalEvent?.type === 'click') e.preventDefault()
