@@ -252,7 +252,9 @@ export function useKeyboard() {
   // Mod
   whenever(mod('backslash'), toggleUI)
   whenever(mod('keyj'), toggleAI)
-  whenever(mod('keyw'), () => { if (activeTabRef.value) closeTab(activeTabRef.value.id) })
+  whenever(mod('keyw'), () => {
+    if (activeTabRef.value) closeTab(activeTabRef.value.id)
+  })
   whenever(mod('keyn'), () => createTab())
   whenever(mod('keyt'), () => createTab())
   whenever(mod('keyz'), () => runCommand('edit.undo'))

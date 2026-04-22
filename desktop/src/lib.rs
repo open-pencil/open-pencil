@@ -7,24 +7,34 @@ use font_kit::source::SystemSource;
 use serde::Serialize;
 use std::sync::{Mutex, OnceLock};
 
-/// Stores an absolute file path passed on the command line at launch
-/// (e.g. `OpenPencil ~/proj/foo.fig`). Consumed by the frontend on
-/// first EditorView mount via the `take_pending_open` command. Once
-/// taken, the slot is empty for the remainder of the process —
-/// preventing accidental re-open if the user navigates away and back.
-struct PendingOpen(Mutex<Option<String>>);
+/// Stores a file passed on the command line at launch, read eagerly
+/// by Rust so the frontend never needs raw filesystem access.
+struct PendingOpen(Mutex<Option<(String, Vec<u8>)>>);
 
-#[tauri::command]
-fn take_pending_open(state: tauri::State<PendingOpen>) -> Option<String> {
-    state.0.lock().ok().and_then(|mut g| g.take())
+#[derive(Serialize)]
+struct PendingFile {
+    path: String,
+    data: Vec<u8>,
 }
 
-fn pending_open_from_argv() -> Option<String> {
-    std::env::args().skip(1).find(|arg| {
+#[tauri::command]
+fn take_pending_open(state: tauri::State<PendingOpen>) -> Option<PendingFile> {
+    state
+        .0
+        .lock()
+        .ok()
+        .and_then(|mut g| g.take())
+        .map(|(path, data)| PendingFile { path, data })
+}
+
+fn pending_open_from_argv() -> Option<(String, Vec<u8>)> {
+    let path = std::env::args().skip(1).find(|arg| {
         let lower = arg.to_lowercase();
         (lower.ends_with(".fig") || lower.ends_with(".pen"))
             && std::path::Path::new(arg).exists()
-    })
+    })?;
+    let data = std::fs::read(&path).ok()?;
+    Some((path, data))
 }
 
 #[derive(Serialize, Clone)]
