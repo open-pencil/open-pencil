@@ -11,7 +11,7 @@ import { useMenu } from '@/composables/use-menu'
 import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
 import { connectAutomation } from '@/automation/server'
 import { spawnMCPIfNeeded } from '@/automation/spawn-mcp'
-import { IS_TAURI } from '@/constants'
+import { IS_BROWSER } from '@open-pencil/core'
 import { createDemoShapes } from '@/demo'
 import { useEditorStore } from '@/stores/editor'
 import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
@@ -58,14 +58,38 @@ const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 
 onMounted(async () => {
+  const isTauri = IS_BROWSER && '__TAURI_INTERNALS__' in window
   try {
     const mcp = await spawnMCPIfNeeded()
     mcpCleanup.value = mcp?.disconnect ?? null
-    if (import.meta.env.DEV || IS_TAURI) {
+    if (import.meta.env.DEV || isTauri) {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
     console.error(e)
+  }
+  // Auto-open file passed as CLI arg (e.g. `OpenPencil ~/proj/foo.fig`).
+  // Rust reads the file at startup and sends bytes directly so the
+  // frontend never needs raw FS scope for absolute paths.
+  if (isTauri) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      interface PendingFile {
+        path: string
+        data: number[]
+      }
+      const pending = await invoke<PendingFile | null>('take_pending_open')
+      if (pending) {
+        const file = new File(
+          [new Uint8Array(pending.data)],
+          pending.path.split('/').pop() ?? 'file.fig'
+        )
+        const { openFileInNewTab } = await import('@/stores/tabs')
+        await openFileInNewTab(file, undefined, pending.path)
+      }
+    } catch (e) {
+      console.error('CLI open-file failed:', e)
+    }
   }
 })
 

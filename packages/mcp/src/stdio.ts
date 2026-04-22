@@ -13,6 +13,12 @@ const wsUrl = `ws://${wsHost}:${wsPort}`
 let ws: WebSocket | null = null
 let registered = false
 
+function rawToUtf8(raw: Buffer | ArrayBuffer | Buffer[]): string {
+  if (Buffer.isBuffer(raw)) return raw.toString('utf8')
+  if (Array.isArray(raw)) return Buffer.concat(raw).toString('utf8')
+  return Buffer.from(raw).toString('utf8')
+}
+
 const pending = new Map<
   string,
   {
@@ -31,7 +37,10 @@ function connect() {
 
   ws.on('message', (raw) => {
     try {
-      const msg = JSON.parse(String(raw)) as {
+      // `raw` from ws is Buffer | ArrayBuffer | Buffer[]; String() on any
+      // of those yields "[object Object]" or similar, not the UTF-8 payload.
+      const text = rawToUtf8(raw)
+      const msg = JSON.parse(text) as {
         type: string
         id?: string
         token?: string

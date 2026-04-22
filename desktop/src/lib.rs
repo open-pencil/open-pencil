@@ -5,7 +5,37 @@ use tauri::{
 
 use font_kit::source::SystemSource;
 use serde::Serialize;
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
+
+/// Stores a file passed on the command line at launch, read eagerly
+/// by Rust so the frontend never needs raw filesystem access.
+struct PendingOpen(Mutex<Option<(String, Vec<u8>)>>);
+
+#[derive(Serialize)]
+struct PendingFile {
+    path: String,
+    data: Vec<u8>,
+}
+
+#[tauri::command]
+fn take_pending_open(state: tauri::State<PendingOpen>) -> Option<PendingFile> {
+    state
+        .0
+        .lock()
+        .ok()
+        .and_then(|mut g| g.take())
+        .map(|(path, data)| PendingFile { path, data })
+}
+
+fn pending_open_from_argv() -> Option<(String, Vec<u8>)> {
+    let path = std::env::args().skip(1).find(|arg| {
+        let lower = arg.to_lowercase();
+        (lower.ends_with(".fig") || lower.ends_with(".pen"))
+            && std::path::Path::new(arg).exists()
+    })?;
+    let data = std::fs::read(&path).ok()?;
+    Some((path, data))
+}
 
 #[derive(Serialize, Clone)]
 struct FontFamily {
@@ -217,10 +247,12 @@ fn show_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(PendingOpen(Mutex::new(pending_open_from_argv())))
         .invoke_handler(tauri::generate_handler![
             build_fig_file,
             list_system_fonts,
-            load_system_font
+            load_system_font,
+            take_pending_open
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
