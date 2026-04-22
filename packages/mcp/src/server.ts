@@ -125,7 +125,7 @@ export function paramToZod(param: ParamDef): z.ZodType {
         ? z.enum(param.enum as [string, ...string[]]).describe(param.description)
         : z.string().describe(param.description),
     number: () => {
-      let s = z.number()
+      let s = z.coerce.number()
       if (param.min !== undefined) s = s.min(param.min)
       if (param.max !== undefined) s = s.max(param.max)
       return s.describe(param.description)

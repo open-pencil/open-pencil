@@ -304,11 +304,11 @@ function paramToValibot(v: typeof valibot, param: ParamDef): unknown {
   const typeMap: Record<ParamType, () => unknown> = {
     string: () => (param.enum ? v.picklist(param.enum as [string, ...string[]]) : v.string()),
     number: () => {
-      const pipes: unknown[] = [v.number()]
+      const pipes: unknown[] = [v.unknown(), v.transform(Number), v.number()]
       if (param.min !== undefined) pipes.push(v.minValue(param.min))
       if (param.max !== undefined) pipes.push(v.maxValue(param.max))
       // eslint-disable-next-line typescript-eslint/no-explicit-any -- valibot pipe() requires specific tuple types, but pipes are built dynamically
-      return pipes.length > 1 ? v.pipe(...(pipes as [any, any, ...unknown[]])) : v.number()
+      return v.pipe(...(pipes as [any, any, ...unknown[]]))
     },
     boolean: () => v.boolean(),
     color: () => v.pipe(v.string(), v.description('Color value (hex like #ff0000 or #ff000080)')),

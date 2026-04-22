@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import WebSocket from 'ws'
 
-import { startServer } from '../../packages/mcp/src/server'
+import { startServer, paramToZod } from '../../packages/mcp/src/server'
 import {
   ALL_TOOLS,
   FigmaAPI,
@@ -227,5 +227,26 @@ describe('MCP server', () => {
     expect(result.isError).not.toBe(true)
     const data = parseResult(result) as { prompt: string }
     expect(data.prompt.length).toBeGreaterThan(100)
+  })
+})
+
+describe('paramToZod coercion', () => {
+  test('number param accepts numeric strings', () => {
+    const schema = paramToZod({ type: 'number', description: 'x', required: true })
+    expect(schema.parse('42')).toBe(42)
+    expect(schema.parse(42)).toBe(42)
+    expect(schema.parse('3.14')).toBeCloseTo(3.14)
+  })
+
+  test('number param rejects non-numeric strings', () => {
+    const schema = paramToZod({ type: 'number', description: 'x', required: true })
+    expect(() => schema.parse('abc')).toThrow()
+  })
+
+  test('number param respects min/max after coercion', () => {
+    const schema = paramToZod({ type: 'number', description: 'x', required: true, min: 0, max: 100 })
+    expect(schema.parse('50')).toBe(50)
+    expect(() => schema.parse('200')).toThrow()
+    expect(() => schema.parse('-1')).toThrow()
   })
 })
