@@ -103,13 +103,7 @@ export function useMenuModel() {
         ? [commandMenuItem('selection.createComponentSet', '⇧⌘K')]
         : []),
       ...(isComponent.value && selectedNode.value
-        ? [
-            {
-              label: t.value.createInstance,
-              action: () => commandMenuItem('selection.createInstance').action?.(),
-              disabled: !commandMenuItem('selection.createInstance').disabled
-            } satisfies MenuActionNode
-          ]
+        ? [commandMenuItem('selection.createInstance')]
         : []),
       ...(isInstance.value ? [commandMenuItem('selection.goToMainComponent')] : []),
       ...(isInstance.value ? [commandMenuItem('selection.detachInstance', '⌥⌘B')] : []),
