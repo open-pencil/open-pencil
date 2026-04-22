@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto'
+import { writeFile, mkdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
+import { resolve, dirname, sep as osSep } from 'node:path'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
@@ -47,12 +49,46 @@ export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 
 export interface RegisterToolsOptions {
   enableEval: boolean
+  mcpRoot?: string | null
   sendRpc: RpcSender
+}
+
+function resolveSafePath(filePath: string, root: string): string {
+  const resolved = resolve(filePath)
+  const sep = root.endsWith('/') || root.endsWith('\\') ? '' : osSep
+  if (!resolved.startsWith(root + sep) && resolved !== root) {
+    throw new Error(`Path is outside the allowed root: ${root}`)
+  }
+  return resolved
 }
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions) {
   const { enableEval, sendRpc } = options
+  const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const register = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
+
+  async function writeToolOutput(
+    toolName: string,
+    r: Record<string, unknown>,
+    filePath: string,
+    root: string
+  ): Promise<MCPResult | null> {
+    const resolved = resolveSafePath(filePath, root)
+    await mkdir(dirname(resolved), { recursive: true })
+    if (toolName === 'export_svg' && typeof r.svg === 'string') {
+      await writeFile(resolved, r.svg, 'utf8')
+      return ok({ written: resolved, byteLength: Buffer.byteLength(r.svg, 'utf8') })
+    }
+    if (toolName === 'export_image' && typeof r.base64 === 'string') {
+      await writeFile(resolved, Buffer.from(r.base64, 'base64'))
+      return ok({ written: resolved, byteLength: r.byteLength ?? null })
+    }
+    if (toolName === 'get_jsx' && typeof r.jsx === 'string') {
+      await writeFile(resolved, r.jsx, 'utf8')
+      return ok({ written: resolved, byteLength: Buffer.byteLength(r.jsx, 'utf8') })
+    }
+    return null
+  }
 
   for (const def of ALL_TOOLS) {
     if (!enableEval && def.name === 'eval') continue
@@ -69,6 +105,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as Record<string, unknown> | undefined
+          const filePath = typeof args.path === 'string' ? args.path : null
+          if (r && filePath && resolvedRoot) {
+            const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
+            if (written) return written
+          }
           if (r && 'base64' in r && 'mimeType' in r) {
             return {
               content: [
@@ -107,6 +148,50 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     }
   )
 
+  if (resolvedRoot) {
+    register(
+      'open_file',
+      {
+        description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
+        inputSchema: z.object({
+          path: z.string().describe('Absolute path to the design file')
+        })
+      },
+      async (args: { path: string }) => {
+        try {
+          const safe = resolveSafePath(args.path, resolvedRoot)
+          const result = await sendRpc({ command: 'open_file', args: { path: safe } })
+          const res = result as { ok?: boolean; error?: string }
+          if (res.ok === false) return fail(new Error(res.error))
+          return ok({ opened: true })
+        } catch (e) {
+          return fail(e)
+        }
+      }
+    )
+
+    register(
+      'new_document',
+      {
+        description: `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`,
+        inputSchema: z.object({
+          path: z.string().describe('Optional absolute path for the new file').optional()
+        })
+      },
+      async (args: { path?: string }) => {
+        try {
+          const safePath = args.path ? resolveSafePath(args.path, resolvedRoot) : undefined
+          const result = await sendRpc({ command: 'new_document', args: { path: safePath } })
+          const res = result as { ok?: boolean; error?: string }
+          if (res.ok === false) return fail(new Error(res.error))
+          return ok({ created: true })
+        } catch (e) {
+          return fail(e)
+        }
+      }
+    )
+  }
+
   register(
     'get_codegen_prompt',
     {
@@ -143,6 +228,7 @@ export interface ServerOptions {
   httpPort?: number
   wsPort?: number
   enableEval?: boolean
+  mcpRoot?: string | null
   authToken?: string | null
   corsOrigin?: string | null
 }
@@ -151,6 +237,7 @@ export function startServer(options: ServerOptions = {}) {
   const httpPort = options.httpPort ?? 7600
   const wsPort = options.wsPort ?? 7601
   const enableEval = options.enableEval ?? false
+  const mcpRoot = options.mcpRoot ?? null
   const authToken = options.authToken ?? null
   const corsOrigin = options.corsOrigin ?? null
 
@@ -360,7 +447,7 @@ export function startServer(options: ServerOptions = {}) {
 
   function createMCPSession(id: string): MCPTransport {
     const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-    registerTools(mcpServer, { enableEval, sendRpc: sendToBrowser })
+    registerTools(mcpServer, { enableEval, mcpRoot, sendRpc: sendToBrowser })
 
     const transport = new WebStandardStreamableHTTPServerTransport({
       sessionIdGenerator: () => id

@@ -8,6 +8,7 @@ import { MCP_VERSION, registerTools } from './server.js'
 const wsPort = parseInt(process.env.WS_PORT ?? '7601', 10)
 const wsHost = process.env.HOST ?? '127.0.0.1'
 const enableEval = process.env.OPENPENCIL_MCP_EVAL === '1'
+const mcpRoot = process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd()
 
 const wsUrl = `ws://${wsHost}:${wsPort}`
 let ws: WebSocket | null = null
@@ -77,7 +78,14 @@ function connect() {
 function sendRpc(body: Record<string, unknown>): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (!ws || ws.readyState !== WebSocket.OPEN || !registered) {
-      reject(new Error('OpenPencil app is not connected. Start the app and open a document.'))
+      reject(
+        new Error(
+          'OpenPencil app is not connected. ' +
+            'STOP and tell the user: "The OpenPencil desktop app is not running or no document is open. ' +
+            'Please start the app and open a document, then try again." ' +
+            'Do NOT attempt to start the app yourself or retry automatically.'
+        )
+      )
       return
     }
     const id = crypto.randomUUID()
@@ -93,7 +101,7 @@ function sendRpc(body: Record<string, unknown>): Promise<unknown> {
 connect()
 
 const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-registerTools(mcpServer, { enableEval, sendRpc })
+registerTools(mcpServer, { enableEval, mcpRoot, sendRpc })
 
 const transport = new StdioServerTransport()
 void mcpServer.connect(transport)

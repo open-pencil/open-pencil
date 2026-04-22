@@ -869,6 +869,18 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     }
   }
 
+  function setPlannedFilePath(path: string) {
+    stopWatchingFile()
+    fileHandle = null
+    filePath = path
+    downloadName = path.split(/[\\/]/).pop() ?? 'Untitled.fig'
+    state.documentName = downloadName.replace(/\.fig$/i, '')
+  }
+
+  function startWatchingCurrentFile() {
+    void startWatchingFile()
+  }
+
   function dispose() {
     stopWatchingFile()
     ;(debouncedAutosave as typeof debouncedAutosave & { cancel?: () => void }).cancel?.()
@@ -1256,6 +1268,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     saveFigFile,
     saveFigFileAs,
     setDocumentSource,
+    setPlannedFilePath,
+    startWatchingCurrentFile,
     dispose,
     renderExportImage,
     listSelectionExportFormats,

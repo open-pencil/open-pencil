@@ -17,7 +17,14 @@
       "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }]
     },
-    "fs:allow-watch",
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-watch",
+      "allow": [{ "path": "**" }]
+    },
     "fs:allow-unwatch",
     {
       "identifier": "shell:allow-spawn",

@@ -288,7 +288,11 @@ export const getJsx = defineTool({
   description:
     'Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool.',
   params: {
-    id: { type: 'string', description: 'Node ID', required: true }
+    id: { type: 'string', description: 'Node ID', required: true },
+    path: {
+      type: 'string',
+      description: 'Write JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
+    }
   },
   execute: (figma, { id }) => {
     const node = figma.getNodeById(id)
