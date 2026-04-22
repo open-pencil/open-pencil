@@ -1,7 +1,7 @@
 import { parseColor } from '../color'
 import { fetchIcons, searchIconsBatch } from '../icons'
 import { createIconFromPaths } from '../icons/render'
-import { normalizeVectorNetwork } from '../scene-graph'
+import { normalizeVectorNetwork, validateVectorNetwork } from '../scene-graph'
 import { defineTool, nodeSummary } from './schema'
 
 import type { FigmaNodeProxy } from '../figma-api'
@@ -170,8 +170,15 @@ export const createVector = defineTool({
     node.y = args.y
     if (args.name) node.name = args.name
     if (args.path) {
-      const network = normalizeVectorNetwork(JSON.parse(args.path) as VectorNetwork)
-      figma.graph.updateNode(node.id, { vectorNetwork: network })
+      let parsed: VectorNetwork
+      try {
+        parsed = JSON.parse(args.path) as VectorNetwork
+      } catch {
+        return { error: 'Invalid JSON in path parameter' }
+      }
+      const errors = validateVectorNetwork(parsed)
+      if (errors.length > 0) return { error: `Invalid VectorNetwork: ${errors.join('; ')}` }
+      figma.graph.updateNode(node.id, { vectorNetwork: normalizeVectorNetwork(parsed) })
     }
     if (args.fill) {
       node.fills = [{ type: 'SOLID', color: parseColor(args.fill), opacity: 1, visible: true }]

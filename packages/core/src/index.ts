@@ -27,6 +27,7 @@ export {
   generateId,
   cloneVectorNetwork,
   normalizeVectorNetwork,
+  validateVectorNetwork,
   type SceneNode,
   type NodeType,
   type Fill,
