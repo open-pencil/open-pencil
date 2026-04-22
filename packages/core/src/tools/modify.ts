@@ -1,9 +1,11 @@
 /* eslint-disable max-lines -- property setters share common patterns, splitting would scatter related tools */
 import { parseColor } from '../color'
 import { DEFAULT_SHADOW_COLOR } from '../constants'
+import { styleToWeight } from '../text/fonts'
+import { applyStyleToRange } from '../text/style-runs'
 import { defineTool } from './schema'
 
-import type { CharacterStyleOverride, Effect, SceneNode, StyleRun } from '../scene-graph'
+import type { CharacterStyleOverride, Effect, SceneNode } from '../scene-graph'
 import type { Matrix } from '../types'
 
 export const setFill = defineTool({
@@ -487,18 +489,21 @@ export const setFontRange = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return { error: `Node "${args.id}" not found` }
-    const style: CharacterStyleOverride = {}
-    if (args.family) style.fontFamily = args.family
-    if (args.size) style.fontSize = args.size
-    if (args.style === 'italic' || args.style === 'Italic') style.italic = true
-    const run: StyleRun = {
-      start: args.start,
-      length: args.end - args.start,
-      style
+    const override: CharacterStyleOverride = {}
+    if (args.family) override.fontFamily = args.family
+    if (args.size) override.fontSize = args.size
+    if (args.style) {
+      const s = args.style.toLowerCase()
+      if (s.includes('italic')) override.italic = true
+      override.fontWeight = styleToWeight(args.style)
     }
-    figma.graph.updateNode(node.id, {
-      styleRuns: [...(figma.graph.getNode(node.id)?.styleRuns ?? []), run]
-    })
+    if (args.color) {
+      override.fills = [{ type: 'SOLID', color: parseColor(args.color), opacity: 1, visible: true }]
+    }
+    const raw = figma.graph.getNode(node.id)
+    if (!raw) return { error: `Node "${args.id}" not found` }
+    const runs = applyStyleToRange(raw.styleRuns, args.start, args.end, override, raw.text.length)
+    figma.graph.updateNode(node.id, { styleRuns: runs })
     return { id: args.id, range: { start: args.start, end: args.end } }
   }
 })

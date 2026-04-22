@@ -542,6 +542,47 @@ describe('set_constraints', () => {
   })
 })
 
+describe('set_font_range', () => {
+  test('applies font style to text range and survives serialization', () => {
+    const { figma, graph } = setup()
+    const createText = ALL_TOOLS.find((t) => t.name === 'create_shape')!
+    const setText = ALL_TOOLS.find((t) => t.name === 'set_text')!
+    const setFontRange = ALL_TOOLS.find((t) => t.name === 'set_font_range')!
+
+    const created = createText.execute(figma, { type: 'TEXT', x: 0, y: 0, width: 200, height: 20 }) as any
+    setText.execute(figma, { id: created.id, text: 'Hello World' })
+    setFontRange.execute(figma, { id: created.id, start: 0, end: 5, family: 'Inter', size: 18, style: 'Bold' })
+
+    const node = graph.getNode(created.id)!
+    expect(node.styleRuns.length).toBeGreaterThan(0)
+    for (const run of node.styleRuns) {
+      expect(run.style).toBeDefined()
+      expect(typeof run.start).toBe('number')
+      expect(typeof run.length).toBe('number')
+    }
+    const boldRun = node.styleRuns.find((r) => r.style.fontWeight === 700)
+    expect(boldRun).toBeDefined()
+    expect(boldRun!.start).toBe(0)
+    expect(boldRun!.length).toBe(5)
+  })
+
+  test('applies color to text range', () => {
+    const { figma, graph } = setup()
+    const createText = ALL_TOOLS.find((t) => t.name === 'create_shape')!
+    const setText = ALL_TOOLS.find((t) => t.name === 'set_text')!
+    const setFontRange = ALL_TOOLS.find((t) => t.name === 'set_font_range')!
+
+    const created = createText.execute(figma, { type: 'TEXT', x: 0, y: 0, width: 200, height: 20 }) as any
+    setText.execute(figma, { id: created.id, text: 'Red text' })
+    setFontRange.execute(figma, { id: created.id, start: 0, end: 3, color: '#ff0000' })
+
+    const node = graph.getNode(created.id)!
+    const colorRun = node.styleRuns.find((r) => r.style.fills?.length)
+    expect(colorRun).toBeDefined()
+    expect(colorRun!.style.fills![0].color.r).toBeCloseTo(1)
+  })
+})
+
 describe('render', () => {
   test('renders JSX string', async () => {
     const { figma } = setup()
