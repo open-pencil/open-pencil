@@ -77,7 +77,12 @@ function connect() {
 function sendRpc(body: Record<string, unknown>): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (!ws || ws.readyState !== WebSocket.OPEN || !registered) {
-      reject(new Error('OpenPencil app is not connected. Start the app and open a document.'))
+      reject(new Error(
+        'OpenPencil app is not connected. ' +
+        'STOP and tell the user: "The OpenPencil desktop app is not running or no document is open. ' +
+        'Please start the app and open a document, then try again." ' +
+        'Do NOT attempt to start the app yourself or retry automatically.'
+      ))
       return
     }
     const id = crypto.randomUUID()

@@ -20,6 +20,8 @@ import {
 import type { EditorStore } from '@/stores/editor'
 import type { RasterExportFormat } from '@open-pencil/core'
 
+import { wrapEvalCode } from '@/automation/eval-wrap'
+
 export function connectAutomation(getStore: () => EditorStore, authToken: string | null = null) {
   const token = authToken ?? randomHex(32)
   let ws: WebSocket | null = null
@@ -36,10 +38,7 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     const AsyncFunction = Object.getPrototypeOf(async function () {
       /* noop */
     }).constructor
-    const wrappedCode = code.trim().startsWith('return')
-      ? code
-      : `return (async () => { ${code} })()`
-    const fn = new AsyncFunction('figma', wrappedCode)
+    const fn = new AsyncFunction('figma', wrapEvalCode(code))
     const result = await fn(figma)
     store.requestRender()
     return { ok: true, result: result ?? null }
@@ -231,6 +230,33 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
 
   connect()
   return { disconnect, token }
+}
+
+/**
+ * Wrap eval code so the last expression value is returned, REPL-style.
+ * If the code already starts with `return`, use it verbatim.
+ * If the last non-empty line looks like a value expression (not a statement
+ * keyword or closing brace), promote it to `return (expr)` so the result
+ * is surfaced to the caller instead of being silently discarded.
+ */
+function wrapEvalCode(code: string): string {
+  const trimmed = code.trim()
+  if (trimmed.startsWith('return')) return trimmed
+
+  const lines = trimmed.split('\n')
+  let last = lines.length - 1
+  while (last > 0 && !lines[last].trim()) last--
+  const lastLine = lines[last].trim().replace(/;$/, '')
+
+  // Lines that look like statement starts or block ends — don't try to return them
+  const STMT_START =
+    /^(const |let |var |if |else|for |while |do |switch |try |catch|throw |return |async function|function |class |\{|\}|\/\/|\/\*)/
+  if (lastLine && !STMT_START.test(lastLine)) {
+    const body = lines.slice(0, last).join('\n')
+    return `return (async () => { ${body}\nreturn (${lastLine}) })()`
+  }
+
+  return `return (async () => { ${trimmed} })()`
 }
 
 function extractNodeIds(result: unknown): string[] {
