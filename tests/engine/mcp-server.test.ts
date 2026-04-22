@@ -84,7 +84,7 @@ function waitForWsListening(wss: InstanceType<typeof WebSocket.Server>): Promise
 }
 
 async function createTestClient() {
-  const { app, wss } = startServer({ httpPort: 0, wsPort: 0 })
+  const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
   const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
   const actualHttpPort = (httpServer.address() as AddressInfo).port
   const actualWsPort = await waitForWsListening(wss)
@@ -104,7 +104,7 @@ async function createTestClient() {
     close: async () => {
       await client.close()
       browser.close()
-      wss.close()
+      closeServer()
       httpServer.close()
     }
   }
@@ -227,6 +227,58 @@ describe('MCP server', () => {
     expect(result.isError).not.toBe(true)
     const data = parseResult(result) as { prompt: string }
     expect(data.prompt.length).toBeGreaterThan(100)
+  })
+})
+
+describe('MCP server with mcpRoot', () => {
+  test('registers open_file and new_document tools when mcpRoot is set', async () => {
+    const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: '/tmp' })
+    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
+    const actualWsPort = await waitForWsListening(wss)
+
+    const graph = new SceneGraph()
+    const browser = await connectMockBrowser(actualWsPort, graph)
+
+    const client = new Client({ name: 'test-root', version: '0.0.0' })
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
+    )
+    await client.connect(transport)
+
+    const { tools } = await client.listTools()
+    const names = tools.map((t) => t.name)
+    expect(names).toContain('open_file')
+    expect(names).toContain('new_document')
+
+    await client.close()
+    browser.close()
+    closeServer()
+    httpServer.close()
+  })
+
+  test('does not register open_file when mcpRoot is null', async () => {
+    const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
+    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
+    const actualWsPort = await waitForWsListening(wss)
+
+    const graph = new SceneGraph()
+    const browser = await connectMockBrowser(actualWsPort, graph)
+
+    const client = new Client({ name: 'test-no-root', version: '0.0.0' })
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
+    )
+    await client.connect(transport)
+
+    const { tools } = await client.listTools()
+    const names = tools.map((t) => t.name)
+    expect(names).not.toContain('open_file')
+    expect(names).not.toContain('new_document')
+
+    await client.close()
+    browser.close()
+    closeServer()
+    httpServer.close()
   })
 })
 

@@ -491,5 +491,11 @@ export function startServer(options: ServerOptions = {}) {
     return response
   })
 
-  return { app, wss, httpPort }
+  function close() {
+    rejectAllPending('Server shutting down')
+    mcpSessions.clear()
+    wss.close()
+  }
+
+  return { app, wss, httpPort, close }
 }

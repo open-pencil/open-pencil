@@ -1,7 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 
-import { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { WebSocketServer, type WebSocket } from 'ws'
 
 import {
@@ -77,6 +75,8 @@ function createMockApp() {
 }
 
 async function createStdioClient(wsPort: number) {
+  const { Client } = await import('@modelcontextprotocol/sdk/client/index.js')
+  const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js')
   const transport = new StdioClientTransport({
     command: 'bun',
     args: ['packages/mcp/src/stdio.ts'],
@@ -109,8 +109,9 @@ async function createStdioClient(wsPort: number) {
 
 describe('MCP stdio transport', () => {
   let app: ReturnType<typeof createMockApp>
-  let client: Client
-  let transport: StdioClientTransport
+  // eslint-disable-next-line typescript-eslint/no-explicit-any -- types inferred from dynamic import
+  let client: any
+  let transport: any
 
   beforeEach(async () => {
     app = createMockApp()
