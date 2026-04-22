@@ -97,14 +97,13 @@ function clearUnsplashKey() {
 
 <template>
   <PopoverRoot @update:open="popoverOpen = $event">
-    <Tip label="Provider settings" :disabled="popoverOpen">
-      <PopoverTrigger
-        data-test-id="provider-settings-trigger"
-        class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
-      >
-        <icon-lucide-settings class="size-3" />
-      </PopoverTrigger>
-    </Tip>
+    <PopoverTrigger
+      data-test-id="provider-settings-trigger"
+      class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
+      :title="popoverOpen ? undefined : 'Provider settings'"
+    >
+      <icon-lucide-settings class="size-3" />
+    </PopoverTrigger>
 
     <PopoverPortal>
       <PopoverContent
