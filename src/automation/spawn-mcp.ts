@@ -48,7 +48,6 @@ export async function getAutomationAuthToken(): Promise<string | null> {
 
 export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   const isTauri = IS_BROWSER && '__TAURI_INTERNALS__' in window
-  console.warn('[MCP] spawn check: DEV=', import.meta.env.DEV, 'isTauri=', isTauri, 'IS_BROWSER=', IS_BROWSER)
   if (import.meta.env.DEV || !isTauri) {
     return DEV_AUTOMATION_AUTH_TOKEN
       ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN }
@@ -68,12 +67,20 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   runtimeAutomationAuthToken = authToken
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const command = Command.create('openpencil-mcp-http', [], {
-    env: {
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
-    }
-  })
+  const isWindows = navigator.userAgent.includes('Windows')
+  const command = isWindows
+    ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
+        env: {
+          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+        }
+      })
+    : Command.create('openpencil-mcp-http', [], {
+        env: {
+          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+        }
+      })
 
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     console.error('[MCP]', decodeTauriStderr(raw))
