@@ -66,12 +66,20 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   runtimeAutomationAuthToken = authToken
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const command = Command.create('openpencil-mcp-http', [], {
-    env: {
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
-    }
-  })
+  const isWindows = navigator.userAgent.includes('Windows')
+  const command = isWindows
+    ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
+        env: {
+          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+        }
+      })
+    : Command.create('openpencil-mcp-http', [], {
+        env: {
+          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+        }
+      })
 
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     console.error('[MCP]', decodeTauriStderr(raw))
