@@ -17,6 +17,25 @@ const noop = () => undefined
 
 let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN
 
+interface AutomationCommandSpec {
+  name: string
+  args: string[]
+}
+
+export function buildAutomationCommandSpec(userAgent = ''): AutomationCommandSpec {
+  const isWindows = /\bWindows\b/i.test(userAgent)
+  if (isWindows) {
+    return {
+      name: 'openpencil-mcp-http-cmd',
+      args: ['/d', '/c', 'openpencil-mcp-http']
+    }
+  }
+  return {
+    name: 'openpencil-mcp-http',
+    args: []
+  }
+}
+
 async function readHealth(): Promise<AutomationHealth | null> {
   try {
     const res = await fetch(`http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`, {
@@ -66,7 +85,8 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   runtimeAutomationAuthToken = authToken
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const command = Command.create('openpencil-mcp-http', [], {
+  const commandSpec = buildAutomationCommandSpec(globalThis.navigator?.userAgent ?? '')
+  const command = Command.create(commandSpec.name, commandSpec.args, {
     env: {
       OPENPENCIL_MCP_AUTH_TOKEN: authToken,
       OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
@@ -96,6 +116,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
 
   await child.kill()
   throw new Error(
-    'Failed to start MCP server. Is openpencil-mcp-http installed? Run: npm i -g @open-pencil/mcp'
+    'Failed to start MCP server. Ensure @open-pencil/mcp is installed globally. ' +
+      'On Windows, the desktop app may need to launch it via cmd.exe so the npm wrapper can resolve correctly.'
   )
 }
