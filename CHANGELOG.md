@@ -6,6 +6,14 @@
 
 - Fix `@open-pencil/vue` failing to import from npm — `getAbsolutePositionFull` was imported from `@open-pencil/core/canvas/coordinate`, an unexported subpath. Re-exported the function from `@open-pencil/core/canvas` and updated the vue import.
 
+## 0.11.8 — 2026-04-23
+
+### Fixes
+
+- Fix MCP server not spawning on Windows — use `cmd /c` to resolve `.cmd` wrappers from npm global installs
+- Fix MCP server and automation WebSocket not connecting on Windows/Linux — inline `__TAURI_INTERNALS__` check at call time instead of using stale module-level `IS_TAURI` constant
+- Fix shell PATH not inherited by GUI app on macOS/Linux — add `fix-path-env-rs` to read shell config
+
 ## 0.11.7 — 2026-04-22
 
 ### Features
