@@ -47,6 +47,12 @@ export function fail(e: unknown): MCPResult {
 
 export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 
+interface RpcEnvelope {
+  ok?: boolean
+  result?: unknown
+  error?: string
+}
+
 export interface RegisterToolsOptions {
   enableEval: boolean
   mcpRoot?: string | null
@@ -90,6 +96,21 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     return null
   }
 
+  async function exportCurrentFig(root: string, filePath: string): Promise<MCPResult> {
+    const resolved = resolveSafePath(filePath, root)
+    const result = await sendRpc({ command: 'export_fig' })
+    const res = result as RpcEnvelope
+    if (res.ok === false) return fail(new Error(res.error))
+    const payload = res.result as { base64?: string } | undefined
+    if (!payload?.base64) {
+      return fail(new Error('OpenPencil app did not return fig data'))
+    }
+    await mkdir(dirname(resolved), { recursive: true })
+    const bytes = Buffer.from(payload.base64, 'base64')
+    await writeFile(resolved, bytes)
+    return ok({ written: resolved, byteLength: bytes.byteLength, saved: true })
+  }
+
   for (const def of ALL_TOOLS) {
     if (!enableEval && def.name === 'eval') continue
     const shape: Record<string, z.ZodType> = {}
@@ -102,7 +123,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: Record<string, unknown>) => {
         try {
           const result = await sendRpc({ command: 'tool', args: { name: def.name, args } })
-          const res = result as { ok?: boolean; result?: unknown; error?: string }
+          const res = result as RpcEnvelope
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as Record<string, unknown> | undefined
           const filePath = typeof args.path === 'string' ? args.path : null
@@ -133,13 +154,22 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     'save_file',
     {
       description:
-        'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
-      inputSchema: z.object({})
+        resolvedRoot
+          ? `Save the current document. If path is provided, write the .fig file inside ${resolvedRoot} using the MCP host filesystem.`
+          : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
+      inputSchema: resolvedRoot
+        ? z.object({
+            path: z.string().describe('Optional absolute path for the .fig file').optional()
+          })
+        : z.object({})
     },
-    async () => {
+    async (args: { path?: string }) => {
       try {
+        if (resolvedRoot && args.path) {
+          return await exportCurrentFig(resolvedRoot, args.path)
+        }
         const result = await sendRpc({ command: 'save_file' })
-        const res = result as { ok?: boolean; error?: string }
+        const res = result as RpcEnvelope
         if (res.ok === false) return fail(new Error(res.error))
         return ok({ saved: true })
       } catch (e) {
@@ -182,8 +212,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         try {
           const safePath = args.path ? resolveSafePath(args.path, resolvedRoot) : undefined
           const result = await sendRpc({ command: 'new_document', args: { path: safePath } })
-          const res = result as { ok?: boolean; error?: string }
+          const res = result as RpcEnvelope
           if (res.ok === false) return fail(new Error(res.error))
+          if (safePath) {
+            return await exportCurrentFig(resolvedRoot, safePath)
+          }
           return ok({ created: true })
         } catch (e) {
           return fail(e)

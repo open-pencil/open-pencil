@@ -129,18 +129,18 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     return { ok: true }
   }
 
+  async function handleExportFig(store: EditorStore): Promise<unknown> {
+    const data = await store.buildFigFile()
+    let binary = ''
+    for (const byte of data) binary += String.fromCharCode(byte)
+    return { ok: true, result: { base64: btoa(binary) } }
+  }
+
   async function handleNewDocument(_store: EditorStore, args: unknown): Promise<unknown> {
     const path = (args as { path?: string }).path
     const tab = createTab()
     if (path) {
       tab.store.setPlannedFilePath(path)
-      if (IS_TAURI) {
-        const { mkdir } = await import('@tauri-apps/plugin-fs')
-        const dir = path.replace(/[\\/][^\\/]+$/, '')
-        await mkdir(dir, { recursive: true })
-      }
-      await tab.store.saveFigFile()
-      tab.store.startWatchingCurrentFile()
     }
     return { ok: true }
   }
@@ -182,6 +182,7 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     eval: handleEval,
     tool: handleTool,
     export: handleExport,
+    export_fig: handleExportFig,
     export_jsx: handleExportJsx,
     selection: handleSelection,
 

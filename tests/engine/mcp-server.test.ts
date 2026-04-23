@@ -13,6 +13,9 @@ import {
   executeRpcCommand
 } from '@open-pencil/core'
 import { serve } from '@hono/node-server'
+import { mkdtemp, readFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import type { AddressInfo } from 'node:net'
 
@@ -51,9 +54,13 @@ function connectMockBrowser(port: number, graph: SceneGraph): Promise<MockBrowse
             api.currentPage = api.wrapNode(graph.getPages()[0].id)
             result = await def.execute(api, args.args ?? {})
             if (def.mutates) computeAllLayouts(graph)
-          } else {
-            result = executeRpcCommand(graph, command, args ?? {})
-          }
+        } else if (command === 'export_fig') {
+          result = { base64: Buffer.from('fig-bytes').toString('base64') }
+        } else if (command === 'new_document' || command === 'save_file' || command === 'open_file') {
+          result = {}
+        } else {
+          result = executeRpcCommand(graph, command, args ?? {})
+        }
 
           ws.send(JSON.stringify({ type: 'response', id: msg.id, ok: true, result }))
         } catch (e) {
@@ -249,6 +256,58 @@ describe('MCP server with mcpRoot', () => {
     const names = tools.map((t) => t.name)
     expect(names).toContain('open_file')
     expect(names).toContain('new_document')
+
+    await client.close()
+    browser.close()
+    closeServer()
+    httpServer.close()
+  })
+
+  test('new_document writes through the MCP host filesystem when path is provided', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-pencil-mcp-'))
+    const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: root })
+    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
+    const actualWsPort = await waitForWsListening(wss)
+
+    const graph = new SceneGraph()
+    const browser = await connectMockBrowser(actualWsPort, graph)
+
+    const client = new Client({ name: 'test-root-write', version: '0.0.0' })
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
+    )
+    await client.connect(transport)
+
+    const filePath = join(root, 'nested', 'draft.fig')
+    const result = await client.callTool({ name: 'new_document', arguments: { path: filePath } })
+    expect(result.isError).not.toBe(true)
+    expect(await readFile(filePath, 'utf8')).toBe('fig-bytes')
+
+    await client.close()
+    browser.close()
+    closeServer()
+    httpServer.close()
+  })
+
+  test('save_file supports writing to an explicit MCP root path', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'open-pencil-mcp-'))
+    const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: root })
+    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
+    const actualWsPort = await waitForWsListening(wss)
+
+    const graph = new SceneGraph()
+    const browser = await connectMockBrowser(actualWsPort, graph)
+
+    const client = new Client({ name: 'test-root-save', version: '0.0.0' })
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
+    )
+    await client.connect(transport)
+
+    const filePath = join(root, 'exports', 'saved.fig')
+    const result = await client.callTool({ name: 'save_file', arguments: { path: filePath } })
+    expect(result.isError).not.toBe(true)
+    expect(await readFile(filePath, 'utf8')).toBe('fig-bytes')
 
     await client.close()
     browser.close()
