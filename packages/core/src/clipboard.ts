@@ -42,23 +42,27 @@ export async function parseFigmaClipboard(
   const meta: FigmaClipboardMeta = JSON.parse(atob(metaMatch[1]))
   const binary = Uint8Array.fromBase64(bufMatch[1])
 
-  const chunks = parseFigKiwiChunks(binary)
-  if (!chunks) return null
+  try {
+    const chunks = parseFigKiwiChunks(binary)
+    if (!chunks) return null
 
-  const schemaBytes = inflateSync(chunks[0])
-  const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
-  const compiled = compileSchema(schema)
-  const dataRaw = await decompressFigKiwiDataAsync(chunks[1])
-  const msg = compiled.decodeMessage(dataRaw) as {
-    nodeChanges?: KiwiNodeChange[]
-    blobs?: Array<{ bytes: Uint8Array | Record<string, number> }>
+    const schemaBytes = inflateSync(chunks[0])
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema)
+    const dataRaw = await decompressFigKiwiDataAsync(chunks[1])
+    const msg = compiled.decodeMessage(dataRaw) as {
+      nodeChanges?: KiwiNodeChange[]
+      blobs?: Array<{ bytes: Uint8Array | Record<string, number> }>
+    }
+
+    const blobs: Uint8Array[] = (msg.blobs ?? []).map((b) =>
+      b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes))
+    )
+
+    return { nodes: msg.nodeChanges ?? [], meta, blobs }
+  } catch {
+    return null
   }
-
-  const blobs: Uint8Array[] = (msg.blobs ?? []).map((b) =>
-    b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes))
-  )
-
-  return { nodes: msg.nodeChanges ?? [], meta, blobs }
 }
 
 const NON_VISUAL_TYPES = new Set([
