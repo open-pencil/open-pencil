@@ -48,7 +48,7 @@ export async function getAutomationAuthToken(): Promise<string | null> {
 
 export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   const isTauri = IS_BROWSER && '__TAURI_INTERNALS__' in window
-  if (IS_BROWSER) localStorage.setItem('__mcp_debug', JSON.stringify({ DEV: import.meta.env.DEV, isTauri, IS_BROWSER, ts: Date.now() }))
+  console.warn('[MCP] spawn check: DEV=', import.meta.env.DEV, 'isTauri=', isTauri, 'IS_BROWSER=', IS_BROWSER)
   if (import.meta.env.DEV || !isTauri) {
     return DEV_AUTOMATION_AUTH_TOKEN
       ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN }
