@@ -67,7 +67,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   runtimeAutomationAuthToken = authToken
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const isWindows = navigator.userAgent.includes('Windows')
+  const isWindows = navigator.platform.includes('Win')
   const command = isWindows
     ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
         env: {
