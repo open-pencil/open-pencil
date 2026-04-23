@@ -29,4 +29,5 @@ tauri-plugin-shell = "2"
 zstd = "0.13"
 zip = { version = "2", default-features = false }
 font-kit = "0.14.3"
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
 
