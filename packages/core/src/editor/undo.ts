@@ -110,6 +110,7 @@ export function createUndoActions(ctx: EditorContext) {
   function undoAction(validateEnteredContainer: () => void) {
     ctx.undo.undo()
     validateEnteredContainer()
+    ctx.requestRender()
   }
 
   function redoAction(validateEnteredContainer: () => void) {

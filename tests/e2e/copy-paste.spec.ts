@@ -116,6 +116,30 @@ test('cut removes original', async () => {
   expect(await getPageChildCount()).toBe(0)
 })
 
+test('multiple pastes can all be undone', async () => {
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 80, 60)
+  await canvas.waitForRender()
+
+  expect(await getPageChildCount()).toBe(1)
+
+  // Duplicate 3 times via Cmd+D (synchronous, no clipboard issues)
+  for (let i = 0; i < 3; i++) {
+    await canvas.duplicate()
+    await canvas.waitForRender()
+  }
+
+  expect(await getPageChildCount()).toBe(4) // 1 original + 3 duplicates
+
+  // Undo all 3 duplicates
+  for (let i = 0; i < 3; i++) {
+    await canvas.undo()
+    await canvas.waitForRender()
+  }
+
+  expect(await getPageChildCount()).toBe(1) // back to original only
+})
+
 test('multi-select duplicate creates copies of all', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(100, 100, 60, 60)
