@@ -108,49 +108,40 @@ export function drawSingleSelectionSize(
   const pillH = SIZE_PILL_HEIGHT
   const pillColor = r.isComponentType(node.type) ? r.compColor() : r.selColor()
   const overlayRotation = getOverlayRotation(node, overlays)
-  const world = getWorldMatrix({ ...node, rotation: overlayRotation }, graph)
-  const view = r.ck.Matrix.multiply(
-    r.ck.Matrix.translated(r.panX, r.panY),
-    r.ck.Matrix.scaled(r.zoom, r.zoom)
-  )
 
-  // Local -> screen matrix.
-  const m = r.ck.Matrix.multiply(view, world)
+  const abs = getAbsolutePosition(node, graph)
+  const cx = abs.x + node.width / 2
+  const cy = abs.y + node.height / 2
 
-  // Node center in local space.
-  const localCX = node.width / 2
-  const localCY = node.height / 2
+  // Account for rotation: find the bottom center in canvas space
+  const rad = (overlayRotation * Math.PI) / 180
+  const hh = node.height / 2
+  const bottomCenterX = cx + Math.sin(rad) * hh
+  const bottomCenterY = cy + Math.cos(rad) * hh
 
-  // Pill placement in local space (below the node, centered).
-  const localX = -pillW / 2
-  const localY = localCY + SIZE_PILL_PADDING_Y
+  // Convert to screen space
+  const sx = bottomCenterX * r.zoom + r.panX
+  const sy = bottomCenterY * r.zoom + r.panY
 
-  canvas.save()
-  canvas.concat(m)
+  const pillX = sx - pillW / 2
+  const pillY = sy + SIZE_PILL_PADDING_Y
 
-  // Move origin to node center (still in local space).
-  canvas.translate(localCX, localCY)
-
-  // Pill background.
   r.auxFill.setColor(pillColor)
   const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(localX, localY, localX + pillW, localY + pillH),
+    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH),
     SIZE_PILL_RADIUS,
     SIZE_PILL_RADIUS
   )
   canvas.drawRRect(rrect, r.auxFill)
 
-  // Text.
   r.auxFill.setColor(r.ck.WHITE)
   canvas.drawText(
     sizeText,
-    localX + SIZE_PILL_PADDING_X,
-    localY + SIZE_PILL_TEXT_OFFSET_Y,
+    pillX + SIZE_PILL_PADDING_X,
+    pillY + SIZE_PILL_TEXT_OFFSET_Y,
     r.auxFill,
     sizeFont
   )
-
-  canvas.restore()
 }
 function drawMultiSelectionSize(
   r: SkiaRenderer,
