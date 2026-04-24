@@ -1265,6 +1265,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex,
     openFigFile,
+    buildFigFile,
     saveFigFile,
     saveFigFileAs,
     setDocumentSource,
