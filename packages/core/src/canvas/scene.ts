@@ -482,6 +482,69 @@ export function renderShapeUncached(
   r.renderEffects(canvas, node, rect, hasRadius, 'front')
 }
 
+function drawShapeDropShadow(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  effect: SceneNode['effects'][number],
+  hasRadius: boolean,
+  shadowShapeChild?: SceneNode | null
+): void {
+  const sp = effect.spread
+  const shapeNode = shadowShapeChild ?? node
+  const shapeHasRadius = shadowShapeChild ? nodeHasRadius(shadowShapeChild) : hasRadius
+  const strokeShadow =
+    !shadowShapeChild && !node.fills.some((fill) => fill.visible) && node.strokeGeometry.length > 0
+      ? r.getStrokeGeometry(node)
+      : null
+
+  r.auxFill.setColor(r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a))
+  r.auxFill.setMaskFilter(r.getCachedMaskBlur(effect.radius / 2))
+  r.auxFill.setImageFilter(null)
+  canvas.save()
+  canvas.translate(
+    effect.offset.x + (shadowShapeChild?.x ?? 0),
+    effect.offset.y + (shadowShapeChild?.y ?? 0)
+  )
+  if (strokeShadow) {
+    for (const path of strokeShadow) canvas.drawPath(path, r.auxFill)
+  } else if (shapeNode.type === 'ELLIPSE') {
+    canvas.drawOval(r.ltrb(-sp, -sp, shapeNode.width + sp, shapeNode.height + sp), r.auxFill)
+  } else if (shapeHasRadius) {
+    canvas.drawRRect(r.makeRRectWithSpread(shapeNode, sp), r.auxFill)
+  } else {
+    canvas.drawRect(r.ltrb(-sp, -sp, shapeNode.width + sp, shapeNode.height + sp), r.auxFill)
+  }
+  canvas.restore()
+  r.auxFill.setMaskFilter(null)
+}
+
+function renderDropShadow(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  effect: SceneNode['effects'][number],
+  hasRadius: boolean,
+  shadowShapeChild?: SceneNode | null
+): void {
+  if (node.type !== 'TEXT') {
+    drawShapeDropShadow(r, canvas, node, effect, hasRadius, shadowShapeChild)
+    return
+  }
+
+  const shadowColor = r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
+  const dropFilter = r.getCachedDropShadow(
+    effect.offset.x,
+    effect.offset.y,
+    effect.radius / 2,
+    shadowColor
+  )
+  r.effectLayerPaint.setImageFilter(dropFilter)
+  canvas.saveLayer(r.effectLayerPaint)
+  r.renderText(canvas, node)
+  canvas.restore()
+}
+
 export function renderEffects(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -495,50 +558,7 @@ export function renderEffects(
     if (!effect.visible) continue
 
     if (pass === 'behind' && effect.type === 'DROP_SHADOW') {
-      const sp = effect.spread
-      const sigma = effect.radius / 2
-
-      if (node.type === 'TEXT') {
-        const shadowColor = r.ck.Color4f(
-          effect.color.r,
-          effect.color.g,
-          effect.color.b,
-          effect.color.a
-        )
-        const dropFilter = r.getCachedDropShadow(
-          effect.offset.x,
-          effect.offset.y,
-          sigma,
-          shadowColor
-        )
-        r.effectLayerPaint.setImageFilter(dropFilter)
-        canvas.saveLayer(r.effectLayerPaint)
-        r.renderText(canvas, node)
-        canvas.restore()
-      } else {
-        // When a container has no visible fills, Figma renders the drop
-        // shadow using the first child's shape (e.g. a rounded child
-        // inside a rectangular wrapper).
-        const shapeNode = shadowShapeChild ?? node
-        const shapeHasRadius = shadowShapeChild ? nodeHasRadius(shadowShapeChild) : hasRadius
-
-        r.auxFill.setColor(
-          r.color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
-        )
-        r.auxFill.setMaskFilter(r.getCachedMaskBlur(sigma))
-        r.auxFill.setImageFilter(null)
-        canvas.save()
-        canvas.translate(effect.offset.x, effect.offset.y)
-        if (shapeNode.type === 'ELLIPSE') {
-          canvas.drawOval(r.ltrb(-sp, -sp, shapeNode.width + sp, shapeNode.height + sp), r.auxFill)
-        } else if (shapeHasRadius) {
-          canvas.drawRRect(r.makeRRectWithSpread(shapeNode, sp), r.auxFill)
-        } else {
-          canvas.drawRect(r.ltrb(-sp, -sp, shapeNode.width + sp, shapeNode.height + sp), r.auxFill)
-        }
-        canvas.restore()
-        r.auxFill.setMaskFilter(null)
-      }
+      renderDropShadow(r, canvas, node, effect, hasRadius, shadowShapeChild)
     }
 
     if (pass === 'behind' && effect.type === 'BACKGROUND_BLUR') {
