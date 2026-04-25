@@ -82,6 +82,10 @@ export function closeTab(tabId: string) {
   closingTab.store.dispose()
 }
 
+function yieldToUI(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()))
+}
+
 export async function openFileInNewTab(
   file: File,
   handle?: FileSystemFileHandle,
@@ -90,31 +94,29 @@ export async function openFileInNewTab(
   const current = activeTab.value
   const isUntouched =
     current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  const { graph: imported, sourceFormat } = await io.readDocument({
-    name: file.name,
-    mimeType: file.type || undefined,
-    data: bytes
-  })
+  const store = isUntouched ? current.store : createTab().store
   const documentName = file.name.replace(/\.[^.]+$/i, '')
 
-  if (isUntouched) {
-    current.store.replaceGraph(imported)
-    current.store.undo.clear()
-    current.store.state.documentName = documentName
-    current.store.setDocumentSource(file.name, sourceFormat, handle, path)
-    current.store.state.selectedIds = new Set()
-    const pageId = current.store.graph.getPages()[0]?.id ?? current.store.graph.rootId
-    await current.store.switchPage(pageId)
-  } else {
-    const store = createEditorStore(imported)
-    createTab(store)
+  store.state.documentName = documentName
+  store.state.loading = true
+  await yieldToUI()
+
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer())
+    const { graph: imported, sourceFormat } = await io.readDocument({
+      name: file.name,
+      mimeType: file.type || undefined,
+      data: bytes
+    })
+
+    store.replaceGraph(imported)
     store.undo.clear()
-    store.state.documentName = documentName
     store.setDocumentSource(file.name, sourceFormat, handle, path)
     store.state.selectedIds = new Set()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
+  } finally {
+    store.state.loading = false
   }
 }
 

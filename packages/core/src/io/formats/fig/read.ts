@@ -1,8 +1,9 @@
 import { IS_BROWSER } from '../../../constants'
 import { importNodeChanges } from '../../../kiwi/fig-import'
 import { parseFigBuffer } from '../../../kiwi/fig-parse-core'
+import { deserializeSceneGraph } from '../../../kiwi/graph-transfer'
 
-import type { FigParseResult } from '../../../kiwi/fig-parse-core'
+import type { SerializedSceneGraph } from '../../../kiwi/graph-transfer'
 import type { SceneGraph } from '../../../scene-graph'
 
 function parseFigFileSync(buffer: ArrayBuffer): SceneGraph {
@@ -12,23 +13,24 @@ function parseFigFileSync(buffer: ArrayBuffer): SceneGraph {
   return graph
 }
 
+interface WorkerParseResult {
+  graph?: SerializedSceneGraph
+  error?: string
+}
+
 function parseViaWorker(buffer: ArrayBuffer): Promise<SceneGraph> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('../../../kiwi/fig-parse-worker.ts', import.meta.url), {
       type: 'module'
     })
 
-    worker.onmessage = (e: MessageEvent<FigParseResult & { error?: string }>) => {
+    worker.onmessage = (e: MessageEvent<WorkerParseResult>) => {
       worker.terminate()
-      if (e.data.error) {
-        reject(new Error(e.data.error))
+      if (e.data.error || !e.data.graph) {
+        reject(new Error(e.data.error ?? 'Worker failed to parse .fig file'))
         return
       }
-      const { nodeChanges, blobs, images: imageEntries, figKiwiVersion } = e.data
-      const images = new Map<string, Uint8Array>(imageEntries)
-      const graph = importNodeChanges(nodeChanges, blobs, images)
-      graph.figKiwiVersion = figKiwiVersion
-      resolve(graph)
+      resolve(deserializeSceneGraph(e.data.graph))
     }
 
     worker.onerror = (err) => {
