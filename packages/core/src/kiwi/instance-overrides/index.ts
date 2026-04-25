@@ -10,6 +10,7 @@ export type {
   SymbolOverride
 } from './types'
 
+import { copyFills } from '../../scene-graph/copy'
 import { guidToString } from '../convert'
 import { applyConstraintScaling } from './constraints'
 import { applyDerivedSymbolData } from './dsd'
@@ -39,14 +40,28 @@ function buildKiwiPropertyNodes(
     if (!node?.componentId) continue
     const comp = graph.getNode(node.componentId)
     if (!comp) continue
-    const hasDiffFills = nc.fillPaints !== undefined && node.fills !== comp.fills
     const hasDiffRadius =
       (nc.cornerRadius !== undefined || nc.rectangleCornerRadiiIndependent !== undefined) &&
       node.cornerRadius !== comp.cornerRadius
     const hasDiffVisible = nc.visible === false && comp.visible
-    if (hasDiffFills || hasDiffRadius || hasDiffVisible) result.add(nodeId)
+    if (hasDiffRadius || hasDiffVisible) result.add(nodeId)
   }
   return result
+}
+
+function propagateResolvedFills(graph: SceneGraph, protectedNodes: Set<string>): void {
+  for (let pass = 0; pass < 10; pass++) {
+    let changed = false
+    for (const node of graph.getAllNodes()) {
+      if (!node.componentId) continue
+      const source = graph.getNode(node.componentId)
+      if (!source || source.fills === node.fills) continue
+      if (protectedNodes.has(node.id) && !protectedNodes.has(source.id)) continue
+      graph.updateNode(node.id, { fills: copyFills(source.fills) })
+      changed = true
+    }
+    if (!changed) return
+  }
 }
 
 function buildOverrideContext(
@@ -139,5 +154,6 @@ export function populateAndApplyOverrides(
   }
 
   applyDerivedSymbolData(ctx)
+  propagateResolvedFills(graph, new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]))
   applyConstraintScaling(ctx)
 }

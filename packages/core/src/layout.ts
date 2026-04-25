@@ -29,6 +29,12 @@ export type TextMeasurer = (
 let globalTextMeasurer: TextMeasurer | null = null
 
 const GLYPH_WIDTH_FACTOR = 0.6
+const yogaConfig = Yoga.Config.create()
+yogaConfig.setPointScaleFactor(0)
+
+function createYogaNode(): YogaNode {
+  return Yoga.Node.create(yogaConfig)
+}
 
 // Rough estimate for text size when CanvasKit/font is not available.
 // DO NOT REMOVE: without this, text nodes keep their 100×100 default size
@@ -151,7 +157,7 @@ function configureAsGrid(
 }
 
 function createGridChildNode(child: SceneNode): YogaNode {
-  const yogaChild = Yoga.Node.create()
+  const yogaChild = createYogaNode()
   if (!child.visible) {
     yogaChild.setDisplay(Display.None)
   } else {
@@ -184,14 +190,14 @@ function buildGridTree(
   frame: SceneNode,
   inheritedDirection: 'LTR' | 'RTL'
 ): YogaNode {
-  const root = Yoga.Node.create()
+  const root = createYogaNode()
   const direction = resolveNodeLayoutDirection(frame, inheritedDirection)
   configureAsGrid(root, frame, direction)
 
   const children = graph.getChildren(frame.id)
   for (const child of children) {
     if (child.layoutPositioning === 'ABSOLUTE') {
-      const yogaChild = Yoga.Node.create()
+      const yogaChild = createYogaNode()
       configureAbsoluteChild(yogaChild, child)
       root.insertChild(yogaChild, root.getChildCount())
     } else {
@@ -218,7 +224,7 @@ function buildYogaTree(
   frame: SceneNode,
   inheritedDirection: 'LTR' | 'RTL'
 ): YogaNode {
-  const root = Yoga.Node.create()
+  const root = createYogaNode()
   const direction = resolveNodeLayoutDirection(frame, inheritedDirection)
 
   if (frame.primaryAxisSizing === 'FIXED') {
@@ -234,7 +240,7 @@ function buildYogaTree(
 
   const children = graph.getChildren(frame.id)
   for (const child of children) {
-    const yogaChild = Yoga.Node.create()
+    const yogaChild = createYogaNode()
 
     if (child.layoutPositioning === 'ABSOLUTE') {
       configureAbsoluteChild(yogaChild, child)
@@ -355,7 +361,7 @@ function configureChildAsGrid(
   const grandchildren = graph.getChildren(child.id)
   for (const gc of grandchildren) {
     if (gc.layoutPositioning === 'ABSOLUTE') {
-      const yogaGC = Yoga.Node.create()
+      const yogaGC = createYogaNode()
       configureAbsoluteChild(yogaGC, gc)
       yogaChild.insertChild(yogaGC, yogaChild.getChildCount())
     } else {
@@ -402,7 +408,7 @@ function configureChildAsAutoLayout(
 
   const grandchildren = graph.getChildren(child.id)
   for (const gc of grandchildren) {
-    const yogaGC = Yoga.Node.create()
+    const yogaGC = createYogaNode()
     if (gc.layoutPositioning === 'ABSOLUTE') {
       configureAbsoluteChild(yogaGC, gc)
     } else if (!gc.visible) {

@@ -59,6 +59,8 @@ export async function listFamilies(): Promise<string[]> {
 
 const BUNDLED_FONTS: Record<string, string> = {
   'Inter|Regular': '/Inter-Regular.ttf',
+  'Inter|Medium': '/Inter-Medium.ttf',
+  'Inter|SemiBold': '/Inter-SemiBold.ttf',
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf'
 }
 
