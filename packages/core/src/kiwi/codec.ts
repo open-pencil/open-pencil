@@ -200,7 +200,7 @@ export interface Paint {
     value?: {
       alias?: {
         guid?: GUID
-        assetRef?: { key: string; version: string }
+        assetRef?: { key: string; version?: string }
       }
     }
     dataType?: string
@@ -223,7 +223,7 @@ export interface VariableAnyValue {
   textValue?: string
   floatValue?: number
   colorValue?: Color
-  alias?: { guid: GUID }
+  alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
 }
 
 export interface VariableDataEntry {
@@ -373,7 +373,7 @@ export interface NodeChange {
   variableData?: VariableDataEntry
   variableConsumptionMap?: { entries?: VariableConsumptionEntry[] }
   variableSetModes?: Array<{ id: GUID; name: string; sortPosition?: string }>
-  variableSetID?: { guid: GUID }
+  variableSetID?: { guid?: GUID; assetRef?: { key: string; version?: string } }
   variableResolvedType?: string
   variableDataValues?: { entries?: VariableDataValuesEntry[] }
   variableScopes?: string[]

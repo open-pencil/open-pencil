@@ -44,4 +44,21 @@ describe('COLOR variable alpha handling', () => {
     const val = Object.values(colorVar.valuesByMode)[0] as { r: number; g: number; b: number; a: number }
     expect(val.a).toBeCloseTo(0.5, 1)
   })
+
+  test('alias variables export with generated target GUIDs', async () => {
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Colors')
+    const target = graph.createVariable('base', 'COLOR', col.id, { r: 0.1, g: 0.2, b: 0.3, a: 1 })
+    graph.createVariable('alias', 'COLOR', col.id, { aliasId: target.id })
+
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    const alias = [...reimported.variables.values()].find((v) => v.name === 'alias')!
+    const resolved = reimported.resolveColorVariable(alias.id)!
+    expect(resolved.r).toBeCloseTo(0.1)
+    expect(resolved.g).toBeCloseTo(0.2)
+    expect(resolved.b).toBeCloseTo(0.3)
+    expect(resolved.a).toBe(1)
+  })
 })

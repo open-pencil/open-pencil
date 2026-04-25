@@ -282,6 +282,72 @@ describe('Variables', () => {
     expect(graph.resolveColorVariable('v1')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 
+  test('missing active mode falls back to default value', () => {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'col1',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light' },
+        { modeId: 'dark', name: 'Dark' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'v1',
+      name: 'bg',
+      type: 'COLOR',
+      collectionId: 'col1',
+      valuesByMode: { light: { r: 1, g: 1, b: 1, a: 1 } },
+      description: '',
+      hiddenFromPublishing: false
+    })
+
+    graph.setActiveMode('col1', 'dark')
+    expect(graph.resolveColorVariable('v1')).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+  })
+
+  test('explicit alias resolution preserves source mode', () => {
+    const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'col1',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light' },
+        { modeId: 'dark', name: 'Dark' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'base',
+      name: 'base',
+      type: 'COLOR',
+      collectionId: 'col1',
+      valuesByMode: {
+        light: { r: 1, g: 1, b: 1, a: 1 },
+        dark: { r: 0, g: 0, b: 0, a: 1 }
+      },
+      description: '',
+      hiddenFromPublishing: false
+    })
+    graph.addVariable({
+      id: 'alias',
+      name: 'alias',
+      type: 'COLOR',
+      collectionId: 'col1',
+      valuesByMode: {
+        light: { aliasId: 'base' },
+        dark: { aliasId: 'base' }
+      },
+      description: '',
+      hiddenFromPublishing: false
+    })
+
+    expect(graph.resolveVariable('alias', 'dark')).toEqual({ r: 0, g: 0, b: 0, a: 1 })
+  })
+
   test('bind and unbind variable to node', () => {
     const graph = new SceneGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })

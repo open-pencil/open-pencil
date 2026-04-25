@@ -737,12 +737,24 @@ export class SceneGraph {
     if (visited?.has(variableId)) return undefined
     const variable = this.variables.get(variableId)
     if (!variable) return undefined
-    const resolvedModeId = modeId ?? this.getActiveModeId(variable.collectionId)
-    const value = variable.valuesByMode[resolvedModeId]
-    if (typeof value === 'object' && 'aliasId' in value) {
+    const collection = this.variableCollections.get(variable.collectionId)
+    const preferredModeId = modeId ?? this.getActiveModeId(variable.collectionId)
+    const fallbackModeId = collection?.defaultModeId
+    let value = Object.hasOwn(variable.valuesByMode, preferredModeId)
+      ? variable.valuesByMode[preferredModeId]
+      : undefined
+    if (
+      value === undefined &&
+      fallbackModeId &&
+      Object.hasOwn(variable.valuesByMode, fallbackModeId)
+    ) {
+      value = variable.valuesByMode[fallbackModeId]
+    }
+    value ??= Object.values(variable.valuesByMode)[0]
+    if (value && typeof value === 'object' && 'aliasId' in value) {
       const seen = visited ?? new Set<string>()
       seen.add(variableId)
-      return this.resolveVariable(value.aliasId, undefined, seen)
+      return this.resolveVariable(value.aliasId, preferredModeId, seen)
     }
     return value
   }

@@ -2,7 +2,29 @@ import { guidToString } from '../convert'
 import { convertOverrideToProps } from '../convert-overrides'
 import { resolveOverrideTarget, repopulateInstance } from './resolve'
 
+import type { SceneNode } from '../../scene-graph'
 import type { OverrideContext } from './types'
+
+function preserveStrokeShapeProps(target: SceneNode, updates: Partial<SceneNode>): void {
+  if (!updates.strokes) return
+  updates.strokes = updates.strokes.map((stroke, index) => {
+    if (index >= target.strokes.length) {
+      return {
+        ...stroke,
+        cap: target.strokeCap,
+        join: target.strokeJoin,
+        dashPattern: target.dashPattern
+      }
+    }
+    const existing = target.strokes[index]
+    return {
+      ...stroke,
+      cap: existing.cap,
+      join: existing.join,
+      dashPattern: existing.dashPattern
+    }
+  })
+}
 
 /**
  * Apply symbolOverrides from kiwi data.
@@ -51,6 +73,8 @@ export function applySymbolOverrides(ctx: OverrideContext): Set<string> {
 
       const updates = convertOverrideToProps(fields as Record<string, unknown>)
       if (Object.keys(updates).length > 0) {
+        const target = ctx.graph.getNode(targetId)
+        if (target) preserveStrokeShapeProps(target, updates)
         ctx.graph.updateNode(targetId, updates)
       }
     }

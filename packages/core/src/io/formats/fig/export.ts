@@ -31,11 +31,13 @@ type KiwiNodeChange = NodeChange & Record<string, unknown>
 
 function variableValueToKiwi(
   value: VariableValue,
-  type: string
+  type: string,
+  varIdToGuid: Map<string, GUID>
 ): { value: Record<string, unknown>; dataType: string; resolvedDataType: string } {
-  if (typeof value === 'object' && 'aliasId' in value) {
+  if (value && typeof value === 'object' && 'aliasId' in value) {
+    const aliasGuid = varIdToGuid.get(value.aliasId) ?? stringToGuid(value.aliasId)
     return {
-      value: { alias: { guid: stringToGuid(value.aliasId) } },
+      value: { alias: { guid: aliasGuid } },
       dataType: 'ALIAS',
       resolvedDataType: { COLOR: 'COLOR', BOOLEAN: 'BOOLEAN', STRING: 'STRING' }[type] ?? 'FLOAT'
     }
@@ -71,6 +73,102 @@ function collectImageEntries(graph: SceneGraph): Array<{ name: string; data: Uin
 const THUMBNAIL_WIDTH = 400
 const THUMBNAIL_HEIGHT = 225
 
+function assignVariableGuids(
+  graph: SceneGraph,
+  localIdCounter: { value: number },
+  varIdToGuid: Map<string, GUID>,
+  modeIdToGuid: Map<string, GUID>
+): void {
+  for (const [colId, col] of graph.variableCollections) {
+    varIdToGuid.set(colId, { sessionID: 0, localID: localIdCounter.value++ })
+    for (const mode of col.modes) {
+      modeIdToGuid.set(mode.modeId, { sessionID: 0, localID: localIdCounter.value++ })
+    }
+    for (const varId of col.variableIds) {
+      varIdToGuid.set(varId, { sessionID: 0, localID: localIdCounter.value++ })
+    }
+  }
+}
+
+function appendVariableNodeChanges(
+  graph: SceneGraph,
+  nodeChanges: KiwiNodeChange[],
+  internalCanvasGuid: GUID,
+  varIdToGuid: Map<string, GUID>,
+  modeIdToGuid: Map<string, GUID>
+): void {
+  let collIdx = 0
+  for (const [colId, col] of graph.variableCollections) {
+    const colGuid = varIdToGuid.get(colId) ?? stringToGuid(colId)
+    nodeChanges.push({
+      guid: colGuid,
+      parentIndex: { guid: internalCanvasGuid, position: fractionalPosition(collIdx++) },
+      type: 'VARIABLE_SET',
+      name: col.name,
+      phase: 'CREATED',
+      strokeAlign: 'CENTER',
+      strokeJoin: 'BEVEL',
+      variableSetModes: col.modes.map((m, i) => {
+        const mGuid = modeIdToGuid.get(m.modeId) ?? stringToGuid(m.modeId)
+        return { id: mGuid, name: m.name, sortPosition: fractionalPosition(i) }
+      })
+    })
+
+    appendVariablesForCollection(
+      graph,
+      nodeChanges,
+      colGuid,
+      internalCanvasGuid,
+      col.variableIds,
+      varIdToGuid,
+      modeIdToGuid
+    )
+  }
+}
+
+function appendVariablesForCollection(
+  graph: SceneGraph,
+  nodeChanges: KiwiNodeChange[],
+  colGuid: GUID,
+  parentGuid: GUID,
+  variableIds: string[],
+  varIdToGuid: Map<string, GUID>,
+  modeIdToGuid: Map<string, GUID>
+): void {
+  let varIdx = 0
+  for (const varId of variableIds) {
+    const variable = graph.variables.get(varId)
+    if (!variable) continue
+
+    const varGuid = varIdToGuid.get(varId) ?? stringToGuid(varId)
+    const typeMap: Record<string, string> = {
+      COLOR: 'COLOR',
+      BOOLEAN: 'BOOLEAN',
+      STRING: 'STRING'
+    }
+    const resolvedType = typeMap[variable.type] ?? 'FLOAT'
+
+    const entries = Object.entries(variable.valuesByMode).map(([modeId, value]) => ({
+      modeID: modeIdToGuid.get(modeId) ?? stringToGuid(modeId),
+      variableData: variableValueToKiwi(value, variable.type, varIdToGuid)
+    }))
+
+    nodeChanges.push({
+      guid: varGuid,
+      parentIndex: { guid: parentGuid, position: fractionalPosition(varIdx++) },
+      type: 'VARIABLE',
+      name: variable.name,
+      phase: 'CREATED',
+      strokeAlign: 'CENTER',
+      strokeJoin: 'BEVEL',
+      variableSetID: { guid: colGuid },
+      variableResolvedType: resolvedType,
+      variableDataValues: { entries },
+      variableScopes: ['ALL_SCOPES']
+    })
+  }
+}
+
 export async function exportFigFile(
   graph: SceneGraph,
   ck?: CanvasKit,
@@ -90,8 +188,11 @@ export async function exportFigFile(
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
   const varIdToGuid = new Map<string, GUID>()
+  const modeIdToGuid = new Map<string, GUID>()
   const fontDigestMap = await buildFontDigestMap(graph)
   let internalCanvasGuid: GUID | null = null
+
+  assignVariableGuids(graph, localIdCounter, varIdToGuid, modeIdToGuid)
 
   for (let p = 0; p < pages.length; p++) {
     const page = pages[p]
@@ -141,63 +242,7 @@ export async function exportFigFile(
       )
     }
 
-    const modeIdToGuid = new Map<string, GUID>()
-
-    let collIdx = 0
-    for (const [colId, col] of graph.variableCollections) {
-      const colGuid = { sessionID: 0, localID: localIdCounter.value++ }
-      varIdToGuid.set(colId, colGuid)
-      const colNc: KiwiNodeChange = {
-        guid: colGuid,
-        parentIndex: { guid: internalCanvasGuid, position: fractionalPosition(collIdx++) },
-        type: 'VARIABLE_SET',
-        name: col.name,
-        phase: 'CREATED',
-        strokeAlign: 'CENTER',
-        strokeJoin: 'BEVEL',
-        variableSetModes: col.modes.map((m, i) => {
-          const mGuid = { sessionID: 0, localID: localIdCounter.value++ }
-          modeIdToGuid.set(m.modeId, mGuid)
-          return { id: mGuid, name: m.name, sortPosition: fractionalPosition(i) }
-        })
-      }
-      nodeChanges.push(colNc)
-
-      let varIdx = 0
-      for (const varId of col.variableIds) {
-        const variable = graph.variables.get(varId)
-        if (!variable) continue
-
-        const varGuid = { sessionID: 0, localID: localIdCounter.value++ }
-        varIdToGuid.set(varId, varGuid)
-        const typeMap: Record<string, string> = {
-          COLOR: 'COLOR',
-          BOOLEAN: 'BOOLEAN',
-          STRING: 'STRING'
-        }
-        const resolvedType = typeMap[variable.type] ?? 'FLOAT'
-
-        const entries = Object.entries(variable.valuesByMode).map(([modeId, value]) => ({
-          modeID: modeIdToGuid.get(modeId) ?? stringToGuid(modeId),
-          variableData: variableValueToKiwi(value, variable.type)
-        }))
-
-        const varNc: KiwiNodeChange = {
-          guid: varGuid,
-          parentIndex: { guid: internalCanvasGuid, position: fractionalPosition(varIdx++) },
-          type: 'VARIABLE',
-          name: variable.name,
-          phase: 'CREATED',
-          strokeAlign: 'CENTER',
-          strokeJoin: 'BEVEL',
-          variableSetID: { guid: colGuid },
-          variableResolvedType: resolvedType,
-          variableDataValues: { entries },
-          variableScopes: ['ALL_SCOPES']
-        }
-        nodeChanges.push(varNc)
-      }
-    }
+    appendVariableNodeChanges(graph, nodeChanges, internalCanvasGuid, varIdToGuid, modeIdToGuid)
   }
 
   const msg: Record<string, unknown> = {
