@@ -115,6 +115,7 @@ export async function openFileInNewTab(
     store.state.selectedIds = new Set()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
+    await store.fitCurrentPageToViewport()
   } finally {
     store.state.loading = false
   }

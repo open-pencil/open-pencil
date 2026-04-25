@@ -112,7 +112,17 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     scrubInputFocused: false
   })
 
-  const editor = createEditor({ graph, state, loadFont, skipInitialGraphSetup: !!initialGraph })
+  const viewportSize = { width: 0, height: 0 }
+  const editor = createEditor({
+    graph,
+    state,
+    loadFont,
+    skipInitialGraphSetup: !!initialGraph,
+    getViewportSize: () =>
+      viewportSize.width > 0 && viewportSize.height > 0
+        ? viewportSize
+        : { width: window.innerWidth, height: window.innerHeight }
+  })
   const io = new IORegistry(BUILTIN_IO_FORMATS)
 
   if (initialGraph) {
@@ -853,6 +863,16 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     return new Promise((r) => requestAnimationFrame(() => r()))
   }
 
+  function setViewportSize(width: number, height: number) {
+    viewportSize.width = width
+    viewportSize.height = height
+  }
+
+  async function fitCurrentPageToViewport() {
+    await yieldToUI()
+    editor.zoomToFit()
+  }
+
   function setDocumentSource(
     fileName: string,
     sourceFormat: string,
@@ -900,6 +920,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       const firstPage = editor.graph.getPages()[0] as SceneNode | undefined
       const pageId = firstPage?.id ?? editor.graph.rootId
       await editor.switchPage(pageId)
+      await fitCurrentPageToViewport()
       editor.requestRender()
     } catch (e) {
       console.error('Failed to open .fig file:', e)
@@ -1265,6 +1286,8 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     nodeEditDeleteSelected,
     nodeEditBreakAtVertex,
     openFigFile,
+    setViewportSize,
+    fitCurrentPageToViewport,
     saveFigFile,
     saveFigFileAs,
     setDocumentSource,
