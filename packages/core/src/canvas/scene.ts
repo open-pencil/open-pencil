@@ -398,7 +398,14 @@ export function renderShapeUncached(
     const sc = r.resolveStrokeColor(stroke, si, node, graph)
 
     if (sg) {
-      drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+      if (node.type !== 'VECTOR' && stroke.align === 'INSIDE') {
+        canvas.save()
+        r.clipNodeShape(canvas, node, rect, hasRadius)
+        drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+        canvas.restore()
+      } else {
+        drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+      }
       continue
     }
     if (vectorPaths) {
