@@ -64,13 +64,33 @@ function resolveDsdGeometry(
   return result
 }
 
-function hasSingleVisibleSibling(ctx: OverrideContext, node: SceneNode): boolean {
-  if (!node.parentId) return false
-  return ctx.graph.getChildren(node.parentId).filter((child) => child.visible).length === 1
+function getVisibleSiblingCount(
+  ctx: OverrideContext,
+  cache: Map<string, number>,
+  parentId: string
+): number {
+  const cached = cache.get(parentId)
+  if (cached !== undefined) return cached
+  const count = ctx.graph.getChildren(parentId).filter((child) => child.visible).length
+  cache.set(parentId, count)
+  return count
 }
 
-function resolveSizeOnlyPosition(ctx: OverrideContext, node: SceneNode): Pick<SceneNode, 'x' | 'y'> | null {
-  if (!hasSingleVisibleSibling(ctx, node) || !node.componentId) return null
+function hasSingleVisibleSibling(
+  ctx: OverrideContext,
+  visibleSiblingCount: Map<string, number>,
+  node: SceneNode
+): boolean {
+  if (!node.parentId) return false
+  return getVisibleSiblingCount(ctx, visibleSiblingCount, node.parentId) === 1
+}
+
+function resolveSizeOnlyPosition(
+  ctx: OverrideContext,
+  visibleSiblingCount: Map<string, number>,
+  node: SceneNode
+): Pick<SceneNode, 'x' | 'y'> | null {
+  if (!hasSingleVisibleSibling(ctx, visibleSiblingCount, node) || !node.componentId) return null
 
   const source = ctx.graph.getNode(node.componentId)
   if (!source) return null
@@ -87,6 +107,7 @@ function resolveSizeOnlyPosition(ctx: OverrideContext, node: SceneNode): Pick<Sc
 
 function buildDsdLayoutUpdates(
   ctx: OverrideContext,
+  visibleSiblingCount: Map<string, number>,
   d: DerivedSymbolOverride,
   target: SceneNode
 ): { updates: Partial<SceneNode>; hasSize: boolean } {
@@ -105,7 +126,7 @@ function buildDsdLayoutUpdates(
     figmaDerivedLayout.x = d.transform.m02
     figmaDerivedLayout.y = d.transform.m12
   } else if (d.size) {
-    const position = resolveSizeOnlyPosition(ctx, target)
+    const position = resolveSizeOnlyPosition(ctx, visibleSiblingCount, target)
     if (position) {
       updates.x = position.x
       updates.y = position.y
@@ -124,6 +145,7 @@ function buildDsdLayoutUpdates(
 function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeSet: Set<string> } {
   const modified = new Set<string>()
   const sizeSet = new Set<string>()
+  const visibleSiblingCount = new Map<string, number>()
 
   for (const [ncId, nc] of ctx.changeMap) {
     if (nc.type !== 'INSTANCE') continue
@@ -143,7 +165,7 @@ function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeS
       const target = ctx.graph.getNode(targetId)
       if (!target) continue
 
-      const { updates, hasSize } = buildDsdLayoutUpdates(ctx, d, target)
+      const { updates, hasSize } = buildDsdLayoutUpdates(ctx, visibleSiblingCount, d, target)
       if (d.fillGeometry?.length || d.strokeGeometry?.length) {
         ctx.geometryOverrideNodes.add(targetId)
       }

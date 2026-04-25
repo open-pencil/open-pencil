@@ -34,24 +34,9 @@ export function populateInstances(graph: SceneGraph): void {
     }
   }
 
-  for (const node of graph.getAllNodes()) {
+  for (const node of graph.nodes.values()) {
     if (node.type === 'INSTANCE' && node.componentId && node.childIds.length === 0) {
       ensurePopulated(node.id)
-    }
-  }
-
-  // Cloning may introduce new empty instances not seen in the first pass
-  // (nested clones). Repeat until stable.
-  let changed = true
-  while (changed) {
-    changed = false
-    for (const node of graph.getAllNodes()) {
-      if (node.type !== 'INSTANCE' || !node.componentId || node.childIds.length > 0) continue
-      const comp = graph.getNode(node.componentId)
-      if (comp && comp.childIds.length > 0) {
-        graph.populateInstanceChildren(node.id, node.componentId)
-        changed = true
-      }
     }
   }
 }
