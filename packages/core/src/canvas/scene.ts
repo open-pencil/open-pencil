@@ -650,7 +650,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
   }
   if (r.fontsLoaded && r.fontProvider) {
     const paragraph = r.buildParagraph(node, r.fillPaint.getColor())
-    const paragraphY = node.fontSize < 13 ? 0 : -1
+    const paragraphY = -1
     canvas.drawParagraph(paragraph, 0, paragraphY)
     paragraph.delete()
   } else if (r.textFont) {

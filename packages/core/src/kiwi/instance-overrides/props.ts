@@ -48,23 +48,32 @@ function findPropRefs(
  * means "reset to the component's initialValue default". This is distinct
  * from `{boolValue: false}` which is an explicit false.
  */
+function resolveAssignmentValue(
+  ctx: OverrideContext,
+  assignment: ComponentPropAssignment,
+  key: string,
+  resolveDefaults: boolean
+): ComponentPropValue {
+  if (!isEmptyPropValue(assignment.value)) return assignment.value
+
+  const variableValue = assignment.varValue?.value
+  if (variableValue?.symbolIdValue?.guid) return { guidValue: variableValue.symbolIdValue.guid }
+  if (variableValue?.boolValue !== undefined) return { boolValue: variableValue.boolValue }
+  if (variableValue?.textValue !== undefined) return { textValue: variableValue.textValue }
+
+  return resolveDefaults ? (ctx.propDefaults.get(key) ?? assignment.value) : assignment.value
+}
+
 function assignmentsToValueMap(
   ctx: OverrideContext,
   assignments: ComponentPropAssignment[],
   resolveDefaults = false
 ): Map<string, ComponentPropValue> {
   const valueByDef = new Map<string, ComponentPropValue>()
-  for (const a of assignments) {
-    if (!a.defID) continue
-    const key = guidToString(a.defID)
-    if (resolveDefaults && isEmptyPropValue(a.value)) {
-      const def = ctx.propDefaults.get(key)
-      if (def) {
-        valueByDef.set(key, def)
-        continue
-      }
-    }
-    valueByDef.set(key, a.value)
+  for (const assignment of assignments) {
+    if (!assignment.defID) continue
+    const key = guidToString(assignment.defID)
+    valueByDef.set(key, resolveAssignmentValue(ctx, assignment, key, resolveDefaults))
   }
   return valueByDef
 }

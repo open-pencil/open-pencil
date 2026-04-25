@@ -1,6 +1,6 @@
 import type { SceneGraph } from '../../scene-graph'
 import type { Matrix, Vector } from '../../types'
-import type { GUID } from '../codec'
+import type { GUID, NodeChange } from '../codec'
 
 export interface SymbolOverride {
   guidPath?: { guids?: GUID[] }
@@ -28,12 +28,22 @@ export type ComponentPropValue = {
 export interface ComponentPropAssignment {
   defID?: GUID
   value: ComponentPropValue
+  varValue?: {
+    value?: {
+      boolValue?: boolean
+      textValue?: string
+      symbolIdValue?: { guid?: GUID }
+    }
+  }
 }
 
 export interface DerivedSymbolOverride {
   guidPath?: { guids?: GUID[] }
   size?: Vector
   transform?: Matrix
+  fontSize?: number
+  lineHeight?: NodeChange['lineHeight']
+  letterSpacing?: NodeChange['letterSpacing']
   fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
 }

@@ -1,5 +1,5 @@
 import { copyGeometryPaths } from '../../scene-graph/copy'
-import { resolveGeometryPaths } from '../convert'
+import { convertLetterSpacing, convertLineHeight, resolveGeometryPaths } from '../convert'
 import { resolveOverrideTarget } from './resolve'
 import { buildClonesMap } from './sync'
 
@@ -105,13 +105,23 @@ function resolveSizeOnlyPosition(
   return withinParent ? { x: source.x, y: source.y } : { x: 0, y: 0 }
 }
 
+function buildDsdTextUpdates(d: DerivedSymbolOverride): Partial<SceneNode> {
+  const updates: Partial<SceneNode> = {}
+  if (d.fontSize !== undefined) updates.fontSize = d.fontSize
+  if (d.lineHeight !== undefined) updates.lineHeight = convertLineHeight(d.lineHeight, d.fontSize)
+  if (d.letterSpacing !== undefined) {
+    updates.letterSpacing = convertLetterSpacing(d.letterSpacing, d.fontSize)
+  }
+  return updates
+}
+
 function buildDsdLayoutUpdates(
   ctx: OverrideContext,
   visibleSiblingCount: Map<string, number>,
   d: DerivedSymbolOverride,
   target: SceneNode
 ): { updates: Partial<SceneNode>; hasSize: boolean } {
-  const updates: Partial<SceneNode> = {}
+  const updates: Partial<SceneNode> = buildDsdTextUpdates(d)
   const figmaDerivedLayout: NonNullable<SceneNode['figmaDerivedLayout']> = {}
 
   if (d.size) {
