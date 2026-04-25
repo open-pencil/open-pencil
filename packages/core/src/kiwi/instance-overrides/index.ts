@@ -49,6 +49,19 @@ function buildKiwiPropertyNodes(
   return result
 }
 
+function buildKiwiGeometryNodes(
+  changeMap: Map<string, InstanceNodeChange>,
+  guidToNodeId: Map<string, string>
+): Set<string> {
+  const result = new Set<string>()
+  for (const [figmaId, nodeId] of guidToNodeId) {
+    const nc = changeMap.get(figmaId)
+    if (!nc) continue
+    if (nc.fillGeometry?.length || nc.strokeGeometry?.length) result.add(nodeId)
+  }
+  return result
+}
+
 function propagateResolvedFills(graph: SceneGraph, protectedNodes: Set<string>): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
@@ -91,6 +104,7 @@ function buildOverrideContext(
   }
 
   const kiwiPropertyNodes = buildKiwiPropertyNodes(graph, changeMap, guidToNodeId)
+  const geometryOverrideNodes = buildKiwiGeometryNodes(changeMap, guidToNodeId)
 
   return {
     graph,
@@ -103,7 +117,8 @@ function buildOverrideContext(
     preComputedRoot: new Map(),
     componentIdRoot: new Map(),
     swappedInstances: new Set(),
-    kiwiPropertyNodes
+    kiwiPropertyNodes,
+    geometryOverrideNodes
   }
 }
 

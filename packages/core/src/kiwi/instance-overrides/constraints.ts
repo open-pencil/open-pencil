@@ -1,6 +1,7 @@
+import { copyGeometryPaths } from '../../scene-graph/copy'
 import { buildClonesMap } from './sync'
 
-import type { SceneGraph, SceneNode } from '../../scene-graph'
+import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '../../scene-graph'
 import type { OverrideContext } from './types'
 
 /**
@@ -29,7 +30,7 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
     scaleChildren(graph, node, comp, sx, sy, scaled, basis !== comp)
   }
 
-  if (scaled.size > 0) propagateScaling(graph, scaled)
+  if (scaled.size > 0) propagateScaling(ctx, scaled)
 }
 
 function resolveScaleBasis(
@@ -48,6 +49,40 @@ function resolveScaleBasis(
   }
 
   return null
+}
+
+function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): GeometryPath[] {
+  if (sx === 1 && sy === 1) return copyGeometryPaths(geom)
+  return geom.map((g) => {
+    const scaled = g.commandsBlob.slice()
+    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
+    let offset = 0
+    while (offset < scaled.length) {
+      const command = scaled[offset++]
+      let coords = 0
+      if (command === 1 || command === 2) coords = 1
+      else if (command === 4) coords = 3
+      for (let i = 0; i < coords; i++) {
+        dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
+        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
+        offset += 8
+      }
+    }
+    return { windingRule: g.windingRule, commandsBlob: scaled }
+  })
+}
+
+function scaleVectorNetwork(network: VectorNetwork | null, sx: number, sy: number): VectorNetwork | null {
+  if (!network) return null
+  return {
+    vertices: network.vertices.map((vertex) => ({ ...vertex, x: vertex.x * sx, y: vertex.y * sy })),
+    segments: network.segments.map((segment) => ({
+      ...segment,
+      tangentStart: { x: segment.tangentStart.x * sx, y: segment.tangentStart.y * sy },
+      tangentEnd: { x: segment.tangentEnd.x * sx, y: segment.tangentEnd.y * sy }
+    })),
+    regions: structuredClone(network.regions)
+  }
 }
 
 function scaleChildren(
@@ -79,6 +114,17 @@ function scaleChildren(
       updates.y = source.y * sy
       updates.height = source.height * sy
     }
+    const shapeScaleX = hScale ? sx : 1
+    const shapeScaleY = vScale ? sy : 1
+    if (source.fillGeometry.length > 0) {
+      updates.fillGeometry = scaleGeometryBlobs(source.fillGeometry, shapeScaleX, shapeScaleY)
+    }
+    if (source.strokeGeometry.length > 0) {
+      updates.strokeGeometry = scaleGeometryBlobs(source.strokeGeometry, shapeScaleX, shapeScaleY)
+    }
+    if (source.vectorNetwork) {
+      updates.vectorNetwork = scaleVectorNetwork(source.vectorNetwork, shapeScaleX, shapeScaleY)
+    }
     graph.updateNode(child.id, updates)
     scaled.add(child.id)
 
@@ -96,7 +142,8 @@ function scaleChildren(
   }
 }
 
-function propagateScaling(graph: SceneGraph, scaled: Set<string>): void {
+function propagateScaling(ctx: OverrideContext, scaled: Set<string>): void {
+  const { graph } = ctx
   const clonesOf = buildClonesMap(graph)
   const queue = [...scaled]
   const visited = new Set<string>()
@@ -116,6 +163,11 @@ function propagateScaling(graph: SceneGraph, scaled: Set<string>): void {
       if (clone.height !== source.height) cu.height = source.height
       if (clone.x !== source.x) cu.x = source.x
       if (clone.y !== source.y) cu.y = source.y
+      if (!ctx.geometryOverrideNodes.has(cloneId)) {
+        if (source.fillGeometry.length > 0) cu.fillGeometry = copyGeometryPaths(source.fillGeometry)
+        if (source.strokeGeometry.length > 0) cu.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
+        if (source.vectorNetwork) cu.vectorNetwork = structuredClone(source.vectorNetwork)
+      }
       if (Object.keys(cu).length > 0) graph.updateNode(cloneId, cu)
       queue.push(cloneId)
     }

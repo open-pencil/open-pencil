@@ -312,6 +312,7 @@ export interface SceneNode {
   width: number
   height: number
   rotation: number
+  figmaDerivedLayout: { x?: number; y?: number; width?: number; height?: number } | null
 
   fills: Fill[]
   strokes: Stroke[]
@@ -473,6 +474,7 @@ function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): 
     width: 100,
     height: 100,
     rotation: 0,
+    figmaDerivedLayout: null,
     fills:
       type === 'TEXT'
         ? [{ type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]

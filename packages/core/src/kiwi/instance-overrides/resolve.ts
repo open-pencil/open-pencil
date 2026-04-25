@@ -5,6 +5,8 @@ import type { GUID } from '../codec'
 import type { OverrideContext } from './types'
 
 const MAX_CHAIN_DEPTH = 20
+const siblingIndexCache = new WeakMap<OverrideContext, Map<string, number | null>>()
+const candidateCache = new WeakMap<OverrideContext, Map<string, string[]>>()
 
 /**
  * Pre-compute componentId root for every node.
@@ -80,6 +82,79 @@ export function getComponentRoot(ctx: OverrideContext, nodeId: string, depth = 0
  *         ambiguity when multiple siblings share the same root).
  * Pass 3: recurse into children.
  */
+function sourceSiblingIndex(ctx: OverrideContext, figmaGuid: string): number | null {
+  let cache = siblingIndexCache.get(ctx)
+  if (!cache) {
+    cache = new Map()
+    siblingIndexCache.set(ctx, cache)
+  }
+  if (cache.has(figmaGuid)) return cache.get(figmaGuid) ?? null
+
+  const nc = ctx.changeMap.get(figmaGuid)
+  const parentId = nc?.parentIndex?.guid ? guidToString(nc.parentIndex.guid) : null
+  const symbolId = nc?.symbolData?.symbolID ? guidToString(nc.symbolData.symbolID) : null
+  if (!nc || !parentId || !symbolId) {
+    cache.set(figmaGuid, null)
+    return null
+  }
+
+  const siblings = [...ctx.changeMap]
+    .filter(([, sibling]) => {
+      const siblingParent = sibling.parentIndex?.guid ? guidToString(sibling.parentIndex.guid) : null
+      const siblingSymbol = sibling.symbolData?.symbolID ? guidToString(sibling.symbolData.symbolID) : null
+      return siblingParent === parentId && siblingSymbol === symbolId
+    })
+    .sort(([, a], [, b]) =>
+      (a.transform?.m12 ?? 0) - (b.transform?.m12 ?? 0) ||
+      (a.transform?.m02 ?? 0) - (b.transform?.m02 ?? 0)
+    )
+    .map(([id]) => id)
+
+  const index = siblings.indexOf(figmaGuid)
+  const result = index !== -1 ? index : null
+  cache.set(figmaGuid, result)
+  return result
+}
+
+function findNodeBySourceSiblingIndex(
+  ctx: OverrideContext,
+  parentId: string,
+  componentId: string,
+  figmaGuid: string
+): string | null {
+  const index = sourceSiblingIndex(ctx, figmaGuid)
+  if (index == null) return null
+
+  const targetRoot = ctx.preComputedRoot.get(componentId) ?? getComponentRoot(ctx, componentId)
+  let cache = candidateCache.get(ctx)
+  if (!cache) {
+    cache = new Map()
+    candidateCache.set(ctx, cache)
+  }
+  const cacheKey = `${parentId}\0${targetRoot}`
+  let candidates = cache.get(cacheKey)
+  if (!candidates) {
+    candidates = []
+    const collect = (id: string) => {
+      const node = ctx.graph.getNode(id)
+      if (!node) return
+      if (node.componentId) {
+        const root = ctx.preComputedRoot.get(node.componentId) ?? getComponentRoot(ctx, node.componentId)
+        if (root === targetRoot) candidates?.push(id)
+      }
+      for (const childId of node.childIds) collect(childId)
+    }
+    collect(parentId)
+    candidates.sort((aId, bId) => {
+      const a = ctx.graph.getNode(aId)
+      const b = ctx.graph.getNode(bId)
+      return (a?.y ?? 0) - (b?.y ?? 0) || (a?.x ?? 0) - (b?.x ?? 0)
+    })
+    cache.set(cacheKey, candidates)
+  }
+  return candidates[index] ?? null
+}
+
 export function findNodeByComponentId(
   ctx: OverrideContext,
   parentId: string,
@@ -132,8 +207,8 @@ export function resolveOverrideTarget(
   guids: GUID[]
 ): string | null {
   let currentId = instanceId
-  for (const guid of guids) {
-    const key = guidToString(guid)
+  for (let index = 0; index < guids.length; index++) {
+    const key = guidToString(guids[index])
     const figmaGuid = ctx.overrideKeyToGuid.get(key) ?? key
     const remapped = ctx.guidToNodeId.get(figmaGuid)
     if (!remapped) return null
@@ -147,12 +222,19 @@ export function resolveOverrideTarget(
       continue
     }
 
-    // After an instance swap, the child's componentId points to the new
-    // component, not the one referenced by the guidPath. Fall back to the
-    // single child of a swapped instance — it occupies the same slot.
+    const indexed = findNodeBySourceSiblingIndex(ctx, currentId, remapped, figmaGuid)
+    if (indexed) {
+      currentId = indexed
+      continue
+    }
+
+    // Some .fig DSD paths include an intermediate source instance while the
+    // imported tree has a single wrapper clone in that slot. Descend into the
+    // wrapper and retry the same guid before giving up.
     const parent = ctx.graph.getNode(currentId)
     if (parent?.childIds.length === 1) {
       currentId = parent.childIds[0]
+      index--
       continue
     }
 

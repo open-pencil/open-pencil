@@ -110,7 +110,7 @@ function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<
     computeLayoutsBottomUp(graph, childId, visited)
   }
 
-  if (node.layoutMode !== 'NONE') {
+  if (node.layoutMode !== 'NONE' && node.type !== 'INSTANCE') {
     computeLayout(graph, nodeId)
   }
 }
@@ -622,16 +622,29 @@ function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode)
   const computedH = yogaNode.getComputedHeight()
   const updates: Partial<SceneNode> = {}
 
+  const derived = frame.figmaDerivedLayout
   if (frame.primaryAxisSizing === 'HUG') {
-    if (frame.layoutMode === 'HORIZONTAL') updates.width = computedW
-    else updates.height = computedH
+    if (frame.layoutMode === 'HORIZONTAL') updates.width = derived?.width ?? computedW
+    else updates.height = derived?.height ?? computedH
   }
   if (frame.counterAxisSizing === 'HUG') {
-    if (frame.layoutMode === 'HORIZONTAL') updates.height = computedH
-    else updates.width = computedW
+    if (frame.layoutMode === 'HORIZONTAL') updates.height = derived?.height ?? computedH
+    else updates.width = derived?.width ?? computedW
   }
 
   graph.updateNode(frame.id, updates)
+}
+
+function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: YogaNode): void {
+  if (!child.visible || child.layoutPositioning === 'ABSOLUTE' || child.type === 'INSTANCE') return
+
+  const derived = child.figmaDerivedLayout
+  graph.updateNode(child.id, {
+    x: derived?.x ?? yogaChild.getComputedLeft(),
+    y: derived?.y ?? yogaChild.getComputedTop(),
+    width: derived?.width ?? yogaChild.getComputedWidth(),
+    height: derived?.height ?? yogaChild.getComputedHeight()
+  })
 }
 
 function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode): void {
@@ -645,14 +658,7 @@ function applyYogaLayout(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!yogaChild) continue
 
-    if (child.visible && child.layoutPositioning !== 'ABSOLUTE') {
-      graph.updateNode(child.id, {
-        x: yogaChild.getComputedLeft(),
-        y: yogaChild.getComputedTop(),
-        width: yogaChild.getComputedWidth(),
-        height: yogaChild.getComputedHeight()
-      })
-    }
+    updateChildFromYoga(graph, child, yogaChild)
 
     if (child.layoutMode !== 'NONE') {
       if (child.layoutMode === 'GRID' && child.visible && child.layoutPositioning !== 'ABSOLUTE') {

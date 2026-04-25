@@ -33,7 +33,7 @@ import {
   DEFAULT_FONT_FAMILY,
   IS_BROWSER
 } from '../constants'
-import { computeVisualBounds } from '../geometry'
+import { computeDescendantVisualBounds } from '../geometry'
 import { RenderProfiler } from '../profiler'
 import { drawAiOverlays as drawAiOverlaysFn } from './ai-overlays'
 import {
@@ -902,15 +902,21 @@ export class SkiaRenderer {
     this.worldViewport = { x: -1e6, y: -1e6, w: 2e6, h: 2e6 }
     const recorder = new this.ck.PictureRecorder()
     const pageNode = graph.getNode(this.pageId ?? graph.rootId)
-    const sceneNodes = pageNode
-      ? pageNode.childIds
-          .map((childId) => graph.getNode(childId))
-          .filter((node): node is SceneNode => node != null)
-      : []
-    const sceneBounds =
-      sceneNodes.length > 0
-        ? computeVisualBounds(sceneNodes, (id) => graph.getAbsolutePosition(id))
-        : { x: 0, y: 0, width: 1, height: 1 }
+    const sceneContentBounds = pageNode
+      ? computeDescendantVisualBounds(
+          pageNode.childIds,
+          (id) => graph.getNode(id),
+          (id) => graph.getAbsolutePosition(id)
+        )
+      : null
+    const sceneBounds = sceneContentBounds
+      ? {
+          x: sceneContentBounds.minX,
+          y: sceneContentBounds.minY,
+          width: sceneContentBounds.maxX - sceneContentBounds.minX,
+          height: sceneContentBounds.maxY - sceneContentBounds.minY
+        }
+      : { x: 0, y: 0, width: 1, height: 1 }
     const padding = 1024
     const bounds = this.ck.LTRBRect(
       sceneBounds.x - padding,

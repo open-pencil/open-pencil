@@ -1,4 +1,4 @@
-import { computeVisualBounds } from '../../../geometry'
+import { computeDescendantVisualBounds } from '../../../geometry'
 import { extractExportGraph } from '../../subgraph'
 
 import type { SkiaRenderer } from '../../../canvas'
@@ -41,25 +41,12 @@ function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
   return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
 }
 
-export function computeContentBounds(
-  graph: SceneGraph,
-  nodeIds: string[]
-): { minX: number; minY: number; maxX: number; maxY: number } | null {
-  const nodes = nodeIds
-    .map((id) => graph.getNode(id))
-    .filter(
-      (node): node is NonNullable<ReturnType<SceneGraph['getNode']>> => !!node && node.visible
-    )
-
-  if (nodes.length === 0) return null
-
-  const bounds = computeVisualBounds(nodes, (id) => graph.getAbsolutePosition(id))
-  return {
-    minX: bounds.x,
-    minY: bounds.y,
-    maxX: bounds.x + bounds.width,
-    maxY: bounds.y + bounds.height
-  }
+export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
+  return computeDescendantVisualBounds(
+    nodeIds,
+    (id) => graph.getNode(id),
+    (id) => graph.getAbsolutePosition(id)
+  )
 }
 
 function ckImageFormat(ck: CanvasKit, format: ExportFormat) {

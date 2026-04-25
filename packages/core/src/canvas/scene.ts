@@ -312,6 +312,39 @@ function drawVectorStrokeGeometry(
   for (const p of sg) canvas.drawPath(p, r.fillPaint)
 }
 
+function vectorStrokePaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
+  if (!node.vectorNetwork) return null
+
+  const paths: Path[] = []
+  for (const segment of node.vectorNetwork.segments) {
+    const start = node.vectorNetwork.vertices[segment.start]
+    const end = node.vectorNetwork.vertices[segment.end]
+
+    const path = new r.ck.Path()
+    path.moveTo(start.x, start.y)
+    const isStraight =
+      Math.abs(segment.tangentStart.x) < 0.001 &&
+      Math.abs(segment.tangentStart.y) < 0.001 &&
+      Math.abs(segment.tangentEnd.x) < 0.001 &&
+      Math.abs(segment.tangentEnd.y) < 0.001
+    if (isStraight) {
+      path.lineTo(end.x, end.y)
+    } else {
+      path.cubicTo(
+        start.x + segment.tangentStart.x,
+        start.y + segment.tangentStart.y,
+        end.x + segment.tangentEnd.x,
+        end.y + segment.tangentEnd.y,
+        end.x,
+        end.y
+      )
+    }
+    paths.push(path)
+  }
+
+  return paths.length > 0 ? paths : null
+}
+
 function drawVectorPathStrokes(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -369,6 +402,48 @@ function drawRegularStroke(
   }
 }
 
+function drawNodeStroke(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  rect: Float32Array,
+  hasRadius: boolean,
+  stroke: SceneNode['strokes'][0],
+  sc: Color,
+  sg: Path[] | null,
+  vectorPaths: Path[] | null,
+  vectorStroke: Path[] | null
+): void {
+  if (vectorStroke && stroke.align === 'CENTER' && node.cornerRadius === 0) {
+    drawVectorPathStrokes(r, canvas, vectorStroke, stroke, sc)
+    return
+  }
+  if (!sg) {
+    if (vectorPaths) drawVectorPathStrokes(r, canvas, vectorPaths, stroke, sc)
+    else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
+    return
+  }
+  if (stroke.align !== 'INSIDE') {
+    drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+    return
+  }
+
+  const clipPaths = node.type === 'VECTOR' ? r.getFillGeometry(node) : null
+  if (node.type === 'VECTOR' && !clipPaths) {
+    drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+    return
+  }
+
+  canvas.save()
+  if (clipPaths) {
+    for (const path of clipPaths) canvas.clipPath(path, r.ck.ClipOp.Intersect, true)
+  } else {
+    r.clipNodeShape(canvas, node, rect, hasRadius)
+  }
+  drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+  canvas.restore()
+}
+
 export function renderShapeUncached(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -391,33 +466,17 @@ export function renderShapeUncached(
   }
 
   const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
-  const vectorPaths = !sg && node.type === 'VECTOR' ? r.getVectorPaths(node) : null
+  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
+  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   for (let si = 0; si < node.strokes.length; si++) {
     const stroke = node.strokes[si]
     if (!stroke.visible) continue
     const sc = r.resolveStrokeColor(stroke, si, node, graph)
 
-    if (sg) {
-      if (stroke.align === 'INSIDE') {
-        canvas.save()
-        const clipPaths = node.type === 'VECTOR' ? r.getFillGeometry(node) : null
-        if (clipPaths) {
-          for (const path of clipPaths) canvas.clipPath(path, r.ck.ClipOp.Intersect, true)
-        } else {
-          r.clipNodeShape(canvas, node, rect, hasRadius)
-        }
-        drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
-        canvas.restore()
-      } else {
-        drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
-      }
-      continue
-    }
-    if (vectorPaths) {
-      drawVectorPathStrokes(r, canvas, vectorPaths, stroke, sc)
-      continue
-    }
-    drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
+    drawNodeStroke(r, canvas, node, rect, hasRadius, stroke, sc, sg, vectorPaths, vectorStroke)
+  }
+  if (vectorStroke) {
+    for (const path of vectorStroke) path.delete()
   }
 
   r.renderEffects(canvas, node, rect, hasRadius, 'front')
@@ -575,7 +634,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
   if (!text) return
 
   canvas.save()
-  canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
+  const shouldClipText = node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE'
+  if (shouldClipText) {
+    canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
+  }
 
   if (node.textPicture) {
     const pic = r.ck.MakePicture(node.textPicture)
@@ -588,7 +650,8 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
   }
   if (r.fontsLoaded && r.fontProvider) {
     const paragraph = r.buildParagraph(node, r.fillPaint.getColor())
-    canvas.drawParagraph(paragraph, 0, -1)
+    const paragraphY = node.fontSize < 13 ? 0 : -1
+    canvas.drawParagraph(paragraph, 0, paragraphY)
     paragraph.delete()
   } else if (r.textFont) {
     canvas.drawText(text, 0, node.fontSize || r.DEFAULT_FONT_SIZE, r.fillPaint, r.textFont)

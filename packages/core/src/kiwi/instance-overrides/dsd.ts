@@ -64,6 +64,63 @@ function resolveDsdGeometry(
   return result
 }
 
+function hasSingleVisibleSibling(ctx: OverrideContext, node: SceneNode): boolean {
+  if (!node.parentId) return false
+  return ctx.graph.getChildren(node.parentId).filter((child) => child.visible).length === 1
+}
+
+function resolveSizeOnlyPosition(ctx: OverrideContext, node: SceneNode): Pick<SceneNode, 'x' | 'y'> | null {
+  if (!hasSingleVisibleSibling(ctx, node) || !node.componentId) return null
+
+  const source = ctx.graph.getNode(node.componentId)
+  if (!source) return null
+  const sourceParent = source.parentId ? ctx.graph.getNode(source.parentId) : null
+  if (!sourceParent) return { x: source.x, y: source.y }
+
+  const withinParent =
+    source.x >= 0 &&
+    source.y >= 0 &&
+    source.x + source.width <= sourceParent.width + 0.01 &&
+    source.y + source.height <= sourceParent.height + 0.01
+  return withinParent ? { x: source.x, y: source.y } : { x: 0, y: 0 }
+}
+
+function buildDsdLayoutUpdates(
+  ctx: OverrideContext,
+  d: DerivedSymbolOverride,
+  target: SceneNode
+): { updates: Partial<SceneNode>; hasSize: boolean } {
+  const updates: Partial<SceneNode> = {}
+  const figmaDerivedLayout: NonNullable<SceneNode['figmaDerivedLayout']> = {}
+
+  if (d.size) {
+    updates.width = d.size.x
+    updates.height = d.size.y
+    figmaDerivedLayout.width = d.size.x
+    figmaDerivedLayout.height = d.size.y
+  }
+  if (d.transform) {
+    updates.x = d.transform.m02
+    updates.y = d.transform.m12
+    figmaDerivedLayout.x = d.transform.m02
+    figmaDerivedLayout.y = d.transform.m12
+  } else if (d.size) {
+    const position = resolveSizeOnlyPosition(ctx, target)
+    if (position) {
+      updates.x = position.x
+      updates.y = position.y
+      figmaDerivedLayout.x = position.x
+      figmaDerivedLayout.y = position.y
+    }
+  }
+  if (Object.keys(figmaDerivedLayout).length > 0) {
+    updates.figmaDerivedLayout = figmaDerivedLayout
+  }
+  Object.assign(updates, resolveDsdGeometry(d, target, ctx.blobs))
+
+  return { updates, hasSize: d.size !== undefined }
+}
+
 function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeSet: Set<string> } {
   const modified = new Set<string>()
   const sizeSet = new Set<string>()
@@ -86,21 +143,15 @@ function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeS
       const target = ctx.graph.getNode(targetId)
       if (!target) continue
 
-      const updates: Partial<SceneNode> = {}
-      if (d.size) {
-        updates.width = d.size.x
-        updates.height = d.size.y
+      const { updates, hasSize } = buildDsdLayoutUpdates(ctx, d, target)
+      if (d.fillGeometry?.length || d.strokeGeometry?.length) {
+        ctx.geometryOverrideNodes.add(targetId)
       }
-      if (d.transform) {
-        updates.x = d.transform.m02
-        updates.y = d.transform.m12
-      }
-      Object.assign(updates, resolveDsdGeometry(d, target, ctx.blobs))
 
       if (Object.keys(updates).length > 0) {
         ctx.graph.updateNode(targetId, updates)
         modified.add(targetId)
-        if (d.size) sizeSet.add(targetId)
+        if (hasSize) sizeSet.add(targetId)
       }
     }
   }
@@ -135,10 +186,12 @@ function propagateDsdChanges(
         if (source.height !== clone.height) cu.height = source.height
         if (source.x !== clone.x) cu.x = source.x
         if (source.y !== clone.y) cu.y = source.y
-        if (source.fillGeometry !== clone.fillGeometry)
-          cu.fillGeometry = copyGeometryPaths(source.fillGeometry)
-        if (source.strokeGeometry !== clone.strokeGeometry)
-          cu.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
+        if (!ctx.geometryOverrideNodes.has(cloneId)) {
+          if (source.fillGeometry !== clone.fillGeometry)
+            cu.fillGeometry = copyGeometryPaths(source.fillGeometry)
+          if (source.strokeGeometry !== clone.strokeGeometry)
+            cu.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
+        }
         if (Object.keys(cu).length > 0) ctx.graph.updateNode(cloneId, cu)
       }
       queue.push(cloneId)
