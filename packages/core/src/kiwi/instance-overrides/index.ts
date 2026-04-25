@@ -95,12 +95,14 @@ function buildOverrideContext(
   }
 
   const propDefaults = new Map<string, ComponentPropValue>()
+  const propNames = new Map<string, string>()
   for (const [, nc] of changeMap) {
     if (!nc.componentPropDefs?.length) continue
     for (const def of nc.componentPropDefs) {
-      if (def.id && def.initialValue) {
-        propDefaults.set(guidToString(def.id), def.initialValue)
-      }
+      if (!def.id) continue
+      const id = guidToString(def.id)
+      if (def.initialValue) propDefaults.set(id, def.initialValue)
+      if (def.name) propNames.set(id, def.name)
     }
   }
 
@@ -120,6 +122,7 @@ function buildOverrideContext(
     overrideKeyToGuid,
     nodeIdToGuid,
     propDefaults,
+    propNames,
     preComputedRoot: new Map(),
     componentIdRoot: new Map(),
     swappedInstances: new Set(),

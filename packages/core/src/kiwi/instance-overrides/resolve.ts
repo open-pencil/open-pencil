@@ -2,7 +2,7 @@ import { guidToString } from '../convert'
 
 import type { SceneNode } from '../../scene-graph'
 import type { GUID } from '../codec'
-import type { OverrideContext } from './types'
+import type { InstanceNodeChange, OverrideContext } from './types'
 
 const MAX_CHAIN_DEPTH = 20
 const siblingIndexCache = new WeakMap<OverrideContext, Map<string, number | null>>()
@@ -141,6 +141,29 @@ function sourceSiblingIndex(ctx: OverrideContext, figmaGuid: string): number | n
   return result
 }
 
+function findNodeByNameAndType(
+  ctx: OverrideContext,
+  parentId: string,
+  name: string | undefined,
+  type: string | undefined
+): string | null {
+  if (!name || !type) return null
+  let match: string | null = null
+  let count = 0
+  const visit = (id: string) => {
+    if (count > 1) return
+    const node = ctx.graph.getNode(id)
+    if (!node) return
+    if (node.name === name && node.type === type) {
+      count++
+      match = id
+    }
+    for (const childId of node.childIds) visit(childId)
+  }
+  visit(parentId)
+  return count === 1 ? match : null
+}
+
 function findNodeBySourceSiblingIndex(
   ctx: OverrideContext,
   parentId: string,
@@ -195,10 +218,7 @@ export function findNodeByComponentId(
   if (cache.has(cacheKey)) return cache.get(cacheKey) ?? null
 
   const parent = ctx.graph.getNode(parentId)
-  if (!parent) {
-    cache.set(cacheKey, null)
-    return null
-  }
+  if (!parent) return null
 
   for (const childId of parent.childIds) {
     const child = ctx.graph.getNode(childId)
@@ -238,7 +258,6 @@ export function findNodeByComponentId(
       return deep
     }
   }
-  cache.set(cacheKey, null)
   return null
 }
 
@@ -248,6 +267,25 @@ export function findNodeByComponentId(
  * Each GUID in the path identifies an overrideKey → figmaGuid → graph node.
  * The chain walks from the instance down to the target.
  */
+function resolveOverrideStep(
+  ctx: OverrideContext,
+  currentId: string,
+  figmaGuid: string,
+  remapped: string | undefined,
+  targetNc: InstanceNodeChange | undefined
+): string | null {
+  if (!remapped) return findNodeByNameAndType(ctx, currentId, targetNc?.name, targetNc?.type)
+
+  const current = ctx.graph.getNode(currentId)
+  if (current?.componentId === remapped) return currentId
+
+  return (
+    findNodeByComponentId(ctx, currentId, remapped) ??
+    findNodeBySourceSiblingIndex(ctx, currentId, remapped, figmaGuid) ??
+    findNodeByNameAndType(ctx, currentId, targetNc?.name, targetNc?.type)
+  )
+}
+
 export function resolveOverrideTarget(
   ctx: OverrideContext,
   instanceId: string,
@@ -257,27 +295,18 @@ export function resolveOverrideTarget(
   for (let index = 0; index < guids.length; index++) {
     const key = guidToString(guids[index])
     const figmaGuid = ctx.overrideKeyToGuid.get(key) ?? key
-    const remapped = ctx.guidToNodeId.get(figmaGuid)
-    if (!remapped) return null
-
-    const current = ctx.graph.getNode(currentId)
-    if (current?.componentId === remapped) continue
-
-    const found = findNodeByComponentId(ctx, currentId, remapped)
-    if (found) {
-      currentId = found
+    const targetNc = ctx.changeMap.get(figmaGuid)
+    const symbolGuid = targetNc?.symbolData?.symbolID
+      ? guidToString(targetNc.symbolData.symbolID)
+      : null
+    const remapped =
+      ctx.guidToNodeId.get(figmaGuid) ?? (symbolGuid ? ctx.guidToNodeId.get(symbolGuid) : undefined)
+    const resolved = resolveOverrideStep(ctx, currentId, figmaGuid, remapped, targetNc)
+    if (resolved) {
+      currentId = resolved
       continue
     }
 
-    const indexed = findNodeBySourceSiblingIndex(ctx, currentId, remapped, figmaGuid)
-    if (indexed) {
-      currentId = indexed
-      continue
-    }
-
-    // Some .fig DSD paths include an intermediate source instance while the
-    // imported tree has a single wrapper clone in that slot. Descend into the
-    // wrapper and retry the same guid before giving up.
     const parent = ctx.graph.getNode(currentId)
     if (parent?.childIds.length === 1) {
       currentId = parent.childIds[0]

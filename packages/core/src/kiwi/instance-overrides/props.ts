@@ -8,6 +8,10 @@ import type {
   ComponentPropValue
 } from './types'
 
+function normalizePropName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
 function isEmptyPropValue(v: ComponentPropValue): boolean {
   return v.boolValue === undefined && v.textValue === undefined && v.guidValue === undefined
 }
@@ -69,6 +73,25 @@ function assignmentsToValueMap(
  * Recursively apply prop assignments to children of a parent node.
  * Handles VISIBLE toggles and OVERRIDDEN_SYMBOL_ID (instance swap).
  */
+function fallbackRefsForChild(
+  ctx: OverrideContext,
+  childName: string,
+  valueByDef: Map<string, ComponentPropValue>
+): ComponentPropRef[] | undefined {
+  const normalizedChildName = normalizePropName(childName)
+  const refs: ComponentPropRef[] = []
+  for (const defId of valueByDef.keys()) {
+    const propName = ctx.propNames.get(defId)
+    if (propName && normalizePropName(propName) === normalizedChildName) {
+      refs.push({
+        defID: { sessionID: Number(defId.split(':')[0]), localID: Number(defId.split(':')[1]) },
+        componentPropNodeField: 'VISIBLE'
+      })
+    }
+  }
+  return refs.length > 0 ? refs : undefined
+}
+
 function applyPropAssignments(
   ctx: OverrideContext,
   parentId: string,
@@ -86,7 +109,9 @@ function applyPropAssignments(
       continue
     }
 
-    const refs = findPropRefs(ctx, child.componentId, propRefsMap)
+    const refs =
+      findPropRefs(ctx, child.componentId, propRefsMap) ??
+      fallbackRefsForChild(ctx, child.name, valueByDef)
     if (refs) {
       for (const ref of refs) {
         if (!ref.defID) continue

@@ -47,6 +47,7 @@ export interface ComponentPropDef {
 
 export interface InstanceNodeChange {
   type?: string
+  name?: string
   guid?: GUID
   parentIndex?: { guid?: GUID }
   transform?: Matrix
@@ -76,6 +77,7 @@ export interface OverrideContext {
   overrideKeyToGuid: Map<string, string>
   nodeIdToGuid: Map<string, string>
   propDefaults: Map<string, ComponentPropValue>
+  propNames: Map<string, string>
   preComputedRoot: Map<string, string>
   componentIdRoot: Map<string, string>
   swappedInstances: Set<string>
