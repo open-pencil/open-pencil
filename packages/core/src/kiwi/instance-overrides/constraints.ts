@@ -16,19 +16,38 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
     if (node.type !== 'INSTANCE' || !node.componentId) continue
     const comp = graph.getNode(node.componentId)
     if (!comp || comp.width <= 0 || comp.height <= 0) continue
-    if (node.width === comp.width && node.height === comp.height) continue
+    const basis = resolveScaleBasis(graph, node, comp)
+    if (!basis) continue
 
     // Skip if instance uses auto-layout — layout engine handles child sizing
     if (node.layoutMode !== 'NONE') continue
 
-    const sx = node.width / comp.width
-    const sy = node.height / comp.height
+    const sx = node.width / basis.width
+    const sy = node.height / basis.height
     if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) continue
 
-    scaleChildren(graph, node, comp, sx, sy, scaled)
+    scaleChildren(graph, node, comp, sx, sy, scaled, basis !== comp)
   }
 
   if (scaled.size > 0) propagateScaling(graph, scaled)
+}
+
+function resolveScaleBasis(
+  graph: SceneGraph,
+  instance: SceneNode,
+  component: SceneNode
+): { width: number; height: number } | null {
+  if (instance.width !== component.width || instance.height !== component.height) return component
+
+  let source: SceneNode = component
+  for (let depth = 0; depth < 10 && source.type === 'INSTANCE' && source.componentId; depth++) {
+    const next = graph.getNode(source.componentId)
+    if (!next || next.width <= 0 || next.height <= 0) break
+    if (instance.width !== next.width || instance.height !== next.height) return next
+    source = next
+  }
+
+  return null
 }
 
 function scaleChildren(
@@ -37,7 +56,8 @@ function scaleChildren(
   comp: SceneNode,
   sx: number,
   sy: number,
-  scaled: Set<string>
+  scaled: Set<string>,
+  useCurrentChildAsSource = false
 ): void {
   const len = Math.min(instance.childIds.length, comp.childIds.length)
   for (let i = 0; i < len; i++) {
@@ -50,19 +70,28 @@ function scaleChildren(
     if (!hScale && !vScale) continue
 
     const updates: Partial<SceneNode> = {}
+    const source = useCurrentChildAsSource ? child : compChild
     if (hScale) {
-      updates.x = compChild.x * sx
-      updates.width = compChild.width * sx
+      updates.x = source.x * sx
+      updates.width = source.width * sx
     }
     if (vScale) {
-      updates.y = compChild.y * sy
-      updates.height = compChild.height * sy
+      updates.y = source.y * sy
+      updates.height = source.height * sy
     }
     graph.updateNode(child.id, updates)
     scaled.add(child.id)
 
     if (child.childIds.length > 0 && compChild.childIds.length > 0) {
-      scaleChildren(graph, child, compChild, hScale ? sx : 1, vScale ? sy : 1, scaled)
+      scaleChildren(
+        graph,
+        child,
+        compChild,
+        hScale ? sx : 1,
+        vScale ? sy : 1,
+        scaled,
+        useCurrentChildAsSource
+      )
     }
   }
 }
