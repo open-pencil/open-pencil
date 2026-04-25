@@ -485,13 +485,29 @@ function computeExportTransform(node: SceneNode, graph: SceneGraph): Matrix {
     parent.layoutMode !== 'GRID' &&
     node.layoutPositioning !== 'ABSOLUTE'
 
+  const m00 = cos * sx
+  const m01 = -sin
+  const m10 = sin * sx
+  const m11 = cos
+  const corners = [
+    { x: 0, y: 0 },
+    { x: node.width, y: 0 },
+    { x: 0, y: node.height },
+    { x: node.width, y: node.height }
+  ].map((point) => ({
+    x: m00 * point.x + m01 * point.y,
+    y: m10 * point.x + m11 * point.y
+  }))
+  const offsetX = Math.min(...corners.map((point) => point.x))
+  const offsetY = Math.min(...corners.map((point) => point.y))
+
   return {
-    m00: cos * sx,
-    m01: -sin,
-    m02: isAutoLayoutChild ? 0 : node.x,
-    m10: sin * sx,
-    m11: cos,
-    m12: isAutoLayoutChild ? 0 : node.y
+    m00,
+    m01,
+    m02: isAutoLayoutChild ? 0 : node.x - offsetX,
+    m10,
+    m11,
+    m12: isAutoLayoutChild ? 0 : node.y - offsetY
   }
 }
 

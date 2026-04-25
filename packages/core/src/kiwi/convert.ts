@@ -544,18 +544,31 @@ function extractPluginRelaunchData(nc: NodeChange): PluginRelaunchDataEntry[] {
 function convertTransformProps(
   nc: NodeChange
 ): Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'> {
-  const x = nc.transform?.m02 ?? 0
-  const y = nc.transform?.m12 ?? 0
   const width = nc.size?.x ?? 100
   const height = nc.size?.y ?? 100
 
+  let x = nc.transform?.m02 ?? 0
+  let y = nc.transform?.m12 ?? 0
   let rotation = 0
   let flipX = false
   if (nc.transform) {
-    const det = nc.transform.m00 * nc.transform.m11 - nc.transform.m01 * nc.transform.m10
+    const t = nc.transform
+    const det = t.m00 * t.m11 - t.m01 * t.m10
     if (det < 0) flipX = true
     const sx = flipX ? -1 : 1
-    rotation = Math.atan2(nc.transform.m10 * sx, nc.transform.m00 * sx) * (180 / Math.PI)
+    rotation = Math.atan2(t.m10 * sx, t.m00 * sx) * (180 / Math.PI)
+
+    const corners = [
+      { x: 0, y: 0 },
+      { x: width, y: 0 },
+      { x: 0, y: height },
+      { x: width, y: height }
+    ].map((point) => ({
+      x: t.m00 * point.x + t.m01 * point.y + t.m02,
+      y: t.m10 * point.x + t.m11 * point.y + t.m12
+    }))
+    x = Math.min(...corners.map((point) => point.x))
+    y = Math.min(...corners.map((point) => point.y))
   }
 
   return { x, y, width, height, rotation, flipX, flipY: false }
