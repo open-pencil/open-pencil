@@ -5,6 +5,15 @@
 ### Fixes
 
 - Fix `@open-pencil/vue` failing to import from npm — `getAbsolutePositionFull` was imported from `@open-pencil/core/canvas/coordinate`, an unexported subpath. Re-exported the function from `@open-pencil/core/canvas` and updated the vue import.
+- Fix large `.fig` files freezing during open — parsing and scene graph import now run in the worker, and opened files fit to the canvas viewport after loading.
+- Improve Figma import fidelity for Preline UI files — preserve variable aliases, derived instance layout, nested instance scaling, avatar swaps, badge internals, and input text alignment.
+- Improve Figma render fidelity for exports — preserve flipped vector bounds, render Figma stroke geometry for shapes/vectors, fix clipped visual overflow, and render drop shadows for stroked shapes from the stroke outline.
+- Fix text editing inside selected components and instances on double-click.
+- Prevent browser/Safari from intercepting app-level Cmd/Ctrl shortcuts such as undo/redo.
+
+### Performance
+
+- Cache instance override resolution and lazily populate opened `.fig` pages to reduce load time for large community files.
 
 ## 0.11.8 — 2026-04-23
 
