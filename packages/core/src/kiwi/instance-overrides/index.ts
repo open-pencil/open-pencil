@@ -62,10 +62,15 @@ function buildKiwiGeometryNodes(
   return result
 }
 
-function propagateResolvedFills(graph: SceneGraph, protectedNodes: Set<string>): void {
+function propagateResolvedFills(
+  graph: SceneGraph,
+  protectedNodes: Set<string>,
+  activeNodeIds?: Set<string>
+): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
     for (const node of graph.getAllNodes()) {
+      if (activeNodeIds && !activeNodeIds.has(node.id)) continue
       if (!node.componentId) continue
       const source = graph.getNode(node.componentId)
       if (!source || source.fills === node.fills) continue
@@ -81,7 +86,8 @@ function buildOverrideContext(
   graph: SceneGraph,
   changeMap: Map<string, InstanceNodeChange>,
   guidToNodeId: Map<string, string>,
-  blobs: Uint8Array[]
+  blobs: Uint8Array[],
+  activeNodeIds?: Set<string>
 ): OverrideContext {
   const overrideKeyToGuid = new Map<string, string>()
   for (const [id, nc] of changeMap) {
@@ -118,7 +124,8 @@ function buildOverrideContext(
     componentIdRoot: new Map(),
     swappedInstances: new Set(),
     kiwiPropertyNodes,
-    geometryOverrideNodes
+    geometryOverrideNodes,
+    activeNodeIds
   }
 }
 
@@ -142,11 +149,12 @@ export function populateAndApplyOverrides(
   graph: SceneGraph,
   changeMap: Map<string, InstanceNodeChange>,
   guidToNodeId: Map<string, string>,
-  blobs: Uint8Array[] = []
+  blobs: Uint8Array[] = [],
+  activeRootIds?: Iterable<string>
 ): void {
-  populateInstances(graph)
+  const activeNodeIds = populateInstances(graph, activeRootIds)
 
-  const ctx = buildOverrideContext(graph, changeMap, guidToNodeId, blobs)
+  const ctx = buildOverrideContext(graph, changeMap, guidToNodeId, blobs, activeNodeIds)
   preComputeRoots(ctx)
 
   const overriddenNodes = applySymbolOverrides(ctx)
@@ -155,7 +163,14 @@ export function populateAndApplyOverrides(
   // synced with the correct values) AND protected (so sync doesn't overwrite
   // them with component defaults).
   for (const id of ctx.kiwiPropertyNodes) overriddenNodes.add(id)
-  propagateOverridesTransitively(graph, overriddenNodes, ctx.swappedInstances, ctx.componentIdRoot)
+  propagateOverridesTransitively(
+    graph,
+    overriddenNodes,
+    ctx.swappedInstances,
+    ctx.componentIdRoot,
+    undefined,
+    ctx.activeNodeIds
+  )
 
   const propModified = applyComponentProperties(ctx)
   if (propModified.size > 0) {
@@ -164,11 +179,32 @@ export function populateAndApplyOverrides(
       propModified,
       ctx.swappedInstances,
       ctx.componentIdRoot,
-      overriddenNodes
+      overriddenNodes,
+      ctx.activeNodeIds
     )
   }
 
+  if (activeRootIds) {
+    const populated = populateInstances(graph, activeRootIds)
+    if (populated) ctx.activeNodeIds = populated
+    const latePropModified = applyComponentProperties(ctx)
+    if (latePropModified.size > 0) {
+      propagateOverridesTransitively(
+        graph,
+        latePropModified,
+        ctx.swappedInstances,
+        ctx.componentIdRoot,
+        overriddenNodes,
+        ctx.activeNodeIds
+      )
+    }
+  }
+
   applyDerivedSymbolData(ctx)
-  propagateResolvedFills(graph, new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]))
+  propagateResolvedFills(
+    graph,
+    new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]),
+    ctx.activeNodeIds
+  )
   applyConstraintScaling(ctx)
 }

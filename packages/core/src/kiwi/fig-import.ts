@@ -336,10 +336,15 @@ function parseDocumentColorSpace(nodeChanges: NodeChange[]): 'srgb' | 'display-p
   return documentNode?.documentColorProfile === 'DISPLAY_P3' ? 'display-p3' : 'srgb'
 }
 
+export interface FigImportOptions {
+  populate?: 'all' | 'first-page'
+}
+
 export function importNodeChanges(
   nodeChanges: NodeChange[],
   blobs: Uint8Array[] = [],
-  images?: Map<string, Uint8Array>
+  images?: Map<string, Uint8Array>,
+  options: FigImportOptions = {}
 ): SceneGraph {
   const graph = new SceneGraph()
   graph.documentColorSpace = parseDocumentColorSpace(nodeChanges)
@@ -389,11 +394,25 @@ export function importNodeChanges(
   importVariableBindings(changeMap, guidToNodeId, graph)
   remapComponentIds(graph, guidToNodeId)
 
+  const firstPageId = graph.getPages()[0]?.id
+  const componentPageIds = new Set<string>()
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') continue
+    let current = node.parentId ? graph.getNode(node.parentId) : undefined
+    while (current?.parentId && current.type !== 'CANVAS') current = graph.getNode(current.parentId)
+    if (current?.type === 'CANVAS') componentPageIds.add(current.id)
+  }
+  const activeRootIds =
+    options.populate === 'first-page'
+      ? [firstPageId, ...componentPageIds].filter(Boolean)
+      : undefined
+
   populateAndApplyOverrides(
     graph,
     changeMap as unknown as Map<string, InstanceNodeChange>,
     guidToNodeId,
-    blobs
+    blobs,
+    activeRootIds
   )
 
   setVariableColorResolver(null)

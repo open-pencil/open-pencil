@@ -83,4 +83,6 @@ export interface OverrideContext {
   kiwiPropertyNodes: Set<string>
   /** Nodes whose Figma-derived geometry should not be overwritten by clone propagation. */
   geometryOverrideNodes: Set<string>
+  /** When set, apply/populate expensive instance work only inside these already-imported nodes. */
+  activeNodeIds?: Set<string>
 }

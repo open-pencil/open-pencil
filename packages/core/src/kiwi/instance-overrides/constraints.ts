@@ -14,6 +14,7 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
   const scaled = new Set<string>()
 
   for (const node of graph.getAllNodes()) {
+    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(node.id)) continue
     if (node.type !== 'INSTANCE' || !node.componentId) continue
     const comp = graph.getNode(node.componentId)
     if (!comp || comp.width <= 0 || comp.height <= 0) continue
@@ -31,6 +32,7 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
   }
 
   if (scaled.size > 0) propagateScaling(ctx, scaled)
+  normalizeOutOfBoundsSingleChildren(ctx)
 }
 
 function resolveScaleBasis(
@@ -72,7 +74,11 @@ function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): Geome
   })
 }
 
-function scaleVectorNetwork(network: VectorNetwork | null, sx: number, sy: number): VectorNetwork | null {
+function scaleVectorNetwork(
+  network: VectorNetwork | null,
+  sx: number,
+  sy: number
+): VectorNetwork | null {
   if (!network) return null
   return {
     vertices: network.vertices.map((vertex) => ({ ...vertex, x: vertex.x * sx, y: vertex.y * sy })),
@@ -142,9 +148,33 @@ function scaleChildren(
   }
 }
 
+function normalizeOutOfBoundsSingleChildren(ctx: OverrideContext): void {
+  const { graph } = ctx
+  for (const parent of graph.getAllNodes()) {
+    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(parent.id)) continue
+    if (parent.childIds.length !== 1) continue
+    const child = graph.getNode(parent.childIds[0])
+    if (!child?.visible || !child.componentId) continue
+    if (ctx.geometryOverrideNodes.has(child.id) || child.figmaDerivedLayout?.x !== undefined)
+      continue
+    const outsideParent =
+      child.x < -0.01 ||
+      child.y < -0.01 ||
+      child.x + child.width > parent.width + 0.01 ||
+      child.y + child.height > parent.height + 0.01
+    if (outsideParent) {
+      graph.updateNode(child.id, {
+        x: 0,
+        y: 0,
+        figmaDerivedLayout: { ...child.figmaDerivedLayout, x: 0, y: 0 }
+      })
+    }
+  }
+}
+
 function propagateScaling(ctx: OverrideContext, scaled: Set<string>): void {
   const { graph } = ctx
-  const clonesOf = buildClonesMap(graph)
+  const clonesOf = buildClonesMap(graph, ctx.activeNodeIds)
   const queue = [...scaled]
   const visited = new Set<string>()
 
@@ -165,7 +195,8 @@ function propagateScaling(ctx: OverrideContext, scaled: Set<string>): void {
       if (clone.y !== source.y) cu.y = source.y
       if (!ctx.geometryOverrideNodes.has(cloneId)) {
         if (source.fillGeometry.length > 0) cu.fillGeometry = copyGeometryPaths(source.fillGeometry)
-        if (source.strokeGeometry.length > 0) cu.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
+        if (source.strokeGeometry.length > 0)
+          cu.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
         if (source.vectorNetwork) cu.vectorNetwork = structuredClone(source.vectorNetwork)
       }
       if (Object.keys(cu).length > 0) graph.updateNode(cloneId, cu)

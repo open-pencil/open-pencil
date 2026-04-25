@@ -1,6 +1,6 @@
 import { shallowRef, computed, triggerRef } from 'vue'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core'
+import { BUILTIN_IO_FORMATS, IORegistry, readFigFile } from '@open-pencil/core'
 
 import { createEditorStore, setActiveEditorStore } from './editor'
 
@@ -102,12 +102,14 @@ export async function openFileInNewTab(
   await yieldToUI()
 
   try {
-    const bytes = new Uint8Array(await file.arrayBuffer())
-    const { graph: imported, sourceFormat } = await io.readDocument({
-      name: file.name,
-      mimeType: file.type || undefined,
-      data: bytes
-    })
+    const isFig = file.name.toLowerCase().endsWith('.fig')
+    const { graph: imported, sourceFormat } = isFig
+      ? { graph: await readFigFile(file, { populate: 'first-page' }), sourceFormat: 'fig' }
+      : await io.readDocument({
+          name: file.name,
+          mimeType: file.type || undefined,
+          data: new Uint8Array(await file.arrayBuffer())
+        })
 
     store.replaceGraph(imported)
     store.undo.clear()

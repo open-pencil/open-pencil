@@ -153,7 +153,7 @@ function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeS
     if (!derived?.length) continue
 
     const nodeId = ctx.guidToNodeId.get(ncId)
-    if (!nodeId) continue
+    if (!nodeId || (ctx.activeNodeIds && !ctx.activeNodeIds.has(nodeId))) continue
 
     for (const d of derived) {
       const guids = d.guidPath?.guids
@@ -188,7 +188,7 @@ function propagateDsdChanges(
 ): void {
   if (modified.size === 0) return
 
-  const clonesOf = buildClonesMap(ctx.graph)
+  const clonesOf = buildClonesMap(ctx.graph, ctx.activeNodeIds)
   const queue = [...modified]
   const visited = new Set<string>()
 

@@ -125,6 +125,7 @@ function applyInstanceDirectAssignments(
   modified: Set<string>
 ): void {
   for (const node of ctx.graph.getAllNodes()) {
+    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(node.id)) continue
     if (node.type !== 'INSTANCE') continue
     const ownFigmaId = ctx.nodeIdToGuid.get(node.id)
     if (!ownFigmaId) continue
@@ -154,7 +155,7 @@ function applyOverrideAssignments(
 ): void {
   for (const [figmaId, nc] of ctx.changeMap) {
     const instanceNodeId = ctx.guidToNodeId.get(figmaId)
-    if (!instanceNodeId) continue
+    if (!instanceNodeId || (ctx.activeNodeIds && !ctx.activeNodeIds.has(instanceNodeId))) continue
     if (ctx.graph.getNode(instanceNodeId)?.type !== 'INSTANCE') continue
 
     const overrides = nc.symbolData?.symbolOverrides

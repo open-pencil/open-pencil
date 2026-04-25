@@ -80,9 +80,13 @@ export function syncChildrenDeep(
 }
 
 /** Build a map of componentId → list of clone node IDs. */
-export function buildClonesMap(graph: SceneGraph): Map<string, string[]> {
+export function buildClonesMap(
+  graph: SceneGraph,
+  activeNodeIds?: Set<string>
+): Map<string, string[]> {
   const clonesOf = new Map<string, string[]>()
   for (const node of graph.getAllNodes()) {
+    if (activeNodeIds && !activeNodeIds.has(node.id)) continue
     if (!node.componentId) continue
     let arr = clonesOf.get(node.componentId)
     if (!arr) {
@@ -141,12 +145,13 @@ export function propagateOverridesTransitively(
   seeds: Set<string>,
   swappedInstances: Set<string>,
   componentIdRoot: Map<string, string>,
-  protect?: Set<string>
+  protect?: Set<string>,
+  activeNodeIds?: Set<string>
 ): void {
   if (seeds.size === 0) return
 
   componentIdRoot.clear()
-  const clonesOf = buildClonesMap(graph)
+  const clonesOf = buildClonesMap(graph, activeNodeIds)
   const expandedSeeds = expandSeedsToParents(graph, seeds)
   const needsSync = buildNeedsSyncSet(expandedSeeds, clonesOf)
 

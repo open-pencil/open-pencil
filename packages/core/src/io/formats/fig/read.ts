@@ -6,9 +6,13 @@ import { deserializeSceneGraph } from '../../../kiwi/graph-transfer'
 import type { SerializedSceneGraph } from '../../../kiwi/graph-transfer'
 import type { SceneGraph } from '../../../scene-graph'
 
-function parseFigFileSync(buffer: ArrayBuffer): SceneGraph {
+export interface ParseFigFileOptions {
+  populate?: 'all' | 'first-page'
+}
+
+function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}): SceneGraph {
   const { nodeChanges, blobs, images: imageEntries, figKiwiVersion } = parseFigBuffer(buffer)
-  const graph = importNodeChanges(nodeChanges, blobs, new Map(imageEntries))
+  const graph = importNodeChanges(nodeChanges, blobs, new Map(imageEntries), options)
   graph.figKiwiVersion = figKiwiVersion
   return graph
 }
@@ -18,7 +22,7 @@ interface WorkerParseResult {
   error?: string
 }
 
-function parseViaWorker(buffer: ArrayBuffer): Promise<SceneGraph> {
+function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Promise<SceneGraph> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('../../../kiwi/fig-parse-worker.ts', import.meta.url), {
       type: 'module'
@@ -38,23 +42,29 @@ function parseViaWorker(buffer: ArrayBuffer): Promise<SceneGraph> {
       reject(new Error(err.message || 'Worker failed to parse .fig file'))
     }
 
-    worker.postMessage(buffer, [buffer])
+    worker.postMessage({ buffer, options }, [buffer])
   })
 }
 
-export async function parseFigFile(buffer: ArrayBuffer): Promise<SceneGraph> {
+export async function parseFigFile(
+  buffer: ArrayBuffer,
+  options: ParseFigFileOptions = {}
+): Promise<SceneGraph> {
   if (typeof Worker !== 'undefined' && IS_BROWSER) {
     const copy = buffer.slice(0)
     try {
-      return await parseViaWorker(buffer)
+      return await parseViaWorker(buffer, options)
     } catch (error) {
       console.warn('Worker parsing failed, falling back to main thread:', error)
-      return parseFigFileSync(copy)
+      return parseFigFileSync(copy, options)
     }
   }
-  return parseFigFileSync(buffer)
+  return parseFigFileSync(buffer, options)
 }
 
-export async function readFigFile(file: File): Promise<SceneGraph> {
-  return parseFigFile(await file.arrayBuffer())
+export async function readFigFile(
+  file: File,
+  options: ParseFigFileOptions = {}
+): Promise<SceneGraph> {
+  return parseFigFile(await file.arrayBuffer(), options)
 }

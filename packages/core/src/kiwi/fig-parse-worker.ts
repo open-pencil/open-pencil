@@ -2,10 +2,16 @@ import { importNodeChanges } from './fig-import'
 import { parseFigBuffer } from './fig-parse-core'
 import { serializeSceneGraph } from './graph-transfer'
 
-self.onmessage = (e: MessageEvent<ArrayBuffer>) => {
+interface WorkerParseRequest {
+  buffer: ArrayBuffer
+  options?: { populate?: 'all' | 'first-page' }
+}
+
+self.onmessage = (e: MessageEvent<ArrayBuffer | WorkerParseRequest>) => {
   try {
-    const { nodeChanges, blobs, images, figKiwiVersion } = parseFigBuffer(e.data)
-    const graph = importNodeChanges(nodeChanges, blobs, new Map(images))
+    const request = e.data instanceof ArrayBuffer ? { buffer: e.data } : e.data
+    const { nodeChanges, blobs, images, figKiwiVersion } = parseFigBuffer(request.buffer)
+    const graph = importNodeChanges(nodeChanges, blobs, new Map(images), request.options)
     graph.figKiwiVersion = figKiwiVersion
     self.postMessage({ graph: serializeSceneGraph(graph) })
   } catch (err) {

@@ -910,7 +910,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     try {
       state.loading = true
       await yieldToUI()
-      const imported = await readFigFile(file)
+      const imported = await readFigFile(file, { populate: 'first-page' })
       await yieldToUI()
       editor.replaceGraph(imported)
       editor.undo.clear()
@@ -1022,11 +1022,11 @@ export function createEditorStore(initialGraph?: SceneGraph) {
       const bytes = await tauriRead(filePath)
       const blob = new Blob([bytes])
       const file = new File([blob], state.documentName + '.fig')
-      const imported = await readFigFile(file)
+      const imported = await readFigFile(file, { populate: 'first-page' })
       editor.replaceGraph(imported)
     } else if (fileHandle) {
       const file = await fileHandle.getFile()
-      const imported = await readFigFile(file)
+      const imported = await readFigFile(file, { populate: 'first-page' })
       editor.replaceGraph(imported)
     } else {
       return
