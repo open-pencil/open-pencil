@@ -390,7 +390,7 @@ export function renderShapeUncached(
     r.fillPaint.setShader(null)
   }
 
-  const sg = node.type === 'VECTOR' ? r.getStrokeGeometry(node) : null
+  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
   const vectorPaths = !sg && node.type === 'VECTOR' ? r.getVectorPaths(node) : null
   for (let si = 0; si < node.strokes.length; si++) {
     const stroke = node.strokes[si]
