@@ -29,6 +29,37 @@ const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowRight: [1, 0]
 }
 
+const RESERVED_MOD_CODES = new Set([
+  'Backslash',
+  'BracketLeft',
+  'BracketRight',
+  'Digit0',
+  'Digit1',
+  'Digit2',
+  'KeyA',
+  'KeyB',
+  'KeyD',
+  'KeyE',
+  'KeyG',
+  'KeyH',
+  'KeyJ',
+  'KeyK',
+  'KeyL',
+  'KeyN',
+  'KeyO',
+  'KeyS',
+  'KeyT',
+  'KeyW',
+  'KeyY',
+  'KeyZ'
+])
+
+function isReservedModShortcut(e: KeyboardEvent): boolean {
+  if (!(e.metaKey || e.ctrlKey)) return false
+  if (e.altKey) return e.code === 'KeyB' || e.code === 'KeyK'
+  return RESERVED_MOD_CODES.has(e.code)
+}
+
 export function useKeyboard() {
   const { activeTab } = useAIChat()
   const store = useEditorStore()
@@ -154,10 +185,11 @@ export function useKeyboard() {
     if (html) store.pasteFromHTML(html, cursorPos)
   })
 
-  // ─── Nudge (raw keydown for repeat events) ─────────────────
+  // ─── Raw keydown handlers ─────────────────────────────────
 
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
     if (isEditing(e) || store.state.editingTextId) return
+    if (isReservedModShortcut(e)) e.preventDefault()
     if (e.metaKey || e.ctrlKey || e.altKey) return
     const delta = NUDGE_DELTAS[e.code]
     if (delta && store.state.selectedIds.size > 0) {
@@ -174,6 +206,7 @@ export function useKeyboard() {
     onEventFired(e) {
       if (e.type !== 'keydown') return
       if (isEditing(e) || store.state.editingTextId) return
+      if (isReservedModShortcut(e)) e.preventDefault()
       if (e.code === 'Backspace' || e.code === 'Delete') e.preventDefault()
       if (e.code === 'BracketLeft' || e.code === 'BracketRight') e.preventDefault()
       if (e.code === 'Enter' && store.state.penState) e.preventDefault()
