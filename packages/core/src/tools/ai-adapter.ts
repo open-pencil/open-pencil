@@ -5,7 +5,7 @@
  * functions with FigmaAPI instantiation.
  */
 
-import type { FigmaAPI } from '../figma-api'
+import type { FigmaAPI } from '#core/figma-api'
 import type { ToolDef, ParamDef, ParamType } from './schema'
 import type * as valibot from 'valibot'
 

@@ -1,11 +1,11 @@
 import { wcagLuminance } from 'culori'
 
-import { colorToHex } from '../color'
-import { CONTAINER_TYPES, findAncestorBackground } from './describe-shared'
+import { colorToHex } from '#core/color'
+import { CONTAINER_TYPES, findAncestorBackground } from './shared'
 
-import type { SceneGraph, SceneNode } from '../scene-graph'
-import type { Color } from '../types'
-import type { DescribeIssue } from './describe-issues'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { Color } from '#core/types'
+import type { DescribeIssue } from './issues'
 
 const DARK_BG_LUMINANCE = 0.35
 
@@ -267,12 +267,16 @@ function checkSiblingHeightConsistency(ctx: LayoutContext): void {
   }
 }
 
+function visibleChildren(node: SceneNode, graph: SceneGraph): SceneNode[] {
+  return node.childIds
+    .map((childId) => graph.getNode(childId))
+    .filter((child): child is SceneNode => child?.visible === true)
+}
+
 function checkChildUndersize(ctx: LayoutContext): void {
   const { node, graph, issues } = ctx
   if (node.layoutMode !== 'NONE') return
-  for (const childId of node.childIds) {
-    const child = graph.getNode(childId)
-    if (!child?.visible) continue
+  for (const child of visibleChildren(node, graph)) {
     if (
       child.width > 0 &&
       node.width > 0 &&
@@ -308,9 +312,7 @@ function checkCrossAxisOverflow(ctx: LayoutContext): void {
 function checkFillWithoutFlex(ctx: LayoutContext): void {
   const { node, graph, issues } = ctx
   if (node.layoutMode !== 'NONE') return
-  for (const childId of node.childIds) {
-    const child = graph.getNode(childId)
-    if (!child?.visible) continue
+  for (const child of visibleChildren(node, graph)) {
     if (!CONTAINER_TYPES.has(child.type)) continue
     if (child.primaryAxisSizing === 'FILL' || child.counterAxisSizing === 'FILL') {
       issues.push({
@@ -383,9 +385,7 @@ function checkNestedFlexWithoutFill(ctx: LayoutContext): void {
 function checkDuplicateNames(ctx: LayoutContext): void {
   const { node, graph, issues } = ctx
   const nameCounts = new Map<string, number>()
-  for (const childId of node.childIds) {
-    const child = graph.getNode(childId)
-    if (!child?.visible) continue
+  for (const child of visibleChildren(node, graph)) {
     nameCounts.set(child.name, (nameCounts.get(child.name) ?? 0) + 1)
   }
   for (const [name, count] of nameCounts) {

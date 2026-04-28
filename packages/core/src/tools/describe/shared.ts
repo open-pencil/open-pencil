@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '../scene-graph'
-import type { Color } from '../types'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { Color } from '#core/types'
 
 export const CONTAINER_TYPES = new Set(['FRAME', 'COMPONENT', 'INSTANCE'])
 
