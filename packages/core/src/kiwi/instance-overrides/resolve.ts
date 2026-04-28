@@ -1,7 +1,7 @@
-import { guidToString } from '../convert'
+import { guidToString } from '#core/kiwi/node-change/convert'
 
-import type { SceneNode } from '../../scene-graph'
-import type { GUID } from '../codec'
+import type { GUID } from '#core/kiwi/binary/codec'
+import type { SceneNode } from '#core/scene-graph'
 import type { InstanceNodeChange, OverrideContext } from './types'
 
 const MAX_CHAIN_DEPTH = 20

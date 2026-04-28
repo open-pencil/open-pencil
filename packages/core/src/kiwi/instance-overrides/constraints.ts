@@ -1,7 +1,8 @@
-import { copyGeometryPaths } from '../../scene-graph/copy'
+import { copyGeometryPaths } from '#core/scene-graph/copy'
+
 import { buildClonesMap } from './sync'
 
-import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '../../scene-graph'
+import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '#core/scene-graph'
 import type { OverrideContext } from './types'
 
 /**

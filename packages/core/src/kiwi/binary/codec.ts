@@ -7,10 +7,10 @@
  * - fzstd: Browser-compatible Zstd decompression
  */
 
+import { parseColor } from '#core/color'
+import { compileSchema, encodeBinarySchema } from '#core/kiwi/kiwi-schema'
 import { decompress as zstdDecompress } from 'fzstd'
 
-import { parseColor } from '../color'
-import { compileSchema, encodeBinarySchema } from './kiwi-schema'
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
 
@@ -164,9 +164,9 @@ export function peekMessageType(data: Uint8Array): number | null {
 
 // Type definitions
 
-export type { GUID, Color } from '../types'
+export type { GUID, Color } from '#core/types'
 
-import type { Color, GUID, Matrix, Vector } from '../types'
+import type { Color, GUID, Matrix, Vector } from '#core/types'
 
 export type { Matrix, Vector }
 

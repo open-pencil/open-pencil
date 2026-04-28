@@ -1,9 +1,9 @@
+import type { PluginData, PluginRelaunchData } from '#core/kiwi/binary/codec'
 import type {
   PluginDataEntry,
   PluginRelaunchDataEntry,
   SharedPluginDataEntry
-} from '../scene-graph'
-import type { PluginData, PluginRelaunchData } from './codec'
+} from '#core/scene-graph'
 
 export function mergePluginData(
   pluginData: PluginDataEntry[],

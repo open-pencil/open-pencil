@@ -1,8 +1,8 @@
 import { mergePluginData, serializePluginRelaunchData } from './plugin-data'
 
-import type { SceneGraph, SceneNode } from '../scene-graph'
-import type { Color, GUID, Matrix } from '../types'
-import type { NodeChange, Paint } from './codec'
+import type { NodeChange, Paint } from '#core/kiwi/binary/codec'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { Color, GUID, Matrix } from '#core/types'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
 

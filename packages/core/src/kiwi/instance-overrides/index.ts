@@ -10,8 +10,9 @@ export type {
   SymbolOverride
 } from './types'
 
-import { copyFills } from '../../scene-graph/copy'
-import { guidToString } from '../convert'
+import { guidToString } from '#core/kiwi/node-change/convert'
+import { copyFills } from '#core/scene-graph/copy'
+
 import { applyConstraintScaling } from './constraints'
 import { applyDerivedSymbolData } from './dsd'
 import { populateInstances } from './populate'
@@ -20,22 +21,31 @@ import { preComputeRoots } from './resolve'
 import { applySymbolOverrides } from './symbol-overrides'
 import { propagateOverridesTransitively } from './sync'
 
-import type { SceneGraph } from '../../scene-graph'
+import type { SceneGraph } from '#core/scene-graph'
 import type { InstanceNodeChange, OverrideContext, ComponentPropValue } from './types'
 
 /**
  * Identify nodes whose kiwi NC has explicit property values that DIFFER
  * from their component source. Only these need protection from sync.
  */
+function* changedNodeEntries(
+  changeMap: Map<string, InstanceNodeChange>,
+  guidToNodeId: Map<string, string>
+): Generator<[string, InstanceNodeChange]> {
+  for (const [figmaId, nodeId] of guidToNodeId) {
+    const nc = changeMap.get(figmaId)
+    if (nc) yield [nodeId, nc]
+  }
+}
+
 function buildKiwiPropertyNodes(
   graph: SceneGraph,
   changeMap: Map<string, InstanceNodeChange>,
   guidToNodeId: Map<string, string>
 ): Set<string> {
   const result = new Set<string>()
-  for (const [figmaId, nodeId] of guidToNodeId) {
-    const nc = changeMap.get(figmaId) as Record<string, unknown> | undefined
-    if (!nc) continue
+  for (const [nodeId, change] of changedNodeEntries(changeMap, guidToNodeId)) {
+    const nc = change as Record<string, unknown>
     const node = graph.getNode(nodeId)
     if (!node?.componentId) continue
     const comp = graph.getNode(node.componentId)
@@ -54,9 +64,7 @@ function buildKiwiGeometryNodes(
   guidToNodeId: Map<string, string>
 ): Set<string> {
   const result = new Set<string>()
-  for (const [figmaId, nodeId] of guidToNodeId) {
-    const nc = changeMap.get(figmaId)
-    if (!nc) continue
+  for (const [nodeId, nc] of changedNodeEntries(changeMap, guidToNodeId)) {
     if (nc.fillGeometry?.length || nc.strokeGeometry?.length) result.add(nodeId)
   }
   return result

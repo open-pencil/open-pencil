@@ -1,16 +1,17 @@
 export const FIG_KIWI_DEFAULT_VERSION = 101
 
+import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text-data'
+import { getLoadedFontData, normalizeFontFamily, weightToStyle } from '#core/text/fonts'
+import { getGlyphOutlineCommandsSync } from '#core/text/opentype'
+import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
 import { deflateSync, inflateSync } from 'fflate'
 
-import { getLoadedFontData, normalizeFontFamily, weightToStyle } from '../text/fonts'
-import { getGlyphOutlineCommandsSync } from '../text/opentype'
-import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '../vector'
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
-import { sceneNodeToKiwiWithContext, type KiwiNodeChange } from './node-export'
+import { sceneNodeToKiwiWithContext, type KiwiNodeChange } from './export-node'
 
-import type { SceneGraph, SceneNode, CharacterStyleOverride } from '../scene-graph'
-import type { Color, GUID, Matrix } from '../types'
-import type { NodeChange, Paint, VariableConsumptionEntry } from './codec'
+import type { NodeChange, Paint, VariableConsumptionEntry } from '#core/kiwi/binary/codec'
+import type { SceneGraph, SceneNode, CharacterStyleOverride } from '#core/scene-graph'
+import type { Color, GUID, Matrix } from '#core/types'
 
 const fontDigestCache = new Map<string, Uint8Array>()
 const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
@@ -227,25 +228,16 @@ function buildDerivedTextData(
     (_, index) => index * glyphAdvance
   )
 
-  return {
-    layoutSize: { x: node.width, y: node.height },
-    baselines: [
-      {
-        firstCharacter: 0,
-        endCharacter: Math.max(node.text.length - 1, 0),
-        position: { x: 0, y: lineHeight },
-        width: node.width,
-        lineHeight,
-        lineAscent: Math.max(lineHeight - node.fontSize * 0.2, 0)
-      }
-    ],
+  return buildSharedDerivedTextData({
+    node,
     glyphs,
     fontMetaData: fontMeta,
-    logicalIndexToCharacterOffsetMap,
-    derivedLines: [{ directionality: 'LTR' }],
-    truncationStartIndex: -1,
-    truncatedHeight: -1
-  }
+    baseline: lineHeight,
+    width: node.width,
+    lineHeight,
+    lineAscent: Math.max(lineHeight - node.fontSize * 0.2, 0),
+    logicalIndexToCharacterOffsetMap
+  })
 }
 
 function exportTextData(node: SceneNode): NodeChange['textData'] {

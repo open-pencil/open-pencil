@@ -1,16 +1,16 @@
-import { SceneGraph } from '../scene-graph'
+import { populateAndApplyOverrides } from '#core/kiwi/instance-overrides'
 import {
   guidToString,
   nodeChangeToProps,
   sortChildren,
   setVariableColorResolver,
   VARIABLE_BINDING_FIELDS_INVERSE
-} from './convert'
-import { populateAndApplyOverrides } from './instance-overrides'
+} from '#core/kiwi/node-change/convert'
+import { SceneGraph } from '#core/scene-graph'
 
-import type { VariableType, VariableValue } from '../scene-graph'
-import type { NodeChange, VariableDataValuesEntry, Color, GUID } from './codec'
-import type { InstanceNodeChange } from './instance-overrides'
+import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '#core/kiwi/binary/codec'
+import type { InstanceNodeChange } from '#core/kiwi/instance-overrides'
+import type { VariableType, VariableValue } from '#core/scene-graph'
 
 type AssetRef = { key: string; version?: string }
 type AliasRef = { guid?: GUID; assetRef?: AssetRef }

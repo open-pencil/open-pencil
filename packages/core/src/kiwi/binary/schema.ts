@@ -1,5 +1,5 @@
 /* eslint-disable max-lines -- generated kiwi schema definition */
-import { parseSchema } from './kiwi-schema'
+import { parseSchema } from '#core/kiwi/kiwi-schema'
 
 const schemaText = `
 package Fig;

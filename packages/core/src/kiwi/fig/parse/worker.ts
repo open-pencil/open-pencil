@@ -1,6 +1,7 @@
-import { importNodeChanges } from './fig-import'
-import { parseFigBuffer } from './fig-parse-core'
-import { serializeSceneGraph } from './graph-transfer'
+import { importNodeChanges } from '#core/kiwi/fig/import'
+import { serializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
+
+import { parseFigBuffer } from './core'
 
 interface WorkerParseRequest {
   buffer: ArrayBuffer

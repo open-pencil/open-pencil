@@ -1,10 +1,9 @@
+import { isZstdCompressed } from '#core/kiwi/binary/protocol'
+import { decodeBinarySchema, compileSchema, ByteBuffer } from '#core/kiwi/kiwi-schema'
 import { unzipSync, inflateSync } from 'fflate'
 import { decompress as zstdDecompress } from 'fzstd'
 
-import { decodeBinarySchema, compileSchema, ByteBuffer } from './kiwi-schema'
-import { isZstdCompressed } from './protocol'
-
-import type { FigmaMessage, NodeChange } from './codec'
+import type { FigmaMessage, NodeChange } from '#core/kiwi/binary/codec'
 
 interface FigKiwiPayload {
   schemaDeflated: Uint8Array

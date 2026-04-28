@@ -1,8 +1,9 @@
-import { guidToString } from '../convert'
-import { convertOverrideToProps } from '../convert-overrides'
-import { resolveOverrideTarget, repopulateInstance } from './resolve'
+import { guidToString } from '#core/kiwi/node-change/convert'
 
-import type { SceneNode } from '../../scene-graph'
+import { resolveOverrideTarget, repopulateInstance } from './resolve'
+import { convertOverrideToProps } from './symbol-props'
+
+import type { SceneNode } from '#core/scene-graph'
 import type { OverrideContext } from './types'
 
 function isActiveInstance(ctx: OverrideContext, nodeId: string | undefined): nodeId is string {

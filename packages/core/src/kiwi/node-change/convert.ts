@@ -1,9 +1,10 @@
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
-import { normalizeColor } from '../color'
-import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '../constants'
-import { styleToWeight } from '../text/fonts'
-import { decodeVectorNetworkBlob } from '../vector'
+import { normalizeColor } from '#core/color'
+import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
+import { styleToWeight } from '#core/text/fonts'
+import { decodeVectorNetworkBlob } from '#core/vector'
 
+import type { NodeChange, Paint, Effect as KiwiEffect, GUID } from '#core/kiwi/binary/codec'
 import type {
   SceneNode,
   NodeType,
@@ -35,9 +36,8 @@ import type {
   PluginDataEntry,
   SharedPluginDataEntry,
   PluginRelaunchDataEntry
-} from '../scene-graph'
-import type { Color, Matrix, Vector } from '../types'
-import type { NodeChange, Paint, Effect as KiwiEffect, GUID } from './codec'
+} from '#core/scene-graph'
+import type { Color, Matrix, Vector } from '#core/types'
 
 const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
