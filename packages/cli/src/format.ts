@@ -14,7 +14,7 @@ import {
   summary as fmtSummary
 } from 'agentfmt'
 
-import type { SceneNode, SceneGraph } from '@open-pencil/core'
+import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
 import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 
 export {

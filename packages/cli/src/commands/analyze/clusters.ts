@@ -1,12 +1,11 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand, calcClusterConfidence } from '@open-pencil/core'
+import { calcClusterConfidence } from '@open-pencil/core/tools'
 
-import { isAppMode, requireFile, rpc } from '../../app-client'
-import { bold, fmtList, fmtSummary } from '../../format'
-import { loadDocument } from '../../headless'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, fmtList, fmtSummary } from '#cli/format'
 
-import type { AnalyzeClustersResult } from '@open-pencil/core'
+import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 
 function formatSignature(sig: string): string {
   const [typeSize, children] = sig.split('|')
@@ -25,20 +24,6 @@ function formatSignature(sig: string): string {
   return `${typeName} > [${childParts.join(', ')}]`
 }
 
-async function getData(
-  file: string | undefined,
-  args: { limit?: string; 'min-size'?: string; 'min-count'?: string }
-): Promise<AnalyzeClustersResult> {
-  const rpcArgs = {
-    limit: Number(args.limit ?? 20),
-    minSize: Number(args['min-size'] ?? 30),
-    minCount: Number(args['min-count'] ?? 2)
-  }
-  if (isAppMode(file)) return rpc<AnalyzeClustersResult>('analyze_clusters', rpcArgs)
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'analyze_clusters', rpcArgs) as AnalyzeClustersResult
-}
-
 export default defineCommand({
   meta: { description: 'Find repeated design patterns (potential components)' },
   args: {
@@ -53,7 +38,11 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file, args)
+    const data = await loadRpcData<AnalyzeClustersResult>(args.file, 'analyze_clusters', {
+      limit: Number(args.limit),
+      minSize: Number(args['min-size']),
+      minCount: Number(args['min-count'])
+    })
 
     if (args.json) {
       console.log(JSON.stringify(data, null, 2))

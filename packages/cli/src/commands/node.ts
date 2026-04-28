@@ -1,21 +1,11 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand, colorToHex } from '@open-pencil/core'
+import { colorToHex } from '@open-pencil/core/color'
+import { loadRpcData } from '#cli/rpc-data'
+import { fmtNode, printError, formatType } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { fmtNode, printError, formatType } from '../format'
-import { loadDocument } from '../headless'
-
-import type { Color, NodeResult } from '@open-pencil/core'
-
-async function getData(
-  file: string | undefined,
-  id: string
-): Promise<NodeResult | { error: string }> {
-  if (isAppMode(file)) return rpc<NodeResult>('node', { id })
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'node', { id }) as NodeResult | { error: string }
-}
+import type { NodeResult } from '@open-pencil/core/rpc'
+import type { Color } from '@open-pencil/core/types'
 
 export default defineCommand({
   meta: { description: 'Show detailed node properties by ID' },
@@ -29,7 +19,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file, args.id)
+    const data = await loadRpcData<NodeResult | { error: string }>(args.file, 'node', { id: args.id })
 
     if ('error' in data) {
       printError(data.error)

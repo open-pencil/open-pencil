@@ -1,18 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, fmtHistogram, fmtSummary, kv } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { bold, fmtHistogram, fmtSummary, kv } from '../format'
-import { loadDocument } from '../headless'
-
-import type { InfoResult } from '@open-pencil/core'
-
-async function getData(file?: string): Promise<InfoResult> {
-  if (isAppMode(file)) return rpc<InfoResult>('info')
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'info', undefined) as InfoResult
-}
+import type { InfoResult } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: { description: 'Show document info (pages, node counts, fonts)' },
@@ -25,7 +16,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file)
+    const data = await loadRpcData<InfoResult>(args.file, 'info')
 
     if (args.json) {
       console.log(JSON.stringify(data, null, 2))

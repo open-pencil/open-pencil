@@ -1,10 +1,10 @@
 import { defineCommand } from 'citty'
 
-import { FigmaAPI } from '@open-pencil/core'
+import { FigmaAPI } from '@open-pencil/core/figma-api'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { printError } from '../format'
-import { loadDocument } from '../headless'
+import { isAppMode, requireFile, rpc } from '#cli/app-client'
+import { printError } from '#cli/format'
+import { loadDocument } from '#cli/headless'
 
 function printResult(value: unknown, json: boolean) {
   if (json || !process.stdout.isTTY) {
@@ -89,7 +89,7 @@ export default defineCommand({
     }
 
     if (args.write || args.output) {
-      const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core')
+      const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core/io')
       const io = new IORegistry(BUILTIN_IO_FORMATS)
       const outPath = args.output ? args.output : file
       const result = await io.writeDocument('fig', graph)

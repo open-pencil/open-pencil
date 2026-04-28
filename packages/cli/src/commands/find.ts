@@ -1,27 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { printNodeResults } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { printNodeResults } from '../format'
-import { loadDocument } from '../headless'
-
-import type { FindNodeResult } from '@open-pencil/core'
-
-async function getData(
-  file: string | undefined,
-  args: { name?: string; type?: string; page?: string; limit?: string }
-): Promise<FindNodeResult[]> {
-  const rpcArgs = {
-    name: args.name,
-    type: args.type,
-    page: args.page,
-    limit: args.limit ? Number(args.limit) : undefined
-  }
-  if (isAppMode(file)) return rpc<FindNodeResult[]>('find', rpcArgs)
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'find', rpcArgs) as FindNodeResult[]
-}
+import type { FindNodeResult } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: { description: 'Find nodes by name or type' },
@@ -38,7 +20,12 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const results = await getData(args.file, args)
+    const results = await loadRpcData<FindNodeResult[]>(args.file, 'find', {
+      name: args.name,
+      type: args.type,
+      page: args.page,
+      limit: args.limit ? Number(args.limit) : undefined
+    })
 
     if (args.json) {
       console.log(JSON.stringify(results, null, 2))

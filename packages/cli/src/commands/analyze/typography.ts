@@ -1,12 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, fmtHistogram, fmtSummary } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../../app-client'
-import { bold, fmtHistogram, fmtSummary } from '../../format'
-import { loadDocument } from '../../headless'
-
-import type { AnalyzeTypographyResult } from '@open-pencil/core'
+import type { AnalyzeTypographyResult } from '@open-pencil/core/rpc'
 
 function weightName(w: number): string {
   if (w <= 100) return 'Thin'
@@ -18,12 +15,6 @@ function weightName(w: number): string {
   if (w <= 700) return 'Bold'
   if (w <= 800) return 'ExtraBold'
   return 'Black'
-}
-
-async function getData(file?: string): Promise<AnalyzeTypographyResult> {
-  if (isAppMode(file)) return rpc<AnalyzeTypographyResult>('analyze_typography')
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'analyze_typography', {}) as AnalyzeTypographyResult
 }
 
 export default defineCommand({
@@ -42,7 +33,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file)
+    const data = await loadRpcData<AnalyzeTypographyResult>(args.file, 'analyze_typography', {})
     const limit = Number(args.limit)
     const groupBy = args['group-by']
 

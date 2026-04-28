@@ -1,26 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { printNodeResults, printError } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { printNodeResults, printError } from '../format'
-import { loadDocument } from '../headless'
-
-import type { QueryNodeResult } from '@open-pencil/core'
-
-async function getData(
-  file: string | undefined,
-  args: { selector: string; page?: string; limit?: string }
-): Promise<QueryNodeResult[] | { error: string }> {
-  const rpcArgs = {
-    selector: args.selector,
-    page: args.page,
-    limit: args.limit ? Number(args.limit) : undefined
-  }
-  if (isAppMode(file)) return rpc<QueryNodeResult[]>('query', rpcArgs)
-  const graph = await loadDocument(requireFile(file))
-  return (await executeRpcCommand(graph, 'query', rpcArgs)) as QueryNodeResult[] | { error: string }
-}
+import type { QueryNodeResult } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: {
@@ -42,10 +25,10 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const results = await getData(args.file, {
+    const results = await loadRpcData<QueryNodeResult[] | { error: string }>(args.file, 'query', {
       selector: args.selector,
       page: args.page,
-      limit: args.limit
+      limit: args.limit ? Number(args.limit) : undefined
     })
 
     if ('error' in results) {

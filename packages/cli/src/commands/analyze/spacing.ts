@@ -1,18 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../../app-client'
-import { bold, kv, fmtHistogram, fmtSummary } from '../../format'
-import { loadDocument } from '../../headless'
-
-import type { AnalyzeSpacingResult } from '@open-pencil/core'
-
-async function getData(file?: string): Promise<AnalyzeSpacingResult> {
-  if (isAppMode(file)) return rpc<AnalyzeSpacingResult>('analyze_spacing')
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'analyze_spacing', undefined) as AnalyzeSpacingResult
-}
+import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: { description: 'Analyze spacing values (gap, padding)' },
@@ -26,7 +17,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file)
+    const data = await loadRpcData<AnalyzeSpacingResult>(args.file, 'analyze_spacing')
     const gridSize = Number(args.grid)
 
     if (args.json) {

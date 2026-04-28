@@ -2,18 +2,19 @@ import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
-import { requireFile } from '../app-client'
-import { ok, printError } from '../format'
-import { loadDocument } from '../headless'
+import { requireFile } from '#cli/app-client'
+import { ok, printError } from '#cli/format'
+import { loadDocument } from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
-const WRITABLE_FORMATS = ['FIG'] as const
 
-type WritableFormat = (typeof WRITABLE_FORMATS)[number]
+function writableFormatIds(): string[] {
+  return io.listWritableFormats().map((format) => format.id)
+}
 
-function defaultOutput(file: string, format: WritableFormat): string {
+function defaultOutput(file: string, format: string): string {
   const base = basename(file, extname(file))
   return resolve(`${base}.${format.toLowerCase()}`)
 }
@@ -40,15 +41,16 @@ export default defineCommand({
     }
   },
   async run({ args }) {
-    const format = args.format.toUpperCase() as WritableFormat
-    if (!WRITABLE_FORMATS.includes(format)) {
-      printError(`Invalid format "${args.format}". Use fig.`)
+    const format = args.format.toLowerCase()
+    const writableFormats = writableFormatIds()
+    if (!writableFormats.includes(format)) {
+      printError(`Invalid format "${args.format}". Use ${writableFormats.join(', ')}.`)
       process.exit(1)
     }
 
     const file = requireFile(args.file)
     const graph = await loadDocument(file)
-    const result = await io.writeDocument(format.toLowerCase(), graph)
+    const result = await io.writeDocument(format, graph)
     const output = args.output ? resolve(args.output) : defaultOutput(file, format)
     await Bun.write(output, result.data as Uint8Array)
     console.log(ok(`Converted ${file} → ${output}`))
