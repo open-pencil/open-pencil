@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useEditor } from '@open-pencil/vue/context/editorContext'
-import { useCanvas, type UseCanvasOptions } from '@open-pencil/vue'
-import { provideCanvas } from './context'
+import { useEditor } from '#vue/editor/context'
+import { useCanvas, type UseCanvasOptions } from '#vue/canvas/surface/use'
+import { provideCanvas } from '#vue/canvas/context'
 
-const props = withDefaults(defineProps<UseCanvasOptions>(), {
-  showRulers: undefined
-})
+const { showRulers, preserveDrawingBuffer } = defineProps<UseCanvasOptions>()
 
 const editor = useEditor()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -17,7 +15,8 @@ const { renderNow, hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle
   canvasRef,
   editor,
   {
-    ...props,
+    showRulers,
+    preserveDrawingBuffer,
     onReady: () => {
       ready.value = true
     }

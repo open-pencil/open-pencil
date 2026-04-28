@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useCanvasContext } from './context'
+import { useCanvasContext } from '#vue/canvas/context'
 
 const { canvasRef } = useCanvasContext()
 </script>

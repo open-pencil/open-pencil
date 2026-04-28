@@ -1,6 +1,8 @@
+import { setupSafariGestureZoom } from '#vue/shared/input/gesture'
+import { setupWheelPanZoom } from '#vue/shared/input/wheel'
 import { useEventListener } from '@vueuse/core'
 
-import type { DragState } from './types'
+import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
 
@@ -12,63 +14,6 @@ export function setupPanZoom(
   onMouseMove: (e: MouseEvent) => void,
   onMouseUp: () => void
 ) {
-  const wheelAccum = {
-    deltaX: 0,
-    deltaY: 0,
-    zoomDelta: 0,
-    zoomCenterX: 0,
-    zoomCenterY: 0,
-    hasZoom: false,
-    rafId: 0
-  }
-
-  function flushWheel() {
-    wheelAccum.rafId = 0
-    editor.setHoveredNode(null)
-    if (wheelAccum.hasZoom) {
-      editor.applyZoom(wheelAccum.zoomDelta, wheelAccum.zoomCenterX, wheelAccum.zoomCenterY)
-    } else {
-      editor.pan(wheelAccum.deltaX, wheelAccum.deltaY)
-    }
-    wheelAccum.deltaX = 0
-    wheelAccum.deltaY = 0
-    wheelAccum.zoomDelta = 0
-    wheelAccum.hasZoom = false
-  }
-
-  function normalizeWheelDelta(e: WheelEvent): { dx: number; dy: number } {
-    let { deltaX, deltaY } = e
-    if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) {
-      deltaX *= 40
-      deltaY *= 40
-    } else if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      deltaX *= 800
-      deltaY *= 800
-    }
-    return { dx: deltaX, dy: deltaY }
-  }
-
-  function onWheel(e: WheelEvent) {
-    e.preventDefault()
-    const canvas = canvasRef.value
-    if (!canvas) return
-    const { dx, dy } = normalizeWheelDelta(e)
-
-    if (e.ctrlKey || e.metaKey) {
-      const rect = canvas.getBoundingClientRect()
-      wheelAccum.zoomCenterX = e.clientX - rect.left
-      wheelAccum.zoomCenterY = e.clientY - rect.top
-      wheelAccum.zoomDelta += dy
-      wheelAccum.hasZoom = true
-    } else {
-      wheelAccum.deltaX -= dx
-      wheelAccum.deltaY -= dy
-    }
-    if (!wheelAccum.rafId) {
-      wheelAccum.rafId = requestAnimationFrame(flushWheel)
-    }
-  }
-
   let activeTouches: Touch[] = []
   let pinchStartDist = 0
   let pinchStartZoom = 0
@@ -146,15 +91,12 @@ export function setupPanZoom(
       const newDist = touchDist(a, b)
       if (pinchStartDist > 0) {
         const scale = newDist / pinchStartDist
-        const newZoom = Math.max(0.02, Math.min(256, pinchStartZoom * scale))
-        const zoomRatio = newZoom / editor.state.zoom
-
+        const newZoom = pinchStartZoom * scale
         const panDx = newMidX - pinchMidX
         const panDy = newMidY - pinchMidY
 
-        editor.state.panX = pinchMidX - (pinchMidX - editor.state.panX) * zoomRatio + panDx
-        editor.state.panY = pinchMidY - (pinchMidY - editor.state.panY) * zoomRatio + panDy
-        editor.state.zoom = newZoom
+        editor.setZoomAroundPoint(newZoom, pinchMidX, pinchMidY)
+        editor.pan(panDx, panDy)
       }
 
       pinchMidX = newMidX
@@ -200,65 +142,11 @@ export function setupPanZoom(
     }
   }
 
-  useEventListener(canvasRef, 'wheel', onWheel, { passive: false })
+  setupWheelPanZoom(canvasRef, editor)
   useEventListener(canvasRef, 'touchstart', onTouchStart, { passive: false })
   useEventListener(canvasRef, 'touchmove', onTouchMove, { passive: false })
   useEventListener(canvasRef, 'touchend', onTouchEnd, { passive: false })
   useEventListener(canvasRef, 'touchcancel', onTouchEnd, { passive: false })
 
-  let gestureStartZoom = 1
-  let gestureRafId = 0
-  let pendingGesture: { scale: number; sx: number; sy: number } | null = null
-
-  function flushGesture() {
-    gestureRafId = 0
-    if (!pendingGesture) return
-    editor.setHoveredNode(null)
-    const { scale, sx, sy } = pendingGesture
-    pendingGesture = null
-    const newZoom = Math.max(0.02, Math.min(256, gestureStartZoom * scale))
-    const zoomRatio = newZoom / editor.state.zoom
-    editor.state.panX = sx - (sx - editor.state.panX) * zoomRatio
-    editor.state.panY = sy - (sy - editor.state.panY) * zoomRatio
-    editor.state.zoom = newZoom
-    editor.requestRepaint()
-  }
-
-  useEventListener(
-    canvasRef,
-    'gesturestart' as keyof HTMLElementEventMap,
-    (e: Event) => {
-      e.preventDefault()
-      gestureStartZoom = editor.state.zoom
-    },
-    { passive: false }
-  )
-  useEventListener(
-    canvasRef,
-    'gesturechange' as keyof HTMLElementEventMap,
-    (e: Event) => {
-      e.preventDefault()
-      const ge = e as GestureEvent
-      const canvas = canvasRef.value
-      if (!canvas) return
-      const rect = canvas.getBoundingClientRect()
-      pendingGesture = {
-        scale: ge.scale,
-        sx: ge.clientX - rect.left,
-        sy: ge.clientY - rect.top
-      }
-      if (!gestureRafId) {
-        gestureRafId = requestAnimationFrame(flushGesture)
-      }
-    },
-    { passive: false }
-  )
-  useEventListener(
-    canvasRef,
-    'gestureend' as keyof HTMLElementEventMap,
-    (e: Event) => {
-      e.preventDefault()
-    },
-    { passive: false }
-  )
+  setupSafariGestureZoom(canvasRef, editor)
 }

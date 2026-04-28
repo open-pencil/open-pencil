@@ -1,6 +1,27 @@
-import { params } from '@nanostores/i18n'
+import { locale } from '#vue/i18n/locale'
+import { createI18n, params } from '@nanostores/i18n'
 
-import { i18n } from './i18n'
+import type { Locale } from '#vue/i18n/locale'
+import type { ComponentsJSON } from '@nanostores/i18n'
+
+const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: ComponentsJSON }>> = {
+  de: () => import('../locales/de.json'),
+  es: () => import('../locales/es.json'),
+  fr: () => import('../locales/fr.json'),
+  it: () => import('../locales/it.json'),
+  pl: () => import('../locales/pl.json'),
+  ru: () => import('../locales/ru.json'),
+  'zh-CN': () => import('../locales/zh-CN.json')
+}
+
+const i18n = createI18n<Locale, 'en'>(locale, {
+  baseLocale: 'en',
+  async get(code) {
+    if (code === 'en') return {}
+    const mod = await localeLoaders[code]()
+    return mod.default
+  }
+})
 
 export const menuMessages = i18n('menu', {
   file: 'File',

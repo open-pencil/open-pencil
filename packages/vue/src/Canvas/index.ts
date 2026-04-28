@@ -1,4 +1,4 @@
-export { default as CanvasRoot } from './CanvasRoot.vue'
-export { default as CanvasSurface } from './CanvasSurface.vue'
-export { useCanvasContext } from './context'
-export type { CanvasContext } from './context'
+export { default as CanvasRoot } from '#vue/canvas/CanvasRoot.vue'
+export { default as CanvasSurface } from '#vue/canvas/CanvasSurface.vue'
+export { useCanvasContext } from '#vue/canvas/context'
+export type { CanvasContext } from '#vue/canvas/context'

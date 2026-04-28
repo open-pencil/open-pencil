@@ -1,9 +1,14 @@
-import { AUTO_LAYOUT_BREAK_THRESHOLD, computeSelectionBounds, computeSnap } from '@open-pencil/core'
+import {
+  computeAutoLayoutIndicator,
+  computeAutoLayoutIndicatorForFrame
+} from '#vue/shared/input/auto-layout'
+import { findMoveDropTarget, reparentOutsideNodes } from '#vue/shared/input/drop-target'
+export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
+import { applyMoveSnap } from '#vue/shared/input/move-snap'
 
-import { computeAutoLayoutIndicator, computeAutoLayoutIndicatorForFrame } from './auto-layout'
+import { AUTO_LAYOUT_BREAK_THRESHOLD } from '@open-pencil/core/constants'
 
-import type { DragMove, DragState } from './types'
-import type { SceneNode } from '@open-pencil/core'
+import type { DragMove } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
@@ -18,109 +23,6 @@ export function detectAutoLayoutParent(editor: Editor): string | undefined {
     return parent.id
   }
   return undefined
-}
-
-export function duplicateAndDrag(
-  cx: number,
-  cy: number,
-  editor: Editor
-): { originals: Map<string, { x: number; y: number; parentId: string }>; drag: DragState } {
-  const newIds: string[] = []
-  const newOriginals = new Map<string, { x: number; y: number; parentId: string }>()
-  for (const id of editor.state.selectedIds) {
-    const src = editor.graph.getNode(id)
-    if (!src) continue
-    const parentId = src.parentId ?? editor.state.currentPageId
-    const clone = editor.graph.cloneTree(id, parentId, { name: src.name + ' copy' })
-    if (!clone) continue
-    newIds.push(clone.id)
-    newOriginals.set(clone.id, {
-      x: src.x,
-      y: src.y,
-      parentId
-    })
-  }
-  editor.select(newIds)
-  editor.requestRender()
-  return {
-    originals: newOriginals,
-    drag: {
-      type: 'move',
-      startX: cx,
-      startY: cy,
-      currentX: cx,
-      currentY: cy,
-      originals: newOriginals,
-      duplicated: true
-    }
-  }
-}
-
-function findDropTarget(cx: number, cy: number, editor: Editor): SceneNode | null {
-  let dropTarget = editor.graph.hitTestFrame(
-    cx,
-    cy,
-    editor.state.selectedIds,
-    editor.state.currentPageId
-  )
-  const movingSection = [...editor.state.selectedIds].some(
-    (id) => editor.graph.getNode(id)?.type === 'SECTION'
-  )
-  if (
-    movingSection &&
-    dropTarget &&
-    dropTarget.type !== 'SECTION' &&
-    dropTarget.type !== 'CANVAS'
-  ) {
-    dropTarget = null
-  }
-  return dropTarget
-}
-
-function applyMoveSnap(
-  d: DragMove,
-  dx: number,
-  dy: number,
-  editor: Editor
-): { dx: number; dy: number } {
-  const selectedNodes: SceneNode[] = []
-  for (const [id, orig] of d.originals) {
-    const n = editor.graph.getNode(id)
-    if (n) {
-      const abs = editor.graph.getAbsolutePosition(id)
-      const parentAbs = n.parentId ? editor.graph.getAbsolutePosition(n.parentId) : { x: 0, y: 0 }
-      selectedNodes.push({
-        ...n,
-        x: abs.x - parentAbs.x - n.x + orig.x + dx,
-        y: abs.y - parentAbs.y - n.y + orig.y + dy
-      })
-    }
-  }
-
-  const bounds = computeSelectionBounds(selectedNodes)
-  if (!bounds) return { dx, dy }
-
-  const firstId = [...d.originals.keys()][0]
-  const firstNode = editor.graph.getNode(firstId)
-  const parentId = firstNode?.parentId ?? editor.state.currentPageId
-  const siblings = editor.graph.getChildren(parentId)
-  const parentAbs = !editor.isTopLevel(parentId)
-    ? editor.graph.getAbsolutePosition(parentId)
-    : { x: 0, y: 0 }
-  const absTargets = siblings.map((n) => ({
-    ...n,
-    x: n.x + parentAbs.x,
-    y: n.y + parentAbs.y
-  }))
-  const absBounds = {
-    x: bounds.x + parentAbs.x,
-    y: bounds.y + parentAbs.y,
-    width: bounds.width,
-    height: bounds.height
-  }
-  const snap = computeSnap(editor.state.selectedIds, absBounds, absTargets)
-  editor.setSnapGuides(snap.guides)
-  return { dx: dx + snap.dx, dy: dy + snap.dy }
 }
 
 export function handleMoveMove(d: DragMove, cx: number, cy: number, editor: Editor) {
@@ -140,7 +42,7 @@ export function handleMoveMove(d: DragMove, cx: number, cy: number, editor: Edit
     editor.setLayoutInsertIndicator(null)
   }
 
-  const dropTarget = findDropTarget(cx, cy, editor)
+  const dropTarget = findMoveDropTarget(cx, cy, editor)
   const dropParent = dropTarget ? editor.graph.getNode(dropTarget.id) : null
 
   if (dropParent && dropParent.layoutMode !== 'NONE') {
@@ -171,21 +73,6 @@ export function handleMoveMove(d: DragMove, cx: number, cy: number, editor: Edit
 
 function getMoveDistance(d: DragMove) {
   return Math.hypot(d.currentX - d.startX, d.currentY - d.startY)
-}
-
-function reparentOutsideNodes(editor: Editor) {
-  for (const id of editor.state.selectedIds) {
-    const node = editor.graph.getNode(id)
-    if (!node?.parentId || editor.isTopLevel(node.parentId)) continue
-    const parent = editor.graph.getNode(node.parentId)
-    if (!parent || (parent.type !== 'FRAME' && parent.type !== 'SECTION')) continue
-    const outsideX = node.x + node.width < 0 || node.x > parent.width
-    const outsideY = node.y + node.height < 0 || node.y > parent.height
-    if (outsideX || outsideY) {
-      const grandparentId = parent.parentId ?? editor.state.currentPageId
-      editor.graph.reparentNode(id, grandparentId)
-    }
-  }
 }
 
 export function handleMoveUp(d: DragMove, editor: Editor) {
