@@ -393,16 +393,23 @@ function createParentRelativeImportRule({ description, applies, message }) {
       const file = normalizedFilename(context)
       if (!applies(file)) return {}
 
-      function reportParentRelative(node) {
-        const source = importSource(node)
+      function reportSource(node, source) {
         if (!source?.startsWith('../')) return
+        if (/^(?:\.\.\/)+package\.json$/.test(source)) return
         context.report({ node, message })
+      }
+
+      function reportParentRelative(node) {
+        reportSource(node, importSource(node))
       }
 
       return {
         ExportAllDeclaration: reportParentRelative,
         ExportNamedDeclaration: reportParentRelative,
-        ImportDeclaration: reportParentRelative
+        ImportDeclaration: reportParentRelative,
+        ImportExpression(node) {
+          reportSource(node, typeof node.source?.value === 'string' ? node.source.value : null)
+        }
       }
     }
   }
@@ -632,7 +639,11 @@ const noDirectStorageAccess = {
   },
   create(context) {
     const file = normalizedFilename(context)
-    const allowedFiles = ['/src/app/ai/chat/storage.ts', '/packages/vue/src/i18n/locale.ts']
+    const allowedFiles = [
+      '/src/app/ai/chat/storage.ts',
+      '/src/app/shell/layout-storage.ts',
+      '/packages/vue/src/i18n/locale.ts'
+    ]
     if (allowedFiles.some((suffix) => file.endsWith(suffix))) return {}
 
     function reportStorage(node, name) {
@@ -1124,6 +1135,29 @@ const noComponentRootSiblingFolder = {
   }
 }
 
+const noFunctionAliasImports = {
+  meta: {
+    docs: {
+      description: 'Disallow import aliases ending in Fn for facade delegation'
+    }
+  },
+  create(context) {
+    return {
+      ImportSpecifier(node) {
+        if (!node.imported || !node.local) return
+        if (node.imported.type !== 'Identifier' || node.local.type !== 'Identifier') return
+        if (node.imported.name === node.local.name) return
+        if (!node.local.name.endsWith('Fn')) return
+        context.report({
+          node,
+          message:
+            'Avoid aliasing imports as *Fn. Use a namespace import or give the exported helper a clearer domain name.'
+        })
+      }
+    }
+  }
+}
+
 const noFlatKiwiModules = {
   meta: {
     docs: {
@@ -1195,6 +1229,7 @@ const plugin = {
     'component-namespace-pascal-case': componentNamespacePascalCase,
     'non-component-source-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
+    'no-function-alias-imports': noFunctionAliasImports,
     'no-flat-kiwi-modules': noFlatKiwiModules
   }
 }

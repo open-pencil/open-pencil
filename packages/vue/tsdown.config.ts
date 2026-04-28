@@ -10,7 +10,8 @@ export default defineConfig({
   format: ['esm'],
   dts: {
     vue: true,
-    sourcemap: true
+    sourcemap: true,
+    resolver: 'tsc'
   },
   sourcemap: true,
   hash: false,
@@ -19,30 +20,37 @@ export default defineConfig({
   treeshake: {
     moduleSideEffects: false
   },
-  external: [
-    'vue',
-    /^vue\//,
-    '@open-pencil/core',
-    /^@open-pencil\/core\//,
-    'canvaskit-wasm',
-    '@vueuse/core',
-    '@nanostores/vue',
-    '@nanostores/i18n',
-    'nanostores',
-    '@tanstack/vue-table',
-    'reka-ui',
-    '@atlaskit/pragmatic-drag-and-drop',
-    /^@atlaskit\/pragmatic-drag-and-drop\//,
-    '@atlaskit/pragmatic-drag-and-drop-hitbox',
-    /^@atlaskit\/pragmatic-drag-and-drop-hitbox\//
-  ],
+  deps: {
+    neverBundle: [
+      'vue',
+      /^vue\//,
+      '@open-pencil/core',
+      /^@open-pencil\/core\//,
+      'canvaskit-wasm',
+      'opentype.js',
+      '@vueuse/core',
+      '@nanostores/vue',
+      '@nanostores/i18n',
+      'nanostores',
+      '@tanstack/vue-table',
+      'reka-ui',
+      '@atlaskit/pragmatic-drag-and-drop',
+      /^@atlaskit\/pragmatic-drag-and-drop\//,
+      '@atlaskit/pragmatic-drag-and-drop-hitbox',
+      /^@atlaskit\/pragmatic-drag-and-drop-hitbox\//
+    ],
+    onlyBundle: false
+  },
   plugins: [raw(), vue()],
   inputOptions: {
-    preserveEntrySignatures: 'allow-extension'
+    preserveEntrySignatures: 'allow-extension',
+    checks: {
+      pluginTimings: false
+    }
   },
   outputOptions: {
     minifyInternalExports: false,
-    advancedChunks: {
+    codeSplitting: {
       groups: [
         {
           test: /(?<!\.d\.c?ts)$/,

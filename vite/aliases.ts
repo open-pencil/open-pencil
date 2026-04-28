@@ -1,7 +1,11 @@
 import { resolve } from 'path'
 
 export function createOpenPencilAliases(rootDir: string) {
+  const emptyNodeModule = resolve(rootDir, 'vite/empty-node-module.ts')
+
   return {
+    fs: emptyNodeModule,
+    path: emptyNodeModule,
     '@': resolve(rootDir, 'src'),
     '#vue': resolve(rootDir, 'packages/vue/src'),
     '#core': resolve(rootDir, 'packages/core/src'),

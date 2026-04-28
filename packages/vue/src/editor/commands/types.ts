@@ -31,6 +31,7 @@ export interface EditorCommand {
 }
 
 export interface EditorCommandMenuItem {
+  id?: EditorCommandId
   label: string
   shortcut?: string
   action?: () => void

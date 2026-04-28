@@ -1,3 +1,5 @@
+import { promiseTimeout } from '@vueuse/core'
+
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { AUTOMATION_HTTP_PORT, IS_BROWSER } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
@@ -33,7 +35,7 @@ async function readHealth(): Promise<AutomationHealth | null> {
 
 async function pollHealth(retries: number, delayMs: number): Promise<AutomationHealth | null> {
   for (let i = 0; i < retries; i++) {
-    await new Promise((r) => setTimeout(r, delayMs))
+    await promiseTimeout(delayMs)
     const health = await readHealth()
     if (health) return health
   }

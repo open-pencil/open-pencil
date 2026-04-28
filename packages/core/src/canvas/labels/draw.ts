@@ -10,7 +10,7 @@ import {
 } from '#core/constants'
 
 import type { SceneNode, SceneGraph } from '#core/scene-graph'
-import type { SkiaRenderer } from './renderer'
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { Canvas, Font } from 'canvaskit-wasm'
 
 export function drawSectionTitles(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {

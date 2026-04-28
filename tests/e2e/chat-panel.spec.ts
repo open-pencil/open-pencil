@@ -212,17 +212,21 @@ test('transport errors show an actionable toast', async () => {
   await chatInput().press('Enter')
 
   await expect(
-    page.getByText('Install it with: npm i -g @agentclientprotocol/claude-agent-acp', {
-      exact: false,
+    page.locator('[data-test-id="toast-item"]').filter({
+      hasText: 'Install it with: npm i -g @agentclientprotocol/claude-agent-acp',
     }),
   ).toBeVisible({ timeout: 5000 })
 })
 
 test('"Get API key" link opens external URL via window.open', async () => {
-  // Clear the key to return to provider setup
-  await page.locator('[data-test-id="provider-settings-trigger"]').click()
-  await page.locator('[data-test-id="provider-settings-clear-key"]').click()
-  await page.locator('[data-test-id="provider-settings-done"]').click()
+  // Clear the key to return to provider setup if the previous test did not already do it.
+  const settingsTrigger = page.locator('[data-test-id="provider-settings-trigger"]')
+  if (await settingsTrigger.isVisible().catch(() => false)) {
+    await settingsTrigger.click()
+    await page.locator('[data-test-id="provider-settings-clear-key"]').click()
+    const done = page.locator('[data-test-id="provider-settings-done"]')
+    if (await done.isVisible().catch(() => false)) await done.click()
+  }
 
   // Now we're back in ProviderSetup — the link should be visible
   const link = page.locator('[data-test-id="api-key-get-link"]')

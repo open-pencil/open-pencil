@@ -48,7 +48,7 @@ export function createCanvasSurfaceManager({
     state.glContext = result.glContext
     const surface = result.surface
     if (!surface) {
-      console.error('Failed to create WebGL surface')
+      canvas.dataset.surfaceError = 'webgl'
       return
     }
 

@@ -5,8 +5,8 @@ import {
 } from '#vue/editor/menu-model/command-groups'
 
 import type { EditorCommandId } from '#vue/editor/commands/types'
-import type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
 import type { useEditorCommands } from '#vue/editor/commands/use'
+import type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
 import type { useSelectionState } from '#vue/editor/selection-state/use'
 
 type CommandMenuItem = ReturnType<typeof useEditorCommands>['menuItem']
@@ -77,7 +77,9 @@ export function buildCanvasMenu({
     ...(selection.isComponent.value
       ? [commandMenuItem('selection.createInstance')]
       : [commandMenuItem('selection.createComponent')]),
-    ...(selection.canCreateComponentSet.value ? [commandMenuItem('selection.createComponentSet')] : []),
+    ...(selection.canCreateComponentSet.value
+      ? [commandMenuItem('selection.createComponentSet')]
+      : []),
     ...(selection.isInstance.value ? [commandMenuItem('selection.goToMainComponent')] : []),
     ...(selection.isInstance.value ? [commandMenuItem('selection.detachInstance')] : []),
     ...(selection.hasSelection.value

@@ -66,6 +66,7 @@ const sectionCls = useSectionUI()
 
           <button
             :data-test-id="`effect-visibility-${i}`"
+            :data-visible="effect.visible ? 'true' : 'false'"
             class="cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
             @click="toggleVisibility(i)"
           >

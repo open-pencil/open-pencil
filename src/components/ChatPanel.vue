@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
+import { refAutoReset } from '@vueuse/core'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
 import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/app/ai/acp/transport'
@@ -28,8 +29,8 @@ ensureChat().then((c) => {
   if (c) chat.value = markRaw(c)
 })
 const messagesEnd = ref<HTMLDivElement>()
-const debugCopied = ref(false)
-const acpLogCopied = ref(false)
+const debugCopied = refAutoReset(false, 1500)
+const acpLogCopied = refAutoReset(false, 1500)
 
 const messages = computed(() => chat.value?.messages ?? [])
 const status = computed(() => chat.value?.status ?? 'ready')
@@ -63,6 +64,12 @@ function scrollToBottom() {
 
 watch(messages, scrollToBottom, { deep: true })
 watch(
+  () => chat.value?.error,
+  (error) => {
+    if (error) toast.error(error.message)
+  }
+)
+watch(
   () => activeTab.value?.id,
   async () => {
     const nextChat = await ensureChat()
@@ -93,9 +100,6 @@ function handleStop() {
 async function handleCopyDebug() {
   await copyChatLog(messages.value)
   debugCopied.value = true
-  setTimeout(() => {
-    debugCopied.value = false
-  }, 1500)
 }
 
 async function handleCopyAcpLog() {
@@ -103,9 +107,6 @@ async function handleCopyAcpLog() {
   if (!text) return
   await navigator.clipboard.writeText(text)
   acpLogCopied.value = true
-  setTimeout(() => {
-    acpLogCopied.value = false
-  }, 1500)
 }
 
 function handleClearChat() {

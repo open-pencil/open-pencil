@@ -32,5 +32,8 @@ export default defineConfig(async ({ command }) => ({
     openPencilPwaPlugin()
   ],
   clearScreen: false,
+  build: {
+    chunkSizeWarningLimit: 2500
+  },
   server: createDevServerOptions(host)
 }))

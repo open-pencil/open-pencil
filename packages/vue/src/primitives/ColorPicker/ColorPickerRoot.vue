@@ -20,7 +20,11 @@ const swatchBg = computed(() => colorToCSS(color))
   <PopoverRoot>
     <PopoverTrigger as-child>
       <slot name="trigger" :style="{ background: swatchBg }">
-        <button :class="swatchClass" :style="{ background: swatchBg }" />
+        <button
+          data-test-id="color-picker-swatch"
+          :class="swatchClass"
+          :style="{ background: swatchBg }"
+        />
       </slot>
     </PopoverTrigger>
 

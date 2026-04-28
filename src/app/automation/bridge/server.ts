@@ -14,6 +14,7 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
   const token = authToken ?? randomHex(32)
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+  let intentionalDisconnect = false
 
   function makeFigma() {
     return makeFigmaFromStore(getStore())
@@ -70,8 +71,9 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     }
 
     ws.onclose = (event) => {
-      console.error('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       ws = null
+      if (intentionalDisconnect || event.code === 1000) return
+      console.error('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()
     }
 
@@ -87,6 +89,7 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
   }
 
   function disconnect() {
+    intentionalDisconnect = true
     clearTimeout(reconnectTimer)
     ws?.close()
     ws = null

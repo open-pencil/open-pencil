@@ -112,6 +112,7 @@
     "open-pencil/no-legacy-shim-files": "error",
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-core-browser-globals": "error",
+    "open-pencil/no-function-alias-imports": "error",
     "open-pencil/max-composition-root-lines": ["error", { "max": 260 }]
   },
   "overrides": [

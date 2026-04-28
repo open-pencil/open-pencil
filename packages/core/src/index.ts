@@ -140,7 +140,7 @@ export type {
   TypographyStyle
 } from './rpc'
 export { SkiaRenderer, type RenderOverlays } from './canvas'
-export { LabelCache, type CachedSection, type CachedComponent } from './canvas/label-cache'
+export { LabelCache, type CachedSection, type CachedComponent } from './canvas/labels/cache'
 export {
   RenderProfiler,
   FrameStats,

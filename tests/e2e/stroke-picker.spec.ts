@@ -10,7 +10,7 @@ async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, rati
   await page.mouse.move(box.x + 2, y)
   await page.mouse.down()
   await page.mouse.move(box.x + Math.max(2, Math.min(box.width - 2, box.width * ratio)), y, {
-    steps: 20
+    steps: 5
   })
   await page.mouse.up()
   await canvas.waitForRender()

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { promiseTimeout } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 
 import AppGroupedSelect from '@/components/ui/AppGroupedSelect.vue'
@@ -31,7 +32,7 @@ async function checkMCPHealth(retries = 3, delayMs = 1000) {
         '):',
         e instanceof Error ? e.message : e
       )
-      if (i < retries - 1) await new Promise((r) => setTimeout(r, delayMs))
+      if (i < retries - 1) await promiseTimeout(delayMs)
     }
   }
 }

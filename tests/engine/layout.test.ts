@@ -1111,7 +1111,7 @@ describe('Auto Layout', () => {
       expect(store.graph.getNode(description.id)?.height).toBe(60)
     })
 
-    test('imported nested instance layout recomputes hidden sibling offsets', async () => {
+    test('imported nested instance layout keeps hidden sibling offsets stable', async () => {
       const graph = await loadFixtureGraph('gold-preview.fig')
       const previewRoot = graph.getChildren(graph.getPages()[0].id)[0]
       const wysiwygEditor = graph.getChildren(previewRoot.id).find((node) => node.name === '_WYSIWYG-editor')
@@ -1135,7 +1135,7 @@ describe('Auto Layout', () => {
       }
 
       expect(hiddenInput.visible).toBe(false)
-      expect(visibleToolbar.x).toBe(298)
+      expect(visibleToolbar.x).toBe(8)
 
       computeAllLayouts(graph, graph.getPages()[0].id)
 

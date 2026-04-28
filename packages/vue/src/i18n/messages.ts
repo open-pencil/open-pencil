@@ -5,13 +5,13 @@ import type { Locale } from '#vue/i18n/locale'
 import type { ComponentsJSON } from '@nanostores/i18n'
 
 const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: ComponentsJSON }>> = {
-  de: () => import('../locales/de.json'),
-  es: () => import('../locales/es.json'),
-  fr: () => import('../locales/fr.json'),
-  it: () => import('../locales/it.json'),
-  pl: () => import('../locales/pl.json'),
-  ru: () => import('../locales/ru.json'),
-  'zh-CN': () => import('../locales/zh-CN.json')
+  de: () => import('#vue/locales/de.json'),
+  es: () => import('#vue/locales/es.json'),
+  fr: () => import('#vue/locales/fr.json'),
+  it: () => import('#vue/locales/it.json'),
+  pl: () => import('#vue/locales/pl.json'),
+  ru: () => import('#vue/locales/ru.json'),
+  'zh-CN': () => import('#vue/locales/zh-CN.json')
 }
 
 const i18n = createI18n<Locale, 'en'>(locale, {

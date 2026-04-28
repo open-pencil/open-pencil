@@ -115,46 +115,45 @@ const sectionCls = useSectionUI()
             <icon-lucide-align-right v-else class="size-3.5" />
           </ToggleGroupItem>
         </ToggleGroupRoot>
-        <ToggleGroupRoot
-          type="multiple"
-          class="flex gap-0.5"
-          :model-value="ctx.activeFormatting.value"
-          @update:model-value="ctx.onFormattingChange"
-        >
+        <div class="flex gap-0.5">
           <Tip label="Bold (⌘B)">
-            <ToggleGroupItem
-              value="bold"
+            <button
               data-test-id="typography-bold-button"
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 font-bold text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
+              :data-state="ctx.activeFormatting.value.includes('bold') ? 'on' : 'off'"
+              @click="ctx.toggleBold"
             >
               <icon-lucide-bold class="size-3.5" />
-            </ToggleGroupItem>
+            </button>
           </Tip>
           <Tip label="Italic (⌘I)">
-            <ToggleGroupItem
-              value="italic"
+            <button
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
+              :data-state="ctx.activeFormatting.value.includes('italic') ? 'on' : 'off'"
+              @click="ctx.toggleItalic"
             >
               <icon-lucide-italic class="size-3.5" />
-            </ToggleGroupItem>
+            </button>
           </Tip>
           <Tip label="Underline (⌘U)">
-            <ToggleGroupItem
-              value="underline"
+            <button
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
+              :data-state="ctx.activeFormatting.value.includes('underline') ? 'on' : 'off'"
+              @click="ctx.toggleDecoration('UNDERLINE')"
             >
               <icon-lucide-underline class="size-3.5" />
-            </ToggleGroupItem>
+            </button>
           </Tip>
           <Tip label="Strikethrough">
-            <ToggleGroupItem
-              value="strikethrough"
+            <button
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
+              :data-state="ctx.activeFormatting.value.includes('strikethrough') ? 'on' : 'off'"
+              @click="ctx.toggleDecoration('STRIKETHROUGH')"
             >
               <icon-lucide-strikethrough class="size-3.5" />
-            </ToggleGroupItem>
+            </button>
           </Tip>
-        </ToggleGroupRoot>
+        </div>
       </div>
     </div>
   </TypographyControlsRoot>

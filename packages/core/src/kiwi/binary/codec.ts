@@ -13,6 +13,7 @@ import { decompress as zstdDecompress } from 'fzstd'
 
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'
+import * as VariableBindings from './variable-bindings'
 
 interface CompiledSchema {
   encodeMessage(message: unknown): Uint8Array
@@ -122,7 +123,7 @@ export function encodeMessage(message: FigmaMessage): Uint8Array {
 
   // Build nodeChanges array with our encoded nodes
   const ncBytes: number[] = [0x04] // field 4
-  ncBytes.push(...encodeVarint(nodeChangeBytes.length)) // array length
+  ncBytes.push(...VariableBindings.encodeVarint(nodeChangeBytes.length)) // array length
   for (const ncArr of nodeChangeBytes) {
     ncBytes.push(...Array.from(ncArr))
   }
@@ -489,26 +490,6 @@ export function createNodeChange(opts: {
 /**
  * Encode a varint (variable-length integer)
  */
-function encodeVarint(value: number): number[] {
-  const bytes: number[] = []
-  while (value > 0x7f) {
-    bytes.push((value & 0x7f) | 0x80)
-    value >>>= 7
-  }
-  bytes.push(value)
-  return bytes
-}
-
-/**
- * Encode a Paint with optional variable binding
- *
- * Figma's variable binding format (discovered via WS traffic analysis):
- * - Field 21 = 1 (binding type)
- * - Field 4 = 1 (flag)
- * - Raw sessionID varint (no field number)
- * - Raw localID varint (no field number)
- * - Terminators: 00 00 02 03 03 04 00 00
- */
 export function encodePaintWithVariableBinding(
   paint: Paint,
   variableSessionID: number,
@@ -517,140 +498,19 @@ export function encodePaintWithVariableBinding(
   if (!compiledSchema) {
     throw new Error('Codec not initialized. Call initCodec() first.')
   }
-
-  const { colorVariableBinding: _, ...basePaint } = paint
-
-  const baseBytes = compiledSchema.encodePaint(basePaint)
-  const baseArray = Array.from(baseBytes)
-
-  // Remove trailing 00
-  if (baseArray[baseArray.length - 1] === 0) {
-    baseArray.pop()
-  }
-
-  // Add variable binding in Figma's exact format:
-  // Field 21 (0x15) = 1 (binding type)
-  baseArray.push(0x15, 0x01)
-  // Field 4 = 1 (flag)
-  baseArray.push(0x04, 0x01)
-  // Raw varints: sessionID, localID (no field numbers!)
-  baseArray.push(...encodeVarint(variableSessionID))
-  baseArray.push(...encodeVarint(variableLocalID))
-  // Terminators observed in Figma traffic
-  baseArray.push(0x00, 0x00, 0x02, 0x03, 0x03, 0x04)
-  // Final terminators
-  baseArray.push(0x00, 0x00)
-
-  return new Uint8Array(baseArray)
+  return VariableBindings.encodePaintWithVariableBinding(
+    compiledSchema,
+    paint,
+    variableSessionID,
+    variableLocalID
+  )
 }
 
-/**
- * Parse a variable ID string (e.g., "VariableID:38448:122296")
- * Returns sessionID and localID
- */
-export function parseVariableId(variableId: string): GUID | null {
-  const match = variableId.match(/VariableID:(\d+):(\d+)/)
-  if (!match) return null
-  return {
-    sessionID: parseInt(match[1] ?? '0', 10),
-    localID: parseInt(match[2] ?? '0', 10)
-  }
-}
+export { parseVariableId } from './variable-bindings'
 
-/**
- * Encode a NodeChange with variable bindings in fillPaints and/or strokePaints
- * This is needed because kiwi-schema cannot produce Figma's exact variable binding format
- */
 export function encodeNodeChangeWithVariables(nodeChange: NodeChange): Uint8Array {
   if (!compiledSchema) {
     throw new Error('Codec not initialized. Call initCodec() first.')
   }
-
-  const hasFillBinding = nodeChange.fillPaints?.some((p) => p.colorVariableBinding)
-  const hasStrokeBinding = nodeChange.strokePaints?.some((p) => p.colorVariableBinding)
-
-  if (!hasFillBinding && !hasStrokeBinding) {
-    return compiledSchema.encodeNodeChange(nodeChange)
-  }
-
-  // Create a copy without variable bindings for base encoding
-  const cleanNodeChange = { ...nodeChange }
-  if (cleanNodeChange.fillPaints) {
-    cleanNodeChange.fillPaints = cleanNodeChange.fillPaints.map(
-      ({ colorVariableBinding: _, ...rest }) => rest
-    )
-  }
-  if (cleanNodeChange.strokePaints) {
-    cleanNodeChange.strokePaints = cleanNodeChange.strokePaints.map(
-      ({ colorVariableBinding: _, ...rest }) => rest
-    )
-  }
-
-  // Encode clean version
-  const baseBytes = compiledSchema.encodeNodeChange(cleanNodeChange)
-  let hex = Buffer.from(baseBytes).toString('hex')
-
-  // Inject fill variable binding (field 38 = 0x26)
-  const fillBinding = nodeChange.fillPaints?.[0]?.colorVariableBinding
-  if (hasFillBinding && fillBinding) {
-    hex = injectVariableBinding(hex, '2601', fillBinding)
-  }
-
-  // Inject stroke variable binding (field 39 = 0x27)
-  const strokeBinding = nodeChange.strokePaints?.[0]?.colorVariableBinding
-  if (hasStrokeBinding && strokeBinding) {
-    hex = injectVariableBinding(hex, '2701', strokeBinding)
-  }
-
-  return new Uint8Array(hex.match(/.{2}/g)?.map((b) => parseInt(b, 16)) ?? [])
-}
-
-/**
- * Inject variable binding into a paint at the specified marker
- */
-function injectVariableBinding(hex: string, marker: string, binding: { variableID: GUID }): string {
-  const markerIdx = hex.indexOf(marker)
-  if (markerIdx === -1) return hex
-
-  // Find visible=true pattern (04 01) after the marker
-  const visiblePattern = '0401'
-  const patternIdx = hex.indexOf(visiblePattern, markerIdx)
-  if (patternIdx === -1) return hex
-
-  // Move past 0401 to find where to insert
-  let insertPoint = patternIdx + visiblePattern.length
-
-  // Check if blendMode follows (05 01)
-  if (hex.slice(insertPoint, insertPoint + 4) === '0501') {
-    insertPoint += 4
-  }
-
-  // Build variable binding bytes
-  const varBytes = [
-    0x15,
-    0x01, // Field 21 (variableBinding) = 1
-    0x04,
-    0x01, // Nested field 4 = 1
-    ...encodeVarint(binding.variableID.sessionID),
-    ...encodeVarint(binding.variableID.localID),
-    0x00,
-    0x00,
-    0x02,
-    0x03,
-    0x03,
-    0x04,
-    0x00,
-    0x00 // Terminators
-  ]
-  const varHex = Buffer.from(varBytes).toString('hex')
-
-  const beforeVar = hex.slice(0, insertPoint)
-  // Skip original paint terminator (00) - our varHex includes terminators
-  let afterIdx = insertPoint
-  if (hex.slice(afterIdx, afterIdx + 2) === '00') {
-    afterIdx += 2
-  }
-  const afterVar = hex.slice(afterIdx)
-
-  return beforeVar + varHex + afterVar
+  return VariableBindings.encodeNodeChangeWithVariables(compiledSchema, nodeChange)
 }

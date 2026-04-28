@@ -8,8 +8,8 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
-import type { ComputedRef, Ref } from 'vue'
 import type { UIMessage } from 'ai'
+import type { ComputedRef, Ref } from 'vue'
 
 type EditorStore = ReturnType<typeof getActiveEditorStore>
 
@@ -174,7 +174,9 @@ export function createChatSessionManager({
 
     if (!chat || transportDirty || currentChatStore !== store) {
       const messages = currentChatMessages.get(store)
-      const transport = isACPProvider.value ? await createActiveACPTransport() : createTransport(store)
+      const transport = isACPProvider.value
+        ? await createActiveACPTransport()
+        : createTransport(store)
       chat = new Chat<UIMessage>({ transport, messages })
       currentChatStore = store
       transportDirty = false
@@ -191,6 +193,7 @@ export function createChatSessionManager({
 
   function setOverrideTransport(factory: (() => unknown) | null) {
     overrideTransport = factory
+    markTransportDirty()
   }
 
   return { ensureChat, resetChat, markTransportDirty, setOverrideTransport }

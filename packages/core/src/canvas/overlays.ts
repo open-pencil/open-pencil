@@ -199,6 +199,9 @@ function drawBoundsHandles(
   r.drawHandle(canvas, maxX, maxY)
   const midX = (minX + maxX) / 2
   const midY = (minY + maxY) / 2
+  const rotationHandleY = minY - 24 / r.zoom
+  canvas.drawLine(midX, minY, midX, rotationHandleY, r.selectionPaint)
+  r.drawHandle(canvas, midX, rotationHandleY)
   r.drawHandle(canvas, midX, minY)
   r.drawHandle(canvas, midX, maxY)
   r.drawHandle(canvas, minX, midY)

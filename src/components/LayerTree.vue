@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useAttrs } from 'vue'
 import { TreeRoot, TreeItem, ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
 
 import {
@@ -13,7 +14,10 @@ import { nodeIcon, COMPONENT_TYPES } from '@/app/editor/icons'
 import CanvasMenu from './CanvasMenu.vue'
 import Tip from './ui/Tip.vue'
 
+defineOptions({ inheritAttrs: false })
+
 const INDENT = 16
+const attrs = useAttrs()
 const store = useEditorStore()
 const rename = useInlineRename((id, name) => store.renameNode(id, name))
 const { menu: t } = useI18n()
@@ -43,7 +47,7 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
   >
     <ContextMenuRoot :modal="false">
       <ContextMenuTrigger as-child @contextmenu="onLayerRightClick">
-        <div class="relative scrollbar-thin flex-1 overflow-y-auto px-1">
+        <div v-bind="attrs" class="relative scrollbar-thin flex-1 overflow-y-auto px-1">
           <TreeRoot
             :key="treeKey"
             v-slot="{ flattenItems }"

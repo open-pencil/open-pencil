@@ -7,6 +7,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useViewportKind } from '@open-pencil/vue'
 import { useKeyboard } from '@/app/shell/keyboard/use'
+import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
@@ -56,6 +57,7 @@ useEventListener(
 
 const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
+const initialEditorLayout = loadEditorLayout()
 
 onMounted(async () => {
   try {
@@ -91,9 +93,15 @@ onUnmounted(() => {
       :key="activeTab?.id"
       direction="horizontal"
       class="flex-1 overflow-hidden"
-      auto-save-id="editor-layout"
+      @layout="saveEditorLayout"
     >
-      <SplitterPanel :default-size="18" :min-size="10" :max-size="30" class="flex">
+      <SplitterPanel
+        id="layers"
+        :default-size="initialEditorLayout[0]"
+        :min-size="10"
+        :max-size="30"
+        class="flex"
+      >
         <LayersPanel />
       </SplitterPanel>
       <SplitterResizeHandle
@@ -102,7 +110,7 @@ onUnmounted(() => {
       >
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
-      <SplitterPanel :default-size="64" :min-size="30" class="flex">
+      <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
         <div class="relative flex min-w-0 flex-1">
           <EditorCanvas />
           <Toolbar />
@@ -111,7 +119,13 @@ onUnmounted(() => {
       <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
-      <SplitterPanel :default-size="18" :min-size="10" :max-size="30" class="flex flex-col">
+      <SplitterPanel
+        id="properties"
+        :default-size="initialEditorLayout[2]"
+        :min-size="10"
+        :max-size="30"
+        class="flex flex-col"
+      >
         <div
           class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
         >

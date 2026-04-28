@@ -1,5 +1,8 @@
+import type { EditorCommandId } from '#vue/editor/commands/types'
+
 export interface MenuActionNode {
   separator?: false
+  id?: EditorCommandId
   label: string
   shortcut?: string
   action?: () => void

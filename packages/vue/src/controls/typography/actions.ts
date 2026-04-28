@@ -5,8 +5,8 @@ import { computed } from 'vue'
 import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/core/text'
 
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
-import type { SceneNode, TextDecoration } from '@open-pencil/core/scene-graph'
 import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode, TextDecoration } from '@open-pencil/core/scene-graph'
 import type { ComputedRef } from 'vue'
 
 type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT'
@@ -76,9 +76,10 @@ export function createTypographyActions({
 
   async function setWeight(weight: number) {
     if (!node.value) return
+    const { id, fontFamily } = node.value
     const style = weightToStyle(weight)
-    await doLoadFont(node.value.fontFamily, style)
-    editor.updateNodeWithUndo(node.value.id, { fontWeight: weight }, 'Change font weight')
+    editor.updateNodeWithUndo(id, { fontWeight: weight }, 'Change font weight')
+    await doLoadFont(fontFamily, style)
   }
 
   function setAlign(align: TextAlign) {

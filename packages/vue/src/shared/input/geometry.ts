@@ -10,11 +10,7 @@ import type { Editor } from '@open-pencil/core/editor'
 import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
 import type { Vector } from '@open-pencil/core/types'
 
-export function getPointerCoords(
-  e: MouseEvent,
-  canvas: HTMLCanvasElement | null,
-  editor: Editor
-) {
+export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
   if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }
   const rect = canvas.getBoundingClientRect()
   const sx = e.clientX - rect.left
@@ -64,7 +60,9 @@ export function hitTestInEditorScope(
       editor.state.enteredContainerId = null
     } else {
       const { lx, ly } = canvasToLocal(cx, cy, scopeId)
-      return deep ? editor.graph.hitTestDeep(lx, ly, scopeId) : editor.graph.hitTest(lx, ly, scopeId)
+      return deep
+        ? editor.graph.hitTestDeep(lx, ly, scopeId)
+        : editor.graph.hitTest(lx, ly, scopeId)
     }
   }
   return deep
@@ -202,6 +200,29 @@ export function getHitHandleByMatrix(
 
   return null
 }
+export function hitTestTopRotationHandleByMatrix(
+  cx: number,
+  cy: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  zoom: number = 1
+): boolean {
+  const handles = getWorldHandles(node, graph)
+  const rotation = getAbsoluteRotation(node, graph)
+  const topMidX = (handles.nw.x + handles.ne.x) / 2
+  const topMidY = (handles.nw.y + handles.ne.y) / 2
+  const distance = 24 / zoom
+  const rad = degToRad(rotation - 90)
+  const handle = {
+    x: topMidX + Math.cos(rad) * distance,
+    y: topMidY + Math.sin(rad) * distance
+  }
+  const radius = HANDLE_HIT_RADIUS / zoom
+  const dx = cx - handle.x
+  const dy = cy - handle.y
+  return dx * dx + dy * dy <= radius * radius
+}
+
 export function hitTestCornerRotationByMatrix(
   cx: number,
   cy: number,

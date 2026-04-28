@@ -58,7 +58,8 @@ const varPopoverOpen = ref(false)
       :model-value="opacityPercent(item.opacity)"
       :min="0"
       :max="100"
-      @update:model-value="emit('patch', { opacity: opacityFromPercent($event) })"},{
+      @update:model-value="emit('patch', { opacity: opacityFromPercent($event) })"
+      },{
     />
 
     <PopoverRoot
@@ -130,6 +131,7 @@ const varPopoverOpen = ref(false)
 
     <button
       :data-test-id="visibilityTestId"
+      :data-visible="item.visible ? 'true' : 'false'"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
       @click="emit('toggleVisibility')"
     >

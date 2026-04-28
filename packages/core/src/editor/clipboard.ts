@@ -1,5 +1,10 @@
-import { importClipboardNodes, parseFigmaClipboard } from '#core/clipboard'
+import {
+  importClipboardNodes,
+  parseFigmaClipboard,
+  parseOpenPencilClipboard
+} from '#core/clipboard'
 import { computeAllLayouts } from '#core/layout'
+
 import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'
 import { createClipboardFontActions } from './clipboard/fonts'
@@ -55,6 +60,12 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   function pasteFromHTML(html: string, cursorPos?: Vector) {
+    const openPencil = parseOpenPencilClipboard(html)
+    if (openPencil) {
+      pasteOpenPencilNodes(openPencil.nodes, openPencil.images, cursorPos)
+      return
+    }
+
     void parseFigmaClipboard(html).then((figma) => {
       if (figma) {
         const prevSelection = new Set(ctx.state.selectedIds)
@@ -97,6 +108,56 @@ export function createClipboardActions(ctx: EditorContext) {
           void fontActions.loadFontsForNodes(created)
           warnMissingImages(created)
         }
+      }
+    })
+  }
+
+  function pasteOpenPencilNodes(
+    nodes: Array<SceneNode & { children?: SceneNode[] }>,
+    images: Map<string, Uint8Array>,
+    cursorPos?: Vector
+  ) {
+    const prevSelection = new Set(ctx.state.selectedIds)
+    for (const [hash, bytes] of images) ctx.graph.images.set(hash, bytes)
+
+    const created: string[] = []
+    const createNodeTree = (source: SceneNode & { children?: SceneNode[] }, parentId: string) => {
+      const { id: _id, childIds: _childIds, children = [], parentId: _parentId, ...rest } = source
+      const node = ctx.graph.createNode(source.type, parentId, {
+        ...structuredClone(rest),
+        x: source.x + 20,
+        y: source.y + 20,
+        childIds: []
+      })
+      for (const child of children) createNodeTree(child, node.id)
+      return node.id
+    }
+
+    for (const node of nodes) created.push(createNodeTree(node, ctx.state.currentPageId))
+    if (created.length === 0) return
+
+    if (cursorPos) placementActions.centerNodesAt(created, cursorPos.x, cursorPos.y)
+    computeAllLayouts(ctx.graph, ctx.state.currentPageId)
+    ctx.state.selectedIds = new Set(created)
+
+    const allNodes = collectSubtrees(ctx.graph, created)
+    const pageId = ctx.state.currentPageId
+    ctx.undo.push({
+      label: 'Paste',
+      forward: () => {
+        for (const snapshot of allNodes) {
+          ctx.graph.createNode(snapshot.type, snapshot.parentId ?? pageId, {
+            ...snapshot,
+            childIds: []
+          })
+        }
+        computeAllLayouts(ctx.graph, pageId)
+        ctx.state.selectedIds = new Set(created)
+      },
+      inverse: () => {
+        for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
+        computeAllLayouts(ctx.graph, pageId)
+        ctx.state.selectedIds = prevSelection
       }
     })
   }

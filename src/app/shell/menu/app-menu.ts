@@ -144,6 +144,14 @@ export function useAppMenu(mod: string) {
       ]
     },
     {
+      label: t.value.text,
+      items: [
+        { label: t.value.bold, shortcut: `${mod}B` },
+        { label: t.value.italic, shortcut: `${mod}I` },
+        { label: t.value.underline, shortcut: `${mod}U` }
+      ]
+    },
+    {
       label: t.value.arrange,
       items: [
         commandMenuItem('selection.wrapInAutoLayout', '⇧A'),
@@ -155,14 +163,6 @@ export function useAppMenu(mod: string) {
         { label: p.value.alignTop, shortcut: '⌥W' },
         { label: p.value.alignMiddle, shortcut: '⌥V' },
         { label: p.value.alignBottom, shortcut: '⌥S' }
-      ]
-    },
-    {
-      label: t.value.text,
-      items: [
-        { label: t.value.bold, shortcut: `${mod}B` },
-        { label: t.value.italic, shortcut: `${mod}I` },
-        { label: t.value.underline, shortcut: `${mod}U` }
       ]
     }
   ])

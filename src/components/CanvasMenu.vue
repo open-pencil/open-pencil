@@ -37,23 +37,47 @@ const cls = {
   component: componentMenu.item(),
   sep: menuCls.separator
 }
+
+const staticContextCommandIds = new Set(['selection.duplicate', 'selection.delete'])
+
+const contextCommandTestIds: Record<string, string> = {
+  'selection.duplicate': 'context-duplicate',
+  'selection.delete': 'context-delete',
+  'selection.bringToFront': 'context-bring-to-front',
+  'selection.sendToBack': 'context-send-to-back',
+  'selection.group': 'context-group',
+  'selection.createComponent': 'context-create-component',
+  'selection.toggleVisibility': 'context-toggle-visibility',
+  'selection.toggleLock': 'context-toggle-lock'
+}
 </script>
 
 <template>
   <ContextMenuContent :class="cls.menu" :side-offset="2" align="start">
-    <ContextMenuItem :class="cls.item" :disabled="!hasSelection" @select="execCommand('copy')">
+    <ContextMenuItem
+      data-test-id="context-copy"
+      :class="cls.item"
+      :disabled="!hasSelection"
+      @select="execCommand('copy')"
+    >
       <span>{{ t.copy }}</span
       ><span class="text-[11px] text-muted">⌘C</span>
     </ContextMenuItem>
-    <ContextMenuItem :class="cls.item" :disabled="!hasSelection" @select="execCommand('cut')">
+    <ContextMenuItem
+      data-test-id="context-cut"
+      :class="cls.item"
+      :disabled="!hasSelection"
+      @select="execCommand('cut')"
+    >
       <span>{{ t.cut }}</span
       ><span class="text-[11px] text-muted">⌘X</span>
     </ContextMenuItem>
-    <ContextMenuItem :class="cls.item" @select="execCommand('paste')">
+    <ContextMenuItem data-test-id="context-paste" :class="cls.item" @select="execCommand('paste')">
       <span>{{ t.pasteHere }}</span
       ><span class="text-[11px] text-muted">⌘V</span>
     </ContextMenuItem>
     <ContextMenuItem
+      data-test-id="context-duplicate"
       :class="cls.item"
       :disabled="!hasSelection"
       @select="getCommand('selection.duplicate').run()"
@@ -61,6 +85,7 @@ const cls = {
       <span>Duplicate</span><span class="text-[11px] text-muted">⌘D</span>
     </ContextMenuItem>
     <ContextMenuItem
+      data-test-id="context-delete"
       :class="cls.item"
       :disabled="!hasSelection"
       @select="getCommand('selection.delete').run()"
@@ -69,7 +94,8 @@ const cls = {
     </ContextMenuItem>
 
     <template v-for="(item, i) in canvasMenu" :key="`menu-${i}`">
-      <ContextMenuSeparator v-if="item.separator" :class="cls.sep" />
+      <template v-if="!item.separator && item.id && staticContextCommandIds.has(item.id)" />
+      <ContextMenuSeparator v-else-if="item.separator" :class="cls.sep" />
       <ContextMenuSub v-else-if="item.sub">
         <ContextMenuSubTrigger :class="cls.item">
           <span>{{ item.label }}</span
@@ -94,6 +120,7 @@ const cls = {
       </ContextMenuSub>
       <ContextMenuItem
         v-else
+        :data-test-id="item.id ? contextCommandTestIds[item.id] : undefined"
         :class="canvasMenuItemClass(item.label, cls)"
         :disabled="item.disabled"
         @select="item.action?.()"
@@ -112,7 +139,7 @@ const cls = {
       <ContextMenuSeparator :class="cls.sep" />
 
       <ContextMenuSub>
-        <ContextMenuSubTrigger :class="cls.item">
+        <ContextMenuSubTrigger data-test-id="context-copy-paste-as" :class="cls.item">
           <span>{{ t.copyPasteAs }}</span
           ><span class="text-sm text-muted">›</span>
         </ContextMenuSubTrigger>
@@ -124,6 +151,7 @@ const cls = {
               >{{ t.copyAsText }}</ContextMenuItem
             >
             <ContextMenuItem
+              data-test-id="context-copy-as-svg"
               :class="cls.item"
               @select="clipboardWrite(editor.copySelectionAsSVG(ids()), 'SVG')"
               >{{ t.copyAsSVG }}</ContextMenuItem
@@ -133,6 +161,7 @@ const cls = {
               ><span class="text-[11px] text-muted">⇧⌘C</span>
             </ContextMenuItem>
             <ContextMenuItem
+              data-test-id="context-copy-as-jsx"
               :class="cls.item"
               @select="clipboardWrite(editor.copySelectionAsJSX(ids()), 'JSX')"
               >{{ t.copyAsJSX }}</ContextMenuItem

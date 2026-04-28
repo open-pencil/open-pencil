@@ -32,5 +32,8 @@ function onFormattingChange(val: AcceptableValue | AcceptableValue[]) {
     :commit-prop="ctx.commitProp"
     :on-align-change="onAlignChange"
     :on-formatting-change="onFormattingChange"
+    :toggle-bold="ctx.toggleBold"
+    :toggle-italic="ctx.toggleItalic"
+    :toggle-decoration="ctx.toggleDecoration"
   />
 </template>

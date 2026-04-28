@@ -18,12 +18,13 @@ export function createEditorCommandActions(commands: Record<EditorCommandId, Edi
   ): EditorCommandMenuItem {
     const command = getCommand(id)
     return {
+      id,
       label: command.label,
       shortcut,
       get disabled() {
         return !command.enabled.value
       },
-      action: () => runCommand(id),
+      action: () => runCommand(id)
     }
   }
 

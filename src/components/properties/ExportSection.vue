@@ -144,9 +144,9 @@ onScopeDispose(() => {
       class="flex items-center gap-1.5 py-0.5"
     >
       <AppSelect
+        v-if="formatSupportsScale(setting.format)"
         :model-value="setting.scale"
         :options="SCALE_OPTIONS"
-        :disabled="!formatSupportsScale(setting.format)"
         @update:model-value="updateScale(i, Number($event))"
       />
       <AppSelect

@@ -1,20 +1,30 @@
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
-import { normalizeColor } from '#core/color'
 import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
 import { styleToWeight } from '#core/text/fonts'
-import { decodeVectorNetworkBlob } from '#core/vector'
+import { guidToString } from './guid'
+import { convertEffects, convertFills, convertStrokes } from './paint'
+import { importStyleRuns } from './style-runs'
+export { importStyleRuns } from './style-runs'
+import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
+export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
+export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
+import {
+  extractBoundVariables,
+  extractPluginData,
+  extractPluginRelaunchData,
+  extractSharedPluginData,
+  getOpenPencilPluginValue,
+  LAYOUT_DIRECTION_PLUGIN_KEY,
+  TEXT_DIRECTION_PLUGIN_KEY
+} from './plugin-data'
+import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
+export { resolveGeometryPaths } from './vector-geometry'
 
-import type { NodeChange, Paint, Effect as KiwiEffect, GUID } from '#core/kiwi/binary/codec'
+import type { NodeChange } from '#core/kiwi/binary/codec'
 import type {
   SceneNode,
   NodeType,
   Fill,
-  FillType,
-  Stroke,
-  Effect,
-  BlendMode,
-  ImageScaleMode,
-  GradientTransform,
   StrokeCap,
   StrokeJoin,
   LayoutMode,
@@ -26,33 +36,12 @@ import type {
   TextAutoResize,
   TextAlignVertical,
   TextCase,
-  TextDecoration,
   ArcData,
-  VectorNetwork,
-  GeometryPath,
-  StyleRun,
-  CharacterStyleOverride,
-  WindingRule,
-  PluginDataEntry,
-  SharedPluginDataEntry,
-  PluginRelaunchDataEntry
+  VectorNetwork
 } from '#core/scene-graph'
-import type { Color, Matrix, Vector } from '#core/types'
+import type { GUID } from '#core/types'
 
-const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
-const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
-const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
-
-export function guidToString(guid: GUID): string {
-  return `${guid.sessionID}:${guid.localID}`
-}
-
-export function stringToGuid(str: string): GUID {
-  const match = str.match(/^(?:VariableID:|VariableCollectionId:)?(\d+):(\d+)$/)
-  if (match) return { sessionID: parseInt(match[1], 10), localID: parseInt(match[2], 10) }
-  const [session, local] = str.split(':')
-  return { sessionID: parseInt(session, 10), localID: parseInt(local, 10) }
-}
+export { guidToString, stringToGuid } from './guid'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
   cornerRadius: 'CORNER_RADIUS',
@@ -79,114 +68,6 @@ export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
 export const VARIABLE_BINDING_FIELDS_INVERSE: Record<string, string> = Object.fromEntries(
   Object.entries(VARIABLE_BINDING_FIELDS).map(([k, v]) => [v, k])
 )
-
-const convertColor = normalizeColor
-
-function imageHashToString(hash: Record<string, number>): string {
-  const bytes = Object.keys(hash)
-    .sort((a, b) => Number(a) - Number(b))
-    .map((k) => hash[Number(k)])
-  return bytes.map((b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-function convertGradientTransform(t?: Matrix): GradientTransform | undefined {
-  if (!t) return undefined
-  return { m00: t.m00, m01: t.m01, m02: t.m02, m10: t.m10, m11: t.m11, m12: t.m12 }
-}
-
-type VariableAliasRef = NonNullable<NonNullable<NonNullable<Paint['colorVar']>['value']>['alias']>
-
-let variableColorResolver: ((alias: VariableAliasRef) => Color | null) | null = null
-
-export function setVariableColorResolver(
-  resolver: ((alias: VariableAliasRef) => Color | null) | null
-): void {
-  variableColorResolver = resolver
-}
-
-function resolveColorVar(paint: Paint): Color | undefined {
-  const alias = paint.colorVar?.value?.alias
-  if (!alias || !variableColorResolver) return undefined
-  return variableColorResolver(alias) ?? undefined
-}
-
-export function convertFills(paints?: Paint[]): Fill[] {
-  if (!paints) return []
-  return paints.map((p) => {
-    const base: Fill = {
-      type: p.type as FillType,
-      color: convertColor(resolveColorVar(p) ?? p.color),
-      opacity: p.opacity ?? 1,
-      visible: p.visible ?? true,
-      blendMode: (p.blendMode ?? 'NORMAL') as BlendMode
-    }
-
-    if (p.type.startsWith('GRADIENT') && p.stops) {
-      base.gradientStops = p.stops.map((s) => ({
-        color: convertColor(s.color),
-        position: s.position
-      }))
-      if (p.transform) {
-        base.gradientTransform = convertGradientTransform(p.transform)
-      }
-    }
-
-    if (p.type === 'IMAGE') {
-      if (p.image && typeof p.image === 'object') {
-        const img = p.image as { hash: string | Record<string, number> }
-        if (typeof img.hash === 'object') {
-          base.imageHash = imageHashToString(img.hash)
-        } else if (typeof img.hash === 'string') {
-          base.imageHash = img.hash
-        }
-      }
-      base.imageScaleMode = (p.imageScaleMode ?? 'FILL') as ImageScaleMode
-      if (p.transform) {
-        base.imageTransform = convertGradientTransform(p.transform)
-      }
-    }
-
-    return base
-  })
-}
-
-export function convertStrokes(
-  paints?: Paint[],
-  weight?: number,
-  align?: string,
-  cap?: StrokeCap,
-  join?: StrokeJoin,
-  dashPattern?: number[]
-): Stroke[] {
-  if (!paints) return []
-  let strokeAlign: 'INSIDE' | 'OUTSIDE' | 'CENTER' = 'CENTER'
-  if (align === 'INSIDE') strokeAlign = 'INSIDE'
-  else if (align === 'OUTSIDE') strokeAlign = 'OUTSIDE'
-
-  return paints.map((p) => ({
-    color: convertColor(resolveColorVar(p) ?? p.color),
-    weight: weight ?? 1,
-    opacity: p.opacity ?? 1,
-    visible: p.visible ?? true,
-    align: strokeAlign,
-    cap: cap ?? 'NONE',
-    join: join ?? 'MITER',
-    dashPattern: dashPattern ?? []
-  }))
-}
-
-export function convertEffects(effects?: KiwiEffect[]): Effect[] {
-  if (!effects) return []
-  return effects.map((e) => ({
-    type: e.type,
-    color: convertColor(e.color),
-    offset: e.offset ?? { x: 0, y: 0 },
-    radius: e.radius ?? 0,
-    spread: e.spread ?? 0,
-    visible: e.visible ?? true,
-    blendMode: (e.blendMode ?? 'NORMAL') as BlendMode
-  }))
-}
 
 const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   DOCUMENT: 'DOCUMENT',
@@ -301,38 +182,6 @@ function mapConstraint(c?: string): ConstraintType {
   }
 }
 
-export function mapTextDecoration(d?: string): TextDecoration {
-  switch (d) {
-    case 'UNDERLINE':
-      return 'UNDERLINE'
-    case 'STRIKETHROUGH':
-      return 'STRIKETHROUGH'
-    default:
-      return 'NONE'
-  }
-}
-
-export function convertLineHeight(
-  lh?: { value: number; units: string },
-  fontSize?: number
-): number | null {
-  if (!lh) return null
-  if (lh.units === 'PIXELS') return lh.value
-  if (lh.units === 'PERCENT') return (lh.value / 100) * (fontSize ?? 14)
-  if (lh.units === 'RAW') return lh.value * (fontSize ?? 14)
-  return null
-}
-
-export function convertLetterSpacing(
-  ls?: { value: number; units: string },
-  fontSize?: number
-): number {
-  if (!ls) return 0
-  if (ls.units === 'PIXELS') return ls.value
-  if (ls.units === 'PERCENT') return (ls.value / 100) * (fontSize ?? 14)
-  return ls.value
-}
-
 export function mapArcData(data?: Partial<ArcData>): ArcData | null {
   if (!data) return null
   return {
@@ -340,205 +189,6 @@ export function mapArcData(data?: Partial<ArcData>): ArcData | null {
     endingAngle: data.endingAngle ?? 2 * Math.PI,
     innerRadius: data.innerRadius ?? 0
   }
-}
-
-function convertStyleOverride(
-  override: NodeChange,
-  fallbackFontSize: number | undefined
-): CharacterStyleOverride {
-  const style: CharacterStyleOverride = {}
-  if (override.fontName) {
-    style.fontFamily = override.fontName.family
-    style.fontWeight = styleToWeight(override.fontName.style)
-    style.italic = override.fontName.style.toLowerCase().includes('italic')
-  }
-  if (override.fontSize !== undefined) style.fontSize = override.fontSize
-  if (override.letterSpacing) {
-    style.letterSpacing = convertLetterSpacing(
-      override.letterSpacing,
-      override.fontSize ?? fallbackFontSize
-    )
-  }
-  if (override.lineHeight) {
-    const lh = convertLineHeight(override.lineHeight, override.fontSize ?? fallbackFontSize)
-    if (lh != null) style.lineHeight = lh
-  }
-  const deco = override.textDecoration
-  if (deco) style.textDecoration = mapTextDecoration(deco)
-  if (override.fillPaints) {
-    const fills = convertFills(override.fillPaints)
-    if (fills.length > 0) style.fills = fills
-  }
-  return style
-}
-
-function buildStyleMap(
-  table: NodeChange[],
-  fallbackFontSize: number | undefined
-): Map<number, CharacterStyleOverride> {
-  const styleMap = new Map<number, CharacterStyleOverride>()
-  for (const override of table) {
-    const id = override.styleID as number | undefined
-    if (id === undefined) continue
-    const style = convertStyleOverride(override, fallbackFontSize)
-    if (Object.keys(style).length > 0) styleMap.set(id, style)
-  }
-  return styleMap
-}
-
-function collectStyleRuns(
-  ids: number[],
-  styleMap: Map<number, CharacterStyleOverride>
-): StyleRun[] {
-  const runs: StyleRun[] = []
-  let currentId = ids[0]
-  let start = 0
-
-  for (let i = 1; i <= ids.length; i++) {
-    if (i === ids.length || ids[i] !== currentId) {
-      if (currentId !== 0) {
-        const style = styleMap.get(currentId)
-        if (style) runs.push({ start, length: i - start, style })
-      }
-      if (i < ids.length) {
-        currentId = ids[i]
-        start = i
-      }
-    }
-  }
-  return runs
-}
-
-export function importStyleRuns(nc: NodeChange): StyleRun[] {
-  const td = nc.textData
-  if (!td?.characterStyleIDs || !td.styleOverrideTable) return []
-
-  const ids = td.characterStyleIDs
-  if (ids.length === 0 || td.styleOverrideTable.length === 0) return []
-
-  const styleMap = buildStyleMap(td.styleOverrideTable, nc.fontSize)
-  if (styleMap.size === 0) return []
-
-  return collectStyleRuns(ids, styleMap)
-}
-
-function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): VectorNetwork | null {
-  const vectorData = nc.vectorData as
-    | {
-        vectorNetworkBlob?: number
-        normalizedSize?: Vector
-        styleOverrideTable?: Array<{ styleID: number; handleMirroring?: string }>
-      }
-    | undefined
-
-  if (vectorData?.vectorNetworkBlob === undefined) return null
-  const idx = vectorData.vectorNetworkBlob
-  if (idx < 0 || idx >= blobs.length) return null
-
-  try {
-    const network = decodeVectorNetworkBlob(blobs[idx], vectorData.styleOverrideTable)
-
-    const ns = vectorData.normalizedSize
-    const nodeW = nc.size?.x ?? 0
-    const nodeH = nc.size?.y ?? 0
-    if (ns && nodeW > 0 && nodeH > 0 && (ns.x !== nodeW || ns.y !== nodeH)) {
-      const sx = nodeW / ns.x
-      const sy = nodeH / ns.y
-      for (const v of network.vertices) {
-        v.x *= sx
-        v.y *= sy
-      }
-      for (const seg of network.segments) {
-        seg.tangentStart = { x: seg.tangentStart.x * sx, y: seg.tangentStart.y * sy }
-        seg.tangentEnd = { x: seg.tangentEnd.x * sx, y: seg.tangentEnd.y * sy }
-      }
-    }
-
-    return network
-  } catch {
-    return null
-  }
-}
-
-interface KiwiPath {
-  windingRule?: string
-  commandsBlob?: number
-}
-
-export function resolveGeometryPaths(
-  paths: KiwiPath[] | undefined,
-  blobs: Uint8Array[]
-): GeometryPath[] {
-  if (!paths || paths.length === 0) return []
-  const result: GeometryPath[] = []
-  for (const p of paths) {
-    if (p.commandsBlob === undefined || p.commandsBlob < 0 || p.commandsBlob >= blobs.length)
-      continue
-    const blob = blobs[p.commandsBlob]
-    if (blob.length === 0) continue
-    result.push({
-      windingRule: (p.windingRule === 'EVENODD' ? 'EVENODD' : 'NONZERO') as WindingRule,
-      commandsBlob: blob
-    })
-  }
-  return result
-}
-
-function extractBoundVariables(nc: NodeChange): Record<string, string> {
-  const bindings: Record<string, string> = {}
-  nc.fillPaints?.forEach((paint, i) => {
-    if (paint.colorVariableBinding) {
-      bindings[`fills/${i}/color`] = guidToString(paint.colorVariableBinding.variableID)
-    }
-  })
-  nc.strokePaints?.forEach((paint, i) => {
-    if (paint.colorVariableBinding) {
-      bindings[`strokes/${i}/color`] = guidToString(paint.colorVariableBinding.variableID)
-    }
-  })
-  return bindings
-}
-
-function extractPluginData(nc: NodeChange): PluginDataEntry[] {
-  return (nc.pluginData ?? []).map((entry) => ({
-    pluginId: entry.pluginID,
-    key: entry.key,
-    value: entry.value
-  }))
-}
-
-function getOpenPencilPluginValue(nc: NodeChange, key: string): string | null {
-  return (
-    nc.pluginData?.find((entry) => entry.pluginID === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
-      ?.value ?? null
-  )
-}
-
-function extractSharedPluginData(nc: NodeChange): SharedPluginDataEntry[] {
-  return extractPluginData(nc).map((entry) => {
-    const slashIndex = entry.key.indexOf('/')
-    if (slashIndex === -1) {
-      return {
-        namespace: entry.pluginId,
-        key: entry.key,
-        value: entry.value
-      }
-    }
-    return {
-      namespace: entry.key.slice(0, slashIndex),
-      key: entry.key.slice(slashIndex + 1),
-      value: entry.value
-    }
-  })
-}
-
-function extractPluginRelaunchData(nc: NodeChange): PluginRelaunchDataEntry[] {
-  return (nc.pluginRelaunchData ?? []).map((entry) => ({
-    pluginId: entry.pluginID,
-    command: entry.command,
-    message: entry.message,
-    isDeleted: entry.isDeleted
-  }))
 }
 
 function convertTransformProps(

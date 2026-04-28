@@ -34,14 +34,12 @@ export function useSelectionCapabilities() {
     canToggleLock: computed(() => hasSelection.value),
     canGoToMainComponent: computed(() => selection.isInstance.value),
     canCreateInstance: computed(() => selectedNode.value?.type === 'COMPONENT'),
-    canMoveToPage: useSceneComputed(
-      () => hasSelection.value && editor.graph.getPages().length > 1
-    ),
+    canMoveToPage: useSceneComputed(() => hasSelection.value && editor.graph.getPages().length > 1),
     canSelectAll: useSceneComputed(
       () => editor.graph.getChildren(editor.state.currentPageId).length > 0
     ),
-    canUndo: computed(() => editor.undo.canUndo),
-    canRedo: computed(() => editor.undo.canRedo),
+    canUndo: useSceneComputed(() => editor.undo.canUndo),
+    canRedo: useSceneComputed(() => editor.undo.canRedo),
     canZoomToSelection: computed(() => hasSelection.value)
   }
 }

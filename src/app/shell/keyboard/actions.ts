@@ -57,7 +57,7 @@ export function createKeyboardActions({
       return
     }
     if (store.state.penState) {
-      store.penCommit(false)
+      store.penCancel()
       return
     }
     if (store.state.enteredContainerId) {

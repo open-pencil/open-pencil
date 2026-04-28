@@ -1,9 +1,84 @@
-import type { PluginData, PluginRelaunchData } from '#core/kiwi/binary/codec'
+import { guidToString } from './guid'
+
+import type {
+  NodeChange,
+  PluginData,
+  PluginRelaunchData
+} from '#core/kiwi/binary/codec'
 import type {
   PluginDataEntry,
   PluginRelaunchDataEntry,
   SharedPluginDataEntry
 } from '#core/scene-graph'
+
+export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
+export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
+export const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
+
+export function upsertPluginData(node: { pluginData: PluginDataEntry[] }, key: string, value: string): void {
+  const pluginData = node.pluginData.filter(
+    (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
+  )
+  pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_ID, key, value })
+  node.pluginData = pluginData
+}
+
+export function extractBoundVariables(nc: NodeChange): Record<string, string> {
+  const bindings: Record<string, string> = {}
+  nc.fillPaints?.forEach((paint, i) => {
+    if (paint.colorVariableBinding) {
+      bindings[`fills/${i}/color`] = guidToString(paint.colorVariableBinding.variableID)
+    }
+  })
+  nc.strokePaints?.forEach((paint, i) => {
+    if (paint.colorVariableBinding) {
+      bindings[`strokes/${i}/color`] = guidToString(paint.colorVariableBinding.variableID)
+    }
+  })
+  return bindings
+}
+
+export function extractPluginData(nc: NodeChange): PluginDataEntry[] {
+  return (nc.pluginData ?? []).map((entry) => ({
+    pluginId: entry.pluginID,
+    key: entry.key,
+    value: entry.value
+  }))
+}
+
+export function getOpenPencilPluginValue(nc: NodeChange, key: string): string | null {
+  return (
+    nc.pluginData?.find((entry) => entry.pluginID === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
+      ?.value ?? null
+  )
+}
+
+export function extractSharedPluginData(nc: NodeChange): SharedPluginDataEntry[] {
+  return extractPluginData(nc).map((entry) => {
+    const slashIndex = entry.key.indexOf('/')
+    if (slashIndex === -1) {
+      return {
+        namespace: entry.pluginId,
+        key: entry.key,
+        value: entry.value
+      }
+    }
+    return {
+      namespace: entry.key.slice(0, slashIndex),
+      key: entry.key.slice(slashIndex + 1),
+      value: entry.value
+    }
+  })
+}
+
+export function extractPluginRelaunchData(nc: NodeChange): PluginRelaunchDataEntry[] {
+  return (nc.pluginRelaunchData ?? []).map((entry) => ({
+    pluginId: entry.pluginID,
+    command: entry.command,
+    message: entry.message,
+    isDeleted: entry.isDeleted
+  }))
+}
 
 export function mergePluginData(
   pluginData: PluginDataEntry[],

@@ -1,133 +1,27 @@
-export const FIG_KIWI_DEFAULT_VERSION = 101
-
 import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text-data'
-import { getLoadedFontData, normalizeFontFamily, weightToStyle } from '#core/text/fonts'
+import { normalizeFontFamily, weightToStyle } from '#core/text/fonts'
 import { getGlyphOutlineCommandsSync } from '#core/text/opentype'
 import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
-import { deflateSync, inflateSync } from 'fflate'
+export {
+  buildFigKiwi,
+  decompressFigKiwiData,
+  decompressFigKiwiDataAsync,
+  FIG_KIWI_DEFAULT_VERSION,
+  parseFigKiwiChunks
+} from './fig-kiwi-container'
+export { buildFontDigestMap } from './font-digests'
 
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
 import { sceneNodeToKiwiWithContext, type KiwiNodeChange } from './export-node'
+import {
+  LAYOUT_DIRECTION_PLUGIN_KEY,
+  TEXT_DIRECTION_PLUGIN_KEY,
+  upsertPluginData
+} from './plugin-data'
 
 import type { NodeChange, Paint, VariableConsumptionEntry } from '#core/kiwi/binary/codec'
 import type { SceneGraph, SceneNode, CharacterStyleOverride } from '#core/scene-graph'
 import type { Color, GUID, Matrix } from '#core/types'
-
-const fontDigestCache = new Map<string, Uint8Array>()
-const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
-const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
-const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
-
-function upsertPluginData(node: SceneNode, key: string, value: string): void {
-  const pluginData = node.pluginData.filter(
-    (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
-  )
-  pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_ID, key, value })
-  node.pluginData = pluginData
-}
-
-async function computeFontDigest(data: ArrayBuffer): Promise<Uint8Array> {
-  if (typeof crypto !== 'undefined') {
-    const hash = await crypto.subtle.digest('SHA-1', data)
-    return new Uint8Array(hash)
-  }
-  return new Uint8Array(20)
-}
-
-async function getFontDigest(family: string, style: string): Promise<Uint8Array | null> {
-  const key = `${family}|${style}`
-  const cached = fontDigestCache.get(key)
-  if (cached) return cached
-  const data = getLoadedFontData(family, style)
-  if (!data) return null
-  const digest = await computeFontDigest(data)
-  fontDigestCache.set(key, digest)
-  return digest
-}
-
-export async function buildFontDigestMap(graph: SceneGraph): Promise<Map<string, Uint8Array>> {
-  const fontKeys = new Set<string>()
-  for (const node of graph.getAllNodes()) {
-    if (node.type !== 'TEXT') continue
-    const baseStyle = weightToStyle(node.fontWeight, node.italic)
-    fontKeys.add(`${node.fontFamily}|${baseStyle}`)
-    for (const run of node.styleRuns) {
-      const family = run.style.fontFamily ?? node.fontFamily
-      const weight = run.style.fontWeight ?? node.fontWeight
-      const italic = run.style.italic ?? node.italic
-      fontKeys.add(`${family}|${weightToStyle(weight, italic)}`)
-    }
-  }
-
-  const result = new Map<string, Uint8Array>()
-  for (const key of fontKeys) {
-    const [family, style] = key.split('|')
-    const digest = await getFontDigest(family, style)
-    if (digest) result.set(key, digest)
-  }
-  return result
-}
-
-export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
-  const header = new TextDecoder().decode(binary.slice(0, 8))
-  if (header !== 'fig-kiwi') return null
-
-  const view = new DataView(binary.buffer, binary.byteOffset, binary.byteLength)
-  let offset = 12
-
-  const chunks: Uint8Array[] = []
-  while (offset < binary.length) {
-    const chunkLen = view.getUint32(offset, true)
-    offset += 4
-    chunks.push(binary.slice(offset, offset + chunkLen))
-    offset += chunkLen
-  }
-  return chunks.length >= 2 ? chunks : null
-}
-
-export function decompressFigKiwiData(compressed: Uint8Array): Uint8Array {
-  try {
-    return inflateSync(compressed)
-  } catch {
-    throw new Error('Failed to decompress fig-kiwi data')
-  }
-}
-
-export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promise<Uint8Array> {
-  try {
-    return inflateSync(compressed)
-  } catch {
-    const fzstd = await import('fzstd')
-    return fzstd.decompress(compressed)
-  }
-}
-
-export function buildFigKiwi(
-  schemaDeflated: Uint8Array,
-  dataRaw: Uint8Array,
-  version = FIG_KIWI_DEFAULT_VERSION
-): Uint8Array {
-  const dataDeflated = deflateSync(dataRaw)
-
-  const total = 8 + 4 + 4 + schemaDeflated.length + 4 + dataDeflated.length
-  const out = new Uint8Array(total)
-  const view = new DataView(out.buffer)
-
-  out.set(new TextEncoder().encode('fig-kiwi'), 0)
-  view.setUint32(8, version, true)
-
-  let offset = 12
-  view.setUint32(offset, schemaDeflated.length, true)
-  offset += 4
-  out.set(schemaDeflated, offset)
-  offset += schemaDeflated.length
-
-  view.setUint32(offset, dataDeflated.length, true)
-  offset += 4
-  out.set(dataDeflated, offset)
-
-  return out
-}
 
 export function mapToFigmaType(type: SceneNode['type']): string {
   switch (type) {

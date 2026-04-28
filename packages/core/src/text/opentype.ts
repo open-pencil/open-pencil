@@ -79,13 +79,6 @@ export function measureTextWithOpenType(
   return { width: Math.ceil(singleLineWidth), height: lineH }
 }
 
-let openTypeModulePromise: Promise<OpenTypeModule> | null = null
-
-async function loadOpenTypeModule() {
-  openTypeModulePromise ??= import('opentype.js') as Promise<typeof OpenTypeSync & OpenTypeModule>
-  return openTypeModulePromise
-}
-
 function commandsToFigmaNumbers(commands: OutlineCommand[]): Array<string | number> {
   const result: Array<string | number> = []
   for (const command of commands) {
@@ -122,8 +115,7 @@ export async function probeGlyphOutlineCommands(
   const bytes = getLoadedFontData(family, style)
   if (!bytes) return null
 
-  const openType = await loadOpenTypeModule()
-  const font = openType.parse(bytes.slice(0))
+  const font = (OpenTypeSync as OpenTypeModule).parse(bytes.slice(0))
   const glyphs = font.stringToGlyphs(text)
   const firstGlyph = glyphs.find((glyph: OutlineGlyph) => glyph.path.commands.length > 0)
   const firstGlyphCommandSample = (firstGlyph?.getPath(0, 0, fontSize).commands ?? []).slice(0, 12)
