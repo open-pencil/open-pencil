@@ -128,11 +128,6 @@
       "bun": "./src/xpath.ts",
       "default": "./src/xpath.ts"
     },
-    "./random": {
-      "types": "./src/random.ts",
-      "bun": "./src/random.ts",
-      "default": "./src/random.ts"
-    },
     "./types": {
       "types": "./src/types.ts",
       "bun": "./src/types.ts",
@@ -293,11 +288,6 @@
         "types": "./dist/xpath.d.ts",
         "import": "./dist/xpath.js",
         "default": "./dist/xpath.js"
-      },
-      "./random": {
-        "types": "./dist/random.d.ts",
-        "import": "./dist/random.js",
-        "default": "./dist/random.js"
       },
       "./types": {
         "types": "./dist/types.d.ts",
