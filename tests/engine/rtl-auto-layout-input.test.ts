@@ -3,9 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph, computeLayout } from '@open-pencil/core'
 import { createEditor } from '@open-pencil/core/editor'
 
-import { computeAutoLayoutIndicatorForFrame } from '../../packages/vue/src/shared/input/auto-layout'
-import { handleMoveUp } from '../../packages/vue/src/shared/input/move'
-import type { DragMove } from '../../packages/vue/src/shared/input/types'
+import { computeAutoLayoutIndicatorForFrame } from '#vue/shared/input/auto-layout'
+import { handleMoveUp } from '#vue/shared/input/move'
+import type { DragMove } from '#vue/shared/input/types'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

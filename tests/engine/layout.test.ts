@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 
 import { SceneGraph, type SceneNode, type GridTrack, computeLayout, computeAllLayouts, createEditor, setTextMeasurer, FigmaAPI, readFigFile } from '@open-pencil/core'
 
-import { createEditorStore } from '@/stores/editor'
+import { createEditorStore } from '@/app/editor/session'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

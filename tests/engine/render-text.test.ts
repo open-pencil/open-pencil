@@ -1,15 +1,15 @@
 import { describe, test, expect, mock } from 'bun:test'
-import { renderText } from '../../packages/core/src/canvas/scene'
-import type { SceneNode } from '../../packages/core/src/scene-graph'
-import type { SkiaRenderer } from '../../packages/core/src/canvas/renderer'
-import { initCanvasKit } from '../../packages/cli/src/headless'
+import { renderText } from '#core/canvas/scene'
+import type { SceneNode } from '#core/scene-graph'
+import type { SkiaRenderer } from '#core/canvas/renderer'
+import { initCanvasKit } from '#cli/headless'
 import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@open-pencil/core'
 import {
   initFontService,
   setArabicFallbackFamily,
   setCJKFallbackFamily,
   markFontLoaded
-} from '../../packages/core/src/text/fonts'
+} from '#core/text/fonts'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/core'
 
 function createMockCanvas() {

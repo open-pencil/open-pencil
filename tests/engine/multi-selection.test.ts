@@ -262,9 +262,9 @@ describe('multi-node property merging', () => {
 
 describe('flip roundtrip via kiwi', () => {
   async function roundtrip(graph: SceneGraph) {
-    const { initCodec } = await import('../../packages/core/src/kiwi/codec')
-    const { parseFigFile } = await import('../../packages/core/src/kiwi/fig-file')
-    const { exportFigFile } = await import('../../packages/core/src/io/formats/fig/export')
+    const { initCodec } = await import('#core/kiwi/binary/codec')
+    const { parseFigFile } = await import('#core/kiwi/fig/file')
+    const { exportFigFile } = await import('#core/io/formats/fig/export')
     await initCodec()
     const buf = await exportFigFile(graph)
     return parseFigFile(buf)

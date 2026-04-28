@@ -2,7 +2,7 @@ import { describe, test, expect, beforeAll, setDefaultTimeout } from 'bun:test'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-import { computeContentBounds } from '../../packages/core/src/io/formats/raster/render'
+import { computeContentBounds } from '#core/io/formats/raster/render'
 
 import {
   parseFigFile,
@@ -12,9 +12,15 @@ import {
   initCodec,
   SceneGraph,
   type SceneNode,
-  type NodeType,
   type Fill,
 } from '@open-pencil/core'
+import {
+  childMatching,
+  childNamed,
+  collectAllNodes,
+  countByType,
+  previewChild
+} from '../helpers/fig-traversal'
 import { heavy } from '../helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -40,32 +46,6 @@ const VALID_NODE_TYPES = new Set<string>([
   'CONNECTOR',
   'SHAPE_WITH_TEXT',
 ])
-
-function collectAllNodes(graph: SceneGraph): SceneNode[] {
-  const all: SceneNode[] = []
-  function walk(id: string) {
-    const node = graph.getNode(id)
-    if (!node) return
-    all.push(node)
-    for (const child of graph.getChildren(id)) {
-      walk(child.id)
-    }
-  }
-  for (const page of graph.getPages()) {
-    for (const child of graph.getChildren(page.id)) {
-      walk(child.id)
-    }
-  }
-  return all
-}
-
-function countByType(nodes: SceneNode[]): Map<NodeType, number> {
-  const counts = new Map<NodeType, number>()
-  for (const n of nodes) {
-    counts.set(n.type, (counts.get(n.type) ?? 0) + 1)
-  }
-  return counts
-}
 
 let parsed: SceneGraph
 let allNodes: SceneNode[]
@@ -112,31 +92,6 @@ describe('node type coverage', () => {
     expect(invalid.map((n) => `${n.name}: ${n.type}`)).toEqual([])
   })
 })
-
-function childNamed(
-  graph: SceneGraph,
-  parent: SceneNode | undefined,
-  name: string
-): SceneNode | undefined {
-  return parent ? graph.getChildren(parent.id).find((node) => node.name === name) : undefined
-}
-
-function childMatching(
-  graph: SceneGraph,
-  parent: SceneNode | undefined,
-  predicate: (node: SceneNode) => boolean
-): SceneNode | undefined {
-  return parent ? graph.getChildren(parent.id).find(predicate) : undefined
-}
-
-function previewChild(
-  graph: SceneGraph,
-  nodes: SceneNode[],
-  name: string
-): SceneNode | undefined {
-  const preview = nodes.find((node) => node.name === 'Preview Thumbnail')
-  return childNamed(graph, preview, name)
-}
 
 describe('derived instance layout regressions', () => {
   let layoutGraph: SceneGraph
@@ -654,7 +609,7 @@ describe('edge cases', () => {
   })
 
   test('REMOVED nodes are skipped', async () => {
-    const { importNodeChanges } = await import('../../packages/core/src/kiwi/fig-import')
+    const { importNodeChanges } = await import('#core/kiwi/fig/import')
     const graph = importNodeChanges([
       {
         guid: { sessionID: 0, localID: 0 },

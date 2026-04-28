@@ -6,7 +6,7 @@ import {
   copyEffect,
   copyStyleRun,
   copyGeometryPaths
-} from '../../packages/core/src/scene-graph/copy'
+} from '#core/scene-graph/copy'
 import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/core'
 
 describe('copy helpers — mutation isolation', () => {

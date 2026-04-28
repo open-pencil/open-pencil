@@ -6,7 +6,7 @@ import {
   requestPermissionFromUser,
   respondToPermission,
   rejectCurrentPermission
-} from '../../src/ai/acp-permission'
+} from '../../src/app/ai/acp/permission'
 
 import type { RequestPermissionRequest } from '@agentclientprotocol/sdk'
 

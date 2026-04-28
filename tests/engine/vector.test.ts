@@ -1,6 +1,14 @@
 import { describe, test, expect } from 'bun:test'
 
 import {
+  lineNetwork,
+  triangleNetwork,
+  vectorNetwork,
+  vectorSegment,
+  vectorVertex
+} from '../helpers/vector-network'
+
+import {
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
   computeVectorBounds,
@@ -20,16 +28,7 @@ describe('vectorNetworkBlob round-trip', () => {
   })
 
   test('single line segment', () => {
-    const network: VectorNetwork = {
-      vertices: [
-        { x: 0, y: 0, handleMirroring: 'NONE' },
-        { x: 100, y: 50, handleMirroring: 'NONE' }
-      ],
-      segments: [
-        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
-      ],
-      regions: []
-    }
+    const network = lineNetwork()
     const blob = encodeVectorNetworkBlob(network)
     const decoded = decodeVectorNetworkBlob(blob)
     expect(decoded.vertices).toHaveLength(2)
@@ -42,16 +41,13 @@ describe('vectorNetworkBlob round-trip', () => {
   })
 
   test('cubic bezier segment', () => {
-    const network: VectorNetwork = {
-      vertices: [
-        { x: 0, y: 0, handleMirroring: 'ANGLE' },
-        { x: 100, y: 100, handleMirroring: 'ANGLE' }
+    const network = vectorNetwork(
+      [
+        { ...vectorVertex(0, 0), handleMirroring: 'ANGLE' },
+        { ...vectorVertex(100, 100), handleMirroring: 'ANGLE' }
       ],
-      segments: [
-        { start: 0, end: 1, tangentStart: { x: 30, y: 0 }, tangentEnd: { x: -30, y: 0 } }
-      ],
-      regions: []
-    }
+      [vectorSegment(0, 1, { x: 30, y: 0 }, { x: -30, y: 0 })]
+    )
     const blob = encodeVectorNetworkBlob(network)
     const decoded = decodeVectorNetworkBlob(blob)
     expect(decoded.segments[0].tangentStart.x).toBeCloseTo(30)
@@ -59,21 +55,7 @@ describe('vectorNetworkBlob round-trip', () => {
   })
 
   test('network with region', () => {
-    const network: VectorNetwork = {
-      vertices: [
-        { x: 0, y: 0, handleMirroring: 'NONE' },
-        { x: 100, y: 0, handleMirroring: 'NONE' },
-        { x: 50, y: 100, handleMirroring: 'NONE' }
-      ],
-      segments: [
-        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-        { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-        { start: 2, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
-      ],
-      regions: [
-        { windingRule: 'NONZERO', loops: [[0, 1, 2]] }
-      ]
-    }
+    const network = triangleNetwork()
     const blob = encodeVectorNetworkBlob(network)
     const decoded = decodeVectorNetworkBlob(blob)
     expect(decoded.regions).toHaveLength(1)

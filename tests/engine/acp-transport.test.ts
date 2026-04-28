@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { mapUpdate } from '../../src/ai/acp-map-update'
-import { formatConnectionError, buildCrashChunks } from '../../src/ai/acp-transport'
+import { mapUpdate } from '../../src/app/ai/acp/map-update'
+import { formatConnectionError, buildCrashChunks } from '../../src/app/ai/acp/transport'
 
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 

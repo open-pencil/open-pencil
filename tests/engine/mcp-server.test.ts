@@ -4,7 +4,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import WebSocket from 'ws'
 
-import { startServer, paramToZod } from '../../packages/mcp/src/server'
+import { startServer, paramToZod } from '#mcp/server'
 import {
   ALL_TOOLS,
   FigmaAPI,
