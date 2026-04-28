@@ -3,6 +3,13 @@
   "version": "0.11.8",
   "license": "MIT",
   "type": "module",
+  "imports": {
+    "#mcp/*": {
+      "types": "./src/*",
+      "bun": "./src/*",
+      "default": "./dist/*.js"
+    }
+  },
   "main": "./dist/server.js",
   "bin": {
     "openpencil-mcp": "./dist/stdio.js",
