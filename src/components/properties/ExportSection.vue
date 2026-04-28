@@ -4,10 +4,10 @@ import { ref, computed, watch, onScopeDispose } from 'vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 import { useExport, useI18n } from '@open-pencil/vue'
 
-import type { ExportFormatId } from '@open-pencil/vue/controls/useExport'
+import type { ExportFormatId } from '@open-pencil/vue'
 
 const editorStore = useEditorStore()
 const { panels } = useI18n()

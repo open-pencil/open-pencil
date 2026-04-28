@@ -8,7 +8,7 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useSectionUI } from '@/components/ui/section'
-import { loadFont } from '@/engine/fonts'
+import { loadFont } from '@/app/editor/fonts'
 
 const { panels } = useI18n()
 const sectionCls = useSectionUI()

@@ -8,71 +8,22 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
-import { useClipboard } from '@vueuse/core'
-import { nodeToXPath } from '@open-pencil/core'
 import { useEditorCommands, useI18n, useMenuModel, useSelectionState } from '@open-pencil/vue'
-import { toast } from '@/utils/toast'
 
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
+import { createCanvasMenuActions } from '@/app/editor/canvas/menu-actions'
+import { canvasMenuItemClass, canvasMenuShortcutClass } from '@/app/editor/canvas/menu-model'
 import { menu, useMenuUI } from '@/components/ui/menu'
 
 const store = useEditorStore()
-const { copy } = useClipboard()
 
 const { editor, selectedIds, hasSelection } = useSelectionState()
 const { getCommand } = useEditorCommands()
 const { canvasMenu } = useMenuModel()
 const { menu: t } = useI18n()
 
-function ids() {
-  return [...selectedIds.value]
-}
-
-function execCommand(cmd: 'copy' | 'cut' | 'paste') {
-  try {
-    if (window.document.execCommand(cmd)) return
-  } catch (error) {
-    console.warn(`Clipboard command ${cmd} failed`, error)
-  }
-
-  toast.error('Clipboard access is blocked in this browser context')
-}
-
-async function clipboardWrite(text: string | null, label: string) {
-  if (!text) return
-  copy(text)
-  toast.info(`Copied as ${label}`)
-}
-
-function copyNodeId() {
-  const nodeIds = ids()
-  if (nodeIds.length === 0) return
-  copy(nodeIds.join(', '))
-  toast.info(`Copied node ID${nodeIds.length > 1 ? 's' : ''}`)
-}
-
-function copyXPath() {
-  const nodeIds = ids()
-  if (nodeIds.length === 0) return
-  const xpaths = nodeIds
-    .map((id) => nodeToXPath(store.graph, id))
-    .filter((x): x is string => x !== null)
-  if (xpaths.length === 0) return
-  copy(xpaths.join('\n'))
-  toast.info(`Copied XPath${xpaths.length > 1 ? 's' : ''}`)
-}
-
-async function copyAsPNG() {
-  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
-    toast.error('PNG clipboard export is not available in this browser')
-    return
-  }
-  const data = await store.renderExportImage([...selectedIds.value], 2, 'PNG')
-  if (!data) return
-  const blob = new Blob([data], { type: 'image/png' })
-  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-  toast.info('Copied as PNG')
-}
+const { ids, execCommand, clipboardWrite, copyNodeId, copyXPath, copyAsPNG } =
+  createCanvasMenuActions(store, selectedIds)
 
 const menuCls = useMenuUI({
   content: 'min-w-56 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95',
@@ -143,11 +94,7 @@ const cls = {
       </ContextMenuSub>
       <ContextMenuItem
         v-else
-        :class="
-          item.label.includes('component') || item.label.includes('instance')
-            ? cls.component
-            : cls.item
-        "
+        :class="canvasMenuItemClass(item.label, cls)"
         :disabled="item.disabled"
         @select="item.action?.()"
       >
@@ -155,11 +102,7 @@ const cls = {
         <span
           v-if="item.shortcut"
           class="text-[11px]"
-          :class="
-            item.label.includes('component') || item.label.includes('instance')
-              ? 'text-component/60'
-              : 'text-muted'
-          "
+          :class="canvasMenuShortcutClass(item.label)"
           >{{ item.shortcut }}</span
         >
       </ContextMenuItem>

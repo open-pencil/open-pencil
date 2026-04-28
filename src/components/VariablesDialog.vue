@@ -21,7 +21,7 @@ import IconPalette from '~icons/lucide/palette'
 import IconToggleLeft from '~icons/lucide/toggle-left'
 import IconType from '~icons/lucide/type'
 import IconX from '~icons/lucide/x'
-import ColorInput from './ColorInput.vue'
+import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import Tip from './ui/Tip.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 

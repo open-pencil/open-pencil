@@ -8,8 +8,8 @@ import {
   useInlineRename,
   useLayerDrag
 } from '@open-pencil/vue'
-import { useEditorStore } from '@/stores/editor'
-import { nodeIcon, COMPONENT_TYPES } from '@/utils/layer-icons'
+import { useEditorStore } from '@/app/editor/active-store'
+import { nodeIcon, COMPONENT_TYPES } from '@/app/editor/icons'
 import CanvasMenu from './CanvasMenu.vue'
 import Tip from './ui/Tip.vue'
 

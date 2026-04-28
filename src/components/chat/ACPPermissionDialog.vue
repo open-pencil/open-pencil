@@ -15,7 +15,7 @@ import {
   currentPermission,
   rejectCurrentPermission,
   respondToPermission
-} from '@/ai/acp-permission'
+} from '@/app/ai/acp/permission'
 import { useDialogUI } from '@/components/ui/dialog'
 
 const open = computed(() => currentPermission.value !== null)

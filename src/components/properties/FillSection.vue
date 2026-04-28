@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { colorToHexRaw } from '@open-pencil/core'
 import { PropertyListRoot, useFillControls, useOkHCL, useI18n } from '@open-pencil/vue'
 
 import FillPicker from '@/components/FillPicker.vue'
 import ColorStyleRow from '@/components/properties/ColorStyleRow.vue'
+import { fillLabel } from '@/components/properties/fill-label'
+import { createFillOkhclAdapter } from '@/components/properties/fill-okhcl'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { Fill } from '@open-pencil/core'
+import type { Fill } from '@open-pencil/core/scene-graph'
 
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()
@@ -50,37 +51,20 @@ const sectionCls = useSectionUI()
       >
         <FillPicker
           :fill="fill"
-          :okhcl="
-            activeNode
-              ? {
-                  fieldFormat: okhcl.getFieldFormat(activeNode, i, 'fill'),
-                  fieldOptions: okhcl.fieldOptions,
-                  okhcl: okhcl.getFillOkHCLColor(activeNode, i),
-                  ...okhcl.getFillPreviewInfo(activeNode, i),
-                  setFieldFormat: ($event) => okhcl.setFillFieldFormat(activeNode, i, $event),
-                  updateOkHCL: ($event) => okhcl.updateFillOkHCL(activeNode, i, $event)
-                }
-              : null
-          "
+          :okhcl="createFillOkhclAdapter(okhcl, activeNode, i)"
           @update="update(i, $event)"
         />
 
-        <template v-if="activeNode && fillCtx.getBoundVariable(activeNode.id, i)">
-          <span
-            class="min-w-0 flex-1 truncate rounded bg-violet-500/10 px-1 font-mono text-xs text-violet-400"
-          >
-            {{ fillCtx.getBoundVariable(activeNode.id, i)!.name }}
-          </span>
-        </template>
-        <template v-else>
-          <span class="min-w-0 flex-1 font-mono text-xs text-surface">
-            <template v-if="fill.type === 'SOLID'">{{ colorToHexRaw(fill.color) }}</template>
-            <template v-else-if="fill.type.startsWith('GRADIENT')">{{
-              fill.type.replace('GRADIENT_', '')
-            }}</template>
-            <template v-else>{{ fill.type }}</template>
-          </span>
-        </template>
+        <span
+          class="min-w-0 flex-1 truncate font-mono text-xs"
+          :class="
+            activeNode && fillCtx.getBoundVariable(activeNode.id, i)
+              ? 'rounded bg-violet-500/10 px-1 text-violet-400'
+              : 'text-surface'
+          "
+        >
+          {{ fillLabel(fill, activeNode ? fillCtx.getBoundVariable(activeNode.id, i) : undefined) }}
+        </span>
       </ColorStyleRow>
     </div>
   </PropertyListRoot>

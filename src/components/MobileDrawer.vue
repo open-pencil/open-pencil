@@ -18,7 +18,7 @@ import {
   SWIPE_THRESHOLD,
   SWIPE_VELOCITY_THRESHOLD
 } from '@/constants'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 
 type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'

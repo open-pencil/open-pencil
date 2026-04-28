@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ProviderSelect from '@/components/chat/ProviderSelect.vue'
+import ProviderSelect from '@/components/chat/ProviderSelect/ProviderSelect.vue'
 
 const { testId = 'provider-selector' } = defineProps<{
   testId?: string

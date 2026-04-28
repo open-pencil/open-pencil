@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay } from '@open-pencil/vue'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 
 const store = useEditorStore()
 

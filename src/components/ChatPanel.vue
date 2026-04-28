@@ -2,16 +2,16 @@
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
-import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/ai/acp-transport'
-import { copyChatLog } from '@/ai/chat-debug'
-import { clearToolLogEntries, didHitStepLimit } from '@/ai/tools'
-import { activeTab } from '@/stores/tabs'
-import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
+import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/app/ai/acp/transport'
+import { copyChatLog } from '@/app/ai/debug'
+import { clearToolLogEntries, didHitStepLimit } from '@/app/ai/tools'
+import { activeTab } from '@/app/tabs'
+import AcpPermissionDialog from '@/components/chat/AcpPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
-import { useAIChat } from '@/composables/use-chat'
-import { toast } from '@/utils/toast'
+import { useAIChat } from '@/app/ai/chat/use'
+import { toast } from '@/app/shell/ui'
 import { useI18n } from '@open-pencil/vue'
 
 import type { Chat } from '@ai-sdk/vue'
@@ -213,7 +213,7 @@ function handleClearChat() {
 
       <ChatInput :status="status" @submit="handleSubmit" @stop="handleStop" />
 
-      <ACPPermissionDialog />
+      <AcpPermissionDialog />
     </template>
   </div>
 </template>

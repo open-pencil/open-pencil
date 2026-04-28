@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ColorPickerRoot } from '@open-pencil/vue'
 
-import ColorPickerPanel from './ColorPickerPanel.vue'
-import { usePopoverUI } from './ui/popover'
+import ColorPickerPanel from '@/components/ColorPickerPanel/ColorPickerPanel.vue'
+import { usePopoverUI } from '@/components/ui/popover'
 
-import type { Color } from '@open-pencil/core'
-import type { OkHCLControls } from '@open-pencil/vue/ColorPicker/types'
+import type { Color } from '@open-pencil/core/types'
+import type { OkHCLControls } from '@open-pencil/vue'
 
 const { color, okhcl = null } = defineProps<{ color: Color; okhcl?: OkHCLControls | null }>()
 const emit = defineEmits<{ update: [color: Color] }>()

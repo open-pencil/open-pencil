@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 import Tip from '@/components/ui/Tip.vue'
-import { useTabsStore, createTab } from '@/stores/tabs'
+import { useTabsStore, createTab } from '@/app/tabs'
 
 const { tabs, activeTabId, switchTab, closeTab } = useTabsStore()
 
