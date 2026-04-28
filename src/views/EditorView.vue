@@ -6,25 +6,25 @@ import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useViewportKind } from '@open-pencil/vue'
-import { useKeyboard } from '@/composables/use-keyboard'
-import { useMenu } from '@/composables/use-menu'
-import { useCollab, COLLAB_KEY } from '@/composables/use-collab'
-import { connectAutomation } from '@/automation/server'
-import { spawnMCPIfNeeded } from '@/automation/spawn-mcp'
-import { IS_BROWSER } from '@open-pencil/core'
-import { createDemoShapes } from '@/demo'
-import { useEditorStore } from '@/stores/editor'
-import { createTab, activeTab, getActiveStore } from '@/stores/tabs'
+import { useKeyboard } from '@/app/shell/keyboard/use'
+import { useMenu } from '@/app/shell/menu/use'
+import { useCollab, COLLAB_KEY } from '@/app/collab/use'
+import { connectAutomation } from '@/app/automation/bridge/server'
+import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
+import { IS_BROWSER } from '@open-pencil/core/constants'
+import { createDemoShapes } from '@/app/demo/document'
+import { useEditorStore } from '@/app/editor/active-store'
+import { createTab, activeTab, getActiveStore } from '@/app/tabs'
 
-import CollabPanel from '@/components/CollabPanel.vue'
+import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
-import MobileHud from '@/components/MobileHud.vue'
+import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
-import Toolbar from '@/components/Toolbar.vue'
+import Toolbar from '@/components/Toolbar/Toolbar.vue'
 
 const route = useRoute()
 const params = useUrlSearchParams('history')
@@ -68,7 +68,7 @@ onMounted(async () => {
   } catch (e) {
     console.warn('[MCP]', e)
     if (IS_BROWSER && '__TAURI_INTERNALS__' in window) {
-      const { toast } = await import('@/utils/toast')
+      const { toast } = await import('@/app/shell/ui')
       toast.warning('MCP server failed to start. Install with: npm i -g @open-pencil/mcp')
     }
   }

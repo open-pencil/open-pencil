@@ -18,16 +18,12 @@ import { parseArgs } from 'node:util'
 import { existsSync, mkdirSync } from 'node:fs'
 import { $ } from 'bun'
 
-import {
-  parseFigmaClipboard,
-  importClipboardNodes,
-  computeAllLayouts,
-  SceneGraph,
-  loadFont,
-  SkiaRenderer,
-  renderNodesToImage
-} from '@open-pencil/core'
-import { initCanvasKit } from '../packages/cli/src/headless'
+import { parseFigmaClipboard, importClipboardNodes } from '#core/clipboard'
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io'
+import { computeAllLayouts } from '@open-pencil/core/layout'
+import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { loadFont } from '@open-pencil/core/text'
 
 const { values: opts } = parseArgs({
   options: {
@@ -143,9 +139,7 @@ async function renderOurs(html: string) {
 
 async function renderFigmaViaPaste() {
   // Create temp page so we don't pollute the user's work
-  const createPage =
-    await $`figma-use eval ${'(() => { const p = figma.createPage(); p.name = "__visual_compare__"; figma.currentPage = p; return p.id; })()'} --json`.quiet()
-  const tmpPageId = JSON.parse(createPage.text().trim())
+  await $`figma-use eval ${'(() => { const p = figma.createPage(); p.name = "__visual_compare__"; figma.currentPage = p; return p.id; })()'} --json`.quiet()
 
   try {
     // Activate Figma and paste

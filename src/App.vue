@@ -5,8 +5,8 @@ import { TooltipProvider } from 'reka-ui'
 
 import { provideEditor } from '@open-pencil/vue'
 import AppToast from '@/components/AppToast.vue'
-import { useEditorStore } from '@/stores/editor'
-import { toast } from '@/utils/toast'
+import { useEditorStore } from '@/app/editor/active-store'
+import { toast } from '@/app/shell/ui'
 
 useHead({ titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil') })
 

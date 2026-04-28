@@ -17,13 +17,15 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
+      "#vue/*": ["./packages/vue/src/*", "./packages/vue/src/*.vue"],
+      "#core/*": ["./packages/core/src/*"],
+      "#cli/*": ["./packages/cli/src/*"],
+      "#mcp/*": ["./packages/mcp/src/*"],
       "@open-pencil/vue": ["./packages/vue/src/index.ts"],
-      "@open-pencil/vue/*": ["./packages/vue/src/*"],
       "@open-pencil/core": ["./packages/core/src/index.ts"],
       "@open-pencil/core/*": ["./packages/core/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue"],
-  "exclude": ["src/kiwi/index.ts", "src/kiwi/client.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
