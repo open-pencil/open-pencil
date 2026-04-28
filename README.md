@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/open-pencil-open-pencil-badge.png)](https://mseep.ai/app/open-pencil-open-pencil)
+
 # OpenPencil
 
 Open-source design editor. Opens `.fig` and `.pen` design files, includes built-in AI, and ships as a programmable toolkit with a headless Vue SDK for building custom editors.
