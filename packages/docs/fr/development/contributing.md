@@ -72,25 +72,25 @@ Les développeurs et agents IA doivent lire `AGENTS.md` à la racine du repo ([v
 
 ## Fichiers clés
 
-Le code source du moteur se trouve dans `packages/core/src/`. Les répertoires `src/engine/` et `src/kiwi/` de l'app sont des shims de ré-exportation — éditez le package core, pas les shims.
+Le code source du moteur core se trouve dans `packages/core/src/`. Le code propre à l'app pour l'éditeur, les documents, l'IA, la collaboration, le shell, les démos et l'automatisation vit sous `src/app/*`; le SDK Vue contient le code canvas et composable réutilisable dans `packages/vue/src/`.
 
 | Fichier | Objectif |
 |---------|----------|
-| `packages/core/src/scene-graph.ts` | Graphe de scène : nœuds, variables, instances, hit testing |
-| `packages/core/src/renderer.ts` | Pipeline de rendu CanvasKit |
+| `packages/core/src/scene-graph/` | Graphe de scène : nœuds, variables, instances, hit testing |
+| `packages/core/src/canvas/renderer.ts` | Pipeline de rendu CanvasKit |
 | `packages/core/src/layout.ts` | Adaptateur layout Yoga |
-| `packages/core/src/undo.ts` | Gestionnaire annuler/rétablir |
+| `packages/core/src/scene-graph/undo.ts` | Gestionnaire annuler/rétablir |
 | `packages/core/src/clipboard.ts` | Presse-papiers compatible Figma |
-| `packages/core/src/vector.ts` | Modèle de réseau vectoriel |
-| `packages/core/src/render-image.ts` | Export d'image hors-écran (PNG/JPG/WEBP) |
-| `packages/core/src/kiwi/codec.ts` | Encodeur/décodeur binaire Kiwi |
+| `packages/core/src/vector/` | Modèle de réseau vectoriel |
+| `packages/core/src/io/formats/raster/render.ts` | Export d'image hors-écran (PNG/JPG/WEBP) |
+| `packages/core/src/kiwi/binary/codec.ts` | Encodeur/décodeur binaire Kiwi |
 | `packages/core/src/kiwi/fig-import.ts` | Logique d'import de fichiers .fig |
 | `packages/cli/src/index.ts` | Point d'entrée du CLI |
 | `packages/core/src/tools/` | Définitions d'outils unifiées (IA, MCP, CLI) |
-| `packages/core/src/figma-api.ts` | Implémentation de Figma Plugin API |
+| `packages/core/src/figma-api/` | Implémentation de Figma Plugin API |
 | `packages/mcp/src/server.ts` | Factory du serveur MCP |
 | `packages/cli/src/commands/` | Commandes CLI (info, tree, find, export, eval, analyze) |
-| `src/stores/editor.ts` | État global de l'éditeur |
-| `src/composables/use-canvas.ts` | Composable de rendu du canevas |
-| `src/composables/use-canvas-input.ts` | Gestion des entrées souris/touch |
-| `src/composables/use-keyboard.ts` | Gestion des raccourcis clavier |
+| `src/app/editor/session/create.ts` | Editor session assembly |
+| `packages/vue/src/canvas/CanvasRoot.vue` | Composable de rendu du canevas |
+| `packages/vue/src/canvas/useCanvasInput.ts` | Gestion des entrées souris/touch |
+| `src/app/shell/keyboard/use.ts` | Gestion des raccourcis clavier |

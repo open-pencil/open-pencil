@@ -72,25 +72,25 @@ Deweloperzy i agenci AI powinni przeczytać `AGENTS.md` w katalogu głównym rep
 
 ## Kluczowe pliki
 
-Kod źródłowy silnika znajduje się w `packages/core/src/`. Katalogi `src/engine/` i `src/kiwi/` aplikacji to shimy re-eksportu — edytuj pakiet core, nie shimy.
+Kod źródłowy silnika core znajduje się w `packages/core/src/`. Kod aplikacyjny edytora, dokumentów, AI, współpracy, shella, demo i automatyzacji znajduje się w `src/app/*`; SDK Vue zawiera wielokrotnego użytku kod canvasu i composable w `packages/vue/src/`.
 
 | Plik | Cel |
 |------|-----|
-| `packages/core/src/scene-graph.ts` | Graf sceny: węzły, zmienne, instancje, hit testing |
-| `packages/core/src/renderer.ts` | Pipeline renderowania CanvasKit |
+| `packages/core/src/scene-graph/` | Graf sceny: węzły, zmienne, instancje, hit testing |
+| `packages/core/src/canvas/renderer.ts` | Pipeline renderowania CanvasKit |
 | `packages/core/src/layout.ts` | Adapter layoutu Yoga |
-| `packages/core/src/undo.ts` | Menedżer cofnij/ponów |
+| `packages/core/src/scene-graph/undo.ts` | Menedżer cofnij/ponów |
 | `packages/core/src/clipboard.ts` | Schowek kompatybilny z Figmą |
-| `packages/core/src/vector.ts` | Model sieci wektorowej |
-| `packages/core/src/render-image.ts` | Eksport obrazu offscreen (PNG/JPG/WEBP) |
-| `packages/core/src/kiwi/codec.ts` | Koder/dekoder binarny Kiwi |
+| `packages/core/src/vector/` | Model sieci wektorowej |
+| `packages/core/src/io/formats/raster/render.ts` | Eksport obrazu offscreen (PNG/JPG/WEBP) |
+| `packages/core/src/kiwi/binary/codec.ts` | Koder/dekoder binarny Kiwi |
 | `packages/core/src/kiwi/fig-import.ts` | Logika importu plików .fig |
 | `packages/cli/src/index.ts` | Punkt wejścia CLI |
 | `packages/core/src/tools/` | Ujednolicone definicje narzędzi (AI, MCP, CLI) |
-| `packages/core/src/figma-api.ts` | Implementacja Figma Plugin API |
+| `packages/core/src/figma-api/` | Implementacja Figma Plugin API |
 | `packages/mcp/src/server.ts` | Fabryka serwera MCP |
 | `packages/cli/src/commands/` | Polecenia CLI (info, tree, find, export, eval, analyze) |
-| `src/stores/editor.ts` | Globalny stan edytora |
-| `src/composables/use-canvas.ts` | Composable renderowania canvasu |
-| `src/composables/use-canvas-input.ts` | Obsługa wejścia mysz/dotyk |
-| `src/composables/use-keyboard.ts` | Obsługa skrótów klawiszowych |
+| `src/app/editor/session/create.ts` | Editor session assembly |
+| `packages/vue/src/canvas/CanvasRoot.vue` | Composable renderowania canvasu |
+| `packages/vue/src/canvas/useCanvasInput.ts` | Obsługa wejścia mysz/dotyk |
+| `src/app/shell/keyboard/use.ts` | Obsługa skrótów klawiszowych |
