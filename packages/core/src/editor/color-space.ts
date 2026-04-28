@@ -1,11 +1,15 @@
-import { resolveOkHCLForPreview } from '../color/management'
-import { rgbaToOkHCL } from '../color/okhcl'
-import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '../scene-graph/copy'
+import { resolveOkHCLForPreview } from '#core/color/management'
+import { rgbaToOkHCL } from '#core/color/okhcl'
+import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '#core/scene-graph/copy'
 
-import type { DocumentColorSpace, SceneNode } from '../scene-graph'
+import type { DocumentColorSpace, SceneNode } from '#core/scene-graph'
 import type { EditorContext } from './types'
 
 export type DocumentColorProfileMode = 'assign' | 'convert'
+
+function remapColor(color: SceneNode['fills'][number]['color'], target: DocumentColorSpace) {
+  return resolveOkHCLForPreview(rgbaToOkHCL(color), { documentColorSpace: target }).color
+}
 
 function remapNodeColors(
   node: SceneNode,
@@ -17,40 +21,32 @@ function remapNodeColors(
   const fills = node.fills.map((fill) => {
     const next = copyFill(fill)
     if (fill.type === 'SOLID') {
-      const resolved = resolveOkHCLForPreview(rgbaToOkHCL(fill.color), {
-        documentColorSpace: target
-      }).color
+      const resolved = remapColor(fill.color, target)
       next.color = resolved
       next.opacity = resolved.a
       return next
     }
     if (fill.gradientStops) {
-      next.gradientStops = fill.gradientStops.map((stop) => {
-        const resolved = resolveOkHCLForPreview(rgbaToOkHCL(stop.color), {
-          documentColorSpace: target
-        }).color
-        return { ...stop, color: resolved }
-      })
+      next.gradientStops = fill.gradientStops.map((stop) => ({
+        ...stop,
+        color: remapColor(stop.color, target)
+      }))
     }
     return next
   })
 
   const strokes = node.strokes.map((stroke) => {
     const next = copyStroke(stroke)
-    const resolved = resolveOkHCLForPreview(rgbaToOkHCL(stroke.color), {
-      documentColorSpace: target
-    }).color
+    const resolved = remapColor(stroke.color, target)
     next.color = resolved
     next.opacity = resolved.a
     return next
   })
 
-  const effects = copyEffects(node.effects).map((effect) => {
-    const resolved = resolveOkHCLForPreview(rgbaToOkHCL(effect.color), {
-      documentColorSpace: target
-    }).color
-    return { ...effect, color: resolved }
-  })
+  const effects = copyEffects(node.effects).map((effect) => ({
+    ...effect,
+    color: remapColor(effect.color, target)
+  }))
 
   const styleRuns = copyStyleRuns(node.styleRuns).map((run) => ({
     ...run,
@@ -59,9 +55,7 @@ function remapNodeColors(
       fills: run.style.fills?.map((fill) => {
         const next = copyFill(fill)
         if (fill.type === 'SOLID') {
-          const resolved = resolveOkHCLForPreview(rgbaToOkHCL(fill.color), {
-            documentColorSpace: target
-          }).color
+          const resolved = remapColor(fill.color, target)
           next.color = resolved
           next.opacity = resolved.a
         }

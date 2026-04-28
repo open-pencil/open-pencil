@@ -1,7 +1,10 @@
-import { computeAbsoluteBounds } from '../geometry'
+import { createFlipRotateActions } from '#core/editor/alignment/flip-rotate'
+import { computeAbsoluteBounds } from '#core/geometry'
 
-import type { SceneNode } from '../scene-graph'
-import type { Vector } from '../types'
+import { collectNodePositions, pushPositionUndo } from './history/position'
+
+import type { SceneNode } from '#core/scene-graph'
+import type { Vector } from '#core/types'
 import type { EditorContext } from './types'
 
 function computeAlignTarget(
@@ -76,8 +79,10 @@ export function createAlignmentActions(ctx: EditorContext) {
       .filter((n): n is SceneNode => n != null)
     if (nodes.length === 0) return
 
-    const originals = new Map<string, Vector>()
-    for (const n of nodes) originals.set(n.id, { x: n.x, y: n.y })
+    const originals = collectNodePositions(
+      ctx,
+      nodes.map((node) => node.id)
+    )
 
     if (nodes.length === 1) {
       alignSingleNode(ctx, nodes[0], axis, align)
@@ -85,89 +90,14 @@ export function createAlignmentActions(ctx: EditorContext) {
       alignMultipleNodes(ctx, nodes, axis, align)
     }
 
-    const finals = new Map<string, Vector>()
-    for (const n of nodes) finals.set(n.id, { x: n.x, y: n.y })
-
-    ctx.undo.push({
-      label: 'Align',
-      forward: () => {
-        for (const [id, pos] of finals) {
-          ctx.graph.updateNode(id, pos)
-          ctx.runLayoutForNode(id)
-        }
-      },
-      inverse: () => {
-        for (const [id, pos] of originals) {
-          ctx.graph.updateNode(id, pos)
-          ctx.runLayoutForNode(id)
-        }
-      }
-    })
+    const finals = collectNodePositions(ctx, originals.keys())
+    pushPositionUndo(ctx, 'Align', originals, finals)
 
     for (const id of nodeIds) ctx.runLayoutForNode(id)
     ctx.requestRender()
   }
 
-  function flipNodes(nodeIds: string[], axis: 'horizontal' | 'vertical') {
-    if (nodeIds.length === 0) return
-
-    const originals = new Map<string, { flipX: boolean; flipY: boolean }>()
-    for (const id of nodeIds) {
-      const node = ctx.graph.getNode(id)
-      if (!node) continue
-      originals.set(id, { flipX: node.flipX, flipY: node.flipY })
-      const changes = axis === 'horizontal' ? { flipX: !node.flipX } : { flipY: !node.flipY }
-      ctx.graph.updateNode(id, changes)
-    }
-
-    const finals = new Map<string, { flipX: boolean; flipY: boolean }>()
-    for (const [id] of originals) {
-      const node = ctx.graph.getNode(id)
-      if (node) finals.set(id, { flipX: node.flipX, flipY: node.flipY })
-    }
-
-    ctx.undo.push({
-      label: 'Flip',
-      forward: () => {
-        for (const [id, val] of finals) ctx.graph.updateNode(id, val)
-      },
-      inverse: () => {
-        for (const [id, val] of originals) ctx.graph.updateNode(id, val)
-      }
-    })
-
-    ctx.requestRender()
-  }
-
-  function rotateNodes(nodeIds: string[], degrees: number) {
-    if (nodeIds.length === 0) return
-
-    const originals = new Map<string, number>()
-    for (const id of nodeIds) {
-      const node = ctx.graph.getNode(id)
-      if (!node) continue
-      originals.set(id, node.rotation)
-      ctx.graph.updateNode(id, { rotation: (((node.rotation + degrees) % 360) + 360) % 360 })
-    }
-
-    const finals = new Map<string, number>()
-    for (const [id] of originals) {
-      const node = ctx.graph.getNode(id)
-      if (node) finals.set(id, node.rotation)
-    }
-
-    ctx.undo.push({
-      label: 'Rotate',
-      forward: () => {
-        for (const [id, rot] of finals) ctx.graph.updateNode(id, { rotation: rot })
-      },
-      inverse: () => {
-        for (const [id, rot] of originals) ctx.graph.updateNode(id, { rotation: rot })
-      }
-    })
-
-    ctx.requestRender()
-  }
+  const { flipNodes, rotateNodes } = createFlipRotateActions(ctx)
 
   return { alignNodes, flipNodes, rotateNodes }
 }

@@ -1,32 +1,18 @@
-import { computeAllLayouts } from '../layout'
+import { collectNodePositions, pushPositionUndo } from './history/position'
+import {
+  restorePageFromSnapshot as restorePageSnapshot,
+  snapshotPage as createPageSnapshot,
+  type PageSnapshot
+} from './history/snapshot'
 
-import type { SceneNode } from '../scene-graph'
-import type { UndoEntry } from '../scene-graph/undo'
-import type { Rect, Vector } from '../types'
+import type { SceneNode } from '#core/scene-graph'
+import type { UndoEntry } from '#core/scene-graph/undo'
+import type { Rect, Vector } from '#core/types'
 import type { EditorContext } from './types'
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
-    const finals = new Map<string, Vector>()
-    for (const [id] of originals) {
-      const n = ctx.graph.getNode(id)
-      if (n) finals.set(id, { x: n.x, y: n.y })
-    }
-    ctx.undo.push({
-      label: 'Move',
-      forward: () => {
-        for (const [id, pos] of finals) {
-          ctx.graph.updateNode(id, pos)
-          ctx.runLayoutForNode(id)
-        }
-      },
-      inverse: () => {
-        for (const [id, pos] of originals) {
-          ctx.graph.updateNode(id, pos)
-          ctx.runLayoutForNode(id)
-        }
-      }
-    })
+    pushPositionUndo(ctx, 'Move', originals, collectNodePositions(ctx, originals.keys()))
   }
 
   function commitMoveWithReparent(
@@ -119,46 +105,12 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
-  function snapshotPage(): Map<string, SceneNode> {
-    const snapshot = new Map<string, SceneNode>()
-    const walk = (id: string) => {
-      const node = ctx.graph.getNode(id)
-      if (!node) return
-      snapshot.set(id, structuredClone(node))
-      for (const childId of node.childIds) walk(childId)
-    }
-    walk(ctx.state.currentPageId)
-    return snapshot
+  function snapshotPage(): PageSnapshot {
+    return createPageSnapshot(ctx.graph, ctx.state.currentPageId)
   }
 
-  function restorePageFromSnapshot(snapshot: Map<string, SceneNode>) {
-    const pageId = ctx.state.currentPageId
-    const page = ctx.graph.getNode(pageId)
-    const pageSnap = snapshot.get(pageId)
-    if (!page || !pageSnap) return
-
-    for (const childId of page.childIds.slice()) {
-      ctx.graph.deleteNode(childId)
-    }
-
-    const restoreChildren = (parentId: string, childIds: string[]) => {
-      for (const childId of childIds) {
-        const snap = snapshot.get(childId)
-        if (!snap) continue
-        const { id: _snapId, parentId: _snapParentId, childIds: snapChildIds, ...rest } = snap
-        const restored = ctx.graph.createNode(snap.type, parentId, rest)
-        ctx.graph.reorderChild(restored.id, parentId, childIds.indexOf(childId))
-        restoreChildren(restored.id, snapChildIds)
-      }
-    }
-
-    restoreChildren(pageId, pageSnap.childIds)
-
-    ctx.graph.clearAbsPosCache()
-    computeAllLayouts(ctx.graph, pageId)
-    ctx.state.selectedIds = new Set()
-    ctx.state.hoveredNodeId = null
-    ctx.requestRender()
+  function restorePageFromSnapshot(snapshot: PageSnapshot) {
+    restorePageSnapshot(ctx, snapshot)
   }
 
   function pushUndoEntry(entry: UndoEntry) {
