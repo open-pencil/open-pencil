@@ -143,6 +143,20 @@ function isDocument(node: unknown): node is XPathDocument {
   return (node as XPathDocument).nodeType === NODE_TYPES.DOCUMENT_NODE
 }
 
+function siblingNode(
+  graph: SceneGraph,
+  node: XPathNode | XPathDocument,
+  offset: -1 | 1
+): XPathNode | null {
+  if (isDocument(node)) return null
+  const parent = node._parent
+  if (!parent) return null
+  const siblings = getChildren(graph, parent)
+  const index = siblings.indexOf(node)
+  if (index === -1) return null
+  return siblings[index + offset] ?? null
+}
+
 function createDomFacade(graph: SceneGraph) {
   return {
     getAllAttributes(node: XPathNode | XPathDocument): XPathAttr[] {
@@ -185,12 +199,7 @@ function createDomFacade(graph: SceneGraph) {
     },
 
     getNextSibling(node: XPathNode | XPathDocument): XPathNode | null {
-      if (isDocument(node)) return null
-      const parent = node._parent
-      if (!parent) return null
-      const siblings = getChildren(graph, parent)
-      const idx = siblings.indexOf(node)
-      return siblings[idx + 1] ?? null
+      return siblingNode(graph, node, 1)
     },
 
     getParentNode(node: XPathNode | XPathDocument): XPathNode | XPathDocument | null {
@@ -199,12 +208,7 @@ function createDomFacade(graph: SceneGraph) {
     },
 
     getPreviousSibling(node: XPathNode | XPathDocument): XPathNode | null {
-      if (isDocument(node)) return null
-      const parent = node._parent
-      if (!parent) return null
-      const siblings = getChildren(graph, parent)
-      const idx = siblings.indexOf(node)
-      return idx > 0 ? siblings[idx - 1] : null
+      return siblingNode(graph, node, -1)
     }
   }
 }

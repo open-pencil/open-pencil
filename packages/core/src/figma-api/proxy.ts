@@ -1,9 +1,9 @@
-import { normalizeColor } from '../color'
-import { getFillOkHCL, getStrokeOkHCL, setNodeFillOkHCL, setNodeStrokeOkHCL } from '../color/okhcl'
-import { copyFills, copyStrokes, copyEffects } from '../scene-graph/copy'
-import { FONT_WEIGHT_NAMES } from '../text/fonts'
+import { normalizeColor } from '#core/color'
+import { getFillOkHCL, getStrokeOkHCL, setNodeFillOkHCL, setNodeStrokeOkHCL } from '#core/color/okhcl'
+import { copyFills, copyStrokes, copyEffects } from '#core/scene-graph/copy'
+import { FONT_WEIGHT_NAMES } from '#core/text/fonts'
 
-import type { OkHCLColor, OkHCLPayload } from '../color/okhcl'
+import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 /* eslint-disable max-lines -- Figma Plugin API proxy; FigmaAPI already in separate file */
 import type {
   SceneGraph,
@@ -13,8 +13,8 @@ import type {
   Stroke,
   Effect,
   LayoutMode
-} from '../scene-graph'
-import type { Rect } from '../types'
+} from '#core/scene-graph'
+import type { Rect } from '#core/types'
 
 const MIXED = Symbol('mixed')
 

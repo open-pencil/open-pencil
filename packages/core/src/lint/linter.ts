@@ -2,7 +2,7 @@ import { presets } from './presets'
 import { allRules } from './rules'
 import { getNodePath } from './utils'
 
-import type { SceneGraph, SceneNode } from '../scene-graph'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type {
   LintConfig,
   LintMessage,

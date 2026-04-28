@@ -1,6 +1,7 @@
-import { vectorNetworkToPath, geometryBlobToPath } from '../vector'
+import { polygonVertices } from '#core/geometry'
+import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
-import type { SceneNode } from '../scene-graph'
+import type { SceneNode } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas, Path } from 'canvaskit-wasm'
 
@@ -41,25 +42,10 @@ export function makeNodeShapePath(
 
 export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
   const path = new r.ck.Path()
-  const cx = node.width / 2
-  const cy = node.height / 2
-  const rx = node.width / 2
-  const ry = node.height / 2
-  const n = Math.max(3, node.pointCount)
-  const isStar = node.type === 'STAR'
-  const innerRatio = isStar ? node.starInnerRadius : 1
-  const totalPoints = isStar ? n * 2 : n
-  const angleOffset = -Math.PI / 2
-
-  for (let i = 0; i < totalPoints; i++) {
-    const angle = angleOffset + (2 * Math.PI * i) / totalPoints
-    const isInner = isStar && i % 2 === 1
-    const rad = isInner ? innerRatio : 1
-    const px = cx + rx * rad * Math.cos(angle)
-    const py = cy + ry * rad * Math.sin(angle)
-    if (i === 0) path.moveTo(px, py)
-    else path.lineTo(px, py)
-  }
+  polygonVertices(node).forEach((point, index) => {
+    if (index === 0) path.moveTo(point.x, point.y)
+    else path.lineTo(point.x, point.y)
+  })
   path.close()
   return path
 }

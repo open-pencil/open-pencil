@@ -1,2 +1,2 @@
 export { SkiaRenderer, type RenderOverlays } from './renderer'
-export { getAbsolutePositionFull } from './coordinate'
+export { getAbsolutePositionFull, getAbsoluteRotation, getWorldHandles } from './coordinate'

@@ -10,10 +10,10 @@ import {
   RULER_HIGHLIGHT_ALPHA,
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
-} from '../constants'
-import { computeAbsoluteBounds } from '../geometry'
+} from '#core/constants'
+import { computeAbsoluteBounds } from '#core/geometry'
 
-import type { SceneNode, SceneGraph } from '../scene-graph'
+import type { SceneNode, SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 

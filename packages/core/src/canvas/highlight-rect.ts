@@ -1,6 +1,6 @@
-import { FLASH_PADDING, FLASH_STROKE_WIDTH, FLASH_RADIUS } from '../constants'
+import { FLASH_PADDING, FLASH_STROKE_WIDTH, FLASH_RADIUS } from '#core/constants'
 
-import type { SceneGraph } from '../scene-graph'
+import type { SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
 

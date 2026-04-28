@@ -3,10 +3,10 @@ import {
   AI_DONE_COLOR,
   AI_PULSE_PERIOD_MS,
   AI_DONE_DURATION_MS
-} from '../constants'
+} from '#core/constants'
 import { drawNodeHighlightRect } from './highlight-rect'
 
-import type { SceneGraph } from '../scene-graph'
+import type { SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas } from 'canvaskit-wasm'
 

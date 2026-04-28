@@ -1,8 +1,9 @@
+import { buildDerivedTextData } from './derived-text-data'
 import { normalizeFontFamily, weightToStyle } from './fonts'
 import { getGlyphOutlineCommandsSync } from './opentype'
 
-import type { NodeChange } from '../kiwi/codec'
-import type { SceneNode } from '../scene-graph'
+import type { NodeChange } from '#core/kiwi/binary/codec'
+import type { SceneNode } from '#core/scene-graph'
 
 export interface ShapedClipboardText {
   lineHeight: number
@@ -45,18 +46,8 @@ export async function buildDerivedTextDataV4(
     }
   })
 
-  return {
-    layoutSize: { x: node.width, y: node.height },
-    baselines: [
-      {
-        firstCharacter: 0,
-        endCharacter: Math.max(node.text.length - 1, 0),
-        position: { x: 0, y: shaped?.baseline ?? lineHeightFallback },
-        width: shaped?.lineWidth ?? node.width,
-        lineHeight: shaped?.lineHeight ?? lineHeightFallback,
-        lineAscent: shaped?.lineAscent ?? Math.max(lineHeightFallback - node.fontSize * 0.2, 0)
-      }
-    ],
+  return buildDerivedTextData({
+    node,
     glyphs,
     fontMetaData: [
       {
@@ -67,11 +58,12 @@ export async function buildDerivedTextDataV4(
         fontWeight: node.fontWeight
       }
     ],
+    baseline: shaped?.baseline ?? lineHeightFallback,
+    width: shaped?.lineWidth ?? node.width,
+    lineHeight: shaped?.lineHeight ?? lineHeightFallback,
+    lineAscent: shaped?.lineAscent ?? Math.max(lineHeightFallback - node.fontSize * 0.2, 0),
     logicalIndexToCharacterOffsetMap:
       shaped?.logicalIndexToCharacterOffsetMap ??
-      Array.from({ length: node.text.length + 1 }, () => 0),
-    derivedLines: [{ directionality: 'LTR' }],
-    truncationStartIndex: -1,
-    truncatedHeight: -1
-  }
+      Array.from({ length: node.text.length + 1 }, () => 0)
+  })
 }

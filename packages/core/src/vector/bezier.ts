@@ -1,10 +1,10 @@
-import type { VectorNetwork, VectorSegment, VectorVertex, VectorRegion } from '../scene-graph'
+import type { VectorNetwork, VectorSegment, VectorVertex, VectorRegion } from '#core/scene-graph'
 /* eslint-disable max-lines -- Bezier/network utilities kept together for shared geometry math */
 /**
  * Pure-JS bezier math utilities for VectorNetwork manipulation.
  * Replaces Paper.js dependency from the reference implementation.
  */
-import type { Vector, Rect } from '../types'
+import type { Vector, Rect } from '#core/types'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -335,6 +335,32 @@ export function nearestPointOnNetwork(
  * Split a segment in a VectorNetwork at parameter t, inserting a new vertex.
  * Returns a new VectorNetwork with updated vertices, segments, and regions.
  */
+function finishSplitSegment(
+  network: VectorNetwork,
+  newVertices: VectorVertex[],
+  newSegments: VectorSegment[],
+  segmentIndex: number,
+  seg1: VectorSegment,
+  seg2: VectorSegment,
+  newVertexIndex: number
+): { network: VectorNetwork; newVertexIndex: number } {
+  const newSegIdx2 = newSegments.length
+  newSegments[segmentIndex] = seg1
+  newSegments.push(seg2)
+
+  const regions = reindexRegionLoops(
+    network.regions,
+    segmentIndex,
+    [segmentIndex, newSegIdx2],
+    network.segments
+  )
+
+  return {
+    network: { vertices: newVertices, segments: newSegments, regions },
+    newVertexIndex
+  }
+}
+
 export function splitSegmentAt(
   network: VectorNetwork,
   segmentIndex: number,
@@ -371,22 +397,7 @@ export function splitSegmentAt(
       tangentEnd: { x: 0, y: 0 }
     }
 
-    // Replace original segment with first; insert second after
-    const newSegIdx2 = newSegments.length
-    newSegments[segmentIndex] = seg1
-    newSegments.push(seg2)
-
-    const regions = reindexRegionLoops(
-      network.regions,
-      segmentIndex,
-      [segmentIndex, newSegIdx2],
-      network.segments
-    )
-
-    return {
-      network: { vertices: newVertices, segments: newSegments, regions },
-      newVertexIndex
-    }
+    return finishSplitSegment(network, newVertices, newSegments, segmentIndex, seg1, seg2, newVertexIndex)
   }
 
   // Cubic split via De Casteljau
@@ -410,21 +421,7 @@ export function splitSegmentAt(
     tangentEnd: { x: right.cp2.x - v1.x, y: right.cp2.y - v1.y }
   }
 
-  const newSegIdx2 = newSegments.length
-  newSegments[segmentIndex] = seg1
-  newSegments.push(seg2)
-
-  const regions = reindexRegionLoops(
-    network.regions,
-    segmentIndex,
-    [segmentIndex, newSegIdx2],
-    network.segments
-  )
-
-  return {
-    network: { vertices: newVertices, segments: newSegments, regions },
-    newVertexIndex
-  }
+  return finishSplitSegment(network, newVertices, newSegments, segmentIndex, seg1, seg2, newVertexIndex)
 }
 
 function buildMergedSegmentForRemovedVertex(

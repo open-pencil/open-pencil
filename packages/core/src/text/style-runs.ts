@@ -1,4 +1,4 @@
-import type { CharacterStyleOverride, StyleRun, TextDecoration } from '../scene-graph'
+import type { CharacterStyleOverride, StyleRun, TextDecoration } from '#core/scene-graph'
 
 export function getStyleAt(runs: StyleRun[], index: number): CharacterStyleOverride {
   for (const run of runs) {

@@ -1,9 +1,9 @@
-import { sceneNodeToJSX, selectionToJSX } from '../design-jsx'
+import { sceneNodeToJSX, selectionToJSX } from '#core/design-jsx'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import { parsePenFile } from './formats/pen'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
 import { renderNodesToSVG } from './formats/svg'
-import { extractExportGraph } from './subgraph'
+import { extractExportGraph, findPageId } from './subgraph'
 
 import type {
   ExportRequest,
@@ -25,17 +25,6 @@ function ensureSingleNode(target: ExportRequest['target']): string | null {
   if (target.scope === 'node') return target.nodeId
   if (target.scope === 'selection' && target.nodeIds.length === 1) return target.nodeIds[0]
   return null
-}
-
-function findPageId(graph: ExportRequest['graph'], nodeId: string): string | null {
-  let current = graph.getNode(nodeId)
-  while (current?.parentId) {
-    const parent = graph.getNode(current.parentId)
-    if (!parent) return null
-    if (parent.type === 'CANVAS') return parent.id
-    current = parent
-  }
-  return current?.type === 'CANVAS' ? current.id : null
 }
 
 function resolveExportNodes(request: ExportRequest): { pageId: string; nodeIds: string[] } | null {

@@ -1,4 +1,4 @@
-import type { Vector } from '@open-pencil/core'
+import type { Vector } from '#core/types'
 
 export type Mat3 = number[]
 

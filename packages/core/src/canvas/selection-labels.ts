@@ -1,4 +1,4 @@
-import { getAbsolutePosition, getWorldMatrix } from '../canvas/coordinate'
+import { getAbsolutePosition, getWorldMatrix } from '#core/canvas/coordinate'
 import {
   LABEL_OFFSET_Y,
   SIZE_PILL_PADDING_X,
@@ -6,10 +6,10 @@ import {
   SIZE_PILL_HEIGHT,
   SIZE_PILL_RADIUS,
   SIZE_PILL_TEXT_OFFSET_Y
-} from '../constants'
-import { rotatedCorners } from '../geometry'
+} from '#core/constants'
+import { rotatedCorners } from '#core/geometry'
 
-import type { SceneNode, SceneGraph } from '../scene-graph'
+import type { SceneNode, SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import type { Canvas } from 'canvaskit-wasm'
 
@@ -90,6 +90,44 @@ function drawSingleFrameTitle(
   canvas.restore()
 }
 
+function measureTextWidth(sizeFont: NonNullable<SkiaRenderer['sizeFont']>, text: string): number {
+  const glyphIds = sizeFont.getGlyphIDs(text)
+  const widths = sizeFont.getGlyphWidths(glyphIds)
+  let textWidth = 0
+  for (const width of widths) textWidth += width
+  return textWidth
+}
+
+function drawSizePill(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  sizeFont: NonNullable<SkiaRenderer['sizeFont']>,
+  text: string,
+  x: number,
+  y: number,
+  color: ReturnType<SkiaRenderer['selColor']>
+): void {
+  const pillW = measureTextWidth(sizeFont, text) + SIZE_PILL_PADDING_X * 2
+  const pillX = x - pillW / 2
+  const pillY = y + SIZE_PILL_PADDING_Y
+  r.auxFill.setColor(color)
+  const rrect = r.ck.RRectXY(
+    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + SIZE_PILL_HEIGHT),
+    SIZE_PILL_RADIUS,
+    SIZE_PILL_RADIUS
+  )
+  canvas.drawRRect(rrect, r.auxFill)
+
+  r.auxFill.setColor(r.ck.WHITE)
+  canvas.drawText(
+    text,
+    pillX + SIZE_PILL_PADDING_X,
+    pillY + SIZE_PILL_TEXT_OFFSET_Y,
+    r.auxFill,
+    sizeFont
+  )
+}
+
 export function drawSingleSelectionSize(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -99,13 +137,6 @@ export function drawSingleSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['sizeFont']>
 ): void {
   const sizeText = `${Math.round(node.width)} × ${Math.round(node.height)}`
-  const glyphIds = sizeFont.getGlyphIDs(sizeText)
-  const widths = sizeFont.getGlyphWidths(glyphIds)
-  let textWidth = 0
-  for (const w of widths) textWidth += w
-
-  const pillW = textWidth + SIZE_PILL_PADDING_X * 2
-  const pillH = SIZE_PILL_HEIGHT
   const pillColor = r.isComponentType(node.type) ? r.compColor() : r.selColor()
   const overlayRotation = getOverlayRotation(node, overlays)
 
@@ -123,25 +154,7 @@ export function drawSingleSelectionSize(
   const sx = bottomCenterX * r.zoom + r.panX
   const sy = bottomCenterY * r.zoom + r.panY
 
-  const pillX = sx - pillW / 2
-  const pillY = sy + SIZE_PILL_PADDING_Y
-
-  r.auxFill.setColor(pillColor)
-  const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH),
-    SIZE_PILL_RADIUS,
-    SIZE_PILL_RADIUS
-  )
-  canvas.drawRRect(rrect, r.auxFill)
-
-  r.auxFill.setColor(r.ck.WHITE)
-  canvas.drawText(
-    sizeText,
-    pillX + SIZE_PILL_PADDING_X,
-    pillY + SIZE_PILL_TEXT_OFFSET_Y,
-    r.auxFill,
-    sizeFont
-  )
+  drawSizePill(r, canvas, sizeFont, sizeText, sx, sy, pillColor)
 }
 function drawMultiSelectionSize(
   r: SkiaRenderer,
@@ -154,37 +167,14 @@ function drawMultiSelectionSize(
   sizeFont: NonNullable<SkiaRenderer['sizeFont']>
 ): void {
   const sizeText = `${Math.round(maxX - minX)} × ${Math.round(maxY - minY)}`
-  const glyphIds = sizeFont.getGlyphIDs(sizeText)
-  const widths = sizeFont.getGlyphWidths(glyphIds)
-  let textWidth = 0
-  for (const width of widths) textWidth += width
-  const pillW = textWidth + SIZE_PILL_PADDING_X * 2
-  const pillH = SIZE_PILL_HEIGHT
   const sx1 = minX * r.zoom + r.panX
   const sx2 = maxX * r.zoom + r.panX
   const sy2 = maxY * r.zoom + r.panY
   const smx = (sx1 + sx2) / 2
-  const pillX = smx - pillW / 2
-  const pillY = sy2 + SIZE_PILL_PADDING_Y
   const allComponents = nodes.length > 0 && nodes.every((n) => r.isComponentType(n.type))
   const pillColor = allComponents ? r.compColor() : r.selColor()
 
-  r.auxFill.setColor(pillColor)
-  const rrect = r.ck.RRectXY(
-    r.ck.LTRBRect(pillX, pillY, pillX + pillW, pillY + pillH),
-    SIZE_PILL_RADIUS,
-    SIZE_PILL_RADIUS
-  )
-  canvas.drawRRect(rrect, r.auxFill)
-
-  r.auxFill.setColor(r.ck.WHITE)
-  canvas.drawText(
-    sizeText,
-    pillX + SIZE_PILL_PADDING_X,
-    pillY + SIZE_PILL_TEXT_OFFSET_Y,
-    r.auxFill,
-    sizeFont
-  )
+  drawSizePill(r, canvas, sizeFont, sizeText, smx, sy2, pillColor)
 }
 
 export function drawSelectionLabels(

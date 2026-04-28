@@ -1,5 +1,5 @@
-import { resolveNodeTextDirection } from '../../../text/direction'
-import { computeContentBounds } from '../raster'
+import { resolveNodeTextDirection } from '#core/text/direction'
+import { computeContentBounds } from '#core/io/formats/raster'
 import {
   nextDefId,
   formatColor,
@@ -29,7 +29,7 @@ import type {
   Fill,
   Stroke,
   CharacterStyleOverride
-} from '../../../scene-graph'
+} from '#core/scene-graph'
 import type { SVGExportContext } from './defs'
 import type { SVGNode } from './node'
 

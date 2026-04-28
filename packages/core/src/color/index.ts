@@ -1,8 +1,12 @@
+export * from './management'
+export { normalizeColor } from './normalize'
+export * from './okhcl'
+
 import { parse, formatHex, formatHex8, formatRgb, converter, differenceEuclidean } from 'culori'
 
-import { BLACK } from '../constants'
+import { BLACK } from '#core/constants'
 
-import type { Color } from '../types'
+import type { Color } from '#core/types'
 
 const toRgb = converter('rgb')
 
@@ -16,11 +20,6 @@ export function parseColor(input: string): Color {
     b: rgb.b,
     a: parsed.alpha ?? 1
   }
-}
-
-export function normalizeColor(color?: Partial<Color>): Color {
-  if (!color) return { ...BLACK }
-  return { r: color.r ?? 0, g: color.g ?? 0, b: color.b ?? 0, a: color.a ?? 1 }
 }
 
 export function colorToHex(color: Color): string {

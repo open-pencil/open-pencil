@@ -1,8 +1,7 @@
-import { deflateSync } from 'fflate'
-
-import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '../../../constants'
-import { initCodec, getCompiledSchema, getSchemaBytes } from '../../../kiwi/codec'
-import { stringToGuid } from '../../../kiwi/convert'
+import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
+import { renderThumbnail } from '#core/io/formats/raster'
+import { initCodec, getCompiledSchema, getSchemaBytes } from '#core/kiwi/binary/codec'
+import { stringToGuid } from '#core/kiwi/node-change/convert'
 import {
   sceneNodeToKiwi,
   fractionalPosition,
@@ -10,14 +9,15 @@ import {
   safeColor,
   makeDocumentNodeChange,
   makeCanvasNodeChange
-} from '../../../kiwi/serialize'
-import { renderThumbnail } from '../raster'
+} from '#core/kiwi/node-change/serialize'
+import { deflateSync } from 'fflate'
+
 import { compressFigDataSync } from './compress'
 
-import type { SkiaRenderer } from '../../../canvas'
-import type { NodeChange } from '../../../kiwi/codec'
-import type { SceneGraph, VariableValue } from '../../../scene-graph'
-import type { GUID } from '../../../types'
+import type { SkiaRenderer } from '#core/canvas'
+import type { NodeChange } from '#core/kiwi/binary/codec'
+import type { SceneGraph, VariableValue } from '#core/scene-graph'
+import type { GUID } from '#core/types'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 const THUMBNAIL_1X1 = Uint8Array.from(

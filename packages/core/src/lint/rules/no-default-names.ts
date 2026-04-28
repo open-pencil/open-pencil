@@ -1,5 +1,5 @@
-import { defineRule } from '../rule'
-import { isDefaultName } from '../utils'
+import { defineRule } from '#core/lint/rule'
+import { isDefaultName } from '#core/lint/utils'
 
 export default defineRule({
   meta: {

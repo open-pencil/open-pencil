@@ -1,6 +1,4 @@
-import { getWorldMatrix } from '@open-pencil/core/canvas/coordinate'
-
-import Matrix from '../canvas/matrix'
+import Matrix from '#core/canvas/matrix'
 import {
   FLASH_ATTACK_MS,
   FLASH_COLOR,
@@ -14,15 +12,17 @@ import {
   TEXT_CARET_COLOR,
   TEXT_CARET_WIDTH,
   TEXT_SELECTION_COLOR
-} from '../constants'
-import { rotatedCorners } from '../geometry'
+} from '#core/constants'
+import { rotatedCorners } from '#core/geometry'
+
+import { getWorldMatrix } from './coordinate'
 import { drawNodeHighlightRect } from './highlight-rect'
 
-import type { SceneGraph, SceneNode } from '../scene-graph'
-import type { TextEditor } from '../text/editor'
-import type { Rect, Vector } from '../types'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SnapGuide } from '#core/scene-graph/snap'
+import type { TextEditor } from '#core/text/editor'
+import type { Rect, Vector } from '#core/types'
 import type { RenderOverlays, SkiaRenderer } from './renderer'
-import type { SnapGuide } from '@open-pencil/core'
 import type { Canvas } from 'canvaskit-wasm'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
@@ -185,6 +185,40 @@ function withNodeBounds(
   canvas.restore()
 }
 
+function drawBoundsHandles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+): void {
+  r.drawHandle(canvas, minX, minY)
+  r.drawHandle(canvas, maxX, minY)
+  r.drawHandle(canvas, minX, maxY)
+  r.drawHandle(canvas, maxX, maxY)
+  const midX = (minX + maxX) / 2
+  const midY = (minY + maxY) / 2
+  r.drawHandle(canvas, midX, minY)
+  r.drawHandle(canvas, midX, maxY)
+  r.drawHandle(canvas, minX, midY)
+  r.drawHandle(canvas, maxX, midY)
+}
+
+function drawSelectionRect(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  rotation: number,
+  graph: SceneGraph,
+  afterDraw?: (x1: number, y1: number, x2: number, y2: number) => void
+): void {
+  withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
+    canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
+    afterDraw?.(x1, y1, x2, y2)
+  })
+}
+
 export function drawNodeSelection(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -192,27 +226,8 @@ export function drawNodeSelection(
   rotation: number,
   graph: SceneGraph
 ): void {
-  withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
-    canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
-
-    const drawHandle = (x: number, y: number) => {
-      r.drawHandle(canvas, x, y)
-    }
-
-    // corners
-    drawHandle(x1, y1)
-    drawHandle(x2, y1)
-    drawHandle(x1, y2)
-    drawHandle(x2, y2)
-
-    // center
-    const mx = (x1 + x2) / 2
-    const my = (y1 + y2) / 2
-
-    drawHandle(mx, y1)
-    drawHandle(mx, y2)
-    drawHandle(x1, my)
-    drawHandle(x2, my)
+  drawSelectionRect(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
+    drawBoundsHandles(r, canvas, x1, y1, x2, y2)
   })
 }
 
@@ -271,9 +286,7 @@ export function drawNodeOutline(
   rotation: number,
   graph: SceneGraph
 ): void {
-  withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
-    canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
-  })
+  drawSelectionRect(r, canvas, node, rotation, graph)
 }
 
 export function drawGroupBounds(
@@ -315,16 +328,7 @@ export function drawGroupBounds(
 
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
 
-  r.drawHandle(canvas, minX, minY)
-  r.drawHandle(canvas, maxX, minY)
-  r.drawHandle(canvas, minX, maxY)
-  r.drawHandle(canvas, maxX, maxY)
-  const gmx = (minX + maxX) / 2
-  const gmy = (minY + maxY) / 2
-  r.drawHandle(canvas, gmx, minY)
-  r.drawHandle(canvas, gmx, maxY)
-  r.drawHandle(canvas, minX, gmy)
-  r.drawHandle(canvas, maxX, gmy)
+  drawBoundsHandles(r, canvas, minX, minY, maxX, maxY)
 }
 
 export function getRotatedCorners(r: SkiaRenderer, n: SceneNode, abs: Vector): Vector[] {

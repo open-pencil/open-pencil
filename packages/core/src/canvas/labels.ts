@@ -7,9 +7,9 @@ import {
   COMPONENT_LABEL_GAP,
   COMPONENT_LABEL_ICON_SIZE,
   COMPONENT_LABEL_ICON_GAP
-} from '../constants'
+} from '#core/constants'
 
-import type { SceneNode, SceneGraph } from '../scene-graph'
+import type { SceneNode, SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas, Font } from 'canvaskit-wasm'
 

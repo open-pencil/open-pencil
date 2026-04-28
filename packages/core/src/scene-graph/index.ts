@@ -1,7 +1,10 @@
 /* eslint-disable max-lines -- core class; instance, hit-test methods already extracted */
+export * from './snap'
+export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
+
+import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
 import { createNanoEvents } from 'nanoevents'
 
-import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '../constants'
 import {
   hitTest as hitTestFn,
   hitTestDeep as hitTestDeepFn,
@@ -16,10 +19,10 @@ import {
   getInstances as getInstancesFn
 } from './instances'
 
-export type { GUID, Color } from '../types'
-import { getAbsolutePosition } from '@open-pencil/core/canvas/coordinate'
+export type { GUID, Color } from '#core/types'
+import { getAbsolutePosition } from '#core/canvas/coordinate'
 
-import type { Matrix, Vector, Color, Rect } from '../types'
+import type { Matrix, Vector, Color, Rect } from '#core/types'
 import type { Emitter } from 'nanoevents'
 
 export interface SceneGraphEvents {
@@ -29,6 +32,14 @@ export interface SceneGraphEvents {
   'node:reparented': (nodeId: string, oldParentId: string | null, newParentId: string) => void
   'node:reordered': (nodeId: string, parentId: string, index: number) => void
 }
+
+export type SceneGraphEventHandlers = Partial<{
+  created: (node: SceneNode) => void
+  updated: (id: string, changes: Partial<SceneNode>) => void
+  deleted: (id: string) => void
+  reparented: (nodeId: string, oldParentId: string | null, newParentId: string) => void
+  reordered: (nodeId: string, parentId: string, index: number) => void
+}>
 
 export type DocumentColorSpace = 'srgb' | 'display-p3'
 
@@ -623,6 +634,20 @@ export class SceneGraph {
 
   getNode(id: string): SceneNode | undefined {
     return this.nodes.get(id)
+  }
+
+  onNodeEvents(handlers: SceneGraphEventHandlers): () => void {
+    const unbinds = [
+      handlers.created ? this.emitter.on('node:created', handlers.created) : null,
+      handlers.updated ? this.emitter.on('node:updated', handlers.updated) : null,
+      handlers.deleted ? this.emitter.on('node:deleted', handlers.deleted) : null,
+      handlers.reparented ? this.emitter.on('node:reparented', handlers.reparented) : null,
+      handlers.reordered ? this.emitter.on('node:reordered', handlers.reordered) : null
+    ].filter((unbind): unbind is () => void => !!unbind)
+
+    return () => {
+      for (const unbind of unbinds) unbind()
+    }
   }
 
   // --- Variables ---

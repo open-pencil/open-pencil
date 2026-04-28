@@ -2,7 +2,7 @@ import {
   resolveNodeFillColor,
   resolveNodeStrokeColor,
   type ResolvedRenderColor
-} from '../color/management'
+} from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer class; text, pen-overlay, fills, scene already extracted */
 import {
   SELECTION_COLOR,
@@ -32,16 +32,17 @@ import {
   RULER_TEXT_COLOR,
   DEFAULT_FONT_FAMILY,
   IS_BROWSER
-} from '../constants'
-import { computeDescendantVisualBounds } from '../geometry'
-import { RenderProfiler } from '../profiler'
+} from '#core/constants'
+import { computeDescendantVisualBounds } from '#core/geometry'
+import { RenderProfiler } from '#core/profiler'
 import { drawAiOverlays as drawAiOverlaysFn } from './ai-overlays'
 import {
   getCachedDropShadow as getCachedDropShadowFn,
   getCachedBlur as getCachedBlurFn,
   getCachedDecalBlur as getCachedDecalBlurFn,
   getCachedMaskBlur as getCachedMaskBlurFn,
-  applyClippedBlur as applyClippedBlurFn
+  applyClippedBlur as applyClippedBlurFn,
+  renderEffects as renderEffectsFn
 } from './effects'
 import {
   drawNodeFill as drawNodeFillFn,
@@ -84,7 +85,6 @@ import {
   renderComponentSet as renderComponentSetFn,
   renderShape as renderShapeFn,
   renderShapeUncached as renderShapeUncachedFn,
-  renderEffects as renderEffectsFn,
   renderText as renderTextFn
 } from './scene'
 import {
@@ -112,7 +112,7 @@ import {
   buildParagraph as buildParagraphFn
 } from './text'
 
-import type { EditorState } from '../editor/types'
+import type { EditorState } from '#core/editor/types'
 import type {
   SceneNode,
   SceneGraph,
@@ -120,10 +120,10 @@ import type {
   Stroke,
   VectorVertex,
   VectorRegion
-} from '../scene-graph'
-import type { SnapGuide } from '../scene-graph/snap'
-import type { TextEditor } from '../text/editor'
-import type { Color, Rect, Vector } from '../types'
+} from '#core/scene-graph'
+import type { SnapGuide } from '#core/scene-graph/snap'
+import type { TextEditor } from '#core/text/editor'
+import type { Color, Rect, Vector } from '#core/types'
 import type { NodeEditOverlayState } from './node-edit-overlay'
 import type {
   Image as CKImage,

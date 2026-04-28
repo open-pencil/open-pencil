@@ -1,9 +1,9 @@
 /* eslint-disable max-lines -- RPC commands are cohesive; splitting adds indirection */
-import { colorToHex, colorDistance as colorDist } from '../color'
-import { queryByXPath } from '../xpath'
+import { colorToHex, colorDistance as colorDist } from '#core/color'
+import { queryByXPath } from '#core/xpath'
 
-import type { SceneGraph, SceneNode, Variable } from '../scene-graph'
-import type { Color } from '../types'
+import type { SceneGraph, SceneNode, Variable } from '#core/scene-graph'
+import type { Color } from '#core/types'
 
 export interface RpcCommand<A = unknown, R = unknown> {
   name: string
@@ -31,6 +31,15 @@ function countNodes(graph: SceneGraph, pageId: string): number {
         return true
       })
   return count
+}
+
+function nodeFrame(node: SceneNode) {
+  return {
+    x: Math.round(node.x),
+    y: Math.round(node.y),
+    width: Math.round(node.width),
+    height: Math.round(node.height)
+  }
 }
 
 // ── info ──
@@ -115,10 +124,7 @@ function buildTreeNode(
     id: node.id,
     name: node.name,
     type: node.type,
-    x: Math.round(node.x),
-    y: Math.round(node.y),
-    width: Math.round(node.width),
-    height: Math.round(node.height)
+    ...nodeFrame(node)
   }
   if (node.childIds.length > 0 && depth < maxDepth) {
     result.children = node.childIds
@@ -304,10 +310,7 @@ export const nodeCommand: RpcCommand<NodeArgs, NodeResult | { error: string }> =
       id: node.id,
       name: node.name,
       type: node.type,
-      x: Math.round(node.x),
-      y: Math.round(node.y),
-      width: Math.round(node.width),
-      height: Math.round(node.height),
+      ...nodeFrame(node),
       visible: node.visible,
       locked: node.locked,
       opacity: node.opacity,

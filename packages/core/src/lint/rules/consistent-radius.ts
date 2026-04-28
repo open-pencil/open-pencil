@@ -1,4 +1,4 @@
-import { defineRule } from '../rule'
+import { defineRule } from '#core/lint/rule'
 const SCALE = [0, 2, 4, 6, 8, 12, 16, 20, 24, 32, 9999]
 export default defineRule({
   meta: {

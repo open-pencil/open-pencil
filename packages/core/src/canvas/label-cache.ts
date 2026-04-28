@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '../scene-graph'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 export interface CachedSection {
   nodeId: string
@@ -27,6 +27,25 @@ function isInViewport(absX: number, absY: number, w: number, h: number, vp: View
   return absX + w >= vp.x && absY + h >= vp.y && absX <= vp.x + vp.w && absY <= vp.y + vp.h
 }
 
+function collectVisibleLabels<
+  T extends { nodeId: string; absX: number; absY: number },
+  U extends object
+>(
+  graph: SceneGraph,
+  viewport: Viewport,
+  cachedItems: T[],
+  metadata: (cached: T) => U
+): Array<{ node: SceneNode; absX: number; absY: number } & U> {
+  const result: Array<{ node: SceneNode; absX: number; absY: number } & U> = []
+  for (const cached of cachedItems) {
+    const node = graph.getNode(cached.nodeId)
+    if (!node || !isInViewport(cached.absX, cached.absY, node.width, node.height, viewport))
+      continue
+    result.push({ node, absX: cached.absX, absY: cached.absY, ...metadata(cached) })
+  }
+  return result
+}
+
 export class LabelCache {
   private sections: CachedSection[] = []
   private components: CachedComponent[] = []
@@ -51,33 +70,18 @@ export class LabelCache {
     graph: SceneGraph,
     viewport: Viewport
   ): Array<{ node: SceneNode; absX: number; absY: number; nested: boolean }> {
-    const result: Array<{ node: SceneNode; absX: number; absY: number; nested: boolean }> = []
-    for (const cached of this.sections) {
-      const node = graph.getNode(cached.nodeId)
-      if (!node || !isInViewport(cached.absX, cached.absY, node.width, node.height, viewport))
-        continue
-      result.push({ node, absX: cached.absX, absY: cached.absY, nested: cached.nested })
-    }
-    return result
+    return collectVisibleLabels(graph, viewport, this.sections, (cached) => ({
+      nested: cached.nested
+    }))
   }
 
   getComponents(
     graph: SceneGraph,
     viewport: Viewport
   ): Array<{ node: SceneNode; absX: number; absY: number; inside: boolean }> {
-    const result: Array<{ node: SceneNode; absX: number; absY: number; inside: boolean }> = []
-    for (const cached of this.components) {
-      const node = graph.getNode(cached.nodeId)
-      if (!node || !isInViewport(cached.absX, cached.absY, node.width, node.height, viewport))
-        continue
-      result.push({
-        node,
-        absX: cached.absX,
-        absY: cached.absY,
-        inside: cached.parentType === 'COMPONENT_SET'
-      })
-    }
-    return result
+    return collectVisibleLabels(graph, viewport, this.components, (cached) => ({
+      inside: cached.parentType === 'COMPONENT_SET'
+    }))
   }
 
   private rebuild(graph: SceneGraph, pageId: string | null): void {

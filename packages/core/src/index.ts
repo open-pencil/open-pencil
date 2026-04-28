@@ -243,7 +243,7 @@ export {
   type NetworkNearestResult
 } from './vector/bezier'
 export { computeSelectionBounds, computeSnap, type SnapGuide } from './scene-graph/snap'
-export { UndoManager, type UndoEntry } from './scene-graph/undo'
+export { UndoManager, type UndoEntry, type UndoManagerOptions } from './scene-graph/undo'
 export { TextEditor, type TextCaret, type TextEditorState } from './text/editor'
 export {
   getStyleAt,
@@ -295,7 +295,7 @@ export {
   sceneNodeToKiwi,
   fractionalPosition,
   mapToFigmaType
-} from './kiwi/serialize'
+} from './kiwi/node-change/serialize'
 export { buildDerivedTextDataV4 } from './text/clipboard-derived-text'
 
 export {

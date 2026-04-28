@@ -1,4 +1,4 @@
-import { defineRule } from '../rule'
+import { defineRule } from '#core/lint/rule'
 export default defineRule({
   meta: {
     id: 'no-hidden-layers',

@@ -1,11 +1,11 @@
-import { parseColor, colorToFill } from '../color'
-import { TRANSPARENT } from '../constants'
-import { fetchIcons } from '../icons'
-import { createIconFromPaths } from '../icons/render'
-import { computeAllLayouts } from '../layout'
+import { parseColor, colorToFill } from '#core/color'
+import { TRANSPARENT } from '#core/constants'
+import { fetchIcons } from '#core/icons'
+import { createIconFromPaths } from '#core/icons/render'
+import { computeAllLayouts } from '#core/layout'
 import { isTreeNode } from './tree'
 
-import type { SceneGraph, SceneNode, NodeType, LayoutMode, GridTrack, Stroke } from '../scene-graph'
+import type { SceneGraph, SceneNode, NodeType, LayoutMode, GridTrack, Stroke } from '#core/scene-graph'
 import type { TreeNode } from './tree'
 
 const TYPE_MAP: Partial<Record<string, NodeType>> = {

@@ -1,5 +1,5 @@
-import { defineRule } from '../rule'
-import { isMultipleOf, SPACING_SCALE } from '../utils'
+import { defineRule } from '#core/lint/rule'
+import { isMultipleOf, SPACING_SCALE } from '#core/lint/utils'
 
 export default defineRule({
   meta: {

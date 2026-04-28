@@ -1,4 +1,4 @@
-import type { FrameStats } from './frame-stats'
+import type { FrameStats } from './frame/stats'
 import type { CanvasKit, Canvas, Paint, Font, Typeface } from 'canvaskit-wasm'
 
 const BUFFER_SIZE = 120

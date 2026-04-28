@@ -1,4 +1,4 @@
-import { defineRule } from '../rule'
+import { defineRule } from '#core/lint/rule'
 const PATTERNS = [
   /button/i,
   /btn/i,
