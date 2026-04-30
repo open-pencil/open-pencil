@@ -91,6 +91,22 @@ test('gap auto toggle sets space-between alignment', async () => {
   canvas.assertNoErrors()
 })
 
+test('wrap mode exposes cross-axis gap control', async () => {
+  await selectFrame()
+
+  await page.locator('[data-test-id="layout-direction-wrap"]').click()
+  await canvas.waitForRender()
+
+  const before = await getNodeById(page, frameId)
+  const initialSpacing = before!.counterAxisSpacing
+  await canvas.dragScrubInput(page.locator('[data-test-id="layout-cross-gap-input"]'), 40)
+
+  const after = await getNodeById(page, frameId)
+  expect(after!.layoutWrap).toBe('WRAP')
+  expect(after!.counterAxisSpacing).toBeGreaterThan(initialSpacing + 5)
+  canvas.assertNoErrors()
+})
+
 test('uniform padding ScrubInput sets all four padding sides', async () => {
   await selectFrame()
 

@@ -199,6 +199,8 @@ export const panelMessages = i18n('panels', {
   direction: 'Direction',
   flow: 'Flow',
   gapAuto: 'Auto gap',
+  horizontalGap: 'Horizontal gap',
+  verticalGap: 'Vertical gap',
   auto: 'Auto',
   columns: 'Columns',
   rows: 'Rows',
