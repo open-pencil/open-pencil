@@ -1,4 +1,6 @@
-import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '../../../scene-graph'
+import { polygonVertices } from '#core/geometry'
+
+import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
 
 const CMD_CLOSE = 0
 const CMD_MOVE_TO = 1
@@ -107,24 +109,9 @@ export function vectorNetworkToSVGPaths(network: VectorNetwork): string[] {
 }
 
 export function makePolygonPoints(node: SceneNode): string {
-  const cx = node.width / 2
-  const cy = node.height / 2
-  const rx = node.width / 2
-  const ry = node.height / 2
-  const n = Math.max(3, node.pointCount)
-  const isStar = node.type === 'STAR'
-  const innerRatio = isStar ? node.starInnerRadius : 1
-  const totalPoints = isStar ? n * 2 : n
-  const angleOffset = -Math.PI / 2
-
-  const points: string[] = []
-  for (let i = 0; i < totalPoints; i++) {
-    const angle = angleOffset + (2 * Math.PI * i) / totalPoints
-    const isInner = isStar && i % 2 === 1
-    const r = isInner ? innerRatio : 1
-    points.push(`${round(cx + rx * r * Math.cos(angle))},${round(cy + ry * r * Math.sin(angle))}`)
-  }
-  return points.join(' ')
+  return polygonVertices(node)
+    .map((point) => `${round(point.x)},${round(point.y)}`)
+    .join(' ')
 }
 
 export function hasRadius(node: SceneNode): boolean {

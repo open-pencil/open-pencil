@@ -1,22 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, fmtHistogram, fmtList, fmtSummary } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../../app-client'
-import { bold, fmtHistogram, fmtList, fmtSummary } from '../../format'
-import { loadDocument } from '../../headless'
-
-import type { AnalyzeColorsResult } from '@open-pencil/core'
-
-async function getData(
-  file: string | undefined,
-  args: { threshold?: string; similar?: boolean }
-): Promise<AnalyzeColorsResult> {
-  const rpcArgs = { threshold: Number(args.threshold ?? 15), similar: args.similar }
-  if (isAppMode(file)) return rpc<AnalyzeColorsResult>('analyze_colors', rpcArgs)
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'analyze_colors', rpcArgs) as AnalyzeColorsResult
-}
+import type { AnalyzeColorsResult } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: { description: 'Analyze color palette usage' },
@@ -36,7 +23,10 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file, args)
+    const data = await loadRpcData<AnalyzeColorsResult>(args.file, 'analyze_colors', {
+      threshold: Number(args.threshold),
+      similar: args.similar
+    })
     const limit = Number(args.limit)
 
     if (args.json) {

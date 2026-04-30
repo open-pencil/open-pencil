@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Refactor the editor architecture across core, app, Vue SDK, CLI, MCP, docs, and desktop into smaller domain modules with structural lint rules to keep package boundaries explicit.
+- Add targeted core subpath exports and package-local import aliases for cleaner app, Vue SDK, CLI, and MCP imports.
+- Split the canvas into separate scene and overlay render layers so rulers, labels, selections, and input overlays are isolated from scene rendering.
+- Use `@use-gesture/vanilla` for wheel gesture lifecycle handling and faster trackpad zoom behavior.
+
 ### Fixes
 
 - Fix `@open-pencil/vue` failing to import from npm — `getAbsolutePositionFull` was imported from `@open-pencil/core/canvas/coordinate`, an unexported subpath. Re-exported the function from `@open-pencil/core/canvas` and updated the vue import.
@@ -10,10 +17,16 @@
 - Improve Figma render fidelity for exports — preserve flipped vector bounds, render Figma stroke geometry for shapes/vectors, fix clipped visual overflow, and render drop shadows for stroked shapes from the stroke outline.
 - Fix text editing inside selected components and instances on double-click.
 - Prevent browser/Safari from intercepting app-level Cmd/Ctrl shortcuts such as undo/redo.
+- Fix undo/redo shortcuts firing twice during modifier-key release by handling command shortcuts with event-based dispatch.
+- Fix option-drag duplicate undo/redo so undo removes duplicated subtrees and redo restores them instead of moving the copy back.
+- Fix section drawing errors and color input attribute forwarding in the property panel.
+- Fix demo component instances by laying out source components before creating instances, and restore explicit badge dot/text spacing.
+- Keep the global startup loader visible until CanvasKit fonts load and the first font-backed render completes, avoiding a flash of missing text in opened files and the demo.
 
 ### Performance
 
 - Cache instance override resolution and lazily populate opened `.fig` pages to reduce load time for large community files.
+- Reduce zoom and overlay rendering work by separating scene rendering from rulers, selection, labels, and input overlays.
 
 ## 0.11.8 — 2026-04-23
 

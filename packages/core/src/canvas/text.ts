@@ -1,15 +1,15 @@
-import { getCanvasKit } from '../canvaskit'
-import { resolveRGBAForPreview } from '../color/management'
-import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '../constants'
-import { resolveNodeTextDirection } from '../text/direction'
+import { getCanvasKit } from '#core/canvaskit'
+import { resolveRGBAForPreview } from '#core/color/management'
+import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
+import { resolveNodeTextDirection } from '#core/text/direction'
 import {
   getArabicFallbackFamilies,
   getCJKFallbackFamilies,
   getFontProvider,
   isFontLoaded
-} from '../text/fonts'
+} from '#core/text/fonts'
 
-import type { SceneNode } from '../scene-graph'
+import type { SceneNode } from '#core/scene-graph'
 import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
 
 interface TextRenderer {

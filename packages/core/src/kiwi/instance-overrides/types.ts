@@ -1,6 +1,6 @@
-import type { SceneGraph } from '../../scene-graph'
-import type { Matrix, Vector } from '../../types'
-import type { GUID, NodeChange } from '../codec'
+import type { GUID, NodeChange } from '#core/kiwi/binary/codec'
+import type { SceneGraph } from '#core/scene-graph'
+import type { Matrix, Vector } from '#core/types'
 
 export interface SymbolOverride {
   guidPath?: { guids?: GUID[] }

@@ -11,7 +11,7 @@ import { nextTick, ref, watch } from 'vue'
 
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()

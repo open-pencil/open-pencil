@@ -1,9 +1,9 @@
-import type { SkiaRenderer } from '../canvas/renderer'
-import type { SceneGraph, VectorSegment, VectorVertex } from '../scene-graph'
-import type { SnapGuide } from '../scene-graph/snap'
-import type { UndoManager } from '../scene-graph/undo'
-import type { TextEditor } from '../text/editor'
-import type { Color, Rect, Vector } from '../types'
+import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SceneGraph, VectorSegment, VectorVertex } from '#core/scene-graph'
+import type { SnapGuide } from '#core/scene-graph/snap'
+import type { UndoManager } from '#core/scene-graph/undo'
+import type { TextEditor } from '#core/text/editor'
+import type { Color, Rect, Vector } from '#core/types'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 export type Tool =
@@ -18,39 +18,6 @@ export type Tool =
   | 'TEXT'
   | 'PEN'
   | 'HAND'
-
-export interface EditorToolDef {
-  key: Tool
-  label: string
-  shortcut: string
-  flyout?: Tool[]
-}
-
-export const EDITOR_TOOLS: EditorToolDef[] = [
-  { key: 'SELECT', label: 'Move', shortcut: 'V' },
-  { key: 'FRAME', label: 'Frame', shortcut: 'F', flyout: ['FRAME', 'SECTION'] },
-  {
-    key: 'RECTANGLE',
-    label: 'Rectangle',
-    shortcut: 'R',
-    flyout: ['RECTANGLE', 'LINE', 'ELLIPSE', 'POLYGON', 'STAR']
-  },
-  { key: 'PEN', label: 'Pen', shortcut: 'P' },
-  { key: 'TEXT', label: 'Text', shortcut: 'T' },
-  { key: 'HAND', label: 'Hand', shortcut: 'H' }
-]
-
-export const TOOL_SHORTCUTS: Partial<Record<string, Tool>> = {
-  KeyV: 'SELECT',
-  KeyF: 'FRAME',
-  KeyS: 'SECTION',
-  KeyR: 'RECTANGLE',
-  KeyO: 'ELLIPSE',
-  KeyL: 'LINE',
-  KeyT: 'TEXT',
-  KeyP: 'PEN',
-  KeyH: 'HAND'
-}
 
 export interface EditorState {
   activeTool: Tool

@@ -1,10 +1,10 @@
 import { converter, toGamut } from 'culori'
 
-import { copyFill, copyStroke } from '../scene-graph/copy'
-import { normalizeColor } from './'
+import { copyFill, copyStroke } from '#core/scene-graph/copy'
+import { normalizeColor } from './normalize'
 
-import type { SceneNode } from '../scene-graph'
-import type { Color } from '../types'
+import type { SceneNode } from '#core/scene-graph'
+import type { Color } from '#core/types'
 
 export interface OkHCLColor {
   h: number

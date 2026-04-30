@@ -3,11 +3,21 @@ import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 
 const rendererDir = new URL('../../packages/core/src/canvas/', import.meta.url).pathname
-const files = await readdir(rendererDir)
-const parts = await Promise.all(
-  files.filter((f) => f.endsWith('.ts')).map((f) => Bun.file(join(rendererDir, f)).text())
-)
-const rendererSource = parts.join('\n')
+
+async function readTypescriptFiles(dir: string): Promise<string[]> {
+  const entries = await readdir(dir, { withFileTypes: true })
+  const parts = await Promise.all(
+    entries.map((entry) => {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) return readTypescriptFiles(path)
+      if (entry.isFile() && entry.name.endsWith('.ts')) return Bun.file(path).text()
+      return []
+    })
+  )
+  return parts.flat()
+}
+
+const rendererSource = (await readTypescriptFiles(rendererDir)).join('\n')
 
 describe('Renderer effect ordering', () => {
   test('drop shadow renders before fills', () => {
@@ -51,13 +61,11 @@ describe('Renderer handles all effect types', () => {
 
 describe('Shadow spread support', () => {
   test('drop shadow uses spread for shape expansion', () => {
-    const dropShadowSection = rendererSource.slice(
-      rendererSource.indexOf("effect.type === 'DROP_SHADOW'"),
-      rendererSource.indexOf("effect.type === 'DROP_SHADOW'") + 2000
-    )
+    const dropShadowStart = rendererSource.indexOf('function drawShapeDropShadow')
+    const dropShadowSection = rendererSource.slice(dropShadowStart, dropShadowStart + 1800)
     expect(dropShadowSection).toContain('effect.spread')
     expect(dropShadowSection).toContain('makeRRectWithSpread')
-    expect(dropShadowSection).toContain('getCachedDropShadow')
+    expect(dropShadowSection).toContain('getCachedMaskBlur')
   })
 
   test('inner shadow uses spread for cutout contraction', () => {
@@ -79,10 +87,8 @@ describe('Shadow spread support', () => {
 
 describe('Text shadow renders on glyphs, not bounding box', () => {
   test('drop shadow has TEXT-specific branch', () => {
-    const dropShadowBlock = rendererSource.slice(
-      rendererSource.indexOf("effect.type === 'DROP_SHADOW'"),
-      rendererSource.indexOf("effect.type === 'DROP_SHADOW'") + 2000
-    )
+    const dropShadowStart = rendererSource.indexOf('function renderDropShadow')
+    const dropShadowBlock = rendererSource.slice(dropShadowStart, dropShadowStart + 2500)
     expect(dropShadowBlock).toContain("node.type === 'TEXT'")
     expect(dropShadowBlock).toContain('renderText')
     expect(dropShadowBlock).toContain('getCachedDropShadow')

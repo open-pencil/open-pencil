@@ -6,6 +6,9 @@
     "strict": true,
     "skipLibCheck": true,
     "declaration": true,
+    "paths": {
+      "#cli/*": ["./src/*"]
+    },
     "outDir": "dist",
     "rootDir": "src"
   },

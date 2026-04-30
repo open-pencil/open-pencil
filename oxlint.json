@@ -1,14 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "import",
-    "unicorn",
-    "vue"
-  ],
-  "jsPlugins": [
-    "./lint/plugin.js"
-  ],
+  "plugins": ["typescript", "import", "unicorn", "vue"],
+  "jsPlugins": ["./lint/plugin.js"],
   "env": {
     "browser": true,
     "es2024": true
@@ -31,22 +24,12 @@
         ],
         "patterns": [
           {
-            "group": [
-              "@/engine/*"
-            ],
+            "group": ["@/engine/*"],
             "message": "Import from @open-pencil/core unless the module adds platform-specific logic.",
-            "allowImportNames": [
-              "loadFont",
-              "listFamilies",
-              "listFonts",
-              "preloadFonts"
-            ]
+            "allowImportNames": ["loadFont", "listFamilies", "listFonts", "preloadFonts"]
           },
           {
-            "group": [
-              "../../packages/*",
-              "../../../packages/*"
-            ],
+            "group": ["../../packages/*", "../../../packages/*"],
             "message": "Use the workspace package name (e.g. @open-pencil/core) instead of relative paths to packages/."
           }
         ]
@@ -119,14 +102,22 @@
     "open-pencil/no-hand-rolled-color": "error",
     "open-pencil/no-raw-console-format": "off",
     "open-pencil/no-silent-catch": "error",
-    "open-pencil/no-typeof-window-check": "error"
+    "open-pencil/no-typeof-window-check": "error",
+    "open-pencil/no-legacy-app-imports": "error",
+    "open-pencil/no-vue-self-package-imports": "error",
+    "open-pencil/no-cross-package-source-imports": "error",
+    "open-pencil/no-app-imports-in-packages": "error",
+    "open-pencil/no-core-framework-imports": "error",
+    "open-pencil/no-direct-storage-access": "error",
+    "open-pencil/no-legacy-shim-files": "error",
+    "open-pencil/no-broad-double-cast": "error",
+    "open-pencil/no-core-browser-globals": "error",
+    "open-pencil/no-function-alias-imports": "error",
+    "open-pencil/max-composition-root-lines": ["error", { "max": 260 }]
   },
   "overrides": [
     {
-      "files": [
-        "**/*.test.ts",
-        "**/*.test.tsx"
-      ],
+      "files": ["**/*.test.ts", "**/*.test.tsx"],
       "rules": {
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
@@ -134,33 +125,13 @@
       }
     },
     {
-      "files": [
-        "**/tools/ai-adapter.ts"
-      ],
+      "files": ["**/tools/ai-adapter.ts"],
       "rules": {
         "typescript/no-explicit-any": "off"
       }
     },
     {
-      "files": [
-        "**/figma-api.ts"
-      ],
-      "rules": {
-        "no-console": "off"
-      }
-    },
-    {
-      "files": [
-        "**/render/render.ts"
-      ],
-      "rules": {
-        "typescript/no-implied-eval": "off"
-      }
-    },
-    {
-      "files": [
-        "**/kiwi/kiwi-schema/**"
-      ],
+      "files": ["**/kiwi/kiwi-schema/**"],
       "rules": {
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
@@ -177,37 +148,17 @@
       }
     },
     {
-      "files": [
-        "src/stores/editor.ts",
-        "src/composables/use-canvas-input.ts",
-        "src/demo.ts"
-      ],
-      "rules": {
-        "max-lines": "off"
-      }
-    },
-    {
-      "files": [
-        "packages/cli/src/**",
-        "packages/mcp/src/**"
-      ],
+      "files": ["packages/cli/src/**", "packages/mcp/src/**"],
       "rules": {
         "no-console": "off"
       }
     },
     {
-      "files": [
-        "packages/cli/src/commands/**"
-      ],
+      "files": ["packages/cli/src/commands/**"],
       "rules": {
         "open-pencil/no-raw-console-format": "error"
       }
     }
   ],
-  "ignorePatterns": [
-    "node_modules",
-    "dist",
-    "desktop",
-    "*.config.*"
-  ]
+  "ignorePatterns": ["node_modules", "dist", "desktop", "*.config.*"]
 }

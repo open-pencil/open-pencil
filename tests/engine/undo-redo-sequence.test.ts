@@ -1,24 +1,12 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createHistoryFrame, setupEditorPage } from '../helpers/editor-history'
 
 describe('undo/redo multi-step sequences', () => {
-  function setup() {
-    const editor = createEditor()
-    const pageId = editor.graph.getPages()[0].id
-    return { editor, pageId }
-  }
-
   test('create → move → duplicate → move copy → undo all → redo all', () => {
-    const { editor, pageId } = setup()
+    const { editor, pageId } = setupEditorPage()
 
-    const frame = editor.graph.createNode('FRAME', pageId, {
-      name: 'Card',
-      x: 100,
-      y: 100,
-      width: 200,
-      height: 150,
-    })
+    const frame = createHistoryFrame(editor, pageId, { x: 100, y: 100 })
     editor.select([frame.id])
     const createSnapshot = structuredClone(editor.graph.getNode(frame.id)!)
     editor.pushUndoEntry({
@@ -81,15 +69,9 @@ describe('undo/redo multi-step sequences', () => {
   })
 
   test('duplicate with children preserves subtree on redo', () => {
-    const { editor, pageId } = setup()
+    const { editor, pageId } = setupEditorPage()
 
-    const frame = editor.graph.createNode('FRAME', pageId, {
-      name: 'Card',
-      x: 50,
-      y: 50,
-      width: 200,
-      height: 150,
-    })
+    const frame = createHistoryFrame(editor, pageId, { x: 50, y: 50 })
     editor.graph.createNode('TEXT', frame.id, {
       name: 'Title',
       text: 'Hello',
@@ -121,16 +103,28 @@ describe('undo/redo multi-step sequences', () => {
     expect(editor.graph.getNode(dupTextId)!.text).toBe('Hello')
   })
 
-  test('delete frame with children → undo restores subtree', () => {
-    const { editor, pageId } = setup()
-
-    const frame = editor.graph.createNode('FRAME', pageId, {
-      name: 'Card',
-      x: 0,
-      y: 0,
+  test('page snapshot restore preserves node IDs', () => {
+    const { editor, pageId } = setupEditorPage()
+    const frame = createHistoryFrame(editor, pageId)
+    const child = editor.graph.createNode('RECTANGLE', frame.id, {
+      name: 'Bg',
       width: 200,
       height: 150,
     })
+
+    const snapshot = editor.snapshotPage()
+    editor.graph.deleteNode(frame.id)
+    editor.restorePageFromSnapshot(snapshot)
+
+    expect(editor.graph.getNode(frame.id)).not.toBeUndefined()
+    expect(editor.graph.getNode(child.id)).not.toBeUndefined()
+    expect(editor.graph.getNode(frame.id)!.childIds).toEqual([child.id])
+  })
+
+  test('delete frame with children → undo restores subtree', () => {
+    const { editor, pageId } = setupEditorPage()
+
+    const frame = createHistoryFrame(editor, pageId)
     const child = editor.graph.createNode('RECTANGLE', frame.id, {
       name: 'Bg',
       x: 0,

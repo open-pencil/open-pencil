@@ -1,8 +1,8 @@
 import { resolveNodeTextDirection } from './direction'
 
-import type { SkiaRenderer } from '../canvas'
-import type { SceneNode } from '../scene-graph'
-import type { Rect } from '../types'
+import type { SkiaRenderer } from '#core/canvas'
+import type { SceneNode } from '#core/scene-graph'
+import type { Rect } from '#core/types'
 import type { CanvasKit, Paragraph } from 'canvaskit-wasm'
 
 export interface TextCaret {
@@ -36,6 +36,31 @@ export class TextEditor {
     if (extend && s.selectionAnchor === null) s.selectionAnchor = s.cursor
     if (!extend) s.selectionAnchor = null
     return s
+  }
+
+  private replaceRange(start: number, end: number, text: string): TextEditorState | null {
+    const s = this._state
+    if (!s) return null
+    s.text = s.text.slice(0, start) + text + s.text.slice(end)
+    s.cursor = start + text.length
+    s.selectionAnchor = null
+    return s
+  }
+
+  private currentLineMetrics() {
+    const s = this._state
+    if (!s?.paragraph) return null
+    const lineNum = s.paragraph.getLineNumberAt(s.cursor)
+    return lineNum < 0 ? null : s.paragraph.getLineMetricsAt(lineNum)
+  }
+
+  private collapseSelectionTo(edge: 0 | 1): boolean {
+    const s = this._state
+    if (!s || !this.hasSelection()) return false
+    const range = this.getSelectionRange()
+    if (range) s.cursor = range[edge]
+    s.selectionAnchor = null
+    return true
   }
 
   get state(): TextEditorState | null {
@@ -160,135 +185,124 @@ export class TextEditor {
   insert(text: string, node: SceneNode): void {
     const s = this._state
     if (!s) return
-    const range = this.getSelectionRange()
-    if (range) {
-      s.text = s.text.slice(0, range[0]) + text + s.text.slice(range[1])
-      s.cursor = range[0] + text.length
-    } else {
-      s.text = s.text.slice(0, s.cursor) + text + s.text.slice(s.cursor)
-      s.cursor += text.length
-    }
-    s.selectionAnchor = null
+    const range = this.getSelectionRange() ?? [s.cursor, s.cursor]
+    this.replaceRange(range[0], range[1], text)
     this.rebuildParagraph(node)
   }
 
   backspace(node: SceneNode): void {
     const s = this._state
     if (!s) return
-    const range = this.getSelectionRange()
-    if (range) {
-      s.text = s.text.slice(0, range[0]) + s.text.slice(range[1])
-      s.cursor = range[0]
-    } else if (s.cursor > 0) {
-      s.text = s.text.slice(0, s.cursor - 1) + s.text.slice(s.cursor)
-      s.cursor--
-    }
-    s.selectionAnchor = null
+    const range = this.getSelectionRange() ?? (s.cursor > 0 ? [s.cursor - 1, s.cursor] : null)
+    if (range) this.replaceRange(range[0], range[1], '')
     this.rebuildParagraph(node)
   }
 
   delete(node: SceneNode): void {
     const s = this._state
     if (!s) return
-    const range = this.getSelectionRange()
-    if (range) {
-      s.text = s.text.slice(0, range[0]) + s.text.slice(range[1])
-      s.cursor = range[0]
-    } else if (s.cursor < s.text.length) {
-      s.text = s.text.slice(0, s.cursor) + s.text.slice(s.cursor + 1)
-    }
-    s.selectionAnchor = null
+    const range =
+      this.getSelectionRange() ?? (s.cursor < s.text.length ? [s.cursor, s.cursor + 1] : null)
+    if (range) this.replaceRange(range[0], range[1], '')
     this.rebuildParagraph(node)
   }
 
-  moveLeft(extend = false): void {
+  private moveHorizontal(extend: boolean, visualDirection: 'left' | 'right'): void {
     const s = this._state
     if (!s) return
-    if (!extend && this.hasSelection()) {
-      const range = this.getSelectionRange()
-      if (range) s.cursor = range[0]
-      s.selectionAnchor = null
-      return
-    }
+    if (!extend && this.collapseSelectionTo(visualDirection === 'left' ? 0 : 1)) return
     this.prepareMove(extend)
-    if (s.textDirection === 'RTL') {
-      if (s.cursor < s.text.length) s.cursor++
-    } else if (s.cursor > 0) s.cursor--
+    const movesForward = (visualDirection === 'left') === (s.textDirection === 'RTL')
+    const step = movesForward ? 1 : -1
+    const next = s.cursor + step
+    if (next >= 0 && next <= s.text.length) s.cursor = next
+  }
+
+  moveLeft(extend = false): void {
+    this.moveHorizontal(extend, 'left')
   }
 
   moveRight(extend = false): void {
+    this.moveHorizontal(extend, 'right')
+  }
+
+  private moveVertical(extend: boolean, edge: 'up' | 'down'): void {
     const s = this._state
-    if (!s) return
-    if (!extend && this.hasSelection()) {
-      const range = this.getSelectionRange()
-      if (range) s.cursor = range[1]
-      s.selectionAnchor = null
-      return
-    }
+    if (!s?.paragraph) return
     this.prepareMove(extend)
-    if (s.textDirection === 'RTL') {
-      if (s.cursor > 0) s.cursor--
-    } else if (s.cursor < s.text.length) s.cursor++
+    const caret = this.getCaretRect()
+    if (!caret) return
+    const fontSize = s.paragraph.getLineMetrics()[0]?.height ?? 14
+    const y = edge === 'up' ? caret.y0 - fontSize / 2 : caret.y1 + fontSize / 2
+    s.cursor = s.paragraph.getGlyphPositionAtCoordinate(caret.x, y).pos
   }
 
   moveUp(extend = false): void {
-    const s = this._state
-    if (!s?.paragraph) return
-    this.prepareMove(extend)
-    const caret = this.getCaretRect()
-    if (!caret) return
-    const fontSize = s.paragraph.getLineMetrics()[0]?.height ?? 14
-    s.cursor = s.paragraph.getGlyphPositionAtCoordinate(caret.x, caret.y0 - fontSize / 2).pos
+    this.moveVertical(extend, 'up')
   }
 
   moveDown(extend = false): void {
+    this.moveVertical(extend, 'down')
+  }
+
+  private moveToLineEdge(extend: boolean, edge: 'start' | 'end'): void {
     const s = this._state
     if (!s?.paragraph) return
     this.prepareMove(extend)
-    const caret = this.getCaretRect()
-    if (!caret) return
-    const fontSize = s.paragraph.getLineMetrics()[0]?.height ?? 14
-    s.cursor = s.paragraph.getGlyphPositionAtCoordinate(caret.x, caret.y1 + fontSize / 2).pos
+    const metrics = this.currentLineMetrics()
+    if (!metrics) return
+    const isRtlStart = s.textDirection === 'RTL' && edge === 'start'
+    const isLtrEnd = s.textDirection !== 'RTL' && edge === 'end'
+    s.cursor = isRtlStart || isLtrEnd ? metrics.endExcludingWhitespaces : metrics.startIndex
   }
 
   moveToLineStart(extend = false): void {
-    const s = this._state
-    if (!s?.paragraph) return
-    this.prepareMove(extend)
-    const lineNum = s.paragraph.getLineNumberAt(s.cursor)
-    if (lineNum < 0) return
-    const metrics = s.paragraph.getLineMetricsAt(lineNum)
-    if (!metrics) return
-    s.cursor = s.textDirection === 'RTL' ? metrics.endExcludingWhitespaces : metrics.startIndex
+    this.moveToLineEdge(extend, 'start')
   }
 
   moveToLineEnd(extend = false): void {
-    const s = this._state
-    if (!s?.paragraph) return
-    this.prepareMove(extend)
-    const lineNum = s.paragraph.getLineNumberAt(s.cursor)
-    if (lineNum < 0) return
-    const metrics = s.paragraph.getLineMetricsAt(lineNum)
-    if (!metrics) return
-    s.cursor = s.textDirection === 'RTL' ? metrics.startIndex : metrics.endExcludingWhitespaces
+    this.moveToLineEdge(extend, 'end')
+  }
+
+  private moveWord(extend: boolean, direction: 'left' | 'right'): void {
+    const s = this.prepareMove(extend)
+    if (!s) return
+    const movingLeft = direction === 'left'
+    let pos = this.skipWordBoundaryRun(s.text, s.cursor, movingLeft)
+    pos = this.skipWordInteriorRun(s.text, pos, movingLeft)
+    s.cursor = pos
+  }
+
+  private skipWordBoundaryRun(text: string, start: number, movingLeft: boolean): number {
+    return this.advanceWhile(text, start, movingLeft, (boundary) => movingLeft === boundary)
+  }
+
+  private skipWordInteriorRun(text: string, start: number, movingLeft: boolean): number {
+    return this.advanceWhile(text, start, movingLeft, (boundary) => movingLeft !== boundary)
+  }
+
+  private advanceWhile(
+    text: string,
+    start: number,
+    movingLeft: boolean,
+    shouldMove: (isBoundary: boolean) => boolean
+  ): number {
+    let pos = start
+    const step = movingLeft ? -1 : 1
+    while (movingLeft ? pos > 0 : pos < text.length) {
+      const char = movingLeft ? text[pos - 1] : text[pos]
+      if (!shouldMove(isWordBoundary(char))) break
+      pos += step
+    }
+    return pos
   }
 
   moveWordLeft(extend = false): void {
-    const s = this.prepareMove(extend)
-    if (!s) return
-    let pos = s.cursor
-    while (pos > 0 && isWordBoundary(s.text[pos - 1])) pos--
-    while (pos > 0 && !isWordBoundary(s.text[pos - 1])) pos--
-    s.cursor = pos
+    this.moveWord(extend, 'left')
   }
 
   moveWordRight(extend = false): void {
-    const s = this.prepareMove(extend)
-    if (!s) return
-    let pos = s.cursor
-    while (pos < s.text.length && !isWordBoundary(s.text[pos])) pos++
-    while (pos < s.text.length && isWordBoundary(s.text[pos])) pos++
-    s.cursor = pos
+    this.moveWord(extend, 'right')
   }
 
   getCaretRect(): TextCaret | null {

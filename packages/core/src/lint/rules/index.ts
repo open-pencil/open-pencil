@@ -34,7 +34,7 @@ import preferAutoLayout from './prefer-auto-layout'
 import textStyleRequired from './text-style-required'
 import touchTargetSize from './touch-target-size'
 
-import type { Rule } from '../types'
+import type { Rule } from '#core/lint/types'
 
 export const allRules: Record<string, Rule> = {
   'no-hardcoded-colors': noHardcodedColors,

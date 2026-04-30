@@ -6,7 +6,8 @@
  * and MCP (JSON Schema) are generated from these definitions.
  */
 
-import type { FigmaAPI, FigmaNodeProxy } from '../figma-api'
+import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
+import type { SceneNode } from '#core/scene-graph'
 
 export type ParamType = 'string' | 'number' | 'boolean' | 'color' | 'string[]'
 
@@ -67,6 +68,18 @@ export function requireNode(figma: FigmaAPI, id: string): ReturnType<FigmaAPI['g
   const node = figma.getNodeById(id)
   if (!node) throw new NodeNotFoundError(id)
   return node
+}
+
+export function nodeNotFound(id: string): { error: string } {
+  return { error: `Node "${id}" not found` }
+}
+
+export function getRawNodeOrError(
+  figma: FigmaAPI,
+  id: string
+): { node: SceneNode } | { error: string } {
+  const node = figma.graph.getNode(id)
+  return node ? { node } : nodeNotFound(id)
 }
 
 export function nodeToResult(node: FigmaNodeProxy, maxDepth?: number): Record<string, unknown> {

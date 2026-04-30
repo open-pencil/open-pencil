@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
+import { makeSceneGraph } from '../helpers/scene'
+
 import {
-  SceneGraph,
   renderTree,
   renderJSX,
   renderTreeNode,
@@ -19,12 +20,6 @@ import {
   isTreeNode,
   node
 } from '@open-pencil/core'
-
-function createGraph(): SceneGraph {
-  const g = new SceneGraph()
-  g.addPage('Test')
-  return g
-}
 
 describe('TreeNode builders', () => {
   it('creates Frame tree node', () => {
@@ -74,7 +69,7 @@ describe('TreeNode builders', () => {
 
 describe('renderTree', () => {
   it('renders a simple frame', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'MyFrame', w: 200, h: 100, bg: '#FF0000' })
     const result = await renderTree(g, tree)
 
@@ -89,7 +84,7 @@ describe('renderTree', () => {
   })
 
   it('renders text node with content', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Text({ name: 'Heading', size: 24, weight: 'bold', color: '#111', children: 'Hello' })
     const result = await renderTree(g, tree)
 
@@ -102,7 +97,7 @@ describe('renderTree', () => {
   })
 
   it('renders nested structure', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({
       name: 'Card',
       w: 320,
@@ -131,7 +126,7 @@ describe('renderTree', () => {
   })
 
   it('renders with position override', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Positioned', w: 100, h: 100 })
     const result = await renderTree(g, tree, { x: 50, y: 75 })
 
@@ -141,7 +136,7 @@ describe('renderTree', () => {
   })
 
   it('renders into a specific parent', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const page = g.getPages()[0]!
     const container = g.createNode('FRAME', page.id, { name: 'Container' })
 
@@ -152,7 +147,7 @@ describe('renderTree', () => {
   })
 
   it('handles auto-layout properties', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({
       name: 'Flex',
       flex: 'row',
@@ -172,7 +167,7 @@ describe('renderTree', () => {
   })
 
   it('justify/items without flex auto-enables auto-layout', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame(
       { name: 'IconBtn', w: 36, h: 36, justify: 'center', items: 'center' },
       Text({ size: 16, color: '#FFFFFF', children: '★' })
@@ -186,7 +181,7 @@ describe('renderTree', () => {
   })
 
   it('handles padding shorthands', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Padded', px: 16, py: 8, pt: 4 })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -198,14 +193,14 @@ describe('renderTree', () => {
   })
 
   it('handles corner radius', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Rounded', rounded: 12 })
     const result = await renderTree(g, tree)
     expect(g.nodes.get(result.id)!.cornerRadius).toBe(12)
   })
 
   it('handles independent corners', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Corners', roundedTL: 8, roundedBR: 16 })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -216,7 +211,7 @@ describe('renderTree', () => {
   })
 
   it('handles stroke', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Rectangle({ name: 'Bordered', stroke: '#000', strokeWidth: 2 })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -226,7 +221,7 @@ describe('renderTree', () => {
   })
 
   it('handles opacity and rotation', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Transformed', opacity: 0.5, rotate: 45 })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -236,14 +231,14 @@ describe('renderTree', () => {
   })
 
   it('handles overflow hidden (clip)', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Clipped', overflow: 'hidden' })
     const result = await renderTree(g, tree)
     expect(g.nodes.get(result.id)!.clipsContent).toBe(true)
   })
 
   it('handles hug sizing', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Hug', w: 'hug', h: 'hug', flex: 'col' })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -253,7 +248,7 @@ describe('renderTree', () => {
   })
 
   it('handles fill sizing', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Fill', w: 'fill' })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -262,7 +257,7 @@ describe('renderTree', () => {
   })
 
   it('handles shadow effect', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Shadow', shadow: '0 4 12 rgba(0,0,0,0.1)' })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -273,7 +268,7 @@ describe('renderTree', () => {
   })
 
   it('handles blur effect', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Blurred', blur: 8 })
     const result = await renderTree(g, tree)
     const node = g.nodes.get(result.id)!
@@ -284,7 +279,7 @@ describe('renderTree', () => {
   })
 
   it('renders all primitive types', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const types = [
       { fn: Rectangle, expected: 'RECTANGLE' },
       { fn: Ellipse, expected: 'ELLIPSE' },
@@ -302,7 +297,7 @@ describe('renderTree', () => {
   })
 
   it('throws on unknown element type', () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = { type: 'foobar', props: {}, children: [] }
     expect(() => renderTree(g, tree)).toThrow('Unknown element: <foobar>')
   })
@@ -310,7 +305,7 @@ describe('renderTree', () => {
 
 describe('renderTreeNode', () => {
   it('renders pre-built tree (browser path)', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({
       name: 'FromAI',
       w: 200,
@@ -330,7 +325,7 @@ describe('renderTreeNode', () => {
 
 describe('renderJSX (string → scene graph)', () => {
   it('renders JSX string', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="Test" w={200} h={100} bg="#FF0000">
         <Text name="Hello" size={16} color="#000">World</Text>
@@ -348,7 +343,7 @@ describe('renderJSX (string → scene graph)', () => {
   })
 
   it('renders nested JSX', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="Card" w={320} flex="col" gap={16} p={24} bg="#FFF" rounded={16}>
         <Rectangle name="Image" w={272} h={200} bg="#E5E7EB" rounded={12} />
@@ -364,7 +359,7 @@ describe('renderJSX (string → scene graph)', () => {
   })
 
   it('renders with position', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Frame name="At" w={50} h={50} />', { x: 100, y: 200 })
     const node = g.nodes.get(result.id)!
 
@@ -375,7 +370,7 @@ describe('renderJSX (string → scene graph)', () => {
 
 describe('grid layout rendering', () => {
   it('creates grid frame with template columns', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr' },
       Rectangle({ name: 'A', w: 50, h: 50 }),
       Rectangle({ name: 'B', w: 50, h: 50 }),
@@ -393,7 +388,7 @@ describe('grid layout rendering', () => {
   })
 
   it('creates grid frame with mixed track sizes', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 400, h: 200, grid: true, columns: '100 1fr 2fr' })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
@@ -406,7 +401,7 @@ describe('grid layout rendering', () => {
   })
 
   it('creates grid with numeric columns shorthand', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: 3 })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
@@ -419,7 +414,7 @@ describe('grid layout rendering', () => {
   })
 
   it('sets grid gaps', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr', columnGap: 10, rowGap: 20 })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
@@ -429,7 +424,7 @@ describe('grid layout rendering', () => {
   })
 
   it('sets grid gap shorthand', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr', gap: 16 })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
@@ -439,7 +434,7 @@ describe('grid layout rendering', () => {
   })
 
   it('applies grid padding', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr', p: 10 })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
@@ -451,7 +446,7 @@ describe('grid layout rendering', () => {
   })
 
   it('sets grid rows', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr', rows: '100 1fr' })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
@@ -463,7 +458,7 @@ describe('grid layout rendering', () => {
   })
 
   it('sets grid child position', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr 1fr' },
       Rectangle({ name: 'A', w: 50, h: 50, colStart: 2, rowStart: 1 })
     )
@@ -474,7 +469,7 @@ describe('grid layout rendering', () => {
   })
 
   it('sets grid child span', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr 1fr' },
       Rectangle({ name: 'A', w: 50, h: 50, colStart: 1, colSpan: 2, rowStart: 1, rowSpan: 2 })
     )
@@ -485,7 +480,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid + computeLayout positions children in cells', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr' },
       Rectangle({ name: 'A', w: 50, h: 50 }),
       Rectangle({ name: 'B', w: 50, h: 50 }),
@@ -501,7 +496,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid 2x2 with gap positions correctly', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 210, h: 210, grid: true, columns: '1fr 1fr', rows: '1fr 1fr', gap: 10 },
       Rectangle({ name: 'A', w: 30, h: 30 }),
       Rectangle({ name: 'B', w: 30, h: 30 }),
@@ -523,7 +518,7 @@ describe('grid layout rendering', () => {
   })
 
   it('renders grid from JSX string', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="Grid" w={300} h={100} grid columns="1fr 1fr" gap={10}>
         <Rectangle name="A" w={50} h={50} />
@@ -548,7 +543,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid auto-height (no rows) grows to fit content', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, grid: true, columns: '1fr 1fr', gap: 10 },
       Rectangle({ name: 'A', w: 50, h: 80 }),
       Rectangle({ name: 'B', w: 50, h: 80 }),
@@ -565,7 +560,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid children with flex stretch to cell width', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 200, grid: true, columns: '1fr 1fr', gap: 0 },
       Frame({ name: 'A', flex: 'col', gap: 4, p: 8, children: [
         Rectangle({ name: 'R1', w: 10, h: 20 })
@@ -585,7 +580,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid prop takes precedence over padding-triggered auto-layout', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, grid: true, columns: '1fr 1fr', p: 20 },
       Rectangle({ name: 'A', w: 50, h: 50 }),
       Rectangle({ name: 'B', w: 50, h: 50 })
@@ -596,7 +591,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid w=fill stretches in flex-col parent', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="P" flex="col" w={400} p={20}>
         <Frame name="G" grid columns="1fr 1fr" gap={10} w="fill">
@@ -613,7 +608,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid grow=1 fills remaining space in flex-row', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="P" flex="row" w={500} p={20} gap={10}>
         <Rectangle w={100} h={50} />
@@ -630,7 +625,7 @@ describe('grid layout rendering', () => {
   })
 
   it('nested flex > flex > grid: grid stretches to correct width', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="Card" flex="col" w={780}>
         <Frame name="Content" flex="col" w="fill" p={28}>
@@ -651,7 +646,7 @@ describe('grid layout rendering', () => {
   })
 
   it('grid h=fill grows in flex-col parent', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const jsx = `
       <Frame name="P" flex="col" w={400} h={600} p={20}>
         <Rectangle w={360} h={100} />
@@ -670,7 +665,7 @@ describe('grid layout rendering', () => {
 
 describe('text props round-trip', () => {
   it('lineHeight renders and exports', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" lineHeight={24}>Hello</Text>')
     const n = g.getNode(result.id)!
     expect(n.lineHeight).toBe(24)
@@ -679,7 +674,7 @@ describe('text props round-trip', () => {
   })
 
   it('letterSpacing renders and exports', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" letterSpacing={2}>Spaced</Text>')
     const n = g.getNode(result.id)!
     expect(n.letterSpacing).toBe(2)
@@ -688,7 +683,7 @@ describe('text props round-trip', () => {
   })
 
   it('textDecoration renders and exports', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" textDecoration="underline">Link</Text>')
     const n = g.getNode(result.id)!
     expect(n.textDecoration).toBe('UNDERLINE')
@@ -697,7 +692,7 @@ describe('text props round-trip', () => {
   })
 
   it('textCase renders and exports', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" textCase="upper">label</Text>')
     const n = g.getNode(result.id)!
     expect(n.textCase).toBe('UPPER')
@@ -706,7 +701,7 @@ describe('text props round-trip', () => {
   })
 
   it('maxLines renders with truncation', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" maxLines={2}>Long text here</Text>')
     const n = g.getNode(result.id)!
     expect(n.maxLines).toBe(2)
@@ -716,7 +711,7 @@ describe('text props round-trip', () => {
   })
 
   it('truncate without maxLines', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" truncate>Overflow</Text>')
     const n = g.getNode(result.id)!
     expect(n.textTruncation).toBe('ENDING')
@@ -725,7 +720,7 @@ describe('text props round-trip', () => {
   })
 
   it('defaults omit text props', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000">Plain</Text>')
     const n = g.getNode(result.id)!
     expect(n.lineHeight).toBeNull()
@@ -743,7 +738,7 @@ describe('text props round-trip', () => {
   })
 
   it('text w="fill" in flex="col" exports as w="fill" not w={computed}', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, `
       <Frame name="Card" flex="col" w={300} p={20}>
         <Text name="Title" size={22} weight="bold" color="#111" w="fill">Hello World</Text>
@@ -759,7 +754,7 @@ describe('text props round-trip', () => {
   })
 
   it('text grow={1} in flex="row" exports as grow not w={computed}', async () => {
-    const g = createGraph()
+    const g = makeSceneGraph()
     const [result] = await renderJSX(g, `
       <Frame name="Row" flex="row" w={300}>
         <Text name="Label" color="#999" w={60}>Label</Text>

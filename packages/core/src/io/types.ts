@@ -1,7 +1,7 @@
-import type { SkiaRenderer } from '../canvas'
-import type { RenderColorSpace } from '../color/management'
-import type { JSXFormat } from '../design-jsx'
-import type { SceneGraph } from '../scene-graph'
+import type { SkiaRenderer } from '#core/canvas'
+import type { RenderColorSpace } from '#core/color/management'
+import type { JSXFormat } from '#core/design-jsx'
+import type { SceneGraph } from '#core/scene-graph'
 import type { RasterExportFormat } from './formats/raster'
 import type { CanvasKit } from 'canvaskit-wasm'
 

@@ -1,22 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, entity, fmtList, fmtSummary } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { bold, entity, fmtList, fmtSummary } from '../format'
-import { loadDocument } from '../headless'
-
-import type { VariablesResult } from '@open-pencil/core'
-
-async function getData(
-  file: string | undefined,
-  args: { collection?: string; type?: string }
-): Promise<VariablesResult> {
-  const rpcArgs = { collection: args.collection, type: args.type }
-  if (isAppMode(file)) return rpc<VariablesResult>('variables', rpcArgs)
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'variables', rpcArgs) as VariablesResult
-}
+import type { VariablesResult } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: { description: 'List design variables and collections' },
@@ -31,7 +18,10 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await getData(args.file, args)
+    const data = await loadRpcData<VariablesResult>(args.file, 'variables', {
+      collection: args.collection,
+      type: args.type
+    })
 
     if (data.totalVariables === 0) {
       console.log('No variables found.')

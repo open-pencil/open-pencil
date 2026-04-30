@@ -1,6 +1,7 @@
-import Matrix, { type Mat3 } from '@open-pencil/core/canvas/matrix'
+import Matrix, { type Mat3 } from './matrix'
 
-import type { SceneGraph, SceneNode, Vector } from '@open-pencil/core'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { Vector } from '#core/types'
 
 export function getWorldMatrix(node: SceneNode, graph: SceneGraph): Mat3 {
   const chain: SceneNode[] = []

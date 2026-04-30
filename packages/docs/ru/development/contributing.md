@@ -72,25 +72,25 @@ bun run check
 
 ## Ключевые файлы
 
-Исходники движка находятся в `packages/core/src/`. Файлы `src/engine/` и `src/kiwi/` приложения — это шимы реэкспорта. Редактируйте пакет core, а не шимы.
+Исходники core-движка находятся в `packages/core/src/`. Код приложения для редактора, документов, AI, коллаборации, shell, демо и автоматизации живёт в `src/app/*`; Vue SDK содержит переиспользуемый canvas/composable-код в `packages/vue/src/`.
 
 | Файл | Назначение |
 |------|------------|
-| `packages/core/src/scene-graph.ts` | Граф сцены: узлы, переменные, экземпляры, проверка попадания |
-| `packages/core/src/renderer.ts` | Конвейер отрисовки CanvasKit |
+| `packages/core/src/scene-graph/` | Граф сцены: узлы, переменные, экземпляры, проверка попадания |
+| `packages/core/src/canvas/renderer.ts` | Конвейер отрисовки CanvasKit |
 | `packages/core/src/layout.ts` | Адаптер компоновки Yoga |
-| `packages/core/src/undo.ts` | Менеджер отмены/повтора |
+| `packages/core/src/scene-graph/undo.ts` | Менеджер отмены/повтора |
 | `packages/core/src/clipboard.ts` | Figma-совместимый буфер обмена |
-| `packages/core/src/vector.ts` | Модель векторных сетей |
-| `packages/core/src/render-image.ts` | Внеэкранный экспорт изображений (PNG/JPG/WEBP) |
-| `packages/core/src/kiwi/codec.ts` | Бинарный кодировщик/декодировщик Kiwi |
+| `packages/core/src/vector/` | Модель векторных сетей |
+| `packages/core/src/io/formats/raster/render.ts` | Внеэкранный экспорт изображений (PNG/JPG/WEBP) |
+| `packages/core/src/kiwi/binary/codec.ts` | Бинарный кодировщик/декодировщик Kiwi |
 | `packages/core/src/kiwi/fig-import.ts` | Логика импорта .fig файлов |
 | `packages/cli/src/index.ts` | Точка входа CLI |
 | `packages/core/src/tools/` | Унифицированные определения инструментов по доменам (read, create, modify, structure, variables, vector, analyze) |
-| `packages/core/src/figma-api.ts` | Реализация Figma Plugin API |
+| `packages/core/src/figma-api/` | Реализация Figma Plugin API |
 | `packages/mcp/src/server.ts` | Фабрика MCP-сервера |
 | `packages/cli/src/commands/` | Команды CLI (info, tree, find, export, eval, analyze) |
-| `src/stores/editor.ts` | Глобальное состояние редактора |
-| `src/composables/use-canvas.ts` | Composable отрисовки холста |
-| `src/composables/use-canvas-input.ts` | Обработка ввода мышью/тачем |
-| `src/composables/use-keyboard.ts` | Обработка сочетаний клавиш |
+| `src/app/editor/session/create.ts` | Editor session assembly |
+| `packages/vue/src/canvas/CanvasRoot.vue` | Composable отрисовки холста |
+| `packages/vue/src/canvas/useCanvasInput.ts` | Обработка ввода мышью/тачем |
+| `src/app/shell/keyboard/use.ts` | Обработка сочетаний клавиш |

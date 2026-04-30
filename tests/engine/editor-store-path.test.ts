@@ -1,8 +1,5 @@
 import { describe, test, expect } from 'bun:test'
-import { SceneGraph } from '@open-pencil/core'
-
-// Import the store factory directly
-import { createEditorStore } from '../../src/stores/editor'
+import { createEditorStore } from '../../src/app/editor/session'
 
 describe('setPlannedFilePath', () => {
   test('sets document name from file path', () => {

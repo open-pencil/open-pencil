@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { useAttrs } from 'vue'
 import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay } from '@open-pencil/vue'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
+
+const attrs = useAttrs()
 
 const store = useEditorStore()
 
@@ -20,6 +23,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: number]
   commit: [value: number, previous: number]
 }>()
+
+defineOptions({ inheritAttrs: false })
 </script>
 
 <template>
@@ -36,13 +41,18 @@ const emit = defineEmits<{
     @editing-change="store.state.scrubInputFocused = $event"
   >
     <div
-      data-test-id="scrub-input"
+      v-bind="attrs"
+      :data-test-id="(attrs['data-test-id'] as string | undefined) ?? 'scrub-input'"
       :tabindex="editing ? undefined : 0"
-      class="group flex h-[26px] min-w-0 flex-1 items-center rounded border border-border bg-input focus-within:border-accent focus:border-accent"
+      :class="[
+        attrs.class,
+        'group flex h-[26px] min-w-0 flex-1 items-center rounded border border-border bg-input focus-within:border-accent focus:border-accent'
+      ]"
       :style="{ cursor: editing ? 'auto' : 'ew-resize' }"
       @pointerdown="!editing && startScrub($event)"
       @focus="!editing && startEdit()"
     >
+      <span v-if="attrs['data-test-id']" data-test-id="scrub-input" class="hidden" />
       <span
         class="flex shrink-0 items-center justify-center self-stretch px-[5px] text-muted select-none [&>*]:pointer-events-none"
       >

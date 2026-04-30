@@ -5,6 +5,9 @@
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
+    "paths": {
+      "#mcp/*": ["./src/*"]
+    },
     "noCheck": true,
     "outDir": "dist",
     "rootDir": "src"

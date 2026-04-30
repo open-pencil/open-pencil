@@ -1,5 +1,5 @@
-import type { NodeType, Rect, VectorNetwork } from '@open-pencil/core'
-import type { Vector } from '@open-pencil/core'
+import type { NodeType, VectorNetwork } from '@open-pencil/core/scene-graph'
+import type { Rect, Vector } from '@open-pencil/core/types'
 import type { Tool } from '@open-pencil/core/editor'
 
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -21,6 +21,7 @@ export interface DragMove {
   currentY: number
   originals: Map<string, { x: number; y: number; parentId: string }>
   duplicated?: boolean
+  duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
 }
@@ -81,7 +82,7 @@ export interface DragEditNode {
   type: 'edit-node'
   startX: number
   startY: number
-  origPositions: Map<number, { x: number; y: number }>
+  origPositions: Map<number, Vector>
 }
 
 export interface DragEditHandle {

@@ -33,4 +33,5 @@ export { createElement } from './mini-react'
 
 export { renderJSX, renderTreeNode, buildComponent } from './render'
 
-export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from '../io/formats/jsx'
+export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from '#core/io/formats/jsx'
+export { default as JSX_REFERENCE } from '#core/tools/prompts/jsx-reference.md'

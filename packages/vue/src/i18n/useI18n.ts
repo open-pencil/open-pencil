@@ -1,6 +1,4 @@
-import { useStore } from '@nanostores/vue'
-
-import { locale, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from './locale'
+import { locale, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '#vue/i18n/locale'
 import {
   menuMessages,
   commandMessages,
@@ -8,9 +6,10 @@ import {
   panelMessages,
   pageMessages,
   dialogMessages
-} from './messages'
+} from '#vue/i18n/messages'
+import { useStore } from '@nanostores/vue'
 
-import type { Locale } from './locale'
+import type { Locale } from '#vue/i18n/locale'
 import type { Ref } from 'vue'
 
 /**

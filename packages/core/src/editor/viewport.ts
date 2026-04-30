@@ -1,5 +1,5 @@
-import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '../constants'
-import { computeBounds, computeAbsoluteBounds } from '../geometry'
+import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
+import { computeBounds, computeAbsoluteBounds } from '#core/geometry'
 
 import type { EditorContext } from './types'
 
@@ -11,16 +11,20 @@ export function createViewportActions(ctx: EditorContext) {
     }
   }
 
+  function setZoomAroundPoint(level: number, centerX: number, centerY: number) {
+    const newZoom = Math.max(0.02, Math.min(256, level))
+    ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
+    ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
+    ctx.state.zoom = newZoom
+    ctx.requestRepaint()
+  }
+
   function applyZoom(delta: number, centerX: number, centerY: number) {
     const factor = Math.min(
       ZOOM_SCALE_MAX,
       Math.max(ZOOM_SCALE_MIN, Math.exp(-delta / ZOOM_DIVISOR))
     )
-    const newZoom = Math.max(0.02, Math.min(256, ctx.state.zoom * factor))
-    ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
-    ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
-    ctx.state.zoom = newZoom
-    ctx.requestRepaint()
+    setZoomAroundPoint(ctx.state.zoom * factor, centerX, centerY)
   }
 
   function pan(dx: number, dy: number) {
@@ -80,6 +84,7 @@ export function createViewportActions(ctx: EditorContext) {
 
   return {
     screenToCanvas,
+    setZoomAroundPoint,
     applyZoom,
     pan,
     zoomToBounds,

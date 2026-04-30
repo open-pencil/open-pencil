@@ -1,9 +1,14 @@
-import { copyGeometryPaths } from '../../scene-graph/copy'
-import { convertLetterSpacing, convertLineHeight, resolveGeometryPaths } from '../convert'
+import {
+  convertLetterSpacing,
+  convertLineHeight,
+  resolveGeometryPaths
+} from '#core/kiwi/node-change/convert'
+import { copyGeometryPaths } from '#core/scene-graph/copy'
+
 import { resolveOverrideTarget } from './resolve'
 import { buildClonesMap } from './sync'
 
-import type { SceneNode, GeometryPath } from '../../scene-graph'
+import type { SceneNode, GeometryPath } from '#core/scene-graph'
 import type { OverrideContext, DerivedSymbolOverride } from './types'
 
 function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): GeometryPath[] {

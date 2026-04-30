@@ -3,6 +3,9 @@
   "version": "0.11.8",
   "license": "MIT",
   "type": "module",
+  "imports": {
+    "#cli/*": "./src/*"
+  },
   "bin": {
     "openpencil": "./src/index.ts"
   },

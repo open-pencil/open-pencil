@@ -1,4 +1,4 @@
-import type { SceneGraph } from '../../scene-graph'
+import type { SceneGraph } from '#core/scene-graph'
 
 /**
  * Populate empty INSTANCE nodes from their source components.

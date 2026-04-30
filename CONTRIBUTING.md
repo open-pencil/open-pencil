@@ -50,6 +50,7 @@ See [`AGENTS.md`](./AGENTS.md) for the full architecture reference, code convent
 - Use `crypto.getRandomValues()`, never `Math.random()`
 - Icons via unplugin-icons (`<icon-lucide-*>`)
 - Use existing deps and Reka UI components before hand-rolling (see AGENTS.md → Code quality)
+- Follow the Reka UI-inspired file structure: PascalCase component namespace folders and Vue files, lowercase/kebab non-component domains, and multi-file root components colocated inside their namespace folder
 
 ## Test IDs (`data-test-id`)
 

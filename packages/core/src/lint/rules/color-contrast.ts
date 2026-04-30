@@ -1,5 +1,5 @@
-import { defineRule } from '../rule'
-import { contrastRatio } from '../utils'
+import { defineRule } from '#core/lint/rule'
+import { contrastRatio } from '#core/lint/utils'
 
 export default defineRule({
   meta: {

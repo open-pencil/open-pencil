@@ -12,13 +12,13 @@ import {
 
 import ColorStyleRow from '@/components/properties/ColorStyleRow.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import ColorInput from '@/components/ColorInput.vue'
+import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { SceneNode, Stroke } from '@open-pencil/core'
+import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
 
 const strokeCtx = useStrokeControls()
 const strokeVarCtx = useColorVariableBinding('strokes')

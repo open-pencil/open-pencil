@@ -13,63 +13,64 @@ export { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core/ed
  * These are the primary entry points for making an editor available to a Vue
  * subtree and reading it back inside composables and headless primitives.
  */
-export { provideEditor, useEditor, EDITOR_KEY } from './context/editorContext'
+export { provideEditor, useEditor, EDITOR_KEY } from '#vue/editor/context'
 
 /** Canvas and input integration composables. */
-export { useCanvas } from './shared/useCanvas'
-export type { UseCanvasOptions } from './shared/useCanvas'
-export { useCanvasInput } from './Canvas/useCanvasInput'
-export { useTextEdit } from './Canvas/useTextEdit'
-export { useCanvasDrop, extractImageFilesFromClipboard } from './Canvas/useCanvasDrop'
+export { useCanvas } from '#vue/canvas/surface/use'
+export type { UseCanvasOptions } from '#vue/canvas/surface/use'
+export { useCanvasInput } from '#vue/canvas/useCanvasInput'
+export { useTextEdit } from '#vue/canvas/text-edit/use'
+export { useCanvasDrop, extractImageFilesFromClipboard } from '#vue/canvas/drop/use'
 
 /** Low-level selection, graph, and derived-state helpers. */
-export { useNodeProps, MIXED } from './controls/useNodeProps'
-export type { MixedValue } from './controls/useNodeProps'
-export { useSceneComputed } from './internal/useSceneComputed'
-export { useSelectionState } from './selection/useSelectionState'
-export { useSelectionCapabilities } from './selection/useSelectionCapabilities'
+export { useNodeProps, MIXED } from '#vue/controls/node-props/use'
+export type { MixedValue } from '#vue/controls/node-props/use'
+export { useSceneComputed } from '#vue/internal/scene-computed/use'
+export { useSelectionState } from '#vue/editor/selection-state/use'
+export { useSelectionCapabilities } from '#vue/editor/selection-capabilities/use'
 
 /** Command and menu composition helpers. */
-export { useEditorCommands } from './commands/useEditorCommands'
-export type { EditorCommand, EditorCommandId } from './commands/useEditorCommands'
-export { useMenuModel } from './commands/useMenuModel'
-export type { MenuEntry } from './commands/useMenuModel'
+export { useEditorCommands } from '#vue/editor/commands/use'
+export type { EditorCommand, EditorCommandId } from '#vue/editor/commands/use'
+export { useMenuModel } from '#vue/editor/menu-model/use'
+export type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/use'
 
 /** Miscellaneous editor-shell helpers. */
-export { useViewportKind } from './viewport/useViewportKind'
-export { useLayerDrag } from './LayerTree/useLayerDrag'
-export { useInlineRename } from './shared/useInlineRename'
-export { useToolbarState } from './Toolbar/useToolbarState'
-export { useNodeFontStatus } from './shared/useFontStatus'
-export { usePropScrub } from './controls/usePropScrub'
-export { toolCursor } from './internal/toolCursor'
+export { useViewportKind } from '#vue/editor/viewport-kind/use'
+export { useLayerDrag } from '#vue/primitives/LayerTree/useLayerDrag'
+export { useInlineRename } from '#vue/editor/inline-rename/use'
+export { useToolbarState } from '#vue/primitives/Toolbar/useToolbarState'
+export { useNodeFontStatus } from '#vue/shared/font-status/use'
+export { usePropScrub } from '#vue/controls/prop-scrub/use'
+export { toolCursor } from '#vue/editor/tool-cursor'
 
 /** Property-panel composables. */
-export { usePosition } from './controls/usePosition'
-export { useLayout } from './controls/useLayout'
-export { useAppearance } from './controls/useAppearance'
-export { useTypography } from './controls/useTypography'
-export type { UseTypographyOptions } from './controls/useTypography'
-export { useExport } from './controls/useExport'
-export { useFillControls } from './controls/useFillControls'
-export { useColorVariableBinding } from './controls/useColorVariableBinding'
-export { useEffectsControls } from './controls/useEffectsControls'
-export { useStrokeControls } from './controls/useStrokeControls'
-export { useOkHCL } from './controls/useOkHCL'
+export { usePosition } from '#vue/controls/position/use'
+export { useLayout } from '#vue/controls/layout/use'
+export { useAppearance } from '#vue/controls/appearance/use'
+export { useTypography } from '#vue/controls/typography/use'
+export type { UseTypographyOptions } from '#vue/controls/typography/use'
+export { useExport } from '#vue/document/export/use'
+export type { ExportFormatId } from '#vue/document/export/use'
+export { useFillControls } from '#vue/controls/fill/use'
+export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
+export { useEffectsControls } from '#vue/controls/effects/use'
+export { useStrokeControls } from '#vue/controls/stroke/use'
+export { useOkHCL } from '#vue/controls/okhcl/use'
 
 /** Variables, page navigation, and picker helpers. */
-export { useVariables } from './VariablesEditor/useVariables'
-export { useVariablesDialogState } from './VariablesEditor/useVariablesDialogState'
-export { useVariablesEditor } from './VariablesEditor/useVariablesEditor'
-export { useVariablesTable } from './VariablesEditor/useVariablesTable'
-export { usePageList } from './PageList/usePageList'
-export { useFillPicker } from './FillPicker/useFillPicker'
-export { useGradientStops } from './GradientEditor/useGradientStops'
-export { useFontPicker } from './FontPicker/useFontPicker'
+export { useVariables } from '#vue/variables/use'
+export { useVariablesDialogState } from '#vue/variables/dialog/use'
+export { useVariablesEditor } from '#vue/variables/editor/use'
+export { useVariablesTable } from '#vue/variables/table/use'
+export { usePageList } from '#vue/primitives/PageList/usePageList'
+export { useFillPicker } from '#vue/primitives/FillPicker/useFillPicker'
+export { useGradientStops } from '#vue/primitives/GradientEditor/useGradientStops'
+export { useFontPicker } from '#vue/primitives/FontPicker/useFontPicker'
 
 /** Headless structural primitives and their local contexts. */
-export { CanvasRoot, CanvasSurface, useCanvasContext } from './Canvas'
-export type { CanvasContext } from './Canvas'
+export { CanvasRoot, CanvasSurface, useCanvasContext } from '#vue/canvas'
+export type { CanvasContext } from '#vue/canvas'
 export {
   ColorInputRoot,
   ColorPickerRoot,
@@ -88,28 +89,39 @@ export {
   updateRGBChannel,
   applySolidFillColor,
   applySolidStrokeColor
-} from './ColorPicker'
-export { FillPickerRoot } from './FillPicker'
-export { FontPickerRoot } from './FontPicker'
-export { GradientEditorRoot, GradientEditorBar, GradientEditorStop } from './GradientEditor'
-export { LayerTreeRoot, LayerTreeItem, useLayerTree } from './LayerTree'
-export type { LayerTreeContext, LayerNode } from './LayerTree'
-export { LayoutControlsRoot } from './LayoutControls'
-export { AppearanceControlsRoot } from './AppearanceControls'
-export { PageListRoot } from './PageList'
-export { PositionControlsRoot } from './PositionControls'
-export { PropertyListRoot, PropertyListItem, usePropertyList } from './PropertyList'
-export type { PropertyListContext } from './PropertyList'
-export { ScrubInputRoot, ScrubInputField, ScrubInputDisplay, useScrubInput } from './ScrubInput'
-export type { ScrubInputContext } from './ScrubInput'
-export { TypographyControlsRoot } from './TypographyControls'
-export { ToolbarRoot, ToolbarItem, useToolbar } from './Toolbar'
-export type { ToolbarContext } from './Toolbar'
+} from '#vue/primitives/ColorPicker'
+export type { ColorFieldFormat, OkHCLControls } from '#vue/primitives/ColorPicker'
+export { FillPickerRoot } from '#vue/primitives/FillPicker'
+export { FontPickerRoot } from '#vue/primitives/FontPicker'
+export {
+  GradientEditorRoot,
+  GradientEditorBar,
+  GradientEditorStop
+} from '#vue/primitives/GradientEditor'
+export { LayerTreeRoot, LayerTreeItem, useLayerTree } from '#vue/primitives/LayerTree'
+export type { LayerTreeContext, LayerNode } from '#vue/primitives/LayerTree'
+export { LayoutControlsRoot, useLayoutControlsContext } from '#vue/primitives/LayoutControls'
+export type { LayoutControlsContext } from '#vue/primitives/LayoutControls'
+export { AppearanceControlsRoot } from '#vue/primitives/AppearanceControls'
+export { PageListRoot } from '#vue/primitives/PageList'
+export { PositionControlsRoot } from '#vue/primitives/PositionControls'
+export { PropertyListRoot, PropertyListItem, usePropertyList } from '#vue/primitives/PropertyList'
+export type { PropertyListContext } from '#vue/primitives/PropertyList'
+export {
+  ScrubInputRoot,
+  ScrubInputField,
+  ScrubInputDisplay,
+  useScrubInput
+} from '#vue/primitives/ScrubInput'
+export type { ScrubInputContext } from '#vue/primitives/ScrubInput'
+export { TypographyControlsRoot } from '#vue/primitives/TypographyControls'
+export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
+export type { ToolbarContext } from '#vue/primitives/Toolbar'
 
 /** Internationalization. */
-export { useI18n } from './i18n'
-export { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from './i18n'
-export type { Locale } from './i18n'
+export { useI18n } from '#vue/i18n'
+export { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '#vue/i18n'
+export type { Locale } from '#vue/i18n'
 export {
   menuMessages,
   commandMessages,
@@ -117,4 +129,4 @@ export {
   panelMessages,
   pageMessages,
   dialogMessages
-} from './i18n'
+} from '#vue/i18n'

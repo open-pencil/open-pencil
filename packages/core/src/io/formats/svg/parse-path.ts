@@ -6,7 +6,7 @@ import type {
   VectorSegment,
   VectorRegion,
   WindingRule
-} from '../../../scene-graph'
+} from '#core/scene-graph'
 
 interface SubPath {
   startVertexIndex: number

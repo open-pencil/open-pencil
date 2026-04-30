@@ -1,11 +1,13 @@
+import { createCaptureSession, createFrameCapture } from './capture-session'
 import { DrawCallCounter } from './draw-call-counter'
-import { CaptureStack, toSpeedscopeJSON } from './frame-capture'
-import { FrameStats } from './frame-stats'
+import { FrameStats } from './frame/stats'
 import { GPUTimer } from './gpu-timer'
-import { HudRenderer } from './hud-renderer'
+import { HudController } from './hud-controller'
 import { PhaseTimer } from './phase-timer'
+import { exportSpeedscopeCapture } from './speedscope-export'
 
-import type { FrameCapture } from './frame-capture'
+import type { CaptureSession } from './capture-session'
+import type { FrameCapture } from './frame/capture'
 import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
 
 const now = typeof performance !== 'undefined' ? () => performance.now() : () => 0
@@ -20,19 +22,18 @@ export class RenderProfiler {
   readonly gpuTimer: GPUTimer
   readonly drawCallCounter: DrawCallCounter
 
-  private hud: HudRenderer | null = null
-  private typeface: Typeface | null = null
-  private captureStack: CaptureStack | null = null
-  private captureFrameStart = 0
+  private readonly hud: HudController
+  private captureSession: CaptureSession | null = null
   private lastCapture: FrameCapture | null = null
   private renderStartTime = 0
 
   constructor(
-    private ck: CanvasKit,
+    ck: CanvasKit,
     gl: WebGL2RenderingContext | null
   ) {
     this.gpuTimer = new GPUTimer(gl)
     this.drawCallCounter = new DrawCallCounter(gl)
+    this.hud = new HudController(ck)
   }
 
   toggle(): void {
@@ -84,38 +85,25 @@ export class RenderProfiler {
 
   beginCapture(): void {
     this.capturing = true
-    this.captureStack = new CaptureStack()
-    this.captureFrameStart = now()
-    this.captureStack.reset(this.captureFrameStart)
+    this.captureSession = createCaptureSession(now())
   }
 
   endCapture(): FrameCapture | null {
-    if (!this.capturing || !this.captureStack) return null
+    if (!this.capturing || !this.captureSession) return null
     this.capturing = false
 
-    const capture: FrameCapture = {
-      timestamp: this.captureFrameStart,
-      totalTimeMs: now() - this.captureFrameStart,
-      cpuTimeMs: this.stats.cpuTime,
-      gpuTimeMs: this.gpuTimer.lastGpuTimeMs,
-      totalNodes: this.stats.totalNodes,
-      culledNodes: this.stats.culledNodes,
-      drawCalls: this.stats.drawCalls,
-      scenePictureCacheHit: this.stats.scenePictureCacheHit,
-      rootProfiles: this.captureStack.getRootProfiles()
-    }
-
+    const capture = createFrameCapture(this.captureSession, this.stats, this.gpuTimer, now)
     this.lastCapture = capture
-    this.captureStack = null
+    this.captureSession = null
     return capture
   }
 
   beginNode(nodeId: string, name: string, type: string, culled: boolean): void {
-    this.captureStack?.begin(nodeId, name, type, culled)
+    this.captureSession?.stack.begin(nodeId, name, type, culled)
   }
 
   endNode(drawCallsBefore: number): void {
-    this.captureStack?.end(this.drawCallCounter.count - drawCallsBefore)
+    this.captureSession?.stack.end(this.drawCallCounter.count - drawCallsBefore)
   }
 
   getLastCapture(): FrameCapture | null {
@@ -123,8 +111,7 @@ export class RenderProfiler {
   }
 
   exportSpeedscope(): string | null {
-    if (!this.lastCapture) return null
-    return toSpeedscopeJSON(this.lastCapture)
+    return exportSpeedscopeCapture(this.lastCapture)
   }
 
   downloadSpeedscope(): void {
@@ -140,24 +127,18 @@ export class RenderProfiler {
   }
 
   setTypeface(typeface: Typeface): void {
-    this.typeface = typeface
-    this.hud?.setTypeface(typeface)
+    this.hud.setTypeface(typeface)
   }
 
   drawHUD(canvas: Canvas, showRulers: boolean): void {
     if (!this.hudVisible) return
-    if (!this.hud) {
-      this.hud = new HudRenderer(this.ck)
-      if (this.typeface) this.hud.setTypeface(this.typeface)
-    }
-    this.hud.draw(canvas, this.stats, this.phases.averages, showRulers)
+    this.hud.draw(canvas, this.stats, this.phases, showRulers)
   }
 
   destroy(): void {
     this.gpuTimer.destroy()
     this.drawCallCounter.destroy()
-    this.hud?.destroy()
-    this.hud = null
+    this.hud.destroy()
     this.phases.clearPhases()
   }
 }

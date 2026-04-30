@@ -16,54 +16,33 @@ import {
 
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { computed } from 'vue'
-
-import { useI18n, useInlineRename } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue'
 import { useMenuUI } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
-import { useAppMenu } from '@/composables/use-app-menu'
-import { useEditorStore } from '@/stores/editor'
+import { useAppMenu } from '@/app/shell/menu/app-menu'
+import { useDocumentNameRename } from '@/app/shell/menu/document-name'
+import {
+  hasMenuSubItems,
+  isMenuCheckbox,
+  isMenuSeparator,
+  menuChecked,
+  menuDisabled,
+  menuLabel,
+  menuShortcut,
+  menuSubItems,
+  runMenuAction,
+  updateMenuChecked
+} from '@/app/shell/menu/entry'
+import { useEditorStore } from '@/app/editor/active-store'
 
 const store = useEditorStore()
 
-const DOCUMENT_NAME_ID = 'document-name'
-const rename = useInlineRename<'document-name'>((_id, name) => {
-  store.state.documentName = name
-})
-const editingName = computed(() => rename.editingId.value === DOCUMENT_NAME_ID)
-
-function setNameInputRef(el: HTMLInputElement | null) {
-  if (el) void rename.focusInput(el)
-}
-
-function startRename() {
-  rename.start(DOCUMENT_NAME_ID, store.state.documentName)
-}
-
-function commitRename(input: HTMLInputElement) {
-  rename.commit(DOCUMENT_NAME_ID, input)
-}
+const { rename, editingName, setNameInputRef, startRename, commitRename } =
+  useDocumentNameRename(store)
 
 const isMac = navigator.platform.includes('Mac')
 const mod = isMac ? '⌘' : 'Ctrl+'
 const { menu: t } = useI18n()
-
-interface MenuAction {
-  separator?: false
-  label: string
-  shortcut?: string
-  action?: () => void
-  disabled?: boolean
-  checked?: boolean
-  onCheckedChange?: (checked: boolean) => void
-  sub?: MenuEntry[]
-}
-
-interface MenuSeparator {
-  separator: true
-}
-
-type MenuEntry = MenuAction | MenuSeparator
 
 const { topMenus } = useAppMenu(mod)
 const menuCls = useMenuUI()
@@ -115,32 +94,23 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
           <MenubarPortal>
             <MenubarContent :side-offset="4" align="start" :class="mainMenuCls.content">
               <template v-for="(item, i) in menu.items" :key="i">
-                <MenubarSeparator
-                  v-if="'separator' in item && item.separator"
-                  :class="menuCls.separator"
-                />
-                <MenubarSub v-else-if="'sub' in item && item.sub">
+                <MenubarSeparator v-if="isMenuSeparator(item)" :class="menuCls.separator" />
+                <MenubarSub v-else-if="hasMenuSubItems(item)">
                   <MenubarSubTrigger :class="menuCls.item">
-                    <span class="flex-1">{{ 'label' in item ? item.label : '' }}</span>
+                    <span class="flex-1">{{ menuLabel(item) }}</span>
                     <IconChevronRight class="size-3 text-muted" />
                   </MenubarSubTrigger>
                   <MenubarPortal>
                     <MenubarSubContent :side-offset="4" :class="subMenuCls.content">
-                      <template
-                        v-for="(sub, j) in 'sub' in item && item.sub ? item.sub : []"
-                        :key="j"
-                      >
-                        <MenubarSeparator
-                          v-if="'separator' in sub && sub.separator"
-                          :class="menuCls.separator"
-                        />
+                      <template v-for="(sub, j) in menuSubItems(item)" :key="j">
+                        <MenubarSeparator v-if="isMenuSeparator(sub)" :class="menuCls.separator" />
                         <MenubarCheckboxItem
-                          v-else-if="'onCheckedChange' in sub && sub.onCheckedChange"
-                          :model-value="'checked' in sub ? sub.checked : undefined"
+                          v-else-if="isMenuCheckbox(sub)"
+                          :model-value="menuChecked(sub)"
                           :class="menuCls.item"
-                          @update:model-value="sub.onCheckedChange?.($event as boolean)"
+                          @update:model-value="updateMenuChecked(sub, $event as boolean)"
                         >
-                          <span class="flex-1">{{ 'label' in sub ? sub.label : '' }}</span>
+                          <span class="flex-1">{{ menuLabel(sub) }}</span>
                           <MenubarItemIndicator class="text-surface">
                             <icon-lucide-check class="size-3.5" />
                           </MenubarItemIndicator>
@@ -148,27 +118,25 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
                         <MenubarItem
                           v-else
                           :class="menuCls.item"
-                          :disabled="'disabled' in sub ? sub.disabled : undefined"
-                          @select="'action' in sub ? sub.action?.() : undefined"
+                          :disabled="menuDisabled(sub)"
+                          @select="runMenuAction(sub)"
                         >
-                          <span class="flex-1">{{ 'label' in sub ? sub.label : '' }}</span>
-                          <span
-                            v-if="'shortcut' in sub && sub.shortcut"
-                            class="text-[11px] text-muted"
-                            >{{ sub.shortcut }}</span
-                          >
+                          <span class="flex-1">{{ menuLabel(sub) }}</span>
+                          <span v-if="menuShortcut(sub)" class="text-[11px] text-muted">{{
+                            menuShortcut(sub)
+                          }}</span>
                         </MenubarItem>
                       </template>
                     </MenubarSubContent>
                   </MenubarPortal>
                 </MenubarSub>
                 <MenubarCheckboxItem
-                  v-else-if="'onCheckedChange' in item && item.onCheckedChange"
-                  :model-value="'checked' in item ? item.checked : undefined"
+                  v-else-if="isMenuCheckbox(item)"
+                  :model-value="menuChecked(item)"
                   :class="menuCls.item"
-                  @update:model-value="item.onCheckedChange?.($event as boolean)"
+                  @update:model-value="updateMenuChecked(item, $event as boolean)"
                 >
-                  <span class="flex-1">{{ 'label' in item ? item.label : '' }}</span>
+                  <span class="flex-1">{{ menuLabel(item) }}</span>
                   <MenubarItemIndicator class="text-surface">
                     <icon-lucide-check class="size-3.5" />
                   </MenubarItemIndicator>
@@ -176,12 +144,12 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
                 <MenubarItem
                   v-else
                   :class="menuCls.item"
-                  :disabled="'disabled' in item ? item.disabled : undefined"
-                  @select="'action' in item ? item.action?.() : undefined"
+                  :disabled="menuDisabled(item)"
+                  @select="runMenuAction(item)"
                 >
-                  <span class="flex-1">{{ 'label' in item ? item.label : '' }}</span>
-                  <span v-if="'shortcut' in item && item.shortcut" class="text-[11px] text-muted">{{
-                    item.shortcut
+                  <span class="flex-1">{{ menuLabel(item) }}</span>
+                  <span v-if="menuShortcut(item)" class="text-[11px] text-muted">{{
+                    menuShortcut(item)
                   }}</span>
                 </MenubarItem>
               </template>

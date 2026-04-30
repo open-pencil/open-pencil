@@ -1,5 +1,5 @@
-import { parseColor } from '../../../color'
-import { generateId } from '../../../scene-graph'
+import { parseColor } from '#core/color'
+import { generateId } from '#core/scene-graph'
 
 import type {
   Color,
@@ -21,8 +21,8 @@ import type {
   VariableCollectionMode,
   VariableType,
   VariableValue
-} from '../../../scene-graph'
-import type { Vector } from '../../../types'
+} from '#core/scene-graph'
+import type { Vector } from '#core/types'
 
 export interface PenDocument {
   version: string

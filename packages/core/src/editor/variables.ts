@@ -1,4 +1,4 @@
-import type { Variable, VariableCollection, VariableType, VariableValue } from '../scene-graph'
+import type { Variable, VariableCollection, VariableType, VariableValue } from '#core/scene-graph'
 import type { EditorContext } from './types'
 
 export function createVariableActions(ctx: EditorContext) {

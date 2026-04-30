@@ -4,7 +4,7 @@ import * as React from './mini-react'
 import { renderTree, type RenderResult } from './renderer'
 import { resolveToTree, type TreeNode } from './tree'
 
-import type { SceneGraph } from '../scene-graph'
+import type { SceneGraph } from '#core/scene-graph'
 
 /**
  * Build a component function from a JSX string using sucrase.

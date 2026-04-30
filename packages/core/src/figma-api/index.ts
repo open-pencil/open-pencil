@@ -1,6 +1,6 @@
-import { IS_BROWSER } from '../constants'
-import { computeBounds } from '../geometry'
-import { copyFills, copyStrokes, copyEffects } from '../scene-graph/copy'
+import { IS_BROWSER } from '#core/constants'
+import { computeBounds } from '#core/geometry'
+import { copyFills, copyStrokes, copyEffects } from '#core/scene-graph/copy'
 import {
   FigmaNodeProxy,
   INTERNAL_ID,
@@ -10,7 +10,7 @@ import {
   type NodeProxyHost
 } from './proxy'
 
-import type { RasterExportFormat } from '../io/formats/raster'
+import type { RasterExportFormat } from '#core/io/formats/raster'
 import type {
   SceneGraph,
   NodeType,
@@ -18,8 +18,8 @@ import type {
   VariableCollection,
   VariableType,
   VariableValue
-} from '../scene-graph'
-import type { Rect, Vector } from '../types'
+} from '#core/scene-graph'
+import type { Rect, Vector } from '#core/types'
 
 export { FigmaNodeProxy } from './proxy'
 export type { FigmaFont, FigmaFontName } from './proxy'

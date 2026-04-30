@@ -214,11 +214,14 @@ async function setupFrameChild(rotation: number) {
       .map((childId: string) => store.graph.getNode(childId))
       .find((node: { type: string } | undefined) => node?.type === 'RECTANGLE')
     if (!child) return null
-    const abs = store.graph.getAbsolutePosition(frame.id)
-    const cx = abs.x + frame.width / 2
-    const cy = abs.y + frame.height / 2
-    const childCx = abs.x + child.x + child.width / 2
-    const childCy = abs.y + child.y + child.height / 2
+    const parent = frame.parentId ? store.graph.getNode(frame.parentId) : null
+    const parentAbs = parent ? store.graph.getAbsolutePosition(parent.id) : { x: 0, y: 0 }
+    const frameX = parentAbs.x + frame.x
+    const frameY = parentAbs.y + frame.y
+    const cx = frameX + frame.width / 2
+    const cy = frameY + frame.height / 2
+    const childCx = frameX + child.x + child.width / 2
+    const childCy = frameY + child.y + child.height / 2
     const rad = (frame.rotation * Math.PI) / 180
     const dx = childCx - cx
     const dy = childCy - cy
@@ -226,8 +229,8 @@ async function setupFrameChild(rotation: number) {
       childId: child.id,
       hitX: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
       hitY: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
-      missX: abs.x + 20,
-      missY: abs.y + 20,
+      missX: frameX + 20,
+      missY: frameY + 20,
     }
   })
 

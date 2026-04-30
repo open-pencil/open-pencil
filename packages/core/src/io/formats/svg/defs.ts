@@ -1,11 +1,11 @@
-import { colorToHex } from '../../../color'
-import { colorToDisplayCss, getDefaultRenderColorSpace } from '../../../color/management'
+import { colorToHex } from '#core/color'
+import { colorToDisplayCss, getDefaultRenderColorSpace } from '#core/color/management'
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 
-import type { RenderColorSpace } from '../../../color/management'
-import type { Effect, Fill, SceneGraph, SceneNode } from '../../../scene-graph'
-import type { Color } from '../../../types'
+import type { RenderColorSpace } from '#core/color/management'
+import type { Effect, Fill, SceneGraph, SceneNode } from '#core/scene-graph'
+import type { Color } from '#core/types'
 
 export interface SVGExportContext {
   defs: SVGNode[]

@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-import { initCanvasKit } from '../../packages/cli/src/headless'
+import { initCanvasKit } from '#cli/headless'
 import {
   computeAllLayouts,
   initCodec,

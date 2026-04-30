@@ -4,9 +4,9 @@ import { useFileDialog, useObjectUrl } from '@vueuse/core'
 
 import AppSelect from './ui/AppSelect.vue'
 
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 
-import type { Fill, ImageScaleMode } from '@open-pencil/core'
+import type { Fill, ImageScaleMode } from '@open-pencil/core/scene-graph'
 
 const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
   { value: 'FILL', label: 'Fill' },

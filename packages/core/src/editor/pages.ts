@@ -1,47 +1,25 @@
-import { getDefaultCanvasBgColor } from '../constants'
-import { computeAllLayouts } from '../layout'
-import { collectFontKeys } from '../text/fonts'
+import { computeAllLayouts } from '#core/layout'
+import { collectFontKeys } from '#core/text/fonts'
 
-import type { Color } from '../types'
+import { createPageViewportStore } from './page-viewports'
+
+import type { Color } from '#core/types'
 import type { EditorContext } from './types'
 
-interface PageViewport {
-  panX: number
-  panY: number
-  zoom: number
-  pageColor: Color
-}
-
 export function createPageActions(ctx: EditorContext) {
-  const pageViewports = new Map<string, PageViewport>()
+  const pageViewportStore = createPageViewportStore(ctx)
 
   async function switchPage(pageId: string) {
     const page = ctx.graph.getNode(pageId)
     if (page?.type !== 'CANVAS') return
 
-    pageViewports.set(ctx.state.currentPageId, {
-      panX: ctx.state.panX,
-      panY: ctx.state.panY,
-      zoom: ctx.state.zoom,
-      pageColor: { ...ctx.state.pageColor }
-    })
+    pageViewportStore.saveCurrentPageViewport()
 
     ctx.state.currentPageId = pageId
     ctx.state.enteredContainerId = null
     ctx.state.selectedIds = new Set()
 
-    const vp = pageViewports.get(pageId)
-    if (vp) {
-      ctx.state.panX = vp.panX
-      ctx.state.panY = vp.panY
-      ctx.state.zoom = vp.zoom
-      ctx.state.pageColor = { ...vp.pageColor }
-    } else {
-      ctx.state.panX = 0
-      ctx.state.panY = 0
-      ctx.state.zoom = 1
-      ctx.state.pageColor = { ...getDefaultCanvasBgColor() }
-    }
+    pageViewportStore.restorePageViewport(pageId)
 
     const toLoad = collectFontKeys(
       ctx.graph,
@@ -69,7 +47,7 @@ export function createPageActions(ctx: EditorContext) {
     if (pages.length <= 1) return
     const idx = pages.findIndex((p) => p.id === pageId)
     ctx.graph.deleteNode(pageId)
-    pageViewports.delete(pageId)
+    pageViewportStore.deletePageViewport(pageId)
     if (ctx.state.currentPageId === pageId) {
       const newIdx = Math.min(idx, pages.length - 2)
       const remaining = ctx.graph.getPages()
@@ -86,9 +64,12 @@ export function createPageActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
-  function clearPageViewports() {
-    pageViewports.clear()
+  return {
+    switchPage,
+    addPage,
+    deletePage,
+    renamePage,
+    setPageColor,
+    clearPageViewports: pageViewportStore.clearPageViewports
   }
-
-  return { switchPage, addPage, deletePage, renamePage, setPageColor, clearPageViewports }
 }

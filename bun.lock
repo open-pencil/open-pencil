@@ -24,6 +24,7 @@
         "@tauri-apps/plugin-opener": "^2",
         "@tauri-apps/plugin-shell": "^2.3.5",
         "@unhead/vue": "^2.1.10",
+        "@use-gesture/vanilla": "^10.3.1",
         "@vueuse/core": "^14.2.1",
         "ai": "^6.0.116",
         "canvaskit-wasm": "^0.40.0",
@@ -39,6 +40,7 @@
         "tailwind-merge": "^3.5.0",
         "tailwind-variants": "^3.2.2",
         "tailwindcss": "^4.2.1",
+        "tinykeys": "^3.0.0",
         "trystero": "^0.22.0",
         "valibot": "^1.2.0",
         "vue": "^3.5.29",
@@ -88,7 +90,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "bin": {
         "openpencil": "./src/index.ts",
       },
@@ -104,7 +106,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "dependencies": {
         "@iconify/utils": "^3.1.0",
         "canvaskit-wasm": "^0.40.0",
@@ -139,7 +141,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "bin": {
         "openpencil-mcp": "./dist/index.js",
       },
@@ -158,10 +160,11 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "dependencies": {
         "@nanostores/i18n": "^1.2.2",
         "@nanostores/vue": "^1.1.0",
+        "@use-gesture/vanilla": "^10.3.1",
         "@vueuse/core": "^14.2.1",
         "nanostores": "^1.2.0",
       },
@@ -1114,6 +1117,10 @@
     "@ungap/structured-clone": ["@ungap/structured-clone@1.3.0", "", {}, "sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g=="],
 
     "@unhead/vue": ["@unhead/vue@2.1.12", "", { "dependencies": { "hookable": "^6.0.1", "unhead": "2.1.12" }, "peerDependencies": { "vue": ">=3.5.18" } }, "sha512-zEWqg0nZM8acpuTZE40wkeUl8AhIe0tU0OkilVi1D4fmVjACrwoh5HP6aNqJ8kUnKsoy6D+R3Vi/O+fmdNGO7g=="],
+
+    "@use-gesture/core": ["@use-gesture/core@10.3.1", "", {}, "sha512-WcINiDt8WjqBdUXye25anHiNxPc0VOrlT8F6LLkU6cycrOGUDyY/yyFmsg3k8i5OLvv25llc0QC45GhR/C8llw=="],
+
+    "@use-gesture/vanilla": ["@use-gesture/vanilla@10.3.1", "", { "dependencies": { "@use-gesture/core": "10.3.1" } }, "sha512-lT4scGLu59ovA3zmtUonukAGcA0AdOOh+iwNDS05Bsu7Lq9aZToDHhI6D8Q2qvsVraovtsLLYwPrWdG/noMAKw=="],
 
     "@valibot/to-json-schema": ["@valibot/to-json-schema@1.6.0", "", { "peerDependencies": { "valibot": "^1.3.0" } }, "sha512-d6rYyK5KVa2XdqamWgZ4/Nr+cXhxjy7lmpe6Iajw15J/jmU+gyxl2IEd1Otg1d7Rl3gOQL5reulnSypzBtYy1A=="],
 
@@ -2346,6 +2353,8 @@
     "tinyexec": ["tinyexec@1.0.4", "", {}, "sha512-u9r3uZC0bdpGOXtlxUIdwf9pkmvhqJdrVCH9fapQtgy/OeTTMZ1nqH7agtvEfmGui6e1XxjcdrlxvxJvc3sMqw=="],
 
     "tinyglobby": ["tinyglobby@0.2.15", "", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.3" } }, "sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ=="],
+
+    "tinykeys": ["tinykeys@3.0.0", "", {}, "sha512-nazawuGv5zx6MuDfDY0rmfXjuOGhD5XU2z0GLURQ1nzl0RUe9OuCJq+0u8xxJZINHe+mr7nw8PWYYZ9WhMFujw=="],
 
     "tinypool": ["tinypool@2.1.0", "", {}, "sha512-Pugqs6M0m7Lv1I7FtxN4aoyToKg1C4tu+/381vH35y8oENM/Ai7f7C4StcoK4/+BSw9ebcS8jRiVrORFKCALLw=="],
 

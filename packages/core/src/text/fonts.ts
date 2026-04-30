@@ -6,9 +6,9 @@ import {
   CJK_FALLBACK_FAMILIES_LINUX,
   CJK_GOOGLE_FONTS,
   GOOGLE_FONTS_API_KEY
-} from '../constants'
+} from '#core/constants'
 
-import type { SceneGraph } from '../scene-graph'
+import type { SceneGraph } from '#core/scene-graph'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 export interface FontInfo {
@@ -160,8 +160,8 @@ export async function fetchBundledFont(url: string): Promise<ArrayBuffer | null>
     const response = await fetch(url)
     return response.arrayBuffer()
   }
-  const { readFile } = await import('node:fs/promises')
-  const { fileURLToPath } = await import('node:url')
+  const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
+  const { fileURLToPath } = await import(/* @vite-ignore */ 'node:url')
   const assetPath = fileURLToPath(new URL(`../../assets${url}`, import.meta.url))
   const buf = await readFile(assetPath)
   return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)

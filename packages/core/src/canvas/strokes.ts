@@ -1,4 +1,4 @@
-import type { SceneNode, Stroke } from '../scene-graph'
+import type { SceneNode, Stroke } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
 

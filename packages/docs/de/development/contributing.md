@@ -69,22 +69,22 @@ Entwickler und KI-Agenten sollten `AGENTS.md` im Repo-Root lesen ([auf GitHub an
 
 ## Schlüsseldateien
 
-Engine-Quellcode lebt in `packages/core/src/`. Die `src/engine/`- und `src/kiwi/`-Dateien der App sind Re-Export-Shims — bearbeiten Sie das Core-Paket, nicht die Shims.
+Der Core-Engine-Quellcode lebt in `packages/core/src/`. App-spezifischer Editor-, Dokument-, KI-, Kollaborations-, Shell-, Demo- und Automatisierungscode liegt unter `src/app/*`; das Vue SDK verwaltet wiederverwendbaren Canvas- und Composable-Code unter `packages/vue/src/`.
 
 | Datei | Zweck |
 |-------|-------|
-| `packages/core/src/scene-graph.ts` | Szenengraph: Knoten, Variablen, Instanzen, Hit-Testing |
-| `packages/core/src/renderer.ts` | CanvasKit-Rendering-Pipeline |
+| `packages/core/src/scene-graph/` | Szenengraph: Knoten, Variablen, Instanzen, Hit-Testing |
+| `packages/core/src/canvas/renderer.ts` | CanvasKit-Rendering-Pipeline |
 | `packages/core/src/layout.ts` | Yoga-Layout-Adapter |
-| `packages/core/src/undo.ts` | Rückgängig/Wiederherstellen-Manager |
+| `packages/core/src/scene-graph/undo.ts` | Rückgängig/Wiederherstellen-Manager |
 | `packages/core/src/clipboard.ts` | Figma-kompatible Zwischenablage |
-| `packages/core/src/vector.ts` | Vektornetzwerk-Modell |
-| `packages/core/src/kiwi/codec.ts` | Kiwi-Binär-Encoder/Decoder |
+| `packages/core/src/vector/` | Vektornetzwerk-Modell |
+| `packages/core/src/kiwi/binary/codec.ts` | Kiwi-Binär-Encoder/Decoder |
 | `packages/core/src/kiwi/fig-import.ts` | .fig-Datei-Import-Logik |
 | `packages/core/src/tools/` | Vereinheitlichte Werkzeugdefinitionen (KI, MCP, CLI) |
-| `packages/core/src/figma-api.ts` | Figma Plugin API-Implementierung |
+| `packages/core/src/figma-api/` | Figma Plugin API-Implementierung |
 | `packages/mcp/src/server.ts` | MCP-Server-Factory |
 | `packages/cli/src/index.ts` | CLI-Einstiegspunkt |
-| `src/stores/editor.ts` | Globaler Editor-Zustand |
-| `src/composables/use-canvas.ts` | Canvas-Rendering-Composable |
-| `src/composables/use-keyboard.ts` | Tastenkürzel-Behandlung |
+| `src/app/editor/session/create.ts` | Editor session assembly |
+| `packages/vue/src/canvas/CanvasRoot.vue` | Canvas-Rendering-Composable |
+| `src/app/shell/keyboard/use.ts` | Tastenkürzel-Behandlung |

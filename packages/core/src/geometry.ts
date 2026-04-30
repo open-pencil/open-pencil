@@ -67,19 +67,72 @@ export function rotatedBBox(
   return { left, right, top, bottom, centerX: (left + right) / 2, centerY: (top + bottom) / 2 }
 }
 
+interface BoundsAccumulator {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+function createBoundsAccumulator(): BoundsAccumulator {
+  return { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
+}
+
+function includePoint(bounds: BoundsAccumulator, x: number, y: number): void {
+  bounds.minX = Math.min(bounds.minX, x)
+  bounds.minY = Math.min(bounds.minY, y)
+  bounds.maxX = Math.max(bounds.maxX, x)
+  bounds.maxY = Math.max(bounds.maxY, y)
+}
+
+function includeRect(bounds: BoundsAccumulator, rect: Rect): void {
+  includePoint(bounds, rect.x, rect.y)
+  includePoint(bounds, rect.x + rect.width, rect.y + rect.height)
+}
+
+function boundsToRect(bounds: BoundsAccumulator): Rect {
+  return bounds.minX === Infinity
+    ? { x: 0, y: 0, width: 0, height: 0 }
+    : {
+        x: bounds.minX,
+        y: bounds.minY,
+        width: bounds.maxX - bounds.minX,
+        height: bounds.maxY - bounds.minY
+      }
+}
+
 export function computeBounds(items: Iterable<Rect>): Rect {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
-  for (const item of items) {
-    minX = Math.min(minX, item.x)
-    minY = Math.min(minY, item.y)
-    maxX = Math.max(maxX, item.x + item.width)
-    maxY = Math.max(maxY, item.y + item.height)
-  }
-  if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+  const bounds = createBoundsAccumulator()
+  for (const item of items) includeRect(bounds, item)
+  return boundsToRect(bounds)
+}
+
+export function polygonVertices(node: {
+  width: number
+  height: number
+  pointCount: number
+  type: string
+  starInnerRadius: number
+}): Vector[] {
+  const cx = node.width / 2
+  const cy = node.height / 2
+  const rx = node.width / 2
+  const ry = node.height / 2
+  const pointCount = Math.max(3, node.pointCount)
+  const isStar = node.type === 'STAR'
+  const innerRatio = isStar ? node.starInnerRadius : 1
+  const totalPoints = isStar ? pointCount * 2 : pointCount
+  const angleOffset = -Math.PI / 2
+
+  return Array.from({ length: totalPoints }, (_, index) => {
+    const angle = angleOffset + (2 * Math.PI * index) / totalPoints
+    const isInner = isStar && index % 2 === 1
+    const radius = isInner ? innerRatio : 1
+    return {
+      x: cx + rx * radius * Math.cos(angle),
+      y: cy + ry * radius * Math.sin(angle)
+    }
+  })
 }
 
 function strokeOverflow(strokes?: Stroke[]): number {
@@ -123,19 +176,12 @@ export function computeAbsoluteBounds(
   nodes: Iterable<{ id: string; width: number; height: number }>,
   getAbsolutePosition: (id: string) => Vector
 ): Rect {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
+  const bounds = createBoundsAccumulator()
   for (const n of nodes) {
     const abs = getAbsolutePosition(n.id)
-    minX = Math.min(minX, abs.x)
-    minY = Math.min(minY, abs.y)
-    maxX = Math.max(maxX, abs.x + n.width)
-    maxY = Math.max(maxY, abs.y + n.height)
+    includeRect(bounds, { x: abs.x, y: abs.y, width: n.width, height: n.height })
   }
-  if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+  return boundsToRect(bounds)
 }
 
 export function computeVisualBounds(
@@ -149,24 +195,18 @@ export function computeVisualBounds(
   }>,
   getAbsolutePosition: (id: string) => Vector
 ): Rect {
-  let minX = Infinity,
-    minY = Infinity,
-    maxX = -Infinity,
-    maxY = -Infinity
+  const bounds = createBoundsAccumulator()
 
   for (const n of nodes) {
     const abs = getAbsolutePosition(n.id)
     const bbox = rotatedBBox(abs.x, abs.y, n.width, n.height, n.rotation ?? 0)
     const stroke = strokeOverflow(n.strokes)
     const effects = effectOverflow(n.effects)
-    minX = Math.min(minX, bbox.left - stroke - effects.left)
-    minY = Math.min(minY, bbox.top - stroke - effects.top)
-    maxX = Math.max(maxX, bbox.right + stroke + effects.right)
-    maxY = Math.max(maxY, bbox.bottom + stroke + effects.bottom)
+    includePoint(bounds, bbox.left - stroke - effects.left, bbox.top - stroke - effects.top)
+    includePoint(bounds, bbox.right + stroke + effects.right, bbox.bottom + stroke + effects.bottom)
   }
 
-  if (minX === Infinity) return { x: 0, y: 0, width: 0, height: 0 }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+  return boundsToRect(bounds)
 }
 
 export interface VisualBounds {
@@ -223,10 +263,7 @@ function geometryCommandCoordCount(command: number): number | null {
 }
 
 export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): Rect | null {
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
+  const bounds = createBoundsAccumulator()
 
   for (const path of paths) {
     const blob = path.commandsBlob
@@ -240,16 +277,13 @@ export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): 
         if (offset + 8 > blob.length) break
         const x = dv.getFloat32(offset, true)
         const y = dv.getFloat32(offset + 4, true)
-        minX = Math.min(minX, x)
-        minY = Math.min(minY, y)
-        maxX = Math.max(maxX, x)
-        maxY = Math.max(maxY, y)
+        includePoint(bounds, x, y)
         offset += 8
       }
     }
   }
 
-  return minX === Infinity ? null : { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
+  return bounds.minX === Infinity ? null : boundsToRect(bounds)
 }
 
 function transformLocalPoint(node: VisualBoundsNode, point: Vector): Vector {

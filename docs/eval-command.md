@@ -61,8 +61,8 @@ bun open-pencil eval design.fig --code '...' -o modified.fig
 
 | Class | Location | Role |
 |-------|----------|------|
-| `FigmaAPI` | `packages/core/src/figma-api.ts` | Proxy object implementing `figma.*` methods against `SceneGraph` |
-| `FigmaNode` | `packages/core/src/figma-api.ts` | Proxy wrapping `SceneNode` with Figma-style property access (`.fills`, `.resize()`, `.appendChild()`, etc.) |
+| `FigmaAPI` | `packages/core/src/figma-api/` | Proxy object implementing `figma.*` methods against `SceneGraph` |
+| `FigmaNode` | `packages/core/src/figma-api/` | Proxy wrapping `SceneNode` with Figma-style property access (`.fills`, `.resize()`, `.appendChild()`, etc.) |
 | `eval` command | `packages/cli/src/commands/eval.ts` | CLI command that loads doc, creates API, executes code |
 
 ### Why in `@open-pencil/core`?
@@ -330,16 +330,10 @@ Options:
 
 ## Shared with AI Tools
 
-The `FigmaAPI` class is the **same API surface** that AI tools use. Currently `src/ai/tools.ts` calls `store.createShape()`, `store.updateNodeWithUndo()`, etc. — these should be refactored to go through `FigmaAPI`:
+The `FigmaAPI` class is the **same API surface** that AI tools use. App AI tools are wired from `src/app/ai/tools/index.ts` through the shared core tool definitions, so CLI scripts, MCP calls, and chat tool calls execute the same scene-graph operations:
 
 ```ts
-// Before (current AI tools)
-execute: async ({ type, x, y, width, height }) => {
-  const id = store.createShape(type, x, y, width, height)
-  return { id }
-}
-
-// After (using FigmaAPI)
+// Tool implementation using FigmaAPI
 execute: async ({ type, x, y, width, height }) => {
   const frame = figma.createFrame()
   frame.resize(width, height)
@@ -355,13 +349,14 @@ This ensures CLI scripts and AI tools behave identically.
 
 ```
 packages/core/src/
-  figma-api.ts          # FigmaAPI class + FigmaNode proxy (Phase 1–4)
-  figma-api.test.ts     # Unit tests against headless SceneGraph
+  figma-api/            # FigmaAPI class + FigmaNode proxy
+  tools/                # Shared ToolDef operations used by AI, MCP, and eval helpers
 
 packages/cli/src/commands/
   eval.ts               # CLI command
 
-packages/cli/src/commands/eval.test.ts  # Integration tests
+src/app/ai/tools/
+  index.ts              # App chat wiring for shared core tool definitions
 ```
 
 ## Test Plan
@@ -398,7 +393,7 @@ packages/cli/src/commands/eval.test.ts  # Integration tests
 3. **CLI `eval` command** — argument parsing, code wrapping, output formatting
 4. **Unit tests** — all 12 test groups above
 5. **CLI integration tests** — all 7 test groups above
-6. **Wire to AI tools** — refactor `src/ai/tools.ts` to use `FigmaAPI` where possible
+6. **Wire to AI tools** — expose shared core tool definitions through `src/app/ai/tools/index.ts`
 7. **Phase 2** — components & instances
 8. **Phase 3** — variables
 9. **Phase 4** — styles, boolean ops, JSX renderer

@@ -1,9 +1,9 @@
-import { computeDescendantVisualBounds } from '../../../geometry'
-import { extractExportGraph } from '../../subgraph'
+import { computeDescendantVisualBounds } from '#core/geometry'
+import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
-import type { SkiaRenderer } from '../../../canvas'
-import type { RenderColorSpace } from '../../../color/management'
-import type { SceneGraph } from '../../../scene-graph'
+import type { SkiaRenderer } from '#core/canvas'
+import type { RenderColorSpace } from '#core/color/management'
+import type { SceneGraph } from '#core/scene-graph'
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
@@ -14,17 +14,6 @@ interface RenderOptions {
   format: ExportFormat
   quality?: number
   colorSpace?: RenderColorSpace
-}
-
-function findPageId(graph: SceneGraph, nodeId: string): string | null {
-  let current = graph.getNode(nodeId)
-  while (current?.parentId) {
-    const parent = graph.getNode(current.parentId)
-    if (!parent) return null
-    if (parent.type === 'CANVAS') return parent.id
-    current = parent
-  }
-  return current?.type === 'CANVAS' ? current.id : null
 }
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {

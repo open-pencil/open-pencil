@@ -1,10 +1,10 @@
-import { IS_BROWSER } from '../../../constants'
-import { importNodeChanges } from '../../../kiwi/fig-import'
-import { parseFigBuffer } from '../../../kiwi/fig-parse-core'
-import { deserializeSceneGraph } from '../../../kiwi/graph-transfer'
+import { IS_BROWSER } from '#core/constants'
+import { importNodeChanges } from '#core/kiwi/fig/import'
+import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
+import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 
-import type { SerializedSceneGraph } from '../../../kiwi/graph-transfer'
-import type { SceneGraph } from '../../../scene-graph'
+import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import type { SceneGraph } from '#core/scene-graph'
 
 export interface ParseFigFileOptions {
   populate?: 'all' | 'first-page'
@@ -24,7 +24,7 @@ interface WorkerParseResult {
 
 function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Promise<SceneGraph> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('../../../kiwi/fig-parse-worker.ts', import.meta.url), {
+    const worker = new Worker(new URL('../../../kiwi/fig/parse/worker.ts', import.meta.url), {
       type: 'module'
     })
 

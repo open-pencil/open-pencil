@@ -4,10 +4,10 @@ import { ref, computed, watch, onScopeDispose } from 'vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 import { useExport, useI18n } from '@open-pencil/vue'
 
-import type { ExportFormatId } from '@open-pencil/vue/controls/useExport'
+import type { ExportFormatId } from '@open-pencil/vue'
 
 const editorStore = useEditorStore()
 const { panels } = useI18n()
@@ -144,9 +144,9 @@ onScopeDispose(() => {
       class="flex items-center gap-1.5 py-0.5"
     >
       <AppSelect
+        v-if="formatSupportsScale(setting.format)"
         :model-value="setting.scale"
         :options="SCALE_OPTIONS"
-        :disabled="!formatSupportsScale(setting.format)"
         @update:model-value="updateScale(i, Number($event))"
       />
       <AppSelect

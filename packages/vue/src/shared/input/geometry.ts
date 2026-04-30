@@ -1,15 +1,87 @@
-import {
-  CORNER_ROTATE_ZONE,
-  getAbsoluteRotation,
-  getWorldHandles,
-  HANDLE_HIT_RADIUS
-} from '@open-pencil/core'
+import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
+import rotateCursorSvg from '#vue/shared/assets/rotate-cursor.svg?raw'
 
-import resizeCursorSvg from '../assets/resize-cursor.svg?raw'
-import rotateCursorSvg from '../assets/rotate-cursor.svg?raw'
+import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/core/canvas'
+import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
+import { degToRad } from '@open-pencil/core/geometry'
 
-import type { CornerPosition, HandlePosition } from './types'
-import type { Vector, SceneGraph, SceneNode } from '@open-pencil/core'
+import type { CornerPosition, HandlePosition } from '#vue/shared/input/types'
+import type { Editor } from '@open-pencil/core/editor'
+import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
+import type { Vector } from '@open-pencil/core/types'
+
+export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
+  if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }
+  const rect = canvas.getBoundingClientRect()
+  const sx = e.clientX - rect.left
+  const sy = e.clientY - rect.top
+  const { x: cx, y: cy } = editor.screenToCanvas(sx, sy)
+  return { sx, sy, cx, cy }
+}
+
+export function canvasToLocalPoint(
+  cx: number,
+  cy: number,
+  scopeId: string,
+  editor: Editor
+): { lx: number; ly: number } {
+  const node = editor.graph.getNode(scopeId)
+  if (!node) return { lx: cx, ly: cy }
+  const abs = editor.graph.getAbsolutePosition(scopeId)
+  let dx = cx - abs.x
+  let dy = cy - abs.y
+  if (node.rotation !== 0) {
+    const hw = node.width / 2
+    const hh = node.height / 2
+    const rad = degToRad(-node.rotation)
+    const cos = Math.cos(rad)
+    const sin = Math.sin(rad)
+    const rx = dx - hw
+    const ry = dy - hh
+    dx = rx * cos - ry * sin + hw
+    dy = rx * sin + ry * cos + hh
+  }
+  return { lx: dx, ly: dy }
+}
+
+export function hitTestInEditorScope(
+  cx: number,
+  cy: number,
+  deep: boolean,
+  editor: Editor,
+  canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
+): SceneNode | null {
+  const scopeId = editor.state.enteredContainerId
+
+  const renderer = editor.renderer
+  if (!renderer) return null
+  if (scopeId) {
+    if (!editor.graph.getNode(scopeId)) {
+      editor.state.enteredContainerId = null
+    } else {
+      const { lx, ly } = canvasToLocal(cx, cy, scopeId)
+      return deep
+        ? editor.graph.hitTestDeep(lx, ly, scopeId)
+        : editor.graph.hitTest(lx, ly, scopeId)
+    }
+  }
+  return deep
+    ? editor.graph.hitTestDeep(cx, cy, editor.state.currentPageId)
+    : editor.graph.hitTest(cx, cy, editor.state.currentPageId)
+}
+
+export function isInsideEditorContainerBounds(
+  cx: number,
+  cy: number,
+  containerId: string,
+  editor: Editor,
+  canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
+): boolean {
+  const container = editor.graph.getNode(containerId)
+  if (!container) return false
+  const { lx, ly } = canvasToLocal(cx, cy, containerId)
+  return lx >= 0 && lx <= container.width && ly >= 0 && ly <= container.height
+}
 
 export function getScreenRect(
   absX: number,
@@ -113,8 +185,6 @@ export function getHitHandleByMatrix(
     const handleKey = key as HandlePosition
     const p = handles[handleKey]
 
-    if (!p) continue
-
     const dx = cx - p.x
     const dy = cy - p.y
 
@@ -130,6 +200,29 @@ export function getHitHandleByMatrix(
 
   return null
 }
+export function hitTestTopRotationHandleByMatrix(
+  cx: number,
+  cy: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  zoom: number = 1
+): boolean {
+  const handles = getWorldHandles(node, graph)
+  const rotation = getAbsoluteRotation(node, graph)
+  const topMidX = (handles.nw.x + handles.ne.x) / 2
+  const topMidY = (handles.nw.y + handles.ne.y) / 2
+  const distance = 24 / zoom
+  const rad = degToRad(rotation - 90)
+  const handle = {
+    x: topMidX + Math.cos(rad) * distance,
+    y: topMidY + Math.sin(rad) * distance
+  }
+  const radius = HANDLE_HIT_RADIUS / zoom
+  const dx = cx - handle.x
+  const dy = cy - handle.y
+  return dx * dx + dy * dy <= radius * radius
+}
+
 export function hitTestCornerRotationByMatrix(
   cx: number,
   cy: number,
@@ -142,7 +235,7 @@ export function hitTestCornerRotationByMatrix(
   const HANDLE_R = HANDLE_HIT_RADIUS / zoom
   const ROTATE_R = CORNER_ROTATE_ZONE / zoom
 
-  const corners: Array<{ key: CornerPosition; p: { x: number; y: number } }> = [
+  const corners: Array<{ key: CornerPosition; p: Vector }> = [
     { key: 'nw', p: handles.nw },
     { key: 'ne', p: handles.ne },
     { key: 'se', p: handles.se },
@@ -206,7 +299,7 @@ export function cornerRotationCursor(corner: CornerPosition, nodeRotation = 0): 
 export function buildResizeCursor(angleDeg: number): string {
   const normalized = ((Math.round(angleDeg) % 360) + 360) % 360
 
-  let svg = resizeCursorSvg
+  const svg = resizeCursorSvg
     .replace(
       '<path',
       `<g transform='translate(512 512) rotate(${normalized}) translate(-512 -512)'><path`

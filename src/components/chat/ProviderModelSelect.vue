@@ -10,7 +10,7 @@ import {
 } from 'reka-ui'
 
 import { useSelectUI } from '@/components/ui/select'
-import { useAIChat } from '@/composables/use-chat'
+import { useAIChat } from '@/app/ai/chat/use'
 
 const { modelID, providerDef } = useAIChat()
 const selectCls = useSelectUI({

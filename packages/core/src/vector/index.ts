@@ -1,3 +1,15 @@
+export {
+  breakAtVertex,
+  computeAccurateBounds,
+  deleteVertex,
+  findAllHandles,
+  findOppositeHandle,
+  mirrorHandle,
+  nearestPointOnNetwork,
+  removeVertex,
+  splitSegmentAt
+} from './bezier'
+
 import { computeAccurateBounds } from './bezier'
 
 import type {
@@ -7,8 +19,8 @@ import type {
   VectorSegment,
   VectorVertex,
   WindingRule
-} from '../scene-graph'
-import type { Rect } from '../types'
+} from '#core/scene-graph'
+import type { Rect } from '#core/types'
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
 // --- vectorNetworkBlob binary format ---

@@ -1,9 +1,9 @@
-import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '../constants'
-import { vectorNetworkToPath } from '../vector'
-import { computeAccurateBounds } from '../vector/bezier'
+import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
+import { vectorNetworkToPath } from '#core/vector'
+import { computeAccurateBounds } from '#core/vector/bezier'
 
-import type { VectorVertex, VectorSegment, VectorRegion, SceneGraph } from '../scene-graph'
-import type { Vector } from '../types'
+import type { VectorVertex, VectorSegment, VectorRegion, SceneGraph } from '#core/scene-graph'
+import type { Vector } from '#core/types'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
 

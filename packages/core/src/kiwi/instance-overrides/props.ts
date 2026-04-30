@@ -1,4 +1,5 @@
-import { guidToString } from '../convert'
+import { guidToString } from '#core/kiwi/node-change/convert'
+
 import { resolveOverrideTarget, repopulateInstance } from './resolve'
 
 import type {

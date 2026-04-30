@@ -2,13 +2,13 @@ import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { ok, printError } from '../format'
-import { loadDocument } from '../headless'
+import { isAppMode, requireFile, rpc } from '#cli/app-client'
+import { ok, printError } from '#cli/format'
+import { loadDocument } from '#cli/headless'
 
-import type { RasterExportFormat } from '@open-pencil/core'
+import type { RasterExportFormat } from '@open-pencil/core/io'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']

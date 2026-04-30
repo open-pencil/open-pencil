@@ -1,6 +1,6 @@
-import { copyFills, copyStrokes, copyEffects, copyStyleRuns } from '../../scene-graph/copy'
+import { copyFills, copyStrokes, copyEffects, copyStyleRuns } from '#core/scene-graph/copy'
 
-import type { SceneGraph, SceneNode } from '../../scene-graph'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 /**
  * Copy appearance props from source to target (text, visibility, fills, etc.).

@@ -5,7 +5,7 @@ import Tip from '@/components/ui/Tip.vue'
 import { useSectionUI } from '@/components/ui/section'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
 
-import { useEditorStore } from '@/stores/editor'
+import { useEditorStore } from '@/app/editor/active-store'
 
 const emit = defineEmits<{ openDialog: [] }>()
 

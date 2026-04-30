@@ -1,27 +1,33 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
 
 import { toolCursor, useCanvas, useCanvasDrop, useCanvasInput, useTextEdit } from '@open-pencil/vue'
-import { useCollabInjected } from '@/composables/use-collab'
-import { useEditorStore } from '@/stores/editor'
+import { useCollabInjected } from '@/app/collab/use'
+import { useEditorStore } from '@/app/editor/active-store'
+import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
+import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { fadeOutGlobalLoader } from '@/app/editor/canvas/loader-overlay'
 import CanvasMenu from './CanvasMenu.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
+const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
+const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
+const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
+
+useCanvas(sceneCanvasRef, store, {
+  layer: 'scene',
+  showRulers: false,
+  onReady: fadeOutGlobalLoader
+})
 const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
   canvasRef,
   store,
   {
-    onReady() {
-      const loader = document.getElementById('loader')
-      if (loader) {
-        loader.classList.add('fade-out')
-        setTimeout(() => loader.remove(), 300)
-      }
-    }
+    layer: 'overlays'
   }
 )
 const { cursorOverride } = useCanvasInput(
@@ -30,45 +36,34 @@ const { cursorOverride } = useCanvasInput(
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
-  (cx, cy) => {
-    store.state.cursorCanvasX = cx
-    store.state.cursorCanvasY = cy
-    collab?.updateCursor(cx, cy, store.state.currentPageId)
-  }
+  updateCursor
 )
 
 useTextEdit(canvasRef, store)
 const { isDraggingOver } = useCanvasDrop(canvasRef, store)
 
-watch(
-  () => [...store.state.selectedIds],
-  (ids) => collab?.updateSelection(ids)
-)
-
 const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))
-
-function onContextMenu(e: MouseEvent) {
-  const canvas = canvasRef.value
-  if (!canvas) return
-  const rect = canvas.getBoundingClientRect()
-  const { x: cx, y: cy } = store.screenToCanvas(e.clientX - rect.left, e.clientY - rect.top)
-  store.selectAtPoint(cx, cy)
-}
 </script>
 
 <template>
   <ContextMenuRoot :modal="false">
-    <ContextMenuTrigger as-child @contextmenu="onContextMenu">
+    <ContextMenuTrigger as-child @contextmenu="selectAtContextPoint">
       <div
         data-test-id="canvas-area"
         class="canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden"
       >
         <canvas
+          ref="sceneCanvasRef"
+          data-test-id="scene-canvas-element"
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 size-full outline-none"
+        />
+        <canvas
           ref="canvasRef"
           data-test-id="canvas-element"
           tabindex="-1"
           :style="{ cursor }"
-          class="block size-full touch-none outline-none"
+          class="absolute inset-0 block size-full touch-none outline-none"
         />
         <Transition
           enter-active-class="transition-opacity duration-150"

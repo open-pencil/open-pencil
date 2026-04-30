@@ -1,5 +1,6 @@
-export { readFigFile, parseFigFile } from './fig-file'
-export { importNodeChanges } from './fig-import'
+export { prefetchFigmaSchema } from '#core/clipboard'
+export { readFigFile, parseFigFile } from './fig/file'
+export { importNodeChanges } from './fig/import'
 export {
   initCodec,
   encodeMessage,
@@ -27,7 +28,7 @@ export {
   type VariableDataValuesEntry,
   type ParentIndex,
   type FigmaMessage
-} from './codec'
+} from './binary/codec'
 export {
   MESSAGE_TYPES,
   NODE_TYPES,
@@ -46,4 +47,4 @@ export {
   getKiwiMessageType,
   parseVarint,
   FIG_WIRE_MAGIC
-} from './protocol'
+} from './binary/protocol'

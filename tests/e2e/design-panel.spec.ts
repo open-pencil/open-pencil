@@ -184,12 +184,12 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
 
   await fillButton.click()
   await canvas.waitForRender()
-  await expect(fillButton.locator('icon-lucide-eye-off')).toBeVisible()
+  await expect(fillButton).toHaveAttribute('data-visible', 'false')
   expect((await getNode(id!))!.fills[0]?.visible).toBe(false)
 
   await fillButton.click()
   await canvas.waitForRender()
-  await expect(fillButton.locator('icon-lucide-eye')).toBeVisible()
+  await expect(fillButton).toHaveAttribute('data-visible', 'true')
   expect((await getNode(id!))!.fills[0]?.visible).toBe(true)
 
   await canvas.undo()
@@ -207,12 +207,12 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
 
   await strokeButton.click()
   await canvas.waitForRender()
-  await expect(strokeButton.locator('icon-lucide-eye-off')).toBeVisible()
+  await expect(strokeButton).toHaveAttribute('data-visible', 'false')
   expect((await getNode(id!))!.strokes[0]?.visible).toBe(false)
 
   await strokeButton.click()
   await canvas.waitForRender()
-  await expect(strokeButton.locator('icon-lucide-eye')).toBeVisible()
+  await expect(strokeButton).toHaveAttribute('data-visible', 'true')
   expect((await getNode(id!))!.strokes[0]?.visible).toBe(true)
 
   await canvas.undo()
@@ -230,12 +230,12 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
 
   await effectButton.click()
   await canvas.waitForRender()
-  await expect(effectButton.locator('icon-lucide-eye-off')).toBeVisible()
+  await expect(effectButton).toHaveAttribute('data-visible', 'false')
   expect((await getNode(id!))!.effects[0]?.visible).toBe(false)
 
   await effectButton.click()
   await canvas.waitForRender()
-  await expect(effectButton.locator('icon-lucide-eye')).toBeVisible()
+  await expect(effectButton).toHaveAttribute('data-visible', 'true')
   expect((await getNode(id!))!.effects[0]?.visible).toBe(true)
 
   await canvas.undo()

@@ -1,3 +1,5 @@
+import ACP_DESIGN_CONTEXT from '@/app/ai/acp/design-context.md'
+
 export {
   IS_BROWSER,
   IS_TAURI,
@@ -55,9 +57,9 @@ export {
   COMPONENT_LABEL_ICON_GAP,
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
-} from '@open-pencil/core'
+} from '@open-pencil/core/constants'
 
-import type { Color } from '@open-pencil/core'
+import type { Color } from '@open-pencil/core/types'
 
 export const TRYSTERO_APP_ID = 'openpencil'
 export const ROOM_ID_LENGTH = 8
@@ -92,7 +94,7 @@ export {
   ZOOM_DIVISOR,
   ZOOM_SCALE_MIN,
   ZOOM_SCALE_MAX
-} from '@open-pencil/core'
+} from '@open-pencil/core/constants'
 
 export const HANDLE_SIZE = 6
 
@@ -116,9 +118,4 @@ export const HANDLE_HIT_RADIUS = 6
 
 export const ACP_PERMISSION_TIMEOUT_MS = 60_000
 
-export const ACP_DESIGN_CONTEXT = `You are inside OpenPencil, an open-source design editor (like Figma). \
-Use the open-pencil MCP tools to create and modify designs on the live canvas. \
-Key tools: render (JSX to design), create_shape, set_fill, set_layout, find_nodes, get_page_tree, export_image. \
-The render tool accepts JSX with components: Frame, Text, Rectangle, Ellipse, Icon, Group, Section. \
-Props: w, h, bg, flex, gap, p, rounded, color, size, weight, items, justify, stroke, opacity, shadow. \
-Do NOT write HTML files or use terminal commands — draw directly on the canvas using the MCP tools.`
+export { ACP_DESIGN_CONTEXT }

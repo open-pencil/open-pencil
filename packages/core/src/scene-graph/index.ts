@@ -1,586 +1,39 @@
-/* eslint-disable max-lines -- core class; instance, hit-test methods already extracted */
+export * from './snap'
+export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
+
 import { createNanoEvents } from 'nanoevents'
 
-import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '../constants'
-import {
-  hitTest as hitTestFn,
-  hitTestDeep as hitTestDeepFn,
-  hitTestFrame as hitTestFrameFn
-} from './hit-test'
-import {
-  createInstance as createInstanceFn,
-  populateInstanceChildren as populateInstanceChildrenFn,
-  syncInstances as syncInstancesFn,
-  detachInstance as detachInstanceFn,
-  getMainComponent as getMainComponentFn,
-  getInstances as getInstancesFn
-} from './instances'
+import * as HitTest from './hit-test'
+import * as Instances from './instances'
+import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
+import { normalizeVectorNetwork } from './vector-network'
+import * as Variables from './variables'
 
-export type { GUID, Color } from '../types'
-import { getAbsolutePosition } from '@open-pencil/core/canvas/coordinate'
+export type { GUID, Color } from '#core/types'
+export * from './types'
 
-import type { Matrix, Vector, Color, Rect } from '../types'
+import { getAbsolutePosition } from '#core/canvas/coordinate'
+
+import type { Color, Rect, Vector } from '#core/types'
 import type { Emitter } from 'nanoevents'
+import type {
+  DocumentColorSpace,
+  NodeType,
+  SceneGraphEventHandlers,
+  SceneGraphEvents,
+  SceneNode,
+  Variable,
+  VariableCollection,
+  VariableType,
+  VariableValue
+} from './types'
 
-export interface SceneGraphEvents {
-  'node:created': (node: SceneNode) => void
-  'node:updated': (id: string, changes: Partial<SceneNode>) => void
-  'node:deleted': (id: string) => void
-  'node:reparented': (nodeId: string, oldParentId: string | null, newParentId: string) => void
-  'node:reordered': (nodeId: string, parentId: string, index: number) => void
-}
-
-export type DocumentColorSpace = 'srgb' | 'display-p3'
-
-export type HandleMirroring = 'NONE' | 'ANGLE' | 'ANGLE_AND_LENGTH'
-export type WindingRule = 'NONZERO' | 'EVENODD'
-
-export interface VectorVertex {
-  x: number
-  y: number
-  strokeCap?: string
-  strokeJoin?: string
-  cornerRadius?: number
-  handleMirroring?: HandleMirroring
-}
-
-export interface VectorSegment {
-  start: number
-  end: number
-  tangentStart: Vector
-  tangentEnd: Vector
-}
-
-export interface VectorRegion {
-  windingRule: WindingRule
-  loops: number[][]
-}
-
-export interface VectorNetwork {
-  vertices: VectorVertex[]
-  segments: VectorSegment[]
-  regions: VectorRegion[]
-}
-
-/** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
-export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
-  return {
-    vertices: vn.vertices.map((v) => ({ ...v })),
-    segments: vn.segments.map((s) => ({
-      ...s,
-      tangentStart: { ...s.tangentStart },
-      tangentEnd: { ...s.tangentEnd }
-    })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
-  }
-}
-
-/**
- * Validate a VectorNetwork structure, returning an array of error messages.
- * Empty array means the network is valid.
- */
-export function validateVectorNetwork(vn: VectorNetwork): string[] {
-  const errors: string[] = []
-  if (!Array.isArray(vn.vertices)) {
-    errors.push('vertices must be an array')
-    return errors
-  }
-  if (!Array.isArray(vn.segments)) {
-    errors.push('segments must be an array')
-    return errors
-  }
-  if (!Array.isArray(vn.regions)) errors.push('regions must be an array')
-  const vertexCount = vn.vertices.length
-  for (let i = 0; i < vn.vertices.length; i++) {
-    const v = vn.vertices[i]
-    if (typeof v.x !== 'number' || typeof v.y !== 'number') {
-      errors.push(`vertex[${i}]: x and y must be numbers`)
-    }
-  }
-  for (let i = 0; i < vn.segments.length; i++) {
-    const s = vn.segments[i]
-    if (typeof s.start !== 'number' || typeof s.end !== 'number') {
-      errors.push(`segment[${i}]: start and end must be numbers`)
-    } else {
-      if (s.start < 0 || s.start >= vertexCount)
-        errors.push(`segment[${i}]: start index ${s.start} out of range`)
-      if (s.end < 0 || s.end >= vertexCount)
-        errors.push(`segment[${i}]: end index ${s.end} out of range`)
-    }
-  }
-  return errors
-}
-
-/**
- * Ensure every segment has tangentStart/tangentEnd.
- * Missing tangents default to {x:0, y:0} (straight line segments).
- * Use at system boundaries where input may come from JSON/MCP.
- */
-export function normalizeVectorNetwork(vn: VectorNetwork): VectorNetwork {
-  const ZERO: Vector = { x: 0, y: 0 }
-  return {
-    vertices: vn.vertices,
-    segments: vn.segments.map((s) => ({
-      start: s.start,
-      end: s.end,
-      tangentStart: (s as Partial<VectorSegment>).tangentStart ?? { ...ZERO },
-      tangentEnd: (s as Partial<VectorSegment>).tangentEnd ?? { ...ZERO }
-    })),
-    regions: vn.regions
-  }
-}
-
-export interface GeometryPath {
-  windingRule: WindingRule
-  commandsBlob: Uint8Array
-}
-
-export type NodeType =
-  | 'CANVAS'
-  | 'FRAME'
-  | 'RECTANGLE'
-  | 'ROUNDED_RECTANGLE'
-  | 'ELLIPSE'
-  | 'TEXT'
-  | 'LINE'
-  | 'STAR'
-  | 'POLYGON'
-  | 'VECTOR'
-  | 'GROUP'
-  | 'SECTION'
-  | 'COMPONENT'
-  | 'COMPONENT_SET'
-  | 'INSTANCE'
-  | 'CONNECTOR'
-  | 'SHAPE_WITH_TEXT'
-
-export type FillType =
-  | 'SOLID'
-  | 'GRADIENT_LINEAR'
-  | 'GRADIENT_RADIAL'
-  | 'GRADIENT_ANGULAR'
-  | 'GRADIENT_DIAMOND'
-  | 'IMAGE'
-export type BlendMode =
-  | 'NORMAL'
-  | 'DARKEN'
-  | 'MULTIPLY'
-  | 'COLOR_BURN'
-  | 'LIGHTEN'
-  | 'SCREEN'
-  | 'COLOR_DODGE'
-  | 'OVERLAY'
-  | 'SOFT_LIGHT'
-  | 'HARD_LIGHT'
-  | 'DIFFERENCE'
-  | 'EXCLUSION'
-  | 'HUE'
-  | 'SATURATION'
-  | 'COLOR'
-  | 'LUMINOSITY'
-  | 'PASS_THROUGH'
-export type ImageScaleMode = 'FILL' | 'FIT' | 'CROP' | 'TILE'
-
-export interface GradientStop {
-  color: Color
-  position: number
-}
-
-export type GradientTransform = Matrix
-
-export interface Fill {
-  type: FillType
-  color: Color
-  opacity: number
-  visible: boolean
-  blendMode?: BlendMode
-  gradientStops?: GradientStop[]
-  gradientTransform?: GradientTransform
-  imageHash?: string
-  imageScaleMode?: ImageScaleMode
-  imageTransform?: GradientTransform
-}
-
-export type StrokeCap = 'NONE' | 'ROUND' | 'SQUARE' | 'ARROW_LINES' | 'ARROW_EQUILATERAL'
-export type StrokeJoin = 'MITER' | 'BEVEL' | 'ROUND'
-export type MaskType = 'ALPHA' | 'VECTOR' | 'LUMINANCE'
-
-export interface Stroke {
-  color: Color
-  weight: number
-  opacity: number
-  visible: boolean
-  align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
-  cap?: StrokeCap
-  join?: StrokeJoin
-  dashPattern?: number[]
-}
-
-export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
-  color: Color
-  offset: Vector
-  radius: number
-  spread: number
-  visible: boolean
-  blendMode?: BlendMode
-}
-
-export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
-export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'
-export type TextAlignVertical = 'TOP' | 'CENTER' | 'BOTTOM'
-export type TextCase = 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE'
-export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
-export type TextDirection = 'AUTO' | 'LTR' | 'RTL'
-export type LayoutDirection = 'AUTO' | 'LTR' | 'RTL'
-
-export interface CharacterStyleOverride {
-  fontWeight?: number
-  italic?: boolean
-  textDecoration?: TextDecoration
-  fontSize?: number
-  fontFamily?: string
-  letterSpacing?: number
-  lineHeight?: number | null
-  fills?: Fill[]
-}
-
-export interface StyleRun {
-  start: number
-  length: number
-  style: CharacterStyleOverride
-}
-
-export interface ArcData {
-  startingAngle: number
-  endingAngle: number
-  innerRadius: number
-}
-
-export type LayoutMode = 'NONE' | 'HORIZONTAL' | 'VERTICAL' | 'GRID'
-export type LayoutSizing = 'FIXED' | 'HUG' | 'FILL'
-
-export type GridTrackSizing = 'FIXED' | 'FR' | 'AUTO'
-
-export interface GridTrack {
-  sizing: GridTrackSizing
-  value: number
-}
-
-export interface GridPosition {
-  column: number
-  row: number
-  columnSpan: number
-  rowSpan: number
-}
-export type LayoutAlign = 'MIN' | 'CENTER' | 'MAX' | 'SPACE_BETWEEN'
-export type LayoutCounterAlign = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'BASELINE'
-export type LayoutAlignSelf = 'AUTO' | 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'BASELINE'
-export type LayoutWrap = 'NO_WRAP' | 'WRAP'
-
-export interface PluginDataEntry {
-  pluginId: string
-  key: string
-  value: string
-}
-
-export interface SharedPluginDataEntry {
-  namespace: string
-  key: string
-  value: string
-}
-
-export interface PluginRelaunchDataEntry {
-  pluginId: string
-  command: string
-  message: string
-  isDeleted: boolean
-}
-
-export interface SceneNode {
-  id: string
-  type: NodeType
-  name: string
-  parentId: string | null
-  childIds: string[]
-
-  x: number
-  y: number
-  width: number
-  height: number
-  rotation: number
-  figmaDerivedLayout: { x?: number; y?: number; width?: number; height?: number } | null
-
-  fills: Fill[]
-  strokes: Stroke[]
-  effects: Effect[]
-  opacity: number
-
-  cornerRadius: number
-  topLeftRadius: number
-  topRightRadius: number
-  bottomRightRadius: number
-  bottomLeftRadius: number
-  independentCorners: boolean
-  cornerSmoothing: number
-
-  visible: boolean
-  locked: boolean
-  clipsContent: boolean
-
-  blendMode: BlendMode
-
-  text: string
-  fontSize: number
-  fontFamily: string
-  fontWeight: number
-  italic: boolean
-  textAlignHorizontal: 'LEFT' | 'CENTER' | 'RIGHT' | 'JUSTIFIED'
-  textDirection: TextDirection
-  textAlignVertical: TextAlignVertical
-  textAutoResize: TextAutoResize
-  textCase: TextCase
-  textDecoration: TextDecoration
-  lineHeight: number | null
-  letterSpacing: number
-  maxLines: number | null
-  styleRuns: StyleRun[]
-
-  horizontalConstraint: ConstraintType
-  verticalConstraint: ConstraintType
-
-  layoutMode: LayoutMode
-  layoutDirection: LayoutDirection
-  layoutWrap: LayoutWrap
-  primaryAxisAlign: LayoutAlign
-  counterAxisAlign: LayoutCounterAlign
-  primaryAxisSizing: LayoutSizing
-  counterAxisSizing: LayoutSizing
-  itemSpacing: number
-  counterAxisSpacing: number
-  paddingTop: number
-  paddingRight: number
-  paddingBottom: number
-  paddingLeft: number
-
-  layoutPositioning: 'AUTO' | 'ABSOLUTE'
-  layoutGrow: number
-  layoutAlignSelf: LayoutAlignSelf
-
-  vectorNetwork: VectorNetwork | null
-  fillGeometry: GeometryPath[]
-  strokeGeometry: GeometryPath[]
-
-  arcData: ArcData | null
-
-  strokeCap: StrokeCap
-  strokeJoin: StrokeJoin
-  dashPattern: number[]
-
-  borderTopWeight: number
-  borderRightWeight: number
-  borderBottomWeight: number
-  borderLeftWeight: number
-  independentStrokeWeights: boolean
-
-  strokeMiterLimit: number
-
-  minWidth: number | null
-  maxWidth: number | null
-  minHeight: number | null
-  maxHeight: number | null
-
-  isMask: boolean
-  maskType: MaskType
-
-  gridTemplateColumns: GridTrack[]
-  gridTemplateRows: GridTrack[]
-  gridColumnGap: number
-  gridRowGap: number
-  gridPosition: GridPosition | null
-
-  counterAxisAlignContent: 'AUTO' | 'SPACE_BETWEEN'
-  itemReverseZIndex: boolean
-  strokesIncludedInLayout: boolean
-
-  expanded: boolean
-  textTruncation: 'DISABLED' | 'ENDING'
-  autoRename: boolean
-
-  pointCount: number
-  starInnerRadius: number
-
-  componentId: string | null
-  overrides: Record<string, unknown>
-
-  boundVariables: Record<string, string>
-
-  pluginData: PluginDataEntry[]
-  sharedPluginData: SharedPluginDataEntry[]
-  pluginRelaunchData: PluginRelaunchDataEntry[]
-
-  internalOnly: boolean
-
-  flipX: boolean
-  flipY: boolean
-
-  textPicture: Uint8Array | null
-}
-
-export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'
-export type VariableValue = Color | number | string | boolean | { aliasId: string }
-
-export interface Variable {
-  id: string
-  name: string
-  type: VariableType
-  collectionId: string
-  valuesByMode: Record<string, VariableValue>
-  description: string
-  hiddenFromPublishing: boolean
-}
-
-export interface VariableCollectionMode {
-  modeId: string
-  name: string
-}
-
-export interface VariableCollection {
-  id: string
-  name: string
-  modes: VariableCollectionMode[]
-  defaultModeId: string
-  variableIds: string[]
-}
-
+export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
 let nextLocalID = 1
 
 export function generateId(): string {
   return `0:${nextLocalID++}`
 }
-
-function createDefaultNode(type: NodeType, overrides: Partial<SceneNode> = {}): SceneNode {
-  return {
-    id: generateId(),
-    type,
-    name: type.charAt(0) + type.slice(1).toLowerCase(),
-    parentId: null,
-    childIds: [],
-    x: 0,
-    y: 0,
-    width: 100,
-    height: 100,
-    rotation: 0,
-    figmaDerivedLayout: null,
-    fills:
-      type === 'TEXT'
-        ? [{ type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
-        : [],
-    strokes: [],
-    effects: [],
-    opacity: 1,
-    cornerRadius: 0,
-    topLeftRadius: 0,
-    topRightRadius: 0,
-    bottomRightRadius: 0,
-    bottomLeftRadius: 0,
-    independentCorners: false,
-    cornerSmoothing: 0,
-    visible: true,
-    locked: false,
-    clipsContent: false,
-    text: '',
-    fontSize: 14,
-    fontFamily: DEFAULT_FONT_FAMILY,
-    fontWeight: 400,
-    italic: false,
-    textAlignHorizontal: 'LEFT',
-    textDirection: 'AUTO',
-    lineHeight: null,
-    letterSpacing: 0,
-    layoutMode: 'NONE',
-    layoutDirection: 'AUTO',
-    layoutWrap: 'NO_WRAP',
-    primaryAxisAlign: 'MIN',
-    counterAxisAlign: 'MIN',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 0,
-    counterAxisSpacing: 0,
-    paddingTop: 0,
-    paddingRight: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    blendMode: 'PASS_THROUGH',
-    layoutPositioning: 'AUTO',
-    layoutGrow: 0,
-    layoutAlignSelf: 'AUTO',
-    vectorNetwork: null,
-    fillGeometry: [],
-    strokeGeometry: [],
-    arcData: null,
-    textAlignVertical: 'TOP',
-    textAutoResize: 'NONE',
-    textCase: 'ORIGINAL',
-    textDecoration: 'NONE',
-    maxLines: null,
-    styleRuns: [],
-    horizontalConstraint: 'MIN',
-    verticalConstraint: 'MIN',
-    strokeCap: 'NONE',
-    strokeJoin: 'MITER',
-    dashPattern: [],
-    borderTopWeight: 0,
-    borderRightWeight: 0,
-    borderBottomWeight: 0,
-    borderLeftWeight: 0,
-    independentStrokeWeights: false,
-    strokeMiterLimit: DEFAULT_STROKE_MITER_LIMIT,
-    minWidth: null,
-    maxWidth: null,
-    minHeight: null,
-    maxHeight: null,
-    isMask: false,
-    maskType: 'ALPHA',
-    gridTemplateColumns: [],
-    gridTemplateRows: [],
-    gridColumnGap: 0,
-    gridRowGap: 0,
-    gridPosition: null,
-    counterAxisAlignContent: 'AUTO',
-    itemReverseZIndex: false,
-    strokesIncludedInLayout: false,
-    expanded: true,
-    textTruncation: 'DISABLED',
-    autoRename: true,
-    pointCount: 5,
-    starInnerRadius: 0.38,
-    componentId: null,
-    overrides: {},
-    boundVariables: {},
-    pluginData: [],
-    sharedPluginData: [],
-    pluginRelaunchData: [],
-    internalOnly: false,
-    flipX: false,
-    flipY: false,
-    textPicture: null,
-    ...overrides
-  }
-}
-
-const CONTAINER_TYPES = new Set<NodeType>([
-  'CANVAS',
-  'FRAME',
-  'GROUP',
-  'SECTION',
-  'COMPONENT',
-  'COMPONENT_SET',
-  'INSTANCE'
-])
 
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
@@ -596,7 +49,7 @@ export class SceneGraph {
   instanceIndex = new Map<string, Set<string>>()
 
   constructor() {
-    const root = createDefaultNode('FRAME', {
+    const root = createDefaultNode(generateId, 'FRAME', {
       name: 'Document',
       width: 0,
       height: 0
@@ -625,36 +78,32 @@ export class SceneGraph {
     return this.nodes.get(id)
   }
 
+  onNodeEvents(handlers: SceneGraphEventHandlers): () => void {
+    const unbinds = [
+      handlers.created ? this.emitter.on('node:created', handlers.created) : null,
+      handlers.updated ? this.emitter.on('node:updated', handlers.updated) : null,
+      handlers.deleted ? this.emitter.on('node:deleted', handlers.deleted) : null,
+      handlers.reparented ? this.emitter.on('node:reparented', handlers.reparented) : null,
+      handlers.reordered ? this.emitter.on('node:reordered', handlers.reordered) : null
+    ].filter((unbind): unbind is () => void => !!unbind)
+
+    return () => {
+      for (const unbind of unbinds) unbind()
+    }
+  }
+
   // --- Variables ---
 
   addVariable(variable: Variable): void {
-    this.variables.set(variable.id, variable)
-    const collection = this.variableCollections.get(variable.collectionId)
-    if (collection && !collection.variableIds.includes(variable.id)) {
-      collection.variableIds.push(variable.id)
-    }
+    Variables.addVariable(this, variable)
   }
 
   removeVariable(id: string): void {
-    const variable = this.variables.get(id)
-    if (!variable) return
-    this.variables.delete(id)
-    const collection = this.variableCollections.get(variable.collectionId)
-    if (collection) {
-      collection.variableIds = collection.variableIds.filter((vid) => vid !== id)
-    }
-    for (const node of this.nodes.values()) {
-      for (const [field, varId] of Object.entries(node.boundVariables)) {
-        if (varId === id) delete node.boundVariables[field]
-      }
-    }
+    Variables.removeVariable(this, id)
   }
 
   addCollection(collection: VariableCollection): void {
-    this.variableCollections.set(collection.id, collection)
-    if (!this.activeMode.has(collection.id)) {
-      this.activeMode.set(collection.id, collection.defaultModeId)
-    }
+    Variables.addCollection(this, collection)
   }
 
   createVariable(
@@ -663,72 +112,23 @@ export class SceneGraph {
     collectionId: string,
     value?: VariableValue
   ): Variable {
-    const collection = this.variableCollections.get(collectionId)
-    if (!collection) throw new Error(`Collection "${collectionId}" not found`)
-    const id = generateId()
-    let defaultValue: VariableValue
-    if (value !== undefined) {
-      defaultValue = value
-    } else if (type === 'COLOR') {
-      defaultValue = { ...BLACK }
-    } else if (type === 'FLOAT') {
-      defaultValue = 0
-    } else if (type === 'BOOLEAN') {
-      defaultValue = false
-    } else {
-      defaultValue = ''
-    }
-    const valuesByMode: Record<string, VariableValue> = {}
-    for (const mode of collection.modes) {
-      valuesByMode[mode.modeId] = structuredClone(defaultValue)
-    }
-    const variable: Variable = {
-      id,
-      name,
-      type,
-      collectionId,
-      valuesByMode,
-      description: '',
-      hiddenFromPublishing: false
-    }
-    this.addVariable(variable)
-    return variable
+    return Variables.createVariable(this, generateId, name, type, collectionId, value)
   }
 
   createCollection(name: string): VariableCollection {
-    const id = generateId()
-    const modeId = generateId()
-    const collection: VariableCollection = {
-      id,
-      name,
-      modes: [{ modeId, name: 'Mode 1' }],
-      defaultModeId: modeId,
-      variableIds: []
-    }
-    this.addCollection(collection)
-    return collection
+    return Variables.createCollection(this, generateId, name)
   }
 
   removeCollection(id: string): void {
-    const collection = this.variableCollections.get(id)
-    if (collection) {
-      for (const varId of Array.from(collection.variableIds)) {
-        this.removeVariable(varId)
-      }
-    }
-    this.variableCollections.delete(id)
-    this.activeMode.delete(id)
+    Variables.removeCollection(this, id)
   }
 
   getActiveModeId(collectionId: string): string {
-    const mode = this.activeMode.get(collectionId)
-    if (mode) return mode
-    const collection = this.variableCollections.get(collectionId)
-    return collection?.defaultModeId ?? ''
+    return Variables.getActiveModeId(this, collectionId)
   }
 
   setActiveMode(collectionId: string, modeId: string): void {
-    this.activeMode.set(collectionId, modeId)
+    Variables.setActiveMode(this, collectionId, modeId)
   }
 
   resolveVariable(
@@ -736,62 +136,31 @@ export class SceneGraph {
     modeId?: string,
     visited?: Set<string>
   ): VariableValue | undefined {
-    if (visited?.has(variableId)) return undefined
-    const variable = this.variables.get(variableId)
-    if (!variable) return undefined
-    const collection = this.variableCollections.get(variable.collectionId)
-    const preferredModeId = modeId ?? this.getActiveModeId(variable.collectionId)
-    const fallbackModeId = collection?.defaultModeId
-    let value = Object.hasOwn(variable.valuesByMode, preferredModeId)
-      ? variable.valuesByMode[preferredModeId]
-      : undefined
-    if (
-      value === undefined &&
-      fallbackModeId &&
-      Object.hasOwn(variable.valuesByMode, fallbackModeId)
-    ) {
-      value = variable.valuesByMode[fallbackModeId]
-    }
-    value ??= Object.values(variable.valuesByMode)[0]
-    if (value && typeof value === 'object' && 'aliasId' in value) {
-      const seen = visited ?? new Set<string>()
-      seen.add(variableId)
-      return this.resolveVariable(value.aliasId, preferredModeId, seen)
-    }
-    return value
+    return Variables.resolveVariable(this, variableId, modeId, visited)
   }
 
   resolveColorVariable(variableId: string): Color | undefined {
-    const value = this.resolveVariable(variableId)
-    if (value && typeof value === 'object' && 'r' in value) return value
-    return undefined
+    return Variables.resolveColorVariable(this, variableId)
   }
 
   resolveNumberVariable(variableId: string): number | undefined {
-    const value = this.resolveVariable(variableId)
-    return typeof value === 'number' ? value : undefined
+    return Variables.resolveNumberVariable(this, variableId)
   }
 
   getVariablesForCollection(collectionId: string): Variable[] {
-    const collection = this.variableCollections.get(collectionId)
-    if (!collection) return []
-    return collection.variableIds
-      .map((id) => this.variables.get(id))
-      .filter((v): v is Variable => v !== undefined)
+    return Variables.getVariablesForCollection(this, collectionId)
   }
 
   getVariablesByType(type: VariableType): Variable[] {
-    return [...this.variables.values()].filter((v) => v.type === type)
+    return Variables.getVariablesByType(this, type)
   }
 
   bindVariable(nodeId: string, field: string, variableId: string): void {
-    const node = this.nodes.get(nodeId)
-    if (node) node.boundVariables[field] = variableId
+    Variables.bindVariable(this, nodeId, field, variableId)
   }
 
   unbindVariable(nodeId: string, field: string): void {
-    const node = this.nodes.get(nodeId)
-    if (node) delete node.boundVariables[field]
+    Variables.unbindVariable(this, nodeId, field)
   }
 
   getChildren(id: string): SceneNode[] {
@@ -844,7 +213,7 @@ export class SceneGraph {
   }
 
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(type, overrides)
+    const node = createDefaultNode(generateId, type, overrides)
     node.parentId = parentId
     this.nodes.set(node.id, node)
 
@@ -1022,11 +391,11 @@ export class SceneGraph {
   }
 
   hitTest(px: number, py: number, scopeId?: string): SceneNode | null {
-    return hitTestFn(this, px, py, scopeId)
+    return HitTest.hitTest(this, px, py, scopeId)
   }
 
   hitTestDeep(px: number, py: number, scopeId?: string): SceneNode | null {
-    return hitTestDeepFn(this, px, py, scopeId)
+    return HitTest.hitTestDeep(this, px, py, scopeId)
   }
 
   hitTestFrame(
@@ -1035,7 +404,7 @@ export class SceneGraph {
     excludeIds: Set<string>,
     scopeId?: string
   ): SceneNode | null {
-    return hitTestFrameFn(this, px, py, excludeIds, scopeId)
+    return HitTest.hitTestFrame(this, px, py, excludeIds, scopeId)
   }
 
   cloneTree(
@@ -1061,27 +430,27 @@ export class SceneGraph {
     parentId: string,
     overrides: Partial<SceneNode> = {}
   ): SceneNode | null {
-    return createInstanceFn(this, componentId, parentId, overrides)
+    return Instances.createInstance(this, componentId, parentId, overrides)
   }
 
   populateInstanceChildren(instanceId: string, componentId: string): void {
-    populateInstanceChildrenFn(this, instanceId, componentId)
+    Instances.populateInstanceChildren(this, instanceId, componentId)
   }
 
   syncInstances(componentId: string): void {
-    syncInstancesFn(this, componentId)
+    Instances.syncInstances(this, componentId)
   }
 
   detachInstance(instanceId: string): void {
-    detachInstanceFn(this, instanceId)
+    Instances.detachInstance(this, instanceId)
   }
 
   getMainComponent(instanceId: string): SceneNode | undefined {
-    return getMainComponentFn(this, instanceId)
+    return Instances.getMainComponent(this, instanceId)
   }
 
   getInstances(componentId: string): SceneNode[] {
-    return getInstancesFn(this, componentId)
+    return Instances.getInstances(this, componentId)
   }
 
   flattenTree(parentId?: string, depth = 0): Array<{ node: SceneNode; depth: number }> {

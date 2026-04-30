@@ -1,18 +1,9 @@
 import { defineCommand } from 'citty'
 
-import { executeRpcCommand } from '@open-pencil/core'
+import { loadRpcData } from '#cli/rpc-data'
+import { bold, fmtList, entity } from '#cli/format'
 
-import { isAppMode, requireFile, rpc } from '../app-client'
-import { bold, fmtList, entity } from '../format'
-import { loadDocument } from '../headless'
-
-import type { PageItem } from '@open-pencil/core'
-
-async function getData(file?: string): Promise<PageItem[]> {
-  if (isAppMode(file)) return rpc<PageItem[]>('pages')
-  const graph = await loadDocument(requireFile(file))
-  return executeRpcCommand(graph, 'pages', undefined) as PageItem[]
-}
+import type { PageItem } from '@open-pencil/core/rpc'
 
 export default defineCommand({
   meta: { description: 'List pages in a document' },
@@ -25,7 +16,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const pages = await getData(args.file)
+    const pages = await loadRpcData<PageItem[]>(args.file, 'pages')
 
     if (args.json) {
       console.log(JSON.stringify(pages, null, 2))

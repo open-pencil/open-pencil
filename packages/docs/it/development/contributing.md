@@ -72,25 +72,25 @@ Sviluppatori e agenti IA dovrebbero leggere `AGENTS.md` nella root del repo ([ve
 
 ## File chiave
 
-Il codice sorgente del motore si trova in `packages/core/src/`. I directory `src/engine/` e `src/kiwi/` dell'app sono shim di ri-esportazione — modificare il pacchetto core, non gli shim.
+Il codice sorgente del motore core si trova in `packages/core/src/`. Il codice specifico dell'app per editor, documenti, IA, collaborazione, shell, demo e automazione vive in `src/app/*`; l'SDK Vue contiene il codice canvas e composable riutilizzabile in `packages/vue/src/`.
 
 | File | Scopo |
 |------|-------|
-| `packages/core/src/scene-graph.ts` | Grafo scena: nodi, variabili, istanze, hit testing |
-| `packages/core/src/renderer.ts` | Pipeline di rendering CanvasKit |
+| `packages/core/src/scene-graph/` | Grafo scena: nodi, variabili, istanze, hit testing |
+| `packages/core/src/canvas/renderer.ts` | Pipeline di rendering CanvasKit |
 | `packages/core/src/layout.ts` | Adattatore layout Yoga |
-| `packages/core/src/undo.ts` | Gestore annulla/ripristina |
+| `packages/core/src/scene-graph/undo.ts` | Gestore annulla/ripristina |
 | `packages/core/src/clipboard.ts` | Appunti compatibili con Figma |
-| `packages/core/src/vector.ts` | Modello rete vettoriale |
-| `packages/core/src/render-image.ts` | Export immagine offscreen (PNG/JPG/WEBP) |
-| `packages/core/src/kiwi/codec.ts` | Encoder/decoder binario Kiwi |
+| `packages/core/src/vector/` | Modello rete vettoriale |
+| `packages/core/src/io/formats/raster/render.ts` | Export immagine offscreen (PNG/JPG/WEBP) |
+| `packages/core/src/kiwi/binary/codec.ts` | Encoder/decoder binario Kiwi |
 | `packages/core/src/kiwi/fig-import.ts` | Logica import file .fig |
 | `packages/cli/src/index.ts` | Punto di ingresso CLI |
 | `packages/core/src/tools/` | Definizioni strumenti unificate (IA, MCP, CLI) |
-| `packages/core/src/figma-api.ts` | Implementazione Figma Plugin API |
+| `packages/core/src/figma-api/` | Implementazione Figma Plugin API |
 | `packages/mcp/src/server.ts` | Factory del server MCP |
 | `packages/cli/src/commands/` | Comandi CLI (info, tree, find, export, eval, analyze) |
-| `src/stores/editor.ts` | Stato globale dell'editor |
-| `src/composables/use-canvas.ts` | Composable rendering canvas |
-| `src/composables/use-canvas-input.ts` | Gestione input mouse/touch |
-| `src/composables/use-keyboard.ts` | Gestione scorciatoie tastiera |
+| `src/app/editor/session/create.ts` | Editor session assembly |
+| `packages/vue/src/canvas/CanvasRoot.vue` | Composable rendering canvas |
+| `packages/vue/src/canvas/useCanvasInput.ts` | Gestione input mouse/touch |
+| `src/app/shell/keyboard/use.ts` | Gestione scorciatoie tastiera |

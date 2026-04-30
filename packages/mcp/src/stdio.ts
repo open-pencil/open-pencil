@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import { WebSocket } from 'ws'
 
+import { createStdioRpcBridge } from './stdio-bridge.js'
 import { MCP_VERSION, registerTools } from './server.js'
 
 const wsPort = parseInt(process.env.WS_PORT ?? '7601', 10)
@@ -11,101 +11,20 @@ const enableEval = process.env.OPENPENCIL_MCP_EVAL === '1'
 const mcpRoot = process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd()
 
 const wsUrl = `ws://${wsHost}:${wsPort}`
-let ws: WebSocket | null = null
-let registered = false
-
-const pending = new Map<
-  string,
-  {
-    resolve: (v: unknown) => void
-    reject: (e: Error) => void
-    timer: ReturnType<typeof setTimeout>
-  }
->()
-
-function connect() {
-  ws = new WebSocket(wsUrl)
-
-  ws.on('open', () => {
+const bridge = createStdioRpcBridge({
+  wsUrl,
+  onOpen: () => {
     process.stderr.write(`Connected to OpenPencil app at ${wsUrl}\n`)
-  })
+  },
+  onMalformedMessage: () => {
+    process.stderr.write('Malformed WS message\n')
+  },
+})
 
-  ws.on('message', (raw) => {
-    try {
-      let text: string
-      if (Buffer.isBuffer(raw)) text = raw.toString('utf8')
-      else if (Array.isArray(raw)) text = Buffer.concat(raw).toString('utf8')
-      else text = Buffer.from(raw).toString('utf8')
-      const msg = JSON.parse(text) as {
-        type: string
-        id?: string
-        token?: string
-        result?: unknown
-        error?: string
-        ok?: boolean
-      }
-      if (msg.type === 'register' && msg.token) {
-        registered = true
-        return
-      }
-      if (msg.type === 'response' && msg.id) {
-        const req = pending.get(msg.id)
-        if (!req) return
-        pending.delete(msg.id)
-        clearTimeout(req.timer)
-        if (msg.ok === false) req.reject(new Error(msg.error ?? 'RPC failed'))
-        else {
-          const { type: _, id: __, ...payload } = msg
-          req.resolve(payload)
-        }
-      }
-    } catch {
-      process.stderr.write('Malformed WS message\n')
-    }
-  })
-
-  ws.on('close', () => {
-    registered = false
-    for (const [id, req] of pending) {
-      clearTimeout(req.timer)
-      req.reject(new Error('WebSocket closed'))
-      pending.delete(id)
-    }
-    setTimeout(connect, 2000)
-  })
-
-  ws.on('error', () => {
-    ws?.close()
-  })
-}
-
-function sendRpc(body: Record<string, unknown>): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    if (!ws || ws.readyState !== WebSocket.OPEN || !registered) {
-      reject(
-        new Error(
-          'OpenPencil app is not connected. ' +
-            'STOP and tell the user: "The OpenPencil desktop app is not running or no document is open. ' +
-            'Please start the app and open a document, then try again." ' +
-            'Do NOT attempt to start the app yourself or retry automatically.'
-        )
-      )
-      return
-    }
-    const id = crypto.randomUUID()
-    const timer = setTimeout(() => {
-      pending.delete(id)
-      reject(new Error('RPC timeout (30s)'))
-    }, 30_000)
-    pending.set(id, { resolve, reject, timer })
-    ws.send(JSON.stringify({ type: 'request', id, ...body }))
-  })
-}
-
-connect()
+bridge.connect()
 
 const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-registerTools(mcpServer, { enableEval, mcpRoot, sendRpc })
+registerTools(mcpServer, { enableEval, mcpRoot, sendRpc: bridge.sendRpc })
 
 const transport = new StdioServerTransport()
 void mcpServer.connect(transport)

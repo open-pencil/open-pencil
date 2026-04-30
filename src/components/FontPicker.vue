@@ -3,7 +3,7 @@ import { FontPickerRoot } from '@open-pencil/vue'
 
 import { useSelectUI } from '@/components/ui/select'
 import { usePopoverUI } from '@/components/ui/popover'
-import { listFamilies } from '@/engine/fonts'
+import { listFamilies } from '@/app/editor/fonts'
 
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()

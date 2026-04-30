@@ -16,28 +16,22 @@ import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 
 import { ref } from 'vue'
-import { colorToCSS } from '@open-pencil/core'
 import { useI18n } from '@open-pencil/vue'
 
-import type { Variable } from '@open-pencil/core'
+import {
+  opacityFromPercent,
+  opacityPercent,
+  variableSwatchBackground
+} from '@/components/properties/color-style-row'
 
-type BindingApi = {
-  store: {
-    resolveColorVariable: (id: string) => unknown
-  }
-  colorVariables: { value: Variable[] }
-  filteredVariables: { value: Variable[] }
-  searchTerm: { value: string }
-  getBoundVariable: (nodeId: string, index: number) => Variable | undefined
-  bindVariable: (nodeId: string, index: number, variableId: string) => void
-  unbindVariable: (nodeId: string, index: number) => void
-}
+import type { ColorVariableBindingApi } from '@/components/properties/color-style-row'
+import type { Variable } from '@open-pencil/core/scene-graph'
 
 const { item, index, activeNodeId, bindingApi, visibilityTestId, unbindTestId } = defineProps<{
   item: { opacity: number; visible: boolean }
   index: number
   activeNodeId?: string | null
-  bindingApi: BindingApi
+  bindingApi: ColorVariableBindingApi
   visibilityTestId: string
   unbindTestId?: string
 }>()
@@ -61,10 +55,10 @@ const varPopoverOpen = ref(false)
     <ScrubInput
       class="w-12 shrink-0"
       suffix="%"
-      :model-value="Math.round(item.opacity * 100)"
+      :model-value="opacityPercent(item.opacity)"
       :min="0"
       :max="100"
-      @update:model-value="emit('patch', { opacity: Math.max(0, Math.min(1, $event / 100)) })"
+      @update:model-value="emit('patch', { opacity: opacityFromPercent($event) })"
     />
 
     <PopoverRoot
@@ -111,11 +105,7 @@ const varPopoverOpen = ref(false)
               >
                 <div
                   class="size-3 shrink-0 rounded-sm border border-border"
-                  :style="{
-                    background: bindingApi.store.resolveColorVariable(v.id)
-                      ? colorToCSS(bindingApi.store.resolveColorVariable(v.id) as never)
-                      : '#000'
-                  }"
+                  :style="{ background: variableSwatchBackground(bindingApi, v.id) }"
                 />
                 <span class="min-w-0 flex-1 truncate">{{ v.name }}</span>
               </ComboboxItem>
@@ -140,6 +130,7 @@ const varPopoverOpen = ref(false)
 
     <button
       :data-test-id="visibilityTestId"
+      :data-visible="item.visible ? 'true' : 'false'"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
       @click="emit('toggleVisibility')"
     >

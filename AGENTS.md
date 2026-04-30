@@ -2,7 +2,7 @@
 
 Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also runs in browser.
 
-**Roadmap:** `plan.md` — phases, tech stack, CLI architecture, test strategy, keyboard shortcuts.
+**Roadmap:** `PLAN.md` — phases, tech stack, CLI architecture, test strategy, keyboard shortcuts.
 
 ## Monorepo
 
@@ -15,7 +15,7 @@ Bun workspace with three packages:
 
 - `packages/vue` — `@open-pencil/vue`: headless Vue 3 SDK (Reka UI-style) for building custom OpenPencil-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
 
-The root app (`src/`) is the Tauri/Vite desktop editor. Its `src/engine/` files are thin re-export shims from `@open-pencil/core`. `src/composables/use-canvas.ts` re-exports from `@open-pencil/vue`.
+The root app (`src/`) is the Tauri/Vite desktop editor. App-specific editor, document, AI, collaboration, shell, tabs, demo, and automation code lives under `src/app/*`. The app consumes `@open-pencil/core` through targeted core subpath exports and `@open-pencil/vue` through the public Vue SDK entrypoint.
 
 ### Core subpath exports
 
@@ -66,7 +66,7 @@ Each module exports a factory: `createXxxActions(ctx: EditorContext) => { ... }`
 `create.ts` assembles context + all modules, spreads into a flat return object.
 `Editor` type = `ReturnType<typeof createEditor>`.
 
-The app store (`src/stores/editor.ts`) is a thin Vue wrapper: creates `shallowReactive` state, calls `createEditor()`, adds Vue-specific concerns (computed refs, file I/O, autosave, export, image placement, mobile clipboard).
+The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrapper: creates `shallowReactive` state, calls `createEditor()`, and assembles app-specific modules for document I/O, autosave, export, vector edit, pen resume, flashes, profiler, and mobile clipboard. Tabs live in `src/app/tabs/`; active editor access lives in `src/app/editor/active-store/`.
 
 ## Commands
 
@@ -176,21 +176,21 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - Each tool has: name, description, typed params, and an `execute(figma: FigmaAPI, args)` function
 - `defineTool()` gives type-safe params in the execute body; the array `ALL_TOOLS` erases the generics for adapters
 - AI adapter (`packages/core/src/tools/ai-adapter.ts`): `toolsToAI()` converts ToolDefs → valibot schemas + Vercel AI `tool()` wrappers
-- `src/ai/tools.ts` is just a thin wire: creates FigmaAPI from editor store, calls `toolsToAI()`
+- `src/app/ai/tools/index.ts` is just a thin wire: creates FigmaAPI from editor store, calls `toolsToAI()`
 - CLI commands (`packages/cli/src/commands/`) are **not** generated from ToolDefs — they have custom agentfmt formatting, tree walking, pagination. The `eval` command is the CLI's access to all ToolDef operations via FigmaAPI.
 - MCP adapter (`packages/mcp/src/server.ts`): `startServer()` creates unified HTTP + WebSocket server. Registers all ToolDefs as MCP tools (zod schemas). Single entry point: `index.ts` (Hono + Streamable HTTP with sessions). Browser connects via WebSocket, tool calls proxied through.
 - MCP-only tools (`open_file`, `new_document`, `save_file`, `get_codegen_prompt`) are registered directly in `server.ts`, not as ToolDefs — they need Node.js fs access or don't operate on the scene graph
 - `open_file` and `new_document` are only registered when `OPENPENCIL_MCP_ROOT` is set (path scoping for security)
 - Export tools (`export_image`, `export_svg`, `get_jsx`) accept an optional `path` param — when provided and `OPENPENCIL_MCP_ROOT` is set, the MCP server writes output to disk and returns `{ written, byteLength }` instead of the raw data
-- Prompts (`CODEGEN_PROMPT`, `JSX_REFERENCE`) live as markdown files in `packages/core/src/tools/prompts/`, loaded via raw-md bundler plugin
+- Core prompts (`CODEGEN_PROMPT`, `JSX_REFERENCE`) live as markdown files in `packages/core/src/tools/prompts/`, loaded via raw-md bundler plugin; app chat/ACP prompts live under `src/app/ai/**` markdown files.
 - To add a new tool: add a `defineTool()` in the appropriate domain file, add to `ALL_TOOLS` in `registry.ts` — it's instantly available in AI chat, MCP, and via `eval` in CLI
-- `FigmaAPI` (`packages/core/src/figma-api.ts`) is the execution target for all tools — Figma Plugin API compatible, uses Symbols for hidden internals
+- `FigmaAPI` (`packages/core/src/figma-api/`) is the execution target for all tools — Figma Plugin API compatible, uses Symbols for hidden internals
 
 ## ACP (Agent Client Protocol)
 
-- ACP transport (`src/ai/acp-transport.ts`) spawns agents via dynamic import of `@tauri-apps/plugin-shell`
-- Pure mapping logic in `src/ai/acp-map-update.ts` — converts `SessionUpdate` → `UIMessageChunk`
-- System prompt (`ACP_DESIGN_CONTEXT`) in `src/constants.ts`
+- ACP transport (`src/app/ai/acp/transport.ts`) spawns agents via dynamic import of `@tauri-apps/plugin-shell`
+- Pure mapping logic in `src/app/ai/acp/map-update.ts` — converts `SessionUpdate` → `UIMessageChunk`
+- ACP design context prompt (`ACP_DESIGN_CONTEXT`) is authored in `src/app/ai/acp/design-context.md` and re-exported from `src/constants.ts`
 - Agent definitions (`ACP_AGENTS`) in `packages/core/src/constants.ts`
 - MCP server: Vite plugin in dev, `openpencil-mcp` via shell plugin in production Tauri (requires `npm i -g @open-pencil/mcp`; follow-up: bundle as Tauri sidecar)
 - Architecture: browser ↔ WebSocket :7601 ↔ MCP server :7600 ↔ HTTP ↔ agent subprocess
@@ -204,7 +204,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - Yjs CRDT for document state sync. Awareness protocol for cursors/selections/presence.
 - y-indexeddb for local persistence — room survives page refresh.
 - Constants in `src/constants.ts`: `TRYSTERO_APP_ID`, `PEER_COLORS`, `ROOM_ID_LENGTH`, `ROOM_ID_CHARS`, `YJS_JSON_FIELDS`
-- `src/composables/use-collab.ts` — composable: connect/disconnect, cursor/selection broadcasting, follow mode, Yjs ↔ SceneGraph sync
+- `src/app/collab/use.ts` — composable: connect/disconnect, cursor/selection broadcasting, follow mode, Yjs ↔ SceneGraph sync
 - Provided via `COLLAB_KEY` injection — `useCollabInjected()` in child components
 - ICE servers: Google STUN + Cloudflare STUN + Open Relay TURN (TCP + UDP)
 - Room IDs use `crypto.getRandomValues()` — no `Math.random()` anywhere in codebase
@@ -212,16 +212,30 @@ Release commits are the exception: keep using `Release v0.x.y`.
 
 ## Code conventions
 
-- `@/` import alias for app cross-directory imports, relative imports within core
+### File and folder naming
+
+OpenPencil follows a Reka UI-inspired component namespace structure:
+
+- Vue component namespace folders use PascalCase: `ColorPicker/`, `Toolbar/`, `ProviderSettings/`.
+- Vue component files use PascalCase: `ColorPickerRoot.vue`, `ToolbarItem.vue`.
+- Component-scoped composables use camelCase: `useToolbarState.ts`, `usePageList.ts`.
+- Non-component domain folders use lowercase or kebab-case: `scene-graph/`, `figma-api/`, `node-edit/`.
+- Non-component TypeScript files use lowercase or kebab-case unless they are conventional entrypoints such as `index.ts`, `types.ts`, `context.ts`, or `use.ts`.
+- Multi-file root components live inside their component namespace folder, not beside it.
+- Use subfolders for multi-file domains instead of many sibling files with repeated prefixes. Prefer `selection/container.ts`, `selection/hit-test.ts`, `selection/overlays.ts` over `selection-container.ts`, `selection-hit-test.ts`, `selection-overlays.ts`; prefer `tools/schema.ts`, `tools/registration.ts` over `tool-schema.ts`, `tool-registration.ts`. A short prefix is acceptable only when there are one or two files, for conventional test names, or when splitting would create empty wrapper directories.
+
+- `@/` import alias for app cross-directory imports; app feature code lives under `src/app/*`
+- Use package-local aliases inside workspace packages: `#vue/*` in `packages/vue`, `#cli/*` in `packages/cli`, `#mcp/*` in `packages/mcp`, and `#core/*` when core code needs an alias. Prefer relative imports within nearby core modules when that is clearer than an alias.
 - No `any` — use proper types, generics, declaration merging
 - No `!` non-null assertions — use guards, `?.`, `??`
 - No `Math.random()` — use `crypto.getRandomValues()` everywhere
-- No inline type definitions when a named type exists — use `Color` not `{ r: number; g: number; b: number; a: number }`, use `Vector` not `{ x: number; y: number }`, use `SceneNode` / `Effect` / `Fill` / `Stroke` from `scene-graph.ts` instead of re-spelling their shapes inline
+- No inline type definitions when a named type exists — use `Color` not `{ r: number; g: number; b: number; a: number }`, use `Vector` not `{ x: number; y: number }`, use `SceneNode` / `Effect` / `Fill` / `Stroke` from `@open-pencil/core/scene-graph` instead of re-spelling their shapes inline
 - Shared types (GUID, Color, Vector, Matrix, Rect) live in `packages/core/src/types.ts`
-- Domain types (SceneNode, Fill, Stroke, Effect, BlendMode, etc.) live in `packages/core/src/scene-graph.ts`
+- Domain types (SceneNode, Fill, Stroke, Effect, BlendMode, etc.) live in `packages/core/src/scene-graph/` and are exported from `@open-pencil/core/scene-graph`
 - Window API extensions (showOpenFilePicker, queryLocalFonts) live in `src/global.d.ts` and `packages/core/src/global.d.ts`
 - Use `culori` for color conversions — don't reimplement parseColor/colorToRgba
 - Use `@vueuse/core` hooks — prefer higher-level composables (`useBreakpoints`, `useEventListener`, `onClickOutside`, etc.) over raw APIs (`useMediaQuery`, manual `addEventListener`)
+- Prefer VueUse utilities for simple browser/timer state: `refAutoReset` for temporary copied/saved flags, `promiseTimeout` for async sleeps/retry backoff, `useClipboard`/`useFileDialog`/`useLocalStorage` where they fit the local state model. Don't force VueUse when direct APIs are clearer: one-shot `requestAnimationFrame` focus/defer calls, explicit service-owned reconnect/permission timers, or nanostores-backed state can stay hand-rolled.
 - No module-level mutable state in components — use the editor store
 - Prefer `tw-animate-css` for animations — don't hand-write `<style>` transition keyframes
 - No duplicated component logic — if two components share data (icon maps, util functions, constants), export from one place and import in both
@@ -303,9 +317,9 @@ Self-review checklist:
 
 ## File format
 
-- .fig files use Kiwi binary codec — schema in `packages/core/src/kiwi/codec.ts`
+- .fig files use Kiwi binary codec — schema in `packages/core/src/kiwi/binary/codec.ts`
 - `NodeChange` is the central type for Kiwi encode/decode
-- Vector data uses reverse-engineered `vectorNetworkBlob` binary format — encoder/decoder in `packages/core/src/vector.ts`
+- Vector data uses reverse-engineered `vectorNetworkBlob` binary format — encoder/decoder in `packages/core/src/vector/`
 - showOpenFilePicker/showSaveFilePicker are File System Access API (Chrome/Edge), not Tauri-only — code has fallbacks
 - Safari save: no File System Access API → uses `<a>` download link with deferred `revokeObjectURL`. SafariBanner warns users about limitations.
 - Tauri detection: `IS_TAURI` constant from `packages/core/src/constants.ts` — don't use `'__TAURI_INTERNALS__' in window` inline

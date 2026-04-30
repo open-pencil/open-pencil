@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
-import { bold, fmtList, kv } from '../format'
+import { bold, fmtList, kv } from '#cli/format'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 

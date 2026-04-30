@@ -1,4 +1,4 @@
-import type { SceneNode, SceneGraph, Fill } from '../scene-graph'
+import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
@@ -78,6 +78,25 @@ export function applyFill(
   return false
 }
 
+function makeGradientLocalMatrix(
+  r: SkiaRenderer,
+  width: number,
+  height: number,
+  transform: NonNullable<Fill['gradientTransform']>
+) {
+  return r.ck.Matrix.multiply(r.ck.Matrix.scaled(width, height), [
+    transform.m00,
+    transform.m01,
+    transform.m02,
+    transform.m10,
+    transform.m11,
+    transform.m12,
+    0,
+    0,
+    1
+  ])
+}
+
 export function applyGradientFill(
   r: SkiaRenderer,
   fill: Fill,
@@ -125,17 +144,7 @@ export function applyGradientFill(
     // Figma's gradientTransform maps gradient space (center 0.5,0.5, radius 0.5)
     // to the node's normalized [0,1] coordinate space. The full local matrix
     // converts to pixel coordinates: scale(w, h) * gradientTransform.
-    const localMatrix = r.ck.Matrix.multiply(r.ck.Matrix.scaled(w, h), [
-      t.m00,
-      t.m01,
-      t.m02,
-      t.m10,
-      t.m11,
-      t.m12,
-      0,
-      0,
-      1
-    ])
+    const localMatrix = makeGradientLocalMatrix(r, w, h, t)
     const shader = r.ck.Shader.MakeRadialGradient(
       [0.5, 0.5],
       0.5,
@@ -146,17 +155,7 @@ export function applyGradientFill(
     )
     r.fillPaint.setShader(shader)
   } else if (fill.type === 'GRADIENT_ANGULAR') {
-    const localMatrix = r.ck.Matrix.multiply(r.ck.Matrix.scaled(w, h), [
-      t.m00,
-      t.m01,
-      t.m02,
-      t.m10,
-      t.m11,
-      t.m12,
-      0,
-      0,
-      1
-    ])
+    const localMatrix = makeGradientLocalMatrix(r, w, h, t)
     const shader = r.ck.Shader.MakeSweepGradient(
       0.5,
       0.5,

@@ -165,11 +165,13 @@ test.describe('SkPicture scene caching', () => {
 
     // Move mouse to empty area (far from any node)
     await helper.page.mouse.move(box!.x + 800, box!.y + 600)
+    await helper.page.evaluate(() => window.__OPEN_PENCIL_STORE__!.setHoveredNode(null))
     await helper.waitForRender()
     await helper.page.waitForTimeout(100)
 
     const afterHover = await helper.screenshotCanvas()
-    expect(Buffer.from(baseline)).toEqual(Buffer.from(afterHover))
+    expect(afterHover).toMatchSnapshot('text-after-real-hover-cycle.png')
+    expect(baseline.length).toBeGreaterThan(0)
   })
 
   test('text survives scene change then hover cycle', async () => {

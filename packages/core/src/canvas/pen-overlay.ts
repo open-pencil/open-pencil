@@ -1,7 +1,7 @@
-import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS, PEN_CLOSE_RADIUS_BOOST } from '../constants'
+import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS, PEN_CLOSE_RADIUS_BOOST } from '#core/constants'
 
-import type { SceneGraph } from '../scene-graph'
-import type { Vector } from '../types'
+import type { SceneGraph } from '#core/scene-graph'
+import type { Vector } from '#core/types'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
 

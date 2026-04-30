@@ -3,14 +3,14 @@ import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
 
 import ProviderModelSelect from '@/components/chat/ProviderModelSelect.vue'
-import ProviderSettings from '@/components/chat/ProviderSettings.vue'
+import ProviderSettings from '@/components/chat/ProviderSettings/ProviderSettings.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useInputUI } from '@/components/ui/input'
-import { useAIChat } from '@/composables/use-chat'
+import { useAIChat } from '@/app/ai/chat/use'
 import { useI18n } from '@open-pencil/vue'
 
-import { ACP_AGENTS } from '@open-pencil/core'
+import { ACP_AGENTS } from '@open-pencil/core/constants'
 
 const { providerID, providerDef, modelID, customModelID } = useAIChat()
 const { dialogs } = useI18n()

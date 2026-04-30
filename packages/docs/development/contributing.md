@@ -70,25 +70,25 @@ Developers and AI agents working on the codebase should read `AGENTS.md` in the 
 
 ## Key Files
 
-Engine source lives in `packages/core/src/`. The app's `src/engine/` and `src/kiwi/` are re-export shims — edit the core package, not the shims.
+Core engine source lives in `packages/core/src/`. App-specific editor, document, AI, collaboration, shell, demo, and automation code lives under `src/app/*`; the Vue SDK owns reusable canvas/composable code under `packages/vue/src/`.
 
 | File | Purpose |
 |------|---------|
-| `packages/core/src/scene-graph.ts` | Scene graph: nodes, variables, instances, hit testing |
-| `packages/core/src/renderer.ts` | CanvasKit rendering pipeline |
+| `packages/core/src/scene-graph/` | Scene graph: nodes, variables, instances, hit testing |
+| `packages/core/src/canvas/renderer.ts` | CanvasKit rendering pipeline |
 | `packages/core/src/layout.ts` | Yoga layout adapter |
-| `packages/core/src/undo.ts` | Undo/redo manager |
+| `packages/core/src/scene-graph/undo.ts` | Undo/redo manager |
 | `packages/core/src/clipboard.ts` | Figma-compatible clipboard |
-| `packages/core/src/vector.ts` | Vector network model |
-| `packages/core/src/render-image.ts` | Offscreen image export (PNG/JPG/WEBP) |
-| `packages/core/src/kiwi/codec.ts` | Kiwi binary encoder/decoder |
+| `packages/core/src/vector/` | Vector network model |
+| `packages/core/src/io/formats/raster/render.ts` | Offscreen image export (PNG/JPG/WEBP) |
+| `packages/core/src/kiwi/binary/codec.ts` | Kiwi binary encoder/decoder |
 | `packages/core/src/kiwi/fig-import.ts` | .fig file import logic |
 | `packages/cli/src/index.ts` | CLI entry point |
 | `packages/core/src/tools/` | Unified tool definitions split by domain (read, create, modify, structure, variables, vector, analyze) |
-| `packages/core/src/figma-api.ts` | Figma Plugin API implementation |
+| `packages/core/src/figma-api/` | Figma Plugin API implementation |
 | `packages/mcp/src/server.ts` | MCP server factory |
 | `packages/cli/src/commands/` | CLI commands (info, tree, find, export, eval, analyze) |
-| `src/stores/editor.ts` | Global editor state |
-| `src/composables/use-canvas.ts` | Canvas rendering composable |
-| `src/composables/use-canvas-input.ts` | Mouse/touch input handling |
-| `src/composables/use-keyboard.ts` | Keyboard shortcut handling |
+| `src/app/editor/session/create.ts` | Editor session assembly |
+| `packages/vue/src/canvas/CanvasRoot.vue` | Canvas rendering composable |
+| `packages/vue/src/canvas/useCanvasInput.ts` | Mouse/touch input handling |
+| `src/app/shell/keyboard/use.ts` | Keyboard shortcut handling |
