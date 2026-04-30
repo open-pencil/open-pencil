@@ -79,6 +79,27 @@ function parseStroke(value: string, width: number): Stroke {
   }
 }
 
+function resolveDashPattern(value: unknown, strokeWidth: number): number[] | null {
+  if (Array.isArray(value)) {
+    const out = value.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0)
+    return out.length > 0 ? out : null
+  }
+  if (value === true) {
+    const d = Math.max(Math.round(strokeWidth * 2), 4)
+    return [d, d]
+  }
+  return null
+}
+
+function applyStrokeOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+  if (typeof props.stroke !== 'string') return
+  const strokeWidth = (props.strokeWidth as number | undefined) ?? 1
+  const stroke = parseStroke(props.stroke, strokeWidth)
+  const dashPattern = resolveDashPattern(props.strokeDash, strokeWidth)
+  if (dashPattern) stroke.dashPattern = dashPattern
+  o.strokes = [stroke]
+}
+
 interface RenderOptions {
   x?: number
   y?: number
@@ -233,10 +254,7 @@ function applyVisualOverrides(props: Record<string, unknown>, o: Partial<SceneNo
     o.fills = [colorToFill(bg)]
   }
 
-  if (typeof props.stroke === 'string') {
-    const strokeWidth = (props.strokeWidth as number | undefined) ?? 1
-    o.strokes = [parseStroke(props.stroke, strokeWidth)]
-  }
+  applyStrokeOverrides(props, o)
 
   const rounded = props.rounded ?? props.cornerRadius
   if (typeof rounded === 'number') {

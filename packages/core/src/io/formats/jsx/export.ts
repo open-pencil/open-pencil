@@ -68,12 +68,16 @@ function solidFillColor(fills: Fill[]): string | null {
   return formatColor(visible[0].color, visible[0].opacity)
 }
 
-function solidStroke(strokes: Stroke[]): { color: string; weight: number } | null {
+function solidStroke(
+  strokes: Stroke[]
+): { color: string; weight: number; dash: number[] | null } | null {
   const visible = strokes.filter((s) => s.visible)
   if (visible.length !== 1) return null
+  const s = visible[0]
   return {
-    color: formatColor(visible[0].color, visible[0].opacity),
-    weight: visible[0].weight
+    color: formatColor(s.color, s.opacity),
+    weight: s.weight,
+    dash: s.dashPattern && s.dashPattern.length > 0 ? [...s.dashPattern] : null
   }
 }
 
@@ -284,6 +288,7 @@ function collectAppearanceProps(node: SceneNode, props: [string, unknown][]): vo
   if (stroke) {
     props.push(['stroke', stroke.color])
     if (stroke.weight !== 1) props.push(['strokeWidth', stroke.weight])
+    if (stroke.dash) props.push(['strokeDash', stroke.dash])
   }
 
   collectCornerRadiiProps(node, props)
