@@ -12,6 +12,7 @@ type CanvasKitLoaderOptions = {
   createSurface: (canvas: HTMLCanvasElement) => void
   loadFonts: () => Promise<unknown> | undefined
   renderNow: () => void
+  onReady?: () => void
 }
 
 export function useCanvasKitLoader({
@@ -20,7 +21,8 @@ export function useCanvasKitLoader({
   setCanvasKit,
   createSurface,
   loadFonts,
-  renderNow
+  renderNow,
+  onReady
 }: CanvasKitLoaderOptions) {
   const isDestroyed = () => lifecycle.destroyed
 
@@ -34,7 +36,9 @@ export function useCanvasKitLoader({
     await new Promise((resolve) => requestAnimationFrame(resolve))
     createSurface(canvas)
     await loadFonts()
-    if (!isDestroyed()) renderNow()
+    if (isDestroyed()) return
+    renderNow()
+    onReady?.()
   }
 
   onMounted(() => {

@@ -57,7 +57,6 @@ export function createCanvasSurfaceManager({
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
     editor.setCanvasKit(ck, state.renderer)
     canvas.dataset.ready = '1'
-    options?.onReady?.()
   }
 
   function renderNow() {
@@ -119,13 +118,15 @@ export function useCanvasSurfaceLifecycle({
   surface,
   setCanvasKit,
   getCanvasKitValue,
-  lifecycle
+  lifecycle,
+  onReady
 }: {
   canvasRef: Ref<HTMLCanvasElement | null>
   surface: ReturnType<typeof createCanvasSurfaceManager>
   setCanvasKit: (ck: CanvasKit | null) => void
   getCanvasKitValue: () => CanvasKit | null
   lifecycle: { destroyed: boolean }
+  onReady?: () => void
 }) {
   useCanvasKitLoader({
     canvasRef,
@@ -133,7 +134,8 @@ export function useCanvasSurfaceLifecycle({
     setCanvasKit,
     createSurface: surface.createSurface,
     loadFonts: () => surface.getRenderer()?.loadFonts(),
-    renderNow: surface.renderNow
+    renderNow: surface.renderNow,
+    onReady
   })
 
   const { cancelResize } = useCanvasResizeObserver({
