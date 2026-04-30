@@ -39,6 +39,7 @@
         "tailwind-merge": "^3.5.0",
         "tailwind-variants": "^3.2.2",
         "tailwindcss": "^4.2.1",
+        "tinykeys": "^3.0.0",
         "trystero": "^0.22.0",
         "valibot": "^1.2.0",
         "vue": "^3.5.29",
@@ -88,7 +89,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "bin": {
         "openpencil": "./src/index.ts",
       },
@@ -104,7 +105,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "dependencies": {
         "@iconify/utils": "^3.1.0",
         "canvaskit-wasm": "^0.40.0",
@@ -139,7 +140,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "bin": {
         "openpencil-mcp": "./dist/index.js",
       },
@@ -158,7 +159,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.11.6",
+      "version": "0.11.8",
       "dependencies": {
         "@nanostores/i18n": "^1.2.2",
         "@nanostores/vue": "^1.1.0",
@@ -2346,6 +2347,8 @@
     "tinyexec": ["tinyexec@1.0.4", "", {}, "sha512-u9r3uZC0bdpGOXtlxUIdwf9pkmvhqJdrVCH9fapQtgy/OeTTMZ1nqH7agtvEfmGui6e1XxjcdrlxvxJvc3sMqw=="],
 
     "tinyglobby": ["tinyglobby@0.2.15", "", { "dependencies": { "fdir": "^6.5.0", "picomatch": "^4.0.3" } }, "sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ=="],
+
+    "tinykeys": ["tinykeys@3.0.0", "", {}, "sha512-nazawuGv5zx6MuDfDY0rmfXjuOGhD5XU2z0GLURQ1nzl0RUe9OuCJq+0u8xxJZINHe+mr7nw8PWYYZ9WhMFujw=="],
 
     "tinypool": ["tinypool@2.1.0", "", {}, "sha512-Pugqs6M0m7Lv1I7FtxN4aoyToKg1C4tu+/381vH35y8oENM/Ai7f7C4StcoK4/+BSw9ebcS8jRiVrORFKCALLw=="],
 

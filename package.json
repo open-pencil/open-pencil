@@ -65,6 +65,7 @@
     "tailwind-merge": "^3.5.0",
     "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.2.1",
+    "tinykeys": "^3.0.0",
     "trystero": "^0.22.0",
     "valibot": "^1.2.0",
     "vue": "^3.5.29",
