@@ -4,17 +4,6 @@ import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
 
-const DEFAULT_ZOOM_DELTA_MULTIPLIER = 1
-const SAFARI_ZOOM_DELTA_MULTIPLIER = 1.5
-
-function isSafariBrowser(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return /safari/i.test(navigator.userAgent) && !/chrome|chromium|android/i.test(navigator.userAgent)
-}
-
-function getZoomDeltaMultiplier(): number {
-  return isSafariBrowser() ? SAFARI_ZOOM_DELTA_MULTIPLIER : DEFAULT_ZOOM_DELTA_MULTIPLIER
-}
 
 type WheelAccum = {
   deltaX: number
@@ -38,7 +27,6 @@ function normalizeWheelDelta(e: WheelEvent): { dx: number; dy: number } {
 }
 
 export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
-  const zoomDeltaMultiplier = getZoomDeltaMultiplier()
   const wheelAccum: WheelAccum = {
     deltaX: 0,
     deltaY: 0,
@@ -72,7 +60,7 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
       const rect = canvas.getBoundingClientRect()
       wheelAccum.zoomCenterX = e.clientX - rect.left
       wheelAccum.zoomCenterY = e.clientY - rect.top
-      wheelAccum.zoomDelta += dy * zoomDeltaMultiplier
+      wheelAccum.zoomDelta += dy
       wheelAccum.hasZoom = true
     } else {
       wheelAccum.deltaX -= dx
