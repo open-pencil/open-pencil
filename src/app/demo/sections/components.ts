@@ -199,6 +199,7 @@ export function createComponentsSection(store: EditorStore) {
     counterAxisSizing: 'HUG',
     primaryAxisAlign: 'CENTER',
     counterAxisAlign: 'CENTER',
+    itemSpacing: 4,
     paddingTop: 4,
     paddingBottom: 4,
     paddingLeft: 8,
