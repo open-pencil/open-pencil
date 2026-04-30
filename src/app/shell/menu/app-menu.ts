@@ -7,7 +7,7 @@ import { useAppTheme } from '@/app/shell/theme'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
-import type { EditorCommandId, MenuEntry } from '@open-pencil/vue'
+import type { MenuEntry } from '@open-pencil/vue'
 
 export interface AppMenuGroup {
   label: string
@@ -24,10 +24,6 @@ function isVisible(entry: { target?: string }): boolean {
 
 function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type: 'separator' }> {
   return entry.type === 'separator'
-}
-
-function isCommandId(id: string | undefined): id is EditorCommandId {
-  return Boolean(id?.includes('.'))
 }
 
 export function useAppMenu(mod: string) {
@@ -157,9 +153,8 @@ export function useAppMenu(mod: string) {
       return { label: entry.label, sub: languageMenu.value }
     }
 
-    if (entry.command ?? isCommandId(entry.id)) {
-      const command = entry.command ?? (entry.id as EditorCommandId)
-      return commandMenuItem(command, shortcutLabel(entry.shortcut, mod))
+    if (entry.command) {
+      return commandMenuItem(entry.command, shortcutLabel(entry.shortcut, mod))
     }
 
     return {
