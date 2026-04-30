@@ -1,4 +1,5 @@
 import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE, SECTION_CORNER_RADIUS } from '#core/constants'
+import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { nodeHasRadius } from './effects'
 
@@ -355,6 +356,19 @@ function drawVectorPathStrokes(
   stroke: SceneNode['strokes'][0],
   sc: Color
 ): void {
+  const dash = stroke.dashPattern
+  if (dash && dash.length > 0) {
+    r.strokePaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
+    r.strokePaint.setAlphaf(stroke.opacity)
+    r.strokePaint.setStrokeWidth(stroke.weight)
+    r.strokePaint.setStrokeCap(getCapEntity(r, stroke.cap ?? 'NONE'))
+    r.strokePaint.setStrokeJoin(getJoinEntity(r, stroke.join ?? 'MITER'))
+    r.strokePaint.setShader(null)
+    r.strokePaint.setPathEffect(r.ck.PathEffect.MakeDash(dash, 0))
+    for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
+    r.strokePaint.setPathEffect(null)
+    return
+  }
   const strokeOpts = {
     width: stroke.weight,
     miter_limit: 4,
@@ -465,6 +479,17 @@ export function renderShapeUncached(
   const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
   const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   forVisibleStrokes(r, node, graph, (stroke, color) => {
+    if (
+      stroke.dashPattern &&
+      stroke.dashPattern.length > 0 &&
+      node.type === 'VECTOR' &&
+      node.vectorNetwork
+    ) {
+      const centerline = vectorNetworkToCenterlinePath(r.ck, node.vectorNetwork)
+      drawVectorPathStrokes(r, canvas, [centerline], stroke, color)
+      centerline.delete()
+      return
+    }
     drawNodeStroke(r, canvas, node, rect, hasRadius, stroke, color, sg, vectorPaths, vectorStroke)
   })
   if (vectorStroke) {
