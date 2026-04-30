@@ -23,6 +23,7 @@ export async function loadFonts(r: SkiaRenderer): Promise<void> {
 
   const fontData = await loadFont(DEFAULT_FONT_FAMILY, 'Regular')
   if (fontData) {
+    r.fontProvider.registerFont(fontData, DEFAULT_FONT_FAMILY)
     const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(fontData)
     if (typeface) {
       r.textFont?.delete()
