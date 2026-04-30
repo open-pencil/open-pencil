@@ -18,7 +18,7 @@ import { applyDerivedSymbolData } from './dsd'
 import { populateInstances } from './populate'
 import { applyComponentProperties } from './props'
 import { preComputeRoots } from './resolve'
-import { applySymbolOverrides } from './symbol-overrides'
+import { applySymbolOverrides } from './symbol/overrides'
 import { propagateOverridesTransitively } from './sync'
 
 import type { SceneGraph } from '#core/scene-graph'

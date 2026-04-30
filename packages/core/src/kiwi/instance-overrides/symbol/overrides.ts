@@ -1,10 +1,10 @@
 import { guidToString } from '#core/kiwi/node-change/convert'
 
-import { resolveOverrideTarget, repopulateInstance } from './resolve'
-import { convertOverrideToProps } from './symbol-props'
+import { resolveOverrideTarget, repopulateInstance } from '#core/kiwi/instance-overrides/resolve'
+import { convertOverrideToProps } from './props'
 
 import type { SceneNode } from '#core/scene-graph'
-import type { OverrideContext } from './types'
+import type { OverrideContext } from '#core/kiwi/instance-overrides/types'
 
 function isActiveInstance(ctx: OverrideContext, nodeId: string | undefined): nodeId is string {
   return nodeId !== undefined && (!ctx.activeNodeIds || ctx.activeNodeIds.has(nodeId))
