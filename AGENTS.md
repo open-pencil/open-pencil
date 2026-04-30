@@ -222,6 +222,7 @@ OpenPencil follows a Reka UI-inspired component namespace structure:
 - Non-component domain folders use lowercase or kebab-case: `scene-graph/`, `figma-api/`, `node-edit/`.
 - Non-component TypeScript files use lowercase or kebab-case unless they are conventional entrypoints such as `index.ts`, `types.ts`, `context.ts`, or `use.ts`.
 - Multi-file root components live inside their component namespace folder, not beside it.
+- Use subfolders for multi-file domains instead of many sibling files with repeated prefixes. Prefer `selection/container.ts`, `selection/hit-test.ts`, `selection/overlays.ts` over `selection-container.ts`, `selection-hit-test.ts`, `selection-overlays.ts`; prefer `tools/schema.ts`, `tools/registration.ts` over `tool-schema.ts`, `tool-registration.ts`. A short prefix is acceptable only when there are one or two files, for conventional test names, or when splitting would create empty wrapper directories.
 
 - `@/` import alias for app cross-directory imports; app feature code lives under `src/app/*`
 - Use package-local aliases inside workspace packages: `#vue/*` in `packages/vue`, `#cli/*` in `packages/cli`, `#mcp/*` in `packages/mcp`, and `#core/*` when core code needs an alias. Prefer relative imports within nearby core modules when that is clearer than an alias.
