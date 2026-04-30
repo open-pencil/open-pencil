@@ -1,7 +1,14 @@
+import type { VectorRegion, VectorVertex } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
 import type { Color, Rect, Vector } from '#core/types'
-import type { VectorRegion, VectorVertex } from '#core/scene-graph'
+
+export interface RulerTheme {
+  background: Color
+  tick: Color
+  text: Color
+  label: Color
+}
 
 export interface RenderOverlays {
   hoveredNodeId?: string | null

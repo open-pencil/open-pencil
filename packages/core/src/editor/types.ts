@@ -1,4 +1,4 @@
-import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph, VectorSegment, VectorVertex } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { UndoManager } from '#core/scene-graph/undo'
@@ -57,6 +57,7 @@ export interface EditorState {
   documentName: string
   panX: number
   pageColor: Color
+  rulerTheme?: RulerTheme
   panY: number
   zoom: number
   renderVersion: number

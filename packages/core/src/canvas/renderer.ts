@@ -1,4 +1,3 @@
-import type { ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
   SELECTION_COLOR,
@@ -10,30 +9,27 @@ import {
   COMPONENT_SET_BORDER_WIDTH,
   IS_BROWSER
 } from '#core/constants'
-import * as LabelHitTest from './labels/hit-test'
 import { RenderProfiler } from '#core/profiler'
+
 import { LabelCache } from './labels/cache'
-import { installRendererDomainMethods } from './renderer/methods'
+import * as LabelHitTest from './labels/hit-test'
+import * as RenderColors from './renderer/colors'
 import * as RendererFonts from './renderer/fonts'
 import { destroyRenderer } from './renderer/lifecycle'
-import * as RendererState from './renderer/state'
-import * as RenderColors from './renderer/colors'
+import { installRendererDomainMethods } from './renderer/methods'
 import { initializeRendererPaints } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
+import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 
+import type { ResolvedRenderColor } from '#core/color/management'
 import type { EditorState } from '#core/editor/types'
-import type {
-  SceneNode,
-  SceneGraph,
-  Fill,
-  Stroke
-} from '#core/scene-graph'
+import type { SceneNode, SceneGraph, Fill, Stroke } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
 import type { Color, Rect, Vector } from '#core/types'
-export type { RenderOverlays } from './renderer/types'
-import type { RenderOverlays } from './renderer/types'
+export type { RenderOverlays, RulerTheme } from './renderer/types'
+import type { RenderOverlays, RulerTheme } from './renderer/types'
 import type {
   Image as CKImage,
   Path,
@@ -105,6 +101,7 @@ export class SkiaRenderer {
   viewportHeight = 0
   showRulers = true
   pageColor = CANVAS_BG_COLOR
+  rulerTheme: RulerTheme | null = null
   pageId: string | null = null
 
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
@@ -119,7 +116,6 @@ export class SkiaRenderer {
   readonly COMPONENT_SET_BORDER_WIDTH = COMPONENT_SET_BORDER_WIDTH
   readonly COMPONENT_SET_DASH = COMPONENT_SET_DASH
   readonly COMPONENT_SET_DASH_GAP = COMPONENT_SET_DASH_GAP
-
 
   declare drawHoverHighlight: (
     canvas: Canvas,
@@ -137,15 +133,29 @@ export class SkiaRenderer {
     selectedIds: Set<string>,
     overlays: RenderOverlays
   ) => void
-  declare drawNodeSelection: (canvas: Canvas, node: SceneNode, rotation: number, graph: SceneGraph) => void
+  declare drawNodeSelection: (
+    canvas: Canvas,
+    node: SceneNode,
+    rotation: number,
+    graph: SceneGraph
+  ) => void
   declare drawSelectionLabels: (
     canvas: Canvas,
     graph: SceneGraph,
     selectedIds: Set<string>,
     overlays?: RenderOverlays
   ) => void
-  declare drawParentFrameOutlines: (canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>) => void
-  declare drawNodeOutline: (canvas: Canvas, node: SceneNode, rotation: number, graph: SceneGraph) => void
+  declare drawParentFrameOutlines: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>
+  ) => void
+  declare drawNodeOutline: (
+    canvas: Canvas,
+    node: SceneNode,
+    rotation: number,
+    graph: SceneGraph
+  ) => void
   declare drawGroupBounds: (canvas: Canvas, nodes: SceneNode[], graph: SceneGraph) => void
   declare getRotatedCorners: (node: SceneNode, abs: Vector) => Vector[]
   declare drawHandle: (canvas: Canvas, x: number, y: number) => void
@@ -171,7 +181,12 @@ export class SkiaRenderer {
   declare drawRulers: (canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>) => void
   declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph) => void
   declare drawComponentLabels: (canvas: Canvas, graph: SceneGraph) => void
-  declare renderNode: (canvas: Canvas, graph: SceneGraph, nodeId: string, overlays: RenderOverlays) => void
+  declare renderNode: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    nodeId: string,
+    overlays: RenderOverlays
+  ) => void
   declare renderSection: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
   declare renderComponentSet: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
   declare renderShape: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
@@ -185,12 +200,22 @@ export class SkiaRenderer {
     shadowShapeChild?: SceneNode | null
   ) => void
   declare renderText: (canvas: Canvas, node: SceneNode) => void
-  declare drawNodeFill: (canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean) => void
+  declare drawNodeFill: (
+    canvas: Canvas,
+    node: SceneNode,
+    rect: Float32Array,
+    hasRadius: boolean
+  ) => void
   declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
   declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => void
   declare applyImageFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
   declare drawArc: (canvas: Canvas, node: SceneNode, paint: Paint) => void
-  declare drawNodeStroke: (canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean) => void
+  declare drawNodeStroke: (
+    canvas: Canvas,
+    node: SceneNode,
+    rect: Float32Array,
+    hasRadius: boolean
+  ) => void
   declare drawStrokeWithAlign: (
     canvas: Canvas,
     node: SceneNode,
@@ -198,7 +223,12 @@ export class SkiaRenderer {
     hasRadius: boolean,
     align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
   ) => void
-  declare drawRRectStrokeWithAlign: (canvas: Canvas, rrect: Float32Array, node: SceneNode, stroke: Stroke) => void
+  declare drawRRectStrokeWithAlign: (
+    canvas: Canvas,
+    rrect: Float32Array,
+    node: SceneNode,
+    stroke: Stroke
+  ) => void
   declare drawIndividualSideStrokes: (
     canvas: Canvas,
     node: SceneNode,
@@ -209,12 +239,27 @@ export class SkiaRenderer {
   declare makePolygonPath: (node: SceneNode) => Path
   declare makeRRect: (node: SceneNode) => Float32Array
   declare makeRRectWithSpread: (node: SceneNode, spread: number) => Float32Array
-  declare makeRRectWithOffset: (node: SceneNode, ox: number, oy: number, spread: number) => Float32Array
-  declare clipNodeShape: (canvas: Canvas, node: SceneNode, rect: Float32Array, hasRadius: boolean) => void
+  declare makeRRectWithOffset: (
+    node: SceneNode,
+    ox: number,
+    oy: number,
+    spread: number
+  ) => Float32Array
+  declare clipNodeShape: (
+    canvas: Canvas,
+    node: SceneNode,
+    rect: Float32Array,
+    hasRadius: boolean
+  ) => void
   declare getVectorPaths: (node: SceneNode) => Path[] | null
   declare getFillGeometry: (node: SceneNode) => Path[] | null
   declare getStrokeGeometry: (node: SceneNode) => Path[] | null
-  declare getCachedDropShadow: (dx: number, dy: number, sigma: number, color: Float32Array) => ImageFilter
+  declare getCachedDropShadow: (
+    dx: number,
+    dy: number,
+    sigma: number,
+    color: Float32Array
+  ) => ImageFilter
   declare getCachedBlur: (sigma: number) => ImageFilter
   declare getCachedDecalBlur: (sigma: number) => ImageFilter
   declare getCachedMaskBlur: (sigma: number) => MaskFilter
@@ -351,13 +396,23 @@ export class SkiaRenderer {
 
   hitTestSectionTitle(graph: SceneGraph, canvasX: number, canvasY: number): SceneNode | null {
     return LabelHitTest.hitTestSectionTitle(
-      graph, canvasX, canvasY, this.zoom, this.pageId ?? graph.rootId, this.sectionTitleFont
+      graph,
+      canvasX,
+      canvasY,
+      this.zoom,
+      this.pageId ?? graph.rootId,
+      this.sectionTitleFont
     )
   }
 
   hitTestComponentLabel(graph: SceneGraph, canvasX: number, canvasY: number): SceneNode | null {
     return LabelHitTest.hitTestComponentLabel(
-      graph, canvasX, canvasY, this.zoom, this.pageId ?? graph.rootId, this.componentLabelFont
+      graph,
+      canvasX,
+      canvasY,
+      this.zoom,
+      this.pageId ?? graph.rootId,
+      this.componentLabelFont
     )
   }
 
@@ -367,7 +422,14 @@ export class SkiaRenderer {
     canvasY: number,
     selectedIds: Set<string>
   ): SceneNode | null {
-    return LabelHitTest.hitTestFrameTitle(graph, canvasX, canvasY, this.zoom, selectedIds, this.labelFont)
+    return LabelHitTest.hitTestFrameTitle(
+      graph,
+      canvasX,
+      canvasY,
+      this.zoom,
+      selectedIds,
+      this.labelFont
+    )
   }
 
   renderSceneToCanvas(canvas: Canvas, graph: SceneGraph, pageId: string): void {
@@ -485,7 +547,6 @@ export class SkiaRenderer {
   destroy(): void {
     destroyRenderer(this)
   }
-
 }
 
 installRendererDomainMethods(SkiaRenderer.prototype)

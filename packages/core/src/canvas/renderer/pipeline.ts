@@ -46,6 +46,7 @@ export function renderFromEditorState(
   r.viewportHeight = viewportHeight
   r.showRulers = showRulers
   r.pageColor = state.pageColor
+  r.rulerTheme = state.rulerTheme ?? null
   r.pageId = state.currentPageId
   render(
     r,

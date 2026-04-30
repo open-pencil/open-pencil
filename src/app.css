@@ -52,6 +52,10 @@
   --color-code-punctuation: #888888;
   --color-checkerboard: #3a3a3a;
   --color-checkerboard-muted: #4a4a4a;
+  --color-ruler-bg: rgb(36, 36, 36);
+  --color-ruler-tick: rgb(102, 102, 102);
+  --color-ruler-text: rgb(140, 140, 140);
+  --color-ruler-label: rgb(255, 255, 255);
 }
 
 html[data-theme='light'] {
@@ -78,6 +82,10 @@ html[data-theme='light'] {
   --color-code-punctuation: #64748b;
   --color-checkerboard: #d1d5db;
   --color-checkerboard-muted: #e5e7eb;
+  --color-ruler-bg: rgb(229, 231, 235);
+  --color-ruler-tick: rgb(148, 163, 184);
+  --color-ruler-text: rgb(100, 116, 139);
+  --color-ruler-label: rgb(255, 255, 255);
 }
 
 html,
