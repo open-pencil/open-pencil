@@ -1,21 +1,39 @@
 import { computed } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
-import type { MenuEntry } from '@open-pencil/vue'
+import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
+import type { EditorCommandId, MenuEntry } from '@open-pencil/vue'
 
 export interface AppMenuGroup {
   label: string
   items: MenuEntry[]
 }
 
+function shortcutLabel(shortcut: string | undefined, mod: string): string | undefined {
+  return shortcut?.replaceAll('MOD', mod)
+}
+
+function isVisible(entry: { target?: string }): boolean {
+  return entry.target !== 'native'
+}
+
+function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type: 'separator' }> {
+  return entry.type === 'separator'
+}
+
+function isCommandId(id: string | undefined): id is EditorCommandId {
+  return Boolean(id?.includes('.'))
+}
+
 export function useAppMenu(mod: string) {
   const store = useEditorStore()
   const { menuItem: commandMenuItem } = useEditorCommands()
-  const { menu: t, panels: p, locale, availableLocales, localeLabels, setLocale } = useI18n()
+  const { locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
 
   const languageMenu = computed<MenuEntry[]>(() =>
@@ -28,172 +46,143 @@ export function useAppMenu(mod: string) {
     }))
   )
 
-  const topMenus = computed<AppMenuGroup[]>(() => [
-    {
-      label: t.value.file,
-      items: [
-        {
-          label: t.value.new,
-          shortcut: `${mod}N`,
-          action: () => {
-            void import('@/app/tabs').then((m) => m.createTab())
-          }
-        },
-        { label: t.value.open, shortcut: `${mod}O`, action: () => void openFileDialog() },
-        { separator: true as const },
-        { label: t.value.save, shortcut: `${mod}S`, action: () => void store.saveFigFile() },
-        {
-          label: t.value.saveAs,
-          shortcut: `${mod}⇧S`,
-          action: () => void store.saveFigFileAs()
-        },
-        { separator: true as const },
-        {
-          label: t.value.exportSelection,
-          shortcut: `${mod}⇧E`,
-          sub: [
-            {
-              label: 'PNG',
-              action: () => {
-                void store.exportSelection(1, 'png')
-              }
-            },
-            {
-              label: 'SVG',
-              action: () => {
-                void store.exportSelection(1, 'svg')
-              }
-            },
-            {
-              label: '.fig',
-              action: () => {
-                void store.exportSelection(1, 'fig')
-              }
-            }
-          ]
-        },
-        { separator: true as const },
-        {
-          label: t.value.autosave,
-          get checked() {
-            return store.state.autosaveEnabled
-          },
-          onCheckedChange: (value: boolean) => {
-            store.state.autosaveEnabled = value
-          }
-        }
-      ]
-    },
-    {
-      label: t.value.edit,
-      items: [
-        commandMenuItem('edit.undo', `${mod}Z`),
-        commandMenuItem('edit.redo', `${mod}⇧Z`),
-        { separator: true as const },
-        { label: t.value.copy, shortcut: `${mod}C` },
-        { label: t.value.paste, shortcut: `${mod}V` },
-        commandMenuItem('selection.duplicate', `${mod}D`),
-        commandMenuItem('selection.delete', '⌫'),
-        { separator: true as const },
-        commandMenuItem('selection.selectAll', `${mod}A`)
-      ]
-    },
-    {
-      label: t.value.view,
-      items: [
-        commandMenuItem('view.zoom100', `${mod}0`),
-        commandMenuItem('view.zoomFit', `${mod}1`),
-        commandMenuItem('view.zoomSelection', `${mod}2`),
-        {
-          label: t.value.zoomIn,
-          shortcut: `${mod}=`,
-          action: () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2)
-        },
-        {
-          label: t.value.zoomOut,
-          shortcut: `${mod}-`,
-          action: () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2)
-        },
-        { separator: true as const },
-        {
-          label: t.value.profiler,
-          get checked() {
-            return store.renderer?.profiler.hudVisible ?? false
-          },
-          onCheckedChange: () => {
-            store.toggleProfiler()
-          }
-        },
-        { separator: true as const },
-        {
-          label: 'Theme',
-          sub: [
-            {
-              label: 'Light',
-              checked: theme.value === 'light',
-              onCheckedChange: (checked: boolean) => {
-                if (checked) setTheme('light')
-              }
-            },
-            {
-              label: 'Dark',
-              checked: theme.value === 'dark',
-              onCheckedChange: (checked: boolean) => {
-                if (checked) setTheme('dark')
-              }
-            },
-            {
-              label: 'Auto',
-              checked: theme.value === 'auto',
-              onCheckedChange: (checked: boolean) => {
-                if (checked) setTheme('auto')
-              }
-            }
-          ]
-        },
-        {
-          label: t.value.language,
-          sub: languageMenu.value
-        }
-      ]
-    },
-    {
-      label: t.value.object,
-      items: [
-        commandMenuItem('selection.group', `${mod}G`),
-        commandMenuItem('selection.ungroup', `${mod}⇧G`),
-        { separator: true as const },
-        commandMenuItem('selection.createComponent', `${mod}⌥K`),
-        commandMenuItem('selection.createComponentSet'),
-        commandMenuItem('selection.detachInstance'),
-        { separator: true as const },
-        commandMenuItem('selection.bringToFront', ']'),
-        commandMenuItem('selection.sendToBack', '[')
-      ]
-    },
-    {
-      label: t.value.text,
-      items: [
-        { label: t.value.bold, shortcut: `${mod}B` },
-        { label: t.value.italic, shortcut: `${mod}I` },
-        { label: t.value.underline, shortcut: `${mod}U` }
-      ]
-    },
-    {
-      label: t.value.arrange,
-      items: [
-        commandMenuItem('selection.wrapInAutoLayout', '⇧A'),
-        { separator: true as const },
-        { label: p.value.alignLeft, shortcut: '⌥A' },
-        { label: p.value.alignCenter, shortcut: '⌥H' },
-        { label: p.value.alignRight, shortcut: '⌥D' },
-        { separator: true as const },
-        { label: p.value.alignTop, shortcut: '⌥W' },
-        { label: p.value.alignMiddle, shortcut: '⌥V' },
-        { label: p.value.alignBottom, shortcut: '⌥S' }
-      ]
+  function exportSelection(format: 'png' | 'svg' | 'fig') {
+    if (store.state.selectedIds.size > 0) void store.exportSelection(1, format)
+  }
+
+  function alignSelected(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max') {
+    store.alignNodes([...store.state.selectedIds], axis, align)
+  }
+
+  function updateSelectedText(updates: {
+    fontWeight?: number
+    italic?: boolean
+    textDecoration?: 'NONE' | 'UNDERLINE'
+  }) {
+    for (const node of store.selectedNodes.value) {
+      if (node.type === 'TEXT') store.updateNodeWithUndo(node.id, updates, 'Format text')
     }
-  ])
+  }
+
+  function selectedTextNode() {
+    return store.selectedNodes.value.find((item) => item.type === 'TEXT')
+  }
+
+  const actions: Partial<Record<string, () => void>> = {
+    new: () => {
+      void import('@/app/tabs').then((m) => m.createTab())
+    },
+    open: () => void openFileDialog(),
+    save: () => void store.saveFigFile(),
+    'save-as': () => void store.saveFigFileAs(),
+    'export-selection': () => exportSelection('png'),
+    'export-png': () => exportSelection('png'),
+    'export-svg': () => exportSelection('svg'),
+    'export-fig': () => exportSelection('fig'),
+    'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),
+    'zoom-out': () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2),
+    'toggle-ui': () => {
+      store.state.showUI = !store.state.showUI
+    },
+    'theme-light': () => setTheme('light'),
+    'theme-dark': () => setTheme('dark'),
+    'theme-auto': () => setTheme('auto'),
+    'text.bold': () => {
+      const node = selectedTextNode()
+      updateSelectedText({ fontWeight: node && node.fontWeight >= 700 ? 400 : 700 })
+    },
+    'text.italic': () => {
+      const node = selectedTextNode()
+      updateSelectedText({ italic: node ? !node.italic : true })
+    },
+    'text.underline': () => {
+      const node = selectedTextNode()
+      updateSelectedText({
+        textDecoration: node?.textDecoration === 'UNDERLINE' ? 'NONE' : 'UNDERLINE'
+      })
+    },
+    'align-left': () => alignSelected('horizontal', 'min'),
+    'align-center': () => alignSelected('horizontal', 'center'),
+    'align-right': () => alignSelected('horizontal', 'max'),
+    'align-top': () => alignSelected('vertical', 'min'),
+    'align-middle': () => alignSelected('vertical', 'center'),
+    'align-bottom': () => alignSelected('vertical', 'max')
+  }
+
+  function itemAction(item: AppMenuActionItem): (() => void) | undefined {
+    return actions[item.id]
+  }
+
+  function checked(item: AppMenuActionItem): boolean | undefined {
+    switch (item.id) {
+      case 'autosave':
+        return store.state.autosaveEnabled
+      case 'profiler':
+        return store.renderer?.profiler.hudVisible ?? false
+      case 'theme-light':
+        return theme.value === 'light'
+      case 'theme-dark':
+        return theme.value === 'dark'
+      case 'theme-auto':
+        return theme.value === 'auto'
+      default:
+        return undefined
+    }
+  }
+
+  function onCheckedChange(item: AppMenuActionItem): ((checked: boolean) => void) | undefined {
+    switch (item.id) {
+      case 'autosave':
+        return (value: boolean) => {
+          store.state.autosaveEnabled = value
+        }
+      case 'profiler':
+        return () => store.toggleProfiler()
+      case 'theme-light':
+      case 'theme-dark':
+      case 'theme-auto':
+        return (value: boolean) => {
+          if (value) itemAction(item)?.()
+        }
+      default:
+        return undefined
+    }
+  }
+
+  function buildEntry(entry: AppMenuEntry): MenuEntry | null {
+    if (!isVisible(entry)) return null
+    if (isSeparator(entry)) return { separator: true }
+
+    if (entry.id === 'language') {
+      return { label: entry.label, sub: languageMenu.value }
+    }
+
+    if (entry.command ?? isCommandId(entry.id)) {
+      const command = entry.command ?? (entry.id as EditorCommandId)
+      return commandMenuItem(command, shortcutLabel(entry.shortcut, mod))
+    }
+
+    return {
+      label: entry.label,
+      shortcut: shortcutLabel(entry.shortcut, mod),
+      action: itemAction(entry),
+      checked: checked(entry),
+      onCheckedChange: onCheckedChange(entry),
+      sub: entry.sub?.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+    }
+  }
+
+  function buildGroup(group: AppMenuGroupSchema): AppMenuGroup | null {
+    if (!isVisible(group)) return null
+    return {
+      label: group.label,
+      items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
+    }
+  }
+
+  const topMenus = computed<AppMenuGroup[]>(() =>
+    APP_MENU_SCHEMA.map(buildGroup).filter((group): group is AppMenuGroup => group !== null)
+  )
 
   return { topMenus }
 }

@@ -28,7 +28,8 @@
     "docs:dev": "bun --filter @open-pencil/docs dev",
     "docs:build": "bun --filter @open-pencil/docs build",
     "docs:preview": "bun --filter @open-pencil/docs preview",
-    "visual-compare": "bun scripts/visual-compare.ts"
+    "visual-compare": "bun scripts/visual-compare.ts",
+    "generate:tauri-menu": "bun scripts/generate-tauri-menu.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",

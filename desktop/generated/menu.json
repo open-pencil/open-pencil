@@ -1,0 +1,288 @@
+[
+  {
+    "label": "File",
+    "items": [
+      {
+        "id": "new",
+        "label": "New",
+        "accelerator": "CmdOrCtrl+N"
+      },
+      {
+        "id": "open",
+        "label": "Open…",
+        "accelerator": "CmdOrCtrl+O"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "save",
+        "label": "Save",
+        "accelerator": "CmdOrCtrl+S"
+      },
+      {
+        "id": "save-as",
+        "label": "Save As…",
+        "accelerator": "CmdOrCtrl+Shift+S"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "export-selection",
+        "label": "Export Selection",
+        "accelerator": "CmdOrCtrl+Shift+E",
+        "sub": [
+          {
+            "id": "export-png",
+            "label": "PNG"
+          },
+          {
+            "id": "export-svg",
+            "label": "SVG"
+          },
+          {
+            "id": "export-fig",
+            "label": ".fig"
+          }
+        ]
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "autosave",
+        "label": "Autosave",
+        "checkbox": true
+      },
+      {
+        "id": "close",
+        "label": "Close Tab",
+        "accelerator": "CmdOrCtrl+W"
+      }
+    ]
+  },
+  {
+    "label": "Edit",
+    "items": [
+      {
+        "id": "edit.undo",
+        "label": "Undo",
+        "accelerator": "CmdOrCtrl+Z"
+      },
+      {
+        "id": "edit.redo",
+        "label": "Redo",
+        "accelerator": "CmdOrCtrl+Shift+Z"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "copy",
+        "label": "Copy",
+        "accelerator": "CmdOrCtrl+C"
+      },
+      {
+        "id": "paste",
+        "label": "Paste",
+        "accelerator": "CmdOrCtrl+V"
+      },
+      {
+        "id": "selection.duplicate",
+        "label": "Duplicate",
+        "accelerator": "CmdOrCtrl+D"
+      },
+      {
+        "id": "selection.delete",
+        "label": "Delete",
+        "accelerator": "Backspace"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.selectAll",
+        "label": "Select All",
+        "accelerator": "CmdOrCtrl+A"
+      }
+    ]
+  },
+  {
+    "label": "View",
+    "items": [
+      {
+        "id": "view.zoom100",
+        "label": "Zoom to 100%",
+        "accelerator": "CmdOrCtrl+0"
+      },
+      {
+        "id": "view.zoomFit",
+        "label": "Zoom to Fit",
+        "accelerator": "CmdOrCtrl+1"
+      },
+      {
+        "id": "view.zoomSelection",
+        "label": "Zoom to Selection",
+        "accelerator": "CmdOrCtrl+2"
+      },
+      {
+        "id": "zoom-in",
+        "label": "Zoom In",
+        "accelerator": "CmdOrCtrl+="
+      },
+      {
+        "id": "zoom-out",
+        "label": "Zoom Out",
+        "accelerator": "CmdOrCtrl+-"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "theme",
+        "label": "Theme",
+        "sub": [
+          {
+            "id": "theme-light",
+            "label": "Light",
+            "checkbox": true
+          },
+          {
+            "id": "theme-dark",
+            "label": "Dark",
+            "checkbox": true
+          },
+          {
+            "id": "theme-auto",
+            "label": "Auto",
+            "checkbox": true
+          }
+        ]
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "toggle-ui",
+        "label": "Toggle UI",
+        "accelerator": "CmdOrCtrl+\\"
+      },
+      {
+        "id": "dev-tools",
+        "label": "Developer Tools",
+        "accelerator": "CmdOrCtrl+Alt+I"
+      }
+    ]
+  },
+  {
+    "label": "Object",
+    "items": [
+      {
+        "id": "selection.group",
+        "label": "Group Selection",
+        "accelerator": "CmdOrCtrl+G"
+      },
+      {
+        "id": "selection.ungroup",
+        "label": "Ungroup Selection",
+        "accelerator": "CmdOrCtrl+Shift+G"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.createComponent",
+        "label": "Create Component",
+        "accelerator": "CmdOrCtrl+Alt+K"
+      },
+      {
+        "id": "selection.createComponentSet",
+        "label": "Create Component Set"
+      },
+      {
+        "id": "selection.detachInstance",
+        "label": "Detach Instance"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.bringToFront",
+        "label": "Bring to Front",
+        "accelerator": "]"
+      },
+      {
+        "id": "selection.sendToBack",
+        "label": "Send to Back",
+        "accelerator": "["
+      }
+    ]
+  },
+  {
+    "label": "Text",
+    "items": [
+      {
+        "id": "text.bold",
+        "label": "Bold",
+        "accelerator": "CmdOrCtrl+B"
+      },
+      {
+        "id": "text.italic",
+        "label": "Italic",
+        "accelerator": "CmdOrCtrl+I"
+      },
+      {
+        "id": "text.underline",
+        "label": "Underline",
+        "accelerator": "CmdOrCtrl+U"
+      }
+    ]
+  },
+  {
+    "label": "Arrange",
+    "items": [
+      {
+        "id": "selection.wrapInAutoLayout",
+        "label": "Wrap in Auto Layout",
+        "accelerator": "Shift+A"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "align-left",
+        "label": "Align Left",
+        "accelerator": "Alt+A"
+      },
+      {
+        "id": "align-center",
+        "label": "Align Center",
+        "accelerator": "Alt+H"
+      },
+      {
+        "id": "align-right",
+        "label": "Align Right",
+        "accelerator": "Alt+D"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "align-top",
+        "label": "Align Top",
+        "accelerator": "Alt+W"
+      },
+      {
+        "id": "align-middle",
+        "label": "Align Middle",
+        "accelerator": "Alt+V"
+      },
+      {
+        "id": "align-bottom",
+        "label": "Align Bottom",
+        "accelerator": "Alt+S"
+      }
+    ]
+  }
+]

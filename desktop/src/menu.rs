@@ -1,4 +1,65 @@
-use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
+use serde::Deserialize;
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, Submenu, SubmenuBuilder};
+
+#[derive(Deserialize)]
+struct MenuGroup {
+    label: String,
+    items: Vec<MenuEntry>,
+}
+
+#[derive(Deserialize)]
+struct MenuEntry {
+    #[serde(default)]
+    r#type: Option<String>,
+    id: Option<String>,
+    label: Option<String>,
+    accelerator: Option<String>,
+    #[serde(default)]
+    sub: Vec<MenuEntry>,
+}
+
+fn build_submenu<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    label: &str,
+    items: &[MenuEntry],
+) -> tauri::Result<Submenu<R>> {
+    let mut builder = SubmenuBuilder::new(app, label);
+
+    for entry in items {
+        if entry.r#type.as_deref() == Some("separator") {
+            builder = builder.separator();
+            continue;
+        }
+
+        let label = entry.label.as_deref().unwrap_or_default();
+        if !entry.sub.is_empty() {
+            let submenu = build_submenu(app, label, &entry.sub)?;
+            builder = builder.item(&submenu);
+            continue;
+        }
+
+        let mut item = MenuItemBuilder::new(label);
+        if let Some(id) = &entry.id {
+            item = item.id(id);
+        }
+        if let Some(accelerator) = &entry.accelerator {
+            item = item.accelerator(accelerator);
+        }
+        builder = builder.item(&item.build(app)?);
+    }
+
+    builder.build()
+}
+
+fn build_schema_menus<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> tauri::Result<Vec<Submenu<R>>> {
+    let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../generated/menu.json"))?;
+    groups
+        .iter()
+        .map(|group| build_submenu(app, &group.label, &group.items))
+        .collect()
+}
 
 pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Result<()> {
     #[cfg(target_os = "macos")]
@@ -18,237 +79,19 @@ pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Re
         .item(&PredefinedMenuItem::quit(app, None)?)
         .build()?;
 
-    #[allow(unused_mut)]
-    let mut file_menu_builder = SubmenuBuilder::new(app, "File")
-        .item(
-            &MenuItemBuilder::new("New")
-                .id("new")
-                .accelerator("CmdOrCtrl+N")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Open…")
-                .id("open")
-                .accelerator("CmdOrCtrl+O")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Save")
-                .id("save")
-                .accelerator("CmdOrCtrl+S")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Save As…")
-                .id("save-as")
-                .accelerator("CmdOrCtrl+Shift+S")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Export…")
-                .id("export")
-                .accelerator("CmdOrCtrl+Shift+E")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Close Tab")
-                .id("close")
-                .accelerator("CmdOrCtrl+W")
-                .build(app)?,
-        );
-    #[cfg(not(target_os = "macos"))]
-    {
-        file_menu_builder = file_menu_builder
-            .separator()
-            .item(&PredefinedMenuItem::quit(app, None)?);
-    }
-    let file_menu = file_menu_builder.build()?;
-
-    let edit_menu = SubmenuBuilder::new(app, "Edit")
-        .item(&PredefinedMenuItem::undo(app, None)?)
-        .item(&PredefinedMenuItem::redo(app, None)?)
-        .separator()
-        .item(&PredefinedMenuItem::cut(app, None)?)
-        .item(&PredefinedMenuItem::copy(app, None)?)
-        .item(&PredefinedMenuItem::paste(app, None)?)
-        .item(
-            &MenuItemBuilder::new("Paste in Place")
-                .id("paste-in-place")
-                .accelerator("CmdOrCtrl+Shift+V")
-                .build(app)?,
-        )
-        .item(&PredefinedMenuItem::select_all(app, None)?)
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Duplicate")
-                .id("duplicate")
-                .accelerator("CmdOrCtrl+D")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Delete")
-                .id("delete")
-                .accelerator("Backspace")
-                .build(app)?,
-        )
-        .build()?;
-
-    let theme_menu = SubmenuBuilder::new(app, "Theme")
-        .item(&MenuItemBuilder::new("Light").id("theme-light").build(app)?)
-        .item(&MenuItemBuilder::new("Dark").id("theme-dark").build(app)?)
-        .item(&MenuItemBuilder::new("Auto").id("theme-auto").build(app)?)
-        .build()?;
-
-    let view_menu = SubmenuBuilder::new(app, "View")
-        .item(
-            &MenuItemBuilder::new("Zoom In")
-                .id("zoom-in")
-                .accelerator("CmdOrCtrl+=")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Zoom Out")
-                .id("zoom-out")
-                .accelerator("CmdOrCtrl+-")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Zoom to Fit")
-                .id("zoom-fit")
-                .accelerator("CmdOrCtrl+1")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Zoom to 100%")
-                .id("zoom-100")
-                .accelerator("CmdOrCtrl+0")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Toggle Rulers")
-                .id("toggle-rulers")
-                .accelerator("Shift+R")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Toggle Grid")
-                .id("toggle-grid")
-                .accelerator("CmdOrCtrl+'")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Toggle UI")
-                .id("toggle-ui")
-                .accelerator("CmdOrCtrl+\\")
-                .build(app)?,
-        )
-        .separator()
-        .item(&theme_menu)
-        .separator()
-        .item(&PredefinedMenuItem::fullscreen(app, None)?)
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Developer Tools")
-                .id("dev-tools")
-                .accelerator("CmdOrCtrl+Alt+I")
-                .build(app)?,
-        )
-        .build()?;
-
-    let object_menu = SubmenuBuilder::new(app, "Object")
-        .item(
-            &MenuItemBuilder::new("Group Selection")
-                .id("group")
-                .accelerator("CmdOrCtrl+G")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Ungroup Selection")
-                .id("ungroup")
-                .accelerator("CmdOrCtrl+Shift+G")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Frame Selection")
-                .id("frame-selection")
-                .accelerator("CmdOrCtrl+Alt+G")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Bring to Front")
-                .id("bring-front")
-                .accelerator("CmdOrCtrl+]")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Send to Back")
-                .id("send-back")
-                .accelerator("CmdOrCtrl+[")
-                .build(app)?,
-        )
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Flip Horizontal")
-                .id("flip-h")
-                .accelerator("Shift+H")
-                .build(app)?,
-        )
-        .item(
-            &MenuItemBuilder::new("Flip Vertical")
-                .id("flip-v")
-                .accelerator("Shift+V")
-                .build(app)?,
-        )
-        .build()?;
-
-    let window_menu = SubmenuBuilder::new(app, "Window")
-        .item(&PredefinedMenuItem::minimize(app, None)?)
-        .item(&PredefinedMenuItem::maximize(app, None)?)
-        .separator()
-        .item(&PredefinedMenuItem::close_window(app, None)?)
-        .build()?;
-
-    #[allow(unused_mut)]
-    let mut help_menu_builder = SubmenuBuilder::new(app, "Help").item(
-        &MenuItemBuilder::new("Keyboard Shortcuts")
-            .id("shortcuts")
-            .accelerator("CmdOrCtrl+/")
-            .build(app)?,
-    );
-    #[cfg(not(target_os = "macos"))]
-    {
-        help_menu_builder = help_menu_builder
-            .separator()
-            .item(&PredefinedMenuItem::about(
-                app,
-                Some("About OpenPencil"),
-                None,
-            )?);
-    }
-    let help_menu = help_menu_builder.build()?;
-
+    let handle = app.handle().clone();
+    let schema_menus = build_schema_menus(&handle)?;
     let mut builder = MenuBuilder::new(app);
+
     #[cfg(target_os = "macos")]
     {
         builder = builder.item(&app_menu);
     }
-    let menu = builder
-        .items(&[
-            &file_menu,
-            &edit_menu,
-            &view_menu,
-            &object_menu,
-            &window_menu,
-            &help_menu,
-        ])
-        .build()?;
 
-    app.set_menu(menu)?;
+    for menu in &schema_menus {
+        builder = builder.item(menu);
+    }
+
+    app.set_menu(builder.build()?)?;
     Ok(())
 }

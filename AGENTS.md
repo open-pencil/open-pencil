@@ -305,6 +305,9 @@ Self-review checklist:
 ## UI
 
 - Use reka-ui for UI components (Splitter, ContextMenu, DropdownMenu, etc.)
+- Browser and Tauri menus share `src/app/shell/menu/schema.ts` as the canonical menu model. Do not add menu items directly in `src/components/AppMenu.vue` or `desktop/src/menu.rs`.
+- Regenerate the native menu with `bun run generate:tauri-menu` after editing the shared menu schema; `desktop/generated/menu.json` is consumed by the Tauri menu builder.
+- Every shared menu item with an `id` must be handled by `src/app/shell/menu/use.ts`, an editor command, or explicitly marked browser/native-only in the schema.
 - Tailwind 4 for styling — no inline CSS, no component-level `<style>` blocks
 - Mac keyboards: use `e.code` not `e.key` for shortcuts with modifiers (Option transforms characters)
 - Splitter resize handles need inner div with `pointer-events-none` for sizing (zero-width handle collapses without it)
