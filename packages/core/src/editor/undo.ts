@@ -1,3 +1,4 @@
+import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
   restorePageFromSnapshot as restorePageSnapshot,
@@ -38,6 +39,33 @@ export function createUndoActions(ctx: EditorContext) {
           ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
           ctx.runLayoutForNode(id)
         }
+      }
+    })
+  }
+
+  function commitDuplicateMove(rootIds: string[], previousSelection: Set<string>) {
+    const snapshots = new Map<string, SceneNode>()
+    for (const id of rootIds) {
+      const subtree = snapshotSubtree(ctx.graph, id)
+      for (const [nodeId, snapshot] of subtree) snapshots.set(nodeId, snapshot)
+    }
+    const nextSelection = new Set(rootIds)
+
+    ctx.undo.push({
+      label: 'Duplicate',
+      forward: () => {
+        for (const id of rootIds) {
+          if (ctx.graph.getNode(id)) continue
+          const snapshot = snapshots.get(id)
+          if (!snapshot) continue
+          restoreSubtree(ctx.graph, snapshot, snapshot.parentId ?? ctx.state.currentPageId, snapshots)
+          ctx.runLayoutForNode(id)
+        }
+        ctx.state.selectedIds = new Set(nextSelection)
+      },
+      inverse: () => {
+        for (const id of rootIds.toReversed()) ctx.graph.deleteNode(id)
+        ctx.state.selectedIds = new Set(previousSelection)
       }
     })
   }
@@ -120,6 +148,7 @@ export function createUndoActions(ctx: EditorContext) {
   return {
     commitMove,
     commitMoveWithReparent,
+    commitDuplicateMove,
     commitResize,
     commitRotation,
     commitNodeUpdate,

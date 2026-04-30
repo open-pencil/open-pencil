@@ -21,6 +21,7 @@ export interface DragMove {
   currentY: number
   originals: Map<string, { x: number; y: number; parentId: string }>
   duplicated?: boolean
+  duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string
   brokeFromAutoLayout?: boolean
 }

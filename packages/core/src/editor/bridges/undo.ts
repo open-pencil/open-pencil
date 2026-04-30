@@ -8,6 +8,7 @@ export function createUndoBridge(undoActions: UndoActions, selection: SelectionA
   return {
     commitMove: undoActions.commitMove,
     commitMoveWithReparent: undoActions.commitMoveWithReparent,
+    commitDuplicateMove: undoActions.commitDuplicateMove,
     commitResize: undoActions.commitResize,
     commitRotation: undoActions.commitRotation,
     commitNodeUpdate: undoActions.commitNodeUpdate,

@@ -8,9 +8,10 @@ export function duplicateAndDrag(
   cy: number,
   editor: Editor
 ): { originals: Map<string, DragOriginal>; drag: DragState } {
+  const previousSelection = new Set(editor.state.selectedIds)
   const newIds: string[] = []
   const newOriginals = new Map<string, DragOriginal>()
-  for (const id of editor.state.selectedIds) {
+  for (const id of previousSelection) {
     const source = editor.graph.getNode(id)
     if (!source) continue
     const parentId = source.parentId ?? editor.state.currentPageId
@@ -34,7 +35,8 @@ export function duplicateAndDrag(
       currentX: cx,
       currentY: cy,
       originals: newOriginals,
-      duplicated: true
+      duplicated: true,
+      duplicatedPreviousSelection: previousSelection
     }
   }
 }

@@ -104,6 +104,11 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     } else {
       reparentOutsideNodes(editor)
     }
+  }
+
+  if (d.duplicated) {
+    editor.commitDuplicateMove([...d.originals.keys()], d.duplicatedPreviousSelection ?? new Set())
+  } else if (moved) {
     editor.commitMoveWithReparent(d.originals)
   }
   editor.setDropTarget(null)
