@@ -36,7 +36,7 @@ const sectionCls = useSectionUI()
         >
           <icon-lucide-alert-triangle
             data-test-id="typography-missing-font"
-            class="size-3.5 shrink-0 text-amber-400"
+            class="size-3.5 shrink-0 text-[var(--color-warning-action)]"
           />
         </Tip>
       </div>

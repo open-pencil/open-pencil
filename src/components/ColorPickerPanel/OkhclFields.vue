@@ -87,7 +87,7 @@ const ctx = useColorPickerPanelContext()
         {{ ctx.okhcl.previewColorSpace }}
       </span>
     </div>
-    <p v-if="ctx.okhcl.clipped" class="text-[10px] leading-4 text-amber-400">
+    <p v-if="ctx.okhcl.clipped" class="text-[10px] leading-4 text-[var(--color-warning-text)]">
       {{ ctx.panels.colorPreviewClipped({ space: ctx.okhcl.previewColorSpace ?? 'display-p3' }) }}
     </p>
   </div>

@@ -11,7 +11,7 @@ const show = !IS_TAURI && IS_BROWSER && !window.showSaveFilePicker
   <div
     v-if="show && !dismissed"
     data-test-id="safari-banner"
-    class="flex items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-800 dark:text-amber-200"
+    class="flex items-center gap-2 border-b border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] px-3 py-1.5 text-xs text-[var(--color-warning-text)]"
   >
     <span class="flex-1">
       Your browser doesn't support the local file API. Files will be downloaded instead of saved in
@@ -21,7 +21,7 @@ const show = !IS_TAURI && IS_BROWSER && !window.showSaveFilePicker
     </span>
     <button
       data-test-id="safari-banner-dismiss"
-      class="shrink-0 rounded px-1.5 py-0.5 font-medium text-amber-900 transition-colors hover:bg-amber-500/20 dark:text-amber-300"
+      class="shrink-0 rounded px-1.5 py-0.5 font-medium text-[var(--color-warning-action)] transition-colors hover:bg-amber-500/20"
       @click="dismissed = true"
     >
       Dismiss

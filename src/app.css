@@ -38,6 +38,10 @@
   --color-muted: #888888;
   --color-input: #1e1e1e;
   --color-component: #9747ff;
+  --color-warning-bg: rgb(245 158 11 / 0.1);
+  --color-warning-border: rgb(245 158 11 / 0.3);
+  --color-warning-text: #fde68a;
+  --color-warning-action: #fcd34d;
 }
 
 html[data-theme='light'] {
@@ -50,6 +54,10 @@ html[data-theme='light'] {
   --color-muted: #6b7280;
   --color-input: #ffffff;
   --color-component: #7c3aed;
+  --color-warning-bg: rgb(245 158 11 / 0.14);
+  --color-warning-border: rgb(245 158 11 / 0.32);
+  --color-warning-text: #92400e;
+  --color-warning-action: #78350f;
 }
 
 html,
