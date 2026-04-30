@@ -1,6 +1,4 @@
-import { WheelGesture } from '@use-gesture/vanilla'
-import { watch, onScopeDispose } from 'vue'
-
+import { useWheelGesture } from '#vue/shared/gesture/wheel'
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
 import type { Editor } from '@open-pencil/core/editor'
@@ -53,7 +51,6 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
   }
 
   const wheelScheduler = createRafScheduler(flushWheel)
-  let gesture: WheelGesture | null = null
 
   function onWheel(e: WheelEvent) {
     const canvas = canvasRef.value
@@ -73,24 +70,14 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
     wheelScheduler.schedule()
   }
 
-  const stopWatch = watch(
+  useWheelGesture(
     canvasRef,
-    (canvas) => {
-      gesture?.destroy()
-      gesture = canvas
-        ? new WheelGesture(canvas, ({ event, last }) => {
-            if (!last) onWheel(event)
-          }, {
-            eventOptions: { passive: false },
-            preventDefault: true
-          })
-        : null
+    ({ event, last }) => {
+      if (!last) onWheel(event)
     },
-    { immediate: true }
+    {
+      eventOptions: { passive: false },
+      preventDefault: true
+    }
   )
-
-  onScopeDispose(() => {
-    stopWatch()
-    gesture?.destroy()
-  })
 }
