@@ -8,5 +8,18 @@ export function handleMagicKeyEvent(e: KeyboardEvent, store: EditorStore) {
   if (isEditing(e) || store.state.editingTextId) return
 
   preventReservedKeyboardDefaults(e)
+  if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+    if (e.code === 'KeyZ') {
+      if (e.shiftKey) store.redoAction()
+      else store.undoAction()
+      e.preventDefault()
+      return
+    }
+    if (e.code === 'KeyY') {
+      store.redoAction()
+      e.preventDefault()
+      return
+    }
+  }
   if (e.code === 'Enter' && store.state.penState) e.preventDefault()
 }
