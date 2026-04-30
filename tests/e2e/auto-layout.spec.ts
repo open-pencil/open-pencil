@@ -78,7 +78,9 @@ test('uniform padding ScrubInput sets all four padding sides', async () => {
   const paddingScrub = page.locator('[data-test-id="layout-uniform-padding-input"]')
   await paddingScrub.click()
   await canvas.waitForRender()
-  const paddingInput = page.locator('[data-test-id="layout-uniform-padding-input"] [data-test-id="scrub-input-field"]')
+  const paddingInput = page.locator(
+    '[data-test-id="layout-uniform-padding-input"] [data-test-id="scrub-input-field"]'
+  )
   await paddingInput.fill('16')
   await paddingInput.press('Enter')
   await canvas.waitForRender()
@@ -88,6 +90,27 @@ test('uniform padding ScrubInput sets all four padding sides', async () => {
   expect(frame!.paddingRight).toBe(16)
   expect(frame!.paddingBottom).toBe(16)
   expect(frame!.paddingLeft).toBe(16)
+  canvas.assertNoErrors()
+})
+
+test('size dropdown adds and removes min width', async () => {
+  await selectFrame()
+
+  await page.locator('[data-test-id="layout-width-sizing-menu"]').click()
+  await page.getByText('Add min width').click()
+  await canvas.waitForRender()
+
+  let frame = await getNodeById(page, frameId)
+  expect(frame!.minWidth).toBe(Math.round(frame!.width))
+  await expect(page.locator('[data-test-id="layout-min-width-input"]')).toBeVisible()
+
+  await page.locator('[data-test-id="layout-width-sizing-menu"]').click()
+  await page.getByText('Remove min width').click()
+  await canvas.waitForRender()
+
+  frame = await getNodeById(page, frameId)
+  expect(frame!.minWidth).toBeNull()
+  await expect(page.locator('[data-test-id="layout-min-width-input"]')).toHaveCount(0)
   canvas.assertNoErrors()
 })
 

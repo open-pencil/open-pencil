@@ -206,6 +206,18 @@ export const panelMessages = i18n('panels', {
   sizingFill: 'Fill',
   sizingHugShort: 'Hug',
   sizingFillShort: 'Fill',
+  addMinWidth: 'Add min width',
+  removeMinWidth: 'Remove min width',
+  addMaxWidth: 'Add max width',
+  removeMaxWidth: 'Remove max width',
+  addMinHeight: 'Add min height',
+  removeMinHeight: 'Remove min height',
+  addMaxHeight: 'Add max height',
+  removeMaxHeight: 'Remove max height',
+  minWidthShort: 'Min W',
+  maxWidthShort: 'Max W',
+  minHeightShort: 'Min H',
+  maxHeightShort: 'Max H',
   sizingFillFr: 'Fill (fr)',
   sizingFixedPx: 'Fixed (px)'
 })

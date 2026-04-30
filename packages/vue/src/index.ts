@@ -47,6 +47,7 @@ export { toolCursor } from '#vue/editor/tool-cursor'
 /** Property-panel composables. */
 export { usePosition } from '#vue/controls/position/use'
 export { useLayout } from '#vue/controls/layout/use'
+export type { SizeLimitProp } from '#vue/controls/layout/helpers'
 export { useAppearance } from '#vue/controls/appearance/use'
 export { useTypography } from '#vue/controls/typography/use'
 export type { UseTypographyOptions } from '#vue/controls/typography/use'

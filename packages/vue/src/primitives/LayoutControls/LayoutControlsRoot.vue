@@ -4,7 +4,11 @@ import { provideLayoutControls } from '#vue/primitives/LayoutControls/context'
 import { proxyRefs } from 'vue'
 
 const ctx = useLayout()
-provideLayoutControls(proxyRefs(ctx) as ReturnType<typeof proxyRefs<typeof ctx>> & { node: NonNullable<typeof ctx.node.value> })
+provideLayoutControls(
+  proxyRefs(ctx) as ReturnType<typeof proxyRefs<typeof ctx>> & {
+    node: NonNullable<typeof ctx.node.value>
+  }
+)
 </script>
 
 <template>
@@ -24,6 +28,10 @@ provideLayoutControls(proxyRefs(ctx) as ReturnType<typeof proxyRefs<typeof ctx>>
     :has-uniform-padding="ctx.hasUniformPadding.value"
     :track-sizing-options="ctx.trackSizingOptions"
     :update-prop="ctx.updateProp"
+    :update-size-limit="ctx.updateSizeLimit"
+    :commit-size-limit="ctx.commitSizeLimit"
+    :add-size-limit="ctx.addSizeLimit"
+    :remove-size-limit="ctx.removeSizeLimit"
     :commit-prop="ctx.commitProp"
     :set-width-sizing="ctx.setWidthSizing"
     :set-height-sizing="ctx.setHeightSizing"

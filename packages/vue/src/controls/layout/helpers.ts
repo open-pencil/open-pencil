@@ -2,6 +2,7 @@ import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { computed, ref } from 'vue'
 
 import type { useI18n } from '#vue/i18n'
+import type { Editor } from '@open-pencil/core/editor'
 import type {
   GridTrack,
   LayoutAlign,
@@ -9,7 +10,6 @@ import type {
   LayoutSizing,
   SceneNode
 } from '@open-pencil/core/scene-graph'
-import type { Editor } from '@open-pencil/core/editor'
 import type { ComputedRef } from 'vue'
 
 export type AlignCell = { primary: LayoutAlign; counter: LayoutCounterAlign }
@@ -21,6 +21,8 @@ type LayoutPanelStrings = {
   sizingHug: string
   sizingFill: string
 }
+
+export type SizeLimitProp = 'minWidth' | 'maxWidth' | 'minHeight' | 'maxHeight'
 
 type ValueRef<T> = { readonly value: T }
 
@@ -172,6 +174,28 @@ export function createLayoutActions({
     if (node.value) editor.updateNode(node.value.id, { [key]: value })
   }
 
+  function updateSizeLimit(prop: SizeLimitProp, value: number) {
+    if (!node.value) return
+    editor.updateNode(node.value.id, { [prop]: value })
+  }
+
+  function commitSizeLimit(prop: SizeLimitProp, _value: number, previous: number) {
+    if (!node.value) return
+    editor.commitNodeUpdate(node.value.id, { [prop]: previous }, `Change ${prop}`)
+  }
+
+  function addSizeLimit(prop: SizeLimitProp) {
+    const n = node.value
+    if (!n) return
+    const fallback = prop === 'minWidth' || prop === 'maxWidth' ? n.width : n.height
+    editor.updateNodeWithUndo(n.id, { [prop]: Math.round(fallback) }, `Add ${prop}`)
+  }
+
+  function removeSizeLimit(prop: SizeLimitProp) {
+    if (!node.value) return
+    editor.updateNodeWithUndo(node.value.id, { [prop]: null }, `Remove ${prop}`)
+  }
+
   function commitProp(key: string, _value: number | string, previous: number | string) {
     if (node.value) {
       editor.commitNodeUpdate(
@@ -222,6 +246,10 @@ export function createLayoutActions({
 
   return {
     updateProp,
+    updateSizeLimit,
+    commitSizeLimit,
+    addSizeLimit,
+    removeSizeLimit,
     commitProp,
     setWidthSizing,
     setHeightSizing,

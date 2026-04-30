@@ -16,7 +16,7 @@ export function getPageChildren(page: Page) {
       height: n.height,
       layoutMode: n.layoutMode,
       childIds: n.childIds,
-      vectorNetwork: n.vectorNetwork,
+      vectorNetwork: n.vectorNetwork
     }))
   })
 }
@@ -46,7 +46,7 @@ export function getSelectedNode(page: Page) {
       clipsContent: n.clipsContent,
       fills: n.fills,
       fontWeight: n.fontWeight,
-      italic: n.italic,
+      italic: n.italic
     }
   })
 }
@@ -72,6 +72,10 @@ export function getNodeById(page: Page, id: string) {
       paddingRight: n.paddingRight,
       paddingBottom: n.paddingBottom,
       paddingLeft: n.paddingLeft,
+      minWidth: n.minWidth,
+      maxWidth: n.maxWidth,
+      minHeight: n.minHeight,
+      maxHeight: n.maxHeight,
       childIds: n.childIds,
       cornerRadius: n.cornerRadius,
       flipX: n.flipX,
@@ -79,7 +83,7 @@ export function getNodeById(page: Page, id: string) {
       fills: n.fills,
       fontWeight: n.fontWeight,
       italic: n.italic,
-      styleRuns: n.styleRuns,
+      styleRuns: n.styleRuns
     }
   }, id)
 }
