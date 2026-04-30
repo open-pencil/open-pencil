@@ -24,6 +24,9 @@ export function renderSceneToCanvas(
 
 export type RenderLayer = 'full' | 'scene' | 'overlays'
 
+const LIVE_SCENE_CHANGE_MS = 120
+const now = typeof performance !== 'undefined' ? () => performance.now() : () => Date.now()
+
 export function renderFromEditorState(
   r: SkiaRenderer,
   state: EditorState,
@@ -77,6 +80,28 @@ export function renderFromEditorState(
   )
 }
 
+function hasVolatileOverlay(overlays: RenderOverlays): boolean {
+  return (
+    overlays.dropTargetId != null ||
+    overlays.rotationPreview != null ||
+    overlays.editingTextId != null ||
+    overlays.nodeEditState != null
+  )
+}
+
+function hasLiveSceneChange(r: SkiaRenderer, sceneVersion: number, layer: RenderLayer): boolean {
+  if (layer === 'overlays' || sceneVersion < 0 || sceneVersion === r.lastObservedSceneVersion) {
+    return false
+  }
+
+  const timestamp = now()
+  const live =
+    r.lastSceneVersionChangeAt > 0 && timestamp - r.lastSceneVersionChangeAt < LIVE_SCENE_CHANGE_MS
+  r.lastObservedSceneVersion = sceneVersion
+  r.lastSceneVersionChangeAt = timestamp
+  return live
+}
+
 export function render(
   r: SkiaRenderer,
   graph: SceneGraph,
@@ -105,10 +130,7 @@ export function render(
   }
 
   const hasVolatileOverlays =
-    overlays.dropTargetId != null ||
-    overlays.rotationPreview != null ||
-    overlays.editingTextId != null ||
-    overlays.nodeEditState != null
+    hasVolatileOverlay(overlays) || hasLiveSceneChange(r, sceneVersion, layer)
 
   const canUsePicture =
     !hasVolatileOverlays &&
