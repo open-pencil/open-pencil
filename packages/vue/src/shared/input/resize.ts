@@ -1,7 +1,7 @@
-export { constrainToAspectRatio } from '#vue/shared/input/resize-rect'
-export { tryStartResize } from '#vue/shared/input/resize-start'
-import { calculateResizeRect } from '#vue/shared/input/resize-rect'
-import { scaleVectorNetworkForResize } from '#vue/shared/input/resize-vector'
+export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
+export { tryStartResize } from '#vue/shared/input/resize/start'
+import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
 
 import type { DragResize } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'

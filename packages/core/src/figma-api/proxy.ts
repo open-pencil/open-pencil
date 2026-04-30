@@ -21,9 +21,9 @@ import type {
   Effect,
   LayoutMode
 } from '#core/scene-graph'
-import { installBasicNodeProxyAccessors } from './accessors-basic'
-import { installLayoutNodeProxyAccessors } from './accessors-layout'
-import { installVisualNodeProxyAccessors } from './accessors-visual'
+import { installBasicNodeProxyAccessors } from './accessors/basic'
+import { installLayoutNodeProxyAccessors } from './accessors/layout'
+import { installVisualNodeProxyAccessors } from './accessors/visual'
 import type { Rect } from '#core/types'
 
 const MIXED = Symbol('mixed')

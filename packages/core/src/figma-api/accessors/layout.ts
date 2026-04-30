@@ -1,4 +1,4 @@
-import { raw, updateNode, type NodeProxyInternals, type ProxyThis } from './accessor-utils'
+import { raw, updateNode, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
 
 import type { LayoutMode, SceneGraph, SceneNode } from '#core/scene-graph'
 

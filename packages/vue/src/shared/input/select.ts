@@ -1,8 +1,8 @@
 import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/node-edit'
-export { resolveHit } from '#vue/shared/input/select-hit'
-import { resolveHit } from '#vue/shared/input/select-hit'
-export { updateHoverCursor } from '#vue/shared/input/select-hover'
-import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select-move'
+export { resolveHit } from '#vue/shared/input/select/hit'
+import { resolveHit } from '#vue/shared/input/select/hit'
+export { updateHoverCursor } from '#vue/shared/input/select/hover'
+import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'
 import { tryStartResize } from '#vue/shared/input/resize'
 
 import type { DragState } from '#vue/shared/input/types'

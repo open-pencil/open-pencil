@@ -7,7 +7,7 @@ import { createBrowserRpcBridge } from './browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from './http-options'
 import { preprocessRpc } from './jsx-preprocess'
 import { createMcpSessionManager } from './mcp-sessions'
-import { registerTools } from './tool-registration'
+import { registerTools } from './tool/registration'
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
@@ -16,8 +16,8 @@ export const MCP_VERSION: string = (require('../package.json') as { version: str
 
 export { fail, ok, type MCPContent, type MCPResult } from './result'
 
-export { registerTools, type RegisterToolsOptions, type RpcSender } from './tool-registration'
-export { paramToZod } from './tool-schema'
+export { registerTools, type RegisterToolsOptions, type RpcSender } from './tool/registration'
+export { paramToZod } from './tool/schema'
 
 export interface ServerOptions {
   httpPort?: number

@@ -5,8 +5,8 @@
   "type": "module",
   "imports": {
     "#mcp/*": {
-      "types": "./src/*",
-      "bun": "./src/*",
+      "types": "./src/*.ts",
+      "bun": "./src/*.ts",
       "default": "./dist/*.js"
     }
   },

@@ -1,7 +1,7 @@
-import { createSelectionContainerActions } from './selection-container'
-import { createSelectionHitTestActions } from './selection-hit-test'
-import { createSelectionOverlayActions } from './selection-overlays'
-import { createSelectionReadActions } from './selection-read'
+import { createSelectionContainerActions } from './selection/container'
+import { createSelectionHitTestActions } from './selection/hit-test'
+import { createSelectionOverlayActions } from './selection/overlays'
+import { createSelectionReadActions } from './selection/read'
 import type { EditorContext } from './types'
 
 export function createSelectionActions(ctx: EditorContext) {

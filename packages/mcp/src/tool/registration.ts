@@ -4,9 +4,9 @@ import { z } from 'zod'
 
 import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
-import { fail, ok } from './result'
-import { resolveSafePath, writeToolOutput } from './tool-output'
-import { paramToZod } from './tool-schema'
+import { fail, ok } from '#mcp/result'
+import { resolveSafePath, writeToolOutput } from './output'
+import { paramToZod } from './schema'
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
