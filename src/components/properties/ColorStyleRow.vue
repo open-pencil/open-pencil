@@ -59,7 +59,6 @@ const varPopoverOpen = ref(false)
       :min="0"
       :max="100"
       @update:model-value="emit('patch', { opacity: opacityFromPercent($event) })"
-      },{
     />
 
     <PopoverRoot

@@ -82,10 +82,19 @@ export class CanvasHelper {
     await this.waitForRender()
   }
 
-  async selectTool(tool: 'select' | 'frame' | 'rectangle' | 'ellipse' | 'text' | 'pen' | 'hand') {
+  async drawSection(x: number, y: number, width: number, height: number) {
+    await this.pressKey('s')
+    await this.drag(x, y, x + width, y + height)
+    await this.waitForRender()
+  }
+
+  async selectTool(
+    tool: 'select' | 'frame' | 'section' | 'rectangle' | 'ellipse' | 'text' | 'pen' | 'hand'
+  ) {
     const keys: Record<string, string> = {
       select: 'v',
       frame: 'f',
+      section: 's',
       rectangle: 'r',
       ellipse: 'o',
       text: 't',
