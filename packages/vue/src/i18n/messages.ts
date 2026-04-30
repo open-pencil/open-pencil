@@ -198,6 +198,7 @@ export const panelMessages = i18n('panels', {
   multiplayerCursors: 'Multiplayer cursors',
   direction: 'Direction',
   flow: 'Flow',
+  gapAuto: 'Auto gap',
   auto: 'Auto',
   columns: 'Columns',
   rows: 'Rows',

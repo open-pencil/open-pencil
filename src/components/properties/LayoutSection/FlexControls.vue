@@ -26,7 +26,19 @@ const { panels } = useI18n()
   </div>
 
   <div class="mt-2 flex items-center gap-1.5">
+    <button
+      v-if="ctx.gapAuto"
+      data-test-id="layout-gap-input"
+      class="group flex h-[26px] min-w-0 flex-1 cursor-pointer items-center rounded border border-accent/50 bg-accent/10 text-xs text-accent hover:bg-accent/15"
+      @click="ctx.setGapAuto(false)"
+    >
+      <span class="flex shrink-0 items-center justify-center self-stretch px-[5px] text-accent/80">
+        {{ ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔' }}
+      </span>
+      <span class="flex-1 truncate text-left">{{ panels.auto }}</span>
+    </button>
     <ScrubInput
+      v-else
       data-test-id="layout-gap-input"
       class="flex-1"
       :icon="ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔'"
@@ -35,6 +47,15 @@ const { panels } = useI18n()
       @update:model-value="ctx.updateProp('itemSpacing', $event)"
       @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
     />
+    <button
+      data-test-id="layout-gap-auto-toggle"
+      :title="panels.gapAuto"
+      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-transparent text-[10px] text-muted hover:bg-hover hover:text-surface"
+      :class="ctx.gapAuto ? 'border-accent bg-accent/10 text-accent' : ''"
+      @click="ctx.setGapAuto(!ctx.gapAuto)"
+    >
+      A
+    </button>
     <button
       class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-transparent text-muted hover:bg-hover hover:text-surface"
       @click="ctx.toggleIndividualPadding"

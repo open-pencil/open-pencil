@@ -22,6 +22,7 @@ export function useLayout() {
   const {
     node,
     layoutDirection,
+    gapAuto,
     alignGrid,
     isInAutoLayout,
     isGrid,
@@ -48,6 +49,7 @@ export function useLayout() {
     editor,
     node,
     layoutDirection,
+    gapAuto,
     isInAutoLayout,
     isGrid,
     isFlex,
@@ -70,6 +72,7 @@ export function useLayout() {
     setUniformPadding,
     commitUniformPadding,
     setAlignment: layoutActions.setAlignment,
+    setGapAuto: layoutActions.setGapAuto,
     setLayoutDirection: layoutActions.setLayoutDirection,
     updateGridTrack,
     addTrack,

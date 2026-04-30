@@ -72,6 +72,25 @@ test('gap ScrubInput sets itemSpacing', async () => {
   canvas.assertNoErrors()
 })
 
+test('gap auto toggle sets space-between alignment', async () => {
+  await selectFrame()
+
+  await page.locator('[data-test-id="layout-gap-auto-toggle"]').click()
+  await canvas.waitForRender()
+
+  let frame = await getNodeById(page, frameId)
+  expect(frame!.primaryAxisAlign).toBe('SPACE_BETWEEN')
+  await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(3)
+
+  await page.locator('[data-test-id="layout-gap-auto-toggle"]').click()
+  await canvas.waitForRender()
+
+  frame = await getNodeById(page, frameId)
+  expect(frame!.primaryAxisAlign).toBe('MIN')
+  await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(9)
+  canvas.assertNoErrors()
+})
+
 test('uniform padding ScrubInput sets all four padding sides', async () => {
   await selectFrame()
 
