@@ -11,6 +11,7 @@ export function createDemoShapes(store: EditorStore) {
   const { graph } = store
 
   const { btnCompId, badgeCompId } = createComponentsSection(store)
+  computeAllLayouts(store.graph)
   const { sidebarId, headerId, frameId, headerTitle, chartTitle } = createAppPreviewSection(
     store,
     btnCompId,
