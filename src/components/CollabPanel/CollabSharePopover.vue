@@ -19,9 +19,9 @@ const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
         class="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-none px-3 text-xs font-medium transition-colors"
         :class="
           collab.state.connected
-            ? 'bg-green-600 text-white hover:bg-green-700'
+            ? 'bg-[var(--color-success-bg)] text-white hover:bg-[var(--color-success-bg-hover)]'
             : collab.isJoining
-              ? 'animate-pulse bg-amber-600 text-white'
+              ? 'animate-pulse border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]'
               : 'bg-accent text-white hover:bg-accent/90'
         "
       >

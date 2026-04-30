@@ -76,7 +76,7 @@ function copyReference() {
           title="Copy JSX prop reference to clipboard"
           @click="copyReference"
         >
-          <icon-lucide-check v-if="copiedRef" class="size-3 text-green-400" />
+          <icon-lucide-check v-if="copiedRef" class="size-3 text-[var(--color-success)]" />
           <icon-lucide-book-open v-else class="size-3" />
         </button>
         <button
@@ -84,7 +84,7 @@ function copyReference() {
           class="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
           @click="copyCode"
         >
-          <icon-lucide-check v-if="copied" class="size-3 text-green-400" />
+          <icon-lucide-check v-if="copied" class="size-3 text-[var(--color-success)]" />
           <icon-lucide-copy v-else class="size-3" />
           {{ copied ? dialogs.copied : dialogs.copy }}
         </button>
@@ -115,25 +115,25 @@ function copyReference() {
 
 <style scoped>
 .token.tag {
-  color: #7dd3fc;
+  color: var(--color-code-tag);
 }
 .token.attr-name {
-  color: #c4b5fd;
+  color: var(--color-code-attribute);
 }
 .token.attr-value,
 .token.string {
-  color: #86efac;
+  color: var(--color-code-string);
 }
 .token.number {
-  color: #fca5a5;
+  color: var(--color-code-number);
 }
 .token.punctuation {
-  color: #888;
+  color: var(--color-code-punctuation);
 }
 .token.boolean {
-  color: #fca5a5;
+  color: var(--color-code-number);
 }
 .token.keyword {
-  color: #c4b5fd;
+  color: var(--color-code-attribute);
 }
 </style>

@@ -16,7 +16,7 @@ const pickerSlider = tv({
     checkerboard: {
       true: {
         track:
-          'bg-[#333] bg-[image:linear-gradient(45deg,#444_25%,transparent_25%),linear-gradient(-45deg,#444_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#444_75%),linear-gradient(-45deg,transparent_75%,#444_75%)] bg-[size:8px_8px] bg-[position:0_0,0_4px,4px_-4px,-4px_0]'
+          'bg-[var(--color-checkerboard)] bg-[image:linear-gradient(45deg,var(--color-checkerboard-muted)_25%,transparent_25%),linear-gradient(-45deg,var(--color-checkerboard-muted)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,var(--color-checkerboard-muted)_75%),linear-gradient(-45deg,transparent_75%,var(--color-checkerboard-muted)_75%)] bg-[size:8px_8px] bg-[position:0_0,0_4px,4px_-4px,-4px_0]'
       },
       false: {}
     }

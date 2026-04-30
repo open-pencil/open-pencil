@@ -186,7 +186,8 @@ onScopeDispose(() => {
         class="block w-full"
         style="
           image-rendering: auto;
-          background: repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 16px 16px;
+          background: repeating-conic-gradient(var(--color-checkerboard) 0% 25%, transparent 0% 50%)
+            50% / 16px 16px;
         "
       />
     </div>
