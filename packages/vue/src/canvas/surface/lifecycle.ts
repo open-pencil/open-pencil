@@ -37,6 +37,7 @@ export function createCanvasSurfaceManager({
     const ck = getCanvasKit()
     if (!ck) return
 
+    if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
     state.renderer = null
     state.glContext?.delete()
@@ -67,7 +68,8 @@ export function createCanvasSurfaceManager({
       editor.textEditor,
       canvasRef.value?.clientWidth ?? 0,
       canvasRef.value?.clientHeight ?? 0,
-      shouldShowRulers()
+      shouldShowRulers(),
+      options?.layer ?? 'full'
     )
     renderLoop.markRendered()
   }
@@ -97,6 +99,7 @@ export function createCanvasSurfaceManager({
 
   function destroy() {
     renderLoop.pause()
+    if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
     state.glContext?.delete()
   }

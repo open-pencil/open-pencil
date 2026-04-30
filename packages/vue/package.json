@@ -47,6 +47,7 @@
   "dependencies": {
     "@nanostores/i18n": "^1.2.2",
     "@nanostores/vue": "^1.1.0",
+    "@use-gesture/vanilla": "^10.3.1",
     "@vueuse/core": "^14.2.1",
     "nanostores": "^1.2.0"
   },

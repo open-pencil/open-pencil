@@ -3,7 +3,7 @@ import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 type GraphEventOptions = {
   getGraph: () => SceneGraph
-  getRenderer: () => SkiaRenderer | null
+  getRenderers: () => Iterable<SkiaRenderer>
   scheduleComponentSync: (nodeId: string) => void
   requestRender: () => void
 }
@@ -12,10 +12,10 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
   let unbindGraphEvents: (() => void) | null = null
 
   function onNodeUpdated(id: string, changes: Partial<SceneNode>) {
-    if ('vectorNetwork' in changes) {
-      options.getRenderer()?.invalidateVectorPath(id)
+    for (const renderer of options.getRenderers()) {
+      if ('vectorNetwork' in changes) renderer.invalidateVectorPath(id)
+      renderer.invalidateNodePicture(id)
     }
-    options.getRenderer()?.invalidateNodePicture(id)
     options.scheduleComponentSync(id)
     options.requestRender()
   }

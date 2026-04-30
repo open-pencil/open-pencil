@@ -50,6 +50,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@unhead/vue": "^2.1.10",
+    "@use-gesture/vanilla": "^10.3.1",
     "@vueuse/core": "^14.2.1",
     "ai": "^6.0.116",
     "canvaskit-wasm": "^0.40.0",

@@ -1,9 +1,12 @@
-import { useEventListener } from '@vueuse/core'
+import { WheelGesture } from '@use-gesture/vanilla'
+import { watch, onScopeDispose } from 'vue'
 
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
+
+const TRACKPAD_ZOOM_DELTA_MULTIPLIER = 1.5
 
 type WheelAccum = {
   deltaX: number
@@ -50,9 +53,9 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
   }
 
   const wheelScheduler = createRafScheduler(flushWheel)
+  let gesture: WheelGesture | null = null
 
   function onWheel(e: WheelEvent) {
-    e.preventDefault()
     const canvas = canvasRef.value
     if (!canvas) return
     const { dx, dy } = normalizeWheelDelta(e)
@@ -61,7 +64,7 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
       const rect = canvas.getBoundingClientRect()
       wheelAccum.zoomCenterX = e.clientX - rect.left
       wheelAccum.zoomCenterY = e.clientY - rect.top
-      wheelAccum.zoomDelta += dy
+      wheelAccum.zoomDelta += dy * TRACKPAD_ZOOM_DELTA_MULTIPLIER
       wheelAccum.hasZoom = true
     } else {
       wheelAccum.deltaX -= dx
@@ -70,5 +73,24 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
     wheelScheduler.schedule()
   }
 
-  useEventListener(canvasRef, 'wheel', onWheel, { passive: false })
+  const stopWatch = watch(
+    canvasRef,
+    (canvas) => {
+      gesture?.destroy()
+      gesture = canvas
+        ? new WheelGesture(canvas, ({ event, last }) => {
+            if (!last) onWheel(event)
+          }, {
+            eventOptions: { passive: false },
+            preventDefault: true
+          })
+        : null
+    },
+    { immediate: true }
+  )
+
+  onScopeDispose(() => {
+    stopWatch()
+    gesture?.destroy()
+  })
 }

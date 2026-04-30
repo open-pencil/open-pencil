@@ -12,16 +12,22 @@ import CanvasMenu from './CanvasMenu.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
+const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
+useCanvas(sceneCanvasRef, store, {
+  layer: 'scene',
+  showRulers: false,
+  onReady: fadeOutGlobalLoader
+})
 const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
   canvasRef,
   store,
   {
-    onReady: fadeOutGlobalLoader
+    layer: 'overlays'
   }
 )
 const { cursorOverride } = useCanvasInput(
@@ -47,11 +53,17 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
         class="canvas-area relative min-h-0 min-w-0 flex-1 overflow-hidden"
       >
         <canvas
+          ref="sceneCanvasRef"
+          data-test-id="scene-canvas-element"
+          aria-hidden="true"
+          class="pointer-events-none absolute inset-0 size-full outline-none"
+        />
+        <canvas
           ref="canvasRef"
           data-test-id="canvas-element"
           tabindex="-1"
           :style="{ cursor }"
-          class="block size-full touch-none outline-none"
+          class="absolute inset-0 block size-full touch-none outline-none"
         />
         <Transition
           enter-active-class="transition-opacity duration-150"

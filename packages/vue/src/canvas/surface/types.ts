@@ -1,7 +1,13 @@
 /**
  * Options for {@link useCanvas}.
  */
+export type CanvasRenderLayer = 'full' | 'scene' | 'overlays'
+
 export interface UseCanvasOptions {
+  /**
+   * Selects which render layer this canvas owns.
+   */
+  layer?: CanvasRenderLayer
   /**
    * Forces ruler visibility on or off for this canvas.
    *

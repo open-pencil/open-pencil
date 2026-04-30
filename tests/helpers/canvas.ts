@@ -7,7 +7,7 @@ export class CanvasHelper {
 
   constructor(page: Page) {
     this.page = page
-    this.canvas = page.locator('canvas')
+    this.canvas = page.locator('[data-test-id="canvas-area"]')
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
       if (msg.type() === 'error') this.errors.push(msg.text())

@@ -380,19 +380,31 @@ export class SkiaRenderer {
     textEditor: unknown,
     viewportWidth: number,
     viewportHeight: number,
-    showRulers = true
+    showRulers = true,
+    layer: RenderPipeline.RenderLayer = 'full'
   ): void {
     const dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
-    RenderPipeline.renderFromEditorState(this, state, graph, textEditor, viewportWidth, viewportHeight, showRulers, dpr)
+    RenderPipeline.renderFromEditorState(
+      this,
+      state,
+      graph,
+      textEditor,
+      viewportWidth,
+      viewportHeight,
+      showRulers,
+      dpr,
+      layer
+    )
   }
 
   render(
     graph: SceneGraph,
     selectedIds: Set<string>,
     overlays: RenderOverlays = {},
-    sceneVersion = -1
+    sceneVersion = -1,
+    layer: RenderPipeline.RenderLayer = 'full'
   ): void {
-    RenderPipeline.render(this, graph, selectedIds, overlays, sceneVersion)
+    RenderPipeline.render(this, graph, selectedIds, overlays, sceneVersion, layer)
   }
 
   invalidateVectorPath(nodeId: string): void {

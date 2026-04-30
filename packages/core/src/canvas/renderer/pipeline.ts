@@ -22,6 +22,8 @@ export function renderSceneToCanvas(
   r.worldViewport = prevViewport
 }
 
+export type RenderLayer = 'full' | 'scene' | 'overlays'
+
 export function renderFromEditorState(
   r: SkiaRenderer,
   state: EditorState,
@@ -30,7 +32,8 @@ export function renderFromEditorState(
   viewportWidth: number,
   viewportHeight: number,
   showRulers = true,
-  dpr = 1
+  dpr = 1,
+  layer: RenderLayer = 'full'
 ): void {
   const extendedState = state as EditorState & {
     nodeEditState?: RenderOverlays['nodeEditState']
@@ -68,7 +71,8 @@ export function renderFromEditorState(
       nodeEditState: extendedState.nodeEditState ?? null,
       remoteCursors: state.remoteCursors
     },
-    state.sceneVersion
+    state.sceneVersion,
+    layer
   )
 }
 
@@ -77,7 +81,8 @@ export function render(
   graph: SceneGraph,
   selectedIds: Set<string>,
   overlays: RenderOverlays = {},
-  sceneVersion = -1
+  sceneVersion = -1,
+  layer: RenderLayer = 'full'
 ): void {
   const p = r.profiler
   p.beginFrame()
@@ -85,7 +90,11 @@ export function render(
   graph.clearAbsPosCache()
 
   const canvas = r.surface.getCanvas()
-  canvas.clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
+  if (layer === 'overlays') {
+    canvas.clear(r.ck.Color4f(0, 0, 0, 0))
+  } else {
+    canvas.clear(r.ck.Color4f(r.pageColor.r, r.pageColor.g, r.pageColor.b, 1))
+  }
 
   r.worldViewport = {
     x: -r.panX / r.zoom,
@@ -108,71 +117,75 @@ export function render(
 
   p.setCacheHit(!!canUsePicture)
 
-  canvas.save()
-  canvas.scale(r.dpr, r.dpr)
-  canvas.translate(r.panX, r.panY)
-  canvas.scale(r.zoom, r.zoom)
+  if (layer !== 'overlays') {
+    canvas.save()
+    canvas.scale(r.dpr, r.dpr)
+    canvas.translate(r.panX, r.panY)
+    canvas.scale(r.zoom, r.zoom)
 
-  p.beginPhase('render:scene')
-  if (canUsePicture) {
-    p.beginPhase('render:drawPicture')
-    if (r.scenePicture) canvas.drawPicture(r.scenePicture)
-    p.endPhase('render:drawPicture')
-  } else if (hasVolatileOverlays) {
-    r._nodeCount = 0
-    r._culledCount = 0
-    p.beginPhase('render:volatile')
-    renderPageChildren(r, canvas, graph, overlays)
-    p.endPhase('render:volatile')
-  } else {
-    r._nodeCount = 0
-    r._culledCount = 0
-    p.beginPhase('render:recordPicture')
-    recordScenePicture(r, canvas, graph, sceneVersion)
-    if (r.scenePicture) canvas.drawPicture(r.scenePicture)
-    p.endPhase('render:recordPicture')
+    p.beginPhase('render:scene')
+    if (canUsePicture) {
+      p.beginPhase('render:drawPicture')
+      if (r.scenePicture) canvas.drawPicture(r.scenePicture)
+      p.endPhase('render:drawPicture')
+    } else if (hasVolatileOverlays) {
+      r._nodeCount = 0
+      r._culledCount = 0
+      p.beginPhase('render:volatile')
+      renderPageChildren(r, canvas, graph, overlays)
+      p.endPhase('render:volatile')
+    } else {
+      r._nodeCount = 0
+      r._culledCount = 0
+      p.beginPhase('render:recordPicture')
+      recordScenePicture(r, canvas, graph, sceneVersion)
+      if (r.scenePicture) canvas.drawPicture(r.scenePicture)
+      p.endPhase('render:recordPicture')
+    }
+    p.endPhase('render:scene')
+
+    canvas.restore()
   }
-  p.endPhase('render:scene')
 
-  canvas.restore()
+  if (layer !== 'scene') {
+    canvas.save()
+    canvas.scale(r.dpr, r.dpr)
+    r.labelCache.update(graph, r.pageId, sceneVersion)
+    p.beginPhase('render:sectionTitles')
+    r.drawSectionTitles(canvas, graph)
+    p.endPhase('render:sectionTitles')
+    p.beginPhase('render:componentLabels')
+    r.drawComponentLabels(canvas, graph)
+    p.endPhase('render:componentLabels')
+    canvas.restore()
 
-  canvas.save()
-  canvas.scale(r.dpr, r.dpr)
-  r.labelCache.update(graph, r.pageId, sceneVersion)
-  p.beginPhase('render:sectionTitles')
-  r.drawSectionTitles(canvas, graph)
-  p.endPhase('render:sectionTitles')
-  p.beginPhase('render:componentLabels')
-  r.drawComponentLabels(canvas, graph)
-  p.endPhase('render:componentLabels')
-  canvas.restore()
+    canvas.save()
+    canvas.scale(r.dpr, r.dpr)
 
-  canvas.save()
-  canvas.scale(r.dpr, r.dpr)
+    r.drawHoverHighlight(
+      canvas,
+      graph,
+      overlays.hoveredNodeId === overlays.nodeEditState?.nodeId ? null : overlays.hoveredNodeId
+    )
+    r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId)
+    p.beginPhase('render:selection')
+    r.drawSelection(canvas, graph, selectedIds, overlays)
+    p.endPhase('render:selection')
+    r.drawFlashes(canvas, graph)
+    r.drawSnapGuides(canvas, overlays.snapGuides)
+    r.drawMarquee(canvas, overlays.marquee)
+    r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
+    r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
+    r.drawPenOverlay(canvas, overlays.penState)
+    r.drawRemoteCursors(canvas, graph, overlays.remoteCursors)
+    p.beginPhase('render:rulers')
+    if (r.showRulers) r.drawRulers(canvas, graph, selectedIds)
+    p.endPhase('render:rulers')
 
-  r.drawHoverHighlight(
-    canvas,
-    graph,
-    overlays.hoveredNodeId === overlays.nodeEditState?.nodeId ? null : overlays.hoveredNodeId
-  )
-  r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId)
-  p.beginPhase('render:selection')
-  r.drawSelection(canvas, graph, selectedIds, overlays)
-  p.endPhase('render:selection')
-  r.drawFlashes(canvas, graph)
-  r.drawSnapGuides(canvas, overlays.snapGuides)
-  r.drawMarquee(canvas, overlays.marquee)
-  r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
-  r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
-  r.drawPenOverlay(canvas, overlays.penState)
-  r.drawRemoteCursors(canvas, graph, overlays.remoteCursors)
-  p.beginPhase('render:rulers')
-  if (r.showRulers) r.drawRulers(canvas, graph, selectedIds)
-  p.endPhase('render:rulers')
+    p.drawHUD(canvas, r.showRulers)
 
-  p.drawHUD(canvas, r.showRulers)
-
-  canvas.restore()
+    canvas.restore()
+  }
 
   p.beginPhase('render:flush')
   r.surface.flush()

@@ -47,6 +47,7 @@ export function createEditor(options?: EditorOptions) {
     })
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
+  const _renderers = new Set<SkiaRenderer>()
   let _textEditor: TextEditor | null = null
 
   void prefetchFigmaSchema()
@@ -68,7 +69,7 @@ export function createEditor(options?: EditorOptions) {
 
   const { subscribeToGraph } = createGraphEventSubscription({
     getGraph: () => _graph,
-    getRenderer: () => _renderer,
+    getRenderers: () => _renderers,
     scheduleComponentSync,
     requestRender
   })
@@ -120,8 +121,16 @@ export function createEditor(options?: EditorOptions) {
   function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
     _ck = ck
     _renderer = renderer
-    _textEditor = new TextEditor(ck)
+    _renderers.add(renderer)
+    _textEditor ??= new TextEditor(ck)
     setTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+  }
+
+  function removeCanvasRenderer(renderer: SkiaRenderer) {
+    _renderers.delete(renderer)
+    if (_renderer === renderer) {
+      _renderer = _renderers.values().next().value ?? null
+    }
   }
 
   function replaceGraph(newGraph: SceneGraph) {
@@ -154,6 +163,7 @@ export function createEditor(options?: EditorOptions) {
     requestRender,
     requestRepaint,
     setCanvasKit,
+    removeCanvasRenderer,
     replaceGraph,
     subscribeToGraph,
 
