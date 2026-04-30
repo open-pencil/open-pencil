@@ -4,9 +4,9 @@
   "version": "0.11.8",
   "identifier": "net.dannote.open-pencil",
   "build": {
-    "beforeDevCommand": "bun run dev",
+    "beforeDevCommand": "bun run generate:tauri-menu && bun run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "bun run build",
+    "beforeBuildCommand": "bun run generate:tauri-menu && bun run build",
     "frontendDist": "../dist"
   },
   "app": {
