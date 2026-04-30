@@ -8,7 +8,7 @@ export {
   decompressFigKiwiDataAsync,
   FIG_KIWI_DEFAULT_VERSION,
   parseFigKiwiChunks
-} from './fig-kiwi-container'
+} from './fig/container'
 export { buildFontDigestMap } from './font-digests'
 
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
