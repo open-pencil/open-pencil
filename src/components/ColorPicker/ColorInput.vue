@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { useAttrs } from 'vue'
+
 import { ColorInputRoot } from '@open-pencil/vue'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 
 import type { Color } from '@open-pencil/core/types'
 import type { OkHCLControls } from '@open-pencil/vue'
+
+defineOptions({ inheritAttrs: false })
+
+const attrs = useAttrs()
 
 const {
   editable = false,
@@ -28,7 +34,7 @@ const emit = defineEmits<{ update: [color: Color] }>()
     <template
       #default="{ editable: isEditable, hex, updateFromHex, updateColor, okhcl: okhclControls }"
     >
-      <div class="flex items-center gap-1.5">
+      <div v-bind="attrs" class="flex items-center gap-1.5">
         <ColorPicker :color="color" :okhcl="okhclControls" @update="updateColor($event)" />
         <input
           v-if="isEditable"
