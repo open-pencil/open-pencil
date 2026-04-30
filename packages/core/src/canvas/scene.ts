@@ -352,6 +352,18 @@ function drawVectorPathStrokes(
   stroke: SceneNode['strokes'][0],
   sc: Color
 ): void {
+  if (stroke.dashPattern && stroke.dashPattern.length > 0) {
+    r.strokePaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
+    r.strokePaint.setAlphaf(stroke.opacity)
+    r.strokePaint.setStrokeWidth(stroke.weight)
+    r.strokePaint.setStrokeCap(getCapEntity(r, stroke.cap ?? 'NONE'))
+    r.strokePaint.setStrokeJoin(getJoinEntity(r, stroke.join ?? 'MITER'))
+    r.strokePaint.setShader(null)
+    r.strokePaint.setPathEffect(r.ck.PathEffect.MakeDash(stroke.dashPattern, 0))
+    for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
+    r.strokePaint.setPathEffect(null)
+    return
+  }
   const strokeOpts = {
     width: stroke.weight,
     miter_limit: 4,
@@ -414,11 +426,12 @@ function drawNodeStroke(
   vectorPaths: Path[] | null,
   vectorStroke: Path[] | null
 ): void {
-  if (vectorStroke && stroke.align === 'CENTER' && node.cornerRadius === 0) {
+  const dashed = !!(stroke.dashPattern && stroke.dashPattern.length > 0)
+  if (vectorStroke && (dashed || (stroke.align === 'CENTER' && node.cornerRadius === 0))) {
     drawVectorPathStrokes(r, canvas, vectorStroke, stroke, sc)
     return
   }
-  if (!sg) {
+  if (!sg || (dashed && vectorPaths)) {
     if (vectorPaths) drawVectorPathStrokes(r, canvas, vectorPaths, stroke, sc)
     else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
     return
