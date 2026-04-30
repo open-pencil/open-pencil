@@ -1,28 +1,11 @@
+import { getWorldMatrix } from '#core/canvas/coordinate'
 import Matrix from '#core/canvas/matrix'
-import {
-  FLASH_ATTACK_MS,
-  FLASH_COLOR,
-  FLASH_HOLD_MS,
-  FLASH_OVERSHOOT,
-  FLASH_RELEASE_MS,
-  HANDLE_HALF_SIZE,
-  LAYOUT_INDICATOR_STROKE,
-  MARQUEE_FILL_ALPHA,
-  SELECTION_DASH_ALPHA,
-  TEXT_CARET_COLOR,
-  TEXT_CARET_WIDTH,
-  TEXT_SELECTION_COLOR
-} from '#core/constants'
+import { HANDLE_HALF_SIZE, SELECTION_DASH_ALPHA } from '#core/constants'
 import { rotatedCorners } from '#core/geometry'
 
-import { getWorldMatrix } from './coordinate'
-import { drawNodeHighlightRect } from './highlight-rect'
-
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
-import type { TextEditor } from '#core/text/editor'
-import type { Rect, Vector } from '#core/types'
-import type { RenderOverlays, SkiaRenderer } from './renderer'
+import type { Vector } from '#core/types'
 import type { Canvas } from 'canvaskit-wasm'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
@@ -125,9 +108,9 @@ export function drawSelection(
     r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
     r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
-    const _rotation =
+    const rotation =
       overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
-    r.drawNodeSelection(canvas, node, _rotation, graph)
+    r.drawNodeSelection(canvas, node, rotation, graph)
     r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
 
     r.selectionPaint.setColor(r.selColor())
@@ -168,13 +151,7 @@ function withNodeBounds(
   graph: SceneGraph,
   draw: (x1: number, y1: number, x2: number, y2: number) => void
 ): void {
-  const worldMatrix = getWorldMatrix(
-    {
-      ...node,
-      rotation
-    },
-    graph
-  )
+  const worldMatrix = getWorldMatrix({ ...node, rotation }, graph)
 
   canvas.save()
   canvas.translate(r.panX, r.panY)
@@ -255,9 +232,7 @@ export function drawParentFrameOutlines(
     drawn.add(parent.id)
 
     const world = getWorldMatrix(parent, graph)
-
     const view = Matrix.multiply(Matrix.translated(r.panX, r.panY), Matrix.scaled(r.zoom, r.zoom))
-
     const m = Matrix.multiply(view, world)
 
     const pts = Matrix.mapPoints(m, [
@@ -342,8 +317,6 @@ export function getRotatedCorners(r: SkiaRenderer, n: SceneNode, abs: Vector): V
   return rotatedCorners(cx, cy, hw, hh, n.rotation)
 }
 
-export { drawSelectionLabels } from './selection-labels'
-
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
   r.auxFill.setColor(r.ck.WHITE)
   const rect = r.ck.LTRBRect(
@@ -355,140 +328,3 @@ export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number
   canvas.drawRect(rect, r.auxFill)
   canvas.drawRect(rect, r.selectionPaint)
 }
-
-export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
-  if (!guides || guides.length === 0) return
-
-  for (const guide of guides) {
-    if (guide.axis === 'x') {
-      const x = guide.position * r.zoom + r.panX
-      const y1 = guide.from * r.zoom + r.panY
-      const y2 = guide.to * r.zoom + r.panY
-      canvas.drawLine(x, y1, x, y2, r.snapPaint)
-    } else {
-      const y = guide.position * r.zoom + r.panY
-      const x1 = guide.from * r.zoom + r.panX
-      const x2 = guide.to * r.zoom + r.panX
-      canvas.drawLine(x1, y, x2, y, r.snapPaint)
-    }
-  }
-}
-
-export function drawMarquee(r: SkiaRenderer, canvas: Canvas, marquee?: Rect | null): void {
-  if (!marquee || marquee.width <= 0 || marquee.height <= 0) return
-
-  const x1 = marquee.x * r.zoom + r.panX
-  const y1 = marquee.y * r.zoom + r.panY
-  const x2 = (marquee.x + marquee.width) * r.zoom + r.panX
-  const y2 = (marquee.y + marquee.height) * r.zoom + r.panY
-  const rect = r.ck.LTRBRect(x1, y1, x2, y2)
-
-  r.auxFill.setColor(r.selColor(MARQUEE_FILL_ALPHA))
-  canvas.drawRect(rect, r.auxFill)
-  canvas.drawRect(rect, r.selectionPaint)
-}
-
-export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
-  if (r._flashes.length === 0) return
-
-  const now = performance.now()
-  const totalMs = FLASH_ATTACK_MS + FLASH_HOLD_MS + FLASH_RELEASE_MS
-
-  for (let i = r._flashes.length - 1; i >= 0; i--) {
-    const flash = r._flashes[i]
-    const elapsed = now - flash.startTime
-    if (elapsed > totalMs) {
-      r._flashes.splice(i, 1)
-      continue
-    }
-
-    let opacity: number
-    let extraPad: number
-
-    if (elapsed < FLASH_ATTACK_MS) {
-      const t = elapsed / FLASH_ATTACK_MS
-      const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
-      opacity = ease
-      extraPad = (1 - ease) * FLASH_OVERSHOOT
-    } else if (elapsed < FLASH_ATTACK_MS + FLASH_HOLD_MS) {
-      opacity = 1
-      extraPad = 0
-    } else {
-      const t = (elapsed - FLASH_ATTACK_MS - FLASH_HOLD_MS) / FLASH_RELEASE_MS
-      opacity = 1 - t * t
-      extraPad = 0
-    }
-
-    if (!drawNodeHighlightRect(r, canvas, graph, flash.nodeId, FLASH_COLOR, opacity, extraPad)) {
-      r._flashes.splice(i, 1)
-    }
-  }
-}
-
-export function drawLayoutInsertIndicator(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  indicator?: RenderOverlays['layoutInsertIndicator']
-): void {
-  if (!indicator) return
-
-  r.auxStroke.setStrokeWidth(LAYOUT_INDICATOR_STROKE)
-  r.auxStroke.setColor(r.selColor())
-  r.auxStroke.setPathEffect(null)
-
-  if (indicator.direction === 'HORIZONTAL') {
-    const y = indicator.y * r.zoom + r.panY
-    const x1 = indicator.x * r.zoom + r.panX
-    const x2 = (indicator.x + indicator.length) * r.zoom + r.panX
-    canvas.drawLine(x1, y, x2, y, r.auxStroke)
-  } else {
-    const x = indicator.x * r.zoom + r.panX
-    const y1 = indicator.y * r.zoom + r.panY
-    const y2 = (indicator.y + indicator.length) * r.zoom + r.panY
-    canvas.drawLine(x, y1, x, y2, r.auxStroke)
-  }
-}
-
-export function drawTextEditOverlay(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode,
-  editor: TextEditor
-): void {
-  r.auxStroke.setStrokeWidth(1 / r.zoom)
-  r.auxStroke.setColor(r.selColor())
-  r.auxStroke.setPathEffect(null)
-  canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxStroke)
-
-  const selRects = editor.getSelectionRects()
-  if (selRects.length > 0) {
-    r.auxFill.setColor(
-      r.ck.Color4f(
-        TEXT_SELECTION_COLOR.r,
-        TEXT_SELECTION_COLOR.g,
-        TEXT_SELECTION_COLOR.b,
-        TEXT_SELECTION_COLOR.a
-      )
-    )
-    for (const sel of selRects) {
-      canvas.drawRect(r.ck.LTRBRect(sel.x, sel.y, sel.x + sel.width, sel.y + sel.height), r.auxFill)
-    }
-  }
-
-  if (editor.caretVisible && !editor.hasSelection()) {
-    const caret = editor.getCaretRect()
-    if (caret) {
-      r.auxFill.setColor(
-        r.ck.Color4f(TEXT_CARET_COLOR.r, TEXT_CARET_COLOR.g, TEXT_CARET_COLOR.b, TEXT_CARET_COLOR.a)
-      )
-      const w = TEXT_CARET_WIDTH / r.zoom
-      canvas.drawRect(
-        r.ck.LTRBRect(caret.x - w / 2, caret.y0, caret.x + w / 2, caret.y1),
-        r.auxFill
-      )
-    }
-  }
-}
-
-export { drawPenOverlay, drawRemoteCursors } from './pen-overlay'
-export { drawNodeEditOverlay } from './node-edit-overlay'
