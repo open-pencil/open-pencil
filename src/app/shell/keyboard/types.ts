@@ -2,8 +2,6 @@ import type { EditorStore } from '@/app/editor/active-store'
 import type { useEditorCommands } from '@open-pencil/vue'
 import type { ComputedRef } from 'vue'
 
-export type MagicKeys = Record<string, { value: boolean }>
-
 export type KeyboardShortcutActions = {
   smartDelete: (altKey: boolean) => void
   confirmOrEnterText: () => void
@@ -15,7 +13,6 @@ export type KeyboardShortcutActions = {
 }
 
 export type KeyboardShortcutOptions = {
-  keys: MagicKeys
   inputFocused: ComputedRef<boolean>
   store: EditorStore
   runCommand: ReturnType<typeof useEditorCommands>['runCommand']
@@ -23,4 +20,9 @@ export type KeyboardShortcutOptions = {
   openFileDialog: () => void
   closeActiveTab: () => void
   createTab: () => void
+}
+
+export type KeyboardShortcutRunOptions = KeyboardShortcutOptions & {
+  keyEvent: KeyboardEvent
+  spaceTool: { resetToolBeforeSpace: () => void }
 }
