@@ -2,6 +2,7 @@ import { computed } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openFileDialog } from '@/app/shell/menu/use'
+import { useAppTheme } from '@/app/shell/theme'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import type { MenuEntry } from '@open-pencil/vue'
@@ -15,6 +16,7 @@ export function useAppMenu(mod: string) {
   const store = useEditorStore()
   const { menuItem: commandMenuItem } = useEditorCommands()
   const { menu: t, panels: p, locale, availableLocales, localeLabels, setLocale } = useI18n()
+  const { theme, setTheme } = useAppTheme()
 
   const languageMenu = computed<MenuEntry[]>(() =>
     availableLocales.map((code) => ({
@@ -123,6 +125,32 @@ export function useAppMenu(mod: string) {
           }
         },
         { separator: true as const },
+        {
+          label: 'Theme',
+          sub: [
+            {
+              label: 'Light',
+              checked: theme.value === 'light',
+              onCheckedChange: (checked: boolean) => {
+                if (checked) setTheme('light')
+              }
+            },
+            {
+              label: 'Dark',
+              checked: theme.value === 'dark',
+              onCheckedChange: (checked: boolean) => {
+                if (checked) setTheme('dark')
+              }
+            },
+            {
+              label: 'Auto',
+              checked: theme.value === 'auto',
+              onCheckedChange: (checked: boolean) => {
+                if (checked) setTheme('auto')
+              }
+            }
+          ]
+        },
         {
           label: t.value.language,
           sub: languageMenu.value

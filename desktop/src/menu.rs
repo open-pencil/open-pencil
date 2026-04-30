@@ -96,6 +96,12 @@ pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Re
         )
         .build()?;
 
+    let theme_menu = SubmenuBuilder::new(app, "Theme")
+        .item(&MenuItemBuilder::new("Light").id("theme-light").build(app)?)
+        .item(&MenuItemBuilder::new("Dark").id("theme-dark").build(app)?)
+        .item(&MenuItemBuilder::new("Auto").id("theme-auto").build(app)?)
+        .build()?;
+
     let view_menu = SubmenuBuilder::new(app, "View")
         .item(
             &MenuItemBuilder::new("Zoom In")
@@ -141,6 +147,9 @@ pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Re
                 .accelerator("CmdOrCtrl+\\")
                 .build(app)?,
         )
+        .separator()
+        .item(&theme_menu)
+        .separator()
         .item(&PredefinedMenuItem::fullscreen(app, None)?)
         .separator()
         .item(

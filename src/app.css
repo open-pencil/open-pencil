@@ -40,6 +40,18 @@
   --color-component: #9747ff;
 }
 
+html[data-theme='light'] {
+  --color-panel: #ffffff;
+  --color-canvas: #f3f4f6;
+  --color-border: #d8dce3;
+  --color-hover: #eef1f5;
+  --color-accent: #2563eb;
+  --color-surface: #202124;
+  --color-muted: #6b7280;
+  --color-input: #ffffff;
+  --color-component: #7c3aed;
+}
+
 html,
 body,
 #app {

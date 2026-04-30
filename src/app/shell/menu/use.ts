@@ -2,6 +2,7 @@ import { tryOnScopeDispose } from '@vueuse/core'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
+import { useAppTheme } from '@/app/shell/theme'
 import { createTab, closeTab, activeTab } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
 
@@ -38,10 +39,16 @@ export function useMenu() {
   if (!IS_TAURI) return
 
   let unlisten: (() => void) | undefined
+  const { setTheme } = useAppTheme()
+  const themeActions: Partial<Record<string, () => void>> = {
+    'theme-dark': () => setTheme('dark'),
+    'theme-light': () => setTheme('light'),
+    'theme-auto': () => setTheme('auto')
+  }
 
   void import('@tauri-apps/api/event').then(({ listen }) => {
     void listen<string>('menu-event', (event) => {
-      const action = MENU_ACTIONS[event.payload]
+      const action = MENU_ACTIONS[event.payload] ?? themeActions[event.payload]
       if (action) action()
     }).then((fn) => {
       unlisten = fn

@@ -7,11 +7,13 @@ import { provideEditor } from '@open-pencil/vue'
 import AppToast from '@/components/AppToast.vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
+import { useAppTheme } from '@/app/shell/theme'
 
 useHead({ titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil') })
 
 const store = useEditorStore()
 provideEditor(store)
+useAppTheme()
 
 onMounted(() => {
   toast.setupGlobalErrorHandler()
