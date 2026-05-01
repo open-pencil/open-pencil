@@ -27,7 +27,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
       @commit="ctx.commitHorizontalPadding"
     >
       <template #icon>
-        <icon-lucide-panel-left-right-dashed class="size-3.5" />
+        <icon-lucide-separator-vertical class="size-3.5" />
       </template>
     </ScrubInput>
     <ScrubInput
@@ -38,7 +38,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
       @commit="ctx.commitVerticalPadding"
     >
       <template #icon>
-        <icon-lucide-panel-top-bottom-dashed class="size-3.5" />
+        <icon-lucide-separator-horizontal class="size-3.5" />
       </template>
     </ScrubInput>
   </div>

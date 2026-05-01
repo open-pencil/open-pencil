@@ -60,23 +60,37 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
       <ScrubInput
         data-test-id="layout-gap-input"
         class="min-w-0 flex-1"
-        :icon="ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔'"
         :label="ctx.node.layoutMode === 'VERTICAL' ? panels.verticalGap : panels.horizontalGap"
         :model-value="Math.round(ctx.node.itemSpacing)"
         :min="0"
         @update:model-value="ctx.updateProp('itemSpacing', $event)"
         @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
-      />
+      >
+        <template #icon>
+          <icon-lucide-align-vertical-space-between
+            v-if="ctx.node.layoutMode === 'VERTICAL'"
+            class="size-3.5"
+          />
+          <icon-lucide-align-horizontal-space-between v-else class="size-3.5" />
+        </template>
+      </ScrubInput>
       <ScrubInput
         data-test-id="layout-cross-gap-input"
         class="min-w-0 flex-1"
-        :icon="ctx.node.layoutMode === 'VERTICAL' ? '↔' : '↕'"
         :label="ctx.node.layoutMode === 'VERTICAL' ? panels.horizontalGap : panels.verticalGap"
         :model-value="Math.round(ctx.node.counterAxisSpacing)"
         :min="0"
         @update:model-value="ctx.updateProp('counterAxisSpacing', $event)"
         @commit="(v: number, p: number) => ctx.commitProp('counterAxisSpacing', v, p)"
-      />
+      >
+        <template #icon>
+          <icon-lucide-align-horizontal-space-between
+            v-if="ctx.node.layoutMode === 'VERTICAL'"
+            class="size-3.5"
+          />
+          <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
+        </template>
+      </ScrubInput>
     </template>
     <template v-else>
       <div
@@ -86,7 +100,11 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
         class="group flex h-[26px] min-w-0 flex-1 items-center rounded border border-border bg-input focus-within:border-accent"
       >
         <span class="flex shrink-0 items-center justify-center self-stretch px-[5px] text-muted">
-          {{ ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔' }}
+          <icon-lucide-align-vertical-space-between
+            v-if="ctx.node.layoutMode === 'VERTICAL'"
+            class="size-3.5"
+          />
+          <icon-lucide-align-horizontal-space-between v-else class="size-3.5" />
         </span>
         <span class="flex-1 truncate text-xs text-surface">{{ panels.auto }}</span>
         <SelectRoot :model-value="'AUTO'" @update:model-value="setGapMode">
@@ -126,12 +144,18 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
         <ScrubInput
           data-test-id="layout-gap-input"
           class="w-full"
-          :icon="ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔'"
           :model-value="Math.round(ctx.node.itemSpacing)"
           :min="0"
           @update:model-value="ctx.updateProp('itemSpacing', $event)"
           @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
         >
+          <template #icon>
+            <icon-lucide-align-vertical-space-between
+              v-if="ctx.node.layoutMode === 'VERTICAL'"
+              class="size-3.5"
+            />
+            <icon-lucide-align-horizontal-space-between v-else class="size-3.5" />
+          </template>
           <template #suffix>
             <SelectRoot :model-value="'FIXED'" @update:model-value="setGapMode">
               <SelectTrigger
