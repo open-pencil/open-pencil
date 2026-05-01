@@ -174,6 +174,7 @@ export const panelMessages = i18n('panels', {
   create: 'Create',
   createVariable: 'Create variable',
   createColorVariable: params('Create color variable from {value}'),
+  createNumberVariable: params('Create number variable from {value}'),
   variableName: 'Variable name',
   mixed: 'Mixed',
   layersCount: params('{count} layers'),

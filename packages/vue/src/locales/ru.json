@@ -172,7 +172,8 @@
     "createVariable": "Создать переменную",
     "createColorVariable": "Создать переменную цвета из {value}",
     "variableName": "Имя переменной",
-    "create": "Создать"
+    "create": "Создать",
+    "createNumberVariable": "Создать числовую переменную из {value}"
   },
   "pages": {
     "newPage": "Новая страница",

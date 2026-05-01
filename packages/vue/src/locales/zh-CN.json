@@ -172,7 +172,8 @@
     "createVariable": "创建变量",
     "createColorVariable": "从 {value} 创建颜色变量",
     "variableName": "变量名称",
-    "create": "创建"
+    "create": "创建",
+    "createNumberVariable": "从 {value} 创建数字变量"
   },
   "pages": {
     "newPage": "新建页面",

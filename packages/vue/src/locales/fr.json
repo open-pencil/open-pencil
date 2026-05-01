@@ -172,7 +172,8 @@
     "createVariable": "Créer une variable",
     "createColorVariable": "Créer une variable de couleur depuis {value}",
     "variableName": "Nom de la variable",
-    "create": "Créer"
+    "create": "Créer",
+    "createNumberVariable": "Créer une variable numérique depuis {value}"
   },
   "pages": {
     "newPage": "Nouvelle page",

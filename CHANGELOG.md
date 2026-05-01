@@ -10,7 +10,7 @@
 - Use `@use-gesture/vanilla` for wheel gesture lifecycle handling and faster trackpad zoom behavior.
 - Add auto-layout inspector controls for min/max dimensions, Auto gap distribution, wrap cross-axis gap, and two-axis padding controls.
 - Add signed Tauri updater configuration, release artifacts, startup update checks, and a native Check for Updates menu item.
-- Add inspector variable binding controls for fill and stroke colors, including existing variable selection and named color variable creation.
+- Add inspector variable binding controls for fill and stroke colors plus width/height sizing, including existing variable selection and named variable creation.
 
 ### Fixes
 

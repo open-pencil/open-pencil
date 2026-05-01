@@ -55,6 +55,7 @@ export { useExport } from '#vue/document/export/use'
 export type { ExportFormatId } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
 export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
+export { useNumberVariableBinding } from '#vue/controls/number-variable-binding/use'
 export { useVariableBinding } from '#vue/controls/variable-binding/use'
 export type {
   VariableBindingState,

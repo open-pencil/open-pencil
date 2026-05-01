@@ -14,6 +14,10 @@ export function createVariableActions(ctx: EditorContext) {
     return ctx.graph.resolveColorVariable(id)
   }
 
+  function resolveNumberVariable(id: string) {
+    return ctx.graph.resolveNumberVariable(id)
+  }
+
   function getVariablesForCollection(collectionId: string) {
     return ctx.graph.getVariablesForCollection(collectionId)
   }
@@ -177,6 +181,7 @@ export function createVariableActions(ctx: EditorContext) {
     getVariablesByType,
     getVariable,
     resolveColorVariable,
+    resolveNumberVariable,
     getVariablesForCollection,
     getCollection,
     getCollections,

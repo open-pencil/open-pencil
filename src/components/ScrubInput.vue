@@ -68,6 +68,7 @@ defineOptions({ inheritAttrs: false })
         :max="max === Infinity ? undefined : max"
         :step="step"
       />
+      <slot v-if="editing" name="suffix" />
       <ScrubInputDisplay
         class="flex flex-1 items-center truncate overflow-hidden text-xs select-none"
         :class="$slots.suffix ? 'pr-0' : 'pr-1.5'"

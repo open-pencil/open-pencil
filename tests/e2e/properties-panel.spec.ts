@@ -171,6 +171,47 @@ test('fill color can create and bind a variable', async () => {
   canvas.assertNoErrors()
 })
 
+test('width can create, bind, and detach a number variable', async () => {
+  await canvas.clearCanvas()
+  await canvas.drawRect(200, 200, 80, 80)
+  await page.locator('[data-test-id="layout-height-input"]').click()
+
+  await page.locator('[data-test-id="layout-width-apply-variable"]').click()
+  await expect(page.getByText('Create number variable from 80')).toBeVisible()
+  await page.locator('[data-test-id="layout-width-apply-variable-create"]').click()
+  await page.getByPlaceholder('Variable name').fill('Card/width')
+  await page.locator('[data-test-id="layout-width-apply-variable-create"]').click()
+  await canvas.waitForRender()
+
+  await expect(page.locator('[data-test-id="layout-width-unbind-variable"]')).toBeVisible()
+  const boundVariable = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const id = [...store.state.selectedIds][0]
+    if (!id) return null
+    const node = store.getNode(id)
+    const variableId = node?.boundVariables.width
+    return variableId ? store.getVariable(variableId)?.name : null
+  })
+  expect(boundVariable).toBe('Card/width')
+
+  const widthField = page.locator('[data-test-id="layout-width-input"]')
+  await widthField.click()
+  const widthInput = widthField.locator('[data-test-id="scrub-input-field"]')
+  await widthInput.fill('120')
+  await widthInput.press('Enter')
+  await canvas.waitForRender()
+
+  await expect(page.locator('[data-test-id="layout-width-unbind-variable"]')).toBeHidden()
+  const directWidth = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const id = [...store.state.selectedIds][0]
+    const node = id ? store.getNode(id) : null
+    return node ? { width: node.width, binding: node.boundVariables.width ?? null } : null
+  })
+  expect(directWidth).toEqual({ width: 120, binding: null })
+  canvas.assertNoErrors()
+})
+
 test('alignment buttons align nodes to same X', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(50, 200, 60, 60)

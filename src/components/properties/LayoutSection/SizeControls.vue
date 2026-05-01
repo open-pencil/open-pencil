@@ -12,8 +12,10 @@ import {
 } from 'reka-ui'
 
 import ScrubInput from '@/components/ScrubInput.vue'
+import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
+import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useSelectUI } from '@/components/ui/select'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n, useLayoutControlsContext, useNumberVariableBinding } from '@open-pencil/vue'
 
 import type { LayoutSizing } from '@open-pencil/core/scene-graph'
 import type { SizeLimitProp } from '@open-pencil/vue'
@@ -30,6 +32,8 @@ type ActiveSizeLimit = {
 }
 
 const ctx = useLayoutControlsContext()
+const widthVariableBinding = useNumberVariableBinding('width')
+const heightVariableBinding = useNumberVariableBinding('height')
 const widthFieldRef = ref<HTMLElement | null>(null)
 const heightFieldRef = ref<HTMLElement | null>(null)
 const limitFieldRefs = ref<Record<SizeLimitProp, HTMLElement | null>>({
@@ -39,7 +43,7 @@ const limitFieldRefs = ref<Record<SizeLimitProp, HTMLElement | null>>({
   maxHeight: null
 })
 
-const { panels } = useI18n()
+const { panels, dialogs } = useI18n()
 const sizingSelect = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
 
 const widthLimitItems = [
@@ -118,6 +122,35 @@ function handleLimitSelect(prop: SizeLimitProp, value: string) {
   else if (value === 'REMOVE') ctx.removeSizeLimit(prop)
 }
 
+function resolvedBoundNumber(axis: 'width' | 'height'): number | undefined {
+  const binding = axis === 'width' ? widthVariableBinding : heightVariableBinding
+  const variable = binding.getBoundVariable(ctx.node.id)
+  return variable ? binding.store.resolveNumberVariable(variable.id) : undefined
+}
+
+function updateSizeProp(axis: 'width' | 'height', value: number) {
+  const binding = axis === 'width' ? widthVariableBinding : heightVariableBinding
+  if (binding.getBoundVariable(ctx.node.id)) binding.unbindVariable(ctx.node.id)
+  ctx.updateProp(axis, value)
+}
+
+function commitSizeProp(axis: 'width' | 'height', value: number, previous: number) {
+  ctx.commitProp(axis, value, previous)
+}
+
+function bindSizeVariable(axis: 'width' | 'height', variableId: string) {
+  const binding = axis === 'width' ? widthVariableBinding : heightVariableBinding
+  binding.bindVariable(ctx.node.id, variableId)
+  const value = binding.store.resolveNumberVariable(variableId)
+  if (value != null) ctx.updateProp(axis, value)
+}
+
+function createAndBindSizeVariable(axis: 'width' | 'height', name: string) {
+  const binding = axis === 'width' ? widthVariableBinding : heightVariableBinding
+  const value = ctx.node[axis]
+  binding.createAndBindVariable(ctx.node.id, value, name)
+}
+
 function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   if (value === 'FIXED' || value === 'HUG' || value === 'FILL') {
     if (axis === 'width') ctx.setWidthSizing(value)
@@ -135,13 +168,35 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   <div class="flex gap-1.5">
     <div ref="widthFieldRef" class="min-w-0 flex-1">
       <ScrubInput
+        data-test-id="layout-width-input"
         icon="W"
-        :model-value="Math.round(ctx.node.width)"
+        :model-value="Math.round(resolvedBoundNumber('width') ?? ctx.node.width)"
         :min="0"
-        @update:model-value="ctx.updateProp('width', $event)"
-        @commit="(v: number, p: number) => ctx.commitProp('width', v, p)"
+        @update:model-value="updateSizeProp('width', $event)"
+        @commit="(v: number, p: number) => commitSizeProp('width', v, p)"
       >
-        <template v-if="ctx.isFlex || ctx.isInAutoLayout" #suffix>
+        <template #suffix>
+          <BoundVariableButton
+            v-if="widthVariableBinding.getBoundVariable(ctx.node.id)"
+            test-id="layout-width-unbind-variable"
+            :label="panels.detachVariable"
+            @detach="widthVariableBinding.unbindVariable(ctx.node.id)"
+          />
+          <VariablePickerPopover
+            v-else
+            v-model:search-term="widthVariableBinding.searchTerm.value"
+            :variables="widthVariableBinding.filteredVariables.value"
+            :trigger-label="panels.applyVariable"
+            :search-placeholder="dialogs.search"
+            :empty-label="panels.noVariablesFound"
+            :trigger-test-id="'layout-width-apply-variable'"
+            :create-label="panels.createNumberVariable({ value: Math.round(ctx.node.width) })"
+            :create-name-placeholder="panels.variableName"
+            :create-submit-label="panels.create"
+            :create-test-id="'layout-width-apply-variable-create'"
+            @select="bindSizeVariable('width', $event.id)"
+            @create="createAndBindSizeVariable('width', $event)"
+          />
           <SelectRoot
             :model-value="ctx.widthSizing"
             @update:model-value="handleSizeSelect('width', $event as SizeSelectValue)"
@@ -196,13 +251,35 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
 
     <div ref="heightFieldRef" class="min-w-0 flex-1">
       <ScrubInput
+        data-test-id="layout-height-input"
         icon="H"
-        :model-value="Math.round(ctx.node.height)"
+        :model-value="Math.round(resolvedBoundNumber('height') ?? ctx.node.height)"
         :min="0"
-        @update:model-value="ctx.updateProp('height', $event)"
-        @commit="(v: number, p: number) => ctx.commitProp('height', v, p)"
+        @update:model-value="updateSizeProp('height', $event)"
+        @commit="(v: number, p: number) => commitSizeProp('height', v, p)"
       >
-        <template v-if="ctx.isFlex || ctx.isInAutoLayout" #suffix>
+        <template #suffix>
+          <BoundVariableButton
+            v-if="heightVariableBinding.getBoundVariable(ctx.node.id)"
+            test-id="layout-height-unbind-variable"
+            :label="panels.detachVariable"
+            @detach="heightVariableBinding.unbindVariable(ctx.node.id)"
+          />
+          <VariablePickerPopover
+            v-else
+            v-model:search-term="heightVariableBinding.searchTerm.value"
+            :variables="heightVariableBinding.filteredVariables.value"
+            :trigger-label="panels.applyVariable"
+            :search-placeholder="dialogs.search"
+            :empty-label="panels.noVariablesFound"
+            :trigger-test-id="'layout-height-apply-variable'"
+            :create-label="panels.createNumberVariable({ value: Math.round(ctx.node.height) })"
+            :create-name-placeholder="panels.variableName"
+            :create-submit-label="panels.create"
+            :create-test-id="'layout-height-apply-variable-create'"
+            @select="bindSizeVariable('height', $event.id)"
+            @create="createAndBindSizeVariable('height', $event)"
+          />
           <SelectRoot
             :model-value="ctx.heightSizing"
             @update:model-value="handleSizeSelect('height', $event as SizeSelectValue)"

@@ -81,6 +81,7 @@ function submitCreate() {
       :aria-label="triggerLabel"
       :title="triggerLabel"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
+      @pointerdown.stop
     >
       <icon-lucide-diamond-plus class="size-3.5" />
     </PopoverTrigger>
