@@ -15,7 +15,7 @@ import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createTab, activeTab, getActiveStore } from '@/app/tabs'
+import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -31,11 +31,12 @@ const route = useRoute()
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 
-const firstTab = createTab()
+const createdInitialTab = tabCount() === 0
+const firstTab = createdInitialTab ? createTab() : (activeTab.value ?? createTab())
 const store = useEditorStore()
 const { isMobile } = useViewportKind()
 
-if (route.meta.demo && !('test' in params)) {
+if (createdInitialTab && route.meta.demo && !('test' in params)) {
   createDemoShapes(firstTab.store)
 }
 
