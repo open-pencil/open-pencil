@@ -60,17 +60,9 @@ export function createLayoutSelectionState(
   )
   const sizingState = createLayoutSizingState(editor, node, panels)
   const gapAuto = computed(() => node.value?.primaryAxisAlign === 'SPACE_BETWEEN')
-  const alignGrid = computed(() => {
-    const n = node.value
-    if (n?.primaryAxisAlign === 'SPACE_BETWEEN') {
-      return [
-        { primary: 'SPACE_BETWEEN' as const, counter: 'MIN' as const },
-        { primary: 'SPACE_BETWEEN' as const, counter: 'CENTER' as const },
-        { primary: 'SPACE_BETWEEN' as const, counter: 'MAX' as const }
-      ]
-    }
-    return n?.layoutMode === 'VERTICAL' ? ALIGN_VERTICAL : ALIGN_HORIZONTAL
-  })
+  const alignGrid = computed(() =>
+    node.value?.layoutMode === 'VERTICAL' ? ALIGN_VERTICAL : ALIGN_HORIZONTAL
+  )
 
   return { node, layoutDirection, gapAuto, alignGrid, ...sizingState }
 }

@@ -94,8 +94,8 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
           <SelectPortal>
             <SelectContent
               position="popper"
-              align="start"
-              :side-offset="2"
+              align="end"
+              :side-offset="4"
               :class="sizingSelect.content"
             >
               <SelectViewport class="p-0.5">
@@ -152,8 +152,8 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
           <SelectPortal>
             <SelectContent
               position="popper"
-              align="start"
-              :side-offset="2"
+              align="end"
+              :side-offset="4"
               :class="sizingSelect.content"
             >
               <SelectViewport class="p-0.5">
