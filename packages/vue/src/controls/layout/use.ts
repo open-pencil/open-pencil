@@ -36,8 +36,11 @@ export function useLayout() {
   const {
     showIndividualPadding,
     hasUniformPadding,
-    setUniformPadding,
-    commitUniformPadding,
+    hasSymmetricPadding,
+    setHorizontalPadding,
+    commitHorizontalPadding,
+    setVerticalPadding,
+    commitVerticalPadding,
     toggleIndividualPadding
   } = createPaddingActions(editor, node)
 
@@ -60,6 +63,7 @@ export function useLayout() {
     alignGrid,
     showIndividualPadding,
     hasUniformPadding,
+    hasSymmetricPadding,
     trackSizingOptions: createTrackSizingOptions(panels.value),
     updateProp: layoutActions.updateProp,
     updateSizeLimit: layoutActions.updateSizeLimit,
@@ -70,8 +74,10 @@ export function useLayout() {
     commitProp: layoutActions.commitProp,
     setWidthSizing: layoutActions.setWidthSizing,
     setHeightSizing: layoutActions.setHeightSizing,
-    setUniformPadding,
-    commitUniformPadding,
+    setHorizontalPadding,
+    commitHorizontalPadding,
+    setVerticalPadding,
+    commitVerticalPadding,
     setAlignment: layoutActions.setAlignment,
     setGapAuto: layoutActions.setGapAuto,
     setLayoutDirection: layoutActions.setLayoutDirection,

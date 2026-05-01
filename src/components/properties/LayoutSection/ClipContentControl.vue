@@ -7,7 +7,7 @@ const { panels } = useI18n()
 </script>
 
 <template>
-  <label class="flex cursor-pointer items-center gap-2 text-xs text-surface">
+  <label class="mt-2 flex cursor-pointer items-center gap-2 text-xs text-surface">
     <input
       type="checkbox"
       data-test-id="clip-content-checkbox"

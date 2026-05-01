@@ -123,27 +123,37 @@ export function createPaddingActions(editor: Editor, node: ComputedRef<SceneNode
     )
   })
 
-  function setUniformPadding(v: number) {
+  const hasSymmetricPadding = computed(() => {
+    const n = node.value
+    if (!n) return true
+    return n.paddingLeft === n.paddingRight && n.paddingTop === n.paddingBottom
+  })
+
+  function setHorizontalPadding(v: number) {
     if (!node.value) return
-    editor.updateNode(node.value.id, {
-      paddingTop: v,
-      paddingRight: v,
-      paddingBottom: v,
-      paddingLeft: v
-    })
+    editor.updateNode(node.value.id, { paddingLeft: v, paddingRight: v })
   }
 
-  function commitUniformPadding(_value: number, previous: number) {
+  function commitHorizontalPadding(_value: number, previous: number) {
     if (!node.value) return
     editor.commitNodeUpdate(
       node.value.id,
-      {
-        paddingTop: previous,
-        paddingRight: previous,
-        paddingBottom: previous,
-        paddingLeft: previous
-      } satisfies Partial<SceneNode>,
-      'Change padding'
+      { paddingLeft: previous, paddingRight: previous } satisfies Partial<SceneNode>,
+      'Change horizontal padding'
+    )
+  }
+
+  function setVerticalPadding(v: number) {
+    if (!node.value) return
+    editor.updateNode(node.value.id, { paddingTop: v, paddingBottom: v })
+  }
+
+  function commitVerticalPadding(_value: number, previous: number) {
+    if (!node.value) return
+    editor.commitNodeUpdate(
+      node.value.id,
+      { paddingTop: previous, paddingBottom: previous } satisfies Partial<SceneNode>,
+      'Change vertical padding'
     )
   }
 
@@ -154,8 +164,11 @@ export function createPaddingActions(editor: Editor, node: ComputedRef<SceneNode
   return {
     showIndividualPadding,
     hasUniformPadding,
-    setUniformPadding,
-    commitUniformPadding,
+    hasSymmetricPadding,
+    setHorizontalPadding,
+    commitHorizontalPadding,
+    setVerticalPadding,
+    commitVerticalPadding,
     toggleIndividualPadding
   }
 }

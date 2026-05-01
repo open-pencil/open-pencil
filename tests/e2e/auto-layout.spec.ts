@@ -109,24 +109,32 @@ test('wrap mode exposes cross-axis gap control', async () => {
   canvas.assertNoErrors()
 })
 
-test('uniform padding ScrubInput sets all four padding sides', async () => {
+test('padding controls set horizontal and vertical padding pairs', async () => {
   await selectFrame()
 
-  const paddingScrub = page.locator('[data-test-id="layout-uniform-padding-input"]')
-  await paddingScrub.click()
+  await page.locator('[data-test-id="layout-horizontal-padding-input"]').click()
   await canvas.waitForRender()
-  const paddingInput = page.locator(
-    '[data-test-id="layout-uniform-padding-input"] [data-test-id="scrub-input-field"]'
+  const horizontalInput = page.locator(
+    '[data-test-id="layout-horizontal-padding-input"] [data-test-id="scrub-input-field"]'
   )
-  await paddingInput.fill('16')
-  await paddingInput.press('Enter')
+  await horizontalInput.fill('24')
+  await horizontalInput.press('Enter')
+  await canvas.waitForRender()
+
+  await page.locator('[data-test-id="layout-vertical-padding-input"]').click()
+  await canvas.waitForRender()
+  const verticalInput = page.locator(
+    '[data-test-id="layout-vertical-padding-input"] [data-test-id="scrub-input-field"]'
+  )
+  await verticalInput.fill('16')
+  await verticalInput.press('Enter')
   await canvas.waitForRender()
 
   const frame = await getNodeById(page, frameId)
   expect(frame!.paddingTop).toBe(16)
-  expect(frame!.paddingRight).toBe(16)
+  expect(frame!.paddingRight).toBe(24)
   expect(frame!.paddingBottom).toBe(16)
-  expect(frame!.paddingLeft).toBe(16)
+  expect(frame!.paddingLeft).toBe(24)
   canvas.assertNoErrors()
 })
 
