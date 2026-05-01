@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import {
   SelectContent,
   SelectItem,
@@ -19,9 +20,14 @@ import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 import type { LayoutDirection, LayoutAlign } from '@open-pencil/core/scene-graph'
 
 const ctx = useLayoutControlsContext()
+const gapFieldRef = ref<HTMLElement | null>(null)
 
 const { panels } = useI18n()
 const gapSelect = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
+
+function anchorRef(element: HTMLElement | null): HTMLElement | undefined {
+  return element ?? undefined
+}
 
 function setGapMode(value: string) {
   ctx.setGapAuto(value === 'AUTO')
@@ -74,6 +80,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
     <template v-else>
       <div
         v-if="ctx.gapAuto"
+        ref="gapFieldRef"
         data-test-id="layout-gap-input"
         class="group flex h-[26px] min-w-0 flex-1 items-center rounded border border-border bg-input focus-within:border-accent"
       >
@@ -84,6 +91,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
         <SelectRoot :model-value="'AUTO'" @update:model-value="setGapMode">
           <SelectTrigger
             data-test-id="layout-gap-menu"
+            :reference="anchorRef(gapFieldRef)"
             class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
             @pointerdown.stop
           >
@@ -92,7 +100,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
           <SelectPortal>
             <SelectContent
               position="popper"
-              align="end"
+              align="start"
               :side-offset="4"
               :class="gapSelect.content"
             >
@@ -113,50 +121,52 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
           </SelectPortal>
         </SelectRoot>
       </div>
-      <ScrubInput
-        v-else
-        data-test-id="layout-gap-input"
-        class="flex-1"
-        :icon="ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔'"
-        :model-value="Math.round(ctx.node.itemSpacing)"
-        :min="0"
-        @update:model-value="ctx.updateProp('itemSpacing', $event)"
-        @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
-      >
-        <template #suffix>
-          <SelectRoot :model-value="'FIXED'" @update:model-value="setGapMode">
-            <SelectTrigger
-              data-test-id="layout-gap-menu"
-              class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
-              @pointerdown.stop
-            >
-              <icon-lucide-chevron-down class="size-3" />
-            </SelectTrigger>
-            <SelectPortal>
-              <SelectContent
-                position="popper"
-                align="end"
-                :side-offset="4"
-                :class="gapSelect.content"
+      <div v-else ref="gapFieldRef" class="min-w-0 flex-1">
+        <ScrubInput
+          data-test-id="layout-gap-input"
+          class="w-full"
+          :icon="ctx.node.layoutMode === 'VERTICAL' ? '↕' : '↔'"
+          :model-value="Math.round(ctx.node.itemSpacing)"
+          :min="0"
+          @update:model-value="ctx.updateProp('itemSpacing', $event)"
+          @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
+        >
+          <template #suffix>
+            <SelectRoot :model-value="'FIXED'" @update:model-value="setGapMode">
+              <SelectTrigger
+                data-test-id="layout-gap-menu"
+                :reference="anchorRef(gapFieldRef)"
+                class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
+                @pointerdown.stop
               >
-                <SelectViewport class="p-0.5">
-                  <SelectItem value="FIXED" :class="gapSelect.item">
-                    <SelectItemIndicator
-                      class="absolute left-1.5 inline-flex items-center justify-center"
-                    >
-                      <icon-lucide-check class="size-3 text-accent" />
-                    </SelectItemIndicator>
-                    <SelectItemText>{{ Math.round(ctx.node.itemSpacing) }}</SelectItemText>
-                  </SelectItem>
-                  <SelectItem value="AUTO" :class="gapSelect.item">
-                    <SelectItemText>{{ panels.auto }}</SelectItemText>
-                  </SelectItem>
-                </SelectViewport>
-              </SelectContent>
-            </SelectPortal>
-          </SelectRoot>
-        </template>
-      </ScrubInput>
+                <icon-lucide-chevron-down class="size-3" />
+              </SelectTrigger>
+              <SelectPortal>
+                <SelectContent
+                  position="popper"
+                  align="start"
+                  :side-offset="4"
+                  :class="gapSelect.content"
+                >
+                  <SelectViewport class="p-0.5">
+                    <SelectItem value="FIXED" :class="gapSelect.item">
+                      <SelectItemIndicator
+                        class="absolute left-1.5 inline-flex items-center justify-center"
+                      >
+                        <icon-lucide-check class="size-3 text-accent" />
+                      </SelectItemIndicator>
+                      <SelectItemText>{{ Math.round(ctx.node.itemSpacing) }}</SelectItemText>
+                    </SelectItem>
+                    <SelectItem value="AUTO" :class="gapSelect.item">
+                      <SelectItemText>{{ panels.auto }}</SelectItemText>
+                    </SelectItem>
+                  </SelectViewport>
+                </SelectContent>
+              </SelectPortal>
+            </SelectRoot>
+          </template>
+        </ScrubInput>
+      </div>
     </template>
     <button
       class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-transparent text-muted hover:bg-hover hover:text-surface"
