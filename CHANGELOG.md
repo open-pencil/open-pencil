@@ -8,6 +8,7 @@
 - Add targeted core subpath exports and package-local import aliases for cleaner app, Vue SDK, CLI, and MCP imports.
 - Split the canvas into separate scene and overlay render layers so rulers, labels, selections, and input overlays are isolated from scene rendering.
 - Use `@use-gesture/vanilla` for wheel gesture lifecycle handling and faster trackpad zoom behavior.
+- Add auto-layout inspector controls for min/max dimensions, Auto gap distribution, wrap cross-axis gap, and two-axis padding controls.
 
 ### Fixes
 
@@ -22,6 +23,8 @@
 - Fix section drawing errors and color input attribute forwarding in the property panel.
 - Fix demo component instances by laying out source components before creating instances, and restore explicit badge dot/text spacing.
 - Keep the global startup loader visible until CanvasKit fonts load and the first font-backed render completes, avoiding a flash of missing text in opened files and the demo.
+- Fix hot reload creating duplicate editor tabs during development.
+- Improve layout inspector dropdown anchoring and icon clarity for spacing and padding controls.
 
 ### Performance
 
