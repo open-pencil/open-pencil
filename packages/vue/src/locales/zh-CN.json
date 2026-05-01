@@ -169,7 +169,10 @@
     "strokeAlignOutside": "外部",
     "exportPreview": "预览",
     "exportRenderingPreview": "正在渲染预览…",
-    "createVariable": "创建变量"
+    "createVariable": "创建变量",
+    "createColorVariable": "从 {value} 创建颜色变量",
+    "variableName": "变量名称",
+    "create": "创建"
   },
   "pages": {
     "newPage": "新建页面",

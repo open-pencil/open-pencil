@@ -117,6 +117,12 @@
   },
   "overrides": [
     {
+      "files": ["src/**/*.ts"],
+      "rules": {
+        "open-pencil/no-useless-pass-through-wrappers": "error"
+      }
+    },
+    {
       "files": ["**/*.test.ts", "**/*.test.tsx"],
       "rules": {
         "typescript/no-explicit-any": "off",

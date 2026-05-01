@@ -3,17 +3,33 @@ import { PropertyListRoot, useFillControls, useOkHCL, useI18n } from '@open-penc
 
 import FillPicker from '@/components/FillPicker.vue'
 import ColorStyleRow from '@/components/properties/ColorStyleRow.vue'
+import {
+  boundVariableSwatchBackground,
+  displayFillWithBoundVariable
+} from '@/components/properties/color-style-row'
 import { fillLabel } from '@/components/properties/fill-label'
 import { createFillOkhclAdapter } from '@/components/properties/fill-okhcl'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { Fill } from '@open-pencil/core/scene-graph'
+import type { Fill, SceneNode } from '@open-pencil/core/scene-graph'
 
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()
 const { panels } = useI18n()
 const sectionCls = useSectionUI()
+
+function updateFill(
+  activeNode: SceneNode | null | undefined,
+  index: number,
+  fill: Fill,
+  update: (index: number, fill: Fill) => void
+) {
+  if (activeNode && fillCtx.getBoundVariable(activeNode.id, index)) {
+    fillCtx.unbindVariable(activeNode.id, index)
+  }
+  update(index, fill)
+}
 </script>
 
 <template>
@@ -41,7 +57,9 @@ const sectionCls = useSectionUI()
         :index="i"
         :active-node-id="activeNode?.id ?? null"
         :binding-api="fillCtx"
+        :variable-color="fill.type === 'SOLID' ? fill.color : undefined"
         :visibility-test-id="`fill-visibility-${i}`"
+        :apply-variable-test-id="`fill-apply-variable-${i}`"
         unbind-test-id="fill-unbind-variable"
         data-test-id="fill-item"
         :data-test-index="i"
@@ -50,9 +68,12 @@ const sectionCls = useSectionUI()
         @remove="remove(i)"
       >
         <FillPicker
-          :fill="fill"
+          :fill="activeNode ? displayFillWithBoundVariable(fillCtx, activeNode.id, i, fill) : fill"
           :okhcl="createFillOkhclAdapter(okhcl, activeNode, i)"
-          @update="update(i, $event)"
+          :swatch-background="
+            activeNode ? boundVariableSwatchBackground(fillCtx, activeNode.id, i) : undefined
+          "
+          @update="updateFill(activeNode, i, $event, update)"
         />
 
         <span

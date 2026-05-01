@@ -1135,6 +1135,70 @@ const noComponentRootSiblingFolder = {
   }
 }
 
+const noUselessPassThroughWrappers = {
+  meta: {
+    docs: {
+      description: 'Disallow functions that only return another function call with the same arguments'
+    }
+  },
+  create(context) {
+    function paramNames(params) {
+      const names = []
+      for (const param of params ?? []) {
+        if (param.type !== 'Identifier') return null
+        names.push(param.name)
+      }
+      return names
+    }
+
+    function returnedCall(body) {
+      if (!body) return null
+      if (body.type === 'CallExpression') return body
+      if (body.type !== 'BlockStatement') return null
+      const statements = body.body?.filter((statement) => statement.type !== 'EmptyStatement') ?? []
+      if (statements.length !== 1) return null
+      const statement = statements[0]
+      if (statement.type !== 'ReturnStatement') return null
+      return statement.argument?.type === 'CallExpression' ? statement.argument : null
+    }
+
+    function calleeName(callee) {
+      return callee?.type === 'Identifier' ? callee.name : null
+    }
+
+    function isSameArgumentForwarding(args, params) {
+      if (args?.length !== params.length) return false
+      return args.every((arg, index) => arg.type === 'Identifier' && arg.name === params[index])
+    }
+
+    function check(node, name, params, body) {
+      const names = paramNames(params)
+      if (!names) return
+      const call = returnedCall(body)
+      if (!call || !isSameArgumentForwarding(call.arguments, names)) return
+      const target = calleeName(call.callee)
+      if (!target || target === name) return
+      context.report({
+        node,
+        message: `Remove pass-through wrapper '${name}'. Call '${target}' directly or give the wrapper real domain logic.`
+      })
+    }
+
+    return {
+      FunctionDeclaration(node) {
+        if (!node.id?.name) return
+        check(node, node.id.name, node.params, node.body)
+      },
+      VariableDeclarator(node) {
+        if (node.id?.type !== 'Identifier') return
+        const init = node.init
+        if (!init || (init.type !== 'ArrowFunctionExpression' && init.type !== 'FunctionExpression')) return
+        check(node, node.id.name, init.params, init.body)
+      }
+    }
+  }
+}
+
 const noFunctionAliasImports = {
   meta: {
     docs: {
@@ -1229,6 +1293,7 @@ const plugin = {
     'component-namespace-pascal-case': componentNamespacePascalCase,
     'non-component-source-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
+    'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,
     'no-function-alias-imports': noFunctionAliasImports,
     'no-flat-kiwi-modules': noFlatKiwiModules
   }

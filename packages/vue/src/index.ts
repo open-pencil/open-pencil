@@ -55,6 +55,11 @@ export { useExport } from '#vue/document/export/use'
 export type { ExportFormatId } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
 export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
+export { useVariableBinding } from '#vue/controls/variable-binding/use'
+export type {
+  VariableBindingState,
+  UseVariableBindingOptions
+} from '#vue/controls/variable-binding/use'
 export { useEffectsControls } from '#vue/controls/effects/use'
 export { useStrokeControls } from '#vue/controls/stroke/use'
 export { useOkHCL } from '#vue/controls/okhcl/use'

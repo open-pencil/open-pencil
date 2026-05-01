@@ -1,21 +1,9 @@
 <script setup lang="ts">
-import {
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxRoot,
-  PopoverContent,
-  PopoverPortal,
-  PopoverRoot,
-  PopoverTrigger
-} from 'reka-ui'
-
 import ScrubInput from '@/components/ScrubInput.vue'
-import Tip from '@/components/ui/Tip.vue'
+import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
+import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 
-import { ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -23,17 +11,29 @@ import {
   opacityPercent,
   variableSwatchBackground
 } from '@/components/properties/color-style-row'
+import { colorToHexRaw } from '@open-pencil/core/color'
 
 import type { ColorVariableBindingApi } from '@/components/properties/color-style-row'
-import type { Variable } from '@open-pencil/core/scene-graph'
+import type { Color } from '@open-pencil/core/types'
 
-const { item, index, activeNodeId, bindingApi, visibilityTestId, unbindTestId } = defineProps<{
+const {
+  item,
+  index,
+  activeNodeId,
+  bindingApi,
+  visibilityTestId,
+  applyVariableTestId,
+  unbindTestId,
+  variableColor
+} = defineProps<{
   item: { opacity: number; visible: boolean }
   index: number
   activeNodeId?: string | null
   bindingApi: ColorVariableBindingApi
   visibilityTestId: string
+  applyVariableTestId?: string
   unbindTestId?: string
+  variableColor?: Color
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +43,6 @@ const emit = defineEmits<{
 }>()
 
 const { panels, dialogs } = useI18n()
-const varPopoverOpen = ref(false)
 </script>
 
 <template>
@@ -61,72 +60,43 @@ const varPopoverOpen = ref(false)
       @update:model-value="emit('patch', { opacity: opacityFromPercent($event) })"
     />
 
-    <PopoverRoot
+    <VariablePickerPopover
       v-if="
         activeNodeId &&
-        bindingApi.colorVariables.value.length > 0 &&
+        (bindingApi.colorVariables.value.length > 0 ||
+          (variableColor && bindingApi.createAndBindVariable)) &&
         !bindingApi.getBoundVariable(activeNodeId, index)
       "
-      @update:open="varPopoverOpen = $event"
-    >
-      <Tip :label="panels.applyVariable" :disabled="varPopoverOpen">
-        <PopoverTrigger
-          class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
-        >
-          <icon-lucide-link class="size-3.5" />
-        </PopoverTrigger>
-      </Tip>
-      <PopoverPortal>
-        <PopoverContent
-          side="left"
-          :side-offset="8"
-          class="z-50 w-56 rounded-lg border border-border bg-panel shadow-lg"
-        >
-          <ComboboxRoot
-            @update:model-value="
-              activeNodeId && bindingApi.bindVariable(activeNodeId, index, ($event as Variable).id)
-            "
-          >
-            <ComboboxInput
-              :model-value="bindingApi.searchTerm.value"
-              :placeholder="dialogs.search"
-              class="w-full border-b border-border bg-transparent px-2 py-1.5 text-[11px] text-surface outline-none placeholder:text-muted"
-              @update:model-value="bindingApi.searchTerm.value = String($event)"
-            />
-            <ComboboxContent class="max-h-48 overflow-y-auto p-1">
-              <ComboboxEmpty class="px-2 py-3 text-center text-[11px] text-muted">{{
-                panels.noVariablesFound
-              }}</ComboboxEmpty>
-              <ComboboxItem
-                v-for="v in bindingApi.filteredVariables.value"
-                :key="v.id"
-                :value="v"
-                class="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-[11px] text-surface data-[highlighted]:bg-hover"
-              >
-                <div
-                  class="size-3 shrink-0 rounded-sm border border-border"
-                  :style="{ background: variableSwatchBackground(bindingApi, v.id) }"
-                />
-                <span class="min-w-0 flex-1 truncate">{{ v.name }}</span>
-              </ComboboxItem>
-            </ComboboxContent>
-          </ComboboxRoot>
-        </PopoverContent>
-      </PopoverPortal>
-    </PopoverRoot>
+      v-model:search-term="bindingApi.searchTerm.value"
+      :variables="bindingApi.filteredVariables.value"
+      :trigger-label="panels.applyVariable"
+      :search-placeholder="dialogs.search"
+      :empty-label="panels.noVariablesFound"
+      :trigger-test-id="applyVariableTestId"
+      :create-label="
+        variableColor && bindingApi.createAndBindVariable
+          ? panels.createColorVariable({ value: colorToHexRaw(variableColor) })
+          : undefined
+      "
+      :create-name-placeholder="panels.variableName"
+      :create-submit-label="panels.create"
+      :create-default-name="bindingApi.searchTerm.value"
+      :create-test-id="applyVariableTestId ? `${applyVariableTestId}-create` : undefined"
+      :swatch-background="(variableId) => variableSwatchBackground(bindingApi, variableId)"
+      @select="activeNodeId && bindingApi.bindVariable(activeNodeId, index, $event.id)"
+      @create="
+        activeNodeId &&
+        variableColor &&
+        bindingApi.createAndBindVariable?.(activeNodeId, index, variableColor, $event)
+      "
+    />
 
-    <Tip
+    <BoundVariableButton
       v-else-if="activeNodeId && bindingApi.getBoundVariable(activeNodeId, index)"
+      :test-id="unbindTestId"
       :label="panels.detachVariable"
-    >
-      <button
-        :data-test-id="unbindTestId"
-        class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-violet-400 hover:text-surface"
-        @click="bindingApi.unbindVariable(activeNodeId, index)"
-      >
-        <icon-lucide-unlink class="size-3" />
-      </button>
-    </Tip>
+      @detach="bindingApi.unbindVariable(activeNodeId, index)"
+    />
 
     <button
       :data-test-id="visibilityTestId"

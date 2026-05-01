@@ -169,7 +169,10 @@
     "strokeAlignOutside": "Снаружи",
     "exportPreview": "Предпросмотр",
     "exportRenderingPreview": "Рендеринг предпросмотра…",
-    "createVariable": "Создать переменную"
+    "createVariable": "Создать переменную",
+    "createColorVariable": "Создать переменную цвета из {value}",
+    "variableName": "Имя переменной",
+    "create": "Создать"
   },
   "pages": {
     "newPage": "Новая страница",

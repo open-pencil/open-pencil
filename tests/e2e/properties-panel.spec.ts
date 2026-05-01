@@ -106,6 +106,71 @@ test('variable bind badge appears on fill', async () => {
   canvas.assertNoErrors()
 })
 
+test('fill color can bind an existing variable', async () => {
+  await canvas.clearCanvas()
+  await canvas.drawRect(200, 200, 80, 80)
+
+  const variableId = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const col = store.graph.createCollection('Colors')
+    const variable = store.graph.createVariable('test-brand-red', 'COLOR', col.id, {
+      r: 1,
+      g: 0,
+      b: 0,
+      a: 1
+    })
+    store.state.sceneVersion++
+    return variable.id
+  })
+  await canvas.waitForRender()
+
+  await page.locator('[data-test-id="fill-apply-variable-0"]').click()
+  await page.getByText('test-brand-red', { exact: true }).click()
+  await canvas.waitForRender()
+
+  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeVisible()
+  const fillSwatch = page.locator('[data-test-id="fill-picker-swatch"]')
+  await expect(fillSwatch).toHaveCSS('background-color', 'rgb(255, 0, 0)')
+  await fillSwatch.click()
+  const colorInputs = page.locator('[role="dialog"] input[type="number"]:not(.hidden)')
+  await expect(colorInputs.first()).toHaveValue('255')
+  await colorInputs.first().fill('0')
+  await colorInputs.first().press('Enter')
+  await canvas.waitForRender()
+  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeHidden()
+  const boundVariableId = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const id = [...store.state.selectedIds][0]
+    return id ? (store.getNode(id)?.boundVariables['fills/0/color'] ?? null) : null
+  })
+  expect(boundVariableId).toBeNull()
+  canvas.assertNoErrors()
+})
+
+test('fill color can create and bind a variable', async () => {
+  await canvas.clearCanvas()
+  await canvas.drawRect(200, 200, 80, 80)
+
+  await page.locator('[data-test-id="fill-apply-variable-0"]').click()
+  await expect(page.getByText(/Create color variable from #?[0-9A-F]{6}/)).toBeVisible()
+  await page.locator('[data-test-id="fill-apply-variable-0-create"]').click()
+  await page.getByPlaceholder('Variable name').fill('Surface/default')
+  await page.locator('[data-test-id="fill-apply-variable-0-create"]').click()
+  await canvas.waitForRender()
+
+  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeVisible()
+  const boundVariable = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const id = [...store.state.selectedIds][0]
+    if (!id) return null
+    const node = store.getNode(id)
+    const variableId = node?.boundVariables['fills/0/color']
+    return variableId ? store.getVariable(variableId)?.name : null
+  })
+  expect(boundVariable).toBe('Surface/default')
+  canvas.assertNoErrors()
+})
+
 test('alignment buttons align nodes to same X', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(50, 200, 60, 60)

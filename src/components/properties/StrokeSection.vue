@@ -11,6 +11,7 @@ import {
 } from '@open-pencil/vue'
 
 import ColorStyleRow from '@/components/properties/ColorStyleRow.vue'
+import { boundVariableColor } from '@/components/properties/color-style-row'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
@@ -18,7 +19,7 @@ import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
+import type { Color, SceneNode, Stroke } from '@open-pencil/core/scene-graph'
 
 const strokeCtx = useStrokeControls()
 const strokeVarCtx = useColorVariableBinding('strokes')
@@ -27,6 +28,18 @@ const { panels } = useI18n()
 const sectionCls = useSectionUI()
 
 const expandedSides = ref(false)
+
+function updateStrokeColor(
+  activeNode: SceneNode | null | undefined,
+  index: number,
+  color: Color,
+  patch: (index: number, changes: Record<string, unknown>) => void
+) {
+  if (activeNode && strokeVarCtx.getBoundVariable(activeNode.id, index)) {
+    strokeVarCtx.unbindVariable(activeNode.id, index)
+  }
+  patch(index, applySolidStrokeColor(color))
+}
 
 function onToggleSides(activeNode: SceneNode) {
   const next = !expandedSides.value
@@ -73,7 +86,9 @@ function onToggleSides(activeNode: SceneNode) {
         :index="i"
         :active-node-id="activeNode?.id ?? null"
         :binding-api="strokeVarCtx"
+        :variable-color="stroke.color"
         :visibility-test-id="`stroke-visibility-${i}`"
+        :apply-variable-test-id="`stroke-apply-variable-${i}`"
         unbind-test-id="stroke-unbind-variable"
         data-test-id="stroke-item"
         :data-test-index="i"
@@ -83,7 +98,11 @@ function onToggleSides(activeNode: SceneNode) {
       >
         <ColorInput
           class="min-w-0 flex-1"
-          :color="stroke.color"
+          :color="
+            activeNode
+              ? (boundVariableColor(strokeVarCtx, activeNode.id, i) ?? stroke.color)
+              : stroke.color
+          "
           :okhcl="
             activeNode
               ? {
@@ -97,7 +116,7 @@ function onToggleSides(activeNode: SceneNode) {
               : null
           "
           editable
-          @update="patch(i, applySolidStrokeColor($event))"
+          @update="updateStrokeColor(activeNode, i, $event, patch)"
         />
       </ColorStyleRow>
 

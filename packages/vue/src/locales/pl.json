@@ -169,7 +169,10 @@
     "strokeAlignOutside": "Zewnętrzny",
     "exportPreview": "Podgląd",
     "exportRenderingPreview": "Renderowanie podglądu…",
-    "createVariable": "Utwórz zmienną"
+    "createVariable": "Utwórz zmienną",
+    "createColorVariable": "Utwórz zmienną koloru z {value}",
+    "variableName": "Nazwa zmiennej",
+    "create": "Utwórz"
   },
   "pages": {
     "newPage": "Nowa strona",

@@ -22,7 +22,15 @@ function tabClass(active: boolean) {
   )
 }
 
-const { fill, okhcl = null } = defineProps<{ fill: Fill; okhcl?: OkHCLControls | null }>()
+const {
+  fill,
+  okhcl = null,
+  swatchBackground
+} = defineProps<{
+  fill: Fill
+  okhcl?: OkHCLControls | null
+  swatchBackground?: string
+}>()
 const emit = defineEmits<{ update: [fill: Fill] }>()
 const cls = usePopoverUI({ content: 'w-60 p-2' })
 const { panels } = useI18n()
@@ -39,7 +47,7 @@ const { panels } = useI18n()
       <button
         data-test-id="fill-picker-swatch"
         class="size-5 shrink-0 cursor-pointer rounded border border-border p-0"
-        :style="style"
+        :style="{ ...style, background: swatchBackground ?? style.background }"
       />
     </template>
     <template #default="{ fill: currentFill, category, toSolid, toGradient, toImage, update }">

@@ -10,6 +10,7 @@
 - Use `@use-gesture/vanilla` for wheel gesture lifecycle handling and faster trackpad zoom behavior.
 - Add auto-layout inspector controls for min/max dimensions, Auto gap distribution, wrap cross-axis gap, and two-axis padding controls.
 - Add signed Tauri updater configuration, release artifacts, startup update checks, and a native Check for Updates menu item.
+- Add inspector variable binding controls for fill and stroke colors, including existing variable selection and named color variable creation.
 
 ### Fixes
 
@@ -26,6 +27,7 @@
 - Keep the global startup loader visible until CanvasKit fonts load and the first font-backed render completes, avoiding a flash of missing text in opened files and the demo.
 - Fix hot reload creating duplicate editor tabs during development.
 - Improve layout inspector dropdown anchoring and icon clarity for spacing and padding controls.
+- Fix bound color variable inspector swatches to display the resolved variable color and detach the binding when edited directly.
 
 ### Performance
 

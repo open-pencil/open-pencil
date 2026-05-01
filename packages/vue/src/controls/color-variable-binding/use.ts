@@ -1,47 +1,67 @@
-import { useEditor } from '#vue/editor/context'
-import { useFilter } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { useVariableBinding } from '#vue/controls/variable-binding/use'
 
-import type { Variable } from '@open-pencil/core/scene-graph'
+import { randomHex } from '@open-pencil/core/random'
+
+const FALLBACK_COLOR_VARIABLE_NAME = 'New color'
+
+import type { VariableCollection } from '@open-pencil/core/scene-graph'
+import type { Color } from '@open-pencil/core/types'
 
 type ColorBindingKind = 'fills' | 'strokes'
 
 export function useColorVariableBinding(kind: ColorBindingKind) {
-  const store = useEditor()
-  const colorVariables = computed(() => store.getVariablesByType('COLOR'))
-  const searchTerm = ref('')
-  const { contains } = useFilter({ sensitivity: 'base' })
-  const filteredVariables = computed(() => {
-    if (!searchTerm.value) return colorVariables.value
-    return colorVariables.value.filter((v) => contains(v.name, searchTerm.value))
+  const binding = useVariableBinding({
+    type: 'COLOR',
+    path: (index) => `${kind}/${index}/color`
   })
 
-  function bindingPath(index: number) {
-    return `${kind}/${index}/color`
+  function colorCollection(): VariableCollection {
+    const existing = binding.store
+      .getCollections()
+      .find((collection) =>
+        collection.variableIds.some(
+          (variableId) => binding.store.getVariable(variableId)?.type === 'COLOR'
+        )
+      )
+    if (existing) return existing
+
+    const collection: VariableCollection = {
+      id: `col:${randomHex(8)}`,
+      name: 'Colors',
+      modes: [{ modeId: 'default', name: 'Mode 1' }],
+      defaultModeId: 'default',
+      variableIds: []
+    }
+    binding.store.addCollection(collection)
+    return collection
   }
 
-  function getBoundVariable(nodeId: string, index: number): Variable | undefined {
-    const n = store.getNode(nodeId)
-    if (!n) return undefined
-    const varId = n.boundVariables[bindingPath(index)]
-    return varId ? store.getVariable(varId) : undefined
-  }
-
-  function bindVariable(nodeId: string, index: number, variableId: string) {
-    store.bindVariable(nodeId, bindingPath(index), variableId)
-  }
-
-  function unbindVariable(nodeId: string, index: number) {
-    store.unbindVariable(nodeId, bindingPath(index))
+  function createAndBindVariable(
+    nodeId: string,
+    index: number,
+    color: Color,
+    name = FALLBACK_COLOR_VARIABLE_NAME
+  ) {
+    const collection = colorCollection()
+    const id = `var:${randomHex(8)}`
+    binding.store.addVariable({
+      id,
+      name: name.trim() || FALLBACK_COLOR_VARIABLE_NAME,
+      type: 'COLOR',
+      collectionId: collection.id,
+      valuesByMode: Object.fromEntries(collection.modes.map((mode) => [mode.modeId, color])),
+      description: '',
+      hiddenFromPublishing: false
+    })
+    binding.bindVariable(nodeId, id, index)
   }
 
   return {
-    store,
-    colorVariables,
-    searchTerm,
-    filteredVariables,
-    getBoundVariable,
-    bindVariable,
-    unbindVariable
+    ...binding,
+    colorVariables: binding.variables,
+    bindVariable: (nodeId: string, index: number, variableId: string) =>
+      binding.bindVariable(nodeId, variableId, index),
+    unbindVariable: (nodeId: string, index: number) => binding.unbindVariable(nodeId, index),
+    createAndBindVariable
   }
 }
