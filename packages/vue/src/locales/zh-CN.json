@@ -38,7 +38,8 @@
     "copyAsPNG": "复制为 PNG",
     "copyAsJSX": "复制为 JSX",
     "copyNodeId": "复制节点 ID",
-    "copyXPath": "复制 XPath"
+    "copyXPath": "复制 XPath",
+    "checkUpdates": "检查更新…"
   },
   "commands": {
     "undo": "撤销",
@@ -89,7 +90,7 @@
     "autoLayout": "自动布局",
     "alignment": "对齐",
     "appearance": "外观",
-    "sizingFill": "填充",
+    "fill": "填充",
     "stroke": "描边",
     "effects": "效果",
     "export": "导出",
@@ -158,6 +159,7 @@
     "rows": "行",
     "sizingFixed": "固定",
     "sizingHug": "适应内容",
+    "sizingFill": "填充",
     "sizingHugShort": "适应",
     "sizingFillShort": "填充",
     "sizingFillFr": "填充 (fr)",
@@ -208,6 +210,15 @@
     "connected": "已连接",
     "search": "搜索…",
     "noResults": "无结果",
-    "share": "分享"
+    "share": "分享",
+    "appUpToDate": "OpenPencil 已是最新版本",
+    "updateAvailableTitle": "更新 OpenPencil",
+    "updateAvailable": "OpenPencil {version} 可用。",
+    "updateInstallPrompt": "现在下载并安装？更新安装后应用将重启。",
+    "downloadingUpdate": "正在下载 OpenPencil {version}",
+    "updateInstalledTitle": "更新已安装",
+    "updateInstalled": "OpenPencil {version} 已安装{size}。正在重启。",
+    "updateCheckFailed": "无法检查更新：{error}",
+    "updateUnavailable": "更新尚不可用。请先发布带有 latest.json 的已签名版本。"
   }
 }

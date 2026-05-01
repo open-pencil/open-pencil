@@ -9,6 +9,8 @@
     "dialog:default",
     "dialog:allow-save",
     "dialog:allow-open",
+    "updater:default",
+    "process:default",
     {
       "identifier": "fs:allow-read-file",
       "allow": [{ "path": "**" }]

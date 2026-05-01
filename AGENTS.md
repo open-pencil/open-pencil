@@ -94,15 +94,16 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 
 ### How to release
 
-1. Update version in `package.json`, `packages/core/package.json`, `packages/cli/package.json`, `desktop/tauri.conf.json`
+1. Update version in `package.json`, `packages/core/package.json`, `packages/cli/package.json`, `packages/mcp/package.json`, `packages/vue/package.json`, `desktop/tauri.conf.json`, and `desktop/Cargo.toml`
 2. Update `CHANGELOG.md` — move "Unreleased" items under new version heading with date
 3. Commit: `Release v0.x.y`
 4. Tag: `git tag v0.x.y && git push --tags`
-5. The `build.yml` workflow triggers on `v*` tags and:
+5. Ensure GitHub release secrets include `TAURI_SIGNING_PRIVATE_KEY` (and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` if the updater key is password-protected); the public updater key is configured in `desktop/tauri.conf.json`.
+6. The `build.yml` workflow triggers on `v*` tags and:
    - Builds Tauri binaries for macOS (arm64 + x64), Windows (x64 + arm64), Linux (x64)
    - Creates a draft GitHub Release with all platform binaries
    - Publishes `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` to npm with provenance
-6. Go to GitHub Releases → edit the draft → paste changelog section → publish
+7. Go to GitHub Releases → edit the draft → paste changelog section → publish
 
 ### CI workflows
 

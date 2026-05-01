@@ -45,6 +45,7 @@ export const menuMessages = i18n('menu', {
   zoomOut: 'Zoom out',
   profiler: 'Performance profiler',
   language: 'Language',
+  checkUpdates: 'Check for updates…',
 
   moveToPage: 'Move to page',
   createInstance: 'Create instance',
@@ -267,5 +268,16 @@ export const dialogMessages = i18n('dialogs', {
   connected: 'Connected',
   search: 'Search…',
   noResults: 'No results',
-  share: 'Share'
+  share: 'Share',
+  appUpToDate: 'OpenPencil is up to date',
+  updateAvailableTitle: 'Update OpenPencil',
+  updateAvailable: params('OpenPencil {version} is available.'),
+  updateInstallPrompt:
+    'Download and install it now? The app will restart after the update is installed.',
+  downloadingUpdate: params('Downloading OpenPencil {version}'),
+  updateInstalledTitle: 'Update installed',
+  updateInstalled: params('OpenPencil {version} was installed{size}. Restarting now.'),
+  updateUnavailable:
+    'Updates are not available yet. Publish a signed release with latest.json first.',
+  updateCheckFailed: params('Could not check for updates: {error}')
 })

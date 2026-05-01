@@ -69,6 +69,11 @@ pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Re
             Some("About OpenPencil"),
             None,
         )?)
+        .item(
+            &MenuItemBuilder::new("Check for Updates…")
+                .id("check-updates")
+                .build(app)?,
+        )
         .separator()
         .item(&PredefinedMenuItem::services(app, None)?)
         .separator()

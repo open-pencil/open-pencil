@@ -38,7 +38,8 @@
     "copyAsPNG": "Kopiuj jako PNG",
     "copyAsJSX": "Kopiuj jako JSX",
     "copyNodeId": "Kopiuj ID węzła",
-    "copyXPath": "Kopiuj XPath"
+    "copyXPath": "Kopiuj XPath",
+    "checkUpdates": "Sprawdź aktualizacje…"
   },
   "commands": {
     "undo": "Cofnij",
@@ -209,6 +210,15 @@
     "connected": "Połączono",
     "search": "Szukaj…",
     "noResults": "Brak wyników",
-    "share": "Udostępnij"
+    "share": "Udostępnij",
+    "appUpToDate": "OpenPencil jest aktualny",
+    "updateAvailableTitle": "Zaktualizuj OpenPencil",
+    "updateAvailable": "OpenPencil {version} jest dostępny.",
+    "updateInstallPrompt": "Pobrać i zainstalować teraz? Aplikacja uruchomi się ponownie po zainstalowaniu aktualizacji.",
+    "downloadingUpdate": "Pobieranie OpenPencil {version}",
+    "updateInstalledTitle": "Aktualizacja zainstalowana",
+    "updateInstalled": "OpenPencil {version} został zainstalowany{size}. Ponowne uruchamianie.",
+    "updateCheckFailed": "Nie udało się sprawdzić aktualizacji: {error}",
+    "updateUnavailable": "Aktualizacje nie są jeszcze dostępne. Najpierw opublikuj podpisane wydanie z latest.json."
   }
 }

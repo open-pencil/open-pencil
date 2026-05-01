@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+# Tauri updater private signing keys
+/desktop/*.key
+!/desktop/*.key.pub
 
 # Copied from node_modules at build time
 public/canvaskit.wasm

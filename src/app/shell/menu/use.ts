@@ -3,9 +3,10 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { useEditorStore } from '@/app/editor/active-store'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
 import { useAppTheme } from '@/app/shell/theme'
+import { checkForAppUpdate } from '@/app/shell/updater'
 import { createTab, closeTab, activeTab } from '@/app/tabs'
 import { IS_TAURI } from '@/constants'
-import { useEditorCommands } from '@open-pencil/vue'
+import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import type { EditorCommandId } from '@open-pencil/vue'
 
@@ -55,6 +56,7 @@ export function useMenu() {
 
   let unlisten: (() => void) | undefined
   const { setTheme } = useAppTheme()
+  const { dialogs } = useI18n()
   const { runCommand } = useEditorCommands()
 
   const actions: Partial<Record<string, () => void>> = {
@@ -90,6 +92,7 @@ export function useMenu() {
     'toggle-ui': () => {
       store.state.showUI = !store.state.showUI
     },
+    'check-updates': () => void checkForAppUpdate({ messages: dialogs }),
     'text.bold': () => {
       const node = store.selectedNodes.value.find((item) => item.type === 'TEXT')
       updateSelectedText({ fontWeight: node && node.fontWeight >= 700 ? 400 : 700 })

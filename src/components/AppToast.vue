@@ -29,9 +29,9 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
       <ToastDescription class="min-w-0 flex-1 select-text">
         {{ t.message }}<span v-if="t.count > 1" class="ml-1.5 opacity-70">×{{ t.count }}</span>
       </ToastDescription>
-      <Tip v-if="t.variant === 'error'" :label="copied ? 'Copied!' : 'Copy error'">
+      <Tip v-if="t.variant !== 'default'" :label="copied ? 'Copied!' : 'Copy message'">
         <button
-          data-test-id="toast-copy-error"
+          data-test-id="toast-copy-message"
           class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100"
           @click="copy(t.message)"
         >
@@ -40,7 +40,7 @@ const { copy, copied } = useClipboard({ copiedDuring: 1500 })
         </button>
       </Tip>
       <ToastClose
-        v-if="t.variant === 'error'"
+        v-if="t.variant !== 'default'"
         data-test-id="toast-close"
         class="mt-0.5 shrink-0 cursor-pointer rounded p-0.5 opacity-70 hover:opacity-100"
       >

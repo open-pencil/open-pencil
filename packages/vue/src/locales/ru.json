@@ -38,7 +38,8 @@
     "copyAsPNG": "Копировать как PNG",
     "copyAsJSX": "Копировать как JSX",
     "copyNodeId": "Копировать ID узла",
-    "copyXPath": "Копировать XPath"
+    "copyXPath": "Копировать XPath",
+    "checkUpdates": "Проверить обновления…"
   },
   "commands": {
     "undo": "Отменить",
@@ -209,6 +210,15 @@
     "connected": "Подключено",
     "search": "Поиск…",
     "noResults": "Ничего не найдено",
-    "share": "Поделиться"
+    "share": "Поделиться",
+    "appUpToDate": "OpenPencil обновлён до последней версии",
+    "updateAvailableTitle": "Обновить OpenPencil",
+    "updateAvailable": "Доступен OpenPencil {version}.",
+    "updateInstallPrompt": "Скачать и установить сейчас? После установки обновления приложение перезапустится.",
+    "downloadingUpdate": "Загрузка OpenPencil {version}",
+    "updateInstalledTitle": "Обновление установлено",
+    "updateInstalled": "OpenPencil {version} установлен{size}. Перезапуск.",
+    "updateCheckFailed": "Не удалось проверить обновления: {error}",
+    "updateUnavailable": "Обновления пока недоступны. Сначала опубликуйте подписанный релиз с latest.json."
   }
 }

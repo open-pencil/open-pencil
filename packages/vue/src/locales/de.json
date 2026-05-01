@@ -38,7 +38,8 @@
     "copyAsPNG": "Als PNG kopieren",
     "copyAsJSX": "Als JSX kopieren",
     "copyNodeId": "Knoten-ID kopieren",
-    "copyXPath": "XPath kopieren"
+    "copyXPath": "XPath kopieren",
+    "checkUpdates": "Nach Updates suchen…"
   },
   "commands": {
     "undo": "Rückgängig",
@@ -209,6 +210,15 @@
     "connected": "Verbunden",
     "search": "Suchen…",
     "noResults": "Keine Ergebnisse",
-    "share": "Teilen"
+    "share": "Teilen",
+    "appUpToDate": "OpenPencil ist auf dem neuesten Stand",
+    "updateAvailableTitle": "OpenPencil aktualisieren",
+    "updateAvailable": "OpenPencil {version} ist verfügbar.",
+    "updateInstallPrompt": "Jetzt herunterladen und installieren? Die App wird nach der Installation neu gestartet.",
+    "downloadingUpdate": "OpenPencil {version} wird heruntergeladen",
+    "updateInstalledTitle": "Update installiert",
+    "updateInstalled": "OpenPencil {version} wurde installiert{size}. Neustart jetzt.",
+    "updateCheckFailed": "Updates konnten nicht geprüft werden: {error}",
+    "updateUnavailable": "Updates sind noch nicht verfügbar. Veröffentliche zuerst ein signiertes Release mit latest.json."
   }
 }

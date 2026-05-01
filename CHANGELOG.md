@@ -9,6 +9,7 @@
 - Split the canvas into separate scene and overlay render layers so rulers, labels, selections, and input overlays are isolated from scene rendering.
 - Use `@use-gesture/vanilla` for wheel gesture lifecycle handling and faster trackpad zoom behavior.
 - Add auto-layout inspector controls for min/max dimensions, Auto gap distribution, wrap cross-axis gap, and two-axis padding controls.
+- Add signed Tauri updater configuration, release artifacts, startup update checks, and a native Check for Updates menu item.
 
 ### Fixes
 
