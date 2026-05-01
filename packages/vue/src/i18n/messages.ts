@@ -221,6 +221,8 @@ export const panelMessages = i18n('panels', {
   maxWidthShort: 'Max W',
   minHeightShort: 'Min H',
   maxHeightShort: 'Max H',
+  setToCurrentWidth: 'Set to current width',
+  setToCurrentHeight: 'Set to current height',
   sizingFillFr: 'Fill (fr)',
   sizingFixedPx: 'Fixed (px)'
 })

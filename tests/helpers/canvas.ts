@@ -27,8 +27,12 @@ export class CanvasHelper {
   }
 
   async waitForInit() {
-    await this.page.locator('canvas[data-ready="1"]').waitFor({ timeout: 30000 })
-    await this.page.locator('[data-test-id="canvas-loading"]').waitFor({ state: 'hidden', timeout: 30000 })
+    await this.page
+      .locator('[data-test-id="canvas-element"][data-ready="1"]')
+      .waitFor({ timeout: 30000 })
+    await this.page
+      .locator('[data-test-id="canvas-loading"]')
+      .waitFor({ state: 'hidden', timeout: 30000 })
     await this.page.locator('#loader').waitFor({ state: 'detached', timeout: 30000 })
   }
 
@@ -53,13 +57,7 @@ export class CanvasHelper {
     await this.page.mouse.click(box.x + canvasX, box.y + canvasY)
   }
 
-  async drag(
-    fromX: number,
-    fromY: number,
-    toX: number,
-    toY: number,
-    steps = 10
-  ) {
+  async drag(fromX: number, fromY: number, toX: number, toY: number, steps = 10) {
     const box = await this.canvasBounds()
     await this.page.mouse.move(box.x + fromX, box.y + fromY)
     await this.page.mouse.down()

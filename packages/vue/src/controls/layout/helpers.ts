@@ -180,6 +180,13 @@ export function createLayoutActions({
     editor.updateNode(node.value.id, { [prop]: value })
   }
 
+  function setSizeLimitToCurrent(prop: SizeLimitProp) {
+    const n = node.value
+    if (!n) return
+    const value = prop === 'minWidth' || prop === 'maxWidth' ? n.width : n.height
+    editor.updateNodeWithUndo(n.id, { [prop]: Math.round(value) }, `Set ${prop}`)
+  }
+
   function commitSizeLimit(prop: SizeLimitProp, _value: number, previous: number) {
     if (!node.value) return
     editor.commitNodeUpdate(node.value.id, { [prop]: previous }, `Change ${prop}`)
@@ -258,6 +265,7 @@ export function createLayoutActions({
   return {
     updateProp,
     updateSizeLimit,
+    setSizeLimitToCurrent,
     commitSizeLimit,
     addSizeLimit,
     removeSizeLimit,

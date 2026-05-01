@@ -30,6 +30,7 @@ provideLayoutControls(
     :track-sizing-options="ctx.trackSizingOptions"
     :update-prop="ctx.updateProp"
     :update-size-limit="ctx.updateSizeLimit"
+    :set-size-limit-to-current="ctx.setSizeLimitToCurrent"
     :commit-size-limit="ctx.commitSizeLimit"
     :add-size-limit="ctx.addSizeLimit"
     :remove-size-limit="ctx.removeSizeLimit"

@@ -20,9 +20,24 @@ import type { SizeLimitProp } from '@open-pencil/vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 
+type ActiveSizeLimit = {
+  prop: SizeLimitProp
+  testId: string
+  icon: () => string
+  value: () => number | null
+  setLabel: () => string
+  removeLabel: () => string
+}
+
 const ctx = useLayoutControlsContext()
 const widthFieldRef = ref<HTMLElement | null>(null)
 const heightFieldRef = ref<HTMLElement | null>(null)
+const limitFieldRefs = ref<Record<SizeLimitProp, HTMLElement | null>>({
+  minWidth: null,
+  maxWidth: null,
+  minHeight: null,
+  maxHeight: null
+})
 
 const { panels } = useI18n()
 const sizingSelect = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
@@ -37,6 +52,41 @@ const widthLimitItems = [
     prop: 'maxWidth' as const,
     addLabel: () => panels.value.addMaxWidth,
     removeLabel: () => panels.value.removeMaxWidth
+  }
+]
+
+const activeSizeLimits: ActiveSizeLimit[] = [
+  {
+    prop: 'minWidth',
+    testId: 'layout-min-width-input',
+    icon: () => panels.value.minWidthShort,
+    value: () => ctx.node.minWidth,
+    setLabel: () => panels.value.setToCurrentWidth,
+    removeLabel: () => panels.value.removeMinWidth
+  },
+  {
+    prop: 'maxWidth',
+    testId: 'layout-max-width-input',
+    icon: () => panels.value.maxWidthShort,
+    value: () => ctx.node.maxWidth,
+    setLabel: () => panels.value.setToCurrentWidth,
+    removeLabel: () => panels.value.removeMaxWidth
+  },
+  {
+    prop: 'minHeight',
+    testId: 'layout-min-height-input',
+    icon: () => panels.value.minHeightShort,
+    value: () => ctx.node.minHeight,
+    setLabel: () => panels.value.setToCurrentHeight,
+    removeLabel: () => panels.value.removeMinHeight
+  },
+  {
+    prop: 'maxHeight',
+    testId: 'layout-max-height-input',
+    icon: () => panels.value.maxHeightShort,
+    value: () => ctx.node.maxHeight,
+    setLabel: () => panels.value.setToCurrentHeight,
+    removeLabel: () => panels.value.removeMaxHeight
   }
 ]
 
@@ -61,6 +111,11 @@ function sizingShortLabel(sizing: LayoutSizing): string | null {
 
 function anchorRef(element: HTMLElement | null): HTMLElement | undefined {
   return element ?? undefined
+}
+
+function handleLimitSelect(prop: SizeLimitProp, value: string) {
+  if (value === 'CURRENT') ctx.setSizeLimitToCurrent(prop)
+  else if (value === 'REMOVE') ctx.removeSizeLimit(prop)
 }
 
 function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
@@ -210,41 +265,54 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
     "
     class="mt-1.5 grid grid-cols-2 gap-1.5"
   >
-    <ScrubInput
-      v-if="ctx.node.minWidth != null"
-      data-test-id="layout-min-width-input"
-      :icon="panels.minWidthShort"
-      :model-value="Math.round(ctx.node.minWidth)"
-      :min="0"
-      @update:model-value="ctx.updateSizeLimit('minWidth', $event)"
-      @commit="(v: number, p: number) => ctx.commitSizeLimit('minWidth', v, p)"
-    />
-    <ScrubInput
-      v-if="ctx.node.maxWidth != null"
-      data-test-id="layout-max-width-input"
-      :icon="panels.maxWidthShort"
-      :model-value="Math.round(ctx.node.maxWidth)"
-      :min="0"
-      @update:model-value="ctx.updateSizeLimit('maxWidth', $event)"
-      @commit="(v: number, p: number) => ctx.commitSizeLimit('maxWidth', v, p)"
-    />
-    <ScrubInput
-      v-if="ctx.node.minHeight != null"
-      data-test-id="layout-min-height-input"
-      :icon="panels.minHeightShort"
-      :model-value="Math.round(ctx.node.minHeight)"
-      :min="0"
-      @update:model-value="ctx.updateSizeLimit('minHeight', $event)"
-      @commit="(v: number, p: number) => ctx.commitSizeLimit('minHeight', v, p)"
-    />
-    <ScrubInput
-      v-if="ctx.node.maxHeight != null"
-      data-test-id="layout-max-height-input"
-      :icon="panels.maxHeightShort"
-      :model-value="Math.round(ctx.node.maxHeight)"
-      :min="0"
-      @update:model-value="ctx.updateSizeLimit('maxHeight', $event)"
-      @commit="(v: number, p: number) => ctx.commitSizeLimit('maxHeight', v, p)"
-    />
+    <template v-for="item in activeSizeLimits" :key="item.prop">
+      <div
+        v-if="item.value() != null"
+        :ref="(el) => (limitFieldRefs[item.prop] = el as HTMLElement | null)"
+        class="min-w-0"
+      >
+        <ScrubInput
+          :data-test-id="item.testId"
+          :icon="item.icon()"
+          :model-value="Math.round(item.value() ?? 0)"
+          :min="0"
+          @update:model-value="ctx.updateSizeLimit(item.prop, $event)"
+          @commit="(v: number, p: number) => ctx.commitSizeLimit(item.prop, v, p)"
+        >
+          <template #suffix>
+            <SelectRoot
+              :model-value="'VALUE'"
+              @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
+            >
+              <SelectTrigger
+                :data-test-id="`${item.testId}-menu`"
+                :reference="anchorRef(limitFieldRefs[item.prop])"
+                class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
+                @pointerdown.stop
+              >
+                <icon-lucide-chevron-down class="size-3" />
+              </SelectTrigger>
+              <SelectPortal>
+                <SelectContent
+                  position="popper"
+                  align="start"
+                  :side-offset="4"
+                  :class="sizingSelect.content"
+                >
+                  <SelectViewport class="p-0.5">
+                    <SelectItem value="CURRENT" :class="sizingSelect.item">
+                      <SelectItemText>{{ item.setLabel() }}</SelectItemText>
+                    </SelectItem>
+                    <SelectItem value="REMOVE" :class="sizingSelect.item">
+                      <SelectItemText>{{ item.removeLabel() }}</SelectItemText>
+                    </SelectItem>
+                  </SelectViewport>
+                </SelectContent>
+              </SelectPortal>
+            </SelectRoot>
+          </template>
+        </ScrubInput>
+      </div>
+    </template>
   </div>
 </template>

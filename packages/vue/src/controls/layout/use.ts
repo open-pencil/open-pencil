@@ -63,6 +63,7 @@ export function useLayout() {
     trackSizingOptions: createTrackSizingOptions(panels.value),
     updateProp: layoutActions.updateProp,
     updateSizeLimit: layoutActions.updateSizeLimit,
+    setSizeLimitToCurrent: layoutActions.setSizeLimitToCurrent,
     commitSizeLimit: layoutActions.commitSizeLimit,
     addSizeLimit: layoutActions.addSizeLimit,
     removeSizeLimit: layoutActions.removeSizeLimit,
