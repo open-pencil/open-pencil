@@ -1,7 +1,8 @@
+import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { SceneGraph } from '#core/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
 import { populateInstanceChildren } from '#core/scene-graph/instances'
-import { parseSVGPath } from '#core/io/formats/svg/parse-path'
+
 import {
   applyCornerRadius,
   applyPadding,

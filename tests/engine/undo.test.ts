@@ -14,7 +14,17 @@ describe('UndoManager', () => {
   test('apply executes forward and enables undo', () => {
     const undo = createUndoManager()
     let value = 0
-    undo.apply(undoEntry('increment', () => { value = 1 }, () => { value = 0 }))
+    undo.apply(
+      undoEntry(
+        'increment',
+        () => {
+          value = 1
+        },
+        () => {
+          value = 0
+        }
+      )
+    )
     expect(value).toBe(1)
     expect(undo.canUndo).toBe(true)
     expect(undo.undoLabel).toBe('increment')
@@ -23,7 +33,17 @@ describe('UndoManager', () => {
   test('push does not execute forward', () => {
     const undo = createUndoManager()
     let value = 0
-    undo.push(undoEntry('set', () => { value = 1 }, () => { value = 0 }))
+    undo.push(
+      undoEntry(
+        'set',
+        () => {
+          value = 1
+        },
+        () => {
+          value = 0
+        }
+      )
+    )
     expect(value).toBe(0)
     expect(undo.canUndo).toBe(true)
   })
@@ -31,7 +51,17 @@ describe('UndoManager', () => {
   test('undo calls inverse and returns label', () => {
     const undo = createUndoManager()
     let value = 0
-    undo.apply(undoEntry('set', () => { value = 1 }, () => { value = 0 }))
+    undo.apply(
+      undoEntry(
+        'set',
+        () => {
+          value = 1
+        },
+        () => {
+          value = 0
+        }
+      )
+    )
     const label = undo.undo()
     expect(label).toBe('set')
     expect(value).toBe(0)
@@ -42,7 +72,17 @@ describe('UndoManager', () => {
   test('redo calls forward and returns label', () => {
     const undo = createUndoManager()
     let value = 0
-    undo.apply(undoEntry('set', () => { value = 1 }, () => { value = 0 }))
+    undo.apply(
+      undoEntry(
+        'set',
+        () => {
+          value = 1
+        },
+        () => {
+          value = 0
+        }
+      )
+    )
     undo.undo()
     const label = undo.redo()
     expect(label).toBe('set')
@@ -81,9 +121,39 @@ describe('UndoManager', () => {
   test('history limit drops oldest entries', () => {
     const undo = createUndoManager({ limit: 2 })
     let val = 0
-    undo.apply(undoEntry('to1', () => { val = 1 }, () => { val = 0 }))
-    undo.apply(undoEntry('to2', () => { val = 2 }, () => { val = 1 }))
-    undo.apply(undoEntry('to3', () => { val = 3 }, () => { val = 2 }))
+    undo.apply(
+      undoEntry(
+        'to1',
+        () => {
+          val = 1
+        },
+        () => {
+          val = 0
+        }
+      )
+    )
+    undo.apply(
+      undoEntry(
+        'to2',
+        () => {
+          val = 2
+        },
+        () => {
+          val = 1
+        }
+      )
+    )
+    undo.apply(
+      undoEntry(
+        'to3',
+        () => {
+          val = 3
+        },
+        () => {
+          val = 2
+        }
+      )
+    )
 
     expect(undo.undoLabel).toBe('to3')
     undo.undo()
@@ -96,8 +166,20 @@ describe('UndoManager', () => {
     const undo = createUndoManager()
     const log: number[] = []
     undo.beginBatch('batch')
-    undo.apply(undoEntry('a', () => log.push(1), () => log.push(-1)))
-    undo.apply(undoEntry('b', () => log.push(2), () => log.push(-2)))
+    undo.apply(
+      undoEntry(
+        'a',
+        () => log.push(1),
+        () => log.push(-1)
+      )
+    )
+    undo.apply(
+      undoEntry(
+        'b',
+        () => log.push(2),
+        () => log.push(-2)
+      )
+    )
     undo.commitBatch()
     expect(log).toEqual([1, 2])
     expect(undo.undoLabel).toBe('batch')
@@ -111,8 +193,20 @@ describe('UndoManager', () => {
     const log: number[] = []
 
     undo.runBatch('batch', () => {
-      undo.apply(undoEntry('a', () => log.push(1), () => log.push(-1)))
-      undo.apply(undoEntry('b', () => log.push(2), () => log.push(-2)))
+      undo.apply(
+        undoEntry(
+          'a',
+          () => log.push(1),
+          () => log.push(-1)
+        )
+      )
+      undo.apply(
+        undoEntry(
+          'b',
+          () => log.push(2),
+          () => log.push(-2)
+        )
+      )
     })
 
     expect(log).toEqual([1, 2])
@@ -127,7 +221,13 @@ describe('UndoManager', () => {
 
     expect(() =>
       undo.runBatch('batch', () => {
-        undo.apply(undoEntry('a', () => log.push(1), () => log.push(-1)))
+        undo.apply(
+          undoEntry(
+            'a',
+            () => log.push(1),
+            () => log.push(-1)
+          )
+        )
         throw new Error('boom')
       })
     ).toThrow('boom')
@@ -141,9 +241,21 @@ describe('UndoManager', () => {
     const log: number[] = []
 
     undo.runBatch('outer', () => {
-      undo.apply(undoEntry('a', () => log.push(1), () => log.push(-1)))
+      undo.apply(
+        undoEntry(
+          'a',
+          () => log.push(1),
+          () => log.push(-1)
+        )
+      )
       undo.runBatch('inner', () => {
-        undo.apply(undoEntry('b', () => log.push(2), () => log.push(-2)))
+        undo.apply(
+          undoEntry(
+            'b',
+            () => log.push(2),
+            () => log.push(-2)
+          )
+        )
       })
     })
 
@@ -162,9 +274,39 @@ describe('UndoManager', () => {
   test('multiple undo/redo', () => {
     const undo = createUndoManager()
     let val = 0
-    undo.apply(undoEntry('to1', () => { val = 1 }, () => { val = 0 }))
-    undo.apply(undoEntry('to2', () => { val = 2 }, () => { val = 1 }))
-    undo.apply(undoEntry('to3', () => { val = 3 }, () => { val = 2 }))
+    undo.apply(
+      undoEntry(
+        'to1',
+        () => {
+          val = 1
+        },
+        () => {
+          val = 0
+        }
+      )
+    )
+    undo.apply(
+      undoEntry(
+        'to2',
+        () => {
+          val = 2
+        },
+        () => {
+          val = 1
+        }
+      )
+    )
+    undo.apply(
+      undoEntry(
+        'to3',
+        () => {
+          val = 3
+        },
+        () => {
+          val = 2
+        }
+      )
+    )
 
     undo.undo()
     expect(val).toBe(2)

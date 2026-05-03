@@ -330,4 +330,3 @@ export const nodeCommand: RpcCommand<NodeArgs, NodeResult | { error: string }> =
     }
   }
 }
-

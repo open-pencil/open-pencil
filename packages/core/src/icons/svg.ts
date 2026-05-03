@@ -1,7 +1,6 @@
+import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { iconToSVG } from '@iconify/utils'
 import svgpath from 'svgpath'
-
-import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 
 import type { IconData, IconifyIconEntry, IconPathInfo } from './types'
 
@@ -61,7 +60,10 @@ function shapeToD(tagName: string, tag: string): string | null {
     case 'polyline': {
       const points = attrValue(tag, 'points')
       if (!points) return null
-      const values = points.trim().split(/[\s,]+/).map(Number)
+      const values = points
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number)
       if (values.length < 4) return null
       let d = `M${values[0]},${values[1]}`
       for (let i = 2; i < values.length; i += 2) d += `L${values[i]},${values[i + 1]}`
@@ -89,7 +91,7 @@ function extractPaths(svgBody: string): IconPathInfo[] {
     stroke: null as string | null,
     strokeWidth: null as string | null,
     strokeCap: null as string | null,
-    strokeJoin: null as string | null,
+    strokeJoin: null as string | null
   }
   const groupRe = /<g\b[^>]*>/g
   let groupMatch
@@ -118,7 +120,7 @@ function extractPaths(svgBody: string): IconPathInfo[] {
       strokeWidth: parseFloat(attrValue(tag, 'stroke-width') ?? groupAttrs.strokeWidth ?? '1'),
       strokeCap: attrValue(tag, 'stroke-linecap') ?? groupAttrs.strokeCap ?? 'butt',
       strokeJoin: attrValue(tag, 'stroke-linejoin') ?? groupAttrs.strokeJoin ?? 'miter',
-      fillRule: fillRuleAttr === 'evenodd' ? 'EVENODD' : 'NONZERO',
+      fillRule: fillRuleAttr === 'evenodd' ? 'EVENODD' : 'NONZERO'
     })
   }
   return result
@@ -135,7 +137,7 @@ export function buildIconData(
   const rendered = iconToSVG({
     body: iconEntry.body,
     width: iconEntry.width ?? defaultW,
-    height: iconEntry.height ?? defaultH,
+    height: iconEntry.height ?? defaultH
   })
   const [, , viewBoxWidth, viewBoxHeight] = rendered.viewBox
   const scaleX = size / viewBoxWidth
@@ -159,8 +161,8 @@ export function buildIconData(
         stroke: path.stroke,
         strokeWidth: path.strokeWidth * Math.min(scaleX, scaleY),
         strokeCap: path.strokeCap,
-        strokeJoin: path.strokeJoin,
+        strokeJoin: path.strokeJoin
       }
-    }),
+    })
   }
 }

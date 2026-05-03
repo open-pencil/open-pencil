@@ -5,7 +5,11 @@ import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
 import type { Color } from '@open-pencil/core/types'
 import type { OkHCLControls } from '#vue/primitives/ColorPicker/types'
 
-const { color, editable = false, okhcl = null } = defineProps<{
+const {
+  color,
+  editable = false,
+  okhcl = null
+} = defineProps<{
   color: Color
   editable?: boolean
   okhcl?: OkHCLControls | null

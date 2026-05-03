@@ -17,7 +17,10 @@ async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, rati
 }
 
 async function openStrokePicker(page: Page) {
-  await page.locator('[data-test-id="stroke-item"] [data-test-id="color-picker-popover"]').waitFor({ state: 'detached' }).catch(() => {})
+  await page
+    .locator('[data-test-id="stroke-item"] [data-test-id="color-picker-popover"]')
+    .waitFor({ state: 'detached' })
+    .catch(() => {})
   await page.locator('[data-test-id="stroke-item"] button').first().click()
   await expect(page.locator('[data-test-id="color-picker-popover"]')).toBeVisible()
 }
@@ -51,7 +54,11 @@ test('stroke picker updates stroke color on a rectangle', async ({ page }) => {
   const after = await getSelectedStroke(page)
 
   expect(after).not.toBeNull()
-  expect(before?.color.r !== after?.color.r || before?.color.g !== after?.color.g || before?.color.b !== after?.color.b).toBe(true)
+  expect(
+    before?.color.r !== after?.color.r ||
+      before?.color.g !== after?.color.g ||
+      before?.color.b !== after?.color.b
+  ).toBe(true)
 })
 
 test('stroke picker alpha slider updates stroke opacity and alpha', async ({ page }) => {
@@ -72,7 +79,9 @@ test('stroke picker alpha slider updates stroke opacity and alpha', async ({ pag
   expect(after?.color.a).toBeCloseTo(after?.opacity ?? 0, 3)
 })
 
-test('stroke picker hsb saturation and brightness sliders update stroke color on demo card', async ({ page }) => {
+test('stroke picker hsb saturation and brightness sliders update stroke color on demo card', async ({
+  page
+}) => {
   const canvas = new CanvasHelper(page)
   await page.goto('/demo')
   await canvas.waitForInit()
@@ -80,10 +89,17 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
   await page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!
     const nodes = Array.from(store.graph.nodes.values())
-    const card = nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT')
-      ?? nodes.find((node) => node.name === 'Card')
+    const card =
+      nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT') ??
+      nodes.find((node) => node.name === 'Card')
     if (!card) throw new Error('Card not found')
-    const stroke = { color: { r: 0.9, g: 0.9, b: 0.92, a: 1 }, weight: 1, opacity: 1, visible: true, align: 'INSIDE' }
+    const stroke = {
+      color: { r: 0.9, g: 0.9, b: 0.92, a: 1 },
+      weight: 1,
+      opacity: 1,
+      visible: true,
+      align: 'INSIDE'
+    }
     store.updateNodeWithUndo(card.id, { strokes: [stroke] }, 'Add demo card stroke')
     store.state.selectedIds = new Set([card.id])
     store.requestRender()
@@ -98,11 +114,19 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
   await dragSlider(page, canvas, 'color-slider-hsb-s', 0.6)
   const afterS = await getSelectedStroke(page)
   expect(afterS).not.toBeNull()
-  expect(beforeS?.color.r !== afterS?.color.r || beforeS?.color.g !== afterS?.color.g || beforeS?.color.b !== afterS?.color.b).toBe(true)
+  expect(
+    beforeS?.color.r !== afterS?.color.r ||
+      beforeS?.color.g !== afterS?.color.g ||
+      beforeS?.color.b !== afterS?.color.b
+  ).toBe(true)
 
   const beforeB = await getSelectedStroke(page)
   await dragSlider(page, canvas, 'color-slider-hsb-b', 0.2)
   const afterB = await getSelectedStroke(page)
   expect(afterB).not.toBeNull()
-  expect(beforeB?.color.r !== afterB?.color.r || beforeB?.color.g !== afterB?.color.g || beforeB?.color.b !== afterB?.color.b).toBe(true)
+  expect(
+    beforeB?.color.r !== afterB?.color.r ||
+      beforeB?.color.g !== afterB?.color.g ||
+      beforeB?.color.b !== afterB?.color.b
+  ).toBe(true)
 })

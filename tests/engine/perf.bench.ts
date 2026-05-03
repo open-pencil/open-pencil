@@ -1,9 +1,10 @@
-import { bench, group, run } from 'mitata'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-import { parseFigFile, exportFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 import { copyFills } from '#core/scene-graph/copy'
+import { bench, group, run } from 'mitata'
+
+import { parseFigFile, exportFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 
 const FIXTURES = resolve(import.meta.dir, '../fixtures')
 
@@ -78,8 +79,20 @@ group('SceneNode memory', () => {
 
 group('structuredClone vs copy (fills)', () => {
   const sampleFills = [
-    { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' as const },
-    { type: 'SOLID' as const, color: { r: 0, g: 1, b: 0, a: 1 }, opacity: 0.5, visible: true, blendMode: 'NORMAL' as const }
+    {
+      type: 'SOLID' as const,
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true,
+      blendMode: 'NORMAL' as const
+    },
+    {
+      type: 'SOLID' as const,
+      color: { r: 0, g: 1, b: 0, a: 1 },
+      opacity: 0.5,
+      visible: true,
+      blendMode: 'NORMAL' as const
+    }
   ]
 
   bench('structuredClone × 10k', () => {

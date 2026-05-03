@@ -1,15 +1,15 @@
-import { onScopeDispose } from 'vue'
 import { tinykeys } from 'tinykeys'
+import { onScopeDispose } from 'vue'
 
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 
-import type { KeyBindingMap } from 'tinykeys'
 import type {
   KeyboardShortcutOptions,
   KeyboardShortcutRunOptions
 } from '@/app/shell/keyboard/types'
+import type { KeyBindingMap } from 'tinykeys'
 
 type ShortcutAction = (options: KeyboardShortcutRunOptions) => void
 
@@ -69,7 +69,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     commandShortcut('create-component-set', '$mod+Shift+KeyK', 'selection.createComponentSet'),
     commandShortcut('toggle-visibility', '$mod+Shift+KeyH', 'selection.toggleVisibility'),
     commandShortcut('toggle-lock', '$mod+Shift+KeyL', 'selection.toggleLock'),
-    { id: 'export-selection-png', keys: '$mod+Shift+KeyE', run: ({ actions }) => actions.exportSelectionPng() },
+    {
+      id: 'export-selection-png',
+      keys: '$mod+Shift+KeyE',
+      run: ({ actions }) => actions.exportSelectionPng()
+    },
     { id: 'save-as', keys: '$mod+Shift+KeyS', run: ({ store }) => void store.saveFigFileAs() },
     commandShortcut('ungroup', '$mod+Shift+KeyG', 'selection.ungroup'),
     commandShortcut('redo-shift', '$mod+Shift+KeyZ', 'edit.redo'),
@@ -89,7 +93,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     commandShortcut('group', '$mod+KeyG', 'selection.group'),
     commandShortcut('zoom-fit-shift', 'Shift+Digit1', 'view.zoomFit'),
     commandShortcut('zoom-selection-shift', 'Shift+Digit2', 'view.zoomSelection'),
-    { id: 'toggle-auto-layout', keys: 'Shift+KeyA', run: ({ actions }) => actions.toggleAutoLayout() },
+    {
+      id: 'toggle-auto-layout',
+      keys: 'Shift+KeyA',
+      run: ({ actions }) => actions.toggleAutoLayout()
+    },
     commandShortcut('bring-to-front', 'BracketRight', 'selection.bringToFront'),
     commandShortcut('send-to-back', 'BracketLeft', 'selection.sendToBack'),
     { id: 'delete-backspace', keys: 'Backspace', run: ({ actions }) => actions.smartDelete(false) },
@@ -109,15 +117,18 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     })
   }
 
-  const unsubscribe = tinykeys(window, Object.fromEntries(
-    Object.entries(bindings).map(([keys, handler]) => [
-      keys,
-      (event: KeyboardEvent) => {
-        if (shouldIgnoreShortcut(event, options)) return
-        handler(event)
-      }
-    ])
-  ))
+  const unsubscribe = tinykeys(
+    window,
+    Object.fromEntries(
+      Object.entries(bindings).map(([keys, handler]) => [
+        keys,
+        (event: KeyboardEvent) => {
+          if (shouldIgnoreShortcut(event, options)) return
+          handler(event)
+        }
+      ])
+    )
+  )
 
   onScopeDispose(unsubscribe)
 }

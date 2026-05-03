@@ -1,6 +1,14 @@
 import { colorToHex8, colorToCSSCompact } from '#core/color'
 
-import type { SceneGraph, SceneNode, Fill, Stroke, Effect, Color, GridTrack } from '#core/scene-graph'
+import type {
+  SceneGraph,
+  SceneNode,
+  Fill,
+  Stroke,
+  Effect,
+  Color,
+  GridTrack
+} from '#core/scene-graph'
 
 export function formatColor(color: Color, opacity = 1): string {
   return colorToHex8(color, opacity)
@@ -127,4 +135,3 @@ export function formatTrack(t: GridTrack): string {
 export function formatTracks(tracks: GridTrack[]): string {
   return tracks.map(formatTrack).join(' ')
 }
-

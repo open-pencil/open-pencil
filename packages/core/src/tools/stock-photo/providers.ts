@@ -85,9 +85,9 @@ const pexelsProvider: StockPhotoProvider = {
       width: photo.width,
       height: photo.height,
       photographer: photo.photographer,
-      sourceId: String(photo.id),
+      sourceId: String(photo.id)
     }))
-  },
+  }
 }
 
 let unsplashAccessKey: string | null = null
@@ -124,8 +124,8 @@ const unsplashProvider: StockPhotoProvider = {
     const resp = await fetch(url, {
       headers: {
         Authorization: `Client-ID ${unsplashAccessKey}`,
-        'Accept-Version': 'v1',
-      },
+        'Accept-Version': 'v1'
+      }
     })
     if (!resp.ok) throw new Error(`Unsplash ${resp.status}`)
     const data = (await resp.json()) as { results: UnsplashPhoto[] }
@@ -134,7 +134,7 @@ const unsplashProvider: StockPhotoProvider = {
       width: photo.width,
       height: photo.height,
       photographer: photo.user.name,
-      sourceId: photo.id,
+      sourceId: photo.id
     }))
-  },
+  }
 }

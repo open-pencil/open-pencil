@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'bun:test'
 
-import { makeSceneGraph } from '../helpers/scene'
-
 import {
   renderTree,
   renderJSX,
@@ -20,6 +18,8 @@ import {
   isTreeNode,
   node
 } from '@open-pencil/core'
+
+import { makeSceneGraph } from '../helpers/scene'
 
 describe('TreeNode builders', () => {
   it('creates Frame tree node', () => {
@@ -85,7 +85,13 @@ describe('renderTree', () => {
 
   it('renders text node with content', async () => {
     const g = makeSceneGraph()
-    const tree = Text({ name: 'Heading', size: 24, weight: 'bold', color: '#111', children: 'Hello' })
+    const tree = Text({
+      name: 'Heading',
+      size: 24,
+      weight: 'bold',
+      color: '#111',
+      children: 'Hello'
+    })
     const result = await renderTree(g, tree)
 
     const node = g.nodes.get(result.id)!
@@ -371,7 +377,8 @@ describe('renderJSX (string → scene graph)', () => {
 describe('grid layout rendering', () => {
   it('creates grid frame with template columns', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr' },
+    const tree = Frame(
+      { name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr' },
       Rectangle({ name: 'A', w: 50, h: 50 }),
       Rectangle({ name: 'B', w: 50, h: 50 }),
       Rectangle({ name: 'C', w: 50, h: 50 })
@@ -415,7 +422,15 @@ describe('grid layout rendering', () => {
 
   it('sets grid gaps', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr', columnGap: 10, rowGap: 20 })
+    const tree = Frame({
+      name: 'Grid',
+      w: 300,
+      h: 200,
+      grid: true,
+      columns: '1fr 1fr',
+      columnGap: 10,
+      rowGap: 20
+    })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
 
@@ -447,7 +462,14 @@ describe('grid layout rendering', () => {
 
   it('sets grid rows', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr', rows: '100 1fr' })
+    const tree = Frame({
+      name: 'Grid',
+      w: 300,
+      h: 200,
+      grid: true,
+      columns: '1fr',
+      rows: '100 1fr'
+    })
     const result = await renderTree(g, tree)
     const frame = g.nodes.get(result.id)!
 
@@ -459,7 +481,8 @@ describe('grid layout rendering', () => {
 
   it('sets grid child position', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr 1fr' },
+    const tree = Frame(
+      { name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr 1fr' },
       Rectangle({ name: 'A', w: 50, h: 50, colStart: 2, rowStart: 1 })
     )
     const result = await renderTree(g, tree)
@@ -470,7 +493,8 @@ describe('grid layout rendering', () => {
 
   it('sets grid child span', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr 1fr' },
+    const tree = Frame(
+      { name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr 1fr' },
       Rectangle({ name: 'A', w: 50, h: 50, colStart: 1, colSpan: 2, rowStart: 1, rowSpan: 2 })
     )
     const result = await renderTree(g, tree)
@@ -481,7 +505,8 @@ describe('grid layout rendering', () => {
 
   it('grid + computeLayout positions children in cells', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr' },
+    const tree = Frame(
+      { name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr 1fr', rows: '1fr' },
       Rectangle({ name: 'A', w: 50, h: 50 }),
       Rectangle({ name: 'B', w: 50, h: 50 }),
       Rectangle({ name: 'C', w: 50, h: 50 })
@@ -497,7 +522,8 @@ describe('grid layout rendering', () => {
 
   it('grid 2x2 with gap positions correctly', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 210, h: 210, grid: true, columns: '1fr 1fr', rows: '1fr 1fr', gap: 10 },
+    const tree = Frame(
+      { name: 'Grid', w: 210, h: 210, grid: true, columns: '1fr 1fr', rows: '1fr 1fr', gap: 10 },
       Rectangle({ name: 'A', w: 30, h: 30 }),
       Rectangle({ name: 'B', w: 30, h: 30 }),
       Rectangle({ name: 'C', w: 30, h: 30 }),
@@ -544,7 +570,8 @@ describe('grid layout rendering', () => {
 
   it('grid auto-height (no rows) grows to fit content', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, grid: true, columns: '1fr 1fr', gap: 10 },
+    const tree = Frame(
+      { name: 'Grid', w: 300, grid: true, columns: '1fr 1fr', gap: 10 },
       Rectangle({ name: 'A', w: 50, h: 80 }),
       Rectangle({ name: 'B', w: 50, h: 80 }),
       Rectangle({ name: 'C', w: 50, h: 60 }),
@@ -561,13 +588,22 @@ describe('grid layout rendering', () => {
 
   it('grid children with flex stretch to cell width', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 200, grid: true, columns: '1fr 1fr', gap: 0 },
-      Frame({ name: 'A', flex: 'col', gap: 4, p: 8, children: [
-        Rectangle({ name: 'R1', w: 10, h: 20 })
-      ]}),
-      Frame({ name: 'B', flex: 'col', gap: 4, p: 8, children: [
-        Rectangle({ name: 'R2', w: 10, h: 20 })
-      ]})
+    const tree = Frame(
+      { name: 'Grid', w: 200, grid: true, columns: '1fr 1fr', gap: 0 },
+      Frame({
+        name: 'A',
+        flex: 'col',
+        gap: 4,
+        p: 8,
+        children: [Rectangle({ name: 'R1', w: 10, h: 20 })]
+      }),
+      Frame({
+        name: 'B',
+        flex: 'col',
+        gap: 4,
+        p: 8,
+        children: [Rectangle({ name: 'R2', w: 10, h: 20 })]
+      })
     )
     const result = await renderTree(g, tree)
     computeAllLayouts(g)
@@ -581,7 +617,8 @@ describe('grid layout rendering', () => {
 
   it('grid prop takes precedence over padding-triggered auto-layout', async () => {
     const g = makeSceneGraph()
-    const tree = Frame({ name: 'Grid', w: 300, grid: true, columns: '1fr 1fr', p: 20 },
+    const tree = Frame(
+      { name: 'Grid', w: 300, grid: true, columns: '1fr 1fr', p: 20 },
       Rectangle({ name: 'A', w: 50, h: 50 }),
       Rectangle({ name: 'B', w: 50, h: 50 })
     )
@@ -602,7 +639,7 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const grid = g.getChildren(result.id).find(c => c.name === 'G')!
+    const grid = g.getChildren(result.id).find((c) => c.name === 'G')!
     expect(grid.width).toBe(360)
     expect(grid.layoutMode).toBe('GRID')
   })
@@ -620,7 +657,7 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const grid = g.getChildren(result.id).find(c => c.name === 'G')!
+    const grid = g.getChildren(result.id).find((c) => c.name === 'G')!
     expect(grid.width).toBe(350)
   })
 
@@ -639,8 +676,8 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const content = g.getChildren(result.id).find(c => c.name === 'Content')!
-    const grid = g.getChildren(content.id).find(c => c.name === 'G')!
+    const content = g.getChildren(result.id).find((c) => c.name === 'Content')!
+    const grid = g.getChildren(content.id).find((c) => c.name === 'G')!
     expect(content.width).toBe(780)
     expect(grid.width).toBe(724)
   })
@@ -658,7 +695,7 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const grid = g.getChildren(result.id).find(c => c.name === 'G')!
+    const grid = g.getChildren(result.id).find((c) => c.name === 'G')!
     expect(grid.height).toBe(460)
   })
 })
@@ -739,11 +776,14 @@ describe('text props round-trip', () => {
 
   it('text w="fill" in flex="col" exports as w="fill" not w={computed}', async () => {
     const g = makeSceneGraph()
-    const [result] = await renderJSX(g, `
+    const [result] = await renderJSX(
+      g,
+      `
       <Frame name="Card" flex="col" w={300} p={20}>
         <Text name="Title" size={22} weight="bold" color="#111" w="fill">Hello World</Text>
       </Frame>
-    `)
+    `
+    )
     const card = g.getNode(result.id)!
     const title = g.getNode(card.childIds[0]!)!
     expect(title.layoutAlignSelf).toBe('STRETCH')
@@ -755,12 +795,15 @@ describe('text props round-trip', () => {
 
   it('text grow={1} in flex="row" exports as grow not w={computed}', async () => {
     const g = makeSceneGraph()
-    const [result] = await renderJSX(g, `
+    const [result] = await renderJSX(
+      g,
+      `
       <Frame name="Row" flex="row" w={300}>
         <Text name="Label" color="#999" w={60}>Label</Text>
         <Text name="Value" color="#111" w="fill">Some value text</Text>
       </Frame>
-    `)
+    `
+    )
     const row = g.getNode(result.id)!
     const value = g.getNode(row.childIds[1]!)!
     expect(value.layoutGrow).toBe(1)

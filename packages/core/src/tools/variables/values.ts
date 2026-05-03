@@ -20,16 +20,16 @@ export const createVariable = defineTool({
       type: 'string',
       description: 'Variable type',
       required: true,
-      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN'],
+      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
     },
     collection_id: { type: 'string', description: 'Collection ID', required: true },
-    value: { type: 'string', description: 'Initial value (hex for COLOR, number for FLOAT, etc.)' },
+    value: { type: 'string', description: 'Initial value (hex for COLOR, number for FLOAT, etc.)' }
   },
   execute: (figma, args) => {
     const type = args.type as VariableType
     const parsedValue = args.value === undefined ? undefined : parseVariableValue(type, args.value)
     return figma.createVariable(args.name, type, args.collection_id, parsedValue)
-  },
+  }
 })
 
 export const setVariable = defineTool({
@@ -42,8 +42,8 @@ export const setVariable = defineTool({
     value: {
       type: 'string',
       description: 'Value (hex for COLOR, number for FLOAT, etc.)',
-      required: true,
-    },
+      required: true
+    }
   },
   execute: (figma, args) => {
     const variable = figma.getVariableById(args.id)
@@ -51,7 +51,7 @@ export const setVariable = defineTool({
     const parsedValue = parseVariableValue(variable.type, args.value)
     figma.setVariableValue(args.id, args.mode, parsedValue)
     return { id: args.id, mode: args.mode, value: parsedValue }
-  },
+  }
 })
 
 export const deleteVariable = defineTool({
@@ -59,10 +59,10 @@ export const deleteVariable = defineTool({
   mutates: true,
   description: 'Delete a variable.',
   params: {
-    id: { type: 'string', description: 'Variable ID', required: true },
+    id: { type: 'string', description: 'Variable ID', required: true }
   },
   execute: (figma, { id }) => {
     figma.deleteVariable(id)
     return { deleted: id }
-  },
+  }
 })

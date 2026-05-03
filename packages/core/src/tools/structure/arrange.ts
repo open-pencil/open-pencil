@@ -13,10 +13,10 @@ export const arrangeNodes = defineTool({
       type: 'string',
       description: 'Layout mode',
       enum: ['grid', 'row', 'column'],
-      default: 'grid',
+      default: 'grid'
     },
     gap: { type: 'number', description: 'Spacing between nodes (default: 40)' },
-    cols: { type: 'number', description: 'Column count for grid mode (default: auto)' },
+    cols: { type: 'number', description: 'Column count for grid mode (default: auto)' }
   },
   execute: (figma, args) => {
     const gap = args.gap ?? 40
@@ -44,7 +44,7 @@ export const arrangeNodes = defineTool({
     }
 
     return { arranged: nodes.length, mode }
-  },
+  }
 })
 
 function arrangeRow(nodes: FigmaNodeProxy[], startX: number, y: number, gap: number) {
@@ -65,7 +65,13 @@ function arrangeColumn(nodes: FigmaNodeProxy[], x: number, startY: number, gap: 
   }
 }
 
-function arrangeGrid(nodes: FigmaNodeProxy[], startX: number, startY: number, cols: number, gap: number) {
+function arrangeGrid(
+  nodes: FigmaNodeProxy[],
+  startX: number,
+  startY: number,
+  cols: number,
+  gap: number
+) {
   let x = startX
   let y = startY
   let rowHeight = 0

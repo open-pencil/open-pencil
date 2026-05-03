@@ -18,7 +18,11 @@ export function captureReloadState(state: EditorState): ReloadStateSnapshot {
   }
 }
 
-export function restoreReloadState(editor: Editor, state: EditorState, snapshot: ReloadStateSnapshot) {
+export function restoreReloadState(
+  editor: Editor,
+  state: EditorState,
+  snapshot: ReloadStateSnapshot
+) {
   state.selectedIds = new Set()
   if (editor.graph.getNode(snapshot.pageId)) {
     state.currentPageId = snapshot.pageId

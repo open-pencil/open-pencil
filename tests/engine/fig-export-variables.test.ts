@@ -1,11 +1,6 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 
-import {
-  exportFigFile,
-  parseFigFile,
-  initCodec,
-  SceneGraph,
-} from '@open-pencil/core'
+import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 
 beforeAll(async () => {
   await initCodec()
@@ -24,7 +19,12 @@ describe('COLOR variable alpha handling', () => {
     const vars = [...reimported.variables.values()]
     const colorVar = vars.find((v) => v.name === 'brand')!
     expect(colorVar.type).toBe('COLOR')
-    const val = Object.values(colorVar.valuesByMode)[0] as { r: number; g: number; b: number; a: number }
+    const val = Object.values(colorVar.valuesByMode)[0] as {
+      r: number
+      g: number
+      b: number
+      a: number
+    }
     expect(val.r).toBeCloseTo(0.2, 1)
     expect(val.g).toBeCloseTo(0.4, 1)
     expect(val.b).toBeCloseTo(0.8, 1)
@@ -41,7 +41,12 @@ describe('COLOR variable alpha handling', () => {
 
     const vars = [...reimported.variables.values()]
     const colorVar = vars.find((v) => v.name === 'overlay')!
-    const val = Object.values(colorVar.valuesByMode)[0] as { r: number; g: number; b: number; a: number }
+    const val = Object.values(colorVar.valuesByMode)[0] as {
+      r: number
+      g: number
+      b: number
+      a: number
+    }
     expect(val.a).toBeCloseTo(0.5, 1)
   })
 

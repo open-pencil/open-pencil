@@ -1,7 +1,7 @@
 import { useClipboard } from '@vueuse/core'
-import { nodeToXPath } from '@open-pencil/core/xpath'
 
 import { toast } from '@/app/shell/ui'
+import { nodeToXPath } from '@open-pencil/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import type { Ref } from 'vue'

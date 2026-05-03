@@ -17,7 +17,7 @@ function nodeToTreeEntry(node: FigmaNodeProxy): TreeEntry {
     type: node.type,
     name: node.name,
     w: node.width,
-    h: node.height,
+    h: node.height
   }
   if (node.children.length > 0) {
     entry.children = node.children.map(nodeToTreeEntry)
@@ -34,9 +34,9 @@ export const getPageTree = defineTool({
     const page = figma.currentPage
     return {
       page: page.name,
-      children: page.children.map(nodeToTreeEntry),
+      children: page.children.map(nodeToTreeEntry)
     }
-  },
+  }
 })
 
 export const getNode = defineTool({
@@ -47,14 +47,14 @@ export const getNode = defineTool({
     id: { type: 'string', description: 'Node ID', required: true },
     depth: {
       type: 'number',
-      description: 'Max depth of children to include (0 = no children). Default: unlimited',
-    },
+      description: 'Max depth of children to include (0 = no children). Default: unlimited'
+    }
   },
   execute: (figma, { id, depth }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
     return nodeToResult(node, depth)
-  },
+  }
 })
 
 export const findNodes = defineTool({
@@ -77,9 +77,9 @@ export const findNodes = defineTool({
         'GROUP',
         'COMPONENT',
         'INSTANCE',
-        'VECTOR',
-      ],
-    },
+        'VECTOR'
+      ]
+    }
   },
   execute: (figma, args) => {
     const page = figma.currentPage
@@ -89,5 +89,5 @@ export const findNodes = defineTool({
       return true
     })
     return { count: matches.length, nodes: matches.map(nodeSummary) }
-  },
+  }
 })

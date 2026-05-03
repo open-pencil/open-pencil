@@ -1,9 +1,8 @@
+import { bold, dim, fail, fmtList, ok } from '#cli/format'
+import { loadDocument } from '#cli/headless'
 import { defineCommand } from 'citty'
 
 import { allRules, createLinter, presets, type LintMessage } from '@open-pencil/core/lint'
-
-import { bold, dim, fail, fmtList, ok } from '#cli/format'
-import { loadDocument } from '#cli/headless'
 
 function formatSeverity(severity: LintMessage['severity']) {
   if (severity === 'error') return fail('error')

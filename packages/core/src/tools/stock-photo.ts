@@ -12,7 +12,7 @@ export {
   setPexelsApiKey,
   setUnsplashAccessKey,
   type StockPhotoProvider,
-  type StockPhotoResult,
+  type StockPhotoResult
 } from './stock-photo/providers'
 
 export const stockPhoto = defineTool({
@@ -26,14 +26,14 @@ export const stockPhoto = defineTool({
       type: 'string',
       description:
         'JSON array: [{"id":"0:5","query":"mountain sunset"},{"id":"0:8","query":"business team","orientation":"square"}]',
-      required: true,
-    },
+      required: true
+    }
   },
   execute: async (figma, { requests }) => {
     const provider = getActiveProvider()
     if (!provider) {
       return {
-        error: `No stock photo provider configured. Ask the user to add an API key in AI chat settings. Available providers: Pexels, Unsplash.`,
+        error: `No stock photo provider configured. Ask the user to add an API key in AI chat settings. Available providers: Pexels, Unsplash.`
       }
     }
 
@@ -44,5 +44,5 @@ export const stockPhoto = defineTool({
     const ok = results.filter((result) => result.photo).length
 
     return { applied: ok, failed: results.length - ok, provider: provider.name, results }
-  },
+  }
 })

@@ -6,7 +6,7 @@ export const nodeReplaceWith = defineTool({
   description: 'Replace a node with JSX content.',
   params: {
     id: { type: 'string', description: 'Node ID to replace', required: true },
-    jsx: { type: 'string', description: 'JSX string for the replacement', required: true },
+    jsx: { type: 'string', description: 'JSX string for the replacement', required: true }
   },
   execute: async (figma, args) => {
     const node = figma.getNodeById(args.id)
@@ -22,7 +22,9 @@ export const nodeReplaceWith = defineTool({
       id: result.id,
       name: result.name,
       type: result.type,
-      children: results.slice(1).map((child) => ({ id: child.id, name: child.name, type: child.type })),
+      children: results
+        .slice(1)
+        .map((child) => ({ id: child.id, name: child.name, type: child.type }))
     }
-  },
+  }
 })

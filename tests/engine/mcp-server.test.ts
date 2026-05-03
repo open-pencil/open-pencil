@@ -1,10 +1,11 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 
+import { startServer, paramToZod } from '#mcp/server'
+import { serve } from '@hono/node-server'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import WebSocket from 'ws'
 
-import { startServer, paramToZod } from '#mcp/server'
 import {
   ALL_TOOLS,
   FigmaAPI,
@@ -12,7 +13,6 @@ import {
   computeAllLayouts,
   executeRpcCommand
 } from '@open-pencil/core'
-import { serve } from '@hono/node-server'
 
 import type { AddressInfo } from 'node:net'
 
@@ -57,12 +57,14 @@ function connectMockBrowser(port: number, graph: SceneGraph): Promise<MockBrowse
 
           ws.send(JSON.stringify({ type: 'response', id: msg.id, ok: true, result }))
         } catch (e) {
-          ws.send(JSON.stringify({
-            type: 'response',
-            id: msg.id,
-            ok: false,
-            error: e instanceof Error ? e.message : String(e)
-          }))
+          ws.send(
+            JSON.stringify({
+              type: 'response',
+              id: msg.id,
+              ok: false,
+              error: e instanceof Error ? e.message : String(e)
+            })
+          )
         }
       })
 
@@ -232,7 +234,11 @@ describe('MCP server', () => {
 
 describe('MCP server with mcpRoot', () => {
   test('registers open_file and new_document tools when mcpRoot is set', async () => {
-    const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: '/tmp' })
+    const {
+      app,
+      wss,
+      close: closeServer
+    } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: '/tmp' })
     const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
     const actualWsPort = await waitForWsListening(wss)
 
@@ -296,7 +302,13 @@ describe('paramToZod coercion', () => {
   })
 
   test('number param respects min/max after coercion', () => {
-    const schema = paramToZod({ type: 'number', description: 'x', required: true, min: 0, max: 100 })
+    const schema = paramToZod({
+      type: 'number',
+      description: 'x',
+      required: true,
+      min: 0,
+      max: 100
+    })
     expect(schema.parse('50')).toBe(50)
     expect(() => schema.parse('200')).toThrow()
     expect(() => schema.parse('-1')).toThrow()

@@ -1,8 +1,10 @@
 export function documentNameFromFigPath(path: string): string {
-  return path
-    .split(/[\\/]/)
-    .pop()
-    ?.replace(/\.fig$/i, '') ?? 'Untitled'
+  return (
+    path
+      .split(/[\\/]/)
+      .pop()
+      ?.replace(/\.fig$/i, '') ?? 'Untitled'
+  )
 }
 
 export function downloadNameFromPath(path: string): string {

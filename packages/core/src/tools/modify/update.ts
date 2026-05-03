@@ -20,16 +20,16 @@ export const updateNode = defineTool({
     text_direction: {
       type: 'string',
       description: 'Text direction for TEXT nodes',
-      enum: ['AUTO', 'LTR', 'RTL'],
+      enum: ['AUTO', 'LTR', 'RTL']
     },
     flow_direction: {
       type: 'string',
       description: 'Auto-layout flow direction for FRAME nodes',
-      enum: ['AUTO', 'LTR', 'RTL'],
+      enum: ['AUTO', 'LTR', 'RTL']
     },
     font_size: { type: 'number', description: 'Font size', min: 1 },
     font_weight: { type: 'number', description: 'Font weight (100-900)' },
-    name: { type: 'string', description: 'Layer name' },
+    name: { type: 'string', description: 'Layer name' }
   },
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
@@ -69,13 +69,13 @@ export const updateNode = defineTool({
     }
     if (args.text_direction !== undefined) {
       figma.graph.updateNode(node.id, {
-        textDirection: args.text_direction as SceneNode['textDirection'],
+        textDirection: args.text_direction as SceneNode['textDirection']
       })
       updated.push('textDirection')
     }
     if (args.flow_direction !== undefined) {
       figma.graph.updateNode(node.id, {
-        layoutDirection: args.flow_direction as SceneNode['layoutDirection'],
+        layoutDirection: args.flow_direction as SceneNode['layoutDirection']
       })
       updated.push('layoutDirection')
     }
@@ -88,5 +88,5 @@ export const updateNode = defineTool({
       updated.push('fontWeight')
     }
     return { id: args.id, updated }
-  },
+  }
 })

@@ -109,4 +109,3 @@ export const analyzeColors = defineTool({
     return result
   }
 })
-

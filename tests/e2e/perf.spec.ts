@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+
 import { CanvasHelper } from '../helpers/canvas'
 
 const NODE_COUNT = 500
@@ -22,7 +23,11 @@ test.describe('Render performance', () => {
         const mod = i % 10
         const isVector = mod === 0
         const isEllipse = mod === 5
-        const type = isVector ? ('VECTOR' as const) : isEllipse ? ('ELLIPSE' as const) : ('RECTANGLE' as const)
+        const type = isVector
+          ? ('VECTOR' as const)
+          : isEllipse
+            ? ('ELLIPSE' as const)
+            : ('RECTANGLE' as const)
         const props: Record<string, unknown> = {
           x: (i % cols) * 60,
           y: Math.floor(i / cols) * 60,
@@ -43,7 +48,13 @@ test.describe('Render performance', () => {
             }
           ],
           strokes: [
-            { type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1, weight: 1 }
+            {
+              type: 'SOLID',
+              color: { r: 0, g: 0, b: 0, a: 1 },
+              visible: true,
+              opacity: 1,
+              weight: 1
+            }
           ]
         }
         if (isVector) {
@@ -133,9 +144,18 @@ test.describe('Render performance', () => {
       const hoverMs = performance.now() - hoverStart
 
       return {
-        pan: { ms: Math.round(panMs * 100) / 100, avg: Math.round((panMs / iterations) * 100) / 100 },
-        scene: { ms: Math.round(sceneMs * 100) / 100, avg: Math.round((sceneMs / iterations) * 100) / 100 },
-        hover: { ms: Math.round(hoverMs * 100) / 100, avg: Math.round((hoverMs / iterations) * 100) / 100 }
+        pan: {
+          ms: Math.round(panMs * 100) / 100,
+          avg: Math.round((panMs / iterations) * 100) / 100
+        },
+        scene: {
+          ms: Math.round(sceneMs * 100) / 100,
+          avg: Math.round((sceneMs / iterations) * 100) / 100
+        },
+        hover: {
+          ms: Math.round(hoverMs * 100) / 100,
+          avg: Math.round((hoverMs / iterations) * 100) / 100
+        }
       }
     }, ITERATIONS)
 
@@ -169,7 +189,9 @@ test.describe('Render performance', () => {
             width: 60,
             height: 60,
             cornerRadius: 8,
-            fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }],
+            fills: [
+              { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }
+            ],
             effects: [
               {
                 type: 'DROP_SHADOW',
@@ -224,9 +246,7 @@ test.describe('Render performance', () => {
     console.log(
       `\n═══ SHADOW BENCHMARK (${SHADOW_NODES} shadow nodes, ${SHADOW_ITERS} iterations) ═══`
     )
-    console.log(
-      `  Scene change:  ${results.scene.avg}ms/frame  (${results.scene.ms}ms total)`
-    )
+    console.log(`  Scene change:  ${results.scene.avg}ms/frame  (${results.scene.ms}ms total)`)
     console.log(`═══════════════════════════════════════════════════════\n`)
 
     expect(results.scene.avg).toBeLessThan(50)

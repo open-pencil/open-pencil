@@ -4,7 +4,7 @@ export function bearerToken(header: string | undefined | null): string | null {
 
 export function mcpRequestToken(
   authorization: string | undefined | null,
-  headerToken: string | undefined | null,
+  headerToken: string | undefined | null
 ): string | null {
   return bearerToken(authorization) ?? headerToken ?? null
 }

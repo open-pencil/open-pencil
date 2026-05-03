@@ -5,7 +5,7 @@ export const getComponents = defineTool({
   description: 'List all components in the document, optionally filtered by name.',
   params: {
     name: { type: 'string', description: 'Filter by name (case-insensitive substring)' },
-    limit: { type: 'number', description: 'Max results (default: 50)' },
+    limit: { type: 'number', description: 'Max results (default: 50)' }
   },
   execute: (figma, args) => {
     const limit = args.limit ?? 50
@@ -24,5 +24,5 @@ export const getComponents = defineTool({
     }
 
     return { count: components.length, components }
-  },
+  }
 })

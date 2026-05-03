@@ -1,6 +1,6 @@
+import type { Tool } from '@open-pencil/core/editor'
 import type { NodeType, VectorNetwork } from '@open-pencil/core/scene-graph'
 import type { Rect, Vector } from '@open-pencil/core/types'
-import type { Tool } from '@open-pencil/core/editor'
 
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 

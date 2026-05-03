@@ -478,7 +478,9 @@ describe('FigmaAPI', () => {
       const frame = api.createFrame()
       frame.name = 'Card'
       frame.resize(300, 200)
-      frame.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
+      frame.fills = [
+        { type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }
+      ]
       const json = frame.toJSON()
       expect(json.name).toBe('Card')
       expect(json.width).toBe(300)
@@ -579,7 +581,9 @@ describe('FigmaAPI', () => {
       rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
       const fills = rect.fills
       expect(Object.isFrozen(fills)).toBe(true)
-      expect(() => { (fills as Fill[]).push({} as Fill) }).toThrow()
+      expect(() => {
+        ;(fills as Fill[]).push({} as Fill)
+      }).toThrow()
     })
 
     test('mutating returned fills does not affect node', () => {
@@ -587,7 +591,9 @@ describe('FigmaAPI', () => {
       const rect = api.createRectangle()
       rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
       const fills = rect.fills as Fill[]
-      try { fills[0].color.r = 0 } catch {}
+      try {
+        fills[0].color.r = 0
+      } catch {}
       expect(rect.fills[0].color.r).toBe(1)
     })
   })
@@ -637,7 +643,9 @@ describe('FigmaAPI', () => {
     test('strokeWeight and strokeAlign', () => {
       const api = createAPI()
       const rect = api.createRectangle()
-      rect.strokes = [{ color: { r: 0, g: 0, b: 0, a: 1 }, weight: 2, opacity: 1, visible: true, align: 'CENTER' }]
+      rect.strokes = [
+        { color: { r: 0, g: 0, b: 0, a: 1 }, weight: 2, opacity: 1, visible: true, align: 'CENTER' }
+      ]
       expect(rect.strokeWeight).toBe(2)
       expect(rect.strokeAlign).toBe('CENTER')
       rect.strokeWeight = 4
@@ -682,7 +690,9 @@ describe('FigmaAPI', () => {
       const api = createAPI()
       const frame = api.createFrame()
       frame.name = 'Original'
-      frame.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      frame.fills = [
+        { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+      ]
       const child = api.createRectangle()
       child.name = 'Child'
       frame.appendChild(child)
@@ -909,7 +919,7 @@ describe('FigmaAPI', () => {
         name: 'Colors',
         modes: [{ modeId: 'mode1', name: 'Default' }],
         defaultModeId: 'mode1',
-        variableIds: [],
+        variableIds: []
       })
       api.graph.addVariable({
         id: 'var1',
@@ -918,7 +928,7 @@ describe('FigmaAPI', () => {
         collectionId: 'col1',
         valuesByMode: { mode1: { r: 1, g: 0, b: 0, a: 1 } },
         description: '',
-        hiddenFromPublishing: false,
+        hiddenFromPublishing: false
       })
       expect(api.getLocalVariables().length).toBe(1)
       expect(api.getLocalVariables('COLOR').length).toBe(1)
@@ -932,7 +942,7 @@ describe('FigmaAPI', () => {
         name: 'Spacing',
         modes: [{ modeId: 'mode1', name: 'Default' }],
         defaultModeId: 'mode1',
-        variableIds: [],
+        variableIds: []
       })
       api.graph.addVariable({
         id: 'var1',
@@ -941,7 +951,7 @@ describe('FigmaAPI', () => {
         collectionId: 'col1',
         valuesByMode: { mode1: 8 },
         description: '',
-        hiddenFromPublishing: false,
+        hiddenFromPublishing: false
       })
       const v = api.getVariableById('var1')
       expect(v).not.toBeNull()
@@ -956,7 +966,7 @@ describe('FigmaAPI', () => {
         name: 'Colors',
         modes: [{ modeId: 'mode1', name: 'Default' }],
         defaultModeId: 'mode1',
-        variableIds: [],
+        variableIds: []
       })
       const cols = api.getLocalVariableCollections()
       expect(cols.length).toBe(1)
@@ -970,7 +980,7 @@ describe('FigmaAPI', () => {
         name: 'Colors',
         modes: [{ modeId: 'mode1', name: 'Default' }],
         defaultModeId: 'mode1',
-        variableIds: [],
+        variableIds: []
       })
       expect(api.getVariableCollectionById('col1')?.name).toBe('Colors')
       expect(api.getVariableCollectionById('nonexistent')).toBeNull()

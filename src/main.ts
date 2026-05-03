@@ -2,8 +2,8 @@ import { createHead } from '@unhead/vue/client'
 import { createApp } from 'vue'
 
 import './app.css'
-import { IS_TAURI } from '@/constants'
 import { preloadFonts } from '@/app/editor/fonts'
+import { IS_TAURI } from '@/constants'
 
 import App from './App.vue'
 import router from './router'

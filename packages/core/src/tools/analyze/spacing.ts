@@ -5,7 +5,7 @@ export const analyzeSpacing = defineTool({
   description:
     'Analyze spacing values (gap, padding) across the current page. Checks grid compliance.',
   params: {
-    grid: { type: 'number', description: 'Base grid size to check against (default: 8)' },
+    grid: { type: 'number', description: 'Base grid size to check against (default: 8)' }
   },
   execute: (figma, args) => {
     const gridSize = args.grid ?? 8
@@ -23,7 +23,12 @@ export const analyzeSpacing = defineTool({
         gapMap.set(raw.itemSpacing, (gapMap.get(raw.itemSpacing) ?? 0) + 1)
       }
 
-      for (const padding of [raw.paddingTop, raw.paddingRight, raw.paddingBottom, raw.paddingLeft]) {
+      for (const padding of [
+        raw.paddingTop,
+        raw.paddingRight,
+        raw.paddingBottom,
+        raw.paddingLeft
+      ]) {
         if (padding > 0) {
           paddingMap.set(padding, (paddingMap.get(padding) ?? 0) + 1)
         }
@@ -48,7 +53,7 @@ export const analyzeSpacing = defineTool({
       gaps,
       paddings,
       offGridGaps: offGridGaps.map((gap) => gap.value),
-      offGridPaddings: offGridPaddings.map((padding) => padding.value),
+      offGridPaddings: offGridPaddings.map((padding) => padding.value)
     }
-  },
+  }
 })

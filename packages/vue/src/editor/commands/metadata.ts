@@ -15,5 +15,5 @@ export const EDITOR_COMMAND_SHORTCUTS: Partial<Record<EditorCommandId, string>> 
   'selection.bringToFront': ']',
   'selection.sendToBack': '[',
   'selection.toggleVisibility': '⇧⌘H',
-  'selection.toggleLock': '⇧⌘L',
+  'selection.toggleLock': '⇧⌘L'
 }

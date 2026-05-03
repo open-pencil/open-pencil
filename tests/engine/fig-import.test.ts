@@ -10,7 +10,7 @@ function doc(): NodeChange {
     visible: true,
     opacity: 1,
     phase: 'CREATED',
-    transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+    transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   } as NodeChange
 }
 
@@ -23,14 +23,22 @@ function canvas(localID = 1): NodeChange {
     visible: true,
     opacity: 1,
     phase: 'CREATED',
-    transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+    transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
   } as NodeChange
 }
 
-function node(type: string, localID: number, parentLocalID: number, overrides: Partial<NodeChange> = {}): NodeChange {
+function node(
+  type: string,
+  localID: number,
+  parentLocalID: number,
+  overrides: Partial<NodeChange> = {}
+): NodeChange {
   return {
     guid: { sessionID: 1, localID },
-    parentIndex: { guid: { sessionID: 0, localID: parentLocalID }, position: String.fromCharCode(33 + localID) },
+    parentIndex: {
+      guid: { sessionID: 0, localID: parentLocalID },
+      position: String.fromCharCode(33 + localID)
+    },
     type,
     name: `${type}_${localID}`,
     visible: true,
@@ -38,7 +46,7 @@ function node(type: string, localID: number, parentLocalID: number, overrides: P
     phase: 'CREATED',
     size: { x: 100, y: 100 },
     transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-    ...overrides,
+    ...overrides
   } as NodeChange
 }
 
@@ -94,19 +102,25 @@ describe('fig-import: transforms', () => {
 
 describe('fig-import: gradient fills', () => {
   test('linear gradient', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      fillPaints: [{
-        type: 'GRADIENT_LINEAR',
-        opacity: 1,
-        visible: true,
-        blendMode: 'NORMAL',
-        stops: [
-          { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
-          { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 },
-        ],
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-      }] as unknown as NodeChange['fillPaints'],
-    })])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        fillPaints: [
+          {
+            type: 'GRADIENT_LINEAR',
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL',
+            stops: [
+              { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+              { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+            ],
+            transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+          }
+        ] as unknown as NodeChange['fillPaints']
+      })
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills).toHaveLength(1)
     expect(n.fills[0].type).toBe('GRADIENT_LINEAR')
@@ -117,19 +131,25 @@ describe('fig-import: gradient fills', () => {
   })
 
   test('radial gradient', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('ELLIPSE', 10, 1, {
-      fillPaints: [{
-        type: 'GRADIENT_RADIAL',
-        opacity: 0.8,
-        visible: true,
-        blendMode: 'NORMAL',
-        stops: [
-          { color: { r: 1, g: 1, b: 1, a: 1 }, position: 0 },
-          { color: { r: 0, g: 0, b: 0, a: 1 }, position: 1 },
-        ],
-        transform: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 },
-      }] as unknown as NodeChange['fillPaints'],
-    })])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('ELLIPSE', 10, 1, {
+        fillPaints: [
+          {
+            type: 'GRADIENT_RADIAL',
+            opacity: 0.8,
+            visible: true,
+            blendMode: 'NORMAL',
+            stops: [
+              { color: { r: 1, g: 1, b: 1, a: 1 }, position: 0 },
+              { color: { r: 0, g: 0, b: 0, a: 1 }, position: 1 }
+            ],
+            transform: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 }
+          }
+        ] as unknown as NodeChange['fillPaints']
+      })
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills[0].type).toBe('GRADIENT_RADIAL')
     expect(n.fills[0].opacity).toBe(0.8)
@@ -142,17 +162,23 @@ describe('fig-import: image fills', () => {
     const hash: Record<string, number> = {}
     for (let i = 0; i < 20; i++) hash[String(i)] = i + 10
 
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      fillPaints: [{
-        type: 'IMAGE',
-        opacity: 1,
-        visible: true,
-        blendMode: 'NORMAL',
-        image: { hash, name: 'test-image' },
-        imageScaleMode: 'FILL',
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-      }] as unknown as NodeChange['fillPaints'],
-    })])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        fillPaints: [
+          {
+            type: 'IMAGE',
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL',
+            image: { hash, name: 'test-image' },
+            imageScaleMode: 'FILL',
+            transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+          }
+        ] as unknown as NodeChange['fillPaints']
+      })
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills[0].type).toBe('IMAGE')
     expect(n.fills[0].imageHash).toBeDefined()
@@ -170,16 +196,22 @@ describe('fig-import: image fills', () => {
 
 describe('fig-import: effects', () => {
   test('drop shadow', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      effects: [{
-        type: 'DROP_SHADOW',
-        color: { r: 0, g: 0, b: 0, a: 0.25 },
-        offset: { x: 4, y: 4 },
-        radius: 8,
-        spread: 0,
-        visible: true,
-      }] as unknown as NodeChange['effects'],
-    })])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        effects: [
+          {
+            type: 'DROP_SHADOW',
+            color: { r: 0, g: 0, b: 0, a: 0.25 },
+            offset: { x: 4, y: 4 },
+            radius: 8,
+            spread: 0,
+            visible: true
+          }
+        ] as unknown as NodeChange['effects']
+      })
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.effects).toHaveLength(1)
     expect(n.effects[0].type).toBe('DROP_SHADOW')
@@ -188,16 +220,22 @@ describe('fig-import: effects', () => {
   })
 
   test('inner shadow', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      effects: [{
-        type: 'INNER_SHADOW',
-        color: { r: 0, g: 0, b: 0, a: 0.5 },
-        offset: { x: 0, y: 2 },
-        radius: 4,
-        spread: 0,
-        visible: true,
-      }] as unknown as NodeChange['effects'],
-    })])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        effects: [
+          {
+            type: 'INNER_SHADOW',
+            color: { r: 0, g: 0, b: 0, a: 0.5 },
+            offset: { x: 0, y: 2 },
+            radius: 4,
+            spread: 0,
+            visible: true
+          }
+        ] as unknown as NodeChange['effects']
+      })
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.effects[0].type).toBe('INNER_SHADOW')
   })
@@ -205,25 +243,49 @@ describe('fig-import: effects', () => {
 
 describe('fig-import: stroke options', () => {
   test('stroke cap and join', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('VECTOR', 10, 1, {
-      strokePaints: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }],
-      strokeWeight: 3,
-      strokeAlign: 'CENTER',
-      strokeCap: 'ROUND',
-      strokeJoin: 'BEVEL',
-    } as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('VECTOR', 10, 1, {
+        strokePaints: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL'
+          }
+        ],
+        strokeWeight: 3,
+        strokeAlign: 'CENTER',
+        strokeCap: 'ROUND',
+        strokeJoin: 'BEVEL'
+      } as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.strokes[0].cap).toBe('ROUND')
     expect(n.strokes[0].join).toBe('BEVEL')
   })
 
   test('dash pattern', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      strokePaints: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }],
-      strokeWeight: 2,
-      strokeAlign: 'CENTER',
-      dashPattern: [10, 5],
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        strokePaints: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL'
+          }
+        ],
+        strokeWeight: 2,
+        strokeAlign: 'CENTER',
+        dashPattern: [10, 5]
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.strokes[0].dashPattern).toEqual([10, 5])
   })
@@ -231,12 +293,16 @@ describe('fig-import: stroke options', () => {
 
 describe('fig-import: text properties', () => {
   test('text auto resize', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('TEXT', 10, 1, {
-      textData: { characters: 'Hello' },
-      fontSize: 16,
-      textAlignHorizontal: 'CENTER',
-      textAutoResize: 'WIDTH_AND_HEIGHT',
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('TEXT', 10, 1, {
+        textData: { characters: 'Hello' },
+        fontSize: 16,
+        textAlignHorizontal: 'CENTER',
+        textAutoResize: 'WIDTH_AND_HEIGHT'
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.textAutoResize).toBe('WIDTH_AND_HEIGHT')
     expect(n.textAlignHorizontal).toBe('CENTER')
@@ -251,14 +317,18 @@ describe('fig-import: text properties', () => {
       ['Black', 900],
       ['Thin', 100],
       ['Medium', 500],
-      ['Regular', 400],
+      ['Regular', 400]
     ] as const
 
     for (const [style, expected] of cases) {
-      const graph = importNodeChanges([doc(), canvas(), node('TEXT', 10, 1, {
-        textData: { characters: 'X' },
-        fontName: { family: 'Inter', style },
-      } as unknown as Partial<NodeChange>)])
+      const graph = importNodeChanges([
+        doc(),
+        canvas(),
+        node('TEXT', 10, 1, {
+          textData: { characters: 'X' },
+          fontName: { family: 'Inter', style }
+        } as unknown as Partial<NodeChange>)
+      ])
       const n = graph.getChildren(graph.getPages()[0].id)[0]
       expect(n.fontWeight).toBe(expected)
     }
@@ -267,13 +337,17 @@ describe('fig-import: text properties', () => {
 
 describe('fig-import: arc data', () => {
   test('partial ellipse', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('ELLIPSE', 10, 1, {
-      arcData: {
-        startingAngle: 0,
-        endingAngle: Math.PI,
-        innerRadius: 0,
-      },
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('ELLIPSE', 10, 1, {
+        arcData: {
+          startingAngle: 0,
+          endingAngle: Math.PI,
+          innerRadius: 0
+        }
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData).toBeDefined()
     expect(n.arcData!.startingAngle).toBe(0)
@@ -282,13 +356,17 @@ describe('fig-import: arc data', () => {
   })
 
   test('donut (inner radius)', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('ELLIPSE', 10, 1, {
-      arcData: {
-        startingAngle: 0,
-        endingAngle: Math.PI * 2,
-        innerRadius: 0.5,
-      },
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('ELLIPSE', 10, 1, {
+        arcData: {
+          startingAngle: 0,
+          endingAngle: Math.PI * 2,
+          innerRadius: 0.5
+        }
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData!.innerRadius).toBe(0.5)
   })
@@ -296,10 +374,14 @@ describe('fig-import: arc data', () => {
 
 describe('fig-import: constraints', () => {
   test('horizontal and vertical constraints', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      horizontalConstraint: 'STRETCH',
-      verticalConstraint: 'CENTER',
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        horizontalConstraint: 'STRETCH',
+        verticalConstraint: 'CENTER'
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.horizontalConstraint).toBe('STRETCH')
     expect(n.verticalConstraint).toBe('CENTER')
@@ -315,9 +397,13 @@ describe('fig-import: constraints', () => {
 
 describe('fig-import: blend mode', () => {
   test('node blend mode', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      blendMode: 'MULTIPLY',
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        blendMode: 'MULTIPLY'
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.blendMode).toBe('MULTIPLY')
   })
@@ -331,13 +417,17 @@ describe('fig-import: blend mode', () => {
 
 describe('fig-import: independent stroke weights', () => {
   test('border weights imported', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('FRAME', 10, 1, {
-      borderTopWeight: 2,
-      borderRightWeight: 4,
-      borderBottomWeight: 2,
-      borderLeftWeight: 4,
-      borderStrokeWeightsIndependent: true,
-    } as unknown as Partial<NodeChange>)])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('FRAME', 10, 1, {
+        borderTopWeight: 2,
+        borderRightWeight: 4,
+        borderBottomWeight: 2,
+        borderLeftWeight: 4,
+        borderStrokeWeightsIndependent: true
+      } as unknown as Partial<NodeChange>)
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.borderTopWeight).toBe(2)
     expect(n.borderRightWeight).toBe(4)
@@ -347,22 +437,32 @@ describe('fig-import: independent stroke weights', () => {
 
 describe('fig-import: multiple fills', () => {
   test('solid + gradient stacked', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1, {
-      fillPaints: [
-        { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' },
-        {
-          type: 'GRADIENT_LINEAR',
-          opacity: 0.5,
-          visible: true,
-          blendMode: 'NORMAL',
-          stops: [
-            { color: { r: 1, g: 1, b: 1, a: 1 }, position: 0 },
-            { color: { r: 0, g: 0, b: 0, a: 0 }, position: 1 },
-          ],
-          transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        },
-      ] as unknown as NodeChange['fillPaints'],
-    })])
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('RECTANGLE', 10, 1, {
+        fillPaints: [
+          {
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL'
+          },
+          {
+            type: 'GRADIENT_LINEAR',
+            opacity: 0.5,
+            visible: true,
+            blendMode: 'NORMAL',
+            stops: [
+              { color: { r: 1, g: 1, b: 1, a: 1 }, position: 0 },
+              { color: { r: 0, g: 0, b: 0, a: 0 }, position: 1 }
+            ],
+            transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+          }
+        ] as unknown as NodeChange['fillPaints']
+      })
+    ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills).toHaveLength(2)
     expect(n.fills[0].type).toBe('SOLID')
@@ -378,8 +478,8 @@ describe('fig-import: auto-layout alignment', () => {
       canvas(),
       node('FRAME', 10, 1, {
         stackMode: 'HORIZONTAL',
-        stackPrimaryAlignItems: 'SPACE_EVENLY',
-      } as Partial<NodeChange>),
+        stackPrimaryAlignItems: 'SPACE_EVENLY'
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.primaryAxisAlign).toBe('SPACE_BETWEEN')
@@ -396,7 +496,7 @@ describe('fig-import: variable asset refs', () => {
         name: 'Tokens',
         key: 'collection-key',
         version: '1:1',
-        variableSetModes: [{ id: { sessionID: 10, localID: 1 }, name: 'Default' }],
+        variableSetModes: [{ id: { sessionID: 10, localID: 1 }, name: 'Default' }]
       } as NodeChange,
       {
         ...node('VARIABLE', 21, 1),
@@ -412,11 +512,11 @@ describe('fig-import: variable asset refs', () => {
               variableData: {
                 dataType: 'COLOR',
                 resolvedDataType: 'COLOR',
-                value: { colorValue: { r: 0.14, g: 0.39, b: 0.92, a: 1 } },
-              },
-            },
-          ],
-        },
+                value: { colorValue: { r: 0.14, g: 0.39, b: 0.92, a: 1 } }
+              }
+            }
+          ]
+        }
       } as NodeChange,
       {
         ...node('VARIABLE', 22, 1),
@@ -432,11 +532,11 @@ describe('fig-import: variable asset refs', () => {
               variableData: {
                 dataType: 'ALIAS',
                 resolvedDataType: 'COLOR',
-                value: { alias: { assetRef: { key: 'blue-key', version: '1:2' } } },
-              },
-            },
-          ],
-        },
+                value: { alias: { assetRef: { key: 'blue-key', version: '1:2' } } }
+              }
+            }
+          ]
+        }
       } as NodeChange,
       node('TEXT', 30, 1, {
         textData: { characters: 'browse' },
@@ -447,11 +547,11 @@ describe('fig-import: variable asset refs', () => {
             colorVar: {
               value: { alias: { assetRef: { key: 'primary-key', version: '1:3' } } },
               dataType: 'ALIAS',
-              resolvedDataType: 'COLOR',
-            },
-          },
-        ] as unknown as NodeChange['fillPaints'],
-      }),
+              resolvedDataType: 'COLOR'
+            }
+          }
+        ] as unknown as NodeChange['fillPaints']
+      })
     ])
 
     const primary = [...graph.variables.values()].find((v) => v.name === 'Primary')!
@@ -475,12 +575,18 @@ describe('fig-import: component set detection', () => {
       {
         ...node('FRAME', 10, 1),
         name: 'Button',
-        componentPropDefs: [
-          { id: { sessionID: 0, localID: 1 }, name: 'State', type: 'VARIANT' },
-        ],
+        componentPropDefs: [{ id: { sessionID: 0, localID: 1 }, name: 'State', type: 'VARIANT' }]
       } as unknown as NodeChange,
-      { ...node('SYMBOL', 11, 1), parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' }, name: 'State=Default' } as NodeChange,
-      { ...node('SYMBOL', 12, 1), parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '"' }, name: 'State=Hover' } as NodeChange,
+      {
+        ...node('SYMBOL', 11, 1),
+        parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' },
+        name: 'State=Default'
+      } as NodeChange,
+      {
+        ...node('SYMBOL', 12, 1),
+        parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '"' },
+        name: 'State=Hover'
+      } as NodeChange
     ]
     const graph = importNodeChanges(changes, [])
     const page = graph.getPages()[0]
@@ -494,11 +600,7 @@ describe('fig-import: component set detection', () => {
   })
 
   test('FRAME without componentPropDefs stays FRAME', () => {
-    const changes: NodeChange[] = [
-      doc(),
-      canvas(),
-      node('FRAME', 10, 1, { name: 'Regular Frame' }),
-    ]
+    const changes: NodeChange[] = [doc(), canvas(), node('FRAME', 10, 1, { name: 'Regular Frame' })]
     const graph = importNodeChanges(changes, [])
     const page = graph.getPages()[0]
     const frame = graph.getChildren(page.id)[0]
@@ -509,8 +611,9 @@ describe('fig-import: component set detection', () => {
 describe('fig-import: clipsContent with resizeToFit', () => {
   test('regular FRAME with frameMaskDisabled=false clips content', () => {
     const graph = importNodeChanges([
-      doc(), canvas(),
-      node('FRAME', 10, 1, { frameMaskDisabled: false }),
+      doc(),
+      canvas(),
+      node('FRAME', 10, 1, { frameMaskDisabled: false })
     ])
     const frame = graph.getChildren(graph.getPages()[0].id)[0]
     expect(frame.clipsContent).toBe(true)
@@ -518,8 +621,9 @@ describe('fig-import: clipsContent with resizeToFit', () => {
 
   test('resizeToFit FRAME does not clip even with frameMaskDisabled=false', () => {
     const graph = importNodeChanges([
-      doc(), canvas(),
-      node('FRAME', 10, 1, { frameMaskDisabled: false, resizeToFit: true }),
+      doc(),
+      canvas(),
+      node('FRAME', 10, 1, { frameMaskDisabled: false, resizeToFit: true })
     ])
     const frame = graph.getChildren(graph.getPages()[0].id)[0]
     expect(frame.clipsContent).toBe(false)
@@ -527,8 +631,9 @@ describe('fig-import: clipsContent with resizeToFit', () => {
 
   test('FRAME with frameMaskDisabled=true does not clip', () => {
     const graph = importNodeChanges([
-      doc(), canvas(),
-      node('FRAME', 10, 1, { frameMaskDisabled: true }),
+      doc(),
+      canvas(),
+      node('FRAME', 10, 1, { frameMaskDisabled: true })
     ])
     const frame = graph.getChildren(graph.getPages()[0].id)[0]
     expect(frame.clipsContent).toBe(false)

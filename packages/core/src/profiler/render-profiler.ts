@@ -27,10 +27,7 @@ export class RenderProfiler {
   private lastCapture: FrameCapture | null = null
   private renderStartTime = 0
 
-  constructor(
-    ck: CanvasKit,
-    gl: WebGL2RenderingContext | null
-  ) {
+  constructor(ck: CanvasKit, gl: WebGL2RenderingContext | null) {
     this.gpuTimer = new GPUTimer(gl)
     this.drawCallCounter = new DrawCallCounter(gl)
     this.hud = new HudController(ck)

@@ -1,5 +1,5 @@
-import type { SceneNode } from '#core/scene-graph'
 import type { EditorContext } from '#core/editor/types'
+import type { SceneNode } from '#core/scene-graph'
 
 export function ungroupSelected(ctx: EditorContext, selectedNode: SceneNode | undefined) {
   if (selectedNode?.type !== 'GROUP') return

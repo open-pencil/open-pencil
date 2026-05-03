@@ -79,4 +79,3 @@ export const variablesCommand: RpcCommand<VariablesArgs, VariablesResult> = {
     return result
   }
 }
-

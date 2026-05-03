@@ -30,7 +30,7 @@ export function createStdioRpcBridge({
   wsUrl,
   reconnectDelayMs = 2000,
   onOpen,
-  onMalformedMessage,
+  onMalformedMessage
 }: StdioRpcBridgeOptions) {
   const pending = new Map<string, PendingRequest>()
   let ws: WebSocket | null = null

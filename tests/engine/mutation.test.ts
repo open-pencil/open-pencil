@@ -6,15 +6,13 @@ import {
   applyStyleToRange,
   removeStyleFromRange,
   getStyleAt,
-  type StyleRun,
+  type StyleRun
 } from '@open-pencil/core'
-
 import {
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
-  type VectorNetwork,
+  type VectorNetwork
 } from '@open-pencil/core'
-
 import { SceneGraph, UndoManager } from '@open-pencil/core'
 
 // ---------------------------------------------------------------------------
@@ -111,12 +109,12 @@ describe('applyStyleToRange — split and merge', () => {
   test('applying same style merges adjacent runs', () => {
     const runs: StyleRun[] = [
       { start: 0, length: 3, style: { fontWeight: 700 } },
-      { start: 5, length: 3, style: { fontWeight: 700 } },
+      { start: 5, length: 3, style: { fontWeight: 700 } }
     ]
     // fill the gap between them
     const result = applyStyleToRange(runs, 3, 5, { fontWeight: 700 }, 10)
     // should compact into one run
-    const bold700Count = result.filter(r => r.style.fontWeight === 700).length
+    const bold700Count = result.filter((r) => r.style.fontWeight === 700).length
     expect(bold700Count).toBe(1)
     expect(result[0].length).toBe(8)
   })
@@ -165,12 +163,10 @@ describe('vectorNetworkBlob — precision and mirroring', () => {
     const network: VectorNetwork = {
       vertices: [
         { x: -123.456, y: -78.9, handleMirroring: 'NONE' },
-        { x: -0.001, y: -999.999, handleMirroring: 'NONE' },
+        { x: -0.001, y: -999.999, handleMirroring: 'NONE' }
       ],
-      segments: [
-        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
-      ],
-      regions: [],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+      regions: []
     }
     const decoded = decodeVectorNetworkBlob(encodeVectorNetworkBlob(network))
     expect(decoded.vertices[0].x).toBeCloseTo(-123.456, 2)
@@ -182,18 +178,24 @@ describe('vectorNetworkBlob — precision and mirroring', () => {
   // ANGLE and ANGLE_AND_LENGTH are decoded as NONE — document this known limitation.
   test('handleMirroring NONE round-trips; ANGLE decodes as NONE (known limitation)', () => {
     const noneNetwork: VectorNetwork = {
-      vertices: [{ x: 0, y: 0, handleMirroring: 'NONE' }, { x: 10, y: 0, handleMirroring: 'NONE' }],
+      vertices: [
+        { x: 0, y: 0, handleMirroring: 'NONE' },
+        { x: 10, y: 0, handleMirroring: 'NONE' }
+      ],
       segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
-      regions: [],
+      regions: []
     }
     const decodedNone = decodeVectorNetworkBlob(encodeVectorNetworkBlob(noneNetwork))
     expect(decodedNone.vertices[0].handleMirroring).toBe('NONE')
 
     // ANGLE is not persisted in blob — comes back as NONE
     const angleNetwork: VectorNetwork = {
-      vertices: [{ x: 0, y: 0, handleMirroring: 'ANGLE' }, { x: 10, y: 0, handleMirroring: 'ANGLE' }],
+      vertices: [
+        { x: 0, y: 0, handleMirroring: 'ANGLE' },
+        { x: 10, y: 0, handleMirroring: 'ANGLE' }
+      ],
       segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
-      regions: [],
+      regions: []
     }
     const decodedAngle = decodeVectorNetworkBlob(encodeVectorNetworkBlob(angleNetwork))
     // This is a known limitation: handleMirroring is not stored in the blob format
@@ -204,12 +206,12 @@ describe('vectorNetworkBlob — precision and mirroring', () => {
     const network: VectorNetwork = {
       vertices: [
         { x: 0, y: 0, handleMirroring: 'ANGLE' },
-        { x: 500, y: 500, handleMirroring: 'ANGLE' },
+        { x: 500, y: 500, handleMirroring: 'ANGLE' }
       ],
       segments: [
-        { start: 0, end: 1, tangentStart: { x: -200, y: 300 }, tangentEnd: { x: 150, y: -100 } },
+        { start: 0, end: 1, tangentStart: { x: -200, y: 300 }, tangentEnd: { x: 150, y: -100 } }
       ],
-      regions: [],
+      regions: []
     }
     const decoded = decodeVectorNetworkBlob(encodeVectorNetworkBlob(network))
     expect(decoded.segments[0].tangentStart.x).toBeCloseTo(-200, 1)
@@ -223,13 +225,13 @@ describe('vectorNetworkBlob — precision and mirroring', () => {
     const vertices = Array.from({ length: n }, (_, i) => ({
       x: i * 10,
       y: i * 5,
-      handleMirroring: 'NONE' as const,
+      handleMirroring: 'NONE' as const
     }))
     const segments = Array.from({ length: n - 1 }, (_, i) => ({
       start: i,
       end: i + 1,
       tangentStart: { x: 0, y: 0 },
-      tangentEnd: { x: 0, y: 0 },
+      tangentEnd: { x: 0, y: 0 }
     }))
     const network: VectorNetwork = { vertices, segments, regions: [] }
     const decoded = decodeVectorNetworkBlob(encodeVectorNetworkBlob(network))
@@ -245,12 +247,10 @@ describe('vectorNetworkBlob — precision and mirroring', () => {
     const network: VectorNetwork = {
       vertices: [
         { x: 10, y: 20, handleMirroring: 'NONE' },
-        { x: 30, y: 40, handleMirroring: 'ANGLE' },
+        { x: 30, y: 40, handleMirroring: 'ANGLE' }
       ],
-      segments: [
-        { start: 0, end: 1, tangentStart: { x: 5, y: 0 }, tangentEnd: { x: -5, y: 0 } },
-      ],
-      regions: [],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 5, y: 0 }, tangentEnd: { x: -5, y: 0 } }],
+      regions: []
     }
     const a = encodeVectorNetworkBlob(network)
     const b = encodeVectorNetworkBlob(network)
@@ -268,16 +268,20 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     const undo = new UndoManager()
     const pageId = graph.getPages()[0].id
 
-    function updateWithUndo(id: string, changes: Partial<Parameters<SceneGraph['updateNode']>[1]>, label: string) {
+    function updateWithUndo(
+      id: string,
+      changes: Partial<Parameters<SceneGraph['updateNode']>[1]>,
+      label: string
+    ) {
       const node = graph.getNode(id)!
       const previous = Object.fromEntries(
-        (Object.keys(changes) as string[]).map(k => [k, (node as Record<string, unknown>)[k]])
+        (Object.keys(changes) as string[]).map((k) => [k, (node as Record<string, unknown>)[k]])
       )
       graph.updateNode(id, changes)
       undo.push({
         label,
         forward: () => graph.updateNode(id, changes),
-        inverse: () => graph.updateNode(id, previous as Parameters<SceneGraph['updateNode']>[1]),
+        inverse: () => graph.updateNode(id, previous as Parameters<SceneGraph['updateNode']>[1])
       })
     }
 
@@ -380,12 +384,12 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     undo.apply({
       label: 'x',
       forward: () => graph.updateNode(id, { x: 10 }),
-      inverse: () => graph.updateNode(id, { x: 0 }),
+      inverse: () => graph.updateNode(id, { x: 0 })
     })
     undo.apply({
       label: 'y',
       forward: () => graph.updateNode(id, { y: 20 }),
-      inverse: () => graph.updateNode(id, { y: 0 }),
+      inverse: () => graph.updateNode(id, { y: 0 })
     })
     undo.commitBatch()
 

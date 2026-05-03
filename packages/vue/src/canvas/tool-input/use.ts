@@ -41,16 +41,7 @@ export function handleToolMouseDown({
   }
 
   if (tool === 'SELECT') {
-    handleSelectDown(
-      event,
-      cx,
-      cy,
-      editor,
-      hitFns,
-      tryStartRotation,
-      handleTextEditClick,
-      setDrag
-    )
+    handleSelectDown(event, cx, cy, editor, hitFns, tryStartRotation, handleTextEditClick, setDrag)
     return
   }
 

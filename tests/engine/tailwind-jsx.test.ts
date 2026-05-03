@@ -404,7 +404,9 @@ describe('Tailwind JSX export', () => {
       itemSpacing: 8,
       primaryAxisSizing: 'HUG',
       counterAxisSizing: 'FIXED',
-      fills: [{ type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95, a: 1 }, opacity: 1, visible: true }],
+      fills: [
+        { type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95, a: 1 }, opacity: 1, visible: true }
+      ],
       cornerRadius: 12
     })
     graph.createNode('TEXT', frame.id, {

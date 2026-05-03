@@ -7,26 +7,26 @@ export const listVariables = defineTool({
     type: {
       type: 'string',
       description: 'Filter by variable type',
-      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN'],
-    },
+      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
+    }
   },
   execute: (figma, args) => {
     const variables = figma.getLocalVariables(args.type)
     return { count: variables.length, variables }
-  },
+  }
 })
 
 export const getVariable = defineTool({
   name: 'get_variable',
   description: 'Get a variable by ID.',
   params: {
-    id: { type: 'string', description: 'Variable ID', required: true },
+    id: { type: 'string', description: 'Variable ID', required: true }
   },
   execute: (figma, { id }) => {
     const variable = figma.getVariableById(id)
     if (!variable) return { error: `Variable "${id}" not found` }
     return variable
-  },
+  }
 })
 
 export const findVariables = defineTool({
@@ -37,8 +37,8 @@ export const findVariables = defineTool({
     type: {
       type: 'string',
       description: 'Filter by type',
-      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN'],
-    },
+      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
+    }
   },
   execute: (figma, args) => {
     let variables = figma.getLocalVariables(args.type)
@@ -46,5 +46,5 @@ export const findVariables = defineTool({
       variable.name.toLowerCase().includes(args.query.toLowerCase())
     )
     return { count: variables.length, variables }
-  },
+  }
 })

@@ -97,7 +97,7 @@ test('resize corner handle drag increases node dimensions', async () => {
     const panY = store.state.panY
     return {
       handleX: (abs.x + n.width) * zoom + panX,
-      handleY: (abs.y + n.height) * zoom + panY,
+      handleY: (abs.y + n.height) * zoom + panY
     }
   })
   expect(viewport).not.toBeNull()
@@ -230,7 +230,7 @@ async function setupFrameChild(rotation: number) {
       hitX: cx + dx * Math.cos(rad) - dy * Math.sin(rad),
       hitY: cy + dx * Math.sin(rad) + dy * Math.cos(rad),
       missX: frameX + 20,
-      missY: frameY + 20,
+      missY: frameY + 20
     }
   })
 
@@ -274,7 +274,7 @@ test('rotated frame children keep correct hover and click hit area', async () =>
   canvas.assertNoErrors()
 })
 
- test('rotation drag exposes live rotation preview state', async () => {
+test('rotation drag exposes live rotation preview state', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 100, 100)
   await canvas.click(250, 250)
@@ -313,7 +313,9 @@ test('rotated frame children keep correct hover and click hit area', async () =>
   await page.mouse.up()
   await canvas.waitForRender()
 
-  const clearedPreview = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.rotationPreview)
+  const clearedPreview = await page.evaluate(
+    () => window.__OPEN_PENCIL_STORE__!.state.rotationPreview
+  )
   expect(clearedPreview).toBeNull()
   canvas.assertNoErrors()
 })

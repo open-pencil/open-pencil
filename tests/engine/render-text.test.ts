@@ -1,16 +1,19 @@
 import { describe, test, expect, mock } from 'bun:test'
-import { renderText } from '#core/canvas/scene'
-import type { SceneNode } from '#core/scene-graph'
-import type { SkiaRenderer } from '#core/canvas/renderer'
+
 import { initCanvasKit } from '#cli/headless'
-import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@open-pencil/core'
+import { renderText } from '#core/canvas/scene'
 import {
   initFontService,
   setArabicFallbackFamily,
   setCJKFallbackFamily,
   markFontLoaded
 } from '#core/text/fonts'
+
+import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@open-pencil/core'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/core'
+
+import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SceneNode } from '#core/scene-graph'
 
 function createMockCanvas() {
   return {
@@ -134,7 +137,8 @@ describe('renderText headless visual', () => {
     fontProvider.registerFont(interData, 'Inter')
     markFontLoaded('Inter', 'Regular', interData)
 
-    const notoPath = new URL('../../tests/fixtures/fonts/NotoSansSC-Regular.ttf', import.meta.url).pathname
+    const notoPath = new URL('../../tests/fixtures/fonts/NotoSansSC-Regular.ttf', import.meta.url)
+      .pathname
     const notoData = await Bun.file(notoPath).arrayBuffer()
     fontProvider.registerFont(notoData, 'Noto Sans SC')
     setCJKFallbackFamily('Noto Sans SC')

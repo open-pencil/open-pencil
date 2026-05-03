@@ -1,8 +1,8 @@
 import { computeVectorBounds } from '#core/vector'
 
+import type { EditorContext } from '#core/editor/types'
 import type { Fill, SceneNode, VectorNetwork, VectorRegion, VectorSegment } from '#core/scene-graph'
 import type { Vector } from '#core/types'
-import type { EditorContext } from '#core/editor/types'
 
 export interface PenDragOptions {
   keepOpposite?: boolean

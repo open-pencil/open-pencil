@@ -2,14 +2,10 @@ import { useEventListener } from '@vueuse/core'
 import { shallowRef, type Ref } from 'vue'
 
 import { createTextClipboardActions } from './clipboard'
-import {
-  createCaretBlink,
-  createTextCompositionHandlers,
-  createTextEditActions
-} from './editing'
-import { focusTextAreaOnCanvasPointerDown, useTextEditingSession } from './textarea'
+import { createCaretBlink, createTextCompositionHandlers, createTextEditActions } from './editing'
 import { createTextFormattingActions } from './formatting'
 import { createTextKeyDownHandler } from './keyboard'
+import { focusTextAreaOnCanvasPointerDown, useTextEditingSession } from './textarea'
 
 import type { Editor } from '@open-pencil/core/editor'
 

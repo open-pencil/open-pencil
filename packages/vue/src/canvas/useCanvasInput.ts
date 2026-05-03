@@ -6,22 +6,22 @@ import {
 import { handlePenDragMove, updatePenHover } from '#vue/canvas/pen-input/use'
 import { createCanvasPointer } from '#vue/canvas/pointer/use'
 import { createTextEditInput } from '#vue/canvas/text-edit/input'
-import { createCanvasTransformInput } from '#vue/canvas/transform-input/use'
 import { handleToolMouseDown } from '#vue/canvas/tool-input/use'
+import { createCanvasTransformInput } from '#vue/canvas/transform-input/use'
 import { createClickCounter } from '#vue/shared/input/click-count'
 import { handleDrawMove, handleDrawUp } from '#vue/shared/input/draw'
-import { useSpaceHeld } from '#vue/shared/input/space-key'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
 import { handleNodeEditMove } from '#vue/shared/input/node-edit'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
 import { applyResize } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
+import { useSpaceHeld } from '#vue/shared/input/space-key'
 import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
 import type { DragState } from '#vue/shared/input/types'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 /**
  * Wires pointer and mouse interaction to an OpenPencil canvas.

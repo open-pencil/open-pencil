@@ -247,7 +247,12 @@ describe('multi-node property merging', () => {
   test('fills comparison detects same', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
-    const fill = { type: 'SOLID' as const, color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+    const fill = {
+      type: 'SOLID' as const,
+      color: { r: 1, g: 0, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
     const a = rect(graph, page)
     const b = rect(graph, page)
 

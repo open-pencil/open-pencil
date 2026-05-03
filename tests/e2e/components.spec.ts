@@ -128,9 +128,21 @@ test('modifying component propagates to instance', async () => {
   // Change component fill
   await page.evaluate((id) => {
     const store = window.__OPEN_PENCIL_STORE__!
-    store.updateNodeWithUndo(id, {
-      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }]
-    }, 'Change fill')
+    store.updateNodeWithUndo(
+      id,
+      {
+        fills: [
+          {
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL'
+          }
+        ]
+      },
+      'Change fill'
+    )
   }, componentId)
   await canvas.waitForRender()
 

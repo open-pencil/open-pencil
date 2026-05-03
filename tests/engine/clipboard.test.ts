@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
 import { beforeAll, describe, expect, it } from 'bun:test'
+import { readFileSync } from 'node:fs'
 
 import {
   parseFigmaClipboard,
@@ -11,10 +11,13 @@ import {
   readFigFile,
   initCodec,
   SceneGraph,
-  type SceneNode,
+  type SceneNode
 } from '@open-pencil/core'
 
-function makeClipboardHtml(nodeChanges: unknown[], meta = { fileKey: 'test', pasteID: 1, dataType: 'scene' }) {
+function makeClipboardHtml(
+  nodeChanges: unknown[],
+  meta = { fileKey: 'test', pasteID: 1, dataType: 'scene' }
+) {
   // Minimal fig-kiwi clipboard: just meta + empty figma buffer
   // For real parsing we'd need actual Kiwi binary — these tests use importClipboardNodes directly
   const metaB64 = btoa(JSON.stringify(meta))
@@ -33,11 +36,42 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Document' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page 1' },
-      { guid: { sessionID: 0, localID: 2 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'VARIABLE_SET', name: 'Primitives' },
-      { guid: { sessionID: 0, localID: 3 }, parentIndex: { guid: { sessionID: 0, localID: 2 }, position: '!' }, type: 'VARIABLE', name: 'Colors/Brand/500' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'FRAME', name: 'Card', size: { x: 300, y: 200 }, transform: { m00: 1, m01: 0, m02: 50, m10: 0, m11: 1, m12: 50 } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' }, type: 'TEXT', name: 'Title', size: { x: 200, y: 30 }, transform: { m00: 1, m01: 0, m02: 10, m10: 0, m11: 1, m12: 10 }, textData: { characters: 'Hello' }, fontSize: 16 },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page 1'
+      },
+      {
+        guid: { sessionID: 0, localID: 2 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'VARIABLE_SET',
+        name: 'Primitives'
+      },
+      {
+        guid: { sessionID: 0, localID: 3 },
+        parentIndex: { guid: { sessionID: 0, localID: 2 }, position: '!' },
+        type: 'VARIABLE',
+        name: 'Colors/Brand/500'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'FRAME',
+        name: 'Card',
+        size: { x: 300, y: 200 },
+        transform: { m00: 1, m01: 0, m02: 50, m10: 0, m11: 1, m12: 50 }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
+        type: 'TEXT',
+        name: 'Title',
+        size: { x: 200, y: 30 },
+        transform: { m00: 1, m01: 0, m02: 10, m10: 0, m11: 1, m12: 10 },
+        textData: { characters: 'Hello' },
+        fontSize: 16
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -53,26 +87,49 @@ describe('importClipboardNodes', () => {
     expect(children[0].name).toBe('Title')
 
     const allNodes = [...graph.getAllNodes()]
-    const variableNodes = allNodes.filter(n => n.name.includes('Primitives') || n.name.includes('Colors/'))
+    const variableNodes = allNodes.filter(
+      (n) => n.name.includes('Primitives') || n.name.includes('Colors/')
+    )
     expect(variableNodes).toHaveLength(0)
   })
 
   it('skips non-visual Figma types', () => {
     const { graph, pageId } = createGraphWithPage()
 
-    const nonVisualTypes = ['WIDGET', 'STAMP', 'STICKY', 'CONNECTOR', 'CODE_BLOCK', 'SHAPE_WITH_TEXT', 'TABLE_NODE', 'TABLE_CELL']
+    const nonVisualTypes = [
+      'WIDGET',
+      'STAMP',
+      'STICKY',
+      'CONNECTOR',
+      'CODE_BLOCK',
+      'SHAPE_WITH_TEXT',
+      'TABLE_NODE',
+      'TABLE_CELL'
+    ]
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       ...nonVisualTypes.map((type, i) => ({
         guid: { sessionID: 0, localID: 100 + i },
         parentIndex: { guid: { sessionID: 0, localID: 1 }, position: String.fromCharCode(33 + i) },
         type,
         name: `${type}_node`,
         size: { x: 100, y: 100 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       })),
-      { guid: { sessionID: 0, localID: 200 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: 'z' }, type: 'RECTANGLE', name: 'RealShape', size: { x: 50, y: 50 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
+      {
+        guid: { sessionID: 0, localID: 200 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: 'z' },
+        type: 'RECTANGLE',
+        name: 'RealShape',
+        size: { x: 50, y: 50 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -85,10 +142,38 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Outer', size: { x: 400, y: 300 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' }, type: 'FRAME', name: 'Inner', size: { x: 200, y: 100 }, transform: { m00: 1, m01: 0, m02: 20, m10: 0, m11: 1, m12: 20 } },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 11 }, position: '!' }, type: 'TEXT', name: 'Label', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 5, m10: 0, m11: 1, m12: 5 }, textData: { characters: 'Test' }, fontSize: 14 },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Outer',
+        size: { x: 400, y: 300 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
+        type: 'FRAME',
+        name: 'Inner',
+        size: { x: 200, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 20, m10: 0, m11: 1, m12: 20 }
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 11 }, position: '!' },
+        type: 'TEXT',
+        name: 'Label',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 5, m10: 0, m11: 1, m12: 5 },
+        textData: { characters: 'Test' },
+        fontSize: 14
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -112,7 +197,12 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       {
         guid: { sessionID: 0, localID: 10 },
         parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
@@ -120,10 +210,14 @@ describe('importClipboardNodes', () => {
         name: 'Colored',
         size: { x: 100, y: 100 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        fillPaints: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
-        strokePaints: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }],
-        strokeWeight: 2,
-      },
+        fillPaints: [
+          { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
+        ],
+        strokePaints: [
+          { type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }
+        ],
+        strokeWeight: 2
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -140,10 +234,38 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Row', size: { x: 400, y: 100 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, stackMode: 'HORIZONTAL' },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' }, type: 'FRAME', name: 'Stretched', size: { x: 200, y: 50 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, stackChildAlignSelf: 'STRETCH' },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '"' }, type: 'FRAME', name: 'Auto', size: { x: 200, y: 50 }, transform: { m00: 1, m01: 0, m02: 200, m10: 0, m11: 1, m12: 0 } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Row',
+        size: { x: 400, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        stackMode: 'HORIZONTAL'
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
+        type: 'FRAME',
+        name: 'Stretched',
+        size: { x: 200, y: 50 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        stackChildAlignSelf: 'STRETCH'
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '"' },
+        type: 'FRAME',
+        name: 'Auto',
+        size: { x: 200, y: 50 },
+        transform: { m00: 1, m01: 0, m02: 200, m10: 0, m11: 1, m12: 0 }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -158,10 +280,38 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Clipped', size: { x: 200, y: 100 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, frameMaskDisabled: false },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'FRAME', name: 'Unclipped', size: { x: 200, y: 100 }, transform: { m00: 1, m01: 0, m02: 200, m10: 0, m11: 1, m12: 0 }, frameMaskDisabled: true },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' }, type: 'FRAME', name: 'Default', size: { x: 200, y: 100 }, transform: { m00: 1, m01: 0, m02: 400, m10: 0, m11: 1, m12: 0 } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Clipped',
+        size: { x: 200, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        frameMaskDisabled: false
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'FRAME',
+        name: 'Unclipped',
+        size: { x: 200, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 200, m10: 0, m11: 1, m12: 0 },
+        frameMaskDisabled: true
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' },
+        type: 'FRAME',
+        name: 'Default',
+        size: { x: 200, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 400, m10: 0, m11: 1, m12: 0 }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -175,10 +325,45 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'TEXT', name: 'Medium', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, textData: { characters: 'Hello' }, fontSize: 14, fontName: { family: 'PT Root UI', style: 'Medium', postscript: 'PTRootUI-Medium' } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'TEXT', name: 'Bold', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 20 }, textData: { characters: 'World' }, fontSize: 14, fontName: { family: 'Inter', style: 'Bold', postscript: 'Inter-Bold' } },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' }, type: 'TEXT', name: 'Italic', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 40 }, textData: { characters: 'Italic' }, fontSize: 14, fontName: { family: 'Inter', style: 'Bold Italic', postscript: 'Inter-BoldItalic' } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'TEXT',
+        name: 'Medium',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        textData: { characters: 'Hello' },
+        fontSize: 14,
+        fontName: { family: 'PT Root UI', style: 'Medium', postscript: 'PTRootUI-Medium' }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'TEXT',
+        name: 'Bold',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 20 },
+        textData: { characters: 'World' },
+        fontSize: 14,
+        fontName: { family: 'Inter', style: 'Bold', postscript: 'Inter-Bold' }
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' },
+        type: 'TEXT',
+        name: 'Italic',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 40 },
+        textData: { characters: 'Italic' },
+        fontSize: 14,
+        fontName: { family: 'Inter', style: 'Bold Italic', postscript: 'Inter-BoldItalic' }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -193,10 +378,44 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'TEXT', name: 'PixelSpacing', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, textData: { characters: 'A' }, fontSize: 20, letterSpacing: { value: 2, units: 'PIXELS' } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'TEXT', name: 'PercentSpacing', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 20 }, textData: { characters: 'B' }, fontSize: 20, letterSpacing: { value: 10, units: 'PERCENT' } },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' }, type: 'TEXT', name: 'NoSpacing', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 40 }, textData: { characters: 'C' }, fontSize: 20 },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'TEXT',
+        name: 'PixelSpacing',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        textData: { characters: 'A' },
+        fontSize: 20,
+        letterSpacing: { value: 2, units: 'PIXELS' }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'TEXT',
+        name: 'PercentSpacing',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 20 },
+        textData: { characters: 'B' },
+        fontSize: 20,
+        letterSpacing: { value: 10, units: 'PERCENT' }
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' },
+        type: 'TEXT',
+        name: 'NoSpacing',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 40 },
+        textData: { characters: 'C' },
+        fontSize: 20
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -210,10 +429,45 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'TEXT', name: 'RawLH', size: { x: 100, y: 36 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, textData: { characters: 'A' }, fontSize: 24, lineHeight: { value: 1.5, units: 'RAW' } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'TEXT', name: 'PixelLH', size: { x: 100, y: 20 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 40 }, textData: { characters: 'B' }, fontSize: 16, lineHeight: { value: 20, units: 'PIXELS' } },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' }, type: 'TEXT', name: 'PercentLH', size: { x: 100, y: 24 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 80 }, textData: { characters: 'C' }, fontSize: 20, lineHeight: { value: 120, units: 'PERCENT' } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'TEXT',
+        name: 'RawLH',
+        size: { x: 100, y: 36 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        textData: { characters: 'A' },
+        fontSize: 24,
+        lineHeight: { value: 1.5, units: 'RAW' }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'TEXT',
+        name: 'PixelLH',
+        size: { x: 100, y: 20 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 40 },
+        textData: { characters: 'B' },
+        fontSize: 16,
+        lineHeight: { value: 20, units: 'PIXELS' }
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' },
+        type: 'TEXT',
+        name: 'PercentLH',
+        size: { x: 100, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 80 },
+        textData: { characters: 'C' },
+        fontSize: 20,
+        lineHeight: { value: 120, units: 'PERCENT' }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -227,25 +481,34 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       {
         guid: { sessionID: 0, localID: 10 },
         parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
-        type: 'TEXT', name: 'Styled', size: { x: 200, y: 40 },
+        type: 'TEXT',
+        name: 'Styled',
+        size: { x: 200, y: 40 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
         fontSize: 16,
         textData: {
           characters: 'Hello World',
           characterStyleIDs: [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-          styleOverrideTable: [{
-            styleID: 1,
-            fontName: { family: 'Inter', style: 'Bold' },
-            fontSize: 20,
-            lineHeight: { value: 1.5, units: 'RAW' },
-            letterSpacing: { value: -2, units: 'PERCENT' },
-          }],
-        },
-      },
+          styleOverrideTable: [
+            {
+              styleID: 1,
+              fontName: { family: 'Inter', style: 'Bold' },
+              fontSize: 20,
+              lineHeight: { value: 1.5, units: 'RAW' },
+              letterSpacing: { value: -2, units: 'PERCENT' }
+            }
+          ]
+        }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -260,7 +523,12 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       {
         guid: { sessionID: 0, localID: 10 },
         parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
@@ -273,7 +541,7 @@ describe('importClipboardNodes', () => {
         stackVerticalPadding: 24,
         stackHorizontalPadding: 24,
         stackPrimarySizing: 'RESIZE_TO_FIT',
-        stackCounterSizing: 'RESIZE_TO_FIT',
+        stackCounterSizing: 'RESIZE_TO_FIT'
       },
       {
         guid: { sessionID: 0, localID: 11 },
@@ -284,7 +552,7 @@ describe('importClipboardNodes', () => {
         transform: { m00: 1, m01: 0, m02: 24, m10: 0, m11: 1, m12: 24 },
         textData: { characters: 'Hello' },
         fontSize: 24,
-        fontWeight: 700,
+        fontWeight: 700
       },
       {
         guid: { sessionID: 0, localID: 12 },
@@ -292,8 +560,8 @@ describe('importClipboardNodes', () => {
         type: 'RECTANGLE',
         name: 'Divider',
         size: { x: 404, y: 1 },
-        transform: { m00: 1, m01: 0, m02: 24, m10: 0, m11: 1, m12: 72 },
-      },
+        transform: { m00: 1, m01: 0, m02: 24, m10: 0, m11: 1, m12: 72 }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -317,12 +585,39 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       // Component with a child
-      { guid: { sessionID: 1, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'SYMBOL', name: 'Icon/Warning', size: { x: 48, y: 48 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 1, localID: 11 }, parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' }, type: 'VECTOR', name: 'Triangle', size: { x: 48, y: 42 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 3 } },
+      {
+        guid: { sessionID: 1, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'SYMBOL',
+        name: 'Icon/Warning',
+        size: { x: 48, y: 48 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 1, localID: 11 },
+        parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' },
+        type: 'VECTOR',
+        name: 'Triangle',
+        size: { x: 48, y: 42 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 3 }
+      },
       // Instance referencing the component
-      { guid: { sessionID: 2, localID: 20 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'INSTANCE', name: 'Icon/Warning', size: { x: 48, y: 48 }, transform: { m00: 1, m01: 0, m02: 100, m10: 0, m11: 1, m12: 0 }, symbolData: { symbolID: { sessionID: 1, localID: 10 } } },
+      {
+        guid: { sessionID: 2, localID: 20 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'INSTANCE',
+        name: 'Icon/Warning',
+        size: { x: 48, y: 48 },
+        transform: { m00: 1, m01: 0, m02: 100, m10: 0, m11: 1, m12: 0 },
+        symbolData: { symbolID: { sessionID: 1, localID: 10 } }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -347,13 +642,46 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page 1' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page 1'
+      },
       // Internal Only Canvas with component
-      { guid: { sessionID: 99, localID: 2 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '"' }, type: 'CANVAS', name: 'Internal Only Canvas', internalOnly: true },
-      { guid: { sessionID: 1, localID: 10 }, parentIndex: { guid: { sessionID: 99, localID: 2 }, position: '!' }, type: 'SYMBOL', name: 'Icon', size: { x: 24, y: 24 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 1, localID: 11 }, parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' }, type: 'VECTOR', name: 'Path', size: { x: 24, y: 24 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
+      {
+        guid: { sessionID: 99, localID: 2 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '"' },
+        type: 'CANVAS',
+        name: 'Internal Only Canvas',
+        internalOnly: true
+      },
+      {
+        guid: { sessionID: 1, localID: 10 },
+        parentIndex: { guid: { sessionID: 99, localID: 2 }, position: '!' },
+        type: 'SYMBOL',
+        name: 'Icon',
+        size: { x: 24, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 1, localID: 11 },
+        parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' },
+        type: 'VECTOR',
+        name: 'Path',
+        size: { x: 24, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
       // Visible page with instance
-      { guid: { sessionID: 2, localID: 20 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'INSTANCE', name: 'Icon', size: { x: 24, y: 24 }, transform: { m00: 1, m01: 0, m02: 50, m10: 0, m11: 1, m12: 50 }, symbolData: { symbolID: { sessionID: 1, localID: 10 } } },
+      {
+        guid: { sessionID: 2, localID: 20 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'INSTANCE',
+        name: 'Icon',
+        size: { x: 24, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 50, m10: 0, m11: 1, m12: 50 },
+        symbolData: { symbolID: { sessionID: 1, localID: 10 } }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -381,19 +709,34 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       // Frame containing an instance whose component is NOT in the clipboard
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Card', size: { x: 400, y: 200 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Card',
+        size: { x: 400, y: 200 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
       {
         guid: { sessionID: 0, localID: 11 },
         parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
-        type: 'INSTANCE', name: 'Button',
+        type: 'INSTANCE',
+        name: 'Button',
         size: { x: 120, y: 40 },
         transform: { m00: 1, m01: 0, m02: 20, m10: 0, m11: 1, m12: 20 },
-        fillPaints: [{ type: 'SOLID', color: { r: 0.2, g: 0.4, b: 1, a: 1 }, opacity: 1, visible: true }],
+        fillPaints: [
+          { type: 'SOLID', color: { r: 0.2, g: 0.4, b: 1, a: 1 }, opacity: 1, visible: true }
+        ],
         cornerRadius: 8,
-        symbolData: { symbolID: { sessionID: 99, localID: 999 } },
-      },
+        symbolData: { symbolID: { sessionID: 99, localID: 999 } }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -419,14 +762,56 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page 1' },
-      { guid: { sessionID: 99, localID: 2 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '"' }, type: 'CANVAS', name: 'Internal Only Canvas', internalOnly: true },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page 1'
+      },
+      {
+        guid: { sessionID: 99, localID: 2 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '"' },
+        type: 'CANVAS',
+        name: 'Internal Only Canvas',
+        internalOnly: true
+      },
       // Component on internal canvas
-      { guid: { sessionID: 1, localID: 10 }, parentIndex: { guid: { sessionID: 99, localID: 2 }, position: '!' }, type: 'SYMBOL', name: 'Day', size: { x: 46, y: 46 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 1, localID: 11 }, parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' }, type: 'TEXT', name: 'Number', size: { x: 14, y: 17 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, textData: { characters: '1' }, overrideKey: { sessionID: 50, localID: 100 } },
+      {
+        guid: { sessionID: 1, localID: 10 },
+        parentIndex: { guid: { sessionID: 99, localID: 2 }, position: '!' },
+        type: 'SYMBOL',
+        name: 'Day',
+        size: { x: 46, y: 46 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 1, localID: 11 },
+        parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' },
+        type: 'TEXT',
+        name: 'Number',
+        size: { x: 14, y: 17 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        textData: { characters: '1' },
+        overrideKey: { sessionID: 50, localID: 100 }
+      },
       // Instance on visible page with text override
-      { guid: { sessionID: 2, localID: 20 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'INSTANCE', name: 'Day', size: { x: 46, y: 46 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        symbolData: { symbolID: { sessionID: 1, localID: 10 }, symbolOverrides: [{ guidPath: { guids: [{ sessionID: 50, localID: 100 }] }, textData: { characters: '25' } }] } },
+      {
+        guid: { sessionID: 2, localID: 20 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'INSTANCE',
+        name: 'Day',
+        size: { x: 46, y: 46 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        symbolData: {
+          symbolID: { sessionID: 1, localID: 10 },
+          symbolOverrides: [
+            {
+              guidPath: { guids: [{ sessionID: 50, localID: 100 }] },
+              textData: { characters: '25' }
+            }
+          ]
+        }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -444,10 +829,44 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'TEXT', name: 'AutoHeight', size: { x: 200, y: 24 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }, textData: { characters: 'Hello' }, fontSize: 16, textAutoResize: 'HEIGHT' },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'TEXT', name: 'AutoBoth', size: { x: 100, y: 24 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 30 }, textData: { characters: 'World' }, fontSize: 16, textAutoResize: 'WIDTH_AND_HEIGHT' },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' }, type: 'TEXT', name: 'Fixed', size: { x: 100, y: 24 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 60 }, textData: { characters: 'Fixed' }, fontSize: 16 },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'TEXT',
+        name: 'AutoHeight',
+        size: { x: 200, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        textData: { characters: 'Hello' },
+        fontSize: 16,
+        textAutoResize: 'HEIGHT'
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'TEXT',
+        name: 'AutoBoth',
+        size: { x: 100, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 30 },
+        textData: { characters: 'World' },
+        fontSize: 16,
+        textAutoResize: 'WIDTH_AND_HEIGHT'
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '#' },
+        type: 'TEXT',
+        name: 'Fixed',
+        size: { x: 100, y: 24 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 60 },
+        textData: { characters: 'Fixed' },
+        fontSize: 16
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -461,10 +880,38 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Parent', size: { x: 400, y: 300 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' }, type: 'RECTANGLE', name: 'Child1', size: { x: 100, y: 100 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '"' }, type: 'TEXT', name: 'Child2', size: { x: 200, y: 30 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 100 }, textData: { characters: 'Hello' }, fontSize: 14 },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Parent',
+        size: { x: 400, y: 300 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
+        type: 'RECTANGLE',
+        name: 'Child1',
+        size: { x: 100, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '"' },
+        type: 'TEXT',
+        name: 'Child2',
+        size: { x: 200, y: 30 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 100 },
+        textData: { characters: 'Hello' },
+        fontSize: 14
+      }
     ] as any[]
 
     const nodesBefore = [...graph.getAllNodes()].length
@@ -482,10 +929,38 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Parent', size: { x: 400, y: 300 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' }, type: 'RECTANGLE', name: 'Child1', size: { x: 100, y: 100 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 0, localID: 12 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '"' }, type: 'TEXT', name: 'Child2', size: { x: 200, y: 30 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 100 }, textData: { characters: 'Hello' }, fontSize: 14 },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Parent',
+        size: { x: 400, y: 300 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
+        type: 'RECTANGLE',
+        name: 'Child1',
+        size: { x: 100, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 0, localID: 12 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '"' },
+        type: 'TEXT',
+        name: 'Child2',
+        size: { x: 200, y: 30 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 100 },
+        textData: { characters: 'Hello' },
+        fontSize: 14
+      }
     ] as any[]
 
     const childrenBefore = graph.getChildren(pageId).length
@@ -528,9 +1003,28 @@ describe('importClipboardNodes', () => {
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'Parent', size: { x: 400, y: 300 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' }, type: 'RECTANGLE', name: 'Child', size: { x: 100, y: 100 }, transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'Parent',
+        size: { x: 400, y: 300 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 10 }, position: '!' },
+        type: 'RECTANGLE',
+        name: 'Child',
+        size: { x: 100, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      }
     ] as any[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -562,9 +1056,28 @@ describe('figmaNodesBounds', () => {
   it('computes bounds of top-level visual nodes', () => {
     const nodes = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'FRAME', name: 'A', size: { x: 200, y: 100 }, transform: { m00: 1, m01: 0, m02: 500, m10: 0, m11: 1, m12: 300 } },
-      { guid: { sessionID: 0, localID: 11 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'RECTANGLE', name: 'B', size: { x: 50, y: 50 }, transform: { m00: 1, m01: 0, m02: 800, m10: 0, m11: 1, m12: 400 } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'FRAME',
+        name: 'A',
+        size: { x: 200, y: 100 },
+        transform: { m00: 1, m01: 0, m02: 500, m10: 0, m11: 1, m12: 300 }
+      },
+      {
+        guid: { sessionID: 0, localID: 11 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'RECTANGLE',
+        name: 'B',
+        size: { x: 50, y: 50 },
+        transform: { m00: 1, m01: 0, m02: 800, m10: 0, m11: 1, m12: 400 }
+      }
     ] as any[]
 
     const bounds = figmaNodesBounds(nodes)
@@ -574,9 +1087,26 @@ describe('figmaNodesBounds', () => {
   it('ignores variables and non-visual types', () => {
     const nodes = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
-      { guid: { sessionID: 0, localID: 2 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' }, type: 'VARIABLE_SET', name: 'Vars' },
-      { guid: { sessionID: 0, localID: 10 }, parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' }, type: 'FRAME', name: 'Card', size: { x: 300, y: 200 }, transform: { m00: 1, m01: 0, m02: 18000, m10: 0, m11: 1, m12: 45000 } },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
+      {
+        guid: { sessionID: 0, localID: 2 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
+        type: 'VARIABLE_SET',
+        name: 'Vars'
+      },
+      {
+        guid: { sessionID: 0, localID: 10 },
+        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
+        type: 'FRAME',
+        name: 'Card',
+        size: { x: 300, y: 200 },
+        transform: { m00: 1, m01: 0, m02: 18000, m10: 0, m11: 1, m12: 45000 }
+      }
     ] as any[]
 
     const bounds = figmaNodesBounds(nodes)
@@ -587,7 +1117,12 @@ describe('figmaNodesBounds', () => {
     expect(figmaNodesBounds([])).toBeNull()
     const nodes = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      { guid: { sessionID: 0, localID: 1 }, parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: { sessionID: 0, localID: 1 },
+        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      }
     ] as any[]
     expect(figmaNodesBounds(nodes)).toBeNull()
   })
@@ -603,8 +1138,11 @@ describe('buildFigmaClipboardHTML', () => {
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, {
       name: 'Card',
-      x: 0, y: 0, width: 300, height: 200,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 200,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
 
     const html = await buildFigmaClipboardHTML([frame], graph)
@@ -617,15 +1155,18 @@ describe('buildFigmaClipboardHTML', () => {
     const page = graph.getPages()[0]
     const text = graph.createNode('TEXT', page.id, {
       name: 'Styled',
-      x: 0, y: 0, width: 200, height: 24,
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 24,
       text: 'Hello World',
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 16,
       styleRuns: [
         { start: 0, length: 5, style: { fontWeight: 700 } },
-        { start: 6, length: 5, style: { fontWeight: 400, italic: true } },
-      ],
+        { start: 6, length: 5, style: { fontWeight: 400, italic: true } }
+      ]
     })
 
     const html = await buildFigmaClipboardHTML([text], graph)
@@ -643,16 +1184,25 @@ describe('buildFigmaClipboardHTML', () => {
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, {
       name: 'Row',
-      x: 0, y: 0, width: 400, height: 100,
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 100,
       layoutMode: 'HORIZONTAL',
       itemSpacing: 16,
-      paddingTop: 12, paddingRight: 12, paddingBottom: 12, paddingLeft: 12,
+      paddingTop: 12,
+      paddingRight: 12,
+      paddingBottom: 12,
+      paddingLeft: 12,
       primaryAxisSizing: 'HUG',
-      counterAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
     })
     graph.createNode('RECTANGLE', frame.id, {
       name: 'Child',
-      x: 0, y: 0, width: 50, height: 50,
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
     })
 
     const html = await buildFigmaClipboardHTML([frame], graph)
@@ -664,28 +1214,40 @@ describe('buildFigmaClipboardHTML', () => {
     const page = graph.getPages()[0]
     const frame = graph.createNode('FRAME', page.id, {
       name: 'Analytics Overview',
-      x: 0, y: 0, width: 300, height: 200,
+      x: 0,
+      y: 0,
+      width: 300,
+      height: 200,
       layoutMode: 'VERTICAL',
       itemSpacing: 8,
-      paddingTop: 20, paddingRight: 20, paddingBottom: 20, paddingLeft: 20,
+      paddingTop: 20,
+      paddingRight: 20,
+      paddingBottom: 20,
+      paddingLeft: 20,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
-      cornerRadius: 12,
+      cornerRadius: 12
     })
     graph.createNode('TEXT', frame.id, {
       name: 'Title',
-      x: 0, y: 0, width: 260, height: 24,
+      x: 0,
+      y: 0,
+      width: 260,
+      height: 24,
       text: 'Analytics Overview',
       fontFamily: 'Inter',
       fontWeight: 600,
-      fontSize: 18,
+      fontSize: 18
     })
     graph.createNode('TEXT', frame.id, {
       name: 'Subtitle',
-      x: 0, y: 0, width: 260, height: 40,
+      x: 0,
+      y: 0,
+      width: 260,
+      height: 40,
       text: 'Track your key metrics and performance indicators in real time.',
       fontFamily: 'Inter',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const html = await buildFigmaClipboardHTML([frame], graph)
@@ -795,13 +1357,21 @@ describe('gold-preview.fig clipboard roundtrip', () => {
       if (o.name !== p.name) continue
 
       if (p.clipsContent !== o.clipsContent)
-        errors.push(`clipsContent: ${o.type} "${o.name}" expected ${o.clipsContent}, got ${p.clipsContent}`)
+        errors.push(
+          `clipsContent: ${o.type} "${o.name}" expected ${o.clipsContent}, got ${p.clipsContent}`
+        )
       if (p.horizontalConstraint !== o.horizontalConstraint)
-        errors.push(`horizontalConstraint: "${o.name}" expected ${o.horizontalConstraint}, got ${p.horizontalConstraint}`)
+        errors.push(
+          `horizontalConstraint: "${o.name}" expected ${o.horizontalConstraint}, got ${p.horizontalConstraint}`
+        )
       if (p.verticalConstraint !== o.verticalConstraint)
-        errors.push(`verticalConstraint: "${o.name}" expected ${o.verticalConstraint}, got ${p.verticalConstraint}`)
+        errors.push(
+          `verticalConstraint: "${o.name}" expected ${o.verticalConstraint}, got ${p.verticalConstraint}`
+        )
       if (p.layoutAlignSelf !== o.layoutAlignSelf)
-        errors.push(`layoutAlignSelf: "${o.name}" expected ${o.layoutAlignSelf}, got ${p.layoutAlignSelf}`)
+        errors.push(
+          `layoutAlignSelf: "${o.name}" expected ${o.layoutAlignSelf}, got ${p.layoutAlignSelf}`
+        )
       if ((p.arcData != null) !== (o.arcData != null))
         errors.push(`arcData: "${o.name}" expected ${o.arcData != null}, got ${p.arcData != null}`)
     }

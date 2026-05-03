@@ -163,4 +163,3 @@ export const setTextProperties = defineTool({
     return { id: args.id, updated }
   }
 })
-

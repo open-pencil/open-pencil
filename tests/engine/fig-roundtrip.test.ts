@@ -12,8 +12,9 @@ import {
   initCodec,
   SceneGraph,
   type SceneNode,
-  type Fill,
+  type Fill
 } from '@open-pencil/core'
+
 import {
   childMatching,
   childNamed,
@@ -44,7 +45,7 @@ const VALID_NODE_TYPES = new Set<string>([
   'COMPONENT_SET',
   'INSTANCE',
   'CONNECTOR',
-  'SHAPE_WITH_TEXT',
+  'SHAPE_WITH_TEXT'
 ])
 
 let parsed: SceneGraph
@@ -149,7 +150,9 @@ describe('derived instance layout regressions', () => {
       const inline = childNamed(layoutGraph, list, 'Inline')
       const icon = childNamed(layoutGraph, inline, 'Static Icon')
       const content = childNamed(layoutGraph, inline, 'Content')
-      const label = content ? layoutGraph.getChildren(content.id).find((node) => node.text) : undefined
+      const label = content
+        ? layoutGraph.getChildren(content.id).find((node) => node.text)
+        : undefined
       expect(icon?.y).toBeCloseTo(0, 3)
       expect(label?.y).toBeCloseTo(0, 3)
       expect(icon?.height).toBeCloseTo(label?.height ?? 0, 3)
@@ -311,7 +314,6 @@ describe('property integrity', () => {
       }
     }
   })
-
 })
 
 heavy('parse heavy .fig files', () => {
@@ -400,7 +402,7 @@ describe('roundtrip: export → re-import', () => {
     graph.createNode('RECTANGLE', internalPage.id, {
       name: 'Internal Rect',
       width: 50,
-      height: 50,
+      height: 50
     })
 
     graph.createNode('FRAME', page1.id, {
@@ -416,7 +418,15 @@ describe('roundtrip: export → re-import', () => {
       paddingBottom: 24,
       paddingLeft: 24,
       cornerRadius: 12,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }],
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 1, b: 1, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
     })
 
     const container = graph.getChildren(page1.id)[0]
@@ -434,7 +444,13 @@ describe('roundtrip: export → re-import', () => {
       bottomLeftRadius: 0,
       independentCorners: true,
       fills: [
-        { type: 'SOLID', color: { r: 0.2, g: 0.4, b: 0.8, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' },
+        {
+          type: 'SOLID',
+          color: { r: 0.2, g: 0.4, b: 0.8, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        },
         {
           type: 'GRADIENT_LINEAR',
           color: { r: 0, g: 0, b: 0, a: 0 },
@@ -443,14 +459,22 @@ describe('roundtrip: export → re-import', () => {
           blendMode: 'NORMAL',
           gradientStops: [
             { color: { r: 1, g: 1, b: 1, a: 1 }, position: 0 },
-            { color: { r: 0, g: 0, b: 0, a: 0 }, position: 1 },
+            { color: { r: 0, g: 0, b: 0, a: 0 }, position: 1 }
           ],
-          gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        },
+          gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        }
       ],
       effects: [
-        { type: 'DROP_SHADOW', color: { r: 0, g: 0, b: 0, a: 0.25 }, offset: { x: 0, y: 4 }, radius: 8, spread: 0, visible: true, blendMode: 'NORMAL' },
-      ],
+        {
+          type: 'DROP_SHADOW',
+          color: { r: 0, g: 0, b: 0, a: 0.25 },
+          offset: { x: 0, y: 4 },
+          radius: 8,
+          spread: 0,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
     })
 
     graph.createNode('TEXT', container.id, {
@@ -463,7 +487,7 @@ describe('roundtrip: export → re-import', () => {
       fontSize: 18,
       fontFamily: 'Inter',
       fontWeight: 700,
-      textAlignHorizontal: 'CENTER',
+      textAlignHorizontal: 'CENTER'
     })
 
     graph.createNode('ELLIPSE', container.id, {
@@ -472,7 +496,15 @@ describe('roundtrip: export → re-import', () => {
       y: 140,
       width: 48,
       height: 48,
-      fills: [{ type: 'SOLID', color: { r: 0.9, g: 0.1, b: 0.3, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }],
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 0.9, g: 0.1, b: 0.3, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
     })
 
     graph.createNode('RECTANGLE', page2.id, {
@@ -480,7 +512,7 @@ describe('roundtrip: export → re-import', () => {
       x: 50,
       y: 50,
       width: 100,
-      height: 100,
+      height: 100
     })
 
     const figBytes = await exportFigFile(graph)
@@ -618,7 +650,7 @@ describe('edge cases', () => {
         visible: true,
         opacity: 1,
         phase: 'CREATED',
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       },
       {
         guid: { sessionID: 0, localID: 1 },
@@ -628,7 +660,7 @@ describe('edge cases', () => {
         visible: true,
         opacity: 1,
         phase: 'CREATED',
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       },
       {
         guid: { sessionID: 1, localID: 10 },
@@ -639,7 +671,7 @@ describe('edge cases', () => {
         opacity: 1,
         phase: 'CREATED',
         size: { x: 100, y: 100 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       },
       {
         guid: { sessionID: 1, localID: 11 },
@@ -650,8 +682,8 @@ describe('edge cases', () => {
         opacity: 1,
         phase: 'REMOVED',
         size: { x: 100, y: 100 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-      },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      }
     ])
     const children = graph.getChildren(graph.getPages()[0].id)
     expect(children).toHaveLength(1)
@@ -675,14 +707,14 @@ describe('edge cases', () => {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
         name: 'Document',
-        phase: 'CREATED',
+        phase: 'CREATED'
       } as NodeChange,
       {
         guid: { sessionID: 0, localID: 1 },
         parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
         type: 'CANVAS',
         name: 'Page',
-        phase: 'CREATED',
+        phase: 'CREATED'
       } as NodeChange,
       // Inner component
       {
@@ -692,7 +724,7 @@ describe('edge cases', () => {
         name: 'Inner',
         phase: 'CREATED',
         size: { x: 100, y: 40 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       // TEXT child of Inner
       {
@@ -704,7 +736,7 @@ describe('edge cases', () => {
         textData: { characters: 'Default' },
         phase: 'CREATED',
         size: { x: 80, y: 20 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       // Outer component
       {
@@ -714,7 +746,7 @@ describe('edge cases', () => {
         name: 'Outer',
         phase: 'CREATED',
         size: { x: 200, y: 40 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       // INSTANCE of Inner inside Outer, with symbolOverride on Label
       {
@@ -730,10 +762,10 @@ describe('edge cases', () => {
           symbolOverrides: [
             {
               guidPath: { guids: [{ sessionID: 99, localID: 2 }] },
-              textData: { characters: 'Changed' },
-            },
-          ],
-        },
+              textData: { characters: 'Changed' }
+            }
+          ]
+        }
       } as NodeChange,
       // Top-level INSTANCE of Outer on the page
       {
@@ -745,9 +777,9 @@ describe('edge cases', () => {
         size: { x: 200, y: 40 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
         symbolData: {
-          symbolID: { sessionID: 1, localID: 3 },
-        },
-      } as NodeChange,
+          symbolID: { sessionID: 1, localID: 3 }
+        }
+      } as NodeChange
     ])
 
     const page = graph.getPages()[0]
@@ -780,14 +812,14 @@ describe('edge cases', () => {
         guid: { sessionID: 0, localID: 0 },
         type: 'DOCUMENT',
         name: 'Document',
-        phase: 'CREATED',
+        phase: 'CREATED'
       } as NodeChange,
       {
         guid: { sessionID: 0, localID: 1 },
         parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
         type: 'CANVAS',
         name: 'Page',
-        phase: 'CREATED',
+        phase: 'CREATED'
       } as NodeChange,
       // IconA component with 1 child
       {
@@ -798,7 +830,7 @@ describe('edge cases', () => {
         name: 'IconA',
         phase: 'CREATED',
         size: { x: 24, y: 24 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
         guid: { sessionID: 1, localID: 2 },
@@ -808,7 +840,7 @@ describe('edge cases', () => {
         name: 'PathA',
         phase: 'CREATED',
         size: { x: 24, y: 24 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       // IconB component with 2 children
       {
@@ -819,7 +851,7 @@ describe('edge cases', () => {
         name: 'IconB',
         phase: 'CREATED',
         size: { x: 24, y: 24 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
         guid: { sessionID: 1, localID: 31 },
@@ -829,7 +861,7 @@ describe('edge cases', () => {
         name: 'PathB1',
         phase: 'CREATED',
         size: { x: 24, y: 12 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
         guid: { sessionID: 1, localID: 32 },
@@ -839,7 +871,7 @@ describe('edge cases', () => {
         name: 'PathB2',
         phase: 'CREATED',
         size: { x: 24, y: 12 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       // Button component with instance of IconA
       {
@@ -850,7 +882,7 @@ describe('edge cases', () => {
         name: 'Button',
         phase: 'CREATED',
         size: { x: 40, y: 40 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
         guid: { sessionID: 1, localID: 6 },
@@ -861,7 +893,7 @@ describe('edge cases', () => {
         phase: 'CREATED',
         size: { x: 24, y: 24 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        symbolData: { symbolID: { sessionID: 1, localID: 1 } },
+        symbolData: { symbolID: { sessionID: 1, localID: 1 } }
       } as NodeChange,
       // Toolbar component with instance of Button, swapping icon to IconB
       {
@@ -872,7 +904,7 @@ describe('edge cases', () => {
         name: 'Toolbar',
         phase: 'CREATED',
         size: { x: 200, y: 40 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
         guid: { sessionID: 1, localID: 8 },
@@ -888,10 +920,10 @@ describe('edge cases', () => {
           symbolOverrides: [
             {
               guidPath: { guids: [{ sessionID: 90, localID: 6 }] },
-              overriddenSymbolID: { sessionID: 1, localID: 3 },
-            },
-          ],
-        },
+              overriddenSymbolID: { sessionID: 1, localID: 3 }
+            }
+          ]
+        }
       } as NodeChange,
       // Page-level instance of Toolbar
       {
@@ -903,9 +935,9 @@ describe('edge cases', () => {
         size: { x: 200, y: 40 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
         symbolData: {
-          symbolID: { sessionID: 1, localID: 7 },
-        },
-      } as NodeChange,
+          symbolID: { sessionID: 1, localID: 7 }
+        }
+      } as NodeChange
     ])
 
     const page = graph.getPages()[0]
@@ -928,7 +960,9 @@ describe('edge cases', () => {
   })
 
   test('DSD propagates through intermediate clones that are also DSD-targeted', async () => {
-    const graph = await parseFigFile(readFileSync(resolve(__dirname, '../fixtures/gold-preview.fig')).buffer)
+    const graph = await parseFigFile(
+      readFileSync(resolve(__dirname, '../fixtures/gold-preview.fig')).buffer
+    )
 
     const thumb = [...graph.getAllNodes()].find((n) => n.name === 'Preview Thumbnail')
     expect(thumb).toBeDefined()
@@ -948,7 +982,7 @@ describe('edge cases', () => {
               vis = false
               break
             }
-            cur = cur.parentId ? graph.getNode(cur.parentId) ?? null : null
+            cur = cur.parentId ? (graph.getNode(cur.parentId) ?? null) : null
           }
           // Check clipping
           let clipped = false
@@ -958,7 +992,7 @@ describe('edge cases', () => {
               clipped = true
               break
             }
-            cur = cur.parentId ? graph.getNode(cur.parentId) ?? null : null
+            cur = cur.parentId ? (graph.getNode(cur.parentId) ?? null) : null
           }
           if (vis && !clipped && node.width > parent.width * 1.2) {
             overflows++
@@ -1026,9 +1060,8 @@ describe('text node export', () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
-    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import(
-      '../../packages/core/src/kiwi/kiwi-schema'
-    )
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('../../packages/core/src/kiwi/kiwi-schema')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -1084,9 +1117,8 @@ describe('text node export', () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
-    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import(
-      '../../packages/core/src/kiwi/kiwi-schema'
-    )
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('../../packages/core/src/kiwi/kiwi-schema')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -1166,7 +1198,12 @@ describe('variable roundtrip', () => {
     const vars = [...reimported.variables.values()]
     const colorVar = vars.find((v) => v.name === 'color/primary')!
     expect(colorVar.type).toBe('COLOR')
-    const colorVal = Object.values(colorVar.valuesByMode)[0] as { r: number; g: number; b: number; a: number }
+    const colorVal = Object.values(colorVar.valuesByMode)[0] as {
+      r: number
+      g: number
+      b: number
+      a: number
+    }
     expect(colorVal.r).toBeCloseTo(0.23, 1)
 
     const floatVar = vars.find((v) => v.name === 'spacing/base')!
@@ -1194,7 +1231,7 @@ describe('variable roundtrip', () => {
       name: 'Bound Rect',
       width: 100,
       height: 100,
-      cornerRadius: 12,
+      cornerRadius: 12
     })
     graph.bindVariable(rect.id, 'cornerRadius', floatVar.id)
 

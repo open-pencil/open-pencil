@@ -1,6 +1,7 @@
 import { parseColor } from '#core/color'
 import { fetchIcons, searchIconsBatch } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
+
 import { defineTool } from './schema'
 
 export const fetchIconsTool = defineTool({
@@ -11,9 +12,9 @@ export const fetchIconsTool = defineTool({
     names: {
       type: 'string[]',
       description: 'Icon names as prefix:name (e.g. ["lucide:heart", "lucide:home", "mdi:star"])',
-      required: true,
+      required: true
     },
-    size: { type: 'number', description: 'Icon size in pixels (default: 24)' },
+    size: { type: 'number', description: 'Icon size in pixels (default: 24)' }
   },
   execute: async (_figma, args) => {
     const size = args.size ?? 24
@@ -27,7 +28,7 @@ export const fetchIconsTool = defineTool({
     } catch (e) {
       return { error: (e as Error).message }
     }
-  },
+  }
 })
 
 export const insertIcon = defineTool({
@@ -39,18 +40,18 @@ export const insertIcon = defineTool({
     names: {
       type: 'string[]',
       description:
-        'Icon names as prefix:name (e.g. ["lucide:heart"] or ["lucide:heart","lucide:home","lucide:star"])',
+        'Icon names as prefix:name (e.g. ["lucide:heart"] or ["lucide:heart","lucide:home","lucide:star"])'
     },
     name: {
       type: 'string',
-      description: 'Single icon name (shorthand for names with one icon)',
+      description: 'Single icon name (shorthand for names with one icon)'
     },
     size: { type: 'number', description: 'Icon size in pixels (default: 24)' },
     color: {
       type: 'color',
-      description: 'Icon color hex (replaces currentColor). Default: #000000',
+      description: 'Icon color hex (replaces currentColor). Default: #000000'
     },
-    parent_id: { type: 'string', description: 'Parent node ID for all icons' },
+    parent_id: { type: 'string', description: 'Parent node ID for all icons' }
   },
   execute: async (figma, args) => {
     const names = args.names ?? (args.name ? [args.name] : [])
@@ -88,7 +89,7 @@ export const insertIcon = defineTool({
     const result: Record<string, unknown> = { inserted }
     if (notFound.length > 0) result.not_found = notFound
     return result
-  },
+  }
 })
 
 export const searchIconsTool = defineTool({
@@ -99,16 +100,16 @@ export const searchIconsTool = defineTool({
     queries: {
       type: 'string[]',
       description: 'Search keywords (e.g. ["heart", "arrow", "settings"])',
-      required: true,
+      required: true
     },
     limit: { type: 'number', description: 'Max results per query (default: 5)' },
-    prefix: { type: 'string', description: 'Filter by icon set prefix (e.g. "lucide", "mdi")' },
+    prefix: { type: 'string', description: 'Filter by icon set prefix (e.g. "lucide", "mdi")' }
   },
   execute: async (_figma, args) => {
     try {
       const results = await searchIconsBatch(args.queries, {
         limit: args.limit ?? 5,
-        prefix: args.prefix,
+        prefix: args.prefix
       })
       const output: Record<string, { icons: string[]; total: number }> = {}
       for (const [query, result] of results) {
@@ -118,5 +119,5 @@ export const searchIconsTool = defineTool({
     } catch (e) {
       return { error: (e as Error).message }
     }
-  },
+  }
 })

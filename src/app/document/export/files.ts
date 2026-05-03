@@ -2,7 +2,12 @@ import { IS_TAURI } from '@/constants'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 
 import type { Editor, EditorState } from '@open-pencil/core/editor'
-import type { ExportRequest, IOFormatAdapter, IORegistry, RasterExportFormat } from '@open-pencil/core/io'
+import type {
+  ExportRequest,
+  IOFormatAdapter,
+  IORegistry,
+  RasterExportFormat
+} from '@open-pencil/core/io'
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
 
 type ExportOptions = {

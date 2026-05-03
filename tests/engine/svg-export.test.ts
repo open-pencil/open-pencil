@@ -249,9 +249,7 @@ describe('renderNodesToSVG()', () => {
     const node = graph.createNode('ELLIPSE', pageId(graph), {
       width: 80,
       height: 60,
-      fills: [
-        { type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, opacity: 1, visible: true }
-      ]
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
     const result = exportSVG(graph, [node.id])!
     expect(result).toContain('<ellipse')
@@ -656,9 +654,7 @@ describe('renderNodesToSVG()', () => {
     const node = graph.createNode('RECTANGLE', pageId(graph), {
       width: 50,
       height: 50,
-      fills: [
-        { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }
-      ]
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }]
     })
     const result = exportSVG(graph, [node.id])!
     expect(result).toContain('fill="#FF0000')

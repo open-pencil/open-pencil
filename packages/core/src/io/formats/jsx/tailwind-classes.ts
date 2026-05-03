@@ -8,6 +8,7 @@ import {
   opacityToTw
 } from '#core/design-jsx/tailwind'
 import { resolveNodeTextDirection } from '#core/text/direction'
+
 import {
   collectCornerRadii,
   collectPadding,
@@ -190,4 +191,3 @@ export function collectTailwindClasses(node: SceneNode, graph: SceneGraph): stri
 
   return classes
 }
-

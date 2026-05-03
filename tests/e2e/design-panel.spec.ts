@@ -47,7 +47,18 @@ function getNode(id: string) {
     const store = window.__OPEN_PENCIL_STORE__!
     const n = store.graph.getNode(nodeId)
     if (!n) return null
-    return { fills: n.fills, strokes: n.strokes, effects: n.effects, opacity: n.opacity, visible: n.visible, x: n.x, y: n.y, width: n.width, height: n.height, rotation: n.rotation }
+    return {
+      fills: n.fills,
+      strokes: n.strokes,
+      effects: n.effects,
+      opacity: n.opacity,
+      visible: n.visible,
+      x: n.x,
+      y: n.y,
+      width: n.width,
+      height: n.height,
+      rotation: n.rotation
+    }
   }, id)
 }
 

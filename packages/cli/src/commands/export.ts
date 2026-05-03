@@ -1,12 +1,11 @@
 import { basename, extname, resolve } from 'node:path'
 
-import { defineCommand } from 'citty'
-
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { ok, printError } from '#cli/format'
 import { loadDocument } from '#cli/headless'
+import { defineCommand } from 'citty'
+
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
 import type { RasterExportFormat } from '@open-pencil/core/io'
 

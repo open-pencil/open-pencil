@@ -6,8 +6,8 @@ import {
 } from '#vue/shared/input/geometry'
 
 import type { HitTestFns } from '#vue/shared/input/select'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { Ref } from 'vue'
 
 export function createCanvasPointer(

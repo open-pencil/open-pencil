@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+
 import { CanvasHelper } from '../helpers/canvas'
 
 const NODE_COUNT = 200
@@ -21,7 +22,9 @@ test.describe('Zoom and pan', () => {
           y: Math.floor(i / cols) * 60,
           width: 50,
           height: 50,
-          fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.8, a: 1 }, visible: true, opacity: 1 }]
+          fills: [
+            { type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.8, a: 1 }, visible: true, opacity: 1 }
+          ]
         })
       }
       store.requestRender()
@@ -181,7 +184,9 @@ test.describe('Zoom and pan', () => {
       const pageNode = store.graph.getNode(store.state.currentPageId)!
       const firstId = pageNode.childIds[0]
       store.graph.updateNode(firstId, {
-        fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.8, a: 1 }, visible: true, opacity: 1 }]
+        fills: [
+          { type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.8, a: 1 }, visible: true, opacity: 1 }
+        ]
       })
       store.requestRender()
     })
@@ -263,9 +268,18 @@ test.describe('Zoom and pan', () => {
       const wheelMs = performance.now() - wheelStart
 
       return {
-        zoom: { ms: Math.round(zoomMs * 100) / 100, avg: Math.round((zoomMs / iterations) * 1000) / 1000 },
-        pan: { ms: Math.round(panMs * 100) / 100, avg: Math.round((panMs / iterations) * 1000) / 1000 },
-        wheel: { ms: Math.round(wheelMs * 100) / 100, avg: Math.round((wheelMs / iterations) * 1000) / 1000 }
+        zoom: {
+          ms: Math.round(zoomMs * 100) / 100,
+          avg: Math.round((zoomMs / iterations) * 1000) / 1000
+        },
+        pan: {
+          ms: Math.round(panMs * 100) / 100,
+          avg: Math.round((panMs / iterations) * 1000) / 1000
+        },
+        wheel: {
+          ms: Math.round(wheelMs * 100) / 100,
+          avg: Math.round((wheelMs / iterations) * 1000) / 1000
+        }
       }
     }, ITERATIONS)
 

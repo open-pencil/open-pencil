@@ -1,7 +1,3 @@
-import { useEditor } from '#vue/editor/context'
-import { useI18n } from '#vue/i18n'
-import { ref } from 'vue'
-
 import {
   BORDER_SIDES,
   DEFAULT_STROKE,
@@ -11,6 +7,9 @@ import {
   currentSides,
   updateAlign
 } from '#vue/controls/stroke/helpers'
+import { useEditor } from '#vue/editor/context'
+import { useI18n } from '#vue/i18n'
+import { ref } from 'vue'
 
 /**
  * Returns stroke-related helpers for property panels.

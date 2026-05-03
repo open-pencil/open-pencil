@@ -43,8 +43,6 @@ describe('MCP path scoping', () => {
   })
 
   test('rejects root prefix trick (root-evil)', () => {
-    expect(() => resolveSafePath(`${root}-evil/file.fig`, root)).toThrow(
-      'outside the allowed root'
-    )
+    expect(() => resolveSafePath(`${root}-evil/file.fig`, root)).toThrow('outside the allowed root')
   })
 })

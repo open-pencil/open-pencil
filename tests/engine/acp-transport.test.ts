@@ -38,9 +38,7 @@ describe('mapUpdate', () => {
     }
     const result = mapUpdate(update, TEXT_ID, true)
     expect(result.textStarted).toBe(true)
-    expect(result.chunks).toEqual([
-      { type: 'text-delta', id: TEXT_ID, delta: 'world' }
-    ])
+    expect(result.chunks).toEqual([{ type: 'text-delta', id: TEXT_ID, delta: 'world' }])
   })
 
   test('agent_thought_chunk emits reasoning start/delta/end', () => {
@@ -68,13 +66,15 @@ describe('mapUpdate', () => {
       status: 'pending'
     }
     const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([{
-      type: 'tool-input-start',
-      toolCallId: 'tc-1',
-      toolName: 'create_shape',
-      providerExecuted: true,
-      title: 'create_shape'
-    }])
+    expect(result.chunks).toEqual([
+      {
+        type: 'tool-input-start',
+        toolCallId: 'tc-1',
+        toolName: 'create_shape',
+        providerExecuted: true,
+        title: 'create_shape'
+      }
+    ])
   })
 
   test('tool_call with rawInput emits tool-input-available', () => {
@@ -118,12 +118,14 @@ describe('mapUpdate', () => {
       rawOutput: { id: '1:5', type: 'RECTANGLE' }
     }
     const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([{
-      type: 'tool-output-available',
-      toolCallId: 'tc-1',
-      output: { id: '1:5', type: 'RECTANGLE' },
-      providerExecuted: true
-    }])
+    expect(result.chunks).toEqual([
+      {
+        type: 'tool-output-available',
+        toolCallId: 'tc-1',
+        output: { id: '1:5', type: 'RECTANGLE' },
+        providerExecuted: true
+      }
+    ])
   })
 
   test('tool_call_update failed emits tool-output-error', () => {
@@ -134,12 +136,14 @@ describe('mapUpdate', () => {
       content: [{ type: 'content', content: { type: 'text', text: 'Node not found' } }]
     }
     const result = mapUpdate(update, TEXT_ID, false)
-    expect(result.chunks).toEqual([{
-      type: 'tool-output-error',
-      toolCallId: 'tc-1',
-      errorText: 'Node not found',
-      providerExecuted: true
-    }])
+    expect(result.chunks).toEqual([
+      {
+        type: 'tool-output-error',
+        toolCallId: 'tc-1',
+        errorText: 'Node not found',
+        providerExecuted: true
+      }
+    ])
   })
 
   test('agent_message_chunk with non-text content produces no chunks', () => {
@@ -226,6 +230,9 @@ describe('buildCrashChunks', () => {
     const result = buildCrashChunks(false, TEXT_ID, true)
     expect(result.shouldNullSession).toBe(true)
     expect(result.chunks[0]).toEqual({ type: 'text-end', id: TEXT_ID })
-    expect(result.chunks[1]).toEqual({ type: 'error', errorText: 'Agent process exited unexpectedly.' })
+    expect(result.chunks[1]).toEqual({
+      type: 'error',
+      errorText: 'Agent process exited unexpectedly.'
+    })
   })
 })

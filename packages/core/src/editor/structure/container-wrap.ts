@@ -1,7 +1,7 @@
 import { computeAbsoluteBounds } from '#core/geometry'
 
-import type { SceneNode } from '#core/scene-graph'
 import type { EditorContext } from '#core/editor/types'
+import type { SceneNode } from '#core/scene-graph'
 
 export function wrapSelectionInContainer(
   ctx: EditorContext,
@@ -34,9 +34,7 @@ export function wrapSelectionInContainer(
   const maxX = minX + bw
   const maxY = minY + bh
 
-  const parentAbs = isTopLevel(parentId)
-    ? { x: 0, y: 0 }
-    : ctx.graph.getAbsolutePosition(parentId)
+  const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : ctx.graph.getAbsolutePosition(parentId)
   const firstIndex = Math.min(...nodeIds.map((id) => parent.childIds.indexOf(id)))
 
   const padding = containerType === 'COMPONENT_SET' ? 40 : 0

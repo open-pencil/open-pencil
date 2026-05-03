@@ -1,7 +1,7 @@
 import { type ComputedRef, type InjectionKey, inject, provide } from 'vue'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 type ArrayPropKey = 'fills' | 'strokes' | 'effects'
 

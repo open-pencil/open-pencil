@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
+
 import { unzipSync } from 'fflate'
 
 import {
@@ -10,7 +11,7 @@ import {
   parseOpenPencilClipboard,
   parseFigFile,
   SceneGraph,
-  type SceneNode,
+  type SceneNode
 } from '@open-pencil/core'
 
 const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -64,15 +65,29 @@ describe('set_image_fill tool', () => {
   test('sets an IMAGE fill with correct imageHash and scaleMode', () => {
     const { figma } = setup()
     const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
-    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 100, height: 100 }) as { id: string }
+    const node = shape.execute(figma, {
+      type: 'RECTANGLE',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100
+    }) as { id: string }
 
     const b64 = PNG_MAGIC.toBase64()
-    const result = tool.execute(figma, { id: node.id, image_data: b64 }) as { id: string; imageHash: string; scaleMode: string }
+    const result = tool.execute(figma, { id: node.id, image_data: b64 }) as {
+      id: string
+      imageHash: string
+      scaleMode: string
+    }
 
     expect(result.imageHash).toBeTruthy()
     expect(result.scaleMode).toBe('FILL')
 
-    const fills = figma.getNodeById(node.id)!.fills as Array<{ type: string; imageHash: string; imageScaleMode: string }>
+    const fills = figma.getNodeById(node.id)!.fills as Array<{
+      type: string
+      imageHash: string
+      imageScaleMode: string
+    }>
     expect(fills).toHaveLength(1)
     expect(fills[0].type).toBe('IMAGE')
     expect(fills[0].imageHash).toBe(result.imageHash)
@@ -81,16 +96,22 @@ describe('set_image_fill tool', () => {
 
   test('returns error for non-existent node', () => {
     const { figma } = setup()
-    const result = tool.execute(figma, { id: 'nonexistent', image_data: PNG_MAGIC.toBase64() }) as { error: string }
+    const result = tool.execute(figma, { id: 'nonexistent', image_data: PNG_MAGIC.toBase64() }) as {
+      error: string
+    }
     expect(result.error).toContain('not found')
   })
 
   test('default scale mode is FILL', () => {
     const { figma } = setup()
     const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
-    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as { id: string }
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
 
-    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as { scaleMode: string }
+    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as {
+      scaleMode: string
+    }
     expect(result.scaleMode).toBe('FILL')
   })
 
@@ -99,9 +120,19 @@ describe('set_image_fill tool', () => {
     for (const mode of modes) {
       const { figma } = setup()
       const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
-      const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as { id: string }
+      const node = shape.execute(figma, {
+        type: 'RECTANGLE',
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 50
+      }) as { id: string }
 
-      const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64(), scale_mode: mode }) as { scaleMode: string }
+      const result = tool.execute(figma, {
+        id: node.id,
+        image_data: PNG_MAGIC.toBase64(),
+        scale_mode: mode
+      }) as { scaleMode: string }
       expect(result.scaleMode).toBe(mode)
 
       const fills = figma.getNodeById(node.id)!.fills as Array<{ imageScaleMode: string }>
@@ -112,15 +143,24 @@ describe('set_image_fill tool', () => {
   test('image data is stored in graph.images', () => {
     const { graph, figma } = setup()
     const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
-    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as { id: string }
+    const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
+      id: string
+    }
 
-    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as { imageHash: string }
+    const result = tool.execute(figma, { id: node.id, image_data: PNG_MAGIC.toBase64() }) as {
+      imageHash: string
+    }
     expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
   })
 })
 
 describe('clipboard roundtrip with images', () => {
-  function graphWithImageNode(): { graph: SceneGraph; node: SceneNode; imageHash: string; imageBytes: Uint8Array } {
+  function graphWithImageNode(): {
+    graph: SceneGraph
+    node: SceneNode
+    imageHash: string
+    imageBytes: Uint8Array
+  } {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const imageBytes = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])
@@ -131,14 +171,16 @@ describe('clipboard roundtrip with images', () => {
       name: 'ImageRect',
       width: 100,
       height: 100,
-      fills: [{
-        type: 'IMAGE',
-        color: { r: 0, g: 0, b: 0, a: 1 },
-        opacity: 1,
-        visible: true,
-        imageHash: hash,
-        imageScaleMode: 'FILL',
-      }],
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash,
+          imageScaleMode: 'FILL'
+        }
+      ]
     })
 
     return { graph, node, imageHash: hash, imageBytes }
@@ -178,13 +220,33 @@ describe('clipboard roundtrip with images', () => {
 
     const node1 = graph.createNode('RECTANGLE', page.id, {
       name: 'Img1',
-      width: 50, height: 50,
-      fills: [{ type: 'IMAGE', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, imageHash: hash1, imageScaleMode: 'FILL' }],
+      width: 50,
+      height: 50,
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash1,
+          imageScaleMode: 'FILL'
+        }
+      ]
     })
     const node2 = graph.createNode('RECTANGLE', page.id, {
       name: 'Img2',
-      width: 50, height: 50,
-      fills: [{ type: 'IMAGE', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, imageHash: hash2, imageScaleMode: 'FIT' }],
+      width: 50,
+      height: 50,
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash2,
+          imageScaleMode: 'FIT'
+        }
+      ]
     })
 
     const html = buildOpenPencilClipboardHTML([node1, node2], graph)
@@ -200,8 +262,9 @@ describe('clipboard roundtrip with images', () => {
     const page = graph.getPages()[0]
     const node = graph.createNode('RECTANGLE', page.id, {
       name: 'Plain',
-      width: 50, height: 50,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+      width: 50,
+      height: 50,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
 
     const html = buildOpenPencilClipboardHTML([node], graph)
@@ -221,8 +284,18 @@ describe('clipboard roundtrip with images', () => {
     const frame = graph.createNode('FRAME', page.id, { name: 'Parent', width: 200, height: 200 })
     graph.createNode('RECTANGLE', frame.id, {
       name: 'ChildImg',
-      width: 50, height: 50,
-      fills: [{ type: 'IMAGE', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, imageHash: hash, imageScaleMode: 'TILE' }],
+      width: 50,
+      height: 50,
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash,
+          imageScaleMode: 'TILE'
+        }
+      ]
     })
 
     const html = buildOpenPencilClipboardHTML([frame], graph)
@@ -248,8 +321,18 @@ describe('fig export/import with images', () => {
 
     graph.createNode('RECTANGLE', page.id, {
       name: 'ImageNode',
-      width: 100, height: 100,
-      fills: [{ type: 'IMAGE', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, imageHash: hash, imageScaleMode: 'FILL' }],
+      width: 100,
+      height: 100,
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash,
+          imageScaleMode: 'FILL'
+        }
+      ]
     })
 
     const zip = await exportFigFile(graph)
@@ -263,7 +346,8 @@ describe('fig export/import with images', () => {
     const graph = new SceneGraph()
     graph.createNode('RECTANGLE', graph.getPages()[0].id, {
       name: 'Plain',
-      width: 50, height: 50,
+      width: 50,
+      height: 50
     })
 
     const zip = await exportFigFile(graph)
@@ -284,12 +368,34 @@ describe('fig export/import with images', () => {
     const { hash: hash2 } = figma.createImage(bytes2)
 
     graph.createNode('RECTANGLE', page.id, {
-      name: 'Img1', width: 100, height: 100,
-      fills: [{ type: 'IMAGE', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, imageHash: hash1, imageScaleMode: 'FILL' }],
+      name: 'Img1',
+      width: 100,
+      height: 100,
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash1,
+          imageScaleMode: 'FILL'
+        }
+      ]
     })
     graph.createNode('ELLIPSE', page.id, {
-      name: 'Img2', width: 80, height: 80,
-      fills: [{ type: 'IMAGE', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, imageHash: hash2, imageScaleMode: 'FIT' }],
+      name: 'Img2',
+      width: 80,
+      height: 80,
+      fills: [
+        {
+          type: 'IMAGE',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          imageHash: hash2,
+          imageScaleMode: 'FIT'
+        }
+      ]
     })
 
     const zip = await exportFigFile(graph)

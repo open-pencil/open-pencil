@@ -36,6 +36,6 @@ export async function searchIconify(
   return {
     icons: icons.slice(0, limit),
     total: data.total ?? 0,
-    collections: data.collections ?? {},
+    collections: data.collections ?? {}
   }
 }

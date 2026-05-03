@@ -2,9 +2,8 @@ export * from './management'
 export { normalizeColor } from './normalize'
 export * from './okhcl'
 
-import { parse, formatHex, formatHex8, formatRgb, converter, differenceEuclidean } from 'culori'
-
 import { BLACK } from '#core/constants'
+import { parse, formatHex, formatHex8, formatRgb, converter, differenceEuclidean } from 'culori'
 
 import type { Color } from '#core/types'
 

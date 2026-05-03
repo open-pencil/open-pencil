@@ -10,8 +10,8 @@ import { randomIndex } from '@open-pencil/core/random'
 
 import type { CollabState } from '@/app/collab/types'
 import type { EditorStore } from '@/app/editor/active-store'
-import type { Ref } from 'vue'
 import type { Room } from 'trystero'
+import type { Ref } from 'vue'
 import type { Awareness } from 'y-protocols/awareness'
 
 export type CollabRuntime = {

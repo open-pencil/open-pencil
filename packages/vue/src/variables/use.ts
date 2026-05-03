@@ -1,9 +1,6 @@
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
-import {
-  createVariableCollectionActions,
-  createVariableValueActions
-} from '#vue/variables/helpers'
+import { createVariableCollectionActions, createVariableValueActions } from '#vue/variables/helpers'
 import { ref, computed, watch } from 'vue'
 
 import type { Variable } from '@open-pencil/core/scene-graph'

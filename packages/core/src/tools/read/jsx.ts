@@ -1,7 +1,6 @@
-import { createTwoFilesPatch } from 'diff'
-
 import { sceneNodeToJSX } from '#core/io/formats/jsx'
 import { defineTool } from '#core/tools/schema'
+import { createTwoFilesPatch } from 'diff'
 
 const MAX_JSX_LENGTH = 12_000
 
@@ -13,8 +12,8 @@ export const getJsx = defineTool({
     id: { type: 'string', description: 'Node ID', required: true },
     path: {
       type: 'string',
-      description: 'Write JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)',
-    },
+      description: 'Write JSX to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
+    }
   },
   execute: (figma, { id }) => {
     const node = figma.getNodeById(id)
@@ -26,11 +25,11 @@ export const getJsx = defineTool({
         name: node.name,
         jsx: jsx.slice(0, MAX_JSX_LENGTH),
         truncated: true,
-        totalLength: jsx.length,
+        totalLength: jsx.length
       }
     }
     return { id, name: node.name, jsx }
-  },
+  }
 })
 
 export const diffJsx = defineTool({
@@ -39,7 +38,7 @@ export const diffJsx = defineTool({
     'Structural diff between two nodes in JSX format. Shows added/removed children, changed props.',
   params: {
     from: { type: 'string', description: 'Source node ID', required: true },
-    to: { type: 'string', description: 'Target node ID', required: true },
+    to: { type: 'string', description: 'Target node ID', required: true }
   },
   execute: (figma, { from, to }) => {
     const fromNode = figma.getNodeById(from)
@@ -62,5 +61,5 @@ export const diffJsx = defineTool({
       { context: 3 }
     )
     return { diff: patch }
-  },
+  }
 })

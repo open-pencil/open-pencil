@@ -1,7 +1,11 @@
 import { normalizeColor } from '#core/color'
+import {
+  raw,
+  updateNode,
+  type NodeProxyInternals,
+  type ProxyThis
+} from '#core/figma-api/accessor-utils'
 import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
-
-import { raw, updateNode, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
 
 import type { Effect, Fill, SceneNode, Stroke } from '#core/scene-graph'
 

@@ -54,7 +54,14 @@ export function createExportTargetState(
     activeTarget.value === 'selection' ? selectionSettings.value : pageSettings.value
   )
 
-  return { hasSelection, activeTarget, selectedNodeName, currentPageName, activeName, activeSettings }
+  return {
+    hasSelection,
+    activeTarget,
+    selectedNodeName,
+    currentPageName,
+    activeName,
+    activeSettings
+  }
 }
 
 export function createExportSettingActions(
@@ -80,7 +87,8 @@ export function createExportSettingActions(
     addPageSetting: () => addSetting(pageSettings),
     removeSelectionSetting: (index: number) => selectionSettings.value.splice(index, 1),
     removePageSetting: (index: number) => pageSettings.value.splice(index, 1),
-    updateSelectionScale: (index: number, scale: number) => updateScale(selectionSettings, index, scale),
+    updateSelectionScale: (index: number, scale: number) =>
+      updateScale(selectionSettings, index, scale),
     updatePageScale: (index: number, scale: number) => updateScale(pageSettings, index, scale),
     updateSelectionFormat: (index: number, format: ExportFormatId) =>
       updateFormat(selectionSettings, index, format),

@@ -1,4 +1,5 @@
 import { useVariableBinding } from '#vue/controls/variable-binding/use'
+
 import { randomHex } from '@open-pencil/core/random'
 
 import type { VariableCollection } from '@open-pencil/core/scene-graph'
@@ -17,7 +18,9 @@ export function useNumberVariableBinding(path: NumberBindingPath) {
     const existing = binding.store
       .getCollections()
       .find((collection) =>
-        collection.variableIds.some((variableId) => binding.store.getVariable(variableId)?.type === 'FLOAT')
+        collection.variableIds.some(
+          (variableId) => binding.store.getVariable(variableId)?.type === 'FLOAT'
+        )
       )
     if (existing) return existing
 
@@ -32,7 +35,11 @@ export function useNumberVariableBinding(path: NumberBindingPath) {
     return collection
   }
 
-  function createAndBindVariable(nodeId: string, value: number, name = FALLBACK_NUMBER_VARIABLE_NAME) {
+  function createAndBindVariable(
+    nodeId: string,
+    value: number,
+    name = FALLBACK_NUMBER_VARIABLE_NAME
+  ) {
     const collection = numberCollection()
     const id = `var:${randomHex(8)}`
     binding.store.addVariable({

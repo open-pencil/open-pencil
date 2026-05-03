@@ -13,7 +13,8 @@ export function describeVisual(node: SceneNode): string {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW') parts.push('drop shadow')
     else if (effect.type === 'INNER_SHADOW') parts.push('inner shadow')
-    else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') parts.push('blurred')
+    else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+      parts.push('blurred')
     else parts.push('backdrop blur')
   }
   return parts.join(', ') || 'no visual styles'
@@ -23,7 +24,7 @@ const JUSTIFY_LABELS: Record<string, string> = {
   MIN: 'start',
   CENTER: 'center',
   MAX: 'end',
-  SPACE_BETWEEN: 'between',
+  SPACE_BETWEEN: 'between'
 }
 
 const ITEMS_LABELS: Record<string, string> = {
@@ -31,7 +32,7 @@ const ITEMS_LABELS: Record<string, string> = {
   CENTER: 'center',
   MAX: 'end',
   STRETCH: 'stretch',
-  BASELINE: 'baseline',
+  BASELINE: 'baseline'
 }
 
 export function describeLayout(node: SceneNode): string | null {

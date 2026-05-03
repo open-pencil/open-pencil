@@ -1,9 +1,8 @@
+import { bold, fmtList, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import { calcClusterConfidence } from '@open-pencil/core/tools'
-
-import { loadRpcData } from '#cli/rpc-data'
-import { bold, fmtList, fmtSummary } from '#cli/format'
 
 import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 

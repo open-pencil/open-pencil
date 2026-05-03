@@ -1,8 +1,8 @@
+import { fmtNode, printError, formatType } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import { colorToHex } from '@open-pencil/core/color'
-import { loadRpcData } from '#cli/rpc-data'
-import { fmtNode, printError, formatType } from '#cli/format'
 
 import type { NodeResult } from '@open-pencil/core/rpc'
 import type { Color } from '@open-pencil/core/types'
@@ -19,7 +19,9 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<NodeResult | { error: string }>(args.file, 'node', { id: args.id })
+    const data = await loadRpcData<NodeResult | { error: string }>(args.file, 'node', {
+      id: args.id
+    })
 
     if ('error' in data) {
       printError(data.error)

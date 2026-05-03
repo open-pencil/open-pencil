@@ -1,7 +1,6 @@
-import { defineCommand } from 'citty'
-
-import { loadRpcData } from '#cli/rpc-data'
 import { fmtTree, printError, entity, formatType } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
+import { defineCommand } from 'citty'
 
 import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
 import type { TreeNode } from 'agentfmt'

@@ -5,12 +5,12 @@ export const booleanUnion = defineTool({
   mutates: true,
   description: 'Union (combine) multiple nodes.',
   params: {
-    ids: { type: 'string[]', description: 'Node IDs to union', required: true },
+    ids: { type: 'string[]', description: 'Node IDs to union', required: true }
   },
   execute: (figma, { ids }) => {
     const result = figma.booleanOperation('UNION', ids)
     return nodeSummary(result)
-  },
+  }
 })
 
 export const booleanSubtract = defineTool({
@@ -18,12 +18,12 @@ export const booleanSubtract = defineTool({
   mutates: true,
   description: 'Subtract the second node from the first.',
   params: {
-    ids: { type: 'string[]', description: 'Node IDs (first minus rest)', required: true },
+    ids: { type: 'string[]', description: 'Node IDs (first minus rest)', required: true }
   },
   execute: (figma, { ids }) => {
     const result = figma.booleanOperation('SUBTRACT', ids)
     return nodeSummary(result)
-  },
+  }
 })
 
 export const booleanIntersect = defineTool({
@@ -31,12 +31,12 @@ export const booleanIntersect = defineTool({
   mutates: true,
   description: 'Intersect multiple nodes.',
   params: {
-    ids: { type: 'string[]', description: 'Node IDs to intersect', required: true },
+    ids: { type: 'string[]', description: 'Node IDs to intersect', required: true }
   },
   execute: (figma, { ids }) => {
     const result = figma.booleanOperation('INTERSECT', ids)
     return nodeSummary(result)
-  },
+  }
 })
 
 export const booleanExclude = defineTool({
@@ -44,10 +44,10 @@ export const booleanExclude = defineTool({
   mutates: true,
   description: 'Exclude (XOR) multiple nodes.',
   params: {
-    ids: { type: 'string[]', description: 'Node IDs to exclude', required: true },
+    ids: { type: 'string[]', description: 'Node IDs to exclude', required: true }
   },
   execute: (figma, { ids }) => {
     const result = figma.booleanOperation('EXCLUDE', ids)
     return nodeSummary(result)
-  },
+  }
 })

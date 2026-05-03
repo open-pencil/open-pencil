@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test'
+
 import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts, parseFigFile } from '@open-pencil/core'
 
 describe('MCP tool execution', () => {
@@ -37,7 +38,10 @@ describe('MCP tool execution', () => {
 
   test('get_page_tree returns page hierarchy', () => {
     const { api } = setup()
-    const result = findTool('get_page_tree').execute(api, {}) as { page: string; children: unknown[] }
+    const result = findTool('get_page_tree').execute(api, {}) as {
+      page: string
+      children: unknown[]
+    }
     expect(result.page).toBe('Page 1')
     expect(result.children).toBeArray()
   })
@@ -126,7 +130,9 @@ describe('MCP tool execution', () => {
       parent_id: parent.id
     }) as { id: string }
 
-    const tree = findTool('get_page_tree').execute(api, {}) as { children: { id: string; children?: unknown[] }[] }
+    const tree = findTool('get_page_tree').execute(api, {}) as {
+      children: { id: string; children?: unknown[] }[]
+    }
     const parentNode = tree.children.find((c: { id: string }) => c.id === parent.id)
     expect(parentNode).toBeDefined()
     expect(parentNode!.children).toBeArray()
@@ -148,9 +154,30 @@ describe('MCP tool execution', () => {
 
   test('find_nodes filters by type', () => {
     const { api } = setup()
-    findTool('create_shape').execute(api, { type: 'FRAME', x: 0, y: 0, width: 100, height: 100, name: 'F1' })
-    findTool('create_shape').execute(api, { type: 'RECTANGLE', x: 0, y: 0, width: 100, height: 100, name: 'R1' })
-    findTool('create_shape').execute(api, { type: 'FRAME', x: 0, y: 0, width: 100, height: 100, name: 'F2' })
+    findTool('create_shape').execute(api, {
+      type: 'FRAME',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      name: 'F1'
+    })
+    findTool('create_shape').execute(api, {
+      type: 'RECTANGLE',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      name: 'R1'
+    })
+    findTool('create_shape').execute(api, {
+      type: 'FRAME',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      name: 'F2'
+    })
 
     const result = findTool('find_nodes').execute(api, { type: 'FRAME' }) as { count: number }
     expect(result.count).toBe(2)

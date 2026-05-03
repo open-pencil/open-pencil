@@ -1,11 +1,6 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 
-import {
-  exportFigFile,
-  parseFigFile,
-  initCodec,
-  SceneGraph,
-} from '@open-pencil/core'
+import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 
 beforeAll(async () => {
   await initCodec()
@@ -27,7 +22,7 @@ describe('Font family normalization on .fig export', () => {
       text: 'Hello',
       fontFamily: 'DM Sans 9pt',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -49,7 +44,7 @@ describe('Font family normalization on .fig export', () => {
       text: 'Hello',
       fontFamily: 'Inter',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -71,7 +66,7 @@ describe('Font family normalization on .fig export', () => {
       text: 'Hello',
       fontFamily: 'Roboto Variable',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -95,7 +90,7 @@ describe('TEXT node default fill', () => {
       text: 'Hello',
       fontFamily: 'Inter',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -123,7 +118,7 @@ describe('TEXT node default fill', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 14,
-      fills: [{ type: 'SOLID', color: { r: 0.96, g: 0.72, b: 0, a: 1 }, opacity: 1, visible: true }],
+      fills: [{ type: 'SOLID', color: { r: 0.96, g: 0.72, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
 
     const exported = await exportFigFile(graph)
@@ -144,7 +139,7 @@ describe('TEXT node default fill', () => {
       x: 0,
       y: 0,
       width: 100,
-      height: 100,
+      height: 100
     })
     expect(graph.getNode(node.id)!.fills.length).toBe(0)
   })

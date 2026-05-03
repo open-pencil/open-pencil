@@ -15,7 +15,7 @@ describe('undo/redo multi-step sequences', () => {
         const { parentId: _p, childIds: _c, ...rest } = createSnapshot
         editor.graph.createNode('FRAME', pageId, rest)
       },
-      inverse: () => editor.graph.deleteNode(frame.id),
+      inverse: () => editor.graph.deleteNode(frame.id)
     })
 
     editor.graph.updateNode(frame.id, { x: 300, y: 50 })
@@ -78,7 +78,7 @@ describe('undo/redo multi-step sequences', () => {
       x: 10,
       y: 10,
       width: 100,
-      height: 20,
+      height: 20
     })
 
     editor.select([frame.id])
@@ -109,7 +109,7 @@ describe('undo/redo multi-step sequences', () => {
     const child = editor.graph.createNode('RECTANGLE', frame.id, {
       name: 'Bg',
       width: 200,
-      height: 150,
+      height: 150
     })
 
     const snapshot = editor.snapshotPage()
@@ -130,7 +130,7 @@ describe('undo/redo multi-step sequences', () => {
       x: 0,
       y: 0,
       width: 200,
-      height: 150,
+      height: 150
     })
 
     editor.select([frame.id])

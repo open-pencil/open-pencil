@@ -10,7 +10,7 @@ export function preprocessRpc(body: Record<string, unknown>): Record<string, unk
     const tree = resolveToTree(element)
     return {
       ...body,
-      args: { ...args, args: { ...args.args, jsx: undefined, tree } },
+      args: { ...args, args: { ...args.args, jsx: undefined, tree } }
     }
   } catch (e) {
     console.warn('JSX preprocessing failed, passing raw:', e instanceof Error ? e.message : e)

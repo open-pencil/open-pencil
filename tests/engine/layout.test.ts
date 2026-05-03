@@ -1,8 +1,17 @@
 import { describe, test, expect } from 'bun:test'
 
-import { SceneGraph, type SceneNode, type GridTrack, computeLayout, computeAllLayouts, createEditor, setTextMeasurer, FigmaAPI, readFigFile } from '@open-pencil/core'
-
 import { createEditorStore } from '@/app/editor/session'
+import {
+  SceneGraph,
+  type SceneNode,
+  type GridTrack,
+  computeLayout,
+  computeAllLayouts,
+  createEditor,
+  setTextMeasurer,
+  FigmaAPI,
+  readFigFile
+} from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -19,7 +28,7 @@ function autoFrame(
     counterAxisSizing: 'FIXED',
     width: 400,
     height: 200,
-    ...overrides,
+    ...overrides
   })
 }
 
@@ -34,7 +43,7 @@ function rect(
     name: 'Rect',
     width: w,
     height: h,
-    ...overrides,
+    ...overrides
   })
 }
 
@@ -83,7 +92,7 @@ describe('Auto Layout', () => {
         paddingTop: 10,
         paddingRight: 20,
         paddingBottom: 30,
-        paddingLeft: 40,
+        paddingLeft: 40
       })
       rect(graph, frame.id, 50, 50)
 
@@ -99,7 +108,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         paddingLeft: 20,
         paddingTop: 15,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 30)
       rect(graph, frame.id, 50, 30)
@@ -215,7 +224,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         layoutMode: 'VERTICAL',
         width: 200,
-        height: 400,
+        height: 400
       })
       rect(graph, frame.id, 50, 80)
       rect(graph, frame.id, 50, 60)
@@ -235,7 +244,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 200,
         height: 400,
-        itemSpacing: 16,
+        itemSpacing: 16
       })
       rect(graph, frame.id, 50, 40)
       rect(graph, frame.id, 50, 40)
@@ -256,7 +265,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 100,
-        primaryAxisAlign: 'CENTER',
+        primaryAxisAlign: 'CENTER'
       })
       rect(graph, frame.id, 100, 50)
 
@@ -271,7 +280,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 100,
-        primaryAxisAlign: 'MAX',
+        primaryAxisAlign: 'MAX'
       })
       rect(graph, frame.id, 100, 50)
 
@@ -286,7 +295,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 100,
-        primaryAxisAlign: 'SPACE_BETWEEN',
+        primaryAxisAlign: 'SPACE_BETWEEN'
       })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 50, 50)
@@ -306,7 +315,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 200,
         height: 400,
-        primaryAxisAlign: 'CENTER',
+        primaryAxisAlign: 'CENTER'
       })
       rect(graph, frame.id, 50, 100)
 
@@ -322,7 +331,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 200,
         height: 400,
-        primaryAxisAlign: 'MAX',
+        primaryAxisAlign: 'MAX'
       })
       rect(graph, frame.id, 50, 100)
 
@@ -339,7 +348,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'CENTER',
+        counterAxisAlign: 'CENTER'
       })
       rect(graph, frame.id, 50, 50)
 
@@ -354,7 +363,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'MAX',
+        counterAxisAlign: 'MAX'
       })
       rect(graph, frame.id, 50, 50)
 
@@ -370,7 +379,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 200,
         height: 400,
-        counterAxisAlign: 'CENTER',
+        counterAxisAlign: 'CENTER'
       })
       rect(graph, frame.id, 50, 50)
 
@@ -385,7 +394,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'STRETCH',
+        counterAxisAlign: 'STRETCH'
       })
       rect(graph, frame.id, 50, 50)
 
@@ -401,7 +410,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 200,
         height: 400,
-        counterAxisAlign: 'STRETCH',
+        counterAxisAlign: 'STRETCH'
       })
       rect(graph, frame.id, 50, 50)
 
@@ -420,7 +429,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'FIXED',
         width: 999,
         height: 100,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 70, 50)
@@ -439,7 +448,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'FIXED',
         width: 200,
         height: 999,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 40)
       rect(graph, frame.id, 50, 60)
@@ -460,7 +469,7 @@ describe('Auto Layout', () => {
         paddingTop: 10,
         paddingRight: 20,
         paddingBottom: 30,
-        paddingLeft: 40,
+        paddingLeft: 40
       })
       rect(graph, frame.id, 100, 50)
 
@@ -475,7 +484,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 100, 50)
       rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
@@ -492,7 +501,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         layoutMode: 'VERTICAL',
         width: 200,
-        height: 400,
+        height: 400
       })
       rect(graph, frame.id, 50, 100)
       rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
@@ -508,7 +517,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 300,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
       rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
@@ -529,7 +538,7 @@ describe('Auto Layout', () => {
         height: 100,
         paddingLeft: 20,
         paddingRight: 20,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 100, 50)
       rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
@@ -549,13 +558,13 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 50, 50, {
         layoutPositioning: 'ABSOLUTE',
         x: 200,
-        y: 100,
+        y: 100
       })
       rect(graph, frame.id, 50, 50)
 
@@ -578,7 +587,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 300,
         height: 100,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 50, { visible: false })
       rect(graph, frame.id, 80, 40)
@@ -600,7 +609,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 100,
-        itemSpacing: 20,
+        itemSpacing: 20
       })
       rect(graph, frame.id, 50, 50, { visible: false })
       rect(graph, frame.id, 100, 50)
@@ -617,7 +626,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         primaryAxisSizing: 'HUG',
-        counterAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG'
       })
       rect(graph, frame.id, 200, 200, { visible: false })
       rect(graph, frame.id, 50, 30)
@@ -634,14 +643,14 @@ describe('Auto Layout', () => {
       const outer = autoFrame(graph, pageId(graph), {
         width: 300,
         height: 100,
-        itemSpacing: 16,
+        itemSpacing: 16
       })
       const inner = autoFrame(graph, outer.id, {
         primaryAxisSizing: 'FIXED',
         counterAxisSizing: 'FIXED',
         width: 50,
         height: 50,
-        visible: false,
+        visible: false
       })
       rect(graph, inner.id, 30, 30)
       rect(graph, outer.id, 80, 40)
@@ -662,7 +671,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'MIN',
+        counterAxisAlign: 'MIN'
       })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'STRETCH' })
       rect(graph, frame.id, 50, 50)
@@ -681,14 +690,14 @@ describe('Auto Layout', () => {
       const outer = autoFrame(graph, pageId(graph), {
         width: 500,
         height: 200,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       const inner = autoFrame(graph, outer.id, {
         primaryAxisSizing: 'HUG',
         counterAxisSizing: 'FIXED',
         width: 999,
         height: 100,
-        itemSpacing: 5,
+        itemSpacing: 5
       })
       rect(graph, inner.id, 40, 40)
       rect(graph, inner.id, 60, 40)
@@ -709,7 +718,7 @@ describe('Auto Layout', () => {
       const outer = autoFrame(graph, pageId(graph), {
         width: 500,
         height: 300,
-        itemSpacing: 20,
+        itemSpacing: 20
       })
       const inner = autoFrame(graph, outer.id, {
         layoutMode: 'VERTICAL',
@@ -717,7 +726,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'FIXED',
         width: 100,
         height: 999,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, inner.id, 80, 50)
       rect(graph, inner.id, 80, 70)
@@ -740,7 +749,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 300,
         height: 500,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       const middle = autoFrame(graph, outer.id, {
         layoutMode: 'HORIZONTAL',
@@ -748,7 +757,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'HUG',
         width: 999,
         height: 999,
-        itemSpacing: 5,
+        itemSpacing: 5
       })
       rect(graph, middle.id, 40, 30)
       rect(graph, middle.id, 60, 30)
@@ -772,7 +781,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 200,
         height: 300,
-        layoutWrap: 'WRAP',
+        layoutWrap: 'WRAP'
       })
       rect(graph, frame.id, 80, 40)
       rect(graph, frame.id, 80, 40)
@@ -797,7 +806,7 @@ describe('Auto Layout', () => {
         width: 200,
         height: 300,
         layoutWrap: 'WRAP',
-        counterAxisSpacing: 10,
+        counterAxisSpacing: 10
       })
       rect(graph, frame.id, 120, 40)
       rect(graph, frame.id, 120, 40)
@@ -815,7 +824,7 @@ describe('Auto Layout', () => {
         width: 200,
         height: 300,
         layoutWrap: 'WRAP',
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       // 90 + 10 + 90 = 190, fits in 200
       rect(graph, frame.id, 90, 40)
@@ -840,7 +849,7 @@ describe('Auto Layout', () => {
         width: 300,
         height: 100,
         counterAxisSpacing: 50,
-        layoutWrap: 'NO_WRAP',
+        layoutWrap: 'NO_WRAP'
       })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 50, 50)
@@ -861,7 +870,7 @@ describe('Auto Layout', () => {
         name: 'Plain',
         layoutMode: 'NONE',
         width: 400,
-        height: 200,
+        height: 200
       })
       const child = rect(graph, frame.id, 50, 50, { x: 100, y: 100 })
 
@@ -882,7 +891,7 @@ describe('Auto Layout', () => {
         paddingTop: 10,
         paddingRight: 20,
         paddingBottom: 30,
-        paddingLeft: 40,
+        paddingLeft: 40
       })
 
       computeLayout(graph, frame.id)
@@ -896,7 +905,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 200,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 50, 50)
 
@@ -917,7 +926,7 @@ describe('Auto Layout', () => {
         paddingTop: 5,
         paddingRight: 5,
         paddingBottom: 5,
-        paddingLeft: 5,
+        paddingLeft: 5
       })
       rect(graph, frame.id, 100, 100, { layoutPositioning: 'ABSOLUTE' })
 
@@ -932,7 +941,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         primaryAxisSizing: 'HUG',
-        counterAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG'
       })
       rect(graph, frame.id, 0, 0)
       rect(graph, frame.id, 50, 50)
@@ -955,7 +964,7 @@ describe('Auto Layout', () => {
         width: 400,
         height: 999,
         primaryAxisSizing: 'FIXED',
-        counterAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG'
       })
       rect(graph, frame.id, 50, 80)
       rect(graph, frame.id, 50, 120)
@@ -975,7 +984,7 @@ describe('Auto Layout', () => {
         height: 999,
         primaryAxisSizing: 'HUG',
         counterAxisSizing: 'FIXED',
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 40)
       rect(graph, frame.id, 80, 60)
@@ -994,7 +1003,7 @@ describe('Auto Layout', () => {
       const outer = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, outer.id, 100, 50)
       const inner = autoFrame(graph, outer.id, {
@@ -1002,7 +1011,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'FIXED',
         width: 50,
         height: 50,
-        layoutGrow: 1,
+        layoutGrow: 1
       })
       rect(graph, inner.id, 30, 30)
 
@@ -1022,7 +1031,7 @@ describe('Auto Layout', () => {
         height: 300,
         layoutWrap: 'WRAP',
         itemSpacing: 10,
-        counterAxisSpacing: 20,
+        counterAxisSpacing: 20
       })
       // Each row: 90 + 10 + 90 = 190 <= 200
       rect(graph, frame.id, 90, 40)
@@ -1050,7 +1059,7 @@ describe('Auto Layout', () => {
         height: 200,
         layoutWrap: 'WRAP',
         itemSpacing: 10,
-        counterAxisSpacing: 20,
+        counterAxisSpacing: 20
       })
       // Each column: 80 + 10 + 80 = 170 <= 200
       rect(graph, frame.id, 40, 80)
@@ -1082,7 +1091,8 @@ describe('Auto Layout', () => {
       )
       const subtitle = [...store.graph.getAllNodes()].find(
         (node) =>
-          node.type === 'TEXT' && node.text === 'Preline UI Figma - crafted with Tailwind CSS styles'
+          node.type === 'TEXT' &&
+          node.text === 'Preline UI Figma - crafted with Tailwind CSS styles'
       )
       const description = [...store.graph.getAllNodes()].find(
         (node) =>
@@ -1114,9 +1124,13 @@ describe('Auto Layout', () => {
     test('imported nested instance layout keeps hidden sibling offsets stable', async () => {
       const graph = await loadFixtureGraph('gold-preview.fig')
       const previewRoot = graph.getChildren(graph.getPages()[0].id)[0]
-      const wysiwygEditor = graph.getChildren(previewRoot.id).find((node) => node.name === '_WYSIWYG-editor')
+      const wysiwygEditor = graph
+        .getChildren(previewRoot.id)
+        .find((node) => node.name === '_WYSIWYG-editor')
       const toolbarVariant = wysiwygEditor
-        ? graph.getChildren(wysiwygEditor.id).find((node) => node.name === '_on-text-WYSIWYG-toolbar')
+        ? graph
+            .getChildren(wysiwygEditor.id)
+            .find((node) => node.name === '_on-text-WYSIWYG-toolbar')
         : undefined
       const toolbarRow = toolbarVariant
         ? graph.getChildren(toolbarVariant.id).find((node) => node.name === 'Toolbar')
@@ -1125,9 +1139,9 @@ describe('Auto Layout', () => {
         ? graph.getChildren(toolbarRow.id).find((node) => node.name === 'Input')
         : undefined
       const visibleToolbar = toolbarRow
-        ? graph.getChildren(toolbarRow.id).find(
-            (node) => node.name === 'Toolbar' && node.id !== toolbarRow.id
-          )
+        ? graph
+            .getChildren(toolbarRow.id)
+            .find((node) => node.name === 'Toolbar' && node.id !== toolbarRow.id)
         : undefined
 
       if (!toolbarRow || !hiddenInput || !visibleToolbar) {
@@ -1156,7 +1170,7 @@ describe('Auto Layout', () => {
         primaryAxisAlign: 'CENTER',
         paddingLeft: 10,
         paddingRight: 10,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
 
       const arrow1 = graph.createNode('FRAME', frame.id, { width: 20, height: 20 })
@@ -1165,7 +1179,7 @@ describe('Auto Layout', () => {
         height: 20,
         text: 'Test',
         fontSize: 14,
-        textAutoResize: 'WIDTH_AND_HEIGHT' as const,
+        textAutoResize: 'WIDTH_AND_HEIGHT' as const
       })
       const arrow2 = graph.createNode('FRAME', frame.id, { width: 20, height: 20 })
 
@@ -1203,7 +1217,7 @@ describe('Auto Layout', () => {
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'FIXED',
         counterAxisSizing: 'FIXED',
-        primaryAxisAlign: 'CENTER',
+        primaryAxisAlign: 'CENTER'
       })
 
       graph.createNode('TEXT', frame.id, {
@@ -1211,7 +1225,7 @@ describe('Auto Layout', () => {
         height: 20,
         text: 'Test',
         fontSize: 14,
-        textAutoResize: 'WIDTH_AND_HEIGHT' as const,
+        textAutoResize: 'WIDTH_AND_HEIGHT' as const
       })
 
       setTextMeasurer(null)
@@ -1233,7 +1247,7 @@ describe('Auto Layout', () => {
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'FIXED',
         counterAxisSizing: 'FIXED',
-        primaryAxisAlign: 'CENTER',
+        primaryAxisAlign: 'CENTER'
       })
 
       graph.createNode('TEXT', frame.id, {
@@ -1241,7 +1255,7 @@ describe('Auto Layout', () => {
         height: 100,
         text: 'Test',
         fontSize: 14,
-        textAutoResize: 'WIDTH_AND_HEIGHT' as const,
+        textAutoResize: 'WIDTH_AND_HEIGHT' as const
       })
 
       setTextMeasurer(null)
@@ -1264,7 +1278,7 @@ describe('Auto Layout', () => {
         height: 400,
         layoutMode: 'VERTICAL',
         primaryAxisSizing: 'FIXED',
-        counterAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED'
       })
 
       graph.createNode('TEXT', frame.id, {
@@ -1273,7 +1287,7 @@ describe('Auto Layout', () => {
         text: 'GDP Growth Exceeds Expectations at 3.1% in Q2 Report That Nobody Expected',
         fontSize: 15,
         lineHeight: 22,
-        textAutoResize: 'HEIGHT' as const,
+        textAutoResize: 'HEIGHT' as const
       })
 
       setTextMeasurer(null)
@@ -1294,7 +1308,7 @@ describe('Auto Layout', () => {
         height: 400,
         layoutMode: 'VERTICAL',
         primaryAxisSizing: 'FIXED',
-        counterAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED'
       })
 
       graph.createNode('TEXT', frame.id, {
@@ -1303,7 +1317,7 @@ describe('Auto Layout', () => {
         text: 'GDP Growth Exceeds Expectations at 3.1% in Q2 Report That Nobody Expected',
         fontSize: 15,
         lineHeight: 22,
-        textAutoResize: 'HEIGHT' as const,
+        textAutoResize: 'HEIGHT' as const
       })
 
       setTextMeasurer(null)
@@ -1325,7 +1339,7 @@ describe('Auto Layout', () => {
         primaryAxisSizing: 'FIXED',
         counterAxisSizing: 'FIXED',
         paddingLeft: 20,
-        paddingRight: 20,
+        paddingRight: 20
       })
 
       const text = graph.createNode('TEXT', frame.id, {
@@ -1334,7 +1348,7 @@ describe('Auto Layout', () => {
         text: 'This text should fill the parent width',
         fontSize: 14,
         textAutoResize: 'HEIGHT' as const,
-        layoutAlignSelf: 'STRETCH' as const,
+        layoutAlignSelf: 'STRETCH' as const
       })
 
       setTextMeasurer((_node, maxWidth) => {
@@ -1359,7 +1373,7 @@ describe('Auto Layout', () => {
         height: 200,
         layoutMode: 'VERTICAL',
         primaryAxisSizing: 'FIXED',
-        counterAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED'
       })
 
       const text = graph.createNode('TEXT', frame.id, {
@@ -1367,7 +1381,7 @@ describe('Auto Layout', () => {
         height: 20,
         text: 'Long text that should wrap within the available width',
         fontSize: 14,
-        textAutoResize: 'HEIGHT' as const,
+        textAutoResize: 'HEIGHT' as const
       })
 
       setTextMeasurer((_node, maxWidth) => {
@@ -1394,7 +1408,7 @@ describe('Auto Layout', () => {
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'FIXED',
         counterAxisSizing: 'FIXED',
-        itemSpacing: 10,
+        itemSpacing: 10
       })
 
       rect(graph, frame.id, 100, 50)
@@ -1405,7 +1419,7 @@ describe('Auto Layout', () => {
         text: 'Wide text',
         fontSize: 14,
         textAutoResize: 'WIDTH_AND_HEIGHT' as const,
-        layoutGrow: 1,
+        layoutGrow: 1
       })
 
       const receivedWidths: number[] = []
@@ -1433,7 +1447,7 @@ describe('Auto Layout', () => {
         height: 100,
         layoutMode: 'HORIZONTAL',
         primaryAxisSizing: 'FIXED',
-        counterAxisSizing: 'FIXED',
+        counterAxisSizing: 'FIXED'
       })
 
       const text = graph.createNode('TEXT', frame.id, {
@@ -1441,7 +1455,7 @@ describe('Auto Layout', () => {
         height: 40,
         text: 'Fixed text',
         fontSize: 14,
-        textAutoResize: 'NONE' as const,
+        textAutoResize: 'NONE' as const
       })
 
       let measureCalled = false
@@ -1465,7 +1479,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 50, 50, { layoutGrow: 1, maxWidth: 200 })
 
@@ -1479,7 +1493,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 100,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 200, 50, { minWidth: 150 })
 
@@ -1494,7 +1508,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         layoutMode: 'VERTICAL',
         width: 200,
-        height: 400,
+        height: 400
       })
       rect(graph, frame.id, 50, 50, { layoutGrow: 1, maxHeight: 150 })
 
@@ -1509,7 +1523,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         layoutMode: 'VERTICAL',
         width: 200,
-        height: 400,
+        height: 400
       })
       rect(graph, frame.id, 50, 30, { minHeight: 80 })
 
@@ -1523,7 +1537,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const outer = autoFrame(graph, pageId(graph), {
         width: 500,
-        height: 200,
+        height: 200
       })
       const inner = autoFrame(graph, outer.id, {
         primaryAxisSizing: 'FIXED',
@@ -1531,7 +1545,7 @@ describe('Auto Layout', () => {
         width: 50,
         height: 50,
         layoutGrow: 1,
-        maxWidth: 250,
+        maxWidth: 250
       })
       rect(graph, inner.id, 30, 30)
 
@@ -1549,7 +1563,7 @@ describe('Auto Layout', () => {
         width: 200,
         height: 300,
         layoutWrap: 'WRAP',
-        counterAxisAlignContent: 'SPACE_BETWEEN' as const,
+        counterAxisAlignContent: 'SPACE_BETWEEN' as const
       })
       rect(graph, frame.id, 120, 40)
       rect(graph, frame.id, 120, 40)
@@ -1571,7 +1585,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 200,
         height: 300,
-        layoutWrap: 'WRAP',
+        layoutWrap: 'WRAP'
       })
       rect(graph, frame.id, 120, 40)
       rect(graph, frame.id, 120, 40)
@@ -1592,7 +1606,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'MIN',
+        counterAxisAlign: 'MIN'
       })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'CENTER' as const })
       rect(graph, frame.id, 50, 50)
@@ -1609,7 +1623,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'MIN',
+        counterAxisAlign: 'MIN'
       })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'MAX' as const })
       rect(graph, frame.id, 50, 50)
@@ -1626,7 +1640,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        counterAxisAlign: 'STRETCH',
+        counterAxisAlign: 'STRETCH'
       })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'MIN' as const })
       rect(graph, frame.id, 50, 50)
@@ -1645,7 +1659,7 @@ describe('Auto Layout', () => {
         layoutMode: 'VERTICAL',
         width: 300,
         height: 400,
-        counterAxisAlign: 'MIN',
+        counterAxisAlign: 'MIN'
       })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'CENTER' as const })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'MAX' as const })
@@ -1663,7 +1677,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
-        height: 100,
+        height: 100
       })
 
       const inner1 = autoFrame(graph, frame.id, {
@@ -1671,7 +1685,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'FIXED',
         width: 100,
         height: 50,
-        layoutGrow: 1,
+        layoutGrow: 1
       })
       rect(graph, inner1.id, 100, 50)
 
@@ -1680,7 +1694,7 @@ describe('Auto Layout', () => {
         counterAxisSizing: 'FIXED',
         width: 200,
         height: 50,
-        layoutGrow: 1,
+        layoutGrow: 1
       })
       rect(graph, inner2.id, 200, 50)
 
@@ -1696,25 +1710,25 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 300,
         height: 100,
-        itemSpacing: 0,
+        itemSpacing: 0
       })
       autoFrame(graph, frame.id, {
         primaryAxisSizing: 'FILL' as const,
         counterAxisSizing: 'FIXED',
         width: 50,
-        height: 100,
+        height: 100
       })
       autoFrame(graph, frame.id, {
         primaryAxisSizing: 'FILL' as const,
         counterAxisSizing: 'FIXED',
         width: 50,
-        height: 100,
+        height: 100
       })
       autoFrame(graph, frame.id, {
         primaryAxisSizing: 'FILL' as const,
         counterAxisSizing: 'FIXED',
         width: 50,
-        height: 100,
+        height: 100
       })
 
       computeLayout(graph, frame.id)
@@ -1731,7 +1745,7 @@ describe('Auto Layout', () => {
       const graph = new SceneGraph()
       const frame = autoFrame(graph, pageId(graph), {
         width: 300,
-        height: 100,
+        height: 100
       })
       const child = rect(graph, frame.id, 80, 60)
 
@@ -1757,7 +1771,7 @@ describe('Auto Layout', () => {
         width: 400,
         height: 200,
         primaryAxisSizing: 'HUG',
-        counterAxisSizing: 'HUG',
+        counterAxisSizing: 'HUG'
       })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 100, 100, { layoutPositioning: 'ABSOLUTE', x: 300, y: 150 })
@@ -1781,7 +1795,7 @@ describe('Auto Layout', () => {
       const frame = autoFrame(graph, pageId(graph), {
         width: 400,
         height: 200,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 80, 40, { layoutPositioning: 'ABSOLUTE', x: 200, y: 100 })
@@ -1813,7 +1827,7 @@ function gridFrame(
     gridTemplateRows: rows,
     gridColumnGap: 0,
     gridRowGap: 0,
-    ...overrides,
+    ...overrides
   })
 }
 
@@ -1879,12 +1893,10 @@ describe('Grid Layout', () => {
     test('unequal fr columns', () => {
       const graph = new SceneGraph()
       // 1fr + 2fr = 3fr total → 133.33px + 266.67px
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr(1), fr(2)],
-        [fr()],
-        { width: 300, height: 100 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr(1), fr(2)], [fr()], {
+        width: 300,
+        height: 100
+      })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 50, 50)
 
@@ -1899,12 +1911,7 @@ describe('Grid Layout', () => {
   describe('gaps', () => {
     test('column gap', () => {
       const graph = new SceneGraph()
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr(), fr()],
-        [fr()],
-        { gridColumnGap: 20 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr()], { gridColumnGap: 20 })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 50, 50)
 
@@ -1918,12 +1925,10 @@ describe('Grid Layout', () => {
 
     test('row gap', () => {
       const graph = new SceneGraph()
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr()],
-        [fr(), fr()],
-        { gridRowGap: 20, height: 200 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr()], [fr(), fr()], {
+        gridRowGap: 20,
+        height: 200
+      })
       rect(graph, frame.id, 50, 50)
       rect(graph, frame.id, 50, 50)
 
@@ -1937,12 +1942,12 @@ describe('Grid Layout', () => {
 
     test('both column and row gaps', () => {
       const graph = new SceneGraph()
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr(), fr()],
-        [fr(), fr()],
-        { gridColumnGap: 10, gridRowGap: 10, width: 210, height: 210 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr(), fr()], {
+        gridColumnGap: 10,
+        gridRowGap: 10,
+        width: 210,
+        height: 210
+      })
       for (let i = 0; i < 4; i++) rect(graph, frame.id, 30, 30)
 
       computeLayout(graph, frame.id)
@@ -1963,12 +1968,12 @@ describe('Grid Layout', () => {
   describe('padding', () => {
     test('padding offsets grid content', () => {
       const graph = new SceneGraph()
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr()],
-        [fr()],
-        { paddingTop: 10, paddingLeft: 20, paddingRight: 30, paddingBottom: 40 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr()], [fr()], {
+        paddingTop: 10,
+        paddingLeft: 20,
+        paddingRight: 30,
+        paddingBottom: 40
+      })
       rect(graph, frame.id, 50, 50)
 
       computeLayout(graph, frame.id)
@@ -1985,7 +1990,7 @@ describe('Grid Layout', () => {
       const frame = gridFrame(graph, pageId(graph), [fr(), fr(), fr()], [fr(), fr()])
       // Place in column 2, row 1 (0-indexed internally, but yoga uses 1-indexed)
       rect(graph, frame.id, 50, 50, {
-        gridPosition: { column: 2, row: 1, columnSpan: 1, rowSpan: 1 },
+        gridPosition: { column: 2, row: 1, columnSpan: 1, rowSpan: 1 }
       })
 
       computeLayout(graph, frame.id)
@@ -1998,14 +2003,12 @@ describe('Grid Layout', () => {
 
     test('column span stretches across multiple columns', () => {
       const graph = new SceneGraph()
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr(), fr(), fr()],
-        [fr()],
-        { width: 300, height: 100 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr(), fr(), fr()], [fr()], {
+        width: 300,
+        height: 100
+      })
       rect(graph, frame.id, 50, 50, {
-        gridPosition: { column: 1, row: 1, columnSpan: 2, rowSpan: 1 },
+        gridPosition: { column: 1, row: 1, columnSpan: 2, rowSpan: 1 }
       })
 
       computeLayout(graph, frame.id)
@@ -2018,14 +2021,12 @@ describe('Grid Layout', () => {
 
     test('row span stretches across multiple rows', () => {
       const graph = new SceneGraph()
-      const frame = gridFrame(
-        graph, pageId(graph),
-        [fr()],
-        [fr(), fr(), fr()],
-        { width: 100, height: 300 },
-      )
+      const frame = gridFrame(graph, pageId(graph), [fr()], [fr(), fr(), fr()], {
+        width: 100,
+        height: 300
+      })
       rect(graph, frame.id, 50, 50, {
-        gridPosition: { column: 1, row: 1, columnSpan: 1, rowSpan: 2 },
+        gridPosition: { column: 1, row: 1, columnSpan: 1, rowSpan: 2 }
       })
 
       computeLayout(graph, frame.id)
@@ -2079,7 +2080,7 @@ describe('Grid Layout', () => {
         primaryAxisSizing: 'HUG',
         counterAxisSizing: 'HUG',
         width: 100,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 80, 80)
       rect(graph, frame.id, 80, 80)
@@ -2103,10 +2104,13 @@ describe('Grid Layout', () => {
         counterAxisSizing: 'FIXED',
         width: maxChildW * cols,
         height: maxChildH * rows,
-        gridTemplateColumns: Array.from({ length: cols }, () => ({ sizing: 'FR' as const, value: 1 })),
+        gridTemplateColumns: Array.from({ length: cols }, () => ({
+          sizing: 'FR' as const,
+          value: 1
+        })),
         gridTemplateRows: Array.from({ length: rows }, () => ({ sizing: 'FR' as const, value: 1 })),
         gridColumnGap: 0,
-        gridRowGap: 0,
+        gridRowGap: 0
       })
 
       computeLayout(graph, frame.id)
@@ -2135,11 +2139,11 @@ describe('Grid Layout', () => {
         layoutMode: 'VERTICAL',
         width: 400,
         height: 600,
-        itemSpacing: 10,
+        itemSpacing: 10
       })
       const inner = gridFrame(graph, outer.id, [fr(), fr()], [fr()], {
         width: 380,
-        height: 100,
+        height: 100
       })
       rect(graph, inner.id, 50, 50)
       rect(graph, inner.id, 50, 50)
@@ -2162,7 +2166,7 @@ describe('Grid Layout', () => {
       const graph = new SceneGraph()
       const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr()], {
         width: 300,
-        height: 100,
+        height: 100
       })
       rect(graph, frame.id, 50, 50, { layoutAlignSelf: 'STRETCH' as const })
       rect(graph, frame.id, 50, 50)
@@ -2178,7 +2182,7 @@ describe('Grid Layout', () => {
       const graph = new SceneGraph()
       const frame = gridFrame(graph, pageId(graph), [fr(), fr()], [fr()], {
         width: 400,
-        height: 200,
+        height: 200
       })
       rect(graph, frame.id, 50, 50, { layoutGrow: 1 })
       rect(graph, frame.id, 50, 50)

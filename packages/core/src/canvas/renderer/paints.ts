@@ -60,7 +60,9 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.rulerBgPaint.setColor(ck.Color4f(bg.r, bg.g, bg.b, 1))
 
   r.rulerTickPaint = new ck.Paint()
-  r.rulerTickPaint.setColor(ck.Color4f(RULER_TICK_COLOR.r, RULER_TICK_COLOR.g, RULER_TICK_COLOR.b, 1))
+  r.rulerTickPaint.setColor(
+    ck.Color4f(RULER_TICK_COLOR.r, RULER_TICK_COLOR.g, RULER_TICK_COLOR.b, 1)
+  )
   r.rulerTickPaint.setStrokeWidth(1)
   r.rulerTickPaint.setAntiAlias(true)
 

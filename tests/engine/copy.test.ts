@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'bun:test'
+
 import {
   copyFill,
   copyFills,
@@ -7,6 +8,7 @@ import {
   copyStyleRun,
   copyGeometryPaths
 } from '#core/scene-graph/copy'
+
 import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/core'
 
 describe('copy helpers — mutation isolation', () => {
@@ -15,7 +17,7 @@ describe('copy helpers — mutation isolation', () => {
       type: 'SOLID',
       color: { r: 1, g: 0, b: 0, a: 1 },
       opacity: 1,
-      visible: true,
+      visible: true
     }
     const copy = copyFill(original)
     copy.color.r = 0
@@ -32,9 +34,9 @@ describe('copy helpers — mutation isolation', () => {
       visible: true,
       gradientStops: [
         { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
-        { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 },
+        { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
       ],
-      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     }
     const copy = copyFill(original)
     copy.gradientStops![0].color.r = 0
@@ -50,7 +52,7 @@ describe('copy helpers — mutation isolation', () => {
       opacity: 1,
       visible: true,
       align: 'CENTER',
-      dashPattern: [5, 3],
+      dashPattern: [5, 3]
     }
     const copy = copyStroke(original)
     copy.dashPattern!.push(99)
@@ -66,7 +68,7 @@ describe('copy helpers — mutation isolation', () => {
       offset: { x: 4, y: 4 },
       radius: 8,
       spread: 0,
-      visible: true,
+      visible: true
     }
     const copy = copyEffect(original)
     copy.offset.x = 100
@@ -79,7 +81,7 @@ describe('copy helpers — mutation isolation', () => {
     const original: StyleRun = {
       start: 0,
       length: 5,
-      style: { fontWeight: 700, fontSize: 24 },
+      style: { fontWeight: 700, fontSize: 24 }
     }
     const copy = copyStyleRun(original)
     copy.style.fontWeight = 400
@@ -88,7 +90,7 @@ describe('copy helpers — mutation isolation', () => {
 
   test('copyGeometryPaths: Uint8Array is independent', () => {
     const original: GeometryPath[] = [
-      { windingRule: 'NONZERO', commandsBlob: new Uint8Array([1, 2, 3]) },
+      { windingRule: 'NONZERO', commandsBlob: new Uint8Array([1, 2, 3]) }
     ]
     const copy = copyGeometryPaths(original)
     copy[0].commandsBlob[0] = 99
@@ -98,7 +100,7 @@ describe('copy helpers — mutation isolation', () => {
   test('copyFills: array independence', () => {
     const originals: Fill[] = [
       { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true },
-      { type: 'SOLID', color: { r: 0, g: 1, b: 0, a: 1 }, opacity: 0.5, visible: true },
+      { type: 'SOLID', color: { r: 0, g: 1, b: 0, a: 1 }, opacity: 0.5, visible: true }
     ]
     const copies = copyFills(originals)
     copies.push({ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true })

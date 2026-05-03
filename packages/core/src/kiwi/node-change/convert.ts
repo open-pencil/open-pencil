@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
 import { styleToWeight } from '#core/text/fonts'
+
 import { guidToString } from './guid'
 import { convertEffects, convertFills, convertStrokes } from './paint'
 import { importStyleRuns } from './style-runs'

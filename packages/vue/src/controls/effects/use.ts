@@ -1,6 +1,3 @@
-import { useEditor } from '#vue/editor/context'
-import { ref } from 'vue'
-
 import {
   EFFECT_OPTIONS,
   createDefaultEffect,
@@ -8,6 +5,8 @@ import {
   createEffectEditActions,
   isShadow
 } from '#vue/controls/effects/helpers'
+import { useEditor } from '#vue/editor/context'
+import { ref } from 'vue'
 
 import type { Effect } from '@open-pencil/core/scene-graph'
 

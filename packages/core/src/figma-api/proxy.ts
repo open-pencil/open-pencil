@@ -1,14 +1,18 @@
-import { getFillOkHCL, getStrokeOkHCL, setNodeFillOkHCL, setNodeStrokeOkHCL } from '#core/color/okhcl'
-import type { FigmaFontName } from './fonts'
-import { nodeProxyToJSON } from './serialization'
-import * as TextProxy from './text'
 import {
-  setFirstStrokeAlign,
-  setFirstStrokeWeight,
-  setIndependentStrokeWeight
-} from './strokes'
-import * as Traversal from './traversal'
+  getFillOkHCL,
+  getStrokeOkHCL,
+  setNodeFillOkHCL,
+  setNodeStrokeOkHCL
+} from '#core/color/okhcl'
+
+import { installBasicNodeProxyAccessors } from './accessors/basic'
+import { installLayoutNodeProxyAccessors } from './accessors/layout'
+import { installVisualNodeProxyAccessors } from './accessors/visual'
 import * as PluginData from './plugin-data'
+import { nodeProxyToJSON } from './serialization'
+import { setFirstStrokeAlign, setFirstStrokeWeight, setIndependentStrokeWeight } from './strokes'
+import * as TextProxy from './text'
+import * as Traversal from './traversal'
 
 import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 /* eslint-disable max-lines -- Figma Plugin API proxy; FigmaAPI already in separate file */
@@ -21,10 +25,8 @@ import type {
   Effect,
   LayoutMode
 } from '#core/scene-graph'
-import { installBasicNodeProxyAccessors } from './accessors/basic'
-import { installLayoutNodeProxyAccessors } from './accessors/layout'
-import { installVisualNodeProxyAccessors } from './accessors/visual'
 import type { Rect } from '#core/types'
+import type { FigmaFontName } from './fonts'
 
 const MIXED = Symbol('mixed')
 
@@ -40,7 +42,6 @@ export interface NodeProxyHost {
 }
 
 export { MIXED }
-
 
 export class FigmaNodeProxy {
   [INTERNAL_ID]: string;
@@ -431,15 +432,30 @@ export class FigmaNodeProxy {
   }
 
   findChild(callback: (node: FigmaNodeProxy) => boolean): FigmaNodeProxy | null {
-    return Traversal.findChild(this[INTERNAL_GRAPH], this[INTERNAL_API], this[INTERNAL_ID], callback)
+    return Traversal.findChild(
+      this[INTERNAL_GRAPH],
+      this[INTERNAL_API],
+      this[INTERNAL_ID],
+      callback
+    )
   }
 
   findChildren(callback?: (node: FigmaNodeProxy) => boolean): FigmaNodeProxy[] {
-    return Traversal.findChildren(this[INTERNAL_GRAPH], this[INTERNAL_API], this[INTERNAL_ID], callback)
+    return Traversal.findChildren(
+      this[INTERNAL_GRAPH],
+      this[INTERNAL_API],
+      this[INTERNAL_ID],
+      callback
+    )
   }
 
   findAllWithCriteria(criteria: { types?: string[] }): FigmaNodeProxy[] {
-    return Traversal.findAllWithCriteria(this[INTERNAL_GRAPH], this[INTERNAL_API], this[INTERNAL_ID], criteria)
+    return Traversal.findAllWithCriteria(
+      this[INTERNAL_GRAPH],
+      this[INTERNAL_API],
+      this[INTERNAL_ID],
+      criteria
+    )
   }
 
   // --- Plugin data ---
@@ -490,7 +506,13 @@ export class FigmaNodeProxy {
   // --- Serialization ---
 
   toJSON(maxDepth?: number, currentDepth = 0): Record<string, unknown> {
-    return nodeProxyToJSON(this[INTERNAL_GRAPH], this[INTERNAL_API], this[INTERNAL_ID], maxDepth, currentDepth)
+    return nodeProxyToJSON(
+      this[INTERNAL_GRAPH],
+      this[INTERNAL_API],
+      this[INTERNAL_ID],
+      maxDepth,
+      currentDepth
+    )
   }
 
   toString(): string {

@@ -18,7 +18,7 @@ export async function writeToolOutput(
   toolName: string,
   result: Record<string, unknown>,
   filePath: string,
-  root: string,
+  root: string
 ): Promise<MCPResult | null> {
   const resolved = resolveSafePath(filePath, root)
   await mkdir(dirname(resolved), { recursive: true })

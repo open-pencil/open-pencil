@@ -1,7 +1,9 @@
 import { createRequire } from 'node:module'
+
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { WebSocketServer } from 'ws'
+
 import { bearerToken, isAuthorized, mcpRequestToken } from './auth'
 import { createBrowserRpcBridge } from './browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from './http-options'

@@ -26,13 +26,15 @@ test('draw section in full editor without browser errors', async () => {
   await canvas.drawSection(100, 100, 240, 160)
 
   await expect(page.locator('[data-test-id="design-node-header"]')).toContainText('SECTION')
-  await expect.poll(async () => {
-    return page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__
-      const selectedId = [...store.state.selectedIds][0]
-      return selectedId ? store.graph.getNode(selectedId)?.type : null
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const store = window.__OPEN_PENCIL_STORE__
+        const selectedId = [...store.state.selectedIds][0]
+        return selectedId ? store.graph.getNode(selectedId)?.type : null
+      })
     })
-  }).toBe('SECTION')
+    .toBe('SECTION')
 
   canvas.assertNoErrors()
 })

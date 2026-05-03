@@ -1,5 +1,6 @@
-import { resolveNodeTextDirection } from '#core/text/direction'
 import { computeContentBounds } from '#core/io/formats/raster'
+import { resolveNodeTextDirection } from '#core/text/direction'
+
 import {
   nextDefId,
   formatColor,
@@ -23,13 +24,7 @@ export { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './paths'
 
 import { svg, renderSVGNode } from './node'
 
-import type {
-  SceneGraph,
-  SceneNode,
-  Fill,
-  Stroke,
-  CharacterStyleOverride
-} from '#core/scene-graph'
+import type { SceneGraph, SceneNode, Fill, Stroke, CharacterStyleOverride } from '#core/scene-graph'
 import type { SVGExportContext } from './defs'
 import type { SVGNode } from './node'
 

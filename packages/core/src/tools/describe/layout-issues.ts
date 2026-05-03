@@ -1,6 +1,6 @@
+import { colorToHex } from '#core/color'
 import { wcagLuminance } from 'culori'
 
-import { colorToHex } from '#core/color'
 import { CONTAINER_TYPES, findAncestorBackground } from './shared'
 
 import type { SceneGraph, SceneNode } from '#core/scene-graph'

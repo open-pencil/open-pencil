@@ -10,7 +10,7 @@ import {
   toggleBoldInRange,
   toggleItalicInRange,
   toggleDecorationInRange,
-  type StyleRun,
+  type StyleRun
 } from '@open-pencil/core'
 
 describe('getStyleAt', () => {

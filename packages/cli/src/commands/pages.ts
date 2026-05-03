@@ -1,7 +1,6 @@
-import { defineCommand } from 'citty'
-
-import { loadRpcData } from '#cli/rpc-data'
 import { bold, fmtList, entity } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
+import { defineCommand } from 'citty'
 
 import type { PageItem } from '@open-pencil/core/rpc'
 

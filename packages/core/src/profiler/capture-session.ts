@@ -1,8 +1,8 @@
 import { CaptureStack } from './frame/capture'
 
+import type { FrameCapture } from './frame/capture'
 import type { FrameStats } from './frame/stats'
 import type { GPUTimer } from './gpu-timer'
-import type { FrameCapture } from './frame/capture'
 
 export type CaptureSession = {
   stack: CaptureStack

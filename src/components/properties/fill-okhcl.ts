@@ -16,7 +16,8 @@ export function createFillOkhclAdapter(
     fieldOptions: okhcl.fieldOptions,
     okhcl: okhcl.getFillOkHCLColor(activeNode, index),
     ...okhcl.getFillPreviewInfo(activeNode, index),
-    setFieldFormat: (format: FillFieldFormat) => okhcl.setFillFieldFormat(activeNode, index, format),
+    setFieldFormat: (format: FillFieldFormat) =>
+      okhcl.setFillFieldFormat(activeNode, index, format),
     updateOkHCL: (value: OkhclValue) => okhcl.updateFillOkHCL(activeNode, index, value)
   }
 }

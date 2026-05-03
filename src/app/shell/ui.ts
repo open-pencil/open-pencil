@@ -1,5 +1,6 @@
 import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
+
 import { IS_TAURI } from '@open-pencil/core/constants'
 
 export type ToastVariant = 'default' | 'warning' | 'error'

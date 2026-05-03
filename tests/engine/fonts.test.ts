@@ -10,7 +10,7 @@ import {
   styleToVariant,
   styleToWeight,
   weightToStyle,
-  SceneGraph,
+  SceneGraph
 } from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {
@@ -84,7 +84,7 @@ describe('collectFontKeys', () => {
       x: 0,
       y: 0,
       width: 100,
-      height: 100,
+      height: 100
     }).id
     expect(collectFontKeys(graph, [id])).toEqual([])
   })
@@ -99,7 +99,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'Hello',
       fontFamily: 'Inter',
-      fontWeight: 400,
+      fontWeight: 400
     }).id
     expect(collectFontKeys(graph, [id])).toEqual([['Inter', 'Regular']])
   })
@@ -114,7 +114,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'Hello',
       fontFamily: 'Roboto',
-      fontWeight: 400,
+      fontWeight: 400
     }).id
     const keys = collectFontKeys(graph, [id])
     expect(keys).toEqual([['Roboto', 'Regular']])
@@ -130,7 +130,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'Hello',
       fontFamily: 'Roboto',
-      fontWeight: 700,
+      fontWeight: 700
     }).id
     const keys = collectFontKeys(graph, [id])
     expect(keys).toEqual([['Roboto', 'Bold']])
@@ -147,7 +147,7 @@ describe('collectFontKeys', () => {
       text: 'Hello',
       fontFamily: 'Roboto',
       fontWeight: 400,
-      italic: true,
+      italic: true
     }).id
     const keys = collectFontKeys(graph, [id])
     expect(keys).toEqual([['Roboto', 'Regular Italic']])
@@ -164,7 +164,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'A',
       fontFamily: 'Roboto',
-      fontWeight: 400,
+      fontWeight: 400
     })
     graph.createNode('TEXT', page, {
       name: 'B',
@@ -174,7 +174,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'B',
       fontFamily: 'Roboto',
-      fontWeight: 400,
+      fontWeight: 400
     })
     const ids = graph.getChildren(page).map((n) => n.id)
     const keys = collectFontKeys(graph, ids)
@@ -192,7 +192,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'A',
       fontFamily: 'Roboto',
-      fontWeight: 400,
+      fontWeight: 400
     })
     graph.createNode('TEXT', page, {
       name: 'B',
@@ -202,7 +202,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'B',
       fontFamily: 'Open Sans',
-      fontWeight: 700,
+      fontWeight: 700
     })
     const ids = graph.getChildren(page).map((n) => n.id)
     const keys = collectFontKeys(graph, ids)
@@ -219,7 +219,7 @@ describe('collectFontKeys', () => {
       x: 0,
       y: 0,
       width: 400,
-      height: 400,
+      height: 400
     }).id
     graph.createNode('TEXT', frame, {
       name: 'Nested',
@@ -229,7 +229,7 @@ describe('collectFontKeys', () => {
       height: 20,
       text: 'Hello',
       fontFamily: 'Poppins',
-      fontWeight: 600,
+      fontWeight: 600
     })
     const keys = collectFontKeys(graph, [frame])
     expect(keys).toEqual([['Poppins', 'SemiBold']])
@@ -250,14 +250,14 @@ describe('collectFontKeys', () => {
         {
           start: 0,
           end: 5,
-          style: { fontFamily: 'Roboto', fontWeight: 400 },
+          style: { fontFamily: 'Roboto', fontWeight: 400 }
         },
         {
           start: 6,
           end: 11,
-          style: { fontFamily: 'Montserrat', fontWeight: 700 },
-        },
-      ],
+          style: { fontFamily: 'Montserrat', fontWeight: 700 }
+        }
+      ]
     }).id
     const keys = collectFontKeys(graph, [id])
     expect(keys).toHaveLength(2)
@@ -280,9 +280,9 @@ describe('collectFontKeys', () => {
         {
           start: 0,
           end: 5,
-          style: {},
-        },
-      ],
+          style: {}
+        }
+      ]
     }).id
     const keys = collectFontKeys(graph, [id])
     expect(keys).toEqual([['Lato', 'Light']])

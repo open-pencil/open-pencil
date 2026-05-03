@@ -1,5 +1,5 @@
-import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
 import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
 import type { Ref } from 'vue'
 
 export type StrokeSides = 'ALL' | 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CUSTOM'
@@ -34,7 +34,12 @@ export function currentAlign(activeNode: SceneNode | null): Stroke['align'] {
 
 export function currentSides(activeNode: SceneNode | null): StrokeSides {
   if (!activeNode?.independentStrokeWeights) return 'ALL'
-  const { borderTopWeight: t, borderRightWeight: r, borderBottomWeight: b, borderLeftWeight: l } = activeNode
+  const {
+    borderTopWeight: t,
+    borderRightWeight: r,
+    borderBottomWeight: b,
+    borderLeftWeight: l
+  } = activeNode
   const active = [t > 0, r > 0, b > 0, l > 0]
   const count = active.filter(Boolean).length
   if (count === 4 && t === r && r === b && b === l) return 'ALL'
@@ -98,9 +103,17 @@ export function createStrokeSideActions(editor: Editor, sideMenuOpen: Ref<boolea
     sideMenuOpen.value = false
   }
 
-  function updateBorderWeight(side: (typeof BORDER_SIDES)[number], value: number, activeNode: SceneNode) {
+  function updateBorderWeight(
+    side: (typeof BORDER_SIDES)[number],
+    value: number,
+    activeNode: SceneNode
+  ) {
     const key = `border${side[0].toUpperCase()}${side.slice(1)}Weight` as keyof SceneNode
-    editor.updateNodeWithUndo(activeNode.id, { [key]: value } as Partial<SceneNode>, 'Change stroke weight')
+    editor.updateNodeWithUndo(
+      activeNode.id,
+      { [key]: value } as Partial<SceneNode>,
+      'Change stroke weight'
+    )
   }
 
   return { selectSide, updateBorderWeight }

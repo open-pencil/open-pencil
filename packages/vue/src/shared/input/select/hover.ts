@@ -29,7 +29,13 @@ function getRotationCursorForSelection(cx: number, cy: number, editor: Editor): 
   const node = editor.graph.getNode(id)
   if (!node) return null
 
-  const corner = hitTestCornerRotationByMatrix(cx, cy, node, editor.graph, editor.renderer?.zoom ?? 1)
+  const corner = hitTestCornerRotationByMatrix(
+    cx,
+    cy,
+    node,
+    editor.graph,
+    editor.renderer?.zoom ?? 1
+  )
   if (!corner) return null
 
   const absoluteRotation = getAbsoluteRotation(node, editor.graph)

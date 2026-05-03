@@ -21,7 +21,9 @@ const rendererSource = (await readTypescriptFiles(rendererDir)).join('\n')
 
 describe('Renderer effect ordering', () => {
   test('drop shadow renders before fills', () => {
-    const behindIdx = rendererSource.indexOf("renderEffects(canvas, node, rect, hasRadius, 'behind'")
+    const behindIdx = rendererSource.indexOf(
+      "renderEffects(canvas, node, rect, hasRadius, 'behind'"
+    )
     const fillsIdx = rendererSource.indexOf('drawNodeFill(canvas, node, rect, hasRadius)')
     expect(behindIdx).toBeGreaterThan(-1)
     expect(fillsIdx).toBeGreaterThan(-1)
@@ -29,7 +31,9 @@ describe('Renderer effect ordering', () => {
   })
 
   test('inner shadow and blur render after strokes', () => {
-    const strokeIdx = rendererSource.indexOf('drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)')
+    const strokeIdx = rendererSource.indexOf(
+      'drawStrokeWithAlign(canvas, node, rect, hasRadius, stroke.align)'
+    )
     const frontIdx = rendererSource.indexOf("renderEffects(canvas, node, rect, hasRadius, 'front')")
     expect(strokeIdx).toBeGreaterThan(-1)
     expect(frontIdx).toBeGreaterThan(-1)

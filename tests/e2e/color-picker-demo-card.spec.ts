@@ -2,7 +2,12 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '../helpers/canvas'
 
-async function dragSlider(page: Parameters<typeof test>[0]['page'], canvas: CanvasHelper, testId: string, ratio: number) {
+async function dragSlider(
+  page: Parameters<typeof test>[0]['page'],
+  canvas: CanvasHelper,
+  testId: string,
+  ratio: number
+) {
   const slider = page.locator(`[data-test-id="${testId}"] input[type="range"]`)
   const box = await slider.boundingBox()
   if (!box) throw new Error(`Missing slider: ${testId}`)
@@ -23,9 +28,16 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
   await page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!
     const nodes = Array.from(store.graph.nodes.values())
-    const card = nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT')
-      ?? nodes.find((node) => node.name === 'Card')
-    if (!card) throw new Error(`Card not found. Available: ${nodes.slice(0, 20).map((n) => `${n.name}:${n.type}`).join(', ')}`)
+    const card =
+      nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT') ??
+      nodes.find((node) => node.name === 'Card')
+    if (!card)
+      throw new Error(
+        `Card not found. Available: ${nodes
+          .slice(0, 20)
+          .map((n) => `${n.name}:${n.type}`)
+          .join(', ')}`
+      )
     store.state.selectedIds = new Set([card.id])
     store.requestRender()
   })
@@ -65,9 +77,12 @@ test('demo card fill changes through color picker', async ({ page }) => {
   const after = await getSelectedFill(page)
 
   expect(after).not.toBeNull()
-  expect(before?.fill?.color.r !== after?.fill?.color.r || before?.fill?.color.g !== after?.fill?.color.g || before?.fill?.color.b !== after?.fill?.color.b).toBe(true)
+  expect(
+    before?.fill?.color.r !== after?.fill?.color.r ||
+      before?.fill?.color.g !== after?.fill?.color.g ||
+      before?.fill?.color.b !== after?.fill?.color.b
+  ).toBe(true)
 })
-
 
 test('demo card fill changes from hsb saturation and brightness sliders', async ({ page }) => {
   const canvas = new CanvasHelper(page)
@@ -83,12 +98,20 @@ test('demo card fill changes from hsb saturation and brightness sliders', async 
   const afterS = await getSelectedFill(page)
 
   expect(afterS).not.toBeNull()
-  expect(beforeS?.fill?.color.r !== afterS?.fill?.color.r || beforeS?.fill?.color.g !== afterS?.fill?.color.g || beforeS?.fill?.color.b !== afterS?.fill?.color.b).toBe(true)
+  expect(
+    beforeS?.fill?.color.r !== afterS?.fill?.color.r ||
+      beforeS?.fill?.color.g !== afterS?.fill?.color.g ||
+      beforeS?.fill?.color.b !== afterS?.fill?.color.b
+  ).toBe(true)
 
   const beforeB = await getSelectedFill(page)
   await dragSlider(page, canvas, 'color-slider-hsb-b', 0.25)
   const afterB = await getSelectedFill(page)
 
   expect(afterB).not.toBeNull()
-  expect(beforeB?.fill?.color.r !== afterB?.fill?.color.r || beforeB?.fill?.color.g !== afterB?.fill?.color.g || beforeB?.fill?.color.b !== afterB?.fill?.color.b).toBe(true)
+  expect(
+    beforeB?.fill?.color.r !== afterB?.fill?.color.r ||
+      beforeB?.fill?.color.g !== afterB?.fill?.color.g ||
+      beforeB?.fill?.color.b !== afterB?.fill?.color.b
+  ).toBe(true)
 })

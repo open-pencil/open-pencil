@@ -9,6 +9,7 @@ import {
   initCodec,
   SceneGraph
 } from '@open-pencil/core'
+
 import { heavy } from '../helpers/test-utils'
 
 setDefaultTimeout(30_000)
@@ -24,13 +25,7 @@ describe('fig export compression', () => {
     const thumbnailPng = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
     const metaJson = JSON.stringify({ version: 1, app: 'test' })
 
-    const result = compressFigDataSync(
-      schemaDeflated,
-      kiwiData,
-      thumbnailPng,
-      metaJson,
-      []
-    )
+    const result = compressFigDataSync(schemaDeflated, kiwiData, thumbnailPng, metaJson, [])
 
     expect(result).toBeInstanceOf(Uint8Array)
     expect(result.length).toBeGreaterThan(0)
@@ -45,17 +40,9 @@ describe('fig export compression', () => {
     const kiwiData = new Uint8Array([10, 20, 30])
     const thumbnailPng = new Uint8Array([0x89, 0x50])
     const metaJson = JSON.stringify({ version: 1, app: 'test' })
-    const images = [
-      { name: 'images/abc123', data: new Uint8Array([0xff, 0xd8, 0xff, 0xe0]) }
-    ]
+    const images = [{ name: 'images/abc123', data: new Uint8Array([0xff, 0xd8, 0xff, 0xe0]) }]
 
-    const result = compressFigDataSync(
-      schemaDeflated,
-      kiwiData,
-      thumbnailPng,
-      metaJson,
-      images
-    )
+    const result = compressFigDataSync(schemaDeflated, kiwiData, thumbnailPng, metaJson, images)
 
     expect(result).toBeInstanceOf(Uint8Array)
     expect(result.length).toBeGreaterThan(0)

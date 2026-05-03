@@ -1,8 +1,8 @@
 import { computeAbsoluteBounds } from '#core/geometry'
 import { computeLayout } from '#core/layout'
 
-import type { LayoutMode, SceneNode } from '#core/scene-graph'
 import type { EditorContext } from '#core/editor/types'
+import type { LayoutMode, SceneNode } from '#core/scene-graph'
 
 export function wrapInAutoLayout(
   ctx: EditorContext,
@@ -22,9 +22,7 @@ export function wrapInAutoLayout(
 
   const bounds = computeAbsoluteBounds(selectedNodes, (id) => ctx.graph.getAbsolutePosition(id))
 
-  const parentAbs = isTopLevel(parentId)
-    ? { x: 0, y: 0 }
-    : ctx.graph.getAbsolutePosition(parentId)
+  const parentAbs = isTopLevel(parentId) ? { x: 0, y: 0 } : ctx.graph.getAbsolutePosition(parentId)
 
   const direction: LayoutMode =
     selectedNodes.length <= 1 || bounds.height > bounds.width ? 'VERTICAL' : 'HORIZONTAL'

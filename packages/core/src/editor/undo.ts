@@ -58,7 +58,12 @@ export function createUndoActions(ctx: EditorContext) {
           if (ctx.graph.getNode(id)) continue
           const snapshot = snapshots.get(id)
           if (!snapshot) continue
-          restoreSubtree(ctx.graph, snapshot, snapshot.parentId ?? ctx.state.currentPageId, snapshots)
+          restoreSubtree(
+            ctx.graph,
+            snapshot,
+            snapshot.parentId ?? ctx.state.currentPageId,
+            snapshots
+          )
           ctx.runLayoutForNode(id)
         }
         ctx.state.selectedIds = new Set(nextSelection)

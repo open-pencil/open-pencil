@@ -1,8 +1,8 @@
 import { colorToHex } from '#core/color'
 import { defineTool } from '#core/tools/schema'
 
-import type { Color } from '#core/types'
 import type { Variable, VariableCollection, VariableValue } from '#core/scene-graph'
+import type { Color } from '#core/types'
 
 function slugify(name: string): string {
   return name
@@ -169,17 +169,17 @@ export const designToTokens = defineTool({
       type: 'string',
       description: 'Output format',
       enum: ['css', 'tailwind', 'json'],
-      default: 'css',
+      default: 'css'
     },
     collection: {
       type: 'string',
-      description: 'Filter by collection name (substring, case-insensitive)',
+      description: 'Filter by collection name (substring, case-insensitive)'
     },
     type: {
       type: 'string',
       description: 'Filter by variable type',
-      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN'],
-    },
+      enum: ['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']
+    }
   },
   execute: (figma, args) => {
     const format = args.format ?? 'css'
@@ -215,5 +215,5 @@ export const designToTokens = defineTool({
     else output = renderCSS(tokens, modes)
 
     return { output, tokenCount: tokens.length, modeCount: modes.length }
-  },
+  }
 })

@@ -9,9 +9,9 @@ export const listPages = defineTool({
     const pages = figma.root.children
     return {
       current: figma.currentPage.name,
-      pages: pages.map((page) => ({ id: page.id, name: page.name })),
+      pages: pages.map((page) => ({ id: page.id, name: page.name }))
     }
-  },
+  }
 })
 
 export const switchPage = defineTool({
@@ -19,14 +19,15 @@ export const switchPage = defineTool({
   mutates: true,
   description: 'Switch to a different page by name or ID.',
   params: {
-    page: { type: 'string', description: 'Page name or ID', required: true },
+    page: { type: 'string', description: 'Page name or ID', required: true }
   },
   execute: (figma, { page }) => {
-    const target = figma.root.children.find((candidate) => candidate.name === page) ?? figma.getNodeById(page)
+    const target =
+      figma.root.children.find((candidate) => candidate.name === page) ?? figma.getNodeById(page)
     if (!target) return { error: `Page "${page}" not found` }
     figma.currentPage = target
     return { page: target.name, id: target.id }
-  },
+  }
 })
 
 export const getCurrentPage = defineTool({
@@ -35,7 +36,7 @@ export const getCurrentPage = defineTool({
   params: {},
   execute: (figma) => {
     return { id: figma.currentPage.id, name: figma.currentPage.name }
-  },
+  }
 })
 
 export const pageBounds = defineTool({
@@ -44,5 +45,5 @@ export const pageBounds = defineTool({
   params: {},
   execute: (figma) => {
     return computeBounds(figma.currentPage.children.map((child) => child.absoluteBoundingBox))
-  },
+  }
 })

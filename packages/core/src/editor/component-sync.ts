@@ -1,6 +1,9 @@
 import type { SceneGraph } from '#core/scene-graph'
 
-export function createComponentSyncScheduler(getGraph: () => SceneGraph, requestRender: () => void) {
+export function createComponentSyncScheduler(
+  getGraph: () => SceneGraph,
+  requestRender: () => void
+) {
   let pendingComponentSync: Set<string> | null = null
 
   function flushComponentSync() {

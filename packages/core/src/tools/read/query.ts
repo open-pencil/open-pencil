@@ -1,5 +1,5 @@
-import { queryByXPath } from '#core/xpath'
 import { defineTool } from '#core/tools/schema'
+import { queryByXPath } from '#core/xpath'
 
 export const queryNodes = defineTool({
   name: 'query_nodes',
@@ -16,20 +16,20 @@ Examples:
   params: {
     selector: { type: 'string', description: 'XPath selector', required: true },
     page: { type: 'string', description: 'Page name (default: current page)' },
-    limit: { type: 'number', description: 'Max results (default: 1000)' },
+    limit: { type: 'number', description: 'Max results (default: 1000)' }
   },
   execute: async (figma, args) => {
     try {
       const nodes = await queryByXPath(figma.graph, args.selector, {
         page: args.page ?? figma.currentPage.name,
-        limit: args.limit,
+        limit: args.limit
       })
       return {
         count: nodes.length,
-        nodes: nodes.map((node) => ({ id: node.id, name: node.name, type: node.type })),
+        nodes: nodes.map((node) => ({ id: node.id, name: node.name, type: node.type }))
       }
     } catch (err) {
       return { error: `XPath error: ${err instanceof Error ? err.message : String(err)}` }
     }
-  },
+  }
 })

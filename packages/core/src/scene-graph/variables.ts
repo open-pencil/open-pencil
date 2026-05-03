@@ -71,7 +71,11 @@ export function createVariable(
   return variable
 }
 
-export function createCollection(graph: SceneGraph, generateId: () => string, name: string): VariableCollection {
+export function createCollection(
+  graph: SceneGraph,
+  generateId: () => string,
+  name: string
+): VariableCollection {
   const id = generateId()
   const modeId = generateId()
   const collection: VariableCollection = {
@@ -122,7 +126,11 @@ export function resolveVariable(
   let value = Object.hasOwn(variable.valuesByMode, preferredModeId)
     ? variable.valuesByMode[preferredModeId]
     : undefined
-  if (value === undefined && fallbackModeId && Object.hasOwn(variable.valuesByMode, fallbackModeId)) {
+  if (
+    value === undefined &&
+    fallbackModeId &&
+    Object.hasOwn(variable.valuesByMode, fallbackModeId)
+  ) {
     value = variable.valuesByMode[fallbackModeId]
   }
   value ??= Object.values(variable.valuesByMode)[0]
@@ -157,7 +165,12 @@ export function getVariablesByType(graph: SceneGraph, type: VariableType): Varia
   return [...graph.variables.values()].filter((v) => v.type === type)
 }
 
-export function bindVariable(graph: SceneGraph, nodeId: string, field: string, variableId: string): void {
+export function bindVariable(
+  graph: SceneGraph,
+  nodeId: string,
+  field: string,
+  variableId: string
+): void {
   const node = graph.nodes.get(nodeId)
   if (node) node.boundVariables[field] = variableId
 }

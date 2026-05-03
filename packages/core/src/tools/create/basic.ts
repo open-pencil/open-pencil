@@ -12,14 +12,14 @@ export const createShape = defineTool({
       type: 'string',
       description: 'Node type',
       required: true,
-      enum: ['FRAME', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'LINE', 'STAR', 'POLYGON', 'SECTION'],
+      enum: ['FRAME', 'RECTANGLE', 'ELLIPSE', 'TEXT', 'LINE', 'STAR', 'POLYGON', 'SECTION']
     },
     x: { type: 'number', description: 'X position', required: true },
     y: { type: 'number', description: 'Y position', required: true },
     width: { type: 'number', description: 'Width in pixels', required: true, min: 1 },
     height: { type: 'number', description: 'Height in pixels', required: true, min: 1 },
     name: { type: 'string', description: 'Node name shown in layers panel' },
-    parent_id: { type: 'string', description: 'Parent node ID to nest inside' },
+    parent_id: { type: 'string', description: 'Parent node ID to nest inside' }
   },
   execute: (figma, args) => {
     const parentId = args.parent_id
@@ -32,7 +32,7 @@ export const createShape = defineTool({
       LINE: () => figma.createLine(),
       STAR: () => figma.createStar(),
       POLYGON: () => figma.createPolygon(),
-      SECTION: () => figma.createSection(),
+      SECTION: () => figma.createSection()
     }
     const node = createMap[args.type]()
     node.x = args.x
@@ -41,7 +41,7 @@ export const createShape = defineTool({
     if (args.name) node.name = args.name
     if (parent) parent.appendChild(node)
     return nodeSummary(node)
-  },
+  }
 })
 
 export const createPage = defineTool({
@@ -49,13 +49,13 @@ export const createPage = defineTool({
   mutates: true,
   description: 'Create a new page.',
   params: {
-    name: { type: 'string', description: 'Page name', required: true },
+    name: { type: 'string', description: 'Page name', required: true }
   },
   execute: (figma, { name }) => {
     const page = figma.createPage()
     page.name = name
     return { id: page.id, name }
-  },
+  }
 })
 
 export const createSlice = defineTool({
@@ -68,7 +68,7 @@ export const createSlice = defineTool({
     width: { type: 'number', description: 'Width', required: true, min: 1 },
     height: { type: 'number', description: 'Height', required: true, min: 1 },
     name: { type: 'string', description: 'Slice name' },
-    parent_id: { type: 'string', description: 'Parent node ID' },
+    parent_id: { type: 'string', description: 'Parent node ID' }
   },
   execute: (figma, args) => {
     const node = figma.createFrame()
@@ -82,5 +82,5 @@ export const createSlice = defineTool({
       if (parent) parent.appendChild(node)
     }
     return nodeSummary(node)
-  },
+  }
 })

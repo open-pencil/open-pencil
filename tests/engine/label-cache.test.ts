@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'bun:test'
+
 import { SceneGraph, LabelCache } from '@open-pencil/core'
 
 function buildGraph() {
@@ -80,7 +81,13 @@ describe('LabelCache', () => {
     cache.update(g, pageId, 1)
     const before = cache.getSections(g, { x: -1000, y: -1000, w: 3000, h: 3000 })
 
-    g.createNode('SECTION', pageId, { name: 'New Section', x: 500, y: 500, width: 100, height: 100 })
+    g.createNode('SECTION', pageId, {
+      name: 'New Section',
+      x: 500,
+      y: 500,
+      width: 100,
+      height: 100
+    })
     cache.update(g, pageId, 2)
     const after = cache.getSections(g, { x: -1000, y: -1000, w: 3000, h: 3000 })
 

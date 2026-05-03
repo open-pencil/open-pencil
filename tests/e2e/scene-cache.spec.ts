@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+
 import { CanvasHelper } from '../helpers/canvas'
 
 test.describe('SkPicture scene caching', () => {
@@ -20,7 +21,9 @@ test.describe('SkPicture scene caching', () => {
         y: 50,
         width: 300,
         height: 200,
-        fills: [{ type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95, a: 1 }, visible: true, opacity: 1 }]
+        fills: [
+          { type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95, a: 1 }, visible: true, opacity: 1 }
+        ]
       })
 
       store.graph.createNode('TEXT', pageId, {
@@ -45,7 +48,9 @@ test.describe('SkPicture scene caching', () => {
         text: 'This text must survive hover transitions without disappearing.',
         fontSize: 14,
         fontFamily: 'Inter',
-        fills: [{ type: 'SOLID', color: { r: 0.3, g: 0.3, b: 0.3, a: 1 }, visible: true, opacity: 1 }]
+        fills: [
+          { type: 'SOLID', color: { r: 0.3, g: 0.3, b: 0.3, a: 1 }, visible: true, opacity: 1 }
+        ]
       })
 
       store.requestRender()

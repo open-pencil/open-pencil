@@ -1,12 +1,12 @@
 import { computed } from 'vue'
 
-import type { EditorCommand } from './types'
 import type { EditorCommandMapOptions } from './context'
+import type { EditorCommand } from './types'
 
 export function createViewCommands({
   editor,
   capabilities,
-  messages: t,
+  messages: t
 }: EditorCommandMapOptions): Pick<
   Record<'view.zoom100' | 'view.zoomFit' | 'view.zoomSelection', EditorCommand>,
   'view.zoom100' | 'view.zoomFit' | 'view.zoomSelection'
@@ -18,7 +18,7 @@ export function createViewCommands({
         return t.value.zoomTo100
       },
       enabled: computed(() => true),
-      run: () => editor.zoomTo100(),
+      run: () => editor.zoomTo100()
     },
     'view.zoomFit': {
       id: 'view.zoomFit',
@@ -26,7 +26,7 @@ export function createViewCommands({
         return t.value.zoomToFit
       },
       enabled: computed(() => true),
-      run: () => editor.zoomToFit(),
+      run: () => editor.zoomToFit()
     },
     'view.zoomSelection': {
       id: 'view.zoomSelection',
@@ -34,7 +34,7 @@ export function createViewCommands({
         return t.value.zoomToSelection
       },
       enabled: capabilities.canZoomToSelection,
-      run: () => editor.zoomToSelection(),
-    },
+      run: () => editor.zoomToSelection()
+    }
   }
 }

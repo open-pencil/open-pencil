@@ -16,7 +16,7 @@ export function paramToZod(param: ParamDef): z.ZodType {
     },
     boolean: () => z.boolean().describe(param.description),
     color: () => z.string().describe(param.description),
-    'string[]': () => z.array(z.string()).min(1).describe(param.description),
+    'string[]': () => z.array(z.string()).min(1).describe(param.description)
   }
 
   const schema = typeMap[param.type]()

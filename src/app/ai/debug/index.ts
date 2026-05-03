@@ -4,7 +4,6 @@ import { buildDebugLog } from '@open-pencil/core/tools'
 import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
 import type { UIMessage } from 'ai'
 
-
 export function formatTokenUsage(): string {
   const steps = getStepUsages()
   if (steps.length === 0) return '  (no usage data — provider may not report it)'

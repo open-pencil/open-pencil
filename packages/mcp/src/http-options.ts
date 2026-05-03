@@ -6,7 +6,7 @@ export const MCP_CORS_HEADERS = [
   'x-mcp-token',
   'mcp-session-id',
   'Last-Event-ID',
-  'mcp-protocol-version',
+  'mcp-protocol-version'
 ]
 
 export const MCP_EXPOSED_HEADERS = ['mcp-session-id', 'mcp-protocol-version']

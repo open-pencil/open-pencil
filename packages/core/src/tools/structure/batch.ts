@@ -98,8 +98,8 @@ export const batchUpdate = defineTool({
       type: 'string',
       description:
         'JSON array: [{"id":"0:5","props":{"spacing":8}},{"id":"0:6","props":{"sizing_horizontal":"FILL","grow":1}}]',
-      required: true,
-    },
+      required: true
+    }
   },
   execute: (figma, { operations }) => {
     let ops: BatchOp[]
@@ -127,5 +127,5 @@ export const batchUpdate = defineTool({
     if (results.length > 0) out.results = results
     if (errors.length > 0) out.errors = errors
     return out
-  },
+  }
 })

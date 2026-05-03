@@ -1,6 +1,6 @@
+import { copyFill, copyStroke } from '#core/scene-graph/copy'
 import { converter, toGamut } from 'culori'
 
-import { copyFill, copyStroke } from '#core/scene-graph/copy'
 import { normalizeColor } from './normalize'
 
 import type { SceneNode } from '#core/scene-graph'

@@ -104,7 +104,7 @@ function buildScreenInfo(
     width: frameNode.width,
     height: frameNode.height,
     componentRefs: [...refs.entries()].map(([id, { name, count }]) => ({ id, name, count })),
-    topLevelSections,
+    topLevelSections
   }
 }
 
@@ -115,8 +115,8 @@ export const designToComponentMap = defineTool({
   params: {
     page: {
       type: 'string',
-      description: 'Page name to analyze (default: current page)',
-    },
+      description: 'Page name to analyze (default: current page)'
+    }
   },
   execute: (figma, args) => {
     if (args.page) {
@@ -144,7 +144,7 @@ export const designToComponentMap = defineTool({
         variants: detectVariants(raw, figma.graph),
         instanceCount: 0,
         propCandidates: detectPropCandidates(raw, figma.graph),
-        usedOnScreens: [],
+        usedOnScreens: []
       })
       return false
     })
@@ -188,7 +188,7 @@ export const designToComponentMap = defineTool({
       screenCount: screens.length,
       components: components.sort((a, b) => b.instanceCount - a.instanceCount),
       screens,
-      sections,
+      sections
     }
-  },
+  }
 })

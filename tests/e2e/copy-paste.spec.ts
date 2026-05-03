@@ -34,7 +34,16 @@ function getSelectedNodes() {
     const store = window.__OPEN_PENCIL_STORE__!
     return [...store.state.selectedIds].map((id) => {
       const n = store.graph.getNode(id)!
-      return { id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, width: n.width, height: n.height, fills: n.fills }
+      return {
+        id: n.id,
+        name: n.name,
+        type: n.type,
+        x: n.x,
+        y: n.y,
+        width: n.width,
+        height: n.height,
+        fills: n.fills
+      }
     })
   })
 }
@@ -85,9 +94,21 @@ test('duplicate preserves fills', async () => {
   await page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!
     const id = [...store.state.selectedIds][0]
-    store.updateNodeWithUndo(id, {
-      fills: [{ type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, opacity: 1, visible: true, blendMode: 'NORMAL' }]
-    }, 'Set fill')
+    store.updateNodeWithUndo(
+      id,
+      {
+        fills: [
+          {
+            type: 'SOLID',
+            color: { r: 0, g: 0.5, b: 1, a: 1 },
+            opacity: 1,
+            visible: true,
+            blendMode: 'NORMAL'
+          }
+        ]
+      },
+      'Set fill'
+    )
   })
   await canvas.waitForRender()
 

@@ -64,8 +64,8 @@ export async function applyPhoto(
       imageHash: image.hash,
       imageScaleMode: 'FILL',
       visible: true,
-      opacity: 1,
-    },
+      opacity: 1
+    }
   ]
 
   return {
@@ -75,7 +75,7 @@ export async function applyPhoto(
       photographer: photo.photographer,
       width: photo.width,
       height: photo.height,
-      provider: provider.name,
-    },
+      provider: provider.name
+    }
   }
 }

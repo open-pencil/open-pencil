@@ -6,11 +6,7 @@ function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
 
-function rectWithStroke(
-  graph: SceneGraph,
-  name: string,
-  strokeOverrides: Partial<Stroke> = {}
-) {
+function rectWithStroke(graph: SceneGraph, name: string, strokeOverrides: Partial<Stroke> = {}) {
   const stroke: Stroke = {
     color: { r: 0, g: 0, b: 0, a: 1 },
     weight: 2,

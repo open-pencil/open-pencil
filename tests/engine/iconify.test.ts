@@ -5,7 +5,9 @@ import { fetchIcon, fetchIcons, searchIcons, searchIconsBatch } from '@open-penc
 let hasNetwork = true
 beforeAll(async () => {
   try {
-    await fetch('https://api.iconify.design/mdi.json?icons=home', { signal: AbortSignal.timeout(3000) })
+    await fetch('https://api.iconify.design/mdi.json?icons=home', {
+      signal: AbortSignal.timeout(3000)
+    })
   } catch {
     hasNetwork = false
     console.warn('⚠ Skipping iconify tests — no network')
@@ -13,7 +15,14 @@ beforeAll(async () => {
 })
 
 const networkTest: typeof test = (name, fn, timeout) =>
-  test(name, async () => { if (!hasNetwork) return; await (fn as () => Promise<void>)() }, timeout)
+  test(
+    name,
+    async () => {
+      if (!hasNetwork) return
+      await (fn as () => Promise<void>)()
+    },
+    timeout
+  )
 
 describe('fetchIcon', () => {
   networkTest('fetches mdi:home', async () => {
@@ -60,7 +69,9 @@ describe('fetchIcon', () => {
   })
 
   networkTest('throws on non-existent icon', async () => {
-    await expect(fetchIcon('mdi:this-icon-definitely-does-not-exist-xyz123')).rejects.toThrow('not found')
+    await expect(fetchIcon('mdi:this-icon-definitely-does-not-exist-xyz123')).rejects.toThrow(
+      'not found'
+    )
   })
 
   networkTest('heroicons:eye — multi-path icon with group attrs', async () => {

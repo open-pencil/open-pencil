@@ -4,7 +4,6 @@ import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
 
-
 type WheelAccum = {
   deltaX: number
   deltaY: number

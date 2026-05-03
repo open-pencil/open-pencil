@@ -79,7 +79,15 @@ export function splitSegmentAt(
       tangentEnd: { x: 0, y: 0 }
     }
 
-    return finishSplitSegment(network, newVertices, newSegments, segmentIndex, seg1, seg2, newVertexIndex)
+    return finishSplitSegment(
+      network,
+      newVertices,
+      newSegments,
+      segmentIndex,
+      seg1,
+      seg2,
+      newVertexIndex
+    )
   }
 
   // Cubic split via De Casteljau
@@ -103,7 +111,15 @@ export function splitSegmentAt(
     tangentEnd: { x: right.cp2.x - v1.x, y: right.cp2.y - v1.y }
   }
 
-  return finishSplitSegment(network, newVertices, newSegments, segmentIndex, seg1, seg2, newVertexIndex)
+  return finishSplitSegment(
+    network,
+    newVertices,
+    newSegments,
+    segmentIndex,
+    seg1,
+    seg2,
+    newVertexIndex
+  )
 }
 
 function buildMergedSegmentForRemovedVertex(

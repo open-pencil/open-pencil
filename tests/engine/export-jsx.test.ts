@@ -51,9 +51,7 @@ describe('sceneNodeToJSX', () => {
       text: 'Hello World',
       fontSize: 18,
       fontWeight: 700,
-      fills: [
-        { type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
-      ]
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
     const jsx = sceneNodeToJSX(node.id, graph)
     expect(jsx).toContain('<Text')
@@ -134,9 +132,7 @@ describe('sceneNodeToJSX', () => {
       text: 'Card Title',
       fontSize: 16,
       fontWeight: 700,
-      fills: [
-        { type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }
-      ]
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
 
     const jsx = sceneNodeToJSX(frame.id, graph)
@@ -209,7 +205,13 @@ describe('sceneNodeToJSX', () => {
       width: 100,
       height: 100,
       strokes: [
-        { color: { r: 1, g: 0, b: 0, a: 1 }, weight: 2, opacity: 1, visible: true, align: 'INSIDE' as const }
+        {
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          weight: 2,
+          opacity: 1,
+          visible: true,
+          align: 'INSIDE' as const
+        }
       ]
     })
     const jsx = sceneNodeToJSX(node.id, graph)

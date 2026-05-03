@@ -10,7 +10,7 @@ import {
   setStroke,
   setText,
   setTextProperties,
-  updateNode,
+  updateNode
 } from './modify'
 import { findNodes, getJsx, getNode, getSelection } from './read'
 import { stockPhoto } from './stock-photo'
@@ -51,5 +51,5 @@ export const CORE_TOOLS: ToolDef[] = [
   describe,
   calc,
   evalCode,
-  viewportZoomToFit,
+  viewportZoomToFit
 ]

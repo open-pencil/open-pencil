@@ -1,11 +1,11 @@
+import { useEditorCommands } from '#vue/editor/commands/use'
+import { useEditor } from '#vue/editor/context'
 import {
   buildCanvasMenu,
   buildEditMenu,
   buildObjectMenu,
   buildViewMenu
 } from '#vue/editor/menu-model/builders'
-import { useEditorCommands } from '#vue/editor/commands/use'
-import { useEditor } from '#vue/editor/context'
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { menuMessages } from '#vue/i18n'
 import { useStore } from '@nanostores/vue'

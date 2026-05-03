@@ -1,6 +1,10 @@
 import { createAutosave } from '@/app/document/autosave'
+import {
+  documentNameFromFigPath,
+  downloadNameFromPath,
+  figDownloadName
+} from '@/app/document/io/names'
 import { createSaveActions } from '@/app/document/io/save'
-import { documentNameFromFigPath, downloadNameFromPath, figDownloadName } from '@/app/document/io/names'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 

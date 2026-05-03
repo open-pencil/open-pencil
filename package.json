@@ -14,7 +14,7 @@
     "tauri": "tauri",
     "lint": "bun run lint:structure && oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/",
     "lint:structure": "oxlint -c oxlint.structure.json vite.config.ts vite/ src/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/ tests/ scripts/",
-    "format": "oxfmt --write src/ packages/core/src/ packages/cli/src/ packages/mcp/src/ packages/vue/src/",
+    "format": "oxfmt --write src/ packages/core/src/ packages/cli/src/ packages/mcp/src/ packages/vue/src/ tests",
     "check": "bun run lint && tsgo --noEmit && bun run check:vue",
     "check:vue": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p packages/vue/tsconfig.json",
     "test": "playwright test --project=openpencil",

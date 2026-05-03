@@ -5,7 +5,7 @@ import {
   sceneNodeToKiwi,
   exportFigFile,
   parseFigFile,
-  initCodec,
+  initCodec
 } from '@open-pencil/core'
 
 beforeAll(async () => {
@@ -41,7 +41,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       paddingTop: 16,
       paddingLeft: 16,
       paddingBottom: 16,
-      paddingRight: 16,
+      paddingRight: 16
     })
 
     const child = graph.createNode('FRAME', parent.id, {
@@ -49,7 +49,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       x: 50,
       y: 100,
       width: 200,
-      height: 60,
+      height: 60
     })
 
     const blobs: Uint8Array[] = []
@@ -79,7 +79,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       width: 300,
       height: 400,
       layoutMode: 'VERTICAL',
-      itemSpacing: 8,
+      itemSpacing: 8
     })
 
     const absChild = graph.createNode('FRAME', parent.id, {
@@ -88,7 +88,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       y: 120,
       width: 50,
       height: 50,
-      layoutPositioning: 'ABSOLUTE',
+      layoutPositioning: 'ABSOLUTE'
     })
 
     const blobs: Uint8Array[] = []
@@ -114,7 +114,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       x: 0,
       y: 0,
       width: 300,
-      height: 400,
+      height: 400
       // layoutMode defaults to 'NONE'
     })
 
@@ -123,7 +123,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       x: 30,
       y: 45,
       width: 100,
-      height: 80,
+      height: 80
     })
 
     const blobs: Uint8Array[] = []
@@ -151,7 +151,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       width: 600,
       height: 100,
       layoutMode: 'HORIZONTAL',
-      itemSpacing: 12,
+      itemSpacing: 12
     })
 
     graph.createNode('RECTANGLE', parent.id, {
@@ -159,7 +159,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       x: 200,
       y: 50,
       width: 80,
-      height: 80,
+      height: 80
     })
 
     const blobs: Uint8Array[] = []
@@ -190,7 +190,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       x: 0,
       y: 0,
       width: 100,
-      height: 100,
+      height: 100
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -205,7 +205,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       y: 0,
       width: 100,
       height: 100,
-      clipsContent: true,
+      clipsContent: true
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -220,7 +220,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       y: 0,
       width: 100,
       height: 100,
-      clipsContent: false,
+      clipsContent: false
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -235,7 +235,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       y: 0,
       width: 100,
       height: 100,
-      clipsContent: true,
+      clipsContent: true
     })
 
     const exported = await exportFigFile(graph)
@@ -261,7 +261,7 @@ describe('Fix 3: bordersTakeSpace serialization', () => {
       height: 200,
       layoutMode: 'VERTICAL',
       itemSpacing: 8,
-      strokesIncludedInLayout: true,
+      strokesIncludedInLayout: true
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -278,7 +278,7 @@ describe('Fix 3: bordersTakeSpace serialization', () => {
       height: 200,
       layoutMode: 'VERTICAL',
       itemSpacing: 8,
-      strokesIncludedInLayout: false,
+      strokesIncludedInLayout: false
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -293,7 +293,7 @@ describe('Fix 3: bordersTakeSpace serialization', () => {
       y: 0,
       width: 300,
       height: 200,
-      strokesIncludedInLayout: true,
+      strokesIncludedInLayout: true
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -318,7 +318,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 16,
-      lineHeight: 24,
+      lineHeight: 24
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -336,7 +336,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       text: 'Hello',
       fontFamily: 'Inter',
       fontWeight: 400,
-      fontSize: 16,
+      fontSize: 16
       // lineHeight not set — defaults to null
     })
 
@@ -356,7 +356,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       text: 'Hello',
       fontFamily: 'Inter',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -376,7 +376,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 16,
-      lineHeight: 28,
+      lineHeight: 28
     })
 
     const exported = await exportFigFile(graph)
@@ -403,7 +403,7 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
       text: 'Hello',
       fontFamily: 'DM Sans 9pt',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -424,7 +424,7 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
       text: 'Hello',
       fontFamily: 'Roboto Variable',
       fontWeight: 700,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -445,7 +445,7 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
       text: 'Hello',
       fontFamily: 'Inter',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const exported = await exportFigFile(graph)
@@ -466,7 +466,7 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
       text: 'Hello',
       fontFamily: 'DM Sans 18px',
       fontWeight: 400,
-      fontSize: 14,
+      fontSize: 14
     })
 
     const changes = toKiwi(node, graph) as Record<string, any>[]
@@ -499,7 +499,7 @@ describe('Integration: auto-layout component with all fixes', () => {
       counterAxisSizing: 'FIXED',
       clipsContent: true,
       strokesIncludedInLayout: true,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
 
     // Title text
@@ -513,7 +513,7 @@ describe('Integration: auto-layout component with all fixes', () => {
       fontFamily: 'DM Sans 9pt',
       fontWeight: 600,
       fontSize: 14,
-      lineHeight: 20,
+      lineHeight: 20
     })
 
     // Value text
@@ -527,7 +527,7 @@ describe('Integration: auto-layout component with all fixes', () => {
       fontFamily: 'Inter',
       fontWeight: 700,
       fontSize: 32,
-      lineHeight: 40,
+      lineHeight: 40
     })
 
     // Verify kiwi output directly
@@ -553,7 +553,7 @@ describe('Integration: auto-layout component with all fixes', () => {
 
     // Fix 2: frameMaskDisabled is inverse of clipsContent
     expect(cardNc.frameMaskDisabled).toBe(false) // clipsContent=true → frameMaskDisabled=false
-    expect(titleNc.frameMaskDisabled).toBe(true)  // text nodes don't clip
+    expect(titleNc.frameMaskDisabled).toBe(true) // text nodes don't clip
 
     // Fix 3: bordersTakeSpace
     expect(cardNc.bordersTakeSpace).toBe(true)

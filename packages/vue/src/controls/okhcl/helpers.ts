@@ -9,8 +9,8 @@ import {
 
 import type { ColorFieldFormat } from '#vue/primitives/ColorPicker/types'
 import type { OkHCLColor } from '@open-pencil/core/color'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { Ref } from 'vue'
 
 type ColorKind = 'fill' | 'stroke'
@@ -28,11 +28,17 @@ export function getStrokeOkHCLColor(node: SceneNode | null, index: number): OkHC
 }
 
 function fallbackFillOkHCL(node: SceneNode, index: number) {
-  return getFillOkHCLColor(node, index) ?? rgbaToOkHCL(node.fills[index]?.color ?? { r: 0, g: 0, b: 0, a: 1 })
+  return (
+    getFillOkHCLColor(node, index) ??
+    rgbaToOkHCL(node.fills[index]?.color ?? { r: 0, g: 0, b: 0, a: 1 })
+  )
 }
 
 function fallbackStrokeOkHCL(node: SceneNode, index: number) {
-  return getStrokeOkHCLColor(node, index) ?? rgbaToOkHCL(node.strokes[index]?.color ?? { r: 0, g: 0, b: 0, a: 1 })
+  return (
+    getStrokeOkHCLColor(node, index) ??
+    rgbaToOkHCL(node.strokes[index]?.color ?? { r: 0, g: 0, b: 0, a: 1 })
+  )
 }
 
 export function createOkHCLActions(editor: Editor) {

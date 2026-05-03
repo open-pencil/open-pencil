@@ -18,7 +18,7 @@ function describeChild(
   node: SceneNode,
   graph: SceneGraph,
   depth: number,
-  gridSize: number,
+  gridSize: number
 ): ChildDescription {
   const role = detectRole(node)
   const summary = node.type === 'TEXT' ? summarizeText(node) : summarizeContainer(node)
@@ -43,7 +43,7 @@ export function describeOneNode(
   figma: { graph: SceneGraph },
   nodeId: string,
   depth: number,
-  gridSize: number,
+  gridSize: number
 ): Record<string, unknown> {
   const raw = figma.graph.getNode(nodeId)
   if (!raw) return { id: nodeId, error: `Node "${nodeId}" not found` }
@@ -66,7 +66,7 @@ export function describeOneNode(
     type: raw.type,
     role,
     size: `${raw.width}×${raw.height}`,
-    visual,
+    visual
   }
   if (layout) result.layout = layout
   if (children.length > 0) result.children = children

@@ -43,4 +43,3 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
 
   return { handleRequest }
 }
-

@@ -1,4 +1,3 @@
-
 export { booleanExclude, booleanIntersect, booleanSubtract, booleanUnion } from './vector/boolean'
 
 export { pathFlip, pathGet, pathMove, pathScale, pathSet } from './vector/path'

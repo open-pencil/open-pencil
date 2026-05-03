@@ -1,7 +1,7 @@
 import { inject, provide } from 'vue'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { useLayout } from '#vue/controls/layout/use'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 type RawLayoutControlsContext = ShallowUnwrapRef<ReturnType<typeof useLayout>>

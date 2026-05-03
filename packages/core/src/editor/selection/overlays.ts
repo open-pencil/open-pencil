@@ -1,6 +1,6 @@
+import type { EditorContext } from '#core/editor/types'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { Rect } from '#core/types'
-import type { EditorContext } from '#core/editor/types'
 
 export function createSelectionOverlayActions(ctx: EditorContext) {
   function setMarquee(rect: Rect | null) {

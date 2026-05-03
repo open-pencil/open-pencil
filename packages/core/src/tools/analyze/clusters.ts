@@ -28,7 +28,7 @@ export const analyzeClusters = defineTool({
   params: {
     min_count: { type: 'number', description: 'Min instances to form a cluster (default: 2)' },
     min_size: { type: 'number', description: 'Min node size in px (default: 30)' },
-    limit: { type: 'number', description: 'Max clusters to return (default: 20)' },
+    limit: { type: 'number', description: 'Max clusters to return (default: 20)' }
   },
   execute: (figma, args) => {
     const minCount = args.min_count ?? 2
@@ -77,7 +77,7 @@ export const analyzeClusters = defineTool({
         type: raw.type,
         width: raw.width,
         height: raw.height,
-        childCount: raw.childIds.length,
+        childCount: raw.childIds.length
       })
       signatureMap.set(signature, list)
       return false
@@ -102,12 +102,12 @@ export const analyzeClusters = defineTool({
           widthRange: Math.round(widthRange),
           heightRange: Math.round(heightRange),
           confidence,
-          examples: nodes.slice(0, 3).map((node) => ({ id: node.id, name: node.name })),
+          examples: nodes.slice(0, 3).map((node) => ({ id: node.id, name: node.name }))
         }
       })
       .sort((a, b) => b.count - a.count)
       .slice(0, limit)
 
     return { totalNodes, clusters }
-  },
+  }
 })

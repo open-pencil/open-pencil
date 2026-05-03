@@ -19,6 +19,6 @@ export function createHistoryFrame(
     y: 0,
     width: 200,
     height: 150,
-    ...overrides,
+    ...overrides
   })
 }

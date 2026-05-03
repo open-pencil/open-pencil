@@ -6,8 +6,8 @@ import { createNanoEvents } from 'nanoevents'
 import * as HitTest from './hit-test'
 import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
-import { normalizeVectorNetwork } from './vector-network'
 import * as Variables from './variables'
+import { normalizeVectorNetwork } from './vector-network'
 
 export type { GUID, Color } from '#core/types'
 export * from './types'
@@ -15,7 +15,6 @@ export * from './types'
 import { getAbsolutePosition } from '#core/canvas/coordinate'
 
 import type { Color, Rect, Vector } from '#core/types'
-import type { Emitter } from 'nanoevents'
 import type {
   DocumentColorSpace,
   NodeType,
@@ -27,6 +26,7 @@ import type {
   VariableType,
   VariableValue
 } from './types'
+import type { Emitter } from 'nanoevents'
 
 export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
 let nextLocalID = 1

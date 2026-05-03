@@ -2,8 +2,8 @@ import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/node-edi
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { resolveHit } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'
 import { tryStartResize } from '#vue/shared/input/resize'
+import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'
 
 import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
@@ -64,4 +64,3 @@ export function handleSelectDown(
 
   setDrag(createSelectionMoveDrag(cx, cy, editor, e.altKey))
 }
-

@@ -2,8 +2,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
-import { createStdioRpcBridge } from './stdio-bridge.js'
 import { MCP_VERSION, registerTools } from './server.js'
+import { createStdioRpcBridge } from './stdio-bridge.js'
 
 const wsPort = parseInt(process.env.WS_PORT ?? '7601', 10)
 const wsHost = process.env.HOST ?? '127.0.0.1'
@@ -18,7 +18,7 @@ const bridge = createStdioRpcBridge({
   },
   onMalformedMessage: () => {
     process.stderr.write('Malformed WS message\n')
-  },
+  }
 })
 
 bridge.connect()

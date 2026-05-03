@@ -36,7 +36,9 @@ describe('plugin data', () => {
     frame.setSharedPluginData('tokens', 'accent', '{"ref":"brand/500"}')
 
     const bytes = await exportFigFile(graph)
-    const parsed = await parseFigFile(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+    const parsed = await parseFigFile(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    )
     const parsedFrame = [...parsed.getAllNodes()].find((node) => node.name === 'Plugin data frame')
 
     expect(parsedFrame).toBeDefined()
@@ -55,8 +57,12 @@ describe('plugin data', () => {
   test('preserves plugin relaunch data from imported fig files', async () => {
     await initCodec()
     const bytes = new Uint8Array(await Bun.file('./tests/fixtures/material3.fig').arrayBuffer())
-    const graph = await parseFigFile(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
-    const nodeWithRelaunch = [...graph.getAllNodes()].find((node) => node.pluginRelaunchData.length > 0)
+    const graph = await parseFigFile(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    )
+    const nodeWithRelaunch = [...graph.getAllNodes()].find(
+      (node) => node.pluginRelaunchData.length > 0
+    )
 
     expect(nodeWithRelaunch).toBeDefined()
     expect(nodeWithRelaunch?.pluginRelaunchData[0]).toMatchObject({

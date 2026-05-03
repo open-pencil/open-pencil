@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import { PEER_COLORS, ROOM_ID_CHARS, ROOM_ID_LENGTH } from '@/constants'
 import { randomIndex } from '@open-pencil/core/random'
 
-import type { EditorStore } from '@/app/editor/active-store'
 import type { RemotePeer } from './types'
+import type { EditorStore } from '@/app/editor/active-store'
 import type { Color } from '@open-pencil/core/types'
 import type * as awarenessProtocol from 'y-protocols/awareness'
 

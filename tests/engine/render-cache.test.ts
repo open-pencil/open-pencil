@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 import { initCanvasKit } from '#cli/headless'
+
 import {
   computeAllLayouts,
   initCodec,

@@ -190,10 +190,7 @@ function forVisibleStrokes(
   r: SkiaRenderer,
   node: SceneNode,
   graph: SceneGraph,
-  draw: (
-    stroke: SceneNode['strokes'][number],
-    color: Color
-  ) => void
+  draw: (stroke: SceneNode['strokes'][number], color: Color) => void
 ): void {
   for (let index = 0; index < node.strokes.length; index++) {
     const stroke = node.strokes[index]

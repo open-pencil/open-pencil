@@ -6,7 +6,7 @@ export const viewportGet = defineTool({
   params: {},
   execute: (figma) => {
     return figma.viewport
-  },
+  }
 })
 
 export const viewportSet = defineTool({
@@ -16,12 +16,12 @@ export const viewportSet = defineTool({
   params: {
     x: { type: 'number', description: 'Center X', required: true },
     y: { type: 'number', description: 'Center Y', required: true },
-    zoom: { type: 'number', description: 'Zoom level', required: true, min: 0.01 },
+    zoom: { type: 'number', description: 'Zoom level', required: true, min: 0.01 }
   },
   execute: (figma, { x, y, zoom }) => {
     figma.viewport = { center: { x, y }, zoom }
     return { x, y, zoom }
-  },
+  }
 })
 
 export const viewportZoomToFit = defineTool({
@@ -29,7 +29,7 @@ export const viewportZoomToFit = defineTool({
   mutates: true,
   description: 'Zoom viewport to fit specified nodes.',
   params: {
-    ids: { type: 'string[]', description: 'Node IDs to fit in view', required: true },
+    ids: { type: 'string[]', description: 'Node IDs to fit in view', required: true }
   },
   execute: (figma, { ids }) => {
     let minX = Infinity
@@ -51,7 +51,7 @@ export const viewportZoomToFit = defineTool({
     figma.viewport = { center: { x: centerX, y: centerY }, zoom: 1 }
     return {
       center: { x: centerX, y: centerY },
-      bounds: { x: minX, y: minY, width: maxX - minX, height: maxY - minY },
+      bounds: { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
     }
-  },
+  }
 })

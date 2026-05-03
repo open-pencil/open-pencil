@@ -75,7 +75,13 @@ export function createTextCompositionHandlers({
     isComposing = false
   }
 
-  return { isComposing: () => isComposing, onCompositionStart, onCompositionEnd, onInput, resetComposition }
+  return {
+    isComposing: () => isComposing,
+    onCompositionStart,
+    onCompositionEnd,
+    onInput,
+    resetComposition
+  }
 }
 
 export function createTextEditActions(store: Editor) {

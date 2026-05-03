@@ -26,7 +26,9 @@ test('ScrubInput drag changes X position', async () => {
   expect(before).not.toBeNull()
   const initialX = before!.x
 
-  const xScrub = page.locator('[data-test-id="position-section"] [data-test-id="scrub-input"]').first()
+  const xScrub = page
+    .locator('[data-test-id="position-section"] [data-test-id="scrub-input"]')
+    .first()
   await canvas.dragScrubInput(xScrub, 50)
 
   const after = await getSelectedNode(page)
@@ -41,7 +43,9 @@ test('corner radius uniform sets cornerRadius', async () => {
   const scrubContainer = page.locator('[data-test-id="corner-radius-input"]')
   await scrubContainer.click()
   await canvas.waitForRender()
-  const input = page.locator('[data-test-id="corner-radius-input"] [data-test-id="scrub-input-field"]')
+  const input = page.locator(
+    '[data-test-id="corner-radius-input"] [data-test-id="scrub-input-field"]'
+  )
   await input.fill('12')
   await input.press('Enter')
   await canvas.waitForRender()

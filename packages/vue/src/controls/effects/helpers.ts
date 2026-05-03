@@ -1,6 +1,6 @@
+import type { Editor } from '@open-pencil/core/editor'
 import type { Effect, SceneNode } from '@open-pencil/core/scene-graph'
 import type { Color } from '@open-pencil/core/types'
-import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
 
 type EffectType = Effect['type']

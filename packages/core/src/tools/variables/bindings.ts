@@ -9,9 +9,9 @@ export const bindVariable = defineTool({
     field: {
       type: 'string',
       description: 'Property field (fills, strokes, opacity, width, height, etc.)',
-      required: true,
+      required: true
     },
-    variable_id: { type: 'string', description: 'Variable ID', required: true },
+    variable_id: { type: 'string', description: 'Variable ID', required: true }
   },
   execute: (figma, args) => {
     const node = figma.getNodeById(args.node_id)
@@ -20,5 +20,5 @@ export const bindVariable = defineTool({
     if (!variable) return { error: `Variable "${args.variable_id}" not found` }
     figma.bindVariable(args.node_id, args.field, args.variable_id)
     return { node_id: args.node_id, field: args.field, variable_id: args.variable_id }
-  },
+  }
 })

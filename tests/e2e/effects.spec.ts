@@ -99,7 +99,9 @@ test('inner shadow', async () => {
       width: 200,
       height: 120,
       cornerRadius: 12,
-      fills: [{ type: 'SOLID', color: { r: 0.96, g: 0.96, b: 0.97, a: 1 }, visible: true, opacity: 1 }],
+      fills: [
+        { type: 'SOLID', color: { r: 0.96, g: 0.96, b: 0.97, a: 1 }, visible: true, opacity: 1 }
+      ],
       effects: [
         {
           type: 'INNER_SHADOW',
@@ -129,7 +131,9 @@ test('inner shadow with spread', async () => {
       width: 200,
       height: 120,
       cornerRadius: 12,
-      fills: [{ type: 'SOLID', color: { r: 0.96, g: 0.96, b: 0.97, a: 1 }, visible: true, opacity: 1 }],
+      fills: [
+        { type: 'SOLID', color: { r: 0.96, g: 0.96, b: 0.97, a: 1 }, visible: true, opacity: 1 }
+      ],
       effects: [
         {
           type: 'INNER_SHADOW',
@@ -158,7 +162,9 @@ test('drop shadow on ellipse', async () => {
       y: 80,
       width: 160,
       height: 160,
-      fills: [{ type: 'SOLID', color: { r: 0.38, g: 0.35, b: 0.95, a: 1 }, visible: true, opacity: 1 }],
+      fills: [
+        { type: 'SOLID', color: { r: 0.38, g: 0.35, b: 0.95, a: 1 }, visible: true, opacity: 1 }
+      ],
       effects: [
         {
           type: 'DROP_SHADOW',
@@ -261,7 +267,9 @@ test('layer blur', async () => {
       width: 200,
       height: 120,
       cornerRadius: 12,
-      fills: [{ type: 'SOLID', color: { r: 0.23, g: 0.51, b: 0.96, a: 1 }, visible: true, opacity: 1 }],
+      fills: [
+        { type: 'SOLID', color: { r: 0.23, g: 0.51, b: 0.96, a: 1 }, visible: true, opacity: 1 }
+      ],
       effects: [
         {
           type: 'LAYER_BLUR',

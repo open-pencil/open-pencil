@@ -1,21 +1,21 @@
 import { describe, test, expect } from 'bun:test'
 
 import {
+  encodeVectorNetworkBlob,
+  decodeVectorNetworkBlob,
+  computeVectorBounds,
+  normalizeVectorNetwork,
+  validateVectorNetwork,
+  type VectorNetwork
+} from '@open-pencil/core'
+
+import {
   lineNetwork,
   triangleNetwork,
   vectorNetwork,
   vectorSegment,
   vectorVertex
 } from '../helpers/vector-network'
-
-import {
-  encodeVectorNetworkBlob,
-  decodeVectorNetworkBlob,
-  computeVectorBounds,
-  normalizeVectorNetwork,
-  validateVectorNetwork,
-  type VectorNetwork,
-} from '@open-pencil/core'
 
 describe('vectorNetworkBlob round-trip', () => {
   test('empty network', () => {
@@ -77,9 +77,7 @@ describe('vectorNetworkBlob round-trip', () => {
         { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
         { start: 3, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
       ],
-      regions: [
-        { windingRule: 'EVENODD', loops: [[0, 1, 2, 3]] }
-      ]
+      regions: [{ windingRule: 'EVENODD', loops: [[0, 1, 2, 3]] }]
     }
     const blob = encodeVectorNetworkBlob(network)
     const decoded = decodeVectorNetworkBlob(blob)
@@ -114,7 +112,10 @@ describe('vectorNetworkBlob round-trip', () => {
 describe('normalizeVectorNetwork', () => {
   test('passes through segments that already have tangents', () => {
     const network: VectorNetwork = {
-      vertices: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 }
+      ],
       segments: [{ start: 0, end: 1, tangentStart: { x: 5, y: 0 }, tangentEnd: { x: -5, y: 0 } }],
       regions: []
     }
@@ -125,7 +126,10 @@ describe('normalizeVectorNetwork', () => {
 
   test('defaults missing tangentStart and tangentEnd to zero', () => {
     const network = {
-      vertices: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 }
+      ],
       segments: [{ start: 0, end: 1 }],
       regions: []
     } as unknown as VectorNetwork
@@ -136,7 +140,10 @@ describe('normalizeVectorNetwork', () => {
 
   test('defaults only the missing tangent', () => {
     const network = {
-      vertices: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 }
+      ],
       segments: [{ start: 0, end: 1, tangentStart: { x: 3, y: 4 } }],
       regions: []
     } as unknown as VectorNetwork
@@ -177,7 +184,10 @@ describe('normalizeVectorNetwork', () => {
 describe('validateVectorNetwork', () => {
   test('valid network returns no errors', () => {
     const network: VectorNetwork = {
-      vertices: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 }
+      ],
       segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
       regions: []
     }
@@ -186,7 +196,10 @@ describe('validateVectorNetwork', () => {
 
   test('segments without tangents are valid (normalize handles them)', () => {
     const network = {
-      vertices: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 }
+      ],
       segments: [{ start: 0, end: 1 }],
       regions: []
     } as unknown as VectorNetwork
@@ -224,7 +237,10 @@ describe('validateVectorNetwork', () => {
 describe('computeVectorBounds', () => {
   test('empty network', () => {
     expect(computeVectorBounds({ vertices: [], segments: [], regions: [] })).toEqual({
-      x: 0, y: 0, width: 0, height: 0
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0
     })
   })
 
@@ -258,9 +274,7 @@ describe('computeVectorBounds', () => {
         { x: 0, y: 0, handleMirroring: 'NONE' },
         { x: 100, y: 0, handleMirroring: 'NONE' }
       ],
-      segments: [
-        { start: 0, end: 1, tangentStart: { x: 0, y: -50 }, tangentEnd: { x: 0, y: 50 } }
-      ],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: -50 }, tangentEnd: { x: 0, y: 50 } }],
       regions: []
     })
     // Curve extrema at t=(3±√3)/6, not at control points

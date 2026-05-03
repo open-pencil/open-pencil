@@ -1,8 +1,14 @@
-import { graph, nodeId, raw, type NodeProxyInternals, type ProxyThis } from '#core/figma-api/accessor-utils'
+import {
+  graph,
+  nodeId,
+  raw,
+  type NodeProxyInternals,
+  type ProxyThis
+} from '#core/figma-api/accessor-utils'
 
+import type { NodeProxyHost } from '#core/figma-api/proxy'
 import type { SceneNode } from '#core/scene-graph'
 import type { Rect } from '#core/types'
-import type { NodeProxyHost } from '#core/figma-api/proxy'
 
 export function installBasicNodeProxyAccessors(
   prototype: object,

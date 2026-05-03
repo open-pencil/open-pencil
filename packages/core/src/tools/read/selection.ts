@@ -9,7 +9,7 @@ export const getSelection = defineTool({
   execute: (figma) => {
     const selection = figma.currentPage.selection
     return { selection: selection.map(nodeToResult) }
-  },
+  }
 })
 
 export const selectNodes = defineTool({
@@ -17,12 +17,12 @@ export const selectNodes = defineTool({
   mutates: true,
   description: 'Select one or more nodes by ID.',
   params: {
-    ids: { type: 'string[]', description: 'Node IDs to select', required: true },
+    ids: { type: 'string[]', description: 'Node IDs to select', required: true }
   },
   execute: (figma, { ids }) => {
     figma.currentPage.selection = ids
       .map((id) => figma.getNodeById(id))
       .filter((node): node is FigmaNodeProxy => node !== null)
     return { selected: ids }
-  },
+  }
 })

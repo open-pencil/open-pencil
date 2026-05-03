@@ -1,10 +1,10 @@
 import { resolve } from 'node:path'
 
+import { fail, ok } from '#mcp/result'
 import { z } from 'zod'
 
 import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
-import { fail, ok } from '#mcp/result'
 import { resolveSafePath, writeToolOutput } from './output'
 import { paramToZod } from './schema'
 
@@ -49,16 +49,16 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
                 {
                   type: 'image' as const,
                   data: r.base64 as string,
-                  mimeType: r.mimeType as string,
-                },
-              ],
+                  mimeType: r.mimeType as string
+                }
+              ]
             }
           }
           return ok(r)
         } catch (e) {
           return fail(e)
         }
-      },
+      }
     )
   }
 
@@ -67,7 +67,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     {
       description:
         'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
-      inputSchema: z.object({}),
+      inputSchema: z.object({})
     },
     async () => {
       try {
@@ -78,7 +78,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       } catch (e) {
         return fail(e)
       }
-    },
+    }
   )
 
   if (resolvedRoot) {
@@ -87,8 +87,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Absolute path to the design file'),
-        }),
+          path: z.string().describe('Absolute path to the design file')
+        })
       },
       async (args: { path: string }) => {
         try {
@@ -100,7 +100,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         } catch (e) {
           return fail(e)
         }
-      },
+      }
     )
 
     register(
@@ -108,8 +108,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Optional absolute path for the new file').optional(),
-        }),
+          path: z.string().describe('Optional absolute path for the new file').optional()
+        })
       },
       async (args: { path?: string }) => {
         try {
@@ -121,16 +121,17 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         } catch (e) {
           return fail(e)
         }
-      },
+      }
     )
   }
 
   register(
     'get_codegen_prompt',
     {
-      description: 'Get design-to-code generation guidelines. Call before generating frontend code.',
-      inputSchema: z.object({}),
+      description:
+        'Get design-to-code generation guidelines. Call before generating frontend code.',
+      inputSchema: z.object({})
     },
-    async () => ok({ prompt: CODEGEN_PROMPT }),
+    async () => ok({ prompt: CODEGEN_PROMPT })
   )
 }

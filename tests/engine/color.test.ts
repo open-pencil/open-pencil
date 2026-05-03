@@ -221,18 +221,12 @@ describe('colorDistance', () => {
   })
 
   test('similar reds are close', () => {
-    const d = colorDistance(
-      { r: 1, g: 0, b: 0, a: 1 },
-      { r: 0.95, g: 0.02, b: 0.02, a: 1 }
-    )
+    const d = colorDistance({ r: 1, g: 0, b: 0, a: 1 }, { r: 0.95, g: 0.02, b: 0.02, a: 1 })
     expect(d).toBeLessThan(15)
   })
 
   test('red to blue is far', () => {
-    const d = colorDistance(
-      { r: 1, g: 0, b: 0, a: 1 },
-      { r: 0, g: 0, b: 1, a: 1 }
-    )
+    const d = colorDistance({ r: 1, g: 0, b: 0, a: 1 }, { r: 0, g: 0, b: 1, a: 1 })
     expect(d).toBeGreaterThan(300)
   })
 })

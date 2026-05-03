@@ -16,8 +16,10 @@ const show = !IS_TAURI && IS_BROWSER && !window.showSaveFilePicker
     <span class="flex-1">
       Your browser doesn't support the local file API. Files will be downloaded instead of saved in
       place.
-      <a href="https://www.google.com/chrome/" target="_blank" class="font-medium underline">Use Chrome</a> or
-      Edge for full support.
+      <a href="https://www.google.com/chrome/" target="_blank" class="font-medium underline"
+        >Use Chrome</a
+      >
+      or Edge for full support.
     </span>
     <button
       data-test-id="safari-banner-dismiss"

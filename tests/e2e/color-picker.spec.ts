@@ -73,7 +73,11 @@ test('rgb hue slider updates selected fill color', async () => {
   const after = await getSelectedFill()
 
   expect(after).not.toBeNull()
-  expect(before?.color.r !== after?.color.r || before?.color.g !== after?.color.g || before?.color.b !== after?.color.b).toBe(true)
+  expect(
+    before?.color.r !== after?.color.r ||
+      before?.color.g !== after?.color.g ||
+      before?.color.b !== after?.color.b
+  ).toBe(true)
 })
 
 test('rgb alpha slider updates fill opacity and alpha', async () => {
@@ -94,7 +98,11 @@ test('hsl saturation slider changes saturation', async () => {
   const after = await getSelectedFill()
 
   expect(after).not.toBeNull()
-  expect(before?.color.r !== after?.color.r || before?.color.g !== after?.color.g || before?.color.b !== after?.color.b).toBe(true)
+  expect(
+    before?.color.r !== after?.color.r ||
+      before?.color.g !== after?.color.g ||
+      before?.color.b !== after?.color.b
+  ).toBe(true)
 })
 
 test('hsl lightness slider changes color independently', async () => {
@@ -105,7 +113,11 @@ test('hsl lightness slider changes color independently', async () => {
   const after = await getSelectedFill()
 
   expect(after).not.toBeNull()
-  expect(before?.color.r !== after?.color.r || before?.color.g !== after?.color.g || before?.color.b !== after?.color.b).toBe(true)
+  expect(
+    before?.color.r !== after?.color.r ||
+      before?.color.g !== after?.color.g ||
+      before?.color.b !== after?.color.b
+  ).toBe(true)
 })
 
 test('hsb saturation and brightness sliders both affect fill color', async () => {
@@ -116,11 +128,19 @@ test('hsb saturation and brightness sliders both affect fill color', async () =>
   await dragSlider('color-slider-hsb-s', 0.15)
   const afterS = await getSelectedFill()
   expect(afterS).not.toBeNull()
-  expect(beforeS?.color.r !== afterS?.color.r || beforeS?.color.g !== afterS?.color.g || beforeS?.color.b !== afterS?.color.b).toBe(true)
+  expect(
+    beforeS?.color.r !== afterS?.color.r ||
+      beforeS?.color.g !== afterS?.color.g ||
+      beforeS?.color.b !== afterS?.color.b
+  ).toBe(true)
 
   const beforeB = await getSelectedFill()
   await dragSlider('color-slider-hsb-b', 0.9)
   const afterB = await getSelectedFill()
   expect(afterB).not.toBeNull()
-  expect(beforeB?.color.r !== afterB?.color.r || beforeB?.color.g !== afterB?.color.g || beforeB?.color.b !== afterB?.color.b).toBe(true)
+  expect(
+    beforeB?.color.r !== afterB?.color.r ||
+      beforeB?.color.g !== afterB?.color.g ||
+      beforeB?.color.b !== afterB?.color.b
+  ).toBe(true)
 })

@@ -74,7 +74,11 @@ export function createReloadActions({
     const filePath = getFilePath()
     const fileHandle = getFileHandle()
 
-    const imported = await readReloadSource({ documentName: state.documentName, filePath, fileHandle })
+    const imported = await readReloadSource({
+      documentName: state.documentName,
+      filePath,
+      fileHandle
+    })
     if (!imported) return
     editor.replaceGraph(imported)
 

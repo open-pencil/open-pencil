@@ -1,7 +1,4 @@
-import {
-  createAppearanceActions,
-  createAppearanceState
-} from '#vue/controls/appearance/helpers'
+import { createAppearanceActions, createAppearanceState } from '#vue/controls/appearance/helpers'
 import { useNodeProps } from '#vue/controls/node-props/use'
 import { useEditor } from '#vue/editor/context'
 

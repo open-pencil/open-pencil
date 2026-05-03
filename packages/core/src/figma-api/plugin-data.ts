@@ -10,7 +10,12 @@ export function getPluginData(node: SceneNode, key: string): string {
   )
 }
 
-export function setPluginData(graph: SceneGraph, node: SceneNode, key: string, value: string): void {
+export function setPluginData(
+  graph: SceneGraph,
+  node: SceneNode,
+  key: string,
+  value: string
+): void {
   const pluginData = node.pluginData.filter(
     (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && entry.key === key)
   )
@@ -27,7 +32,10 @@ export function getPluginDataKeys(node: SceneNode): string[] {
 }
 
 export function getSharedPluginData(node: SceneNode, namespace: string, key: string): string {
-  return node.sharedPluginData.find((entry) => entry.namespace === namespace && entry.key === key)?.value ?? ''
+  return (
+    node.sharedPluginData.find((entry) => entry.namespace === namespace && entry.key === key)
+      ?.value ?? ''
+  )
 }
 
 export function setSharedPluginData(

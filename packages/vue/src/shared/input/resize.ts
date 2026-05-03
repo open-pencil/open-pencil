@@ -15,13 +15,7 @@ export function applyResize(
   editor: Editor
 ) {
   const { origRect } = d
-  const newRect = calculateResizeRect(
-    d.handle,
-    origRect,
-    cx - d.startX,
-    cy - d.startY,
-    constrain
-  )
+  const newRect = calculateResizeRect(d.handle, origRect, cx - d.startX, cy - d.startY, constrain)
 
   const changes: Partial<SceneNode> = { ...newRect }
 

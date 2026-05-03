@@ -1,7 +1,6 @@
-import { defineCommand } from 'citty'
-
-import { loadRpcData } from '#cli/rpc-data'
 import { bold, fmtHistogram, fmtList, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
+import { defineCommand } from 'citty'
 
 import type { AnalyzeColorsResult } from '@open-pencil/core/rpc'
 

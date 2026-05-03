@@ -1,5 +1,5 @@
-import type { EditorCommand, EditorCommandId } from './types'
 import type { EditorCommandMapOptions } from './context'
+import type { EditorCommand, EditorCommandId } from './types'
 
 type SelectionCommandId = Extract<EditorCommandId, `selection.${string}`>
 
@@ -9,7 +9,7 @@ export function createSelectionCommands({
   capabilities,
   messages: t,
   otherPages,
-  moveSelectionToPage,
+  moveSelectionToPage
 }: EditorCommandMapOptions): Record<SelectionCommandId, EditorCommand> {
   return {
     'selection.selectAll': {
@@ -18,7 +18,7 @@ export function createSelectionCommands({
         return t.value.selectAll
       },
       enabled: capabilities.canSelectAll,
-      run: () => editor.selectAll(),
+      run: () => editor.selectAll()
     },
     'selection.duplicate': {
       id: 'selection.duplicate',
@@ -26,7 +26,7 @@ export function createSelectionCommands({
         return t.value.duplicate
       },
       enabled: capabilities.canDuplicate,
-      run: () => editor.duplicateSelected(),
+      run: () => editor.duplicateSelected()
     },
     'selection.delete': {
       id: 'selection.delete',
@@ -34,7 +34,7 @@ export function createSelectionCommands({
         return t.value.delete
       },
       enabled: capabilities.canDelete,
-      run: () => editor.deleteSelected(),
+      run: () => editor.deleteSelected()
     },
     'selection.group': {
       id: 'selection.group',
@@ -42,7 +42,7 @@ export function createSelectionCommands({
         return t.value.group
       },
       enabled: capabilities.canGroup,
-      run: () => editor.groupSelected(),
+      run: () => editor.groupSelected()
     },
     'selection.ungroup': {
       id: 'selection.ungroup',
@@ -50,7 +50,7 @@ export function createSelectionCommands({
         return t.value.ungroup
       },
       enabled: capabilities.canUngroup,
-      run: () => editor.ungroupSelected(),
+      run: () => editor.ungroupSelected()
     },
     'selection.createComponent': {
       id: 'selection.createComponent',
@@ -58,7 +58,7 @@ export function createSelectionCommands({
         return t.value.createComponent
       },
       enabled: capabilities.canCreateComponent,
-      run: () => editor.createComponentFromSelection(),
+      run: () => editor.createComponentFromSelection()
     },
     'selection.createComponentSet': {
       id: 'selection.createComponentSet',
@@ -66,7 +66,7 @@ export function createSelectionCommands({
         return t.value.createComponentSet
       },
       enabled: capabilities.canCreateComponentSet,
-      run: () => editor.createComponentSetFromComponents(),
+      run: () => editor.createComponentSetFromComponents()
     },
     'selection.createInstance': {
       id: 'selection.createInstance',
@@ -77,7 +77,7 @@ export function createSelectionCommands({
       run: () => {
         const node = selection.selectedNode.value
         if (node?.type === 'COMPONENT') editor.createInstanceFromComponent(node.id)
-      },
+      }
     },
     'selection.detachInstance': {
       id: 'selection.detachInstance',
@@ -85,7 +85,7 @@ export function createSelectionCommands({
         return t.value.detachInstance
       },
       enabled: capabilities.canDetachInstance,
-      run: () => editor.detachInstance(),
+      run: () => editor.detachInstance()
     },
     'selection.goToMainComponent': {
       id: 'selection.goToMainComponent',
@@ -93,7 +93,7 @@ export function createSelectionCommands({
         return t.value.goToMainComponent
       },
       enabled: capabilities.canGoToMainComponent,
-      run: () => editor.goToMainComponent(),
+      run: () => editor.goToMainComponent()
     },
     'selection.wrapInAutoLayout': {
       id: 'selection.wrapInAutoLayout',
@@ -101,7 +101,7 @@ export function createSelectionCommands({
         return t.value.addAutoLayout
       },
       enabled: capabilities.canWrapInAutoLayout,
-      run: () => editor.wrapInAutoLayout(),
+      run: () => editor.wrapInAutoLayout()
     },
     'selection.bringToFront': {
       id: 'selection.bringToFront',
@@ -109,7 +109,7 @@ export function createSelectionCommands({
         return t.value.bringToFront
       },
       enabled: capabilities.canBringToFront,
-      run: () => editor.bringToFront(),
+      run: () => editor.bringToFront()
     },
     'selection.sendToBack': {
       id: 'selection.sendToBack',
@@ -117,7 +117,7 @@ export function createSelectionCommands({
         return t.value.sendToBack
       },
       enabled: capabilities.canSendToBack,
-      run: () => editor.sendToBack(),
+      run: () => editor.sendToBack()
     },
     'selection.toggleVisibility': {
       id: 'selection.toggleVisibility',
@@ -125,7 +125,7 @@ export function createSelectionCommands({
         return t.value.toggleVisibility
       },
       enabled: capabilities.canToggleVisibility,
-      run: () => editor.toggleVisibility(),
+      run: () => editor.toggleVisibility()
     },
     'selection.toggleLock': {
       id: 'selection.toggleLock',
@@ -133,7 +133,7 @@ export function createSelectionCommands({
         return t.value.toggleLock
       },
       enabled: capabilities.canToggleLock,
-      run: () => editor.toggleLock(),
+      run: () => editor.toggleLock()
     },
     'selection.moveToPage': {
       id: 'selection.moveToPage',
@@ -143,7 +143,7 @@ export function createSelectionCommands({
       enabled: capabilities.canMoveToPage,
       run: () => {
         moveSelectionToPage(otherPages.value[0].id)
-      },
-    },
+      }
+    }
   }
 }

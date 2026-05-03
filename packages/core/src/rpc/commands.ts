@@ -1,4 +1,10 @@
 import {
+  analyzeClustersCommand,
+  analyzeColorsCommand,
+  analyzeSpacingCommand,
+  analyzeTypographyCommand
+} from './analyze-commands'
+import {
   findCommand,
   infoCommand,
   nodeCommand,
@@ -6,12 +12,6 @@ import {
   queryCommand,
   treeCommand
 } from './read-commands'
-import {
-  analyzeClustersCommand,
-  analyzeColorsCommand,
-  analyzeSpacingCommand,
-  analyzeTypographyCommand
-} from './analyze-commands'
 import { variablesCommand } from './variables-command'
 
 import type { SceneGraph } from '#core/scene-graph'

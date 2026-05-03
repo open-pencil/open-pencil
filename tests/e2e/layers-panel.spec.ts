@@ -44,7 +44,7 @@ async function getSceneTree() {
       return {
         name: node.name,
         type: node.type,
-        children: node.childIds.map((cid: string) => nodeTree(cid)).filter(Boolean),
+        children: node.childIds.map((cid: string) => nodeTree(cid)).filter(Boolean)
       }
     }
     return nodeTree(store.state.currentPageId)

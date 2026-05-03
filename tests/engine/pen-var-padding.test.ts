@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { applyPadding, isVarRef, type VarContext } from '@open-pencil/core/io/formats/pen'
+
 import type { SceneNode } from '@open-pencil/core'
 
 /**
@@ -18,12 +19,15 @@ function makeNode(): SceneNode {
     paddingRight: 0,
     paddingBottom: 0,
     paddingLeft: 0,
-    boundVariables: {},
+    boundVariables: {}
   } as unknown as SceneNode
 }
 
 function makeVarContext(vars: Record<string, number>): VarContext {
-  const byName = new Map<string, { id: string; variable: { valuesByMode: Record<string, number> } }>()
+  const byName = new Map<
+    string,
+    { id: string; variable: { valuesByMode: Record<string, number> } }
+  >()
   for (const [name, value] of Object.entries(vars)) {
     byName.set(name, { id: name, variable: { valuesByMode: { default: value } } })
   }
@@ -40,14 +44,14 @@ function makeVarContext(vars: Record<string, number>): VarContext {
       return typeof val === 'number' ? val : 0
     },
     resolveString: () => '',
-    setActiveTheme: () => {},
+    setActiveTheme: () => {}
   } as unknown as VarContext
 }
 
 const ctx = makeVarContext({
   '--spacing-sm': 8,
   '--spacing-md': 16,
-  '--spacing-lg': 24,
+  '--spacing-lg': 24
 })
 
 describe('applyPadding — variable resolution (#201)', () => {

@@ -1,5 +1,6 @@
 import { colorToHex } from '#core/color'
 import { colorToDisplayCss, getDefaultRenderColorSpace } from '#core/color/management'
+
 import { svg, type SVGNode } from './node'
 import { round } from './paths'
 

@@ -388,7 +388,7 @@ describe('query_nodes', () => {
     figma.createRectangle()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = await tool.execute(figma, { selector: '//FRAME' }) as any
+    const result = (await tool.execute(figma, { selector: '//FRAME' })) as any
     expect(result.count).toBe(2)
     expect(result.nodes.every((n: any) => n.type === 'FRAME')).toBe(true)
   })
@@ -403,7 +403,7 @@ describe('query_nodes', () => {
     big.name = 'Big'
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = await tool.execute(figma, { selector: '//RECTANGLE[@width < 200]' }) as any
+    const result = (await tool.execute(figma, { selector: '//RECTANGLE[@width < 200]' })) as any
     expect(result.count).toBe(1)
     expect(result.nodes[0].name).toBe('Small')
   })
@@ -418,9 +418,9 @@ describe('query_nodes', () => {
     t3.name = 'Label Secondary'
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = await tool.execute(figma, {
+    const result = (await tool.execute(figma, {
       selector: '//TEXT[contains(@name, "Label")]'
-    }) as any
+    })) as any
     expect(result.count).toBe(2)
     expect(result.nodes.every((n: any) => n.name.includes('Label'))).toBe(true)
   })
@@ -428,7 +428,7 @@ describe('query_nodes', () => {
   test('returns error for invalid xpath', async () => {
     const { figma } = setup()
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = await tool.execute(figma, { selector: '///invalid[[[[' }) as any
+    const result = (await tool.execute(figma, { selector: '///invalid[[[[' })) as any
     expect(result.error).toBeTruthy()
     expect(result.error).toContain('XPath error')
   })
@@ -441,7 +441,7 @@ describe('query_nodes', () => {
     }
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = await tool.execute(figma, { selector: '//RECTANGLE', limit: 3 }) as any
+    const result = (await tool.execute(figma, { selector: '//RECTANGLE', limit: 3 })) as any
     expect(result.count).toBe(3)
   })
 
@@ -450,7 +450,7 @@ describe('query_nodes', () => {
     figma.createRectangle()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = await tool.execute(figma, { selector: '//ELLIPSE' }) as any
+    const result = (await tool.execute(figma, { selector: '//ELLIPSE' })) as any
     expect(result.count).toBe(0)
     expect(result.nodes).toEqual([])
   })
@@ -549,9 +549,22 @@ describe('set_font_range', () => {
     const setText = ALL_TOOLS.find((t) => t.name === 'set_text')!
     const setFontRange = ALL_TOOLS.find((t) => t.name === 'set_font_range')!
 
-    const created = createText.execute(figma, { type: 'TEXT', x: 0, y: 0, width: 200, height: 20 }) as any
+    const created = createText.execute(figma, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 20
+    }) as any
     setText.execute(figma, { id: created.id, text: 'Hello World' })
-    setFontRange.execute(figma, { id: created.id, start: 0, end: 5, family: 'Inter', size: 18, style: 'Bold' })
+    setFontRange.execute(figma, {
+      id: created.id,
+      start: 0,
+      end: 5,
+      family: 'Inter',
+      size: 18,
+      style: 'Bold'
+    })
 
     const node = graph.getNode(created.id)!
     expect(node.styleRuns.length).toBeGreaterThan(0)
@@ -572,7 +585,13 @@ describe('set_font_range', () => {
     const setText = ALL_TOOLS.find((t) => t.name === 'set_text')!
     const setFontRange = ALL_TOOLS.find((t) => t.name === 'set_font_range')!
 
-    const created = createText.execute(figma, { type: 'TEXT', x: 0, y: 0, width: 200, height: 20 }) as any
+    const created = createText.execute(figma, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 20
+    }) as any
     setText.execute(figma, { id: created.id, text: 'Red text' })
     setFontRange.execute(figma, { id: created.id, start: 0, end: 3, color: '#ff0000' })
 

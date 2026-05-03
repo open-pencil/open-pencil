@@ -1,10 +1,6 @@
 import { guidToString } from './guid'
 
-import type {
-  NodeChange,
-  PluginData,
-  PluginRelaunchData
-} from '#core/kiwi/binary/codec'
+import type { NodeChange, PluginData, PluginRelaunchData } from '#core/kiwi/binary/codec'
 import type {
   PluginDataEntry,
   PluginRelaunchDataEntry,
@@ -15,7 +11,11 @@ export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
 export const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
 
-export function upsertPluginData(node: { pluginData: PluginDataEntry[] }, key: string, value: string): void {
+export function upsertPluginData(
+  node: { pluginData: PluginDataEntry[] },
+  key: string,
+  value: string
+): void {
   const pluginData = node.pluginData.filter(
     (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
   )

@@ -115,6 +115,8 @@ test('selecting a frame shows Frame in JSX', async () => {
 test('switching back to Design tab works', async () => {
   await designTab().click()
 
-  const panel = page.locator('[data-test-id="design-panel-single"], [data-test-id="design-panel-empty"]')
+  const panel = page.locator(
+    '[data-test-id="design-panel-single"], [data-test-id="design-panel-empty"]'
+  )
   await expect(panel.first()).toBeVisible()
 })

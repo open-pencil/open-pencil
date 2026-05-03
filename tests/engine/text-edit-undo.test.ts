@@ -16,29 +16,34 @@ function setup() {
     editingTextId: null,
     currentPageId: pageId,
     renderVersion: 0,
-    sceneVersion: 0,
+    sceneVersion: 0
   } as EditorState
 
   const ctx: EditorContext = {
     graph,
     undo,
     state,
-    requestRender: () => { state.renderVersion++; state.sceneVersion++ },
-    requestRepaint: () => { state.renderVersion++ },
+    requestRender: () => {
+      state.renderVersion++
+      state.sceneVersion++
+    },
+    requestRepaint: () => {
+      state.renderVersion++
+    },
     getTextEditor: () => textEditor,
     getRenderer: () => null,
     runLayoutForNode: () => {},
     getCk: () => null,
     loadFont: async () => {},
     getViewportSize: () => ({ width: 800, height: 600 }),
-    subscribeToGraph: () => {},
+    subscribeToGraph: () => {}
   }
 
   const textNode = graph.createNode('TEXT', pageId, {
     name: 'Label',
     text: 'Hello',
     width: 100,
-    height: 20,
+    height: 20
   })
 
   const actions = createTextActions(ctx)
@@ -130,7 +135,7 @@ describe('text edit undo', () => {
     textEditor.insert(' World', textNode)
     const newRuns: StyleRun[] = [
       { start: 0, length: 5, style: { fontWeight: 700 } },
-      { start: 5, length: 6, style: { fontWeight: 400 } },
+      { start: 5, length: 6, style: { fontWeight: 400 } }
     ]
     graph.updateNode(textNode.id, { text: textEditor.state!.text, styleRuns: newRuns })
 

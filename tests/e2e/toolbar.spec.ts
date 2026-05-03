@@ -31,7 +31,7 @@ test('Polygon tool creates POLYGON node', async () => {
   await canvas.waitForRender()
 
   const children = await getPageChildren(page)
-  expect(children.some(n => n.type === 'POLYGON')).toBe(true)
+  expect(children.some((n) => n.type === 'POLYGON')).toBe(true)
   canvas.assertNoErrors()
 })
 
@@ -42,7 +42,7 @@ test('Star tool creates STAR node', async () => {
   await canvas.waitForRender()
 
   const children = await getPageChildren(page)
-  expect(children.some(n => n.type === 'STAR')).toBe(true)
+  expect(children.some((n) => n.type === 'STAR')).toBe(true)
   canvas.assertNoErrors()
 })
 
@@ -59,7 +59,7 @@ test('Pen creates VECTOR node with 3 vertices on Enter', async () => {
   await canvas.waitForRender()
 
   const children = await getPageChildren(page)
-  const vectors = children.filter(n => n.type === 'VECTOR')
+  const vectors = children.filter((n) => n.type === 'VECTOR')
   expect(vectors.length).toBeGreaterThan(0)
   const last = vectors[vectors.length - 1]
   expect(last.vectorNetwork.vertices.length).toBe(3)
@@ -67,7 +67,7 @@ test('Pen creates VECTOR node with 3 vertices on Enter', async () => {
 })
 
 test('Pen Escape with 2 vertices cancels path without creating node', async () => {
-  const before = (await getPageChildren(page)).filter(n => n.type === 'VECTOR').length
+  const before = (await getPageChildren(page)).filter((n) => n.type === 'VECTOR').length
 
   await canvas.pressKey('p')
   await canvas.click(350, 400)
@@ -77,13 +77,13 @@ test('Pen Escape with 2 vertices cancels path without creating node', async () =
   await canvas.pressKey('Escape')
   await canvas.waitForRender()
 
-  const after = (await getPageChildren(page)).filter(n => n.type === 'VECTOR').length
+  const after = (await getPageChildren(page)).filter((n) => n.type === 'VECTOR').length
   expect(after).toBe(before)
   canvas.assertNoErrors()
 })
 
 test('Pen close path creates VECTOR with closed region', async () => {
-  const before = (await getPageChildren(page)).filter(n => n.type === 'VECTOR').length
+  const before = (await getPageChildren(page)).filter((n) => n.type === 'VECTOR').length
 
   await canvas.pressKey('p')
   await canvas.click(500, 200)
@@ -95,10 +95,10 @@ test('Pen close path creates VECTOR with closed region', async () => {
   await canvas.click(500, 200)
   await canvas.waitForRender()
 
-  const after = (await getPageChildren(page)).filter(n => n.type === 'VECTOR').length
+  const after = (await getPageChildren(page)).filter((n) => n.type === 'VECTOR').length
   expect(after).toBeGreaterThan(before)
 
-  const vectors = (await getPageChildren(page)).filter(n => n.type === 'VECTOR')
+  const vectors = (await getPageChildren(page)).filter((n) => n.type === 'VECTOR')
   const last = vectors[vectors.length - 1]
   expect(last.vectorNetwork.regions?.length).toBeGreaterThan(0)
   canvas.assertNoErrors()

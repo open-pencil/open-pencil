@@ -18,7 +18,7 @@ function nc(
     guid: { sessionID, localID },
     parentIndex: {
       guid: { sessionID: parentSessionID, localID: parentLocalID },
-      position: String.fromCharCode(33 + localID),
+      position: String.fromCharCode(33 + localID)
     },
     type,
     name,
@@ -27,7 +27,7 @@ function nc(
     phase: 'CREATED',
     size: SIZE,
     transform: ID,
-    ...extra,
+    ...extra
   } as NodeChange
 }
 
@@ -64,7 +64,7 @@ function swapOverrideFixture(opts?: { customName?: string }): NodeChange[] {
     // Button component containing an Icon instance pointing to IconA
     nc(0, 30, 'COMPONENT', 0, 1, 'Button'),
     nc(0, 31, 'INSTANCE', 0, 30, opts?.customName ?? 'IconA', {
-      symbolData: { symbolID: guid(0, 10) },
+      symbolData: { symbolID: guid(0, 10) }
     }),
 
     // Visible-page instance of Button with a swap override: Icon→IconB
@@ -74,11 +74,11 @@ function swapOverrideFixture(opts?: { customName?: string }): NodeChange[] {
         symbolOverrides: [
           {
             guidPath: { guids: [guid(0, 31)] },
-            overriddenSymbolID: guid(0, 20),
-          },
-        ],
-      },
-    }),
+            overriddenSymbolID: guid(0, 20)
+          }
+        ]
+      }
+    })
   ]
 }
 
@@ -121,7 +121,7 @@ describe('instance swap overrides', () => {
       // Wrapper COMPONENT on internal page that contains a Button instance
       nc(0, 50, 'COMPONENT', 0, 1, 'Wrapper'),
       nc(0, 51, 'INSTANCE', 0, 50, 'ButtonInstance', {
-        symbolData: { symbolID: guid(0, 30) },
+        symbolData: { symbolID: guid(0, 30) }
       }),
       // WrapperInstance on visible page with swap override on the button's icon
       nc(0, 60, 'INSTANCE', 0, 2, 'WrapperInstance', {
@@ -130,11 +130,11 @@ describe('instance swap overrides', () => {
           symbolOverrides: [
             {
               guidPath: { guids: [guid(0, 51), guid(0, 31)] },
-              overriddenSymbolID: guid(0, 20),
-            },
-          ],
-        },
-      }),
+              overriddenSymbolID: guid(0, 20)
+            }
+          ]
+        }
+      })
     ]
 
     const graph = importNodeChanges(nodes)
@@ -163,8 +163,8 @@ describe('instance swap overrides', () => {
       ...swapOverrideFixture(),
       // Second ButtonInstance with NO swap override
       nc(0, 41, 'INSTANCE', 0, 2, 'ButtonDefault', {
-        symbolData: { symbolID: guid(0, 30) },
-      }),
+        symbolData: { symbolID: guid(0, 30) }
+      })
     ]
 
     const graph = importNodeChanges(nodes)
@@ -197,7 +197,7 @@ describe('instance swap overrides', () => {
       // Button component: children = Icon INSTANCE→IconA
       nc(0, 30, 'COMPONENT', 0, 1, 'Button'),
       nc(0, 31, 'INSTANCE', 0, 30, 'IconA', {
-        symbolData: { symbolID: guid(0, 10) },
+        symbolData: { symbolID: guid(0, 10) }
       }),
 
       // ButtonSwapped: instance of Button on internal page with swap
@@ -207,22 +207,22 @@ describe('instance swap overrides', () => {
           symbolOverrides: [
             {
               guidPath: { guids: [guid(0, 31)] },
-              overriddenSymbolID: guid(0, 20),
-            },
-          ],
-        },
+              overriddenSymbolID: guid(0, 20)
+            }
+          ]
+        }
       }),
 
       // Container component on internal page wrapping ButtonSwapped
       nc(0, 50, 'COMPONENT', 0, 1, 'Container'),
       nc(0, 51, 'INSTANCE', 0, 50, 'ButtonSwapped', {
-        symbolData: { symbolID: guid(0, 40) },
+        symbolData: { symbolID: guid(0, 40) }
       }),
 
       // Visible-page instance of Container
       nc(0, 60, 'INSTANCE', 0, 2, 'ContainerInstance', {
-        symbolData: { symbolID: guid(0, 50) },
-      }),
+        symbolData: { symbolID: guid(0, 50) }
+      })
     ]
 
     const graph = importNodeChanges(nodes)

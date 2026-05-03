@@ -1,12 +1,12 @@
-import type { EditorCommand } from './types'
 import type { EditorCommandMapOptions } from './context'
+import type { EditorCommand } from './types'
 
 type EditCommandId = 'edit.undo' | 'edit.redo'
 
 export function createEditCommands({
   editor,
   capabilities,
-  messages: t,
+  messages: t
 }: EditorCommandMapOptions): Record<EditCommandId, EditorCommand> {
   return {
     'edit.undo': {
@@ -15,7 +15,7 @@ export function createEditCommands({
         return t.value.undo
       },
       enabled: capabilities.canUndo,
-      run: () => editor.undoAction(),
+      run: () => editor.undoAction()
     },
     'edit.redo': {
       id: 'edit.redo',
@@ -23,7 +23,7 @@ export function createEditCommands({
         return t.value.redo
       },
       enabled: capabilities.canRedo,
-      run: () => editor.redoAction(),
-    },
+      run: () => editor.redoAction()
+    }
   }
 }

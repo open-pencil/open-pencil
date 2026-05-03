@@ -4,6 +4,7 @@ import {
   AI_PULSE_PERIOD_MS,
   AI_DONE_DURATION_MS
 } from '#core/constants'
+
 import { drawNodeHighlightRect } from './highlight-rect'
 
 import type { SceneGraph } from '#core/scene-graph'

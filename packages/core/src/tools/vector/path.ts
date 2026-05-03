@@ -18,14 +18,14 @@ export const pathGet = defineTool({
   name: 'path_get',
   description: 'Get vector path data of a node.',
   params: {
-    id: { type: 'string', description: 'Node ID', required: true },
+    id: { type: 'string', description: 'Node ID', required: true }
   },
   execute: (figma, { id }) => {
     const raw = figma.graph.getNode(id)
     if (!raw) return { error: `Node "${id}" not found` }
     const vectorNetwork = raw.vectorNetwork
     return vectorNetwork ? { id, vectorNetwork } : { error: `Node "${id}" has no vector data` }
-  },
+  }
 })
 
 export const pathSet = defineTool({
@@ -34,7 +34,7 @@ export const pathSet = defineTool({
   description: 'Set vector path data on a node. Provide a VectorNetwork JSON.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
-    path: { type: 'string', description: 'VectorNetwork JSON', required: true },
+    path: { type: 'string', description: 'VectorNetwork JSON', required: true }
   },
   execute: (figma, args) => {
     const raw = figma.graph.getNode(args.id)
@@ -42,7 +42,7 @@ export const pathSet = defineTool({
     const network = JSON.parse(args.path)
     figma.graph.updateNode(args.id, { vectorNetwork: network })
     return { id: args.id }
-  },
+  }
 })
 
 export const pathScale = defineTool({
@@ -51,7 +51,7 @@ export const pathScale = defineTool({
   description: 'Scale vector path from center.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
-    factor: { type: 'number', description: 'Scale factor (e.g. 2 for double)', required: true },
+    factor: { type: 'number', description: 'Scale factor (e.g. 2 for double)', required: true }
   },
   execute: (figma, { id, factor }) => {
     const result = getVectorNode(figma, id)
@@ -72,7 +72,7 @@ export const pathScale = defineTool({
 
     figma.graph.updateNode(id, { vectorNetwork: vn })
     return { id, factor }
-  },
+  }
 })
 
 export const pathFlip = defineTool({
@@ -85,8 +85,8 @@ export const pathFlip = defineTool({
       type: 'string',
       description: 'Flip axis',
       required: true,
-      enum: ['horizontal', 'vertical'],
-    },
+      enum: ['horizontal', 'vertical']
+    }
   },
   execute: (figma, { id, axis }) => {
     const result = getVectorNode(figma, id)
@@ -107,7 +107,7 @@ export const pathFlip = defineTool({
 
     figma.graph.updateNode(id, { vectorNetwork: vn })
     return { id, axis }
-  },
+  }
 })
 
 export const pathMove = defineTool({
@@ -117,7 +117,7 @@ export const pathMove = defineTool({
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
     dx: { type: 'number', description: 'X offset', required: true },
-    dy: { type: 'number', description: 'Y offset', required: true },
+    dy: { type: 'number', description: 'Y offset', required: true }
   },
   execute: (figma, { id, dx, dy }) => {
     const result = getVectorNode(figma, id)
@@ -130,5 +130,5 @@ export const pathMove = defineTool({
 
     figma.graph.updateNode(id, { vectorNetwork: vn })
     return { id, dx, dy }
-  },
+  }
 })

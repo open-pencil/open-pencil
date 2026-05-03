@@ -90,4 +90,3 @@ export const setStrokeAlign = defineTool({
     return { id, strokeAlign: align }
   }
 })
-

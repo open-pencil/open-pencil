@@ -1,6 +1,7 @@
 import { IS_BROWSER } from '#core/constants'
 import { computeBounds } from '#core/geometry'
 import { copyFills, copyStrokes, copyEffects } from '#core/scene-graph/copy'
+
 import {
   FigmaNodeProxy,
   INTERNAL_ID,

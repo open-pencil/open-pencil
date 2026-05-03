@@ -1,4 +1,3 @@
-import { useEditor } from '#vue/editor/context'
 import {
   MIXED,
   createNodePropArrayActions,
@@ -6,6 +5,7 @@ import {
   createNodePropSelectionState,
   isNodeArrayMixed
 } from '#vue/controls/node-props/helpers'
+import { useEditor } from '#vue/editor/context'
 
 /** Sentinel value returned when a property differs across multiple selected nodes. */
 export { MIXED }

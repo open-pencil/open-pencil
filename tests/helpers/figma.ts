@@ -48,13 +48,7 @@ export class FigmaHelper {
     await this.page.mouse.click(box.x + canvasX, box.y + canvasY)
   }
 
-  async drag(
-    fromX: number,
-    fromY: number,
-    toX: number,
-    toY: number,
-    steps = 10
-  ) {
+  async drag(fromX: number, fromY: number, toX: number, toY: number, steps = 10) {
     const box = await this.canvasBounds()
     await this.page.mouse.move(box.x + fromX, box.y + fromY)
     await this.page.mouse.down()

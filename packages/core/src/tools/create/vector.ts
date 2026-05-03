@@ -16,7 +16,7 @@ export const createVector = defineTool({
     fill: { type: 'color', description: 'Fill color (hex)' },
     stroke: { type: 'color', description: 'Stroke color (hex)' },
     stroke_weight: { type: 'number', description: 'Stroke weight' },
-    parent_id: { type: 'string', description: 'Parent node ID' },
+    parent_id: { type: 'string', description: 'Parent node ID' }
   },
   execute: (figma, args) => {
     const node = figma.createVector()
@@ -44,8 +44,8 @@ export const createVector = defineTool({
           weight: args.stroke_weight ?? 1,
           opacity: 1,
           visible: true,
-          align: 'CENTER',
-        },
+          align: 'CENTER'
+        }
       ]
     }
     if (args.parent_id) {
@@ -53,5 +53,5 @@ export const createVector = defineTool({
       if (parent) parent.appendChild(node)
     }
     return nodeSummary(node)
-  },
+  }
 })

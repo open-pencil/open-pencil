@@ -44,4 +44,3 @@ export const setEffects = defineTool({
     return { id: args.id, effects: node.effects.length }
   }
 })
-

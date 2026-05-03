@@ -1,7 +1,6 @@
-import { defineCommand } from 'citty'
-
-import { loadRpcData } from '#cli/rpc-data'
 import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
+import { defineCommand } from 'citty'
 
 import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
 

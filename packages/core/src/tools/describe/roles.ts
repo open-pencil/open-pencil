@@ -42,7 +42,7 @@ const NAME_ROLE_PATTERNS: { pattern: RegExp; role: string }[] = [
   { pattern: /^progress$/i, role: 'progressbar' },
   { pattern: /^spinner$/i, role: 'progressbar' },
   { pattern: /^divider$/i, role: 'separator' },
-  { pattern: /^separator$/i, role: 'separator' },
+  { pattern: /^separator$/i, role: 'separator' }
 ]
 
 function detectRoleFromName(name: string): string | null {

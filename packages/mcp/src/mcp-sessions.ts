@@ -19,7 +19,10 @@ type McpSessionManagerOptions = {
 const MAX_MCP_SESSIONS = 10
 const MCP_SESSION_TTL_MS = 15 * 60_000
 
-export function createMcpSessionManager({ serverVersion, registerTools }: McpSessionManagerOptions) {
+export function createMcpSessionManager({
+  serverVersion,
+  registerTools
+}: McpSessionManagerOptions) {
   const sessions = new Map<string, MCPSession>()
 
   function notifyToolsChanged() {
@@ -46,7 +49,7 @@ export function createMcpSessionManager({ serverVersion, registerTools }: McpSes
     registerTools(server)
 
     const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: () => id,
+      sessionIdGenerator: () => id
     })
     void server.connect(transport)
     sessions.set(id, { transport, server, lastSeen: Date.now() })

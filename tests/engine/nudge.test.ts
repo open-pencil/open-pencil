@@ -11,7 +11,7 @@ describe('nudgeSelected', () => {
       x: 100,
       y: 200,
       width: 50,
-      height: 50,
+      height: 50
     })
     editor.select([rect.id])
     return { editor, rect }
@@ -86,7 +86,7 @@ describe('nudgeSelected', () => {
       x: 300,
       y: 400,
       width: 50,
-      height: 50,
+      height: 50
     })
     editor.select([rect.id, rect2.id])
 

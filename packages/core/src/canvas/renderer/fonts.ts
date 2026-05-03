@@ -7,8 +7,8 @@ import {
   SIZE_FONT_SIZE
 } from '#core/constants'
 
-import type { SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { SceneGraph } from '#core/scene-graph'
 
 export function getFontProvider(r: SkiaRenderer) {
   return r.fontProvider

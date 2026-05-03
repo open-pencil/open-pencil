@@ -34,7 +34,7 @@ async function injectMockTransport(page: Page) {
 
     setTransport(() => ({
       async sendMessages({
-        messages,
+        messages
       }: {
         messages: Array<{ role: string; parts: Array<{ type: string; text?: string }> }>
       }) {
@@ -46,7 +46,7 @@ async function injectMockTransport(page: Page) {
 
         if (lowerText.includes('missing agent')) {
           throw new Error(
-            '"claude-agent-acp" is not installed. Install it with: npm i -g @agentclientprotocol/claude-agent-acp',
+            '"claude-agent-acp" is not installed. Install it with: npm i -g @agentclientprotocol/claude-agent-acp'
           )
         }
 
@@ -59,24 +59,33 @@ async function injectMockTransport(page: Page) {
               controller.enqueue({
                 type: 'tool-input-start',
                 toolCallId,
-                toolName: 'create_shape',
+                toolName: 'create_shape'
               })
               controller.enqueue({
                 type: 'tool-input-delta',
                 toolCallId,
-                inputTextDelta: '{"type":"FRAME","x":100,"y":100,"width":200,"height":150,"name":"Card"}',
+                inputTextDelta:
+                  '{"type":"FRAME","x":100,"y":100,"width":200,"height":150,"name":"Card"}'
               })
               controller.enqueue({
                 type: 'tool-input-available',
                 toolCallId,
                 toolName: 'create_shape',
-                input: { type: 'FRAME', x: 100, y: 100, width: 200, height: 150, name: 'Card' },
+                input: { type: 'FRAME', x: 100, y: 100, width: 200, height: 150, name: 'Card' }
               })
               controller.enqueue({
                 type: 'tool-output-available',
                 toolCallId,
                 toolName: 'create_shape',
-                output: { id: '0:99', type: 'FRAME', x: 100, y: 100, width: 200, height: 150, name: 'Card' },
+                output: {
+                  id: '0:99',
+                  type: 'FRAME',
+                  x: 100,
+                  y: 100,
+                  width: 200,
+                  height: 150,
+                  name: 'Card'
+                }
               })
             }
 
@@ -91,12 +100,12 @@ async function injectMockTransport(page: Page) {
             controller.enqueue({ type: 'text-end', id: 'text-1' })
             controller.enqueue({ type: 'finish', finishReason: 'stop' })
             controller.close()
-          },
+          }
         })
       },
       async reconnectToStream() {
         return null
-      },
+      }
     }))
   })
 }
@@ -164,9 +173,9 @@ test('Enter submits message and clears input', async () => {
 
 test('assistant responds', async () => {
   if (USE_REAL_LLM) {
-    await expect(
-      page.locator('.chat-markdown, [class*="rounded-tl-md"]').first(),
-    ).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('.chat-markdown, [class*="rounded-tl-md"]').first()).toBeVisible({
+      timeout: 30000
+    })
   } else {
     await expect(page.getByText('mock response', { exact: false })).toBeVisible({ timeout: 5000 })
   }
@@ -189,9 +198,9 @@ test('tool calls render in assistant message', async () => {
   await chatInput().press('Enter')
 
   if (USE_REAL_LLM) {
-    await expect(
-      page.locator('.chat-markdown, [class*="rounded-tl-md"]').first(),
-    ).toBeVisible({ timeout: 30000 })
+    await expect(page.locator('.chat-markdown, [class*="rounded-tl-md"]').first()).toBeVisible({
+      timeout: 30000
+    })
   } else {
     await expect(page.getByText('Create Shape')).toBeVisible({ timeout: 5000 })
     await expect(page.getByText('Done')).toBeVisible()
@@ -213,8 +222,8 @@ test('transport errors show an actionable toast', async () => {
 
   await expect(
     page.locator('[data-test-id="toast-item"]').filter({
-      hasText: 'Install it with: npm i -g @agentclientprotocol/claude-agent-acp',
-    }),
+      hasText: 'Install it with: npm i -g @agentclientprotocol/claude-agent-acp'
+    })
   ).toBeVisible({ timeout: 5000 })
 })
 

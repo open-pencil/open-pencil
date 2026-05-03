@@ -76,17 +76,23 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
   const toggle = page.locator('[data-test-id="stroke-sides-toggle"]')
   await expect(toggle).toBeVisible({ timeout: 5000 })
 
-  const sectionInputsBefore = await page.locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]').count()
+  const sectionInputsBefore = await page
+    .locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]')
+    .count()
 
   await toggle.click()
   await canvas.waitForRender()
 
-  const sectionInputsAfter = await page.locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]').count()
+  const sectionInputsAfter = await page
+    .locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]')
+    .count()
   expect(sectionInputsAfter).toBeGreaterThan(sectionInputsBefore)
 
   await toggle.click()
   await canvas.waitForRender()
 
-  const sectionInputsFinal = await page.locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]').count()
+  const sectionInputsFinal = await page
+    .locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]')
+    .count()
   expect(sectionInputsFinal).toBe(sectionInputsBefore)
 })
