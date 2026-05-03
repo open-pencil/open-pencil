@@ -85,7 +85,7 @@ function resolveAttr(
   return fallback
 }
 
-function extractPaths(svgBody: string): IconPathInfo[] {
+export function extractPaths(svgBody: string): IconPathInfo[] {
   const groupAttrs = {
     fill: null as string | null,
     stroke: null as string | null,
