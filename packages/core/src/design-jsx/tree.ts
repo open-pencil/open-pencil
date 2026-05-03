@@ -115,6 +115,7 @@ export type StyleProps = {
   stroke?: string
   strokeWidth?: number
   strokeAlign?: 'inside' | 'outside' | 'center'
+  strokeDash?: number[] | boolean
   rounded?: number
   roundedTL?: number
   roundedTR?: number

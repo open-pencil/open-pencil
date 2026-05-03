@@ -153,6 +153,7 @@ function collectAppearanceProps(node: SceneNode, props: [string, unknown][]): vo
   if (stroke) {
     props.push(['stroke', stroke.color])
     if (stroke.weight !== 1) props.push(['strokeWidth', stroke.weight])
+    if (stroke.dash) props.push(['strokeDash', stroke.dash])
   }
 
   collectCornerRadiiProps(node, props)

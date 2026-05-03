@@ -173,7 +173,8 @@
     "createColorVariable": "Farbvariable aus {value} erstellen",
     "variableName": "Variablenname",
     "create": "Erstellen",
-    "createNumberVariable": "Zahlenvariable aus {value} erstellen"
+    "createNumberVariable": "Zahlenvariable aus {value} erstellen",
+    "strokeDash": "Gestrichelter Strich"
   },
   "pages": {
     "newPage": "Neue Seite",

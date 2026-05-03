@@ -23,6 +23,8 @@ import type {
 import type { Rect } from '#core/types'
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
+export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
+
 // --- vectorNetworkBlob binary format ---
 // Header:  [numVertices:u32, numSegments:u32, numRegions:u32]  (12 bytes)
 // Vertex:  [styleOverrideIdx:u32, x:f32, y:f32]               (12 bytes)

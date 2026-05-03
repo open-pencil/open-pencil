@@ -173,7 +173,8 @@
     "createColorVariable": "Créer une variable de couleur depuis {value}",
     "variableName": "Nom de la variable",
     "create": "Créer",
-    "createNumberVariable": "Créer une variable numérique depuis {value}"
+    "createNumberVariable": "Créer une variable numérique depuis {value}",
+    "strokeDash": "Trait en pointillés"
   },
   "pages": {
     "newPage": "Nouvelle page",

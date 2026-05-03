@@ -173,7 +173,8 @@
     "createColorVariable": "Utwórz zmienną koloru z {value}",
     "variableName": "Nazwa zmiennej",
     "create": "Utwórz",
-    "createNumberVariable": "Utwórz zmienną liczbową z {value}"
+    "createNumberVariable": "Utwórz zmienną liczbową z {value}",
+    "strokeDash": "Obrys przerywany"
   },
   "pages": {
     "newPage": "Nowa strona",

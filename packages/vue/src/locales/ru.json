@@ -173,7 +173,8 @@
     "createColorVariable": "Создать переменную цвета из {value}",
     "variableName": "Имя переменной",
     "create": "Создать",
-    "createNumberVariable": "Создать числовую переменную из {value}"
+    "createNumberVariable": "Создать числовую переменную из {value}",
+    "strokeDash": "Пунктирная обводка"
   },
   "pages": {
     "newPage": "Новая страница",
