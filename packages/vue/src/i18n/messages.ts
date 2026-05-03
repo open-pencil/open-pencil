@@ -166,6 +166,7 @@ export const panelMessages = i18n('panels', {
   mixedStrokesHelp: 'Click + to replace mixed strokes',
   mixedEffectsHelp: 'Click + to replace mixed effects',
   strokeSides: 'Stroke sides',
+  strokeDash: 'Dashed stroke',
   strokeAlignInside: 'Inside',
   strokeAlignCenter: 'Center',
   strokeAlignOutside: 'Outside',

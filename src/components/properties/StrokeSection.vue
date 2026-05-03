@@ -197,6 +197,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
       >
         <button
           data-test-id="stroke-dash-toggle"
+          :aria-label="panels.strokeDash"
           class="flex h-[26px] shrink-0 cursor-pointer items-center gap-1 rounded border bg-input px-1.5 text-[11px]"
           :class="
             dashState((items as Stroke[])[0]).on
@@ -218,7 +219,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
         <template v-if="dashState((items as Stroke[])[0]).on">
           <ScrubInput
             class="flex-1"
-            :model-value="dashState((items as Stroke[])[0]).dash"
+            :model-value="(items as Stroke[])[0].dashPattern?.[0] ?? 6"
             :min="1"
             data-test-id="stroke-dash-length"
             @update:model-value="setDash((items as Stroke[])[0], patch, $event)"
@@ -238,7 +239,11 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
           </ScrubInput>
           <ScrubInput
             class="flex-1"
-            :model-value="dashState((items as Stroke[])[0]).gap"
+            :model-value="
+              (items as Stroke[])[0].dashPattern?.[1] ??
+              (items as Stroke[])[0].dashPattern?.[0] ??
+              6
+            "
             :min="1"
             data-test-id="stroke-dash-gap"
             @update:model-value="setGap((items as Stroke[])[0], patch, $event)"

@@ -364,9 +364,11 @@ function drawVectorPathStrokes(
     r.strokePaint.setStrokeCap(getCapEntity(r, stroke.cap ?? 'NONE'))
     r.strokePaint.setStrokeJoin(getJoinEntity(r, stroke.join ?? 'MITER'))
     r.strokePaint.setShader(null)
-    r.strokePaint.setPathEffect(r.ck.PathEffect.MakeDash(dash, 0))
+    const effect = r.ck.PathEffect.MakeDash(dash, 0)
+    r.strokePaint.setPathEffect(effect)
     for (const vp of vectorPaths) canvas.drawPath(vp, r.strokePaint)
     r.strokePaint.setPathEffect(null)
+    effect.delete()
     return
   }
   const strokeOpts = {
