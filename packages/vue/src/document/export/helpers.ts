@@ -7,7 +7,7 @@ import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
 
 export const EXPORT_SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
-export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'fig']
+export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'pdf', 'fig']
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 

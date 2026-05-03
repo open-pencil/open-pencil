@@ -40,6 +40,33 @@ export const exportSvg = defineTool({
   }
 })
 
+export const exportPdf = defineTool({
+  name: 'export_pdf',
+  description:
+    'Export nodes as a vector PDF document. Text remains selectable, paths stay sharp at any zoom. Returns base64-encoded PDF data.',
+  params: {
+    ids: {
+      type: 'string[]',
+      description: 'Node IDs to export. Omit to export all top-level nodes on the current page.'
+    },
+    path: {
+      type: 'string',
+      description:
+        'Write PDF to this path instead of returning base64 (requires OPENPENCIL_MCP_ROOT)'
+    }
+  },
+  execute: async (figma, args) => {
+    const { renderNodesToPDF } = await import('#core/io/formats/pdf')
+    const pageId = figma.currentPageId
+    const ids =
+      args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
+    const data = await renderNodesToPDF(figma.graph, pageId, ids)
+    if (!data || data.length === 0) return { error: 'No visible nodes to export' }
+    const base64 = uint8ArrayToBase64(data)
+    return { mimeType: 'application/pdf', base64, byteLength: data.length }
+  }
+})
+
 export const exportImage = defineTool({
   name: 'export_image',
   description:

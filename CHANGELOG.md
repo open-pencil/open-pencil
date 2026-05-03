@@ -13,6 +13,7 @@
 - Add inspector variable binding controls for fill and stroke colors plus width/height sizing, including existing variable selection and named variable creation.
 - Add stroke dash/gap controls to the stroke inspector panel.
 - Bump AI SDK dependencies for improved DeepSeek reasoning mode and newer model support.
+- Add PDF export — vector PDF output via SVG→PDF conversion. Available in export panel, CLI (`--format pdf`), and MCP (`export_pdf` tool).
 
 ### Fixes
 

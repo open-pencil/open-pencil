@@ -250,6 +250,38 @@ export const svgFormat: IOFormatAdapter = {
   }
 }
 
+export const pdfFormat: IOFormatAdapter = {
+  id: 'pdf',
+  label: 'PDF',
+  role: 'derived-export',
+  category: 'vector',
+  extensions: ['pdf'],
+  mimeTypes: ['application/pdf'],
+  support: {
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
+  },
+  exportOptions: {
+    scale: false,
+    quality: false
+  },
+  async exportContent(request) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { renderNodesToPDF } = await import('./formats/pdf')
+    const data = await renderNodesToPDF(request.graph, target.pageId, target.nodeIds)
+    if (!data) throw new Error('Nothing to export')
+    return {
+      format: 'pdf',
+      mimeType: 'application/pdf',
+      extension: 'pdf',
+      data
+    }
+  }
+}
+
 export const jsxFormat: IOFormatAdapter = {
   id: 'jsx',
   label: 'JSX',
@@ -292,5 +324,6 @@ export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
   jpgFormat,
   webpFormat,
   svgFormat,
+  pdfFormat,
   jsxFormat
 ]

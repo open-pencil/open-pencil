@@ -82,6 +82,7 @@ import {
   booleanSubtract,
   booleanUnion,
   exportImage,
+  exportPdf,
   exportSvg,
   pathFlip,
   pathGet,
@@ -176,6 +177,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   viewportGet,
   viewportSet,
   exportSvg,
+  exportPdf,
   exportImage,
   // Analyze & diff
   analyzeColors,

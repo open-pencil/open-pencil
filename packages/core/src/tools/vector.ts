@@ -4,4 +4,4 @@ export { pathFlip, pathGet, pathMove, pathScale, pathSet } from './vector/path'
 
 export { viewportGet, viewportSet, viewportZoomToFit } from './vector/viewport'
 
-export { exportImage, exportSvg } from './vector/export'
+export { exportImage, exportPdf, exportSvg } from './vector/export'

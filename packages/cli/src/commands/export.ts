@@ -11,7 +11,7 @@ import type { RasterExportFormat } from '@open-pencil/core/io'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']
-const ALL_FORMATS = [...RASTER_FORMATS, 'SVG', 'JSX', 'FIG']
+const ALL_FORMATS = [...RASTER_FORMATS, 'SVG', 'PDF', 'JSX', 'FIG']
 const JSX_STYLES = ['openpencil', 'tailwind']
 
 interface ExportArgs {
@@ -45,6 +45,20 @@ async function exportViaApp(format: string, args: ExportArgs) {
       process.exit(1)
     }
     await writeAndLog(resolve(args.output ?? 'export.svg'), result.svg)
+    return
+  }
+
+  if (format === 'PDF') {
+    const result = await rpc<{ base64: string }>('tool', {
+      name: 'export_pdf',
+      args: { ids: args.node ? [args.node] : undefined }
+    })
+    if (!result.base64) {
+      printError('Nothing to export.')
+      process.exit(1)
+    }
+    const data = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))
+    await writeAndLog(resolve(args.output ?? 'export.pdf'), data)
     return
   }
 
@@ -130,7 +144,7 @@ async function exportFromFile(format: string, args: ExportArgs) {
 }
 
 export default defineCommand({
-  meta: { description: 'Export a document to PNG, JPG, WEBP, SVG, JSX, or .fig' },
+  meta: { description: 'Export a document to PNG, JPG, WEBP, SVG, PDF, JSX, or .fig' },
   args: {
     file: {
       type: 'positional',
@@ -146,7 +160,7 @@ export default defineCommand({
     format: {
       type: 'string',
       alias: 'f',
-      description: 'Export format: png, jpg, webp, svg, jsx, fig (default: png)',
+      description: 'Export format: png, jpg, webp, svg, pdf, jsx, fig (default: png)',
       default: 'png'
     },
     scale: { type: 'string', alias: 's', description: 'Export scale (default: 1)', default: '1' },
@@ -178,7 +192,7 @@ export default defineCommand({
   async run({ args }) {
     const format = args.format.toUpperCase() as RasterExportFormat | 'SVG' | 'JSX' | 'FIG'
     if (!ALL_FORMATS.includes(format)) {
-      printError(`Invalid format "${args.format}". Use png, jpg, webp, svg, jsx, or fig.`)
+      printError(`Invalid format "${args.format}". Use png, jpg, webp, svg, pdf, jsx, or fig.`)
       process.exit(1)
     }
 
