@@ -1,4 +1,5 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
+import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
@@ -42,6 +43,10 @@ export function createLanguageModel(config: ModelConfig): LanguageModel {
     case 'google': {
       const google = createGoogleGenerativeAI({ apiKey: config.apiKey })
       return google(effectiveModelID)
+    }
+    case 'deepseek': {
+      const deepseek = createDeepSeek({ apiKey: config.apiKey })
+      return deepseek(effectiveModelID)
     }
     case 'zai': {
       const zai = createAnthropic({
