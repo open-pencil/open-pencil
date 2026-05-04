@@ -85,28 +85,30 @@ defineOptions({ inheritAttrs: true })
       <slot name="icon" />
     </template>
     <template #suffix>
-      <BoundVariableButton
-        v-if="binding.getBoundVariable(nodeId)"
-        :label="panels.detachVariable"
-        @detach="binding.unbindVariable(nodeId)"
-      />
-      <VariablePickerPopover
-        v-else
-        v-model:search-term="binding.searchTerm.value"
-        :variables="binding.filteredVariables.value"
-        :trigger-label="panels.applyVariable"
-        :search-placeholder="dialogs.search"
-        :empty-label="panels.noVariablesFound"
-        :create-label="
-          panels.createNumberVariable({
-            value: typeof modelValue === 'number' ? Math.round(modelValue) : 0
-          })
-        "
-        :create-name-placeholder="panels.variableName"
-        :create-submit-label="panels.create"
-        @select="onBind($event.id)"
-        @create="onCreate"
-      />
+      <span :class="$slots['after-variable'] ? '' : 'pr-1'" class="flex items-center">
+        <BoundVariableButton
+          v-if="binding.getBoundVariable(nodeId)"
+          :label="panels.detachVariable"
+          @detach="binding.unbindVariable(nodeId)"
+        />
+        <VariablePickerPopover
+          v-else
+          v-model:search-term="binding.searchTerm.value"
+          :variables="binding.filteredVariables.value"
+          :trigger-label="panels.applyVariable"
+          :search-placeholder="dialogs.search"
+          :empty-label="panels.noVariablesFound"
+          :create-label="
+            panels.createNumberVariable({
+              value: typeof modelValue === 'number' ? Math.round(modelValue) : 0
+            })
+          "
+          :create-name-placeholder="panels.variableName"
+          :create-submit-label="panels.create"
+          @select="onBind($event.id)"
+          @create="onCreate"
+        />
+      </span>
       <slot name="after-variable" />
     </template>
   </ScrubInput>

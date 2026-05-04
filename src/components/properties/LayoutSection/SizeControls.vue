@@ -107,12 +107,6 @@ const heightLimitItems = [
   }
 ]
 
-function sizingShortLabel(sizing: LayoutSizing): string | null {
-  if (sizing === 'HUG') return panels.value.sizingHugShort
-  if (sizing === 'FILL') return panels.value.sizingFillShort
-  return null
-}
-
 function anchorRef(element: HTMLElement | null): HTMLElement | undefined {
   return element ?? undefined
 }
@@ -204,11 +198,10 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
             <SelectTrigger
               data-test-id="layout-width-sizing-menu"
               :reference="anchorRef(widthFieldRef)"
-              class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
+              class="flex shrink-0 cursor-pointer items-center justify-center self-stretch border-none bg-transparent px-1.5 text-[11px] text-muted outline-none"
               @pointerdown.stop
             >
-              <span class="group-hover:hidden">{{ sizingShortLabel(ctx.widthSizing) }}</span>
-              <icon-lucide-chevron-down class="hidden size-3 group-hover:block" />
+              <icon-lucide-chevron-down class="size-3" />
             </SelectTrigger>
             <SelectPortal>
               <SelectContent
@@ -287,11 +280,10 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
             <SelectTrigger
               data-test-id="layout-height-sizing-menu"
               :reference="anchorRef(heightFieldRef)"
-              class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
+              class="flex shrink-0 cursor-pointer items-center justify-center self-stretch border-none bg-transparent px-1.5 text-[11px] text-muted outline-none"
               @pointerdown.stop
             >
-              <span class="group-hover:hidden">{{ sizingShortLabel(ctx.heightSizing) }}</span>
-              <icon-lucide-chevron-down class="hidden size-3 group-hover:block" />
+              <icon-lucide-chevron-down class="size-3" />
             </SelectTrigger>
             <SelectPortal>
               <SelectContent
