@@ -85,13 +85,16 @@ test('demo card fill changes through color picker', async ({ page }) => {
 })
 
 test('demo card fill changes from hsb saturation and brightness sliders', async ({ page }) => {
+  test.setTimeout(30_000)
   const canvas = new CanvasHelper(page)
   await selectDemoCard(page, canvas)
 
   await page.locator('[data-test-id="fill-picker-swatch"]').first().click()
   await expect(page.locator('[data-test-id="fill-picker-tab-solid"]')).toBeVisible()
+  await canvas.waitForRender()
   await page.locator('[data-test-id="color-format-select"]').click()
   await page.getByRole('option', { name: 'HSB', exact: true }).click()
+  await canvas.waitForRender()
 
   const beforeS = await getSelectedFill(page)
   await dragSlider(page, canvas, 'color-slider-hsb-s', 0.5)

@@ -8,7 +8,6 @@ import {
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
-import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { setFirstStrokeAlign, setFirstStrokeWeight, setIndependentStrokeWeight } from './strokes'
 import * as TextProxy from './text'
@@ -29,6 +28,8 @@ import type { Rect } from '#core/types'
 import type { FigmaFontName } from './fonts'
 
 const MIXED = Symbol('mixed')
+
+const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
 
 export { styleNameToWeight, weightToStyleName, type FigmaFont, type FigmaFontName } from './fonts'
 
@@ -461,27 +462,84 @@ export class FigmaNodeProxy {
   // --- Plugin data ---
 
   getPluginData(key: string): string {
-    return PluginData.getPluginData(this._raw(), key)
+    return (
+      this._raw().pluginData.find(
+        (entry) => entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && entry.key === key
+      )?.value ?? ''
+    )
   }
 
   setPluginData(key: string, value: string): void {
-    PluginData.setPluginData(this[INTERNAL_GRAPH], this._raw(), key, value)
+    const node = this._raw()
+    const pluginData = node.pluginData.filter(
+      (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && entry.key === key)
+    )
+    if (value !== '') {
+      pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_DATA_NAMESPACE, key, value })
+    }
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { pluginData })
   }
 
   getPluginDataKeys(): string[] {
-    return PluginData.getPluginDataKeys(this._raw())
+    return this._raw()
+      .pluginData.filter(
+        (entry) => entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && !entry.key.includes('/')
+      )
+      .map((entry) => entry.key)
   }
 
   getSharedPluginData(namespace: string, key: string): string {
-    return PluginData.getSharedPluginData(this._raw(), namespace, key)
+    for (const entry of this._raw().pluginData) {
+      const slash = entry.key.indexOf('/')
+      if (slash === -1) {
+        // Guard: entries without namespace/key format and with the open-pencil
+        // pluginId are private plugin data — never expose as shared data.
+        if (entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE) continue
+        if (entry.pluginId === namespace && entry.key === key) return entry.value
+      } else if (
+        entry.pluginId === namespace &&
+        entry.key.slice(0, slash) === namespace &&
+        entry.key.slice(slash + 1) === key
+      ) {
+        return entry.value
+      }
+    }
+    return ''
   }
 
   setSharedPluginData(namespace: string, key: string, value: string): void {
-    PluginData.setSharedPluginData(this[INTERNAL_GRAPH], this._raw(), namespace, key, value)
+    const pluginData = this._raw().pluginData.filter((entry) => {
+      const slash = entry.key.indexOf('/')
+      if (slash === -1) {
+        // Guard: preserve private 'open-pencil' plugin data entries.
+        if (entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE) return true
+        return !(entry.pluginId === namespace && entry.key === key)
+      }
+      return !(
+        entry.pluginId === namespace &&
+        entry.key.slice(0, slash) === namespace &&
+        entry.key.slice(slash + 1) === key
+      )
+    })
+    if (value !== '') {
+      pluginData.push({ pluginId: namespace, key: `${namespace}/${key}`, value })
+    }
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { pluginData })
   }
 
   getSharedPluginDataKeys(namespace: string): string[] {
-    return PluginData.getSharedPluginDataKeys(this._raw(), namespace)
+    const keys: string[] = []
+    for (const entry of this._raw().pluginData) {
+      const slash = entry.key.indexOf('/')
+      if (slash === -1) {
+        // Guard: skip private 'open-pencil' plugin data entries.
+        if (entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE) continue
+        if (entry.pluginId === namespace) keys.push(entry.key)
+      } else if (entry.pluginId === namespace && entry.key.slice(0, slash) === namespace) {
+        keys.push(entry.key.slice(slash + 1))
+      }
+    }
+    return keys
   }
 
   getFillOkHCL(index = 0): OkHCLPayload | null {

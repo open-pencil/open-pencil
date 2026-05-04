@@ -13,7 +13,6 @@ import {
   extractBoundVariables,
   extractPluginData,
   extractPluginRelaunchData,
-  extractSharedPluginData,
   getOpenPencilPluginValue,
   LAYOUT_DIRECTION_PLUGIN_KEY,
   TEXT_DIRECTION_PLUGIN_KEY
@@ -431,7 +430,6 @@ export function nodeChangeToProps(
     autoRename: (nc.autoRename ?? true) as boolean,
     boundVariables: extractBoundVariables(nc),
     pluginData: extractPluginData(nc),
-    sharedPluginData: extractSharedPluginData(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc)

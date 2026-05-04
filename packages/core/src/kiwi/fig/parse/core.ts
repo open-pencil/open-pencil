@@ -5,6 +5,35 @@ import { decompress as zstdDecompress } from 'fzstd'
 
 import type { FigmaMessage, NodeChange } from '#core/kiwi/binary/codec'
 
+/**
+ * Deduplicates pluginData/pluginRelaunchData entries on raw NodeChange objects.
+ * Some .fig files have millions of identical entries (e.g. slop-funnel.fig
+ * has 10.9M entries where only ~5.5K are unique by full triple).
+ * Full-triple key (id+key+value) preserves multi-entry subsystems like OkHCL.
+ */
+export function deduplicateNodeChangePluginData(nodeChanges: NodeChange[]): void {
+  for (const nc of nodeChanges) {
+    if (nc.pluginData && nc.pluginData.length > 1) {
+      const map = new Map<string, (typeof nc.pluginData)[number]>()
+      for (const entry of nc.pluginData) {
+        map.set(`${entry.pluginID}\0${entry.key}\0${entry.value}`, entry)
+      }
+      if (map.size < nc.pluginData.length) {
+        nc.pluginData = [...map.values()]
+      }
+    }
+    if (nc.pluginRelaunchData && nc.pluginRelaunchData.length > 1) {
+      const map = new Map<string, (typeof nc.pluginRelaunchData)[number]>()
+      for (const entry of nc.pluginRelaunchData) {
+        map.set(`${entry.pluginID}\0${entry.command}\0${entry.message}`, entry)
+      }
+      if (map.size < nc.pluginRelaunchData.length) {
+        nc.pluginRelaunchData = [...map.values()]
+      }
+    }
+  }
+}
+
 interface FigKiwiPayload {
   schemaDeflated: Uint8Array
   dataRaw: Uint8Array
@@ -21,8 +50,14 @@ export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
 
   const chunks: Uint8Array[] = []
   while (offset < data.length) {
+    if (offset + 4 > data.length) break
     const len = view.getUint32(offset, true)
     offset += 4
+    if (offset + len > data.length) {
+      throw new Error(
+        `Corrupted .fig file: chunk at offset ${offset - 4} declares length ${len} but only ${data.length - offset} bytes remain`
+      )
+    }
     chunks.push(data.slice(offset, offset + len))
     offset += len
   }
@@ -94,6 +129,10 @@ export function parseFigBuffer(buffer: ArrayBuffer): FigParseResult {
   if (!nodeChanges || nodeChanges.length === 0) {
     throw new Error('No nodes found in .fig file')
   }
+
+  // Deduplicate before returning — critical for worker path where raw
+  // nodeChanges are serialized via postMessage before extractPluginData runs
+  deduplicateNodeChangePluginData(nodeChanges)
 
   const blobs: Uint8Array[] = (message.blobs ?? []).map((b) =>
     b.bytes instanceof Uint8Array ? b.bytes : new Uint8Array(Object.values(b.bytes))

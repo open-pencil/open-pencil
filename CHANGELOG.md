@@ -17,6 +17,8 @@
 
 ### Fixes
 
+- Fix inner shadow rendering for text nodes to be more in line with Figma's behavior
+- Fix bug causing exponential (decompressed) .fig growth triggered by repeated save / load cycles
 - Fix `@open-pencil/vue` failing to import from npm — `getAbsolutePositionFull` was imported from `@open-pencil/core/canvas/coordinate`, an unexported subpath. Re-exported the function from `@open-pencil/core/canvas` and updated the vue import.
 - Fix large `.fig` files freezing during open — parsing and scene graph import now run in the worker, and opened files fit to the canvas viewport after loading.
 - Improve Figma import fidelity for Preline UI files — preserve variable aliases, derived instance layout, nested instance scaling, avatar swaps, badge internals, and input text alignment.

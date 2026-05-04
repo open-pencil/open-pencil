@@ -202,12 +202,6 @@ export interface PluginDataEntry {
   value: string
 }
 
-export interface SharedPluginDataEntry {
-  namespace: string
-  key: string
-  value: string
-}
-
 export interface PluginRelaunchDataEntry {
   pluginId: string
   command: string
@@ -335,7 +329,6 @@ export interface SceneNode {
   boundVariables: Record<string, string>
 
   pluginData: PluginDataEntry[]
-  sharedPluginData: SharedPluginDataEntry[]
   pluginRelaunchData: PluginRelaunchDataEntry[]
 
   internalOnly: boolean

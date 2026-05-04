@@ -11,10 +11,12 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph } from '#core/scene-graph'
 
 export function getFontProvider(r: SkiaRenderer) {
-  return r.fontProvider
+  return r.isDestroyed() ? null : r.fontProvider
 }
 
 export async function loadFonts(r: SkiaRenderer): Promise<void> {
+  if (r.isDestroyed()) return
+  r.fontProvider?.delete()
   r.fontProvider = r.ck.TypefaceFontProvider.Make()
 
   const { initFontService, loadFont, ensureArabicFallback, ensureCJKFallback } =

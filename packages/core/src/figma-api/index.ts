@@ -223,7 +223,6 @@ export class FigmaAPI implements NodeProxyHost {
       paddingBottom: raw.paddingBottom,
       paddingLeft: raw.paddingLeft,
       pluginData: structuredClone(raw.pluginData),
-      sharedPluginData: structuredClone(raw.sharedPluginData),
       pluginRelaunchData: structuredClone(raw.pluginRelaunchData)
     })
     for (const childId of raw.childIds) {

@@ -54,12 +54,12 @@ test('copy + paste via store duplicates a shape', async () => {
 
   const countBefore = await getPageChildCount()
 
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const store = window.__OPEN_PENCIL_STORE__!
     const data = new DataTransfer()
-    store.writeCopyData(data)
+    await store.writeCopyData(data)
     const html = data.getData('text/html')
-    if (html) store.pasteFromHTML(html)
+    if (html) await store.pasteFromHTML(html)
   })
   await canvas.waitForRender()
 

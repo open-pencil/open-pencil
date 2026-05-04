@@ -176,7 +176,8 @@ test('clicking outside page rename input commits', async () => {
   await expect(input).toBeVisible()
   await input.fill('Outside Click Page')
 
-  await page.mouse.click(500, 400)
+  // Click on the page header label to trigger blur (outside the input but still in the panel)
+  await page.locator('[data-test-id="pages-header"]').click()
   await canvas.waitForRender()
 
   await expect(input).not.toBeVisible()

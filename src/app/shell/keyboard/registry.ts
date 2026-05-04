@@ -47,7 +47,7 @@ function bindShortcut(
 function bindToolShortcuts(bindings: KeyBindingMap, options: KeyboardShortcutRunOptions) {
   for (const [code, tool] of Object.entries(TOOL_SHORTCUTS)) {
     if (!tool) continue
-    bindings[code] = (event) => {
+    bindings[code] = (event: KeyboardEvent) => {
       event.preventDefault()
       options.spaceTool.resetToolBeforeSpace()
       options.store.setTool(tool)

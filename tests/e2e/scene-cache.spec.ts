@@ -81,6 +81,13 @@ test.describe('SkPicture scene caching', () => {
     })
     await helper.waitForRender()
 
+    // Extra render to stabilize the SkPicture cache
+    await helper.page.evaluate(() => {
+      const store = window.__OPEN_PENCIL_STORE__!
+      store.requestRender()
+    })
+    await helper.waitForRender()
+
     // Baseline after cache was invalidated and re-recorded
     const baseline = await helper.screenshotCanvas()
 
@@ -108,6 +115,12 @@ test.describe('SkPicture scene caching', () => {
     await helper.page.evaluate(() => {
       const store = window.__OPEN_PENCIL_STORE__!
       store.setHoveredNode(null)
+      store.requestRender()
+    })
+    await helper.waitForRender()
+    // Extra render cycle to ensure SkPicture cache is fully recorded
+    await helper.page.evaluate(() => {
+      const store = window.__OPEN_PENCIL_STORE__!
       store.requestRender()
     })
     await helper.waitForRender()

@@ -16,7 +16,7 @@ export function createMobileClipboardActions(editor: Editor, state: MobileClipbo
 
   function mobilePaste() {
     if (state.clipboardHtml) {
-      editor.pasteFromHTML(state.clipboardHtml)
+      void editor.pasteFromHTML(state.clipboardHtml)
     }
   }
 

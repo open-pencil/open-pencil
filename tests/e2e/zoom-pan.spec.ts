@@ -42,20 +42,12 @@ test.describe('Zoom and pan', () => {
       return { panX: store.state.panX, panY: store.state.panY, zoom: store.state.zoom }
     })
 
-    // Playwright's mouse.wheel doesn't set ctrlKey, dispatch manually
-    await helper.page.evaluate(() => {
-      const canvas = document.querySelector('canvas')!
-      canvas.dispatchEvent(
-        new WheelEvent('wheel', {
-          deltaY: -100,
-          ctrlKey: true,
-          clientX: 400,
-          clientY: 300,
-          bubbles: true,
-          cancelable: true
-        })
-      )
-    })
+    // Use Playwright's native mouse.wheel with Control key held for zoom
+    const box = await helper.canvas.boundingBox()
+    await helper.page.mouse.move(box!.x + 400, box!.y + 300)
+    await helper.page.keyboard.down('Control')
+    await helper.page.mouse.wheel(0, -100)
+    await helper.page.keyboard.up('Control')
     await helper.waitForRender()
     await helper.page.waitForTimeout(50)
 
@@ -78,12 +70,7 @@ test.describe('Zoom and pan', () => {
     await helper.page.mouse.move(box!.x + 400, box!.y + 300)
 
     // Playwright wheel without ctrl → pan
-    await helper.page.evaluate(() => {
-      const canvas = document.querySelector('canvas')!
-      canvas.dispatchEvent(
-        new WheelEvent('wheel', { deltaX: 100, deltaY: 50, bubbles: true, cancelable: true })
-      )
-    })
+    await helper.page.mouse.wheel(100, 50)
     await helper.waitForRender()
     await helper.page.waitForTimeout(50)
 
@@ -98,22 +85,13 @@ test.describe('Zoom and pan', () => {
   })
 
   test('rapid wheel events are coalesced without errors', async () => {
-    await helper.page.evaluate(() => {
-      const canvas = document.querySelector('canvas')!
-      for (let i = 0; i < 50; i++) {
-        canvas.dispatchEvent(
-          new WheelEvent('wheel', {
-            deltaX: 0,
-            deltaY: -5,
-            ctrlKey: true,
-            clientX: 400,
-            clientY: 300,
-            bubbles: true,
-            cancelable: true
-          })
-        )
-      }
-    })
+    const box = await helper.canvas.boundingBox()
+    await helper.page.mouse.move(box!.x + 400, box!.y + 300)
+    await helper.page.keyboard.down('Control')
+    for (let i = 0; i < 50; i++) {
+      await helper.page.mouse.wheel(0, -5)
+    }
+    await helper.page.keyboard.up('Control')
     await helper.waitForRender()
     await helper.page.waitForTimeout(50)
 
@@ -250,7 +228,7 @@ test.describe('Zoom and pan', () => {
       store.state.panX = 0
       store.state.panY = 0
 
-      const canvas = document.querySelector('canvas')!
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')!
       const wheelStart = performance.now()
       for (let i = 0; i < iterations; i++) {
         canvas.dispatchEvent(

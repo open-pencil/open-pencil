@@ -11,6 +11,7 @@ import {
   importNodeChanges,
   initCodec,
   SceneGraph,
+  FigmaAPI,
   type SceneNode,
   type Fill
 } from '@open-pencil/core'
@@ -537,8 +538,8 @@ describe('roundtrip: export → re-import', () => {
     expect(publicPages.length).toBe(2)
     const internal = allPages.find((p) => p.internalOnly)
     expect(internal).toBeDefined()
-    expect(internal!.name).toBe('Internal Only Canvas')
-    expect(reImported.getChildren(internal!.id).length).toBe(1)
+    expect(internal?.name).toBe('Internal Only Canvas')
+    expect(reImported.getChildren(internal?.id ?? '').length).toBe(1)
   })
 
   test('preserves node count', () => {
@@ -564,8 +565,9 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves fills', () => {
-    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')!
-    expect(headerBg.fills).toHaveLength(2)
+    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
+    expect(headerBg).toBeDefined()
+    expect(headerBg!.fills).toHaveLength(2)
     expect(headerBg.fills[0].type).toBe('SOLID')
     expect(headerBg.fills[0].color.r).toBeCloseTo(0.2, 1)
     expect(headerBg.fills[1].type).toBe('GRADIENT_LINEAR')
@@ -574,26 +576,30 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves text content', () => {
-    const title = reImportedNodes.find((n) => n.name === 'Title')!
-    expect(title.text).toBe('Hello World')
+    const title = reImportedNodes.find((n) => n.name === 'Title')
+    expect(title).toBeDefined()
+    expect(title!.text).toBe('Hello World')
   })
 
   test('preserves text properties', () => {
-    const title = reImportedNodes.find((n) => n.name === 'Title')!
-    expect(title.fontSize).toBe(18)
+    const title = reImportedNodes.find((n) => n.name === 'Title')
+    expect(title).toBeDefined()
+    expect(title!.fontSize).toBe(18)
     expect(title.fontFamily).toBe('Inter')
     expect(title.fontWeight).toBe(700)
     expect(title.textAlignHorizontal).toBe('CENTER')
   })
 
   test('preserves layout mode', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')!
-    expect(container.layoutMode).toBe('VERTICAL')
+    const container = reImportedNodes.find((n) => n.name === 'Container')
+    expect(container).toBeDefined()
+    expect(container!.layoutMode).toBe('VERTICAL')
   })
 
   test('preserves layout spacing', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')!
-    expect(container.itemSpacing).toBe(16)
+    const container = reImportedNodes.find((n) => n.name === 'Container')
+    expect(container).toBeDefined()
+    expect(container!.itemSpacing).toBe(16)
     expect(container.paddingTop).toBe(24)
     expect(container.paddingRight).toBe(24)
     expect(container.paddingBottom).toBe(24)
@@ -601,13 +607,15 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves corner radius', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')!
-    expect(container.cornerRadius).toBe(12)
+    const container = reImportedNodes.find((n) => n.name === 'Container')
+    expect(container).toBeDefined()
+    expect(container!.cornerRadius).toBe(12)
   })
 
   test('preserves independent corner radii', () => {
-    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')!
-    expect(headerBg.independentCorners).toBe(true)
+    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
+    expect(headerBg).toBeDefined()
+    expect(headerBg!.independentCorners).toBe(true)
     expect(headerBg.topLeftRadius).toBe(8)
     expect(headerBg.topRightRadius).toBe(8)
     expect(headerBg.bottomRightRadius).toBe(0)
@@ -615,16 +623,18 @@ describe('roundtrip: export → re-import', () => {
   })
 
   test('preserves effects', () => {
-    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')!
-    expect(headerBg.effects).toHaveLength(1)
+    const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
+    expect(headerBg).toBeDefined()
+    expect(headerBg!.effects).toHaveLength(1)
     expect(headerBg.effects[0].type).toBe('DROP_SHADOW')
     expect(headerBg.effects[0].radius).toBe(8)
     expect(headerBg.effects[0].offset.y).toBe(4)
   })
 
   test('preserves dimensions', () => {
-    const container = reImportedNodes.find((n) => n.name === 'Container')!
-    expect(container.width).toBe(400)
+    const container = reImportedNodes.find((n) => n.name === 'Container')
+    expect(container).toBeDefined()
+    expect(container!.width).toBe(400)
     expect(container.height).toBe(300)
   })
 })
@@ -788,7 +798,7 @@ describe('edge cases', () => {
     expect(outerUse!.type).toBe('INSTANCE')
 
     // Walk down: OuterUse > InnerUse clone > Label clone
-    const innerClone = graph.getChildren(outerUse!.id)[0]
+    const innerClone = graph.getChildren(outerUse?.id ?? '')[0]
     expect(innerClone).toBeDefined()
     expect(innerClone.name).toBe('InnerUse')
 
@@ -1025,9 +1035,9 @@ describe('text node export', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')!
+    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')
     expect(textNode).toBeDefined()
-    expect(textNode.type).toBe('TEXT')
+    expect(textNode!.type).toBe('TEXT')
     expect(textNode.text).toBe('Hello World')
     expect(textNode.fontFamily).toBe('Inter')
     expect(textNode.fontSize).toBe(16)
@@ -1051,9 +1061,9 @@ describe('text node export', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Multiline')!
+    const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Multiline')
     expect(textNode).toBeDefined()
-    expect(textNode.text).toBe('Line 1\nLine 2\nLine 3')
+    expect(textNode!.text).toBe('Line 1\nLine 2\nLine 3')
   })
 
   test('derivedTextData fields present in raw binary', async () => {
@@ -1083,15 +1093,18 @@ describe('text node export', () => {
 
     const chunks = parseFigKiwiChunks(canvasData)
     expect(chunks).not.toBeNull()
-    expect(chunks!.length).toBeGreaterThanOrEqual(2)
+    expect(chunks?.length).toBeGreaterThanOrEqual(2)
 
-    const schemaBytes = inflateSync(chunks![0])
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
     const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
-    const compiled = compileSchema(schema) as { decodeMessage(data: Uint8Array): any }
-    const dataRaw = inflateSync(chunks![1])
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const dataRaw = inflateSync(chunks?.[1] ?? new Uint8Array())
     const message = compiled.decodeMessage(dataRaw)
 
-    const textNc = message.nodeChanges.find((nc: any) => nc.type === 'TEXT')
+    const nodeChanges = message.nodeChanges as Array<Record<string, unknown>>
+    const textNc = nodeChanges.find((nc) => nc.type === 'TEXT')
     expect(textNc).toBeDefined()
 
     expect(textNc.textData.characters).toBe('Check binary')
@@ -1140,17 +1153,27 @@ describe('text node export', () => {
     const exported = await exportFigFile(graph)
     const zip = unzipSync(new Uint8Array(exported))
     const canvasData = zip['canvas.fig'] ?? zip['canvas']
-    const chunks = parseFigKiwiChunks(canvasData)!
-    const schemaBytes = inflateSync(chunks[0])
+    const chunks = parseFigKiwiChunks(canvasData)
+    expect(chunks).toBeDefined()
+
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
     const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
-    const compiled = compileSchema(schema) as { decodeMessage(data: Uint8Array): any }
-    const dataRaw = inflateSync(chunks[1])
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const dataRaw = inflateSync(chunks?.[1] ?? new Uint8Array())
     const message = compiled.decodeMessage(dataRaw)
 
-    const textNc = message.nodeChanges.find((nc: any) => nc.type === 'TEXT')
-    expect(textNc.derivedTextData.fontMetaData.length).toBe(2)
+    const nodeChanges = message.nodeChanges as Array<Record<string, unknown>>
+    const textNc = nodeChanges.find((nc) => nc.type === 'TEXT')
 
-    const families = textNc.derivedTextData.fontMetaData.map((m: any) => m.key.style)
+    const derivedTextData = textNc?.derivedTextData as Record<string, unknown> | undefined
+    const fontMetaData = derivedTextData?.fontMetaData as Array<Record<string, unknown>> | undefined
+    expect(fontMetaData?.length).toBe(2)
+
+    const families = (fontMetaData ?? []).map(
+      (m) => (m.key as Record<string, unknown>)?.style as string
+    )
     expect(families).toContain('Bold')
     expect(families).toContain('Regular')
   })
@@ -1196,8 +1219,9 @@ describe('variable roundtrip', () => {
     expect(reimportedCol.variableIds).toHaveLength(4)
 
     const vars = [...reimported.variables.values()]
-    const colorVar = vars.find((v) => v.name === 'color/primary')!
-    expect(colorVar.type).toBe('COLOR')
+    const colorVar = vars.find((v) => v.name === 'color/primary')
+    expect(colorVar).toBeDefined()
+    expect(colorVar!.type).toBe('COLOR')
     const colorVal = Object.values(colorVar.valuesByMode)[0] as {
       r: number
       g: number
@@ -1206,16 +1230,19 @@ describe('variable roundtrip', () => {
     }
     expect(colorVal.r).toBeCloseTo(0.23, 1)
 
-    const floatVar = vars.find((v) => v.name === 'spacing/base')!
-    expect(floatVar.type).toBe('FLOAT')
+    const floatVar = vars.find((v) => v.name === 'spacing/base')
+    expect(floatVar).toBeDefined()
+    expect(floatVar!.type).toBe('FLOAT')
     expect(Object.values(floatVar.valuesByMode)[0]).toBe(8)
 
-    const boolVar = vars.find((v) => v.name === 'visible')!
-    expect(boolVar.type).toBe('BOOLEAN')
+    const boolVar = vars.find((v) => v.name === 'visible')
+    expect(boolVar).toBeDefined()
+    expect(boolVar!.type).toBe('BOOLEAN')
     expect(Object.values(boolVar.valuesByMode)[0]).toBe(true)
 
-    const strVar = vars.find((v) => v.name === 'label')!
-    expect(strVar.type).toBe('STRING')
+    const strVar = vars.find((v) => v.name === 'label')
+    expect(strVar).toBeDefined()
+    expect(strVar!.type).toBe('STRING')
     expect(Object.values(strVar.valuesByMode)[0]).toBe('Hello')
   })
 
@@ -1238,7 +1265,7 @@ describe('variable roundtrip', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const reimportedRect = [...reimported.getAllNodes()].find((n) => n.name === 'Bound Rect')!
+    const reimportedRect = [...reimported.getAllNodes()].find((n) => n.name === 'Bound Rect')
     expect(reimportedRect).toBeDefined()
     expect(Object.keys(reimportedRect.boundVariables)).toContain('cornerRadius')
   })
@@ -1254,5 +1281,73 @@ describe('variable roundtrip', () => {
     expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
       [...original.variableCollections.values()].filter((c) => c.variableIds.length > 0).length
     )
+  })
+
+  test('pluginID casing is consistent across full codec pipeline', async () => {
+    await initCodec()
+
+    // Create a graph with multiple nodes having pluginData entries
+    const graph = new SceneGraph()
+    const api = new FigmaAPI(graph)
+    const frame = api.createFrame()
+    frame.name = 'PluginID Test'
+    frame.setPluginData('key1', 'value1')
+    frame.setPluginData('key2', 'value2')
+
+    const rect = api.createRectangle()
+    rect.name = 'Plugin Rect'
+    rect.setPluginData('testKey', 'testValue')
+
+    // Round-trip through the codec
+    const exported = await exportFigFile(graph)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    // Find all nodes with pluginData
+    let nodesWithPluginData = 0
+    let totalEntries = 0
+    for (const node of reimported.getAllNodes()) {
+      if (node.pluginData && node.pluginData.length > 0) {
+        nodesWithPluginData++
+        for (const entry of node.pluginData) {
+          totalEntries++
+          // Every entry MUST use pluginId (lowercase d, matching SceneGraph type)
+          expect(entry).toHaveProperty('pluginId')
+          expect(typeof entry.pluginId).toBe('string')
+          expect(entry.pluginId.length).toBeGreaterThan(0)
+        }
+      }
+      // Also check pluginRelaunchData entries
+      if (node.pluginRelaunchData && node.pluginRelaunchData.length > 0) {
+        for (const entry of node.pluginRelaunchData) {
+          expect(entry).toHaveProperty('pluginId')
+          expect(typeof entry.pluginId).toBe('string')
+        }
+      }
+    }
+
+    // Should have at least 2 nodes with plugin data (frame + rect)
+    expect(nodesWithPluginData).toBeGreaterThanOrEqual(2)
+    expect(totalEntries).toBeGreaterThanOrEqual(3)
+  })
+
+  test('slop-funnel.fig pluginID casing is consistent after round-trip', async () => {
+    const buf = readFileSync(resolve(FIXTURES, 'slop-funnel.fig'))
+    const original = await parseFigFile(buf.buffer as ArrayBuffer)
+
+    const exported = await exportFigFile(original)
+    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+
+    // Check every pluginData entry across all nodes
+    let checkedEntries = 0
+    for (const node of reimported.getAllNodes()) {
+      for (const entry of node.pluginData) {
+        checkedEntries++
+        expect(entry).toHaveProperty('pluginId')
+        expect(typeof entry.pluginId).toBe('string')
+      }
+    }
+
+    // slop-funnel.fig has thousands of pluginData entries — verify they all survived
+    expect(checkedEntries).toBeGreaterThan(100)
   })
 })

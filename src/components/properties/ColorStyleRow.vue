@@ -104,8 +104,8 @@ const { panels, dialogs } = useI18n()
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
       @click="emit('toggleVisibility')"
     >
-      <icon-lucide-eye v-if="item.visible" class="size-3.5" />
-      <icon-lucide-eye-off v-else class="size-3.5" />
+      <icon-lucide-eye v-if="item.visible" data-test-id="visibility-icon-on" class="size-3.5" />
+      <icon-lucide-eye-off v-else data-test-id="visibility-icon-off" class="size-3.5" />
     </button>
 
     <button :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="emit('remove')">

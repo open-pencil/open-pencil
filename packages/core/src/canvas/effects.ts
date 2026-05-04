@@ -55,11 +55,20 @@ export function applyClippedBlur(
   hasRadius: boolean,
   sigma: number
 ): void {
+  // Entry guard: reset shared paint to known state
+  r.effectLayerPaint.setImageFilter(null)
+  r.effectLayerPaint.setColorFilter(null)
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+
   canvas.save()
   r.clipNodeShape(canvas, node, rect, hasRadius)
   r.effectLayerPaint.setImageFilter(r.getCachedBlur(sigma))
   canvas.saveLayer(r.effectLayerPaint)
   canvas.restore()
+  // Exit guard: ensure shared paint is in clean state
+  r.effectLayerPaint.setImageFilter(null)
+  r.effectLayerPaint.setColorFilter(null)
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
   canvas.restore()
 }
 
@@ -159,7 +168,7 @@ export function renderEffects(
 
     if (pass === 'front' && effect.type === 'INNER_SHADOW') {
       if (node.type === 'TEXT') {
-        r.effectLayerPaint.setImageFilter(r.getCachedDecalBlur(effect.radius))
+        r.effectLayerPaint.setImageFilter(r.getCachedDecalBlur(effect.radius / 2))
         r.effectLayerPaint.setColorFilter(
           r.ck.ColorFilter.MakeBlend(
             r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a),
@@ -179,7 +188,7 @@ export function renderEffects(
       r.auxFill.setColor(
         r.ck.Color4f(effect.color.r, effect.color.g, effect.color.b, effect.color.a)
       )
-      r.auxFill.setImageFilter(r.getCachedDecalBlur(effect.radius))
+      r.auxFill.setImageFilter(r.getCachedDecalBlur(effect.radius / 2))
 
       canvas.save()
       r.clipNodeShape(canvas, node, rect, hasRadius)

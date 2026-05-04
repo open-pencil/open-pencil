@@ -78,7 +78,6 @@ test('gap menu sets auto space-between alignment', async () => {
   await page.locator('[data-test-id="layout-gap-menu"]').click()
   await page.getByRole('option', { name: 'Auto' }).click()
   await canvas.waitForRender()
-
   let frame = await getNodeById(page, frameId)
   expect(frame!.primaryAxisAlign).toBe('SPACE_BETWEEN')
   await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(9)

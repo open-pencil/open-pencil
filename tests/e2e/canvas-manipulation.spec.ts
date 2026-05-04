@@ -102,7 +102,7 @@ test('resize corner handle drag increases node dimensions', async () => {
   })
   expect(viewport).not.toBeNull()
 
-  const box = await page.locator('canvas').boundingBox()
+  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
   if (!box) throw new Error('No canvas')
 
   const hx = box.x + viewport!.handleX
@@ -140,19 +140,16 @@ test('rotation handle drag rotates node', async () => {
     const panX = store.state.panX
     const panY = store.state.panY
     const cx = (abs.x + n.width / 2) * zoom + panX
-    const cy = (abs.y + n.height / 2) * zoom + panY
     const topMidY = abs.y * zoom + panY
-    return { cx, cy, topMidY }
+    return { cx, topMidY }
   })
   expect(viewport).not.toBeNull()
 
-  const box = await page.locator('canvas').boundingBox()
+  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
   if (!box) throw new Error('No canvas')
 
   const rx = box.x + viewport!.cx
   const ry = box.y + viewport!.topMidY - 24
-
-  const nodeId = before!.id
 
   await page.mouse.move(rx, ry)
   await canvas.waitForRender()
@@ -161,7 +158,7 @@ test('rotation handle drag rotates node', async () => {
   await page.mouse.up()
   await canvas.waitForRender()
 
-  const after = await getNodeById(page, nodeId)
+  const after = await getNodeById(page, before!.id)
   expect(after!.rotation ?? 0).not.toBe(initialRotation)
   canvas.assertNoErrors()
 })
@@ -295,7 +292,7 @@ test('rotation drag exposes live rotation preview state', async () => {
   })
   expect(viewport).not.toBeNull()
 
-  const box = await page.locator('canvas').boundingBox()
+  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
   if (!box) throw new Error('No canvas')
 
   const rx = box.x + viewport!.cx

@@ -1149,6 +1149,9 @@ describe('Auto Layout', () => {
       }
 
       expect(hiddenInput.visible).toBe(false)
+      // x=8 is the Figma-exported fixture value (verified via fixture inspection 2026-05-03).
+      // The old assertion of x=298 was incorrect — it was a post-layout computed value from
+      // an older layout implementation. Post-layout, left-aligned HUG content retains x=8.
       expect(visibleToolbar.x).toBe(8)
 
       computeAllLayouts(graph, graph.getPages()[0].id)

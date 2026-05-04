@@ -16,6 +16,14 @@ export class ByteBuffer {
     this.length = data ? data.length : 0
   }
 
+  /**
+   * Returns a view into the internal buffer, not a copy.
+   *
+   * Consumers transferring this Uint8Array across thread boundaries (e.g. via
+   * postMessage with transferables) MUST copy first: `new Uint8Array(buffer)`.
+   * Otherwise, if multiple Uint8Arrays share the same underlying ArrayBuffer and
+   * one is transferred, all views into that buffer become detached.
+   */
   toUint8Array(): Uint8Array {
     return this._data.subarray(0, this.length)
   }

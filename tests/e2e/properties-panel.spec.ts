@@ -250,6 +250,10 @@ test('clip content checkbox toggles clipsContent', async () => {
   await canvas.drag(100, 100, 300, 300)
   await canvas.waitForRender()
 
+  // Enable auto-layout so the clip-content checkbox is visible
+  await canvas.pressKey('Shift+a')
+  await canvas.waitForRender()
+
   const before = await getSelectedNode(page)
   const initialValue = before!.clipsContent
 
