@@ -331,10 +331,12 @@ export const CJK_FALLBACK_FAMILIES_MACOS = [
 
 export const CJK_FALLBACK_FAMILIES_WINDOWS = [
   'Microsoft YaHei',
+  'Microsoft YaHei UI',
   'Microsoft JhengHei',
   'Yu Gothic',
   'Malgun Gothic',
-  'SimHei'
+  'SimHei',
+  'SimSun'
 ]
 
 export const CJK_FALLBACK_FAMILIES_LINUX = [
