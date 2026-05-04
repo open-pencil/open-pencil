@@ -12,7 +12,7 @@ import {
 } from 'reka-ui'
 
 import AppSelect from '@/components/ui/AppSelect.vue'
-import ScrubInput from '@/components/ScrubInput.vue'
+
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
@@ -146,11 +146,13 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
         </SelectRoot>
       </div>
       <div v-else ref="gapFieldRef" class="min-w-0 flex-1">
-        <ScrubInput
+        <VariableScrubInput
           data-test-id="layout-gap-input"
           class="w-full"
           :model-value="Math.round(ctx.node.itemSpacing)"
           :min="0"
+          :node-id="ctx.node.id"
+          binding-path="itemSpacing"
           @update:model-value="ctx.updateProp('itemSpacing', $event)"
           @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
         >
@@ -161,7 +163,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
             />
             <icon-lucide-align-horizontal-space-between v-else class="size-3.5" />
           </template>
-          <template #suffix>
+          <template #after-variable>
             <SelectRoot :model-value="'FIXED'" @update:model-value="setGapMode">
               <SelectTrigger
                 data-test-id="layout-gap-menu"
@@ -195,7 +197,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </VariableScrubInput>
       </div>
     </template>
     <button
