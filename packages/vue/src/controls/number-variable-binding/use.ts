@@ -6,7 +6,26 @@ import type { VariableCollection } from '@open-pencil/core/scene-graph'
 
 const FALLBACK_NUMBER_VARIABLE_NAME = 'New number'
 
-type NumberBindingPath = 'width' | 'height'
+export type NumberBindingPath =
+  | 'width'
+  | 'height'
+  | 'minWidth'
+  | 'maxWidth'
+  | 'minHeight'
+  | 'maxHeight'
+  | 'cornerRadius'
+  | 'topLeftRadius'
+  | 'topRightRadius'
+  | 'bottomLeftRadius'
+  | 'bottomRightRadius'
+  | 'itemSpacing'
+  | 'counterAxisSpacing'
+  | 'paddingTop'
+  | 'paddingRight'
+  | 'paddingBottom'
+  | 'paddingLeft'
+  | 'opacity'
+  | 'fontSize'
 
 export function useNumberVariableBinding(path: NumberBindingPath) {
   const binding = useVariableBinding({

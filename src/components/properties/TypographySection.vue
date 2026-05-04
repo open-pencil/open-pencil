@@ -5,6 +5,7 @@ import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
 import FontPicker from '@/components/FontPicker.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
+import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useSectionUI } from '@/components/ui/section'
@@ -47,11 +48,13 @@ const sectionCls = useSectionUI()
           :options="ctx.weights"
           @update:model-value="ctx.setWeight(+$event)"
         />
-        <ScrubInput
+        <VariableScrubInput
           class="flex-1"
           :model-value="ctx.node.value.fontSize"
           :min="1"
           :max="1000"
+          :node-id="ctx.node.value.id"
+          binding-path="fontSize"
           @update:model-value="ctx.updateProp('fontSize', $event)"
           @commit="(v: number, p: number) => ctx.commitProp('fontSize', v, p)"
         />

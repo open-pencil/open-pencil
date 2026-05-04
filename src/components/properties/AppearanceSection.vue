@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useAppearance, useI18n } from '@open-pencil/vue'
 
 import ScrubInput from '@/components/ScrubInput.vue'
+import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useSectionUI } from '@/components/ui/section'
 
@@ -65,7 +66,23 @@ function onToggleCorners() {
     </div>
 
     <div class="flex gap-1.5">
+      <VariableScrubInput
+        v-if="node"
+        suffix="%"
+        :model-value="opacityPercent"
+        :min="0"
+        :max="100"
+        :node-id="node.id"
+        binding-path="opacity"
+        @update:model-value="updateProp('opacity', $event / 100)"
+        @commit="(v: number, p: number) => commitProp('opacity', v / 100, p / 100)"
+      >
+        <template #icon>
+          <icon-lucide-blend class="size-3" />
+        </template>
+      </VariableScrubInput>
       <ScrubInput
+        v-else
         suffix="%"
         :model-value="opacityPercent"
         :min="0"
@@ -79,8 +96,22 @@ function onToggleCorners() {
       </ScrubInput>
 
       <template v-if="hasCornerRadius">
+        <VariableScrubInput
+          v-if="!showIndependentCorners && node"
+          data-test-id="corner-radius-input"
+          :model-value="cornerRadiusValue"
+          :min="0"
+          :node-id="node.id"
+          binding-path="cornerRadius"
+          @update:model-value="updateProp('cornerRadius', $event)"
+          @commit="(v: number, p: number) => commitProp('cornerRadius', v, p)"
+        >
+          <template #icon>
+            <icon-lucide-square-round-corner class="size-3" />
+          </template>
+        </VariableScrubInput>
         <ScrubInput
-          v-if="!showIndependentCorners"
+          v-else-if="!showIndependentCorners"
           data-test-id="corner-radius-input"
           :model-value="cornerRadiusValue"
           :min="0"
@@ -121,10 +152,12 @@ function onToggleCorners() {
       data-test-id="independent-corners-grid"
       class="mt-1.5 grid grid-cols-2 gap-1.5"
     >
-      <ScrubInput
+      <VariableScrubInput
         data-test-id="corner-tl-input"
         :model-value="node.topLeftRadius"
         :min="0"
+        :node-id="node.id"
+        binding-path="topLeftRadius"
         @update:model-value="updateCornerProp('topLeftRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('topLeftRadius', v, p)"
       >
@@ -139,11 +172,13 @@ function onToggleCorners() {
             <path d="M1 11V4a3 3 0 0 1 3-3h7" />
           </svg>
         </template>
-      </ScrubInput>
-      <ScrubInput
+      </VariableScrubInput>
+      <VariableScrubInput
         data-test-id="corner-tr-input"
         :model-value="node.topRightRadius"
         :min="0"
+        :node-id="node.id"
+        binding-path="topRightRadius"
         @update:model-value="updateCornerProp('topRightRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('topRightRadius', v, p)"
       >
@@ -158,11 +193,13 @@ function onToggleCorners() {
             <path d="M11 11V4a3 3 0 0 0-3-3H1" />
           </svg>
         </template>
-      </ScrubInput>
-      <ScrubInput
+      </VariableScrubInput>
+      <VariableScrubInput
         data-test-id="corner-bl-input"
         :model-value="node.bottomLeftRadius"
         :min="0"
+        :node-id="node.id"
+        binding-path="bottomLeftRadius"
         @update:model-value="updateCornerProp('bottomLeftRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('bottomLeftRadius', v, p)"
       >
@@ -177,11 +214,13 @@ function onToggleCorners() {
             <path d="M1 1v7a3 3 0 0 0 3 3h7" />
           </svg>
         </template>
-      </ScrubInput>
-      <ScrubInput
+      </VariableScrubInput>
+      <VariableScrubInput
         data-test-id="corner-br-input"
         :model-value="node.bottomRightRadius"
         :min="0"
+        :node-id="node.id"
+        binding-path="bottomRightRadius"
         @update:model-value="updateCornerProp('bottomRightRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('bottomRightRadius', v, p)"
       >
@@ -196,7 +235,7 @@ function onToggleCorners() {
             <path d="M11 1v7a3 3 0 0 1-3 3H1" />
           </svg>
         </template>
-      </ScrubInput>
+      </VariableScrubInput>
     </div>
   </div>
 </template>

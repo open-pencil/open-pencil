@@ -13,6 +13,7 @@ import {
 
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
+import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
 import { useSelectUI } from '@/components/ui/select'
@@ -57,12 +58,14 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
 
   <div class="mt-2 flex items-center gap-1.5">
     <template v-if="ctx.node.layoutWrap === 'WRAP'">
-      <ScrubInput
+      <VariableScrubInput
         data-test-id="layout-gap-input"
         class="min-w-0 flex-1"
         :label="ctx.node.layoutMode === 'VERTICAL' ? panels.verticalGap : panels.horizontalGap"
         :model-value="Math.round(ctx.node.itemSpacing)"
         :min="0"
+        :node-id="ctx.node.id"
+        binding-path="itemSpacing"
         @update:model-value="ctx.updateProp('itemSpacing', $event)"
         @commit="(v: number, p: number) => ctx.commitProp('itemSpacing', v, p)"
       >
@@ -73,13 +76,15 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
           />
           <icon-lucide-align-horizontal-space-between v-else class="size-3.5" />
         </template>
-      </ScrubInput>
-      <ScrubInput
+      </VariableScrubInput>
+      <VariableScrubInput
         data-test-id="layout-cross-gap-input"
         class="min-w-0 flex-1"
         :label="ctx.node.layoutMode === 'VERTICAL' ? panels.horizontalGap : panels.verticalGap"
         :model-value="Math.round(ctx.node.counterAxisSpacing)"
         :min="0"
+        :node-id="ctx.node.id"
+        binding-path="counterAxisSpacing"
         @update:model-value="ctx.updateProp('counterAxisSpacing', $event)"
         @commit="(v: number, p: number) => ctx.commitProp('counterAxisSpacing', v, p)"
       >
@@ -90,7 +95,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
           />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
         </template>
-      </ScrubInput>
+      </VariableScrubInput>
     </template>
     <template v-else>
       <div
