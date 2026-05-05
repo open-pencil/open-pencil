@@ -25,7 +25,7 @@ export function deduplicateNodeChangePluginData(nodeChanges: NodeChange[]): void
     if (nc.pluginRelaunchData && nc.pluginRelaunchData.length > 1) {
       const map = new Map<string, (typeof nc.pluginRelaunchData)[number]>()
       for (const entry of nc.pluginRelaunchData) {
-        map.set(`${entry.pluginID}\0${entry.command}\0${entry.message}`, entry)
+        map.set(`${entry.pluginID}\0${entry.command}\0${entry.message}\0${entry.isDeleted}`, entry)
       }
       if (map.size < nc.pluginRelaunchData.length) {
         nc.pluginRelaunchData = [...map.values()]

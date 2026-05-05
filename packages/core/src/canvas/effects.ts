@@ -72,16 +72,8 @@ export function applyClippedBlur(
   canvas.restore()
 }
 
-export function nodeHasRadius(node: SceneNode): boolean {
-  return (
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
-  )
-}
+import { nodeHasRadius } from './shapes'
+export { nodeHasRadius }
 
 function drawShapeDropShadow(
   r: SkiaRenderer,
