@@ -1,19 +1,18 @@
 import { describe, test, expect } from 'bun:test'
 
 import {
+  applyStyleToRange,
+  decodeVectorNetworkBlob,
+  encodeVectorNetworkBlob,
+  getStyleAt,
+  removeStyleFromRange,
+  SceneGraph,
   toggleBoldInRange,
   toggleItalicInRange,
-  applyStyleToRange,
-  removeStyleFromRange,
-  getStyleAt,
-  type StyleRun
-} from '@open-pencil/core'
-import {
-  encodeVectorNetworkBlob,
-  decodeVectorNetworkBlob,
+  UndoManager,
+  type StyleRun,
   type VectorNetwork
 } from '@open-pencil/core'
-import { SceneGraph, UndoManager } from '@open-pencil/core'
 
 // ---------------------------------------------------------------------------
 // toggleBoldInRange — mutation coverage

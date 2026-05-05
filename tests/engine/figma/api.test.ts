@@ -593,7 +593,9 @@ describe('FigmaAPI', () => {
       const fills = rect.fills as Fill[]
       try {
         fills[0].color.r = 0
-      } catch {}
+      } catch (error) {
+        expect(error).toBeInstanceOf(TypeError)
+      }
       expect(rect.fills[0].color.r).toBe(1)
     })
   })

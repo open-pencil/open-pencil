@@ -23,11 +23,9 @@ test.describe('Render performance', () => {
         const mod = i % 10
         const isVector = mod === 0
         const isEllipse = mod === 5
-        const type = isVector
-          ? ('VECTOR' as const)
-          : isEllipse
-            ? ('ELLIPSE' as const)
-            : ('RECTANGLE' as const)
+        let type: 'VECTOR' | 'ELLIPSE' | 'RECTANGLE' = 'RECTANGLE'
+        if (isVector) type = 'VECTOR'
+        else if (isEllipse) type = 'ELLIPSE'
         const props: Record<string, unknown> = {
           x: (i % cols) * 60,
           y: Math.floor(i / cols) * 60,

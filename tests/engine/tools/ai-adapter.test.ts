@@ -136,8 +136,8 @@ describe('AI adapter', () => {
     const evalTool = adapterTool(tools, 'eval')
     try {
       await evalTool.execute({ code: 'throw new Error("test")' })
-    } catch {
-      // expected
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
     }
 
     expect(afterCalled).toBe(true)

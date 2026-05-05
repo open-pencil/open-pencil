@@ -165,18 +165,13 @@
       "files": ["tests/**/*.ts", "tests/**/*.tsx"],
       "rules": {
         "typescript/no-non-null-assertion": "off",
-        "open-pencil/no-silent-catch": "off",
         "no-unused-vars": "off",
         "no-empty-function": "off",
-        "unicorn/no-nested-ternary": "off",
         "typescript/consistent-type-imports": "off",
         "open-pencil/no-inline-named-types": "off",
         "no-console": "off",
         "max-lines": "off",
-        "complexity": "off",
-        "radix": "off",
-        "prefer-const": "off",
-        "import/no-duplicates": "off"
+        "complexity": "off"
       }
     },
     {
@@ -232,16 +227,6 @@
       ],
       "rules": {
         "typescript/no-non-null-assertion": "error"
-      }
-    },
-    {
-      "files": ["tests/**/*.spec.ts"],
-      "rules": {
-        "typescript/no-non-null-assertion": "off",
-        "open-pencil/no-silent-catch": "off",
-        "no-unused-vars": "off",
-        "no-empty-function": "off",
-        "unicorn/no-nested-ternary": "off"
       }
     },
     {

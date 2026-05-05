@@ -356,7 +356,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
         fontData.buffer.slice(fontData.byteOffset, fontData.byteOffset + fontData.byteLength)
       )
     } catch {
-      // Font may not be available in headless — some text tests will be skipped
+      void fontPath
     }
 
     const surface = ck.MakeSurface(200, 200)!

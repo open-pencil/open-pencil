@@ -87,11 +87,13 @@ async function main() {
   // Scan the center line to find the 'O' boundaries
   // Background (Blue) | Left Stem (White/Shadow) | Counter (Blue) | Right Stem (White/Shadow) | Background (Blue)
 
-  let transitions = []
+  const transitions = []
   let lastColor = ''
   for (let x = 0; x < width; x++) {
     const p = getPixel(x, centerY)
-    const color = p[0] > 200 ? 'white' : p[2] > 200 ? 'blue' : 'black'
+    let color = 'black'
+    if (p[0] > 200) color = 'white'
+    else if (p[2] > 200) color = 'blue'
     if (color !== lastColor) {
       transitions.push({ x, color })
       lastColor = color

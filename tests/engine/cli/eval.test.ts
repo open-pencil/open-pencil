@@ -54,7 +54,7 @@ heavy('eval CLI', () => {
       'return figma.root.children.length'
     ])
     expect(exitCode).toBe(0)
-    const count = parseInt(stdout)
+    const count = parseInt(stdout, 10)
     expect(count).toBeGreaterThan(0)
   })
 
