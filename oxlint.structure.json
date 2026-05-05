@@ -30,7 +30,7 @@
         "tests/engine/okhcl-ui-logic.test.ts",
         "tests/engine/plugin-data.test.ts",
         "tests/engine/render-cache.test.ts",
-        "tests/engine/render.test.ts",
+        "tests/engine/render/jsx/**/*.test.ts",
         "tests/engine/text-edit-undo.test.ts"
       ],
       "rules": {
