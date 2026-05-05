@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createHistoryFrame, setupEditorPage } from '../helpers/editor-history'
+import { createHistoryFrame, setupEditorPage } from '#tests/helpers/editor-history'
 
 describe('undo/redo multi-step sequences', () => {
   test('create → move → duplicate → move copy → undo all → redo all', () => {

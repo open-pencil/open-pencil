@@ -384,7 +384,7 @@ const noStaleViteAppPaths = {
   }
 }
 
-function createParentRelativeImportRule({ description, applies, message }) {
+function createParentRelativeImportRule({ description, applies, message, minDepth = 1 }) {
   return {
     meta: {
       docs: { description }
@@ -395,6 +395,8 @@ function createParentRelativeImportRule({ description, applies, message }) {
 
       function reportSource(node, source) {
         if (!source?.startsWith('../')) return
+        const depth = source.match(/^(?:\.\.\/)+/)?.[0].split('../').length - 1
+        if ((depth ?? 0) < minDepth) return
         if (/^(?:\.\.\/)+package\.json$/.test(source)) return
         context.report({ node, message })
       }
@@ -414,6 +416,13 @@ function createParentRelativeImportRule({ description, applies, message }) {
     }
   }
 }
+
+const noDeepParentRelativeImports = createParentRelativeImportRule({
+  description: 'Disallow deep parent-relative imports — use package/test aliases instead',
+  applies: () => true,
+  message: 'Use an import alias instead of path drilling with ../.. imports.',
+  minDepth: 2
+})
 
 const noCoreParentRelativeImports = createParentRelativeImportRule({
   description: 'Disallow parent-relative imports in core internals — use #core/* aliases',
@@ -1371,6 +1380,7 @@ const plugin = {
     'no-legacy-app-imports': noLegacyAppImports,
     'no-vue-self-package-imports': noVueSelfPackageImports,
     'no-cross-package-source-imports': noCrossPackageSourceImports,
+    'no-deep-parent-relative-imports': noDeepParentRelativeImports,
     'no-core-parent-relative-imports': noCoreParentRelativeImports,
     'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
     'no-vue-parent-relative-imports': noVueParentRelativeImports,

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+
 import { clearDownloadedFontCache, downloadedFontCacheSummary } from '@/app/editor/fonts/cache'
-import { clearTauriMocks, mockTauriIPC } from '../helpers/tauri-mocks'
 
 const encoder = new TextEncoder()
 
@@ -14,27 +15,31 @@ describe('Tauri downloaded font cache helpers', () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('plugin:fs|read_file')
       expect(args).toMatchObject({ path: 'font-cache/v1/manifest.json' })
-      return [...encoder.encode(JSON.stringify({
-        version: 1,
-        entries: {
-          one: {
-            family: 'Noto Sans SC',
-            style: 'Regular',
-            file: 'one.ttf',
-            byteLength: 10,
-            sha256: 'a',
-            updatedAt: 100
-          },
-          two: {
-            family: 'Noto Naskh Arabic',
-            style: 'Regular',
-            file: 'two.ttf',
-            byteLength: 25,
-            sha256: 'b',
-            updatedAt: 250
-          }
-        }
-      }))]
+      return [
+        ...encoder.encode(
+          JSON.stringify({
+            version: 1,
+            entries: {
+              one: {
+                family: 'Noto Sans SC',
+                style: 'Regular',
+                file: 'one.ttf',
+                byteLength: 10,
+                sha256: 'a',
+                updatedAt: 100
+              },
+              two: {
+                family: 'Noto Naskh Arabic',
+                style: 'Regular',
+                file: 'two.ttf',
+                byteLength: 25,
+                sha256: 'b',
+                updatedAt: 250
+              }
+            }
+          })
+        )
+      ]
     })
 
     await expect(downloadedFontCacheSummary()).resolves.toEqual({

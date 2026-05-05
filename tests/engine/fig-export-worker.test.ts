@@ -2,6 +2,8 @@ import { describe, test, expect, beforeAll, setDefaultTimeout } from 'bun:test'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
+import { heavy } from '#tests/helpers/test-utils'
+
 import {
   parseFigFile,
   exportFigFile,
@@ -9,8 +11,6 @@ import {
   initCodec,
   SceneGraph
 } from '@open-pencil/core'
-
-import { heavy } from '../helpers/test-utils'
 
 setDefaultTimeout(30_000)
 

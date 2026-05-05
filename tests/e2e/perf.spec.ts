@@ -1,6 +1,5 @@
+import { CanvasHelper } from '#tests/helpers/canvas'
 import { test, expect } from '@playwright/test'
-
-import { CanvasHelper } from '../helpers/canvas'
 
 const NODE_COUNT = 500
 const ITERATIONS = 200

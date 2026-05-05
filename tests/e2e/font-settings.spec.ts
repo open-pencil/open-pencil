@@ -1,6 +1,5 @@
+import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '@playwright/test'
-
-import { CanvasHelper } from '../helpers/canvas'
 
 test('font settings popover is available from typography panel', async ({ page }) => {
   await page.goto('/')

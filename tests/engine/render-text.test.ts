@@ -3,6 +3,7 @@ import { describe, test, expect, mock } from 'bun:test'
 import { initCanvasKit } from '#cli/headless'
 import { renderText } from '#core/canvas/scene'
 import { fontManager } from '#core/text/fonts'
+import { repoPath } from '#tests/helpers/paths'
 
 import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@open-pencil/core'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/core'
@@ -161,8 +162,7 @@ describe('renderText headless visual', () => {
     fontProvider.registerFont(interData, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', interData)
 
-    const notoPath = new URL('../../tests/fixtures/fonts/NotoSansSC-Regular.ttf', import.meta.url)
-      .pathname
+    const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
     const notoData = await Bun.file(notoPath).arrayBuffer()
     fontProvider.registerFont(notoData, 'Noto Sans SC')
     fontManager.setCJKFallbackFamily('Noto Sans SC')

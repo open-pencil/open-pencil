@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { getNodeOrThrow } from '#tests/helpers/assert'
 
-import { getNodeOrThrow } from '../helpers/assert'
+import { createEditor } from '@open-pencil/core/editor'
 
 describe('nudgeSelected', () => {
   function setup() {

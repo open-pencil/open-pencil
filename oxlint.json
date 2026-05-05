@@ -8,11 +8,21 @@
   },
   "rules": {
     "no-unused-vars": "warn",
-    "no-console": ["warn", { "allow": ["warn", "error", "debug", "time", "timeEnd"] }],
-    "eqeqeq": ["error", "always", { "null": "ignore" }],
+    "no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error", "debug", "time", "timeEnd"]
+      }
+    ],
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
     "prefer-const": "error",
     "radix": "error",
-
     "no-restricted-imports": [
       "error",
       {
@@ -110,6 +120,7 @@
     "open-pencil/no-core-framework-imports": "error",
     "open-pencil/no-direct-storage-access": "error",
     "open-pencil/no-legacy-shim-files": "error",
+    "open-pencil/no-deep-parent-relative-imports": "error",
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-unknown-record-double-cast": "error",
     "open-pencil/no-ts-suppression-comments": "error",
@@ -117,7 +128,37 @@
     "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-function-alias-imports": "error",
-    "open-pencil/max-composition-root-lines": ["error", { "max": 260 }]
+    "open-pencil/max-composition-root-lines": [
+      "error",
+      {
+        "max": 260
+      }
+    ],
+    "open-pencil/no-core-parent-relative-imports": "error",
+    "open-pencil/no-mcp-parent-relative-imports": "error",
+    "open-pencil/no-vue-parent-relative-imports": "error",
+    "open-pencil/no-stale-vite-app-paths": "error",
+    "open-pencil/no-cli-parent-relative-imports": "error",
+    "open-pencil/no-root-demo-module": "error",
+    "open-pencil/no-mcp-core-barrel-imports": "error",
+    "open-pencil/no-cli-core-barrel-imports": "error",
+    "open-pencil/no-script-core-barrel-imports": "error",
+    "open-pencil/no-core-self-package-imports": "error",
+    "open-pencil/no-inline-prompt-constants": "error",
+    "open-pencil/no-legacy-app-support-imports": "error",
+    "open-pencil/no-app-vue-core-barrel-imports": "error",
+    "open-pencil/no-legacy-test-app-imports": "error",
+    "open-pencil/no-test-core-source-imports": "error",
+    "open-pencil/no-direct-graph-emitter-subscriptions": "error",
+    "open-pencil/no-on-unmounted-in-composition-roots": "error",
+    "open-pencil/no-composable-state-wrappers": "error",
+    "open-pencil/prefer-vueuse-intervals": "error",
+    "open-pencil/prefer-vueuse-timeouts": "error",
+    "open-pencil/vue-component-file-pascal-case": "error",
+    "open-pencil/component-namespace-pascal-case": "error",
+    "open-pencil/non-component-source-directories-kebab-case": "error",
+    "open-pencil/no-component-root-sibling-folder": "error",
+    "open-pencil/no-flat-kiwi-modules": "error"
   },
   "overrides": [
     {
@@ -127,10 +168,21 @@
       }
     },
     {
-      "files": ["**/*.test.ts", "**/*.test.tsx"],
+      "files": ["tests/**/*.ts", "tests/**/*.tsx"],
       "rules": {
         "typescript/no-non-null-assertion": "off",
-        "open-pencil/no-silent-catch": "off"
+        "open-pencil/no-silent-catch": "off",
+        "no-unused-vars": "off",
+        "no-empty-function": "off",
+        "unicorn/no-nested-ternary": "off",
+        "typescript/consistent-type-imports": "off",
+        "open-pencil/no-inline-named-types": "off",
+        "no-console": "off",
+        "max-lines": "off",
+        "complexity": "off",
+        "radix": "off",
+        "prefer-const": "off",
+        "import/no-duplicates": "off"
       }
     },
     {
@@ -160,6 +212,45 @@
       "files": ["packages/cli/src/commands/**"],
       "rules": {
         "open-pencil/no-raw-console-format": "error"
+      }
+    },
+    {
+      "files": [
+        "tests/engine/copy.test.ts",
+        "tests/engine/editor/selection/**/*.test.ts",
+        "tests/engine/fig/**/*.test.ts",
+        "tests/engine/font-normalize-export.test.ts",
+        "tests/engine/matrix.test.ts",
+        "tests/engine/mcp-stdio.test.ts",
+        "tests/engine/nudge.test.ts",
+        "tests/engine/okhcl-toggle-conversion.test.ts",
+        "tests/engine/okhcl-ui-logic.test.ts",
+        "tests/engine/plugin-data.test.ts",
+        "tests/engine/render-cache.test.ts",
+        "tests/engine/render/jsx/**/*.test.ts",
+        "tests/engine/text-edit-undo.test.ts"
+      ],
+      "rules": {
+        "typescript/no-non-null-assertion": "error"
+      }
+    },
+    {
+      "files": ["tests/**/*.spec.ts"],
+      "rules": {
+        "typescript/no-non-null-assertion": "off",
+        "open-pencil/no-silent-catch": "off",
+        "no-unused-vars": "off",
+        "no-empty-function": "off",
+        "unicorn/no-nested-ternary": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.ts"],
+      "rules": {
+        "no-console": "off",
+        "typescript/no-non-null-assertion": "off",
+        "open-pencil/no-hand-rolled-color": "off",
+        "radix": "off"
       }
     }
   ],

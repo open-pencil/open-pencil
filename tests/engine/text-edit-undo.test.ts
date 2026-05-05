@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
-
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 
 import type { StyleRun } from '@open-pencil/core'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'

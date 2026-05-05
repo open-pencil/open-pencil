@@ -13,31 +13,28 @@
  */
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
+import { cliSourcePath, coreSourcePath, publicPath, testPath } from '#tests/helpers/paths'
 
 // === CLAIM EXTRACTION ===
 // Each claim is: [doc_section, claim_text, verification_strategy]
 
 // We load the relevant source files to verify the claims by static analysis
 // AND runtime behavior where applicable.
-const shadowsPath = join(import.meta.dir, '../../packages/core/src/canvas/shadows.ts')
-const effectsPath = join(import.meta.dir, '../../packages/core/src/canvas/effects.ts')
-const scenePath = join(import.meta.dir, '../../packages/core/src/canvas/scene.ts')
-const rendererPath = join(import.meta.dir, '../../packages/core/src/canvas/renderer.ts')
-const sgTypesPath = join(import.meta.dir, '../../packages/core/src/scene-graph/types.ts')
-const nodeExportPath = join(
-  import.meta.dir,
-  '../../packages/core/src/kiwi/node-change/export-node.ts'
-)
-const convertPath = join(import.meta.dir, '../../packages/core/src/kiwi/node-change/paint.ts')
-const schemaPath = join(import.meta.dir, '../../packages/core/src/kiwi/binary/schema.ts')
-const codecPath = join(import.meta.dir, '../../packages/core/src/kiwi/binary/codec.ts')
-const lifecyclePath = join(import.meta.dir, '../../packages/core/src/canvas/renderer/lifecycle.ts')
+const shadowsPath = coreSourcePath('canvas/shadows.ts')
+const effectsPath = coreSourcePath('canvas/effects.ts')
+const scenePath = coreSourcePath('canvas/scene.ts')
+const rendererPath = coreSourcePath('canvas/renderer.ts')
+const sgTypesPath = coreSourcePath('scene-graph/types.ts')
+const nodeExportPath = coreSourcePath('kiwi/node-change/export-node.ts')
+const convertPath = coreSourcePath('kiwi/node-change/paint.ts')
+const schemaPath = coreSourcePath('kiwi/binary/schema.ts')
+const codecPath = coreSourcePath('kiwi/binary/codec.ts')
+const lifecyclePath = coreSourcePath('canvas/renderer/lifecycle.ts')
 
 function readSource(path: string): string {
   return readFileSync(path, 'utf-8')
@@ -293,7 +290,7 @@ describe('Doc 02 — Formula Deconstruction: Static Code Claims', () => {
 
 describe('Doc 03 — Artifact Analysis: Static + Runtime Verification', () => {
   test('C03-01: visual-inner-shadow-counter.ts exists and checks for right-edge shadow', () => {
-    const testPath = join(import.meta.dir, '../../tests/engine/visual-inner-shadow-counter.ts')
+    const testPath = testPath('engine/visual-inner-shadow-counter.ts')
     const src = readFileSync(testPath, 'utf-8')
     expect(src).toContain('hasShadowOnRightInnerEdge')
     expect(src).toContain("t.color === 'black'")
@@ -344,7 +341,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
     fontManager.attachProvider(ck, fontProvider)
 
     // Load Inter font for text tests
-    const fontPath = join(import.meta.dir, '../../public/Inter-SemiBold.ttf')
+    const fontPath = publicPath('Inter-SemiBold.ttf')
     try {
       const fontData = readFileSync(fontPath)
       fontManager.markLoaded(

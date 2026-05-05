@@ -3,12 +3,13 @@ import { randomUUID } from 'crypto'
 import { tmpdir } from 'os'
 import { join } from 'path'
 
-import { heavy } from '../helpers/test-utils'
+import { cliSourcePath, repoPath } from '#tests/helpers/paths'
+import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(30_000)
 
-const CLI = join(import.meta.dir, '../../packages/cli/src/index.ts')
-const FIXTURE = join(import.meta.dir, '../fixtures/gold-preview.fig')
+const CLI = cliSourcePath('index.ts')
+const FIXTURE = repoPath('tests/fixtures/gold-preview.fig')
 
 async function run(
   args: string[],

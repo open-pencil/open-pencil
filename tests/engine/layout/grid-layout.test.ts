@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeLayout, computeAllLayouts, FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#tests/helpers/layout'
 
-import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '../../helpers/layout'
+import { computeLayout, computeAllLayouts, FigmaAPI, SceneGraph } from '@open-pencil/core'
 
 describe('Grid Layout', () => {
   describe('basic grid', () => {

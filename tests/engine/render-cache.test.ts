@@ -3,6 +3,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 import { initCanvasKit } from '#cli/headless'
+import { expectDefined } from '#tests/helpers/assert'
 
 import {
   computeAllLayouts,
@@ -13,8 +14,6 @@ import {
   SkiaRenderer,
   type SceneNode
 } from '@open-pencil/core'
-
-import { expectDefined } from '../helpers/assert'
 
 let graph: SceneGraph
 let movingNodeId: string

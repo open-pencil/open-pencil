@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { autoFrame, loadFixtureGraph, pageId, rect } from '#tests/helpers/layout'
+
 import { createEditorStore } from '@/app/editor/session'
 import {
   computeLayout,
@@ -9,8 +11,6 @@ import {
   SceneGraph,
   setTextMeasurer
 } from '@open-pencil/core'
-
-import { autoFrame, loadFixtureGraph, pageId, rect } from '../../helpers/layout'
 
 describe('Auto Layout', () => {
   describe('horizontal basic', () => {

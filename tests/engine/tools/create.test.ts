@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { getTool, setupToolTest, type ToolResult } from '../../helpers/tools'
+import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('create_shape', () => {
   test('creates a frame', () => {

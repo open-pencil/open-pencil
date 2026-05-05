@@ -13,7 +13,9 @@ export async function mockTauriIPC(
   const { mockIPC } = await import('@tauri-apps/api/mocks')
   mockIPC(handler)
   const windowLike = window as typeof window & {
-    __TAURI_INTERNALS__: { invoke: (cmd: string, args: unknown, options?: unknown) => Promise<unknown> }
+    __TAURI_INTERNALS__: {
+      invoke: (cmd: string, args: unknown, options?: unknown) => Promise<unknown>
+    }
   }
   windowLike.__TAURI_INTERNALS__.invoke = async (cmd, args, options) => handler(cmd, args, options)
 }

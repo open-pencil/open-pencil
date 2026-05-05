@@ -1,8 +1,7 @@
 import { copyFileSync, createReadStream, existsSync, mkdirSync } from 'fs'
 import { dirname, resolve } from 'node:path'
 
-import type { Connect, ResolvedConfig } from 'vite'
-import type { Plugin } from 'vite'
+import type { Connect, Plugin, ResolvedConfig } from 'vite'
 
 function syncWasmFromNodeModules(root: string, source: string, destination: string) {
   const sourcePath = resolve(root, source)
@@ -51,7 +50,11 @@ export function copyCanvasKitAssetsPlugin(): Plugin {
       root = config.root
     },
     buildStart() {
-      syncWasmFromNodeModules(root, 'node_modules/canvaskit-wasm/bin/canvaskit.wasm', 'public/canvaskit.wasm')
+      syncWasmFromNodeModules(
+        root,
+        'node_modules/canvaskit-wasm/bin/canvaskit.wasm',
+        'public/canvaskit.wasm'
+      )
       syncWasmFromNodeModules(
         root,
         'packages/core/vendor/canvaskit-webgpu/canvaskit.wasm',

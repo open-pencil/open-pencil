@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 import {
   clearNodeFillOkHCL,
   clearNodeStrokeOkHCL,
@@ -9,8 +11,6 @@ import {
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
 } from '@open-pencil/core'
-
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 
 describe('OkHCL metadata toggling', () => {
   test('can disable fill OkHCL metadata', () => {

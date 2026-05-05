@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts } from '@open-pencil/core'
+import { ALL_TOOLS, getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
-import { ALL_TOOLS, getTool, setupToolTest, type ToolResult } from '../../helpers/tools'
+import { computeAllLayouts } from '@open-pencil/core'
 
 describe('set_fill', () => {
   test('sets solid fill', () => {

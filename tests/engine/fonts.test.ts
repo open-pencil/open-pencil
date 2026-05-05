@@ -13,6 +13,7 @@ import {
   fontFallbackEntry,
   fontFallbackManifest
 } from '@open-pencil/core'
+
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 function pageId(graph: SceneGraph) {

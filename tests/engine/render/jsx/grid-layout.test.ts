@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { makeSceneGraph } from '#tests/helpers/scene'
+
 import {
   renderTree,
   renderJSX,
@@ -8,9 +11,6 @@ import {
   Frame,
   Rectangle
 } from '@open-pencil/core'
-
-import { expectDefined, getNodeOrThrow } from '../../../helpers/assert'
-import { makeSceneGraph } from '../../../helpers/scene'
 
 describe('grid layout rendering', () => {
   it('creates grid frame with template columns', async () => {

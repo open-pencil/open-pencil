@@ -1,6 +1,5 @@
+import { CanvasHelper } from '#tests/helpers/canvas'
 import { test, expect } from '@playwright/test'
-
-import { CanvasHelper } from '../helpers/canvas'
 
 test.describe('SkPicture scene caching', () => {
   let helper: CanvasHelper

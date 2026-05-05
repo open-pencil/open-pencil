@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
+import { makeSceneGraph } from '#tests/helpers/scene'
+
 import {
   renderTree,
   renderJSX,
@@ -13,9 +16,6 @@ import {
   Group,
   Section
 } from '@open-pencil/core'
-
-import { expectDefined, getNodeOrThrow, childIdAt } from '../../../helpers/assert'
-import { makeSceneGraph } from '../../../helpers/scene'
 
 describe('renderTree', () => {
   it('renders a simple frame', async () => {

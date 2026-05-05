@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { ALL_TOOLS } from '../../helpers/tools'
+import { ALL_TOOLS } from '#tests/helpers/tools'
 
 describe('tool definitions', () => {
   test('all tools have unique names', () => {

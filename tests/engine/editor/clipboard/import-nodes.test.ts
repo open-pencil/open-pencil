@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import { importClipboardNodes } from '@open-pencil/core'
+import { createClipboardGraph } from '#tests/helpers/clipboard'
 
-import { createClipboardGraph } from '../../../helpers/clipboard'
+import { importClipboardNodes } from '@open-pencil/core'
 
 import type { NodeChange, SceneNode } from '@open-pencil/core'
 

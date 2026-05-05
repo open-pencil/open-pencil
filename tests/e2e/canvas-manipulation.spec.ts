@@ -1,7 +1,6 @@
+import { CanvasHelper } from '#tests/helpers/canvas'
+import { getSelectedIds, getPageChildren, getSelectedNode, getNodeById } from '#tests/helpers/store'
 import { test, expect, type Page } from '@playwright/test'
-
-import { CanvasHelper } from '../helpers/canvas'
-import { getSelectedIds, getPageChildren, getSelectedNode, getNodeById } from '../helpers/store'
 
 let page: Page
 let canvas: CanvasHelper

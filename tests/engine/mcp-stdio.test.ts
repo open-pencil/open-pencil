@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { WebSocketServer, type WebSocket } from 'ws'
 
 import {
@@ -9,8 +10,6 @@ import {
   computeAllLayouts,
   executeRpcCommand
 } from '@open-pencil/core'
-
-import { expectDefined, getNodeOrThrow } from '../helpers/assert'
 
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'

@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createEditorStore } from '../../src/app/editor/session'
+import { createEditorStore } from '@/app/editor/session'
 
 describe('setPlannedFilePath', () => {
   test('sets document name from file path', () => {

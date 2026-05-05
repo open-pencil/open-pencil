@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { createUndoManager, noop, undoEntry } from '../helpers/undo'
+import { createUndoManager, noop, undoEntry } from '#tests/helpers/undo'
 
 describe('UndoManager idle-timer batching', () => {
   test('rapid pushes inside a batch produce a single undo entry', () => {

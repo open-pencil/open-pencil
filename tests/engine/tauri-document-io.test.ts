@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import { createDocumentWriter } from '@/app/document/io/write'
-
-import { clearTauriMocks, mockTauriIPC } from '../helpers/tauri-mocks'
 
 afterEach(async () => {
   await clearTauriMocks()

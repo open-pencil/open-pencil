@@ -1,6 +1,14 @@
 import { describe, test, expect } from 'bun:test'
 
 import {
+  lineNetwork,
+  triangleNetwork,
+  vectorNetwork,
+  vectorSegment,
+  vectorVertex
+} from '#tests/helpers/vector-network'
+
+import {
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
   computeVectorBounds,
@@ -8,14 +16,6 @@ import {
   validateVectorNetwork,
   type VectorNetwork
 } from '@open-pencil/core'
-
-import {
-  lineNetwork,
-  triangleNetwork,
-  vectorNetwork,
-  vectorSegment,
-  vectorVertex
-} from '../helpers/vector-network'
 
 describe('vectorNetworkBlob round-trip', () => {
   test('empty network', () => {

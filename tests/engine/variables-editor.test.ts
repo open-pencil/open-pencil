@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { ref } from 'vue'
 
 import { createVariableCollectionActions, createVariableValueActions } from '#vue/variables/helpers'
+import { ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { Variable, VariableCollection } from '@open-pencil/core/scene-graph'
