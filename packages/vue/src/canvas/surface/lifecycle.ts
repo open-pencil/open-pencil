@@ -33,7 +33,10 @@ export function createCanvasSurfaceManager({
 }) {
   const state: SurfaceManagerState = { renderer: null, glContext: null }
 
-  function createSurface(canvas: HTMLCanvasElement) {
+  function createSurface(
+    canvas: HTMLCanvasElement,
+    { reloadFonts = false }: { reloadFonts?: boolean } = {}
+  ) {
     const ck = getCanvasKit()
     if (!ck) return
 
@@ -57,6 +60,15 @@ export function createCanvasSurfaceManager({
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
     editor.setCanvasKit(ck, state.renderer)
     canvas.dataset.ready = '1'
+
+    // When the surface is recreated after a resize fallback, destroyRenderer
+    // has cleared the module-level fontProvider — the new renderer must reload.
+    // On initial mount, kit-loader.init() handles loadFonts, so skip here.
+    if (reloadFonts && !isDestroyed()) {
+      void state.renderer.loadFonts().then(() => {
+        if (!isDestroyed()) renderNow()
+      })
+    }
   }
 
   function renderNow() {
@@ -89,7 +101,7 @@ export function createCanvasSurfaceManager({
     const surface = result.surface
     if (!surface) {
       console.warn('Falling back to full surface recreation after resize')
-      createSurface(canvas)
+      createSurface(canvas, { reloadFonts: true })
       return
     }
     state.renderer.replaceSurface(surface)

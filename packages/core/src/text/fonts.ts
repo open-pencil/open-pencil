@@ -29,6 +29,10 @@ export function getFontProvider(): TypefaceFontProvider | null {
   return fontProvider
 }
 
+export function resetFontService(): void {
+  fontProvider = null
+}
+
 async function queryFonts(): Promise<FontInfo[]> {
   if (!IS_BROWSER || !window.queryLocalFonts) return []
   try {

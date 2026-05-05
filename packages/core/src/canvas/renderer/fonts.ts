@@ -11,7 +11,7 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph } from '#core/scene-graph'
 
 export function getFontProvider(r: SkiaRenderer) {
-  return r.isDestroyed() ? null : r.fontProvider
+  return r.isDestroyed() || !r.fontProvider ? null : r.fontProvider
 }
 
 export async function loadFonts(r: SkiaRenderer): Promise<void> {
@@ -21,9 +21,11 @@ export async function loadFonts(r: SkiaRenderer): Promise<void> {
 
   const { initFontService, loadFont, ensureArabicFallback, ensureCJKFallback } =
     await import('#core/text/fonts')
+  if (r.isDestroyed()) return
   initFontService(r.ck, r.fontProvider)
 
   const fontData = await loadFont(DEFAULT_FONT_FAMILY, 'Regular')
+  if (r.isDestroyed()) return
   if (fontData) {
     r.fontProvider.registerFont(fontData, DEFAULT_FONT_FAMILY)
     const typeface = r.ck.Typeface.MakeFreeTypeFaceFromData(fontData)
@@ -47,10 +49,10 @@ export async function loadFonts(r: SkiaRenderer): Promise<void> {
   r.invalidateAllPictures()
 
   void ensureCJKFallback().then((families) => {
-    if (families.length > 0) r.invalidateAllPictures()
+    if (!r.isDestroyed() && families.length > 0) r.invalidateAllPictures()
   })
   void ensureArabicFallback().then((families) => {
-    if (families.length > 0) r.invalidateAllPictures()
+    if (!r.isDestroyed() && families.length > 0) r.invalidateAllPictures()
   })
 }
 
