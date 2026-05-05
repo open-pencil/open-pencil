@@ -1,39 +1,14 @@
-import { beforeAll, describe, expect, it } from 'bun:test'
-import { readFileSync } from 'node:fs'
+import { describe, expect, it } from 'bun:test'
 
-import {
-  parseFigmaClipboard,
-  importClipboardNodes,
-  figmaNodesBounds,
-  buildFigmaClipboardHTML,
-  buildOpenPencilClipboardHTML,
-  parseOpenPencilClipboard,
-  readFigFile,
-  initCodec,
-  SceneGraph,
-  type SceneNode,
-  type NodeChange
-} from '@open-pencil/core'
+import { importClipboardNodes } from '@open-pencil/core'
 
-function makeClipboardHtml(
-  nodeChanges: unknown[],
-  meta = { fileKey: 'test', pasteID: 1, dataType: 'scene' }
-) {
-  // Minimal fig-kiwi clipboard: just meta + empty figma buffer
-  // For real parsing we'd need actual Kiwi binary — these tests use importClipboardNodes directly
-  const metaB64 = btoa(JSON.stringify(meta))
-  return `<meta charset='utf-8'><span data-metadata="<!--(figmeta)${metaB64}(/figmeta)-->"></span><span data-buffer="<!--(figma)(/figma)-->"></span>`
-}
+import { createClipboardGraph } from '../../../helpers/clipboard'
 
-function createGraphWithPage(): { graph: SceneGraph; pageId: string } {
-  const graph = new SceneGraph()
-  graph.addPage('Test')
-  return { graph, pageId: graph.rootId }
-}
+import type { NodeChange, SceneNode } from '@open-pencil/core'
 
 describe('importClipboardNodes', () => {
   it('skips VARIABLE_SET and VARIABLE nodes', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Document' },
@@ -95,7 +70,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('skips non-visual Figma types', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nonVisualTypes = [
       'WIDGET',
@@ -139,7 +114,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('imports nested frames with children', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -194,7 +169,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('preserves fills and strokes', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -231,7 +206,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('imports layoutAlignSelf from stackChildAlignSelf', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -277,7 +252,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('imports clipsContent from frameMaskDisabled', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -322,7 +297,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('imports fontWeight from fontName.style via styleToWeight', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -375,7 +350,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('converts letterSpacing object to pixels', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -426,7 +401,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('converts RAW lineHeight to pixels', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -478,7 +453,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('converts letterSpacing and lineHeight in style overrides', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -520,7 +495,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('maps SYMBOL type to COMPONENT with auto-layout', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -582,7 +557,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('populates instance children from pasted component', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -639,7 +614,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('internal canvas components populate instances but are not pasted', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -706,7 +681,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('detaches orphaned instances to FRAME when component is missing', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -759,7 +734,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('applies symbolOverrides text to instance children via overrideKey', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -826,7 +801,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('imports textAutoResize from clipboard data', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -877,7 +852,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('undo removes all imported nodes including children', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -926,7 +901,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('redo recreates full subtree with correct parent-child relationships', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -1000,7 +975,7 @@ describe('importClipboardNodes', () => {
   })
 
   it('redo without childIds:[] causes duplicate children', () => {
-    const { graph, pageId } = createGraphWithPage()
+    const { graph, pageId } = createClipboardGraph()
 
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
@@ -1050,334 +1025,5 @@ describe('importClipboardNodes', () => {
     // Bug: parent has duplicated childIds because snapshot already had [childId]
     // and createNode appends childId again
     expect(restored.childIds.length).toBeGreaterThan(1)
-  })
-})
-
-describe('figmaNodesBounds', () => {
-  it('computes bounds of top-level visual nodes', () => {
-    const nodes = [
-      { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      {
-        guid: { sessionID: 0, localID: 1 },
-        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
-        type: 'CANVAS',
-        name: 'Page'
-      },
-      {
-        guid: { sessionID: 0, localID: 10 },
-        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
-        type: 'FRAME',
-        name: 'A',
-        size: { x: 200, y: 100 },
-        transform: { m00: 1, m01: 0, m02: 500, m10: 0, m11: 1, m12: 300 }
-      },
-      {
-        guid: { sessionID: 0, localID: 11 },
-        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
-        type: 'RECTANGLE',
-        name: 'B',
-        size: { x: 50, y: 50 },
-        transform: { m00: 1, m01: 0, m02: 800, m10: 0, m11: 1, m12: 400 }
-      }
-    ] as NodeChange[]
-
-    const bounds = figmaNodesBounds(nodes)
-    expect(bounds).toEqual({ x: 500, y: 300, w: 350, h: 150 })
-  })
-
-  it('ignores variables and non-visual types', () => {
-    const nodes = [
-      { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      {
-        guid: { sessionID: 0, localID: 1 },
-        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
-        type: 'CANVAS',
-        name: 'Page'
-      },
-      {
-        guid: { sessionID: 0, localID: 2 },
-        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '!' },
-        type: 'VARIABLE_SET',
-        name: 'Vars'
-      },
-      {
-        guid: { sessionID: 0, localID: 10 },
-        parentIndex: { guid: { sessionID: 0, localID: 1 }, position: '"' },
-        type: 'FRAME',
-        name: 'Card',
-        size: { x: 300, y: 200 },
-        transform: { m00: 1, m01: 0, m02: 18000, m10: 0, m11: 1, m12: 45000 }
-      }
-    ] as NodeChange[]
-
-    const bounds = figmaNodesBounds(nodes)
-    expect(bounds).toEqual({ x: 18000, y: 45000, w: 300, h: 200 })
-  })
-
-  it('returns null for empty or all-non-visual nodes', () => {
-    expect(figmaNodesBounds([])).toBeNull()
-    const nodes = [
-      { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
-      {
-        guid: { sessionID: 0, localID: 1 },
-        parentIndex: { guid: { sessionID: 0, localID: 0 }, position: '!' },
-        type: 'CANVAS',
-        name: 'Page'
-      }
-    ] as NodeChange[]
-    expect(figmaNodesBounds(nodes)).toBeNull()
-  })
-})
-
-describe('buildFigmaClipboardHTML', () => {
-  beforeAll(async () => {
-    await initCodec()
-  })
-
-  it('encodes a simple frame without throwing', async () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const frame = graph.createNode('FRAME', page.id, {
-      name: 'Card',
-      x: 0,
-      y: 0,
-      width: 300,
-      height: 200,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
-    })
-
-    const html = await buildFigmaClipboardHTML([frame], graph)
-    expect(html).toContain('figmeta')
-    expect(html).toContain('figma')
-  })
-
-  it('encodes text nodes with style runs', async () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const text = graph.createNode('TEXT', page.id, {
-      name: 'Styled',
-      x: 0,
-      y: 0,
-      width: 200,
-      height: 24,
-      text: 'Hello World',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      fontSize: 16,
-      styleRuns: [
-        { start: 0, length: 5, style: { fontWeight: 700 } },
-        { start: 6, length: 5, style: { fontWeight: 400, italic: true } }
-      ]
-    })
-
-    const html = await buildFigmaClipboardHTML([text], graph)
-    expect(html).toContain('figmeta')
-
-    const parsed = await parseFigmaClipboard(html)
-    const textNode = parsed?.nodes.find((node) => node.type === 'TEXT')
-    expect(textNode?.textUserLayoutVersion).toBe(4)
-    expect(textNode?.derivedTextData?.glyphs).toBeDefined()
-    expect(textNode?.derivedTextData?.baselines?.length).toBeGreaterThan(0)
-  })
-
-  it('encodes auto-layout frames', async () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const frame = graph.createNode('FRAME', page.id, {
-      name: 'Row',
-      x: 0,
-      y: 0,
-      width: 400,
-      height: 100,
-      layoutMode: 'HORIZONTAL',
-      itemSpacing: 16,
-      paddingTop: 12,
-      paddingRight: 12,
-      paddingBottom: 12,
-      paddingLeft: 12,
-      primaryAxisSizing: 'HUG',
-      counterAxisSizing: 'FIXED'
-    })
-    graph.createNode('RECTANGLE', frame.id, {
-      name: 'Child',
-      x: 0,
-      y: 0,
-      width: 50,
-      height: 50
-    })
-
-    const html = await buildFigmaClipboardHTML([frame], graph)
-    expect(html).toContain('figmeta')
-  })
-
-  it('roundtrips: encode then decode back', async () => {
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const frame = graph.createNode('FRAME', page.id, {
-      name: 'Analytics Overview',
-      x: 0,
-      y: 0,
-      width: 300,
-      height: 200,
-      layoutMode: 'VERTICAL',
-      itemSpacing: 8,
-      paddingTop: 20,
-      paddingRight: 20,
-      paddingBottom: 20,
-      paddingLeft: 20,
-      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }],
-      cornerRadius: 12
-    })
-    graph.createNode('TEXT', frame.id, {
-      name: 'Title',
-      x: 0,
-      y: 0,
-      width: 260,
-      height: 24,
-      text: 'Analytics Overview',
-      fontFamily: 'Inter',
-      fontWeight: 600,
-      fontSize: 18
-    })
-    graph.createNode('TEXT', frame.id, {
-      name: 'Subtitle',
-      x: 0,
-      y: 0,
-      width: 260,
-      height: 40,
-      text: 'Track your key metrics and performance indicators in real time.',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      fontSize: 14
-    })
-
-    const html = await buildFigmaClipboardHTML([frame], graph)
-    expect(html).not.toBeNull()
-
-    const parsed = await parseFigmaClipboard(html!)
-    expect(parsed).not.toBeNull()
-    expect(parsed!.nodes.length).toBeGreaterThan(0)
-
-    const graph2 = new SceneGraph()
-    const page2 = graph2.getPages()[0]
-    const created = importClipboardNodes(parsed!.nodes, graph2, page2.id)
-    expect(created).toHaveLength(1)
-
-    const imported = graph2.getNode(created[0])!
-    expect(imported.name).toBe('Analytics Overview')
-    expect(imported.cornerRadius).toBe(12)
-
-    const children = graph2.getChildren(imported.id)
-    expect(children).toHaveLength(2)
-    expect(children[0].text).toBe('Analytics Overview')
-    expect(children[1].text).toContain('Track your key metrics')
-  })
-})
-
-describe('gold-preview.fig clipboard roundtrip', () => {
-  let graph: SceneGraph
-  let pageId: string
-  let topLevelNodes: SceneNode[]
-
-  function flatten(g: SceneGraph, parentId: string): SceneNode[] {
-    const res: SceneNode[] = []
-    for (const c of g.getChildren(parentId)) {
-      res.push(c)
-      res.push(...flatten(g, c.id))
-    }
-    return res
-  }
-
-  beforeAll(async () => {
-    await initCodec()
-    const buf = readFileSync('tests/fixtures/gold-preview.fig')
-    const file = new File([buf], 'gold-preview.fig')
-    graph = await readFigFile(file)
-    const page = graph.getPages()[0]
-    pageId = page.id
-    topLevelNodes = graph.getChildren(pageId)
-  })
-
-  it('OpenPencil format: zero property differences', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
-    const parsed = parseOpenPencilClipboard(html)
-    expect(parsed).not.toBeNull()
-
-    const origAll = flatten(graph, pageId)
-
-    function flattenClipboard(nodes: Array<SceneNode & { children?: SceneNode[] }>): SceneNode[] {
-      const res: SceneNode[] = []
-      for (const n of nodes) {
-        res.push(n)
-        if (n.children) res.push(...flattenClipboard(n.children))
-      }
-      return res
-    }
-    const pastedAll = flattenClipboard(
-      parsed!.nodes as Array<SceneNode & { children?: SceneNode[] }>
-    )
-
-    expect(pastedAll.length).toBe(origAll.length)
-
-    const SKIP = new Set(['id', 'parentId', 'childIds', 'children', 'textPicture'])
-    let diffs = 0
-    for (let i = 0; i < origAll.length; i++) {
-      const o = origAll[i]
-      const p = pastedAll[i]
-      for (const k of Object.keys(o) as (keyof SceneNode)[]) {
-        if (SKIP.has(k)) continue
-        if (JSON.stringify(o[k]) !== JSON.stringify(p[k])) diffs++
-      }
-    }
-    expect(diffs).toBe(0)
-  })
-
-  it('OpenPencil format: compressed data is under 1MB', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
-    expect(html.length).toBeLessThan(1024 * 1024)
-  })
-
-  it('Figma format: preserves node count, clipsContent, constraints, arcData, layoutAlignSelf', async () => {
-    const html = await buildFigmaClipboardHTML(topLevelNodes, graph)
-    expect(html).not.toBeNull()
-
-    const parsed = await parseFigmaClipboard(html!)
-    expect(parsed).not.toBeNull()
-
-    const graph2 = new SceneGraph()
-    const page2 = graph2.getPages()[0]
-    importClipboardNodes(parsed!.nodes, graph2, page2.id, 0, 0, parsed!.blobs)
-
-    const origAll = flatten(graph, pageId)
-    const pastedAll = flatten(graph2, page2.id)
-
-    expect(pastedAll.length).toBe(origAll.length)
-
-    const errors: string[] = []
-    for (let i = 0; i < Math.min(origAll.length, pastedAll.length); i++) {
-      const o = origAll[i]
-      const p = pastedAll[i]
-      if (o.name !== p.name) continue
-
-      if (p.clipsContent !== o.clipsContent)
-        errors.push(
-          `clipsContent: ${o.type} "${o.name}" expected ${o.clipsContent}, got ${p.clipsContent}`
-        )
-      if (p.horizontalConstraint !== o.horizontalConstraint)
-        errors.push(
-          `horizontalConstraint: "${o.name}" expected ${o.horizontalConstraint}, got ${p.horizontalConstraint}`
-        )
-      if (p.verticalConstraint !== o.verticalConstraint)
-        errors.push(
-          `verticalConstraint: "${o.name}" expected ${o.verticalConstraint}, got ${p.verticalConstraint}`
-        )
-      if (p.layoutAlignSelf !== o.layoutAlignSelf)
-        errors.push(
-          `layoutAlignSelf: "${o.name}" expected ${o.layoutAlignSelf}, got ${p.layoutAlignSelf}`
-        )
-      if ((p.arcData != null) !== (o.arcData != null))
-        errors.push(`arcData: "${o.name}" expected ${o.arcData != null}, got ${p.arcData != null}`)
-    }
-    if (errors.length > 0) throw new Error(`${errors.length} mismatches:\n${errors.join('\n')}`)
   })
 })
