@@ -28,7 +28,8 @@ function getSelectedCount() {
 
 function getPageChildren() {
   return page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       id: n.id,
       type: n.type,
@@ -219,7 +220,8 @@ test.describe('zoom shortcuts', () => {
 
     // Set zoom to something other than 100%
     await page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.state.zoom = 2
     })
     await canvas.waitForRender()
@@ -300,14 +302,16 @@ test.describe('auto-layout shortcut', () => {
 
     // Change to frame type for auto-layout
     await page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       if (nodes[0]) store.updateNode(nodes[0], { type: 'FRAME' })
     })
     await canvas.waitForRender()
 
     const layoutBefore = await page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       return store.graph.getNode(nodes[0])?.layoutMode
     })
@@ -317,7 +321,8 @@ test.describe('auto-layout shortcut', () => {
     await canvas.waitForRender()
 
     const layoutAfter = await page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       return store.graph.getNode(nodes[0])?.layoutMode
     })
@@ -328,7 +333,8 @@ test.describe('auto-layout shortcut', () => {
     await canvas.waitForRender()
 
     const layoutFinal = await page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       return store.graph.getNode(nodes[0])?.layoutMode
     })

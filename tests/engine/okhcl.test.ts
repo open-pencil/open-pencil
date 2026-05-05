@@ -13,6 +13,8 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('OkHCL metadata', () => {
   test('applies rgba rendering color while preserving fill metadata', () => {
     const graph = new SceneGraph()
@@ -79,12 +81,12 @@ describe('OkHCL metadata', () => {
     )
     const parsedFrame = [...parsed.getAllNodes()].find((node) => node.name === 'OKHCL frame')
 
-    expect(parsedFrame).toBeDefined()
-    expect(getFillOkHCL(parsedFrame!, 0)).toMatchObject({
+    const parsedOkhclFrame = expectDefined(parsedFrame, 'parsed OKHCL frame')
+    expect(getFillOkHCL(parsedOkhclFrame, 0)).toMatchObject({
       kind: 'fill',
       color: { h: 210, c: 0.1, l: 0.65, a: 1 }
     })
-    expect(getStrokeOkHCL(parsedFrame!, 0)).toMatchObject({
+    expect(getStrokeOkHCL(parsedOkhclFrame, 0)).toMatchObject({
       kind: 'stroke',
       color: { h: 320, c: 0.09, l: 0.55, a: 0.9 }
     })

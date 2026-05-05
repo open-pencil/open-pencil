@@ -99,7 +99,8 @@ test('deselecting shows empty state again', async () => {
 test('selecting a frame shows Frame in JSX', async () => {
   // Create a frame via store to avoid click-targeting issues
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('FRAME', 300, 100, 200, 200)
     store.select([id])
   })

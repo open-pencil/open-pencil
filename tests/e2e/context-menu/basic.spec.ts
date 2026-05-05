@@ -20,7 +20,8 @@ test.afterAll(async () => {
 
 function getPageChildren() {
   return page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       id: n.id,
       type: n.type,
@@ -117,7 +118,8 @@ test('toggle visibility via context menu', async () => {
 
   // Toggle back: select via store since invisible nodes can't be hit-tested
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     store.toggleVisibility()
   })
   await canvas.waitForRender()
@@ -177,7 +179,8 @@ test('group via context menu', async () => {
 test('ungroup via store after context-menu group', async () => {
   // Groups are click-through, so ungroup via store instead
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const group = store.graph.getChildren(store.state.currentPageId).find((n) => n.type === 'GROUP')
     if (group) store.select([group.id])
     store.ungroupSelected()

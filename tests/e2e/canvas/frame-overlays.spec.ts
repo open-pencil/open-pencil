@@ -30,7 +30,8 @@ async function expectCanvas(name: string) {
 
 async function createOverlayDemo(rotation: number) {
   await page.evaluate((frameRotation) => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
 
     const frame = store.graph.createNode('FRAME', pageId, {
@@ -102,7 +103,8 @@ test('rotation preview updates frame labels before mouse up', async () => {
   await createOverlayDemo(0)
 
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const frameId = [...store.state.selectedIds][0]
     store.state.rotationPreview = { nodeId: frameId, angle: 28 }
     store.requestRepaint()

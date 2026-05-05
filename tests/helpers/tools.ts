@@ -5,7 +5,7 @@ export { ALL_TOOLS }
 import { expectDefined } from './assert'
 
 export interface ToolResult {
-  id: string
+  id?: string
   name?: string
   type?: string
   error?: string

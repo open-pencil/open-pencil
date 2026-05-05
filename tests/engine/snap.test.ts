@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { computeSnap, computeSelectionBounds, type SceneNode } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function node(overrides: Partial<SceneNode> & { id: string }): SceneNode {
   return { x: 0, y: 0, width: 100, height: 100, rotation: 0, ...overrides } as SceneNode
 }
@@ -25,9 +27,10 @@ describe('computeSelectionBounds', () => {
   })
 
   test('rotated node expands bbox', () => {
-    const bounds = computeSelectionBounds([
-      node({ id: 'a', x: 0, y: 0, width: 100, height: 0, rotation: 45 })
-    ])!
+    const bounds = expectDefined(
+      computeSelectionBounds([node({ id: 'a', x: 0, y: 0, width: 100, height: 0, rotation: 45 })]),
+      'rotated node bounds'
+    )
     expect(bounds.width).toBeGreaterThan(0)
     expect(bounds.height).toBeGreaterThan(0)
   })

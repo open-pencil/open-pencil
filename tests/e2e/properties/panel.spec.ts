@@ -96,7 +96,8 @@ test('variable bind badge appears on fill', async () => {
   await canvas.drawRect(200, 200, 80, 80)
 
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const col = store.graph.createCollection('Colors')
     const v = store.graph.createVariable('brand-red', 'COLOR', col.id, { r: 1, g: 0, b: 0, a: 1 })
     const id = [...store.state.selectedIds][0]
@@ -115,7 +116,8 @@ test('fill color can bind an existing variable', async () => {
   await canvas.drawRect(200, 200, 80, 80)
 
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const col = store.graph.createCollection('Colors')
     const variable = store.graph.createVariable('test-brand-red', 'COLOR', col.id, {
       r: 1,
@@ -143,7 +145,8 @@ test('fill color can bind an existing variable', async () => {
   await canvas.waitForRender()
   await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeHidden()
   const boundVariableId = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     return id ? (store.getNode(id)?.boundVariables['fills/0/color'] ?? null) : null
   })
@@ -164,7 +167,8 @@ test('fill color can create and bind a variable', async () => {
 
   await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeVisible()
   const boundVariable = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const node = store.getNode(id)
@@ -189,7 +193,8 @@ test('width can create, bind, and detach a number variable', async () => {
 
   await expect(page.locator('[data-test-id="layout-width-unbind-variable"]')).toBeVisible()
   const boundVariable = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const node = store.getNode(id)
@@ -207,7 +212,8 @@ test('width can create, bind, and detach a number variable', async () => {
 
   await expect(page.locator('[data-test-id="layout-width-unbind-variable"]')).toBeHidden()
   const directWidth = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = id ? store.getNode(id) : null
     return node ? { width: node.width, binding: node.boundVariables.width ?? null } : null

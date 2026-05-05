@@ -16,6 +16,8 @@ import {
   fontFallbackManifest
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -491,12 +493,12 @@ describe('fetchBundledFont', () => {
   test('loads Inter-Regular.ttf from assets in headless', async () => {
     const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
     expect(buffer).toBeInstanceOf(ArrayBuffer)
-    expect(buffer!.byteLength).toBeGreaterThan(100_000)
+    expect(expectDefined(buffer, 'Inter font buffer').byteLength).toBeGreaterThan(100_000)
   })
 
   test('returns valid TTF data', async () => {
     const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
-    const view = new DataView(buffer!)
+    const view = new DataView(expectDefined(buffer, 'Inter font buffer'))
     // TrueType magic: 0x00010000
     expect(view.getUint32(0)).toBe(0x00010000)
   })

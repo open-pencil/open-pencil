@@ -2,6 +2,8 @@ import { describe, expect, test, beforeAll } from 'bun:test'
 
 import { fetchIcon, fetchIcons, searchIcons, searchIconsBatch } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 let hasNetwork = true
 beforeAll(async () => {
   try {
@@ -129,7 +131,7 @@ describe('searchIconsBatch', () => {
   networkTest('searches multiple queries in parallel', async () => {
     const results = await searchIconsBatch(['heart', 'arrow'], { limit: 5 })
     expect(results.size).toBe(2)
-    expect(results.get('heart')!.icons.length).toBeGreaterThan(0)
-    expect(results.get('arrow')!.icons.length).toBeGreaterThan(0)
+    expect(expectDefined(results.get('heart'), 'heart results').icons.length).toBeGreaterThan(0)
+    expect(expectDefined(results.get('arrow'), 'arrow results').icons.length).toBeGreaterThan(0)
   })
 })

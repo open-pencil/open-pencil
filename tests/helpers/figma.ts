@@ -36,7 +36,9 @@ export class FigmaHelper {
   }
 
   private async canvasBounds() {
-    return this.canvas.boundingBox().then((b) => b!)
+    const bounds = await this.canvas.boundingBox()
+    if (!bounds) throw new Error('Figma canvas bounds unavailable')
+    return bounds
   }
 
   async waitForRender() {

@@ -12,7 +12,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.waitForInit()
 
     await page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const pageId = store.state.currentPageId
 
       store.graph.createNode('FRAME', pageId, {
@@ -74,7 +75,8 @@ test.describe('SkPicture scene caching', () => {
     // We simulate this by calling invalidateScenePicture() to force the next
     // render to re-record, then verify hover on/off doesn't lose text.
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       // Simulate what loadFonts() does: invalidate the cached picture
       store.renderer!.invalidateScenePicture()
       store.requestRender()
@@ -83,7 +85,8 @@ test.describe('SkPicture scene caching', () => {
 
     // Extra render to stabilize the SkPicture cache
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.requestRender()
     })
     await helper.waitForRender()
@@ -93,7 +96,8 @@ test.describe('SkPicture scene caching', () => {
 
     // Hover frame → un-hover: replays the newly recorded picture
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const pg = store.graph.getNode(store.state.currentPageId)!
       const frame = pg.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       store.setHoveredNode(frame ?? null)
@@ -101,7 +105,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.waitForRender()
 
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.setHoveredNode(null)
     })
     await helper.waitForRender()
@@ -113,14 +118,16 @@ test.describe('SkPicture scene caching', () => {
   test('text survives hover on/off cycle', async () => {
     // 1. Baseline: no hover — this records the SkPicture cache
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.setHoveredNode(null)
       store.requestRender()
     })
     await helper.waitForRender()
     // Extra render cycle to ensure SkPicture cache is fully recorded
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.requestRender()
     })
     await helper.waitForRender()
@@ -128,7 +135,8 @@ test.describe('SkPicture scene caching', () => {
 
     // 2. Hover a frame — uses requestRepaint (only renderVersion, not sceneVersion)
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const page = store.graph.getNode(store.state.currentPageId)!
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       store.setHoveredNode(frame ?? null)
@@ -137,7 +145,8 @@ test.describe('SkPicture scene caching', () => {
 
     // 3. Hover off — should replay cached SkPicture (the critical transition)
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.setHoveredNode(null)
     })
     await helper.waitForRender()
@@ -151,7 +160,8 @@ test.describe('SkPicture scene caching', () => {
   test('text survives multiple hover cycles', async () => {
     // Rapid hover on/off using the real setHoveredNode path (requestRepaint)
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const page = store.graph.getNode(store.state.currentPageId)!
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
 
@@ -168,7 +178,8 @@ test.describe('SkPicture scene caching', () => {
   test('text survives real mouse hover on/off', async () => {
     // Use actual mouse movement instead of programmatic setHoveredNode
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.setHoveredNode(null)
       store.requestRender()
     })
@@ -195,7 +206,8 @@ test.describe('SkPicture scene caching', () => {
   test('text survives scene change then hover cycle', async () => {
     // Mutate scene to invalidate picture cache
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const page = store.graph.getNode(store.state.currentPageId)!
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       if (frame) store.graph.updateNode(frame, { width: 310 })
@@ -205,7 +217,8 @@ test.describe('SkPicture scene caching', () => {
 
     // Hover on then off using real path
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       const page = store.graph.getNode(store.state.currentPageId)!
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       store.setHoveredNode(frame ?? null)
@@ -213,7 +226,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.waitForRender()
 
     await helper.page.evaluate(() => {
-      const store = window.__OPEN_PENCIL_STORE__!
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
       store.setHoveredNode(null)
     })
     await helper.waitForRender()

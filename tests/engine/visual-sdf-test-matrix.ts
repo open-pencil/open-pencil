@@ -9,6 +9,8 @@ import type { SceneNode } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 import type { Color, Vector } from '#core/types'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 interface TestCase {
   text: string
   fontSize: number
@@ -202,7 +204,7 @@ async function main() {
 
     const surfW = Math.ceil(textProps.width) + 40
     const surfH = Math.ceil(textProps.height) + 40
-    const surface = ck.MakeSurface(surfW, surfH)!
+    const surface = expectDefined(ck.MakeSurface(surfW, surfH), 'CanvasKit surface')
     const renderer = new SkiaRenderer(ck, surface)
     renderer.fontProvider = fontProvider
     renderer.fontsLoaded = true

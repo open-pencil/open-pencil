@@ -87,7 +87,8 @@ test('resize corner handle drag increases node dimensions', async () => {
   expect(before).not.toBeNull()
 
   const viewport = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     const n = store.graph.getNode(id)
     if (!n) return null
@@ -131,7 +132,8 @@ test('rotation handle drag rotates node', async () => {
   const initialRotation = before!.rotation ?? 0
 
   const viewport = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     const n = store.graph.getNode(id)
     if (!n) return null
@@ -183,7 +185,8 @@ async function setupFrameChild(rotation: number) {
   await canvas.clearCanvas()
 
   const setup = await page.evaluate((frameRotation) => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const frameId = store.createShape('FRAME', 180, 160, 240, 160)
     if (!frameId) return null
     store.updateNode(frameId, { rotation: frameRotation })
@@ -200,7 +203,8 @@ async function setupFrameChild(rotation: number) {
   await canvas.waitForRender()
 
   const state = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
     const pageNode = store.graph.getNode(pageId)
     const frame = pageNode?.childIds
@@ -278,7 +282,8 @@ test('rotation drag exposes live rotation preview state', async () => {
   await canvas.waitForRender()
 
   const viewport = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     const n = store.graph.getNode(id)
     if (!n) return null

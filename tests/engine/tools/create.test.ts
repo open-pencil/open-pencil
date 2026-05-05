@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('create_shape', () => {
@@ -17,7 +18,10 @@ describe('create_shape', () => {
     expect(result.name).toBe('Test Frame')
     expect(result.type).toBe('FRAME')
 
-    const node = figma.getNodeById(result.id)!
+    const node = expectDefined(
+      figma.getNodeById(expectDefined(result.id, 'created node id')),
+      'created node'
+    )
     expect(node.x).toBe(100)
     expect(node.y).toBe(200)
     expect(node.width).toBe(300)
@@ -44,7 +48,10 @@ describe('create_shape', () => {
       parent_id: parent.id
     }) as ToolResult
 
-    const parentNode = figma.getNodeById(parent.id)!
+    const parentNode = expectDefined(
+      figma.getNodeById(expectDefined(parent.id, 'created parent id')),
+      'created parent node'
+    )
     expect(parentNode.children.some((c) => c.id === child.id)).toBe(true)
   })
 })

@@ -7,6 +7,8 @@ import type { SceneNode } from '#core/scene-graph'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 async function main() {
   const ck = await initCanvasKit()
 
@@ -55,7 +57,7 @@ async function main() {
 
   graph.createNode('TEXT', pageId, textProps)
 
-  const surface = ck.MakeSurface(width, height)!
+  const surface = expectDefined(ck.MakeSurface(width, height), 'CanvasKit surface')
   const canvas = surface.getCanvas()
   const renderer = new SkiaRenderer(ck, surface)
   renderer.fontProvider = fontProvider
