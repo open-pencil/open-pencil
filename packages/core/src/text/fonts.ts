@@ -105,7 +105,9 @@ async function fetchGoogleFontFiles(family: string): Promise<Record<string, stri
   }
   if (!response.ok) return retryWithNormalizedFamily(family)
 
-  const data = (await response.json()) as { items?: Array<{ files?: Record<string, string> }> }
+  const data = (await response.json()) as {
+    items?: Array<{ files?: Record<string, string> }>
+  }
   const files = data.items?.[0]?.files
   if (!files) return retryWithNormalizedFamily(family)
 
@@ -135,7 +137,13 @@ async function fetchGoogleFont(family: string, style: string): Promise<ArrayBuff
   return response.arrayBuffer()
 }
 
-async function findLocalFont(family: string, style?: string): Promise<ArrayBuffer | null> {
+type FindLocalFontOptions = { allowVariable?: boolean }
+
+async function findLocalFont(
+  family: string,
+  style?: string,
+  options: FindLocalFontOptions = {}
+): Promise<ArrayBuffer | null> {
   if (!IS_BROWSER || !window.queryLocalFonts) return null
   try {
     const fonts = await window.queryLocalFonts()
@@ -153,9 +161,10 @@ async function findLocalFont(family: string, style?: string): Promise<ArrayBuffe
     if (!match) return null
     const blob: Blob = await match.blob()
     const buffer = await blob.arrayBuffer()
-    // Variable fonts (fvar table) cause CanvasKit to render all text at the
-    // default weight. Skip them — Google Fonts serves per-weight static files.
-    if (isVariableFont(buffer)) return null
+    // Variable fonts (fvar table) can skew weight for Latin UI fonts. CJK system
+    // faces (e.g. Microsoft YaHei) are often variable — still prefer them over
+    // missing glyphs (tofu) when explicitly loading CJK fallbacks.
+    if (!options.allowVariable && isVariableFont(buffer)) return null
     return buffer
   } catch (e) {
     console.warn(`Local font access failed for "${family}" ${style ?? ''}:`, e)
@@ -330,15 +339,16 @@ export async function ensureCJKFallback(): Promise<string[]> {
   if (cjkFallbackPromise) return cjkFallbackPromise
 
   cjkFallbackPromise = (async () => {
-    // Try local system fonts first
+    // Try local system fonts first (allow variable fonts — common for 微软雅黑 / PingFang).
     for (const family of getCJKCandidates()) {
-      const buffer = await findLocalFont(family)
+      const buffer = await findLocalFont(family, undefined, {
+        allowVariable: true
+      })
       if (buffer && registerAndCache(family, 'Regular', buffer)) {
         cjkFallbackFamilies.push(family)
       }
     }
 
-    // Load all CJK Google Fonts in parallel for full coverage
     if (cjkFallbackFamilies.length === 0) {
       const results = await Promise.allSettled(
         CJK_GOOGLE_FONTS.map(async (family) => {

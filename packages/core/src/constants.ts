@@ -25,9 +25,8 @@ export const CANVAS_BG_COLOR_DARK = { r: 0.173, g: 0.173, b: 0.173, a: 1 } satis
  */
 export function getDefaultCanvasBgColor(): Color {
   if (IS_BROWSER) {
-    const env = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env
     const params = new URLSearchParams(window.location.search)
-    if (env?.DEV === true && params.has('test')) {
+    if ('env' in import.meta && import.meta.env.DEV && params.has('test')) {
       return CANVAS_BG_COLOR
     }
   }
@@ -331,10 +330,12 @@ export const CJK_FALLBACK_FAMILIES_MACOS = [
 
 export const CJK_FALLBACK_FAMILIES_WINDOWS = [
   'Microsoft YaHei',
+  'Microsoft YaHei UI',
   'Microsoft JhengHei',
   'Yu Gothic',
   'Malgun Gothic',
-  'SimHei'
+  'SimHei',
+  'SimSun'
 ]
 
 export const CJK_FALLBACK_FAMILIES_LINUX = [

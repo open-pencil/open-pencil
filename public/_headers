@@ -1,0 +1,5 @@
+/canvaskit.wasm
+  Content-Type: application/wasm
+
+/canvaskit-webgpu/canvaskit.wasm
+  Content-Type: application/wasm
