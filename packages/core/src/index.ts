@@ -176,6 +176,15 @@ export {
   type LocalFontAccessState
 } from './text/fonts'
 export {
+  ARABIC_LOCAL_FALLBACK_FAMILIES,
+  ARABIC_REMOTE_FALLBACK_FAMILIES,
+  cjkLocalFallbackFamilies,
+  fontFallbackEntry,
+  fontFallbackManifest,
+  type FontFallbackManifestEntry,
+  type FontFallbackScript
+} from './text/fallbacks'
+export {
   parseColor,
   normalizeColor,
   colorToHex,

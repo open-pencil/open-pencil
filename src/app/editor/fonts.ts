@@ -3,6 +3,10 @@ import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pen
 
 import { createTauriDownloadedFontCache } from '@/app/editor/font-cache'
 
+if (typeof navigator !== 'undefined') {
+  fontManager.setFallbackUserAgent(navigator.userAgent)
+}
+
 if (IS_TAURI) {
   fontManager.setDownloadedFontCache(createTauriDownloadedFontCache())
 }
