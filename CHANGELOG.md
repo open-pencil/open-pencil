@@ -35,6 +35,7 @@
 - Improve layout inspector dropdown anchoring and icon clarity for spacing and padding controls.
 - Fix bound color variable inspector swatches to display the resolved variable color and detach the binding when edited directly.
 - Fix dashed strokes on vector nodes rendering as solid lines — dash pattern now uses `PathEffect.MakeDash` directly instead of outline conversion, and closed crescent shapes (e.g. annular wedges) render a single dashed centerline arc instead of two parallel arcs.
+- Fix gradient fills on text nodes by clipping gradient paints through the shaped paragraph mask.
 
 ### Performance
 

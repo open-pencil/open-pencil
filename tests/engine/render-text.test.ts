@@ -15,7 +15,9 @@ function createMockCanvas() {
     drawParagraph: mock(() => {}),
     drawPicture: mock(() => {}),
     drawText: mock(() => {}),
+    drawRect: mock(() => {}),
     save: mock(() => {}),
+    saveLayer: mock(() => {}),
     restore: mock(() => {}),
     clipRect: mock(() => {})
   }
@@ -36,9 +38,16 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     fontProvider: {},
     textFont: {},
     fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
+    effectLayerPaint: {
+      setBlendMode: mock(() => {}),
+      setColorFilter: mock(() => {}),
+      setImageFilter: mock(() => {})
+    },
     ck: {
       MakePicture: mock(() => createMockPicture()),
       LTRBRect: mock((...args: number[]) => args),
+      Color4f: mock((...args: number[]) => new Float32Array(args)),
+      BlendMode: { SrcOver: 0, SrcIn: 1 },
       ClipOp: { Intersect: 0 }
     },
     DEFAULT_FONT_SIZE: 14,
@@ -80,6 +89,26 @@ describe('renderText', () => {
     expect(r.buildParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.drawText).not.toHaveBeenCalled()
+  })
+
+  test('renders gradient text through a paragraph mask', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(r, canvas as never, textNode(), {
+      type: 'GRADIENT_LINEAR',
+      visible: true,
+      opacity: 1,
+      gradientStops: [],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    })
+
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.saveLayer).toHaveBeenCalledTimes(2)
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawRect).toHaveBeenCalledTimes(1)
+    expect(r.effectLayerPaint.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.SrcIn)
+    expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
   })
 
   test('prefers textPicture over paragraph', () => {
@@ -156,7 +185,7 @@ describe('renderText headless visual', () => {
     renderer.viewportHeight = 50
     renderer.dpr = 1
     renderer.fontsLoaded = true
-    ;(renderer as unknown as Record<string, unknown>).fontProvider = fontProvider
+    renderer.fontProvider = fontProvider
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)
@@ -189,6 +218,80 @@ describe('renderText headless visual', () => {
     // CJK characters are dense — should have many dark pixels if rendering correctly
     // Tofu boxes would have far fewer (just outlines)
     expect(darkPixels).toBeGreaterThan(500)
+  })
+
+  test('renders linear gradient text through the canvas scene fill path', async () => {
+    const ck = await initCanvasKit()
+    const fontProvider = ck.TypefaceFontProvider.Make()
+    fontManager.attachProvider(ck, fontProvider)
+
+    const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+    fontProvider.registerFont(interData, 'Inter')
+    fontManager.markLoaded('Inter', 'Regular', interData)
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('TEXT', page.id, {
+      text: 'OPEN',
+      fontFamily: 'Inter',
+      fontSize: 64,
+      fontWeight: 400,
+      width: 220,
+      height: 80,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+          ],
+          gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        }
+      ]
+    })
+
+    const surface = ck.MakeSurface(220, 80)!
+    const renderer = new SkiaRendererClass(ck, surface)
+    renderer.viewportWidth = 220
+    renderer.viewportHeight = 80
+    renderer.dpr = 1
+    renderer.fontsLoaded = true
+    renderer.fontProvider = fontProvider
+
+    const canvas = surface.getCanvas()
+    canvas.clear(ck.WHITE)
+    renderer.renderShape(canvas, graph.getNode(node.id)!, graph)
+    surface.flush()
+
+    const image = surface.makeImageSnapshot()
+    const pixels = image.readPixels(0, 0, {
+      width: 220,
+      height: 80,
+      colorType: ck.ColorType.RGBA_8888,
+      alphaType: ck.AlphaType.Unpremul,
+      colorSpace: ck.ColorSpace.SRGB
+    })!
+    image.delete()
+    surface.delete()
+
+    let redTextPixels = 0
+    let blueTextPixels = 0
+    for (let y = 0; y < 80; y++) {
+      for (let x = 0; x < 220; x++) {
+        const i = (y * 220 + x) * 4
+        const r = pixels[i]
+        const g = pixels[i + 1]
+        const b = pixels[i + 2]
+        if (g > 220) continue
+        if (x < 110 && r > b + 40) redTextPixels++
+        if (x >= 110 && b > r + 40) blueTextPixels++
+      }
+    }
+
+    expect(redTextPixels).toBeGreaterThan(40)
+    expect(blueTextPixels).toBeGreaterThan(40)
   })
 
   test('renders Arabic text via fallback font through paragraph shaper', async () => {
@@ -225,7 +328,7 @@ describe('renderText headless visual', () => {
     renderer.viewportHeight = 60
     renderer.dpr = 1
     renderer.fontsLoaded = true
-    ;(renderer as unknown as Record<string, unknown>).fontProvider = fontProvider
+    renderer.fontProvider = fontProvider
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)

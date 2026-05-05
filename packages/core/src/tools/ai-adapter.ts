@@ -93,7 +93,7 @@ function captureNodeSnapshot(
   if (!targetId) return undefined
   const raw = figma.graph.getNode(targetId)
   if (!raw) return undefined
-  return structuredClone(raw) as unknown as Record<string, unknown>
+  return Object.fromEntries(Object.entries(structuredClone(raw)))
 }
 
 function emitToolLog(

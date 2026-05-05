@@ -3,7 +3,7 @@ import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { nodeHasRadius } from './effects'
 
-import type { SceneNode, SceneGraph } from '#core/scene-graph'
+import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
 import type { Color } from '#core/types'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 import type { Canvas, EmbindEnumEntity, Path } from 'canvaskit-wasm'
@@ -12,14 +12,14 @@ function drawVisibleFills(
   r: SkiaRenderer,
   node: SceneNode,
   graph: SceneGraph,
-  draw: () => void
+  draw: (fill: Fill) => void
 ): void {
   for (let fi = 0; fi < node.fills.length; fi++) {
     const fill = node.fills[fi]
     if (!fill.visible) continue
     if (!r.applyFill(fill, node, graph, fi)) continue
     r.fillPaint.setAlphaf(fill.opacity)
-    draw()
+    draw(fill)
     r.fillPaint.setShader(null)
   }
 }
@@ -477,7 +477,7 @@ export function renderShapeUncached(
   const shadowChild = getShadowShapeChild(node, graph)
   r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
 
-  drawVisibleFills(r, node, graph, () => r.drawNodeFill(canvas, node, rect, hasRadius))
+  drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
 
   const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
   const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
@@ -503,7 +503,38 @@ export function renderShapeUncached(
   r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)
 }
 
-export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): void {
+function isGradientFill(fill?: Fill): boolean {
+  return fill?.type.startsWith('GRADIENT') === true
+}
+
+function drawGradientText(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  paragraphY: number
+): boolean {
+  if (!r.fontsLoaded || !r.fontProvider) return false
+
+  const paragraph = r.buildParagraph(node, r.ck.Color4f(0, 0, 0, 1))
+  r.effectLayerPaint.setImageFilter(null)
+  r.effectLayerPaint.setColorFilter(null)
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  canvas.saveLayer(r.effectLayerPaint)
+  canvas.drawParagraph(paragraph, 0, paragraphY)
+  paragraph.delete()
+
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcIn)
+  canvas.saveLayer(r.effectLayerPaint)
+  canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.fillPaint)
+  canvas.restore()
+  canvas.restore()
+  r.effectLayerPaint.setImageFilter(null)
+  r.effectLayerPaint.setColorFilter(null)
+  r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  return true
+}
+
+export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
 
@@ -511,6 +542,12 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
   const shouldClipText = node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE'
   if (shouldClipText) {
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
+  }
+
+  const paragraphY = -1
+  if (isGradientFill(fill) && drawGradientText(r, canvas, node, paragraphY)) {
+    canvas.restore()
+    return
   }
 
   if (node.textPicture) {
@@ -524,7 +561,6 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): vo
   }
   if (r.fontsLoaded && r.fontProvider) {
     const paragraph = r.buildParagraph(node, r.fillPaint.getColor())
-    const paragraphY = -1
     canvas.drawParagraph(paragraph, 0, paragraphY)
     paragraph.delete()
   } else if (r.textFont) {

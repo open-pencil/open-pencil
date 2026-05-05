@@ -104,7 +104,7 @@ function getAttrs(wrapped: XPathNode): XPathAttr[] {
 
   for (const attrName of QUERYABLE_ATTRS) {
     if (attrName in node) {
-      const value = (node as unknown as Record<string, unknown>)[attrName]
+      const value = Reflect.get(node, attrName)
       if (value === undefined || value === null || typeof value === 'symbol') continue
       const stringValue =
         typeof value === 'object'
@@ -168,7 +168,7 @@ function createDomFacade(graph: SceneGraph) {
       if (isDocument(node)) return null
       const sceneNode = node._sceneNode
       if (attributeName in sceneNode) {
-        const value = (sceneNode as unknown as Record<string, unknown>)[attributeName]
+        const value = Reflect.get(sceneNode, attributeName)
         if (value === undefined || value === null || typeof value === 'symbol') return null
         return typeof value === 'object'
           ? JSON.stringify(value)

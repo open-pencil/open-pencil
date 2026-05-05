@@ -484,19 +484,22 @@ function createExactCoreBarrelImportRule({ description, applies, message }) {
 const noMcpCoreBarrelImports = createExactCoreBarrelImportRule({
   description: 'Disallow MCP imports from @open-pencil/core root barrel — use domain subpaths',
   applies: (file) => file.includes('/packages/mcp/src/'),
-  message: 'Use a targeted @open-pencil/core subpath in MCP code instead of the compatibility barrel.'
+  message:
+    'Use a targeted @open-pencil/core subpath in MCP code instead of the compatibility barrel.'
 })
 
 const noCliCoreBarrelImports = createExactCoreBarrelImportRule({
   description: 'Disallow CLI imports from @open-pencil/core root barrel — use domain subpaths',
   applies: (file) => file.includes('/packages/cli/src/'),
-  message: 'Use a targeted @open-pencil/core subpath in CLI code instead of the compatibility barrel.'
+  message:
+    'Use a targeted @open-pencil/core subpath in CLI code instead of the compatibility barrel.'
 })
 
 const noScriptCoreBarrelImports = createExactCoreBarrelImportRule({
   description: 'Disallow script imports from @open-pencil/core root barrel — use domain subpaths',
   applies: (file) => file.includes('/scripts/'),
-  message: 'Use a targeted @open-pencil/core subpath or #core/* alias in scripts instead of the compatibility barrel.'
+  message:
+    'Use a targeted @open-pencil/core subpath or #core/* alias in scripts instead of the compatibility barrel.'
 })
 
 const noCoreSelfPackageImports = {
@@ -570,8 +573,7 @@ const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
   description:
     'Disallow app and Vue SDK imports from @open-pencil/core root barrel — use domain subpaths',
   applies: (file) =>
-    (file.includes('/src/') && !file.includes('/packages/')) ||
-    file.includes('/packages/vue/src/'),
+    (file.includes('/src/') && !file.includes('/packages/')) || file.includes('/packages/vue/src/'),
   message:
     'Use a targeted @open-pencil/core subpath (editor, scene-graph, constants, io, etc.) instead of the compatibility barrel.'
 })
@@ -708,7 +710,10 @@ const noLegacyTestAppImports = {
 
     function reportLegacyTestImport(node) {
       const source = importSource(node)
-      if (!source || !/^(?:\.\.\/)+src\/(?:ai|automation|composables|stores|utils|engine)\//.test(source)) {
+      if (
+        !source ||
+        !/^(?:\.\.\/)+src\/(?:ai|automation|composables|stores|utils|engine)\//.test(source)
+      ) {
         return
       }
       context.report({
@@ -774,6 +779,28 @@ const noBroadDoubleCast = {
             message: 'Avoid `as unknown as ...`; model the value with a precise type or helper.'
           })
         }
+      }
+    }
+  }
+}
+
+const noUnknownRecordDoubleCast = {
+  meta: {
+    docs: {
+      description: 'Disallow `as unknown as Record<string, unknown>` broad object casts'
+    }
+  },
+  create(context) {
+    return {
+      TSAsExpression(node) {
+        if (!isUnknownTypeAnnotation(node.expression?.typeAnnotation)) return
+        const targetType = context.sourceCode.getText(node.typeAnnotation).replace(/\s+/g, '')
+        if (targetType !== 'Record<string,unknown>') return
+        context.report({
+          node,
+          message:
+            'Avoid `as unknown as Record<string, unknown>`; use a precise type or direct public API.'
+        })
       }
     }
   }
@@ -1006,7 +1033,11 @@ const vueComponentFilePascalCase = {
 
     return {
       Program(node) {
-        const basename = file.split('/').at(-1)?.replace(/\.vue$/, '') ?? ''
+        const basename =
+          file
+            .split('/')
+            .at(-1)
+            ?.replace(/\.vue$/, '') ?? ''
         if (isPascalCaseName(basename)) return
         context.report({
           node,
@@ -1138,7 +1169,8 @@ const noComponentRootSiblingFolder = {
 const noUselessPassThroughWrappers = {
   meta: {
     docs: {
-      description: 'Disallow functions that only return another function call with the same arguments'
+      description:
+        'Disallow functions that only return another function call with the same arguments'
     }
   },
   create(context) {
@@ -1192,7 +1224,11 @@ const noUselessPassThroughWrappers = {
       VariableDeclarator(node) {
         if (node.id?.type !== 'Identifier') return
         const init = node.init
-        if (!init || (init.type !== 'ArrowFunctionExpression' && init.type !== 'FunctionExpression')) return
+        if (
+          !init ||
+          (init.type !== 'ArrowFunctionExpression' && init.type !== 'FunctionExpression')
+        )
+          return
         check(node, node.id.name, init.params, init.body)
       }
     }
@@ -1282,6 +1318,7 @@ const plugin = {
     'no-legacy-test-app-imports': noLegacyTestAppImports,
     'no-test-core-source-imports': noTestCoreSourceImports,
     'no-broad-double-cast': noBroadDoubleCast,
+    'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,

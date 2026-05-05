@@ -201,12 +201,13 @@ export class SkiaRenderer {
     pass: 'behind' | 'front',
     shadowShapeChild?: SceneNode | null
   ) => void
-  declare renderText: (canvas: Canvas, node: SceneNode) => void
+  declare renderText: (canvas: Canvas, node: SceneNode, fill?: Fill) => void
   declare drawNodeFill: (
     canvas: Canvas,
     node: SceneNode,
     rect: Float32Array,
-    hasRadius: boolean
+    hasRadius: boolean,
+    fill?: Fill
   ) => void
   declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
   declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => void
