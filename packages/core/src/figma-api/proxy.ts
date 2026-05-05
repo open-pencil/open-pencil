@@ -470,10 +470,6 @@ export class FigmaNodeProxy {
   }
 
   setPluginData(key: string, value: string): void {
-    if (key.includes('/'))
-      throw new Error(
-        'setPluginData key cannot contain "/" — use setSharedPluginData for namespaced keys'
-      )
     const node = this._raw()
     const pluginData = node.pluginData.filter(
       (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_DATA_NAMESPACE && entry.key === key)
