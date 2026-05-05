@@ -8,6 +8,25 @@ function importSource(node) {
   return typeof node.source?.value === 'string' ? node.source.value : null
 }
 
+function createProgramFilenameRule({ description, check }) {
+  return {
+    meta: {
+      docs: { description }
+    },
+    create(context) {
+      const file = normalizedFilename(context)
+      const message = check(file)
+      if (!message) return {}
+
+      return {
+        Program(node) {
+          context.report({ node, message })
+        }
+      }
+    }
+  }
+}
+
 function createImportSourceRule({
   description,
   applies = () => true,
@@ -306,24 +325,6 @@ const noTypeofWindowCheck = {
   }
 }
 
-const legacyAppImportPrefixes = [
-  '@/ai/',
-  '@/automation/',
-  '@/stores/',
-  '@/composables/use-canvas',
-  '@/composables/use-canvas-input',
-  '@/composables/use-collab',
-  '@/composables/use-keyboard'
-]
-
-const noLegacyAppImports = createImportSourceRule({
-  description:
-    'Disallow imports from removed app/store compatibility shims — import canonical src/app modules instead',
-  check: (source) =>
-    legacyAppImportPrefixes.some((prefix) => source === prefix || source.startsWith(prefix)) &&
-    `Import from the canonical src/app module instead of legacy shim '${source}'.`
-})
-
 const noVueSelfPackageImports = createImportSourceRule({
   description: 'Disallow @open-pencil/vue self-imports inside the Vue SDK — use #vue/* aliases',
   applies: (file) => file.includes('/packages/vue/src/'),
@@ -341,36 +342,6 @@ const noCrossPackageSourceImports = createImportSourceRule({
       /^(?:\.\.\/)+(?:core|vue|cli|mcp)\/src\//.test(source)) &&
     `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`
 })
-
-const noStaleViteAppPaths = {
-  meta: {
-    docs: {
-      description: 'Disallow stale Vite config paths to removed top-level app folders'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.endsWith('/vite.config.ts')) return {}
-
-    function reportIfStale(node, value) {
-      if (typeof value !== 'string') return
-      if (!value.includes('src/automation') && !value.includes('src/shims')) return
-      context.report({
-        node,
-        message: 'Use current src/app/* paths instead of removed src/automation or src/shims paths.'
-      })
-    }
-
-    return {
-      Literal(node) {
-        reportIfStale(node, node.value)
-      },
-      TemplateElement(node) {
-        reportIfStale(node, node.value?.raw)
-      }
-    }
-  }
-}
 
 function createParentRelativeImportRule({ description, applies, message, minDepth = 1 }) {
   return {
@@ -437,27 +408,6 @@ const noCliParentRelativeImports = createParentRelativeImportRule({
   message: 'Use the #cli/* package-local alias instead of parent-relative CLI imports.'
 })
 
-const noRootDemoModule = {
-  meta: {
-    docs: {
-      description: 'Disallow root src/demo.ts — keep demo builders under src/app/demo'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.endsWith('/src/demo.ts')) return {}
-
-    return {
-      Program(node) {
-        context.report({
-          node,
-          message: 'Move demo document builders under src/app/demo instead of root src/demo.ts.'
-        })
-      }
-    }
-  }
-}
-
 function createExactCoreBarrelImportRule({ description, applies, message }) {
   return createImportSourceRule({
     description,
@@ -517,13 +467,6 @@ const noInlinePromptConstants = {
   }
 }
 
-const noLegacyAppSupportImports = createImportSourceRule({
-  description: 'Disallow imports from legacy top-level app support folders',
-  check: (source) =>
-    /^@\/(?:utils|engine)\//.test(source) &&
-    'Move app support imports to cohesive src/app modules instead of using legacy @/utils/* or @/engine/* paths.'
-})
-
 const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
   description:
     'Disallow app and Vue SDK imports from @open-pencil/core root barrel — use domain subpaths',
@@ -581,59 +524,6 @@ const noDirectStorageAccess = {
     }
   }
 }
-
-const noLegacyShimFiles = {
-  meta: {
-    docs: {
-      description: 'Disallow recreating removed compatibility shim files'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    const blocked = [
-      '/src/stores/editor.ts',
-      '/src/stores/tabs.ts',
-      '/src/composables/use-canvas.ts',
-      '/src/composables/use-canvas-input.ts',
-      '/src/composables/use-collab.ts',
-      '/src/composables/use-keyboard.ts'
-    ]
-    const blockedDirs = ['/src/ai/', '/src/automation/']
-    const isBlocked =
-      blocked.some((suffix) => file.endsWith(suffix)) ||
-      blockedDirs.some((segment) => file.includes(segment))
-
-    if (!isBlocked) return {}
-
-    return {
-      Program(node) {
-        context.report({
-          node,
-          message: 'Do not recreate removed compatibility shims; use the canonical src/app module.'
-        })
-      }
-    }
-  }
-}
-
-const noLegacyTestAppImports = createImportSourceRule({
-  description: 'Disallow tests importing removed top-level app modules',
-  applies: (file) => file.includes('/tests/'),
-  includeExports: true,
-  check: (source) =>
-    /^(?:\.\.\/)+src\/(?:ai|automation|composables|stores|utils|engine)\//.test(source) &&
-    'Use the current src/app/* module path instead of a removed top-level app module.'
-})
-
-const noTestCoreSourceImports = createImportSourceRule({
-  description: 'Disallow tests importing non-vendored core internals by relative source path',
-  applies: (file) => file.includes('/tests/'),
-  includeExports: true,
-  includeDynamic: true,
-  check: (source) =>
-    /^(?:\.\.\/)+packages\/core\/src\/(?!kiwi\/kiwi-schema)/.test(source) &&
-    'Use #core/* instead of a relative packages/core/src import in tests.'
-})
 
 const noBroadDoubleCast = {
   meta: {
@@ -1206,54 +1096,28 @@ const noFunctionAliasImports = {
   }
 }
 
-const noTopLevelPrefixedTestFiles = {
-  meta: {
-    docs: {
-      description: 'Disallow top-level test files that encode domains as filename prefixes'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
+const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
+  description: 'Disallow top-level test files that encode domains as filename prefixes',
+  check(file) {
     const match = file.match(/\/tests\/(engine|e2e)\/([^/]+-[^/]+\.(?:test|spec)\.ts)$/)
-    if (!match) return {}
-
-    return {
-      Program(node) {
-        context.report({
-          node,
-          message: `Move '${match[2]}' under a domain folder instead of encoding the domain as a filename prefix.`
-        })
-      }
-    }
+    if (!match) return false
+    return `Move '${match[2]}' under a domain folder instead of encoding the domain as a filename prefix.`
   }
-}
+})
 
-const noFlatKiwiModules = {
-  meta: {
-    docs: {
-      description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
+const noFlatKiwiModules = createProgramFilenameRule({
+  description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
+  check(file) {
     const marker = '/packages/core/src/kiwi/'
     const start = file.indexOf(marker)
-    if (start === -1) return {}
+    if (start === -1) return false
 
     const relativePath = file.slice(start + marker.length)
-    if (relativePath.includes('/') || relativePath === 'index.ts') return {}
+    if (relativePath.includes('/') || relativePath === 'index.ts') return false
 
-    return {
-      Program(node) {
-        context.report({
-          node,
-          message:
-            'Move Kiwi modules under binary/, fig/, node-change/, instance-overrides/, or kiwi-schema/ instead of adding flat top-level files.'
-        })
-      }
-    }
+    return 'Move Kiwi modules under binary/, fig/, node-change/, instance-overrides/, or kiwi-schema/ instead of adding flat top-level files.'
   }
-}
+})
 
 const plugin = {
   meta: { name: 'open-pencil' },
@@ -1265,29 +1129,22 @@ const plugin = {
     'no-raw-console-format': noRawConsoleFormat,
     'no-silent-catch': noSilentCatch,
     'no-typeof-window-check': noTypeofWindowCheck,
-    'no-legacy-app-imports': noLegacyAppImports,
     'no-vue-self-package-imports': noVueSelfPackageImports,
     'no-cross-package-source-imports': noCrossPackageSourceImports,
     'no-deep-parent-relative-imports': noDeepParentRelativeImports,
     'no-core-parent-relative-imports': noCoreParentRelativeImports,
     'no-mcp-parent-relative-imports': noMcpParentRelativeImports,
     'no-vue-parent-relative-imports': noVueParentRelativeImports,
-    'no-stale-vite-app-paths': noStaleViteAppPaths,
     'no-cli-parent-relative-imports': noCliParentRelativeImports,
-    'no-root-demo-module': noRootDemoModule,
     'no-mcp-core-barrel-imports': noMcpCoreBarrelImports,
     'no-cli-core-barrel-imports': noCliCoreBarrelImports,
     'no-script-core-barrel-imports': noScriptCoreBarrelImports,
     'no-core-self-package-imports': noCoreSelfPackageImports,
     'no-inline-prompt-constants': noInlinePromptConstants,
-    'no-legacy-app-support-imports': noLegacyAppSupportImports,
     'no-app-vue-core-barrel-imports': noAppVueCoreBarrelImports,
     'no-app-imports-in-packages': noAppImportsInPackages,
     'no-core-framework-imports': noCoreFrameworkImports,
     'no-direct-storage-access': noDirectStorageAccess,
-    'no-legacy-shim-files': noLegacyShimFiles,
-    'no-legacy-test-app-imports': noLegacyTestAppImports,
-    'no-test-core-source-imports': noTestCoreSourceImports,
     'no-broad-double-cast': noBroadDoubleCast,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
     'no-ts-suppression-comments': noTsSuppressionComments,
