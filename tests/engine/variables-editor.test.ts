@@ -46,7 +46,7 @@ function createEditorHarness() {
     getVariable(id: string) {
       return variables.get(id)
     }
-  } as unknown as Editor
+  } as Editor
 
   return { editor, collection, collections, variables }
 }

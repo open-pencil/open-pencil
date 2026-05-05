@@ -177,7 +177,7 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
     if (style.fills && style.fills.length > 0) {
       override.fillPaints = style.fills.map(fillToKiwiPaint)
     }
-    overrideTable.push(override as unknown as NodeChange)
+    overrideTable.push(override as NodeChange)
   }
 
   return {

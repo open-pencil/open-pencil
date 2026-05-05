@@ -13,7 +13,7 @@ describe('openExternalLink', () => {
 
   beforeEach(() => {
     mockOpen = vi.fn().mockReturnValue(null)
-    globalThis.window = { open: mockOpen } as unknown as Window & typeof globalThis
+    globalThis.window = { open: mockOpen } as Window & typeof globalThis
   })
 
   afterEach(async () => {

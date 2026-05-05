@@ -40,7 +40,7 @@ const QUERYABLE_ATTRS = [
 interface XPathDocument {
   nodeType: number
   nodeName: string
-  documentElement: XPathNode
+  documentElement: XPathNode | null
   _children?: XPathNode[]
 }
 
@@ -63,7 +63,7 @@ interface XPathNode {
   prefix: null
   _sceneNode: SceneNode
   _attrs?: XPathAttr[]
-  _parent?: XPathNode | null
+  _parent?: XPathNode | XPathDocument | null
   _children?: XPathNode[]
 }
 
@@ -79,7 +79,7 @@ function wrapNode(
     namespaceURI: null,
     prefix: null,
     _sceneNode: node,
-    _parent: parent as XPathNode | null
+    _parent: parent
   }
   return wrapped
 }
@@ -88,9 +88,9 @@ function createDocument(graph: SceneGraph, rootNode: SceneNode): XPathDocument {
   const doc: XPathDocument = {
     nodeType: NODE_TYPES.DOCUMENT_NODE,
     nodeName: '#document',
-    documentElement: null as unknown as XPathNode
+    documentElement: null
   }
-  const root = wrapNode(graph, rootNode, doc as unknown as XPathNode)
+  const root = wrapNode(graph, rootNode, doc)
   doc.documentElement = root
   doc._children = [root]
   return doc
@@ -150,7 +150,7 @@ function siblingNode(
 ): XPathNode | null {
   if (isDocument(node)) return null
   const parent = node._parent
-  if (!parent) return null
+  if (!parent || isDocument(parent)) return null
   const siblings = getChildren(graph, parent)
   const index = siblings.indexOf(node)
   if (index === -1) return null
@@ -230,7 +230,7 @@ export async function queryByXPath(
   if (targetPages.length === 0) return []
 
   const { evaluateXPathToNodes } = await import('fontoxpath')
-  const domFacade = createDomFacade(graph) as unknown as IDomFacade
+  const domFacade = createDomFacade(graph) as IDomFacade
   const results: SceneNode[] = []
 
   for (const page of targetPages) {
@@ -309,7 +309,7 @@ export async function matchByXPath(
   node: SceneNode
 ): Promise<boolean> {
   const { evaluateXPathToBoolean } = await import('fontoxpath')
-  const domFacade = createDomFacade(graph) as unknown as IDomFacade
+  const domFacade = createDomFacade(graph) as IDomFacade
   const wrapped = wrapNode(graph, node)
   try {
     return evaluateXPathToBoolean(`self::*[${selector}]`, wrapped, domFacade)

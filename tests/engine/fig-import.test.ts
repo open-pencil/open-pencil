@@ -118,7 +118,7 @@ describe('fig-import: gradient fills', () => {
             ],
             transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
           }
-        ] as unknown as NodeChange['fillPaints']
+        ] as NodeChange['fillPaints']
       })
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
@@ -147,7 +147,7 @@ describe('fig-import: gradient fills', () => {
             ],
             transform: { m00: 0.5, m01: 0, m02: 0.5, m10: 0, m11: 0.5, m12: 0.5 }
           }
-        ] as unknown as NodeChange['fillPaints']
+        ] as NodeChange['fillPaints']
       })
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
@@ -176,7 +176,7 @@ describe('fig-import: image fills', () => {
             imageScaleMode: 'FILL',
             transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
           }
-        ] as unknown as NodeChange['fillPaints']
+        ] as NodeChange['fillPaints']
       })
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
@@ -209,7 +209,7 @@ describe('fig-import: effects', () => {
             spread: 0,
             visible: true
           }
-        ] as unknown as NodeChange['effects']
+        ] as NodeChange['effects']
       })
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
@@ -233,7 +233,7 @@ describe('fig-import: effects', () => {
             spread: 0,
             visible: true
           }
-        ] as unknown as NodeChange['effects']
+        ] as NodeChange['effects']
       })
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
@@ -284,7 +284,7 @@ describe('fig-import: stroke options', () => {
         strokeWeight: 2,
         strokeAlign: 'CENTER',
         dashPattern: [10, 5]
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.strokes[0].dashPattern).toEqual([10, 5])
@@ -301,7 +301,7 @@ describe('fig-import: text properties', () => {
         fontSize: 16,
         textAlignHorizontal: 'CENTER',
         textAutoResize: 'WIDTH_AND_HEIGHT'
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.textAutoResize).toBe('WIDTH_AND_HEIGHT')
@@ -327,7 +327,7 @@ describe('fig-import: text properties', () => {
         node('TEXT', 10, 1, {
           textData: { characters: 'X' },
           fontName: { family: 'Inter', style }
-        } as unknown as Partial<NodeChange>)
+        } as Partial<NodeChange>)
       ])
       const n = graph.getChildren(graph.getPages()[0].id)[0]
       expect(n.fontWeight).toBe(expected)
@@ -346,7 +346,7 @@ describe('fig-import: arc data', () => {
           endingAngle: Math.PI,
           innerRadius: 0
         }
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData).toBeDefined()
@@ -365,7 +365,7 @@ describe('fig-import: arc data', () => {
           endingAngle: Math.PI * 2,
           innerRadius: 0.5
         }
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData!.innerRadius).toBe(0.5)
@@ -380,7 +380,7 @@ describe('fig-import: constraints', () => {
       node('RECTANGLE', 10, 1, {
         horizontalConstraint: 'STRETCH',
         verticalConstraint: 'CENTER'
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.horizontalConstraint).toBe('STRETCH')
@@ -402,7 +402,7 @@ describe('fig-import: blend mode', () => {
       canvas(),
       node('RECTANGLE', 10, 1, {
         blendMode: 'MULTIPLY'
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.blendMode).toBe('MULTIPLY')
@@ -426,7 +426,7 @@ describe('fig-import: independent stroke weights', () => {
         borderBottomWeight: 2,
         borderLeftWeight: 4,
         borderStrokeWeightsIndependent: true
-      } as unknown as Partial<NodeChange>)
+      } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.borderTopWeight).toBe(2)
@@ -460,7 +460,7 @@ describe('fig-import: multiple fills', () => {
             ],
             transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
           }
-        ] as unknown as NodeChange['fillPaints']
+        ] as NodeChange['fillPaints']
       })
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
@@ -550,7 +550,7 @@ describe('fig-import: variable asset refs', () => {
               resolvedDataType: 'COLOR'
             }
           }
-        ] as unknown as NodeChange['fillPaints']
+        ] as NodeChange['fillPaints']
       })
     ])
 
@@ -576,7 +576,7 @@ describe('fig-import: component set detection', () => {
         ...node('FRAME', 10, 1),
         name: 'Button',
         componentPropDefs: [{ id: { sessionID: 0, localID: 1 }, name: 'State', type: 'VARIANT' }]
-      } as unknown as NodeChange,
+      } as NodeChange,
       {
         ...node('SYMBOL', 11, 1),
         parentIndex: { guid: { sessionID: 1, localID: 10 }, position: '!' },

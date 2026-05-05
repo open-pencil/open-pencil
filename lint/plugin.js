@@ -763,13 +763,12 @@ const noTestCoreSourceImports = {
 const noBroadDoubleCast = {
   meta: {
     docs: {
-      description: 'Disallow broad `as unknown as` casts in app and Vue SDK code'
+      description: 'Disallow broad `as unknown as` casts outside vendored code'
     }
   },
   create(context) {
     const file = normalizedFilename(context)
-    const applies = file.includes('/src/app/') || file.includes('/packages/vue/src/')
-    if (!applies) return {}
+    if (file.includes('/packages/core/src/kiwi/kiwi-schema/')) return {}
 
     return {
       TSAsExpression(node) {

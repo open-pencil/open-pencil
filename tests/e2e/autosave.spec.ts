@@ -31,7 +31,7 @@ test('autosave triggers after scene changes with a file handle', async () => {
     }
     const mockHandle = {
       createWritable: async () => mockWritable
-    } as unknown as FileSystemFileHandle
+    } as FileSystemFileHandle
 
     // Inject mock file handle via saveFigFileAs path:
     // We access the internal closure by calling openFigFile with a mock

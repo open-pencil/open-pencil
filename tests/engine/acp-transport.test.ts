@@ -160,7 +160,7 @@ describe('mapUpdate', () => {
     const update = {
       sessionUpdate: 'available_commands_update',
       availableCommands: []
-    } as unknown as SessionUpdate
+    } as SessionUpdate
     const result = mapUpdate(update, TEXT_ID, false)
     expect(result.chunks).toEqual([])
     expect(result.textStarted).toBe(false)

@@ -20,7 +20,7 @@ function makeNode(): SceneNode {
     paddingBottom: 0,
     paddingLeft: 0,
     boundVariables: {}
-  } as unknown as SceneNode
+  } as SceneNode
 }
 
 function makeVarContext(vars: Record<string, number>): VarContext {
@@ -45,7 +45,7 @@ function makeVarContext(vars: Record<string, number>): VarContext {
     },
     resolveString: () => '',
     setActiveTheme: () => {}
-  } as unknown as VarContext
+  } as VarContext
 }
 
 const ctx = makeVarContext({

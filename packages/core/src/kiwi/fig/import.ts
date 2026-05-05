@@ -409,7 +409,7 @@ export function importNodeChanges(
 
   populateAndApplyOverrides(
     graph,
-    changeMap as unknown as Map<string, InstanceNodeChange>,
+    changeMap as Map<string, InstanceNodeChange>,
     guidToNodeId,
     blobs,
     activeRootIds

@@ -132,7 +132,7 @@ describe('normalizeVectorNetwork', () => {
       ],
       segments: [{ start: 0, end: 1 }],
       regions: []
-    } as unknown as VectorNetwork
+    } as VectorNetwork
     const result = normalizeVectorNetwork(network)
     expect(result.segments[0].tangentStart).toEqual({ x: 0, y: 0 })
     expect(result.segments[0].tangentEnd).toEqual({ x: 0, y: 0 })
@@ -146,7 +146,7 @@ describe('normalizeVectorNetwork', () => {
       ],
       segments: [{ start: 0, end: 1, tangentStart: { x: 3, y: 4 } }],
       regions: []
-    } as unknown as VectorNetwork
+    } as VectorNetwork
     const result = normalizeVectorNetwork(network)
     expect(result.segments[0].tangentStart).toEqual({ x: 3, y: 4 })
     expect(result.segments[0].tangentEnd).toEqual({ x: 0, y: 0 })
@@ -165,7 +165,7 @@ describe('normalizeVectorNetwork', () => {
         { start: 2, end: 0 }
       ],
       regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
-    } as unknown as VectorNetwork
+    } as VectorNetwork
 
     const normalized = normalizeVectorNetwork(raw)
     const blob = encodeVectorNetworkBlob(normalized)
@@ -202,7 +202,7 @@ describe('validateVectorNetwork', () => {
       ],
       segments: [{ start: 0, end: 1 }],
       regions: []
-    } as unknown as VectorNetwork
+    } as VectorNetwork
     expect(validateVectorNetwork(network)).toEqual([])
   })
 
@@ -211,14 +211,14 @@ describe('validateVectorNetwork', () => {
       vertices: [{ x: 0, y: 0 }],
       segments: [{ start: 0, end: 5 }],
       regions: []
-    } as unknown as VectorNetwork
+    } as VectorNetwork
     const errors = validateVectorNetwork(network)
     expect(errors.length).toBe(1)
     expect(errors[0]).toContain('end index 5 out of range')
   })
 
   test('rejects missing vertices array', () => {
-    const network = { segments: [], regions: [] } as unknown as VectorNetwork
+    const network = { segments: [], regions: [] } as VectorNetwork
     const errors = validateVectorNetwork(network)
     expect(errors[0]).toContain('vertices must be an array')
   })
@@ -228,7 +228,7 @@ describe('validateVectorNetwork', () => {
       vertices: [{ x: 'a', y: 0 }],
       segments: [],
       regions: []
-    } as unknown as VectorNetwork
+    } as VectorNetwork
     const errors = validateVectorNetwork(network)
     expect(errors[0]).toContain('x and y must be numbers')
   })

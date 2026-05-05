@@ -68,7 +68,7 @@ function createRecordingProvider() {
     registerFont(data: ArrayBuffer, family: string) {
       registrations.push({ family, byteLength: data.byteLength })
     }
-  } as unknown as TypefaceFontProvider
+  } as TypefaceFontProvider
   return { provider, registrations }
 }
 

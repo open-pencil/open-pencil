@@ -276,7 +276,7 @@ export function importClipboardNodes(
 
   populateAndApplyOverrides(
     graph,
-    guidMap as unknown as Map<string, InstanceNodeChange>,
+    guidMap as Map<string, InstanceNodeChange>,
     created,
     blobs
   )

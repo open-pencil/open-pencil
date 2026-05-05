@@ -54,7 +54,7 @@ export function defineTool<P extends Record<string, ParamDef>>(def: {
   params: P
   execute: (figma: FigmaAPI, args: ResolvedParams<P>) => unknown
 }): ToolDef {
-  return def as unknown as ToolDef
+  return def as ToolDef
 }
 
 export class NodeNotFoundError extends Error {

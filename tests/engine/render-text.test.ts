@@ -55,7 +55,7 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     buildParagraph: mock(() => paragraph),
     _paragraph: paragraph,
     ...overrides
-  } as unknown as SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }
+  } as SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }
 }
 
 function textNode(overrides: Partial<SceneNode> = {}): SceneNode {

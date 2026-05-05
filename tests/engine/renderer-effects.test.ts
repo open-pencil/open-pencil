@@ -125,7 +125,7 @@ function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer
     isRectangularType: mock(() => true),
     worldViewport: { x: 0, y: 0, w: 1000, h: 1000 },
     ...overrides
-  } as unknown as SkiaRenderer
+  } as SkiaRenderer
 }
 
 function createMockCanvas() {

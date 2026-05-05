@@ -98,7 +98,7 @@ export function installBasicNodeProxyAccessors(
       graph(this, internals).updateNode(nodeId(this, internals), { width, height })
     },
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {
-      ;(this as unknown as { resize(width: number, height: number): void }).resize(width, height)
+      ;(this as { resize(width: number, height: number): void }).resize(width, height)
     }
   })
 }

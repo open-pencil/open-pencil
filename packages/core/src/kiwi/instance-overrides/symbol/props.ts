@@ -21,7 +21,7 @@ function applyOverridePaints(ov: Record<string, unknown>, updates: Partial<Scene
   if (ov.textData != null) {
     const td = ov.textData as { characters?: string }
     if (td.characters != null) updates.text = td.characters
-    const runs = importStyleRuns(ov as unknown as NodeChange)
+    const runs = importStyleRuns(ov as NodeChange)
     if (runs.length > 0) updates.styleRuns = runs
   }
   if (ov.fillPaints != null) updates.fills = convertFills(ov.fillPaints as Paint[])
