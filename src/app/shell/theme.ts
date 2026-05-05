@@ -2,6 +2,7 @@ import { useLocalStorage, usePreferredDark } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
+import { parseColor } from '@open-pencil/core/color'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import type { RulerTheme } from '@open-pencil/core/canvas'
@@ -18,25 +19,14 @@ const resolvedTheme = computed<'dark' | 'light'>(() => {
   return theme.value
 })
 
-function cssColorToRgba(value: string) {
-  const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
-  if (!match) return { r: 0, g: 0, b: 0, a: 1 }
-  return {
-    r: Number(match[1]) / 255,
-    g: Number(match[2]) / 255,
-    b: Number(match[3]) / 255,
-    a: match[4] ? Number(match[4]) : 1
-  }
-}
-
 function readRulerTheme(): RulerTheme | null {
   if (!IS_BROWSER || !('document' in globalThis)) return null
   const style = getComputedStyle(document.documentElement)
   return {
-    background: cssColorToRgba(style.getPropertyValue('--color-ruler-bg')),
-    tick: cssColorToRgba(style.getPropertyValue('--color-ruler-tick')),
-    text: cssColorToRgba(style.getPropertyValue('--color-ruler-text')),
-    label: cssColorToRgba(style.getPropertyValue('--color-ruler-label'))
+    background: parseColor(style.getPropertyValue('--color-ruler-bg')),
+    tick: parseColor(style.getPropertyValue('--color-ruler-tick')),
+    text: parseColor(style.getPropertyValue('--color-ruler-text')),
+    label: parseColor(style.getPropertyValue('--color-ruler-label'))
   }
 }
 
