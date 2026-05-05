@@ -42,6 +42,13 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
   const busyAction = ref<FontSettingsBusyAction | null>(null)
   const status = ref('')
 
+  const accessStateLabel = computed(() => {
+    if (accessState.value === 'granted') return 'Enabled'
+    if (accessState.value === 'denied') return 'Denied'
+    if (accessState.value === 'unsupported') return 'Unavailable'
+    return 'Not requested'
+  })
+
   const cacheSize = computed(() => {
     if (cacheByteLength.value === 0) return '0 MB'
     return `${(cacheByteLength.value / 1024 / 1024).toFixed(1)} MB`
@@ -51,6 +58,10 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
     if (cacheUpdatedAt.value === null) return 'Never'
     return new Date(cacheUpdatedAt.value).toLocaleDateString()
   })
+
+  const canRequestLocalFonts = computed(() =>
+    accessState.value === 'prompt' || accessState.value === 'denied'
+  )
 
   async function refreshSummary() {
     busyAction.value = busyAction.value ?? 'refresh'
@@ -110,7 +121,9 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
 
   return {
     accessState,
+    accessStateLabel,
     busyAction,
+    canRequestLocalFonts,
     cacheCount,
     cacheSize,
     cacheUpdatedLabel,

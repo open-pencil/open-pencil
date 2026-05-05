@@ -4,8 +4,8 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater'
+import { isTauri } from '@/app/tauri/env'
 import { createTab, closeTab, activeTab } from '@/app/tabs'
-import { IS_TAURI } from '@/constants'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import type { EditorCommandId } from '@open-pencil/vue'
@@ -52,7 +52,7 @@ function updateSelectedText(updates: {
 }
 
 export function useMenu() {
-  if (!IS_TAURI) return
+  if (!isTauri()) return
 
   let unlisten: (() => void) | undefined
   const { setTheme } = useAppTheme()

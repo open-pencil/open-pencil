@@ -1,4 +1,4 @@
-import { IS_TAURI } from '@/constants'
+import { isTauri } from '@/app/tauri/env'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 
 import type { Editor, EditorState } from '@open-pencil/core/editor'
@@ -86,6 +86,19 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
   return { renderExportImage, getSelectionExportTarget, listSelectionExportFormats }
 }
 
+export async function chooseTauriExportPath(fileName: string, format: string, ext: string) {
+  const { save } = await import('@tauri-apps/plugin-dialog')
+  return save({
+    defaultPath: fileName,
+    filters: [{ name: format, extensions: [ext.slice(1)] }]
+  })
+}
+
+export async function writeTauriExportFile(path: string, data: Uint8Array) {
+  const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
+  await tauriWrite(path, data)
+}
+
 export async function saveExportedFile(
   data: Uint8Array,
   fileName: string,
@@ -94,15 +107,10 @@ export async function saveExportedFile(
   mime: string,
   downloadBlob: DownloadBlob
 ) {
-  if (IS_TAURI) {
-    const { save } = await import('@tauri-apps/plugin-dialog')
-    const path = await save({
-      defaultPath: fileName,
-      filters: [{ name: format, extensions: [ext.slice(1)] }]
-    })
+  if (isTauri()) {
+    const path = await chooseTauriExportPath(fileName, format, ext)
     if (!path) return
-    const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
-    await tauriWrite(path, data)
+    await writeTauriExportFile(path, data)
     return
   }
 

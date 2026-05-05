@@ -4,7 +4,7 @@ import { ToggleGroupItem, ToggleGroupRoot } from 'reka-ui'
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
 import FontPicker from '@/components/FontPicker.vue'
-import FontSettingsPopover from '@/components/FontSettingsPopover.vue'
+import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'

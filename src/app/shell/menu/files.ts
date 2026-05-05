@@ -1,7 +1,8 @@
 import { useFileDialog } from '@vueuse/core'
 
 import { openFileInNewTab } from '@/app/tabs'
-import { IS_BROWSER, IS_TAURI } from '@/constants'
+import { isTauri } from '@/app/tauri/env'
+import { IS_BROWSER } from '@/constants'
 
 const fileDialog = useFileDialog({ accept: '.fig,.pen', multiple: false, reset: true })
 
@@ -22,21 +23,30 @@ if (IS_BROWSER) {
   }
 }
 
-export async function openFileFromPath(path: string) {
-  if (!IS_TAURI) return
+export async function readTauriDesignFile(path: string): Promise<File> {
   const { readFile } = await import('@tauri-apps/plugin-fs')
   const bytes = await readFile(path)
-  const file = new File([bytes], path.split('/').pop() ?? 'file.fig')
+  return new File([bytes], path.split('/').pop() ?? 'file.fig')
+}
+
+export async function chooseTauriOpenPath(): Promise<string | null> {
+  const { open } = await import('@tauri-apps/plugin-dialog')
+  const path = await open({
+    filters: [{ name: 'Design file', extensions: ['fig', 'pen'] }],
+    multiple: false
+  })
+  return typeof path === 'string' ? path : null
+}
+
+export async function openFileFromPath(path: string) {
+  if (!isTauri()) return
+  const file = await readTauriDesignFile(path)
   await openFileInNewTab(file, undefined, path)
 }
 
 export async function openFileDialog() {
-  if (IS_TAURI) {
-    const { open } = await import('@tauri-apps/plugin-dialog')
-    const path = await open({
-      filters: [{ name: 'Design file', extensions: ['fig', 'pen'] }],
-      multiple: false
-    })
+  if (isTauri()) {
+    const path = await chooseTauriOpenPath()
     if (!path) return
     await openFileFromPath(path)
     return

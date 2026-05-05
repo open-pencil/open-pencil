@@ -28,6 +28,8 @@ describe('useFontSettings', () => {
     await settings.refreshSummary()
 
     expect(settings.cacheCount.value).toBe(2)
+    expect(settings.accessStateLabel.value).toBe('Not requested')
+    expect(settings.canRequestLocalFonts.value).toBe(true)
     expect(settings.cacheSize.value).toBe('1.5 MB')
     expect(settings.cacheUpdatedLabel.value).not.toBe('Never')
     expect(settings.busyAction.value).toBeNull()
@@ -39,6 +41,8 @@ describe('useFontSettings', () => {
     await settings.requestAccess()
 
     expect(settings.accessState.value).toBe('granted')
+    expect(settings.accessStateLabel.value).toBe('Enabled')
+    expect(settings.canRequestLocalFonts.value).toBe(false)
     expect(settings.status.value).toBe('Local font access enabled.')
     expect(settings.busyAction.value).toBeNull()
   })
