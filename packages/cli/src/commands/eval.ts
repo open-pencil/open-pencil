@@ -68,8 +68,11 @@ export default defineCommand({
     const graph = await loadDocument(file)
     const figma = new FigmaAPI(graph)
 
-    // eslint-disable-next-line no-empty-function -- needed to get AsyncFunction constructor
-    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+    type AsyncFunctionConstructor = new (
+      ...args: string[]
+    ) => (...args: unknown[]) => Promise<unknown>
+    const AsyncFunction = Object.getPrototypeOf(async () => undefined)
+      .constructor as AsyncFunctionConstructor
     const wrappedCode = code.trim().startsWith('return')
       ? code
       : `return (async () => { ${code} })()`

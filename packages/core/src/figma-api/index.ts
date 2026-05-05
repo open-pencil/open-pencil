@@ -22,6 +22,8 @@ import type {
 } from '#core/scene-graph'
 import type { Rect, Vector } from '#core/types'
 
+const noop = () => undefined
+
 export { FigmaNodeProxy } from './proxy'
 export type { FigmaFont, FigmaFontName } from './proxy'
 
@@ -385,14 +387,16 @@ export class FigmaAPI implements NodeProxyHost {
 
   notify(message: string): { cancel: () => void } {
     if (typeof console !== 'undefined') console.warn(`[figma.notify] ${message}`)
-    // eslint-disable-next-line no-empty-function
-    return { cancel() {} }
+    return { cancel: noop }
   }
 
-  // eslint-disable-next-line no-empty-function
-  commitUndo(): void {}
-  // eslint-disable-next-line no-empty-function
-  triggerUndo(): void {}
+  commitUndo(): void {
+    return undefined
+  }
+
+  triggerUndo(): void {
+    return undefined
+  }
 
   exportImage?: (
     nodeIds: string[],

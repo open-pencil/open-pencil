@@ -1,4 +1,5 @@
 import type { EditorStore } from '@/app/editor/session/create'
+import type { ChatTransport, UIMessage } from 'ai'
 
 declare global {
   interface Uint8ArrayConstructor {
@@ -38,7 +39,7 @@ declare global {
         blob(): Promise<Blob>
       }[]
     >
-    __OPEN_PENCIL_SET_TRANSPORT__?(factory: () => unknown): void
+    __OPEN_PENCIL_SET_TRANSPORT__?(factory: () => ChatTransport<UIMessage>): void
     __OPEN_PENCIL_STORE__?: EditorStore
     __TEST_WRITE_COUNT__?(): number
     __TEST_MOCK_HANDLE__?: FileSystemFileHandle

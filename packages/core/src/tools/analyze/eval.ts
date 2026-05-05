@@ -9,12 +9,18 @@ export const evalCode = defineTool({
   },
   mutates: true,
   execute: async (figma, { code }) => {
-    // eslint-disable-next-line no-empty-function
-    const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+    type AsyncFunctionConstructor = new (
+      ...args: string[]
+    ) => (...args: unknown[]) => Promise<unknown>
+    const AsyncFunction = Object.getPrototypeOf(async () => undefined)
+      .constructor as AsyncFunctionConstructor
     const wrapped = code.trim().startsWith('return') ? code : `return (async () => { ${code} })()`
     const fn = new AsyncFunction('figma', wrapped)
     const result = await fn(figma)
-    if (result && typeof result === 'object' && 'toJSON' in result) return result.toJSON()
+    if (result && typeof result === 'object') {
+      const toJSON = Reflect.get(result, 'toJSON')
+      if (typeof toJSON === 'function') return toJSON.call(result)
+    }
     if (result !== undefined && result !== null) return result
     return { ok: true, message: 'Code executed (no return value)' }
   }

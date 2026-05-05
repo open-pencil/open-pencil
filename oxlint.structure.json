@@ -17,6 +17,17 @@
       "rules": {
         "typescript/no-explicit-any": "off"
       }
+    },
+    {
+      "files": [
+        "tests/engine/fig-roundtrip.test.ts",
+        "tests/engine/nudge.test.ts",
+        "tests/engine/render.test.ts",
+        "tests/engine/text-edit-undo.test.ts"
+      ],
+      "rules": {
+        "typescript/no-non-null-assertion": "error"
+      }
     }
   ],
   "rules": {

@@ -16,6 +16,7 @@ import {
   type Fill
 } from '@open-pencil/core'
 
+import { expectDefined } from '../helpers/assert'
 import {
   childMatching,
   childNamed,
@@ -567,7 +568,7 @@ describe('roundtrip: export → re-import', () => {
   test('preserves fills', () => {
     const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
     expect(headerBg).toBeDefined()
-    expect(headerBg!.fills).toHaveLength(2)
+    expect(expectDefined(headerBg, 'headerBg').fills).toHaveLength(2)
     expect(headerBg.fills[0].type).toBe('SOLID')
     expect(headerBg.fills[0].color.r).toBeCloseTo(0.2, 1)
     expect(headerBg.fills[1].type).toBe('GRADIENT_LINEAR')
@@ -578,13 +579,13 @@ describe('roundtrip: export → re-import', () => {
   test('preserves text content', () => {
     const title = reImportedNodes.find((n) => n.name === 'Title')
     expect(title).toBeDefined()
-    expect(title!.text).toBe('Hello World')
+    expect(expectDefined(title, 'title').text).toBe('Hello World')
   })
 
   test('preserves text properties', () => {
     const title = reImportedNodes.find((n) => n.name === 'Title')
     expect(title).toBeDefined()
-    expect(title!.fontSize).toBe(18)
+    expect(expectDefined(title, 'title').fontSize).toBe(18)
     expect(title.fontFamily).toBe('Inter')
     expect(title.fontWeight).toBe(700)
     expect(title.textAlignHorizontal).toBe('CENTER')
@@ -593,13 +594,13 @@ describe('roundtrip: export → re-import', () => {
   test('preserves layout mode', () => {
     const container = reImportedNodes.find((n) => n.name === 'Container')
     expect(container).toBeDefined()
-    expect(container!.layoutMode).toBe('VERTICAL')
+    expect(expectDefined(container, 'container').layoutMode).toBe('VERTICAL')
   })
 
   test('preserves layout spacing', () => {
     const container = reImportedNodes.find((n) => n.name === 'Container')
     expect(container).toBeDefined()
-    expect(container!.itemSpacing).toBe(16)
+    expect(expectDefined(container, 'container').itemSpacing).toBe(16)
     expect(container.paddingTop).toBe(24)
     expect(container.paddingRight).toBe(24)
     expect(container.paddingBottom).toBe(24)
@@ -609,13 +610,13 @@ describe('roundtrip: export → re-import', () => {
   test('preserves corner radius', () => {
     const container = reImportedNodes.find((n) => n.name === 'Container')
     expect(container).toBeDefined()
-    expect(container!.cornerRadius).toBe(12)
+    expect(expectDefined(container, 'container').cornerRadius).toBe(12)
   })
 
   test('preserves independent corner radii', () => {
     const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
     expect(headerBg).toBeDefined()
-    expect(headerBg!.independentCorners).toBe(true)
+    expect(expectDefined(headerBg, 'headerBg').independentCorners).toBe(true)
     expect(headerBg.topLeftRadius).toBe(8)
     expect(headerBg.topRightRadius).toBe(8)
     expect(headerBg.bottomRightRadius).toBe(0)
@@ -625,7 +626,7 @@ describe('roundtrip: export → re-import', () => {
   test('preserves effects', () => {
     const headerBg = reImportedNodes.find((n) => n.name === 'Header BG')
     expect(headerBg).toBeDefined()
-    expect(headerBg!.effects).toHaveLength(1)
+    expect(expectDefined(headerBg, 'headerBg').effects).toHaveLength(1)
     expect(headerBg.effects[0].type).toBe('DROP_SHADOW')
     expect(headerBg.effects[0].radius).toBe(8)
     expect(headerBg.effects[0].offset.y).toBe(4)
@@ -634,7 +635,7 @@ describe('roundtrip: export → re-import', () => {
   test('preserves dimensions', () => {
     const container = reImportedNodes.find((n) => n.name === 'Container')
     expect(container).toBeDefined()
-    expect(container!.width).toBe(400)
+    expect(expectDefined(container, 'container').width).toBe(400)
     expect(container.height).toBe(300)
   })
 })
@@ -795,7 +796,7 @@ describe('edge cases', () => {
     const page = graph.getPages()[0]
     const outerUse = graph.getChildren(page.id).find((n) => n.name === 'OuterUse')
     expect(outerUse).toBeDefined()
-    expect(outerUse!.type).toBe('INSTANCE')
+    expect(expectDefined(outerUse, 'outerUse').type).toBe('INSTANCE')
 
     // Walk down: OuterUse > InnerUse clone > Label clone
     const innerClone = graph.getChildren(outerUse?.id ?? '')[0]
@@ -1037,7 +1038,7 @@ describe('text node export', () => {
 
     const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Greeting')
     expect(textNode).toBeDefined()
-    expect(textNode!.type).toBe('TEXT')
+    expect(expectDefined(textNode, 'textNode').type).toBe('TEXT')
     expect(textNode.text).toBe('Hello World')
     expect(textNode.fontFamily).toBe('Inter')
     expect(textNode.fontSize).toBe(16)
@@ -1063,7 +1064,7 @@ describe('text node export', () => {
 
     const textNode = [...reimported.getAllNodes()].find((n) => n.name === 'Multiline')
     expect(textNode).toBeDefined()
-    expect(textNode!.text).toBe('Line 1\nLine 2\nLine 3')
+    expect(expectDefined(textNode, 'textNode').text).toBe('Line 1\nLine 2\nLine 3')
   })
 
   test('derivedTextData fields present in raw binary', async () => {
@@ -1221,7 +1222,7 @@ describe('variable roundtrip', () => {
     const vars = [...reimported.variables.values()]
     const colorVar = vars.find((v) => v.name === 'color/primary')
     expect(colorVar).toBeDefined()
-    expect(colorVar!.type).toBe('COLOR')
+    expect(expectDefined(colorVar, 'colorVar').type).toBe('COLOR')
     const colorVal = Object.values(colorVar.valuesByMode)[0] as {
       r: number
       g: number
@@ -1232,17 +1233,17 @@ describe('variable roundtrip', () => {
 
     const floatVar = vars.find((v) => v.name === 'spacing/base')
     expect(floatVar).toBeDefined()
-    expect(floatVar!.type).toBe('FLOAT')
+    expect(expectDefined(floatVar, 'floatVar').type).toBe('FLOAT')
     expect(Object.values(floatVar.valuesByMode)[0]).toBe(8)
 
     const boolVar = vars.find((v) => v.name === 'visible')
     expect(boolVar).toBeDefined()
-    expect(boolVar!.type).toBe('BOOLEAN')
+    expect(expectDefined(boolVar, 'boolVar').type).toBe('BOOLEAN')
     expect(Object.values(boolVar.valuesByMode)[0]).toBe(true)
 
     const strVar = vars.find((v) => v.name === 'label')
     expect(strVar).toBeDefined()
-    expect(strVar!.type).toBe('STRING')
+    expect(expectDefined(strVar, 'strVar').type).toBe('STRING')
     expect(Object.values(strVar.valuesByMode)[0]).toBe('Hello')
   })
 

@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 
+import { getNodeOrThrow } from '../helpers/assert'
+
 describe('nudgeSelected', () => {
   function setup() {
     const editor = createEditor()
@@ -21,22 +23,22 @@ describe('nudgeSelected', () => {
     const { editor, rect } = setup()
 
     editor.nudgeSelected(1, 0)
-    expect(editor.graph.getNode(rect.id)!.x).toBe(101)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(200)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(101)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(200)
 
     editor.nudgeSelected(0, -1)
-    expect(editor.graph.getNode(rect.id)!.x).toBe(101)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(199)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(101)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(199)
   })
 
   test('shift nudge moves by 10px', () => {
     const { editor, rect } = setup()
 
     editor.nudgeSelected(10, 0)
-    expect(editor.graph.getNode(rect.id)!.x).toBe(110)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(110)
 
     editor.nudgeSelected(0, 10)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(210)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(210)
   })
 
   test('nudge is undoable as a single entry', () => {
@@ -47,15 +49,15 @@ describe('nudgeSelected', () => {
     editor.nudgeSelected(1, 0)
     editor.flushNudge()
 
-    expect(editor.graph.getNode(rect.id)!.x).toBe(103)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(103)
     expect(editor.undo.canUndo).toBe(true)
 
     editor.undo.undo()
-    expect(editor.graph.getNode(rect.id)!.x).toBe(100)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(200)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(100)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(200)
 
     editor.undo.redo()
-    expect(editor.graph.getNode(rect.id)!.x).toBe(103)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(103)
   })
 
   test('nudge skips locked nodes', () => {
@@ -64,8 +66,8 @@ describe('nudgeSelected', () => {
     editor.graph.updateNode(rect.id, { locked: true })
     editor.nudgeSelected(10, 10)
     editor.flushNudge()
-    expect(editor.graph.getNode(rect.id)!.x).toBe(100)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(200)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(100)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(200)
     expect(editor.undo.canUndo).toBe(false)
   })
 
@@ -93,10 +95,10 @@ describe('nudgeSelected', () => {
     editor.nudgeSelected(-5, 3)
     editor.flushNudge()
 
-    expect(editor.graph.getNode(rect.id)!.x).toBe(95)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(203)
-    expect(editor.graph.getNode(rect2.id)!.x).toBe(295)
-    expect(editor.graph.getNode(rect2.id)!.y).toBe(403)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(95)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(203)
+    expect(getNodeOrThrow(editor.graph, rect2.id).x).toBe(295)
+    expect(getNodeOrThrow(editor.graph, rect2.id).y).toBe(403)
   })
 
   test('separate nudge sequences create separate undo entries', () => {
@@ -108,15 +110,15 @@ describe('nudgeSelected', () => {
     editor.nudgeSelected(0, 5)
     editor.flushNudge()
 
-    expect(editor.graph.getNode(rect.id)!.x).toBe(105)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(205)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(105)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(205)
 
     editor.undo.undo()
-    expect(editor.graph.getNode(rect.id)!.x).toBe(105)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(200)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(105)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(200)
 
     editor.undo.undo()
-    expect(editor.graph.getNode(rect.id)!.x).toBe(100)
-    expect(editor.graph.getNode(rect.id)!.y).toBe(200)
+    expect(getNodeOrThrow(editor.graph, rect.id).x).toBe(100)
+    expect(getNodeOrThrow(editor.graph, rect.id).y).toBe(200)
   })
 })

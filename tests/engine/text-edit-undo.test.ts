@@ -3,6 +3,8 @@ import { describe, test, expect } from 'bun:test'
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 
+import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+
 import type { StyleRun } from '@open-pencil/core'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
 import type { CanvasKit } from 'canvaskit-wasm'
@@ -59,19 +61,21 @@ describe('text edit undo', () => {
     expect(textEditor.isActive).toBe(true)
 
     textEditor.insert(' World', textNode)
-    graph.updateNode(textNode.id, { text: textEditor.state!.text })
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text
+    })
 
     actions.commitTextEdit()
 
     expect(undo.canUndo).toBe(true)
     expect(undo.undoLabel).toBe('Edit text')
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello World')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
 
     undo.undo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello')
 
     undo.redo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello World')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
   })
 
   test('commitTextEdit does not push undo when text unchanged', () => {
@@ -89,18 +93,22 @@ describe('text edit undo', () => {
     actions.startTextEditing(textNode.id)
 
     textEditor.insert(' Beautiful', textNode)
-    graph.updateNode(textNode.id, { text: textEditor.state!.text })
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text
+    })
 
     textEditor.insert(' World', textNode)
-    graph.updateNode(textNode.id, { text: textEditor.state!.text })
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text
+    })
 
     actions.commitTextEdit()
 
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello Beautiful World')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello Beautiful World')
     expect(undo.canUndo).toBe(true)
 
     undo.undo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello')
   })
 
   test('sequential edits create separate undo entries', () => {
@@ -108,21 +116,25 @@ describe('text edit undo', () => {
 
     actions.startTextEditing(textNode.id)
     textEditor.insert('!', textNode)
-    graph.updateNode(textNode.id, { text: textEditor.state!.text })
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text
+    })
     actions.commitTextEdit()
 
     actions.startTextEditing(textNode.id)
     textEditor.insert('!', textNode)
-    graph.updateNode(textNode.id, { text: textEditor.state!.text })
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text
+    })
     actions.commitTextEdit()
 
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello!!')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello!!')
 
     undo.undo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello!')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello!')
 
     undo.undo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello')
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello')
   })
 
   test('undo restores styleRuns when they changed during editing', () => {
@@ -138,20 +150,23 @@ describe('text edit undo', () => {
       { start: 0, length: 5, style: { fontWeight: 700 } },
       { start: 5, length: 6, style: { fontWeight: 400 } }
     ]
-    graph.updateNode(textNode.id, { text: textEditor.state!.text, styleRuns: newRuns })
+    graph.updateNode(textNode.id, {
+      text: expectDefined(textEditor.state, 'text editor state').text,
+      styleRuns: newRuns
+    })
 
     actions.commitTextEdit()
 
-    expect(graph.getNode(textNode.id)!.styleRuns).toEqual(newRuns)
+    expect(getNodeOrThrow(graph, textNode.id).styleRuns).toEqual(newRuns)
     expect(undo.canUndo).toBe(true)
 
     undo.undo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello')
-    expect(graph.getNode(textNode.id)!.styleRuns).toEqual([boldRun])
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello')
+    expect(getNodeOrThrow(graph, textNode.id).styleRuns).toEqual([boldRun])
 
     undo.redo()
-    expect(graph.getNode(textNode.id)!.text).toBe('Hello World')
-    expect(graph.getNode(textNode.id)!.styleRuns).toEqual(newRuns)
+    expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
+    expect(getNodeOrThrow(graph, textNode.id).styleRuns).toEqual(newRuns)
   })
 
   test('undo entry is pushed when only styleRuns changed', () => {
@@ -167,7 +182,7 @@ describe('text edit undo', () => {
     expect(undo.canUndo).toBe(true)
 
     undo.undo()
-    expect(graph.getNode(textNode.id)!.styleRuns).toEqual([])
+    expect(getNodeOrThrow(graph, textNode.id).styleRuns).toEqual([])
   })
 
   test('no undo entry when neither text nor styleRuns changed', () => {

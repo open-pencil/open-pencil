@@ -8,7 +8,7 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
-import type { UIMessage } from 'ai'
+import type { ChatTransport, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 
 type EditorStore = ReturnType<typeof getActiveEditorStore>
@@ -110,7 +110,7 @@ export function createToolLoopTransport({
     }
   })
 
-  return new DirectChatTransport({ agent })
+  return new DirectChatTransport({ agent }) as ChatTransport<UIMessage>
 }
 
 export function createChatSessionManager({
@@ -130,8 +130,7 @@ export function createChatSessionManager({
   let currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test-only mock transports don't implement full generics
-  let overrideTransport: (() => any) | null = null
+  let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
 
   function markTransportDirty() {
     transportDirty = true
@@ -143,7 +142,7 @@ export function createChatSessionManager({
     await acpTransportInstance?.destroy()
     const transport = await createACPTransport(providerID.value)
     acpTransportInstance = transport
-    return transport
+    return transport as ChatTransport<UIMessage>
   }
 
   function createTransport(store: EditorStore) {
@@ -174,7 +173,7 @@ export function createChatSessionManager({
 
     if (!chat || transportDirty || currentChatStore !== store) {
       const messages = currentChatMessages.get(store)
-      const transport = isACPProvider.value
+      const transport: ChatTransport<UIMessage> = isACPProvider.value
         ? await createActiveACPTransport()
         : createTransport(store)
       chat = new Chat<UIMessage>({ transport, messages })
@@ -191,7 +190,7 @@ export function createChatSessionManager({
     transportDirty = false
   }
 
-  function setOverrideTransport(factory: (() => unknown) | null) {
+  function setOverrideTransport(factory: (() => ChatTransport<UIMessage>) | null) {
     overrideTransport = factory
     markTransportDirty()
   }

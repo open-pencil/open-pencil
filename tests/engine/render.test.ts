@@ -19,6 +19,7 @@ import {
   node
 } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow, childIdAt } from '../helpers/assert'
 import { makeSceneGraph } from '../helpers/scene'
 
 describe('TreeNode builders', () => {
@@ -46,7 +47,7 @@ describe('TreeNode builders', () => {
       ]
     })
     expect(tree.children.length).toBe(2)
-    expect(isTreeNode(tree.children[0]!)).toBe(true)
+    expect(isTreeNode(expectDefined(tree.children[0], 'first tree child'))).toBe(true)
     const bg = tree.children[0] as ReturnType<typeof Rectangle>
     expect(bg.type).toBe('rectangle')
     expect(bg.props.name).toBe('Bg')
@@ -76,11 +77,11 @@ describe('renderTree', () => {
     expect(result.name).toBe('MyFrame')
     expect(result.type).toBe('FRAME')
 
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
     expect(node.width).toBe(200)
     expect(node.height).toBe(100)
     expect(node.fills.length).toBe(1)
-    expect(node.fills[0]!.type).toBe('SOLID')
+    expect(expectDefined(node.fills[0], 'first fill').type).toBe('SOLID')
   })
 
   it('renders text node with content', async () => {
@@ -94,7 +95,7 @@ describe('renderTree', () => {
     })
     const result = await renderTree(g, tree)
 
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
     expect(node.type).toBe('TEXT')
     expect(node.text).toBe('Hello')
     expect(node.fontSize).toBe(24)
@@ -119,14 +120,14 @@ describe('renderTree', () => {
     })
     const result = await renderTree(g, tree)
 
-    const card = g.nodes.get(result.id)!
+    const card = getNodeOrThrow(g, result.id)
     expect(card.layoutMode).toBe('VERTICAL')
     expect(card.itemSpacing).toBe(16)
     expect(card.paddingTop).toBe(24)
     expect(card.paddingRight).toBe(24)
     expect(card.childIds.length).toBe(3)
 
-    const title = g.nodes.get(card.childIds[1]!)!
+    const title = getNodeOrThrow(g, childIdAt(card, 1))
     expect(title.text).toBe('Card Title')
     expect(title.fontWeight).toBe(700)
   })
@@ -136,14 +137,14 @@ describe('renderTree', () => {
     const tree = Frame({ name: 'Positioned', w: 100, h: 100 })
     const result = await renderTree(g, tree, { x: 50, y: 75 })
 
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
     expect(node.x).toBe(50)
     expect(node.y).toBe(75)
   })
 
   it('renders into a specific parent', async () => {
     const g = makeSceneGraph()
-    const page = g.getPages()[0]!
+    const page = expectDefined(g.getPages()[0], 'first page')
     const container = g.createNode('FRAME', page.id, { name: 'Container' })
 
     const tree = Frame({ name: 'Child', w: 50, h: 50 })
@@ -163,7 +164,7 @@ describe('renderTree', () => {
       wrap: true
     })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.layoutMode).toBe('HORIZONTAL')
     expect(node.itemSpacing).toBe(8)
@@ -179,7 +180,7 @@ describe('renderTree', () => {
       Text({ size: 16, color: '#FFFFFF', children: '★' })
     )
     const result = await renderTree(g, tree)
-    const n = g.nodes.get(result.id)!
+    const n = getNodeOrThrow(g, result.id)
 
     expect(n.layoutMode).toBe('VERTICAL')
     expect(n.primaryAxisAlign).toBe('CENTER')
@@ -190,7 +191,7 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Padded', px: 16, py: 8, pt: 4 })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.paddingLeft).toBe(16)
     expect(node.paddingRight).toBe(16)
@@ -202,14 +203,14 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Rounded', rounded: 12 })
     const result = await renderTree(g, tree)
-    expect(g.nodes.get(result.id)!.cornerRadius).toBe(12)
+    expect(getNodeOrThrow(g, result.id).cornerRadius).toBe(12)
   })
 
   it('handles independent corners', async () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Corners', roundedTL: 8, roundedBR: 16 })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.independentCorners).toBe(true)
     expect(node.topLeftRadius).toBe(8)
@@ -220,17 +221,17 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     const tree = Rectangle({ name: 'Bordered', stroke: '#000', strokeWidth: 2 })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.strokes.length).toBe(1)
-    expect(node.strokes[0]!.weight).toBe(2)
+    expect(expectDefined(node.strokes[0], 'first stroke').weight).toBe(2)
   })
 
   it('handles opacity and rotation', async () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Transformed', opacity: 0.5, rotate: 45 })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.opacity).toBe(0.5)
     expect(node.rotation).toBe(45)
@@ -240,14 +241,14 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Clipped', overflow: 'hidden' })
     const result = await renderTree(g, tree)
-    expect(g.nodes.get(result.id)!.clipsContent).toBe(true)
+    expect(getNodeOrThrow(g, result.id).clipsContent).toBe(true)
   })
 
   it('handles hug sizing', async () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Hug', w: 'hug', h: 'hug', flex: 'col' })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.primaryAxisSizing).toBe('HUG')
     expect(node.counterAxisSizing).toBe('HUG')
@@ -257,7 +258,7 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Fill', w: 'fill' })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.layoutGrow).toBe(1)
   })
@@ -266,22 +267,22 @@ describe('renderTree', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Shadow', shadow: '0 4 12 rgba(0,0,0,0.1)' })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.effects.length).toBe(1)
-    expect(node.effects[0]!.type).toBe('DROP_SHADOW')
-    expect(node.effects[0]!.radius).toBe(12)
+    expect(expectDefined(node.effects[0], 'first effect').type).toBe('DROP_SHADOW')
+    expect(expectDefined(node.effects[0], 'first effect').radius).toBe(12)
   })
 
   it('handles blur effect', async () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Blurred', blur: 8 })
     const result = await renderTree(g, tree)
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.effects.length).toBe(1)
-    expect(node.effects[0]!.type).toBe('LAYER_BLUR')
-    expect(node.effects[0]!.radius).toBe(8)
+    expect(expectDefined(node.effects[0], 'first effect').type).toBe('LAYER_BLUR')
+    expect(expectDefined(node.effects[0], 'first effect').radius).toBe(8)
   })
 
   it('renders all primitive types', async () => {
@@ -298,7 +299,7 @@ describe('renderTree', () => {
     for (const { fn, expected } of types) {
       const tree = fn({ name: expected })
       const result = await renderTree(g, tree)
-      expect(g.nodes.get(result.id)!.type).toBe(expected)
+      expect(getNodeOrThrow(g, result.id).type).toBe(expected)
     }
   })
 
@@ -322,9 +323,9 @@ describe('renderTreeNode', () => {
     const result = await renderTreeNode(g, tree)
 
     expect(result.name).toBe('FromAI')
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
     expect(node.childIds.length).toBe(1)
-    const label = g.nodes.get(node.childIds[0]!)!
+    const label = getNodeOrThrow(g, childIdAt(node, 0))
     expect(label.text).toBe('Button')
   })
 })
@@ -340,11 +341,11 @@ describe('renderJSX (string → scene graph)', () => {
     const [result] = await renderJSX(g, jsx)
 
     expect(result.name).toBe('Test')
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
     expect(node.type).toBe('FRAME')
     expect(node.childIds.length).toBe(1)
 
-    const text = g.nodes.get(node.childIds[0]!)!
+    const text = getNodeOrThrow(g, childIdAt(node, 0))
     expect(text.text).toBe('World')
   })
 
@@ -358,7 +359,7 @@ describe('renderJSX (string → scene graph)', () => {
       </Frame>
     `
     const [result] = await renderJSX(g, jsx)
-    const card = g.nodes.get(result.id)!
+    const card = getNodeOrThrow(g, result.id)
 
     expect(card.layoutMode).toBe('VERTICAL')
     expect(card.childIds.length).toBe(3)
@@ -367,7 +368,7 @@ describe('renderJSX (string → scene graph)', () => {
   it('renders with position', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Frame name="At" w={50} h={50} />', { x: 100, y: 200 })
-    const node = g.nodes.get(result.id)!
+    const node = getNodeOrThrow(g, result.id)
 
     expect(node.x).toBe(100)
     expect(node.y).toBe(200)
@@ -384,7 +385,7 @@ describe('grid layout rendering', () => {
       Rectangle({ name: 'C', w: 50, h: 50 })
     )
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.layoutMode).toBe('GRID')
     expect(frame.gridTemplateColumns).toEqual([
@@ -398,7 +399,7 @@ describe('grid layout rendering', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 400, h: 200, grid: true, columns: '100 1fr 2fr' })
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.gridTemplateColumns).toEqual([
       { sizing: 'FIXED', value: 100 },
@@ -411,7 +412,7 @@ describe('grid layout rendering', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: 3 })
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.gridTemplateColumns).toEqual([
       { sizing: 'FR', value: 1 },
@@ -432,7 +433,7 @@ describe('grid layout rendering', () => {
       rowGap: 20
     })
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.gridColumnGap).toBe(10)
     expect(frame.gridRowGap).toBe(20)
@@ -442,7 +443,7 @@ describe('grid layout rendering', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr', gap: 16 })
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.gridColumnGap).toBe(16)
     expect(frame.gridRowGap).toBe(16)
@@ -452,7 +453,7 @@ describe('grid layout rendering', () => {
     const g = makeSceneGraph()
     const tree = Frame({ name: 'Grid', w: 300, h: 200, grid: true, columns: '1fr 1fr', p: 10 })
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.paddingTop).toBe(10)
     expect(frame.paddingRight).toBe(10)
@@ -471,7 +472,7 @@ describe('grid layout rendering', () => {
       rows: '100 1fr'
     })
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.gridTemplateRows).toEqual([
       { sizing: 'FIXED', value: 100 },
@@ -552,7 +553,7 @@ describe('grid layout rendering', () => {
       </Frame>
     `
     const [result] = await renderJSX(g, jsx)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
 
     expect(frame.layoutMode).toBe('GRID')
     expect(frame.gridTemplateColumns).toEqual([
@@ -578,11 +579,11 @@ describe('grid layout rendering', () => {
       Rectangle({ name: 'D', w: 50, h: 60 })
     )
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
     expect(frame.gridTemplateRows).toEqual([])
 
     computeLayout(g, result.id)
-    const updated = g.nodes.get(result.id)!
+    const updated = getNodeOrThrow(g, result.id)
     expect(updated.height).toBe(150)
   })
 
@@ -623,7 +624,7 @@ describe('grid layout rendering', () => {
       Rectangle({ name: 'B', w: 50, h: 50 })
     )
     const result = await renderTree(g, tree)
-    const frame = g.nodes.get(result.id)!
+    const frame = getNodeOrThrow(g, result.id)
     expect(frame.layoutMode).toBe('GRID')
   })
 
@@ -639,7 +640,10 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const grid = g.getChildren(result.id).find((c) => c.name === 'G')!
+    const grid = expectDefined(
+      g.getChildren(result.id).find((c) => c.name === 'G'),
+      'grid node'
+    )
     expect(grid.width).toBe(360)
     expect(grid.layoutMode).toBe('GRID')
   })
@@ -657,7 +661,10 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const grid = g.getChildren(result.id).find((c) => c.name === 'G')!
+    const grid = expectDefined(
+      g.getChildren(result.id).find((c) => c.name === 'G'),
+      'grid node'
+    )
     expect(grid.width).toBe(350)
   })
 
@@ -676,8 +683,14 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const content = g.getChildren(result.id).find((c) => c.name === 'Content')!
-    const grid = g.getChildren(content.id).find((c) => c.name === 'G')!
+    const content = expectDefined(
+      g.getChildren(result.id).find((c) => c.name === 'Content'),
+      'content node'
+    )
+    const grid = expectDefined(
+      g.getChildren(content.id).find((c) => c.name === 'G'),
+      'grid node'
+    )
     expect(content.width).toBe(780)
     expect(grid.width).toBe(724)
   })
@@ -695,7 +708,10 @@ describe('grid layout rendering', () => {
     `
     const [result] = await renderJSX(g, jsx)
     computeAllLayouts(g)
-    const grid = g.getChildren(result.id).find((c) => c.name === 'G')!
+    const grid = expectDefined(
+      g.getChildren(result.id).find((c) => c.name === 'G'),
+      'grid node'
+    )
     expect(grid.height).toBe(460)
   })
 })
@@ -704,7 +720,7 @@ describe('text props round-trip', () => {
   it('lineHeight renders and exports', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" lineHeight={24}>Hello</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.lineHeight).toBe(24)
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('lineHeight={24}')
@@ -713,7 +729,7 @@ describe('text props round-trip', () => {
   it('letterSpacing renders and exports', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" letterSpacing={2}>Spaced</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.letterSpacing).toBe(2)
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('letterSpacing={2}')
@@ -722,7 +738,7 @@ describe('text props round-trip', () => {
   it('textDecoration renders and exports', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" textDecoration="underline">Link</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.textDecoration).toBe('UNDERLINE')
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('textDecoration="underline"')
@@ -731,7 +747,7 @@ describe('text props round-trip', () => {
   it('textCase renders and exports', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" textCase="upper">label</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.textCase).toBe('UPPER')
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('textCase="upper"')
@@ -740,7 +756,7 @@ describe('text props round-trip', () => {
   it('maxLines renders with truncation', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" maxLines={2}>Long text here</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.maxLines).toBe(2)
     expect(n.textTruncation).toBe('ENDING')
     const jsx = sceneNodeToJSX(n.id, g)
@@ -750,7 +766,7 @@ describe('text props round-trip', () => {
   it('truncate without maxLines', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000" truncate>Overflow</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.textTruncation).toBe('ENDING')
     const jsx = sceneNodeToJSX(n.id, g)
     expect(jsx).toContain('truncate')
@@ -759,7 +775,7 @@ describe('text props round-trip', () => {
   it('defaults omit text props', async () => {
     const g = makeSceneGraph()
     const [result] = await renderJSX(g, '<Text color="#000">Plain</Text>')
-    const n = g.getNode(result.id)!
+    const n = getNodeOrThrow(g, result.id)
     expect(n.lineHeight).toBeNull()
     expect(n.letterSpacing).toBe(0)
     expect(n.textDecoration).toBe('NONE')
@@ -784,8 +800,8 @@ describe('text props round-trip', () => {
       </Frame>
     `
     )
-    const card = g.getNode(result.id)!
-    const title = g.getNode(card.childIds[0]!)!
+    const card = getNodeOrThrow(g, result.id)
+    const title = getNodeOrThrow(g, childIdAt(card, 0))
     expect(title.layoutAlignSelf).toBe('STRETCH')
     expect(title.textAutoResize).toBe('HEIGHT')
     const jsx = sceneNodeToJSX(title.id, g)
@@ -804,8 +820,8 @@ describe('text props round-trip', () => {
       </Frame>
     `
     )
-    const row = g.getNode(result.id)!
-    const value = g.getNode(row.childIds[1]!)!
+    const row = getNodeOrThrow(g, result.id)
+    const value = getNodeOrThrow(g, childIdAt(row, 1))
     expect(value.layoutGrow).toBe(1)
     const jsx = sceneNodeToJSX(value.id, g)
     expect(jsx).toContain('grow={1}')
