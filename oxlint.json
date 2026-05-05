@@ -169,8 +169,6 @@
         "no-empty-function": "off",
         "typescript/consistent-type-imports": "off",
         "open-pencil/no-inline-named-types": "off",
-        "no-console": "off",
-        "max-lines": "off",
         "complexity": "off"
       }
     },
@@ -201,6 +199,31 @@
       "files": ["packages/cli/src/commands/**"],
       "rules": {
         "open-pencil/no-raw-console-format": "error"
+      }
+    },
+    {
+      "files": [
+        "tests/e2e/perf/basic.spec.ts",
+        "tests/e2e/viewport/zoom-pan.spec.ts",
+        "tests/engine/visual-*.ts"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "tests/engine/editor/clipboard/import-nodes.test.ts",
+        "tests/engine/fig/import/legacy.test.ts",
+        "tests/engine/figma/api.test.ts",
+        "tests/engine/kiwi/serialize-fixes.test.ts",
+        "tests/engine/layout/auto-layout.test.ts",
+        "tests/engine/render/canvas/effects.test.ts",
+        "tests/engine/scene-graph/basic.test.ts",
+        "tests/engine/svg/export.test.ts"
+      ],
+      "rules": {
+        "max-lines": "off"
       }
     },
     {
