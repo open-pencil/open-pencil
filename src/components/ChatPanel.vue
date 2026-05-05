@@ -63,13 +63,6 @@ function scrollToBottom() {
 }
 
 watch(messages, scrollToBottom, { deep: true })
-watch(status, (s) => {
-  if (s === 'error') {
-    const err = chat.value?.error
-    const errMsg = err instanceof Error ? err.message : 'AI request failed'
-    toast.error(errMsg)
-  }
-})
 watch(
   () => chat.value?.error,
   (error) => {

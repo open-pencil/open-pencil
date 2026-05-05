@@ -25,8 +25,9 @@ export const CANVAS_BG_COLOR_DARK = { r: 0.173, g: 0.173, b: 0.173, a: 1 } satis
  */
 export function getDefaultCanvasBgColor(): Color {
   if (IS_BROWSER) {
+    const env = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env
     const params = new URLSearchParams(window.location.search)
-    if (params.has('test')) {
+    if (env?.DEV === true && params.has('test')) {
       return CANVAS_BG_COLOR
     }
   }
