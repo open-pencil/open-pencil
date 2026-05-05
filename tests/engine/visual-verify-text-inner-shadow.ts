@@ -5,20 +5,20 @@ import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { renderNodesToImage } from '#core/io/formats/raster'
 import { SceneGraph } from '#core/scene-graph'
-import { initFontService, markFontLoaded } from '#core/text'
+import { fontManager } from '#core/text'
 
 async function main() {
   const ck = await initCanvasKit()
 
   // Initialize font service
   const fontProvider = ck.TypefaceFontProvider.Make()
-  initFontService(ck, fontProvider)
+  fontManager.attachProvider(ck, fontProvider)
 
   // Load Inter font from public dir
   const fontPath = join(process.cwd(), 'public/Inter-SemiBold.ttf')
   console.log('Loading font from:', fontPath)
   const fontData = await readFile(fontPath)
-  markFontLoaded(
+  fontManager.markLoaded(
     'Inter',
     'SemiBold',
     fontData.buffer.slice(fontData.byteOffset, fontData.byteOffset + fontData.byteLength)

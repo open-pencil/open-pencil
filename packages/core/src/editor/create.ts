@@ -4,7 +4,7 @@ import { setTextMeasurer } from '#core/layout'
 import { SceneGraph } from '#core/scene-graph'
 import { UndoManager } from '#core/scene-graph/undo'
 import { TextEditor } from '#core/text/editor'
-import { loadFont as defaultLoadFont } from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 
 import { createAlignmentActions } from './alignment'
 import { createClipboardBridge } from './bridges/clipboard'
@@ -39,7 +39,7 @@ export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
   const undo = new UndoManager()
-  const _loadFont = options?.loadFont ?? defaultLoadFont
+  const _loadFont = options?.loadFont ?? fontManager.loadFont.bind(fontManager)
   const _getViewportSize =
     options?.getViewportSize ??
     (() => {

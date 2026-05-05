@@ -1,6 +1,6 @@
 import * as OpenTypeSync from 'opentype.js'
 
-import { getLoadedFontData } from './fonts'
+import { fontManager } from './fonts'
 
 interface OutlineCommand {
   type: string
@@ -48,7 +48,7 @@ function getParsedFont(family: string, style: string): OutlineFont | null {
   const key = `${family}|${style}`
   const cached = parsedFontCache.get(key)
   if (cached) return cached
-  const bytes = getLoadedFontData(family, style)
+  const bytes = fontManager.loadedData(family, style)
   if (!bytes) return null
   const font = (OpenTypeSync as OpenTypeModule).parse(bytes.slice(0))
   parsedFontCache.set(key, font)
@@ -112,7 +112,7 @@ export async function probeGlyphOutlineCommands(
   text: string,
   fontSize: number
 ): Promise<GlyphOutlineProbe | null> {
-  const bytes = getLoadedFontData(family, style)
+  const bytes = fontManager.loadedData(family, style)
   if (!bytes) return null
 
   const font = (OpenTypeSync as OpenTypeModule).parse(bytes.slice(0))

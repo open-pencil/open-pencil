@@ -2,12 +2,7 @@ import { describe, test, expect, mock } from 'bun:test'
 
 import { initCanvasKit } from '#cli/headless'
 import { renderText } from '#core/canvas/scene'
-import {
-  initFontService,
-  setArabicFallbackFamily,
-  setCJKFallbackFamily,
-  markFontLoaded
-} from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 
 import { SceneGraph, SkiaRenderer as SkiaRendererClass } from '@open-pencil/core'
 import { detectTextDirection, resolveTextDirection } from '@open-pencil/core'
@@ -131,17 +126,17 @@ describe('renderText headless visual', () => {
   test('renders CJK text via fallback font through paragraph shaper', async () => {
     const ck = await initCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
-    initFontService(ck, fontProvider)
+    fontManager.attachProvider(ck, fontProvider)
 
     const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
-    markFontLoaded('Inter', 'Regular', interData)
+    fontManager.markLoaded('Inter', 'Regular', interData)
 
     const notoPath = new URL('../../tests/fixtures/fonts/NotoSansSC-Regular.ttf', import.meta.url)
       .pathname
     const notoData = await Bun.file(notoPath).arrayBuffer()
     fontProvider.registerFont(notoData, 'Noto Sans SC')
-    setCJKFallbackFamily('Noto Sans SC')
+    fontManager.setCJKFallbackFamily('Noto Sans SC')
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -199,17 +194,17 @@ describe('renderText headless visual', () => {
   test('renders Arabic text via fallback font through paragraph shaper', async () => {
     const ck = await initCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
-    initFontService(ck, fontProvider)
+    fontManager.attachProvider(ck, fontProvider)
 
     const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
     fontProvider.registerFont(interData, 'Inter')
-    markFontLoaded('Inter', 'Regular', interData)
+    fontManager.markLoaded('Inter', 'Regular', interData)
 
     const arabicPath = new URL('../fixtures/fonts/NotoNaskhArabic-Regular.ttf', import.meta.url)
       .pathname
     const arabicData = await Bun.file(arabicPath).arrayBuffer()
     fontProvider.registerFont(arabicData, 'Noto Naskh Arabic')
-    setArabicFallbackFamily('Noto Naskh Arabic')
+    fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

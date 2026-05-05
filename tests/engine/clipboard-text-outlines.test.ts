@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { fetchBundledFont, markFontLoaded, probeGlyphOutlineCommands } from '@open-pencil/core'
+import { fontManager, probeGlyphOutlineCommands } from '@open-pencil/core'
 
 describe('clipboard text outline probe', () => {
   test('lazy-loads opentype.js and extracts glyph commands from a loaded font', async () => {
-    const font = await fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
     expect(font).toBeTruthy()
     if (!font) return
 
-    markFontLoaded('Inter', 'Regular', font)
+    fontManager.markLoaded('Inter', 'Regular', font)
 
     const probe = await probeGlyphOutlineCommands('Inter', 'Regular', 'Hello', 16)
     expect(probe).toBeTruthy()

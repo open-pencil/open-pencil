@@ -6,6 +6,7 @@ import {
   SECTION_TITLE_FONT_SIZE,
   SIZE_FONT_SIZE
 } from '#core/constants'
+import { fontManager } from '#core/text/fonts'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph } from '#core/scene-graph'
@@ -19,12 +20,9 @@ export async function loadFonts(r: SkiaRenderer): Promise<void> {
   r.fontProvider?.delete()
   r.fontProvider = r.ck.TypefaceFontProvider.Make()
 
-  const { initFontService, loadFont, ensureArabicFallback, ensureCJKFallback } =
-    await import('#core/text/fonts')
-  if (r.isDestroyed()) return
-  initFontService(r.ck, r.fontProvider)
+  fontManager.attachProvider(r.ck, r.fontProvider)
 
-  const fontData = await loadFont(DEFAULT_FONT_FAMILY, 'Regular')
+  const fontData = await fontManager.loadFont(DEFAULT_FONT_FAMILY, 'Regular')
   if (r.isDestroyed()) return
   if (fontData) {
     r.fontProvider.registerFont(fontData, DEFAULT_FONT_FAMILY)
@@ -48,10 +46,10 @@ export async function loadFonts(r: SkiaRenderer): Promise<void> {
   r.fontsLoaded = true
   r.invalidateAllPictures()
 
-  void ensureCJKFallback().then((families) => {
+  void fontManager.ensureCJKFallback().then((families) => {
     if (!r.isDestroyed() && families.length > 0) r.invalidateAllPictures()
   })
-  void ensureArabicFallback().then((families) => {
+  void fontManager.ensureArabicFallback().then((families) => {
     if (!r.isDestroyed() && families.length > 0) r.invalidateAllPictures()
   })
 }
@@ -62,14 +60,13 @@ export async function prepareForExport(
   pageId: string,
   nodeIds: string[]
 ): Promise<() => void> {
-  const { collectFontKeys, loadFont } = await import('#core/text/fonts')
   const { getTextMeasurer, setTextMeasurer, computeAllLayouts } = await import('#core/layout')
 
   const previousTextMeasurer = getTextMeasurer()
   setTextMeasurer((node, maxWidth) => r.measureTextNode(node, maxWidth))
 
-  const fontKeys = collectFontKeys(graph, nodeIds)
-  await Promise.all(fontKeys.map(([family, style]) => loadFont(family, style)))
+  const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
+  await Promise.all(fontKeys.map(([family, style]) => fontManager.loadFont(family, style)))
 
   computeAllLayouts(graph, pageId)
 

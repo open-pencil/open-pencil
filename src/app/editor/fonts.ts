@@ -1,5 +1,5 @@
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { loadFont as loadFontCore, markFontLoaded, styleToWeight } from '@open-pencil/core/text'
+import { fontManager, styleToWeight } from '@open-pencil/core/text'
 
 interface TauriFontFamily {
   family: string
@@ -7,7 +7,6 @@ interface TauriFontFamily {
 }
 
 let tauriFontsCache: TauriFontFamily[] | null = null
-
 let tauriFontsPromise: Promise<TauriFontFamily[]> | null = null
 
 async function getTauriFonts(): Promise<TauriFontFamily[]> {
@@ -43,9 +42,7 @@ export async function listFamilies(): Promise<string[]> {
     const fonts = await getTauriFonts()
     return fonts.map((f) => f.family)
   }
-
-  const { listFamilies: coreList } = await import('@open-pencil/core/text')
-  return coreList()
+  return fontManager.listFamilies()
 }
 
 export async function listFonts(): Promise<TauriFontFamily[]> {
@@ -62,7 +59,7 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
       const data = await invoke<number[]>('load_system_font', { family, style })
       const buffer = new Uint8Array(data).buffer
 
-      markFontLoaded(family, style, buffer)
+      fontManager.markLoaded(family, style, buffer)
 
       const weight = styleToWeight(style)
       const italic = style.toLowerCase().includes('italic') ? 'italic' : 'normal'
@@ -72,9 +69,9 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
 
       return buffer
     } catch {
-      return loadFontCore(family, style)
+      return fontManager.loadFont(family, style)
     }
   }
 
-  return loadFontCore(family, style)
+  return fontManager.loadFont(family, style)
 }

@@ -18,7 +18,7 @@ import { join } from 'node:path'
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { SceneGraph } from '#core/scene-graph'
-import { initFontService, markFontLoaded } from '#core/text'
+import { fontManager } from '#core/text'
 
 // === CLAIM EXTRACTION ===
 // Each claim is: [doc_section, claim_text, verification_strategy]
@@ -341,13 +341,13 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
   beforeAll(async () => {
     ck = await initCanvasKit()
     const fontProvider = ck.TypefaceFontProvider.Make()
-    initFontService(ck, fontProvider)
+    fontManager.attachProvider(ck, fontProvider)
 
     // Load Inter font for text tests
     const fontPath = join(import.meta.dir, '../../public/Inter-SemiBold.ttf')
     try {
       const fontData = readFileSync(fontPath)
-      markFontLoaded(
+      fontManager.markLoaded(
         'Inter',
         'SemiBold',
         fontData.buffer.slice(fontData.byteOffset, fontData.byteOffset + fontData.byteLength)

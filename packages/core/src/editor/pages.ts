@@ -1,5 +1,5 @@
 import { computeAllLayouts } from '#core/layout'
-import { collectFontKeys } from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 
 import { createPageViewportStore } from './page-viewports'
 
@@ -21,7 +21,7 @@ export function createPageActions(ctx: EditorContext) {
 
     pageViewportStore.restorePageViewport(pageId)
 
-    const toLoad = collectFontKeys(
+    const toLoad = fontManager.collectFontKeys(
       ctx.graph,
       ctx.graph.getChildren(pageId).map((n) => n.id)
     )
