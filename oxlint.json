@@ -158,7 +158,8 @@
     "open-pencil/component-namespace-pascal-case": "error",
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
-    "open-pencil/no-flat-kiwi-modules": "error"
+    "open-pencil/no-flat-kiwi-modules": "error",
+    "open-pencil/no-top-level-prefixed-test-files": "error"
   },
   "overrides": [
     {
@@ -218,17 +219,23 @@
       "files": [
         "tests/engine/copy.test.ts",
         "tests/engine/editor/selection/**/*.test.ts",
-        "tests/engine/fig/**/*.test.ts",
-        "tests/engine/font-normalize-export.test.ts",
+        "tests/engine/fig/export/text.test.ts",
+        "tests/engine/fig/heavy/fixtures.test.ts",
+        "tests/engine/fig/import/basic.test.ts",
+        "tests/engine/fig/import/edge-cases.test.ts",
+        "tests/engine/fig/import/instance-regressions.test.ts",
+        "tests/engine/fig/import/property-integrity.test.ts",
+        "tests/engine/fig/roundtrip/basic.test.ts",
+        "tests/engine/fig/roundtrip/variables.test.ts",
+        "tests/engine/fonts/normalize-export.test.ts",
         "tests/engine/matrix.test.ts",
-        "tests/engine/mcp-stdio.test.ts",
-        "tests/engine/nudge.test.ts",
-        "tests/engine/okhcl-toggle-conversion.test.ts",
-        "tests/engine/okhcl-ui-logic.test.ts",
-        "tests/engine/plugin-data.test.ts",
-        "tests/engine/render-cache.test.ts",
+        "tests/engine/mcp/stdio.test.ts",
+        "tests/engine/editor/nudge.test.ts",
+        "tests/engine/color/okhcl/**/*.test.ts",
+        "tests/engine/scene-graph/plugin-data.test.ts",
+        "tests/engine/render/canvas/cache.test.ts",
         "tests/engine/render/jsx/**/*.test.ts",
-        "tests/engine/text-edit-undo.test.ts"
+        "tests/engine/text/edit-undo.test.ts"
       ],
       "rules": {
         "typescript/no-non-null-assertion": "error"

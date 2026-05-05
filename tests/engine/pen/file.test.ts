@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test'
-import { join } from 'node:path'
+
+import { repoPath } from '#tests/helpers/paths'
 
 import { parsePenFile } from '@open-pencil/core'
 
-const FIXTURE_DIR = join(import.meta.dir, '..', 'fixtures')
+const FIXTURE_DIR = repoPath('tests/fixtures')
 
 async function loadFixture(name: string): Promise<string> {
-  return Bun.file(join(FIXTURE_DIR, name)).text()
+  return Bun.file(`${FIXTURE_DIR}/${name}`).text()
 }
 
 describe('parsePenFile', () => {

@@ -18,7 +18,12 @@ import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
-import { cliSourcePath, coreSourcePath, publicPath, testPath } from '#tests/helpers/paths'
+import {
+  cliSourcePath,
+  coreSourcePath,
+  publicPath,
+  testPath as repoTestPath
+} from '#tests/helpers/paths'
 
 // === CLAIM EXTRACTION ===
 // Each claim is: [doc_section, claim_text, verification_strategy]
@@ -290,8 +295,8 @@ describe('Doc 02 — Formula Deconstruction: Static Code Claims', () => {
 
 describe('Doc 03 — Artifact Analysis: Static + Runtime Verification', () => {
   test('C03-01: visual-inner-shadow-counter.ts exists and checks for right-edge shadow', () => {
-    const testPath = testPath('engine/visual-inner-shadow-counter.ts')
-    const src = readFileSync(testPath, 'utf-8')
+    const visualTestPath = repoTestPath('engine/visual-inner-shadow-counter.ts')
+    const src = readFileSync(visualTestPath, 'utf-8')
     expect(src).toContain('hasShadowOnRightInnerEdge')
     expect(src).toContain("t.color === 'black'")
   })

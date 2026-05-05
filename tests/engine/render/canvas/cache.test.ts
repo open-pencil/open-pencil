@@ -1,9 +1,9 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'fs'
-import { resolve } from 'path'
 
 import { initCanvasKit } from '#cli/headless'
 import { expectDefined } from '#tests/helpers/assert'
+import { repoPath } from '#tests/helpers/paths'
 
 import {
   computeAllLayouts,
@@ -22,7 +22,7 @@ let ck: Awaited<ReturnType<typeof initCanvasKit>>
 beforeAll(async () => {
   ck = await initCanvasKit()
   await initCodec()
-  const buf = readFileSync(resolve(import.meta.dir, '../fixtures/gold-preview.fig'))
+  const buf = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
   graph = await parseFigFile(buf.buffer as ArrayBuffer)
   computeAllLayouts(graph)
   const preview = [...graph.getAllNodes()].find((node) => node.name === 'Preview Thumbnail')

@@ -303,8 +303,7 @@ describe('renderText headless visual', () => {
     fontProvider.registerFont(interData, 'Inter')
     fontManager.markLoaded('Inter', 'Regular', interData)
 
-    const arabicPath = new URL('../fixtures/fonts/NotoNaskhArabic-Regular.ttf', import.meta.url)
-      .pathname
+    const arabicPath = repoPath('tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf')
     const arabicData = await Bun.file(arabicPath).arrayBuffer()
     fontProvider.registerFont(arabicData, 'Noto Naskh Arabic')
     fontManager.setArabicFallbackFamily('Noto Naskh Arabic')

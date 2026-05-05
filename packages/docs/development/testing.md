@@ -2,11 +2,11 @@
 
 ## Overview
 
-| Type | Framework | Command | Location |
-|------|-----------|---------|----------|
-| E2E visual regression | Playwright | `bun run test` | `tests/e2e/` |
-| Figma CDP reference | Playwright | `bun run test:figma` | `tests/figma/` |
-| Unit tests | bun:test | `bun run test:unit` | `tests/engine/` |
+| Type                  | Framework  | Command              | Location        |
+| --------------------- | ---------- | -------------------- | --------------- |
+| E2E visual regression | Playwright | `bun run test`       | `tests/e2e/`    |
+| Figma CDP reference   | Playwright | `bun run test:figma` | `tests/figma/`  |
+| Unit tests            | bun:test   | `bun run test:unit`  | `tests/engine/` |
 
 ## E2E Visual Regression
 
@@ -49,9 +49,10 @@ bun run test:unit
 ```
 
 Tests cover:
+
 - Scene graph CRUD operations, parent-child relationships, z-ordering, hit testing
-- **Fig-import pipeline** — node type mapping, transforms, fills/strokes/effects, gradients, images, arcs, nested hierarchies (`tests/engine/fig-import.test.ts`)
-- **Layout computation** — Yoga auto-layout: direction, gap, padding, justify, align, child sizing (fixed/fill/hug), cross-axis sizing, wrap, nested layouts (`tests/engine/layout.test.ts`)
+- **Fig-import pipeline** — node type mapping, transforms, fills/strokes/effects, gradients, images, arcs, nested hierarchies (`tests/engine/fig/import/legacy.test.ts`)
+- **Layout computation** — Yoga auto-layout: direction, gap, padding, justify, align, child sizing (fixed/fill/hug), cross-axis sizing, wrap, nested layouts (`tests/engine/layout/`)
 
 ### Writing Unit Tests
 
@@ -70,22 +71,22 @@ describe('SceneGraph', () => {
 
 ## E2E Test Coverage
 
-| Test file | Scope |
-|-----------|-------|
+| Test file                        | Scope                                                           |
+| -------------------------------- | --------------------------------------------------------------- |
 | `tests/e2e/layers-panel.spec.ts` | Layers panel tree structure, visibility toggles, selection sync |
-| `tests/e2e/visual.spec.ts` | Visual regression screenshots for shapes and rendering |
+| `tests/e2e/visual.spec.ts`       | Visual regression screenshots for shapes and rendering          |
 
 ## Test Helpers
 
-| File | Purpose |
-|------|---------|
+| File                      | Purpose                                |
+| ------------------------- | -------------------------------------- |
 | `tests/helpers/canvas.ts` | Canvas setup and interaction utilities |
-| `tests/helpers/figma.ts` | Figma CDP connection helpers |
+| `tests/helpers/figma.ts`  | Figma CDP connection helpers           |
 
 ## Performance Targets
 
-| Metric | Target |
-|--------|--------|
-| E2E suite total | < 3s |
-| Unit test suite total | < 50ms |
+| Metric                | Target                        |
+| --------------------- | ----------------------------- |
+| E2E suite total       | < 3s                          |
+| Unit test suite total | < 50ms                        |
 | Screenshot comparison | toMatchSnapshot (pixel-level) |

@@ -1340,6 +1340,28 @@ const noFunctionAliasImports = {
   }
 }
 
+const noTopLevelPrefixedTestFiles = {
+  meta: {
+    docs: {
+      description: 'Disallow top-level test files that encode domains as filename prefixes'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    const match = file.match(/\/tests\/(engine|e2e)\/([^/]+-[^/]+\.(?:test|spec)\.ts)$/)
+    if (!match) return {}
+
+    return {
+      Program(node) {
+        context.report({
+          node,
+          message: `Move '${match[2]}' under a domain folder instead of encoding the domain as a filename prefix.`
+        })
+      }
+    }
+  }
+}
+
 const noFlatKiwiModules = {
   meta: {
     docs: {
@@ -1418,7 +1440,8 @@ const plugin = {
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
     'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,
     'no-function-alias-imports': noFunctionAliasImports,
-    'no-flat-kiwi-modules': noFlatKiwiModules
+    'no-flat-kiwi-modules': noFlatKiwiModules,
+    'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles
   }
 }
 
