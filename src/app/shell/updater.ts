@@ -1,7 +1,7 @@
 import { promiseTimeout } from '@vueuse/core'
 
 import { toast } from '@/app/shell/ui'
-import { IS_TAURI } from '@/constants'
+import { isTauri } from '@/app/tauri/env'
 
 import type { Ref } from 'vue'
 
@@ -28,7 +28,7 @@ let startupCheckStarted = false
 let updateCheckInFlight: Promise<void> | null = null
 
 export async function checkForAppUpdate(options: UpdateCheckOptions) {
-  if (!IS_TAURI) return
+  if (!isTauri()) return
   if (updateCheckInFlight) return updateCheckInFlight
 
   const { silent = false, messages } = options
@@ -39,7 +39,7 @@ export async function checkForAppUpdate(options: UpdateCheckOptions) {
 }
 
 export function scheduleStartupUpdateCheck(messages: Ref<UpdaterMessages>) {
-  if (startupCheckStarted || !IS_TAURI) return
+  if (startupCheckStarted || !isTauri()) return
   startupCheckStarted = true
   void promiseTimeout(STARTUP_UPDATE_CHECK_DELAY_MS).then(() =>
     checkForAppUpdate({ silent: true, messages })
