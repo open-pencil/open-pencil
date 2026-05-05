@@ -3,8 +3,8 @@ import { join } from 'node:path'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
-import { SceneGraph } from '#core/scene-graph'
 import type { SceneNode } from '#core/scene-graph'
+import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
 async function main() {
@@ -53,8 +53,7 @@ async function main() {
     ]
   } satisfies Partial<SceneNode>
 
-  const textNode = graph.createNode('TEXT', pageId, textProps)
-  const nodeId = textNode.id
+  graph.createNode('TEXT', pageId, textProps)
 
   const surface = ck.MakeSurface(width, height)!
   const canvas = surface.getCanvas()

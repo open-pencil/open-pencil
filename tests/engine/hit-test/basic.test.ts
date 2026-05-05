@@ -139,7 +139,6 @@ describe('hitTest — opacity', () => {
 describe('hitTest — point outside all nodes', () => {
   test('returns null for empty area', () => {
     const graph = new SceneGraph()
-    const page = pageId(graph)
 
     const hit = graph.hitTest(500, 500)
     expect(hit).toBeNull()

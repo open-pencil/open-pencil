@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { getNodeOrThrow } from '#tests/helpers/assert'
 import { createRect, firstPageId } from '#tests/helpers/scene'
 
 describe('single-node alignment to parent', () => {
@@ -26,7 +26,7 @@ describe('single-node alignment to parent', () => {
   }
 
   test('align left within parent', () => {
-    const { graph, frame, child } = setup()
+    const { graph, child } = setup()
     graph.updateNode(child.id, { x: 0 })
     expect(getNodeOrThrow(graph, child.id).x).toBe(0)
   })
@@ -80,7 +80,7 @@ describe('multi-node alignment', () => {
     const { graph, a, b, c } = setup()
     const nodes = [a, b, c].map((n) => getNodeOrThrow(graph, n.id))
     const abs = nodes.map((n) => graph.getAbsolutePosition(n.id))
-    const minX = Math.min(...abs.map((p, i) => p.x))
+    const minX = Math.min(...abs.map((p) => p.x))
 
     for (const n of nodes) {
       const nodeAbs = graph.getAbsolutePosition(n.id)

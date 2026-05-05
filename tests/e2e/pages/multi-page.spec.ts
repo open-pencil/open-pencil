@@ -134,7 +134,6 @@ test('delete current page switches to adjacent', async () => {
 })
 
 test('rename page via store', async () => {
-  const pages = await getPages()
   const currentId = await getCurrentPageId()
 
   await page.evaluate(

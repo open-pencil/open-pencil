@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts } from '@open-pencil/core'
 
-import { ALL_TOOLS, getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
+import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('set_fill', () => {
   test('sets solid fill', () => {

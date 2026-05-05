@@ -1,15 +1,15 @@
-import { describe, test, expect } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
 import {
-  getStyleAt,
+  adjustRunsForDelete,
+  adjustRunsForInsert,
   applyStyleToRange,
+  getStyleAt,
   removeStyleFromRange,
   selectionHasStyle,
-  adjustRunsForInsert,
-  adjustRunsForDelete,
   toggleBoldInRange,
-  toggleItalicInRange,
   toggleDecorationInRange,
+  toggleItalicInRange,
   type StyleRun
 } from '@open-pencil/core'
 
@@ -124,7 +124,7 @@ describe('toggleBoldInRange', () => {
 
   test('bold to non-bold', () => {
     const existing: StyleRun[] = [{ start: 0, length: 5, style: { fontWeight: 700 } }]
-    const { runs, newWeight } = toggleBoldInRange(existing, 0, 5, 400, 10)
+    const { newWeight } = toggleBoldInRange(existing, 0, 5, 400, 10)
     expect(newWeight).toBe(400)
   })
 })

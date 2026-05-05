@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { getNodeOrThrow } from '#tests/helpers/assert'
 import { createRect, firstPageId } from '#tests/helpers/scene'
 
 describe('multi-node property merging', () => {

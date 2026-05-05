@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -140,7 +140,6 @@ test('grouping updates layers', async () => {
   await canvas.drawRect(800, 600, 60, 60)
   await canvas.selectAll()
 
-  const beforeCount = await getSelectedCount()
   await page.keyboard.press('Meta+g')
   await canvas.waitForRender()
 

@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
 
@@ -28,7 +28,7 @@ describe('hitTest — group behavior', () => {
   }
 
   test('single click on child returns GROUP (not child)', () => {
-    const { graph, page, child } = setup()
+    const { graph, page } = setup()
     const hit = graph.hitTest(110, 110, page)
     expect(hit).not.toBeNull()
     expect(hit!.type).toBe('GROUP')

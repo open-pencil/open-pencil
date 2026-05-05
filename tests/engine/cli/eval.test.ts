@@ -1,4 +1,4 @@
-import { describe, expect, test, setDefaultTimeout } from 'bun:test'
+import { expect, setDefaultTimeout, test } from 'bun:test'
 import { randomUUID } from 'crypto'
 import { tmpdir } from 'os'
 import { join } from 'path'

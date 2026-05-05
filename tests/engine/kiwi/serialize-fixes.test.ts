@@ -1,11 +1,11 @@
-import { describe, test, expect, beforeAll } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'bun:test'
 
 import {
-  SceneGraph,
-  sceneNodeToKiwi,
   exportFigFile,
+  initCodec,
   parseFigFile,
-  initCodec
+  SceneGraph,
+  sceneNodeToKiwi
 } from '@open-pencil/core'
 
 beforeAll(async () => {
@@ -44,7 +44,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       paddingRight: 16
     })
 
-    const child = graph.createNode('FRAME', parent.id, {
+    graph.createNode('FRAME', parent.id, {
       name: 'Child',
       x: 50,
       y: 100,
@@ -82,7 +82,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       itemSpacing: 8
     })
 
-    const absChild = graph.createNode('FRAME', parent.id, {
+    graph.createNode('FRAME', parent.id, {
       name: 'AbsChild',
       x: 75,
       y: 120,
@@ -118,7 +118,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       // layoutMode defaults to 'NONE'
     })
 
-    const child = graph.createNode('FRAME', parent.id, {
+    graph.createNode('FRAME', parent.id, {
       name: 'Child',
       x: 30,
       y: 45,
@@ -591,7 +591,7 @@ describe('Directionality plugin fallback', () => {
       width: 240,
       height: 80
     })
-    const text = graph.createNode('TEXT', frame.id, {
+    graph.createNode('TEXT', frame.id, {
       text: 'مرحبا',
       textDirection: 'RTL',
       width: 120,

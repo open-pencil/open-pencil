@@ -1,5 +1,4 @@
-import { describe, expect, test, setDefaultTimeout } from 'bun:test'
-import { join } from 'path'
+import { expect, setDefaultTimeout, test } from 'bun:test'
 
 import { cliSourcePath, repoPath } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'

@@ -39,7 +39,7 @@ describe('AI adapter', () => {
 
   test('each tool has description and execute', () => {
     const { tools } = setup()
-    for (const [name, t] of Object.entries(tools)) {
+    for (const t of Object.values(tools)) {
       const aiTool = t as AdapterTool
       expect(aiTool.description).toBeTruthy()
       expect(typeof aiTool.execute).toBe('function')

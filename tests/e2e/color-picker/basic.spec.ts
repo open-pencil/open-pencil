@@ -18,13 +18,6 @@ test.afterAll(async () => {
   await page.close()
 })
 
-async function getSelectedId() {
-  return page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
-    return [...store.state.selectedIds][0] ?? null
-  })
-}
-
 async function getSelectedFill() {
   return page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!

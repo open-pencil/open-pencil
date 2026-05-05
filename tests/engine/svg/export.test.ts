@@ -2,11 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   SceneGraph,
-  renderNodesToSVG,
   geometryBlobToSVGPath,
-  vectorNetworkToSVGPaths,
+  renderNodesToSVG,
+  renderSVGNode,
   svg,
-  renderSVGNode
+  vectorNetworkToSVGPaths
 } from '@open-pencil/core'
 
 function makeGraph() {
@@ -69,16 +69,6 @@ describe('svg() and renderSVGNode()', () => {
 // --- geometryBlobToSVGPath tests ---
 
 describe('geometryBlobToSVGPath()', () => {
-  function makeBlob(commands: number[]): Uint8Array {
-    const buf = new ArrayBuffer(commands.length)
-    const view = new DataView(buf)
-    let o = 0
-    for (const cmd of commands) {
-      view.setUint8(o++, cmd)
-    }
-    return new Uint8Array(buf)
-  }
-
   function makeBlobWithFloats(ops: Array<{ cmd: number; floats?: number[] }>): Uint8Array {
     let size = 0
     for (const op of ops) {

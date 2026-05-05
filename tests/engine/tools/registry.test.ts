@@ -19,7 +19,7 @@ describe('tool definitions', () => {
 
   test('required params are marked', () => {
     for (const t of ALL_TOOLS) {
-      for (const [key, param] of Object.entries(t.params)) {
+      for (const param of Object.values(t.params)) {
         expect(typeof param.type).toBe('string')
         expect(typeof param.description).toBe('string')
       }

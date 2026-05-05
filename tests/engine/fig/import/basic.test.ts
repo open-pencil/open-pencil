@@ -1,34 +1,8 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import {
-  parseFigFile,
-  computeAllLayouts,
-  exportFigFile,
-  importNodeChanges,
-  initCodec,
-  SceneGraph,
-  FigmaAPI,
-  type SceneNode,
-  type Fill
-} from '@open-pencil/core'
+import { SceneGraph, type SceneNode } from '@open-pencil/core'
 
-import { computeContentBounds } from '#core/io/formats/raster/render'
-
-import { expectDefined } from '#tests/helpers/assert'
-import {
-  FIXTURES,
-  parseFixture,
-  parseGoldPreviewFixture,
-  VALID_NODE_TYPES
-} from '#tests/helpers/fig-fixtures'
-import {
-  childMatching,
-  childNamed,
-  collectAllNodes,
-  countByType,
-  previewChild
-} from '#tests/helpers/fig-traversal'
-import { heavy } from '#tests/helpers/test-utils'
+import { parseGoldPreviewFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
 
 setDefaultTimeout(60_000)
 

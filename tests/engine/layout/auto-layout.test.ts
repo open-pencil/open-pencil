@@ -1,10 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  computeLayout,
   computeAllLayouts,
+  computeLayout,
   createEditor,
-  FigmaAPI,
   SceneGraph,
   setTextMeasurer
 } from '@open-pencil/core'

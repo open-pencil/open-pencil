@@ -19,12 +19,7 @@ import { SkiaRenderer } from '#core/canvas'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
-import {
-  cliSourcePath,
-  coreSourcePath,
-  publicPath,
-  testPath as repoTestPath
-} from '#tests/helpers/paths'
+import { coreSourcePath, publicPath, testPath as repoTestPath } from '#tests/helpers/paths'
 
 // === CLAIM EXTRACTION ===
 // Each claim is: [doc_section, claim_text, verification_strategy]
@@ -499,7 +494,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
       ]
     })
 
-    const child = graph.createNode('RECTANGLE', parentWithFill.id, {
+    graph.createNode('RECTANGLE', parentWithFill.id, {
       x: 25,
       y: 25,
       width: 50,

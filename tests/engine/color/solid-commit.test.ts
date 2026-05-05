@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Fill, Stroke } from '@open-pencil/core'
+import type { Fill } from '@open-pencil/core'
 import { applySolidFillColor, applySolidStrokeColor } from '@open-pencil/vue'
 
 describe('solid color commit helpers', () => {
@@ -18,14 +18,6 @@ describe('solid color commit helpers', () => {
   })
 
   test('syncs stroke opacity with color alpha', () => {
-    const stroke: Stroke = {
-      color: { r: 0, g: 0, b: 1, a: 1 },
-      weight: 1,
-      opacity: 1,
-      visible: true,
-      align: 'CENTER'
-    }
-
     const updated = applySolidStrokeColor({ r: 1, g: 1, b: 0, a: 0.2 })
     expect(updated.color?.a).toBeCloseTo(0.2, 5)
     expect(updated.opacity).toBeCloseTo(0.2, 5)

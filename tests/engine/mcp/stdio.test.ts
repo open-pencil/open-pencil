@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import type { AddressInfo } from 'node:net'
 
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
@@ -161,7 +161,6 @@ describe('MCP stdio transport', () => {
     expect(data.type).toBe('FRAME')
     expect(data.name).toBe('StdioFrame')
 
-    const node = app.graph.getNode(data.id)
     expect(getNodeOrThrow(app.graph, data.id).width).toBe(200)
   })
 

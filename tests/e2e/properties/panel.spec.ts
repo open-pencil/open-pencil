@@ -1,7 +1,7 @@
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { getSelectedNode, getPageChildren } from '#tests/helpers/store'
+import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
 let page: Page
 let canvas: CanvasHelper
@@ -114,7 +114,7 @@ test('fill color can bind an existing variable', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 80, 80)
 
-  const variableId = await page.evaluate(() => {
+  await page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!
     const col = store.graph.createCollection('Colors')
     const variable = store.graph.createVariable('test-brand-red', 'COLOR', col.id, {

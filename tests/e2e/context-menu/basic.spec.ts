@@ -116,10 +116,10 @@ test('toggle visibility via context menu', async () => {
   expect(hidden!.visible).toBe(false)
 
   // Toggle back: select via store since invisible nodes can't be hit-tested
-  await page.evaluate((id) => {
+  await page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!
     store.toggleVisibility()
-  }, nodeId)
+  })
   await canvas.waitForRender()
 
   const restored = await page.evaluate((id) => {

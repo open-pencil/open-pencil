@@ -120,7 +120,7 @@ describe('MCP tool execution', () => {
       name: 'Parent'
     }) as { id: string }
 
-    const child = findTool('create_shape').execute(api, {
+    findTool('create_shape').execute(api, {
       type: 'TEXT',
       x: 0,
       y: 0,
@@ -128,7 +128,7 @@ describe('MCP tool execution', () => {
       height: 30,
       name: 'Child',
       parent_id: parent.id
-    }) as { id: string }
+    })
 
     const tree = findTool('get_page_tree').execute(api, {}) as {
       children: { id: string; children?: unknown[] }[]

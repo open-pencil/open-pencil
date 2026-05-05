@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
 
@@ -801,7 +801,7 @@ describe('hitTest', () => {
   test('hidden node is not hittable', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
-    const rectId = graph.createNode('RECTANGLE', page, {
+    graph.createNode('RECTANGLE', page, {
       name: 'Hidden',
       x: 0,
       y: 0,
@@ -809,7 +809,7 @@ describe('hitTest', () => {
       height: 100,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
       visible: false
-    }).id
+    })
     // Hidden nodes should be skipped during hit testing
     expect(graph.hitTest(50, 50, page)).toBeNull()
   })
@@ -851,7 +851,6 @@ describe('hitTest', () => {
 describe('updateNode', () => {
   test('non-layout change does not clear absPosCache', () => {
     const graph = new SceneGraph()
-    const page = pageId(graph)
     const rId = rect(graph, 'R', 100, 200)
     // Populate absPosCache by calling getAbsolutePosition
     const absPos = graph.getAbsolutePosition(rId)
@@ -865,7 +864,6 @@ describe('updateNode', () => {
 
   test('layout change clears absPosCache', () => {
     const graph = new SceneGraph()
-    const page = pageId(graph)
     const rId = rect(graph, 'R', 100, 200)
     const absPos = graph.getAbsolutePosition(rId)
     expect(absPos).toEqual({ x: 100, y: 200 })
@@ -1107,7 +1105,6 @@ describe('countDescendants', () => {
 
   test('root node count includes all pages and their children', () => {
     const graph = new SceneGraph()
-    const page = pageId(graph)
     rect(graph, 'R1')
     rect(graph, 'R2')
     graph.addPage('Page 2')

@@ -10,7 +10,7 @@ import {
   setNodeStrokeOkHCL
 } from '@open-pencil/core'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { getNodeOrThrow } from '#tests/helpers/assert'
 
 describe('OkHCL metadata toggling', () => {
   test('can disable fill OkHCL metadata', () => {

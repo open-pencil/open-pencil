@@ -5,10 +5,9 @@
  * correct world coordinates for rotated, flipped, and nested nodes.
  * The tests exercise the full transform chain through the SceneGraph API.
  */
-import { describe, test, expect } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, getWorldMatrix, TransformMatrix } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/core'
+import { getWorldMatrix, SceneGraph, TransformMatrix } from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

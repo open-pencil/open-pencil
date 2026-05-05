@@ -42,7 +42,6 @@ test('autosave triggers after scene changes with a file handle', async () => {
   // Inject the file handle into the store's internal state
   // We do this by calling a save first to establish the handle
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
     // Directly set the fileHandle via a test hook
     // Since fileHandle is a closure variable, we need to trigger the save path
     // The cleanest way: mock showSaveFilePicker to return our handle

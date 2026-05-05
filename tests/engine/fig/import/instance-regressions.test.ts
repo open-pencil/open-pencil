@@ -1,45 +1,18 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import {
-  parseFigFile,
-  computeAllLayouts,
-  exportFigFile,
-  importNodeChanges,
-  initCodec,
-  FigmaAPI,
-  type SceneGraph,
-  type SceneNode,
-  type Fill
-} from '@open-pencil/core'
+import { computeAllLayouts, type SceneGraph, type SceneNode } from '@open-pencil/core'
 
 import { computeContentBounds } from '#core/io/formats/raster/render'
 
-import { expectDefined } from '#tests/helpers/assert'
-import {
-  FIXTURES,
-  parseFixture,
-  parseGoldPreviewFixture,
-  VALID_NODE_TYPES
-} from '#tests/helpers/fig-fixtures'
+import { parseFixture } from '#tests/helpers/fig-fixtures'
 import {
   childMatching,
   childNamed,
   collectAllNodes,
-  countByType,
   previewChild
 } from '#tests/helpers/fig-traversal'
-import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
-
-let parsed: SceneGraph
-let allNodes: SceneNode[]
-
-beforeAll(async () => {
-  const fixture = await parseGoldPreviewFixture()
-  parsed = fixture.graph
-  allNodes = fixture.allNodes
-})
 
 describe('derived instance layout regressions', () => {
   let layoutGraph: SceneGraph
