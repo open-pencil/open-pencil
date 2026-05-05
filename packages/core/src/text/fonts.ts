@@ -349,17 +349,15 @@ export async function ensureCJKFallback(): Promise<string[]> {
       }
     }
 
-    // Always try remote Noto fonts too: supplements locals, covers Google-API-only
-    // installs, and fixes cases where a local face matched but lacked SC glyphs.
-    const results = await Promise.allSettled(
-      CJK_GOOGLE_FONTS.map(async (family) => {
-        const data = await loadFont(family, 'Regular')
-        return data ? family : null
-      })
-    )
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value) {
-        if (!cjkFallbackFamilies.includes(result.value)) {
+    if (cjkFallbackFamilies.length === 0) {
+      const results = await Promise.allSettled(
+        CJK_GOOGLE_FONTS.map(async (family) => {
+          const data = await loadFont(family, 'Regular')
+          return data ? family : null
+        })
+      )
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value) {
           cjkFallbackFamilies.push(result.value)
         }
       }

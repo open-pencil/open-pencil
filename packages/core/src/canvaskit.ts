@@ -14,9 +14,9 @@ export async function getCanvasKit(options?: CanvasKitOptions): Promise<CanvasKi
 
   const defaultLocate = (file: string) => {
     if (!IS_BROWSER) return file
-    const base = import.meta.env.BASE_URL
+    const base = 'env' in import.meta ? import.meta.env.BASE_URL : '/'
     const prefix = base === '/' ? '' : base.replace(/\/$/, '')
-    return `${prefix}/${file}`.replace(/\/{2,}/g, '/')
+    return `${prefix}/${file}`
   }
 
   instance = await CanvasKitInit({

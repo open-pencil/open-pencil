@@ -1,18 +1,18 @@
 import { copyFileSync, createReadStream, existsSync, mkdirSync } from 'fs'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 
-import type { Connect } from 'vite'
+import type { Connect, ResolvedConfig } from 'vite'
 import type { Plugin } from 'vite'
 
-/** Always copy when source exists so public/ never keeps a stale or empty wasm. */
-function syncWasmFromNodeModules(source: string, destination: string) {
-  if (!existsSync(source)) {
-    console.warn(`[copy-canvaskit-wasm] Missing source (run \`bun install\`): ${source}`)
+function syncWasmFromNodeModules(root: string, source: string, destination: string) {
+  const sourcePath = resolve(root, source)
+  const destinationPath = resolve(root, destination)
+  if (!existsSync(sourcePath)) {
+    console.warn(`[copy-canvaskit-wasm] Missing source (run \`bun install\`): ${sourcePath}`)
     return
   }
-  const directory = destination.slice(0, destination.lastIndexOf('/'))
-  if (directory) mkdirSync(directory, { recursive: true })
-  copyFileSync(source, destination)
+  mkdirSync(dirname(destinationPath), { recursive: true })
+  copyFileSync(sourcePath, destinationPath)
 }
 
 function serveCanvasKitWasm(root: string): Connect.NextHandleFunction {
@@ -42,25 +42,32 @@ function serveCanvasKitWasm(root: string): Connect.NextHandleFunction {
 }
 
 export function copyCanvasKitAssetsPlugin(): Plugin {
+  let root = process.cwd()
+
   return {
     name: 'copy-canvaskit-wasm',
     enforce: 'pre',
+    configResolved(config: ResolvedConfig) {
+      root = config.root
+    },
     buildStart() {
-      syncWasmFromNodeModules('node_modules/canvaskit-wasm/bin/canvaskit.wasm', 'public/canvaskit.wasm')
+      syncWasmFromNodeModules(root, 'node_modules/canvaskit-wasm/bin/canvaskit.wasm', 'public/canvaskit.wasm')
       syncWasmFromNodeModules(
+        root,
         'packages/core/vendor/canvaskit-webgpu/canvaskit.wasm',
-        'public/canvaskit-webgpu/canvaskit.wasm',
+        'public/canvaskit-webgpu/canvaskit.wasm'
       )
       syncWasmFromNodeModules(
+        root,
         'packages/core/vendor/canvaskit-webgpu/canvaskit.js',
-        'public/canvaskit-webgpu/canvaskit.js',
+        'public/canvaskit-webgpu/canvaskit.js'
       )
     },
     configureServer(server) {
-      server.middlewares.use(serveCanvasKitWasm(process.cwd()))
+      server.middlewares.use(serveCanvasKitWasm(server.config.root))
     },
     configurePreviewServer(server) {
-      server.middlewares.use(serveCanvasKitWasm(process.cwd()))
-    },
+      server.middlewares.use(serveCanvasKitWasm(server.config.root))
+    }
   }
 }
