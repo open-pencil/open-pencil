@@ -8,6 +8,40 @@ function importSource(node) {
   return typeof node.source?.value === 'string' ? node.source.value : null
 }
 
+function createImportSourceRule({
+  description,
+  applies = () => true,
+  includeExports = false,
+  includeDynamic = false,
+  check
+}) {
+  return {
+    meta: {
+      docs: { description }
+    },
+    create(context) {
+      const file = normalizedFilename(context)
+      if (!applies(file)) return {}
+
+      function reportIfRestricted(node) {
+        const source = importSource(node)
+        if (!source) return
+        const message = check(source, file)
+        if (!message) return
+        context.report({ node, message })
+      }
+
+      const visitors = { ImportDeclaration: reportIfRestricted }
+      if (includeExports) {
+        visitors.ExportAllDeclaration = reportIfRestricted
+        visitors.ExportNamedDeclaration = reportIfRestricted
+      }
+      if (includeDynamic) visitors.ImportExpression = reportIfRestricted
+      return visitors
+    }
+  }
+}
+
 function isUnknownTypeAnnotation(typeAnnotation) {
   return typeAnnotation?.type === 'TSUnknownKeyword'
 }
@@ -272,87 +306,41 @@ const noTypeofWindowCheck = {
   }
 }
 
-const noLegacyAppImports = {
-  meta: {
-    docs: {
-      description:
-        'Disallow imports from removed app/store compatibility shims — import canonical src/app modules instead'
-    }
-  },
-  create(context) {
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source) return
-        const legacyPrefixes = [
-          '@/ai/',
-          '@/automation/',
-          '@/stores/',
-          '@/composables/use-canvas',
-          '@/composables/use-canvas-input',
-          '@/composables/use-collab',
-          '@/composables/use-keyboard'
-        ]
-        if (legacyPrefixes.some((prefix) => source === prefix || source.startsWith(prefix))) {
-          context.report({
-            node,
-            message: `Import from the canonical src/app module instead of legacy shim '${source}'.`
-          })
-        }
-      }
-    }
-  }
-}
+const legacyAppImportPrefixes = [
+  '@/ai/',
+  '@/automation/',
+  '@/stores/',
+  '@/composables/use-canvas',
+  '@/composables/use-canvas-input',
+  '@/composables/use-collab',
+  '@/composables/use-keyboard'
+]
 
-const noVueSelfPackageImports = {
-  meta: {
-    docs: {
-      description: 'Disallow @open-pencil/vue self-imports inside the Vue SDK — use #vue/* aliases'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/packages/vue/src/')) return {}
+const noLegacyAppImports = createImportSourceRule({
+  description:
+    'Disallow imports from removed app/store compatibility shims — import canonical src/app modules instead',
+  check: (source) =>
+    legacyAppImportPrefixes.some((prefix) => source === prefix || source.startsWith(prefix)) &&
+    `Import from the canonical src/app module instead of legacy shim '${source}'.`
+})
 
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source?.startsWith('@open-pencil/vue')) return
-        context.report({
-          node,
-          message: `Use #vue/* for internal Vue SDK imports instead of self-package import '${source}'.`
-        })
-      }
-    }
-  }
-}
+const noVueSelfPackageImports = createImportSourceRule({
+  description: 'Disallow @open-pencil/vue self-imports inside the Vue SDK — use #vue/* aliases',
+  applies: (file) => file.includes('/packages/vue/src/'),
+  check: (source) =>
+    source.startsWith('@open-pencil/vue') &&
+    `Use #vue/* for internal Vue SDK imports instead of self-package import '${source}'.`
+})
 
-const noCrossPackageSourceImports = {
-  meta: {
-    docs: {
-      description:
-        'Disallow imports that reach into another workspace package source tree — use package exports or package-local aliases'
-    }
-  },
-  create(context) {
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source) return
-        if (
-          source.includes('/packages/') ||
-          /^(?:\.\.\/){2,}packages\//.test(source) ||
-          /^(?:\.\.\/)+(?:core|vue|cli|mcp)\/src\//.test(source)
-        ) {
-          context.report({
-            node,
-            message: `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`
-          })
-        }
-      }
-    }
-  }
-}
+const noCrossPackageSourceImports = createImportSourceRule({
+  description:
+    'Disallow imports that reach into another workspace package source tree — use package exports or package-local aliases',
+  check: (source) =>
+    (source.includes('/packages/') ||
+      /^(?:\.\.\/){2,}packages\//.test(source) ||
+      /^(?:\.\.\/)+(?:core|vue|cli|mcp)\/src\//.test(source)) &&
+    `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`
+})
 
 const noStaleViteAppPaths = {
   meta: {
@@ -471,23 +459,11 @@ const noRootDemoModule = {
 }
 
 function createExactCoreBarrelImportRule({ description, applies, message }) {
-  return {
-    meta: {
-      docs: { description }
-    },
-    create(context) {
-      const file = normalizedFilename(context)
-      if (!applies(file)) return {}
-
-      return {
-        ImportDeclaration(node) {
-          const source = importSource(node)
-          if (source !== '@open-pencil/core') return
-          context.report({ node, message })
-        }
-      }
-    }
-  }
+  return createImportSourceRule({
+    description,
+    applies,
+    check: (source) => source === '@open-pencil/core' && message
+  })
 }
 
 const noMcpCoreBarrelImports = createExactCoreBarrelImportRule({
@@ -511,29 +487,13 @@ const noScriptCoreBarrelImports = createExactCoreBarrelImportRule({
     'Use a targeted @open-pencil/core subpath or #core/* alias in scripts instead of the compatibility barrel.'
 })
 
-const noCoreSelfPackageImports = {
-  meta: {
-    docs: {
-      description: 'Disallow @open-pencil/core self-imports inside packages/core/src'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/packages/core/src/')) return {}
-
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source?.startsWith('@open-pencil/core')) return
-        context.report({
-          node,
-          message:
-            'Core internals must import local modules directly instead of importing the @open-pencil/core public package entrypoints.'
-        })
-      }
-    }
-  }
-}
+const noCoreSelfPackageImports = createImportSourceRule({
+  description: 'Disallow @open-pencil/core self-imports inside packages/core/src',
+  applies: (file) => file.includes('/packages/core/src/'),
+  check: (source) =>
+    source.startsWith('@open-pencil/core') &&
+    'Core internals must import local modules directly instead of importing the @open-pencil/core public package entrypoints.'
+})
 
 const noInlinePromptConstants = {
   meta: {
@@ -557,26 +517,12 @@ const noInlinePromptConstants = {
   }
 }
 
-const noLegacyAppSupportImports = {
-  meta: {
-    docs: {
-      description: 'Disallow imports from legacy top-level app support folders'
-    }
-  },
-  create(context) {
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source || !/^@\/(?:utils|engine)\//.test(source)) return
-        context.report({
-          node,
-          message:
-            'Move app support imports to cohesive src/app modules instead of using legacy @/utils/* or @/engine/* paths.'
-        })
-      }
-    }
-  }
-}
+const noLegacyAppSupportImports = createImportSourceRule({
+  description: 'Disallow imports from legacy top-level app support folders',
+  check: (source) =>
+    /^@\/(?:utils|engine)\//.test(source) &&
+    'Move app support imports to cohesive src/app modules instead of using legacy @/utils/* or @/engine/* paths.'
+})
 
 const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
   description:
@@ -587,59 +533,22 @@ const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
     'Use a targeted @open-pencil/core subpath (editor, scene-graph, constants, io, etc.) instead of the compatibility barrel.'
 })
 
-const noAppImportsInPackages = {
-  meta: {
-    docs: {
-      description: 'Disallow app-shell imports from workspace packages'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/packages/')) return {}
+const noAppImportsInPackages = createImportSourceRule({
+  description: 'Disallow app-shell imports from workspace packages',
+  applies: (file) => file.includes('/packages/'),
+  check: (source) =>
+    source.startsWith('@/') && `Workspace packages must not import app-shell alias '${source}'.`
+})
 
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source?.startsWith('@/')) return
-        context.report({
-          node,
-          message: `Workspace packages must not import app-shell alias '${source}'.`
-        })
-      }
-    }
-  }
-}
+const frameworkImportPrefixes = ['@vue/', '@open-pencil/vue', '@tauri-apps/', '@/']
 
-const noCoreFrameworkImports = {
-  meta: {
-    docs: {
-      description: 'Keep @open-pencil/core framework-agnostic by disallowing Vue/Tauri/app imports'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/packages/core/src/')) return {}
-
-    return {
-      ImportDeclaration(node) {
-        const source = importSource(node)
-        if (!source) return
-        if (
-          source === 'vue' ||
-          source.startsWith('@vue/') ||
-          source.startsWith('@open-pencil/vue') ||
-          source.startsWith('@tauri-apps/') ||
-          source.startsWith('@/')
-        ) {
-          context.report({
-            node,
-            message: `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
-          })
-        }
-      }
-    }
-  }
-}
+const noCoreFrameworkImports = createImportSourceRule({
+  description: 'Keep @open-pencil/core framework-agnostic by disallowing Vue/Tauri/app imports',
+  applies: (file) => file.includes('/packages/core/src/'),
+  check: (source) =>
+    (source === 'vue' || frameworkImportPrefixes.some((prefix) => source.startsWith(prefix))) &&
+    `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
+})
 
 const noDirectStorageAccess = {
   meta: {
@@ -707,67 +616,24 @@ const noLegacyShimFiles = {
   }
 }
 
-const noLegacyTestAppImports = {
-  meta: {
-    docs: {
-      description: 'Disallow tests importing removed top-level app modules'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/tests/')) return {}
+const noLegacyTestAppImports = createImportSourceRule({
+  description: 'Disallow tests importing removed top-level app modules',
+  applies: (file) => file.includes('/tests/'),
+  includeExports: true,
+  check: (source) =>
+    /^(?:\.\.\/)+src\/(?:ai|automation|composables|stores|utils|engine)\//.test(source) &&
+    'Use the current src/app/* module path instead of a removed top-level app module.'
+})
 
-    function reportLegacyTestImport(node) {
-      const source = importSource(node)
-      if (
-        !source ||
-        !/^(?:\.\.\/)+src\/(?:ai|automation|composables|stores|utils|engine)\//.test(source)
-      ) {
-        return
-      }
-      context.report({
-        node,
-        message: 'Use the current src/app/* module path instead of a removed top-level app module.'
-      })
-    }
-
-    return {
-      ExportAllDeclaration: reportLegacyTestImport,
-      ExportNamedDeclaration: reportLegacyTestImport,
-      ImportDeclaration: reportLegacyTestImport
-    }
-  }
-}
-
-const noTestCoreSourceImports = {
-  meta: {
-    docs: {
-      description: 'Disallow tests importing non-vendored core internals by relative source path'
-    }
-  },
-  create(context) {
-    const file = normalizedFilename(context)
-    if (!file.includes('/tests/')) return {}
-
-    function reportCoreSourceImport(node) {
-      const source = importSource(node)
-      if (!source || !/^(?:\.\.\/)+packages\/core\/src\/(?!kiwi\/kiwi-schema)/.test(source)) {
-        return
-      }
-      context.report({
-        node,
-        message: 'Use #core/* instead of a relative packages/core/src import in tests.'
-      })
-    }
-
-    return {
-      ExportAllDeclaration: reportCoreSourceImport,
-      ExportNamedDeclaration: reportCoreSourceImport,
-      ImportDeclaration: reportCoreSourceImport,
-      ImportExpression: reportCoreSourceImport
-    }
-  }
-}
+const noTestCoreSourceImports = createImportSourceRule({
+  description: 'Disallow tests importing non-vendored core internals by relative source path',
+  applies: (file) => file.includes('/tests/'),
+  includeExports: true,
+  includeDynamic: true,
+  check: (source) =>
+    /^(?:\.\.\/)+packages\/core\/src\/(?!kiwi\/kiwi-schema)/.test(source) &&
+    'Use #core/* instead of a relative packages/core/src import in tests.'
+})
 
 const noBroadDoubleCast = {
   meta: {
