@@ -9,6 +9,8 @@ import {
   copyGeometryPaths
 } from '#core/scene-graph/copy'
 
+import { expectDefined } from '../helpers/assert'
+
 import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/core'
 
 describe('copy helpers — mutation isolation', () => {
@@ -39,10 +41,10 @@ describe('copy helpers — mutation isolation', () => {
       gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     }
     const copy = copyFill(original)
-    copy.gradientStops![0].color.r = 0
-    copy.gradientTransform!.m00 = 99
-    expect(original.gradientStops![0].color.r).toBe(1)
-    expect(original.gradientTransform!.m00).toBe(1)
+    expectDefined(copy.gradientStops?.[0], 'copied gradient stop').color.r = 0
+    expectDefined(copy.gradientTransform, 'copied gradient transform').m00 = 99
+    expect(expectDefined(original.gradientStops?.[0], 'original gradient stop').color.r).toBe(1)
+    expect(expectDefined(original.gradientTransform, 'original gradient transform').m00).toBe(1)
   })
 
   test('copyStroke: dash pattern is independent', () => {
@@ -55,7 +57,7 @@ describe('copy helpers — mutation isolation', () => {
       dashPattern: [5, 3]
     }
     const copy = copyStroke(original)
-    copy.dashPattern!.push(99)
+    expectDefined(copy.dashPattern, 'copied dash pattern').push(99)
     copy.color.g = 1
     expect(original.dashPattern).toEqual([5, 3])
     expect(original.color.g).toBe(0)

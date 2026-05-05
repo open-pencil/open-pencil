@@ -10,6 +10,8 @@ import {
   executeRpcCommand
 } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import type { AddressInfo } from 'node:net'
@@ -35,8 +37,9 @@ function createMockApp() {
       try {
         let result: unknown
         if (msg.command === 'tool' && msg.args?.name) {
-          const def = ALL_TOOLS.find((t) => t.name === msg.args!.name)
-          if (!def) throw new Error(`Unknown tool: ${msg.args.name}`)
+          const toolName = msg.args.name
+          const def = ALL_TOOLS.find((t) => t.name === toolName)
+          if (!def) throw new Error(`Unknown tool: ${toolName}`)
           const api = new FigmaAPI(graph)
           api.currentPage = api.wrapNode(graph.getPages()[0].id)
           result = await def.execute(api, msg.args.args ?? {})
@@ -109,6 +112,14 @@ async function createStdioClient(wsPort: number) {
   return { client, transport }
 }
 
+function textContent(content: unknown): string {
+  const items = content as { type: string; text: string }[]
+  return expectDefined(
+    items.find((c) => c.type === 'text'),
+    'text content'
+  ).text
+}
+
 describe('MCP stdio transport', () => {
   let app: ReturnType<typeof createMockApp>
   let client: Client
@@ -143,32 +154,29 @@ describe('MCP stdio transport', () => {
       arguments: { type: 'FRAME', x: 10, y: 20, width: 200, height: 100, name: 'StdioFrame' }
     })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(
-      (result.content as { type: string; text: string }[]).find((c) => c.type === 'text')!.text
-    ) as { id: string; name: string; type: string }
+    const data = JSON.parse(textContent(result.content)) as {
+      id: string
+      name: string
+      type: string
+    }
     expect(data.type).toBe('FRAME')
     expect(data.name).toBe('StdioFrame')
 
     const node = app.graph.getNode(data.id)
-    expect(node).toBeDefined()
-    expect(node!.width).toBe(200)
+    expect(getNodeOrThrow(app.graph, data.id).width).toBe(200)
   })
 
   test('save_file via stdio succeeds', async () => {
     const result = await client.callTool({ name: 'save_file', arguments: {} })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(
-      (result.content as { type: string; text: string }[]).find((c) => c.type === 'text')!.text
-    ) as { saved: boolean }
+    const data = JSON.parse(textContent(result.content)) as { saved: boolean }
     expect(data.saved).toBe(true)
   })
 
   test('get_codegen_prompt via stdio returns prompt', async () => {
     const result = await client.callTool({ name: 'get_codegen_prompt', arguments: {} })
     expect(result.isError).not.toBe(true)
-    const data = JSON.parse(
-      (result.content as { type: string; text: string }[]).find((c) => c.type === 'text')!.text
-    ) as { prompt: string }
+    const data = JSON.parse(textContent(result.content)) as { prompt: string }
     expect(data.prompt.length).toBeGreaterThan(100)
   })
 
@@ -177,9 +185,7 @@ describe('MCP stdio transport', () => {
       name: 'create_shape',
       arguments: { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }
     })
-    const { id } = JSON.parse(
-      (create.content as { type: string; text: string }[]).find((c) => c.type === 'text')!.text
-    ) as { id: string }
+    const { id } = JSON.parse(textContent(create.content)) as { id: string }
 
     expect(app.graph.getNode(id)).toBeDefined()
 

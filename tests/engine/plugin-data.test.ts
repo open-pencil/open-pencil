@@ -12,6 +12,8 @@ import {
   type NodeChange
 } from '@open-pencil/core'
 
+import { expectDefined } from '../helpers/assert'
+
 function doc(): NodeChange {
   return {
     guid: { sessionID: 0, localID: 0 },
@@ -154,9 +156,12 @@ describe('plugin data deduplication', () => {
     const changes: NodeChange[] = [doc(), canvas(), node('FRAME', 10, 1, { pluginData: entries })]
 
     deduplicateNodeChangePluginData(changes)
-    const frameChange = changes.find((nc) => nc.type === 'FRAME')!
+    const frameChange = expectDefined(
+      changes.find((nc) => nc.type === 'FRAME'),
+      'frame change'
+    )
     expect(frameChange.pluginData).toHaveLength(1)
-    expect(frameChange.pluginData![0]).toEqual({
+    expect(expectDefined(frameChange.pluginData?.[0], 'plugin data entry')).toEqual({
       pluginID: 'open-pencil',
       key: 'textDirection',
       value: 'RTL'
@@ -304,7 +309,7 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     const page = graph.getPages()[0]
     const frame = graph.getChildren(page.id)[0]
     const api = new FigmaAPI(graph)
-    const proxy = api.getNodeById(frame.id)!
+    const proxy = expectDefined(api.getNodeById(frame.id), 'frame proxy')
 
     // Update: old pluginData entry must be replaced, not kept alongside the new one
     proxy.setSharedPluginData('tokens', 'accent', 'v2')
@@ -322,7 +327,7 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     expect(accentEntries[0].value).toBe('v2')
 
     const parsedApi = new FigmaAPI(parsed)
-    const parsedProxy = parsedApi.getNodeById(parsedFrame.id)!
+    const parsedProxy = expectDefined(parsedApi.getNodeById(parsedFrame.id), 'parsed frame proxy')
     expect(parsedProxy.getSharedPluginData('tokens', 'accent')).toBe('v2')
   })
 
@@ -340,7 +345,7 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     const page = graph.getPages()[0]
     const frame = graph.getChildren(page.id)[0]
     const api = new FigmaAPI(graph)
-    const proxy = api.getNodeById(frame.id)!
+    const proxy = expectDefined(api.getNodeById(frame.id), 'frame proxy')
 
     // Delete by setting empty string — must purge from pluginData
     proxy.setSharedPluginData('tokens', 'accent', '')
@@ -356,7 +361,7 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     expect(parsedFrame.pluginData.some((e) => e.key === 'tokens/accent')).toBe(false)
 
     const parsedApi = new FigmaAPI(parsed)
-    const parsedProxy = parsedApi.getNodeById(parsedFrame.id)!
+    const parsedProxy = expectDefined(parsedApi.getNodeById(parsedFrame.id), 'parsed frame proxy')
     expect(parsedProxy.getSharedPluginData('tokens', 'accent')).toBe('')
   })
 })

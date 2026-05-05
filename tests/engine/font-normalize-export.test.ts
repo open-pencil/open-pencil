@@ -2,6 +2,8 @@ import { describe, test, expect, beforeAll } from 'bun:test'
 
 import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+
 beforeAll(async () => {
   await initCodec()
 })
@@ -29,7 +31,10 @@ describe('Font family normalization on .fig export', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const nodes = [...reimported.nodes.values()]
-    const textNode = nodes.find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      nodes.find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fontFamily).toBe('DM Sans')
   })
 
@@ -51,7 +56,10 @@ describe('Font family normalization on .fig export', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const nodes = [...reimported.nodes.values()]
-    const textNode = nodes.find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      nodes.find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fontFamily).toBe('Inter')
   })
 
@@ -73,7 +81,10 @@ describe('Font family normalization on .fig export', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const nodes = [...reimported.nodes.values()]
-    const textNode = nodes.find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      nodes.find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fontFamily).toBe('Roboto')
   })
 })
@@ -97,7 +108,10 @@ describe('TEXT node default fill', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const nodes = [...reimported.nodes.values()]
-    const textNode = nodes.find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      nodes.find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fills.length).toBe(1)
     expect(textNode.fills[0].type).toBe('SOLID')
     expect(textNode.fills[0].color.r).toBe(0)
@@ -125,7 +139,10 @@ describe('TEXT node default fill', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const nodes = [...reimported.nodes.values()]
-    const textNode = nodes.find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      nodes.find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fills.length).toBe(1)
     expect(textNode.fills[0].color.r).toBeCloseTo(0.96, 1)
     expect(textNode.fills[0].color.g).toBeCloseTo(0.72, 1)
@@ -141,6 +158,6 @@ describe('TEXT node default fill', () => {
       width: 100,
       height: 100
     })
-    expect(graph.getNode(node.id)!.fills.length).toBe(0)
+    expect(getNodeOrThrow(graph, node.id).fills.length).toBe(0)
   })
 })
