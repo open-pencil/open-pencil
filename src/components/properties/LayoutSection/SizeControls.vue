@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useTemplateRefsList } from '@vueuse/core'
 import {
   SelectContent,
   SelectItem,
@@ -36,12 +37,7 @@ const widthVariableBinding = useNumberVariableBinding('width')
 const heightVariableBinding = useNumberVariableBinding('height')
 const widthFieldRef = ref<HTMLElement | null>(null)
 const heightFieldRef = ref<HTMLElement | null>(null)
-const limitFieldRefs = ref<Record<SizeLimitProp, HTMLElement | null>>({
-  minWidth: null,
-  maxWidth: null,
-  minHeight: null,
-  maxHeight: null
-})
+const limitFieldRefs = useTemplateRefsList<HTMLElement>()
 
 const { panels, dialogs } = useI18n()
 const sizingSelect = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
@@ -94,6 +90,8 @@ const activeSizeLimits: ActiveSizeLimit[] = [
   }
 ]
 
+const visibleSizeLimits = computed(() => activeSizeLimits.filter((item) => item.value() != null))
+
 const heightLimitItems = [
   {
     prop: 'minHeight' as const,
@@ -109,6 +107,10 @@ const heightLimitItems = [
 
 function anchorRef(element: HTMLElement | null): HTMLElement | undefined {
   return element ?? undefined
+}
+
+function limitFieldAnchor(index: number): HTMLElement | undefined {
+  return anchorRef(limitFieldRefs.value[index] ?? null)
 }
 
 function handleLimitSelect(prop: SizeLimitProp, value: string) {
@@ -334,12 +336,8 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
     "
     class="mt-1.5 grid grid-cols-2 gap-1.5"
   >
-    <template v-for="item in activeSizeLimits" :key="item.prop">
-      <div
-        v-if="item.value() != null"
-        :ref="(el) => (limitFieldRefs[item.prop] = el as HTMLElement | null)"
-        class="min-w-0"
-      >
+    <template v-for="(item, index) in visibleSizeLimits" :key="item.prop">
+      <div :ref="limitFieldRefs.set" class="min-w-0">
         <ScrubInput
           :data-test-id="item.testId"
           :icon="item.icon()"
@@ -355,7 +353,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
             >
               <SelectTrigger
                 :data-test-id="`${item.testId}-menu`"
-                :reference="anchorRef(limitFieldRefs[item.prop])"
+                :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop
               >

@@ -6,10 +6,14 @@ import { useFillPicker } from '#vue/primitives/FillPicker/useFillPicker'
 
 import type { Fill } from '@open-pencil/core/scene-graph'
 
-const { fill, contentClass, swatchClass } = defineProps<{
+export interface FillPickerUi {
+  content?: string
+  swatch?: string
+}
+
+const { fill, ui } = defineProps<{
   fill: Fill
-  contentClass?: string
-  swatchClass?: string
+  ui?: FillPickerUi
 }>()
 
 const emit = defineEmits<{ update: [fill: Fill] }>()
@@ -24,19 +28,18 @@ const { category, swatchBg, toSolid, toGradient, toImage } = useFillPicker(
   <PopoverRoot>
     <PopoverTrigger as-child>
       <slot name="trigger" :style="{ background: swatchBg }">
-        <button :class="swatchClass" :style="{ background: swatchBg }" />
+        <button :class="ui?.swatch" :style="{ background: swatchBg }" />
       </slot>
     </PopoverTrigger>
 
     <PopoverPortal>
-      <PopoverContent :class="contentClass" :side-offset="4" side="left">
+      <PopoverContent :class="ui?.content" :side-offset="4" side="left">
         <slot
           :fill="fill"
           :category="category"
           :to-solid="toSolid"
           :to-gradient="toGradient"
           :to-image="toImage"
-          :update="(nextFill: Fill) => emit('update', nextFill)"
         />
       </PopoverContent>
     </PopoverPortal>

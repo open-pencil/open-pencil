@@ -29,7 +29,7 @@ defineOptions({ inheritAttrs: false })
 
 <template>
   <ScrubInputRoot
-    v-slot="{ editing, startScrub, startEdit, placeholder: ph }"
+    v-slot="{ editing, actions, placeholder: ph }"
     :model-value="modelValue"
     :min="min"
     :max="max"
@@ -50,9 +50,9 @@ defineOptions({ inheritAttrs: false })
       ]"
       :style="{ cursor: editing ? 'auto' : 'ew-resize' }"
       @pointerdown="
-        !editing && !($event.target as HTMLElement)?.closest?.('button') && startScrub($event)
+        !editing && !($event.target as HTMLElement)?.closest?.('button') && actions.startScrub($event)
       "
-      @focus="!editing && startEdit()"
+      @focus="!editing && actions.startEdit()"
     >
       <span v-if="attrs['data-test-id']" data-test-id="scrub-input" class="hidden" />
       <span

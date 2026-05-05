@@ -105,6 +105,11 @@ function toggleExpand(id: string) {
   else expanded.value = [...expanded.value, id]
 }
 
+const actions = {
+  select,
+  toggleExpand
+}
+
 provideLayerTree({
   editor,
   items,
@@ -136,8 +141,7 @@ provideLayerTree({
     :expanded="expanded"
     :tree-key="treeKey"
     :selected-ids="selectedIds"
-    :select="select"
-    :toggle-expand="toggleExpand"
+    :actions="actions"
     :get-key="(v: LayerNode) => v.id"
     :get-children="(v: LayerNode) => v.children"
   />

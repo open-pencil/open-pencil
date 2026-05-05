@@ -5,10 +5,14 @@ import { colorToCSS } from '@open-pencil/core/color'
 
 import type { Color } from '@open-pencil/core/types'
 
-const { color, contentClass, swatchClass } = defineProps<{
+export interface ColorPickerUi {
+  content?: string
+  swatch?: string
+}
+
+const { color, ui } = defineProps<{
   color: Color
-  contentClass?: string
-  swatchClass?: string
+  ui?: ColorPickerUi
 }>()
 
 const emit = defineEmits<{ update: [color: Color] }>()
@@ -22,7 +26,7 @@ const swatchBg = computed(() => colorToCSS(color))
       <slot name="trigger" :style="{ background: swatchBg }">
         <button
           data-test-id="color-picker-swatch"
-          :class="swatchClass"
+          :class="ui?.swatch"
           :style="{ background: swatchBg }"
         />
       </slot>
@@ -31,11 +35,11 @@ const swatchBg = computed(() => colorToCSS(color))
     <PopoverPortal>
       <PopoverContent
         data-test-id="color-picker-popover"
-        :class="contentClass"
+        :class="ui?.content"
         :side-offset="4"
         side="left"
       >
-        <slot :color="color" :update="(nextColor: Color) => emit('update', nextColor)" />
+        <slot :color="color" />
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>

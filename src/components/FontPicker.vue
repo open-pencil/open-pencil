@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { FontPickerRoot } from '@open-pencil/vue'
 
 import { useSelectUI } from '@/components/ui/select'
 import { usePopoverUI } from '@/components/ui/popover'
-import { listFamilies } from '@/app/editor/fonts'
+import { listFamilies, localFontAccessState, requestLocalFontAccess } from '@/app/editor/fonts'
+
+import type { FontPickerUi } from '@open-pencil/vue'
 
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
@@ -15,6 +18,20 @@ const selectCls = useSelectUI({
   trigger: 'w-full rounded px-2 py-1 text-xs',
   item: 'w-full gap-2 px-2 py-2 text-sm'
 })
+
+const ui = computed<FontPickerUi>(() => ({
+  trigger: selectCls.trigger,
+  content: cls.content,
+  item: selectCls.item,
+  search: 'w-full border-b border-border bg-transparent px-2 py-1 text-xs text-surface outline-none placeholder:text-muted',
+  empty: 'px-2 py-3 text-center text-xs text-muted',
+  emptyAction: 'mt-2 rounded bg-accent px-2 py-1 text-xs font-medium text-white disabled:opacity-50'
+}))
+
+const localFontAccess = {
+  state: localFontAccessState,
+  load: requestLocalFontAccess
+}
 </script>
 
 <template>
@@ -22,11 +39,8 @@ const selectCls = useSelectUI({
     v-model="modelValue"
     data-test-id="font-picker-root"
     :list-families="listFamilies"
-    :trigger-class="selectCls.trigger"
-    :content-class="cls.content"
-    item-class=""
-    search-class="min-w-0 flex-1 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
-    empty-class="px-2 py-3 text-center text-xs text-muted"
+    :local-font-access="localFontAccess"
+    :ui="ui"
     empty-fonts-hint="Use the desktop app or Chrome/Edge to access system fonts."
     @select="emit('select', $event)"
   >
@@ -37,19 +51,7 @@ const selectCls = useSelectUI({
       </button>
     </template>
 
-    <template #search>
-      <div class="flex items-center gap-1 border-b border-border px-2 py-1">
-        <icon-lucide-search class="size-3 shrink-0 text-muted" />
-        <input
-          class="min-w-0 flex-1 border-none bg-transparent text-xs text-surface outline-none placeholder:text-muted"
-          placeholder="Search fonts…"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          spellcheck="false"
-        />
-      </div>
-    </template>
+
 
     <template #item="{ family, selected }">
       <div

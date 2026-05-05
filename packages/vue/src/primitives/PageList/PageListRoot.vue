@@ -41,6 +41,13 @@ function handleDelete(pageId: string) {
   deletePage(pageId)
   emit('delete', pageId)
 }
+
+const actions = {
+  add: handleAdd,
+  switch: handleSwitch,
+  rename: handleRename,
+  delete: handleDelete
+}
 </script>
 
 <template>
@@ -48,9 +55,6 @@ function handleDelete(pageId: string) {
     :pages="pages"
     :current-page-id="currentPageId"
     :is-divider="isDivider"
-    :add-page="handleAdd"
-    :switch-page="handleSwitch"
-    :rename-page="handleRename"
-    :delete-page="handleDelete"
+    :actions="actions"
   />
 </template>

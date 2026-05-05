@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useTypography } from '#vue/controls/typography/use'
 
+import type { TypographyFontLoader } from '#vue/controls/typography/use'
 import type { AcceptableValue } from 'reka-ui'
 
-const { loadFont } = defineProps<{
-  loadFont?: (family: string, style: string) => Promise<unknown>
+const { fontLoader } = defineProps<{
+  fontLoader?: TypographyFontLoader
 }>()
 
-const ctx = useTypography({ loadFont })
+const ctx = useTypography({ fontLoader })
 
 function onAlignChange(val: AcceptableValue) {
   if (val) ctx.setAlign(val as 'LEFT' | 'CENTER' | 'RIGHT')
@@ -15,6 +16,19 @@ function onAlignChange(val: AcceptableValue) {
 
 function onFormattingChange(val: AcceptableValue | AcceptableValue[]) {
   if (Array.isArray(val)) ctx.onFormattingChange(val as string[])
+}
+
+const actions = {
+  setFamily: ctx.setFamily,
+  setWeight: ctx.setWeight,
+  setDirection: ctx.setDirection,
+  updateProp: ctx.updateProp,
+  commitProp: ctx.commitProp,
+  align: onAlignChange,
+  formatting: onFormattingChange,
+  toggleBold: ctx.toggleBold,
+  toggleItalic: ctx.toggleItalic,
+  toggleDecoration: ctx.toggleDecoration
 }
 </script>
 
@@ -25,15 +39,6 @@ function onFormattingChange(val: AcceptableValue | AcceptableValue[]) {
     :missing-fonts="ctx.missingFonts"
     :has-missing-fonts="ctx.hasMissingFonts"
     :active-formatting="ctx.activeFormatting"
-    :set-family="ctx.setFamily"
-    :set-weight="ctx.setWeight"
-    :set-direction="ctx.setDirection"
-    :update-prop="ctx.updateProp"
-    :commit-prop="ctx.commitProp"
-    :on-align-change="onAlignChange"
-    :on-formatting-change="onFormattingChange"
-    :toggle-bold="ctx.toggleBold"
-    :toggle-italic="ctx.toggleItalic"
-    :toggle-decoration="ctx.toggleDecoration"
+    :actions="actions"
   />
 </template>

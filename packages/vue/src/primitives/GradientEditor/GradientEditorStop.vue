@@ -22,6 +22,13 @@ const positionPercent = computed(() => Math.round(stop.position * 100))
 const opacityPercent = computed(() => Math.round(stop.color.a * 100))
 const hex = computed(() => colorToHexRaw(stop.color))
 const css = computed(() => colorToCSS(stop.color))
+const actions = {
+  select: () => emit('select', index),
+  updatePosition: (pos: number) => emit('updatePosition', index, pos),
+  updateColor: (hexValue: string) => emit('updateColor', index, hexValue),
+  updateOpacity: (opacity: number) => emit('updateOpacity', index, opacity),
+  remove: () => emit('remove', index)
+}
 </script>
 
 <template>
@@ -33,10 +40,6 @@ const css = computed(() => colorToCSS(stop.color))
     :opacity-percent="opacityPercent"
     :hex="hex"
     :css="css"
-    :select="() => emit('select', index)"
-    :update-position="(pos: number) => emit('updatePosition', index, pos)"
-    :update-color="(h: string) => emit('updateColor', index, h)"
-    :update-opacity="(o: number) => emit('updateOpacity', index, o)"
-    :remove="() => emit('remove', index)"
+    :actions="actions"
   />
 </template>

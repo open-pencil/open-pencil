@@ -11,7 +11,7 @@ import { ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
-import type { ToolbarActionItem, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import type { ToolbarActionItem, ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
 const {
   tools,
@@ -19,7 +19,7 @@ const {
   toolIcons,
   toolLabels,
   toolShortcuts,
-  flyoutContentClass,
+  ui,
   mobileCategory,
   slideDirection,
   hasPrev,
@@ -32,7 +32,7 @@ const {
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
-  flyoutContentClass: string
+  ui?: ToolbarUi
   mobileCategory: number
   slideDirection: number
   hasPrev: boolean
@@ -106,17 +106,17 @@ function activeKeyForTool(tool: EditorToolDef) {
               :tool-icons="toolIcons"
               :tool-labels="toolLabels"
               :tool-shortcuts="toolShortcuts"
-              :content-class="flyoutContentClass"
+              :ui="ui"
               @select="emit('setTool', $event)"
             />
 
-            <ToolbarItem v-else v-slot="{ active, select: selectTool }" :tool="tool.key">
+            <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
               <ToolButton
                 mobile
                 :test-id="`mobile-toolbar-tool-${tool.key.toLowerCase()}`"
                 :icon="toolIcons[tool.key]"
                 :active="active || activeKeyForTool(tool) === activeTool"
-                @click="selectTool"
+                @click="actions.select"
               />
             </ToolbarItem>
           </template>

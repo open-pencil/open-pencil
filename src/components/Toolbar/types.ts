@@ -7,5 +7,9 @@ export interface ToolbarActionItem {
   action: () => void
 }
 
+export interface ToolbarUi {
+  flyoutContent?: string
+}
+
 export type ToolLabels = Record<Tool, string>
 export type ToolIconMap = Record<Tool, Component>

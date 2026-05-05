@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { templateRef } from '@vueuse/core'
 import { ref } from 'vue'
 
 import type { GradientStop } from '@open-pencil/core/scene-graph'
 
-const { stops } = defineProps<{
+const { stops, ui } = defineProps<{
   stops: GradientStop[]
   activeStopIndex: number
   barBackground: string
+  ui?: {
+    bar?: string
+  }
 }>()
 
 const emit = defineEmits<{
@@ -14,10 +18,10 @@ const emit = defineEmits<{
   dragStop: [index: number, position: number]
 }>()
 
-const barRef = ref<HTMLElement | null>(null)
+const barRef = templateRef<HTMLElement>('barRef')
 const draggingIndex = ref<number | null>(null)
 
-function onStopPointerDown(index: number, e: PointerEvent) {
+function stopPointerDown(index: number, e: PointerEvent) {
   emit('selectStop', index)
   draggingIndex.value = index
   barRef.value?.setPointerCapture(e.pointerId)
@@ -35,22 +39,27 @@ function onPointerUp() {
   draggingIndex.value = null
 }
 
-function setBarRef(el: unknown) {
-  barRef.value = el instanceof HTMLElement ? el : null
+const actions = {
+  stopPointerDown
 }
 
 defineExpose({ barRef })
 </script>
 
 <template>
-  <slot
-    :stops="stops"
-    :active-stop-index="activeStopIndex"
-    :bar-background="barBackground"
-    :bar-ref="setBarRef"
-    :on-stop-pointer-down="onStopPointerDown"
-    :on-pointer-move="onPointerMove"
-    :on-pointer-up="onPointerUp"
-    :dragging-index="draggingIndex"
-  />
+  <div
+    ref="barRef"
+    :class="ui?.bar"
+    :style="{ background: barBackground }"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+  >
+    <slot
+      :stops="stops"
+      :active-stop-index="activeStopIndex"
+      :bar-background="barBackground"
+      :actions="actions"
+      :dragging-index="draggingIndex"
+    />
+  </div>
 </template>

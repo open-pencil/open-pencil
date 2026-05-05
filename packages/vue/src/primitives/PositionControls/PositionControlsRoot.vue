@@ -38,6 +38,14 @@ function flip(axis: 'horizontal' | 'vertical') {
 function rotate(degrees: number) {
   store.rotateNodes(ids.value, degrees)
 }
+
+const actions = {
+  updateProp,
+  commitProp,
+  align,
+  flip,
+  rotate
+}
 </script>
 
 <template>
@@ -51,10 +59,6 @@ function rotate(degrees: number) {
     :h-value="hValue"
     :rotation-value="rotationValue"
     :mixed="MIXED"
-    :update-prop="updateProp"
-    :commit-prop="commitProp"
-    :align="align"
-    :flip="flip"
-    :rotate="rotate"
+    :actions="actions"
   />
 </template>

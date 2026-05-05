@@ -15,12 +15,14 @@ const cls = usePopoverUI({ content: 'w-56 p-2' })
 <template>
   <ColorPickerRoot
     :color="color"
-    :content-class="cls.content"
-    swatch-class="size-5 shrink-0 cursor-pointer rounded border border-border p-0"
+    :ui="{
+      content: cls.content,
+      swatch: 'size-5 shrink-0 cursor-pointer rounded border border-border p-0'
+    }"
     @update="emit('update', $event)"
   >
-    <template #default="{ color: currentColor, update }">
-      <ColorPickerPanel :color="currentColor" :okhcl="okhcl" @update="update($event)" />
+    <template #default="{ color: currentColor }">
+      <ColorPickerPanel :color="currentColor" :okhcl="okhcl" @update="emit('update', $event)" />
     </template>
   </ColorPickerRoot>
 </template>

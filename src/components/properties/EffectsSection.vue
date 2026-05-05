@@ -17,7 +17,7 @@ const sectionCls = useSectionUI()
 
 <template>
   <PropertyListRoot
-    v-slot="{ items, isMixed, activeNode, patch, add, remove, toggleVisibility }"
+    v-slot="{ items, isMixed, activeNode, actions }"
     prop-key="effects"
     :label="panels.effects"
   >
@@ -27,7 +27,7 @@ const sectionCls = useSectionUI()
         <button
           data-test-id="effects-section-add"
           :class="useIconButtonUI().base"
-          @click="add(effectsCtx.createDefaultEffect())"
+          @click="actions.add(effectsCtx.createDefaultEffect())"
         >
           +
         </button>
@@ -60,7 +60,7 @@ const sectionCls = useSectionUI()
             :model-value="effect.type"
             :options="effectsCtx.effectOptions"
             @update:model-value="
-              effectsCtx.updateType(patch, activeNode, i, $event as Effect['type'])
+              effectsCtx.updateType(actions.patch, activeNode, i, $event as Effect['type'])
             "
           />
 
@@ -68,7 +68,7 @@ const sectionCls = useSectionUI()
             :data-test-id="`effect-visibility-${i}`"
             :data-visible="effect.visible ? 'true' : 'false'"
             class="cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
-            @click="toggleVisibility(i)"
+            @click="actions.toggleVisibility(i)"
           >
             <icon-lucide-eye
               v-if="effect.visible"
@@ -77,7 +77,7 @@ const sectionCls = useSectionUI()
             />
             <icon-lucide-eye-off v-else data-test-id="visibility-icon-off" class="size-3.5" />
           </button>
-          <button :class="useIconButtonUI().base" @click="effectsCtx.handleRemove(remove, i)">
+          <button :class="useIconButtonUI().base" @click="effectsCtx.handleRemove(actions.remove, i)">
             −
           </button>
         </div>
@@ -131,7 +131,7 @@ const sectionCls = useSectionUI()
               <ColorInput
                 :color="effect.color"
                 editable
-                @update="effectsCtx.updateColor(patch, i, $event)"
+                @update="effectsCtx.updateColor(actions.patch, i, $event)"
               />
               <ScrubInput
                 class="w-14"

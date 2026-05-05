@@ -31,18 +31,16 @@ const emit = defineEmits<{ update: [color: Color] }>()
     :okhcl="okhcl"
     @update="emit('update', $event)"
   >
-    <template
-      #default="{ editable: isEditable, hex, updateFromHex, updateColor, okhcl: okhclControls }"
-    >
+    <template #default="{ editable: isEditable, hex, actions, okhcl: okhclControls }">
       <div v-bind="attrs" class="flex items-center gap-1.5">
-        <ColorPicker :color="color" :okhcl="okhclControls" @update="updateColor($event)" />
+        <ColorPicker :color="color" :okhcl="okhclControls" @update="actions.updateColor($event)" />
         <input
           v-if="isEditable"
           data-test-id="color-hex-input"
           class="min-w-0 flex-1 border-none bg-transparent font-mono text-xs text-surface outline-none"
           :value="hex"
           maxlength="6"
-          @change="updateFromHex(($event.target as HTMLInputElement).value)"
+          @change="actions.updateFromHex(($event.target as HTMLInputElement).value)"
         />
         <span v-else class="min-w-0 flex-1 truncate font-mono text-xs text-muted">
           {{ hex }}

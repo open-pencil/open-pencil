@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { type Component } from 'vue'
+import { watch, type Component } from 'vue'
+import { templateRef } from '@vueuse/core'
 import {
   DialogClose,
   DialogContent,
@@ -43,6 +44,11 @@ const ctx = useVariablesEditor({
   fallbackIcon: IconToggleLeft,
   deleteIcon: IconX
 })
+const collectionInput = templateRef<HTMLInputElement>('collectionInput')
+
+watch(collectionInput, (input) => {
+  void ctx.focusCollectionInput(input)
+})
 </script>
 
 <template>
@@ -85,7 +91,7 @@ const ctx = useVariablesEditor({
                 <template v-for="col in ctx.collections.value" :key="col.id">
                   <input
                     v-if="ctx.editingCollectionId.value === col.id"
-                    :ref="(el) => ctx.setCollectionInputRef(col.id, el as HTMLInputElement | null)"
+                    ref="collectionInput"
                     class="w-24 rounded border border-accent bg-input px-2 py-0.5 text-xs text-surface outline-none"
                     :value="col.name"
                     @blur="ctx.commitRenameCollection(col.id, $event.target as HTMLInputElement)"

@@ -6,17 +6,16 @@ import { ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
-import type { ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import type { ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
-const { tools, activeTool, toolIcons, toolLabels, toolShortcuts, flyoutContentClass } =
-  defineProps<{
+const { tools, activeTool, toolIcons, toolLabels, toolShortcuts, ui } = defineProps<{
     tools: EditorToolDef[]
     activeTool: Tool
     toolIcons: ToolIconMap
-    toolLabels: ToolLabels
-    toolShortcuts: Record<Tool, string>
-    flyoutContentClass: string
-  }>()
+  toolLabels: ToolLabels
+  toolShortcuts: Record<Tool, string>
+  ui?: ToolbarUi
+}>()
 
 const emit = defineEmits<{
   setTool: [tool: Tool]
@@ -48,18 +47,18 @@ function activeKeyForTool(tool: EditorToolDef) {
             :tool-icons="toolIcons"
             :tool-labels="toolLabels"
             :tool-shortcuts="toolShortcuts"
-            :content-class="flyoutContentClass"
+            :ui="ui"
             @select="emit('setTool', $event)"
           />
         </Tip>
 
-        <ToolbarItem v-else v-slot="{ active, select: selectTool }" :tool="tool.key">
+        <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
           <Tip :label="`${toolLabels[tool.key]} (${tool.shortcut})`">
             <ToolButton
               :test-id="`toolbar-tool-${tool.key.toLowerCase()}`"
               :icon="toolIcons[tool.key]"
               :active="active || isActive(tool)"
-              @click="selectTool"
+              @click="actions.select"
             />
           </Tip>
         </ToolbarItem>

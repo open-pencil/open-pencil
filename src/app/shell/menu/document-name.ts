@@ -12,10 +12,6 @@ export function useDocumentNameRename(store: EditorStore) {
   })
   const editingName = computed(() => rename.editingId.value === DOCUMENT_NAME_ID)
 
-  function setNameInputRef(el: HTMLInputElement | null) {
-    if (el) void rename.focusInput(el)
-  }
-
   function startRename() {
     rename.start(DOCUMENT_NAME_ID, store.state.documentName)
   }
@@ -24,5 +20,5 @@ export function useDocumentNameRename(store: EditorStore) {
     rename.commit(DOCUMENT_NAME_ID, input)
   }
 
-  return { rename, editingName, setNameInputRef, startRename, commitRename }
+  return { rename, editingName, startRename, commitRename }
 }

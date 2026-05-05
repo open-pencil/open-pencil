@@ -5,25 +5,15 @@ export function useVariablesDialogState() {
   const variables = useVariables()
 
   const editingCollectionId = ref<string | null>(null)
-  const collectionInputRefs = new Map<string, HTMLInputElement>()
-  const pendingCollectionFocusId = ref<string | null>(null)
-
-  function setCollectionInputRef(id: string, el: HTMLInputElement | null) {
-    if (el) collectionInputRefs.set(id, el)
-    else collectionInputRefs.delete(id)
-
-    if (el && pendingCollectionFocusId.value === id) {
-      pendingCollectionFocusId.value = null
-      void nextTick(() => {
-        el.focus()
-        el.select()
-      })
-    }
+  async function focusCollectionInput(input: HTMLInputElement | null) {
+    if (!input) return
+    await nextTick()
+    input.focus()
+    input.select()
   }
 
   function startRenameCollection(id: string) {
     editingCollectionId.value = id
-    pendingCollectionFocusId.value = id
   }
 
   function commitRenameCollection(id: string, input: HTMLInputElement) {
@@ -39,7 +29,7 @@ export function useVariablesDialogState() {
   return {
     ...variables,
     editingCollectionId,
-    setCollectionInputRef,
+    focusCollectionInput,
     startRenameCollection,
     commitRenameCollection
   }

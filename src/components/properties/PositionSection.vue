@@ -34,11 +34,7 @@ function handleAlign(
       wValue,
       hValue,
       rotationValue,
-      updateProp,
-      commitProp,
-      align,
-      flip,
-      rotate
+      actions
     }"
   >
     <div v-if="active" data-test-id="position-section" :class="sectionCls.wrapper">
@@ -50,7 +46,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-left"
-              @click="handleAlign(align, 'horizontal', 'min')"
+              @click="handleAlign(actions.align, 'horizontal', 'min')"
             >
               <icon-lucide-align-start-vertical class="size-3.5" />
             </button>
@@ -59,7 +55,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-center-h"
-              @click="handleAlign(align, 'horizontal', 'center')"
+              @click="handleAlign(actions.align, 'horizontal', 'center')"
             >
               <icon-lucide-align-center-vertical class="size-3.5" />
             </button>
@@ -68,7 +64,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-right"
-              @click="handleAlign(align, 'horizontal', 'max')"
+              @click="handleAlign(actions.align, 'horizontal', 'max')"
             >
               <icon-lucide-align-end-vertical class="size-3.5" />
             </button>
@@ -79,7 +75,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-top"
-              @click="handleAlign(align, 'vertical', 'min')"
+              @click="handleAlign(actions.align, 'vertical', 'min')"
             >
               <icon-lucide-align-start-horizontal class="size-3.5" />
             </button>
@@ -88,7 +84,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-center-v"
-              @click="handleAlign(align, 'vertical', 'center')"
+              @click="handleAlign(actions.align, 'vertical', 'center')"
             >
               <icon-lucide-align-center-horizontal class="size-3.5" />
             </button>
@@ -97,7 +93,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-bottom"
-              @click="handleAlign(align, 'vertical', 'max')"
+              @click="handleAlign(actions.align, 'vertical', 'max')"
             >
               <icon-lucide-align-end-horizontal class="size-3.5" />
             </button>
@@ -109,14 +105,14 @@ function handleAlign(
         <ScrubInput
           icon="X"
           :model-value="xValue"
-          @update:model-value="updateProp('x', $event)"
-          @commit="(v: number, p: number) => commitProp('x', v, p)"
+          @update:model-value="actions.updateProp('x', $event)"
+          @commit="(v: number, p: number) => actions.commitProp('x', v, p)"
         />
         <ScrubInput
           icon="Y"
           :model-value="yValue"
-          @update:model-value="updateProp('y', $event)"
-          @commit="(v: number, p: number) => commitProp('y', v, p)"
+          @update:model-value="actions.updateProp('y', $event)"
+          @commit="(v: number, p: number) => actions.commitProp('y', v, p)"
         />
       </div>
 
@@ -125,15 +121,15 @@ function handleAlign(
           icon="W"
           :model-value="wValue"
           :min="1"
-          @update:model-value="updateProp('width', $event)"
-          @commit="(v: number, p: number) => commitProp('width', v, p)"
+          @update:model-value="actions.updateProp('width', $event)"
+          @commit="(v: number, p: number) => actions.commitProp('width', v, p)"
         />
         <ScrubInput
           icon="H"
           :model-value="hValue"
           :min="1"
-          @update:model-value="updateProp('height', $event)"
-          @commit="(v: number, p: number) => commitProp('height', v, p)"
+          @update:model-value="actions.updateProp('height', $event)"
+          @commit="(v: number, p: number) => actions.commitProp('height', v, p)"
         />
       </div>
 
@@ -144,8 +140,8 @@ function handleAlign(
           :model-value="rotationValue"
           :min="-360"
           :max="360"
-          @update:model-value="updateProp('rotation', $event)"
-          @commit="(v: number, p: number) => commitProp('rotation', v, p)"
+          @update:model-value="actions.updateProp('rotation', $event)"
+          @commit="(v: number, p: number) => actions.commitProp('rotation', v, p)"
         >
           <template #icon>
             <icon-lucide-rotate-cw class="size-3" />
@@ -155,7 +151,7 @@ function handleAlign(
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
             data-test-id="position-flip-horizontal"
-            @click="flip('horizontal')"
+            @click="actions.flip('horizontal')"
           >
             <icon-lucide-flip-horizontal-2 class="size-3.5" />
           </button>
@@ -164,7 +160,7 @@ function handleAlign(
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
             data-test-id="position-flip-vertical"
-            @click="flip('vertical')"
+            @click="actions.flip('vertical')"
           >
             <icon-lucide-flip-vertical-2 class="size-3.5" />
           </button>
@@ -173,7 +169,7 @@ function handleAlign(
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
             data-test-id="position-rotate-90"
-            @click="rotate(90)"
+            @click="actions.rotate(90)"
           >
             <icon-lucide-rotate-cw-square class="size-3.5" />
           </button>

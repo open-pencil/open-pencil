@@ -8,11 +8,15 @@ import { useEditor } from '#vue/editor/context'
 /**
  * Options for {@link useTypography}.
  */
+export interface TypographyFontLoader {
+  load: (family: string, style: string) => Promise<unknown>
+}
+
 export interface UseTypographyOptions {
   /**
    * Optional font loader invoked before changing family or weight.
    */
-  loadFont?: (family: string, style: string) => Promise<unknown>
+  fontLoader?: TypographyFontLoader
 }
 
 /**

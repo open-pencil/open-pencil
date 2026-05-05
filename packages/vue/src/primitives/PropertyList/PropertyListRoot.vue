@@ -130,6 +130,14 @@ function toggleVisibility(index: number) {
   else updateVisibility()
 }
 
+const actions = {
+  add,
+  remove,
+  update,
+  patch,
+  toggleVisibility
+}
+
 providePropertyList({
   editor,
   propKey,
@@ -152,10 +160,6 @@ providePropertyList({
     :is-mixed="isMixed"
     :is-multi="isMulti"
     :active-node="activeNode"
-    :add="add"
-    :remove="remove"
-    :update="update"
-    :patch="patch"
-    :toggle-visibility="toggleVisibility"
+    :actions="actions"
   />
 </template>

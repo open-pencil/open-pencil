@@ -39,8 +39,10 @@ const { panels } = useI18n()
 <template>
   <FillPickerRoot
     :fill="fill"
-    :content-class="cls.content"
-    swatch-class="size-5 shrink-0 cursor-pointer rounded border border-border p-0"
+    :ui="{
+      content: cls.content,
+      swatch: 'size-5 shrink-0 cursor-pointer rounded border border-border p-0'
+    }"
     @update="emit('update', $event)"
   >
     <template #trigger="{ style }">
@@ -50,7 +52,7 @@ const { panels } = useI18n()
         :style="{ ...style, background: swatchBackground ?? style.background }"
       />
     </template>
-    <template #default="{ fill: currentFill, category, toSolid, toGradient, toImage, update }">
+    <template #default="{ fill: currentFill, category, toSolid, toGradient, toImage }">
       <div class="mb-2 flex items-center gap-0.5">
         <Tip :label="panels.solid">
           <button
@@ -85,12 +87,12 @@ const { panels } = useI18n()
         v-if="category === 'SOLID'"
         :color="currentFill.color"
         :okhcl="okhcl"
-        @update="update(applySolidFillColor(currentFill, $event))"
+        @update="emit('update', applySolidFillColor(currentFill, $event))"
       />
 
-      <GradientEditor v-if="category === 'GRADIENT'" :fill="currentFill" @update="update($event)" />
+      <GradientEditor v-if="category === 'GRADIENT'" :fill="currentFill" @update="emit('update', $event)" />
 
-      <ImageFillPicker v-if="category === 'IMAGE'" :fill="currentFill" @update="update($event)" />
+      <ImageFillPicker v-if="category === 'IMAGE'" :fill="currentFill" @update="emit('update', $event)" />
     </template>
   </FillPickerRoot>
 </template>

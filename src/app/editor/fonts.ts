@@ -1,5 +1,5 @@
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { fontManager, styleToWeight } from '@open-pencil/core/text'
+import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pencil/core/text'
 
 interface TauriFontFamily {
   family: string
@@ -27,6 +27,16 @@ export function preloadFonts(): void {
   if (IS_TAURI) {
     void getTauriFonts().then(registerFontFaces)
   }
+}
+
+export function localFontAccessState(): LocalFontAccessState {
+  return IS_TAURI ? 'granted' : fontManager.localAccessState()
+}
+
+export async function requestLocalFontAccess(): Promise<string[]> {
+  if (IS_TAURI) return listFamilies()
+  await fontManager.requestLocalFontAccess()
+  return fontManager.listFamilies()
 }
 
 function registerFontFaces(fonts: TauriFontFamily[]): void {

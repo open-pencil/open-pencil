@@ -34,7 +34,7 @@ function updateFill(
 
 <template>
   <PropertyListRoot
-    v-slot="{ items, isMixed, activeNode, add, remove, update, patch, toggleVisibility }"
+    v-slot="{ items, isMixed, activeNode, actions }"
     prop-key="fills"
     :label="panels.fill"
   >
@@ -44,7 +44,7 @@ function updateFill(
         <button
           data-test-id="fill-section-add"
           :class="useIconButtonUI().base"
-          @click="add({ ...fillCtx.defaultFill })"
+          @click="actions.add({ ...fillCtx.defaultFill })"
         >
           +
         </button>
@@ -63,9 +63,9 @@ function updateFill(
         unbind-test-id="fill-unbind-variable"
         data-test-id="fill-item"
         :data-test-index="i"
-        @patch="patch(i, $event)"
-        @toggle-visibility="toggleVisibility(i)"
-        @remove="remove(i)"
+        @patch="actions.patch(i, $event)"
+        @toggle-visibility="actions.toggleVisibility(i)"
+        @remove="actions.remove(i)"
       >
         <FillPicker
           :fill="activeNode ? displayFillWithBoundVariable(fillCtx, activeNode.id, i, fill) : fill"
@@ -73,7 +73,7 @@ function updateFill(
           :swatch-background="
             activeNode ? boundVariableSwatchBackground(fillCtx, activeNode.id, i) : undefined
           "
-          @update="updateFill(activeNode, i, $event, update)"
+          @update="updateFill(activeNode, i, $event, actions.update)"
         />
 
         <span

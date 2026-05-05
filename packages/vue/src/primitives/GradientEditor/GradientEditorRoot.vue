@@ -28,6 +28,18 @@ const {
   computed(() => fill),
   (updated) => emit('update', updated)
 )
+
+const actions = {
+  setSubtype,
+  selectStop,
+  addStop,
+  removeStop,
+  updateStopPosition,
+  updateStopColor,
+  updateStopOpacity,
+  updateActiveColor,
+  dragStop
+}
 </script>
 
 <template>
@@ -38,14 +50,6 @@ const {
     :active-stop-index="activeStopIndex"
     :active-color="activeColor"
     :bar-background="barBackground"
-    :set-subtype="setSubtype"
-    :select-stop="selectStop"
-    :add-stop="addStop"
-    :remove-stop="removeStop"
-    :update-stop-position="updateStopPosition"
-    :update-stop-color="updateStopColor"
-    :update-stop-opacity="updateStopOpacity"
-    :update-active-color="updateActiveColor"
-    :drag-stop="dragStop"
+    :actions="actions"
   />
 </template>

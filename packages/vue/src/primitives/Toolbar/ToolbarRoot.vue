@@ -28,6 +28,12 @@ function closeFlyout() {
   expandedFlyout.value = null
 }
 
+const actions = {
+  setTool,
+  toggleFlyout,
+  closeFlyout
+}
+
 provideToolbar({
   editor,
   tools,
@@ -44,8 +50,6 @@ provideToolbar({
     :tools="tools"
     :active-tool="activeTool"
     :expanded-flyout="expandedFlyout"
-    :set-tool="setTool"
-    :toggle-flyout="toggleFlyout"
-    :close-flyout="closeFlyout"
+    :actions="actions"
   />
 </template>

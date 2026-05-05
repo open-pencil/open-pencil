@@ -25,7 +25,7 @@ const { panels } = useI18n()
         <AppSelect
           :model-value="root.subtype"
           :options="root.subtypes"
-          @update:model-value="root.setSubtype($event)"
+          @update:model-value="root.actions.setSubtype($event)"
         />
       </div>
 
@@ -33,27 +33,20 @@ const { panels } = useI18n()
         :stops="root.stops"
         :active-stop-index="root.activeStopIndex"
         :bar-background="root.barBackground"
-        @select-stop="root.selectStop"
-        @drag-stop="root.dragStop"
+        :ui="{ bar: 'relative mb-2 h-6 rounded' }"
+        data-test-id="fill-picker-gradient-bar"
+        @select-stop="root.actions.selectStop"
+        @drag-stop="root.actions.dragStop"
         v-slot="bar"
       >
         <div
-          :ref="bar.barRef"
-          data-test-id="fill-picker-gradient-bar"
-          class="relative mb-2 h-6 rounded"
-          :style="{ background: bar.barBackground }"
-          @pointermove="bar.onPointerMove"
-          @pointerup="bar.onPointerUp"
-        >
-          <div
-            v-for="(stop, idx) in bar.stops"
-            :key="idx"
-            class="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-sm border-2 shadow-sm"
-            :class="idx === bar.activeStopIndex ? 'border-white' : 'border-white/60'"
-            :style="{ left: `${stop.position * 100}%`, background: colorToCSS(stop.color) }"
-            @pointerdown.stop="bar.onStopPointerDown(idx, $event)"
-          />
-        </div>
+          v-for="(stop, idx) in bar.stops"
+          :key="idx"
+          class="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 cursor-grab rounded-sm border-2 shadow-sm"
+          :class="idx === bar.activeStopIndex ? 'border-white' : 'border-white/60'"
+          :style="{ left: `${stop.position * 100}%`, background: colorToCSS(stop.color) }"
+          @pointerdown.stop="bar.actions.stopPointerDown(idx, $event)"
+        />
       </GradientEditorBar>
 
       <div class="mb-2">
@@ -63,7 +56,7 @@ const { panels } = useI18n()
             <button
               class="flex size-4 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-surface"
               data-test-id="fill-picker-add-stop"
-              @click="root.addStop"
+              @click="root.actions.addStop"
             >
               <icon-lucide-plus class="size-3" />
             </button>
@@ -75,17 +68,17 @@ const { panels } = useI18n()
           :stop="stop"
           :index="idx"
           :active="idx === root.activeStopIndex"
-          @select="root.selectStop"
-          @update-position="root.updateStopPosition"
-          @update-color="root.updateStopColor"
-          @update-opacity="root.updateStopOpacity"
-          @remove="root.removeStop"
+          @select="root.actions.selectStop"
+          @update-position="root.actions.updateStopPosition"
+          @update-color="root.actions.updateStopColor"
+          @update-opacity="root.actions.updateStopOpacity"
+          @remove="root.actions.removeStop"
           v-slot="s"
         >
           <div
             class="flex items-center gap-1 py-0.5"
             :class="{ 'rounded bg-hover/50': s.active }"
-            @click="s.select"
+            @click="s.actions.select"
           >
             <ScrubInput
               class="w-11"
@@ -93,19 +86,19 @@ const { panels } = useI18n()
               :model-value="s.positionPercent"
               :min="0"
               :max="100"
-              @update:model-value="s.updatePosition(Number($event))"
+              @update:model-value="s.actions.updatePosition(Number($event))"
               @click.stop
             />
             <button
               class="size-4 shrink-0 cursor-pointer rounded border border-border p-0"
               :style="{ background: s.css }"
-              @click.stop="s.select"
+              @click.stop="s.actions.select"
             />
             <input
               class="min-w-0 flex-1 rounded border border-border bg-input px-1 py-0.5 font-mono text-[11px] text-surface"
               :value="s.hex"
               maxlength="6"
-              @change="s.updateColor(($event.target as HTMLInputElement).value)"
+              @change="s.actions.updateColor(($event.target as HTMLInputElement).value)"
               @click.stop
             />
             <ScrubInput
@@ -114,13 +107,13 @@ const { panels } = useI18n()
               :model-value="s.opacityPercent"
               :min="0"
               :max="100"
-              @update:model-value="s.updateOpacity(Number($event))"
+              @update:model-value="s.actions.updateOpacity(Number($event))"
               @click.stop
             />
             <button
               v-if="root.stops.length > 2"
               class="flex size-4 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-surface"
-              @click.stop="s.remove"
+              @click.stop="s.actions.remove"
             >
               −
             </button>
@@ -128,7 +121,7 @@ const { panels } = useI18n()
         </GradientEditorStop>
       </div>
 
-      <ColorPickerPanel :color="root.activeColor" @update="root.updateActiveColor" />
+      <ColorPickerPanel :color="root.activeColor" @update="root.actions.updateActiveColor" />
     </div>
   </GradientEditorRoot>
 </template>

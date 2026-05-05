@@ -12,8 +12,11 @@ const { tool } = defineProps<{
 const { activeTool, setTool } = useToolbar()
 
 const isActive = computed(() => activeTool.value === tool)
+const actions = {
+  select: () => setTool(tool)
+}
 </script>
 
 <template>
-  <slot :active="isActive" :select="() => setTool(tool)" :tool="tool" />
+  <slot :active="isActive" :actions="actions" :tool="tool" />
 </template>

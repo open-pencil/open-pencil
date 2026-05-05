@@ -15,7 +15,7 @@ import { ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
-import type { ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import type { ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
 const {
   tool,
@@ -23,7 +23,7 @@ const {
   toolIcons,
   toolLabels,
   toolShortcuts,
-  contentClass,
+  ui,
   mobile = false
 } = defineProps<{
   tool: EditorToolDef
@@ -31,7 +31,7 @@ const {
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
-  contentClass: string
+  ui?: ToolbarUi
   mobile?: boolean
 }>()
 
@@ -85,17 +85,17 @@ function activeKeyForTool() {
       </DropdownMenuTrigger>
 
       <DropdownMenuPortal>
-        <DropdownMenuContent side="top" :side-offset="8" align="start" :class="contentClass">
+        <DropdownMenuContent side="top" :side-offset="8" align="start" :class="ui?.flyoutContent">
           <ToolbarItem
             v-for="sub in tool.flyout"
             :key="sub"
-            v-slot="{ active: subActive, select: selectSub }"
+            v-slot="{ active: subActive, actions }"
             :tool="sub"
           >
             <DropdownMenuItem
               :data-test-id="`${mobile ? 'mobile-' : ''}toolbar-flyout-item-${sub.toLowerCase()}`"
               :class="menu().item({ class: subActive ? 'bg-accent text-white' : undefined })"
-              @select="selectSub"
+              @select="actions.select"
             >
               <component :is="toolIcons[sub]" class="size-3.5" />
               <span class="flex-1">{{ toolLabels[sub] }}</span>

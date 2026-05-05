@@ -65,7 +65,7 @@ export function createTypographyActions({
   options
 }: TypographyActionOptions) {
   async function doLoadFont(family: string, style: string) {
-    if (options.loadFont) await options.loadFont(family, style)
+    await options.fontLoader?.load(family, style)
   }
 
   async function setFamily(family: string) {

@@ -84,7 +84,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
 
 <template>
   <PropertyListRoot
-    v-slot="{ items, isMixed, activeNode, add, remove, patch, toggleVisibility }"
+    v-slot="{ items, isMixed, activeNode, actions }"
     prop-key="strokes"
     :label="panels.stroke"
   >
@@ -94,7 +94,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
         <button
           data-test-id="stroke-section-add"
           :class="useIconButtonUI().base"
-          @click="add(strokeCtx.defaultStroke)"
+          @click="actions.add(strokeCtx.defaultStroke)"
         >
           +
         </button>
@@ -115,9 +115,9 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
         unbind-test-id="stroke-unbind-variable"
         data-test-id="stroke-item"
         :data-test-index="i"
-        @patch="patch(i, $event)"
-        @toggle-visibility="toggleVisibility(i)"
-        @remove="remove(i)"
+        @patch="actions.patch(i, $event)"
+        @toggle-visibility="actions.toggleVisibility(i)"
+        @remove="actions.remove(i)"
       >
         <ColorInput
           class="min-w-0 flex-1"
@@ -139,7 +139,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
               : null
           "
           editable
-          @update="updateStrokeColor(activeNode, i, $event, patch)"
+          @update="updateStrokeColor(activeNode, i, $event, actions.patch)"
         />
       </ColorStyleRow>
 
@@ -158,7 +158,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
           class="flex-1"
           :model-value="activeNode!.strokes[0]?.weight ?? 1"
           :min="0"
-          @update:model-value="patch(0, { weight: $event })"
+          @update:model-value="actions.patch(0, { weight: $event })"
         >
           <template #icon>
             <svg
@@ -204,7 +204,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
               ? '!border-accent !text-accent'
               : 'border-border text-muted hover:bg-hover hover:text-surface'
           "
-          @click="toggleDash((items as Stroke[])[0], patch)"
+          @click="toggleDash((items as Stroke[])[0], actions.patch)"
         >
           <svg
             class="size-3"
@@ -222,7 +222,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
             :model-value="(items as Stroke[])[0].dashPattern?.[0] ?? 6"
             :min="1"
             data-test-id="stroke-dash-length"
-            @update:model-value="setDash((items as Stroke[])[0], patch, $event)"
+            @update:model-value="setDash((items as Stroke[])[0], actions.patch, $event)"
           >
             <template #icon>
               <svg
@@ -246,7 +246,7 @@ function setGap(stroke: Stroke | undefined, patch: StrokePatch, value: number) {
             "
             :min="1"
             data-test-id="stroke-dash-gap"
-            @update:model-value="setGap((items as Stroke[])[0], patch, $event)"
+            @update:model-value="setGap((items as Stroke[])[0], actions.patch, $event)"
           >
             <template #icon>
               <svg

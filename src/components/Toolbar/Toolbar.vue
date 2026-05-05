@@ -54,6 +54,7 @@ const toolShortcuts: Record<Tool, string> = {
 }
 
 const flyoutMenuCls = useMenuUI({ content: 'min-w-32' })
+const toolbarUi = { flyoutContent: flyoutMenuCls.content }
 const { editActions, arrangeActions } = useToolbarActions({ store, getCommand, menu })
 
 const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
@@ -65,7 +66,7 @@ function onActionTap(item: ToolbarActionItem) {
 </script>
 
 <template>
-  <ToolbarRoot v-slot="{ tools, activeTool, setTool }">
+  <ToolbarRoot v-slot="{ tools, activeTool, actions }">
     <DesktopToolbar
       v-if="!isMobile"
       :tools="tools"
@@ -73,8 +74,8 @@ function onActionTap(item: ToolbarActionItem) {
       :tool-icons="toolIcons"
       :tool-labels="toolLabels"
       :tool-shortcuts="toolShortcuts"
-      :flyout-content-class="flyoutMenuCls.content"
-      @set-tool="setTool"
+      :ui="toolbarUi"
+      @set-tool="actions.setTool"
     />
 
     <MobileToolbar
@@ -84,14 +85,14 @@ function onActionTap(item: ToolbarActionItem) {
       :tool-icons="toolIcons"
       :tool-labels="toolLabels"
       :tool-shortcuts="toolShortcuts"
-      :flyout-content-class="flyoutMenuCls.content"
+      :ui="toolbarUi"
       :mobile-category="mobileCategory"
       :slide-direction="slideDirection"
       :has-prev="hasPrev"
       :has-next="hasNext"
       :edit-actions="editActions"
       :arrange-actions="arrangeActions"
-      @set-tool="setTool"
+      @set-tool="actions.setTool"
       @prev="goPrev"
       @next="goNext"
       @action="onActionTap"

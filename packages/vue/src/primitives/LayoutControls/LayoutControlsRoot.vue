@@ -4,6 +4,28 @@ import { provideLayoutControls } from '#vue/primitives/LayoutControls/context'
 import { proxyRefs } from 'vue'
 
 const ctx = useLayout()
+const actions = {
+  updateProp: ctx.updateProp,
+  updateSizeLimit: ctx.updateSizeLimit,
+  setSizeLimitToCurrent: ctx.setSizeLimitToCurrent,
+  commitSizeLimit: ctx.commitSizeLimit,
+  addSizeLimit: ctx.addSizeLimit,
+  removeSizeLimit: ctx.removeSizeLimit,
+  commitProp: ctx.commitProp,
+  setWidthSizing: ctx.setWidthSizing,
+  setHeightSizing: ctx.setHeightSizing,
+  setHorizontalPadding: ctx.setHorizontalPadding,
+  commitHorizontalPadding: ctx.commitHorizontalPadding,
+  setVerticalPadding: ctx.setVerticalPadding,
+  commitVerticalPadding: ctx.commitVerticalPadding,
+  setAlignment: ctx.setAlignment,
+  setGapAuto: ctx.setGapAuto,
+  setLayoutDirection: ctx.setLayoutDirection,
+  updateGridTrack: ctx.updateGridTrack,
+  addTrack: ctx.addTrack,
+  removeTrack: ctx.removeTrack,
+  toggleIndividualPadding: ctx.toggleIndividualPadding
+}
 provideLayoutControls(
   proxyRefs(ctx) as ReturnType<typeof proxyRefs<typeof ctx>> & {
     node: NonNullable<typeof ctx.node.value>
@@ -29,26 +51,7 @@ provideLayoutControls(
     :has-uniform-padding="ctx.hasUniformPadding.value"
     :has-symmetric-padding="ctx.hasSymmetricPadding.value"
     :track-sizing-options="ctx.trackSizingOptions"
-    :update-prop="ctx.updateProp"
-    :update-size-limit="ctx.updateSizeLimit"
-    :set-size-limit-to-current="ctx.setSizeLimitToCurrent"
-    :commit-size-limit="ctx.commitSizeLimit"
-    :add-size-limit="ctx.addSizeLimit"
-    :remove-size-limit="ctx.removeSizeLimit"
-    :commit-prop="ctx.commitProp"
-    :set-width-sizing="ctx.setWidthSizing"
-    :set-height-sizing="ctx.setHeightSizing"
-    :set-horizontal-padding="ctx.setHorizontalPadding"
-    :commit-horizontal-padding="ctx.commitHorizontalPadding"
-    :set-vertical-padding="ctx.setVerticalPadding"
-    :commit-vertical-padding="ctx.commitVerticalPadding"
-    :set-alignment="ctx.setAlignment"
-    :set-gap-auto="ctx.setGapAuto"
-    :set-layout-direction="ctx.setLayoutDirection"
-    :update-grid-track="ctx.updateGridTrack"
-    :add-track="ctx.addTrack"
-    :remove-track="ctx.removeTrack"
     :track-label="ctx.trackLabel"
-    :toggle-individual-padding="ctx.toggleIndividualPadding"
+    :actions="actions"
   />
 </template>

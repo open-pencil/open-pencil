@@ -2,6 +2,14 @@
 import { useAppearance } from '#vue/controls/appearance/use'
 
 const ctx = useAppearance()
+const actions = {
+  updateProp: ctx.updateProp,
+  commitProp: ctx.commitProp,
+  toggleVisibility: ctx.toggleVisibility,
+  toggleIndependentCorners: ctx.toggleIndependentCorners,
+  updateCornerProp: ctx.updateCornerProp,
+  commitCornerProp: ctx.commitCornerProp
+}
 </script>
 
 <template>
@@ -14,11 +22,6 @@ const ctx = useAppearance()
     :corner-radius-value="ctx.cornerRadiusValue.value"
     :opacity-percent="ctx.opacityPercent.value"
     :visibility-state="ctx.visibilityState.value"
-    :update-prop="ctx.updateProp"
-    :commit-prop="ctx.commitProp"
-    :toggle-visibility="ctx.toggleVisibility"
-    :toggle-independent-corners="ctx.toggleIndependentCorners"
-    :update-corner-prop="ctx.updateCornerProp"
-    :commit-corner-prop="ctx.commitCornerProp"
+    :actions="actions"
   />
 </template>

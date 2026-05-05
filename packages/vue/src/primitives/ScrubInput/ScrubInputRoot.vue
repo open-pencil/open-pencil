@@ -125,6 +125,13 @@ const ctx = {
   onKeydown
 }
 
+const actions = {
+  startScrub,
+  startEdit,
+  commitEdit,
+  keydown: onKeydown
+}
+
 provideScrubInput(ctx)
 
 watch(editing, (v) => emit('editing-change', v))
@@ -137,10 +144,7 @@ watch(editing, (v) => emit('editing-change', v))
     :is-mixed="isMixed"
     :editing="editing"
     :scrubbing="scrubbing"
-    :start-scrub="startScrub"
-    :start-edit="startEdit"
-    :commit-edit="commitEdit"
-    :keydown="onKeydown"
+    :actions="actions"
     :placeholder="placeholder"
   />
 </template>

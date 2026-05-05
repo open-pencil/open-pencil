@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+import { templateRef } from '@vueuse/core'
+
 import {
   MenubarCheckboxItem,
   MenubarContent,
@@ -37,8 +40,12 @@ import { useEditorStore } from '@/app/editor/active-store'
 
 const store = useEditorStore()
 
-const { rename, editingName, setNameInputRef, startRename, commitRename } =
-  useDocumentNameRename(store)
+const { rename, editingName, startRename, commitRename } = useDocumentNameRename(store)
+const nameInput = templateRef<HTMLInputElement>('nameInput')
+
+watch(nameInput, (input) => {
+  if (input) void rename.focusInput(input)
+})
 
 const isMac = navigator.platform.includes('Mac')
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -56,7 +63,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
       <input
         v-if="editingName"
-        :ref="(el) => setNameInputRef(el as HTMLInputElement | null)"
+        ref="nameInput"
         data-test-id="app-document-name-input"
         class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0.5 text-xs text-surface outline-none"
         :value="store.state.documentName"
