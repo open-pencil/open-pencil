@@ -2,8 +2,6 @@ name: Heavy tests
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 3 * * *'
 
 concurrency:
   group: heavy-tests-${{ github.ref }}
