@@ -1,0 +1,25 @@
+import { expect, test } from '@playwright/test'
+
+import { CanvasHelper } from '../helpers/canvas'
+
+test('font settings popover is available from typography panel', async ({ page }) => {
+  await page.goto('/')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__!
+    const id = store.createShape('TEXT', 120, 120, 240, 40)
+    store.updateNode(id, { characters: 'Font settings smoke' })
+    store.select([id])
+  })
+
+  await expect(page.locator('[data-test-id="typography-section"]')).toBeVisible()
+  await page.locator('[data-test-id="font-settings-trigger"]').click()
+
+  await expect(page.getByText('Manage local font access')).toBeVisible()
+  await expect(page.locator('[data-test-id="font-settings-request-access"]')).toBeVisible()
+  await expect(page.locator('[data-test-id="font-settings-download-fallbacks"]')).toBeVisible()
+  await expect(page.locator('[data-test-id="font-settings-refresh-cache"]')).toBeVisible()
+  await expect(page.locator('[data-test-id="font-settings-clear-cache"]')).toBeVisible()
+})

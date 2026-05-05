@@ -1,89 +1,23 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import { computed, onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 
-import {
-  clearDownloadedFontCache,
-  downloadedFontCacheSummary,
-  localFontAccessState,
-  predownloadFallbackFonts,
-  requestLocalFontAccess
-} from '@/app/editor/fonts'
+import { useFontSettings } from '@/components/FontSettings/use'
 import { usePopoverUI } from '@/components/ui/popover'
 
 const cls = usePopoverUI({ content: 'isolate z-[51] w-72 p-3' })
-const cacheCount = ref(0)
-const cacheByteLength = ref(0)
-const cacheUpdatedAt = ref<number | null>(null)
-const accessState = ref(localFontAccessState())
-const busyAction = ref<'access' | 'download' | 'clear' | 'refresh' | null>(null)
-const status = ref('')
-
-const cacheSize = computed(() => {
-  if (cacheByteLength.value === 0) return '0 MB'
-  return `${(cacheByteLength.value / 1024 / 1024).toFixed(1)} MB`
-})
-
-const cacheUpdatedLabel = computed(() => {
-  if (cacheUpdatedAt.value === null) return 'Never'
-  return new Date(cacheUpdatedAt.value).toLocaleDateString()
-})
-
-async function refreshSummary() {
-  busyAction.value = busyAction.value ?? 'refresh'
-  try {
-    const summary = await downloadedFontCacheSummary()
-    cacheCount.value = summary.count
-    cacheByteLength.value = summary.byteLength
-    cacheUpdatedAt.value = summary.updatedAt
-    accessState.value = localFontAccessState()
-  } finally {
-    if (busyAction.value === 'refresh') busyAction.value = null
-  }
-}
-
-async function requestAccess() {
-  busyAction.value = 'access'
-  status.value = ''
-  try {
-    await requestLocalFontAccess()
-    accessState.value = localFontAccessState()
-    status.value = 'Local font access enabled.'
-  } catch {
-    accessState.value = localFontAccessState()
-    status.value = 'Local font access was not granted.'
-  } finally {
-    busyAction.value = null
-  }
-}
-
-async function downloadFallbacks() {
-  busyAction.value = 'download'
-  status.value = ''
-  try {
-    await predownloadFallbackFonts()
-    await refreshSummary()
-    status.value = 'Fallback fonts downloaded.'
-  } catch {
-    status.value = 'Could not download fallback fonts.'
-  } finally {
-    busyAction.value = null
-  }
-}
-
-async function clearCache() {
-  busyAction.value = 'clear'
-  status.value = ''
-  try {
-    await clearDownloadedFontCache()
-    await refreshSummary()
-    status.value = 'Downloaded font cache cleared.'
-  } catch {
-    status.value = 'Could not clear downloaded font cache.'
-  } finally {
-    busyAction.value = null
-  }
-}
+const {
+  accessState,
+  busyAction,
+  cacheCount,
+  cacheSize,
+  cacheUpdatedLabel,
+  status,
+  clearCache,
+  downloadFallbacks,
+  refreshSummary,
+  requestAccess
+} = useFontSettings()
 
 onMounted(() => {
   void refreshSummary()
