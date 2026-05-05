@@ -171,6 +171,7 @@ export {
   normalizeFontFamily,
   isVariableFont,
   styleToVariant,
+  type DownloadedFontCache,
   type FontInfo,
   type LocalFontAccessState
 } from './text/fonts'

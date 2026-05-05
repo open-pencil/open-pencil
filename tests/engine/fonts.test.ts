@@ -102,6 +102,27 @@ describe('FontManager loaded font cache', () => {
     manager.detachProvider(second.provider)
     expect(manager.provider()).toBeNull()
   })
+
+  test('loads downloaded cache before other sources', async () => {
+    const manager = new FontManager()
+    const recording = createRecordingProvider()
+    const data = new ArrayBuffer(16)
+    let writes = 0
+
+    manager.attachProvider({} as CanvasKit, recording.provider)
+    manager.setDownloadedFontCache({
+      async read(family, style) {
+        return family === 'DownloadedCache' && style === 'Regular' ? data : null
+      },
+      async write() {
+        writes++
+      }
+    })
+
+    await expect(manager.loadFont('DownloadedCache', 'Regular')).resolves.toBe(data)
+    expect(recording.registrations).toEqual([{ family: 'DownloadedCache', byteLength: 16 }])
+    expect(writes).toBe(0)
+  })
 })
 
 describe('collectFontKeys', () => {

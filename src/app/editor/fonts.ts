@@ -1,6 +1,12 @@
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pencil/core/text'
 
+import { createTauriDownloadedFontCache } from '@/app/editor/font-cache'
+
+if (IS_TAURI) {
+  fontManager.setDownloadedFontCache(createTauriDownloadedFontCache())
+}
+
 interface TauriFontFamily {
   family: string
   styles: string[]
@@ -64,6 +70,9 @@ export async function listFonts(): Promise<TauriFontFamily[]> {
 
 export async function loadFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
   if (IS_TAURI) {
+    const cached = await fontManager.loadCachedFont(family, style)
+    if (cached) return cached
+
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const data = await invoke<number[]>('load_system_font', { family, style })
