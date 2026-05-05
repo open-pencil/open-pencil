@@ -22,10 +22,10 @@ import {
 
 export { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './paths'
 
-import { svg, renderSVGNode } from './node'
-
 import type { SceneGraph, SceneNode, Fill, Stroke, CharacterStyleOverride } from '#core/scene-graph'
+
 import type { SVGExportContext } from './defs'
+import { svg, renderSVGNode } from './node'
 import type { SVGNode } from './node'
 
 // --- Node rendering ---

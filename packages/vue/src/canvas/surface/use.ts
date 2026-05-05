@@ -1,13 +1,14 @@
+import type { CanvasKit } from 'canvaskit-wasm'
+import type { Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+
 import {
   createCanvasSurfaceManager,
   useCanvasSurfaceLifecycle
 } from '#vue/canvas/surface/lifecycle'
 import { createCanvasHitTests, createRulerVisibility } from '#vue/canvas/surface/overlays'
-
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { CanvasKit } from 'canvaskit-wasm'
-import type { Ref } from 'vue'
 
 export type { UseCanvasOptions } from '#vue/canvas/surface/types'
 

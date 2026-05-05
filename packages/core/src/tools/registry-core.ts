@@ -13,11 +13,10 @@ import {
   updateNode
 } from './modify'
 import { findNodes, getJsx, getNode, getSelection } from './read'
+import type { ToolDef } from './schema'
 import { stockPhoto } from './stock-photo'
 import { batchUpdate, deleteNode, nodeResize, reparentNode } from './structure'
 import { viewportZoomToFit } from './vector'
-
-import type { ToolDef } from './schema'
 
 /**
  * Core tools registered by default in AI chat (~30 tools, ~3K schema tokens).

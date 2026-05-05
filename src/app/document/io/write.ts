@@ -1,6 +1,6 @@
-import { isTauri } from '@/app/tauri/env'
-
 import type { EditorState } from '@open-pencil/core/editor'
+
+import { isTauri } from '@/app/tauri/env'
 
 type WriteDocumentState = EditorState
 

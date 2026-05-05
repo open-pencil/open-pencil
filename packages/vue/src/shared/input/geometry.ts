@@ -1,14 +1,13 @@
-import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
-import rotateCursorSvg from '#vue/shared/assets/rotate-cursor.svg?raw'
-
 import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/core/canvas'
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
-import { degToRad } from '@open-pencil/core/geometry'
-
-import type { CornerPosition, HandlePosition } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
+import { degToRad } from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
 import type { Vector } from '@open-pencil/core/types'
+
+import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
+import rotateCursorSvg from '#vue/shared/assets/rotate-cursor.svg?raw'
+import type { CornerPosition, HandlePosition } from '#vue/shared/input/types'
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
   if (!canvas) return { sx: 0, sy: 0, cx: 0, cy: 0 }

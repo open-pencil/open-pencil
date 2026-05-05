@@ -1,7 +1,7 @@
-import { listFonts } from '@/app/editor/fonts'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { listFonts } from '@/app/editor/fonts'
 
 export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
   const api = new FigmaAPI(store.graph)

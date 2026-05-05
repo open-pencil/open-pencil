@@ -1,10 +1,11 @@
+import type { CanvasKit } from 'canvaskit-wasm'
+
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph, VectorSegment, VectorVertex } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { UndoManager } from '#core/scene-graph/undo'
 import type { TextEditor } from '#core/text/editor'
 import type { Color, Rect, Vector } from '#core/types'
-import type { CanvasKit } from 'canvaskit-wasm'
 
 export type Tool =
   | 'SELECT'

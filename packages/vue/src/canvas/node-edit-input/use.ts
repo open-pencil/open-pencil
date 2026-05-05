@@ -1,3 +1,7 @@
+import type { Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+
 import {
   getCanvasNodeEditState,
   handleBendHandleMove,
@@ -5,10 +9,7 @@ import {
   type CanvasNodeEditMethods
 } from '#vue/canvas/node-edit-input/bend'
 import { hitTestEditHandle, isEndpoint, NODE_HIT_THRESHOLD } from '#vue/shared/input/node-edit'
-
 import type { DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { Ref } from 'vue'
 
 export function updateNodeEditHover(editor: Editor, cx: number, cy: number): boolean {
   const nodeEditState = getCanvasNodeEditState(editor)

@@ -1,3 +1,5 @@
+import type { Canvas } from 'canvaskit-wasm'
+
 import { getAbsolutePosition, getWorldMatrix } from '#core/canvas/coordinate'
 import {
   LABEL_OFFSET_Y,
@@ -8,10 +10,9 @@ import {
   SIZE_PILL_TEXT_OFFSET_Y
 } from '#core/constants'
 import { rotatedCorners } from '#core/geometry'
-
 import type { SceneNode, SceneGraph } from '#core/scene-graph'
+
 import type { SkiaRenderer, RenderOverlays } from './renderer'
-import type { Canvas } from 'canvaskit-wasm'
 
 function getOverlayRotation(node: SceneNode, overlays?: RenderOverlays): number {
   return overlays?.rotationPreview?.nodeId === node.id

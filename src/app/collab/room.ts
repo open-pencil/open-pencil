@@ -1,10 +1,9 @@
+import type { Room } from 'trystero'
 import { joinRoom as joinTrysteroRoom } from 'trystero/mqtt'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
 import { TRYSTERO_APP_ID } from '@/constants'
-
-import type { Room } from 'trystero'
 
 type CollabRoomOptions = {
   roomId: string

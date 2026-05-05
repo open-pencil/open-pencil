@@ -1,9 +1,10 @@
 import { promiseTimeout } from '@vueuse/core'
 
-import { decodeTauriStderr } from '@/app/shell/ui'
-import { isTauri } from '@/app/tauri/env'
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
+
+import { decodeTauriStderr } from '@/app/shell/ui'
+import { isTauri } from '@/app/tauri/env'
 
 interface AutomationHealth {
   status: 'ok' | 'no_app'

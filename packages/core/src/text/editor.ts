@@ -1,9 +1,10 @@
-import { resolveNodeTextDirection } from './direction'
+import type { CanvasKit, Paragraph } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { SceneNode } from '#core/scene-graph'
 import type { Rect } from '#core/types'
-import type { CanvasKit, Paragraph } from 'canvaskit-wasm'
+
+import { resolveNodeTextDirection } from './direction'
 
 export interface TextCaret {
   x: number

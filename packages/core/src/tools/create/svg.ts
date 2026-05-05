@@ -1,10 +1,9 @@
 import { parseColor } from '#core/color'
 import { extractPaths } from '#core/icons/svg'
-import { parseSVGPath } from '#core/io/formats/svg/parse-path'
-import { defineTool } from '#core/tools/schema'
-
 import type { IconPathInfo } from '#core/icons/types'
+import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import type { SceneNode, Stroke } from '#core/scene-graph'
+import { defineTool } from '#core/tools/schema'
 
 const STROKE_CAP_MAP: Record<string, SceneNode['strokeCap']> = {
   butt: 'NONE',

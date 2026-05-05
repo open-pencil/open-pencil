@@ -1,7 +1,6 @@
-import { defineTool } from '#core/tools/schema'
-
 import type { FigmaAPI } from '#core/figma-api'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import { defineTool } from '#core/tools/schema'
 
 interface ComponentInfo {
   id: string

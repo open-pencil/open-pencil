@@ -1,7 +1,6 @@
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { computed, ref } from 'vue'
+import type { ComputedRef } from 'vue'
 
-import type { useI18n } from '#vue/i18n'
 import type { Editor } from '@open-pencil/core/editor'
 import type {
   GridTrack,
@@ -10,7 +9,9 @@ import type {
   LayoutSizing,
   SceneNode
 } from '@open-pencil/core/scene-graph'
-import type { ComputedRef } from 'vue'
+
+import type { useI18n } from '#vue/i18n'
+import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 export type AlignCell = { primary: LayoutAlign; counter: LayoutCounterAlign }
 

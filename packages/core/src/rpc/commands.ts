@@ -1,3 +1,5 @@
+import type { SceneGraph } from '#core/scene-graph'
+
 import {
   analyzeClustersCommand,
   analyzeColorsCommand,
@@ -12,10 +14,8 @@ import {
   queryCommand,
   treeCommand
 } from './read-commands'
-import { variablesCommand } from './variables-command'
-
-import type { SceneGraph } from '#core/scene-graph'
 import type { RpcCommand } from './types'
+import { variablesCommand } from './variables-command'
 
 export type { RpcCommand } from './types'
 export * from './read-commands'

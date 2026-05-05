@@ -13,9 +13,9 @@ import {
   histogram as fmtHistogram,
   summary as fmtSummary
 } from 'agentfmt'
+import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
-import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 
 export {
   ok,

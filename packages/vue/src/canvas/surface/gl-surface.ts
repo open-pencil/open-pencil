@@ -1,6 +1,8 @@
-import type { UseCanvasOptions } from '#vue/canvas/surface/types'
-import type { Editor } from '@open-pencil/core/editor'
 import type { CanvasKit, Surface } from 'canvaskit-wasm'
+
+import type { Editor } from '@open-pencil/core/editor'
+
+import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 
 type GLContext = ReturnType<CanvasKit['MakeGrContext']>
 

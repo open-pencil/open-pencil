@@ -1,6 +1,5 @@
 import { parseColor } from '#core/color'
 import { defineTool } from '#core/tools/schema'
-
 import type { Matrix } from '#core/types'
 
 export const setFill = defineTool({

@@ -1,6 +1,5 @@
 import { parseColor } from '#core/color'
 import { generateId } from '#core/scene-graph'
-
 import type {
   Color,
   Effect,

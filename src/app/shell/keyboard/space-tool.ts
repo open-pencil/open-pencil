@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
+import type { ComputedRef } from 'vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import type { ComputedRef } from 'vue'
 
 export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: EditorStore) {
   let toolBeforeSpace: typeof store.state.activeTool | null = null

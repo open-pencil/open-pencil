@@ -1,7 +1,9 @@
+import type { ComputedRef } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+
 import type { useSelectionCapabilities } from '#vue/editor/selection-capabilities/use'
 import type { useSelectionState } from '#vue/editor/selection-state/use'
-import type { Editor } from '@open-pencil/core/editor'
-import type { ComputedRef } from 'vue'
 
 export type CommandMessagesStore = { value: Record<string, string> }
 export type SelectionState = ReturnType<typeof useSelectionState>

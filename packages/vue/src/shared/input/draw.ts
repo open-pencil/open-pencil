@@ -1,9 +1,8 @@
-import { TOOL_TO_NODE } from '#vue/shared/input/types'
-
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
-
-import type { DragDraw, DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
+
+import { TOOL_TO_NODE } from '#vue/shared/input/types'
+import type { DragDraw, DragState } from '#vue/shared/input/types'
 
 export function startTextTool(cx: number, cy: number, editor: Editor) {
   const nodeId = editor.createShape('TEXT', cx, cy, DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_HEIGHT)

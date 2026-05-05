@@ -31,7 +31,6 @@ import {
   mapGridTrack,
   mapJustify
 } from './layout/yoga-helpers'
-
 import type { SceneGraph, SceneNode } from './scene-graph'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {

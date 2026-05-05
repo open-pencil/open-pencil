@@ -11,6 +11,10 @@ export {
 } from './fig/container'
 export { buildFontDigestMap } from './font-digests'
 
+import type { NodeChange, Paint, VariableConsumptionEntry } from '#core/kiwi/binary/codec'
+import type { SceneGraph, SceneNode, CharacterStyleOverride } from '#core/scene-graph'
+import type { Color, GUID, Matrix } from '#core/types'
+
 import { stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
 import { sceneNodeToKiwiWithContext, type KiwiNodeChange } from './export-node'
 import {
@@ -18,10 +22,6 @@ import {
   TEXT_DIRECTION_PLUGIN_KEY,
   upsertPluginData
 } from './plugin-data'
-
-import type { NodeChange, Paint, VariableConsumptionEntry } from '#core/kiwi/binary/codec'
-import type { SceneGraph, SceneNode, CharacterStyleOverride } from '#core/scene-graph'
-import type { Color, GUID, Matrix } from '#core/types'
 
 export function mapToFigmaType(type: SceneNode['type']): string {
   switch (type) {

@@ -1,6 +1,5 @@
-import { computeAllLayouts } from '#core/layout'
-
 import type { EditorContext } from '#core/editor/types'
+import { computeAllLayouts } from '#core/layout'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 export type PageSnapshot = Map<string, SceneNode>

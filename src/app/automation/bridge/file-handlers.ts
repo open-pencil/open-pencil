@@ -1,8 +1,7 @@
+import type { EditorStore } from '@/app/editor/active-store'
 import { openFileFromPath } from '@/app/shell/menu/use'
 import { createTab, openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
-
-import type { EditorStore } from '@/app/editor/active-store'
 
 export async function handleSaveFile(store: EditorStore): Promise<unknown> {
   await store.saveFigFile()

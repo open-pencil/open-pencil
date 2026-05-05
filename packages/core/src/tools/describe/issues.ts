@@ -1,9 +1,8 @@
 import { colorDistance, colorToHex } from '#core/color'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 import { detectLayoutIssues } from './layout-issues'
 import { CONTAINER_TYPES, findAncestorBackground, looksLikeButton } from './shared'
-
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 const MIN_FILL_OPACITY = 0.15
 const MIN_STROKE_OPACITY = 0.2

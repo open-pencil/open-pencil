@@ -1,6 +1,5 @@
-import { defineTool, nodeSummary, nodeToResult } from '#core/tools/schema'
-
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { defineTool, nodeSummary, nodeToResult } from '#core/tools/schema'
 
 interface TreeEntry {
   id: string

@@ -1,5 +1,9 @@
 import { shallowReactive } from 'vue'
 
+import { createEditor } from '@open-pencil/core/editor'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { SceneGraph } from '@open-pencil/core/scene-graph'
+
 import {
   getActiveEditorStore,
   setActiveEditorStore,
@@ -12,9 +16,6 @@ import {
   defineEditorStoreAccessors
 } from '@/app/editor/session/modules'
 import { createInitialAppEditorState, type AppEditorState } from '@/app/editor/session/types'
-import { createEditor } from '@open-pencil/core/editor'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
 
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core/editor'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core/editor'

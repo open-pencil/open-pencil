@@ -1,9 +1,8 @@
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
+import type { Color } from '#core/types'
 
 import { createPageViewportStore } from './page-viewports'
-
-import type { Color } from '#core/types'
 import type { EditorContext } from './types'
 
 export function createPageActions(ctx: EditorContext) {

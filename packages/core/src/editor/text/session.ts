@@ -1,6 +1,5 @@
-import { copyStyleRuns } from '#core/scene-graph/copy'
-
 import type { SceneNode, StyleRun } from '#core/scene-graph'
+import { copyStyleRuns } from '#core/scene-graph/copy'
 
 export type TextEditSnapshot = {
   text: string

@@ -1,6 +1,7 @@
-import type { HitTestFns } from '#vue/shared/input/select'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import type { HitTestFns } from '#vue/shared/input/select'
 
 export function resolveHit(
   cx: number,

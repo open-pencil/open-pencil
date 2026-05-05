@@ -1,3 +1,4 @@
+import type { ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
   SELECTION_COLOR,
@@ -9,7 +10,12 @@ import {
   COMPONENT_SET_BORDER_WIDTH,
   IS_BROWSER
 } from '#core/constants'
+import type { EditorState } from '#core/editor/types'
 import { RenderProfiler } from '#core/profiler'
+import type { SceneNode, SceneGraph, Fill, Stroke } from '#core/scene-graph'
+import type { SnapGuide } from '#core/scene-graph/snap'
+import type { TextEditor } from '#core/text/editor'
+import type { Color, Rect, Vector } from '#core/types'
 
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'
@@ -21,15 +27,7 @@ import { initializeRendererPaints } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
-
-import type { ResolvedRenderColor } from '#core/color/management'
-import type { EditorState } from '#core/editor/types'
-import type { SceneNode, SceneGraph, Fill, Stroke } from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
-import type { TextEditor } from '#core/text/editor'
-import type { Color, Rect, Vector } from '#core/types'
 export type { RenderOverlays, RulerTheme } from './renderer/types'
-import type { RenderOverlays, RulerTheme } from './renderer/types'
 import type {
   Image as CKImage,
   Path,
@@ -45,6 +43,8 @@ import type {
   MaskFilter,
   Paragraph
 } from 'canvaskit-wasm'
+
+import type { RenderOverlays, RulerTheme } from './renderer/types'
 
 export class SkiaRenderer {
   ck: CanvasKit

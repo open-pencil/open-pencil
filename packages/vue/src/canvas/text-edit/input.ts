@@ -1,6 +1,7 @@
-import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import type { DragState } from '#vue/shared/input/types'
 
 type NodeEditMethods = Partial<{ enterNodeEditMode: (nodeId: string) => void }>
 type GetCoords = (e: MouseEvent) => { cx: number; cy: number }

@@ -1,3 +1,6 @@
+import type { CanvasKit } from 'canvaskit-wasm'
+
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
 import { setTextMeasurer } from '#core/layout'
@@ -25,13 +28,10 @@ import { createShapeActions } from './shapes'
 import { createDefaultEditorState } from './state'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
+import type { EditorContext, EditorOptions, EditorState } from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
 import { createViewportActions } from './viewport'
-
-import type { SkiaRenderer } from '#core/canvas/renderer'
-import type { EditorContext, EditorOptions, EditorState } from './types'
-import type { CanvasKit } from 'canvaskit-wasm'
 
 export { createDefaultEditorState } from './state'
 

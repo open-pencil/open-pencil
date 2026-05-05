@@ -1,6 +1,6 @@
-import { styleNameToWeight, weightToStyleName, type FigmaFontName } from './fonts'
-
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
+
+import { styleNameToWeight, weightToStyleName, type FigmaFontName } from './fonts'
 
 export function getFontName(node: SceneNode): FigmaFontName {
   return { family: node.fontFamily, style: weightToStyleName(node.fontWeight, node.italic) }

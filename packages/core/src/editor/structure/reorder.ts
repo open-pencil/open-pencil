@@ -1,6 +1,5 @@
-import { computeLayout } from '#core/layout'
-
 import type { EditorContext } from '#core/editor/types'
+import { computeLayout } from '#core/layout'
 
 export function createStructureReorderActions(ctx: EditorContext) {
   function doReorderChild(nodeId: string, parentId: string, insertIndex: number) {

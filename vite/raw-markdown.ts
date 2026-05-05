@@ -7,6 +7,6 @@ export function rawMarkdownPlugin(): Plugin {
       if (id.endsWith('.md')) {
         return { code: `export default ${JSON.stringify(code)}`, map: null }
       }
-    },
+    }
   }
 }

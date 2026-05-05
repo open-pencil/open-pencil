@@ -1,9 +1,10 @@
-import { usePropScrub } from '#vue/controls/prop-scrub/use'
-import { useEditor } from '#vue/editor/context'
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import { usePropScrub } from '#vue/controls/prop-scrub/use'
+import { useEditor } from '#vue/editor/context'
+import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 /**
  * Returns position-related state and actions for the current selection.

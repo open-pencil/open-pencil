@@ -1,9 +1,8 @@
+import type { CanvasKit } from 'canvaskit-wasm'
 import { onMounted, onScopeDispose } from 'vue'
+import type { Ref } from 'vue'
 
 import { getCanvasKit } from '@open-pencil/core/canvaskit'
-
-import type { CanvasKit } from 'canvaskit-wasm'
-import type { Ref } from 'vue'
 
 type CanvasKitLoaderOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>

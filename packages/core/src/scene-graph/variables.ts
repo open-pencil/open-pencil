@@ -1,6 +1,6 @@
 import { BLACK } from '#core/constants'
-
 import type { Color } from '#core/types'
+
 import type { SceneGraph } from './index'
 import type { Variable, VariableCollection, VariableType, VariableValue } from './types'
 

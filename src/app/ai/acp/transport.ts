@@ -1,10 +1,4 @@
 import { ClientSideConnection, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
-
-import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
-
-import { mapUpdate } from './map-update'
-import { spawnAcpProcess } from './process'
-
 import type {
   Client,
   Agent,
@@ -12,8 +6,14 @@ import type {
   RequestPermissionRequest,
   RequestPermissionResponse
 } from '@agentclientprotocol/sdk'
-import type { ACPAgentDef } from '@open-pencil/core/constants'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
+
+import type { ACPAgentDef } from '@open-pencil/core/constants'
+
+import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
+
+import { mapUpdate } from './map-update'
+import { spawnAcpProcess } from './process'
 
 type TauriChild = Awaited<ReturnType<typeof spawnAcpProcess>>['child']
 

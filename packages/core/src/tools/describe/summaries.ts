@@ -1,5 +1,4 @@
 import { colorToHex } from '#core/color'
-
 import type { SceneNode } from '#core/scene-graph'
 
 export function describeVisual(node: SceneNode): string {

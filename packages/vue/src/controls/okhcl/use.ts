@@ -1,3 +1,5 @@
+import { ref } from 'vue'
+
 import {
   OKHCL_FIELD_OPTIONS,
   createOkHCLActions,
@@ -7,8 +9,6 @@ import {
   getStrokeOkHCLColor
 } from '#vue/controls/okhcl/helpers'
 import { useEditor } from '#vue/editor/context'
-import { ref } from 'vue'
-
 import type { ColorFieldFormat } from '#vue/primitives/ColorPicker/types'
 
 export function useOkHCL() {

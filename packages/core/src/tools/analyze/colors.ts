@@ -1,6 +1,5 @@
 import { colorDistance, colorToHex } from '#core/color'
 import { defineTool } from '#core/tools/schema'
-
 import type { Color } from '#core/types'
 
 interface ColorEntry {

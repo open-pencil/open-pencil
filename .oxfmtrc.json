@@ -10,13 +10,42 @@
     "order": "asc",
     "ignoreCase": true,
     "newlinesBetween": true,
-    "internalPattern": ["@open-pencil/", "@/"],
+    "internalPattern": ["@open-pencil/", "@/", "#core/", "#vue/", "#cli/", "#mcp/", "#tests/"],
+    "customGroups": [
+      {
+        "groupName": "type-workspace",
+        "elementNamePattern": ["@open-pencil/**"],
+        "modifiers": ["type"]
+      },
+      { "groupName": "workspace", "elementNamePattern": ["@open-pencil/**"] },
+      { "groupName": "type-app", "elementNamePattern": ["@/**"], "modifiers": ["type"] },
+      { "groupName": "app", "elementNamePattern": ["@/**"] },
+      {
+        "groupName": "type-package-alias",
+        "elementNamePattern": ["#core/**", "#vue/**", "#cli/**", "#mcp/**"],
+        "modifiers": ["type"]
+      },
+      {
+        "groupName": "package-alias",
+        "elementNamePattern": ["#core/**", "#vue/**", "#cli/**", "#mcp/**"]
+      },
+      {
+        "groupName": "type-test-alias",
+        "elementNamePattern": ["#tests/**"],
+        "modifiers": ["type"]
+      },
+      { "groupName": "test-alias", "elementNamePattern": ["#tests/**"] }
+    ],
     "groups": [
-      "builtin",
-      "external",
-      "internal",
-      ["parent", "sibling", "index"],
-      "type"
+      ["builtin", "type-builtin"],
+      ["external", "type-external"],
+      ["workspace", "type-workspace"],
+      ["app", "type-app"],
+      ["package-alias", "type-package-alias"],
+      ["test-alias", "type-test-alias"],
+      ["parent", "sibling", "index", "type-parent", "type-sibling", "type-index"],
+      "style",
+      "unknown"
     ]
   }
 }

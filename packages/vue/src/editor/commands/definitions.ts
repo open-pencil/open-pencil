@@ -1,9 +1,8 @@
+import type { EditorCommandMapOptions } from './context'
 import { createEditCommands } from './edit'
 import { createSelectionCommands } from './selection'
-import { createViewCommands } from './view'
-
-import type { EditorCommandMapOptions } from './context'
 import type { EditorCommand, EditorCommandId } from './types'
+import { createViewCommands } from './view'
 
 export function createEditorCommandMap(
   options: EditorCommandMapOptions

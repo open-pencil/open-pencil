@@ -2,7 +2,6 @@ import { IS_BROWSER } from '#core/constants'
 import { importNodeChanges } from '#core/kiwi/fig/import'
 import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
-
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import type { SceneGraph } from '#core/scene-graph'
 

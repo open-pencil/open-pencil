@@ -1,9 +1,10 @@
-import { fmtTree, printError, entity, formatType } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import type { TreeNode } from 'agentfmt'
 import { defineCommand } from 'citty'
 
 import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
-import type { TreeNode } from 'agentfmt'
+
+import { fmtTree, printError, entity, formatType } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 function toAgentfmtTree(node: TreeNodeResult, maxDepth: number, depth = 0): TreeNode {
   const treeNode: TreeNode = {

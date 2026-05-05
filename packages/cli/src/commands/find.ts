@@ -1,8 +1,9 @@
-import { printNodeResults } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { FindNodeResult } from '@open-pencil/core/rpc'
+
+import { printNodeResults } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Find nodes by name or type' },

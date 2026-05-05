@@ -1,5 +1,4 @@
 import { colorToCSS } from '@open-pencil/core/color'
-
 import type { Color, Fill, Variable } from '@open-pencil/core/scene-graph'
 
 export type ColorVariableBindingApi = {

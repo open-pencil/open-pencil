@@ -1,10 +1,11 @@
+import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pencil/core/text'
+
 import {
   clearDownloadedFontCache as clearTauriDownloadedFontCache,
   createTauriDownloadedFontCache,
   downloadedFontCacheSummary as tauriDownloadedFontCacheSummary
 } from '@/app/editor/fonts/cache'
 import { isTauri } from '@/app/tauri/env'
-import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pencil/core/text'
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)

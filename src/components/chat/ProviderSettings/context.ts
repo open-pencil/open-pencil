@@ -1,8 +1,7 @@
 import { computed, inject, provide, proxyRefs, ref, watch } from 'vue'
+import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 import { useAIChat } from '@/app/ai/chat/use'
-
-import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 function createProviderSettingsContext() {
   const {

@@ -3,9 +3,9 @@ import { createDeepSeek } from '@ai-sdk/deepseek'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
+import type { LanguageModel } from 'ai'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
-import type { LanguageModel } from 'ai'
 
 export type ModelConfig = {
   providerID: AIProviderID

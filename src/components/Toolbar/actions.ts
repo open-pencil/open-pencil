@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import type { Ref } from 'vue'
 import IconArrowDownToLine from '~icons/lucide/arrow-down-to-line'
 import IconArrowUpToLine from '~icons/lucide/arrow-up-to-line'
 import IconClipboard from '~icons/lucide/clipboard'
@@ -10,10 +11,10 @@ import IconScissors from '~icons/lucide/scissors'
 import IconTrash2 from '~icons/lucide/trash-2'
 import IconUngroup from '~icons/lucide/ungroup'
 
+import type { useEditorCommands } from '@open-pencil/vue'
+
 import type { EditorStore } from '@/app/editor/active-store'
 import type { ToolbarActionItem } from '@/components/Toolbar/types'
-import type { useEditorCommands } from '@open-pencil/vue'
-import type { Ref } from 'vue'
 
 type ToolbarActionOptions = {
   store: EditorStore

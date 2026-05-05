@@ -1,4 +1,5 @@
 import type { SceneGraph } from '#core/scene-graph'
+
 import type { FigmaNodeProxy, NodeProxyHost } from './proxy'
 
 export function findAll(

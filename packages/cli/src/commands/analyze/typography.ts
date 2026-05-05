@@ -1,8 +1,9 @@
-import { bold, fmtHistogram, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { AnalyzeTypographyResult } from '@open-pencil/core/rpc'
+
+import { bold, fmtHistogram, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 function weightName(w: number): string {
   if (w <= 100) return 'Thin'

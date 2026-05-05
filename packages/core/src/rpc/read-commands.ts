@@ -1,6 +1,6 @@
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import { queryByXPath } from '#core/xpath'
 
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { RpcCommand } from './types'
 
 /** Walk descendants. Callback returns `false` to stop traversal. */

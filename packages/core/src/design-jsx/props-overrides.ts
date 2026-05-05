@@ -1,6 +1,5 @@
 import { colorToFill, parseColor } from '#core/color'
 import { TRANSPARENT } from '#core/constants'
-
 import type { GridTrack, LayoutMode, SceneNode, Stroke } from '#core/scene-graph'
 
 const WEIGHT_MAP: Record<string, number> = {

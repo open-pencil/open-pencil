@@ -1,6 +1,5 @@
-import { computeAbsoluteBounds } from '#core/geometry'
-
 import type { EditorContext } from '#core/editor/types'
+import { computeAbsoluteBounds } from '#core/geometry'
 import type { SceneNode } from '#core/scene-graph'
 
 export function wrapSelectionInContainer(

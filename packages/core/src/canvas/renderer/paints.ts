@@ -1,3 +1,4 @@
+import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   DEFAULT_FONT_SIZE,
   PARENT_OUTLINE_ALPHA,
@@ -8,8 +9,6 @@ import {
   RULER_TICK_COLOR,
   SNAP_COLOR
 } from '#core/constants'
-
-import type { SkiaRenderer } from '#core/canvas/renderer'
 
 export function initializeRendererPaints(r: SkiaRenderer): void {
   const ck = r.ck

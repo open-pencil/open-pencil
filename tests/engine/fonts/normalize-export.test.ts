@@ -1,8 +1,8 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-
 import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
+
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
 beforeAll(async () => {
   await initCodec()

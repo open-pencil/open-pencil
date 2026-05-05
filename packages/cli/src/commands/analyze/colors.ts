@@ -1,8 +1,9 @@
-import { bold, fmtHistogram, fmtList, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { AnalyzeColorsResult } from '@open-pencil/core/rpc'
+
+import { bold, fmtHistogram, fmtList, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Analyze color palette usage' },

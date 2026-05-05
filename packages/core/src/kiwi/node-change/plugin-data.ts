@@ -1,7 +1,7 @@
-import { guidToString } from './guid'
-
 import type { NodeChange, PluginData, PluginRelaunchData } from '#core/kiwi/binary/codec'
 import type { PluginDataEntry, PluginRelaunchDataEntry } from '#core/scene-graph'
+
+import { guidToString } from './guid'
 
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'

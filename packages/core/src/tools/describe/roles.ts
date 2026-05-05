@@ -1,6 +1,6 @@
-import { looksLikeButton } from './shared'
-
 import type { SceneNode } from '#core/scene-graph'
+
+import { looksLikeButton } from './shared'
 
 const NAME_ROLE_PATTERNS: { pattern: RegExp; role: string }[] = [
   { pattern: /^icon$/i, role: 'icon' },

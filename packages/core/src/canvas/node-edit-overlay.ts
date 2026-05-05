@@ -1,11 +1,12 @@
+import type { Canvas, Paint } from 'canvaskit-wasm'
+
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
+import type { VectorVertex, VectorSegment, VectorRegion, SceneGraph } from '#core/scene-graph'
+import type { Vector } from '#core/types'
 import { vectorNetworkToPath } from '#core/vector'
 import { computeAccurateBounds } from '#core/vector/bezier'
 
-import type { VectorVertex, VectorSegment, VectorRegion, SceneGraph } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
-import type { Canvas, Paint } from 'canvaskit-wasm'
 
 type ToScreenFn = (x: number, y: number) => Vector
 

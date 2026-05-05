@@ -1,12 +1,12 @@
 import { shallowRef, computed, triggerRef } from 'vue'
 
-import { setActiveEditorStore } from '@/app/editor/active-store'
-import { createEditorStore } from '@/app/editor/session'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
-
-import type { EditorStore } from '@/app/editor/session'
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
+
+import { setActiveEditorStore } from '@/app/editor/active-store'
+import { createEditorStore } from '@/app/editor/session'
+import type { EditorStore } from '@/app/editor/session'
 
 export interface Tab {
   id: string

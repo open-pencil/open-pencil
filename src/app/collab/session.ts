@@ -1,18 +1,18 @@
+import type { Room } from 'trystero'
 import { watch } from 'vue'
+import type { Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
+import type { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
-import { connectCollabRoom } from '@/app/collab/room'
-import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
-import { PEER_COLORS } from '@/constants'
 import { randomIndex } from '@open-pencil/core/random'
 
+import { connectCollabRoom } from '@/app/collab/room'
 import type { CollabState } from '@/app/collab/types'
+import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
-import type { Room } from 'trystero'
-import type { Ref } from 'vue'
-import type { Awareness } from 'y-protocols/awareness'
+import { PEER_COLORS } from '@/constants'
 
 export type CollabRuntime = {
   ydoc: Y.Doc | null

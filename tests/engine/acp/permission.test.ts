@@ -1,5 +1,7 @@
 import { describe, expect, test, beforeEach } from 'bun:test'
 
+import type { RequestPermissionRequest } from '@agentclientprotocol/sdk'
+
 import {
   permissionQueue,
   currentPermission,
@@ -7,8 +9,6 @@ import {
   respondToPermission,
   rejectCurrentPermission
 } from '@/app/ai/acp/permission'
-
-import type { RequestPermissionRequest } from '@agentclientprotocol/sdk'
 
 function makeRequest(
   options: { optionId: string; kind: string; name: string }[] = [

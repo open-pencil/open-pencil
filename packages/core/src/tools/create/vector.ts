@@ -1,8 +1,7 @@
 import { parseColor } from '#core/color'
 import { normalizeVectorNetwork, validateVectorNetwork } from '#core/scene-graph'
-import { defineTool, nodeSummary } from '#core/tools/schema'
-
 import type { VectorNetwork } from '#core/scene-graph'
+import { defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createVector = defineTool({
   name: 'create_vector',

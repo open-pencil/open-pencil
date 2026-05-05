@@ -1,13 +1,12 @@
+import { getAbsolutePositionFull } from '@open-pencil/core/canvas'
+import { ROTATION_SNAP_DEGREES } from '@open-pencil/core/constants'
+import type { Editor } from '@open-pencil/core/editor'
+
 import {
   hitTestCornerRotationByMatrix,
   hitTestTopRotationHandleByMatrix
 } from '#vue/shared/input/geometry'
-
-import { getAbsolutePositionFull } from '@open-pencil/core/canvas'
-import { ROTATION_SNAP_DEGREES } from '@open-pencil/core/constants'
-
 import type { DragRotate, DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
 
 type SetDrag = (drag: DragState) => void
 

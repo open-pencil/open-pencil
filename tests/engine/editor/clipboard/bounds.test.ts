@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
 import { figmaNodesBounds } from '@open-pencil/core'
-
 import type { NodeChange } from '@open-pencil/core'
 
 describe('figmaNodesBounds', () => {

@@ -1,9 +1,9 @@
-import { computeDescendantVisualBounds } from '#core/geometry'
+import type { Canvas } from 'canvaskit-wasm'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import type { EditorState } from '#core/editor/types'
+import { computeDescendantVisualBounds } from '#core/geometry'
 import type { SceneGraph } from '#core/scene-graph'
-import type { Canvas } from 'canvaskit-wasm'
 
 export function renderSceneToCanvas(
   r: SkiaRenderer,

@@ -1,7 +1,7 @@
+import { executeRpcCommand } from '@open-pencil/core/rpc'
+
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { loadDocument } from '#cli/headless'
-
-import { executeRpcCommand } from '@open-pencil/core/rpc'
 
 export async function loadRpcData<Result>(
   file: string | undefined,

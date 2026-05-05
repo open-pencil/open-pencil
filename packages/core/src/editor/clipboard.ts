@@ -4,6 +4,8 @@ import {
   parseOpenPencilClipboard
 } from '#core/clipboard'
 import { computeAllLayouts } from '#core/layout'
+import type { SceneNode } from '#core/scene-graph'
+import type { Vector } from '#core/types'
 
 import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'
@@ -11,9 +13,6 @@ import { createClipboardFontActions } from './clipboard/fonts'
 import { createClipboardImageActions } from './clipboard/images'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
-
-import type { SceneNode } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 import type { EditorContext } from './types'
 
 export function createClipboardActions(ctx: EditorContext) {

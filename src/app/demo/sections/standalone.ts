@@ -12,7 +12,6 @@ import {
   solid,
   thinStroke
 } from '@/app/demo/colors'
-
 import type { EditorStore } from '@/app/editor/session'
 
 export function createStandaloneShapes(store: EditorStore) {

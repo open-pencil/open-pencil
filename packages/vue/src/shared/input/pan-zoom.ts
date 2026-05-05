@@ -1,10 +1,11 @@
-import { setupSafariGestureZoom } from '#vue/shared/input/gesture'
-import { setupWheelPanZoom } from '#vue/shared/input/wheel'
 import { useEventListener } from '@vueuse/core'
-
-import type { DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
 import type { Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+
+import { setupSafariGestureZoom } from '#vue/shared/input/gesture'
+import type { DragState } from '#vue/shared/input/types'
+import { setupWheelPanZoom } from '#vue/shared/input/wheel'
 
 export function setupPanZoom(
   canvasRef: Ref<HTMLCanvasElement | null>,

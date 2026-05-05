@@ -1,3 +1,5 @@
+import type { FigmaAPI } from '@open-pencil/core/figma-api'
+
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJsx } from '@/app/automation/bridge/export-handlers'
 import {
@@ -8,9 +10,7 @@ import {
 import { handleRpcFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
-
 import type { EditorStore } from '@/app/editor/active-store'
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
 type FigmaFactory = () => FigmaAPI
 

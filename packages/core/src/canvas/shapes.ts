@@ -1,9 +1,10 @@
+import type { Canvas, Path } from 'canvaskit-wasm'
+
 import { polygonVertices } from '#core/geometry'
+import type { SceneNode } from '#core/scene-graph'
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
-import type { SceneNode } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
-import type { Canvas, Path } from 'canvaskit-wasm'
 
 export function nodeHasRadius(node: SceneNode): boolean {
   return (

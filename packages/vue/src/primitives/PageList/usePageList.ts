@@ -1,6 +1,7 @@
+import { computed } from 'vue'
+
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
-import { computed } from 'vue'
 
 /**
  * Returns reactive page state and page-management actions.

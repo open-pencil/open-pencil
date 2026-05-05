@@ -1,14 +1,14 @@
+import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
+
 import { createCaptureSession, createFrameCapture } from './capture-session'
+import type { CaptureSession } from './capture-session'
 import { DrawCallCounter } from './draw-call-counter'
+import type { FrameCapture } from './frame/capture'
 import { FrameStats } from './frame/stats'
 import { GPUTimer } from './gpu-timer'
 import { HudController } from './hud-controller'
 import { PhaseTimer } from './phase-timer'
 import { exportSpeedscopeCapture } from './speedscope-export'
-
-import type { CaptureSession } from './capture-session'
-import type { FrameCapture } from './frame/capture'
-import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
 
 const now = typeof performance !== 'undefined' ? () => performance.now() : () => 0
 

@@ -1,6 +1,5 @@
-import { computeImageHash } from '#core/figma-api'
-
 import type { EditorContext } from '#core/editor/types'
+import { computeImageHash } from '#core/figma-api'
 import type { Fill } from '#core/scene-graph'
 
 const IMAGE_MAX_DIMENSION = 4096

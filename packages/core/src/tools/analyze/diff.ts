@@ -1,9 +1,9 @@
-import { colorToHex, parseColor } from '#core/color'
-import { defineTool } from '#core/tools/schema'
 import { createTwoFilesPatch } from 'diff'
 
+import { colorToHex, parseColor } from '#core/color'
 import type { FigmaAPI } from '#core/figma-api'
 import type { SceneNode } from '#core/scene-graph'
+import { defineTool } from '#core/tools/schema'
 
 function serializePaintProps(raw: SceneNode, lines: string[]): void {
   const solidFill = raw.fills.find((f) => f.type === 'SOLID' && f.visible)

@@ -8,7 +8,6 @@
 import { describe, test, expect } from 'bun:test'
 
 import { SceneGraph, getWorldMatrix, TransformMatrix } from '@open-pencil/core'
-
 import type { SceneNode } from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {

@@ -1,13 +1,13 @@
 import { describe, test, expect } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
-import { createTextActions } from '@open-pencil/core/editor'
-
 import type { StyleRun } from '@open-pencil/core'
+import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
-import type { CanvasKit } from 'canvaskit-wasm'
+
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
 function setup() {
   const graph = new SceneGraph()

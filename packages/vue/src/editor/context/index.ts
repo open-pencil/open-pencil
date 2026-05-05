@@ -1,7 +1,7 @@
 import { inject, provide } from 'vue'
+import type { InjectionKey } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { InjectionKey } from 'vue'
 
 /**
  * Injection key for the current OpenPencil editor instance.

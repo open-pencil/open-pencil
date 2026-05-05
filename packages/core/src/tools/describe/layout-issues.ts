@@ -1,11 +1,11 @@
-import { colorToHex } from '#core/color'
 import { wcagLuminance } from 'culori'
 
-import { CONTAINER_TYPES, findAncestorBackground } from './shared'
-
+import { colorToHex } from '#core/color'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Color } from '#core/types'
+
 import type { DescribeIssue } from './issues'
+import { CONTAINER_TYPES, findAncestorBackground } from './shared'
 
 const DARK_BG_LUMINANCE = 0.35
 

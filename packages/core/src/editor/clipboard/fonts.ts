@@ -1,7 +1,6 @@
+import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
-
-import type { EditorContext } from '#core/editor/types'
 
 export function createClipboardFontActions(ctx: EditorContext) {
   async function loadFontsForNodes(nodeIds: string[]) {

@@ -1,9 +1,9 @@
+import type { NodeChange } from '#core/kiwi/binary/codec'
+import type { SceneNode } from '#core/scene-graph'
+
 import { buildDerivedTextData } from './derived-text-data'
 import { normalizeFontFamily, weightToStyle } from './fonts'
 import { getGlyphOutlineCommandsSync } from './opentype'
-
-import type { NodeChange } from '#core/kiwi/binary/codec'
-import type { SceneNode } from '#core/scene-graph'
 
 export interface ShapedClipboardText {
   lineHeight: number

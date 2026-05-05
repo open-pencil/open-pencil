@@ -1,5 +1,4 @@
 import { resolveNodeFillColor, resolveNodeStrokeColor } from '#core/color/management'
-
 import type { ResolvedRenderColor } from '#core/color/management'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
 import type { Color } from '#core/types'

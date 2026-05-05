@@ -1,15 +1,15 @@
+import type { Canvas } from 'canvaskit-wasm'
+
 import {
   AI_ACTIVE_COLOR,
   AI_DONE_COLOR,
   AI_PULSE_PERIOD_MS,
   AI_DONE_DURATION_MS
 } from '#core/constants'
+import type { SceneGraph } from '#core/scene-graph'
 
 import { drawNodeHighlightRect } from './highlight-rect'
-
-import type { SceneGraph } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
-import type { Canvas } from 'canvaskit-wasm'
 
 export function drawAiOverlays(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
   const now = performance.now()

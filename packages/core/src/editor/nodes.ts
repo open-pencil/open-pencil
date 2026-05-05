@@ -1,9 +1,9 @@
+import type { SceneNode } from '#core/scene-graph'
+
 import { createLayoutModeActions } from './layout-mode'
 import { createNudgeActions } from './nudge'
-import { createVariableBindingActions } from './variable-bindings'
-
-import type { SceneNode } from '#core/scene-graph'
 import type { EditorContext } from './types'
+import { createVariableBindingActions } from './variable-bindings'
 
 export function createNodeActions(ctx: EditorContext) {
   const layoutModeActions = createLayoutModeActions(ctx)

@@ -1,12 +1,12 @@
+import type { Canvas, EmbindEnumEntity, Path } from 'canvaskit-wasm'
+
 import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE, SECTION_CORNER_RADIUS } from '#core/constants'
+import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
+import type { Color } from '#core/types'
 import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { nodeHasRadius } from './effects'
-
-import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
-import type { Color } from '#core/types'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
-import type { Canvas, EmbindEnumEntity, Path } from 'canvaskit-wasm'
 
 function drawVisibleFills(
   r: SkiaRenderer,

@@ -1,10 +1,10 @@
+import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { prefetchFigmaSchema } from '@open-pencil/core/kiwi'
+
 import { createDocumentViewportActions, downloadBlob } from '@/app/document/io/browser'
 import { createOpenActions, createReloadActions } from '@/app/document/io/read'
 import { createDocumentSourceActions, createDocumentSourceState } from '@/app/document/io/source'
 import { createFileWatcher } from '@/app/document/io/watch'
-import { prefetchFigmaSchema } from '@open-pencil/core/kiwi'
-
-import type { Editor, EditorState } from '@open-pencil/core/editor'
 
 type DocumentIOState = EditorState & {
   documentName: string

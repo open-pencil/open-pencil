@@ -1,9 +1,9 @@
-import { DEFAULT_FONT_FAMILY, IS_BROWSER, GOOGLE_FONTS_API_KEY } from '#core/constants'
-import { fontFallbackEntry } from '#core/text/fallbacks'
-
-import type { SceneGraph } from '#core/scene-graph'
-import type { FontFallbackScript } from '#core/text/fallbacks'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+
+import { DEFAULT_FONT_FAMILY, IS_BROWSER, GOOGLE_FONTS_API_KEY } from '#core/constants'
+import type { SceneGraph } from '#core/scene-graph'
+import { fontFallbackEntry } from '#core/text/fallbacks'
+import type { FontFallbackScript } from '#core/text/fallbacks'
 
 export interface FontInfo {
   family: string

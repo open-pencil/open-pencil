@@ -1,4 +1,8 @@
+import { useStore } from '@nanostores/vue'
+import type { Ref } from 'vue'
+
 import { locale, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '#vue/i18n/locale'
+import type { Locale } from '#vue/i18n/locale'
 import {
   menuMessages,
   commandMessages,
@@ -8,10 +12,6 @@ import {
   pageMessages,
   dialogMessages
 } from '#vue/i18n/messages'
-import { useStore } from '@nanostores/vue'
-
-import type { Locale } from '#vue/i18n/locale'
-import type { Ref } from 'vue'
 
 /**
  * Reactive i18n composable for OpenPencil Vue components.

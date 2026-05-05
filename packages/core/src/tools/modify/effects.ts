@@ -1,8 +1,7 @@
 import { parseColor } from '#core/color'
 import { DEFAULT_SHADOW_COLOR } from '#core/constants'
-import { defineTool, nodeNotFound } from '#core/tools/schema'
-
 import type { Effect } from '#core/scene-graph'
+import { defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setEffects = defineTool({
   name: 'set_effects',

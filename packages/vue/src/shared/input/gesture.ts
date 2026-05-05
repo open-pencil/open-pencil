@@ -1,8 +1,9 @@
-import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 import { useEventListener } from '@vueuse/core'
+import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { Ref } from 'vue'
+
+import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
 export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
   let gestureStartZoom = 1

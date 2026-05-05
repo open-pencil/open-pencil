@@ -1,6 +1,5 @@
-import { defineTool, nodeNotFound } from '#core/tools/schema'
-
 import type { SceneNode } from '#core/scene-graph'
+import { defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setLayout = defineTool({
   name: 'set_layout',

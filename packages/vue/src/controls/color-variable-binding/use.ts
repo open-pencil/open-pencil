@@ -1,6 +1,6 @@
-import { useVariableBinding } from '#vue/controls/variable-binding/use'
-
 import { randomHex } from '@open-pencil/core/random'
+
+import { useVariableBinding } from '#vue/controls/variable-binding/use'
 
 const FALLBACK_COLOR_VARIABLE_NAME = 'New color'
 

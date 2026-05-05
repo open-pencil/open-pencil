@@ -1,10 +1,10 @@
+import type { NodeType, SceneNode } from '#core/scene-graph'
+
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import { wrapSelectionInContainer as wrapSelectionInContainerImpl } from './structure/container-wrap'
 import { ungroupSelected as ungroupImpl } from './structure/group'
 import { createStructureReorderActions } from './structure/reorder'
 import { createStructureStateActions } from './structure/state'
-
-import type { NodeType, SceneNode } from '#core/scene-graph'
 import type { EditorContext } from './types'
 
 export function createStructureActions(ctx: EditorContext) {

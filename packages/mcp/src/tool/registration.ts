@@ -1,14 +1,14 @@
 import { resolve } from 'node:path'
 
-import { fail, ok } from '#mcp/result'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 
 import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
+import { fail, ok } from '#mcp/result'
+
 import { resolveSafePath, writeToolOutput } from './output'
 import { paramToZod } from './schema'
-
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 

@@ -1,6 +1,5 @@
-import { computeBounds } from '#core/geometry'
-
 import type { EditorContext } from '#core/editor/types'
+import { computeBounds } from '#core/geometry'
 
 export function createClipboardPlacementActions(ctx: EditorContext) {
   function centerNodesAt(nodeIds: string[], cx: number, cy: number) {

@@ -1,5 +1,6 @@
-import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
+
+import type { DragState } from '#vue/shared/input/types'
 
 type DragOriginal = { x: number; y: number; parentId: string }
 

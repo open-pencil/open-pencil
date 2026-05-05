@@ -4,7 +4,6 @@ import {
   textSnapshotChanged,
   type TextEditSession
 } from './text/session'
-
 import type { EditorContext } from './types'
 
 export function createTextActions(ctx: EditorContext) {

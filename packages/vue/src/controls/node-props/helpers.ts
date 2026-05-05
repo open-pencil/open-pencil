@@ -1,9 +1,10 @@
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { computed } from 'vue'
+import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/core/scene-graph'
-import type { ComputedRef } from 'vue'
+
+import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 export const MIXED = Symbol('mixed')
 export type MixedValue<T> = T | typeof MIXED

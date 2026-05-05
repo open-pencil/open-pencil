@@ -1,9 +1,8 @@
+import type { Editor } from '@open-pencil/core/editor'
 import { breakAtVertex, deleteVertex } from '@open-pencil/core/vector'
 
 import { getLiveNetwork, setNodeEditNetwork } from './network'
-
 import type { VectorEditState } from './types'
-import type { Editor } from '@open-pencil/core/editor'
 
 export function createVectorEditSelectionActions(editor: Editor, state: VectorEditState) {
   function getNodeEditState() {

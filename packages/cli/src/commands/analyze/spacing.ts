@@ -1,8 +1,9 @@
-import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
+
+import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Analyze spacing values (gap, padding)' },

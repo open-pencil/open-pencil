@@ -1,5 +1,7 @@
 import { ref } from 'vue'
 
+import { IS_BROWSER } from '@open-pencil/core/constants'
+
 import {
   apiKey,
   customAPIType,
@@ -18,7 +20,6 @@ import {
 } from '@/app/ai/chat/storage'
 import { createChatSessionManager } from '@/app/ai/chat/transports'
 import { getActiveEditorStore } from '@/app/editor/active-store'
-import { IS_BROWSER } from '@open-pencil/core/constants'
 
 const activeTab = ref<'design' | 'code' | 'ai'>('design')
 

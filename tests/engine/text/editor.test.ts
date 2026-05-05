@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import { TextEditor, type SceneNode } from '@open-pencil/core'
-
 import type { CanvasKit } from 'canvaskit-wasm'
+
+import { TextEditor, type SceneNode } from '@open-pencil/core'
 
 const mockCk = {} as CanvasKit
 

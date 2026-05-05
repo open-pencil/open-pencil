@@ -1,13 +1,13 @@
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
-import { useNodeFontStatus } from '#vue/shared/font-status/use'
 import { computed } from 'vue'
+import type { ComputedRef } from 'vue'
 
+import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode, TextDecoration } from '@open-pencil/core/scene-graph'
 import { FONT_WEIGHT_NAMES, weightToStyle } from '@open-pencil/core/text'
 
 import type { UseTypographyOptions } from '#vue/controls/typography/use'
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode, TextDecoration } from '@open-pencil/core/scene-graph'
-import type { ComputedRef } from 'vue'
+import { useSceneComputed } from '#vue/internal/scene-computed/use'
+import { useNodeFontStatus } from '#vue/shared/font-status/use'
 
 type TextAlign = 'LEFT' | 'CENTER' | 'RIGHT'
 type TextDirection = SceneNode['textDirection']

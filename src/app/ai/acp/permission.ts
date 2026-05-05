@@ -1,8 +1,7 @@
+import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
 import { computed, shallowRef } from 'vue'
 
 import { ACP_PERMISSION_TIMEOUT_MS } from '@/constants'
-
-import type { RequestPermissionRequest, RequestPermissionResponse } from '@agentclientprotocol/sdk'
 
 export interface PendingPermission {
   request: RequestPermissionRequest

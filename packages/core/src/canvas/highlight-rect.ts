@@ -1,8 +1,9 @@
-import { FLASH_PADDING, FLASH_STROKE_WIDTH, FLASH_RADIUS } from '#core/constants'
-
-import type { SceneGraph } from '#core/scene-graph'
-import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
+
+import { FLASH_PADDING, FLASH_STROKE_WIDTH, FLASH_RADIUS } from '#core/constants'
+import type { SceneGraph } from '#core/scene-graph'
+
+import type { SkiaRenderer } from './renderer'
 
 export function ensureFlashPaint(r: SkiaRenderer): Paint {
   if (!r._flashPaint) {

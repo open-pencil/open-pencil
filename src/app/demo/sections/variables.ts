@@ -1,3 +1,5 @@
+import type { Color } from '@open-pencil/core/scene-graph'
+
 import {
   BLACK,
   BLUE,
@@ -9,9 +11,7 @@ import {
   RED,
   WHITE
 } from '@/app/demo/colors'
-
 import type { EditorStore } from '@/app/editor/session'
-import type { Color } from '@open-pencil/core/scene-graph'
 
 export function createDemoVariables(store: EditorStore) {
   const { graph } = store

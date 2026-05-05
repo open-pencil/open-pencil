@@ -47,6 +47,7 @@ import {
   selectNodes,
   switchPage
 } from './read'
+import type { ToolDef } from './schema'
 import {
   arrangeNodes,
   cloneNode,
@@ -92,8 +93,6 @@ import {
   viewportGet,
   viewportSet
 } from './vector'
-
-import type { ToolDef } from './schema'
 
 /**
  * Extended tools not in CORE_TOOLS — variables, vector ops, analysis,

@@ -1,9 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 
+import type { EditorStore } from '@/app/editor/active-store'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { isReservedModShortcut } from '@/app/shell/keyboard/reserved'
-
-import type { EditorStore } from '@/app/editor/active-store'
 
 const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
   ArrowUp: [0, -1],

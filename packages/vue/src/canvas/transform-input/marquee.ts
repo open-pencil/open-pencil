@@ -1,5 +1,6 @@
-import type { DragMarquee } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
+
+import type { DragMarquee } from '#vue/shared/input/types'
 
 type CanvasToLocal = (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
 

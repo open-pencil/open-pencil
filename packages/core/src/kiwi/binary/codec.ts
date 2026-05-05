@@ -7,9 +7,10 @@
  * - fzstd: Browser-compatible Zstd decompression
  */
 
+import { decompress as zstdDecompress } from 'fzstd'
+
 import { parseColor } from '#core/color'
 import { compileSchema, encodeBinarySchema } from '#core/kiwi/kiwi-schema'
-import { decompress as zstdDecompress } from 'fzstd'
 
 import { isZstdCompressed, getKiwiMessageType } from './protocol'
 import figmaSchema from './schema'

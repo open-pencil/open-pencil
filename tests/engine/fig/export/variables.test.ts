@@ -1,7 +1,6 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 
 import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
-
 import type { Color } from '@open-pencil/core'
 
 beforeAll(async () => {

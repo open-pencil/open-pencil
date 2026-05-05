@@ -1,4 +1,5 @@
 import type { SceneGraph } from '#core/scene-graph'
+
 import type { NodeProxyHost } from './proxy'
 
 export function nodeProxyToJSON(

@@ -1,3 +1,5 @@
+import type { Canvas, CanvasKit } from 'canvaskit-wasm'
+
 import {
   RULER_SIZE,
   RULER_BADGE_HEIGHT,
@@ -12,10 +14,9 @@ import {
   RULER_MAJOR_TOLERANCE
 } from '#core/constants'
 import { computeAbsoluteBounds } from '#core/geometry'
-
 import type { SceneNode, SceneGraph } from '#core/scene-graph'
+
 import type { SkiaRenderer } from './renderer'
-import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 
 interface SelectionScreenBounds {
   sx1: number

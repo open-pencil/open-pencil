@@ -1,5 +1,6 @@
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test, type Page } from '@playwright/test'
+
+import { CanvasHelper } from '#tests/helpers/canvas'
 
 const USE_REAL_LLM = process.env.TEST_REAL_LLM === '1'
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY ?? ''

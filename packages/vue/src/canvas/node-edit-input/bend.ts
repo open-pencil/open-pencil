@@ -1,7 +1,8 @@
-import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { VectorSegment } from '@open-pencil/core/scene-graph'
 import type { Vector } from '@open-pencil/core/types'
+
+import type { DragState } from '#vue/shared/input/types'
 
 export type CanvasNodeEditState = {
   segments: VectorSegment[]

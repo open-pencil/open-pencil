@@ -1,8 +1,9 @@
-import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
-import { buildDebugLog } from '@open-pencil/core/tools'
-
-import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
 import type { UIMessage } from 'ai'
+
+import { buildDebugLog } from '@open-pencil/core/tools'
+import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
+
+import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
 
 export function formatTokenUsage(): string {
   const steps = getStepUsages()

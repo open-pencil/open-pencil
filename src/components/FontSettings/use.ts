@@ -1,5 +1,7 @@
 import { computed, ref } from 'vue'
 
+import type { LocalFontAccessState } from '@open-pencil/core/text'
+
 import {
   clearDownloadedFontCache,
   downloadedFontCacheSummary,
@@ -7,8 +9,6 @@ import {
   predownloadFallbackFonts,
   requestLocalFontAccess
 } from '@/app/editor/fonts'
-
-import type { LocalFontAccessState } from '@open-pencil/core/text'
 
 export interface FontCacheSummary {
   count: number

@@ -1,11 +1,11 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
-import { calculateResizeRect } from '#vue/shared/input/resize/rect'
-import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
-
-import type { DragResize } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
+import type { DragResize } from '#vue/shared/input/types'
 
 export function applyResize(
   d: DragResize,

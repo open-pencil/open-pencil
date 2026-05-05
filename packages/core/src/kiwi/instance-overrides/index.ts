@@ -11,6 +11,7 @@ export type {
 } from './types'
 
 import { guidToString } from '#core/kiwi/node-change/convert'
+import type { SceneGraph } from '#core/scene-graph'
 import { copyFills } from '#core/scene-graph/copy'
 
 import { applyConstraintScaling } from './constraints'
@@ -20,8 +21,6 @@ import { applyComponentProperties } from './props'
 import { preComputeRoots } from './resolve'
 import { applySymbolOverrides } from './symbol/overrides'
 import { propagateOverridesTransitively } from './sync'
-
-import type { SceneGraph } from '#core/scene-graph'
 import type { InstanceNodeChange, OverrideContext, ComponentPropValue } from './types'
 
 /**

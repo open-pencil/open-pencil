@@ -1,10 +1,10 @@
-import { computeDescendantVisualBounds } from '#core/geometry'
-import { extractExportGraph, findPageId } from '#core/io/subgraph'
+import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { RenderColorSpace } from '#core/color/management'
+import { computeDescendantVisualBounds } from '#core/geometry'
+import { extractExportGraph, findPageId } from '#core/io/subgraph'
 import type { SceneGraph } from '#core/scene-graph'
-import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
 export type ExportFormat = RasterExportFormat | 'SVG'

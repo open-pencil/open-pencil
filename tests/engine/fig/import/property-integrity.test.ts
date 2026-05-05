@@ -1,6 +1,19 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
+import {
+  parseFigFile,
+  computeAllLayouts,
+  exportFigFile,
+  importNodeChanges,
+  initCodec,
+  SceneGraph,
+  FigmaAPI,
+  type SceneNode,
+  type Fill
+} from '@open-pencil/core'
+
 import { computeContentBounds } from '#core/io/formats/raster/render'
+
 import { expectDefined } from '#tests/helpers/assert'
 import {
   parseFixture,
@@ -15,18 +28,6 @@ import {
   previewChild
 } from '#tests/helpers/fig-traversal'
 import { heavy } from '#tests/helpers/test-utils'
-
-import {
-  parseFigFile,
-  computeAllLayouts,
-  exportFigFile,
-  importNodeChanges,
-  initCodec,
-  SceneGraph,
-  FigmaAPI,
-  type SceneNode,
-  type Fill
-} from '@open-pencil/core'
 
 setDefaultTimeout(60_000)
 

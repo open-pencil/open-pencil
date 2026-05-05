@@ -1,6 +1,7 @@
+import { createTwoFilesPatch } from 'diff'
+
 import { sceneNodeToJSX } from '#core/io/formats/jsx'
 import { defineTool } from '#core/tools/schema'
-import { createTwoFilesPatch } from 'diff'
 
 const MAX_JSX_LENGTH = 12_000
 

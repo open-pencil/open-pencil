@@ -1,8 +1,9 @@
-import { bold, fmtHistogram, fmtSummary, kv } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { InfoResult } from '@open-pencil/core/rpc'
+
+import { bold, fmtHistogram, fmtSummary, kv } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Show document info (pages, node counts, fonts)' },

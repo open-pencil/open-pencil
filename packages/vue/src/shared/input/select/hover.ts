@@ -1,3 +1,6 @@
+import { getAbsoluteRotation } from '@open-pencil/core/canvas'
+import type { Editor } from '@open-pencil/core/editor'
+
 import {
   buildResizeCursor,
   cornerRotationCursor,
@@ -5,11 +8,7 @@ import {
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
 import { getNodeEditState } from '#vue/shared/input/node-edit'
-
-import { getAbsoluteRotation } from '@open-pencil/core/canvas'
-
 import type { HitTestFns } from '#vue/shared/input/select'
-import type { Editor } from '@open-pencil/core/editor'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   for (const id of editor.state.selectedIds) {

@@ -1,11 +1,12 @@
 import { basename, extname, resolve } from 'node:path'
 
-import { requireFile } from '#cli/app-client'
-import { ok, printError } from '#cli/format'
-import { loadDocument } from '#cli/headless'
 import { defineCommand } from 'citty'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+
+import { requireFile } from '#cli/app-client'
+import { ok, printError } from '#cli/format'
+import { loadDocument } from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 

@@ -1,8 +1,8 @@
+import type { Editor } from '@open-pencil/core/editor'
+
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import { detectAutoLayoutParent } from '#vue/shared/input/move'
-
 import type { DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
 
 type MoveOriginal = { x: number; y: number; parentId: string }
 

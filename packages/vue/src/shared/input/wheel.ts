@@ -1,8 +1,9 @@
-import { useWheelGesture } from '#vue/shared/gesture/wheel'
-import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
+import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { Ref } from 'vue'
+
+import { useWheelGesture } from '#vue/shared/gesture/wheel'
+import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
 type WheelAccum = {
   deltaX: number

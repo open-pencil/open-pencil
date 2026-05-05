@@ -1,9 +1,9 @@
-import { resolveNodeLayoutDirection } from '#core/text/direction'
 import { Direction, Display, Gutter, Edge, type Node as YogaNode } from 'yoga-layout'
 
-import { configureAbsoluteChild, createYogaNode, mapGridTrack } from './yoga-helpers'
-
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import { resolveNodeLayoutDirection } from '#core/text/direction'
+
+import { configureAbsoluteChild, createYogaNode, mapGridTrack } from './yoga-helpers'
 
 function configureAsGrid(
   yogaNode: YogaNode,

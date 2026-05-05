@@ -1,6 +1,5 @@
-import { defineTool } from '#core/tools/schema'
-
 import type { RasterExportFormat } from '#core/io/formats/raster'
+import { defineTool } from '#core/tools/schema'
 
 const CHUNK_SIZE = 0x8000
 

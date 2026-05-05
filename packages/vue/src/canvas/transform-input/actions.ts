@@ -1,3 +1,5 @@
+import type { Editor } from '@open-pencil/core/editor'
+
 import { handleMarqueeMove as handleMarqueeMoveAction } from '#vue/canvas/transform-input/marquee'
 import { handlePanMove as handlePanMoveAction } from '#vue/canvas/transform-input/pan'
 import {
@@ -5,9 +7,7 @@ import {
   tryStartRotation as tryStartRotationAction
 } from '#vue/canvas/transform-input/rotation'
 import { handleTextSelectMove as handleTextSelectMoveAction } from '#vue/canvas/transform-input/text-selection'
-
 import type { DragMarquee, DragPan, DragRotate, DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
 
 type CanvasToLocal = (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
 type SetDrag = (drag: DragState) => void

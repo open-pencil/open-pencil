@@ -1,4 +1,5 @@
 import type { GUID } from '#core/types'
+
 import type { NodeChange, Paint } from './codec'
 
 export interface VariableBindingCodec {

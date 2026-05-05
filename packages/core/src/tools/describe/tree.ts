@@ -1,9 +1,9 @@
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+
 import { detectIssues } from './issues'
+import type { DescribeIssue } from './issues'
 import { detectRole } from './roles'
 import { describeLayout, describeVisual, summarizeContainer, summarizeText } from './summaries'
-
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { DescribeIssue } from './issues'
 
 interface ChildDescription {
   role: string

@@ -1,6 +1,5 @@
-import { defineTool, getRawNodeOrError, nodeNotFound, nodeSummary } from '#core/tools/schema'
-
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { defineTool, getRawNodeOrError, nodeNotFound, nodeSummary } from '#core/tools/schema'
 
 export const nodeAncestors = defineTool({
   name: 'node_ancestors',

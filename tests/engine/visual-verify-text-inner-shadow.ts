@@ -5,9 +5,8 @@ import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { renderNodesToImage } from '#core/io/formats/raster'
 import { SceneGraph } from '#core/scene-graph'
-import { fontManager } from '#core/text'
-
 import type { SceneNode } from '#core/scene-graph'
+import { fontManager } from '#core/text'
 
 async function main() {
   const ck = await initCanvasKit()

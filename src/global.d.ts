@@ -1,5 +1,6 @@
-import type { EditorStore } from '@/app/editor/session/create'
 import type { ChatTransport, UIMessage } from 'ai'
+
+import type { EditorStore } from '@/app/editor/session/create'
 
 declare global {
   interface Uint8ArrayConstructor {

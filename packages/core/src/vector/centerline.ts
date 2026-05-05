@@ -1,6 +1,7 @@
+import type { CanvasKit, Path } from 'canvaskit-wasm'
+
 import type { VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
 import type { Vector } from '#core/types'
-import type { CanvasKit, Path } from 'canvaskit-wasm'
 
 export function fitCircleArc(
   pts: Vector[]

@@ -1,13 +1,13 @@
 import { computed } from 'vue'
 
+import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import type { MenuEntry } from '@open-pencil/vue'
+
 import { useEditorStore } from '@/app/editor/active-store'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
+import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
-
-import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
-import type { MenuEntry } from '@open-pencil/vue'
 
 export interface AppMenuGroup {
   label: string

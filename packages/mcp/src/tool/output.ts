@@ -2,7 +2,6 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve, sep as osSep } from 'node:path'
 
 import { ok } from '#mcp/result'
-
 import type { MCPResult } from '#mcp/result'
 
 export function resolveSafePath(filePath: string, root: string): string {

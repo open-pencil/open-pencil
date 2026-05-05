@@ -8,9 +8,8 @@ import {
   IS_BROWSER,
   IS_TAURI
 } from '@open-pencil/core/constants'
-import { setPexelsApiKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
-
 import type { AIProviderID } from '@open-pencil/core/constants'
+import { setPexelsApiKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
 
 const STORAGE_PREFIX = 'open-pencil:'
 const LEGACY_KEY_STORAGE = `${STORAGE_PREFIX}openrouter-api-key`

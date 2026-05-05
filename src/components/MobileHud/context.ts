@@ -1,5 +1,6 @@
 import { useClipboard } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs } from 'vue'
+import type { Component, InjectionKey, ShallowUnwrapRef } from 'vue'
 import { useRouter } from 'vue-router'
 import IconFilePlus from '~icons/lucide/file-plus'
 import IconFolderOpen from '~icons/lucide/folder-open'
@@ -7,14 +8,13 @@ import IconImageDown from '~icons/lucide/image-down'
 import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
+import { useEditorCommands, useI18n } from '@open-pencil/vue'
+
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toolIcons } from '@/app/editor/icons'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { toast } from '@/app/shell/ui'
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
-
-import type { Component, InjectionKey, ShallowUnwrapRef } from 'vue'
 
 interface MenuAction {
   icon: Component

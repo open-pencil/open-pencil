@@ -7,6 +7,7 @@ import {
   borderRadiusToTw,
   opacityToTw
 } from '#core/design-jsx/tailwind'
+import type { GridTrack, SceneGraph, SceneNode } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import {
@@ -21,8 +22,6 @@ import {
   solidFillColor,
   solidStroke
 } from './helpers'
-
-import type { GridTrack, SceneGraph, SceneNode } from '#core/scene-graph'
 
 function twRounded(prefix: string, px: number): string {
   const r = borderRadiusToTw(px)

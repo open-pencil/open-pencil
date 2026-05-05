@@ -1,7 +1,6 @@
 import { selectionToJSX } from '#core/design-jsx'
-import { renderNodesToSVG } from '#core/io/formats/svg'
-
 import type { EditorContext } from '#core/editor/types'
+import { renderNodesToSVG } from '#core/io/formats/svg'
 
 export function createClipboardExportActions(ctx: EditorContext) {
   function copySelectionAsText(ids: string[]): string {

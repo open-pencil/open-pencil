@@ -1,6 +1,6 @@
 import { colorToHex } from '#core/color'
-
 import type { SceneGraph, Variable } from '#core/scene-graph'
+
 import type { RpcCommand } from './types'
 
 // ── variables ──

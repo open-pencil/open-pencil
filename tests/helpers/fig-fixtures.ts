@@ -2,10 +2,9 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 import { parseFigFile } from '@open-pencil/core'
+import type { SceneGraph, SceneNode } from '@open-pencil/core'
 
 import { collectAllNodes } from './fig-traversal'
-
-import type { SceneGraph, SceneNode } from '@open-pencil/core'
 
 export const FIXTURES = resolve(import.meta.dir, '../fixtures')
 

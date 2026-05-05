@@ -1,7 +1,7 @@
-import { extendSelectionForDeletion, handleNavigationKey } from './navigation'
-
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import { extendSelectionForDeletion, handleNavigationKey } from './navigation'
 
 type TextKeyboardOptions = {
   store: Editor

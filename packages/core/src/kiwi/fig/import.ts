@@ -1,4 +1,6 @@
+import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '#core/kiwi/binary/codec'
 import { populateAndApplyOverrides } from '#core/kiwi/instance-overrides'
+import type { InstanceNodeChange } from '#core/kiwi/instance-overrides'
 import {
   guidToString,
   nodeChangeToProps,
@@ -7,9 +9,6 @@ import {
   VARIABLE_BINDING_FIELDS_INVERSE
 } from '#core/kiwi/node-change/convert'
 import { SceneGraph } from '#core/scene-graph'
-
-import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '#core/kiwi/binary/codec'
-import type { InstanceNodeChange } from '#core/kiwi/instance-overrides'
 import type { VariableType, VariableValue } from '#core/scene-graph'
 
 type AssetRef = { key: string; version?: string }

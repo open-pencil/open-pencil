@@ -7,9 +7,9 @@
  */
 import { describe, test, expect } from 'bun:test'
 
-import { expectDefined } from '#tests/helpers/assert'
-
 import { TransformMatrix } from '@open-pencil/core'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 describe('TransformMatrix.identity', () => {
   test('produces a 3x3 identity matrix', () => {

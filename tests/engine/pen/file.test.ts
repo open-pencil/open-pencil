@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { repoPath } from '#tests/helpers/paths'
-
 import { parsePenFile } from '@open-pencil/core'
+
+import { repoPath } from '#tests/helpers/paths'
 
 const FIXTURE_DIR = repoPath('tests/fixtures')
 

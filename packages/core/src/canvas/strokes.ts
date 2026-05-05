@@ -1,6 +1,8 @@
-import type { SceneNode, Stroke } from '#core/scene-graph'
-import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
+
+import type { SceneNode, Stroke } from '#core/scene-graph'
+
+import type { SkiaRenderer } from './renderer'
 
 export function drawNodeStroke(
   r: SkiaRenderer,

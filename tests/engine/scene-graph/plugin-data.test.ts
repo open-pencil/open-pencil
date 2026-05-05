@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { deduplicateNodeChangePluginData } from '#core/kiwi'
-import { expectDefined } from '#tests/helpers/assert'
-
 import {
   exportFigFile,
   FigmaAPI,
@@ -12,6 +9,10 @@ import {
   SceneGraph,
   type NodeChange
 } from '@open-pencil/core'
+
+import { deduplicateNodeChangePluginData } from '#core/kiwi'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 function doc(): NodeChange {
   return {

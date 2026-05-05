@@ -1,17 +1,17 @@
 import { computed } from 'vue'
 
+import type { Editor } from '@open-pencil/core/editor'
+import type { IORegistry } from '@open-pencil/core/io'
+import type { SceneGraph } from '@open-pencil/core/scene-graph'
+
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'
 import { createFlashActions } from '@/app/editor/flash'
 import { createMobileClipboardActions } from '@/app/editor/mobile-clipboard'
 import { createPenActions } from '@/app/editor/pen'
 import { createProfilerActions } from '@/app/editor/profiler'
-import { createVectorEditActions } from '@/app/editor/vector-edit'
-
 import type { AppEditorState } from '@/app/editor/session/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { IORegistry } from '@open-pencil/core/io'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import { createVectorEditActions } from '@/app/editor/vector-edit'
 
 type ViewportSize = { width: number; height: number }
 

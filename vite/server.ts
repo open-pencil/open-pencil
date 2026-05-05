@@ -8,7 +8,7 @@ export const WATCH_IGNORED = [
   '**/tests/**',
   '**/.worktrees/**',
   '**/.github/**',
-  '**/.pi/**',
+  '**/.pi/**'
 ]
 
 export function createDevServerOptions(host: string | undefined): ServerOptions {
@@ -20,11 +20,11 @@ export function createDevServerOptions(host: string | undefined): ServerOptions 
       ? {
           protocol: 'ws',
           host,
-          port: 1421,
+          port: 1421
         }
       : undefined,
     watch: {
-      ignored: WATCH_IGNORED,
-    },
+      ignored: WATCH_IGNORED
+    }
   }
 }

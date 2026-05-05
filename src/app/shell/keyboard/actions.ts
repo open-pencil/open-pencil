@@ -1,6 +1,8 @@
-import type { EditorStore } from '@/app/editor/active-store'
-import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
 import type { Ref } from 'vue'
+
+import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
+
+import type { EditorStore } from '@/app/editor/active-store'
 
 type KeyboardActionsOptions = {
   store: EditorStore

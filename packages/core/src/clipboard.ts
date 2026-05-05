@@ -1,7 +1,9 @@
 import { inflateSync, deflateSync } from 'fflate'
 
 import { initCodec, getCompiledSchema, getSchemaBytes } from './kiwi/binary/codec'
+import type { NodeChange as KiwiNodeChange } from './kiwi/binary/codec'
 import { populateAndApplyOverrides } from './kiwi/instance-overrides'
+import type { InstanceNodeChange } from './kiwi/instance-overrides'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from './kiwi/kiwi-schema'
 import { nodeChangeToProps, sortChildren } from './kiwi/node-change/convert'
 import {
@@ -14,11 +16,8 @@ import {
   buildFontDigestMap
 } from './kiwi/node-change/serialize'
 import { randomInt } from './random'
-import { buildDerivedTextDataV4 } from './text/clipboard-derived-text'
-
-import type { NodeChange as KiwiNodeChange } from './kiwi/binary/codec'
-import type { InstanceNodeChange } from './kiwi/instance-overrides'
 import type { SceneGraph, SceneNode } from './scene-graph'
+import { buildDerivedTextDataV4 } from './text/clipboard-derived-text'
 
 interface FigmaClipboardMeta {
   fileKey: string

@@ -4,7 +4,6 @@ import {
   hitTestEditVertex,
   isEndpoint
 } from '#vue/shared/input/node-edit/hit-test'
-
 import type { DragEditHandle, DragEditNode, DragState } from '#vue/shared/input/types'
 
 export {

@@ -1,9 +1,10 @@
-import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 import { computed } from 'vue'
+import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
-import type { ComputedRef } from 'vue'
+
+import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 
 const CORNER_RADIUS_TYPES = new Set([
   'RECTANGLE',

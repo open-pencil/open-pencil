@@ -1,5 +1,4 @@
 import { polygonVertices } from '#core/geometry'
-
 import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
 
 const CMD_CLOSE = 0

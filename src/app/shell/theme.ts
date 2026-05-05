@@ -1,11 +1,11 @@
 import { useLocalStorage, usePreferredDark } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
+import type { RulerTheme } from '@open-pencil/core/canvas'
 import { parseColor } from '@open-pencil/core/color'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
-import type { RulerTheme } from '@open-pencil/core/canvas'
+import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 
 export type AppTheme = 'dark' | 'light' | 'auto'
 

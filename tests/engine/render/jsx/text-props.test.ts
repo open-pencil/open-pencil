@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
+import { renderJSX, sceneNodeToJSX } from '@open-pencil/core'
+
 import { getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'
-
-import { renderJSX, sceneNodeToJSX } from '@open-pencil/core'
 
 describe('text props round-trip', () => {
   it('lineHeight renders and exports', async () => {

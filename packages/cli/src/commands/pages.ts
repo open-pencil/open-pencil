@@ -1,8 +1,9 @@
-import { bold, fmtList, entity } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { PageItem } from '@open-pencil/core/rpc'
+
+import { bold, fmtList, entity } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'List pages in a document' },

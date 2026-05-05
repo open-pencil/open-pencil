@@ -1,6 +1,8 @@
-import type { SceneNode } from '#core/scene-graph'
-import type { SkiaRenderer } from './renderer'
 import type { Canvas, ImageFilter, MaskFilter } from 'canvaskit-wasm'
+
+import type { SceneNode } from '#core/scene-graph'
+
+import type { SkiaRenderer } from './renderer'
 
 export function getCachedDropShadow(
   r: SkiaRenderer,

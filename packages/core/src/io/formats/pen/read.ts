@@ -1,5 +1,6 @@
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { SceneGraph } from '#core/scene-graph'
+import type { LayoutMode, LayoutSizing, SceneNode, VectorNetwork } from '#core/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
 import { populateInstanceChildren } from '#core/scene-graph/instances'
 
@@ -24,8 +25,6 @@ import {
   type PenNode,
   type VarContext
 } from './convert'
-
-import type { LayoutMode, LayoutSizing, SceneNode, VectorNetwork } from '#core/scene-graph'
 
 function scaleVectorNetwork(vn: VectorNetwork, targetW: number, targetH: number): void {
   if (vn.vertices.length === 0) return

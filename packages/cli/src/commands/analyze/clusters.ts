@@ -1,10 +1,10 @@
-import { bold, fmtList, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
+import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 import { calcClusterConfidence } from '@open-pencil/core/tools'
 
-import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
+import { bold, fmtList, fmtSummary } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 function formatSignature(sig: string): string {
   const [typeSize, children] = sig.split('|')

@@ -1,5 +1,6 @@
-import { useVariables } from '#vue/variables/use'
 import { nextTick, ref } from 'vue'
+
+import { useVariables } from '#vue/variables/use'
 
 export function useVariablesDialogState() {
   const variables = useVariables()

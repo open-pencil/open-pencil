@@ -1,5 +1,6 @@
 import { createRequire } from 'node:module'
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { WebSocketServer } from 'ws'
@@ -10,8 +11,6 @@ import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from './http-
 import { preprocessRpc } from './jsx-preprocess'
 import { createMcpSessionManager } from './mcp-sessions'
 import { registerTools } from './tool/registration'
-
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 const require = createRequire(import.meta.url)
 export const MCP_VERSION: string = (require('../package.json') as { version: string }).version

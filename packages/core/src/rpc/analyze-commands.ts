@@ -1,7 +1,7 @@
 import { colorToHex, colorDistance as colorDist } from '#core/color'
-
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Color } from '#core/types'
+
 import type { RpcCommand } from './types'
 
 // ── analyze colors ──

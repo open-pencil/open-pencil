@@ -1,5 +1,6 @@
-import type { EditorStore } from '@/app/editor/active-store'
 import type { Ref } from 'vue'
+
+import type { EditorStore } from '@/app/editor/active-store'
 
 export function createCanvasContextSelection(
   canvasRef: Ref<HTMLCanvasElement | null>,

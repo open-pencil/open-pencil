@@ -1,3 +1,6 @@
+import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+
 import { createAutosave } from '@/app/document/autosave'
 import {
   documentNameFromFigPath,
@@ -6,9 +9,6 @@ import {
 } from '@/app/document/io/names'
 import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
-
-import type { Editor, EditorState } from '@open-pencil/core/editor'
 
 type DocumentSourceState = EditorState & {
   documentName: string

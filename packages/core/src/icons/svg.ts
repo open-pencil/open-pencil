@@ -1,6 +1,7 @@
-import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { iconToSVG } from '@iconify/utils'
 import svgpath from 'svgpath'
+
+import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 
 import type { IconData, IconifyIconEntry, IconPathInfo } from './types'
 

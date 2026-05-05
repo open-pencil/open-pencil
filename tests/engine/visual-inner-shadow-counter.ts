@@ -4,9 +4,8 @@ import { join } from 'node:path'
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { SceneGraph } from '#core/scene-graph'
-import { fontManager } from '#core/text'
-
 import type { SceneNode } from '#core/scene-graph'
+import { fontManager } from '#core/text'
 
 async function main() {
   const ck = await initCanvasKit()

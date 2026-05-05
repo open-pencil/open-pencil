@@ -4,12 +4,11 @@ import {
 } from '#vue/shared/input/auto-layout'
 import { findMoveDropTarget, reparentOutsideNodes } from '#vue/shared/input/drop-target'
 export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
-import { applyMoveSnap } from '#vue/shared/input/move-snap'
-
 import { AUTO_LAYOUT_BREAK_THRESHOLD } from '@open-pencil/core/constants'
-
-import type { DragMove } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
+
+import { applyMoveSnap } from '#vue/shared/input/move-snap'
+import type { DragMove } from '#vue/shared/input/types'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
 

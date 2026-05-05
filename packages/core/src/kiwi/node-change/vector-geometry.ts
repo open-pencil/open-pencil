@@ -1,8 +1,7 @@
-import { decodeVectorNetworkBlob } from '#core/vector'
-
 import type { NodeChange } from '#core/kiwi/binary/codec'
 import type { GeometryPath, VectorNetwork, WindingRule } from '#core/scene-graph'
 import type { Vector } from '#core/types'
+import { decodeVectorNetworkBlob } from '#core/vector'
 
 export function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): VectorNetwork | null {
   const vectorData = nc.vectorData as

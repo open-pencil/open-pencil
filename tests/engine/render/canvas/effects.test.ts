@@ -1,11 +1,11 @@
 import { describe, test, expect, mock } from 'bun:test'
 
-import { renderNode, renderShapeUncached } from '#core/canvas/scene'
-import { renderEffects } from '#core/canvas/shadows'
+import type { Canvas, Path } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { renderNode, renderShapeUncached } from '#core/canvas/scene'
+import { renderEffects } from '#core/canvas/shadows'
 import type { SceneNode, SceneGraph } from '#core/scene-graph'
-import type { Canvas, Path } from 'canvaskit-wasm'
 
 function mockCalls(fn: ReturnType<typeof mock>): unknown[][] {
   return (fn as { mock: { calls: unknown[][] } }).mock.calls

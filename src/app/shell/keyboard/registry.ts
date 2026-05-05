@@ -1,15 +1,14 @@
 import { tinykeys } from 'tinykeys'
+import type { KeyBindingMap } from 'tinykeys'
 import { onScopeDispose } from 'vue'
 
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
-
 import type {
   KeyboardShortcutOptions,
   KeyboardShortcutRunOptions
 } from '@/app/shell/keyboard/types'
-import type { KeyBindingMap } from 'tinykeys'
 
 type ShortcutAction = (options: KeyboardShortcutRunOptions) => void
 

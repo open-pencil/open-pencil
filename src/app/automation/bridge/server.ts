@@ -1,5 +1,3 @@
-import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
-import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 /**
  * Browser-side automation handler.
  *
@@ -9,6 +7,8 @@ import { createAutomationCommandHandlers } from '@/app/automation/bridge/handler
 import { AUTOMATION_WS_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 
+import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
+import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { EditorStore } from '@/app/editor/active-store'
 export function connectAutomation(getStore: () => EditorStore, authToken: string | null = null) {
   const token = authToken ?? randomHex(32)

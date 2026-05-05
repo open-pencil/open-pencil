@@ -1,14 +1,15 @@
+import type { Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
+
 import {
   canvasToLocalPoint,
   getPointerCoords,
   hitTestInEditorScope,
   isInsideEditorContainerBounds
 } from '#vue/shared/input/geometry'
-
 import type { HitTestFns } from '#vue/shared/input/select'
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
-import type { Ref } from 'vue'
 
 export function createCanvasPointer(
   canvasRef: Ref<HTMLCanvasElement | null>,

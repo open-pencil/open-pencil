@@ -1,6 +1,5 @@
-import { defineTool, nodeSummary } from '#core/tools/schema'
-
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createShape = defineTool({
   name: 'create_shape',

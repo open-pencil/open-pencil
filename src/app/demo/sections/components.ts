@@ -16,7 +16,6 @@ import {
   thinStroke
 } from '@/app/demo/colors'
 import { makeComponent } from '@/app/demo/helpers'
-
 import type { EditorStore } from '@/app/editor/session'
 
 export function createComponentsSection(store: EditorStore) {

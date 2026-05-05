@@ -14,16 +14,18 @@
  *   diff.png   — visual diff (red = changed pixels)
  */
 
-import { parseArgs } from 'node:util'
 import { existsSync, mkdirSync } from 'node:fs'
+import { parseArgs } from 'node:util'
+
 import { $ } from 'bun'
 
-import { parseFigmaClipboard, importClipboardNodes } from '#core/clipboard'
 import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/core/scene-graph'
 import { loadFont } from '@open-pencil/core/text'
+
+import { parseFigmaClipboard, importClipboardNodes } from '#core/clipboard'
 
 const { values: opts } = parseArgs({
   options: {
@@ -160,7 +162,9 @@ async function renderFigmaViaPaste() {
     console.log(`   → ${figmaPath}`)
   } finally {
     // Clean up: remove temp page
-    await $`figma-use eval ${'(() => { const ps = figma.root.children; const tmp = ps.find(p => p.name === "__visual_compare__"); if (tmp) { const other = ps.find(p => p !== tmp); if (other) figma.currentPage = other; tmp.remove(); } })()'}`.quiet().nothrow()
+    await $`figma-use eval ${'(() => { const ps = figma.root.children; const tmp = ps.find(p => p.name === "__visual_compare__"); if (tmp) { const other = ps.find(p => p !== tmp); if (other) figma.currentPage = other; tmp.remove(); } })()'}`
+      .quiet()
+      .nothrow()
   }
 }
 
@@ -188,7 +192,9 @@ async function diff() {
   const pct = ((diffPixels / total) * 100).toFixed(2)
 
   console.log(`   → ${diffPath}`)
-  console.log(`   ${diffPixels.toLocaleString()} different pixels (${pct}% of ${total.toLocaleString()})`)
+  console.log(
+    `   ${diffPixels.toLocaleString()} different pixels (${pct}% of ${total.toLocaleString()})`
+  )
   console.log(`\n✅ Done! Images in ${outputDir}/`)
 }
 
@@ -210,7 +216,9 @@ async function readClipboardHtml(): Promise<string | null> {
 async function ensureFigmaConnected() {
   const s = await $`figma-use status`.quiet().nothrow()
   if (s.exitCode !== 0) {
-    bail('figma-use not connected. Start Figma with:\n  open -a Figma --args --remote-debugging-port=9222')
+    bail(
+      'figma-use not connected. Start Figma with:\n  open -a Figma --args --remote-debugging-port=9222'
+    )
   }
 }
 

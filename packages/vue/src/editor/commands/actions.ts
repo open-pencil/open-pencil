@@ -1,5 +1,4 @@
 import { EDITOR_COMMAND_SHORTCUTS } from './metadata'
-
 import type { EditorCommand, EditorCommandId, EditorCommandMenuItem } from './types'
 
 export function createEditorCommandActions(commands: Record<EditorCommandId, EditorCommand>) {

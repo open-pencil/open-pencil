@@ -1,9 +1,11 @@
+import type { CanvasKit } from 'canvaskit-wasm'
+
 import type { SkiaRenderer } from '#core/canvas'
 import type { RenderColorSpace } from '#core/color/management'
 import type { JSXFormat } from '#core/design-jsx'
 import type { SceneGraph } from '#core/scene-graph'
+
 import type { RasterExportFormat } from './formats/raster'
-import type { CanvasKit } from 'canvaskit-wasm'
 
 export type IOFormatRole = 'native-document' | 'interchange-document' | 'derived-export'
 

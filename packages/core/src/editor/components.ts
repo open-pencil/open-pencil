@@ -1,7 +1,7 @@
+import type { SceneNode } from '#core/scene-graph'
+
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
-
-import type { SceneNode } from '#core/scene-graph'
 import type { EditorContext } from './types'
 
 export function createComponentActions(ctx: EditorContext) {

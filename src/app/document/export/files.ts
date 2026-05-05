@@ -1,6 +1,3 @@
-import { isTauri } from '@/app/tauri/env'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 import type {
   ExportRequest,
@@ -8,7 +5,10 @@ import type {
   IORegistry,
   RasterExportFormat
 } from '@open-pencil/core/io'
+import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
+
+import { isTauri } from '@/app/tauri/env'
 
 type ExportOptions = {
   scale?: number

@@ -1,8 +1,7 @@
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
+
 import { presets } from './presets'
 import { allRules } from './rules'
-import { getNodePath } from './utils'
-
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type {
   LintConfig,
   LintMessage,
@@ -12,6 +11,7 @@ import type {
   RuleContext,
   Severity
 } from './types'
+import { getNodePath } from './utils'
 
 export class Linter {
   private rules = new Map<string, Rule>()

@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
-
 import {
   clearNodeFillOkHCL,
   colorDistance,
@@ -10,6 +8,8 @@ import {
   SceneGraph,
   setNodeFillOkHCL
 } from '@open-pencil/core'
+
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
 describe('OkHCL toggle conversion', () => {
   test('enabling OkHCL from an existing rgba fill preserves the visible color closely', () => {

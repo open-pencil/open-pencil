@@ -1,5 +1,6 @@
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test, type Page } from '@playwright/test'
+
+import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, ratio: number) {
   const slider = page.locator(`[data-test-id="${testId}"] input[type="range"]`)

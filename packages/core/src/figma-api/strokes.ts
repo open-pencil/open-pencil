@@ -1,6 +1,5 @@
-import { copyStrokes } from '#core/scene-graph/copy'
-
 import type { SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
+import { copyStrokes } from '#core/scene-graph/copy'
 
 export function setFirstStrokeWeight(graph: SceneGraph, node: SceneNode, weight: number): void {
   if (node.strokes.length === 0) return

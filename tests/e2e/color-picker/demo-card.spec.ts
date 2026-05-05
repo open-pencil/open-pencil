@@ -1,5 +1,6 @@
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { expect, test } from '@playwright/test'
+
+import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function dragSlider(
   page: Parameters<typeof test>[0]['page'],

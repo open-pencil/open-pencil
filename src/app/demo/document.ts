@@ -1,10 +1,10 @@
+import { computeAllLayouts } from '@open-pencil/core/layout'
+
 import { createAppPreviewSection } from '@/app/demo/sections/app-preview'
 import { createComponentsSection } from '@/app/demo/sections/components'
 import { createEffectsSection } from '@/app/demo/sections/effects'
 import { createStandaloneShapes } from '@/app/demo/sections/standalone'
 import { createDemoVariables } from '@/app/demo/sections/variables'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-
 import type { EditorStore } from '@/app/editor/session'
 
 export function createDemoShapes(store: EditorStore) {

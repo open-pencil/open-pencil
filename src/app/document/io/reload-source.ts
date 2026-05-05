@@ -1,5 +1,6 @@
-import { isTauri } from '@/app/tauri/env'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
+
+import { isTauri } from '@/app/tauri/env'
 
 export type ReloadSourceOptions = {
   documentName: string

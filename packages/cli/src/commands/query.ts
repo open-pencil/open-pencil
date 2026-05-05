@@ -1,8 +1,9 @@
-import { printNodeResults, printError } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import type { QueryNodeResult } from '@open-pencil/core/rpc'
+
+import { printNodeResults, printError } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: {

@@ -1,15 +1,15 @@
 import { Chat } from '@ai-sdk/vue'
 import { DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
+import type { ChatTransport, UIMessage } from 'ai'
+import type { ComputedRef, Ref } from 'vue'
+
+import { ACP_AGENTS } from '@open-pencil/core/constants'
+import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { createLanguageModel } from '@/app/ai/chat/model'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/app/ai/tools'
-import { ACP_AGENTS } from '@open-pencil/core/constants'
-
 import type { getActiveEditorStore } from '@/app/editor/active-store'
-import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
-import type { ChatTransport, UIMessage } from 'ai'
-import type { ComputedRef, Ref } from 'vue'
 
 type EditorStore = ReturnType<typeof getActiveEditorStore>
 

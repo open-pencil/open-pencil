@@ -1,9 +1,9 @@
 import * as Y from 'yjs'
 
-import { YJS_JSON_FIELDS } from '@/constants'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import { YJS_JSON_FIELDS } from '@/constants'
 
 type YNodes = Y.Map<Y.Map<unknown>>
 type YImages = Y.Map<Uint8Array>

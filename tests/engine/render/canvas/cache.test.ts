@@ -1,10 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'fs'
 
-import { initCanvasKit } from '#cli/headless'
-import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
-
 import {
   computeAllLayouts,
   initCodec,
@@ -14,6 +10,11 @@ import {
   SkiaRenderer,
   type SceneNode
 } from '@open-pencil/core'
+
+import { initCanvasKit } from '#cli/headless'
+
+import { expectDefined } from '#tests/helpers/assert'
+import { repoPath } from '#tests/helpers/paths'
 
 let graph: SceneGraph
 let movingNodeId: string

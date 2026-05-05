@@ -1,6 +1,6 @@
 import { getDefaultCanvasBgColor } from '#core/constants'
-
 import type { Color } from '#core/types'
+
 import type { EditorContext } from './types'
 
 interface PageViewport {

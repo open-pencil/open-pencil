@@ -1,15 +1,15 @@
+import type { CanvasKit } from 'canvaskit-wasm'
+import { onScopeDispose } from 'vue'
+import type { Ref } from 'vue'
+
+import { SkiaRenderer } from '@open-pencil/core/canvas'
+import type { Editor } from '@open-pencil/core/editor'
+
 import { makeGLSurface, sizeCanvas, type CanvasGLContext } from '#vue/canvas/surface/gl-surface'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'
 import { createCanvasRenderLoop } from '#vue/canvas/surface/render-loop'
 import { useCanvasResizeObserver } from '#vue/canvas/surface/resize-observer'
-import { onScopeDispose } from 'vue'
-
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { CanvasKit } from 'canvaskit-wasm'
-import type { Ref } from 'vue'
 
 type SurfaceManagerState = {
   renderer: SkiaRenderer | null

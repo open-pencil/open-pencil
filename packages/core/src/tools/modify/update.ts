@@ -1,6 +1,5 @@
-import { defineTool, nodeNotFound } from '#core/tools/schema'
-
 import type { SceneNode } from '#core/scene-graph'
+import { defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const updateNode = defineTool({
   name: 'update_node',

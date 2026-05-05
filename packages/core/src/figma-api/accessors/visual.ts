@@ -5,9 +5,8 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
-
 import type { Effect, Fill, SceneNode, Stroke } from '#core/scene-graph'
+import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
 
 export function installVisualNodeProxyAccessors(
   prototype: object,

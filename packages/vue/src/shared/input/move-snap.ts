@@ -1,8 +1,8 @@
+import type { Editor } from '@open-pencil/core/editor'
 import { computeSelectionBounds, computeSnap } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 import type { DragMove } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 export function applyMoveSnap(
   d: DragMove,

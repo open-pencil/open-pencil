@@ -1,4 +1,5 @@
 import type { FigmaAPI } from '#core/figma-api'
+
 import type { StockPhotoProvider, StockPhotoResult } from './providers'
 
 export interface PhotoRequest {

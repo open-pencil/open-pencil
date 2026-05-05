@@ -1,9 +1,9 @@
-import { isZstdCompressed } from '#core/kiwi/binary/protocol'
-import { decodeBinarySchema, compileSchema, ByteBuffer } from '#core/kiwi/kiwi-schema'
 import { unzipSync, inflateSync } from 'fflate'
 import { decompress as zstdDecompress } from 'fzstd'
 
 import type { FigmaMessage, NodeChange } from '#core/kiwi/binary/codec'
+import { isZstdCompressed } from '#core/kiwi/binary/protocol'
+import { decodeBinarySchema, compileSchema, ByteBuffer } from '#core/kiwi/kiwi-schema'
 
 /**
  * Deduplicates pluginData/pluginRelaunchData entries on raw NodeChange objects.

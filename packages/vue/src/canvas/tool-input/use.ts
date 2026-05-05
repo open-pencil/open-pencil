@@ -1,12 +1,13 @@
+import type { Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+
 import { startPenInput } from '#vue/canvas/pen-input/use'
 import { startShapeDraw, startTextTool } from '#vue/shared/input/draw'
 import { startPanDrag } from '#vue/shared/input/pan'
 import { handleSelectDown } from '#vue/shared/input/select'
-
 import type { HitTestFns } from '#vue/shared/input/select'
 import type { DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { Ref } from 'vue'
 
 type ToolMouseDownOptions = {
   event: MouseEvent

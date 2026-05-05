@@ -1,11 +1,11 @@
+import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
+
 import { getCanvasKit } from '#core/canvaskit'
 import { resolveRGBAForPreview } from '#core/color/management'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
+import type { SceneNode } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 import { fontManager } from '#core/text/fonts'
-
-import type { SceneNode } from '#core/scene-graph'
-import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
 
 interface TextRenderer {
   ck: CanvasKit

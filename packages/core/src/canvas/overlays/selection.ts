@@ -1,12 +1,12 @@
+import type { Canvas } from 'canvaskit-wasm'
+
 import { getWorldMatrix } from '#core/canvas/coordinate'
 import Matrix from '#core/canvas/matrix'
+import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { HANDLE_HALF_SIZE, SELECTION_DASH_ALPHA } from '#core/constants'
 import { rotatedCorners } from '#core/geometry'
-
-import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Vector } from '#core/types'
-import type { Canvas } from 'canvaskit-wasm'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
   const chain: SceneNode[] = []

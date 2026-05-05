@@ -1,6 +1,8 @@
 import { useActiveElement } from '@vueuse/core'
 import { computed } from 'vue'
 
+import { useEditorCommands, useViewportKind } from '@open-pencil/vue'
+
 import { useAIChat } from '@/app/ai/chat/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createKeyboardActions } from '@/app/shell/keyboard/actions'
@@ -10,7 +12,6 @@ import { bindNudgeKeys } from '@/app/shell/keyboard/nudging'
 import { registerKeyboardShortcuts } from '@/app/shell/keyboard/registry'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { closeTab, createTab, activeTab as activeTabRef } from '@/app/tabs'
-import { useEditorCommands, useViewportKind } from '@open-pencil/vue'
 
 export function useKeyboard() {
   const { activeTab } = useAIChat()

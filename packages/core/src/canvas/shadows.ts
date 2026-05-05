@@ -1,8 +1,9 @@
-import { nodeHasRadius } from './shapes'
+import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneNode } from '#core/scene-graph'
+
 import type { SkiaRenderer } from './renderer'
-import type { Canvas } from 'canvaskit-wasm'
+import { nodeHasRadius } from './shapes'
 
 function drawChildTransform(canvas: Canvas, child: SceneNode): void {
   canvas.translate(child.x, child.y)

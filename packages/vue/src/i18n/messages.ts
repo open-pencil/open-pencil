@@ -1,8 +1,8 @@
-import { locale } from '#vue/i18n/locale'
 import { createI18n, params } from '@nanostores/i18n'
-
-import type { Locale } from '#vue/i18n/locale'
 import type { ComponentsJSON } from '@nanostores/i18n'
+
+import { locale } from '#vue/i18n/locale'
+import type { Locale } from '#vue/i18n/locale'
 
 const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: ComponentsJSON }>> = {
   de: () => import('#vue/locales/de.json'),

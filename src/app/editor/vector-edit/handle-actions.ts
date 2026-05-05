@@ -1,11 +1,10 @@
+import type { Editor } from '@open-pencil/core/editor'
+import type { Vector } from '@open-pencil/core/types'
 import { findAllHandles, findOppositeHandle, mirrorHandle } from '@open-pencil/core/vector'
 
 import { constrainContinuousTangent } from './handles'
 import { getLiveNetwork } from './network'
-
 import type { NodeEditState } from './types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { Vector } from '@open-pencil/core/types'
 
 type GetNodeEditState = () => NodeEditState | null
 

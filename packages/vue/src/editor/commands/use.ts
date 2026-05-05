@@ -1,3 +1,6 @@
+import { useStore } from '@nanostores/vue'
+import { computed } from 'vue'
+
 import { createEditorCommandActions } from '#vue/editor/commands/actions'
 import { createEditorCommandMap } from '#vue/editor/commands/definitions'
 import { useEditor } from '#vue/editor/context'
@@ -5,8 +8,6 @@ import { useSelectionCapabilities } from '#vue/editor/selection-capabilities/use
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { commandMessages } from '#vue/i18n'
 import { usePageList } from '#vue/primitives/PageList/usePageList'
-import { useStore } from '@nanostores/vue'
-import { computed } from 'vue'
 
 export type {
   EditorCommand,

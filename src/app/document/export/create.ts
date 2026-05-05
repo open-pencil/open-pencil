@@ -1,3 +1,6 @@
+import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { ExportRequest, IORegistry } from '@open-pencil/core/io'
+
 import {
   createExportTargetActions,
   getExportBaseName,
@@ -6,9 +9,6 @@ import {
   getExportOptions,
   saveExportedFile
 } from '@/app/document/export/files'
-
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import type { ExportRequest, IORegistry } from '@open-pencil/core/io'
 
 type ExportOptions = {
   scale?: number

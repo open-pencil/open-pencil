@@ -1,14 +1,14 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 
+import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import type { EditorCommandId } from '@open-pencil/vue'
+
 import { useEditorStore } from '@/app/editor/active-store'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater'
 import { createTab, closeTab, activeTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
-
-import type { EditorCommandId } from '@open-pencil/vue'
 
 const store = useEditorStore()
 const COMMAND_MENU_IDS = new Set<string>([

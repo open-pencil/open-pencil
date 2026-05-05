@@ -1,9 +1,8 @@
-import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
-
+import type { Editor } from '@open-pencil/core/editor'
 import { cloneVectorNetwork } from '@open-pencil/core/scene-graph'
 
+import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
 
 export function tryStartResize(cx: number, cy: number, editor: Editor): DragResize | null {
   for (const id of editor.state.selectedIds) {

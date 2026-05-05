@@ -1,7 +1,7 @@
 import { watch } from 'vue'
+import type { ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { ShallowRef } from 'vue'
 
 export function createHiddenTextArea() {
   const textarea = document.createElement('textarea')

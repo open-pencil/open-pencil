@@ -1,9 +1,9 @@
-import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_COLOR } from '#core/constants'
+import type { Canvas } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_COLOR } from '#core/constants'
 import type { SceneNode } from '#core/scene-graph'
 import type { TextEditor } from '#core/text/editor'
-import type { Canvas } from 'canvaskit-wasm'
 
 export function drawTextEditOverlay(
   r: SkiaRenderer,

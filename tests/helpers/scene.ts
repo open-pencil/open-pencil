@@ -1,5 +1,4 @@
 import { SceneGraph } from '@open-pencil/core'
-
 import type { SceneNode } from '@open-pencil/core'
 
 export function makeSceneGraph(pageName = 'Test'): SceneGraph {

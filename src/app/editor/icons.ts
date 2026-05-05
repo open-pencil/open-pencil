@@ -1,3 +1,4 @@
+import type { Component } from 'vue'
 import IconCircle from '~icons/lucide/circle'
 import IconColumns from '~icons/lucide/columns-3'
 import IconComponentSet from '~icons/lucide/component'
@@ -17,7 +18,6 @@ import IconTriangle from '~icons/lucide/triangle'
 import IconType from '~icons/lucide/type'
 
 import type { Tool } from '@/app/editor/session'
-import type { Component } from 'vue'
 
 export const toolIcons: Record<Tool, Component> = {
   SELECT: IconMousePointer,

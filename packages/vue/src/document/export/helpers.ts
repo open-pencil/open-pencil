@@ -1,10 +1,10 @@
 import { computed } from 'vue'
+import type { Ref } from 'vue'
 
+import type { Editor } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
 import type { ExportFormatId, ExportPanelTarget, ExportSetting } from '#vue/document/export/use'
-import type { Editor } from '@open-pencil/core/editor'
-import type { Ref } from 'vue'
 
 export const EXPORT_SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
 export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'pdf', 'fig']

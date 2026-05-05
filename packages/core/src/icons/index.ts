@@ -1,6 +1,5 @@
 import { fetchIconifyCollection, searchIconify } from './api'
 import { buildIconData } from './svg'
-
 import type { IconData, IconSearchResult } from './types'
 
 export type { IconData, IconPath, IconSearchResult } from './types'

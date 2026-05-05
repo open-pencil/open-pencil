@@ -1,9 +1,8 @@
 import { promiseTimeout } from '@vueuse/core'
+import type { Ref } from 'vue'
 
 import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
-
-import type { Ref } from 'vue'
 
 const STARTUP_UPDATE_CHECK_DELAY_MS = 2500
 

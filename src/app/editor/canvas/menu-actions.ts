@@ -1,10 +1,10 @@
 import { useClipboard } from '@vueuse/core'
+import type { Ref } from 'vue'
 
-import { toast } from '@/app/shell/ui'
 import { nodeToXPath } from '@open-pencil/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import type { Ref } from 'vue'
+import { toast } from '@/app/shell/ui'
 
 function toArrayBuffer(data: Uint8Array): ArrayBuffer {
   const bytes = new Uint8Array(data.length)

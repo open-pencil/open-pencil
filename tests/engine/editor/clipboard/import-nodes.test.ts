@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createClipboardGraph } from '#tests/helpers/clipboard'
-
 import { importClipboardNodes } from '@open-pencil/core'
-
 import type { NodeChange, SceneNode } from '@open-pencil/core'
+
+import { createClipboardGraph } from '#tests/helpers/clipboard'
 
 describe('importClipboardNodes', () => {
   it('skips VARIABLE_SET and VARIABLE nodes', () => {

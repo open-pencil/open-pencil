@@ -1,8 +1,8 @@
 import { resolveOkHCLForPreview } from '#core/color/management'
 import { rgbaToOkHCL } from '#core/color/okhcl'
+import type { DocumentColorSpace, SceneNode } from '#core/scene-graph'
 import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '#core/scene-graph/copy'
 
-import type { DocumentColorSpace, SceneNode } from '#core/scene-graph'
 import type { EditorContext } from './types'
 
 export type DocumentColorProfileMode = 'assign' | 'convert'

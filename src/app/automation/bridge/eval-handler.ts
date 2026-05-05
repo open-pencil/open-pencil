@@ -1,5 +1,6 @@
-import type { EditorStore } from '@/app/editor/active-store'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+
+import type { EditorStore } from '@/app/editor/active-store'
 
 type FigmaFactory = () => FigmaAPI
 

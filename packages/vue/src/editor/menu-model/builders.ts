@@ -1,11 +1,10 @@
+import type { EditorCommandId } from '#vue/editor/commands/types'
+import type { useEditorCommands } from '#vue/editor/commands/use'
 import {
   EDIT_MENU_COMMAND_GROUPS,
   OBJECT_MENU_COMMAND_GROUPS,
   VIEW_MENU_COMMANDS
 } from '#vue/editor/menu-model/command-groups'
-
-import type { EditorCommandId } from '#vue/editor/commands/types'
-import type { useEditorCommands } from '#vue/editor/commands/use'
 import type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
 import type { useSelectionState } from '#vue/editor/selection-state/use'
 

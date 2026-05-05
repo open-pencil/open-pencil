@@ -1,10 +1,9 @@
 import { createFlipRotateActions } from '#core/editor/alignment/flip-rotate'
 import { computeAbsoluteBounds } from '#core/geometry'
-
-import { collectNodePositions, pushPositionUndo } from './history/position'
-
 import type { SceneNode } from '#core/scene-graph'
 import type { Vector } from '#core/types'
+
+import { collectNodePositions, pushPositionUndo } from './history/position'
 import type { EditorContext } from './types'
 
 function computeAlignTarget(

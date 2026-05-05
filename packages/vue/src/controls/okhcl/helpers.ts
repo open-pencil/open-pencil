@@ -1,3 +1,5 @@
+import type { Ref } from 'vue'
+
 import {
   getFillOkHCL,
   getStrokeOkHCL,
@@ -6,12 +8,11 @@ import {
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
 } from '@open-pencil/core/color'
-
-import type { ColorFieldFormat } from '#vue/primitives/ColorPicker/types'
 import type { OkHCLColor } from '@open-pencil/core/color'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
-import type { Ref } from 'vue'
+
+import type { ColorFieldFormat } from '#vue/primitives/ColorPicker/types'
 
 type ColorKind = 'fill' | 'stroke'
 

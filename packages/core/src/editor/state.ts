@@ -1,5 +1,4 @@
 import { getDefaultCanvasBgColor } from '#core/constants'
-
 import type { EditorState } from '#core/editor/types'
 
 export function createDefaultEditorState(pageId: string): EditorState {

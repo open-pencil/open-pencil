@@ -1,3 +1,7 @@
+import { ref } from 'vue'
+
+import type { Effect } from '@open-pencil/core/scene-graph'
+
 import {
   EFFECT_OPTIONS,
   createDefaultEffect,
@@ -6,9 +10,6 @@ import {
   isShadow
 } from '#vue/controls/effects/helpers'
 import { useEditor } from '#vue/editor/context'
-import { ref } from 'vue'
-
-import type { Effect } from '@open-pencil/core/scene-graph'
 
 /**
  * Returns effect-editing helpers for property panels.

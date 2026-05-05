@@ -1,11 +1,11 @@
+import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { readFigFile } from '@open-pencil/core/io/formats/fig'
+
 import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { captureReloadState, restoreReloadState } from '@/app/document/io/reload-state'
 import { toast } from '@/app/shell/ui'
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
-
-import type { Editor, EditorState } from '@open-pencil/core/editor'
 
 type OpenDocumentState = EditorState & {
   documentName: string

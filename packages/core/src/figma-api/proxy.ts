@@ -4,16 +4,6 @@ import {
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
 } from '#core/color/okhcl'
-
-import { installBasicNodeProxyAccessors } from './accessors/basic'
-import { installLayoutNodeProxyAccessors } from './accessors/layout'
-import { installVisualNodeProxyAccessors } from './accessors/visual'
-import * as PluginData from './plugin-data'
-import { nodeProxyToJSON } from './serialization'
-import { setFirstStrokeAlign, setFirstStrokeWeight, setIndependentStrokeWeight } from './strokes'
-import * as TextProxy from './text'
-import * as Traversal from './traversal'
-
 import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 /* eslint-disable max-lines -- Figma Plugin API proxy; FigmaAPI already in separate file */
 import type {
@@ -26,7 +16,16 @@ import type {
   LayoutMode
 } from '#core/scene-graph'
 import type { Rect } from '#core/types'
+
+import { installBasicNodeProxyAccessors } from './accessors/basic'
+import { installLayoutNodeProxyAccessors } from './accessors/layout'
+import { installVisualNodeProxyAccessors } from './accessors/visual'
 import type { FigmaFontName } from './fonts'
+import * as PluginData from './plugin-data'
+import { nodeProxyToJSON } from './serialization'
+import { setFirstStrokeAlign, setFirstStrokeWeight, setIndependentStrokeWeight } from './strokes'
+import * as TextProxy from './text'
+import * as Traversal from './traversal'
 
 const MIXED = Symbol('mixed')
 

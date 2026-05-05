@@ -1,6 +1,5 @@
-import { fontManager } from '#core/text/fonts'
-
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { fontManager } from '#core/text/fonts'
 
 export function destroyRenderer(r: SkiaRenderer): void {
   if (r.destroyed) return

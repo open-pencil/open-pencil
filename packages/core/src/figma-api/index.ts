@@ -1,16 +1,5 @@
 import { IS_BROWSER } from '#core/constants'
 import { computeBounds } from '#core/geometry'
-import { copyFills, copyStrokes, copyEffects } from '#core/scene-graph/copy'
-
-import {
-  FigmaNodeProxy,
-  INTERNAL_ID,
-  MIXED,
-  type FigmaFont,
-  type FigmaFontName,
-  type NodeProxyHost
-} from './proxy'
-
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import type {
   SceneGraph,
@@ -20,7 +9,17 @@ import type {
   VariableType,
   VariableValue
 } from '#core/scene-graph'
+import { copyFills, copyStrokes, copyEffects } from '#core/scene-graph/copy'
 import type { Rect, Vector } from '#core/types'
+
+import {
+  FigmaNodeProxy,
+  INTERNAL_ID,
+  MIXED,
+  type FigmaFont,
+  type FigmaFontName,
+  type NodeProxyHost
+} from './proxy'
 
 const noop = () => undefined
 

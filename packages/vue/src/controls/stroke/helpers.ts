@@ -1,6 +1,7 @@
+import type { Ref } from 'vue'
+
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
-import type { Ref } from 'vue'
 
 export type StrokeSides = 'ALL' | 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CUSTOM'
 

@@ -10,7 +10,7 @@ export {
   splitSegmentAt
 } from './bezier'
 
-import { computeAccurateBounds } from './bezier'
+import type { CanvasKit, Path } from 'canvaskit-wasm'
 
 import type {
   HandleMirroring,
@@ -21,7 +21,8 @@ import type {
   WindingRule
 } from '#core/scene-graph'
 import type { Rect } from '#core/types'
-import type { CanvasKit, Path } from 'canvaskit-wasm'
+
+import { computeAccurateBounds } from './bezier'
 
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 

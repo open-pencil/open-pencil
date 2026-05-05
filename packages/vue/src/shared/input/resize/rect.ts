@@ -1,5 +1,6 @@
-import type { HandlePosition } from '#vue/shared/input/types'
 import type { Rect } from '@open-pencil/core/types'
+
+import type { HandlePosition } from '#vue/shared/input/types'
 
 export function constrainToAspectRatio(
   handle: HandlePosition,

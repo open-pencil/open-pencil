@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { Color } from '@open-pencil/core'
 import {
   createColorPickerModel,
   fromPercent,
@@ -10,8 +11,6 @@ import {
   updateHue,
   updateRGBChannel
 } from '@open-pencil/vue'
-
-import type { Color } from '@open-pencil/core'
 
 describe('color picker model', () => {
   const base: Color = { r: 0.4, g: 0.2, b: 0.6, a: 0.75 }

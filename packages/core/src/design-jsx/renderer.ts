@@ -2,11 +2,10 @@ import { parseColor } from '#core/color'
 import { fetchIcons } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
 import { computeAllLayouts } from '#core/layout'
+import type { SceneGraph, SceneNode, NodeType } from '#core/scene-graph'
 
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { isTreeNode } from './tree'
-
-import type { SceneGraph, SceneNode, NodeType } from '#core/scene-graph'
 import type { TreeNode } from './tree'
 
 const TYPE_MAP: Partial<Record<string, NodeType>> = {

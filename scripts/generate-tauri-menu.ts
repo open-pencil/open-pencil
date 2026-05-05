@@ -2,7 +2,6 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 import { APP_MENU_SCHEMA } from '../src/app/shell/menu/schema'
-
 import type { AppMenuEntry, AppMenuGroupSchema } from '../src/app/shell/menu/schema'
 
 function isNativeVisible(entry: { target?: string }): boolean {

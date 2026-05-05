@@ -1,6 +1,7 @@
+import { computed } from 'vue'
+
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
-import { computed } from 'vue'
 
 /**
  * Returns reactive booleans describing which selection-dependent actions are

@@ -1,12 +1,11 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri-mocks'
-
+import type { ACPChatTransport } from '@/app/ai/acp/transport'
 import { createACPTransport } from '@/app/ai/chat/transports'
 import { ensureTauriParentDirectory } from '@/app/automation/bridge/file-handlers'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 
-import type { ACPChatTransport } from '@/app/ai/acp/transport'
+import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri-mocks'
 
 afterEach(async () => {
   await clearTauriMocks()

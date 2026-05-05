@@ -1,3 +1,6 @@
+import { useStore } from '@nanostores/vue'
+import { computed } from 'vue'
+
 import { useEditorCommands } from '#vue/editor/commands/use'
 import { useEditor } from '#vue/editor/context'
 import {
@@ -8,8 +11,6 @@ import {
 } from '#vue/editor/menu-model/builders'
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { menuMessages } from '#vue/i18n'
-import { useStore } from '@nanostores/vue'
-import { computed } from 'vue'
 
 export type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/menu-model/types'
 

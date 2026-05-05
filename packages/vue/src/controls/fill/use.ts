@@ -1,6 +1,6 @@
-import { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
-
 import { DEFAULT_SHAPE_FILL } from '@open-pencil/core/constants'
+
+import { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
 
 /**
  * Returns fill-related panel helpers and a reusable default fill value.

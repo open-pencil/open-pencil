@@ -1,3 +1,7 @@
+import type { SceneNode } from '#core/scene-graph'
+import type { UndoEntry } from '#core/scene-graph/undo'
+import type { Rect, Vector } from '#core/types'
+
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
@@ -5,10 +9,6 @@ import {
   snapshotPage as createPageSnapshot,
   type PageSnapshot
 } from './history/snapshot'
-
-import type { SceneNode } from '#core/scene-graph'
-import type { UndoEntry } from '#core/scene-graph/undo'
-import type { Rect, Vector } from '#core/types'
 import type { EditorContext } from './types'
 
 export function createUndoActions(ctx: EditorContext) {

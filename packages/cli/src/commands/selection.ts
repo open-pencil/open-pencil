@@ -1,6 +1,7 @@
+import { defineCommand } from 'citty'
+
 import { rpc } from '#cli/app-client'
 import { bold, entity, fmtList, formatType, printError } from '#cli/format'
-import { defineCommand } from 'citty'
 
 interface SelectionNode {
   id: string

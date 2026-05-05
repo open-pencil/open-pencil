@@ -1,8 +1,7 @@
-import { useVariableBinding } from '#vue/controls/variable-binding/use'
-
 import { randomHex } from '@open-pencil/core/random'
-
 import type { VariableCollection } from '@open-pencil/core/scene-graph'
+
+import { useVariableBinding } from '#vue/controls/variable-binding/use'
 
 const FALLBACK_NUMBER_VARIABLE_NAME = 'New number'
 

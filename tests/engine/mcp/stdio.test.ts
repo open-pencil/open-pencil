@@ -1,6 +1,8 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
+import type { AddressInfo } from 'node:net'
 
-import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { WebSocketServer, type WebSocket } from 'ws'
 
 import {
@@ -11,9 +13,7 @@ import {
   executeRpcCommand
 } from '@open-pencil/core'
 
-import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
-import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
-import type { AddressInfo } from 'node:net'
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
 function createMockApp() {
   const graph = new SceneGraph()

@@ -1,3 +1,9 @@
+import { useEventListener } from '@vueuse/core'
+import { ref, type Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
+
 import {
   handleBendHandleMove,
   handleNodeEditMouseUp,
@@ -16,12 +22,7 @@ import { setupPanZoom } from '#vue/shared/input/pan-zoom'
 import { applyResize } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
-import { useEventListener } from '@vueuse/core'
-import { ref, type Ref } from 'vue'
-
 import type { DragState } from '#vue/shared/input/types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 /**
  * Wires pointer and mouse interaction to an OpenPencil canvas.

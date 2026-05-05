@@ -1,11 +1,11 @@
-import { fmtNode, printError, formatType } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
 import { defineCommand } from 'citty'
 
 import { colorToHex } from '@open-pencil/core/color'
-
 import type { NodeResult } from '@open-pencil/core/rpc'
 import type { Color } from '@open-pencil/core/types'
+
+import { fmtNode, printError, formatType } from '#cli/format'
+import { loadRpcData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Show detailed node properties by ID' },

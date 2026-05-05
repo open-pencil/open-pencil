@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
 import { ref } from 'vue'
 
 import { spawnAcpProcess } from '@/app/ai/acp/process'
 import { checkForAppUpdate } from '@/app/shell/updater'
+
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
 
 afterEach(async () => {
   await clearTauriMocks()

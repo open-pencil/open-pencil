@@ -1,8 +1,8 @@
-import { HudRenderer } from './hud-renderer'
+import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
 
 import type { FrameStats } from './frame/stats'
+import { HudRenderer } from './hud-renderer'
 import type { PhaseTimer } from './phase-timer'
-import type { CanvasKit, Canvas, Typeface } from 'canvaskit-wasm'
 
 export class HudController {
   private hud: HudRenderer | null = null

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { SessionUpdate } from '@agentclientprotocol/sdk'
+
 import { mapUpdate } from '@/app/ai/acp/map-update'
 import { formatConnectionError, buildCrashChunks } from '@/app/ai/acp/transport'
-
-import type { SessionUpdate } from '@agentclientprotocol/sdk'
 
 const TEXT_ID = 'text-1'
 

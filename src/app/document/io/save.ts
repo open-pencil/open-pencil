@@ -1,10 +1,10 @@
+import type { EditorState } from '@open-pencil/core/editor'
+
 import { downloadBlob } from '@/app/document/io/browser'
 import { documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import { createDocumentWriter } from '@/app/document/io/write'
 import { IS_TAURI } from '@/constants'
-
-import type { EditorState } from '@open-pencil/core/editor'
 
 type SaveDocumentState = EditorState & { documentName: string }
 

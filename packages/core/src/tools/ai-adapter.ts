@@ -5,11 +5,13 @@
  * functions with FigmaAPI instantiation.
  */
 
-import type { FigmaAPI } from '#core/figma-api'
-import type { ToolDef, ParamDef, ParamType } from './schema'
 import type { valibotSchema as createValibotSchema } from '@ai-sdk/valibot'
 import type { ToolSet, tool as createTool } from 'ai'
 import type * as valibot from 'valibot'
+
+import type { FigmaAPI } from '#core/figma-api'
+
+import type { ToolDef, ParamDef, ParamType } from './schema'
 
 export interface ToolLogEntry {
   tool: string

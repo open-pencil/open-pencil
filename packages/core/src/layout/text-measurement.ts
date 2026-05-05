@@ -1,7 +1,6 @@
+import type { SceneNode } from '#core/scene-graph'
 import { weightToStyle } from '#core/text/fonts'
 import { measureTextWithOpenType } from '#core/text/opentype'
-
-import type { SceneNode } from '#core/scene-graph'
 
 export type TextMeasurer = (
   node: SceneNode,

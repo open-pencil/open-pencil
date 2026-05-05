@@ -1,5 +1,6 @@
-import { buildFigKiwi } from '#core/kiwi/node-change/serialize'
 import { zipSync, type Zippable } from 'fflate'
+
+import { buildFigKiwi } from '#core/kiwi/node-change/serialize'
 
 export function compressFigDataSync(
   schemaDeflated: Uint8Array,

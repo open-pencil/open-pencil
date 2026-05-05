@@ -1,5 +1,4 @@
 import { colorToHex8, colorToCSSCompact } from '#core/color'
-
 import type {
   SceneGraph,
   SceneNode,

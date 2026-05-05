@@ -12,9 +12,11 @@ import { normalizeVectorNetwork } from './vector-network'
 export type { GUID, Color } from '#core/types'
 export * from './types'
 
-import { getAbsolutePosition } from '#core/canvas/coordinate'
+import type { Emitter } from 'nanoevents'
 
+import { getAbsolutePosition } from '#core/canvas/coordinate'
 import type { Color, Rect, Vector } from '#core/types'
+
 import type {
   DocumentColorSpace,
   NodeType,
@@ -26,7 +28,6 @@ import type {
   VariableType,
   VariableValue
 } from './types'
-import type { Emitter } from 'nanoevents'
 
 export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
 

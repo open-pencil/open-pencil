@@ -1,8 +1,8 @@
+import type { Editor } from '@open-pencil/core/editor'
+import type { VectorNetwork } from '@open-pencil/core/scene-graph'
 import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@open-pencil/core/vector'
 
 import type { NodeEditState, VectorEditState } from './types'
-import type { Editor } from '@open-pencil/core/editor'
-import type { VectorNetwork } from '@open-pencil/core/scene-graph'
 
 export function setNodeEditNetwork(es: NodeEditState, network: VectorNetwork) {
   es.vertices = network.vertices.map((v) => ({ ...v }))

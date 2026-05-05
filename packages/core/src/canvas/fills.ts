@@ -1,6 +1,8 @@
-import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
-import type { SkiaRenderer } from './renderer'
 import type { Canvas, Paint } from 'canvaskit-wasm'
+
+import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
+
+import type { SkiaRenderer } from './renderer'
 
 export function drawNodeFill(
   r: SkiaRenderer,

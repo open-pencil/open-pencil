@@ -1,10 +1,9 @@
+import type { NodeChange } from '#core/kiwi/binary/codec'
+import type { CharacterStyleOverride, StyleRun } from '#core/scene-graph'
 import { styleToWeight } from '#core/text/fonts'
 
 import { convertFills } from './paint'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
-
-import type { NodeChange } from '#core/kiwi/binary/codec'
-import type { CharacterStyleOverride, StyleRun } from '#core/scene-graph'
 
 function convertStyleOverride(
   override: NodeChange,

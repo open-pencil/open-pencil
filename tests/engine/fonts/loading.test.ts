@@ -1,5 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
+import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+
 import {
   fontManager,
   isVariableFont,
@@ -13,8 +15,6 @@ import {
   fontFallbackEntry,
   fontFallbackManifest
 } from '@open-pencil/core'
-
-import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

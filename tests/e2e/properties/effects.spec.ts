@@ -1,5 +1,6 @@
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { test, expect, type Page } from '@playwright/test'
+
+import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
 let canvas: CanvasHelper

@@ -1,6 +1,5 @@
-import { defineTool } from '#core/tools/schema'
-
 import type { FigmaNodeProxy } from '#core/figma-api'
+import { defineTool } from '#core/tools/schema'
 
 export const arrangeNodes = defineTool({
   name: 'arrange',

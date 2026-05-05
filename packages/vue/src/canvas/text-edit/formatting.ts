@@ -1,11 +1,10 @@
+import type { Editor } from '@open-pencil/core/editor'
+import type { SceneNode } from '@open-pencil/core/scene-graph'
 import {
   toggleBoldInRange,
   toggleDecorationInRange,
   toggleItalicInRange
 } from '@open-pencil/core/text'
-
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 export function createTextFormattingActions(store: Editor) {
   function applyFormatting(nodeId: string, changes: Partial<SceneNode>, label: string) {

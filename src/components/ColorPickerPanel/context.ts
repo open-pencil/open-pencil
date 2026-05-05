@@ -1,5 +1,7 @@
 import { computed, inject, provide, proxyRefs } from 'vue'
+import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
+import type { Color } from '@open-pencil/core/types'
 import {
   createColorPickerModel,
   createOkHCLSliderGradientModel,
@@ -14,10 +16,7 @@ import {
   updateRGBChannel,
   useI18n
 } from '@open-pencil/vue'
-
-import type { Color } from '@open-pencil/core/types'
 import type { OkHCLControls } from '@open-pencil/vue'
-import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
 type ColorPanelProps = {
   color: Color

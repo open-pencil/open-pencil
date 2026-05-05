@@ -1,6 +1,6 @@
 import { computeLayout } from '#core/layout'
-
 import type { LayoutMode, SceneNode } from '#core/scene-graph'
+
 import type { EditorContext } from './types'
 
 export function createLayoutModeActions(ctx: EditorContext) {

@@ -7,8 +7,6 @@
  */
 import { describe, test, expect } from 'bun:test'
 
-import { computeVisualBounds } from '#core/geometry'
-
 import {
   computeBounds,
   computeAbsoluteBounds,
@@ -18,6 +16,8 @@ import {
   rotatedCorners,
   rotatedBBox
 } from '@open-pencil/core'
+
+import { computeVisualBounds } from '#core/geometry'
 
 describe('degToRad / radToDeg', () => {
   test('degToRad converts degrees to radians', () => {

@@ -1,9 +1,9 @@
 import { useEventListener } from '@vueuse/core'
 
-import { isEditing } from '@/app/shell/keyboard/focus'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { isEditing } from '@/app/shell/keyboard/focus'
 
 export function bindEditorClipboard(store: EditorStore) {
   useEventListener(window, 'copy', (e: ClipboardEvent) => {

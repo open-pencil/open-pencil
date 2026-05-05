@@ -1,3 +1,5 @@
+import type { Font } from 'canvaskit-wasm'
+
 import {
   COMPONENT_LABEL_FONT_SIZE,
   COMPONENT_LABEL_GAP,
@@ -9,10 +11,8 @@ import {
   SECTION_TITLE_HEIGHT,
   SECTION_TITLE_PADDING_X
 } from '#core/constants'
-
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Vector } from '#core/types'
-import type { Font } from 'canvaskit-wasm'
 
 function measureGlyphWidth(font: Font, text: string): number {
   const glyphIds = font.getGlyphIDs(text)

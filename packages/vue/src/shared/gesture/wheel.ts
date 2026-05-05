@@ -1,7 +1,6 @@
 import { WheelGesture } from '@use-gesture/vanilla'
-import { watch, shallowRef, onScopeDispose } from 'vue'
-
 import type { EventTypes, Handler, UserWheelConfig } from '@use-gesture/vanilla'
+import { watch, shallowRef, onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
 export function useWheelGesture(

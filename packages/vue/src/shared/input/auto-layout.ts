@@ -1,9 +1,9 @@
-import { resolveNodeLayoutDirection } from '@open-pencil/core/text'
-
-import type { DragMove } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+import { resolveNodeLayoutDirection } from '@open-pencil/core/text'
 import type { Vector } from '@open-pencil/core/types'
+
+import type { DragMove } from '#vue/shared/input/types'
 
 function resolveLayoutDirection(parent: SceneNode, editor: Editor): 'LTR' | 'RTL' {
   const ancestor = parent.parentId ? editor.graph.getNode(parent.parentId) : null

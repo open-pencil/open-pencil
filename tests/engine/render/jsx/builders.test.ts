@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test'
 
-import { expectDefined } from '#tests/helpers/assert'
-
 import { Frame, Text, Rectangle, isTreeNode, node } from '@open-pencil/core'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 describe('TreeNode builders', () => {
   it('creates Frame tree node', () => {

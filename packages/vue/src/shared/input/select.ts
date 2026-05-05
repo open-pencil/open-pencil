@@ -2,12 +2,12 @@ import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/node-edi
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { resolveHit } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
-import { tryStartResize } from '#vue/shared/input/resize'
-import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'
-
-import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import { tryStartResize } from '#vue/shared/input/resize'
+import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'
+import type { DragState } from '#vue/shared/input/types'
 
 export interface HitTestFns {
   hitTestInScope: (cx: number, cy: number, deep: boolean) => SceneNode | null

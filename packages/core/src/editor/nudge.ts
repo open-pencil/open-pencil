@@ -1,6 +1,6 @@
-import { collectNodePositions, pushPositionUndo } from './history/position'
-
 import type { Vector } from '#core/types'
+
+import { collectNodePositions, pushPositionUndo } from './history/position'
 import type { EditorContext } from './types'
 
 const NUDGE_COMMIT_DELAY = 300

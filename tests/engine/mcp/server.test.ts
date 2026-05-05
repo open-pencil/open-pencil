@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
+import type { AddressInfo } from 'node:net'
 
-import { startServer, paramToZod } from '#mcp/server'
 import { serve } from '@hono/node-server'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
@@ -14,7 +14,7 @@ import {
   executeRpcCommand
 } from '@open-pencil/core'
 
-import type { AddressInfo } from 'node:net'
+import { startServer, paramToZod } from '#mcp/server'
 
 interface MockBrowser {
   ws: WebSocket

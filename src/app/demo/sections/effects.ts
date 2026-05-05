@@ -11,7 +11,6 @@ import {
   thinStroke
 } from '@/app/demo/colors'
 import { blurEffect, dropShadow, innerShadow } from '@/app/demo/effects'
-
 import type { EditorStore } from '@/app/editor/session'
 
 export function createEffectsSection(store: EditorStore) {

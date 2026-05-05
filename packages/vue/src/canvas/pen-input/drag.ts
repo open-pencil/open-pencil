@@ -1,6 +1,7 @@
-import type { DragState } from '#vue/shared/input/types'
 import type { Editor } from '@open-pencil/core/editor'
 import type { Vector } from '@open-pencil/core/types'
+
+import type { DragState } from '#vue/shared/input/types'
 
 type PenDragState = Extract<DragState, { type: 'pen-drag' }>
 type PenState = NonNullable<Editor['state']['penState']>

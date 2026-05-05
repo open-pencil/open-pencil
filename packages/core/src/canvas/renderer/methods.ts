@@ -1,24 +1,24 @@
+import type { ImageFilter, MaskFilter, Canvas, Paint, Path } from 'canvaskit-wasm'
+
 import * as AiOverlays from '#core/canvas/ai-overlays'
 import * as Effects from '#core/canvas/effects'
 import * as Fills from '#core/canvas/fills'
 import * as Labels from '#core/canvas/labels/draw'
 import * as NodeEditOverlay from '#core/canvas/node-edit-overlay'
+import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import * as Overlays from '#core/canvas/overlays'
 import * as PenOverlay from '#core/canvas/pen-overlay'
+import type { SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays } from '#core/canvas/renderer/types'
 import * as Rulers from '#core/canvas/rulers'
 import * as SceneRender from '#core/canvas/scene'
 import { renderEffects as renderShadowEffects } from '#core/canvas/shadows'
 import * as Shapes from '#core/canvas/shapes'
 import * as Strokes from '#core/canvas/strokes'
-
-import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
-import type { SkiaRenderer } from '#core/canvas/renderer'
-import type { RenderOverlays } from '#core/canvas/renderer/types'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
 import type { Rect, Vector } from '#core/types'
-import type { ImageFilter, MaskFilter, Canvas, Paint, Path } from 'canvaskit-wasm'
 
 const rendererMethods: ThisType<SkiaRenderer> = {
   drawHoverHighlight(canvas: Canvas, graph: SceneGraph, hoveredNodeId?: string | null): void {

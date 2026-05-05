@@ -1,9 +1,9 @@
+import type { CanvasKit } from 'canvaskit-wasm'
+
 import { SkiaRenderer } from '#core/canvas'
+import type { SceneGraph } from '#core/scene-graph'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
-
-import type { SceneGraph } from '#core/scene-graph'
-import type { CanvasKit } from 'canvaskit-wasm'
 
 let cachedCk: CanvasKit | null = null
 let cachedRenderer: SkiaRenderer | null = null

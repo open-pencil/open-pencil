@@ -1,5 +1,4 @@
 import { SceneGraph } from '#core/scene-graph'
-
 import type { SceneNode, Variable, VariableCollection, DocumentColorSpace } from '#core/scene-graph'
 
 export interface SerializedSceneGraph {

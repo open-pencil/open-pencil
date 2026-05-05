@@ -1,5 +1,4 @@
 import { useResizeObserver } from '@vueuse/core'
-
 import type { CanvasKit } from 'canvaskit-wasm'
 import type { Ref } from 'vue'
 

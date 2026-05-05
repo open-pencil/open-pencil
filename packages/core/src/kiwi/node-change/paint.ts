@@ -1,5 +1,4 @@
 import { normalizeColor } from '#core/color'
-
 import type { Paint, Effect as KiwiEffect } from '#core/kiwi/binary/codec'
 import type {
   Fill,

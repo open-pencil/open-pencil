@@ -1,7 +1,8 @@
-import { useVariablesDialogState } from '#vue/variables/dialog/use'
-import { useVariablesTable } from '#vue/variables/table/use'
 import { useVueTable, getCoreRowModel } from '@tanstack/vue-table'
 import { computed, type Component } from 'vue'
+
+import { useVariablesDialogState } from '#vue/variables/dialog/use'
+import { useVariablesTable } from '#vue/variables/table/use'
 
 /**
  * Composes variables dialog state, table columns, and TanStack table wiring

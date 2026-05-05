@@ -1,4 +1,5 @@
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
+import type { SceneGraph, SceneNode, NodeType } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import {
@@ -14,8 +15,6 @@ import {
   solidStroke
 } from './helpers'
 import { collectTailwindClasses } from './tailwind-classes'
-
-import type { SceneGraph, SceneNode, NodeType } from '#core/scene-graph'
 
 export type JSXFormat = 'openpencil' | 'tailwind'
 
