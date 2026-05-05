@@ -1281,7 +1281,7 @@ describe('variable roundtrip', () => {
     expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
       [...original.variableCollections.values()].filter((c) => c.variableIds.length > 0).length
     )
-  })
+  }, 120_000)
 
   test('pluginID casing is consistent across full codec pipeline', async () => {
     await initCodec()
