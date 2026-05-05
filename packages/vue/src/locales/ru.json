@@ -174,7 +174,8 @@
     "variableName": "Имя переменной",
     "create": "Создать",
     "createNumberVariable": "Создать числовую переменную из {value}",
-    "strokeDash": "Пунктирная обводка"
+    "strokeDash": "Пунктирная обводка",
+    "add": "Добавить"
   },
   "pages": {
     "newPage": "Новая страница",
@@ -225,5 +226,15 @@
     "updateInstalled": "OpenPencil {version} установлен{size}. Перезапуск.",
     "updateCheckFailed": "Не удалось проверить обновления: {error}",
     "updateUnavailable": "Обновления пока недоступны. Сначала опубликуйте подписанный релиз с latest.json."
+  },
+  "variableTypes": {
+    "color": "Цвет",
+    "colorHint": "Значения заливок",
+    "number": "Число",
+    "numberHint": "Размеры, отступы, прозрачность",
+    "text": "Текст",
+    "textHint": "Текст и подписи",
+    "boolean": "Логический",
+    "booleanHint": "Истина или ложь"
   }
 }

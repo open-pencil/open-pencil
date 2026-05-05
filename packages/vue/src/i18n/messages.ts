@@ -173,6 +173,7 @@ export const panelMessages = i18n('panels', {
   exportPreview: 'Preview',
   exportRenderingPreview: 'Rendering preview…',
   create: 'Create',
+  add: 'Add',
   createVariable: 'Create variable',
   createColorVariable: params('Create color variable from {value}'),
   createNumberVariable: params('Create number variable from {value}'),
@@ -231,6 +232,17 @@ export const panelMessages = i18n('panels', {
   setToCurrentHeight: 'Set to current height',
   sizingFillFr: 'Fill (fr)',
   sizingFixedPx: 'Fixed (px)'
+})
+
+export const variableTypeMessages = i18n('variableTypes', {
+  color: 'Color',
+  colorHint: 'Paint values',
+  number: 'Number',
+  numberHint: 'Sizes, spacing, opacity',
+  text: 'Text',
+  textHint: 'Copy and labels',
+  boolean: 'Boolean',
+  booleanHint: 'True or false'
 })
 
 export const pageMessages = i18n('pages', {

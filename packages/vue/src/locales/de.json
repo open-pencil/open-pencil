@@ -174,7 +174,8 @@
     "variableName": "Variablenname",
     "create": "Erstellen",
     "createNumberVariable": "Zahlenvariable aus {value} erstellen",
-    "strokeDash": "Gestrichelter Strich"
+    "strokeDash": "Gestrichelter Strich",
+    "add": "Hinzufügen"
   },
   "pages": {
     "newPage": "Neue Seite",
@@ -225,5 +226,15 @@
     "updateInstalled": "OpenPencil {version} wurde installiert{size}. Neustart jetzt.",
     "updateCheckFailed": "Updates konnten nicht geprüft werden: {error}",
     "updateUnavailable": "Updates sind noch nicht verfügbar. Veröffentliche zuerst ein signiertes Release mit latest.json."
+  },
+  "variableTypes": {
+    "color": "Farbe",
+    "colorHint": "Farbwerte",
+    "number": "Zahl",
+    "numberHint": "Größen, Abstände, Deckkraft",
+    "text": "Text",
+    "textHint": "Text und Beschriftungen",
+    "boolean": "Boolean",
+    "booleanHint": "Wahr oder falsch"
   }
 }

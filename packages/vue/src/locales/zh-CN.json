@@ -174,7 +174,8 @@
     "variableName": "变量名称",
     "create": "创建",
     "createNumberVariable": "从 {value} 创建数字变量",
-    "strokeDash": "虚线描边"
+    "strokeDash": "虚线描边",
+    "add": "添加"
   },
   "pages": {
     "newPage": "新建页面",
@@ -225,5 +226,15 @@
     "updateInstalled": "OpenPencil {version} 已安装{size}。正在重启。",
     "updateCheckFailed": "无法检查更新：{error}",
     "updateUnavailable": "更新尚不可用。请先发布带有 latest.json 的已签名版本。"
+  },
+  "variableTypes": {
+    "color": "颜色",
+    "colorHint": "绘制值",
+    "number": "数字",
+    "numberHint": "尺寸、间距、不透明度",
+    "text": "文本",
+    "textHint": "文案和标签",
+    "boolean": "布尔值",
+    "booleanHint": "真或假"
   }
 }

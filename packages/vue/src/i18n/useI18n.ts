@@ -4,6 +4,7 @@ import {
   commandMessages,
   toolMessages,
   panelMessages,
+  variableTypeMessages,
   pageMessages,
   dialogMessages
 } from '#vue/i18n/messages'
@@ -36,6 +37,7 @@ export function useI18n() {
     commands: useStore(commandMessages),
     tools: useStore(toolMessages),
     panels: useStore(panelMessages),
+    variableTypes: useStore(variableTypeMessages),
     pages: useStore(pageMessages),
     dialogs: useStore(dialogMessages),
     locale: useStore(locale) as Ref<Locale>,

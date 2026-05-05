@@ -8,6 +8,11 @@ import {
   DialogPortal,
   DialogRoot,
   DialogTitle,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuRoot,
+  DropdownMenuTrigger,
   TabsContent,
   TabsList,
   TabsRoot,
@@ -25,18 +30,49 @@ import IconX from '~icons/lucide/x'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import Tip from './ui/Tip.vue'
 import { useDialogUI } from '@/components/ui/dialog'
+import { useMenuUI } from '@/components/ui/menu'
+
+import type { VariableType } from '@open-pencil/core/scene-graph'
 
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI({ content: 'flex h-[75vh] w-[800px] max-w-[90vw] flex-col' })
+const menuCls = useMenuUI({ content: 'w-44' })
 
-const variableTypeIcons: Record<string, Component> = {
+const variableTypeIcons: Record<VariableType, Component> = {
   COLOR: IconPalette,
   FLOAT: IconHash,
   STRING: IconType,
   BOOLEAN: IconToggleLeft
 }
 
-const { dialogs, panels } = useI18n()
+const { dialogs, panels, variableTypes: variableTypeText } = useI18n()
+
+const variableTypes: Array<{
+  type: VariableType
+  label: () => string
+  description: () => string
+}> = [
+  {
+    type: 'COLOR',
+    label: () => variableTypeText.value.color,
+    description: () => variableTypeText.value.colorHint
+  },
+  {
+    type: 'FLOAT',
+    label: () => variableTypeText.value.number,
+    description: () => variableTypeText.value.numberHint
+  },
+  {
+    type: 'STRING',
+    label: () => variableTypeText.value.text,
+    description: () => variableTypeText.value.textHint
+  },
+  {
+    type: 'BOOLEAN',
+    label: () => variableTypeText.value.boolean,
+    description: () => variableTypeText.value.booleanHint
+  }
+]
 
 const ctx = useVariablesEditor({
   colorInput: ColorInput,
@@ -203,14 +239,38 @@ watch(collectionInput, (input) => {
                 </table>
               </div>
 
-              <button
-                data-test-id="variables-add-variable"
-                class="flex w-full shrink-0 cursor-pointer items-center gap-1.5 border-t border-border bg-transparent px-4 py-2 text-xs text-muted hover:bg-hover hover:text-surface"
-                @click="ctx.addVariable"
-              >
-                <icon-lucide-plus class="size-3.5" />
-                {{ panels.createVariable }}
-              </button>
+              <div class="flex w-full shrink-0 items-center justify-between gap-2 border-t border-border px-4 py-2">
+                <span class="text-xs text-muted">{{ panels.createVariable }}</span>
+                <DropdownMenuRoot>
+                  <DropdownMenuTrigger as-child>
+                    <button
+                      data-test-id="variables-add-variable"
+                      class="flex cursor-pointer items-center gap-1.5 rounded bg-hover px-2.5 py-1.5 text-xs text-surface hover:bg-border"
+                    >
+                      <icon-lucide-plus class="size-3.5" />
+                      {{ panels.add }}
+                      <icon-lucide-chevron-down class="size-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent side="top" :side-offset="8" align="end" :class="menuCls.content">
+                      <DropdownMenuItem
+                        v-for="item in variableTypes"
+                        :key="item.type"
+                        :class="menuCls.item"
+                        :data-test-id="`variables-add-${item.type.toLowerCase()}`"
+                        @select="ctx.addVariable(item.type)"
+                      >
+                        <component :is="variableTypeIcons[item.type]" :class="menuCls.icon" />
+                        <span class="flex min-w-0 flex-1 flex-col">
+                          <span>{{ item.label() }}</span>
+                          <span class="truncate text-[10px] text-muted">{{ item.description() }}</span>
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
+              </div>
             </TabsContent>
           </TabsRoot>
         </template>

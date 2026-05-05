@@ -174,7 +174,8 @@
     "variableName": "Nome variabile",
     "create": "Crea",
     "createNumberVariable": "Crea variabile numerica da {value}",
-    "strokeDash": "Tratto tratteggiato"
+    "strokeDash": "Tratto tratteggiato",
+    "add": "Aggiungi"
   },
   "pages": {
     "newPage": "Nuova pagina",
@@ -225,5 +226,15 @@
     "updateInstalled": "OpenPencil {version} è stato installato{size}. Riavvio in corso.",
     "updateCheckFailed": "Impossibile controllare gli aggiornamenti: {error}",
     "updateUnavailable": "Gli aggiornamenti non sono ancora disponibili. Pubblica prima una release firmata con latest.json."
+  },
+  "variableTypes": {
+    "color": "Colore",
+    "colorHint": "Valori colore",
+    "number": "Numero",
+    "numberHint": "Dimensioni, spaziatura, opacità",
+    "text": "Testo",
+    "textHint": "Testi ed etichette",
+    "boolean": "Booleano",
+    "booleanHint": "Vero o falso"
   }
 }
