@@ -6,8 +6,8 @@ import {
   initCodec,
   parseFigFile,
   renderNodesToImage,
-  SceneGraph,
   SkiaRenderer,
+  type SceneGraph,
   type SceneNode
 } from '@open-pencil/core'
 

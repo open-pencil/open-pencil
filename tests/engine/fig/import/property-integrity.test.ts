@@ -6,8 +6,8 @@ import {
   exportFigFile,
   importNodeChanges,
   initCodec,
-  SceneGraph,
   FigmaAPI,
+  type SceneGraph,
   type SceneNode,
   type Fill
 } from '@open-pencil/core'

@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI } from '@open-pencil/core'
 
-import { ALL_TOOLS, getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
+import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
 
 describe('find_nodes', () => {
   test('finds by name', () => {

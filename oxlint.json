@@ -167,7 +167,6 @@
         "typescript/no-non-null-assertion": "off",
         "no-unused-vars": "off",
         "no-empty-function": "off",
-        "typescript/consistent-type-imports": "off",
         "open-pencil/no-inline-named-types": "off",
         "complexity": "off"
       }
