@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { SceneGraph, type Effect } from '@open-pencil/core'
+import { SceneGraph, type Effect, type Rect } from '@open-pencil/core'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -180,7 +180,7 @@ describe('Effect types on scene graph', () => {
 describe('Resize logic', () => {
   function applyResize(
     handle: string,
-    origRect: { x: number; y: number; width: number; height: number },
+    origRect: Rect,
     startX: number,
     startY: number,
     cx: number,

@@ -7,20 +7,21 @@ import { renderNodesToImage } from '#core/io/formats/raster'
 import { SceneGraph } from '#core/scene-graph'
 import type { SceneNode } from '#core/scene-graph'
 import { fontManager } from '#core/text'
+import type { Color, Vector } from '#core/types'
 
 interface TestCase {
   text: string
   fontSize: number
-  offset: { x: number; y: number }
+  offset: Vector
   radius: number
   spread: number
-  color: { r: number; g: number; b: number; a: number }
+  color: Color
 }
 
 function generateMatrix(): TestCase[] {
   const cases: TestCase[] = []
 
-  const offsets: Array<{ x: number; y: number }> = [
+  const offsets: Vector[] = [
     { x: 0, y: 0 },
     { x: 10, y: 10 },
     { x: -5, y: 5 },

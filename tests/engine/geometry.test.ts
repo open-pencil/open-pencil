@@ -14,7 +14,8 @@ import {
   radToDeg,
   rotatePoint,
   rotatedCorners,
-  rotatedBBox
+  rotatedBBox,
+  type Vector
 } from '@open-pencil/core'
 
 import { computeVisualBounds } from '#core/geometry'
@@ -159,7 +160,7 @@ describe('computeBounds', () => {
 
 describe('computeAbsoluteBounds', () => {
   const idPos = (id: string) => {
-    const map: Record<string, { x: number; y: number }> = {
+    const map: Record<string, Vector> = {
       a: { x: 10, y: 20 },
       b: { x: 50, y: 60 },
       c: { x: 0, y: 0 }
@@ -190,7 +191,7 @@ describe('computeAbsoluteBounds', () => {
 
 describe('computeVisualBounds', () => {
   const idPos = (id: string) => {
-    const map: Record<string, { x: number; y: number }> = {
+    const map: Record<string, Vector> = {
       r1: { x: 100, y: 200 },
       r2: { x: 300, y: 400 },
       rotated: { x: 0, y: 0 }

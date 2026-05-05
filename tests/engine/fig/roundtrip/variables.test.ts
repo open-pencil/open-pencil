@@ -9,7 +9,8 @@ import {
   SceneGraph,
   FigmaAPI,
   type SceneNode,
-  type Fill
+  type Fill,
+  type Color
 } from '@open-pencil/core'
 
 import { computeContentBounds } from '#core/io/formats/raster/render'
@@ -57,12 +58,7 @@ describe('variable roundtrip', () => {
     const colorVar = vars.find((v) => v.name === 'color/primary')
     expect(colorVar).toBeDefined()
     expect(expectDefined(colorVar, 'colorVar').type).toBe('COLOR')
-    const colorVal = Object.values(colorVar.valuesByMode)[0] as {
-      r: number
-      g: number
-      b: number
-      a: number
-    }
+    const colorVal = Object.values(colorVar.valuesByMode)[0] as Color
     expect(colorVal.r).toBeCloseTo(0.23, 1)
 
     const floatVar = vars.find((v) => v.name === 'spacing/base')

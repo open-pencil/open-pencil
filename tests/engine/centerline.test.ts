@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
+import type { Vector } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/core/scene-graph'
 import { fitCircleArc, isClosedThinCrescent } from '@open-pencil/core/vector'
 
@@ -12,13 +13,8 @@ function makeAnnularWedge(
   sweepDeg: number,
   segmentsPerArc: number
 ): VectorNetwork {
-  const vertices: { x: number; y: number }[] = []
-  const segments: {
-    start: number
-    end: number
-    tangentStart: { x: number; y: number }
-    tangentEnd: { x: number; y: number }
-  }[] = []
+  const vertices: Vector[] = []
+  const segments: VectorNetwork['segments'] = []
 
   for (let i = 0; i <= segmentsPerArc; i++) {
     const angle = ((startDeg + (sweepDeg * i) / segmentsPerArc) * Math.PI) / 180
