@@ -20,6 +20,11 @@ export interface FontInfo {
 
 export type LocalFontAccessState = 'unsupported' | 'prompt' | 'granted' | 'denied'
 
+export interface DownloadedFontCache {
+  read(family: string, style: string): Promise<ArrayBuffer | null>
+  write(family: string, style: string, data: ArrayBuffer): Promise<void>
+}
+
 type FindLocalFontOptions = { allowVariable?: boolean }
 
 const BUNDLED_FONTS: Record<string, string> = {
@@ -101,6 +106,7 @@ export class FontManager {
   private fontProvider: TypefaceFontProvider | null = null
   private localFonts: FontInfo[] | null = null
   private localFontAccessState: LocalFontAccessState = IS_BROWSER ? 'prompt' : 'unsupported'
+  private downloadedFontCache: DownloadedFontCache | null = null
   private googleFontsCache = new Map<string, Record<string, string>>()
   private googleFontsFailed = new Set<string>()
   private cjkFallbackFamilies: string[] = []
@@ -126,6 +132,16 @@ export class FontManager {
 
   localAccessState(): LocalFontAccessState {
     return this.localFontAccessState
+  }
+
+  setDownloadedFontCache(cache: DownloadedFontCache | null): void {
+    this.downloadedFontCache = cache
+  }
+
+  async loadCachedFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
+    const cached = await this.readDownloadedFont(family, style)
+    if (!cached) return null
+    return this.registerAndCache(family, style, cached)
   }
 
   async requestLocalFontAccess(): Promise<FontInfo[]> {
@@ -185,13 +201,19 @@ export class FontManager {
       return cached
     }
 
+    const downloadedBuffer = await this.loadCachedFont(family, style)
+    if (downloadedBuffer) return downloadedBuffer
+
     const localBuffer = await this.findLocalFont(family, style)
     if (localBuffer) return this.registerAndCache(family, style, localBuffer)
 
     if (typeof fetch !== 'undefined') {
       try {
         const buffer = await this.fetchGoogleFont(family, style)
-        if (buffer) return this.registerAndCache(family, style, buffer)
+        if (buffer) {
+          await this.writeDownloadedFont(family, style, buffer)
+          return this.registerAndCache(family, style, buffer)
+        }
       } catch (e) {
         console.warn(`Google Fonts fetch failed for "${family}" ${style}:`, e)
       }
@@ -328,6 +350,25 @@ export class FontManager {
   setArabicFallbackFamily(family: string): void {
     if (!this.arabicFallbackFamilies.includes(family)) {
       this.arabicFallbackFamilies.push(family)
+    }
+  }
+
+  private async readDownloadedFont(family: string, style: string): Promise<ArrayBuffer | null> {
+    if (!this.downloadedFontCache) return null
+    try {
+      return await this.downloadedFontCache.read(family, style)
+    } catch (e) {
+      console.warn(`Downloaded font cache read failed for "${family}" ${style}:`, e)
+      return null
+    }
+  }
+
+  private async writeDownloadedFont(family: string, style: string, data: ArrayBuffer): Promise<void> {
+    if (!this.downloadedFontCache) return
+    try {
+      await this.downloadedFontCache.write(family, style, data)
+    } catch (e) {
+      console.warn(`Downloaded font cache write failed for "${family}" ${style}:`, e)
     }
   }
 

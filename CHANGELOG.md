@@ -37,6 +37,7 @@
 
 ### Performance
 
+- Cache downloaded remote fonts in app-local storage so reopened documents can reuse them without repeated network fetches.
 - Cache instance override resolution and lazily populate opened `.fig` pages to reduce load time for large community files.
 - Reduce zoom and overlay rendering work by separating scene rendering from rulers, selection, labels, and input overlays.
 
