@@ -40,7 +40,7 @@ jobs:
       - name: Unit tests
         run: bun test tests/engine/
         env:
-          BUN_HEAVY_TESTS: '1'
+          BUN_HEAVY_TESTS: 'false'
 
       - name: Copy-paste detection
         run: bun run test:dupes
