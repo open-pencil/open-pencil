@@ -9,9 +9,9 @@ import type { EditorToolDef } from '@open-pencil/core/editor'
 import type { ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
 const { tools, activeTool, toolIcons, toolLabels, toolShortcuts, ui } = defineProps<{
-    tools: EditorToolDef[]
-    activeTool: Tool
-    toolIcons: ToolIconMap
+  tools: EditorToolDef[]
+  activeTool: Tool
+  toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
   ui?: ToolbarUi

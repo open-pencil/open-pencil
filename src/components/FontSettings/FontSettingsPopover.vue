@@ -7,11 +7,17 @@ import { useButtonUI } from '@/components/ui/button'
 import { usePopoverUI } from '@/components/ui/popover'
 
 const cls = usePopoverUI({ content: 'isolate z-[51] w-80 p-3' })
-const trigger = useButtonUI({ tone: 'ghost', size: 'iconSm', ui: { base: 'shrink-0 border border-border bg-input' } })
+const trigger = useButtonUI({
+  tone: 'ghost',
+  size: 'iconSm',
+  ui: { base: 'shrink-0 border border-border bg-input' }
+})
 const secondaryButton = useButtonUI({
   tone: 'ghost',
   size: 'sm',
-  ui: { base: 'w-full bg-input px-2 py-1.5 text-[10px] font-medium text-surface hover:bg-hover disabled:opacity-50' }
+  ui: {
+    base: 'w-full bg-input px-2 py-1.5 text-[10px] font-medium text-surface hover:bg-hover disabled:opacity-50'
+  }
 })
 const primaryButton = useButtonUI({
   tone: 'accent',
@@ -40,7 +46,11 @@ onMounted(() => {
 
 <template>
   <PopoverRoot @update:open="$event && refreshSummary()">
-    <PopoverTrigger data-test-id="font-settings-trigger" :class="trigger.base" title="Font settings">
+    <PopoverTrigger
+      data-test-id="font-settings-trigger"
+      :class="trigger.base"
+      title="Font settings"
+    >
       <icon-lucide-settings class="size-3.5" />
     </PopoverTrigger>
 
@@ -55,7 +65,9 @@ onMounted(() => {
       >
         <div class="flex flex-col gap-3">
           <div class="flex items-start gap-2">
-            <div class="flex size-8 shrink-0 items-center justify-center rounded bg-input text-muted">
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded bg-input text-muted"
+            >
               <icon-lucide-type class="size-4" />
             </div>
             <div>
@@ -144,7 +156,10 @@ onMounted(() => {
             </button>
           </div>
 
-          <p v-if="status" class="rounded bg-input px-2 py-1.5 text-[10px] leading-relaxed text-muted">
+          <p
+            v-if="status"
+            class="rounded bg-input px-2 py-1.5 text-[10px] leading-relaxed text-muted"
+          >
             {{ status }}
           </p>
         </div>

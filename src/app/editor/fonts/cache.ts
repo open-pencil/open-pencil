@@ -67,7 +67,9 @@ async function writeManifest(manifest: FontCacheManifest) {
 
 export async function downloadedFontCacheSummary(): Promise<DownloadedFontCacheSummary> {
   const manifest = await readManifest()
-  const entries = Object.values(manifest.entries).filter((entry): entry is FontCacheEntry => !!entry)
+  const entries = Object.values(manifest.entries).filter(
+    (entry): entry is FontCacheEntry => !!entry
+  )
   return {
     count: entries.length,
     byteLength: entries.reduce((sum, entry) => sum + entry.byteLength, 0),
@@ -92,7 +94,9 @@ export function createTauriDownloadedFontCache(): DownloadedFontCache {
       const entry = manifest.entries[await cacheKey(family, style)]
       if (!entry) return null
 
-      const data = await readFile(`${CACHE_DIR}/${entry.file}`, { baseDir: BaseDirectory.AppLocalData })
+      const data = await readFile(`${CACHE_DIR}/${entry.file}`, {
+        baseDir: BaseDirectory.AppLocalData
+      })
       const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
       if (buffer.byteLength !== entry.byteLength) return null
       if ((await hashBytes(buffer)) !== entry.sha256) return null

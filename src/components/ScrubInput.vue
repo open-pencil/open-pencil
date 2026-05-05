@@ -50,7 +50,9 @@ defineOptions({ inheritAttrs: false })
       ]"
       :style="{ cursor: editing ? 'auto' : 'ew-resize' }"
       @pointerdown="
-        !editing && !($event.target as HTMLElement)?.closest?.('button') && actions.startScrub($event)
+        !editing &&
+        !($event.target as HTMLElement)?.closest?.('button') &&
+        actions.startScrub($event)
       "
       @focus="!editing && actions.startEdit()"
     >

@@ -23,7 +23,8 @@ const ui = computed<FontPickerUi>(() => ({
   trigger: selectCls.trigger,
   content: cls.content,
   item: selectCls.item,
-  search: 'w-full border-b border-border bg-transparent px-2 py-1 text-xs text-surface outline-none placeholder:text-muted',
+  search:
+    'w-full border-b border-border bg-transparent px-2 py-1 text-xs text-surface outline-none placeholder:text-muted',
   empty: 'px-2 py-3 text-center text-xs text-muted',
   emptyAction: 'mt-2 rounded bg-accent px-2 py-1 text-xs font-medium text-white disabled:opacity-50'
 }))
@@ -50,8 +51,6 @@ const localFontAccess = {
         <icon-lucide-chevron-down class="size-3 shrink-0 text-muted" />
       </button>
     </template>
-
-
 
     <template #item="{ family, selected }">
       <div

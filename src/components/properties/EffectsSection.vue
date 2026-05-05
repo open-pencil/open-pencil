@@ -77,7 +77,10 @@ const sectionCls = useSectionUI()
             />
             <icon-lucide-eye-off v-else data-test-id="visibility-icon-off" class="size-3.5" />
           </button>
-          <button :class="useIconButtonUI().base" @click="effectsCtx.handleRemove(actions.remove, i)">
+          <button
+            :class="useIconButtonUI().base"
+            @click="effectsCtx.handleRemove(actions.remove, i)"
+          >
             −
           </button>
         </div>

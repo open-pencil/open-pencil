@@ -90,9 +90,17 @@ const { panels } = useI18n()
         @update="emit('update', applySolidFillColor(currentFill, $event))"
       />
 
-      <GradientEditor v-if="category === 'GRADIENT'" :fill="currentFill" @update="emit('update', $event)" />
+      <GradientEditor
+        v-if="category === 'GRADIENT'"
+        :fill="currentFill"
+        @update="emit('update', $event)"
+      />
 
-      <ImageFillPicker v-if="category === 'IMAGE'" :fill="currentFill" @update="emit('update', $event)" />
+      <ImageFillPicker
+        v-if="category === 'IMAGE'"
+        :fill="currentFill"
+        @update="emit('update', $event)"
+      />
     </template>
   </FillPickerRoot>
 </template>

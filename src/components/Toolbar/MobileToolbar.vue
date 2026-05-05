@@ -11,7 +11,12 @@ import { ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
-import type { ToolbarActionItem, ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import type {
+  ToolbarActionItem,
+  ToolbarUi,
+  ToolIconMap,
+  ToolLabels
+} from '@/components/Toolbar/types'
 
 const {
   tools,

@@ -1,8 +1,4 @@
-import {
-  DEFAULT_FONT_FAMILY,
-  IS_BROWSER,
-  GOOGLE_FONTS_API_KEY
-} from '#core/constants'
+import { DEFAULT_FONT_FAMILY, IS_BROWSER, GOOGLE_FONTS_API_KEY } from '#core/constants'
 import { fontFallbackEntry } from '#core/text/fallbacks'
 
 import type { SceneGraph } from '#core/scene-graph'
@@ -300,7 +296,8 @@ export class FontManager {
     const result: Record<FontFallbackScript, string[]> = { cjk: [], arabic: [] }
     await Promise.all(
       scripts.map(async (script) => {
-        result[script] = script === 'cjk' ? await this.ensureCJKFallback() : await this.ensureArabicFallback()
+        result[script] =
+          script === 'cjk' ? await this.ensureCJKFallback() : await this.ensureArabicFallback()
       })
     )
     return result
@@ -357,7 +354,11 @@ export class FontManager {
     }
   }
 
-  private async writeDownloadedFont(family: string, style: string, data: ArrayBuffer): Promise<void> {
+  private async writeDownloadedFont(
+    family: string,
+    style: string,
+    data: ArrayBuffer
+  ): Promise<void> {
     if (!this.downloadedFontCache) return
     try {
       await this.downloadedFontCache.write(family, style, data)
@@ -446,11 +447,7 @@ export class FontManager {
     }
   }
 
-  private registerAndCache(
-    family: string,
-    style: string,
-    buffer: ArrayBuffer
-  ): ArrayBuffer | null {
+  private registerAndCache(family: string, style: string, buffer: ArrayBuffer): ArrayBuffer | null {
     this.loadedFamilies.set(`${family}|${style}`, buffer)
     this.registerFontInCanvasKit(family, buffer)
     this.registerFontInBrowser(family, style, buffer)

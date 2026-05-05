@@ -26,16 +26,7 @@ function handleAlign(
 
 <template>
   <PositionControlsRoot
-    v-slot="{
-      active,
-      isMulti,
-      xValue,
-      yValue,
-      wValue,
-      hValue,
-      rotationValue,
-      actions
-    }"
+    v-slot="{ active, isMulti, xValue, yValue, wValue, hValue, rotationValue, actions }"
   >
     <div v-if="active" data-test-id="position-section" :class="sectionCls.wrapper">
       <label class="mb-1.5 block text-[11px] text-muted">{{ panels.position }}</label>

@@ -31,11 +31,5 @@ const actions = {
 </script>
 
 <template>
-  <slot
-    :color="color"
-    :editable="editable"
-    :hex="hex"
-    :actions="actions"
-    :okhcl="okhcl"
-  />
+  <slot :color="color" :editable="editable" :hex="hex" :actions="actions" :okhcl="okhcl" />
 </template>

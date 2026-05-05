@@ -1,6 +1,6 @@
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { isTauri } from '@/app/tauri/env'
 import { createTab, openFileInNewTab } from '@/app/tabs'
+import { isTauri } from '@/app/tauri/env'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

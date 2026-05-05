@@ -59,8 +59,8 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
     return new Date(cacheUpdatedAt.value).toLocaleDateString()
   })
 
-  const canRequestLocalFonts = computed(() =>
-    accessState.value === 'prompt' || accessState.value === 'denied'
+  const canRequestLocalFonts = computed(
+    () => accessState.value === 'prompt' || accessState.value === 'denied'
   )
 
   async function refreshSummary() {

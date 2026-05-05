@@ -239,7 +239,9 @@ watch(collectionInput, (input) => {
                 </table>
               </div>
 
-              <div class="flex w-full shrink-0 items-center justify-between gap-2 border-t border-border px-4 py-2">
+              <div
+                class="flex w-full shrink-0 items-center justify-between gap-2 border-t border-border px-4 py-2"
+              >
                 <span class="text-xs text-muted">{{ panels.createVariable }}</span>
                 <DropdownMenuRoot>
                   <DropdownMenuTrigger as-child>
@@ -253,7 +255,12 @@ watch(collectionInput, (input) => {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuContent side="top" :side-offset="8" align="end" :class="menuCls.content">
+                    <DropdownMenuContent
+                      side="top"
+                      :side-offset="8"
+                      align="end"
+                      :class="menuCls.content"
+                    >
                       <DropdownMenuItem
                         v-for="item in variableTypes"
                         :key="item.type"
@@ -264,7 +271,9 @@ watch(collectionInput, (input) => {
                         <component :is="variableTypeIcons[item.type]" :class="menuCls.icon" />
                         <span class="flex min-w-0 flex-1 flex-col">
                           <span>{{ item.label() }}</span>
-                          <span class="truncate text-[10px] text-muted">{{ item.description() }}</span>
+                          <span class="truncate text-[10px] text-muted">{{
+                            item.description()
+                          }}</span>
                         </span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>

@@ -65,12 +65,7 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
             <LayerTreeItem
               v-for="item in flattenItems"
               :key="item._id"
-              v-slot="{
-                node,
-                isSelected,
-                padLeft,
-                actions
-              }"
+              v-slot="{ node, isSelected, padLeft, actions }"
               :node="item.value"
               :level="item.level"
               :has-children="item.hasChildren"
