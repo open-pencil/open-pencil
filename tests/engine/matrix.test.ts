@@ -9,6 +9,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { TransformMatrix } from '@open-pencil/core'
 
+import { expectDefined } from '../helpers/assert'
+
 describe('TransformMatrix.identity', () => {
   test('produces a 3x3 identity matrix', () => {
     const id = TransformMatrix.identity()
@@ -134,26 +136,26 @@ describe('TransformMatrix.invert', () => {
   test('inverse of identity is identity', () => {
     const id = TransformMatrix.identity()
     const inv = TransformMatrix.invert(id)
-    expect(inv).not.toBeNull()
-    expect(inv!).toEqual(id)
+    const inverse = expectDefined(inv, 'inverse matrix')
+    expect(inverse).toEqual(id)
   })
 
   test('inverse of translation is negative translation', () => {
     const t = TransformMatrix.translated(10, 20)
     const inv = TransformMatrix.invert(t)
-    expect(inv).not.toBeNull()
-    expect(inv![2]).toBeCloseTo(-10, 10)
-    expect(inv![5]).toBeCloseTo(-20, 10)
+    const inverse = expectDefined(inv, 'inverse matrix')
+    expect(inverse[2]).toBeCloseTo(-10, 10)
+    expect(inverse[5]).toBeCloseTo(-20, 10)
   })
 
   test('inverse of rotation is negative rotation', () => {
     const r = TransformMatrix.rotated(Math.PI / 4)
     const inv = TransformMatrix.invert(r)
-    expect(inv).not.toBeNull()
+    const inverse = expectDefined(inv, 'inverse matrix')
     // Rotation by -π/4
     const expected = TransformMatrix.rotated(-Math.PI / 4)
     for (let i = 0; i < 9; i++) {
-      expect(inv![i]).toBeCloseTo(expected[i], 10)
+      expect(inverse[i]).toBeCloseTo(expected[i], 10)
     }
   })
 
@@ -163,8 +165,8 @@ describe('TransformMatrix.invert', () => {
       TransformMatrix.rotated(Math.PI / 6)
     )
     const inv = TransformMatrix.invert(m)
-    expect(inv).not.toBeNull()
-    const product = TransformMatrix.multiply(m, inv!)
+    const inverse = expectDefined(inv, 'inverse matrix')
+    const product = TransformMatrix.multiply(m, inverse)
     for (let i = 0; i < 9; i++) {
       expect(product[i]).toBeCloseTo(TransformMatrix.identity()[i], 10)
     }
@@ -328,17 +330,17 @@ describe('composed transforms (realistic world matrix chains)', () => {
     m = TransformMatrix.multiply(m, TransformMatrix.translated(-cx, -cy))
 
     const inv = TransformMatrix.invert(m)
-    expect(inv).not.toBeNull()
+    const inverse = expectDefined(inv, 'inverse matrix')
 
     // Map origin to world, then back to local
     const worldOrigin = TransformMatrix.mapPoints(m, [0, 0])
-    const localOrigin = TransformMatrix.mapPoints(inv!, worldOrigin)
+    const localOrigin = TransformMatrix.mapPoints(inverse, worldOrigin)
     expect(localOrigin[0]).toBeCloseTo(0, 8)
     expect(localOrigin[1]).toBeCloseTo(0, 8)
 
     // Map center to world, then back
     const worldCenter = TransformMatrix.mapPoints(m, [50, 25])
-    const localCenter = TransformMatrix.mapPoints(inv!, worldCenter)
+    const localCenter = TransformMatrix.mapPoints(inverse, worldCenter)
     expect(localCenter[0]).toBeCloseTo(50, 8)
     expect(localCenter[1]).toBeCloseTo(25, 8)
   })

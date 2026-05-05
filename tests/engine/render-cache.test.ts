@@ -14,6 +14,8 @@ import {
   type SceneNode
 } from '@open-pencil/core'
 
+import { expectDefined } from '../helpers/assert'
+
 let graph: SceneGraph
 let movingNodeId: string
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
@@ -41,9 +43,9 @@ function renderPreview(renderer: SkiaRenderer, sceneVersion: number): Uint8Array
     colorType: ck.ColorType.RGBA_8888,
     alphaType: ck.AlphaType.Unpremul,
     colorSpace: ck.ColorSpace.SRGB
-  })!
+  })
   image.delete()
-  return pixels
+  return expectDefined(pixels, 'rendered pixels')
 }
 
 function childNamed(parent: SceneNode | undefined, name: string): SceneNode | undefined {
@@ -98,7 +100,7 @@ function maskYCenter(
 
 describe('render cache regressions', () => {
   test('badge label is vertically centered in the pill', async () => {
-    const surface = ck.MakeSurface(120, 60)!
+    const surface = expectDefined(ck.MakeSurface(120, 60), 'badge surface')
     const renderer = new SkiaRenderer(ck, surface)
     await renderer.loadFonts()
     try {
@@ -108,7 +110,10 @@ describe('render cache regressions', () => {
         format: 'PNG'
       })
       expect(png).toBeTruthy()
-      const image = ck.MakeImageFromEncoded(png!)!
+      const image = expectDefined(
+        ck.MakeImageFromEncoded(expectDefined(png, 'badge png')),
+        'badge image'
+      )
       const width = image.width()
       const height = image.height()
       const pixels = image.readPixels(0, 0, {
@@ -117,15 +122,25 @@ describe('render cache regressions', () => {
         colorType: ck.ColorType.RGBA_8888,
         alphaType: ck.AlphaType.Unpremul,
         colorSpace: ck.ColorSpace.SRGB
-      })!
+      })
       image.delete()
 
-      const contentCenter = maskYCenter(pixels, width, height, (i) => pixels[i + 3] > 10)
-      const textCenter = maskYCenter(
-        pixels,
+      const renderedPixels = expectDefined(pixels, 'badge pixels')
+      const contentCenter = maskYCenter(
+        renderedPixels,
         width,
         height,
-        (i) => pixels[i + 3] > 128 && pixels[i] < 130 && pixels[i + 1] < 140 && pixels[i + 2] < 160,
+        (i) => renderedPixels[i + 3] > 10
+      )
+      const textCenter = maskYCenter(
+        renderedPixels,
+        width,
+        height,
+        (i) =>
+          renderedPixels[i + 3] > 128 &&
+          pixels[i] < 130 &&
+          pixels[i + 1] < 140 &&
+          pixels[i + 2] < 160,
         [20, 67]
       )
       expect(Math.abs(textCenter - contentCenter)).toBeLessThanOrEqual(0.6)
@@ -135,7 +150,7 @@ describe('render cache regressions', () => {
   })
 
   test('scene picture redraw keeps text after moving a node', async () => {
-    const surface = ck.MakeSurface(900, 700)!
+    const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
     const renderer = new SkiaRenderer(ck, surface)
     renderer.viewportWidth = 900
     renderer.viewportHeight = 700

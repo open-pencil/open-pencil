@@ -9,6 +9,8 @@ import {
   setNodeFillOkHCL
 } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+
 describe('OkHCL toggle conversion', () => {
   test('enabling OkHCL from an existing rgba fill preserves the visible color closely', () => {
     const graph = new SceneGraph()
@@ -19,10 +21,14 @@ describe('OkHCL toggle conversion', () => {
     })
 
     graph.updateNode(node.id, setNodeFillOkHCL(node, 0, rgbaToOkHCL(originalColor)))
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
 
-    expect(colorDistance(originalColor, updated.fills[0]!.color)).toBeLessThan(1)
-    expect(Math.abs(updated.fills[0]!.color.a - originalColor.a)).toBeLessThan(0.001)
+    expect(
+      colorDistance(originalColor, expectDefined(updated.fills[0], 'updated fill').color)
+    ).toBeLessThan(1)
+    expect(
+      Math.abs(expectDefined(updated.fills[0], 'updated fill').color.a - originalColor.a)
+    ).toBeLessThan(0.001)
     expect(getFillOkHCL(updated, 0)).not.toBeNull()
   })
 
@@ -35,13 +41,18 @@ describe('OkHCL toggle conversion', () => {
     })
 
     graph.updateNode(node.id, setNodeFillOkHCL(node, 0, rgbaToOkHCL(originalColor)))
-    const withOkHCL = graph.getNode(node.id)!
-    const renderedBeforeDisable = withOkHCL.fills[0]!.color
+    const withOkHCL = getNodeOrThrow(graph, node.id)
+    const renderedBeforeDisable = expectDefined(withOkHCL.fills[0], 'OkHCL fill').color
 
     graph.updateNode(node.id, clearNodeFillOkHCL(withOkHCL, 0))
-    const afterDisable = graph.getNode(node.id)!
+    const afterDisable = getNodeOrThrow(graph, node.id)
 
     expect(getFillOkHCL(afterDisable, 0)).toBeNull()
-    expect(colorDistance(renderedBeforeDisable, afterDisable.fills[0]!.color)).toBeLessThan(0.001)
+    expect(
+      colorDistance(
+        renderedBeforeDisable,
+        expectDefined(afterDisable.fills[0], 'fill after disable').color
+      )
+    ).toBeLessThan(0.001)
   })
 })

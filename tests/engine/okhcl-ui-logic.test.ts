@@ -10,6 +10,8 @@ import {
   setNodeStrokeOkHCL
 } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '../helpers/assert'
+
 describe('OkHCL metadata toggling', () => {
   test('can disable fill OkHCL metadata', () => {
     const graph = new SceneGraph()
@@ -19,10 +21,10 @@ describe('OkHCL metadata toggling', () => {
     })
 
     graph.updateNode(node.id, setNodeFillOkHCL(node, 0, { h: 10, c: 0.1, l: 0.5 }))
-    expect(getFillOkHCL(graph.getNode(node.id)!, 0)).not.toBeNull()
+    expect(getFillOkHCL(getNodeOrThrow(graph, node.id), 0)).not.toBeNull()
 
-    graph.updateNode(node.id, clearNodeFillOkHCL(graph.getNode(node.id)!, 0))
-    expect(getFillOkHCL(graph.getNode(node.id)!, 0)).toBeNull()
+    graph.updateNode(node.id, clearNodeFillOkHCL(getNodeOrThrow(graph, node.id), 0))
+    expect(getFillOkHCL(getNodeOrThrow(graph, node.id), 0)).toBeNull()
   })
 
   test('can disable stroke OkHCL metadata', () => {
@@ -35,9 +37,9 @@ describe('OkHCL metadata toggling', () => {
     })
 
     graph.updateNode(node.id, setNodeStrokeOkHCL(node, 0, { h: 200, c: 0.1, l: 0.5 }))
-    expect(getStrokeOkHCL(graph.getNode(node.id)!, 0)).not.toBeNull()
+    expect(getStrokeOkHCL(getNodeOrThrow(graph, node.id), 0)).not.toBeNull()
 
-    graph.updateNode(node.id, clearNodeStrokeOkHCL(graph.getNode(node.id)!, 0))
-    expect(getStrokeOkHCL(graph.getNode(node.id)!, 0)).toBeNull()
+    graph.updateNode(node.id, clearNodeStrokeOkHCL(getNodeOrThrow(graph, node.id), 0))
+    expect(getStrokeOkHCL(getNodeOrThrow(graph, node.id), 0)).toBeNull()
   })
 })
