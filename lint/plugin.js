@@ -805,6 +805,57 @@ const noUnknownRecordDoubleCast = {
   }
 }
 
+const noFunctionType = {
+  meta: {
+    docs: {
+      description: 'Disallow the broad Function type; use an explicit callable signature'
+    }
+  },
+  create(context) {
+    return {
+      TSTypeReference(node) {
+        if (node.typeName?.type !== 'Identifier' || node.typeName.name !== 'Function') return
+        context.report({
+          node,
+          message: 'Use an explicit function signature instead of the broad Function type.'
+        })
+      }
+    }
+  }
+}
+
+const noReflectDeleteGlobalThisOutsideTests = {
+  meta: {
+    docs: {
+      description: 'Disallow Reflect.deleteProperty(globalThis, ...) outside tests'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (file.includes('/tests/')) return {}
+
+    return {
+      CallExpression(node) {
+        if (node.callee?.type !== 'MemberExpression') return
+        if (node.callee.object?.type !== 'Identifier' || node.callee.object.name !== 'Reflect')
+          return
+        if (
+          node.callee.property?.type !== 'Identifier' ||
+          node.callee.property.name !== 'deleteProperty'
+        )
+          return
+        const firstArg = node.arguments?.[0]
+        if (firstArg?.type !== 'Identifier' || firstArg.name !== 'globalThis') return
+        context.report({
+          node,
+          message:
+            'Do not mutate globalThis outside tests; isolate platform state behind a boundary.'
+        })
+      }
+    }
+  }
+}
+
 const noTsSuppressionComments = {
   meta: {
     docs: {
@@ -1342,6 +1393,8 @@ const plugin = {
     'no-broad-double-cast': noBroadDoubleCast,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
     'no-ts-suppression-comments': noTsSuppressionComments,
+    'no-function-type': noFunctionType,
+    'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,

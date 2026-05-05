@@ -113,6 +113,8 @@
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-unknown-record-double-cast": "error",
     "open-pencil/no-ts-suppression-comments": "error",
+    "open-pencil/no-function-type": "error",
+    "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-function-alias-imports": "error",
     "open-pencil/max-composition-root-lines": ["error", { "max": 260 }]

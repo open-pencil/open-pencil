@@ -1,5 +1,7 @@
+export type ComponentType = (props: Record<string, unknown>) => ReactNode
+
 export type ReactElement = {
-  type: string | Function
+  type: string | ComponentType
   props: Record<string, unknown> & { children?: ReactNode[] }
 }
 
@@ -8,7 +10,7 @@ export type ReactNode = ReactElement | string | number | null | undefined | Reac
 export type FC<P = Record<string, unknown>> = (props: P) => ReactElement
 
 export function createElement(
-  type: string | Function,
+  type: string | ComponentType,
   props: Record<string, unknown> | null,
   ...children: ReactNode[]
 ): ReactElement {

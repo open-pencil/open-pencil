@@ -10,7 +10,7 @@ import type { SceneGraph } from '#core/scene-graph'
  * Build a component function from a JSX string using sucrase.
  * Works in both Node/Bun and the browser (no native bindings).
  */
-export function buildComponent(jsxString: string): () => unknown {
+export function buildComponent(jsxString: string): React.ComponentType {
   const trimmed = jsxString.trim()
 
   const aliases = `
@@ -37,7 +37,7 @@ export function buildComponent(jsxString: string): () => unknown {
   }
 
   // eslint-disable-next-line typescript-eslint/no-implied-eval -- sucrase output must be evaluated at runtime
-  return new Function('React', code)(React) as () => unknown
+  return new Function('React', code)(React) as React.ComponentType
 }
 
 interface RenderJSXOptions {

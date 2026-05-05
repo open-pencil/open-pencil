@@ -61,7 +61,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       { value: 100 },
       graph,
       blobs
-    ) as Record<string, any>[]
+    ) as Record<string, unknown>[]
 
     // changes[0] = parent, changes[1] = child
     const childNc = changes.find((nc) => nc.name === 'Child')!
@@ -99,7 +99,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       { value: 100 },
       graph,
       blobs
-    ) as Record<string, any>[]
+    ) as Record<string, unknown>[]
 
     const absNc = changes.find((nc) => nc.name === 'AbsChild')!
     expect(absNc).toBeDefined()
@@ -134,7 +134,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       { value: 100 },
       graph,
       blobs
-    ) as Record<string, any>[]
+    ) as Record<string, unknown>[]
 
     const childNc = changes.find((nc) => nc.name === 'Child')!
     expect(childNc).toBeDefined()
@@ -170,7 +170,7 @@ describe('Fix 1: auto-layout child transforms', () => {
       { value: 100 },
       graph,
       blobs
-    ) as Record<string, any>[]
+    ) as Record<string, unknown>[]
 
     const itemNc = changes.find((nc) => nc.name === 'Item')!
     expect(itemNc.transform.m02).toBe(0)
@@ -193,7 +193,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       height: 100
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].frameMaskDisabled).toBe(true)
   })
 
@@ -208,7 +208,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       clipsContent: true
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].frameMaskDisabled).toBe(false)
   })
 
@@ -223,7 +223,7 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
       clipsContent: false
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].frameMaskDisabled).toBe(true)
   })
 
@@ -264,7 +264,7 @@ describe('Fix 3: bordersTakeSpace serialization', () => {
       strokesIncludedInLayout: true
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].bordersTakeSpace).toBe(true)
   })
 
@@ -281,7 +281,7 @@ describe('Fix 3: bordersTakeSpace serialization', () => {
       strokesIncludedInLayout: false
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].bordersTakeSpace).toBe(false)
   })
 
@@ -296,7 +296,7 @@ describe('Fix 3: bordersTakeSpace serialization', () => {
       strokesIncludedInLayout: true
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].bordersTakeSpace).toBeUndefined()
   })
 })
@@ -321,7 +321,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       lineHeight: 24
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].lineHeight).toEqual({ value: 24, units: 'PIXELS' })
   })
 
@@ -340,7 +340,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       // lineHeight not set — defaults to null
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     // ceil(16 * 1.2) = ceil(19.2) = 20
     expect(changes[0].lineHeight).toEqual({ value: 20, units: 'PIXELS' })
   })
@@ -359,7 +359,7 @@ describe('Fix 4: text lineHeight serialization', () => {
       fontSize: 14
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     // ceil(14 * 1.2) = ceil(16.8) = 17
     expect(changes[0].lineHeight).toEqual({ value: 17, units: 'PIXELS' })
   })
@@ -469,7 +469,7 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
       fontSize: 14
     })
 
-    const changes = toKiwi(node, graph) as Record<string, any>[]
+    const changes = toKiwi(node, graph) as Record<string, unknown>[]
     expect(changes[0].fontName.family).toBe('DM Sans')
   })
 })
@@ -539,7 +539,7 @@ describe('Integration: auto-layout component with all fixes', () => {
       { value: 100 },
       graph,
       blobs
-    ) as Record<string, any>[]
+    ) as Record<string, unknown>[]
 
     const cardNc = changes[0]
     const titleNc = changes.find((nc) => nc.name === 'Title')!

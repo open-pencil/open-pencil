@@ -6,11 +6,12 @@ const DRAW_METHODS = [
 ] as const
 
 type DrawMethod = (typeof DRAW_METHODS)[number]
+type DrawFunction = (...args: unknown[]) => void
 
 export class DrawCallCounter {
   count = 0
 
-  private originals = new Map<DrawMethod, (...args: unknown[]) => void>()
+  private originals = new Map<DrawMethod, DrawFunction>()
   private gl: WebGL2RenderingContext | null
 
   constructor(gl: WebGL2RenderingContext | null) {
@@ -18,10 +19,10 @@ export class DrawCallCounter {
     if (!gl) return
 
     for (const method of DRAW_METHODS) {
-      const original = gl[method].bind(gl) as (...args: unknown[]) => void
+      const original = gl[method].bind(gl) as DrawFunction
       this.originals.set(method, original)
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- monkey-patching overloaded WebGL draw methods
-      ;(gl[method] as Function) = (...args: unknown[]) => {
+      ;(gl[method] as DrawFunction) = (...args: unknown[]) => {
         this.count++
         original(...args)
       }
@@ -39,7 +40,7 @@ export class DrawCallCounter {
     if (!gl) return
 
     for (const [method, fn] of this.originals) {
-      ;(gl[method] as Function) = fn
+      ;(gl[method] as DrawFunction) = fn
     }
     this.originals.clear()
   }

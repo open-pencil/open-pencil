@@ -11,6 +11,12 @@
       "rules": {
         "no-unused-vars": "off"
       }
+    },
+    {
+      "files": ["packages/core/src/kiwi/kiwi-schema/**"],
+      "rules": {
+        "typescript/no-explicit-any": "off"
+      }
     }
   ],
   "rules": {
@@ -39,6 +45,9 @@
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-unknown-record-double-cast": "error",
     "open-pencil/no-ts-suppression-comments": "error",
+    "open-pencil/no-function-type": "error",
+    "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
+    "typescript/no-explicit-any": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-direct-graph-emitter-subscriptions": "error",
     "open-pencil/no-on-unmounted-in-composition-roots": "error",
