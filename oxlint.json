@@ -164,8 +164,7 @@
     {
       "files": ["tests/**/*.ts", "tests/**/*.tsx"],
       "rules": {
-        "typescript/no-non-null-assertion": "off",
-        "no-unused-vars": "off"
+        "typescript/no-non-null-assertion": "off"
       }
     },
     {
@@ -195,6 +194,48 @@
       "files": ["packages/cli/src/commands/**"],
       "rules": {
         "open-pencil/no-raw-console-format": "error"
+      }
+    },
+    {
+      "files": [
+        "tests/e2e/autosave.spec.ts",
+        "tests/e2e/color-picker/basic.spec.ts",
+        "tests/e2e/context-menu/basic.spec.ts",
+        "tests/e2e/layers/panel.spec.ts",
+        "tests/e2e/pages/multi-page.spec.ts",
+        "tests/e2e/properties/panel.spec.ts",
+        "tests/engine/cli/eval.test.ts",
+        "tests/engine/color/okhcl/ui-logic.test.ts",
+        "tests/engine/color/solid-commit.test.ts",
+        "tests/engine/editor/selection/alignment.test.ts",
+        "tests/engine/editor/selection/properties.test.ts",
+        "tests/engine/fig/export/text.test.ts",
+        "tests/engine/fig/heavy/fixtures.test.ts",
+        "tests/engine/fig/import/basic.test.ts",
+        "tests/engine/fig/import/edge-cases.test.ts",
+        "tests/engine/fig/import/instance-regressions.test.ts",
+        "tests/engine/fig/import/property-integrity.test.ts",
+        "tests/engine/fig/roundtrip/basic.test.ts",
+        "tests/engine/fig/roundtrip/variables.test.ts",
+        "tests/engine/hit-test/basic.test.ts",
+        "tests/engine/hit-test/scope.test.ts",
+        "tests/engine/kiwi/serialize-fixes.test.ts",
+        "tests/engine/layout/auto-layout.test.ts",
+        "tests/engine/mcp.test.ts",
+        "tests/engine/mcp/stdio.test.ts",
+        "tests/engine/render/canvas/silhouette-autopsy.test.ts",
+        "tests/engine/scene-graph/basic.test.ts",
+        "tests/engine/scene-graph/world-transform.test.ts",
+        "tests/engine/svg/export.test.ts",
+        "tests/engine/text/style-runs.test.ts",
+        "tests/engine/tools/ai-adapter.test.ts",
+        "tests/engine/tools/cli.test.ts",
+        "tests/engine/tools/modify.test.ts",
+        "tests/engine/tools/registry.test.ts",
+        "tests/engine/visual-inner-shadow-counter.ts"
+      ],
+      "rules": {
+        "no-unused-vars": "off"
       }
     },
     {
