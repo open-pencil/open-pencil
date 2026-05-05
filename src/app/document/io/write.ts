@@ -1,6 +1,6 @@
-import { IS_TAURI } from '@/constants'
-
 import type { EditorState } from '@open-pencil/core/editor'
+
+import { isTauri } from '@/app/tauri/env'
 
 type WriteDocumentState = EditorState
 
@@ -23,7 +23,7 @@ export function createDocumentWriter({
     setLastWriteTime(Date.now())
     const filePath = getFilePath()
     const fileHandle = getFileHandle()
-    if (filePath && IS_TAURI) {
+    if (filePath && isTauri()) {
       const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
       await tauriWrite(filePath, data)
       setSavedVersion(state.sceneVersion)

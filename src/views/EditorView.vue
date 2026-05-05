@@ -12,7 +12,7 @@ import { useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import { isTauri } from '@/app/tauri/env'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
@@ -64,13 +64,13 @@ onMounted(async () => {
   try {
     const mcp = await spawnMCPIfNeeded()
     mcpCleanup.value = mcp?.disconnect ?? null
-    const isTauri = IS_BROWSER && '__TAURI_INTERNALS__' in window
-    if (import.meta.env.DEV || isTauri) {
+    const tauri = isTauri()
+    if (import.meta.env.DEV || tauri) {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
     console.warn('[MCP]', e)
-    if (IS_BROWSER && '__TAURI_INTERNALS__' in window) {
+    if (isTauri()) {
       const { toast } = await import('@/app/shell/ui')
       toast.warning('MCP server failed to start. Install with: npm i -g @open-pencil/mcp')
     }

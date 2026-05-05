@@ -1,7 +1,8 @@
 import { promiseTimeout } from '@vueuse/core'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
-import { AUTOMATION_HTTP_PORT, IS_BROWSER } from '@open-pencil/core/constants'
+import { isTauri } from '@/app/tauri/env'
+import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 
 interface AutomationHealth {
@@ -50,8 +51,7 @@ export async function getAutomationAuthToken(): Promise<string | null> {
 }
 
 export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null> {
-  const isTauri = IS_BROWSER && '__TAURI_INTERNALS__' in window
-  if (import.meta.env.DEV || !isTauri) {
+  if (import.meta.env.DEV || !isTauri()) {
     return DEV_AUTOMATION_AUTH_TOKEN
       ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN }
       : null

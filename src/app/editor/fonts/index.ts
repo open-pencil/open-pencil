@@ -1,4 +1,3 @@
-import { IS_TAURI } from '@open-pencil/core/constants'
 import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pencil/core/text'
 
 import {
@@ -6,14 +5,21 @@ import {
   createTauriDownloadedFontCache,
   downloadedFontCacheSummary as tauriDownloadedFontCacheSummary
 } from '@/app/editor/fonts/cache'
+import { isTauri } from '@/app/tauri/env'
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
 }
 
-if (IS_TAURI) {
+let tauriFontCacheConfigured = false
+
+function configureTauriFontCache() {
+  if (tauriFontCacheConfigured || !isTauri()) return
+  tauriFontCacheConfigured = true
   fontManager.setDownloadedFontCache(createTauriDownloadedFontCache())
 }
+
+configureTauriFontCache()
 
 interface TauriFontFamily {
   family: string
@@ -38,28 +44,31 @@ async function getTauriFonts(): Promise<TauriFontFamily[]> {
 }
 
 export function preloadFonts(): void {
-  if (IS_TAURI) {
+  configureTauriFontCache()
+  if (isTauri()) {
     void getTauriFonts().then(registerFontFaces)
   }
 }
 
 export function localFontAccessState(): LocalFontAccessState {
-  return IS_TAURI ? 'granted' : fontManager.localAccessState()
+  return isTauri() ? 'granted' : fontManager.localAccessState()
 }
 
 export async function requestLocalFontAccess(): Promise<string[]> {
-  if (IS_TAURI) return listFamilies()
+  if (isTauri()) return listFamilies()
   await fontManager.requestLocalFontAccess()
   return fontManager.listFamilies()
 }
 
 export async function downloadedFontCacheSummary() {
-  if (!IS_TAURI) return { count: 0, byteLength: 0, updatedAt: null }
+  configureTauriFontCache()
+  if (!isTauri()) return { count: 0, byteLength: 0, updatedAt: null }
   return tauriDownloadedFontCacheSummary()
 }
 
 export async function clearDownloadedFontCache(): Promise<void> {
-  if (!IS_TAURI) return
+  configureTauriFontCache()
+  if (!isTauri()) return
   await clearTauriDownloadedFontCache()
 }
 
@@ -76,7 +85,8 @@ function registerFontFaces(fonts: TauriFontFamily[]): void {
 }
 
 export async function listFamilies(): Promise<string[]> {
-  if (IS_TAURI) {
+  configureTauriFontCache()
+  if (isTauri()) {
     const fonts = await getTauriFonts()
     return fonts.map((f) => f.family)
   }
@@ -84,14 +94,16 @@ export async function listFamilies(): Promise<string[]> {
 }
 
 export async function listFonts(): Promise<TauriFontFamily[]> {
-  if (IS_TAURI) {
+  configureTauriFontCache()
+  if (isTauri()) {
     return getTauriFonts()
   }
   return []
 }
 
 export async function loadFont(family: string, style = 'Regular'): Promise<ArrayBuffer | null> {
-  if (IS_TAURI) {
+  configureTauriFontCache()
+  if (isTauri()) {
     const cached = await fontManager.loadCachedFont(family, style)
     if (cached) return cached
 

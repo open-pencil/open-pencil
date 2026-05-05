@@ -14,6 +14,7 @@
 - Add stroke dash/gap controls to the stroke inspector panel.
 - Bump AI SDK dependencies for improved DeepSeek reasoning mode and newer model support.
 - Add PDF export — vector PDF output via SVG→PDF conversion. Available in export panel, CLI (`--format pdf`), and MCP (`export_pdf` tool).
+- Add font settings controls for local font access, fallback font predownloads, and downloaded font cache management.
 
 ### Fixes
 
@@ -38,6 +39,7 @@
 ### Performance
 
 - Cache downloaded remote fonts in app-local storage so reopened documents can reuse them without repeated network fetches.
+- Add Tauri API mock coverage for font loading, font cache, external links, document read/write, and save dialogs.
 - Add a curated fallback font manifest for CJK and Arabic font downloads.
 - Cache instance override resolution and lazily populate opened `.fig` pages to reduce load time for large community files.
 - Reduce zoom and overlay rendering work by separating scene rendering from rulers, selection, labels, and input overlays.

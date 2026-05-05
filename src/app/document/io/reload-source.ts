@@ -1,5 +1,6 @@
-import { IS_TAURI } from '@/constants'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
+
+import { isTauri } from '@/app/tauri/env'
 
 export type ReloadSourceOptions = {
   documentName: string
@@ -12,7 +13,7 @@ export async function readReloadSource({
   filePath,
   fileHandle
 }: ReloadSourceOptions) {
-  if (filePath && IS_TAURI) {
+  if (filePath && isTauri()) {
     const { readFile: tauriRead } = await import('@tauri-apps/plugin-fs')
     const bytes = await tauriRead(filePath)
     const blob = new Blob([bytes])

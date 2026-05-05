@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
 
-import { IS_TAURI } from '@open-pencil/core/constants'
+import { isTauri } from '@/app/tauri/env'
 
 export type ToastVariant = 'default' | 'warning' | 'error'
 
@@ -83,7 +83,7 @@ export const toast = {
 }
 
 export async function openExternalLink(url: string) {
-  if (IS_TAURI) {
+  if (isTauri()) {
     const { openUrl } = await import('@tauri-apps/plugin-opener')
     await openUrl(url)
   } else {
