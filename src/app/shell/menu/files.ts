@@ -11,9 +11,9 @@ fileDialog.onChange((files) => {
   if (file) void openFileInNewTab(file)
 })
 
-if (IS_BROWSER) {
+if (IS_BROWSER && 'window' in globalThis) {
   ;(
-    window as Window & { __OPEN_PENCIL_OPEN_FILE__?: (path: string) => Promise<void> }
+    globalThis.window as Window & { __OPEN_PENCIL_OPEN_FILE__?: (path: string) => Promise<void> }
   ).__OPEN_PENCIL_OPEN_FILE__ = async (path: string) => {
     const response = await fetch(path)
     const blob = await response.blob()

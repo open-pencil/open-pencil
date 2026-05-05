@@ -30,7 +30,7 @@ function cssColorToRgba(value: string) {
 }
 
 function readRulerTheme(): RulerTheme | null {
-  if (!IS_BROWSER) return null
+  if (!IS_BROWSER || !('document' in globalThis)) return null
   const style = getComputedStyle(document.documentElement)
   return {
     background: cssColorToRgba(style.getPropertyValue('--color-ruler-bg')),
@@ -53,7 +53,7 @@ function updateCanvasTheme(): void {
 }
 
 function applyTheme(value: 'dark' | 'light', setting: AppTheme): void {
-  if (!IS_BROWSER) return
+  if (!IS_BROWSER || !('document' in globalThis)) return
   document.documentElement.dataset.theme = value
   document.documentElement.dataset.themeSetting = setting
   document.documentElement.style.colorScheme = value
