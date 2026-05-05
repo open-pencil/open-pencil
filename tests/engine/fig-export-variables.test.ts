@@ -2,6 +2,8 @@ import { describe, test, expect, beforeAll } from 'bun:test'
 
 import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 
+import type { Color } from '@open-pencil/core'
+
 beforeAll(async () => {
   await initCodec()
 })
@@ -11,7 +13,7 @@ describe('COLOR variable alpha handling', () => {
     const graph = new SceneGraph()
     const col = graph.createCollection('Colors')
     // Simulate a COLOR variable value missing the alpha field
-    graph.createVariable('brand', 'COLOR', col.id, { r: 0.2, g: 0.4, b: 0.8 } as any)
+    graph.createVariable('brand', 'COLOR', col.id, { r: 0.2, g: 0.4, b: 0.8 } as Color)
 
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)

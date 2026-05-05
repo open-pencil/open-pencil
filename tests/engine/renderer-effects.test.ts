@@ -5,6 +5,11 @@ import { renderEffects } from '#core/canvas/shadows'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { SceneNode, SceneGraph } from '#core/scene-graph'
+import type { Canvas, Path } from 'canvaskit-wasm'
+
+function mockCalls(fn: ReturnType<typeof mock>): unknown[][] {
+  return (fn as { mock: { calls: unknown[][] } }).mock.calls
+}
 
 function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer {
   return {
@@ -113,7 +118,7 @@ function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer
     renderShape: mock(() => {}),
     renderSection: mock(() => {}),
     renderComponentSet: mock(() => {}),
-    renderEffects: mock((...args) => renderEffects(overrides as any, ...args)),
+    renderEffects: mock((...args) => renderEffects(overrides as SkiaRenderer, ...args)),
     drawNodeFill: mock(() => {}),
     drawNodeStroke: mock(() => {}),
     drawStrokeWithAlign: mock(() => {}),
@@ -183,7 +188,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
       callOrder.push('drawNodeFill')
     })
 
-    renderShapeUncached(r, canvas as any, node as SceneNode, graph as any)
+    renderShapeUncached(r, canvas as Canvas, node as SceneNode, graph as SceneGraph)
 
     expect(callOrder).toEqual(['renderEffects:behind', 'drawNodeFill', 'renderEffects:front'])
   })
@@ -223,7 +228,7 @@ describe('Renderer effect ordering (Behavioral)', () => {
       callOrder.push('drawStrokeWithAlign')
     })
 
-    renderShapeUncached(r, canvas as any, node as SceneNode, graph as any)
+    renderShapeUncached(r, canvas as Canvas, node as SceneNode, graph as SceneGraph)
 
     // Strokes are rendered between behind and front effects
     const strokeIdx = callOrder.indexOf('drawStrokeWithAlign')
@@ -256,7 +261,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         }
       ]
     }
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'behind')
+    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
     expect(canvas.drawRect).toHaveBeenCalled()
   })
 
@@ -280,7 +285,14 @@ describe('Renderer handles all effect types (Behavioral)', () => {
         }
       ]
     }
-    renderEffects(r, canvas as any, node as any, new Float32Array([0, 0, 100, 100]), false, 'front')
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array([0, 0, 100, 100]),
+      false,
+      'front'
+    )
     expect(canvas.drawPath).toHaveBeenCalled()
   })
 
@@ -292,7 +304,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       childIds: [],
       effects: [{ type: 'BACKGROUND_BLUR', visible: true, radius: 10 }]
     }
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'behind')
+    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
     expect(r.applyClippedBlur).toHaveBeenCalled()
   })
 
@@ -314,7 +326,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node as SceneNode)
     }
-    renderNode(r, canvas as any, graph as any, 'n1', {})
+    renderNode(r, canvas as Canvas, graph as SceneGraph, 'n1', {})
     expect(r.getCachedBlur).toHaveBeenCalledWith(5)
     expect(canvas.saveLayer).toHaveBeenCalled()
   })
@@ -337,7 +349,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node as SceneNode)
     }
-    renderNode(r, canvas as any, graph as any, 'n1', {})
+    renderNode(r, canvas as Canvas, graph as SceneGraph, 'n1', {})
     expect(r.getCachedBlur).toHaveBeenCalledWith(10)
     expect(canvas.saveLayer).toHaveBeenCalled()
   })
@@ -366,7 +378,7 @@ describe('Shadow spread support (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as any, node as any, rect, false, 'behind')
+    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'behind')
 
     expect(canvas.drawRect).toHaveBeenCalled()
     expect(r.ltrb).toHaveBeenCalledWith(-4, -4, 104, 104)
@@ -394,7 +406,7 @@ describe('Shadow spread support (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as any, node as any, rect, true, 'behind')
+    renderEffects(r, canvas as Canvas, node as SceneNode, rect, true, 'behind')
 
     expect(r.makeRRectWithSpread).toHaveBeenCalledWith(node, 4)
     expect(canvas.drawRRect).toHaveBeenCalled()
@@ -422,7 +434,7 @@ describe('Shadow spread support (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as any, node as any, rect, false, 'front')
+    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'front')
 
     expect(r.ck.LTRBRect).toHaveBeenCalledWith(9, 9, 101, 101)
     expect(canvas.drawPath).toHaveBeenCalled()
@@ -452,7 +464,7 @@ describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as any, node as any, rect, false, 'behind')
+    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'behind')
 
     expect(r.getCachedDropShadow).toHaveBeenCalled()
     expect(canvas.saveLayer).toHaveBeenCalled()
@@ -481,7 +493,7 @@ describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as any, node as any, rect, false, 'front')
+    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'front')
 
     // 4-layer saveLayer stack: Master, SrcIn/Tint, Blur, DstOut/Punch
     expect(canvas.saveLayer).toHaveBeenCalledTimes(4)
@@ -518,7 +530,7 @@ describe('Text shadow renders on glyphs, not bounding box (Behavioral)', () => {
     }
     const rect = new Float32Array([0, 0, 100, 100])
 
-    renderEffects(r, canvas as any, node as any, rect, false, 'front')
+    renderEffects(r, canvas as Canvas, node as SceneNode, rect, false, 'front')
 
     const calls = r.effectLayerPaint.setColorFilter.mock.calls
     // The final call must be null (exit guard cleans up)
@@ -556,11 +568,11 @@ describe('Edge cases and bug fixes', () => {
         }
       ],
       strokes: [{ visible: true, weight: 2, opacity: 1 }],
-      strokeGeometry: [{} as any]
+      strokeGeometry: [{} as Path]
     }
-    r.getStrokeGeometry = mock(() => [{} as any])
+    r.getStrokeGeometry = mock(() => [{} as Path])
 
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'behind')
+    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
 
     expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
     expect(canvas.drawPath).toHaveBeenCalled()
@@ -597,12 +609,20 @@ describe('Edge cases and bug fixes', () => {
       childIds: ['child1']
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'behind', child as any)
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array(4),
+      false,
+      'behind',
+      child as SceneNode
+    )
 
     // Verify order: translate (offset) -> rotate -> translate (flip) -> scale
-    const translateCalls = (canvas.translate as any).mock.calls
-    const rotateCalls = (canvas.rotate as any).mock.calls
-    const scaleCalls = (canvas.scale as any).mock.calls
+    const translateCalls = mockCalls(canvas.translate)
+    const rotateCalls = mockCalls(canvas.rotate)
+    const scaleCalls = mockCalls(canvas.scale)
 
     expect(translateCalls[0]).toEqual([5 + 10, 5 + 20])
     expect(rotateCalls[0]).toEqual([45, 25, 30])
@@ -641,7 +661,15 @@ describe('Edge cases and bug fixes', () => {
       childIds: ['child1']
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'behind', child as any)
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array(4),
+      false,
+      'behind',
+      child as SceneNode
+    )
 
     expect(r.getCachedDropShadow).toHaveBeenCalled()
     expect(canvas.saveLayer).toHaveBeenCalled()
@@ -680,11 +708,19 @@ describe('Edge cases and bug fixes', () => {
       childIds: ['child1']
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'front', child as any)
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array(4),
+      false,
+      'front',
+      child as SceneNode
+    )
 
-    const translateCalls = (canvas.translate as any).mock.calls
-    const rotateCalls = (canvas.rotate as any).mock.calls
-    const scaleCalls = (canvas.scale as any).mock.calls
+    const translateCalls = mockCalls(canvas.translate)
+    const rotateCalls = mockCalls(canvas.rotate)
+    const scaleCalls = mockCalls(canvas.scale)
 
     expect(translateCalls[0]).toEqual([10, 20])
     expect(rotateCalls[0]).toEqual([45, 25, 30])
@@ -725,9 +761,17 @@ describe('Edge cases and bug fixes', () => {
       childIds: ['child1']
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'behind', child as any)
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array(4),
+      false,
+      'behind',
+      child as SceneNode
+    )
 
-    const translateCalls = (canvas.translate as any).mock.calls
+    const translateCalls = mockCalls(canvas.translate)
     expect(translateCalls[0]).toEqual([15, 25]) // offset + child position
 
     // The filter should NOT have the offset (neutralized to 0,0)
@@ -754,7 +798,14 @@ describe('Edge cases and bug fixes', () => {
       ]
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array([0, 0, 100, 100]), false, 'front')
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array([0, 0, 100, 100]),
+      false,
+      'front'
+    )
 
     // Expect LTRBRect for 'big' to encompass both the shape (0 to 100) and the offset hole (200 to 300)
     // with expand (20) padding: min(-20, -20+200) = -20, max(100+20, 100+20+200) = 320
@@ -788,7 +839,14 @@ describe('Edge cases and bug fixes', () => {
       ]
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array([0, 0, 100, 100]), true, 'front')
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array([0, 0, 100, 100]),
+      true,
+      'front'
+    )
 
     // makeRRectWithOffset should receive (node, localOffsetX, localOffsetY, spread)
     // localOffsetX = 5, localOffsetY = 5, spread = 4
@@ -818,7 +876,7 @@ describe('INNER_SHADOW bug proofs', () => {
       ]
     }
 
-    renderEffects(r, canvas as any, node as any, new Float32Array(4), false, 'front')
+    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'front')
 
     // PROOF: ColorFilter.MakeBlend(black, SrcIn) on DstOut layer paint
     // forces renderText output to solid black without mutating fillPaint.

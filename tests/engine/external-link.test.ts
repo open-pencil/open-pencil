@@ -1,6 +1,7 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'bun:test'
 
 import { openExternalLink } from '@/app/shell/ui'
+
 import { clearTauriMocks, mockTauriIPC } from '../helpers/tauri-mocks'
 
 /**
@@ -18,8 +19,7 @@ describe('openExternalLink', () => {
 
   afterEach(async () => {
     await clearTauriMocks()
-    // @ts-expect-error test cleanup
-    delete globalThis.window
+    Reflect.deleteProperty(globalThis, 'window')
     vi.restoreAllMocks()
   })
 

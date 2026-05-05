@@ -34,10 +34,8 @@ function installFontFaceMocks() {
 afterEach(async () => {
   await clearTauriMocks()
   vi.restoreAllMocks()
-  // @ts-expect-error test cleanup
-  delete globalThis.document
-  // @ts-expect-error test cleanup
-  delete globalThis.FontFace
+  Reflect.deleteProperty(globalThis, 'document')
+  Reflect.deleteProperty(globalThis, 'FontFace')
 })
 
 describe('Tauri font helpers', () => {
@@ -50,7 +48,9 @@ describe('Tauri font helpers', () => {
     const { listFamilies, listFonts } = await import('@/app/editor/fonts')
 
     await expect(listFamilies()).resolves.toEqual(['System UI'])
-    await expect(listFonts()).resolves.toEqual([{ family: 'System UI', styles: ['Regular', 'Bold'] }])
+    await expect(listFonts()).resolves.toEqual([
+      { family: 'System UI', styles: ['Regular', 'Bold'] }
+    ])
   })
 
   test('loads system font bytes and registers the face', async () => {

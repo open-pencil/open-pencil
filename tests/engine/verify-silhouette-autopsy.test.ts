@@ -383,7 +383,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
           spread: 0
         }
       ]
-    } as any)
+    })
 
     // Verify the node was created with effects
     expect(node.effects).toHaveLength(1)
@@ -394,11 +394,11 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
     const origRenderEffects = renderer.renderEffects.bind(renderer)
     const origDrawNodeFill = renderer.drawNodeFill.bind(renderer)
 
-    renderer.renderEffects = (...args: any[]) => {
+    renderer.renderEffects = (...args: Parameters<typeof renderer.renderEffects>) => {
       callOrder.push(`effects:${args[4]}`)
       origRenderEffects(...args)
     }
-    renderer.drawNodeFill = (...args: any[]) => {
+    renderer.drawNodeFill = (...args: Parameters<typeof renderer.drawNodeFill>) => {
       callOrder.push('fill')
       origDrawNodeFill(...args)
     }
@@ -431,7 +431,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
           color: { r: 0, g: 0, b: 0, a: 1 }
         }
       ]
-    } as any
+    }
 
     const overflow = renderer.effectOverflow(node)
     // radius 10 + offset 5 = 15 margin needed
@@ -463,14 +463,14 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
           spread: 0
         }
       ]
-    } as any)
+    })
 
     expect(textNode.effects).toHaveLength(1)
     expect(textNode.effects[0].type).toBe('INNER_SHADOW')
 
     // Verify the node exists and renderEffects('front') will be called
     // The actual rendering is verified by the behavioral test
-    const effectTypes = textNode.effects.map((e: any) => e.type)
+    const effectTypes = textNode.effects.map((e) => e.type)
     expect(effectTypes).toContain('INNER_SHADOW')
   })
 
@@ -494,7 +494,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
           spread: 0
         }
       ]
-    } as any)
+    })
 
     const child = graph.createNode('RECTANGLE', parentWithFill.id, {
       x: 25,
@@ -502,12 +502,12 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
       width: 50,
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, visible: true, opacity: 1 }]
-    } as any)
+    })
 
     // renderEffects should use the parent, not the child
     // We verify this by checking that the canvas translation matches
     // the node's own coordinates (shadowShapeChild would be null)
-    expect(parentWithFill.fills.some((f: any) => f.visible)).toBe(true)
+    expect(parentWithFill.fills.some((f) => f.visible)).toBe(true)
     // renderShapeUncached passes getShadowShapeChild result to renderEffects
     // which returns null when fills are visible → confirms claim
   })

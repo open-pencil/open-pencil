@@ -5,12 +5,13 @@ import { createTextActions } from '@open-pencil/core/editor'
 
 import type { StyleRun } from '@open-pencil/core'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
+import type { CanvasKit } from 'canvaskit-wasm'
 
 function setup() {
   const graph = new SceneGraph()
   const pageId = graph.getPages()[0].id
   const undo = new UndoManager()
-  const textEditor = new TextEditor({} as any)
+  const textEditor = new TextEditor({} as CanvasKit)
 
   const state = {
     editingTextId: null,

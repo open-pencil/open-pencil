@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'bun:test'
 import { createACPTransport } from '@/app/ai/chat/transports'
 import { ensureTauriParentDirectory } from '@/app/automation/bridge/file-handlers'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
+
 import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '../helpers/tauri-mocks'
 
 import type { ACPChatTransport } from '@/app/ai/acp/transport'
@@ -10,12 +11,9 @@ import type { ACPChatTransport } from '@/app/ai/acp/transport'
 afterEach(async () => {
   await clearTauriMocks()
   vi.restoreAllMocks()
-  // @ts-expect-error test cleanup
-  delete globalThis.window
-  // @ts-expect-error test cleanup
-  delete globalThis.navigator
-  // @ts-expect-error test cleanup
-  delete globalThis.location
+  Reflect.deleteProperty(globalThis, 'window')
+  Reflect.deleteProperty(globalThis, 'navigator')
+  Reflect.deleteProperty(globalThis, 'location')
 })
 
 describe('remaining Tauri integrations', () => {
@@ -26,7 +24,9 @@ describe('remaining Tauri integrations', () => {
       return '/Users/tester'
     })
 
-    const transport = (await createACPTransport('acp:claude-code')) as ACPChatTransport & { cwd: string }
+    const transport = (await createACPTransport('acp:claude-code')) as ACPChatTransport & {
+      cwd: string
+    }
 
     expect(transport.cwd).toBe('/Users/tester')
   })

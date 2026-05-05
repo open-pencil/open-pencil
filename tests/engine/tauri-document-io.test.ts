@@ -1,14 +1,14 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { createDocumentWriter } from '@/app/document/io/write'
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { chooseTauriFigSavePath } from '@/app/document/io/save-targets'
+import { createDocumentWriter } from '@/app/document/io/write'
+
 import { clearTauriMocks, mockTauriIPC } from '../helpers/tauri-mocks'
 
 afterEach(async () => {
   await clearTauriMocks()
-  // @ts-expect-error test cleanup
-  delete globalThis.window
+  Reflect.deleteProperty(globalThis, 'window')
 })
 
 describe('Tauri document IO helpers', () => {

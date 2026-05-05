@@ -7,6 +7,8 @@ import { renderNodesToImage } from '#core/io/formats/raster'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
+import type { SceneNode } from '#core/scene-graph'
+
 async function main() {
   const ck = await initCanvasKit()
 
@@ -49,9 +51,9 @@ async function main() {
         spread: 0
       }
     ]
-  }
+  } satisfies Partial<SceneNode>
 
-  const textNode = graph.createNode('TEXT', pageId, textProps as any)
+  const textNode = graph.createNode('TEXT', pageId, textProps)
   const nodeId = textNode.id
 
   const surface = ck.MakeSurface(800, 300)!

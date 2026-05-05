@@ -6,6 +6,12 @@ import * as v from 'valibot'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@open-pencil/core'
 
+type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
+
+function adapterTool(tools: Record<string, unknown>, name: string): AdapterTool {
+  return tools[name] as AdapterTool
+}
+
 function setup() {
   const graph = new SceneGraph()
   const figma = new FigmaAPI(graph)
@@ -34,7 +40,7 @@ describe('AI adapter', () => {
   test('each tool has description and execute', () => {
     const { tools } = setup()
     for (const [name, t] of Object.entries(tools)) {
-      const aiTool = t as { description: string; execute: Function }
+      const aiTool = t as AdapterTool
       expect(aiTool.description).toBeTruthy()
       expect(typeof aiTool.execute).toBe('function')
     }
@@ -42,7 +48,7 @@ describe('AI adapter', () => {
 
   test('create_shape tool works through adapter', async () => {
     const { tools, figma } = setup()
-    const createShape = tools.create_shape as { execute: Function }
+    const createShape = adapterTool(tools, 'create_shape')
     const result = (await createShape.execute({
       type: 'RECTANGLE',
       x: 10,
@@ -50,7 +56,7 @@ describe('AI adapter', () => {
       width: 100,
       height: 50,
       name: 'Test Rect'
-    })) as any
+    })) as { id: string; type: string; name: string }
 
     expect(result.id).toBeTruthy()
     expect(result.type).toBe('RECTANGLE')
@@ -67,7 +73,7 @@ describe('AI adapter', () => {
     const rect = figma.createRectangle()
     rect.resize(100, 100)
 
-    const setFill = tools.set_fill as { execute: Function }
+    const setFill = adapterTool(tools, 'set_fill')
     await setFill.execute({ id: rect.id, color: '#00ff00' })
 
     const fills = figma.getNodeById(rect.id)!.fills
@@ -84,8 +90,8 @@ describe('AI adapter', () => {
     rect.resize(50, 50)
     frame.appendChild(rect)
 
-    const getTree = tools.get_page_tree as { execute: Function }
-    const result = (await getTree.execute({})) as any
+    const getTree = adapterTool(tools, 'get_page_tree')
+    const result = (await getTree.execute({})) as { page: unknown; children: unknown[] }
     expect(result.page).toBeTruthy()
     expect(result.children.length).toBeGreaterThan(0)
   })
@@ -105,7 +111,7 @@ describe('AI adapter', () => {
       { v, valibotSchema, tool }
     )
 
-    const listPages = tools.list_pages as { execute: Function }
+    const listPages = adapterTool(tools, 'list_pages')
     await listPages.execute({})
 
     expect(calls).toEqual(['before', 'after'])
@@ -127,7 +133,7 @@ describe('AI adapter', () => {
       { v, valibotSchema, tool }
     )
 
-    const evalTool = tools.eval as { execute: Function }
+    const evalTool = adapterTool(tools, 'eval')
     try {
       await evalTool.execute({ code: 'throw new Error("test")' })
     } catch {
@@ -143,8 +149,8 @@ describe('AI adapter', () => {
     figma.createText().name = 'Label'
     figma.createRectangle().name = 'Button Secondary'
 
-    const findNodes = tools.find_nodes as { execute: Function }
-    const result = (await findNodes.execute({ name: 'button' })) as any
+    const findNodes = adapterTool(tools, 'find_nodes')
+    const result = (await findNodes.execute({ name: 'button' })) as { count: number }
     expect(result.count).toBe(2)
   })
 
@@ -153,7 +159,7 @@ describe('AI adapter', () => {
     const frame = figma.createFrame()
     frame.resize(300, 200)
 
-    const setLayout = tools.set_layout as { execute: Function }
+    const setLayout = adapterTool(tools, 'set_layout')
     await setLayout.execute({
       id: frame.id,
       direction: 'HORIZONTAL',
@@ -169,10 +175,10 @@ describe('AI adapter', () => {
 
   test('render JSX works through adapter', async () => {
     const { tools } = setup()
-    const render = tools.render as { execute: Function }
+    const render = adapterTool(tools, 'render')
     const result = (await render.execute({
       jsx: '<Frame name="Card" w={200} h={100}><Text>Hello</Text></Frame>'
-    })) as any
+    })) as { name: string; type: string }
     expect(result.name).toBe('Card')
     expect(result.type).toBe('FRAME')
   })
@@ -182,11 +188,11 @@ describe('AI adapter', () => {
     const rect = figma.createRectangle()
     const id = rect.id
 
-    const deleteTool = tools.delete_node as { execute: Function }
+    const deleteTool = adapterTool(tools, 'delete_node')
     await deleteTool.execute({ id })
 
-    const getNode = tools.get_node as { execute: Function }
-    const result = (await getNode.execute({ id })) as any
+    const getNode = adapterTool(tools, 'get_node')
+    const result = (await getNode.execute({ id })) as { error: string }
     expect(result.error).toContain('not found')
   })
 })

@@ -10,6 +10,8 @@ import {
   executeRpcCommand
 } from '@open-pencil/core'
 
+import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import type { AddressInfo } from 'node:net'
 
 function createMockApp() {
@@ -109,9 +111,8 @@ async function createStdioClient(wsPort: number) {
 
 describe('MCP stdio transport', () => {
   let app: ReturnType<typeof createMockApp>
-  // eslint-disable-next-line typescript-eslint/no-explicit-any -- types inferred from dynamic import
-  let client: any
-  let transport: any
+  let client: Client
+  let transport: StdioClientTransport
 
   beforeEach(async () => {
     app = createMockApp()

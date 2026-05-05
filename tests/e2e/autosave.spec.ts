@@ -20,8 +20,6 @@ test.afterAll(async () => {
 
 test('autosave triggers after scene changes with a file handle', async () => {
   const writeCount = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__!
-
     let writes = 0
     const mockWritable = {
       write: async () => {
@@ -33,14 +31,8 @@ test('autosave triggers after scene changes with a file handle', async () => {
       createWritable: async () => mockWritable
     } as FileSystemFileHandle
 
-    // Inject mock file handle via saveFigFileAs path:
-    // We access the internal closure by calling openFigFile with a mock
-    // Instead, patch it directly through the store's save mechanism
-    ;(store as any)._testFileHandle = mockHandle
-
-    // Expose write counter
-    ;(window as any).__TEST_WRITE_COUNT__ = () => writes
-    ;(window as any).__TEST_MOCK_HANDLE__ = mockHandle
+    window.__TEST_WRITE_COUNT__ = () => writes
+    window.__TEST_MOCK_HANDLE__ = mockHandle
 
     return writes
   })
@@ -61,7 +53,7 @@ test('autosave triggers after scene changes with a file handle', async () => {
     const mockHandle = {
       createWritable: async () => mockWritable
     }
-    ;(window as any).showSaveFilePicker = async () => mockHandle
+    window.showSaveFilePicker = async () => mockHandle as FileSystemFileHandle
   })
 
   // Trigger Save As to establish the file handle
@@ -83,7 +75,7 @@ test('autosave triggers after scene changes with a file handle', async () => {
   // Verify a write happened by checking the mock was called
   const writeHappened = await page.evaluate(() => {
     // The handle's createWritable should have been called
-    const handle = (window as any).showSaveFilePicker
+    const handle = window.showSaveFilePicker
     return handle !== undefined
   })
   expect(writeHappened).toBe(true)
@@ -100,7 +92,7 @@ test('no autosave without file handle', async ({ browser }) => {
   await freshCanvas.waitForInit()
 
   await freshPage.evaluate(() => {
-    delete (window as any).showSaveFilePicker
+    Reflect.deleteProperty(window, 'showSaveFilePicker')
   })
 
   await freshCanvas.drawRect(100, 100, 50, 50)

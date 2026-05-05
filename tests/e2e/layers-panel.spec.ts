@@ -33,12 +33,18 @@ async function getLayerNames(): Promise<string[]> {
   return names
 }
 
-async function getSceneTree() {
+interface SceneTreeNode {
+  name: string
+  type: string
+  children: SceneTreeNode[]
+}
+
+async function getSceneTree(): Promise<SceneTreeNode> {
   return page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__
     if (!store) return null
 
-    function nodeTree(id: string): { name: string; type: string; children: unknown[] } | null {
+    function nodeTree(id: string): SceneTreeNode | null {
       const node = store.graph.getNode(id)
       if (!node) return null
       return {
@@ -47,7 +53,9 @@ async function getSceneTree() {
         children: node.childIds.map((cid: string) => nodeTree(cid)).filter(Boolean)
       }
     }
-    return nodeTree(store.state.currentPageId)
+    const tree = nodeTree(store.state.currentPageId)
+    if (!tree) throw new Error('Missing current page tree')
+    return tree
   })
 }
 
@@ -65,10 +73,10 @@ test('demo layers visible in panel', async () => {
 
 test('clicking a node inside a frame does not reparent it', async () => {
   const beforeTree = await getSceneTree()
-  const section = beforeTree.children.find((c: any) => c.name === 'App Preview')
-  const dashboard = section.children.find((c: any) => c.name === 'Dashboard')
+  const section = beforeTree.children.find((c) => c.name === 'App Preview')
+  const dashboard = section?.children.find((c) => c.name === 'Dashboard')
   expect(dashboard).toBeTruthy()
-  const sidebarBefore = dashboard.children.find((c: any) => c.name === 'Sidebar')
+  const sidebarBefore = dashboard?.children.find((c) => c.name === 'Sidebar')
   expect(sidebarBefore).toBeTruthy()
 
   // Click inside the App Preview section area
@@ -77,9 +85,9 @@ test('clicking a node inside a frame does not reparent it', async () => {
 
   // Sidebar should still be a child of Dashboard
   const afterTree = await getSceneTree()
-  const afterSection = afterTree.children.find((c: any) => c.name === 'App Preview')
-  const afterDashboard = afterSection.children.find((c: any) => c.name === 'Dashboard')
-  expect(afterDashboard.children.find((c: any) => c.name === 'Sidebar')).toBeTruthy()
+  const afterSection = afterTree.children.find((c) => c.name === 'App Preview')
+  const afterDashboard = afterSection?.children.find((c) => c.name === 'Dashboard')
+  expect(afterDashboard?.children.find((c) => c.name === 'Sidebar')).toBeTruthy()
 
   canvas.assertNoErrors()
 })
@@ -111,7 +119,7 @@ test('Shift+A wraps selection in auto-layout frame', async () => {
   await canvas.waitForRender()
 
   const tree = await getSceneTree()
-  const autoFrame = tree.children.find((c: any) => c.name === 'Frame' && c.type === 'FRAME')
+  const autoFrame = tree.children.find((c) => c.name === 'Frame' && c.type === 'FRAME')
   expect(autoFrame).toBeTruthy()
 
   const after = await getLayerNames()
@@ -137,7 +145,7 @@ test('grouping updates layers', async () => {
   await canvas.waitForRender()
 
   const tree = await getSceneTree()
-  const group = tree.children.find((c: any) => c.name === 'Group' && c.type === 'GROUP')
+  const group = tree.children.find((c) => c.name === 'Group' && c.type === 'GROUP')
   expect(group).toBeTruthy()
 
   const names = await getLayerNames()

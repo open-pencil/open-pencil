@@ -7,6 +7,8 @@ import { renderNodesToImage } from '#core/io/formats/raster'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
+import type { SceneNode } from '#core/scene-graph'
+
 interface TestCase {
   text: string
   fontSize: number
@@ -194,9 +196,9 @@ async function main() {
           spread: tc.spread
         }
       ]
-    }
+    } satisfies Partial<SceneNode>
 
-    const textNode = graph.createNode('TEXT', pageId, textProps as any)
+    const textNode = graph.createNode('TEXT', pageId, textProps)
 
     const surfW = Math.ceil(textProps.width) + 40
     const surfH = Math.ceil(textProps.height) + 40

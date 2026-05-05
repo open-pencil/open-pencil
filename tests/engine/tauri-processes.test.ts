@@ -1,15 +1,16 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
+
 import { ref } from 'vue'
 
 import { spawnAcpProcess } from '@/app/ai/acp/process'
 import { checkForAppUpdate } from '@/app/shell/updater'
+
 import { clearTauriMocks, mockTauriIPC } from '../helpers/tauri-mocks'
 
 afterEach(async () => {
   await clearTauriMocks()
   vi.restoreAllMocks()
-  // @ts-expect-error test cleanup
-  delete globalThis.window
+  Reflect.deleteProperty(globalThis, 'window')
 })
 
 describe('Tauri process helpers', () => {

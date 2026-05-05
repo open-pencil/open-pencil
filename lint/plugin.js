@@ -805,6 +805,29 @@ const noUnknownRecordDoubleCast = {
   }
 }
 
+const noTsSuppressionComments = {
+  meta: {
+    docs: {
+      description: 'Disallow TypeScript suppression comments; fix types instead'
+    }
+  },
+  create(context) {
+    return {
+      Program() {
+        const comments = context.sourceCode.getAllComments?.() ?? []
+        for (const comment of comments) {
+          if (!/@ts-(?:ignore|expect-error|nocheck|check)\b/.test(comment.value)) continue
+          context.report({
+            node: comment,
+            message:
+              'Do not use TypeScript suppression comments; fix the type or add a typed helper.'
+          })
+        }
+      }
+    }
+  }
+}
+
 const noCoreBrowserGlobals = {
   meta: {
     docs: {
@@ -1318,6 +1341,7 @@ const plugin = {
     'no-test-core-source-imports': noTestCoreSourceImports,
     'no-broad-double-cast': noBroadDoubleCast,
     'no-unknown-record-double-cast': noUnknownRecordDoubleCast,
+    'no-ts-suppression-comments': noTsSuppressionComments,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,

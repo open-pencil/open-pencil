@@ -11,7 +11,8 @@ import {
   readFigFile,
   initCodec,
   SceneGraph,
-  type SceneNode
+  type SceneNode,
+  type NodeChange
 } from '@open-pencil/core'
 
 function makeClipboardHtml(
@@ -72,7 +73,7 @@ describe('importClipboardNodes', () => {
         textData: { characters: 'Hello' },
         fontSize: 16
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -130,7 +131,7 @@ describe('importClipboardNodes', () => {
         size: { x: 50, y: 50 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -174,7 +175,7 @@ describe('importClipboardNodes', () => {
         textData: { characters: 'Test' },
         fontSize: 14
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -218,7 +219,7 @@ describe('importClipboardNodes', () => {
         ],
         strokeWeight: 2
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     const node = graph.getNode(created[0])!
@@ -266,7 +267,7 @@ describe('importClipboardNodes', () => {
         size: { x: 200, y: 50 },
         transform: { m00: 1, m01: 0, m02: 200, m10: 0, m11: 1, m12: 0 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     const row = graph.getNode(created[0])!
@@ -312,7 +313,7 @@ describe('importClipboardNodes', () => {
         size: { x: 200, y: 100 },
         transform: { m00: 1, m01: 0, m02: 400, m10: 0, m11: 1, m12: 0 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(graph.getNode(created[0])!.clipsContent).toBe(true)
@@ -364,7 +365,7 @@ describe('importClipboardNodes', () => {
         fontSize: 14,
         fontName: { family: 'Inter', style: 'Bold Italic', postscript: 'Inter-BoldItalic' }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(graph.getNode(created[0])!.fontWeight).toBe(500)
@@ -416,7 +417,7 @@ describe('importClipboardNodes', () => {
         textData: { characters: 'C' },
         fontSize: 20
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(graph.getNode(created[0])!.letterSpacing).toBe(2)
@@ -468,7 +469,7 @@ describe('importClipboardNodes', () => {
         fontSize: 20,
         lineHeight: { value: 120, units: 'PERCENT' }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(graph.getNode(created[0])!.lineHeight).toBe(36) // 24 * 1.5
@@ -509,7 +510,7 @@ describe('importClipboardNodes', () => {
           ]
         }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     const node = graph.getNode(created[0])!
@@ -562,7 +563,7 @@ describe('importClipboardNodes', () => {
         size: { x: 404, y: 1 },
         transform: { m00: 1, m01: 0, m02: 24, m10: 0, m11: 1, m12: 72 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -618,7 +619,7 @@ describe('importClipboardNodes', () => {
         transform: { m00: 1, m01: 0, m02: 100, m10: 0, m11: 1, m12: 0 },
         symbolData: { symbolID: { sessionID: 1, localID: 10 } }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(2)
@@ -682,7 +683,7 @@ describe('importClipboardNodes', () => {
         transform: { m00: 1, m01: 0, m02: 50, m10: 0, m11: 1, m12: 50 },
         symbolData: { symbolID: { sessionID: 1, localID: 10 } }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -737,7 +738,7 @@ describe('importClipboardNodes', () => {
         cornerRadius: 8,
         symbolData: { symbolID: { sessionID: 99, localID: 999 } }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -812,7 +813,7 @@ describe('importClipboardNodes', () => {
           ]
         }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
@@ -867,7 +868,7 @@ describe('importClipboardNodes', () => {
         textData: { characters: 'Fixed' },
         fontSize: 16
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(graph.getNode(created[0])!.textAutoResize).toBe('HEIGHT')
@@ -912,7 +913,7 @@ describe('importClipboardNodes', () => {
         textData: { characters: 'Hello' },
         fontSize: 14
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const nodesBefore = [...graph.getAllNodes()].length
     const childrenBefore = graph.getChildren(pageId).length
@@ -961,7 +962,7 @@ describe('importClipboardNodes', () => {
         textData: { characters: 'Hello' },
         fontSize: 14
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const childrenBefore = graph.getChildren(pageId).length
     const created = importClipboardNodes(nodeChanges, graph, pageId)
@@ -1025,7 +1026,7 @@ describe('importClipboardNodes', () => {
         size: { x: 100, y: 100 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     const parent = graph.getNode(created[0])!
@@ -1078,7 +1079,7 @@ describe('figmaNodesBounds', () => {
         size: { x: 50, y: 50 },
         transform: { m00: 1, m01: 0, m02: 800, m10: 0, m11: 1, m12: 400 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const bounds = figmaNodesBounds(nodes)
     expect(bounds).toEqual({ x: 500, y: 300, w: 350, h: 150 })
@@ -1107,7 +1108,7 @@ describe('figmaNodesBounds', () => {
         size: { x: 300, y: 200 },
         transform: { m00: 1, m01: 0, m02: 18000, m10: 0, m11: 1, m12: 45000 }
       }
-    ] as any[]
+    ] as NodeChange[]
 
     const bounds = figmaNodesBounds(nodes)
     expect(bounds).toEqual({ x: 18000, y: 45000, w: 300, h: 200 })
@@ -1123,7 +1124,7 @@ describe('figmaNodesBounds', () => {
         type: 'CANVAS',
         name: 'Page'
       }
-    ] as any[]
+    ] as NodeChange[]
     expect(figmaNodesBounds(nodes)).toBeNull()
   })
 })
@@ -1308,11 +1309,13 @@ describe('gold-preview.fig clipboard roundtrip', () => {
       const res: SceneNode[] = []
       for (const n of nodes) {
         res.push(n)
-        if ((n as any).children) res.push(...flattenClipboard((n as any).children))
+        if (n.children) res.push(...flattenClipboard(n.children))
       }
       return res
     }
-    const pastedAll = flattenClipboard(parsed!.nodes as any)
+    const pastedAll = flattenClipboard(
+      parsed!.nodes as Array<SceneNode & { children?: SceneNode[] }>
+    )
 
     expect(pastedAll.length).toBe(origAll.length)
 

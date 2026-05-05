@@ -3,12 +3,12 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { saveExportedFile } from '@/app/document/export/files'
 import { watchTauriFile } from '@/app/document/io/watch-targets'
 import { chooseTauriOpenPath, readTauriDesignFile } from '@/app/shell/menu/files'
+
 import { clearTauriMocks, mockTauriIPC } from '../helpers/tauri-mocks'
 
 afterEach(async () => {
   await clearTauriMocks()
-  // @ts-expect-error test cleanup
-  delete globalThis.window
+  Reflect.deleteProperty(globalThis, 'window')
 })
 
 describe('Tauri file actions', () => {

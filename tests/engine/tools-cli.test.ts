@@ -23,8 +23,8 @@ async function evalCode(
   return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
 }
 
-function parseJSON(stdout: string): unknown {
-  return JSON.parse(stdout)
+function parseJSON<T>(stdout: string): T {
+  return JSON.parse(stdout) as T
 }
 
 heavy('CLI tool operations via eval', () => {
@@ -38,7 +38,7 @@ heavy('CLI tool operations via eval', () => {
       return r.toJSON()
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.name).toBe('TestRect')
     expect(result.x).toBe(100)
     expect(result.y).toBe(200)
@@ -54,7 +54,7 @@ heavy('CLI tool operations via eval', () => {
       return { fills: r.fills }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.fills.length).toBe(1)
     expect(result.fills[0].color.r).toBe(1)
   })
@@ -76,7 +76,7 @@ heavy('CLI tool operations via eval', () => {
       }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.layoutMode).toBe('VERTICAL')
     expect(result.itemSpacing).toBe(16)
     expect(result.paddingLeft).toBe(20)
@@ -91,7 +91,7 @@ heavy('CLI tool operations via eval', () => {
       return { name: comp.name, type: comp.type }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.name).toBe('Button')
     expect(result.type).toBe('COMPONENT')
   })
@@ -110,7 +110,7 @@ heavy('CLI tool operations via eval', () => {
       return { groupType, childCount, ungroupedExists: ungrouped !== null }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.groupType).toBe('GROUP')
     expect(result.childCount).toBe(2)
     expect(result.ungroupedExists).toBe(false)
@@ -122,7 +122,7 @@ heavy('CLI tool operations via eval', () => {
       return { count: texts.length, hasTexts: texts.length > 0 }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.hasTexts).toBe(true)
     expect(result.count).toBeGreaterThan(0)
   })
@@ -140,7 +140,7 @@ heavy('CLI tool operations via eval', () => {
       }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.same).toBe(false)
     expect(result.cloneName).toBe('Original')
     expect(result.cloneWidth).toBe(100)
@@ -159,7 +159,7 @@ heavy('CLI tool operations via eval', () => {
       }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.isChild).toBe(true)
   })
 
@@ -171,7 +171,7 @@ heavy('CLI tool operations via eval', () => {
       return r.constraints
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.horizontal).toBe('CENTER')
     expect(result.vertical).toBe('STRETCH')
   })
@@ -191,7 +191,7 @@ heavy('CLI tool operations via eval', () => {
       return { count: f.effects.length, type: f.effects[0].type }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.count).toBe(1)
     expect(result.type).toBe('DROP_SHADOW')
   })
@@ -203,7 +203,7 @@ heavy('CLI tool operations via eval', () => {
       return { variables: vars.length, collections: cols.length }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(typeof result.variables).toBe('number')
     expect(typeof result.collections).toBe('number')
   })
@@ -216,7 +216,7 @@ heavy('CLI tool operations via eval', () => {
       return { page: figma.currentPage.name, pageCount: pages.length }
     `)
     expect(exitCode).toBe(0)
-    const result = parseJSON(stdout) as any
+    const result = parseJSON<Record<string, unknown>>(stdout)
     expect(result.page).toBeTruthy()
     expect(result.pageCount).toBeGreaterThanOrEqual(1)
   })

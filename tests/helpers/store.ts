@@ -7,7 +7,7 @@ export function getSelectedIds(page: Page) {
 export function getPageChildren(page: Page) {
   return page.evaluate(() => {
     const store = window.__OPEN_PENCIL_STORE__!
-    return store.graph.getChildren(store.state.currentPageId).map((n: any) => ({
+    return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       id: n.id,
       type: n.type,
       x: n.x,

@@ -2,6 +2,16 @@ import { describe, expect, test } from 'bun:test'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts } from '@open-pencil/core'
 
+interface ToolResult {
+  id: string
+  name?: string
+  type?: string
+  error?: string
+  count?: number
+  nodes?: Array<{ id?: string; name: string; type: string }>
+  [key: string]: unknown
+}
+
 function setup() {
   const graph = new SceneGraph()
   const figma = new FigmaAPI(graph)
@@ -44,7 +54,7 @@ describe('create_shape', () => {
       width: 300,
       height: 400,
       name: 'Test Frame'
-    }) as any
+    }) as ToolResult
     expect(result.name).toBe('Test Frame')
     expect(result.type).toBe('FRAME')
 
@@ -65,7 +75,7 @@ describe('create_shape', () => {
       width: 500,
       height: 500,
       name: 'Parent'
-    }) as any
+    }) as ToolResult
     const child = tool.execute(figma, {
       type: 'RECTANGLE',
       x: 10,
@@ -73,7 +83,7 @@ describe('create_shape', () => {
       width: 50,
       height: 50,
       parent_id: parent.id
-    }) as any
+    }) as ToolResult
 
     const parentNode = figma.getNodeById(parent.id)!
     expect(parentNode.children.some((c) => c.id === child.id)).toBe(true)
@@ -99,7 +109,7 @@ describe('set_fill', () => {
   test('returns error for missing node', () => {
     const { figma } = setup()
     const tool = ALL_TOOLS.find((t) => t.name === 'set_fill')!
-    const result = tool.execute(figma, { id: 'nonexistent', color: '#ff0000' }) as any
+    const result = tool.execute(figma, { id: 'nonexistent', color: '#ff0000' }) as ToolResult
     expect(result.error).toContain('not found')
   })
 })
@@ -170,7 +180,7 @@ describe('update_node', () => {
       width: 200,
       height: 150,
       opacity: 0.5
-    }) as any
+    }) as ToolResult
 
     expect(result.updated).toContain('x')
     expect(result.updated).toContain('size')
@@ -299,7 +309,7 @@ describe('clone_node', () => {
     rect.resize(100, 100)
 
     const tool = ALL_TOOLS.find((t) => t.name === 'clone_node')!
-    const result = tool.execute(figma, { id: rect.id }) as any
+    const result = tool.execute(figma, { id: rect.id }) as ToolResult
 
     expect(result.id).not.toBe(rect.id)
     expect(result.name).toBe('Original')
@@ -342,7 +352,7 @@ describe('group_nodes', () => {
     r2.resize(50, 50)
 
     const tool = ALL_TOOLS.find((t) => t.name === 'group_nodes')!
-    const result = tool.execute(figma, { ids: [r1.id, r2.id] }) as any
+    const result = tool.execute(figma, { ids: [r1.id, r2.id] }) as ToolResult
 
     expect(result.type).toBe('GROUP')
     const group = figma.getNodeById(result.id)!
@@ -359,7 +369,7 @@ describe('find_nodes', () => {
     text.name = 'Label'
 
     const tool = ALL_TOOLS.find((t) => t.name === 'find_nodes')!
-    const result = tool.execute(figma, { name: 'button' }) as any
+    const result = tool.execute(figma, { name: 'button' }) as ToolResult
     expect(result.count).toBe(1)
     expect(result.nodes[0].name).toBe('Button Primary')
   })
@@ -371,7 +381,7 @@ describe('find_nodes', () => {
     figma.createText()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'find_nodes')!
-    const result = tool.execute(figma, { type: 'RECTANGLE' }) as any
+    const result = tool.execute(figma, { type: 'RECTANGLE' }) as ToolResult
     expect(result.count).toBe(2)
   })
 })
@@ -388,9 +398,9 @@ describe('query_nodes', () => {
     figma.createRectangle()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = (await tool.execute(figma, { selector: '//FRAME' })) as any
+    const result = (await tool.execute(figma, { selector: '//FRAME' })) as ToolResult
     expect(result.count).toBe(2)
-    expect(result.nodes.every((n: any) => n.type === 'FRAME')).toBe(true)
+    expect(result.nodes?.every((n) => n.type === 'FRAME')).toBe(true)
   })
 
   test('finds by attribute //RECTANGLE[@width < 200]', async () => {
@@ -403,7 +413,9 @@ describe('query_nodes', () => {
     big.name = 'Big'
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = (await tool.execute(figma, { selector: '//RECTANGLE[@width < 200]' })) as any
+    const result = (await tool.execute(figma, {
+      selector: '//RECTANGLE[@width < 200]'
+    })) as ToolResult
     expect(result.count).toBe(1)
     expect(result.nodes[0].name).toBe('Small')
   })
@@ -420,15 +432,15 @@ describe('query_nodes', () => {
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
     const result = (await tool.execute(figma, {
       selector: '//TEXT[contains(@name, "Label")]'
-    })) as any
+    })) as ToolResult
     expect(result.count).toBe(2)
-    expect(result.nodes.every((n: any) => n.name.includes('Label'))).toBe(true)
+    expect(result.nodes?.every((n) => n.name.includes('Label'))).toBe(true)
   })
 
   test('returns error for invalid xpath', async () => {
     const { figma } = setup()
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = (await tool.execute(figma, { selector: '///invalid[[[[' })) as any
+    const result = (await tool.execute(figma, { selector: '///invalid[[[[' })) as ToolResult
     expect(result.error).toBeTruthy()
     expect(result.error).toContain('XPath error')
   })
@@ -441,7 +453,7 @@ describe('query_nodes', () => {
     }
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = (await tool.execute(figma, { selector: '//RECTANGLE', limit: 3 })) as any
+    const result = (await tool.execute(figma, { selector: '//RECTANGLE', limit: 3 })) as ToolResult
     expect(result.count).toBe(3)
   })
 
@@ -450,7 +462,7 @@ describe('query_nodes', () => {
     figma.createRectangle()
 
     const tool = ALL_TOOLS.find((t) => t.name === 'query_nodes')!
-    const result = (await tool.execute(figma, { selector: '//ELLIPSE' })) as any
+    const result = (await tool.execute(figma, { selector: '//ELLIPSE' })) as ToolResult
     expect(result.count).toBe(0)
     expect(result.nodes).toEqual([])
   })
@@ -464,7 +476,7 @@ describe('get_node', () => {
     rect.resize(100, 50)
 
     const tool = ALL_TOOLS.find((t) => t.name === 'get_node')!
-    const result = tool.execute(figma, { id: rect.id }) as any
+    const result = tool.execute(figma, { id: rect.id }) as ToolResult
     expect(result.name).toBe('Test Rect')
     expect(result.width).toBe(100)
     expect(result.height).toBe(50)
@@ -475,7 +487,7 @@ describe('page tools', () => {
   test('list_pages returns pages', () => {
     const { figma } = setup()
     const tool = ALL_TOOLS.find((t) => t.name === 'list_pages')!
-    const result = tool.execute(figma, {}) as any
+    const result = tool.execute(figma, {}) as ToolResult
     expect(result.pages.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -555,7 +567,7 @@ describe('set_font_range', () => {
       y: 0,
       width: 200,
       height: 20
-    }) as any
+    }) as ToolResult
     setText.execute(figma, { id: created.id, text: 'Hello World' })
     setFontRange.execute(figma, {
       id: created.id,
@@ -591,7 +603,7 @@ describe('set_font_range', () => {
       y: 0,
       width: 200,
       height: 20
-    }) as any
+    }) as ToolResult
     setText.execute(figma, { id: created.id, text: 'Red text' })
     setFontRange.execute(figma, { id: created.id, start: 0, end: 3, color: '#ff0000' })
 
@@ -608,7 +620,7 @@ describe('render', () => {
     const tool = ALL_TOOLS.find((t) => t.name === 'render')!
     const result = (await tool.execute(figma, {
       jsx: '<Frame name="Card" w={200} h={100} bg="#FFF"><Text>Hello</Text></Frame>'
-    })) as any
+    })) as ToolResult
     expect(result.name).toBe('Card')
     expect(result.type).toBe('FRAME')
     expect(result.children.length).toBeGreaterThan(0)

@@ -2,7 +2,9 @@ import { describe, test, expect } from 'bun:test'
 
 import { TextEditor, type SceneNode } from '@open-pencil/core'
 
-const mockCk = {} as any
+import type { CanvasKit } from 'canvaskit-wasm'
+
+const mockCk = {} as CanvasKit
 
 function createEditor(text = 'Hello World') {
   const editor = new TextEditor(mockCk)

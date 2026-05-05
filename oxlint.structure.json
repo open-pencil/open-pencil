@@ -38,6 +38,7 @@
     "open-pencil/no-test-core-source-imports": "error",
     "open-pencil/no-broad-double-cast": "error",
     "open-pencil/no-unknown-record-double-cast": "error",
+    "open-pencil/no-ts-suppression-comments": "error",
     "open-pencil/no-core-browser-globals": "error",
     "open-pencil/no-direct-graph-emitter-subscriptions": "error",
     "open-pencil/no-on-unmounted-in-composition-roots": "error",
