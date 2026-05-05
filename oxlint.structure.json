@@ -21,7 +21,7 @@
     {
       "files": [
         "tests/engine/copy.test.ts",
-        "tests/engine/fig-roundtrip.test.ts",
+        "tests/engine/fig/**/*.test.ts",
         "tests/engine/font-normalize-export.test.ts",
         "tests/engine/matrix.test.ts",
         "tests/engine/mcp-stdio.test.ts",
