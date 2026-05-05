@@ -24,6 +24,10 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-remove",
+      "allow": [{ "path": "**" }]
+    },
+    {
       "identifier": "fs:allow-watch",
       "allow": [{ "path": "**" }]
     },

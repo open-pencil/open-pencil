@@ -1,7 +1,11 @@
 import { IS_TAURI } from '@open-pencil/core/constants'
 import { fontManager, styleToWeight, type LocalFontAccessState } from '@open-pencil/core/text'
 
-import { createTauriDownloadedFontCache } from '@/app/editor/font-cache'
+import {
+  clearDownloadedFontCache as clearTauriDownloadedFontCache,
+  createTauriDownloadedFontCache,
+  downloadedFontCacheSummary as tauriDownloadedFontCacheSummary
+} from '@/app/editor/fonts/cache'
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
@@ -47,6 +51,20 @@ export async function requestLocalFontAccess(): Promise<string[]> {
   if (IS_TAURI) return listFamilies()
   await fontManager.requestLocalFontAccess()
   return fontManager.listFamilies()
+}
+
+export async function downloadedFontCacheSummary() {
+  if (!IS_TAURI) return { count: 0, byteLength: 0, updatedAt: null }
+  return tauriDownloadedFontCacheSummary()
+}
+
+export async function clearDownloadedFontCache(): Promise<void> {
+  if (!IS_TAURI) return
+  await clearTauriDownloadedFontCache()
+}
+
+export async function predownloadFallbackFonts() {
+  return fontManager.ensureFallbackPack()
 }
 
 function registerFontFaces(fonts: TauriFontFamily[]): void {
