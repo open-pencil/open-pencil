@@ -1,0 +1,38 @@
+name: Heavy tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+concurrency:
+  group: heavy-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fig-roundtrip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull LFS files
+        run: |
+          git lfs install --force
+          git lfs pull
+          head -c 4 tests/fixtures/material3.fig | xxd
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
+      - run: bun install --frozen-lockfile
+
+      - name: Heavy fig roundtrip tests
+        run: bun test --timeout 180000 tests/engine/fig-roundtrip.test.ts
+        env:
+          BUN_HEAVY_TESTS: 'true'
