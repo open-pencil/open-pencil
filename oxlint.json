@@ -165,9 +165,7 @@
       "files": ["tests/**/*.ts", "tests/**/*.tsx"],
       "rules": {
         "typescript/no-non-null-assertion": "off",
-        "no-unused-vars": "off",
-        "no-empty-function": "off",
-        "complexity": "off"
+        "no-unused-vars": "off"
       }
     },
     {
@@ -207,6 +205,33 @@
       ],
       "rules": {
         "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "tests/e2e/autosave.spec.ts",
+        "tests/e2e/stroke-picker/basic.spec.ts",
+        "tests/engine/app/font-settings.test.ts",
+        "tests/engine/pen/var-padding.test.ts",
+        "tests/engine/render/canvas/effects.test.ts",
+        "tests/engine/render/canvas/text.test.ts",
+        "tests/engine/tauri/document-io.test.ts",
+        "tests/engine/text/edit-undo.test.ts",
+        "tests/engine/tools/ai-adapter.test.ts",
+        "tests/helpers/undo.ts"
+      ],
+      "rules": {
+        "no-empty-function": "off"
+      }
+    },
+    {
+      "files": [
+        "tests/e2e/color-picker/demo-card.spec.ts",
+        "tests/engine/editor/clipboard/derived-text.test.ts",
+        "tests/engine/editor/effects-and-resize.test.ts"
+      ],
+      "rules": {
+        "complexity": "off"
       }
     },
     {
