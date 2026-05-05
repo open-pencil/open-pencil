@@ -2,12 +2,7 @@ import { getCanvasKit } from '#core/canvaskit'
 import { resolveRGBAForPreview } from '#core/color/management'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { resolveNodeTextDirection } from '#core/text/direction'
-import {
-  getArabicFallbackFamilies,
-  getCJKFallbackFamilies,
-  getFontProvider,
-  isFontLoaded
-} from '#core/text/fonts'
+import { fontManager } from '#core/text/fonts'
 
 import type { SceneNode } from '#core/scene-graph'
 import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
@@ -41,7 +36,7 @@ export function isNodeFontLoaded(_r: TextRenderer, node: SceneNode): boolean {
   for (const run of node.styleRuns) {
     if (run.style.fontFamily) families.add(run.style.fontFamily)
   }
-  return [...families].every((f) => isFontLoaded(f))
+  return [...families].every((f) => fontManager.isLoaded(f))
 }
 
 export function measureTextNode(
@@ -195,8 +190,8 @@ export function buildParagraph(
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
-  const cjkFallbacks = getCJKFallbackFamilies()
-  const arabicFallbacks = getArabicFallbackFamilies()
+  const cjkFallbacks = fontManager.getCJKFallbackFamilies()
+  const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)
 
   const truncateOpts = buildTruncateOpts(node, baseFontSize)
@@ -250,7 +245,7 @@ export function buildParagraph(
 
 export async function shapeTextForClipboard(node: SceneNode): Promise<ClipboardShapedText | null> {
   const ck = await getCanvasKit()
-  const fontProvider = getFontProvider()
+  const fontProvider = fontManager.provider()
   if (!fontProvider) return null
 
   const paragraph = buildParagraph({ ck, fontProvider, fontsLoaded: true }, node)

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  fetchBundledFont,
-  markFontLoaded,
+  fontManager,
   SceneGraph,
   buildFontDigestMap,
   buildDerivedTextDataV4,
@@ -13,10 +12,10 @@ describe('clipboard derived text export', () => {
   test('builds richer v4 derivedTextData from shaped text + glyph outlines', async () => {
     await initCodec()
 
-    const font = await fetchBundledFont('/Inter-Regular.ttf')
+    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
     expect(font).toBeTruthy()
     if (!font) return
-    markFontLoaded('Inter', 'Regular', font)
+    fontManager.markLoaded('Inter', 'Regular', font)
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

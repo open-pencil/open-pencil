@@ -1,4 +1,4 @@
-import { getLoadedFontData, weightToStyle } from '#core/text/fonts'
+import { fontManager, weightToStyle } from '#core/text/fonts'
 
 import type { SceneGraph } from '#core/scene-graph'
 
@@ -16,7 +16,7 @@ async function getFontDigest(family: string, style: string): Promise<Uint8Array 
   const key = `${family}|${style}`
   const cached = fontDigestCache.get(key)
   if (cached) return cached
-  const data = getLoadedFontData(family, style)
+  const data = fontManager.loadedData(family, style)
   if (!data) return null
   const digest = await computeFontDigest(data)
   fontDigestCache.set(key, digest)

@@ -1,17 +1,16 @@
 import { describe, test, expect } from 'bun:test'
 
 import {
-  collectFontKeys,
-  fetchBundledFont,
-  isFontLoaded,
+  fontManager,
   isVariableFont,
-  markFontLoaded,
   normalizeFontFamily,
   styleToVariant,
   styleToWeight,
   weightToStyle,
+  FontManager,
   SceneGraph
 } from '@open-pencil/core'
+import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -60,19 +59,48 @@ describe('weightToStyle', () => {
   })
 })
 
-describe('markFontLoaded / isFontLoaded', () => {
+function createRecordingProvider() {
+  const registrations: Array<{ family: string; byteLength: number }> = []
+  const provider = {
+    registerFont(data: ArrayBuffer, family: string) {
+      registrations.push({ family, byteLength: data.byteLength })
+    }
+  } as unknown as TypefaceFontProvider
+  return { provider, registrations }
+}
+
+describe('FontManager loaded font cache', () => {
   test('marks and checks font', () => {
     const family = `TestFont_${Date.now()}`
-    expect(isFontLoaded(family)).toBe(false)
-    markFontLoaded(family, 'Regular', new ArrayBuffer(8))
-    expect(isFontLoaded(family)).toBe(true)
+    expect(fontManager.isLoaded(family)).toBe(false)
+    fontManager.markLoaded(family, 'Regular', new ArrayBuffer(8))
+    expect(fontManager.isLoaded(family)).toBe(true)
   })
 
   test('different styles for same family', () => {
     const family = `MultiStyle_${Date.now()}`
-    expect(isFontLoaded(family)).toBe(false)
-    markFontLoaded(family, 'Bold', new ArrayBuffer(8))
-    expect(isFontLoaded(family)).toBe(true)
+    expect(fontManager.isLoaded(family)).toBe(false)
+    fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
+    expect(fontManager.isLoaded(family)).toBe(true)
+  })
+
+  test('re-registers cached fonts when provider changes', () => {
+    const manager = new FontManager()
+    const canvasKit = {} as CanvasKit
+    const first = createRecordingProvider()
+    const second = createRecordingProvider()
+
+    manager.attachProvider(canvasKit, first.provider)
+    manager.markLoaded('ProviderLifecycle', 'Regular', new ArrayBuffer(12))
+    expect(first.registrations).toEqual([{ family: 'ProviderLifecycle', byteLength: 12 }])
+
+    manager.attachProvider(canvasKit, second.provider)
+    expect(second.registrations).toEqual([{ family: 'ProviderLifecycle', byteLength: 12 }])
+    manager.detachProvider(first.provider)
+    expect(manager.provider()).toBe(second.provider)
+
+    manager.detachProvider(second.provider)
+    expect(manager.provider()).toBeNull()
   })
 })
 
@@ -86,7 +114,7 @@ describe('collectFontKeys', () => {
       width: 100,
       height: 100
     }).id
-    expect(collectFontKeys(graph, [id])).toEqual([])
+    expect(fontManager.collectFontKeys(graph, [id])).toEqual([])
   })
 
   test('includes default font (Inter) in collected keys', () => {
@@ -101,7 +129,7 @@ describe('collectFontKeys', () => {
       fontFamily: 'Inter',
       fontWeight: 400
     }).id
-    expect(collectFontKeys(graph, [id])).toEqual([['Inter', 'Regular']])
+    expect(fontManager.collectFontKeys(graph, [id])).toEqual([['Inter', 'Regular']])
   })
 
   test('collects non-default font family', () => {
@@ -116,7 +144,7 @@ describe('collectFontKeys', () => {
       fontFamily: 'Roboto',
       fontWeight: 400
     }).id
-    const keys = collectFontKeys(graph, [id])
+    const keys = fontManager.collectFontKeys(graph, [id])
     expect(keys).toEqual([['Roboto', 'Regular']])
   })
 
@@ -132,7 +160,7 @@ describe('collectFontKeys', () => {
       fontFamily: 'Roboto',
       fontWeight: 700
     }).id
-    const keys = collectFontKeys(graph, [id])
+    const keys = fontManager.collectFontKeys(graph, [id])
     expect(keys).toEqual([['Roboto', 'Bold']])
   })
 
@@ -149,7 +177,7 @@ describe('collectFontKeys', () => {
       fontWeight: 400,
       italic: true
     }).id
-    const keys = collectFontKeys(graph, [id])
+    const keys = fontManager.collectFontKeys(graph, [id])
     expect(keys).toEqual([['Roboto', 'Regular Italic']])
   })
 
@@ -177,7 +205,7 @@ describe('collectFontKeys', () => {
       fontWeight: 400
     })
     const ids = graph.getChildren(page).map((n) => n.id)
-    const keys = collectFontKeys(graph, ids)
+    const keys = fontManager.collectFontKeys(graph, ids)
     expect(keys).toEqual([['Roboto', 'Regular']])
   })
 
@@ -205,7 +233,7 @@ describe('collectFontKeys', () => {
       fontWeight: 700
     })
     const ids = graph.getChildren(page).map((n) => n.id)
-    const keys = collectFontKeys(graph, ids)
+    const keys = fontManager.collectFontKeys(graph, ids)
     expect(keys).toHaveLength(2)
     expect(keys).toContainEqual(['Roboto', 'Regular'])
     expect(keys).toContainEqual(['Open Sans', 'Bold'])
@@ -231,7 +259,7 @@ describe('collectFontKeys', () => {
       fontFamily: 'Poppins',
       fontWeight: 600
     })
-    const keys = collectFontKeys(graph, [frame])
+    const keys = fontManager.collectFontKeys(graph, [frame])
     expect(keys).toEqual([['Poppins', 'SemiBold']])
   })
 
@@ -259,7 +287,7 @@ describe('collectFontKeys', () => {
         }
       ]
     }).id
-    const keys = collectFontKeys(graph, [id])
+    const keys = fontManager.collectFontKeys(graph, [id])
     expect(keys).toHaveLength(2)
     expect(keys).toContainEqual(['Roboto', 'Regular'])
     expect(keys).toContainEqual(['Montserrat', 'Bold'])
@@ -284,13 +312,13 @@ describe('collectFontKeys', () => {
         }
       ]
     }).id
-    const keys = collectFontKeys(graph, [id])
+    const keys = fontManager.collectFontKeys(graph, [id])
     expect(keys).toEqual([['Lato', 'Light']])
   })
 
   test('skips invalid node IDs', () => {
     const graph = new SceneGraph()
-    expect(collectFontKeys(graph, ['nonexistent'])).toEqual([])
+    expect(fontManager.collectFontKeys(graph, ['nonexistent'])).toEqual([])
   })
 })
 
@@ -413,19 +441,19 @@ describe('isVariableFont', () => {
 
 describe('fetchBundledFont', () => {
   test('loads Inter-Regular.ttf from assets in headless', async () => {
-    const buffer = await fetchBundledFont('/Inter-Regular.ttf')
+    const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
     expect(buffer).toBeInstanceOf(ArrayBuffer)
     expect(buffer!.byteLength).toBeGreaterThan(100_000)
   })
 
   test('returns valid TTF data', async () => {
-    const buffer = await fetchBundledFont('/Inter-Regular.ttf')
+    const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
     const view = new DataView(buffer!)
     // TrueType magic: 0x00010000
     expect(view.getUint32(0)).toBe(0x00010000)
   })
 
   test('throws for nonexistent font', async () => {
-    expect(fetchBundledFont('/Nonexistent-Font.ttf')).rejects.toThrow()
+    expect(fontManager.fetchBundledFont('/Nonexistent-Font.ttf')).rejects.toThrow()
   })
 })

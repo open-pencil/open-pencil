@@ -1,5 +1,5 @@
 import { useFilter } from 'reka-ui'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 /**
  * Options for {@link useFontPicker}.
@@ -27,12 +27,12 @@ export function useFontPicker(options: UseFontPickerOptions) {
     return families.value.filter((family) => contains(family, searchTerm.value))
   })
 
-  onMounted(async () => {
-    families.value = await options.listFamilies()
-  })
-
-  watch(open, (isOpen) => {
-    if (isOpen) searchTerm.value = ''
+  watch(open, async (isOpen) => {
+    if (!isOpen) return
+    searchTerm.value = ''
+    if (families.value.length === 0) {
+      families.value = await options.listFamilies()
+    }
   })
 
   function select(family: string) {
