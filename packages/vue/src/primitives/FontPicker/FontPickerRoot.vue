@@ -14,28 +14,19 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 
-import {
-  useFontPicker,
-  type FontAccessController
-} from '#vue/primitives/FontPicker/useFontPicker'
+import { useFontPicker, type FontAccessController } from '#vue/primitives/FontPicker/useFontPicker'
 
 import type { FontPickerUi } from '#vue/primitives/FontPicker/types'
 
-const {
-  listFamilies,
-  localFontAccess,
-  ui,
-  emptySearchText,
-  emptyFontsText,
-  emptyFontsHint
-} = defineProps<{
-  listFamilies: () => Promise<string[]>
-  localFontAccess?: FontAccessController
-  ui?: FontPickerUi
-  emptySearchText?: string
-  emptyFontsText?: string
-  emptyFontsHint?: string
-}>()
+const { listFamilies, localFontAccess, ui, emptySearchText, emptyFontsText, emptyFontsHint } =
+  defineProps<{
+    listFamilies: () => Promise<string[]>
+    localFontAccess?: FontAccessController
+    ui?: FontPickerUi
+    emptySearchText?: string
+    emptyFontsText?: string
+    emptyFontsHint?: string
+  }>()
 
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
@@ -43,18 +34,14 @@ const emit = defineEmits<{ select: [family: string] }>()
 const contentRef = templateRef<HTMLElement>('contentRef')
 
 function focusSearchInput() {
-  nextTick(() => unrefElement(contentRef)?.querySelector('input')?.focus())
+  nextTick(() => {
+    const content = unrefElement(contentRef)
+    if (!(content instanceof HTMLElement)) return
+    content.querySelector<HTMLInputElement>('input')?.focus()
+  })
 }
 
-const {
-  searchTerm,
-  open,
-  filtered,
-  loading,
-  accessState,
-  requestAccess,
-  select
-} = useFontPicker({
+const { searchTerm, open, filtered, loading, accessState, requestAccess, select } = useFontPicker({
   modelValue,
   listFamilies,
   localFontAccess,

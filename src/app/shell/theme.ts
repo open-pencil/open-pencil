@@ -1,7 +1,7 @@
 import { useLocalStorage, usePreferredDark } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import { getActiveEditorStore } from '@/app/editor/active-store'
+import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import type { RulerTheme } from '@open-pencil/core/canvas'
@@ -42,14 +42,10 @@ function readRulerTheme(): RulerTheme | null {
 
 function updateCanvasTheme(): void {
   if (!IS_BROWSER) return
-  try {
-    const store = getActiveEditorStore()
-    store.state.rulerTheme = readRulerTheme() ?? undefined
-    store.requestRepaint()
-  } catch (error) {
-    if (import.meta.env.DEV)
-      console.debug('Canvas theme update skipped before editor initialization', error)
-  }
+  const store = getActiveEditorStoreOrNull()
+  if (!store) return
+  store.state.rulerTheme = readRulerTheme() ?? undefined
+  store.requestRepaint()
 }
 
 function applyTheme(value: 'dark' | 'light', setting: AppTheme): void {

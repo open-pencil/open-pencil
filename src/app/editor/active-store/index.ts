@@ -16,6 +16,10 @@ export function getActiveEditorStore(): EditorStore {
   return storeRef.value
 }
 
+export function getActiveEditorStoreOrNull(): EditorStore | null {
+  return storeRef.value ?? null
+}
+
 const storeProxy = new Proxy({} as EditorStore, {
   get(_, prop) {
     return Reflect.get(getActiveEditorStore(), prop)
