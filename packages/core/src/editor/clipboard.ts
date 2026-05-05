@@ -59,57 +59,57 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function pasteFromHTML(html: string, cursorPos?: Vector) {
+  async function pasteFromHTML(html: string, cursorPos?: Vector) {
     const openPencil = parseOpenPencilClipboard(html)
     if (openPencil) {
       pasteOpenPencilNodes(openPencil.nodes, openPencil.images, cursorPos)
       return
     }
 
-    void parseFigmaClipboard(html).then((figma) => {
-      if (figma) {
-        const prevSelection = new Set(ctx.state.selectedIds)
-        const created = importClipboardNodes(
-          figma.nodes,
-          ctx.graph,
-          ctx.state.currentPageId,
-          0,
-          0,
-          figma.blobs
-        )
-        if (created.length > 0) {
-          const { width: viewW, height: viewH } = ctx.getViewportSize()
-          const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
-          const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
-          placementActions.centerNodesAt(created, cx, cy)
-          computeAllLayouts(ctx.graph, ctx.state.currentPageId)
-          ctx.state.selectedIds = new Set(created)
+    const figma = await parseFigmaClipboard(html)
+    if (figma) {
+      const prevSelection = new Set(ctx.state.selectedIds)
+      const created = importClipboardNodes(
+        figma.nodes,
+        ctx.graph,
+        ctx.state.currentPageId,
+        0,
+        0,
+        figma.blobs
+      )
+      if (created.length > 0) {
+        const { width: viewW, height: viewH } = ctx.getViewportSize()
+        const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
+        const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
+        placementActions.centerNodesAt(created, cx, cy)
+        computeAllLayouts(ctx.graph, ctx.state.currentPageId)
+        ctx.state.selectedIds = new Set(created)
 
-          const allNodes = collectSubtrees(ctx.graph, created)
-          const pageId = ctx.state.currentPageId
-          ctx.undo.push({
-            label: 'Paste',
-            forward: () => {
-              for (const snapshot of allNodes) {
-                ctx.graph.createNode(snapshot.type, snapshot.parentId ?? pageId, {
-                  ...snapshot,
-                  childIds: []
-                })
-              }
-              computeAllLayouts(ctx.graph, pageId)
-              ctx.state.selectedIds = new Set(created)
-            },
-            inverse: () => {
-              for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
-              computeAllLayouts(ctx.graph, pageId)
-              ctx.state.selectedIds = prevSelection
+        const allNodes = collectSubtrees(ctx.graph, created)
+        const pageId = ctx.state.currentPageId
+        ctx.undo.push({
+          label: 'Paste',
+          forward: () => {
+            for (const snapshot of allNodes) {
+              ctx.graph.createNode(snapshot.type, snapshot.parentId ?? pageId, {
+                ...snapshot,
+                childIds: []
+              })
             }
-          })
-          void fontActions.loadFontsForNodes(created)
-          warnMissingImages(created)
-        }
+            computeAllLayouts(ctx.graph, pageId)
+            ctx.state.selectedIds = new Set(created)
+          },
+          inverse: () => {
+            for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
+            computeAllLayouts(ctx.graph, pageId)
+            ctx.state.selectedIds = prevSelection
+          }
+        })
+        void fontActions.loadFontsForNodes(created)
+        warnMissingImages(created)
+        ctx.requestRender()
       }
-    })
+    }
   }
 
   function pasteOpenPencilNodes(

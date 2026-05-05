@@ -338,6 +338,10 @@ export class SkiaRenderer {
     return RendererFonts.getFontProvider(this)
   }
 
+  isDestroyed(): boolean {
+    return this.destroyed
+  }
+
   async loadFonts(): Promise<void> {
     await RendererFonts.loadFonts(this)
   }
@@ -544,7 +548,7 @@ export class SkiaRenderer {
     }
   }
 
-  destroyed = false
+  destroyed: boolean = false
 
   destroy(): void {
     destroyRenderer(this)

@@ -42,6 +42,8 @@ test('layers panel resize increases width', async () => {
 })
 
 test('panel width persists after page reload', async () => {
+  // Allow Reka's auto-save debounce to flush before recording the width
+  await page.waitForTimeout(300)
   const recordedWidth = (await page.locator('[data-test-id="layers-panel"]').boundingBox())!.width
 
   await page.reload()

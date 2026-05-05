@@ -136,7 +136,7 @@ export function sceneNodeToKiwiWithContext(
   context.serializeGeometry(node, nc, context.blobs)
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
 
-  const pluginData = mergePluginData(node.pluginData, node.sharedPluginData)
+  const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {
     nc.pluginRelaunchData = serializePluginRelaunchData(node.pluginRelaunchData)

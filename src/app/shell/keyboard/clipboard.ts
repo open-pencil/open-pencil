@@ -35,6 +35,6 @@ export function bindEditorClipboard(store: EditorStore) {
     }
 
     const html = e.clipboardData?.getData('text/html') ?? ''
-    if (html) store.pasteFromHTML(html, cursorPos)
+    if (html) void store.pasteFromHTML(html, cursorPos)
   })
 }

@@ -7,6 +7,7 @@ import * as Overlays from '#core/canvas/overlays'
 import * as PenOverlay from '#core/canvas/pen-overlay'
 import * as Rulers from '#core/canvas/rulers'
 import * as SceneRender from '#core/canvas/scene'
+import { renderEffects as renderShadowEffects } from '#core/canvas/shadows'
 import * as Shapes from '#core/canvas/shapes'
 import * as Strokes from '#core/canvas/strokes'
 
@@ -163,7 +164,7 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     pass: 'behind' | 'front',
     shadowShapeChild?: SceneNode | null
   ): void {
-    Effects.renderEffects(this, canvas, node, rect, hasRadius, pass, shadowShapeChild)
+    renderShadowEffects(this, canvas, node, rect, hasRadius, pass, shadowShapeChild)
   },
 
   renderText(canvas: Canvas, node: SceneNode): void {

@@ -1,0 +1,84 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+
+import { initCanvasKit } from '#cli/headless'
+import { SkiaRenderer } from '#core/canvas'
+import { renderNodesToImage } from '#core/io/formats/raster'
+import { SceneGraph } from '#core/scene-graph'
+import { initFontService, markFontLoaded } from '#core/text'
+
+async function main() {
+  const ck = await initCanvasKit()
+
+  // Initialize font service
+  const fontProvider = ck.TypefaceFontProvider.Make()
+  initFontService(ck, fontProvider)
+
+  // Load Inter font from public dir
+  const fontPath = join(process.cwd(), 'public/Inter-SemiBold.ttf')
+  console.log('Loading font from:', fontPath)
+  const fontData = await readFile(fontPath)
+  markFontLoaded(
+    'Inter',
+    'SemiBold',
+    fontData.buffer.slice(fontData.byteOffset, fontData.byteOffset + fontData.byteLength)
+  )
+
+  const graph = new SceneGraph()
+  const pageId = graph.getPages()[0].id
+
+  // Create a text node with an inner shadow
+  const textProps = {
+    text: 'INNER SHADOW',
+    fontSize: 80,
+    fontFamily: 'Inter',
+    fontWeight: 600, // SemiBold
+    x: 50,
+    y: 100,
+    width: 700,
+    height: 100,
+    visible: true,
+    fills: [{ type: 'SOLID', color: { r: 1, g: 0.8, b: 0, a: 1 }, visible: true, opacity: 1 }],
+    effects: [
+      {
+        type: 'INNER_SHADOW',
+        visible: true,
+        color: { r: 0, g: 0, b: 0, a: 0.8 },
+        offset: { x: 4, y: 4 },
+        radius: 10,
+        spread: 0
+      }
+    ]
+  }
+
+  const textNode = graph.createNode('TEXT', pageId, textProps as any)
+  const nodeId = textNode.id
+
+  const surface = ck.MakeSurface(800, 300)!
+  const renderer = new SkiaRenderer(ck, surface)
+  renderer.fontProvider = fontProvider
+  renderer.fontsLoaded = true
+
+  console.log('Node created:', nodeId)
+  console.log('Font loaded for node:', renderer.isNodeFontLoaded(textNode))
+  console.log('Absolute position:', graph.getAbsolutePosition(nodeId))
+
+  // Render with scale 2
+  const data = renderNodesToImage(ck, renderer, graph, pageId, [nodeId], {
+    scale: 2,
+    format: 'PNG'
+  })
+  await Bun.write('scratch/text-inner-shadow-verification.png', data)
+  surface.delete()
+
+  if (data && data.length > 2000) {
+    console.log(`✅ Generated scratch/text-inner-shadow-verification.png (${data.length} bytes)`)
+  } else {
+    console.error(`❌ Failed to generate useful image (size: ${data?.length ?? 0} bytes)`)
+    if (data) {
+      await Bun.write('scratch/failed.png', data)
+    }
+  }
+}
+
+main()

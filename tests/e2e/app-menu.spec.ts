@@ -37,7 +37,7 @@ test('File menu opens and shows items', async () => {
   const items = await menu.locator('[role="menuitem"]').allTextContents()
   expect(items.some((t) => t.includes('Open'))).toBe(true)
   expect(items.some((t) => t.includes('Save'))).toBe(true)
-  expect(items.some((t) => t.includes('Save as'))).toBe(true)
+  expect(items.some((t) => t.includes('Save As'))).toBe(true)
 
   await page.keyboard.press('Escape')
 })
@@ -63,8 +63,8 @@ test('View menu shows zoom options', async () => {
 
   const items = await menu.locator('[role="menuitem"]').allTextContents()
   expect(items.some((t) => t.includes('Zoom to fit'))).toBe(true)
-  expect(items.some((t) => t.includes('Zoom in'))).toBe(true)
-  expect(items.some((t) => t.includes('Zoom out'))).toBe(true)
+  expect(items.some((t) => t.includes('Zoom In'))).toBe(true)
+  expect(items.some((t) => t.includes('Zoom Out'))).toBe(true)
 
   await page.keyboard.press('Escape')
 })

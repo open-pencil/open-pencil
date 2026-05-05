@@ -45,3 +45,6 @@ patches/skia-webgpu/
 Caddyfile.dev
 components.d.ts
 vue-stream-markdown/
+
+# Agent scratch space (reviews, test artifacts)
+scratch/

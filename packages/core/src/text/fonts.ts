@@ -23,10 +23,18 @@ let fontProvider: TypefaceFontProvider | null = null
 
 export function initFontService(_canvasKit: CanvasKit, provider: TypefaceFontProvider) {
   fontProvider = provider
+  for (const [cacheKey, data] of loadedFamilies) {
+    const family = cacheKey.slice(0, cacheKey.indexOf('|'))
+    registerFontInCanvasKit(family, data)
+  }
 }
 
 export function getFontProvider(): TypefaceFontProvider | null {
   return fontProvider
+}
+
+export function resetFontService(provider?: TypefaceFontProvider | null): void {
+  if (!provider || fontProvider === provider) fontProvider = null
 }
 
 async function queryFonts(): Promise<FontInfo[]> {

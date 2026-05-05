@@ -1,6 +1,7 @@
 export { prefetchFigmaSchema } from '#core/clipboard'
 export { readFigFile, parseFigFile } from './fig/file'
 export { importNodeChanges } from './fig/import'
+export { deduplicateNodeChangePluginData } from './fig/parse/core'
 export {
   initCodec,
   encodeMessage,

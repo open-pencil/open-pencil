@@ -106,7 +106,6 @@ export function createDefaultNode(
     overrides: {},
     boundVariables: {},
     pluginData: [],
-    sharedPluginData: [],
     pluginRelaunchData: [],
     internalOnly: false,
     flipX: false,

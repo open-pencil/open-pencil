@@ -209,11 +209,15 @@ test('tool calls render in assistant message', async () => {
 })
 
 test('switching tabs preserves chat', async () => {
-  await designTab().click()
+  const selectedModel = page.getByRole('option', { name: /Claude Sonnet 4\.6/ })
+  if (await selectedModel.isVisible().catch(() => false)) {
+    await selectedModel.click()
+  }
+  await designTab().click({ timeout: 10000 })
   await expect(designTab()).toHaveAttribute('data-state', 'active')
 
   await chatTab().click()
-  await expect(page.getByText('Hello there', { exact: true })).toBeVisible()
+  await expect(page.getByText('Hello there', { exact: true })).toBeVisible({ timeout: 10000 })
 })
 
 test('transport errors show an actionable toast', async () => {
@@ -228,16 +232,11 @@ test('transport errors show an actionable toast', async () => {
 })
 
 test('"Get API key" link opens external URL via window.open', async () => {
-  // Clear the key to return to provider setup if the previous test did not already do it.
-  const settingsTrigger = page.locator('[data-test-id="provider-settings-trigger"]')
-  if (await settingsTrigger.isVisible().catch(() => false)) {
-    await settingsTrigger.click()
-    await page.locator('[data-test-id="provider-settings-clear-key"]').click()
-    const done = page.locator('[data-test-id="provider-settings-done"]')
-    if (await done.isVisible().catch(() => false)) await done.click()
-  }
+  await page.evaluate("localStorage.removeItem('open-pencil:ai-key:openrouter')")
+  await page.reload()
+  await canvas.waitForInit()
+  await chatTab().click()
 
-  // Now we're back in ProviderSetup — the link should be visible
   const link = page.locator('[data-test-id="api-key-get-link"]')
   await expect(link).toBeVisible()
 

@@ -406,4 +406,10 @@ export {
 } from './tools/stock-photo'
 export type { StockPhotoProvider, StockPhotoResult } from './tools/stock-photo'
 
-export { getAbsoluteRotation, getWorldHandles, getAbsolutePosition } from './canvas/coordinate'
+export {
+  getAbsoluteRotation,
+  getWorldHandles,
+  getWorldMatrix,
+  getAbsolutePosition
+} from './canvas/coordinate'
+export { default as TransformMatrix } from './canvas/matrix'
