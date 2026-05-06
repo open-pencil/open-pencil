@@ -14,6 +14,8 @@ import {
   type VectorNetwork
 } from '@open-pencil/core'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
+
 // ---------------------------------------------------------------------------
 // toggleBoldInRange — mutation coverage
 // ---------------------------------------------------------------------------
@@ -272,7 +274,7 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
       changes: Partial<Parameters<SceneGraph['updateNode']>[1]>,
       label: string
     ) {
-      const node = graph.getNode(id)!
+      const node = getNodeOrThrow(graph, id)
       const previous = Object.fromEntries(
         (Object.keys(changes) as string[]).map((k) => [k, (node as Record<string, unknown>)[k]])
       )
@@ -292,10 +294,10 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     const id = graph.createNode('RECTANGLE', pageId, { x: 0, y: 0, width: 100, height: 100 }).id
 
     updateWithUndo(id, { x: 200 }, 'move')
-    expect(graph.getNode(id)!.x).toBe(200)
+    expect(getNodeOrThrow(graph, id).x).toBe(200)
 
     undo.undo()
-    expect(graph.getNode(id)!.x).toBe(0)
+    expect(getNodeOrThrow(graph, id).x).toBe(0)
   })
 
   test('update → undo → redo restores updated value', () => {
@@ -304,9 +306,9 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
 
     updateWithUndo(id, { width: 250 }, 'resize')
     undo.undo()
-    expect(graph.getNode(id)!.width).toBe(100)
+    expect(getNodeOrThrow(graph, id).width).toBe(100)
     undo.redo()
-    expect(graph.getNode(id)!.width).toBe(250)
+    expect(getNodeOrThrow(graph, id).width).toBe(250)
   })
 
   test('multiple updates undo in LIFO order', () => {
@@ -318,11 +320,11 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     updateWithUndo(id, { x: 30 }, 'step3')
 
     undo.undo()
-    expect(graph.getNode(id)!.x).toBe(20)
+    expect(getNodeOrThrow(graph, id).x).toBe(20)
     undo.undo()
-    expect(graph.getNode(id)!.x).toBe(10)
+    expect(getNodeOrThrow(graph, id).x).toBe(10)
     undo.undo()
-    expect(graph.getNode(id)!.x).toBe(0)
+    expect(getNodeOrThrow(graph, id).x).toBe(0)
   })
 
   test('new action after undo clears redo stack', () => {
@@ -337,7 +339,7 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     // new action should kill redo
     updateWithUndo(id, { x: 300 }, 'c')
     expect(undo.canRedo).toBe(false)
-    expect(graph.getNode(id)!.x).toBe(300)
+    expect(getNodeOrThrow(graph, id).x).toBe(300)
   })
 
   test('undo does not affect other nodes', () => {
@@ -349,11 +351,11 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     updateWithUndo(b, { x: 200 }, 'move b')
 
     undo.undo() // undoes move b
-    expect(graph.getNode(b)!.x).toBe(0)
-    expect(graph.getNode(a)!.x).toBe(100) // a unaffected
+    expect(getNodeOrThrow(graph, b).x).toBe(0)
+    expect(getNodeOrThrow(graph, a).x).toBe(100) // a unaffected
 
     undo.undo() // undoes move a
-    expect(graph.getNode(a)!.x).toBe(0)
+    expect(getNodeOrThrow(graph, a).x).toBe(0)
   })
 
   test('multi-field update: all fields restored on undo', () => {
@@ -361,14 +363,14 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     const id = graph.createNode('RECTANGLE', pageId, { x: 0, y: 0, width: 100, height: 100 }).id
 
     updateWithUndo(id, { x: 50, y: 75, width: 200, height: 300 }, 'big move')
-    const after = graph.getNode(id)!
+    const after = getNodeOrThrow(graph, id)
     expect(after.x).toBe(50)
     expect(after.y).toBe(75)
     expect(after.width).toBe(200)
     expect(after.height).toBe(300)
 
     undo.undo()
-    const restored = graph.getNode(id)!
+    const restored = getNodeOrThrow(graph, id)
     expect(restored.x).toBe(0)
     expect(restored.y).toBe(0)
     expect(restored.width).toBe(100)
@@ -392,12 +394,12 @@ describe('SceneGraph + UndoManager — updateNode undo integration', () => {
     })
     undo.commitBatch()
 
-    expect(graph.getNode(id)!.x).toBe(10)
-    expect(graph.getNode(id)!.y).toBe(20)
+    expect(getNodeOrThrow(graph, id).x).toBe(10)
+    expect(getNodeOrThrow(graph, id).y).toBe(20)
     expect(undo.undoLabel).toBe('batch move')
 
     undo.undo()
-    expect(graph.getNode(id)!.x).toBe(0)
-    expect(graph.getNode(id)!.y).toBe(0)
+    expect(getNodeOrThrow(graph, id).x).toBe(0)
+    expect(getNodeOrThrow(graph, id).y).toBe(0)
   })
 })

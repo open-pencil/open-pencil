@@ -13,6 +13,7 @@ import { renderText } from '#core/canvas/scene'
 import type { SceneNode } from '#core/scene-graph'
 import { fontManager } from '#core/text/fonts'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
 
 function createMockCanvas() {
@@ -183,7 +184,7 @@ describe('renderText headless visual', () => {
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
 
-    const surface = ck.MakeSurface(200, 50)!
+    const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
     const renderer = new SkiaRendererClass(ck, surface)
     renderer.viewportWidth = 200
     renderer.viewportHeight = 50
@@ -193,24 +194,24 @@ describe('renderText headless visual', () => {
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)
-    renderText(renderer, canvas, graph.getNode(node.id)!)
+    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
     surface.flush()
 
     const image = surface.makeImageSnapshot()
-    const encoded = image.encodeToBytes(ck.ImageFormat.PNG, 100)!
+    const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
     image.delete()
     surface.delete()
 
     expect(encoded.length).toBeGreaterThan(200)
 
-    const decodedImage = ck.MakeImageFromEncoded(encoded)!
+    const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
     const pixels = decodedImage.readPixels(0, 0, {
       width: 200,
       height: 50,
       colorType: ck.ColorType.RGBA_8888,
       alphaType: ck.AlphaType.Unpremul,
       colorSpace: ck.ColorSpace.SRGB
-    })!
+    })
     decodedImage.delete()
 
     let darkPixels = 0
@@ -256,7 +257,7 @@ describe('renderText headless visual', () => {
       ]
     })
 
-    const surface = ck.MakeSurface(220, 80)!
+    const surface = expectDefined(ck.MakeSurface(220, 80), 'CanvasKit surface')
     const renderer = new SkiaRendererClass(ck, surface)
     renderer.viewportWidth = 220
     renderer.viewportHeight = 80
@@ -266,7 +267,7 @@ describe('renderText headless visual', () => {
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)
-    renderer.renderShape(canvas, graph.getNode(node.id)!, graph)
+    renderer.renderShape(canvas, expectDefined(graph.getNode(node.id), 'text node'), graph)
     surface.flush()
 
     const image = surface.makeImageSnapshot()
@@ -276,7 +277,7 @@ describe('renderText headless visual', () => {
       colorType: ck.ColorType.RGBA_8888,
       alphaType: ck.AlphaType.Unpremul,
       colorSpace: ck.ColorSpace.SRGB
-    })!
+    })
     image.delete()
     surface.delete()
 
@@ -325,7 +326,7 @@ describe('renderText headless visual', () => {
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
 
-    const surface = ck.MakeSurface(220, 60)!
+    const surface = expectDefined(ck.MakeSurface(220, 60), 'CanvasKit surface')
     const renderer = new SkiaRendererClass(ck, surface)
     renderer.viewportWidth = 220
     renderer.viewportHeight = 60
@@ -335,24 +336,24 @@ describe('renderText headless visual', () => {
 
     const canvas = surface.getCanvas()
     canvas.clear(ck.WHITE)
-    renderText(renderer, canvas, graph.getNode(node.id)!)
+    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
     surface.flush()
 
     const image = surface.makeImageSnapshot()
-    const encoded = image.encodeToBytes(ck.ImageFormat.PNG, 100)!
+    const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
     image.delete()
     surface.delete()
 
     expect(encoded.length).toBeGreaterThan(200)
 
-    const decodedImage = ck.MakeImageFromEncoded(encoded)!
+    const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
     const pixels = decodedImage.readPixels(0, 0, {
       width: 220,
       height: 60,
       colorType: ck.ColorType.RGBA_8888,
       alphaType: ck.AlphaType.Unpremul,
       colorSpace: ck.ColorSpace.SRGB
-    })!
+    })
     decodedImage.delete()
 
     let darkPixels = 0
