@@ -219,7 +219,6 @@
         "tests/engine/figma/api.test.ts",
         "tests/engine/kiwi/serialize-fixes.test.ts",
         "tests/engine/layout/auto-layout.test.ts",
-        "tests/engine/render/canvas/effects.test.ts",
         "tests/engine/scene-graph/basic.test.ts"
       ],
       "rules": {
