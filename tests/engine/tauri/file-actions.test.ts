@@ -4,7 +4,7 @@ import { saveExportedFile } from '@/app/document/export/files'
 import { watchTauriFile } from '@/app/document/io/watch-targets'
 import { chooseTauriOpenPath, readTauriDesignFile } from '@/app/shell/menu/files'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(async () => {
   await clearTauriMocks()

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 
 import { clearDownloadedFontCache, downloadedFontCacheSummary } from '@/app/editor/fonts/cache'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 const encoder = new TextEncoder()
 

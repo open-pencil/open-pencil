@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 describe('Tauri fig export', () => {
   test('delegates fig archive construction to the Tauri Rust command', async () => {
-    const proc = Bun.spawn(['bun', 'tests/helpers/tauri-fig-export-fixture.ts'], {
+    const proc = Bun.spawn(['bun', 'tests/helpers/tauri/fig-export-fixture.ts'], {
       stdout: 'pipe',
       stderr: 'pipe'
     })

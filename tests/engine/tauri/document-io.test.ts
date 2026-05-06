@@ -4,7 +4,7 @@ import { readReloadSource } from '@/app/document/io/reload-source'
 import { chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import { createDocumentWriter } from '@/app/document/io/write'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(async () => {
   await clearTauriMocks()

@@ -5,7 +5,7 @@ import { createACPTransport } from '@/app/ai/chat/transports'
 import { ensureTauriParentDirectory } from '@/app/automation/bridge/file-handlers'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 
-import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(async () => {
   await clearTauriMocks()

@@ -2,7 +2,7 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'bun:test'
 
 import { openExternalLink } from '@/app/shell/ui'
 
-import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri-mocks'
+import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 /**
  * Tests for the browser (window.open) path only.
