@@ -214,7 +214,6 @@
     },
     {
       "files": [
-        "tests/engine/editor/clipboard/import-nodes.test.ts",
         "tests/engine/layout/auto-layout.test.ts",
         "tests/engine/scene-graph/basic.test.ts"
       ],
