@@ -8,13 +8,16 @@ import {
   initCodec
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('clipboard derived text export', () => {
   test('builds richer v4 derivedTextData from shaped text + glyph outlines', async () => {
     await initCodec()
 
-    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
-    expect(font).toBeTruthy()
-    if (!font) return
+    const font = expectDefined(
+      await fontManager.fetchBundledFont('/Inter-Regular.ttf'),
+      'bundled Inter font'
+    )
     fontManager.markLoaded('Inter', 'Regular', font)
 
     const graph = new SceneGraph()
@@ -45,19 +48,25 @@ describe('clipboard derived text export', () => {
       logicalIndexToCharacterOffsetMap: [0, 8, 16, 24, 32, 42]
     })
 
-    expect(derived?.fontMetaData?.length).toBeGreaterThan(0)
-    expect(derived?.glyphs?.length).toBeGreaterThan(0)
-    expect(derived?.baselines?.length).toBeGreaterThan(0)
-    expect(derived?.logicalIndexToCharacterOffsetMap?.length).toBe(text.text.length + 1)
-    expect(derived?.logicalIndexToCharacterOffsetMap?.[5]).toBe(42)
-    expect(derived?.derivedLines?.[0]?.directionality).toBe('LTR')
-    expect(derived?.truncationStartIndex).toBe(-1)
-    expect(derived?.truncatedHeight).toBe(-1)
-    expect(derived?.glyphs?.[0]?.commands.length).toBeGreaterThan(0)
-    expect(derived?.glyphs?.[0]?.position.x).toBe(0)
-    expect(derived?.glyphs?.[4]?.position.x).toBe(32)
-    expect(derived?.baselines?.[0]?.lineHeight).toBe(20)
-    expect(derived?.baselines?.[0]?.lineAscent).toBe(15)
-    expect(derived?.baselines?.[0]?.width).toBe(42)
+    const derivedTextData = expectDefined(derived, 'derived text data')
+    const firstGlyph = expectDefined(derivedTextData.glyphs[0], 'first glyph')
+    const lastGlyph = expectDefined(derivedTextData.glyphs[4], 'last glyph')
+    const baseline = expectDefined(derivedTextData.baselines[0], 'first baseline')
+    const line = expectDefined(derivedTextData.derivedLines[0], 'first derived line')
+
+    expect(derivedTextData.fontMetaData.length).toBeGreaterThan(0)
+    expect(derivedTextData.glyphs.length).toBeGreaterThan(0)
+    expect(derivedTextData.baselines.length).toBeGreaterThan(0)
+    expect(derivedTextData.logicalIndexToCharacterOffsetMap.length).toBe(text.text.length + 1)
+    expect(derivedTextData.logicalIndexToCharacterOffsetMap[5]).toBe(42)
+    expect(line.directionality).toBe('LTR')
+    expect(derivedTextData.truncationStartIndex).toBe(-1)
+    expect(derivedTextData.truncatedHeight).toBe(-1)
+    expect(firstGlyph.commands.length).toBeGreaterThan(0)
+    expect(firstGlyph.position.x).toBe(0)
+    expect(lastGlyph.position.x).toBe(32)
+    expect(baseline.lineHeight).toBe(20)
+    expect(baseline.lineAscent).toBe(15)
+    expect(baseline.width).toBe(42)
   })
 })

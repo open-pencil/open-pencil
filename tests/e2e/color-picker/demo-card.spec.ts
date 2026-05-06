@@ -65,25 +65,37 @@ async function getSelectedFill(page: Parameters<typeof test>[0]['page']) {
   })
 }
 
+async function getSelectedFillOrThrow(page: Parameters<typeof test>[0]['page']) {
+  const selectedFill = await getSelectedFill(page)
+  if (!selectedFill?.fill?.color) throw new Error('Selected node has no color fill')
+  return selectedFill
+}
+
+function expectFillColorChanged(
+  before: Awaited<ReturnType<typeof getSelectedFillOrThrow>>,
+  after: Awaited<ReturnType<typeof getSelectedFillOrThrow>>
+) {
+  expect([
+    before.fill.color.r !== after.fill.color.r,
+    before.fill.color.g !== after.fill.color.g,
+    before.fill.color.b !== after.fill.color.b
+  ]).toContain(true)
+}
+
 test('demo card fill changes through color picker', async ({ page }) => {
   const canvas = new CanvasHelper(page)
   await selectDemoCard(page, canvas)
 
-  const before = await getSelectedFill(page)
+  const before = await getSelectedFillOrThrow(page)
 
   await page.locator('[data-test-id="fill-picker-swatch"]').first().click()
   await expect(page.locator('[data-test-id="fill-picker-tab-solid"]')).toBeVisible()
 
   await dragSlider(page, canvas, 'color-slider-hue', 0.7)
 
-  const after = await getSelectedFill(page)
+  const after = await getSelectedFillOrThrow(page)
 
-  expect(after).not.toBeNull()
-  expect(
-    before?.fill?.color.r !== after?.fill?.color.r ||
-      before?.fill?.color.g !== after?.fill?.color.g ||
-      before?.fill?.color.b !== after?.fill?.color.b
-  ).toBe(true)
+  expectFillColorChanged(before, after)
 })
 
 test('demo card fill changes from hsb saturation and brightness sliders', async ({ page }) => {
@@ -98,25 +110,15 @@ test('demo card fill changes from hsb saturation and brightness sliders', async 
   await page.getByRole('option', { name: 'HSB', exact: true }).click()
   await canvas.waitForRender()
 
-  const beforeS = await getSelectedFill(page)
+  const beforeS = await getSelectedFillOrThrow(page)
   await dragSlider(page, canvas, 'color-slider-hsb-s', 0.5)
-  const afterS = await getSelectedFill(page)
+  const afterS = await getSelectedFillOrThrow(page)
 
-  expect(afterS).not.toBeNull()
-  expect(
-    beforeS?.fill?.color.r !== afterS?.fill?.color.r ||
-      beforeS?.fill?.color.g !== afterS?.fill?.color.g ||
-      beforeS?.fill?.color.b !== afterS?.fill?.color.b
-  ).toBe(true)
+  expectFillColorChanged(beforeS, afterS)
 
-  const beforeB = await getSelectedFill(page)
+  const beforeB = await getSelectedFillOrThrow(page)
   await dragSlider(page, canvas, 'color-slider-hsb-b', 0.25)
-  const afterB = await getSelectedFill(page)
+  const afterB = await getSelectedFillOrThrow(page)
 
-  expect(afterB).not.toBeNull()
-  expect(
-    beforeB?.fill?.color.r !== afterB?.fill?.color.r ||
-      beforeB?.fill?.color.g !== afterB?.fill?.color.g ||
-      beforeB?.fill?.color.b !== afterB?.fill?.color.b
-  ).toBe(true)
+  expectFillColorChanged(beforeB, afterB)
 })

@@ -203,16 +203,6 @@
       }
     },
     {
-      "files": [
-        "tests/e2e/color-picker/demo-card.spec.ts",
-        "tests/engine/editor/clipboard/derived-text.test.ts",
-        "tests/engine/editor/effects-and-resize.test.ts"
-      ],
-      "rules": {
-        "complexity": "off"
-      }
-    },
-    {
       "files": ["scripts/**/*.ts"],
       "rules": {
         "no-console": "off",

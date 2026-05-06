@@ -180,6 +180,72 @@ describe('Effect types on scene graph', () => {
 })
 
 describe('Resize logic', () => {
+  type ResizeState = Pick<Rect, 'x' | 'y' | 'width' | 'height'>
+
+  function resizeFlags(handle: string) {
+    return {
+      moveLeft: handle.includes('w'),
+      moveRight: handle.includes('e'),
+      moveTop: handle === 'nw' || handle === 'n' || handle === 'ne',
+      moveBottom: handle === 'sw' || handle === 's' || handle === 'se'
+    }
+  }
+
+  function applyHandleDelta(handle: string, origRect: Rect, dx: number, dy: number): ResizeState {
+    const state: ResizeState = { ...origRect }
+    const flags = resizeFlags(handle)
+
+    if (flags.moveRight) state.width = origRect.width + dx
+    if (flags.moveLeft) {
+      state.x = origRect.x + dx
+      state.width = origRect.width - dx
+    }
+    if (flags.moveBottom) state.height = origRect.height + dy
+    if (flags.moveTop) {
+      state.y = origRect.y + dy
+      state.height = origRect.height - dy
+    }
+
+    return state
+  }
+
+  function applyAspectConstraint(
+    handle: string,
+    origRect: Rect,
+    state: ResizeState,
+    dx: number,
+    dy: number
+  ) {
+    const aspect = origRect.width / origRect.height
+    const flags = resizeFlags(handle)
+
+    if (handle === 'n' || handle === 's') {
+      state.width = Math.abs(state.height) * aspect
+      state.x = origRect.x + (origRect.width - state.width) / 2
+    } else if (handle === 'e' || handle === 'w') {
+      state.height = Math.abs(state.width) / aspect
+      state.y = origRect.y + (origRect.height - state.height) / 2
+    } else if (Math.abs(dx) > Math.abs(dy)) {
+      state.height = (Math.abs(state.width) / aspect) * Math.sign(state.height || 1)
+      if (flags.moveTop) state.y = origRect.y + origRect.height - Math.abs(state.height)
+    } else {
+      state.width = Math.abs(state.height) * aspect * Math.sign(state.width || 1)
+      if (flags.moveLeft) state.x = origRect.x + origRect.width - Math.abs(state.width)
+    }
+  }
+
+  function normalizeResize(state: ResizeState): ResizeState {
+    if (state.width < 0) {
+      state.x += state.width
+      state.width = -state.width
+    }
+    if (state.height < 0) {
+      state.y += state.height
+      state.height = -state.height
+    }
+    return state
+  }
+
   function applyResize(
     handle: string,
     origRect: Rect,
@@ -189,59 +255,20 @@ describe('Resize logic', () => {
     cy: number,
     constrain = false
   ) {
-    let { x, y, width, height } = origRect
     const dx = cx - startX
     const dy = cy - startY
-
-    const moveLeft = handle.includes('w')
-    const moveRight = handle.includes('e')
-    const moveTop = handle === 'nw' || handle === 'n' || handle === 'ne'
-    const moveBottom = handle === 'sw' || handle === 's' || handle === 'se'
-
-    if (moveRight) width = origRect.width + dx
-    if (moveLeft) {
-      x = origRect.x + dx
-      width = origRect.width - dx
-    }
-    if (moveBottom) height = origRect.height + dy
-    if (moveTop) {
-      y = origRect.y + dy
-      height = origRect.height - dy
-    }
+    const state = applyHandleDelta(handle, origRect, dx, dy)
 
     if (constrain && origRect.width > 0 && origRect.height > 0) {
-      const aspect = origRect.width / origRect.height
-      if (handle === 'n' || handle === 's') {
-        width = Math.abs(height) * aspect
-        x = origRect.x + (origRect.width - width) / 2
-      } else if (handle === 'e' || handle === 'w') {
-        height = Math.abs(width) / aspect
-        y = origRect.y + (origRect.height - height) / 2
-      } else {
-        if (Math.abs(dx) > Math.abs(dy)) {
-          height = (Math.abs(width) / aspect) * Math.sign(height || 1)
-          if (moveTop) y = origRect.y + origRect.height - Math.abs(height)
-        } else {
-          width = Math.abs(height) * aspect * Math.sign(width || 1)
-          if (moveLeft) x = origRect.x + origRect.width - Math.abs(width)
-        }
-      }
+      applyAspectConstraint(handle, origRect, state, dx, dy)
     }
 
-    if (width < 0) {
-      x = x + width
-      width = -width
-    }
-    if (height < 0) {
-      y = y + height
-      height = -height
-    }
-
+    const normalized = normalizeResize(state)
     return {
-      x: Math.round(x),
-      y: Math.round(y),
-      width: Math.round(Math.max(1, width)),
-      height: Math.round(Math.max(1, height))
+      x: Math.round(normalized.x),
+      y: Math.round(normalized.y),
+      width: Math.round(Math.max(1, normalized.width)),
+      height: Math.round(Math.max(1, normalized.height))
     }
   }
 
