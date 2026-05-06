@@ -1,8 +1,8 @@
 import { useFileDialog } from '@vueuse/core'
 
+import { setOpenPencilOpenFileHandler } from '@/app/browser-bridge'
 import { openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
-import { setOpenPencilOpenFileHandler } from '@/app/window-api'
 import { IS_BROWSER } from '@/constants'
 
 const fileDialog = useFileDialog({ accept: '.fig,.pen', multiple: false, reset: true })

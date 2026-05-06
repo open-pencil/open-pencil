@@ -27,12 +27,12 @@ test.afterAll(async () => {
 
 async function injectMockTransport(page: Page) {
   await page.evaluate(() => {
-    const setTransport = window.openPencil?.setTransport
-    if (!setTransport) throw new Error('Transport override not available')
+    const setChatTransport = window.openPencil?.setChatTransport
+    if (!setChatTransport) throw new Error('Transport override not available')
 
     let msgCounter = 0
 
-    setTransport(() => ({
+    setChatTransport(() => ({
       async sendMessages({
         messages
       }: {

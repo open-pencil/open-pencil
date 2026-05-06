@@ -1116,7 +1116,7 @@ const noDirectOpenPencilWindowInternals = {
         context.report({
           node,
           message:
-            'Do not access window.__OPEN_PENCIL* directly. Use src/app/window-api.ts or tests/helpers/store.ts instead.'
+            'Do not access window.__OPEN_PENCIL* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
         })
       }
     }

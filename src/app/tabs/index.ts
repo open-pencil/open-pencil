@@ -4,10 +4,10 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
 
+import { setOpenPencilStore } from '@/app/browser-bridge'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
-import { setOpenPencilStore } from '@/app/window-api'
 
 export interface Tab {
   id: string
