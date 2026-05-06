@@ -36,7 +36,7 @@ const { values: opts } = parseArgs({
 })
 
 const scale = Number(opts.scale)
-const outputDir = opts.output!
+const outputDir = opts.output ?? '/tmp/visual-compare'
 const figmaPath = `${outputDir}/figma.png`
 const oursPath = `${outputDir}/ours.png`
 const diffPath = `${outputDir}/diff.png`
@@ -122,7 +122,8 @@ async function renderOurs(html: string) {
   }
 
   const ck = await initCanvasKit()
-  const surface = ck.MakeSurface(1, 1)!
+  const surface = ck.MakeSurface(1, 1)
+  if (!surface) throw new Error('Failed to create CanvasKit surface')
   const renderer = new SkiaRenderer(ck, surface)
   renderer.viewportWidth = 1
   renderer.viewportHeight = 1
@@ -182,11 +183,11 @@ async function diff() {
   }
 
   const result =
-    await $`magick compare -metric AE -highlight-color red -lowlight-color 'rgba(255,255,255,0.2)' -compose src ${figmaPath} ${oursPath} ${diffPath}`
+    await $`magick compare -metric AE -highlight-color red -lowlight-color '#FFFFFF33' -compose src ${figmaPath} ${oursPath} ${diffPath}`
       .quiet()
       .nothrow()
 
-  const diffPixels = parseInt(result.stderr.toString().trim()) || 0
+  const diffPixels = parseInt(result.stderr.toString().trim(), 10) || 0
   const [w, h] = figmaSize.split('x').map(Number)
   const total = w * h
   const pct = ((diffPixels / total) * 100).toFixed(2)

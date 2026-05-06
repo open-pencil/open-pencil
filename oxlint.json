@@ -206,10 +206,7 @@
     {
       "files": ["scripts/**/*.ts"],
       "rules": {
-        "no-console": "off",
-        "typescript/no-non-null-assertion": "off",
-        "open-pencil/no-hand-rolled-color": "off",
-        "radix": "off"
+        "no-console": "off"
       }
     }
   ],
