@@ -20,7 +20,7 @@ test.afterAll(async () => {
 
 function getPageChildCount() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).length
   })
@@ -28,7 +28,7 @@ function getPageChildCount() {
 
 function getSelectedCount() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.selectedIds.size
   })
@@ -36,7 +36,7 @@ function getSelectedCount() {
 
 function getSelectedNodes() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return [...store.state.selectedIds].map((id) => {
       const n = store.graph.getNode(id)
@@ -62,7 +62,7 @@ test('copy + paste via store duplicates a shape', async () => {
   const countBefore = await getPageChildCount()
 
   await page.evaluate(async () => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const data = new DataTransfer()
     await store.writeCopyData(data)
@@ -100,7 +100,7 @@ test('⌘D duplicates in place', async () => {
 test('duplicate preserves fills', async () => {
   // Set a custom fill on the selected node
   await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     store.updateNodeWithUndo(
@@ -136,7 +136,7 @@ test('cut removes original', async () => {
 
   // Cut via store
   await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const data = new DataTransfer()
     store.writeCopyData(data)

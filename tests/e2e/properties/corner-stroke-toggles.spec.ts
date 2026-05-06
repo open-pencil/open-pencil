@@ -20,7 +20,7 @@ test.afterAll(async () => {
 
 async function getSelectedNodeFlags() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null

@@ -24,7 +24,7 @@ test.beforeEach(async () => {
 
 async function rectangleCount() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return [...store.graph.nodes.values()].filter((node) => node.type === 'RECTANGLE').length
   })
@@ -36,7 +36,7 @@ async function layerItems() {
 
 async function historyState() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return {
       canUndo: store.undo.canUndo,

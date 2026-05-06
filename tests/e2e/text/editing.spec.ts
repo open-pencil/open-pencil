@@ -21,7 +21,7 @@ test.afterAll(async () => {
 
 function getSelectedNode() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
@@ -43,7 +43,7 @@ function getSelectedNode() {
 
 function getPageChildren() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       type: n.type,
@@ -57,7 +57,7 @@ test('pressing T activates text tool', async () => {
   await page.keyboard.press('t')
 
   const tool = await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.activeTool
   })
@@ -105,7 +105,7 @@ test('creating text via store works', async () => {
   await canvas.waitForRender()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('TEXT', 100, 300, 200, 30)
     store.graph.updateNode(id, { text: 'Hello World', fontSize: 24, fontFamily: 'Inter' })
@@ -146,7 +146,7 @@ test('Enter key opens text editing and selects all without erasing', async () =>
   await canvas.waitForRender()
 
   const textId = await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('TEXT', 300, 300, 200, 30)
     store.graph.updateNode(id, { text: 'Keep this text' })
@@ -164,14 +164,14 @@ test('Enter key opens text editing and selects all without erasing', async () =>
   await page.waitForTimeout(200)
 
   const editing = await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.editingTextId
   })
   expect(editing).toBe(textId)
 
   const after = await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.state.editingTextId
     if (!id) return null

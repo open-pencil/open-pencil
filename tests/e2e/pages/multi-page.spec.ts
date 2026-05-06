@@ -20,7 +20,7 @@ test.afterAll(async () => {
 
 function getPages() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getPages().map((p) => ({ id: p.id, name: p.name }))
   })
@@ -28,7 +28,7 @@ function getPages() {
 
 function getCurrentPageId() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.currentPageId
   })
@@ -36,7 +36,7 @@ function getCurrentPageId() {
 
 function getPageChildCount() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).length
   })
@@ -126,7 +126,7 @@ test('delete current page switches to adjacent', async () => {
   const deletingId = await getCurrentPageId()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     store.deletePage(store.state.currentPageId)
   })
@@ -145,7 +145,7 @@ test('rename page via store', async () => {
 
   await page.evaluate(
     ([id, name]) => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.renamePage(id, name)
     },
@@ -200,7 +200,7 @@ test('cannot delete the last page', async () => {
   let pages = await getPages()
   while (pages.length > 1) {
     await page.evaluate(() => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.deletePage(store.state.currentPageId)
     })
@@ -212,7 +212,7 @@ test('cannot delete the last page', async () => {
 
   // Try deleting the last one — should be a no-op
   await page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     store.deletePage(store.state.currentPageId)
   })

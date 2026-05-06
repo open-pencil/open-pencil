@@ -21,7 +21,7 @@ test.afterAll(async () => {
 
 function getActiveTool() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.activeTool
   })
@@ -29,7 +29,7 @@ function getActiveTool() {
 
 function getSelectedCount() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.selectedIds.size
   })
@@ -37,7 +37,7 @@ function getSelectedCount() {
 
 function getPageChildren() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       id: n.id,
@@ -50,7 +50,7 @@ function getPageChildren() {
 
 function getUIVisible() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.showUI
   })
@@ -58,7 +58,7 @@ function getUIVisible() {
 
 function getZoom() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.zoom
   })
@@ -150,7 +150,7 @@ test.describe('z-order shortcuts', () => {
 
     // Select the first (bottom) node
     await page.evaluate((id) => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.select([id])
     }, firstId)
@@ -169,7 +169,7 @@ test.describe('z-order shortcuts', () => {
 
     // Select the last (top) node
     await page.evaluate((id) => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.select([id])
     }, lastId)
@@ -245,7 +245,7 @@ test.describe('zoom shortcuts', () => {
 
     // Set zoom to something other than 100%
     await page.evaluate(() => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.state.zoom = 2
     })
@@ -327,7 +327,7 @@ test.describe('auto-layout shortcut', () => {
 
     // Change to frame type for auto-layout
     await page.evaluate(() => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       if (nodes[0]) store.updateNode(nodes[0], { type: 'FRAME' })
@@ -335,7 +335,7 @@ test.describe('auto-layout shortcut', () => {
     await canvas.waitForRender()
 
     const layoutBefore = await page.evaluate(() => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       return store.graph.getNode(nodes[0])?.layoutMode
@@ -346,7 +346,7 @@ test.describe('auto-layout shortcut', () => {
     await canvas.waitForRender()
 
     const layoutAfter = await page.evaluate(() => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       return store.graph.getNode(nodes[0])?.layoutMode
@@ -358,7 +358,7 @@ test.describe('auto-layout shortcut', () => {
     await canvas.waitForRender()
 
     const layoutFinal = await page.evaluate(() => {
-      const store = window.openPencil?.store
+      const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       return store.graph.getNode(nodes[0])?.layoutMode

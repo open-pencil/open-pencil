@@ -41,7 +41,7 @@ interface SceneTreeNode {
 
 async function getSceneTree(): Promise<SceneTreeNode> {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) return null
 
     function nodeTree(id: string): SceneTreeNode | null {
@@ -61,7 +61,7 @@ async function getSceneTree(): Promise<SceneTreeNode> {
 
 async function getSelectedCount(): Promise<number> {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.selectedIds.size
   })

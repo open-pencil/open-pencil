@@ -45,7 +45,7 @@ function effectsSection() {
 
 function getNode(id: string) {
   return page.evaluate((nodeId) => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const n = store.graph.getNode(nodeId)
     if (!n) return null
@@ -66,7 +66,7 @@ function getNode(id: string) {
 
 function getSelectedId() {
   return page.evaluate(() => {
-    const store = window.openPencil?.store
+    const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return [...store.state.selectedIds][0] ?? null
   })

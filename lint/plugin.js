@@ -1096,6 +1096,41 @@ const noFunctionAliasImports = {
   }
 }
 
+const noDirectOpenPencilBrowserStore = {
+  meta: {
+    docs: {
+      description: 'Disallow direct window.openPencil.store access'
+    }
+  },
+  create(context) {
+    function propertyName(property) {
+      if (property?.type === 'Identifier') return property.name
+      if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
+      return null
+    }
+
+    function isOpenPencilMember(node) {
+      return (
+        node?.type === 'MemberExpression' &&
+        propertyName(node.property) === 'openPencil' &&
+        ((node.object?.type === 'Identifier' && node.object.name === 'window') ||
+          (node.object?.type === 'Identifier' && node.object.name === 'globalThis'))
+      )
+    }
+
+    return {
+      MemberExpression(node) {
+        if (propertyName(node.property) !== 'store') return
+        if (!isOpenPencilMember(node.object)) return
+        context.report({
+          node,
+          message: 'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
+        })
+      }
+    }
+  }
+}
+
 const noDirectOpenPencilWindowInternals = {
   meta: {
     docs: {
@@ -1179,6 +1214,7 @@ const plugin = {
     'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
     'no-core-browser-globals': noCoreBrowserGlobals,
     'no-direct-open-pencil-window-internals': noDirectOpenPencilWindowInternals,
+    'no-direct-open-pencil-browser-store': noDirectOpenPencilBrowserStore,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,
     'no-composable-state-wrappers': noComposableStateWrappers,
