@@ -217,7 +217,6 @@
         "tests/engine/editor/clipboard/import-nodes.test.ts",
         "tests/engine/fig/import/legacy.test.ts",
         "tests/engine/figma/api.test.ts",
-        "tests/engine/kiwi/serialize-fixes.test.ts",
         "tests/engine/layout/auto-layout.test.ts",
         "tests/engine/scene-graph/basic.test.ts"
       ],
