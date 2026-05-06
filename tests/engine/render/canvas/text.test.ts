@@ -18,23 +18,23 @@ import { repoPath } from '#tests/helpers/paths'
 
 function createMockCanvas() {
   return {
-    drawParagraph: mock(() => {}),
-    drawPicture: mock(() => {}),
-    drawText: mock(() => {}),
-    drawRect: mock(() => {}),
-    save: mock(() => {}),
-    saveLayer: mock(() => {}),
-    restore: mock(() => {}),
-    clipRect: mock(() => {})
+    drawParagraph: mock(() => undefined),
+    drawPicture: mock(() => undefined),
+    drawText: mock(() => undefined),
+    drawRect: mock(() => undefined),
+    save: mock(() => undefined),
+    saveLayer: mock(() => undefined),
+    restore: mock(() => undefined),
+    clipRect: mock(() => undefined)
   }
 }
 
 function createMockParagraph() {
-  return { delete: mock(() => {}) }
+  return { delete: mock(() => undefined) }
 }
 
 function createMockPicture() {
-  return { delete: mock(() => {}) }
+  return { delete: mock(() => undefined) }
 }
 
 function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
@@ -45,9 +45,9 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     textFont: {},
     fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
     effectLayerPaint: {
-      setBlendMode: mock(() => {}),
-      setColorFilter: mock(() => {}),
-      setImageFilter: mock(() => {})
+      setBlendMode: mock(() => undefined),
+      setColorFilter: mock(() => undefined),
+      setImageFilter: mock(() => undefined)
     },
     ck: {
       MakePicture: mock(() => createMockPicture()),

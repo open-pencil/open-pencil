@@ -19,17 +19,17 @@ function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer
       RRectXY: mock(() => new Float32Array(12)),
       ClipOp: { Intersect: 0 },
       Path: class {
-        addOval = mock(() => {})
-        addRect = mock(() => {})
-        addRRect = mock(() => {})
-        op = mock(() => {})
-        delete = mock(() => {})
+        addOval = mock(() => undefined)
+        addRect = mock(() => undefined)
+        addRRect = mock(() => undefined)
+        op = mock(() => undefined)
+        delete = mock(() => undefined)
         copy = mock(() => this)
         stroke = mock(() => this)
-        moveTo = mock(() => {})
-        lineTo = mock(() => {})
-        cubicTo = mock(() => {})
-        close = mock(() => {})
+        moveTo = mock(() => undefined)
+        lineTo = mock(() => undefined)
+        cubicTo = mock(() => undefined)
+        close = mock(() => undefined)
       },
       PathOp: { Difference: 0 },
       BlendMode: { SrcOver: 0, SrcIn: 1, DstOut: 2 },
@@ -43,62 +43,62 @@ function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer
       WHITE: new Float32Array([1, 1, 1, 1]),
       TRANSPARENT: new Float32Array([0, 0, 0, 0]),
       Paint: class {
-        setColor = mock(() => {})
-        setShader = mock(() => {})
-        delete = mock(() => {})
+        setColor = mock(() => undefined)
+        setShader = mock(() => undefined)
+        delete = mock(() => undefined)
       },
       ColorFilter: {
-        MakeBlend: mock(() => ({ delete: () => {} })),
-        MakeMatrix: mock(() => ({ delete: () => {} }))
+        MakeBlend: mock(() => ({ delete: () => undefined })),
+        MakeMatrix: mock(() => ({ delete: () => undefined }))
       }
     },
     auxFill: {
-      setColor: mock(() => {}),
-      setMaskFilter: mock(() => {}),
-      setImageFilter: mock(() => {}),
-      setAlphaf: mock(() => {}),
-      setBlendMode: mock(() => {}),
-      setShader: mock(() => {}),
-      delete: mock(() => {})
+      setColor: mock(() => undefined),
+      setMaskFilter: mock(() => undefined),
+      setImageFilter: mock(() => undefined),
+      setAlphaf: mock(() => undefined),
+      setBlendMode: mock(() => undefined),
+      setShader: mock(() => undefined),
+      delete: mock(() => undefined)
     },
     auxStroke: {
-      setStrokeWidth: mock(() => {}),
-      setColor: mock(() => {}),
-      setPathEffect: mock(() => {}),
-      setAlphaf: mock(() => {}),
-      setBlendMode: mock(() => {}),
-      delete: mock(() => {})
+      setStrokeWidth: mock(() => undefined),
+      setColor: mock(() => undefined),
+      setPathEffect: mock(() => undefined),
+      setAlphaf: mock(() => undefined),
+      setBlendMode: mock(() => undefined),
+      delete: mock(() => undefined)
     },
     fillPaint: {
-      setColor: mock(() => {}),
-      setAlphaf: mock(() => {}),
-      setShader: mock(() => {}),
+      setColor: mock(() => undefined),
+      setAlphaf: mock(() => undefined),
+      setShader: mock(() => undefined),
       getColor: mock(() => new Float32Array([0, 0, 0, 1])),
-      setBlendMode: mock(() => {}),
-      delete: mock(() => {})
+      setBlendMode: mock(() => undefined),
+      delete: mock(() => undefined)
     },
     strokePaint: {
-      setColor: mock(() => {}),
-      setStrokeWidth: mock(() => {}),
-      setAlphaf: mock(() => {}),
-      setPathEffect: mock(() => {}),
-      setStrokeCap: mock(() => {}),
-      setStrokeJoin: mock(() => {}),
-      setBlendMode: mock(() => {}),
-      delete: mock(() => {})
+      setColor: mock(() => undefined),
+      setStrokeWidth: mock(() => undefined),
+      setAlphaf: mock(() => undefined),
+      setPathEffect: mock(() => undefined),
+      setStrokeCap: mock(() => undefined),
+      setStrokeJoin: mock(() => undefined),
+      setBlendMode: mock(() => undefined),
+      delete: mock(() => undefined)
     },
     opacityPaint: {
-      setAlphaf: mock(() => {}),
-      setBlendMode: mock(() => {}),
-      delete: mock(() => {})
+      setAlphaf: mock(() => undefined),
+      setBlendMode: mock(() => undefined),
+      delete: mock(() => undefined)
     },
     effectLayerPaint: {
-      setColor: mock(() => {}),
-      setMaskFilter: mock(() => {}),
-      setImageFilter: mock(() => {}),
-      setColorFilter: mock(() => {}),
-      setBlendMode: mock(() => {}),
-      delete: mock(() => {})
+      setColor: mock(() => undefined),
+      setMaskFilter: mock(() => undefined),
+      setImageFilter: mock(() => undefined),
+      setColorFilter: mock(() => undefined),
+      setBlendMode: mock(() => undefined),
+      delete: mock(() => undefined)
     },
     color4f: mock((r, g, b, a) => new Float32Array([r, g, b, a])),
     ltrb: mock((l, t, r, b) => new Float32Array([l, t, r, b])),
@@ -112,20 +112,20 @@ function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer
     makeRRect: mock(() => new Float32Array(12)),
     makeRRectWithSpread: mock(() => new Float32Array(12)),
     makeRRectWithOffset: mock(() => new Float32Array(12)),
-    renderText: mock(() => {}),
-    applyClippedBlur: mock(() => {}),
+    renderText: mock(() => undefined),
+    applyClippedBlur: mock(() => undefined),
     applyFill: mock(() => true),
-    renderShape: mock(() => {}),
-    renderSection: mock(() => {}),
-    renderComponentSet: mock(() => {}),
+    renderShape: mock(() => undefined),
+    renderSection: mock(() => undefined),
+    renderComponentSet: mock(() => undefined),
     renderEffects: mock((...args) => renderEffects(overrides as SkiaRenderer, ...args)),
-    drawNodeFill: mock(() => {}),
-    drawNodeStroke: mock(() => {}),
-    drawStrokeWithAlign: mock(() => {}),
+    drawNodeFill: mock(() => undefined),
+    drawNodeStroke: mock(() => undefined),
+    drawStrokeWithAlign: mock(() => undefined),
     resolveStrokeColor: mock(() => ({ r: 0, g: 0, b: 0, a: 1 })),
     nodePictureCache: {
       get: mock(() => null),
-      set: mock(() => {})
+      set: mock(() => undefined)
     },
     isRectangularType: mock(() => true),
     worldViewport: { x: 0, y: 0, w: 1000, h: 1000 },
@@ -135,21 +135,21 @@ function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer
 
 function createMockCanvas() {
   return {
-    save: mock(() => {}),
-    restore: mock(() => {}),
-    translate: mock(() => {}),
-    rotate: mock(() => {}),
-    scale: mock(() => {}),
-    drawOval: mock(() => {}),
-    drawRRect: mock(() => {}),
-    drawRect: mock(() => {}),
-    drawPath: mock(() => {}),
-    saveLayer: mock(() => {}),
-    clipPath: mock(() => {}),
-    clipRRect: mock(() => {}),
-    clipRect: mock(() => {}),
-    drawPicture: mock(() => {}),
-    drawParagraph: mock(() => {})
+    save: mock(() => undefined),
+    restore: mock(() => undefined),
+    translate: mock(() => undefined),
+    rotate: mock(() => undefined),
+    scale: mock(() => undefined),
+    drawOval: mock(() => undefined),
+    drawRRect: mock(() => undefined),
+    drawRect: mock(() => undefined),
+    drawPath: mock(() => undefined),
+    saveLayer: mock(() => undefined),
+    clipPath: mock(() => undefined),
+    clipRRect: mock(() => undefined),
+    clipRect: mock(() => undefined),
+    drawPicture: mock(() => undefined),
+    drawParagraph: mock(() => undefined)
   }
 }
 

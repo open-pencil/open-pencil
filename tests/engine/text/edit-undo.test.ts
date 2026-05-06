@@ -35,11 +35,11 @@ function setup() {
     },
     getTextEditor: () => textEditor,
     getRenderer: () => null,
-    runLayoutForNode: () => {},
+    runLayoutForNode: () => undefined,
     getCk: () => null,
-    loadFont: async () => {},
+    loadFont: async () => undefined,
     getViewportSize: () => ({ width: 800, height: 600 }),
-    subscribeToGraph: () => {}
+    subscribeToGraph: () => undefined
   }
 
   const textNode = graph.createNode('TEXT', pageId, {

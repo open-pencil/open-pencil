@@ -204,16 +204,6 @@
     },
     {
       "files": [
-        "tests/engine/render/canvas/effects.test.ts",
-        "tests/engine/render/canvas/text.test.ts",
-        "tests/engine/text/edit-undo.test.ts"
-      ],
-      "rules": {
-        "no-empty-function": "off"
-      }
-    },
-    {
-      "files": [
         "tests/e2e/color-picker/demo-card.spec.ts",
         "tests/engine/editor/clipboard/derived-text.test.ts",
         "tests/engine/editor/effects-and-resize.test.ts"
