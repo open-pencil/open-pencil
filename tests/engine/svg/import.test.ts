@@ -3,6 +3,8 @@ import { describe, test, expect, beforeEach } from 'bun:test'
 import { FigmaAPI, SceneGraph } from '@open-pencil/core'
 import { importSvg } from '@open-pencil/core/tools'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 let graph: SceneGraph
 let figma: FigmaAPI
 
@@ -20,16 +22,17 @@ describe('import_svg', () => {
     expect(result.id).toBeDefined()
     expect(result.type).toBe('FRAME')
 
-    const frame = graph.getNode(result.id)
-    expect(frame).not.toBeUndefined()
-    expect(frame!.width).toBe(24)
-    expect(frame!.height).toBe(24)
+    const frame = getNodeOrThrow(graph, result.id)
+    expect(frame.width).toBe(24)
+    expect(frame.height).toBe(24)
 
     const children = graph.getChildren(result.id)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe('VECTOR')
     expect(children[0].vectorNetwork).toBeDefined()
-    expect(children[0].vectorNetwork!.vertices.length).toBeGreaterThan(0)
+    expect(
+      expectDefined(children[0].vectorNetwork, 'imported vector network').vertices.length
+    ).toBeGreaterThan(0)
   })
 
   test('imports multiple shapes', async () => {
@@ -51,9 +54,9 @@ describe('import_svg', () => {
       svg: '<svg viewBox="0 0 200 100"><path d="M0 0 L200 100"/></svg>'
     })) as { id: string }
 
-    const frame = graph.getNode(result.id)
-    expect(frame!.width).toBe(200)
-    expect(frame!.height).toBe(100)
+    const frame = getNodeOrThrow(graph, result.id)
+    expect(frame.width).toBe(200)
+    expect(frame.height).toBe(100)
   })
 
   test('uses width/height attributes when no viewBox', async () => {
@@ -61,9 +64,9 @@ describe('import_svg', () => {
       svg: '<svg width="48" height="48"><path d="M0 0 L48 48"/></svg>'
     })) as { id: string }
 
-    const frame = graph.getNode(result.id)
-    expect(frame!.width).toBe(48)
-    expect(frame!.height).toBe(48)
+    const frame = getNodeOrThrow(graph, result.id)
+    expect(frame.width).toBe(48)
+    expect(frame.height).toBe(48)
   })
 
   test('sets custom name', async () => {
@@ -116,9 +119,9 @@ describe('import_svg', () => {
       y: 200
     })) as { id: string }
 
-    const frame = graph.getNode(result.id)
-    expect(frame!.x).toBe(100)
-    expect(frame!.y).toBe(200)
+    const frame = getNodeOrThrow(graph, result.id)
+    expect(frame.x).toBe(100)
+    expect(frame.y).toBe(200)
   })
 
   test('returns error for empty SVG', async () => {

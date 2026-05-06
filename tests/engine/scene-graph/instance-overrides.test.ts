@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { importNodeChanges, type NodeChange } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 const ID = { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
 const SIZE = { x: 100, y: 100 }
 
@@ -85,7 +87,10 @@ function swapOverrideFixture(opts?: { customName?: string }): NodeChange[] {
 describe('instance swap overrides', () => {
   test('swap override renames icon and reclones children', () => {
     const graph = importNodeChanges(swapOverrideFixture())
-    const page = graph.getPages().find((p) => p.name === 'Page1')!
+    const page = expectDefined(
+      graph.getPages().find((p) => p.name === 'Page1'),
+      'Page1'
+    )
     const button = graph.getChildren(page.id)[0]
     expect(button.name).toBe('ButtonInstance')
 
@@ -100,7 +105,10 @@ describe('instance swap overrides', () => {
 
   test('swap override preserves user-given name', () => {
     const graph = importNodeChanges(swapOverrideFixture({ customName: 'MyCustomIcon' }))
-    const page = graph.getPages().find((p) => p.name === 'Page1')!
+    const page = expectDefined(
+      graph.getPages().find((p) => p.name === 'Page1'),
+      'Page1'
+    )
     const button = graph.getChildren(page.id)[0]
     const icon = graph.getChildren(button.id)[0]
 
@@ -138,11 +146,16 @@ describe('instance swap overrides', () => {
     ]
 
     const graph = importNodeChanges(nodes)
-    const page = graph.getPages().find((p) => p.name === 'Page1')!
+    const page = expectDefined(
+      graph.getPages().find((p) => p.name === 'Page1'),
+      'Page1'
+    )
     const children = graph.getChildren(page.id)
 
-    const wrapper = children.find((c) => c.name === 'WrapperInstance')!
-    expect(wrapper).toBeDefined()
+    const wrapper = expectDefined(
+      children.find((c) => c.name === 'WrapperInstance'),
+      'wrapper instance'
+    )
 
     // WrapperInstance > ButtonInstance > icon
     const wrapperButton = graph.getChildren(wrapper.id)[0]
@@ -168,14 +181,23 @@ describe('instance swap overrides', () => {
     ]
 
     const graph = importNodeChanges(nodes)
-    const page = graph.getPages().find((p) => p.name === 'Page1')!
+    const page = expectDefined(
+      graph.getPages().find((p) => p.name === 'Page1'),
+      'Page1'
+    )
     const children = graph.getChildren(page.id)
 
-    const swapped = children.find((c) => c.name === 'ButtonInstance')!
+    const swapped = expectDefined(
+      children.find((c) => c.name === 'ButtonInstance'),
+      'swapped button instance'
+    )
     const swappedIcon = graph.getChildren(swapped.id)[0]
     expect(swappedIcon.name).toBe('IconB')
 
-    const defaultBtn = children.find((c) => c.name === 'ButtonDefault')!
+    const defaultBtn = expectDefined(
+      children.find((c) => c.name === 'ButtonDefault'),
+      'default button instance'
+    )
     const defaultIcon = graph.getChildren(defaultBtn.id)[0]
     expect(defaultIcon.name).toBe('IconA')
   })
@@ -226,7 +248,10 @@ describe('instance swap overrides', () => {
     ]
 
     const graph = importNodeChanges(nodes)
-    const page = graph.getPages().find((p) => p.name === 'Page1')!
+    const page = expectDefined(
+      graph.getPages().find((p) => p.name === 'Page1'),
+      'Page1'
+    )
     const container = graph.getChildren(page.id)[0]
 
     // ContainerInstance > ButtonSwapped > icon

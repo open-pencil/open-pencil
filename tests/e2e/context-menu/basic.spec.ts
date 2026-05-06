@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -33,12 +34,16 @@ function getPageChildren() {
 }
 
 function getSelectedCount() {
-  return page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.selectedIds.size)
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.selectedIds.size
+  })
 }
 
 async function rightClickShape(x: number, y: number) {
-  const box = await canvas.canvas.boundingBox()
-  await page.mouse.click(box!.x + x, box!.y + y, { button: 'right' })
+  const box = expectDefined(await canvas.canvas.boundingBox(), 'canvas bounds')
+  await page.mouse.click(box.x + x, box.y + y, { button: 'right' })
 }
 
 function contextMenu() {
@@ -104,17 +109,23 @@ test('toggle visibility via context menu', async () => {
   await canvas.click(250, 230)
   await canvas.waitForRender()
 
-  const nodeId = await page.evaluate(() => [...window.__OPEN_PENCIL_STORE__!.state.selectedIds][0])
+  const nodeId = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return [...store.state.selectedIds][0]
+  })
 
   await rightClickShape(250, 230)
   await contextItem('context-toggle-visibility').click()
   await canvas.waitForRender()
 
   const hidden = await page.evaluate((id) => {
-    const n = window.__OPEN_PENCIL_STORE__!.graph.getNode(id)
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const n = store.graph.getNode(id)
     return n ? { visible: n.visible } : null
   }, nodeId)
-  expect(hidden!.visible).toBe(false)
+  expect(hidden?.visible).toBe(false)
 
   // Toggle back: select via store since invisible nodes can't be hit-tested
   await page.evaluate(() => {
@@ -125,10 +136,12 @@ test('toggle visibility via context menu', async () => {
   await canvas.waitForRender()
 
   const restored = await page.evaluate((id) => {
-    const n = window.__OPEN_PENCIL_STORE__!.graph.getNode(id)
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const n = store.graph.getNode(id)
     return n ? { visible: n.visible } : null
   }, nodeId)
-  expect(restored!.visible).toBe(true)
+  expect(restored?.visible).toBe(true)
 })
 
 test('toggle lock via context menu', async () => {

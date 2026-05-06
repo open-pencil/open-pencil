@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -27,8 +28,10 @@ test('layers panel resize increases width', async () => {
   const handleBox = await handle.boundingBox()
   expect(handleBox).not.toBeNull()
 
-  const cx = handleBox!.x + handleBox!.width / 2
-  const cy = handleBox!.y + handleBox!.height / 2
+  const handleBounds = expectDefined(handleBox, 'splitter handle bounds')
+  const beforeBounds = expectDefined(before, 'layers panel bounds')
+  const cx = handleBounds.x + handleBounds.width / 2
+  const cy = handleBounds.y + handleBounds.height / 2
 
   await page.mouse.move(cx, cy)
   await page.mouse.down()
@@ -36,22 +39,28 @@ test('layers panel resize increases width', async () => {
   await page.mouse.up()
   await canvas.waitForRender()
 
-  const after = await panel.boundingBox()
-  expect(after!.width).toBeGreaterThan(before!.width + 40)
+  const after = expectDefined(await panel.boundingBox(), 'resized layers panel bounds')
+  expect(after.width).toBeGreaterThan(beforeBounds.width + 40)
   canvas.assertNoErrors()
 })
 
 test('panel width persists after page reload', async () => {
   // Allow Reka's auto-save debounce to flush before recording the width
   await page.waitForTimeout(300)
-  const recordedWidth = (await page.locator('[data-test-id="layers-panel"]').boundingBox())!.width
+  const recordedWidth = expectDefined(
+    await page.locator('[data-test-id="layers-panel"]').boundingBox(),
+    'persisted layers panel bounds'
+  ).width
 
   await page.reload()
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
-  const after = await page.locator('[data-test-id="layers-panel"]').boundingBox()
-  expect(Math.abs(after!.width - recordedWidth)).toBeLessThanOrEqual(2)
+  const after = expectDefined(
+    await page.locator('[data-test-id="layers-panel"]').boundingBox(),
+    'reloaded layers panel bounds'
+  )
+  expect(Math.abs(after.width - recordedWidth)).toBeLessThanOrEqual(2)
   canvas.assertNoErrors()
 })
 

@@ -37,9 +37,9 @@ test.describe('Render performance', () => {
             {
               type: 'SOLID',
               color: {
-                r: arr[i * 3]! / 255,
-                g: arr[i * 3 + 1]! / 255,
-                b: arr[i * 3 + 2]! / 255,
+                r: (arr[i * 3] ?? 0) / 255,
+                g: (arr[i * 3 + 1] ?? 0) / 255,
+                b: (arr[i * 3 + 2] ?? 0) / 255,
                 a: 1
               },
               visible: true,
@@ -89,7 +89,8 @@ test.describe('Render performance', () => {
     const results = await helper.page.evaluate((iterations: number) => {
       const store = window.__OPEN_PENCIL_STORE__
       if (!store) throw new Error('OpenPencil store not initialized')
-      const renderer = store.renderer!
+      const renderer = store.renderer
+      if (!renderer) throw new Error('OpenPencil renderer not initialized')
 
       function setupRenderer() {
         renderer.dpr = window.devicePixelRatio || 1
@@ -119,11 +120,15 @@ test.describe('Render performance', () => {
       const panMs = performance.now() - panStart
 
       // Benchmark 2: Scene change (cache miss every frame)
-      const nodes = [...store.graph.getNode(store.state.currentPageId)!.childIds]
+      const pageNode = store.graph.getNode(store.state.currentPageId)
+      if (!pageNode) throw new Error(`Page ${store.state.currentPageId} not found`)
+      const nodes = [...pageNode.childIds]
       setupRenderer()
       const sceneStart = performance.now()
       for (let i = 0; i < iterations; i++) {
-        const node = store.graph.getNode(nodes[i % nodes.length]!)
+        const nodeId = nodes[i % nodes.length]
+        if (!nodeId) throw new Error('Benchmark node id not found')
+        const node = store.graph.getNode(nodeId)
         if (node) store.graph.updateNode(node.id, { x: node.x + 0.1 })
         store.state.sceneVersion++
         renderer.render(store.graph, store.state.selectedIds, {}, store.state.sceneVersion)
@@ -177,7 +182,8 @@ test.describe('Render performance', () => {
       ({ count, iterations }) => {
         const store = window.__OPEN_PENCIL_STORE__
         if (!store) throw new Error('OpenPencil store not initialized')
-        const renderer = store.renderer!
+        const renderer = store.renderer
+        if (!renderer) throw new Error('OpenPencil renderer not initialized')
         const graph = store.graph
         const pageId = store.state.currentPageId
 
@@ -225,7 +231,9 @@ test.describe('Render performance', () => {
         setupRenderer()
         const sceneStart = performance.now()
         for (let i = 0; i < iterations; i++) {
-          const node = graph.getNode(shadowIds[i % shadowIds.length]!)
+          const nodeId = shadowIds[i % shadowIds.length]
+          if (!nodeId) throw new Error('Shadow benchmark node id not found')
+          const node = graph.getNode(nodeId)
           if (node) graph.updateNode(node.id, { x: node.x + 0.1 })
           store.state.sceneVersion++
           renderer.render(graph, store.state.selectedIds, {}, store.state.sceneVersion)

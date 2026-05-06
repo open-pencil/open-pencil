@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
+
 describe('create shape undo/redo', () => {
   test('batched create+resize undoes in one step', () => {
     const editor = createEditor()
@@ -13,8 +15,8 @@ describe('create shape undo/redo', () => {
     editor.commitResize(id, { x: 100, y: 100, width: 0, height: 0 })
     editor.undo.commitBatch()
 
-    expect(editor.graph.getNode(id)!.width).toBe(200)
-    expect(editor.graph.getNode(id)!.height).toBe(150)
+    expect(getNodeOrThrow(editor.graph, id).width).toBe(200)
+    expect(getNodeOrThrow(editor.graph, id).height).toBe(150)
 
     // Single undo removes the shape entirely
     editor.undo.undo()
@@ -22,11 +24,11 @@ describe('create shape undo/redo', () => {
 
     // Single redo restores with full dimensions
     editor.undo.redo()
-    expect(editor.graph.getNode(id)).not.toBeUndefined()
-    expect(editor.graph.getNode(id)!.width).toBe(200)
-    expect(editor.graph.getNode(id)!.height).toBe(150)
-    expect(editor.graph.getNode(id)!.x).toBe(100)
-    expect(editor.graph.getNode(id)!.y).toBe(100)
+    const restored = getNodeOrThrow(editor.graph, id)
+    expect(restored.width).toBe(200)
+    expect(restored.height).toBe(150)
+    expect(restored.x).toBe(100)
+    expect(restored.y).toBe(100)
   })
 
   test('redo after create+move+duplicate restores correct state', () => {
@@ -46,7 +48,7 @@ describe('create shape undo/redo', () => {
 
     // Undo move
     editor.undo.undo()
-    expect(editor.graph.getNode(id)!.x).toBe(50)
+    expect(getNodeOrThrow(editor.graph, id).x).toBe(50)
 
     // Undo create (single step)
     editor.undo.undo()
@@ -54,10 +56,10 @@ describe('create shape undo/redo', () => {
 
     // Redo create (single step, full dimensions)
     editor.undo.redo()
-    expect(editor.graph.getNode(id)!.width).toBe(120)
+    expect(getNodeOrThrow(editor.graph, id).width).toBe(120)
 
     // Redo move
     editor.undo.redo()
-    expect(editor.graph.getNode(id)!.x).toBe(200)
+    expect(getNodeOrThrow(editor.graph, id).x).toBe(200)
   })
 })

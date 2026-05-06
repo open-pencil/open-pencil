@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
@@ -23,8 +24,7 @@ test('ScrubInput drag changes X position', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(100, 100, 80, 80)
   const before = await getSelectedNode(page)
-  expect(before).not.toBeNull()
-  const initialX = before!.x
+  const initialX = expectDefined(before, 'selected rectangle before drag').x
 
   const xScrub = page
     .locator('[data-test-id="position-section"] [data-test-id="scrub-input"]')
@@ -32,7 +32,7 @@ test('ScrubInput drag changes X position', async () => {
   await canvas.dragScrubInput(xScrub, 50)
 
   const after = await getSelectedNode(page)
-  expect(after!.x).not.toBe(initialX)
+  expect(after?.x).not.toBe(initialX)
   canvas.assertNoErrors()
 })
 
@@ -51,7 +51,7 @@ test('corner radius uniform sets cornerRadius', async () => {
   await canvas.waitForRender()
 
   const node = await getSelectedNode(page)
-  expect(node!.cornerRadius).toBe(12)
+  expect(node?.cornerRadius).toBe(12)
   canvas.assertNoErrors()
 })
 
@@ -86,8 +86,8 @@ test('fill gradient switch changes fill type', async () => {
   await page.locator('[data-test-id="fill-picker-tab-gradient"]').click()
   await canvas.waitForRender()
 
-  const node = await getSelectedNode(page)
-  expect(node!.fills[0].type).toBe('GRADIENT_LINEAR')
+  const node = expectDefined(await getSelectedNode(page), 'gradient-filled node')
+  expect(node.fills[0]?.type).toBe('GRADIENT_LINEAR')
   canvas.assertNoErrors()
 })
 
@@ -246,7 +246,7 @@ test('flip horizontal sets flipX', async () => {
   await canvas.waitForRender()
 
   const node = await getSelectedNode(page)
-  expect(node!.flipX).toBe(true)
+  expect(node?.flipX).toBe(true)
   canvas.assertNoErrors()
 })
 
@@ -260,13 +260,13 @@ test('clip content checkbox toggles clipsContent', async () => {
   await canvas.pressKey('Shift+a')
   await canvas.waitForRender()
 
-  const before = await getSelectedNode(page)
-  const initialValue = before!.clipsContent
+  const before = expectDefined(await getSelectedNode(page), 'selected frame before clipping')
+  const initialValue = before.clipsContent
 
   await page.locator('[data-test-id="clip-content-checkbox"]').click()
   await canvas.waitForRender()
 
   const after = await getSelectedNode(page)
-  expect(after!.clipsContent).toBe(!initialValue)
+  expect(after?.clipsContent).toBe(!initialValue)
   canvas.assertNoErrors()
 })

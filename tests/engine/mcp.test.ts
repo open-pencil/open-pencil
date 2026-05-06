@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts, parseFigFile } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('MCP tool execution', () => {
   function setup() {
     const graph = new SceneGraph()
@@ -59,12 +61,11 @@ describe('MCP tool execution', () => {
     expect(result.type).toBe('FRAME')
     expect(result.name).toBe('TestFrame')
 
-    const node = api.getNodeById(result.id)
-    expect(node).not.toBeNull()
-    expect(node!.x).toBe(10)
-    expect(node!.y).toBe(20)
-    expect(node!.width).toBe(300)
-    expect(node!.height).toBe(200)
+    const node = expectDefined(api.getNodeById(result.id), 'created frame')
+    expect(node.x).toBe(10)
+    expect(node.y).toBe(20)
+    expect(node.width).toBe(300)
+    expect(node.height).toBe(200)
   })
 
   test('set_fill applies color', () => {
@@ -78,7 +79,7 @@ describe('MCP tool execution', () => {
     }) as { id: string }
 
     findTool('set_fill').execute(api, { id: frame.id, color: '#ff0000' })
-    const node = api.getNodeById(frame.id)!
+    const node = expectDefined(api.getNodeById(frame.id), 'filled rectangle')
     expect(node.fills).toHaveLength(1)
     expect(node.fills[0].color.r).toBeCloseTo(1)
     expect(node.fills[0].color.g).toBeCloseTo(0)
@@ -102,7 +103,7 @@ describe('MCP tool execution', () => {
       padding: 24
     })
 
-    const node = api.getNodeById(frame.id)!
+    const node = expectDefined(api.getNodeById(frame.id), 'layout frame')
     expect(node.layoutMode).toBe('VERTICAL')
     expect(node.itemSpacing).toBe(16)
     expect(node.paddingTop).toBe(24)
@@ -133,9 +134,11 @@ describe('MCP tool execution', () => {
     const tree = findTool('get_page_tree').execute(api, {}) as {
       children: { id: string; children?: unknown[] }[]
     }
-    const parentNode = tree.children.find((c: { id: string }) => c.id === parent.id)
-    expect(parentNode).toBeDefined()
-    expect(parentNode!.children).toBeArray()
+    const parentNode = expectDefined(
+      tree.children.find((c: { id: string }) => c.id === parent.id),
+      'parent tree node'
+    )
+    expect(parentNode.children).toBeArray()
   })
 
   test('delete_node removes node', () => {
@@ -195,7 +198,7 @@ describe('MCP tool execution', () => {
 
     const clone = findTool('clone_node').execute(api, { id: frame.id }) as { id: string }
     expect(clone.id).not.toBe(frame.id)
-    const clonedNode = api.getNodeById(clone.id)!
+    const clonedNode = expectDefined(api.getNodeById(clone.id), 'cloned node')
     expect(clonedNode.width).toBe(100)
     expect(clonedNode.height).toBe(50)
   })
@@ -224,7 +227,7 @@ describe('MCP tool execution', () => {
     expect(result.updated).toContain('cornerRadius')
     expect(result.updated).toContain('name')
 
-    const node = api.getNodeById(frame.id)!
+    const node = expectDefined(api.getNodeById(frame.id), 'updated node')
     expect(node.x).toBe(50)
     expect(node.opacity).toBe(0.5)
     expect(node.cornerRadius).toBe(8)
