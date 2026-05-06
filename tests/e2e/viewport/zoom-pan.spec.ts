@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 const NODE_COUNT = 200
@@ -45,8 +46,8 @@ test.describe('Zoom and pan', () => {
     })
 
     // Use Playwright's native mouse.wheel with Control key held for zoom
-    const box = await helper.canvas.boundingBox()
-    await helper.page.mouse.move(box!.x + 400, box!.y + 300)
+    const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
+    await helper.page.mouse.move(box.x + 400, box.y + 300)
     await helper.page.keyboard.down('Control')
     await helper.page.mouse.wheel(0, -100)
     await helper.page.keyboard.up('Control')
@@ -70,8 +71,8 @@ test.describe('Zoom and pan', () => {
       return { panX: store.state.panX, panY: store.state.panY }
     })
 
-    const box = await helper.canvas.boundingBox()
-    await helper.page.mouse.move(box!.x + 400, box!.y + 300)
+    const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
+    await helper.page.mouse.move(box.x + 400, box.y + 300)
 
     // Playwright wheel without ctrl → pan
     await helper.page.mouse.wheel(100, 50)
@@ -90,8 +91,8 @@ test.describe('Zoom and pan', () => {
   })
 
   test('rapid wheel events are coalesced without errors', async () => {
-    const box = await helper.canvas.boundingBox()
-    await helper.page.mouse.move(box!.x + 400, box!.y + 300)
+    const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
+    await helper.page.mouse.move(box.x + 400, box.y + 300)
     await helper.page.keyboard.down('Control')
     for (let i = 0; i < 50; i++) {
       await helper.page.mouse.wheel(0, -5)
@@ -115,8 +116,10 @@ test.describe('Zoom and pan', () => {
     const result = await helper.page.evaluate(() => {
       const store = window.__OPEN_PENCIL_STORE__
       if (!store) throw new Error('OpenPencil store not initialized')
-      const pageNode = store.graph.getNode(store.state.currentPageId)!
+      const pageNode = store.graph.getNode(store.state.currentPageId)
+      if (!pageNode) throw new Error(`Page ${store.state.currentPageId} not found`)
       const firstId = pageNode.childIds[0]
+      if (!firstId) throw new Error('First page child not found')
 
       store.select([firstId])
       const after = store.state.selectedIds.has(firstId)
@@ -152,8 +155,10 @@ test.describe('Zoom and pan', () => {
     await helper.page.evaluate(() => {
       const store = window.__OPEN_PENCIL_STORE__
       if (!store) throw new Error('OpenPencil store not initialized')
-      const pageNode = store.graph.getNode(store.state.currentPageId)!
+      const pageNode = store.graph.getNode(store.state.currentPageId)
+      if (!pageNode) throw new Error(`Page ${store.state.currentPageId} not found`)
       const firstId = pageNode.childIds[0]
+      if (!firstId) throw new Error('First page child not found')
       store.graph.updateNode(firstId, {
         fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
       })
@@ -169,8 +174,10 @@ test.describe('Zoom and pan', () => {
     await helper.page.evaluate(() => {
       const store = window.__OPEN_PENCIL_STORE__
       if (!store) throw new Error('OpenPencil store not initialized')
-      const pageNode = store.graph.getNode(store.state.currentPageId)!
+      const pageNode = store.graph.getNode(store.state.currentPageId)
+      if (!pageNode) throw new Error(`Page ${store.state.currentPageId} not found`)
       const firstId = pageNode.childIds[0]
+      if (!firstId) throw new Error('First page child not found')
       store.graph.updateNode(firstId, {
         fills: [
           { type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.8, a: 1 }, visible: true, opacity: 1 }
@@ -187,8 +194,11 @@ test.describe('Zoom and pan', () => {
     await helper.page.evaluate(() => {
       const store = window.__OPEN_PENCIL_STORE__
       if (!store) throw new Error('OpenPencil store not initialized')
-      const pageNode = store.graph.getNode(store.state.currentPageId)!
-      store.select([pageNode.childIds[0]])
+      const pageNode = store.graph.getNode(store.state.currentPageId)
+      if (!pageNode) throw new Error(`Page ${store.state.currentPageId} not found`)
+      const firstId = pageNode.childIds[0]
+      if (!firstId) throw new Error('First page child not found')
+      store.select([firstId])
     })
     await helper.waitForRender()
     await helper.page.waitForTimeout(50)
@@ -198,7 +208,9 @@ test.describe('Zoom and pan', () => {
     expect(Buffer.from(before)).not.toEqual(Buffer.from(after))
 
     await helper.page.evaluate(() => {
-      window.__OPEN_PENCIL_STORE__!.clearSelection()
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.clearSelection()
     })
     await helper.waitForRender()
   })
@@ -240,7 +252,8 @@ test.describe('Zoom and pan', () => {
       store.state.panX = 0
       store.state.panY = 0
 
-      const canvas = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')!
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')
+      if (!canvas) throw new Error('Canvas element not found')
       const wheelStart = performance.now()
       for (let i = 0; i < iterations; i++) {
         canvas.dispatchEvent(
