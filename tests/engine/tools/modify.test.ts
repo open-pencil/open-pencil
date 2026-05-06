@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('set_fill', () => {
@@ -13,7 +14,7 @@ describe('set_fill', () => {
     const tool = getTool('set_fill')
     tool.execute(figma, { id: frame.id, color: '#ff0000' })
 
-    const fills = figma.getNodeById(frame.id)!.fills
+    const fills = expectDefined(figma.getNodeById(frame.id), 'frame node').fills
     expect(fills.length).toBe(1)
     expect(fills[0].color.r).toBeCloseTo(1)
     expect(fills[0].color.g).toBeCloseTo(0)
@@ -37,7 +38,7 @@ describe('set_stroke', () => {
     const tool = getTool('set_stroke')
     tool.execute(figma, { id: rect.id, color: '#0000ff', weight: 2 })
 
-    const strokes = figma.getNodeById(rect.id)!.strokes
+    const strokes = expectDefined(figma.getNodeById(rect.id), 'rectangle node').strokes
     expect(strokes.length).toBe(1)
     expect(strokes[0].color.b).toBeCloseTo(1)
     expect(strokes[0].weight).toBe(2)
@@ -61,7 +62,7 @@ describe('set_effects', () => {
       spread: 0
     })
 
-    const effects = figma.getNodeById(frame.id)!.effects
+    const effects = expectDefined(figma.getNodeById(frame.id), 'frame node').effects
     expect(effects.length).toBe(1)
     expect(effects[0].type).toBe('DROP_SHADOW')
   })
@@ -74,7 +75,7 @@ describe('set_effects', () => {
     const tool = getTool('set_effects')
     tool.execute(figma, { id: frame.id, type: 'BACKGROUND_BLUR', radius: 10 })
 
-    const effects = figma.getNodeById(frame.id)!.effects
+    const effects = expectDefined(figma.getNodeById(frame.id), 'frame node').effects
     expect(effects.length).toBe(1)
     expect(effects[0].type).toBe('BACKGROUND_BLUR')
   })
@@ -100,7 +101,7 @@ describe('update_node', () => {
     expect(result.updated).toContain('size')
     expect(result.updated).toContain('opacity')
 
-    const node = figma.getNodeById(rect.id)!
+    const node = expectDefined(figma.getNodeById(rect.id), 'rectangle node')
     expect(node.x).toBe(50)
     expect(node.y).toBe(75)
     expect(node.width).toBe(200)
@@ -116,7 +117,7 @@ describe('update_node', () => {
     const tool = getTool('update_node')
     tool.execute(figma, { id: rect.id, corner_radius: 12 })
 
-    expect(figma.getNodeById(rect.id)!.cornerRadius).toBe(12)
+    expect(expectDefined(figma.getNodeById(rect.id), 'rectangle node').cornerRadius).toBe(12)
   })
 })
 
@@ -134,7 +135,7 @@ describe('set_layout', () => {
       padding: 20
     })
 
-    const node = figma.getNodeById(frame.id)!
+    const node = expectDefined(figma.getNodeById(frame.id), 'frame node')
     expect(node.layoutMode).toBe('VERTICAL')
     expect(node.itemSpacing).toBe(16)
     expect(node.paddingLeft).toBe(20)
@@ -146,7 +147,7 @@ describe('set_layout', () => {
     const frame = figma.createFrame()
     frame.resize(300, 200)
 
-    const rawBefore = graph.getNode(frame.id)!
+    const rawBefore = getNodeOrThrow(graph, frame.id)
     expect(rawBefore.layoutMode).toBe('NONE')
     expect(rawBefore.primaryAxisSizing).toBe('FIXED')
     expect(rawBefore.counterAxisSizing).toBe('FIXED')
@@ -154,7 +155,7 @@ describe('set_layout', () => {
     const tool = getTool('set_layout')
     tool.execute(figma, { id: frame.id, direction: 'VERTICAL' })
 
-    const rawAfter = graph.getNode(frame.id)!
+    const rawAfter = getNodeOrThrow(graph, frame.id)
     expect(rawAfter.layoutMode).toBe('VERTICAL')
     expect(rawAfter.primaryAxisSizing).toBe('HUG')
     expect(rawAfter.counterAxisSizing).toBe('HUG')
@@ -170,12 +171,12 @@ describe('set_layout', () => {
 
     // Manually set primary axis back to FIXED (user wants fixed width)
     graph.updateNode(frame.id, { primaryAxisSizing: 'FIXED' })
-    expect(graph.getNode(frame.id)!.primaryAxisSizing).toBe('FIXED')
+    expect(getNodeOrThrow(graph, frame.id).primaryAxisSizing).toBe('FIXED')
 
     // Updating spacing should NOT reset sizing modes
     tool.execute(figma, { id: frame.id, spacing: 24 })
 
-    const raw = graph.getNode(frame.id)!
+    const raw = getNodeOrThrow(graph, frame.id)
     expect(raw.primaryAxisSizing).toBe('FIXED')
     expect(raw.counterAxisSizing).toBe('HUG')
   })
@@ -196,7 +197,7 @@ describe('set_layout', () => {
 
     computeAllLayouts(graph)
 
-    const node = graph.getNode(frame.id)!
+    const node = getNodeOrThrow(graph, frame.id)
     expect(node.primaryAxisSizing).toBe('HUG')
     // 16 (top pad) + 5*50 (children) + 4*8 (gaps) + 16 (bottom pad) = 314
     expect(node.height).toBe(314)
@@ -212,7 +213,7 @@ describe('set_constraints', () => {
     const tool = getTool('set_constraints')
     tool.execute(figma, { id: rect.id, horizontal: 'CENTER', vertical: 'STRETCH' })
 
-    const node = figma.getNodeById(rect.id)!
+    const node = expectDefined(figma.getNodeById(rect.id), 'rectangle node')
     expect(node.constraints.horizontal).toBe('CENTER')
     expect(node.constraints.vertical).toBe('STRETCH')
   })
@@ -242,7 +243,7 @@ describe('set_font_range', () => {
       style: 'Bold'
     })
 
-    const node = graph.getNode(created.id)!
+    const node = getNodeOrThrow(graph, created.id)
     expect(node.styleRuns.length).toBeGreaterThan(0)
     for (const run of node.styleRuns) {
       expect(run.style).toBeDefined()
@@ -251,8 +252,8 @@ describe('set_font_range', () => {
     }
     const boldRun = node.styleRuns.find((r) => r.style.fontWeight === 700)
     expect(boldRun).toBeDefined()
-    expect(boldRun!.start).toBe(0)
-    expect(boldRun!.length).toBe(5)
+    expect(expectDefined(boldRun, 'bold style run').start).toBe(0)
+    expect(expectDefined(boldRun, 'bold style run').length).toBe(5)
   })
 
   test('applies color to text range', () => {
@@ -271,9 +272,12 @@ describe('set_font_range', () => {
     setText.execute(figma, { id: created.id, text: 'Red text' })
     setFontRange.execute(figma, { id: created.id, start: 0, end: 3, color: '#ff0000' })
 
-    const node = graph.getNode(created.id)!
+    const node = getNodeOrThrow(graph, created.id)
     const colorRun = node.styleRuns.find((r) => r.style.fills?.length)
     expect(colorRun).toBeDefined()
-    expect(colorRun!.style.fills![0].color.r).toBeCloseTo(1)
+    expect(
+      expectDefined(expectDefined(colorRun, 'color style run').style.fills, 'color style fills')[0]
+        ?.color.r
+    ).toBeCloseTo(1)
   })
 })
