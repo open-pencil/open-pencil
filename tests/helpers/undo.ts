@@ -1,6 +1,8 @@
 import { UndoManager } from '@open-pencil/core'
 
-export function noop() {}
+export function noop() {
+  return undefined
+}
 
 export function createUndoManager(options?: ConstructorParameters<typeof UndoManager>[0]) {
   return new UndoManager(options)

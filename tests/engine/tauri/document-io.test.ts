@@ -41,7 +41,7 @@ describe('Tauri document IO helpers', () => {
       getFilePath: () => '/tmp/document.fig',
       getFileHandle: () => null,
       setSavedVersion: (version) => savedVersions.push(version),
-      setLastWriteTime: () => {}
+      setLastWriteTime: () => undefined
     })
 
     await write(new Uint8Array([1, 2, 3]))

@@ -204,16 +204,9 @@
     },
     {
       "files": [
-        "tests/e2e/autosave.spec.ts",
-        "tests/e2e/stroke-picker/basic.spec.ts",
-        "tests/engine/app/font-settings.test.ts",
-        "tests/engine/pen/var-padding.test.ts",
         "tests/engine/render/canvas/effects.test.ts",
         "tests/engine/render/canvas/text.test.ts",
-        "tests/engine/tauri/document-io.test.ts",
-        "tests/engine/text/edit-undo.test.ts",
-        "tests/engine/tools/ai-adapter.test.ts",
-        "tests/helpers/undo.ts"
+        "tests/engine/text/edit-undo.test.ts"
       ],
       "rules": {
         "no-empty-function": "off"
@@ -242,32 +235,6 @@
       ],
       "rules": {
         "max-lines": "off"
-      }
-    },
-    {
-      "files": [
-        "tests/engine/copy.test.ts",
-        "tests/engine/editor/selection/**/*.test.ts",
-        "tests/engine/fig/export/text.test.ts",
-        "tests/engine/fig/heavy/fixtures.test.ts",
-        "tests/engine/fig/import/basic.test.ts",
-        "tests/engine/fig/import/edge-cases.test.ts",
-        "tests/engine/fig/import/instance-regressions.test.ts",
-        "tests/engine/fig/import/property-integrity.test.ts",
-        "tests/engine/fig/roundtrip/basic.test.ts",
-        "tests/engine/fig/roundtrip/variables.test.ts",
-        "tests/engine/fonts/normalize-export.test.ts",
-        "tests/engine/matrix.test.ts",
-        "tests/engine/mcp/stdio.test.ts",
-        "tests/engine/editor/nudge.test.ts",
-        "tests/engine/color/okhcl/**/*.test.ts",
-        "tests/engine/scene-graph/plugin-data.test.ts",
-        "tests/engine/render/canvas/cache.test.ts",
-        "tests/engine/render/jsx/**/*.test.ts",
-        "tests/engine/text/edit-undo.test.ts"
-      ],
-      "rules": {
-        "typescript/no-non-null-assertion": "error"
       }
     },
     {

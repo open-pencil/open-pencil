@@ -25,7 +25,7 @@ test('autosave triggers after scene changes with a file handle', async () => {
       write: async () => {
         writes++
       },
-      close: async () => {}
+      close: async () => undefined
     }
     const mockHandle = {
       createWritable: async () => mockWritable
@@ -46,8 +46,8 @@ test('autosave triggers after scene changes with a file handle', async () => {
     // Since fileHandle is a closure variable, we need to trigger the save path
     // The cleanest way: mock showSaveFilePicker to return our handle
     const mockWritable = {
-      write: async () => {},
-      close: async () => {}
+      write: async () => undefined,
+      close: async () => undefined
     }
     const mockHandle = {
       createWritable: async () => mockWritable

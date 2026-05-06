@@ -5,14 +5,18 @@ import { useFontSettings, type FontSettingsActions } from '@/components/FontSett
 function actions(overrides: Partial<FontSettingsActions> = {}): FontSettingsActions {
   let accessState: ReturnType<FontSettingsActions['localFontAccessState']> = 'prompt'
   return {
-    async clearDownloadedFontCache() {},
+    async clearDownloadedFontCache() {
+      return undefined
+    },
     async downloadedFontCacheSummary() {
       return { count: 2, byteLength: 1_572_864, updatedAt: 1_700_000_000_000 }
     },
     localFontAccessState() {
       return accessState
     },
-    async predownloadFallbackFonts() {},
+    async predownloadFallbackFonts() {
+      return undefined
+    },
     async requestLocalFontAccess() {
       accessState = 'granted'
       return ['Inter']

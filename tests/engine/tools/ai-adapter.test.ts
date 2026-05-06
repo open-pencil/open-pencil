@@ -22,7 +22,7 @@ function setup() {
     ALL_TOOLS,
     {
       getFigma: () => figma,
-      onAfterExecute: () => {}
+      onAfterExecute: () => undefined
     },
     { v, valibotSchema, tool }
   )

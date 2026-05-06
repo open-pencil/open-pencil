@@ -20,7 +20,7 @@ async function openStrokePicker(page: Page) {
   await page
     .locator('[data-test-id="stroke-item"] [data-test-id="color-picker-popover"]')
     .waitFor({ state: 'detached' })
-    .catch(() => {})
+    .catch(() => undefined)
   await page.locator('[data-test-id="stroke-item"] button').first().click()
   await expect(page.locator('[data-test-id="color-picker-popover"]')).toBeVisible()
 }

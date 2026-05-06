@@ -43,7 +43,7 @@ function makeVarContext(vars: Record<string, number>): VarContext {
       return typeof val === 'number' ? val : 0
     },
     resolveString: () => '',
-    setActiveTheme: () => {}
+    setActiveTheme: () => undefined
   } as VarContext
 }
 
