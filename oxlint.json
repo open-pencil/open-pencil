@@ -213,14 +213,6 @@
       }
     },
     {
-      "files": [
-        "tests/engine/layout/auto-layout.test.ts"
-      ],
-      "rules": {
-        "max-lines": "off"
-      }
-    },
-    {
       "files": ["scripts/**/*.ts"],
       "rules": {
         "no-console": "off",
