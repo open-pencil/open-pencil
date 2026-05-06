@@ -8,6 +8,8 @@ import {
   sceneNodeToKiwi
 } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 beforeAll(async () => {
   await initCodec()
 })
@@ -55,7 +57,7 @@ describe('Fix 1: auto-layout child transforms', () => {
     const blobs: Uint8Array[] = []
     // Serialize the parent — children are serialized recursively
     const changes = sceneNodeToKiwi(
-      graph.getNode(parent.id)!,
+      getNodeOrThrow(graph, parent.id),
       ROOT_GUID,
       0,
       { value: 100 },
@@ -64,7 +66,10 @@ describe('Fix 1: auto-layout child transforms', () => {
     ) as Record<string, unknown>[]
 
     // changes[0] = parent, changes[1] = child
-    const childNc = changes.find((nc) => nc.name === 'Child')!
+    const childNc = expectDefined(
+      changes.find((nc) => nc.name === 'Child'),
+      'child node change'
+    )
     expect(childNc).toBeDefined()
     expect(childNc.transform.m02).toBe(0)
     expect(childNc.transform.m12).toBe(0)
@@ -93,7 +98,7 @@ describe('Fix 1: auto-layout child transforms', () => {
 
     const blobs: Uint8Array[] = []
     const changes = sceneNodeToKiwi(
-      graph.getNode(parent.id)!,
+      getNodeOrThrow(graph, parent.id),
       ROOT_GUID,
       0,
       { value: 100 },
@@ -101,7 +106,10 @@ describe('Fix 1: auto-layout child transforms', () => {
       blobs
     ) as Record<string, unknown>[]
 
-    const absNc = changes.find((nc) => nc.name === 'AbsChild')!
+    const absNc = expectDefined(
+      changes.find((nc) => nc.name === 'AbsChild'),
+      'absolute child node change'
+    )
     expect(absNc).toBeDefined()
     expect(absNc.transform.m02).toBe(75)
     expect(absNc.transform.m12).toBe(120)
@@ -128,7 +136,7 @@ describe('Fix 1: auto-layout child transforms', () => {
 
     const blobs: Uint8Array[] = []
     const changes = sceneNodeToKiwi(
-      graph.getNode(parent.id)!,
+      getNodeOrThrow(graph, parent.id),
       ROOT_GUID,
       0,
       { value: 100 },
@@ -136,7 +144,10 @@ describe('Fix 1: auto-layout child transforms', () => {
       blobs
     ) as Record<string, unknown>[]
 
-    const childNc = changes.find((nc) => nc.name === 'Child')!
+    const childNc = expectDefined(
+      changes.find((nc) => nc.name === 'Child'),
+      'child node change'
+    )
     expect(childNc).toBeDefined()
     expect(childNc.transform.m02).toBe(30)
     expect(childNc.transform.m12).toBe(45)
@@ -164,7 +175,7 @@ describe('Fix 1: auto-layout child transforms', () => {
 
     const blobs: Uint8Array[] = []
     const changes = sceneNodeToKiwi(
-      graph.getNode(parent.id)!,
+      getNodeOrThrow(graph, parent.id),
       ROOT_GUID,
       0,
       { value: 100 },
@@ -172,7 +183,10 @@ describe('Fix 1: auto-layout child transforms', () => {
       blobs
     ) as Record<string, unknown>[]
 
-    const itemNc = changes.find((nc) => nc.name === 'Item')!
+    const itemNc = expectDefined(
+      changes.find((nc) => nc.name === 'Item'),
+      'item node change'
+    )
     expect(itemNc.transform.m02).toBe(0)
     expect(itemNc.transform.m12).toBe(0)
   })
@@ -241,7 +255,10 @@ describe('Fix 2: frameMaskDisabled is inverse of clipsContent', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const frame = [...reimported.nodes.values()].find((n) => n.name === 'ClipFrame')!
+    const frame = expectDefined(
+      [...reimported.nodes.values()].find((n) => n.name === 'ClipFrame'),
+      'ClipFrame'
+    )
     expect(frame.clipsContent).toBe(true)
   })
 })
@@ -382,7 +399,10 @@ describe('Fix 4: text lineHeight serialization', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.nodes.values()].find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      [...reimported.nodes.values()].find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.lineHeight).toBe(28)
   })
 })
@@ -409,7 +429,10 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.nodes.values()].find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      [...reimported.nodes.values()].find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fontFamily).toBe('DM Sans')
   })
 
@@ -430,7 +453,10 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.nodes.values()].find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      [...reimported.nodes.values()].find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fontFamily).toBe('Roboto')
   })
 
@@ -451,7 +477,10 @@ describe('Fix 5: font family normalization in derivedTextData', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const textNode = [...reimported.nodes.values()].find((n) => n.type === 'TEXT')!
+    const textNode = expectDefined(
+      [...reimported.nodes.values()].find((n) => n.type === 'TEXT'),
+      'text node'
+    )
     expect(textNode.fontFamily).toBe('Inter')
   })
 
@@ -533,7 +562,7 @@ describe('Integration: auto-layout component with all fixes', () => {
     // Verify kiwi output directly
     const blobs: Uint8Array[] = []
     const changes = sceneNodeToKiwi(
-      graph.getNode(card.id)!,
+      getNodeOrThrow(graph, card.id),
       ROOT_GUID,
       0,
       { value: 100 },
@@ -542,8 +571,14 @@ describe('Integration: auto-layout component with all fixes', () => {
     ) as Record<string, unknown>[]
 
     const cardNc = changes[0]
-    const titleNc = changes.find((nc) => nc.name === 'Title')!
-    const valueNc = changes.find((nc) => nc.name === 'Value')!
+    const titleNc = expectDefined(
+      changes.find((nc) => nc.name === 'Title'),
+      'Title node change'
+    )
+    const valueNc = expectDefined(
+      changes.find((nc) => nc.name === 'Value'),
+      'Value node change'
+    )
 
     // Fix 1: children have zero transforms
     expect(titleNc.transform.m02).toBe(0)
@@ -571,8 +606,14 @@ describe('Integration: auto-layout component with all fixes', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const nodes = [...reimported.nodes.values()]
-    const cardNode = nodes.find((n) => n.name === 'StatCard')!
-    const titleNode = nodes.find((n) => n.name === 'Title')!
+    const cardNode = expectDefined(
+      nodes.find((n) => n.name === 'StatCard'),
+      'StatCard node'
+    )
+    const titleNode = expectDefined(
+      nodes.find((n) => n.name === 'Title'),
+      'Title node'
+    )
 
     expect(cardNode.layoutMode).toBe('VERTICAL')
     expect(cardNode.clipsContent).toBe(true)

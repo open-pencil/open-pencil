@@ -163,12 +163,6 @@
       }
     },
     {
-      "files": ["tests/**/*.ts", "tests/**/*.tsx"],
-      "rules": {
-        "typescript/no-non-null-assertion": "off"
-      }
-    },
-    {
       "files": ["**/kiwi/kiwi-schema/**"],
       "rules": {
         "typescript/no-explicit-any": "off",

@@ -9,6 +9,8 @@ import {
   vectorNetworkToSVGPaths
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function makeGraph() {
   const graph = new SceneGraph()
   graph.createNode('CANVAS', graph.rootId, { name: 'Page 1' })
@@ -21,6 +23,19 @@ function pageId(graph: SceneGraph) {
 
 function exportSVG(graph: SceneGraph, nodeIds: string[], xmlDecl = false): string | null {
   return renderNodesToSVG(graph, pageId(graph), nodeIds, { xmlDeclaration: xmlDecl })
+}
+
+function exportSVGOrThrow(graph: SceneGraph, nodeIds: string[], xmlDecl = false): string {
+  return expectDefined(exportSVG(graph, nodeIds, xmlDecl), 'SVG output')
+}
+
+function renderNodesToSVGOrThrow(
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  options: Parameters<typeof renderNodesToSVG>[3]
+): string {
+  return expectDefined(renderNodesToSVG(graph, pageId, nodeIds, options), 'SVG output')
 }
 
 // --- SVGNode builder tests ---
@@ -210,7 +225,7 @@ describe('renderNodesToSVG()', () => {
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<svg')
     expect(result).toContain('width="100"')
     expect(result).toContain('height="50"')
@@ -226,10 +241,12 @@ describe('renderNodesToSVG()', () => {
       height: 10,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const withDecl = renderNodesToSVG(graph, pageId(graph), [node.id], { xmlDeclaration: true })!
-    const withoutDecl = renderNodesToSVG(graph, pageId(graph), [node.id], {
+    const withDecl = renderNodesToSVGOrThrow(graph, pageId(graph), [node.id], {
+      xmlDeclaration: true
+    })
+    const withoutDecl = renderNodesToSVGOrThrow(graph, pageId(graph), [node.id], {
       xmlDeclaration: false
-    })!
+    })
     expect(withDecl).toStartWith('<?xml')
     expect(withoutDecl).toStartWith('<svg')
   })
@@ -241,7 +258,7 @@ describe('renderNodesToSVG()', () => {
       height: 60,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<ellipse')
     expect(result).toContain('cx="40"')
     expect(result).toContain('cy="30"')
@@ -264,7 +281,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<line')
     expect(result).toContain('x2="100"')
     expect(result).toContain('stroke-width="2"')
@@ -279,7 +296,7 @@ describe('renderNodesToSVG()', () => {
       starInnerRadius: 0.382,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<polygon')
     expect(result).toContain('points="')
   })
@@ -292,7 +309,7 @@ describe('renderNodesToSVG()', () => {
       pointCount: 6,
       fills: [{ type: 'SOLID', color: { r: 0, g: 1, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<polygon')
   })
 
@@ -304,7 +321,7 @@ describe('renderNodesToSVG()', () => {
       cornerRadius: 16,
       fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('rx="16"')
     expect(result).toContain('ry="16"')
   })
@@ -322,7 +339,7 @@ describe('renderNodesToSVG()', () => {
       bottomLeftRadius: 5,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<path')
     expect(result).toContain('d="M10 0')
   })
@@ -338,7 +355,7 @@ describe('renderNodesToSVG()', () => {
       fontFamily: 'Inter',
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<text')
     expect(result).toContain('font-size="18"')
     expect(result).toContain('font-weight="700"')
@@ -357,7 +374,7 @@ describe('renderNodesToSVG()', () => {
       textAlignHorizontal: 'LEFT',
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('direction="rtl"')
     expect(result).toContain('text-anchor="end"')
     expect(result).toContain('x="180"')
@@ -377,7 +394,7 @@ describe('renderNodesToSVG()', () => {
         { start: 6, length: 4, style: { fontWeight: 700 } }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<tspan')
     expect(result).toContain('font-weight="700"')
   })
@@ -390,7 +407,7 @@ describe('renderNodesToSVG()', () => {
       opacity: 0.5,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('opacity="0.5"')
   })
 
@@ -402,7 +419,7 @@ describe('renderNodesToSVG()', () => {
       rotation: 45,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('rotate(45,')
   })
 
@@ -422,7 +439,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('stroke-dasharray="5 3"')
   })
 
@@ -443,7 +460,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('stroke-linecap="round"')
     expect(result).toContain('stroke-linejoin="bevel"')
   })
@@ -463,7 +480,7 @@ describe('renderNodesToSVG()', () => {
       y: 10,
       fills: [{ type: 'SOLID', color: { r: 0.9, g: 0.9, b: 0.9, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [frame.id])!
+    const result = exportSVGOrThrow(graph, [frame.id])
     expect(result).toContain('<g')
     expect(result).toContain('translate(10, 10)')
   })
@@ -481,7 +498,7 @@ describe('renderNodesToSVG()', () => {
       height: 200,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [frame.id])!
+    const result = exportSVGOrThrow(graph, [frame.id])
     expect(result).toContain('<clipPath')
     expect(result).toContain('clip-path="url(#clip')
   })
@@ -505,7 +522,7 @@ describe('renderNodesToSVG()', () => {
       visible: false,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [frame.id])!
+    const result = exportSVGOrThrow(graph, [frame.id])
     expect(result).toContain('fill="#FF0000"')
     expect(result).not.toContain('fill="#0000FF"')
   })
@@ -529,7 +546,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<linearGradient')
     expect(result).toContain('<stop')
     expect(result).toContain('url(#grad')
@@ -554,7 +571,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<radialGradient')
     expect(result).toContain('url(#grad')
   })
@@ -576,7 +593,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<filter')
     expect(result).toContain('<feDropShadow')
     expect(result).toContain('dy="4"')
@@ -600,7 +617,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<feGaussianBlur')
     expect(result).toContain('stdDeviation="5"')
   })
@@ -621,7 +638,7 @@ describe('renderNodesToSVG()', () => {
       height: 40,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [a.id, b.id])!
+    const result = exportSVGOrThrow(graph, [a.id, b.id])
     expect(result).toContain('viewBox="0 0 100 50"')
     expect(result).toContain('<rect')
     expect(result).toContain('<ellipse')
@@ -635,7 +652,7 @@ describe('renderNodesToSVG()', () => {
       blendMode: 'MULTIPLY',
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('mix-blend-mode: multiply')
   })
 
@@ -646,7 +663,7 @@ describe('renderNodesToSVG()', () => {
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('fill="#FF0000')
   })
 
@@ -664,7 +681,7 @@ describe('renderNodesToSVG()', () => {
       y: 10,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [comp.id])!
+    const result = exportSVGOrThrow(graph, [comp.id])
     expect(result).toContain('<rect')
     expect(result).toContain('translate(10, 10)')
   })
@@ -678,7 +695,7 @@ describe('renderNodesToSVG()', () => {
         { type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.95, a: 1 }, opacity: 1, visible: true }
       ]
     })
-    const result = exportSVG(graph, [section.id])!
+    const result = exportSVGOrThrow(graph, [section.id])
     expect(result).toContain('<rect')
     expect(result).toContain('width="500"')
   })
@@ -691,7 +708,7 @@ describe('renderNodesToSVG()', () => {
       flipX: true,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('scale(-1, 1)')
   })
 
@@ -710,7 +727,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('stroke-opacity="0.5"')
   })
 
@@ -735,7 +752,7 @@ describe('renderNodesToSVG()', () => {
       height: 50,
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
-    const result = exportSVG(graph, [group.id])!
+    const result = exportSVGOrThrow(graph, [group.id])
     expect(result).toContain('<rect')
     expect(result).toContain('fill="#FF0000"')
   })
@@ -757,7 +774,7 @@ describe('renderNodesToSVG()', () => {
         }
       ]
     })
-    const result = exportSVG(graph, [node.id])!
+    const result = exportSVGOrThrow(graph, [node.id])
     expect(result).toContain('<filter')
     expect(result).toContain('<feGaussianBlur')
     expect(result).toContain('<feComposite')

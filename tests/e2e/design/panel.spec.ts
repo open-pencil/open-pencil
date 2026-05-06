@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -102,7 +103,7 @@ test('fill item shows color swatch', async () => {
 
 test('clicking color area changes fill color', async () => {
   const id = await getSelectedId()
-  const before = await getNode(id!)
+  const before = await getNode(expectDefined(id, 'selected id'))
 
   const swatch = fillSection().locator('[data-test-id="fill-picker-swatch"]').first()
   await swatch.click()
@@ -111,13 +112,16 @@ test('clicking color area changes fill color', async () => {
   await expect(colorArea).toBeVisible({ timeout: 5000 })
 
   const box = await colorArea.boundingBox()
-  await page.mouse.click(box!.x + box!.width - 10, box!.y + 10)
+  await page.mouse.click(
+    expectDefined(box, 'color area bounds').x + expectDefined(box, 'color area bounds').width - 10,
+    expectDefined(box, 'color area bounds').y + 10
+  )
   await canvas.waitForRender()
   await page.waitForTimeout(100)
 
-  const after = await getNode(id!)
-  const c1 = before!.fills[0].color
-  const c2 = after!.fills[0].color
+  const after = await getNode(expectDefined(id, 'selected id'))
+  const c1 = expectDefined(before, 'before node').fills[0].color
+  const c2 = expectDefined(after, 'after node').fills[0].color
   expect(c1.r !== c2.r || c1.g !== c2.g || c1.b !== c2.b).toBe(true)
 
   // Close popover — click the swatch again to toggle it off
@@ -134,8 +138,8 @@ test('adding a stroke creates stroke section item', async () => {
   await expect(strokeItems.first()).toBeVisible()
 
   const id = await getSelectedId()
-  const node = await getNode(id!)
-  expect(node!.strokes.length).toBe(1)
+  const node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node node').strokes.length).toBe(1)
 })
 
 test('adding an effect creates effect item', async () => {
@@ -147,8 +151,8 @@ test('adding an effect creates effect item', async () => {
   await expect(effectItems.first()).toBeVisible()
 
   const id = await getSelectedId()
-  const node = await getNode(id!)
-  expect(node!.effects.length).toBe(1)
+  const node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node node').effects.length).toBe(1)
 })
 
 test('adding a second fill shows two fill items', async () => {
@@ -160,8 +164,8 @@ test('adding a second fill shows two fill items', async () => {
   expect(await fillItems.count()).toBe(2)
 
   const id = await getSelectedId()
-  const node = await getNode(id!)
-  expect(node!.fills.length).toBe(2)
+  const node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node node').fills.length).toBe(2)
 })
 
 test('visibility toggle in appearance section works', async () => {
@@ -169,20 +173,20 @@ test('visibility toggle in appearance section works', async () => {
   await expect(visBtn).toBeVisible()
 
   const id = await getSelectedId()
-  const before = await getNode(id!)
-  expect(before!.visible).toBe(true)
+  const before = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(before, 'before node').visible).toBe(true)
 
   await visBtn.click()
   await canvas.waitForRender()
 
-  const after = await getNode(id!)
-  expect(after!.visible).toBe(false)
+  const after = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(after, 'after node').visible).toBe(false)
 
   await visBtn.click()
   await canvas.waitForRender()
 
-  const restored = await getNode(id!)
-  expect(restored!.visible).toBe(true)
+  const restored = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(restored, 'restored node').visible).toBe(true)
 })
 
 test('fill stroke and effect visibility toggles update on repeated clicks and support undo redo', async () => {
@@ -192,23 +196,35 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
   const fillButton = page.locator('[data-test-id="fill-visibility-0"]')
   await expect(fillButton).toBeVisible()
 
-  const initial = await getNode(id!)
-  expect(initial!.fills[0]?.visible).toBe(true)
+  const initial = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(initial, 'initial node').fills[0]?.visible).toBe(true)
 
   await fillButton.click()
   await canvas.waitForRender()
   await expect(fillButton).toHaveAttribute('data-visible', 'false')
-  expect((await getNode(id!))!.fills[0]?.visible).toBe(false)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').fills[0]
+      ?.visible
+  ).toBe(false)
 
   await fillButton.click()
   await canvas.waitForRender()
   await expect(fillButton).toHaveAttribute('data-visible', 'true')
-  expect((await getNode(id!))!.fills[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').fills[0]
+      ?.visible
+  ).toBe(true)
 
   await canvas.undo()
-  expect((await getNode(id!))!.fills[0]?.visible).toBe(false)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').fills[0]
+      ?.visible
+  ).toBe(false)
   await canvas.redo()
-  expect((await getNode(id!))!.fills[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').fills[0]
+      ?.visible
+  ).toBe(true)
 
   const strokeAddButton = strokeSection().locator('[data-test-id="stroke-section-add"]')
   await strokeAddButton.click()
@@ -216,22 +232,37 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
 
   const strokeButton = page.locator('[data-test-id="stroke-visibility-0"]')
   await expect(strokeButton).toBeVisible()
-  expect((await getNode(id!))!.strokes[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').strokes[0]
+      ?.visible
+  ).toBe(true)
 
   await strokeButton.click()
   await canvas.waitForRender()
   await expect(strokeButton).toHaveAttribute('data-visible', 'false')
-  expect((await getNode(id!))!.strokes[0]?.visible).toBe(false)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').strokes[0]
+      ?.visible
+  ).toBe(false)
 
   await strokeButton.click()
   await canvas.waitForRender()
   await expect(strokeButton).toHaveAttribute('data-visible', 'true')
-  expect((await getNode(id!))!.strokes[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').strokes[0]
+      ?.visible
+  ).toBe(true)
 
   await canvas.undo()
-  expect((await getNode(id!))!.strokes[0]?.visible).toBe(false)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').strokes[0]
+      ?.visible
+  ).toBe(false)
   await canvas.redo()
-  expect((await getNode(id!))!.strokes[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').strokes[0]
+      ?.visible
+  ).toBe(true)
 
   const effectAddButton = effectsSection().locator('[data-test-id="effects-section-add"]')
   await effectAddButton.click()
@@ -239,22 +270,37 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
 
   const effectButton = page.locator('[data-test-id="effect-visibility-0"]')
   await expect(effectButton).toBeVisible()
-  expect((await getNode(id!))!.effects[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').effects[0]
+      ?.visible
+  ).toBe(true)
 
   await effectButton.click()
   await canvas.waitForRender()
   await expect(effectButton).toHaveAttribute('data-visible', 'false')
-  expect((await getNode(id!))!.effects[0]?.visible).toBe(false)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').effects[0]
+      ?.visible
+  ).toBe(false)
 
   await effectButton.click()
   await canvas.waitForRender()
   await expect(effectButton).toHaveAttribute('data-visible', 'true')
-  expect((await getNode(id!))!.effects[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').effects[0]
+      ?.visible
+  ).toBe(true)
 
   await canvas.undo()
-  expect((await getNode(id!))!.effects[0]?.visible).toBe(false)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').effects[0]
+      ?.visible
+  ).toBe(false)
   await canvas.redo()
-  expect((await getNode(id!))!.effects[0]?.visible).toBe(true)
+  expect(
+    expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').effects[0]
+      ?.visible
+  ).toBe(true)
 })
 
 test('deselecting shows empty design panel', async () => {

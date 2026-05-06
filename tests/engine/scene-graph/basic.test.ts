@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -16,7 +18,7 @@ describe('SceneGraph', () => {
     const id = rect(graph, 'Rect', 100, 100, 200, 150)
     const node = graph.getNode(id)
     expect(node).toBeDefined()
-    expect(node!.type).toBe('RECTANGLE')
+    expect(expectDefined(node, 'node').type).toBe('RECTANGLE')
     expect(node.x).toBe(100)
     expect(node.width).toBe(200)
   })
@@ -146,13 +148,13 @@ describe('SceneGraph', () => {
     const r = rect(graph, 'R', 100, 200)
     const node = graph.getNode(r)
     expect(node).toBeDefined()
-    expect(node!.parentId).toBe(page)
+    expect(expectDefined(node, 'node').parentId).toBe(page)
     graph.reparentNode(r, page)
     // Position should not change
     const after = graph.getNode(r)
     expect(after).toBeDefined()
-    expect(after!.x).toBe(100)
-    expect(after!.y).toBe(200)
+    expect(expectDefined(after, 'updated node').x).toBe(100)
+    expect(expectDefined(after, 'updated node').y).toBe(200)
     expect(after.parentId).toBe(page)
     expect(graph.getChildren(page)).toHaveLength(1)
   })
@@ -176,7 +178,7 @@ describe('SceneGraph', () => {
     // Now node is inside frame at (200,100), so local coords should be (100, 50)
     const after = graph.getNode(r)
     expect(after).toBeDefined()
-    expect(after!.x).toBe(100)
+    expect(expectDefined(after, 'updated node').x).toBe(100)
     expect(after.y).toBe(50)
     // Absolute position preserved
     const absAfter = graph.getAbsolutePosition(r)
@@ -245,7 +247,7 @@ describe('SceneGraph', () => {
     // Inner was at (100,100), frame is at (50,50), so inner's local = (50,50)
     const innerNode = graph.getNode(inner)
     expect(innerNode).toBeDefined()
-    expect(innerNode!.x).toBe(50)
+    expect(expectDefined(innerNode, 'inner node').x).toBe(50)
     expect(innerNode.y).toBe(50)
     // Child still at (10,10) relative to inner, absolute = (110,110)
     expect(graph.getAbsolutePosition(child)).toEqual({ x: 110, y: 110 })
@@ -326,7 +328,7 @@ describe('SceneGraph', () => {
     graph.updateNode(id, { x: 200, name: 'Updated' })
     const node = graph.getNode(id)
     expect(node).toBeDefined()
-    expect(node!.x).toBe(200)
+    expect(expectDefined(node, 'node').x).toBe(200)
     expect(node.name).toBe('Updated')
   })
 
@@ -340,7 +342,7 @@ describe('SceneGraph', () => {
     const child = graph.createNode('RECTANGLE', comp.id, { name: 'BG', width: 100, height: 40 })
     const instance = graph.createInstance(comp.id, pageId(graph))
     expect(instance).toBeDefined()
-    expect(instance!.type).toBe('INSTANCE')
+    expect(expectDefined(instance, 'instance').type).toBe('INSTANCE')
     expect(instance.componentId).toBe(comp.id)
     const instChildren = graph.getChildren(instance.id)
     expect(instChildren).toHaveLength(1)
@@ -358,7 +360,7 @@ describe('SceneGraph', () => {
     const label = graph.createNode('TEXT', comp.id, { name: 'Title', text: 'Hello', fontSize: 14 })
     const instance = graph.createInstance(comp.id, pageId(graph))
     expect(instance).toBeDefined()
-    const instLabel = graph.getChildren(instance!.id)[0]
+    const instLabel = graph.getChildren(expectDefined(instance, 'instance').id)[0]
     expect(instLabel.text).toBe('Hello')
 
     graph.updateNode(label.id, { text: 'Updated', fontSize: 18 })
@@ -378,7 +380,7 @@ describe('SceneGraph', () => {
     graph.createNode('TEXT', comp.id, { name: 'Title', text: 'Default', fontSize: 14 })
     const instance = graph.createInstance(comp.id, pageId(graph))
     expect(instance).toBeDefined()
-    const instLabel = graph.getChildren(instance!.id)[0]
+    const instLabel = graph.getChildren(expectDefined(instance, 'instance').id)[0]
 
     // Override the text on the instance child
     graph.updateNode(instLabel.id, { text: 'Custom' })
@@ -403,12 +405,12 @@ describe('SceneGraph', () => {
     graph.createNode('RECTANGLE', comp.id, { name: 'BG' })
     const instance = graph.createInstance(comp.id, pageId(graph))
     expect(instance).toBeDefined()
-    expect(graph.getChildren(instance!.id)).toHaveLength(1)
+    expect(graph.getChildren(expectDefined(instance, 'instance').id)).toHaveLength(1)
 
     graph.createNode('TEXT', comp.id, { name: 'Label', text: 'New' })
     graph.syncInstances(comp.id)
 
-    const instChildren = graph.getChildren(instance!.id)
+    const instChildren = graph.getChildren(expectDefined(instance, 'instance').id)
     expect(instChildren).toHaveLength(2)
     expect(instChildren[1].name).toBe('Label')
     expect(instChildren[1].text).toBe('New')
@@ -424,10 +426,10 @@ describe('SceneGraph', () => {
     graph.createNode('RECTANGLE', comp.id, { name: 'BG' })
     const instance = graph.createInstance(comp.id, pageId(graph))
     expect(instance).toBeDefined()
-    expect(instance!.type).toBe('INSTANCE')
+    expect(expectDefined(instance, 'instance').type).toBe('INSTANCE')
 
-    graph.detachInstance(instance!.id)
-    expect(instance!.type).toBe('FRAME')
+    graph.detachInstance(expectDefined(instance, 'instance').id)
+    expect(expectDefined(instance, 'instance').type).toBe('FRAME')
     expect(instance.componentId).toBeNull()
     expect(graph.getInstances(comp.id)).toHaveLength(0)
   })
@@ -1019,13 +1021,13 @@ describe('updateNode', () => {
     expect(textNode).toBeDefined()
     // Simulate a cached textPicture
     const fakePicture = new Uint8Array([1, 2, 3])
-    textNode!.textPicture = fakePicture
+    expectDefined(textNode, 'text node').textPicture = fakePicture
 
     // Changing fontSize (a TEXT_PICTURE_KEY) should null the cache
     graph.updateNode(textId, { fontSize: 24 })
     const afterUpdate = graph.getNode(textId)
     expect(afterUpdate).toBeDefined()
-    expect(afterUpdate!.textPicture).toBeNull()
+    expect(expectDefined(afterUpdate, 'updated node').textPicture).toBeNull()
   })
 
   test('textPicture survives non-text property change on TEXT node', () => {
@@ -1041,13 +1043,13 @@ describe('updateNode', () => {
     const fakePicture = new Uint8Array([4, 5, 6])
     const textNode = graph.getNode(textId)
     expect(textNode).toBeDefined()
-    textNode!.textPicture = fakePicture
+    expectDefined(textNode, 'text node').textPicture = fakePicture
 
     // Changing opacity (NOT a TEXT_PICTURE_KEY) should preserve textPicture
     graph.updateNode(textId, { opacity: 0.5 })
     const afterUpdate = graph.getNode(textId)
     expect(afterUpdate).toBeDefined()
-    expect(afterUpdate!.textPicture).toBe(fakePicture)
+    expect(expectDefined(afterUpdate, 'updated node').textPicture).toBe(fakePicture)
   })
 
   test('textPicture is nulled when textPicture is already null', () => {
@@ -1064,7 +1066,7 @@ describe('updateNode', () => {
     graph.updateNode(textId, { fontSize: 16 })
     const afterUpdate = graph.getNode(textId)
     expect(afterUpdate).toBeDefined()
-    expect(afterUpdate!.textPicture).toBeNull()
+    expect(expectDefined(afterUpdate, 'updated node').textPicture).toBeNull()
   })
 })
 

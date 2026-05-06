@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -31,21 +33,21 @@ describe('hitTest — group behavior', () => {
     const { graph, page } = setup()
     const hit = graph.hitTest(110, 110, page)
     expect(hit).not.toBeNull()
-    expect(hit!.type).toBe('GROUP')
+    expect(expectDefined(hit, 'hit node').type).toBe('GROUP')
   })
 
   test('hitTestDeep on child returns child directly', () => {
     const { graph, page, child } = setup()
     const hit = graph.hitTestDeep(110, 110, page)
     expect(hit).not.toBeNull()
-    expect(hit!.id).toBe(child.id)
+    expect(expectDefined(hit, 'hit node').id).toBe(child.id)
   })
 
   test('hitTest with scope=group returns child', () => {
     const { graph, group } = setup()
     const hit = graph.hitTest(110, 110, group.id)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('Rect')
+    expect(expectDefined(hit, 'hit node').name).toBe('Rect')
   })
 
   test('hitTest miss inside group returns null', () => {
@@ -93,28 +95,28 @@ describe('hitTest — nested groups', () => {
     const { graph, page } = setup()
     const hit = graph.hitTest(100, 100, page)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('GroupA')
+    expect(expectDefined(hit, 'hit node').name).toBe('GroupA')
   })
 
   test('click with scope=GroupA returns GroupB', () => {
     const { graph, groupA } = setup()
     const hit = graph.hitTest(150, 150, groupA.id)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('GroupB')
+    expect(expectDefined(hit, 'hit node').name).toBe('GroupB')
   })
 
   test('click with scope=GroupB returns DeepRect', () => {
     const { graph, groupB } = setup()
     const hit = graph.hitTest(160, 160, groupB.id)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('DeepRect')
+    expect(expectDefined(hit, 'hit node').name).toBe('DeepRect')
   })
 
   test('hitTestDeep from page returns deepest child', () => {
     const { graph, page, rect } = setup()
     const hit = graph.hitTestDeep(160, 160, page)
     expect(hit).not.toBeNull()
-    expect(hit!.id).toBe(rect.id)
+    expect(expectDefined(hit, 'hit node').id).toBe(rect.id)
   })
 })
 
@@ -140,7 +142,7 @@ describe('hitTest — locked nodes', () => {
 
     const hit = graph.hitTestDeep(10, 10, page)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('LockedFrame')
+    expect(expectDefined(hit, 'hit node').name).toBe('LockedFrame')
   })
 
   test('locked leaf node is still clickable', () => {
@@ -157,7 +159,7 @@ describe('hitTest — locked nodes', () => {
 
     const hit = graph.hitTest(25, 25, page)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('LockedRect')
+    expect(expectDefined(hit, 'hit node').name).toBe('LockedRect')
   })
 })
 
@@ -194,7 +196,7 @@ describe('scene graph — locked node operations', () => {
 
     const node = graph.getNode(rect.id)
     expect(node).not.toBeNull()
-    expect(node!.locked).toBe(true)
+    expect(expectDefined(node, 'node').locked).toBe(true)
   })
 
   test('lock can be toggled', () => {
@@ -208,11 +210,11 @@ describe('scene graph — locked node operations', () => {
       height: 50
     })
 
-    expect(graph.getNode(rect.id)!.locked).toBe(false)
+    expect(getNodeOrThrow(graph, rect.id).locked).toBe(false)
     graph.updateNode(rect.id, { locked: true })
-    expect(graph.getNode(rect.id)!.locked).toBe(true)
+    expect(getNodeOrThrow(graph, rect.id).locked).toBe(true)
     graph.updateNode(rect.id, { locked: false })
-    expect(graph.getNode(rect.id)!.locked).toBe(false)
+    expect(getNodeOrThrow(graph, rect.id).locked).toBe(false)
   })
 
   test('visibility can be toggled', () => {
@@ -226,11 +228,11 @@ describe('scene graph — locked node operations', () => {
       height: 50
     })
 
-    expect(graph.getNode(rect.id)!.visible).toBe(true)
+    expect(getNodeOrThrow(graph, rect.id).visible).toBe(true)
     graph.updateNode(rect.id, { visible: false })
-    expect(graph.getNode(rect.id)!.visible).toBe(false)
+    expect(getNodeOrThrow(graph, rect.id).visible).toBe(false)
     graph.updateNode(rect.id, { visible: true })
-    expect(graph.getNode(rect.id)!.visible).toBe(true)
+    expect(getNodeOrThrow(graph, rect.id).visible).toBe(true)
   })
 })
 
@@ -255,7 +257,7 @@ describe('hitTest — frame with children', () => {
 
     const hit = graph.hitTest(70, 70, frame.id)
     expect(hit).not.toBeNull()
-    expect(hit!.id).toBe(child.id)
+    expect(expectDefined(hit, 'hit node').id).toBe(child.id)
   })
 
   test('rotated frame scope hit test finds children using rotated local bounds', () => {
@@ -280,7 +282,7 @@ describe('hitTest — frame with children', () => {
     // point that is inside rotated frame bounds and child bounds
     const hitInside = graph.hitTest(193, 111, frame.id)
     expect(hitInside).not.toBeNull()
-    expect(hitInside!.id).toBe(child.id)
+    expect(expectDefined(hitInside, 'inside hit node').id).toBe(child.id)
 
     // point that would be inside if frame were not rotated
     const hitOutside = graph.hitTest(160, 130, frame.id)
@@ -309,7 +311,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
 
     const hit = graph.hitTest(10, 10, page)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('MyComp')
+    expect(expectDefined(hit, 'hit node').name).toBe('MyComp')
   })
 
   test('hitTestDeep inside COMPONENT scope finds child', () => {
@@ -332,7 +334,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
 
     const hit = graph.hitTestDeep(10, 10, comp.id)
     expect(hit).not.toBeNull()
-    expect(hit!.id).toBe(child.id)
+    expect(expectDefined(hit, 'hit node').id).toBe(child.id)
   })
 
   test('hitTest on INSTANCE returns instance itself', () => {
@@ -355,7 +357,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
 
     const hit = graph.hitTest(55, 55, page)
     expect(hit).not.toBeNull()
-    expect(hit!.name).toBe('MyInstance')
+    expect(expectDefined(hit, 'hit node').name).toBe('MyInstance')
   })
 
   test('hitTestDeep inside INSTANCE scope finds child', () => {
@@ -378,7 +380,7 @@ describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {
 
     const hit = graph.hitTestDeep(55, 55, inst.id)
     expect(hit).not.toBeNull()
-    expect(hit!.id).toBe(child.id)
+    expect(expectDefined(hit, 'hit node').id).toBe(child.id)
   })
 })
 
@@ -410,7 +412,7 @@ describe('hitTest — absolute position and scope offset', () => {
 
     const hit = graph.hitTest(250, 360, frame.id)
     expect(hit).not.toBeNull()
-    expect(hit!.id).toBe(child.id)
+    expect(expectDefined(hit, 'hit node').id).toBe(child.id)
 
     const missHit = graph.hitTest(50, 60, frame.id)
     expect(missHit).toBeNull()

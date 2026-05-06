@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getSelectedIds, getPageChildren, getSelectedNode, getNodeById } from '#tests/helpers/store'
 
@@ -106,8 +107,8 @@ test('resize corner handle drag increases node dimensions', async () => {
   const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
   if (!box) throw new Error('No canvas')
 
-  const hx = box.x + viewport!.handleX
-  const hy = box.y + viewport!.handleY
+  const hx = box.x + expectDefined(viewport, 'viewport state').handleX
+  const hy = box.y + expectDefined(viewport, 'viewport state').handleY
 
   await page.mouse.move(hx, hy)
   await page.mouse.down()
@@ -116,8 +117,12 @@ test('resize corner handle drag increases node dimensions', async () => {
   await canvas.waitForRender()
 
   const after = await getSelectedNode(page)
-  expect(after!.width).toBeGreaterThan(before!.width + 20)
-  expect(after!.height).toBeGreaterThan(before!.height + 20)
+  expect(expectDefined(after, 'selected node after').width).toBeGreaterThan(
+    expectDefined(before, 'selected node before').width + 20
+  )
+  expect(expectDefined(after, 'selected node after').height).toBeGreaterThan(
+    expectDefined(before, 'selected node before').height + 20
+  )
   canvas.assertNoErrors()
 })
 
@@ -129,7 +134,7 @@ test('rotation handle drag rotates node', async () => {
 
   const before = await getSelectedNode(page)
   expect(before).not.toBeNull()
-  const initialRotation = before!.rotation ?? 0
+  const initialRotation = expectDefined(before, 'selected node before').rotation ?? 0
 
   const viewport = await page.evaluate(() => {
     const store = window.openPencil?.store
@@ -150,8 +155,8 @@ test('rotation handle drag rotates node', async () => {
   const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
   if (!box) throw new Error('No canvas')
 
-  const rx = box.x + viewport!.cx
-  const ry = box.y + viewport!.topMidY - 24
+  const rx = box.x + expectDefined(viewport, 'viewport state').cx
+  const ry = box.y + expectDefined(viewport, 'viewport state').topMidY - 24
 
   await page.mouse.move(rx, ry)
   await canvas.waitForRender()
@@ -160,8 +165,8 @@ test('rotation handle drag rotates node', async () => {
   await page.mouse.up()
   await canvas.waitForRender()
 
-  const after = await getNodeById(page, before!.id)
-  expect(after!.rotation ?? 0).not.toBe(initialRotation)
+  const after = await getNodeById(page, expectDefined(before, 'selected node before').id)
+  expect(expectDefined(after, 'selected node after').rotation ?? 0).not.toBe(initialRotation)
   canvas.assertNoErrors()
 })
 
@@ -236,14 +241,20 @@ async function setupFrameChild(rotation: number) {
   })
 
   expect(state).not.toBeNull()
-  return state!
+  return expectDefined(state, 'frame child state')
 }
 
 test('frame children keep correct hover and click hit area without rotation', async () => {
   const state = await setupFrameChild(0)
 
   await canvas.hover(state.hitX, state.hitY)
-  const hoveredId = await page.evaluate(() => window.openPencil?.store!.state.hoveredNodeId)
+  const hoveredId = await page.evaluate(() =>
+    (() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.state.hoveredNodeId
+    })()
+  )
   expect(hoveredId).toBe(state.childId)
 
   await canvas.click(state.hitX, state.hitY)
@@ -252,7 +263,13 @@ test('frame children keep correct hover and click hit area without rotation', as
   expect(selected?.id).toBe(state.childId)
 
   await canvas.hover(state.missX, state.missY)
-  const hoveredMiss = await page.evaluate(() => window.openPencil?.store!.state.hoveredNodeId)
+  const hoveredMiss = await page.evaluate(() =>
+    (() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.state.hoveredNodeId
+    })()
+  )
   expect(hoveredMiss).not.toBe(state.childId)
   canvas.assertNoErrors()
 })
@@ -261,7 +278,13 @@ test('rotated frame children keep correct hover and click hit area', async () =>
   const state = await setupFrameChild(35)
 
   await canvas.hover(state.hitX, state.hitY)
-  const hoveredId = await page.evaluate(() => window.openPencil?.store!.state.hoveredNodeId)
+  const hoveredId = await page.evaluate(() =>
+    (() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.state.hoveredNodeId
+    })()
+  )
   expect(hoveredId).toBe(state.childId)
 
   await canvas.click(state.hitX, state.hitY)
@@ -270,7 +293,13 @@ test('rotated frame children keep correct hover and click hit area', async () =>
   expect(selected?.id).toBe(state.childId)
 
   await canvas.hover(state.missX, state.missY)
-  const hoveredMiss = await page.evaluate(() => window.openPencil?.store!.state.hoveredNodeId)
+  const hoveredMiss = await page.evaluate(() =>
+    (() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.state.hoveredNodeId
+    })()
+  )
   expect(hoveredMiss).not.toBe(state.childId)
   canvas.assertNoErrors()
 })
@@ -300,8 +329,8 @@ test('rotation drag exposes live rotation preview state', async () => {
   const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
   if (!box) throw new Error('No canvas')
 
-  const rx = box.x + viewport!.cx
-  const ry = box.y + viewport!.topMidY - 24
+  const rx = box.x + expectDefined(viewport, 'viewport state').cx
+  const ry = box.y + expectDefined(viewport, 'viewport state').topMidY - 24
 
   await page.mouse.move(rx, ry)
   await canvas.waitForRender()
@@ -309,13 +338,25 @@ test('rotation drag exposes live rotation preview state', async () => {
   await page.mouse.move(rx + 60, ry + 60, { steps: 15 })
   await canvas.waitForRender()
 
-  const preview = await page.evaluate(() => window.openPencil?.store!.state.rotationPreview)
+  const preview = await page.evaluate(() =>
+    (() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.state.rotationPreview
+    })()
+  )
   expect(preview).not.toBeNull()
 
   await page.mouse.up()
   await canvas.waitForRender()
 
-  const clearedPreview = await page.evaluate(() => window.openPencil?.store!.state.rotationPreview)
+  const clearedPreview = await page.evaluate(() =>
+    (() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return store.state.rotationPreview
+    })()
+  )
   expect(clearedPreview).toBeNull()
   canvas.assertNoErrors()
 })

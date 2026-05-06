@@ -3,6 +3,7 @@ import { describe, expect, it } from 'bun:test'
 import { importClipboardNodes } from '@open-pencil/core'
 import type { NodeChange, SceneNode } from '@open-pencil/core'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
 import { createClipboardGraph } from '#tests/helpers/clipboard'
 
 describe('importClipboardNodes', () => {
@@ -52,7 +53,7 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
 
-    const card = graph.getNode(created[0])!
+    const card = getNodeOrThrow(graph, created[0])
     expect(card.type).toBe('FRAME')
     expect(card.name).toBe('Card')
 
@@ -109,7 +110,7 @@ describe('importClipboardNodes', () => {
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
-    expect(graph.getNode(created[0])!.name).toBe('RealShape')
+    expect(getNodeOrThrow(graph, created[0]).name).toBe('RealShape')
   })
 
   it('imports nested frames with children', () => {
@@ -154,7 +155,7 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
 
-    const outer = graph.getNode(created[0])!
+    const outer = getNodeOrThrow(graph, created[0])
     expect(outer.name).toBe('Outer')
 
     const innerList = graph.getChildren(outer.id)
@@ -196,7 +197,7 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    const node = graph.getNode(created[0])!
+    const node = getNodeOrThrow(graph, created[0])
     expect(node.fills).toHaveLength(1)
     expect(node.fills[0].color.r).toBe(1)
     expect(node.strokes).toHaveLength(1)
@@ -244,7 +245,7 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    const row = graph.getNode(created[0])!
+    const row = getNodeOrThrow(graph, created[0])
     const children = graph.getChildren(row.id)
     expect(children[0].layoutAlignSelf).toBe('STRETCH')
     expect(children[1].layoutAlignSelf).toBe('AUTO')
@@ -290,9 +291,9 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(graph.getNode(created[0])!.clipsContent).toBe(true)
-    expect(graph.getNode(created[1])!.clipsContent).toBe(false)
-    expect(graph.getNode(created[2])!.clipsContent).toBe(false)
+    expect(getNodeOrThrow(graph, created[0]).clipsContent).toBe(true)
+    expect(getNodeOrThrow(graph, created[1]).clipsContent).toBe(false)
+    expect(getNodeOrThrow(graph, created[2]).clipsContent).toBe(false)
   })
 
   it('imports fontWeight from fontName.style via styleToWeight', () => {
@@ -342,10 +343,10 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(graph.getNode(created[0])!.fontWeight).toBe(500)
-    expect(graph.getNode(created[1])!.fontWeight).toBe(700)
-    expect(graph.getNode(created[2])!.fontWeight).toBe(700)
-    expect(graph.getNode(created[2])!.italic).toBe(true)
+    expect(getNodeOrThrow(graph, created[0]).fontWeight).toBe(500)
+    expect(getNodeOrThrow(graph, created[1]).fontWeight).toBe(700)
+    expect(getNodeOrThrow(graph, created[2]).fontWeight).toBe(700)
+    expect(getNodeOrThrow(graph, created[2]).italic).toBe(true)
   })
 
   it('converts letterSpacing object to pixels', () => {
@@ -394,9 +395,9 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(graph.getNode(created[0])!.letterSpacing).toBe(2)
-    expect(graph.getNode(created[1])!.letterSpacing).toBe(2) // 10% of 20px
-    expect(graph.getNode(created[2])!.letterSpacing).toBe(0)
+    expect(getNodeOrThrow(graph, created[0]).letterSpacing).toBe(2)
+    expect(getNodeOrThrow(graph, created[1]).letterSpacing).toBe(2) // 10% of 20px
+    expect(getNodeOrThrow(graph, created[2]).letterSpacing).toBe(0)
   })
 
   it('converts RAW lineHeight to pixels', () => {
@@ -446,9 +447,9 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(graph.getNode(created[0])!.lineHeight).toBe(36) // 24 * 1.5
-    expect(graph.getNode(created[1])!.lineHeight).toBe(20)
-    expect(graph.getNode(created[2])!.lineHeight).toBe(24) // 120% of 20
+    expect(getNodeOrThrow(graph, created[0]).lineHeight).toBe(36) // 24 * 1.5
+    expect(getNodeOrThrow(graph, created[1]).lineHeight).toBe(20)
+    expect(getNodeOrThrow(graph, created[2]).lineHeight).toBe(24) // 120% of 20
   })
 
   it('converts letterSpacing and lineHeight in style overrides', () => {
@@ -487,7 +488,7 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    const node = graph.getNode(created[0])!
+    const node = getNodeOrThrow(graph, created[0])
     expect(node.styleRuns).toHaveLength(1)
     expect(node.styleRuns[0].style.lineHeight).toBe(30) // 20 * 1.5
     expect(node.styleRuns[0].style.letterSpacing).toBeCloseTo(-0.4) // 20 * -2/100
@@ -542,7 +543,7 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
 
-    const component = graph.getNode(created[0])!
+    const component = getNodeOrThrow(graph, created[0])
     expect(component.type).toBe('COMPONENT')
     expect(component.layoutMode).toBe('VERTICAL')
     expect(component.itemSpacing).toBe(16)
@@ -598,11 +599,11 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(2)
 
-    const component = graph.getNode(created[0])!
+    const component = getNodeOrThrow(graph, created[0])
     expect(component.type).toBe('COMPONENT')
     expect(graph.getChildren(component.id)).toHaveLength(1)
 
-    const instance = graph.getNode(created[1])!
+    const instance = getNodeOrThrow(graph, created[1])
     expect(instance.type).toBe('INSTANCE')
     expect(instance.componentId).toBe(component.id)
 
@@ -662,7 +663,7 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
 
-    const instance = graph.getNode(created[0])!
+    const instance = getNodeOrThrow(graph, created[0])
     expect(instance.type).toBe('INSTANCE')
     expect(instance.name).toBe('Icon')
 
@@ -717,7 +718,7 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
 
-    const card = graph.getNode(created[0])!
+    const card = getNodeOrThrow(graph, created[0])
     const children = graph.getChildren(card.id)
     expect(children).toHaveLength(1)
 
@@ -792,7 +793,7 @@ describe('importClipboardNodes', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     expect(created).toHaveLength(1)
 
-    const instance = graph.getNode(created[0])!
+    const instance = getNodeOrThrow(graph, created[0])
     expect(instance.type).toBe('INSTANCE')
     const children = graph.getChildren(instance.id)
     expect(children).toHaveLength(1)
@@ -845,9 +846,9 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    expect(graph.getNode(created[0])!.textAutoResize).toBe('HEIGHT')
-    expect(graph.getNode(created[1])!.textAutoResize).toBe('WIDTH_AND_HEIGHT')
-    expect(graph.getNode(created[2])!.textAutoResize).toBe('NONE')
+    expect(getNodeOrThrow(graph, created[0]).textAutoResize).toBe('HEIGHT')
+    expect(getNodeOrThrow(graph, created[1]).textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    expect(getNodeOrThrow(graph, created[2]).textAutoResize).toBe('NONE')
   })
 
   it('undo removes all imported nodes including children', () => {
@@ -940,11 +941,11 @@ describe('importClipboardNodes', () => {
 
     const childrenBefore = graph.getChildren(pageId).length
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    const parent = graph.getNode(created[0])!
+    const parent = getNodeOrThrow(graph, created[0])
 
     const allSnapshots: SceneNode[] = []
     function walk(id: string) {
-      const n = graph.getNode(id)!
+      const n = getNodeOrThrow(graph, id)
       allSnapshots.push({ ...n })
       for (const cid of n.childIds) walk(cid)
     }
@@ -962,7 +963,7 @@ describe('importClipboardNodes', () => {
       })
     }
 
-    const restored = graph.getNode(parent.id)!
+    const restored = getNodeOrThrow(graph, parent.id)
     expect(restored).toBeTruthy()
     expect(restored.name).toBe('Parent')
     expect(restored.childIds).toHaveLength(2)
@@ -1003,11 +1004,11 @@ describe('importClipboardNodes', () => {
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, pageId)
-    const parent = graph.getNode(created[0])!
+    const parent = getNodeOrThrow(graph, created[0])
 
     const allSnapshots: SceneNode[] = []
     function walk(id: string) {
-      const n = graph.getNode(id)!
+      const n = getNodeOrThrow(graph, id)
       allSnapshots.push({ ...n })
       for (const cid of n.childIds) walk(cid)
     }
@@ -1020,7 +1021,7 @@ describe('importClipboardNodes', () => {
       graph.createNode(snapshot.type, snapshot.parentId ?? pageId, snapshot)
     }
 
-    const restored = graph.getNode(parent.id)!
+    const restored = getNodeOrThrow(graph, parent.id)
     // Bug: parent has duplicated childIds because snapshot already had [childId]
     // and createNode appends childId again
     expect(restored.childIds.length).toBeGreaterThan(1)

@@ -10,6 +10,7 @@ import {
 
 import { createEditorStore } from '@/app/editor/session'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, loadFixtureGraph, pageId, rect } from '#tests/helpers/layout'
 
 describe('Auto Layout', () => {
@@ -394,7 +395,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(130)
     })
 
@@ -413,7 +414,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.height).toBe(110)
     })
 
@@ -433,7 +434,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(160)
       expect(f.height).toBe(90)
     })
@@ -591,7 +592,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(50)
       expect(f.height).toBe(30)
     })
@@ -616,7 +617,7 @@ describe('Auto Layout', () => {
       computeLayout(graph, outer.id)
 
       const children = graph.getChildren(outer.id)
-      const innerNode = graph.getNode(inner.id)!
+      const innerNode = getNodeOrThrow(graph, inner.id)
       expect(innerNode.width).toBe(50)
       expect(innerNode.height).toBe(50)
       expect(children[1].x).toBe(0)
@@ -663,7 +664,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, outer.id)
 
-      const innerNode = graph.getNode(inner.id)!
+      const innerNode = getNodeOrThrow(graph, inner.id)
       expect(innerNode.width).toBe(105)
       expect(innerNode.x).toBe(0)
 
@@ -692,7 +693,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, outer.id)
 
-      const innerNode = graph.getNode(inner.id)!
+      const innerNode = getNodeOrThrow(graph, inner.id)
       expect(innerNode.height).toBe(130)
 
       const outerChildren = graph.getChildren(outer.id)
@@ -723,7 +724,7 @@ describe('Auto Layout', () => {
 
       computeAllLayouts(graph)
 
-      const middleNode = graph.getNode(middle.id)!
+      const middleNode = getNodeOrThrow(graph, middle.id)
       expect(middleNode.width).toBe(105)
       expect(middleNode.height).toBe(30)
 
@@ -834,7 +835,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const c = graph.getNode(child.id)!
+      const c = getNodeOrThrow(graph, child.id)
       expect(c.x).toBe(100)
       expect(c.y).toBe(100)
     })
@@ -854,7 +855,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(60)
       expect(f.height).toBe(40)
     })
@@ -890,7 +891,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(10)
       expect(f.height).toBe(10)
     })
@@ -906,7 +907,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(50)
 
       const children = graph.getChildren(frame.id)
@@ -929,7 +930,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(400)
       expect(f.height).toBe(120)
     })
@@ -949,7 +950,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.height).toBe(110)
       expect(f.width).toBe(200)
     })
@@ -975,7 +976,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, outer.id)
 
-      const innerNode = graph.getNode(inner.id)!
+      const innerNode = getNodeOrThrow(graph, inner.id)
       // 400 - 100 - 10 = 290
       expect(innerNode.width).toBe(290)
     })
@@ -1155,9 +1156,9 @@ describe('Auto Layout', () => {
 
       setTextMeasurer(null)
 
-      const updatedText = graph.getNode(text.id)!
-      const updatedArrow1 = graph.getNode(arrow1.id)!
-      const updatedArrow2 = graph.getNode(arrow2.id)!
+      const updatedText = getNodeOrThrow(graph, text.id)
+      const updatedArrow1 = getNodeOrThrow(graph, arrow1.id)
+      const updatedArrow2 = getNodeOrThrow(graph, arrow2.id)
 
       expect(updatedText.width).toBe(60)
 
@@ -1320,7 +1321,7 @@ describe('Auto Layout', () => {
       computeAllLayouts(graph)
       setTextMeasurer(null)
 
-      const updatedText = graph.getNode(text.id)!
+      const updatedText = getNodeOrThrow(graph, text.id)
       // Should stretch to 300 - 20 - 20 = 260, NOT stay at 100
       expect(updatedText.width).toBe(260)
     })
@@ -1354,7 +1355,7 @@ describe('Auto Layout', () => {
       computeAllLayouts(graph)
       setTextMeasurer(null)
 
-      const updatedText = graph.getNode(text.id)!
+      const updatedText = getNodeOrThrow(graph, text.id)
       expect(updatedText.width).toBe(300)
       expect(updatedText.height).toBe(20)
     })
@@ -1395,7 +1396,7 @@ describe('Auto Layout', () => {
 
       // 400 - 100 - 10 = 290 available for the fill text
       expect(receivedWidths.length).toBeGreaterThan(0)
-      const updatedText = graph.getNode(text.id)!
+      const updatedText = getNodeOrThrow(graph, text.id)
       expect(updatedText.width).toBe(290)
     })
 
@@ -1429,7 +1430,7 @@ describe('Auto Layout', () => {
       setTextMeasurer(null)
 
       expect(measureCalled).toBe(false)
-      const updatedText = graph.getNode(text.id)!
+      const updatedText = getNodeOrThrow(graph, text.id)
       expect(updatedText.width).toBe(150)
       expect(updatedText.height).toBe(40)
     })
@@ -1512,7 +1513,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, outer.id)
 
-      const innerNode = graph.getNode(inner.id)!
+      const innerNode = getNodeOrThrow(graph, inner.id)
       expect(innerNode.width).toBe(250)
     })
   })
@@ -1711,17 +1712,17 @@ describe('Auto Layout', () => {
       const child = rect(graph, frame.id, 80, 60)
 
       computeLayout(graph, frame.id)
-      expect(graph.getNode(child.id)!.width).toBe(80)
+      expect(getNodeOrThrow(graph, child.id).width).toBe(80)
 
       graph.updateNode(child.id, { visible: false })
       computeLayout(graph, frame.id)
-      expect(graph.getNode(child.id)!.width).toBe(80)
-      expect(graph.getNode(child.id)!.height).toBe(60)
+      expect(getNodeOrThrow(graph, child.id).width).toBe(80)
+      expect(getNodeOrThrow(graph, child.id).height).toBe(60)
 
       graph.updateNode(child.id, { visible: true })
       computeLayout(graph, frame.id)
-      expect(graph.getNode(child.id)!.width).toBe(80)
-      expect(graph.getNode(child.id)!.height).toBe(60)
+      expect(getNodeOrThrow(graph, child.id).width).toBe(80)
+      expect(getNodeOrThrow(graph, child.id).height).toBe(60)
     })
   })
 
@@ -1740,7 +1741,7 @@ describe('Auto Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const f = graph.getNode(frame.id)!
+      const f = getNodeOrThrow(graph, frame.id)
       expect(f.width).toBe(100)
 
       const children = graph.getChildren(frame.id)

@@ -19,6 +19,7 @@ import { SkiaRenderer } from '#core/canvas'
 import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { coreSourcePath, publicPath, testPath as repoTestPath } from '#tests/helpers/paths'
 
 // === CLAIM EXTRACTION ===
@@ -75,7 +76,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
     // Use a targeted search near the Effect interface definition
     const effectInterfaceMatch = src.match(/interface Effect\s*\{([^}]+)\}/)
     expect(effectInterfaceMatch).toBeTruthy()
-    const effectBody = effectInterfaceMatch![1]
+    const effectBody = expectDefined(effectInterfaceMatch, 'effectInterfaceMatch')[1]
     for (const type of [
       'DROP_SHADOW',
       'INNER_SHADOW',
@@ -107,7 +108,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
       /export function renderShapeUncached[\s\S]*?(?=\nexport function|\n$)/
     )
     expect(renderShapeUncachedMatch).toBeTruthy()
-    const body = renderShapeUncachedMatch![0]
+    const body = expectDefined(renderShapeUncachedMatch, 'renderShapeUncachedMatch')[0]
 
     // Find indices of key calls
     const behindIdx = body.indexOf("'behind'")
@@ -132,7 +133,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
       /export function renderNode[\s\S]*?(?=\nexport function|\nexport const)/
     )
     expect(renderNodeMatch).toBeTruthy()
-    const body = renderNodeMatch![0]
+    const body = expectDefined(renderNodeMatch, 'renderNodeMatch')[0]
 
     // Verify opacity saveLayer comes before layerBlur saveLayer
     const opacityLayerIdx = body.indexOf('opacity < 1')
@@ -170,7 +171,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
       /function drawTextInnerShadow[\s\S]*?(?=\nfunction |\nexport )/
     )
     expect(drawTextInnerShadowMatch).toBeTruthy()
-    const body = drawTextInnerShadowMatch![0]
+    const body = expectDefined(drawTextInnerShadowMatch, 'drawTextInnerShadowMatch')[0]
 
     // Count saveLayer calls — there are 4 (Master, Restrictive, Blur, DstOut)
     // plus 2 canvas.save() calls (child transform + offset transform)
@@ -199,7 +200,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
       /export function renderShape[\s\S]*?(?=\nexport function|\nexport const)/
     )
     expect(renderShapeMatch).toBeTruthy()
-    const body = renderShapeMatch![0]
+    const body = expectDefined(renderShapeMatch, 'renderShapeMatch')[0]
     expect(body).toContain('nodePictureCache')
     expect(body).toContain('PictureRecorder')
   })
@@ -213,7 +214,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
       /function getShadowShapeChild[\s\S]*?(?=\nfunction |\nexport )/
     )
     expect(getShadowShapeChildFn).toBeTruthy()
-    const body = getShadowShapeChildFn![0]
+    const body = expectDefined(getShadowShapeChildFn, 'getShadowShapeChildFn')[0]
     // No for loop over children
     expect(body).not.toMatch(/for\s*\(.*childIds/)
     // Accesses childIds twice: once for .length guard, once for [0] read
@@ -243,7 +244,7 @@ describe('Doc 02 — Formula Deconstruction: Static Code Claims', () => {
       /function drawTextInnerShadow[\s\S]*?(?=\nfunction |\nexport )/
     )
     expect(drawTextInnerShadowMatch).toBeTruthy()
-    const body = drawTextInnerShadowMatch![0]
+    const body = expectDefined(drawTextInnerShadowMatch, 'drawTextInnerShadowMatch')[0]
 
     // 4 saveLayer: Master, Restrictive, Blur, DstOut
     // 2 save: child transform, offset transform
@@ -303,7 +304,7 @@ describe('Doc 03 — Artifact Analysis: Static + Runtime Verification', () => {
       /function drawTextInnerShadow[\s\S]*?(?=\nfunction |\nexport )/
     )
     expect(drawTextInnerShadowMatch).toBeTruthy()
-    const body = drawTextInnerShadowMatch![0]
+    const body = expectDefined(drawTextInnerShadowMatch, 'drawTextInnerShadowMatch')[0]
 
     // Check the expand calculation
     expect(body).toContain('const expand')
@@ -316,7 +317,7 @@ describe('Doc 03 — Artifact Analysis: Static + Runtime Verification', () => {
     const src = readSource(scenePath)
     const match = src.match(/function getShadowShapeChild[\s\S]*?(?=\nfunction |\nexport )/)
     expect(match).toBeTruthy()
-    const body = match![0]
+    const body = expectDefined(match, 'match')[0]
     // Verify it returns early after first child
     expect(body).toContain('return child')
     // Verify no array accumulation
@@ -354,7 +355,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
       void fontPath
     }
 
-    const surface = ck.MakeSurface(200, 200)!
+    const surface = expectDefined(ck.MakeSurface(200, 200), 'CanvasKit surface')
     renderer = new SkiaRenderer(ck, surface)
     renderer.fontProvider = fontProvider
     renderer.fontsLoaded = true
@@ -516,7 +517,7 @@ describe('Doc 01/03 — Runtime Behavior Verification', () => {
       /function drawTextInnerShadow[\s\S]*?(?=\nfunction |\nexport )/
     )
     expect(drawTextInnerShadowMatch).toBeTruthy()
-    const body = drawTextInnerShadowMatch![0]
+    const body = expectDefined(drawTextInnerShadowMatch, 'drawTextInnerShadowMatch')[0]
 
     // MakeBlend IS called (for tintFilter and solidBlackFilter)
     expect(body).toContain('MakeBlend')
@@ -543,7 +544,7 @@ describe('Doc 01 — LAYER_BLUR Round-Trip Loss Verification', () => {
     const src = readSource(schemaPath)
     const effectTypeBlock = src.match(/enum EffectType\s*\{([^}]*)\}/)
     expect(effectTypeBlock).toBeTruthy()
-    const body = effectTypeBlock![1]
+    const body = expectDefined(effectTypeBlock, 'effectTypeBlock')[1]
     // Count the values (each is "NAME = N;")
     const valueCount = (body.match(/=\s*\d+\s*;/g) || []).length
     expect(valueCount).toBe(4)
@@ -576,7 +577,7 @@ describe('Doc 02/03 — Cache Infrastructure Verification', () => {
     const rendererSrc = readSource(rendererPath)
     const destroyMatch = rendererSrc.match(/destroy\(\)[\s\S]*?(?=\n  \w|\n\})/)
     expect(destroyMatch).toBeTruthy()
-    const body = destroyMatch![0]
+    const body = expectDefined(destroyMatch, 'destroyMatch')[0]
     // destroy() delegates to destroyRenderer — verify the lifecycle module cleans caches
     expect(body).toContain('destroyRenderer')
     const lifecycleSrc = readSource(lifecyclePath)

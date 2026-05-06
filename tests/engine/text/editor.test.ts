@@ -4,6 +4,8 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import { TextEditor, type SceneNode } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 const mockCk = {} as CanvasKit
 
 function createEditor(text = 'Hello World') {
@@ -11,6 +13,10 @@ function createEditor(text = 'Hello World') {
   const node = { id: 'test-node', text } as SceneNode
   editor.start(node)
   return { editor, node }
+}
+
+function editorState(editor: TextEditor) {
+  return expectDefined(editor.state, 'text editor state')
 }
 
 describe('TextEditor', () => {
@@ -45,15 +51,15 @@ describe('TextEditor', () => {
 
   test('insert at cursor position', () => {
     const { editor, node } = createEditor()
-    editor.state!.cursor = 5
+    editorState(editor).cursor = 5
     editor.insert(' Beautiful', node)
     expect(editor.state?.text).toBe('Hello Beautiful World')
   })
 
   test('insert replaces selection', () => {
     const { editor, node } = createEditor()
-    editor.state!.selectionAnchor = 0
-    editor.state!.cursor = 5
+    editorState(editor).selectionAnchor = 0
+    editorState(editor).cursor = 5
     editor.insert('Goodbye', node)
     expect(editor.state?.text).toBe('Goodbye World')
     expect(editor.state?.cursor).toBe(7)
@@ -69,15 +75,15 @@ describe('TextEditor', () => {
 
   test('backspace at start does nothing', () => {
     const { editor, node } = createEditor()
-    editor.state!.cursor = 0
+    editorState(editor).cursor = 0
     editor.backspace(node)
     expect(editor.state?.text).toBe('Hello World')
   })
 
   test('backspace deletes selection', () => {
     const { editor, node } = createEditor()
-    editor.state!.selectionAnchor = 6
-    editor.state!.cursor = 11
+    editorState(editor).selectionAnchor = 6
+    editorState(editor).cursor = 11
     editor.backspace(node)
     expect(editor.state?.text).toBe('Hello ')
     expect(editor.state?.cursor).toBe(6)
@@ -85,7 +91,7 @@ describe('TextEditor', () => {
 
   test('delete removes char after cursor', () => {
     const { editor, node } = createEditor()
-    editor.state!.cursor = 0
+    editorState(editor).cursor = 0
     editor.delete(node)
     expect(editor.state?.text).toBe('ello World')
     expect(editor.state?.cursor).toBe(0)
@@ -99,8 +105,8 @@ describe('TextEditor', () => {
 
   test('delete removes selection', () => {
     const { editor, node } = createEditor()
-    editor.state!.selectionAnchor = 0
-    editor.state!.cursor = 5
+    editorState(editor).selectionAnchor = 0
+    editorState(editor).cursor = 5
     editor.delete(node)
     expect(editor.state?.text).toBe(' World')
   })
@@ -119,8 +125,8 @@ describe('TextEditor', () => {
 
   test('moveLeft collapses selection to start', () => {
     const { editor } = createEditor()
-    editor.state!.selectionAnchor = 3
-    editor.state!.cursor = 8
+    editorState(editor).selectionAnchor = 3
+    editorState(editor).cursor = 8
     editor.moveLeft()
     expect(editor.state?.cursor).toBe(3)
     expect(editor.state?.selectionAnchor).toBeNull()
@@ -128,8 +134,8 @@ describe('TextEditor', () => {
 
   test('moveRight collapses selection to end', () => {
     const { editor } = createEditor()
-    editor.state!.selectionAnchor = 3
-    editor.state!.cursor = 8
+    editorState(editor).selectionAnchor = 3
+    editorState(editor).cursor = 8
     editor.moveRight()
     expect(editor.state?.cursor).toBe(8)
     expect(editor.state?.selectionAnchor).toBeNull()
@@ -145,28 +151,28 @@ describe('TextEditor', () => {
   test('hasSelection', () => {
     const { editor } = createEditor()
     expect(editor.hasSelection()).toBe(false)
-    editor.state!.selectionAnchor = 0
+    editorState(editor).selectionAnchor = 0
     expect(editor.hasSelection()).toBe(true)
   })
 
   test('hasSelection false when anchor equals cursor', () => {
     const { editor } = createEditor()
-    editor.state!.selectionAnchor = editor.state!.cursor
+    editorState(editor).selectionAnchor = editorState(editor).cursor
     expect(editor.hasSelection()).toBe(false)
   })
 
   test('getSelectionRange', () => {
     const { editor } = createEditor()
     expect(editor.getSelectionRange()).toBeNull()
-    editor.state!.selectionAnchor = 8
-    editor.state!.cursor = 3
+    editorState(editor).selectionAnchor = 8
+    editorState(editor).cursor = 3
     expect(editor.getSelectionRange()).toEqual([3, 8])
   })
 
   test('getSelectedText', () => {
     const { editor } = createEditor()
-    editor.state!.selectionAnchor = 0
-    editor.state!.cursor = 5
+    editorState(editor).selectionAnchor = 0
+    editorState(editor).cursor = 5
     expect(editor.getSelectedText()).toBe('Hello')
   })
 
@@ -192,14 +198,14 @@ describe('TextEditor', () => {
 
   test('moveWordRight from start', () => {
     const { editor } = createEditor()
-    editor.state!.cursor = 0
+    editorState(editor).cursor = 0
     editor.moveWordRight()
     expect(editor.state?.cursor).toBe(6)
   })
 
   test('moveLeft with extend creates selection', () => {
     const { editor } = createEditor()
-    editor.state!.cursor = 5
+    editorState(editor).cursor = 5
     editor.moveLeft(true)
     expect(editor.state?.selectionAnchor).toBe(5)
     expect(editor.state?.cursor).toBe(4)

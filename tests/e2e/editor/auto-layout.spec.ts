@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getSelectedNode, getNodeById } from '#tests/helpers/store'
 
@@ -24,7 +25,9 @@ test.afterAll(async () => {
 async function selectFrame() {
   expect(frameId, 'frameId must be set — did the Shift+A test run?').toBeTruthy()
   await page.evaluate((id: string) => {
-    window.openPencil?.store!.select([id])
+    const store = window.openPencil?.store
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.select([id])
   }, frameId)
   await canvas.waitForRender()
 }
@@ -41,11 +44,11 @@ test('Shift+A wraps selection in auto-layout frame', async () => {
 
   const node = await getSelectedNode(page)
   expect(node).not.toBeNull()
-  expect(node!.type).toBe('FRAME')
-  expect(node!.layoutMode).not.toBe('NONE')
-  expect(node!.childIds.length).toBe(2)
+  expect(expectDefined(node, 'node').type).toBe('FRAME')
+  expect(expectDefined(node, 'node').layoutMode).not.toBe('NONE')
+  expect(expectDefined(node, 'node').childIds.length).toBe(2)
 
-  frameId = node!.id
+  frameId = expectDefined(node, 'node').id
   canvas.assertNoErrors()
 })
 
@@ -56,19 +59,19 @@ test('direction button toggles to VERTICAL', async () => {
   await canvas.waitForRender()
 
   const frame = await getNodeById(page, frameId)
-  expect(frame!.layoutMode).toBe('VERTICAL')
+  expect(expectDefined(frame, 'frame').layoutMode).toBe('VERTICAL')
   canvas.assertNoErrors()
 })
 
 test('gap ScrubInput sets itemSpacing', async () => {
   await selectFrame()
   const before = await getNodeById(page, frameId)
-  const initialSpacing = before!.itemSpacing
+  const initialSpacing = expectDefined(before, 'before').itemSpacing
 
   await canvas.dragScrubInput(page.locator('[data-test-id="layout-gap-input"]'), 40)
 
   const after = await getNodeById(page, frameId)
-  expect(after!.itemSpacing).toBeGreaterThan(initialSpacing + 5)
+  expect(expectDefined(after, 'after').itemSpacing).toBeGreaterThan(initialSpacing + 5)
   canvas.assertNoErrors()
 })
 
@@ -79,15 +82,17 @@ test('gap menu sets auto space-between alignment', async () => {
   await page.getByRole('option', { name: 'Auto' }).click()
   await canvas.waitForRender()
   let frame = await getNodeById(page, frameId)
-  expect(frame!.primaryAxisAlign).toBe('SPACE_BETWEEN')
+  expect(expectDefined(frame, 'frame').primaryAxisAlign).toBe('SPACE_BETWEEN')
   await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(9)
 
   await page.locator('[data-test-id="layout-gap-menu"]').click()
-  await page.getByRole('option', { name: String(Math.round(frame!.itemSpacing)) }).click()
+  await page
+    .getByRole('option', { name: String(Math.round(expectDefined(frame, 'frame').itemSpacing)) })
+    .click()
   await canvas.waitForRender()
 
   frame = await getNodeById(page, frameId)
-  expect(frame!.primaryAxisAlign).toBe('MIN')
+  expect(expectDefined(frame, 'frame').primaryAxisAlign).toBe('MIN')
   await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(9)
   canvas.assertNoErrors()
 })
@@ -99,12 +104,12 @@ test('wrap mode exposes cross-axis gap control', async () => {
   await canvas.waitForRender()
 
   const before = await getNodeById(page, frameId)
-  const initialSpacing = before!.counterAxisSpacing
+  const initialSpacing = expectDefined(before, 'before').counterAxisSpacing
   await canvas.dragScrubInput(page.locator('[data-test-id="layout-cross-gap-input"]'), 40)
 
   const after = await getNodeById(page, frameId)
-  expect(after!.layoutWrap).toBe('WRAP')
-  expect(after!.counterAxisSpacing).toBeGreaterThan(initialSpacing + 5)
+  expect(expectDefined(after, 'after').layoutWrap).toBe('WRAP')
+  expect(expectDefined(after, 'after').counterAxisSpacing).toBeGreaterThan(initialSpacing + 5)
   canvas.assertNoErrors()
 })
 
@@ -130,10 +135,10 @@ test('padding controls set horizontal and vertical padding pairs', async () => {
   await canvas.waitForRender()
 
   const frame = await getNodeById(page, frameId)
-  expect(frame!.paddingTop).toBe(16)
-  expect(frame!.paddingRight).toBe(24)
-  expect(frame!.paddingBottom).toBe(16)
-  expect(frame!.paddingLeft).toBe(24)
+  expect(expectDefined(frame, 'frame').paddingTop).toBe(16)
+  expect(expectDefined(frame, 'frame').paddingRight).toBe(24)
+  expect(expectDefined(frame, 'frame').paddingBottom).toBe(16)
+  expect(expectDefined(frame, 'frame').paddingLeft).toBe(24)
   canvas.assertNoErrors()
 })
 
@@ -145,7 +150,9 @@ test('size dropdown adds and removes min width', async () => {
   await canvas.waitForRender()
 
   let frame = await getNodeById(page, frameId)
-  expect(frame!.minWidth).toBe(Math.round(frame!.width))
+  expect(expectDefined(frame, 'frame').minWidth).toBe(
+    Math.round(expectDefined(frame, 'frame').width)
+  )
   await expect(page.locator('[data-test-id="layout-min-width-input"]')).toBeVisible()
 
   await page.locator('[data-test-id="layout-width-sizing-menu"]').click()
@@ -153,7 +160,7 @@ test('size dropdown adds and removes min width', async () => {
   await canvas.waitForRender()
 
   frame = await getNodeById(page, frameId)
-  expect(frame!.minWidth).toBeNull()
+  expect(expectDefined(frame, 'frame').minWidth).toBeNull()
   await expect(page.locator('[data-test-id="layout-min-width-input"]')).toHaveCount(0)
   canvas.assertNoErrors()
 })
@@ -166,8 +173,8 @@ test('alignment grid center sets CENTER alignment', async () => {
   await canvas.waitForRender()
 
   const frame = await getNodeById(page, frameId)
-  expect(frame!.primaryAxisAlign).toBe('CENTER')
-  expect(frame!.counterAxisAlign).toBe('CENTER')
+  expect(expectDefined(frame, 'frame').primaryAxisAlign).toBe('CENTER')
+  expect(expectDefined(frame, 'frame').counterAxisAlign).toBe('CENTER')
   canvas.assertNoErrors()
 })
 
@@ -178,6 +185,6 @@ test('remove auto-layout sets layoutMode to NONE', async () => {
   await canvas.waitForRender()
 
   const frame = await getNodeById(page, frameId)
-  expect(frame!.layoutMode).toBe('NONE')
+  expect(expectDefined(frame, 'frame').layoutMode).toBe('NONE')
   canvas.assertNoErrors()
 })
