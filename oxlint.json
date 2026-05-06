@@ -154,7 +154,8 @@
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
     "open-pencil/no-flat-kiwi-modules": "error",
-    "open-pencil/no-top-level-prefixed-test-files": "error"
+    "open-pencil/no-top-level-prefixed-test-files": "error",
+    "open-pencil/no-sibling-domain-prefixed-test-files": "error"
   },
   "overrides": [
     {

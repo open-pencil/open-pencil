@@ -1167,6 +1167,20 @@ const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   }
 })
 
+const noSiblingDomainPrefixedTestFiles = createProgramFilenameRule({
+  description: 'Disallow test files that repeat an existing sibling domain folder as a filename prefix',
+  check(file) {
+    const match = file.match(/^(.*\/tests\/(?:engine|e2e)\/.+\/)([^/]+)-[^/]+\.(?:test|spec)\.ts$/)
+    if (!match) return false
+
+    const [, dir, prefix] = match
+    if (!existsSync(`${dir}${prefix}`)) return false
+
+    const filename = file.slice(dir.length)
+    return `Move '${filename}' under the existing '${prefix}/' folder instead of repeating the domain as a filename prefix.`
+  }
+})
+
 const noFlatKiwiModules = createProgramFilenameRule({
   description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
   check(file) {
@@ -1228,7 +1242,8 @@ const plugin = {
     'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,
     'no-function-alias-imports': noFunctionAliasImports,
     'no-flat-kiwi-modules': noFlatKiwiModules,
-    'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles
+    'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
+    'no-sibling-domain-prefixed-test-files': noSiblingDomainPrefixedTestFiles
   }
 }
 
