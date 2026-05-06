@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { importNodeChanges, type NodeChange } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function doc(): NodeChange {
   return {
     guid: { sessionID: 0, localID: 0 },
@@ -125,8 +127,9 @@ describe('fig-import: gradient fills', () => {
     expect(n.fills).toHaveLength(1)
     expect(n.fills[0].type).toBe('GRADIENT_LINEAR')
     expect(n.fills[0].gradientStops).toHaveLength(2)
-    expect(n.fills[0].gradientStops![0].color.r).toBe(1)
-    expect(n.fills[0].gradientStops![1].color.b).toBe(1)
+    const gradientStops = expectDefined(n.fills[0].gradientStops, 'linear gradient stops')
+    expect(gradientStops[0]?.color.r).toBe(1)
+    expect(gradientStops[1]?.color.b).toBe(1)
     expect(n.fills[0].gradientTransform).toBeDefined()
   })
 
@@ -182,7 +185,7 @@ describe('fig-import: image fills', () => {
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills[0].type).toBe('IMAGE')
     expect(n.fills[0].imageHash).toBeDefined()
-    expect(n.fills[0].imageHash!.length).toBe(40)
+    expect(n.fills[0].imageHash?.length).toBe(40)
     expect(n.fills[0].imageScaleMode).toBe('FILL')
   })
 
@@ -350,9 +353,10 @@ describe('fig-import: arc data', () => {
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.arcData).toBeDefined()
-    expect(n.arcData!.startingAngle).toBe(0)
-    expect(n.arcData!.endingAngle).toBeCloseTo(Math.PI)
-    expect(n.arcData!.innerRadius).toBe(0)
+    const arcData = expectDefined(n.arcData, 'ellipse arc data')
+    expect(arcData.startingAngle).toBe(0)
+    expect(arcData.endingAngle).toBeCloseTo(Math.PI)
+    expect(arcData.innerRadius).toBe(0)
   })
 
   test('donut (inner radius)', () => {
@@ -368,7 +372,7 @@ describe('fig-import: arc data', () => {
       } as Partial<NodeChange>)
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
-    expect(n.arcData!.innerRadius).toBe(0.5)
+    expect(n.arcData?.innerRadius).toBe(0.5)
   })
 })
 
@@ -554,13 +558,19 @@ describe('fig-import: variable asset refs', () => {
       })
     ])
 
-    const primary = [...graph.variables.values()].find((v) => v.name === 'Primary')!
-    const resolved = graph.resolveColorVariable(primary.id)!
+    const primary = expectDefined(
+      [...graph.variables.values()].find((v) => v.name === 'Primary'),
+      'Primary variable'
+    )
+    const resolved = expectDefined(graph.resolveColorVariable(primary.id), 'resolved Primary color')
     expect(resolved.r).toBeCloseTo(0.14)
     expect(resolved.g).toBeCloseTo(0.39)
     expect(resolved.b).toBeCloseTo(0.92)
 
-    const text = [...graph.getAllNodes()].find((n) => n.type === 'TEXT' && n.text === 'browse')!
+    const text = expectDefined(
+      [...graph.getAllNodes()].find((n) => n.type === 'TEXT' && n.text === 'browse'),
+      'browse text node'
+    )
     expect(text.fills[0].color.r).toBeCloseTo(0.14)
     expect(text.fills[0].color.g).toBeCloseTo(0.39)
     expect(text.fills[0].color.b).toBeCloseTo(0.92)

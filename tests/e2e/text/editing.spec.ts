@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -55,7 +56,11 @@ function getPageChildren() {
 test('pressing T activates text tool', async () => {
   await page.keyboard.press('t')
 
-  const tool = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.activeTool)
+  const tool = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.activeTool
+  })
   expect(tool).toBe('TEXT')
 })
 
@@ -73,8 +78,7 @@ test('clicking with text tool creates a text node', async () => {
 
 test('text node is selected after creation', async () => {
   const node = await getSelectedNode()
-  expect(node).toBeTruthy()
-  expect(node!.type).toBe('TEXT')
+  expect(node?.type).toBe('TEXT')
 })
 
 test('typography section appears for text node', async () => {
@@ -92,9 +96,8 @@ test('typography section appears for text node', async () => {
 
 test('text node has default font properties', async () => {
   const node = await getSelectedNode()
-  expect(node).toBeTruthy()
-  expect(node!.fontSize).toBeGreaterThan(0)
-  expect(node!.fontFamily).toBeTruthy()
+  expect(node?.fontSize).toBeGreaterThan(0)
+  expect(node?.fontFamily).toBeTruthy()
 })
 
 test('creating text via store works', async () => {
@@ -111,8 +114,8 @@ test('creating text via store works', async () => {
   await canvas.waitForRender()
 
   const node = await getSelectedNode()
-  expect(node!.text).toBe('Hello World')
-  expect(node!.fontSize).toBe(24)
+  expect(node?.text).toBe('Hello World')
+  expect(node?.fontSize).toBe(24)
 })
 
 test('undo removes text node', async () => {
@@ -130,10 +133,10 @@ test('frame tool creates FRAME node', async () => {
   await canvas.drag(400, 100, 600, 250)
   await canvas.waitForRender()
 
-  const node = await getSelectedNode()
-  expect(node!.type).toBe('FRAME')
-  expect(node!.width).toBeGreaterThan(0)
-  expect(node!.height).toBeGreaterThan(0)
+  const node = expectDefined(await getSelectedNode(), 'selected frame')
+  expect(node.type).toBe('FRAME')
+  expect(node.width).toBeGreaterThan(0)
+  expect(node.height).toBeGreaterThan(0)
 
   canvas.assertNoErrors()
 })
@@ -154,13 +157,17 @@ test('Enter key opens text editing and selects all without erasing', async () =>
   await canvas.waitForRender()
 
   const before = await getSelectedNode()
-  expect(before!.text).toBe('Keep this text')
-  expect(before!.type).toBe('TEXT')
+  expect(before?.text).toBe('Keep this text')
+  expect(before?.type).toBe('TEXT')
 
   await page.keyboard.press('Enter')
   await page.waitForTimeout(200)
 
-  const editing = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.editingTextId)
+  const editing = await page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.editingTextId
+  })
   expect(editing).toBe(textId)
 
   const after = await page.evaluate(() => {

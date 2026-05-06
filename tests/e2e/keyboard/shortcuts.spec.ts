@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -19,11 +20,19 @@ test.afterAll(async () => {
 })
 
 function getActiveTool() {
-  return page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.activeTool)
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.activeTool
+  })
 }
 
 function getSelectedCount() {
-  return page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.selectedIds.size)
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.selectedIds.size
+  })
 }
 
 function getPageChildren() {
@@ -40,7 +49,19 @@ function getPageChildren() {
 }
 
 function getUIVisible() {
-  return page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.showUI)
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.showUI
+  })
+}
+
+function getZoom() {
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.zoom
+  })
 }
 
 test.describe('tool switching', () => {
@@ -125,11 +146,13 @@ test.describe('z-order shortcuts', () => {
     await canvas.drawRect(100, 100, 60, 60)
 
     const childrenBefore = await getPageChildren()
-    const firstId = childrenBefore[0].id
+    const firstId = expectDefined(childrenBefore[0], 'first page child').id
 
     // Select the first (bottom) node
     await page.evaluate((id) => {
-      window.__OPEN_PENCIL_STORE__!.select([id])
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.select([id])
     }, firstId)
     await canvas.waitForRender()
 
@@ -142,11 +165,13 @@ test.describe('z-order shortcuts', () => {
 
   test('[ sends to back', async () => {
     const children = await getPageChildren()
-    const lastId = children[children.length - 1].id
+    const lastId = expectDefined(children.at(-1), 'last page child').id
 
     // Select the last (top) node
     await page.evaluate((id) => {
-      window.__OPEN_PENCIL_STORE__!.select([id])
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.select([id])
     }, lastId)
     await canvas.waitForRender()
 
@@ -169,7 +194,7 @@ test.describe('group/ungroup shortcuts', () => {
     const children = await getPageChildren()
     const group = children.find((c) => c.type === 'GROUP')
     expect(group).toBeTruthy()
-    expect(group!.childIds.length).toBeGreaterThanOrEqual(2)
+    expect(group?.childIds.length).toBeGreaterThanOrEqual(2)
   })
 
   test('⌘⇧G ungroups', async () => {
@@ -229,7 +254,7 @@ test.describe('zoom shortcuts', () => {
     await page.keyboard.press('Meta+0')
     await canvas.waitForRender()
 
-    const zoomAfter = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.zoom)
+    const zoomAfter = await getZoom()
     expect(zoomAfter).toBe(1)
   })
 
@@ -237,7 +262,7 @@ test.describe('zoom shortcuts', () => {
     await page.keyboard.press('Meta+1')
     await canvas.waitForRender()
 
-    const zoom = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.zoom)
+    const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
     expect(zoom).toBeLessThanOrEqual(1)
   })
@@ -248,7 +273,7 @@ test.describe('zoom shortcuts', () => {
     await page.keyboard.press('Meta+2')
     await canvas.waitForRender()
 
-    const zoom = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.zoom)
+    const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
     expect(zoom).toBeLessThanOrEqual(1)
   })
@@ -257,7 +282,7 @@ test.describe('zoom shortcuts', () => {
     await page.keyboard.press('Shift+1')
     await canvas.waitForRender()
 
-    const zoom = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.zoom)
+    const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
     expect(zoom).toBeLessThanOrEqual(1)
   })
@@ -268,7 +293,7 @@ test.describe('zoom shortcuts', () => {
     await page.keyboard.press('Shift+2')
     await canvas.waitForRender()
 
-    const zoom = await page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.zoom)
+    const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
     expect(zoom).toBeLessThanOrEqual(1)
   })
