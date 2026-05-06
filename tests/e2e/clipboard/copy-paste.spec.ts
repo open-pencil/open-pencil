@@ -27,7 +27,11 @@ function getPageChildCount() {
 }
 
 function getSelectedCount() {
-  return page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.selectedIds.size)
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.selectedIds.size
+  })
 }
 
 function getSelectedNodes() {
@@ -35,7 +39,8 @@ function getSelectedNodes() {
     const store = window.__OPEN_PENCIL_STORE__
     if (!store) throw new Error('OpenPencil store not initialized')
     return [...store.state.selectedIds].map((id) => {
-      const n = store.graph.getNode(id)!
+      const n = store.graph.getNode(id)
+      if (!n) throw new Error(`Selected node ${id} not found`)
       return {
         id: n.id,
         name: n.name,

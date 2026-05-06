@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI, SceneGraph, matchByXPath, nodeToXPath, queryByXPath } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function setup() {
   const graph = new SceneGraph()
   const figma = new FigmaAPI(graph)
@@ -164,7 +166,7 @@ describe('nodeToXPath', () => {
     btn.name = 'Button'
     frame.appendChild(btn)
 
-    const xpath = nodeToXPath(graph, btn.id)!
+    const xpath = expectDefined(nodeToXPath(graph, btn.id), 'button XPath')
     const results = await queryByXPath(graph, xpath)
     expect(results.length).toBe(1)
     expect(results[0].id).toBe(btn.id)
@@ -187,7 +189,7 @@ describe('matchByXPath', () => {
     rect.resize(100, 100)
     rect.name = 'TestRect'
 
-    const sceneNode = graph.getNode(rect.id)!
+    const sceneNode = expectDefined(graph.getNode(rect.id), 'matching rectangle')
     const result = await matchByXPath(graph, '@name = "TestRect"', sceneNode)
     expect(result).toBe(true)
   })
@@ -198,7 +200,7 @@ describe('matchByXPath', () => {
     rect.resize(100, 100)
     rect.name = 'Other'
 
-    const sceneNode = graph.getNode(rect.id)!
+    const sceneNode = expectDefined(graph.getNode(rect.id), 'non-matching rectangle')
     const result = await matchByXPath(graph, '@name = "TestRect"', sceneNode)
     expect(result).toBe(false)
   })

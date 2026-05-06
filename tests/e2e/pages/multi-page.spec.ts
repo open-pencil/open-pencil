@@ -27,7 +27,11 @@ function getPages() {
 }
 
 function getCurrentPageId() {
-  return page.evaluate(() => window.__OPEN_PENCIL_STORE__!.state.currentPageId)
+  return page.evaluate(() => {
+    const store = window.__OPEN_PENCIL_STORE__
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.currentPageId
+  })
 }
 
 function getPageChildCount() {
@@ -141,7 +145,9 @@ test('rename page via store', async () => {
 
   await page.evaluate(
     ([id, name]) => {
-      window.__OPEN_PENCIL_STORE__!.renamePage(id, name)
+      const store = window.__OPEN_PENCIL_STORE__
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.renamePage(id, name)
     },
     [currentId, 'Renamed Page'] as [string, string]
   )
@@ -149,7 +155,7 @@ test('rename page via store', async () => {
 
   const updated = await getPages()
   const renamed = updated.find((p) => p.id === currentId)
-  expect(renamed!.name).toBe('Renamed Page')
+  expect(renamed?.name).toBe('Renamed Page')
 
   canvas.assertNoErrors()
 })

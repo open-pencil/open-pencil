@@ -45,8 +45,8 @@ test('independent corners toggle shows per-corner inputs', async () => {
   await canvas.waitForRender()
 
   const flags = await getSelectedNodeFlags()
-  expect(flags!.type).toBe('FRAME')
-  expect(flags!.independentCorners).toBe(false)
+  expect(flags?.type).toBe('FRAME')
+  expect(flags?.independentCorners).toBe(false)
 
   const toggle = page.locator('[data-test-id="independent-corners-toggle"]')
   await expect(toggle).toBeVisible()
@@ -54,7 +54,7 @@ test('independent corners toggle shows per-corner inputs', async () => {
   await toggle.click()
   await canvas.waitForRender()
 
-  expect((await getSelectedNodeFlags())!.independentCorners).toBe(true)
+  expect((await getSelectedNodeFlags())?.independentCorners).toBe(true)
   const grid = page.locator('[data-test-id="independent-corners-grid"]')
   await expect(grid).toBeVisible()
   const cornerInputs = grid.locator('[data-test-id="scrub-input"]')

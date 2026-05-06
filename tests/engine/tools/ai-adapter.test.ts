@@ -6,6 +6,8 @@ import * as v from 'valibot'
 
 import { ALL_TOOLS, FigmaAPI, SceneGraph, toolsToAI } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 type AdapterTool = { execute(args: Record<string, unknown>): Promise<unknown>; description: string }
 
 function adapterTool(tools: Record<string, unknown>, name: string): AdapterTool {
@@ -62,7 +64,7 @@ describe('AI adapter', () => {
     expect(result.type).toBe('RECTANGLE')
     expect(result.name).toBe('Test Rect')
 
-    const node = figma.getNodeById(result.id)!
+    const node = expectDefined(figma.getNodeById(result.id), 'created node')
     expect(node.x).toBe(10)
     expect(node.y).toBe(20)
     expect(node.width).toBe(100)
@@ -76,7 +78,7 @@ describe('AI adapter', () => {
     const setFill = adapterTool(tools, 'set_fill')
     await setFill.execute({ id: rect.id, color: '#00ff00' })
 
-    const fills = figma.getNodeById(rect.id)!.fills
+    const fills = expectDefined(figma.getNodeById(rect.id), 'filled rectangle').fills
     expect(fills.length).toBe(1)
     expect(fills[0].color.g).toBeCloseTo(1)
   })
@@ -167,7 +169,7 @@ describe('AI adapter', () => {
       padding: 16
     })
 
-    const node = figma.getNodeById(frame.id)!
+    const node = expectDefined(figma.getNodeById(frame.id), 'layout frame')
     expect(node.layoutMode).toBe('HORIZONTAL')
     expect(node.itemSpacing).toBe(8)
     expect(node.paddingLeft).toBe(16)

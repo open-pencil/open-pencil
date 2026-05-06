@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
 
 describe('delete_node', () => {
@@ -37,7 +38,7 @@ describe('rename_node', () => {
     const tool = getTool('rename_node')
     tool.execute(figma, { id: rect.id, name: 'My Rectangle' })
 
-    expect(figma.getNodeById(rect.id)!.name).toBe('My Rectangle')
+    expect(expectDefined(figma.getNodeById(rect.id), 'renamed rectangle').name).toBe('My Rectangle')
   })
 })
 
@@ -52,7 +53,11 @@ describe('reparent_node', () => {
     const tool = getTool('reparent_node')
     tool.execute(figma, { id: rect.id, parent_id: frame.id })
 
-    expect(figma.getNodeById(frame.id)!.children.some((c) => c.id === rect.id)).toBe(true)
+    expect(
+      expectDefined(figma.getNodeById(frame.id), 'target frame').children.some(
+        (c) => c.id === rect.id
+      )
+    ).toBe(true)
   })
 })
 
@@ -68,7 +73,10 @@ describe('group_nodes', () => {
     const result = tool.execute(figma, { ids: [r1.id, r2.id] }) as ToolResult
 
     expect(result.type).toBe('GROUP')
-    const group = figma.getNodeById(result.id)!
+    const group = expectDefined(
+      figma.getNodeById(expectDefined(result.id, 'group id')),
+      'created group'
+    )
     expect(group.children.length).toBe(2)
   })
 })
