@@ -12,10 +12,9 @@ export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor) {
   const dpr = window.devicePixelRatio || 1
   canvas.width = canvas.clientWidth * dpr
   canvas.height = canvas.clientHeight * dpr
-  const maybeSizedEditor = editor as Editor & {
-    setViewportSize?: (width: number, height: number) => void
+  if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
+    editor.setViewportSize(canvas.clientWidth, canvas.clientHeight)
   }
-  maybeSizedEditor.setViewportSize?.(canvas.clientWidth, canvas.clientHeight)
 }
 
 export function makeGLSurface(

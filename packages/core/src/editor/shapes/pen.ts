@@ -1,5 +1,5 @@
 import type { EditorContext } from '#core/editor/types'
-import type { Fill, SceneNode, VectorNetwork, VectorRegion, VectorSegment } from '#core/scene-graph'
+import type { SceneNode, VectorNetwork, VectorRegion, VectorSegment } from '#core/scene-graph'
 import type { Vector } from '#core/types'
 import { computeVectorBounds } from '#core/vector'
 
@@ -189,13 +189,9 @@ export function createPenActions(ctx: EditorContext, createShape: CreateShape) {
       regions: network.regions
     }
 
-    const penStyle = ps as typeof ps & {
-      resumedFills?: Fill[]
-      resumedStrokes?: SceneNode['strokes']
-    }
-    const fills = penStyle.resumedFills ? penStyle.resumedFills.map((f) => ({ ...f })) : []
-    const strokes = penStyle.resumedStrokes
-      ? penStyle.resumedStrokes.map((s) => ({ ...s }))
+    const fills = ps.resumedFills ? ps.resumedFills.map((f) => ({ ...f })) : []
+    const strokes = ps.resumedStrokes
+      ? ps.resumedStrokes.map((s) => ({ ...s }))
       : [{ ...PEN_DEFAULT_STROKE }]
 
     const nodeId = createShape('VECTOR', bounds.x, bounds.y, bounds.width, bounds.height)

@@ -19,7 +19,14 @@ export default defineRule({
     'INSTANCE'
   ],
   check(node, context) {
-    const checkPaints = (paints: typeof node.fills, field: 'fills' | 'strokes') => {
+    const checkPaints = (
+      paints: ReadonlyArray<{
+        visible: boolean
+        color?: { r: number; g: number; b: number }
+        type?: string
+      }>,
+      field: 'fills' | 'strokes'
+    ) => {
       for (const paint of paints) {
         if (paint.type !== 'SOLID' || !paint.visible || !paint.color || node.boundVariables[field])
           continue
@@ -31,6 +38,6 @@ export default defineRule({
       }
     }
     checkPaints(node.fills, 'fills')
-    checkPaints(node.strokes as typeof node.fills, 'strokes')
+    checkPaints(node.strokes, 'strokes')
   }
 })

@@ -28,8 +28,7 @@ export type CanvasNodeEditMethods = Partial<{
 }>
 
 export function getCanvasNodeEditState(editor: Editor): CanvasNodeEditState | null | undefined {
-  return (editor.state as Editor['state'] & { nodeEditState?: CanvasNodeEditState | null })
-    .nodeEditState
+  return editor.state.nodeEditState as CanvasNodeEditState | null | undefined
 }
 
 export function resolveBendTargetHandle(

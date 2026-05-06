@@ -78,6 +78,7 @@ export interface LintNode {
     visible: boolean
     radius: number
   }>
+  parent?: LintNode
 }
 
 export interface RuleContext {

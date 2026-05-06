@@ -38,9 +38,6 @@ export function renderFromEditorState(
   dpr = 1,
   layer: RenderLayer = 'full'
 ): void {
-  const extendedState = state as EditorState & {
-    nodeEditState?: RenderOverlays['nodeEditState']
-  }
   r.dpr = dpr
   r.panX = state.panX
   r.panY = state.panY
@@ -72,7 +69,7 @@ export function renderFromEditorState(
             cursorY: state.penCursorY ?? undefined
           } as RenderOverlays['penState'])
         : null,
-      nodeEditState: extendedState.nodeEditState ?? null,
+      nodeEditState: state.nodeEditState ?? null,
       remoteCursors: state.remoteCursors
     },
     state.sceneVersion,

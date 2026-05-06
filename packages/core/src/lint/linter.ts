@@ -17,7 +17,7 @@ export class Linter {
   private rules = new Map<string, Rule>()
   private ruleConfigs = new Map<string, { severity: Severity; options?: Record<string, unknown> }>()
   private messages: LintMessage[] = []
-  private nodes = new Map<string, LintNode & { parent?: LintNode }>()
+  private nodes = new Map<string, LintNode>()
 
   constructor(options: { config?: LintConfig; preset?: string; rules?: string[] } = {}) {
     let baseConfig: Record<
@@ -61,8 +61,8 @@ export class Linter {
     const raw = graph.getNode(id)
     if (!raw) return
     const node = this.toLintNode(raw)
-    ;(node as LintNode & { parent?: LintNode }).parent = parent
-    this.nodes.set(id, node as LintNode & { parent?: LintNode })
+    node.parent = parent
+    this.nodes.set(id, node)
     for (const childId of raw.childIds) this.capture(graph, childId, node)
   }
 
@@ -125,7 +125,7 @@ export class Linter {
             message,
             nodeId: node.id,
             nodeName: node.name,
-            nodePath: getNodePath(this.nodes.get(node.id) as LintNode & { parent?: LintNode }),
+            nodePath: getNodePath(this.nodes.get(node.id) ?? node),
             suggest
           })
         },

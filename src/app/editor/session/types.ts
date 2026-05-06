@@ -1,6 +1,4 @@
 import { createDefaultEditorState, type EditorState } from '@open-pencil/core/editor'
-import type { Fill, SceneNode, VectorSegment, VectorVertex } from '@open-pencil/core/scene-graph'
-import type { Vector } from '@open-pencil/core/types'
 
 import type { NodeEditState } from '@/app/editor/vector-edit/types'
 
@@ -23,18 +21,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
   }
 }
 
-export type AppEditorState = Omit<EditorState, 'penState'> & {
-  penState: {
-    vertices: VectorVertex[]
-    segments: VectorSegment[]
-    dragTangent: Vector | null
-    oppositeDragTangent: Vector | null
-    closingToFirst: boolean
-    pendingClose?: boolean
-    resumingNodeId?: string
-    resumedFills?: Fill[]
-    resumedStrokes?: SceneNode['strokes']
-  } | null
+export type AppEditorState = EditorState & {
   showUI: boolean
   showRulers: boolean
   showRemoteCursors: boolean

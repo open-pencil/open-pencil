@@ -10,15 +10,17 @@ export function isMultipleOf(value: number, base: number, tolerance = 0.01): boo
   return remainder < tolerance || base - remainder < tolerance
 }
 
-export function getNodePath(node: {
+interface LintPathNode {
   name: string
-  parent?: { name: string; parent?: unknown }
-}): string[] {
+  parent?: LintPathNode
+}
+
+export function getNodePath(node: LintPathNode): string[] {
   const path: string[] = []
-  let current: typeof node | undefined = node
+  let current: LintPathNode | undefined = node
   while (current) {
     path.unshift(current.name)
-    current = current.parent as typeof node | undefined
+    current = current.parent
   }
   return path
 }

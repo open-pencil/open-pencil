@@ -14,10 +14,7 @@ export type NodeEditState = {
 }
 
 export function getNodeEditState(editor: Editor): NodeEditState | null {
-  return (
-    (editor.state as Editor['state'] & { nodeEditState?: NodeEditState | null }).nodeEditState ??
-    null
-  )
+  return (editor.state.nodeEditState as NodeEditState | null) ?? null
 }
 
 export const NODE_HIT_THRESHOLD = 8

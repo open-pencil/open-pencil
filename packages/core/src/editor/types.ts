@@ -1,6 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays } from '#core/canvas/renderer/types'
 import type { SceneGraph, SceneNode, VectorSegment, VectorVertex } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { UndoManager } from '#core/scene-graph/undo'
@@ -45,6 +46,9 @@ export interface EditorState {
     oppositeDragTangent: Vector | null
     pendingClose?: boolean
     closingToFirst: boolean
+    resumingNodeId?: string
+    resumedFills?: SceneNode['fills']
+    resumedStrokes?: SceneNode['strokes']
   } | null
   penCursorX: number | null
   penCursorY: number | null
@@ -65,6 +69,9 @@ export interface EditorState {
   sceneVersion: number
   loading: boolean
   enteredContainerId: string | null
+  nodeEditState?: RenderOverlays['nodeEditState'] | null
+  cursorCanvasX?: number | null
+  cursorCanvasY?: number | null
 }
 
 export interface EditorEvents {

@@ -1,15 +1,8 @@
 import type { EditorState } from '@open-pencil/core/editor'
-import type { Fill, SceneNode, VectorSegment, VectorVertex } from '@open-pencil/core/scene-graph'
+import type { SceneNode, VectorSegment, VectorVertex } from '@open-pencil/core/scene-graph'
 
-type ResumablePenState = NonNullable<EditorState['penState']> & {
-  resumingNodeId?: string
-  resumedFills?: Fill[]
-  resumedStrokes?: SceneNode['strokes']
-}
-
-export type PenState = Omit<EditorState, 'penState'> & {
-  penState: ResumablePenState | null
-}
+export type PenState = EditorState
+type PenStateInit = NonNullable<EditorState['penState']>
 
 export function absoluteVertices(node: SceneNode, vertices: VectorVertex[]): VectorVertex[] {
   return vertices.map((v) => ({
@@ -31,7 +24,7 @@ export function createResumedPenState(
   node: SceneNode,
   vertices: VectorVertex[],
   segments: VectorSegment[]
-): ResumablePenState {
+): PenStateInit {
   return {
     vertices,
     segments,
