@@ -214,8 +214,7 @@
     },
     {
       "files": [
-        "tests/engine/layout/auto-layout.test.ts",
-        "tests/engine/scene-graph/basic.test.ts"
+        "tests/engine/layout/auto-layout.test.ts"
       ],
       "rules": {
         "max-lines": "off"
