@@ -2,10 +2,17 @@ import type { ChatTransport, UIMessage } from 'ai'
 
 import type { EditorStore } from '@/app/editor/session/create'
 
+export interface OpenPencilTestHooks {
+  writeCount?: () => number
+  mockHandle?: FileSystemFileHandle
+  savedOpen?: Window['open']
+}
+
 export interface OpenPencilWindowAPI {
   store?: EditorStore
   setChatTransport?: (factory: () => ChatTransport<UIMessage>) => void
   openFile?: (path: string) => Promise<void>
+  test?: OpenPencilTestHooks
 }
 
 declare global {

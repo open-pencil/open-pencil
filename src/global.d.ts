@@ -38,9 +38,6 @@ declare global {
         blob(): Promise<Blob>
       }[]
     >
-    __TEST_WRITE_COUNT__?(): number
-    __TEST_MOCK_HANDLE__?: FileSystemFileHandle
-    __savedOpen?: Window['open']
     mockWindowOpen?(url: string): void
   }
 }

@@ -31,8 +31,8 @@ test('autosave triggers after scene changes with a file handle', async () => {
       createWritable: async () => mockWritable
     } as FileSystemFileHandle
 
-    window.__TEST_WRITE_COUNT__ = () => writes
-    window.__TEST_MOCK_HANDLE__ = mockHandle
+    window.openPencil ??= {}
+    window.openPencil.test = { writeCount: () => writes, mockHandle }
 
     return writes
   })
