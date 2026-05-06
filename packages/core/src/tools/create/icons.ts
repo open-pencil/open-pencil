@@ -1,8 +1,7 @@
 import { parseColor } from '#core/color'
 import { fetchIcons, searchIconsBatch } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
-
-import { defineTool } from './schema'
+import { defineTool } from '#core/tools/schema'
 
 export const fetchIconsTool = defineTool({
   name: 'fetch_icons',

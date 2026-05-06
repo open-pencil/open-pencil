@@ -1167,10 +1167,10 @@ const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   }
 })
 
-const noSiblingDomainPrefixedTestFiles = createProgramFilenameRule({
-  description: 'Disallow test files that repeat an existing sibling domain folder as a filename prefix',
+const noSiblingDomainPrefixedFiles = createProgramFilenameRule({
+  description: 'Disallow files that repeat an existing sibling domain folder as a filename prefix',
   check(file) {
-    const match = file.match(/^(.*\/tests\/(?:engine|e2e)\/.+\/)([^/]+)-[^/]+\.(?:test|spec)\.ts$/)
+    const match = file.match(/^(.*\/)([^/]+)-[^/]+\.(?:test\.)?(?:spec\.)?(?:ts|tsx|vue)$/)
     if (!match) return false
 
     const [, dir, prefix] = match
@@ -1243,7 +1243,7 @@ const plugin = {
     'no-function-alias-imports': noFunctionAliasImports,
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
-    'no-sibling-domain-prefixed-test-files': noSiblingDomainPrefixedTestFiles
+    'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles
   }
 }
 
