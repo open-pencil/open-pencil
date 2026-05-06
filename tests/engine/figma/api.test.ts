@@ -2,6 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { FigmaAPI, SceneGraph, type Fill } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
 }
@@ -39,8 +41,7 @@ describe('FigmaAPI', () => {
       const api = createAPI()
       const frame = api.createFrame()
       const found = api.getNodeById(frame.id)
-      expect(found).not.toBeNull()
-      expect(found!.id).toBe(frame.id)
+      expect(expectDefined(found, 'found frame').id).toBe(frame.id)
     })
 
     test('getNodeById returns null for unknown id', () => {
@@ -54,7 +55,7 @@ describe('FigmaAPI', () => {
       const api = createAPI()
       const frame = api.createFrame()
       expect(frame.type).toBe('FRAME')
-      expect(frame.parent!.id).toBe(api.currentPage.id)
+      expect(expectDefined(frame.parent, 'frame parent').id).toBe(api.currentPage.id)
     })
 
     test('createRectangle', () => {
@@ -323,7 +324,7 @@ describe('FigmaAPI', () => {
       parent.appendChild(child)
       expect(parent.children.length).toBe(1)
       expect(parent.children[0].id).toBe(child.id)
-      expect(child.parent!.id).toBe(parent.id)
+      expect(expectDefined(child.parent, 'child parent').id).toBe(parent.id)
     })
 
     test('insertChild at index', () => {
@@ -393,7 +394,7 @@ describe('FigmaAPI', () => {
       parent.appendChild(a)
       parent.appendChild(b)
       const found = parent.findOne((n) => n.type === 'RECTANGLE')
-      expect(found!.name).toBe('First')
+      expect(expectDefined(found, 'first rectangle').name).toBe('First')
     })
 
     test('findChild searches direct children only', () => {
@@ -441,7 +442,7 @@ describe('FigmaAPI', () => {
       const groupId = group.id
       api.ungroup(group)
       expect(api.getNodeById(groupId)).toBeNull()
-      expect(a.parent!.id).toBe(api.currentPage.id)
+      expect(expectDefined(a.parent, 'ungrouped parent').id).toBe(api.currentPage.id)
     })
   })
 
@@ -468,7 +469,7 @@ describe('FigmaAPI', () => {
       comp.resize(200, 40)
       const instance = comp.createInstance()
       expect(instance.type).toBe('INSTANCE')
-      expect(instance.mainComponent!.id).toBe(comp.id)
+      expect(expectDefined(instance.mainComponent, 'instance main component').id).toBe(comp.id)
     })
   })
 
@@ -494,7 +495,7 @@ describe('FigmaAPI', () => {
       frame.appendChild(rect)
       const json = frame.toJSON() as { children?: unknown[] }
       expect(json.children).toBeDefined()
-      expect(json.children!.length).toBe(1)
+      expect(json.children?.length).toBe(1)
     })
 
     test('toString returns readable string', () => {
@@ -554,7 +555,7 @@ describe('FigmaAPI', () => {
       child.layoutSizingVertical = 'FIXED'
       child.resize(375, 44)
       expect(child.layoutSizingVertical).toBe('FIXED')
-      const raw = api.graph.getNode(child.id)!
+      const raw = getNodeOrThrow(api.graph, child.id)
       expect(raw.counterAxisSizing).toBe('FIXED')
     })
 
@@ -569,7 +570,7 @@ describe('FigmaAPI', () => {
       child.layoutSizingHorizontal = 'FIXED'
       child.resize(200, 600)
       expect(child.layoutSizingHorizontal).toBe('FIXED')
-      const raw = api.graph.getNode(child.id)!
+      const raw = getNodeOrThrow(api.graph, child.id)
       expect(raw.counterAxisSizing).toBe('FIXED')
     })
   })
@@ -956,8 +957,7 @@ describe('FigmaAPI', () => {
         hiddenFromPublishing: false
       })
       const v = api.getVariableById('var1')
-      expect(v).not.toBeNull()
-      expect(v!.name).toBe('spacing-sm')
+      expect(expectDefined(v, 'spacing variable').name).toBe('spacing-sm')
       expect(api.getVariableById('nonexistent')).toBeNull()
     })
 

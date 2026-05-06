@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { SceneGraph, type Effect, type Rect } from '@open-pencil/core'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -29,7 +31,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ spread: 10 })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects[0].spread).toBe(10)
   })
 
@@ -43,7 +45,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ type: 'INNER_SHADOW', spread: 5 })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects[0].type).toBe('INNER_SHADOW')
     expect(updated.effects[0].spread).toBe(5)
   })
@@ -58,7 +60,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ type: 'BACKGROUND_BLUR', radius: 20 })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects[0].type).toBe('BACKGROUND_BLUR')
     expect(updated.effects[0].radius).toBe(20)
   })
@@ -73,7 +75,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ type: 'FOREGROUND_BLUR', radius: 8 })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects[0].type).toBe('FOREGROUND_BLUR')
     expect(updated.effects[0].radius).toBe(8)
   })
@@ -88,7 +90,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ type: 'LAYER_BLUR', radius: 12 })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects[0].type).toBe('LAYER_BLUR')
     expect(updated.effects[0].radius).toBe(12)
   })
@@ -104,7 +106,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ type: 'DROP_SHADOW', radius: 4, offset: { x: 2, y: 2 } })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.type).toBe('TEXT')
     expect(updated.effects[0].type).toBe('DROP_SHADOW')
   })
@@ -120,7 +122,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ type: 'INNER_SHADOW', radius: 2, offset: { x: 1, y: 1 } })]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.type).toBe('TEXT')
     expect(updated.effects[0].type).toBe('INNER_SHADOW')
   })
@@ -140,7 +142,7 @@ describe('Effect types on scene graph', () => {
         makeEffect({ type: 'LAYER_BLUR', radius: 4 })
       ]
     })
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects).toHaveLength(4)
     expect(updated.effects.map((e) => e.type)).toEqual([
       'DROP_SHADOW',
@@ -160,7 +162,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ visible: false })]
     })
-    expect(graph.getNode(node.id)!.effects[0].visible).toBe(false)
+    expect(getNodeOrThrow(graph, node.id).effects[0].visible).toBe(false)
   })
 
   test('drop shadow with negative spread (inset shrink)', () => {
@@ -173,7 +175,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ spread: -5 })]
     })
-    expect(graph.getNode(node.id)!.effects[0].spread).toBe(-5)
+    expect(getNodeOrThrow(graph, node.id).effects[0].spread).toBe(-5)
   })
 })
 

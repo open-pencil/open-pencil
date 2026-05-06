@@ -2,6 +2,8 @@ import { describe, test, expect } from 'bun:test'
 
 import { SceneGraph, FigmaAPI, sceneNodeToKiwi, type Stroke } from '@open-pencil/core'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -51,7 +53,7 @@ describe('Stroke align', () => {
     strokes[0] = { ...strokes[0], align: 'INSIDE' }
     graph.updateNode(node.id, { strokes })
 
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.strokes[0].align).toBe('INSIDE')
     expect(updated.strokes[0].weight).toBe(5)
     expect(updated.strokes[0].color).toEqual({ r: 0, g: 0, b: 0, a: 1 })
@@ -80,7 +82,7 @@ describe('Individual stroke weights', () => {
       borderLeftWeight: 0
     })
 
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.independentStrokeWeights).toBe(true)
     expect(updated.borderTopWeight).toBe(2)
     expect(updated.borderRightWeight).toBe(0)
@@ -106,7 +108,7 @@ describe('Individual stroke weights', () => {
       borderLeftWeight: 0
     })
 
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.independentStrokeWeights).toBe(false)
   })
 
@@ -121,7 +123,7 @@ describe('Individual stroke weights', () => {
       borderLeftWeight: 0
     })
 
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.borderTopWeight).toBe(3)
     expect(updated.borderRightWeight).toBe(0)
     expect(updated.borderBottomWeight).toBe(0)
@@ -139,7 +141,7 @@ describe('Individual stroke weights', () => {
       borderLeftWeight: 4
     })
 
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     expect(updated.strokes[0].weight).toBe(10)
     expect(updated.borderTopWeight).toBe(1)
     expect(updated.borderRightWeight).toBe(2)
@@ -169,7 +171,10 @@ describe('Instance sync with stroke weights', () => {
       borderLeftWeight: 0
     })
 
-    const instance = graph.createInstance(comp.id, pageId(graph))!
+    const instance = expectDefined(
+      graph.createInstance(comp.id, pageId(graph)),
+      'component instance'
+    )
     expect(instance.independentStrokeWeights).toBe(true)
     expect(instance.borderTopWeight).toBe(3)
     expect(instance.borderBottomWeight).toBe(3)
@@ -177,7 +182,7 @@ describe('Instance sync with stroke weights', () => {
     graph.updateNode(comp.id, { borderTopWeight: 5 })
     graph.syncInstances(comp.id)
 
-    const synced = graph.getNode(instance.id)!
+    const synced = getNodeOrThrow(graph, instance.id)
     expect(synced.borderTopWeight).toBe(5)
   })
 })
@@ -228,7 +233,7 @@ describe('Kiwi serialization', () => {
       borderLeftWeight: 4
     })
 
-    const updated = graph.getNode(node.id)!
+    const updated = getNodeOrThrow(graph, node.id)
     const blobs: Uint8Array[] = []
     const changes = sceneNodeToKiwi(
       updated,
@@ -280,7 +285,7 @@ describe('FigmaAPI stroke properties', () => {
     ]
     rect.strokeTopWeight = 5
 
-    const raw = api.graph.getNode(rect.id)!
+    const raw = getNodeOrThrow(api.graph, rect.id)
     expect(raw.independentStrokeWeights).toBe(true)
     expect(raw.borderTopWeight).toBe(5)
   })
@@ -321,7 +326,7 @@ describe('FigmaAPI stroke properties', () => {
     ]
     rect.strokeAlign = 'OUTSIDE'
 
-    const raw = api.graph.getNode(rect.id)!
+    const raw = getNodeOrThrow(api.graph, rect.id)
     expect(raw.strokes[0].align).toBe('OUTSIDE')
   })
 
@@ -338,7 +343,7 @@ describe('FigmaAPI stroke properties', () => {
     expect(frame.strokeBottomWeight).toBe(3)
     expect(frame.strokeLeftWeight).toBe(4)
 
-    const raw = api.graph.getNode(frame.id)!
+    const raw = getNodeOrThrow(api.graph, frame.id)
     expect(raw.independentStrokeWeights).toBe(true)
   })
 })
