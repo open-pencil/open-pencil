@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getSelectedNode, getEditingTextId, getNodeById } from '#tests/helpers/store'
 
@@ -49,7 +50,7 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
   await canvas.click(275, 215)
   await canvas.waitForRender()
 
-  const nodeId = (await getSelectedNode(page))!.id
+  const nodeId = expectDefined(await getSelectedNode(page), 'selected text node').id
 
   // ensure starting weight is 400 via undo-safe store method
   await page.evaluate(async (id: string) => {
@@ -69,21 +70,21 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
   await canvas.waitForRender()
 
   const bold = await getNodeById(page, nodeId)
-  expect(bold!.fontWeight).toBe(700)
+  expect(bold?.fontWeight).toBe(700)
 
   await page.locator('[data-test-id="typography-bold-button"]').click()
   await page.waitForTimeout(500)
   await canvas.waitForRender()
 
   const normal = await getNodeById(page, nodeId)
-  expect(normal!.fontWeight).toBe(400)
+  expect(normal?.fontWeight).toBe(400)
   canvas.assertNoErrors()
 })
 
 test('Cmd+I toggles italic', async () => {
   await canvas.click(275, 215)
   await canvas.waitForRender()
-  const nodeId = (await getSelectedNode(page))!.id
+  const nodeId = expectDefined(await getSelectedNode(page), 'selected text node').id
 
   await canvas.dblclick(275, 215)
   await expect.poll(() => getEditingTextId(page), { timeout: 5000 }).toBeTruthy()
@@ -94,7 +95,7 @@ test('Cmd+I toggles italic', async () => {
   await canvas.waitForRender()
 
   const node = await getNodeById(page, nodeId)
-  expect(node!.italic).toBe(true)
+  expect(node?.italic).toBe(true)
   canvas.assertNoErrors()
 })
 

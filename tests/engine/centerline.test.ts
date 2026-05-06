@@ -4,6 +4,8 @@ import type { Vector } from '@open-pencil/core'
 import type { VectorNetwork } from '@open-pencil/core/scene-graph'
 import { fitCircleArc, isClosedThinCrescent } from '@open-pencil/core/vector'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 function makeAnnularWedge(
   cx: number,
   cy: number,
@@ -58,10 +60,10 @@ describe('fitCircleArc', () => {
       pts.push({ x: r * Math.cos(angle), y: r * Math.sin(angle) })
     }
     const result = fitCircleArc(pts)
-    expect(result).not.toBeNull()
-    expect(result!.r).toBeCloseTo(r, 1)
-    expect(result!.cx).toBeCloseTo(0, 1)
-    expect(result!.cy).toBeCloseTo(0, 1)
+    const arc = expectDefined(result, 'fitted arc')
+    expect(arc.r).toBeCloseTo(r, 1)
+    expect(arc.cx).toBeCloseTo(0, 1)
+    expect(arc.cy).toBeCloseTo(0, 1)
   })
 
   test('returns null for collinear points', () => {
@@ -88,8 +90,8 @@ describe('isClosedThinCrescent', () => {
   test('detects annular wedge as crescent', () => {
     const network = makeAnnularWedge(0, 0, 80, 100, 0, 180, 5)
     const result = isClosedThinCrescent(network)
-    expect(result).not.toBeNull()
-    expect(result!.ordered.length).toBe(network.vertices.length)
+    const crescent = expectDefined(result, 'crescent result')
+    expect(crescent.ordered.length).toBe(network.vertices.length)
   })
 
   test('rejects a simple rectangle (4 vertices)', () => {

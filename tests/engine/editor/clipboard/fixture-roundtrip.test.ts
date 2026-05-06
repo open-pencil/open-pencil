@@ -13,6 +13,8 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('gold-preview.fig clipboard roundtrip', () => {
   let graph: SceneGraph
   let pageId: string
@@ -40,7 +42,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
   it('OpenPencil format: zero property differences', () => {
     const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
     const parsed = parseOpenPencilClipboard(html)
-    expect(parsed).not.toBeNull()
+    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
 
     const origAll = flatten(graph, pageId)
 
@@ -53,7 +55,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
       return res
     }
     const pastedAll = flattenClipboard(
-      parsed!.nodes as Array<SceneNode & { children?: SceneNode[] }>
+      clipboard.nodes as Array<SceneNode & { children?: SceneNode[] }>
     )
 
     expect(pastedAll.length).toBe(origAll.length)
@@ -80,12 +82,12 @@ describe('gold-preview.fig clipboard roundtrip', () => {
     const html = await buildFigmaClipboardHTML(topLevelNodes, graph)
     expect(html).not.toBeNull()
 
-    const parsed = await parseFigmaClipboard(html!)
-    expect(parsed).not.toBeNull()
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
+    const clipboard = expectDefined(parsed, 'Figma clipboard')
 
     const graph2 = new SceneGraph()
     const page2 = graph2.getPages()[0]
-    importClipboardNodes(parsed!.nodes, graph2, page2.id, 0, 0, parsed!.blobs)
+    importClipboardNodes(clipboard.nodes, graph2, page2.id, 0, 0, clipboard.blobs)
 
     const origAll = flatten(graph, pageId)
     const pastedAll = flatten(graph2, page2.id)

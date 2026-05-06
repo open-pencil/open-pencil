@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computeLayout, computeAllLayouts, FigmaAPI, SceneGraph } from '@open-pencil/core'
 
+import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#tests/helpers/layout'
 
 describe('Grid Layout', () => {
@@ -253,7 +254,7 @@ describe('Grid Layout', () => {
       rect(graph, frame.id, 80, 80)
 
       computeLayout(graph, frame.id)
-      const hugNode = graph.getNode(frame.id)!
+      const hugNode = getNodeOrThrow(graph, frame.id)
       expect(hugNode.width).toBe(80)
       expect(hugNode.height).toBe(320)
 
@@ -280,7 +281,7 @@ describe('Grid Layout', () => {
 
       computeLayout(graph, frame.id)
 
-      const gridNode = graph.getNode(frame.id)!
+      const gridNode = getNodeOrThrow(graph, frame.id)
       expect(gridNode.width).toBe(160)
       expect(gridNode.height).toBe(160)
 
@@ -398,10 +399,10 @@ describe('Grid Layout', () => {
 
       computeAllLayouts(graph)
 
-      const sb = graph.getNode(statusBar.id)!
-      const tb = graph.getNode(toolbar.id)!
-      const cv = graph.getNode(canvas.id)!
-      const pn = graph.getNode(panel.id)!
+      const sb = getNodeOrThrow(graph, statusBar.id)
+      const tb = getNodeOrThrow(graph, toolbar.id)
+      const cv = getNodeOrThrow(graph, canvas.id)
+      const pn = getNodeOrThrow(graph, panel.id)
 
       expect(sb.height).toBe(44)
       expect(tb.height).toBe(52)

@@ -3,6 +3,8 @@ import { describe, test, expect, beforeAll } from 'bun:test'
 import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
 import type { Color } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 beforeAll(async () => {
   await initCodec()
 })
@@ -18,7 +20,10 @@ describe('COLOR variable alpha handling', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const vars = [...reimported.variables.values()]
-    const colorVar = vars.find((v) => v.name === 'brand')!
+    const colorVar = expectDefined(
+      vars.find((v) => v.name === 'brand'),
+      'brand variable'
+    )
     expect(colorVar.type).toBe('COLOR')
     const val = Object.values(colorVar.valuesByMode)[0] as Color
     expect(val.r).toBeCloseTo(0.2, 1)
@@ -36,7 +41,10 @@ describe('COLOR variable alpha handling', () => {
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
     const vars = [...reimported.variables.values()]
-    const colorVar = vars.find((v) => v.name === 'overlay')!
+    const colorVar = expectDefined(
+      vars.find((v) => v.name === 'overlay'),
+      'overlay variable'
+    )
     const val = Object.values(colorVar.valuesByMode)[0] as Color
     expect(val.a).toBeCloseTo(0.5, 1)
   })
@@ -50,8 +58,14 @@ describe('COLOR variable alpha handling', () => {
     const exported = await exportFigFile(graph)
     const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const alias = [...reimported.variables.values()].find((v) => v.name === 'alias')!
-    const resolved = reimported.resolveColorVariable(alias.id)!
+    const alias = expectDefined(
+      [...reimported.variables.values()].find((v) => v.name === 'alias'),
+      'alias variable'
+    )
+    const resolved = expectDefined(
+      reimported.resolveColorVariable(alias.id),
+      'resolved alias color'
+    )
     expect(resolved.r).toBeCloseTo(0.1)
     expect(resolved.g).toBeCloseTo(0.2)
     expect(resolved.b).toBeCloseTo(0.3)

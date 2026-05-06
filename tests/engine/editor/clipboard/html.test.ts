@@ -8,6 +8,8 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('buildFigmaClipboardHTML', () => {
   beforeAll(async () => {
     await initCodec()
@@ -133,16 +135,16 @@ describe('buildFigmaClipboardHTML', () => {
     const html = await buildFigmaClipboardHTML([frame], graph)
     expect(html).not.toBeNull()
 
-    const parsed = await parseFigmaClipboard(html!)
-    expect(parsed).not.toBeNull()
-    expect(parsed!.nodes.length).toBeGreaterThan(0)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
+    const clipboard = expectDefined(parsed, 'Figma clipboard')
+    expect(clipboard.nodes.length).toBeGreaterThan(0)
 
     const graph2 = new SceneGraph()
     const page2 = graph2.getPages()[0]
-    const created = importClipboardNodes(parsed!.nodes, graph2, page2.id)
+    const created = importClipboardNodes(clipboard.nodes, graph2, page2.id)
     expect(created).toHaveLength(1)
 
-    const imported = graph2.getNode(created[0])!
+    const imported = expectDefined(graph2.getNode(created[0]), 'imported clipboard node')
     expect(imported.name).toBe('Analytics Overview')
     expect(imported.cornerRadius).toBe(12)
 
