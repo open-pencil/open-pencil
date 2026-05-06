@@ -26,7 +26,7 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
   await canvas.waitForInit()
 
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     const nodes = Array.from(store.graph.nodes.values())
     const card =
@@ -50,7 +50,7 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
 
 async function getSelectedFill(page: Parameters<typeof test>[0]['page']) {
   return page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = store.graph.getNode(id)

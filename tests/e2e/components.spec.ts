@@ -20,7 +20,7 @@ test.afterAll(async () => {
 
 function getNodeById(id: string) {
   return page.evaluate((nodeId) => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     const n = store.graph.getNode(nodeId)
     if (!n) return null
@@ -29,12 +29,16 @@ function getNodeById(id: string) {
 }
 
 function getSelectedIds() {
-  return page.evaluate(() => [...window.__OPEN_PENCIL_STORE__!.state.selectedIds])
+  return page.evaluate(() => {
+    const store = window.openPencil?.store
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return [...store.state.selectedIds]
+  })
 }
 
 function getPageChildren() {
   return page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
       id: n.id,
@@ -73,7 +77,7 @@ test('component visible in layers panel', async () => {
   expect(count).toBeGreaterThan(0)
 
   const types = await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => n.type)
   })
@@ -87,7 +91,7 @@ test('create instance from component (context menu)', async () => {
 
   // Use store directly to create instance
   await page.evaluate((compId) => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     store.createInstanceFromComponent(compId, 300, 100)
   }, comp!.id)
@@ -104,7 +108,7 @@ test('instance shows INSTANCE type in design panel', async () => {
   const instance = children.find((c) => c.type === 'INSTANCE')!
 
   await page.evaluate((id) => {
-    window.__OPEN_PENCIL_STORE__!.select([id])
+    window.openPencil?.store!.select([id])
   }, instance.id)
   await canvas.waitForRender()
 
@@ -125,13 +129,13 @@ test('instance has "Detach" button', async () => {
 test('modifying component propagates to instance', async () => {
   // Select the component
   await page.evaluate((id) => {
-    window.__OPEN_PENCIL_STORE__!.select([id])
+    window.openPencil?.store!.select([id])
   }, componentId)
   await canvas.waitForRender()
 
   // Change component fill
   await page.evaluate((id) => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     store.updateNodeWithUndo(
       id,
@@ -155,7 +159,7 @@ test('modifying component propagates to instance', async () => {
   const children = await getPageChildren()
   const instance = children.find((c) => c.type === 'INSTANCE')!
   const instanceNode = await page.evaluate((id) => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     const n = store.graph.getNode(id)
     const child = store.graph.getChildren(id)[0]
@@ -170,12 +174,12 @@ test('detach instance converts to frame', async () => {
   const instance = children.find((c) => c.type === 'INSTANCE')!
 
   await page.evaluate((id) => {
-    window.__OPEN_PENCIL_STORE__!.select([id])
+    window.openPencil?.store!.select([id])
   }, instance.id)
   await canvas.waitForRender()
 
   await page.evaluate(() => {
-    window.__OPEN_PENCIL_STORE__!.detachInstance()
+    window.openPencil?.store!.detachInstance()
   })
   await canvas.waitForRender()
 

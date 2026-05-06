@@ -1096,6 +1096,33 @@ const noFunctionAliasImports = {
   }
 }
 
+const noDirectOpenPencilWindowInternals = {
+  meta: {
+    docs: {
+      description: 'Disallow direct access to private OpenPencil window internals'
+    }
+  },
+  create(context) {
+    function propertyName(property) {
+      if (property?.type === 'Identifier') return property.name
+      if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
+      return null
+    }
+
+    return {
+      MemberExpression(node) {
+        const name = propertyName(node.property)
+        if (!name?.startsWith('__OPEN_PENCIL')) return
+        context.report({
+          node,
+          message:
+            'Do not access window.__OPEN_PENCIL* directly. Use src/app/window-api.ts or tests/helpers/store.ts instead.'
+        })
+      }
+    }
+  }
+}
+
 const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   description: 'Disallow top-level test files that encode domains as filename prefixes',
   check(file) {
@@ -1151,6 +1178,7 @@ const plugin = {
     'no-function-type': noFunctionType,
     'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
     'no-core-browser-globals': noCoreBrowserGlobals,
+    'no-direct-open-pencil-window-internals': noDirectOpenPencilWindowInternals,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,
     'no-composable-state-wrappers': noComposableStateWrappers,

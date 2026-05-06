@@ -125,6 +125,7 @@
     "open-pencil/no-function-type": "error",
     "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
     "open-pencil/no-core-browser-globals": "error",
+    "open-pencil/no-direct-open-pencil-window-internals": "error",
     "open-pencil/no-function-alias-imports": "error",
     "open-pencil/max-composition-root-lines": [
       "error",

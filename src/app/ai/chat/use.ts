@@ -20,6 +20,7 @@ import {
 } from '@/app/ai/chat/storage'
 import { createChatSessionManager } from '@/app/ai/chat/transports'
 import { getActiveEditorStore } from '@/app/editor/active-store'
+import { setOpenPencilTransportFactorySetter } from '@/app/window-api'
 
 const activeTab = ref<'design' | 'code' | 'ai'>('design')
 
@@ -39,9 +40,9 @@ const chatSession = createChatSessionManager({
 registerAIChatEffects(chatSession.markTransportDirty)
 
 if (IS_BROWSER) {
-  window.__OPEN_PENCIL_SET_TRANSPORT__ = (factory) => {
+  setOpenPencilTransportFactorySetter((factory) => {
     chatSession.setOverrideTransport(factory)
-  }
+  })
 }
 
 export function useAIChat() {

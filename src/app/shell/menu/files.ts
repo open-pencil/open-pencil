@@ -2,6 +2,7 @@ import { useFileDialog } from '@vueuse/core'
 
 import { openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
+import { setOpenPencilOpenFileHandler } from '@/app/window-api'
 import { IS_BROWSER } from '@/constants'
 
 const fileDialog = useFileDialog({ accept: '.fig,.pen', multiple: false, reset: true })
@@ -12,15 +13,13 @@ fileDialog.onChange((files) => {
 })
 
 if (IS_BROWSER && 'window' in globalThis) {
-  ;(
-    globalThis.window as Window & { __OPEN_PENCIL_OPEN_FILE__?: (path: string) => Promise<void> }
-  ).__OPEN_PENCIL_OPEN_FILE__ = async (path: string) => {
+  setOpenPencilOpenFileHandler(async (path: string) => {
     const response = await fetch(path)
     const blob = await response.blob()
     const name = path.split('/').pop() ?? 'file.fig'
     const file = new File([blob], name, { type: 'application/octet-stream' })
     await openFileInNewTab(file, undefined, path)
-  }
+  })
 }
 
 export async function readTauriDesignFile(path: string): Promise<File> {

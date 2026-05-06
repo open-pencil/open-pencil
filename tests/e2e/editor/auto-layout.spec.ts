@@ -24,7 +24,7 @@ test.afterAll(async () => {
 async function selectFrame() {
   expect(frameId, 'frameId must be set — did the Shift+A test run?').toBeTruthy()
   await page.evaluate((id: string) => {
-    window.__OPEN_PENCIL_STORE__!.select([id])
+    window.openPencil?.store!.select([id])
   }, frameId)
   await canvas.waitForRender()
 }

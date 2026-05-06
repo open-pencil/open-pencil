@@ -20,7 +20,7 @@ test.afterAll(async () => {
 
 async function createColorVariable(name: string) {
   return page.evaluate((varName: string) => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     const existing = [...store.graph.variableCollections.values()]
     const col = existing.length > 0 ? existing[0] : store.graph.createCollection('Test Collection')
@@ -44,7 +44,7 @@ test('variables dialog opens', async () => {
 
 test('search filters variable rows', async () => {
   await page.evaluate(() => {
-    const store = window.__OPEN_PENCIL_STORE__
+    const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     const col = [...store.graph.variableCollections.values()][0]
     store.graph.createVariable('beta-spacing', 'FLOAT', col.id, 8)

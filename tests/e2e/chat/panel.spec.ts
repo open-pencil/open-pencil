@@ -27,7 +27,7 @@ test.afterAll(async () => {
 
 async function injectMockTransport(page: Page) {
   await page.evaluate(() => {
-    const setTransport = window.__OPEN_PENCIL_SET_TRANSPORT__
+    const setTransport = window.openPencil?.setTransport
     if (!setTransport) throw new Error('Transport override not available')
 
     let msgCounter = 0
