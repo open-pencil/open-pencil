@@ -111,6 +111,61 @@ export function setActiveMode(graph: SceneGraph, collectionId: string, modeId: s
   graph.activeMode.set(collectionId, modeId)
 }
 
+export function addMode(
+  graph: SceneGraph,
+  collectionId: string,
+  modeId: string,
+  name: string,
+  sourceMode?: string
+): void {
+  const collection = graph.variableCollections.get(collectionId)
+  if (!collection) return
+  collection.modes.push({ modeId, name })
+  const sourceModeId = sourceMode ?? collection.defaultModeId
+  for (const varId of collection.variableIds) {
+    const variable = graph.variables.get(varId)
+    if (!variable) continue
+    variable.valuesByMode[modeId] = structuredClone(
+      variable.valuesByMode[sourceModeId] ?? Object.values(variable.valuesByMode)[0]
+    )
+  }
+}
+
+export function removeMode(graph: SceneGraph, collectionId: string, modeId: string): void {
+  const collection = graph.variableCollections.get(collectionId)
+  if (!collection || collection.modes.length <= 1) return
+  collection.modes = collection.modes.filter((m) => m.modeId !== modeId)
+  if (collection.defaultModeId === modeId) {
+    collection.defaultModeId = collection.modes[0].modeId
+  }
+  for (const varId of collection.variableIds) {
+    const variable = graph.variables.get(varId)
+    if (variable) delete variable.valuesByMode[modeId]
+  }
+  if (graph.activeMode.get(collectionId) === modeId) {
+    graph.activeMode.set(collectionId, collection.defaultModeId)
+  }
+}
+
+export function renameMode(
+  graph: SceneGraph,
+  collectionId: string,
+  modeId: string,
+  name: string
+): void {
+  const collection = graph.variableCollections.get(collectionId)
+  if (!collection) return
+  const mode = collection.modes.find((m) => m.modeId === modeId)
+  if (mode) mode.name = name
+}
+
+export function setDefaultMode(graph: SceneGraph, collectionId: string, modeId: string): void {
+  const collection = graph.variableCollections.get(collectionId)
+  if (!collection) return
+  if (!collection.modes.some((m) => m.modeId === modeId)) return
+  collection.defaultModeId = modeId
+}
+
 export function resolveVariable(
   graph: SceneGraph,
   variableId: string,

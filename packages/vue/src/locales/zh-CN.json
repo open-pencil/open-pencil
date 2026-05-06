@@ -225,7 +225,15 @@
     "updateInstalledTitle": "更新已安装",
     "updateInstalled": "OpenPencil {version} 已安装{size}。正在重启。",
     "updateCheckFailed": "无法检查更新：{error}",
-    "updateUnavailable": "更新尚不可用。请先发布带有 latest.json 的已签名版本。"
+    "updateUnavailable": "更新尚不可用。请先发布带有 latest.json 的已签名版本。",
+    "renameCollection": "重命名集合",
+    "deleteCollection": "删除集合",
+    "modes": "模式",
+    "addMode": "添加模式",
+    "renameMode": "重命名模式",
+    "duplicateMode": "复制模式",
+    "deleteMode": "删除模式",
+    "setDefaultMode": "设为默认"
   },
   "variableTypes": {
     "color": "颜色",

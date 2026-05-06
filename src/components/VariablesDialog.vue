@@ -2,6 +2,12 @@
 import { watch, type Component } from 'vue'
 import { templateRef } from '@vueuse/core'
 import {
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuPortal,
+  ContextMenuRoot,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
   DialogClose,
   DialogContent,
   DialogOverlay,
@@ -12,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuPortal,
   DropdownMenuRoot,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   TabsContent,
   TabsList,
@@ -36,7 +43,7 @@ import type { VariableType } from '@open-pencil/core/scene-graph'
 
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI({ content: 'flex h-[75vh] w-[800px] max-w-[90vw] flex-col' })
-const menuCls = useMenuUI({ content: 'w-44' })
+const menuCls = useMenuUI({ content: 'w-40' })
 
 const variableTypeIcons: Record<VariableType, Component> = {
   COLOR: IconPalette,
@@ -81,10 +88,26 @@ const ctx = useVariablesEditor({
   deleteIcon: IconX
 })
 const collectionInput = templateRef<HTMLInputElement>('collectionInput')
+const modeInput = templateRef<HTMLInputElement>('modeInput')
 
 watch(collectionInput, (input) => {
   void ctx.focusCollectionInput(input)
 })
+watch(modeInput, (input) => {
+  void ctx.focusModeInput(input)
+})
+
+function blurOnEnter(e: KeyboardEvent) {
+  if (e.target instanceof HTMLInputElement) e.target.blur()
+}
+
+function getModeId(columnId: string): string | undefined {
+  return columnId.startsWith('mode-') ? columnId.slice(5) : undefined
+}
+
+function modeId(columnId: string): string {
+  return columnId.slice(5)
+}
 </script>
 
 <template>
@@ -130,8 +153,8 @@ watch(collectionInput, (input) => {
                     ref="collectionInput"
                     class="w-24 rounded border border-accent bg-input px-2 py-0.5 text-xs text-surface outline-none"
                     :value="col.name"
-                    @blur="ctx.commitRenameCollection(col.id, $event.target as HTMLInputElement)"
-                    @keydown.enter="($event.target as HTMLInputElement).blur()"
+                    @blur="ctx.commitRenameCollection(col.id, $event)"
+                    @keydown.enter="blurOnEnter"
                     @keydown.escape="ctx.editingCollectionId.value = null"
                   />
                   <TabsTrigger
@@ -147,6 +170,42 @@ watch(collectionInput, (input) => {
               </TabsList>
 
               <div class="flex items-center gap-1.5 px-3">
+                <DropdownMenuRoot>
+                  <DropdownMenuTrigger as-child>
+                    <button
+                      data-test-id="variables-collection-menu"
+                      class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
+                    >
+                      <icon-lucide-ellipsis class="size-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuContent
+                      side="bottom"
+                      :side-offset="4"
+                      align="start"
+                      :class="menuCls.content"
+                    >
+                      <DropdownMenuItem
+                        :class="menuCls.item"
+                        @select="ctx.startRenameCollection(ctx.activeCollectionId.value)"
+                      >
+                        <icon-lucide-pencil :class="menuCls.icon" />
+                        {{ dialogs.renameCollection }}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator class="mx-1.5 my-1 h-px bg-border" />
+                      <DropdownMenuItem
+                        :class="menuCls.item"
+                        class="text-red-500"
+                        data-test-id="variables-delete-collection"
+                        @select="ctx.removeCollection(ctx.activeCollectionId.value)"
+                      >
+                        <icon-lucide-trash-2 :class="menuCls.icon" />
+                        {{ dialogs.deleteCollection }}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuRoot>
                 <div class="flex items-center gap-1 rounded border border-border px-2 py-0.5">
                   <icon-lucide-search class="size-3 text-muted" />
                   <input
@@ -196,8 +255,69 @@ watch(collectionInput, (input) => {
                         class="relative px-4 py-2 text-left text-[11px] font-medium text-muted"
                         :style="{ width: `${header.getSize()}px` }"
                       >
+                        <template v-if="getModeId(header.column.id)">
+                          <input
+                            v-if="ctx.editingModeId.value === getModeId(header.column.id)"
+                            ref="modeInput"
+                            class="-mx-1 w-full rounded border border-accent bg-input px-1 py-0 text-[11px] font-medium text-surface outline-none"
+                            :value="header.column.columnDef.header"
+                            @blur="ctx.commitRenameMode(modeId(header.column.id), $event)"
+                            @keydown.enter="blurOnEnter"
+                            @keydown.escape="ctx.editingModeId.value = null"
+                          />
+                          <ContextMenuRoot v-else>
+                            <ContextMenuTrigger as-child>
+                              <span
+                                class="cursor-default"
+                                :class="
+                                  getModeId(header.column.id) === col.defaultModeId
+                                    ? 'text-surface'
+                                    : ''
+                                "
+                                @dblclick="ctx.startRenameMode(modeId(header.column.id))"
+                              >
+                                {{ header.column.columnDef.header }}
+                              </span>
+                            </ContextMenuTrigger>
+                            <ContextMenuPortal>
+                              <ContextMenuContent :class="menuCls.content">
+                                <ContextMenuItem
+                                  :class="menuCls.item"
+                                  @select="ctx.startRenameMode(modeId(header.column.id))"
+                                >
+                                  <icon-lucide-pencil :class="menuCls.icon" />
+                                  {{ dialogs.renameMode }}
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                  :class="menuCls.item"
+                                  @select="ctx.duplicateMode(modeId(header.column.id))"
+                                >
+                                  <icon-lucide-copy :class="menuCls.icon" />
+                                  {{ dialogs.duplicateMode }}
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                  v-if="getModeId(header.column.id) !== col.defaultModeId"
+                                  :class="menuCls.item"
+                                  @select="ctx.setDefaultMode(modeId(header.column.id))"
+                                >
+                                  <icon-lucide-pin :class="menuCls.icon" />
+                                  {{ dialogs.setDefaultMode }}
+                                </ContextMenuItem>
+                                <ContextMenuSeparator :class="menuCls.separator" />
+                                <ContextMenuItem
+                                  :class="[menuCls.item, 'text-red-500']"
+                                  :disabled="col.modes.length <= 1"
+                                  @select="ctx.removeMode(modeId(header.column.id))"
+                                >
+                                  <icon-lucide-trash-2 :class="menuCls.icon" />
+                                  {{ dialogs.deleteMode }}
+                                </ContextMenuItem>
+                              </ContextMenuContent>
+                            </ContextMenuPortal>
+                          </ContextMenuRoot>
+                        </template>
                         <FlexRender
-                          v-if="!header.isPlaceholder"
+                          v-else-if="!header.isPlaceholder"
                           :render="header.column.columnDef.header"
                           :props="header.getContext()"
                         />
@@ -213,6 +333,17 @@ watch(collectionInput, (input) => {
                           @touchstart="header.getResizeHandler()?.($event)"
                           @dblclick="header.column.resetSize()"
                         />
+                      </th>
+                      <th class="w-8 px-1 py-2">
+                        <Tip :label="dialogs.addMode">
+                          <button
+                            data-test-id="variables-add-mode"
+                            class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
+                            @click="ctx.addMode"
+                          >
+                            <icon-lucide-plus class="size-3" />
+                          </button>
+                        </Tip>
                       </th>
                     </tr>
                   </thead>

@@ -32,7 +32,60 @@ export function createVariableCollectionActions(editor: Editor, activeCollection
     editor.renameCollection(id, newName)
   }
 
-  return { setActiveCollection, addCollection, renameCollection }
+  function removeCollection(id: string) {
+    editor.removeCollection(id)
+    const cols = [...editor.getCollections()]
+    activeCollectionId.value = cols[0]?.id ?? ''
+  }
+
+  function addMode(): string | undefined {
+    const colId = activeCollectionId.value
+    if (!colId) return undefined
+    return editor.addMode(colId)
+  }
+
+  function removeMode(modeId: string) {
+    const colId = activeCollectionId.value
+    if (!colId) return
+    editor.removeMode(colId, modeId)
+  }
+
+  function renameMode(modeId: string, newName: string) {
+    const colId = activeCollectionId.value
+    if (!colId) return
+    editor.renameMode(colId, modeId, newName)
+  }
+
+  function setDefaultMode(modeId: string) {
+    const colId = activeCollectionId.value
+    if (!colId) return
+    editor.setDefaultMode(colId, modeId)
+  }
+
+  function duplicateMode(modeId: string): string | undefined {
+    const colId = activeCollectionId.value
+    if (!colId) return undefined
+    return editor.duplicateMode(colId, modeId)
+  }
+
+  function setActiveMode(modeId: string) {
+    const colId = activeCollectionId.value
+    if (!colId) return
+    editor.setActiveMode(colId, modeId)
+  }
+
+  return {
+    setActiveCollection,
+    addCollection,
+    renameCollection,
+    removeCollection,
+    addMode,
+    removeMode,
+    renameMode,
+    setDefaultMode,
+    duplicateMode,
+    setActiveMode
+  }
 }
 
 export function createVariableValueActions(

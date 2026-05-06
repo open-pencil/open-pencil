@@ -225,7 +225,15 @@
     "updateInstalledTitle": "Обновление установлено",
     "updateInstalled": "OpenPencil {version} установлен{size}. Перезапуск.",
     "updateCheckFailed": "Не удалось проверить обновления: {error}",
-    "updateUnavailable": "Обновления пока недоступны. Сначала опубликуйте подписанный релиз с latest.json."
+    "updateUnavailable": "Обновления пока недоступны. Сначала опубликуйте подписанный релиз с latest.json.",
+    "renameCollection": "Переименовать коллекцию",
+    "deleteCollection": "Удалить коллекцию",
+    "modes": "Режимы",
+    "addMode": "Добавить режим",
+    "renameMode": "Переименовать режим",
+    "duplicateMode": "Дублировать режим",
+    "deleteMode": "Удалить режим",
+    "setDefaultMode": "Установить по умолчанию"
   },
   "variableTypes": {
     "color": "Цвет",

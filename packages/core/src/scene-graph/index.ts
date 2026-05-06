@@ -160,6 +160,22 @@ export class SceneGraph {
     Variables.setActiveMode(this, collectionId, modeId)
   }
 
+  addMode(collectionId: string, modeId: string, name: string, sourceMode?: string): void {
+    Variables.addMode(this, collectionId, modeId, name, sourceMode)
+  }
+
+  removeMode(collectionId: string, modeId: string): void {
+    Variables.removeMode(this, collectionId, modeId)
+  }
+
+  renameMode(collectionId: string, modeId: string, name: string): void {
+    Variables.renameMode(this, collectionId, modeId, name)
+  }
+
+  setDefaultMode(collectionId: string, modeId: string): void {
+    Variables.setDefaultMode(this, collectionId, modeId)
+  }
+
   resolveVariable(
     variableId: string,
     modeId?: string,
