@@ -14,6 +14,8 @@ import {
   type SceneNode
 } from '@open-pencil/core'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const JPEG_MAGIC = new Uint8Array([0xff, 0xd8, 0xff, 0xe0])
 
@@ -60,11 +62,17 @@ describe('FigmaAPI.createImage', () => {
 })
 
 describe('set_image_fill tool', () => {
-  const tool = ALL_TOOLS.find((t) => t.name === 'set_image_fill')!
+  const tool = expectDefined(
+    ALL_TOOLS.find((t) => t.name === 'set_image_fill'),
+    'set_image_fill tool'
+  )
 
   test('sets an IMAGE fill with correct imageHash and scaleMode', () => {
     const { figma } = setup()
-    const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
     const node = shape.execute(figma, {
       type: 'RECTANGLE',
       x: 0,
@@ -83,7 +91,7 @@ describe('set_image_fill tool', () => {
     expect(result.imageHash).toBeTruthy()
     expect(result.scaleMode).toBe('FILL')
 
-    const fills = figma.getNodeById(node.id)!.fills as Array<{
+    const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills as Array<{
       type: string
       imageHash: string
       imageScaleMode: string
@@ -104,7 +112,10 @@ describe('set_image_fill tool', () => {
 
   test('default scale mode is FILL', () => {
     const { figma } = setup()
-    const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
     const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
       id: string
     }
@@ -119,7 +130,10 @@ describe('set_image_fill tool', () => {
     const modes = ['FILL', 'FIT', 'CROP', 'TILE'] as const
     for (const mode of modes) {
       const { figma } = setup()
-      const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
+      const shape = expectDefined(
+        ALL_TOOLS.find((t) => t.name === 'create_shape'),
+        'create_shape tool'
+      )
       const node = shape.execute(figma, {
         type: 'RECTANGLE',
         x: 0,
@@ -135,14 +149,19 @@ describe('set_image_fill tool', () => {
       }) as { scaleMode: string }
       expect(result.scaleMode).toBe(mode)
 
-      const fills = figma.getNodeById(node.id)!.fills as Array<{ imageScaleMode: string }>
+      const fills = expectDefined(figma.getNodeById(node.id), 'image-filled node').fills as Array<{
+        imageScaleMode: string
+      }>
       expect(fills[0].imageScaleMode).toBe(mode)
     }
   })
 
   test('image data is stored in graph.images', () => {
     const { graph, figma } = setup()
-    const shape = ALL_TOOLS.find((t) => t.name === 'create_shape')!
+    const shape = expectDefined(
+      ALL_TOOLS.find((t) => t.name === 'create_shape'),
+      'create_shape tool'
+    )
     const node = shape.execute(figma, { type: 'RECTANGLE', x: 0, y: 0, width: 50, height: 50 }) as {
       id: string
     }
@@ -192,9 +211,9 @@ describe('clipboard roundtrip with images', () => {
     const html = buildOpenPencilClipboardHTML([node], graph)
     const parsed = parseOpenPencilClipboard(html)
 
-    expect(parsed).not.toBeNull()
-    expect(parsed!.images.size).toBe(1)
-    expect(parsed!.images.get(imageHash)).toEqual(imageBytes)
+    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+    expect(clipboard.images.size).toBe(1)
+    expect(clipboard.images.get(imageHash)).toEqual(imageBytes)
   })
 
   test('preserves imageHash on the fill', () => {
@@ -203,7 +222,7 @@ describe('clipboard roundtrip with images', () => {
     const html = buildOpenPencilClipboardHTML([node], graph)
     const parsed = parseOpenPencilClipboard(html)
 
-    const fill = parsed!.nodes[0].fills[0]
+    const fill = expectDefined(parsed, 'OpenPencil clipboard').nodes[0]?.fills[0]
     expect(fill.type).toBe('IMAGE')
     expect(fill.imageHash).toBe(imageHash)
   })
@@ -252,9 +271,10 @@ describe('clipboard roundtrip with images', () => {
     const html = buildOpenPencilClipboardHTML([node1, node2], graph)
     const parsed = parseOpenPencilClipboard(html)
 
-    expect(parsed!.images.size).toBe(2)
-    expect(parsed!.images.get(hash1)).toEqual(bytes1)
-    expect(parsed!.images.get(hash2)).toEqual(bytes2)
+    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+    expect(clipboard.images.size).toBe(2)
+    expect(clipboard.images.get(hash1)).toEqual(bytes1)
+    expect(clipboard.images.get(hash2)).toEqual(bytes2)
   })
 
   test('nodes without image fills produce empty images map', () => {
@@ -270,7 +290,7 @@ describe('clipboard roundtrip with images', () => {
     const html = buildOpenPencilClipboardHTML([node], graph)
     const parsed = parseOpenPencilClipboard(html)
 
-    expect(parsed!.images.size).toBe(0)
+    expect(expectDefined(parsed, 'OpenPencil clipboard').images.size).toBe(0)
   })
 
   test('child node image hashes are collected', () => {
@@ -301,8 +321,9 @@ describe('clipboard roundtrip with images', () => {
     const html = buildOpenPencilClipboardHTML([frame], graph)
     const parsed = parseOpenPencilClipboard(html)
 
-    expect(parsed!.images.size).toBe(1)
-    expect(parsed!.images.get(hash)).toEqual(bytes)
+    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+    expect(clipboard.images.size).toBe(1)
+    expect(clipboard.images.get(hash)).toEqual(bytes)
   })
 })
 
@@ -402,7 +423,11 @@ describe('fig export/import with images', () => {
     const restored = await parseFigFile(zip.buffer as ArrayBuffer)
 
     expect(restored.images.size).toBe(2)
-    expect(new Uint8Array(restored.images.get(hash1)!)).toEqual(bytes1)
-    expect(new Uint8Array(restored.images.get(hash2)!)).toEqual(bytes2)
+    expect(new Uint8Array(expectDefined(restored.images.get(hash1), 'restored image 1'))).toEqual(
+      bytes1
+    )
+    expect(new Uint8Array(expectDefined(restored.images.get(hash2), 'restored image 2'))).toEqual(
+      bytes2
+    )
   })
 })
