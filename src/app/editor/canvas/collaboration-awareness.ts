@@ -1,5 +1,3 @@
-import { watch } from 'vue'
-
 import type { useCollabInjected } from '@/app/collab/use'
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -12,10 +10,7 @@ export function useCanvasCollaborationAwareness(store: EditorStore, collab: Coll
     collab?.updateCursor(cx, cy, store.state.currentPageId)
   }
 
-  watch(
-    () => [...store.state.selectedIds],
-    (ids) => collab?.updateSelection(ids)
-  )
+  store.onEditorEvent('selection:changed', (ids) => collab?.updateSelection(ids))
 
   return { updateCursor }
 }

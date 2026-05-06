@@ -1,5 +1,4 @@
 import type { Room } from 'trystero'
-import { watch } from 'vue'
 import type { Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
@@ -136,19 +135,16 @@ export function createCollabConnectionActions({
 }
 
 export function watchAwarenessZoom(store: EditorStore, getAwareness: () => Awareness | null) {
-  return watch(
-    () => store.state.zoom,
-    (zoom) => {
-      const awareness = getAwareness()
-      if (!awareness) return
-      const prev = awareness.getLocalState()?.cursor as
-        | { x: number; y: number; pageId: string; zoom: number }
-        | undefined
-      if (prev) {
-        awareness.setLocalStateField('cursor', { ...prev, zoom })
-      }
+  return store.onEditorEvent('viewport:changed', (viewport) => {
+    const awareness = getAwareness()
+    if (!awareness) return
+    const prev = awareness.getLocalState()?.cursor as
+      | { x: number; y: number; pageId: string; zoom: number }
+      | undefined
+    if (prev) {
+      awareness.setLocalStateField('cursor', { ...prev, zoom: viewport.zoom })
     }
-  )
+  })
 }
 
 export function connectCollabSession({

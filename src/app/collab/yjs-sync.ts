@@ -76,12 +76,12 @@ export function bindCollabGraphEvents({
     }
   }
 
-  return store.graph.onNodeEvents({
-    updated: (id) => onGraphMutation(id),
-    created: (node) => onGraphMutation(node.id),
-    reparented: (nodeId) => onGraphMutation(nodeId),
-    reordered: (nodeId) => onGraphMutation(nodeId),
-    deleted: (id) => {
+  const unbinds = [
+    store.onEditorEvent('node:updated', (id) => onGraphMutation(id)),
+    store.onEditorEvent('node:created', (node) => onGraphMutation(node.id)),
+    store.onEditorEvent('node:reparented', (nodeId) => onGraphMutation(nodeId)),
+    store.onEditorEvent('node:reordered', (nodeId) => onGraphMutation(nodeId)),
+    store.onEditorEvent('node:deleted', (id) => {
       const ydoc = getYdoc()
       const ynodes = getYnodes()
       if (!getSuppressGraphSync() && ydoc && ynodes) {
@@ -91,8 +91,11 @@ export function bindCollabGraphEvents({
         })
         setSuppressYjsEvents(false)
       }
-    }
-  })
+    })
+  ]
+  return () => {
+    for (const unbind of unbinds) unbind()
+  }
 }
 
 export function registerYjsObservers({

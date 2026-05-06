@@ -2,7 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- Add editor event bus with typed lifecycle events — `selection:changed`, `tool:changed`, `page:changed`, `viewport:changed`, `graph:replaced`, `render:requested`, `repaint:requested`, and all scene graph node events. Subscribe via `editor.onEditorEvent()` in core or `useEditorEvent()` composable in the Vue SDK.
+
 ### Changed
+
+- Route all selection and tool mutations through `setSelectedIds()` / `setActiveTool()` in the editor core, replacing direct `state.selectedIds` / `state.activeTool` assignments. This ensures event bus subscribers receive consistent change notifications.
+- Split large test files into focused domain folders and remove all `max-lines`, `complexity`, and `no-empty-function` test lint exceptions.
+- Enforce `no-sibling-domain-prefixed-files` lint rule project-wide — files with prefixes matching an existing sibling folder must be moved into that folder.
 
 - Refactor the editor architecture across core, app, Vue SDK, CLI, MCP, docs, and desktop into smaller domain modules with structural lint rules to keep package boundaries explicit.
 - Add targeted core subpath exports and package-local import aliases for cleaner app, Vue SDK, CLI, and MCP imports.
