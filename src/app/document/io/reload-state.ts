@@ -23,7 +23,7 @@ export function restoreReloadState(
   state: EditorState,
   snapshot: ReloadStateSnapshot
 ) {
-  state.selectedIds = new Set()
+  editor.clearSelection()
   if (editor.graph.getNode(snapshot.pageId)) {
     state.currentPageId = snapshot.pageId
   } else {

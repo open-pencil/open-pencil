@@ -14,9 +14,11 @@ export function createPageActions(ctx: EditorContext) {
 
     pageViewportStore.saveCurrentPageViewport()
 
+    const previousPageId = ctx.state.currentPageId
     ctx.state.currentPageId = pageId
     ctx.state.enteredContainerId = null
-    ctx.state.selectedIds = new Set()
+    ctx.setSelectedIds(new Set())
+    if (previousPageId !== pageId) ctx.emitEditorEvent('page:changed', pageId, previousPageId)
 
     pageViewportStore.restorePageViewport(pageId)
 

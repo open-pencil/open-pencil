@@ -52,7 +52,7 @@ export function wrapInAutoLayout(
 
   computeLayout(ctx.graph, frameId)
   ctx.runLayoutForNode(frameId)
-  ctx.state.selectedIds = new Set([frameId])
+  ctx.setSelectedIds(new Set([frameId]))
 
   ctx.undo.push({
     label: 'Wrap in auto layout',
@@ -61,7 +61,7 @@ export function wrapInAutoLayout(
       for (const n of origPositions) ctx.graph.reparentNode(n.id, f.id)
       computeLayout(ctx.graph, f.id)
       ctx.runLayoutForNode(f.id)
-      ctx.state.selectedIds = new Set([f.id])
+      ctx.setSelectedIds(new Set([f.id]))
     },
     inverse: () => {
       for (const orig of origPositions) {
@@ -69,7 +69,7 @@ export function wrapInAutoLayout(
         ctx.graph.updateNode(orig.id, { x: orig.x, y: orig.y })
       }
       ctx.graph.deleteNode(frameId)
-      ctx.state.selectedIds = prevSelection
+      ctx.setSelectedIds(prevSelection)
     }
   })
 }

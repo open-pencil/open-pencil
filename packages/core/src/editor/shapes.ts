@@ -70,7 +70,7 @@ export function createShapeActions(ctx: EditorContext) {
         ctx.graph.deleteNode(id)
         const next = new Set(ctx.state.selectedIds)
         next.delete(id)
-        ctx.state.selectedIds = next
+        ctx.setSelectedIds(next)
       }
     })
     return id
@@ -79,7 +79,7 @@ export function createShapeActions(ctx: EditorContext) {
   const penActions = createPenActions(ctx, createShape)
 
   function setTool(tool: typeof ctx.state.activeTool) {
-    ctx.state.activeTool = tool
+    ctx.setActiveTool(tool)
   }
 
   return {

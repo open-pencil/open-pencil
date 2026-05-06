@@ -116,7 +116,7 @@ export async function openFileInNewTab(
     store.replaceGraph(imported)
     store.undo.clear()
     store.setDocumentSource(file.name, sourceFormat, handle, path)
-    store.state.selectedIds = new Set()
+    store.clearSelection()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
     await store.fitCurrentPageToViewport()

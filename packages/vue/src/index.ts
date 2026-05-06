@@ -2,6 +2,8 @@ export type {
   Editor,
   EditorState,
   EditorOptions,
+  EditorEvents,
+  EditorEventName,
   Tool,
   EditorToolDef
 } from '@open-pencil/core/editor'
@@ -27,6 +29,7 @@ export { useNodeProps, MIXED } from '#vue/controls/node-props/use'
 export type { MixedValue } from '#vue/controls/node-props/use'
 export { useSceneComputed } from '#vue/internal/scene-computed/use'
 export { useSelectionState } from '#vue/editor/selection-state/use'
+export { useEditorEvent } from '#vue/editor/events/use'
 export { useSelectionCapabilities } from '#vue/editor/selection-capabilities/use'
 
 /** Command and menu composition helpers. */

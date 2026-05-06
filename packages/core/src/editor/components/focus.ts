@@ -18,7 +18,7 @@ export function createComponentFocusActions(ctx: EditorContext) {
       void switchPage(current.id)
     }
 
-    ctx.state.selectedIds = new Set([main.id])
+    ctx.setSelectedIds(new Set([main.id]))
 
     const abs = ctx.graph.getAbsolutePosition(main.id)
     const { width: viewW, height: viewH } = ctx.getViewportSize()

@@ -66,11 +66,11 @@ export function createUndoActions(ctx: EditorContext) {
           )
           ctx.runLayoutForNode(id)
         }
-        ctx.state.selectedIds = new Set(nextSelection)
+        ctx.setSelectedIds(new Set(nextSelection))
       },
       inverse: () => {
         for (const id of rootIds.toReversed()) ctx.graph.deleteNode(id)
-        ctx.state.selectedIds = new Set(previousSelection)
+        ctx.setSelectedIds(new Set(previousSelection))
       }
     })
   }

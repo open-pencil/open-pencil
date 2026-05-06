@@ -4,6 +4,17 @@ import { computeBounds, computeAbsoluteBounds } from '#core/geometry'
 import type { EditorContext } from './types'
 
 export function createViewportActions(ctx: EditorContext) {
+  function currentViewport() {
+    return { panX: ctx.state.panX, panY: ctx.state.panY, zoom: ctx.state.zoom }
+  }
+
+  function emitViewportChanged(previous: ReturnType<typeof currentViewport>) {
+    const next = currentViewport()
+    if (next.panX !== previous.panX || next.panY !== previous.panY || next.zoom !== previous.zoom) {
+      ctx.emitEditorEvent('viewport:changed', next, previous)
+    }
+  }
+
   function screenToCanvas(sx: number, sy: number) {
     return {
       x: (sx - ctx.state.panX) / ctx.state.zoom,
@@ -12,11 +23,13 @@ export function createViewportActions(ctx: EditorContext) {
   }
 
   function setZoomAroundPoint(level: number, centerX: number, centerY: number) {
+    const previous = currentViewport()
     const newZoom = Math.max(0.02, Math.min(256, level))
     ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
     ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
     ctx.state.zoom = newZoom
     ctx.requestRepaint()
+    emitViewportChanged(previous)
   }
 
   function applyZoom(delta: number, centerX: number, centerY: number) {
@@ -28,12 +41,15 @@ export function createViewportActions(ctx: EditorContext) {
   }
 
   function pan(dx: number, dy: number) {
+    const previous = currentViewport()
     ctx.state.panX += dx
     ctx.state.panY += dy
     ctx.requestRepaint()
+    emitViewportChanged(previous)
   }
 
   function zoomToBounds(minX: number, minY: number, maxX: number, maxY: number) {
+    const previous = currentViewport()
     const padding = 80
     const w = maxX - minX + padding * 2
     const h = maxY - minY + padding * 2
@@ -45,6 +61,7 @@ export function createViewportActions(ctx: EditorContext) {
     ctx.state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
     ctx.state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
     ctx.requestRepaint()
+    emitViewportChanged(previous)
   }
 
   function zoomToFit() {
@@ -60,10 +77,12 @@ export function createViewportActions(ctx: EditorContext) {
     const centerX = (-ctx.state.panX + viewW / 2) / ctx.state.zoom
     const centerY = (-ctx.state.panY + viewH / 2) / ctx.state.zoom
 
+    const previous = currentViewport()
     ctx.state.zoom = Math.max(0.02, Math.min(256, level))
     ctx.state.panX = viewW / 2 - centerX
     ctx.state.panY = viewH / 2 - centerY
     ctx.requestRepaint()
+    emitViewportChanged(previous)
   }
 
   function zoomTo100() {

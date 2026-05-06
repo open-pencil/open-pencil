@@ -60,7 +60,7 @@ export function createStructureActions(ctx: EditorContext) {
     for (const id of ids) {
       ctx.graph.reparentNode(id, pageId)
     }
-    ctx.state.selectedIds = new Set()
+    ctx.setSelectedIds(new Set())
   }
 
   function renameNode(id: string, name: string) {

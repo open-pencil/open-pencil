@@ -205,12 +205,12 @@ export function createPenActions(ctx: EditorContext, createShape: CreateShape) {
       fills,
       strokes
     })
-    ctx.state.selectedIds = new Set([nodeId])
+    ctx.setSelectedIds(new Set([nodeId]))
 
     ctx.state.penState = null
     ctx.state.penCursorX = null
     ctx.state.penCursorY = null
-    ctx.state.activeTool = 'SELECT'
+    ctx.setActiveTool('SELECT')
     ctx.requestRender()
   }
 
@@ -218,7 +218,7 @@ export function createPenActions(ctx: EditorContext, createShape: CreateShape) {
     ctx.state.penState = null
     ctx.state.penCursorX = null
     ctx.state.penCursorY = null
-    ctx.state.activeTool = 'SELECT'
+    ctx.setActiveTool('SELECT')
     ctx.requestRender()
   }
 

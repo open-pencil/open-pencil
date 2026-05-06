@@ -27,7 +27,7 @@ export function restorePageFromSnapshot(ctx: EditorContext, snapshot: PageSnapsh
 
   ctx.graph.clearAbsPosCache()
   computeAllLayouts(ctx.graph, pageId)
-  ctx.state.selectedIds = new Set()
+  ctx.setSelectedIds(new Set())
   ctx.state.hoveredNodeId = null
   ctx.requestRender()
 }

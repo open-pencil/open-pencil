@@ -25,16 +25,16 @@ export function createComponentActions(ctx: EditorContext) {
 
       if (node.type === 'FRAME' || node.type === 'GROUP') {
         ctx.graph.updateNode(node.id, { type: 'COMPONENT' })
-        ctx.state.selectedIds = new Set([node.id])
+        ctx.setSelectedIds(new Set([node.id]))
         ctx.undo.push({
           label: 'Create component',
           forward: () => {
             ctx.graph.updateNode(node.id, { type: 'COMPONENT' })
-            ctx.state.selectedIds = new Set([node.id])
+            ctx.setSelectedIds(new Set([node.id]))
           },
           inverse: () => {
             ctx.graph.updateNode(node.id, { type: prevType })
-            ctx.state.selectedIds = prevSelection
+            ctx.setSelectedIds(prevSelection)
           }
         })
         return

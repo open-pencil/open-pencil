@@ -1,7 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type { SceneGraph, VectorSegment, VectorVertex } from '#core/scene-graph'
+import type { SceneGraph, SceneNode, VectorSegment, VectorVertex } from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { UndoManager } from '#core/scene-graph/undo'
 import type { TextEditor } from '#core/text/editor'
@@ -67,6 +67,26 @@ export interface EditorState {
   enteredContainerId: string | null
 }
 
+export interface EditorEvents {
+  'render:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
+  'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
+  'graph:replaced': (graph: SceneGraph) => void
+  'node:created': (node: SceneNode) => void
+  'node:updated': (id: string, changes: Partial<SceneNode>) => void
+  'node:deleted': (id: string) => void
+  'node:reparented': (nodeId: string, oldParentId: string | null, newParentId: string) => void
+  'node:reordered': (nodeId: string, parentId: string, index: number) => void
+  'selection:changed': (selectedIds: string[], previousIds: string[]) => void
+  'tool:changed': (tool: Tool, previousTool: Tool) => void
+  'page:changed': (pageId: string, previousPageId: string) => void
+  'viewport:changed': (
+    viewport: { panX: number; panY: number; zoom: number },
+    previous: { panX: number; panY: number; zoom: number }
+  ) => void
+}
+
+export type EditorEventName = keyof EditorEvents
+
 export interface EditorOptions {
   graph?: SceneGraph
   state?: EditorState
@@ -87,6 +107,12 @@ export interface EditorContext {
   getTextEditor: () => TextEditor | null
   requestRender: () => void
   requestRepaint: () => void
+  emitEditorEvent: <K extends EditorEventName>(
+    event: K,
+    ...args: Parameters<EditorEvents[K]>
+  ) => void
+  setSelectedIds: (ids: Set<string>) => void
+  setActiveTool: (tool: Tool) => void
   runLayoutForNode: (id: string) => void
   subscribeToGraph: () => void
 }

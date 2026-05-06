@@ -1,4 +1,6 @@
 import type { CanvasKit } from 'canvaskit-wasm'
+import { createNanoEvents } from 'nanoevents'
+import type { Emitter } from 'nanoevents'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
@@ -28,7 +30,13 @@ import { createShapeActions } from './shapes'
 import { createDefaultEditorState } from './state'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
-import type { EditorContext, EditorOptions, EditorState } from './types'
+import type {
+  EditorContext,
+  EditorEventName,
+  EditorEvents,
+  EditorOptions,
+  EditorState
+} from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
 import { createViewportActions } from './viewport'
@@ -50,18 +58,56 @@ export function createEditor(options?: EditorOptions) {
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
   let _textEditor: TextEditor | null = null
+  const events: Emitter<EditorEvents> = createNanoEvents()
 
   void prefetchFigmaSchema()
 
   const state: EditorState = options?.state ?? createDefaultEditorState(_graph.getPages()[0].id)
 
+  function emitEditorEvent<K extends EditorEventName>(
+    event: K,
+    ...args: Parameters<EditorEvents[K]>
+  ) {
+    events.emit(event, ...args)
+  }
+
+  function onEditorEvent<K extends EditorEventName>(event: K, handler: EditorEvents[K]) {
+    return events.on(event, handler)
+  }
+
   function requestRender() {
     state.renderVersion++
     state.sceneVersion++
+    emitEditorEvent('render:requested', {
+      renderVersion: state.renderVersion,
+      sceneVersion: state.sceneVersion
+    })
   }
 
   function requestRepaint() {
     state.renderVersion++
+    emitEditorEvent('repaint:requested', {
+      renderVersion: state.renderVersion,
+      sceneVersion: state.sceneVersion
+    })
+  }
+
+  function setSelectedIds(ids: Set<string>) {
+    const previous = [...state.selectedIds]
+    state.selectedIds = ids
+    const selected = [...ids]
+    if (
+      previous.length !== selected.length ||
+      previous.some((id, index) => id !== selected[index])
+    ) {
+      emitEditorEvent('selection:changed', selected, previous)
+    }
+  }
+
+  function setActiveTool(tool: EditorState['activeTool']) {
+    const previous = state.activeTool
+    state.activeTool = tool
+    if (previous !== tool) emitEditorEvent('tool:changed', tool, previous)
   }
 
   const graphReads = createGraphReadActions(() => _graph)
@@ -72,7 +118,8 @@ export function createEditor(options?: EditorOptions) {
     getGraph: () => _graph,
     getRenderers: () => _renderers,
     scheduleComponentSync,
-    requestRender
+    requestRender,
+    emitEditorEvent
   })
 
   if (!skipInitialGraphSetup) {
@@ -96,6 +143,9 @@ export function createEditor(options?: EditorOptions) {
     getTextEditor: () => _textEditor,
     requestRender,
     requestRepaint,
+    emitEditorEvent,
+    setSelectedIds,
+    setActiveTool,
     runLayoutForNode,
     subscribeToGraph
   }
@@ -137,10 +187,15 @@ export function createEditor(options?: EditorOptions) {
   function replaceGraph(newGraph: SceneGraph) {
     _graph = newGraph
     subscribeToGraph()
+    const previousPageId = state.currentPageId
     state.currentPageId = _graph.getPages()[0]?.id ?? _graph.rootId
-    state.selectedIds = new Set()
+    setSelectedIds(new Set())
     state.hoveredNodeId = null
     pages.clearPageViewports()
+    emitEditorEvent('graph:replaced', _graph)
+    if (previousPageId !== state.currentPageId) {
+      emitEditorEvent('page:changed', state.currentPageId, previousPageId)
+    }
     requestRender()
   }
 
@@ -163,6 +218,7 @@ export function createEditor(options?: EditorOptions) {
     // Lifecycle
     requestRender,
     requestRepaint,
+    onEditorEvent,
     setCanvasKit,
     removeCanvasRenderer,
     replaceGraph,

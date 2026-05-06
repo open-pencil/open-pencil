@@ -38,7 +38,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
 
     if (newRootIds.length > 0) {
-      ctx.state.selectedIds = new Set(newRootIds)
+      ctx.setSelectedIds(new Set(newRootIds))
       ctx.undo.push({
         label: 'Duplicate',
         forward: () => {
@@ -48,11 +48,11 @@ export function createClipboardActions(ctx: EditorContext) {
             const parentId = snapshot.parentId ?? ctx.state.currentPageId
             restoreSubtree(ctx.graph, snapshot, parentId, allSnapshots)
           }
-          ctx.state.selectedIds = new Set(newRootIds)
+          ctx.setSelectedIds(new Set(newRootIds))
         },
         inverse: () => {
           for (const id of newRootIds.slice().reverse()) ctx.graph.deleteNode(id)
-          ctx.state.selectedIds = prevSelection
+          ctx.setSelectedIds(prevSelection)
         }
       })
     }
@@ -82,7 +82,7 @@ export function createClipboardActions(ctx: EditorContext) {
         const cy = cursorPos?.y ?? (-ctx.state.panY + viewH / 2) / ctx.state.zoom
         placementActions.centerNodesAt(created, cx, cy)
         computeAllLayouts(ctx.graph, ctx.state.currentPageId)
-        ctx.state.selectedIds = new Set(created)
+        ctx.setSelectedIds(new Set(created))
 
         const allNodes = collectSubtrees(ctx.graph, created)
         const pageId = ctx.state.currentPageId
@@ -96,12 +96,12 @@ export function createClipboardActions(ctx: EditorContext) {
               })
             }
             computeAllLayouts(ctx.graph, pageId)
-            ctx.state.selectedIds = new Set(created)
+            ctx.setSelectedIds(new Set(created))
           },
           inverse: () => {
             for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
             computeAllLayouts(ctx.graph, pageId)
-            ctx.state.selectedIds = prevSelection
+            ctx.setSelectedIds(prevSelection)
           }
         })
         void fontActions.loadFontsForNodes(created)
@@ -137,7 +137,7 @@ export function createClipboardActions(ctx: EditorContext) {
 
     if (cursorPos) placementActions.centerNodesAt(created, cursorPos.x, cursorPos.y)
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
-    ctx.state.selectedIds = new Set(created)
+    ctx.setSelectedIds(new Set(created))
 
     const allNodes = collectSubtrees(ctx.graph, created)
     const pageId = ctx.state.currentPageId
@@ -151,12 +151,12 @@ export function createClipboardActions(ctx: EditorContext) {
           })
         }
         computeAllLayouts(ctx.graph, pageId)
-        ctx.state.selectedIds = new Set(created)
+        ctx.setSelectedIds(new Set(created))
       },
       inverse: () => {
         for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
         computeAllLayouts(ctx.graph, pageId)
-        ctx.state.selectedIds = prevSelection
+        ctx.setSelectedIds(prevSelection)
       }
     })
   }
@@ -192,7 +192,7 @@ export function createClipboardActions(ctx: EditorContext) {
       label: 'Delete',
       forward: () => {
         for (const { id } of entries) ctx.graph.deleteNode(id)
-        ctx.state.selectedIds = new Set()
+        ctx.setSelectedIds(new Set())
       },
       inverse: () => {
         for (const { id, parentId, index, subtree } of [...entries].reverse()) {
@@ -200,10 +200,10 @@ export function createClipboardActions(ctx: EditorContext) {
           if (rootSnap) restoreSubtree(ctx.graph, rootSnap, parentId, subtree)
           if (index >= 0) ctx.graph.reorderChild(id, parentId, index)
         }
-        ctx.state.selectedIds = prevSelection
+        ctx.setSelectedIds(prevSelection)
       }
     })
-    ctx.state.selectedIds = new Set()
+    ctx.setSelectedIds(new Set())
   }
 
   const copyActions = createClipboardCopyActions(ctx)

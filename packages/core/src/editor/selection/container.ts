@@ -21,7 +21,7 @@ export function createSelectionContainerActions(ctx: EditorContext) {
     } else {
       ctx.state.enteredContainerId = null
     }
-    ctx.state.selectedIds = new Set(entered ? [entered] : [])
+    ctx.setSelectedIds(new Set(entered ? [entered] : []))
   }
 
   return { validateEnteredContainer, enterContainer, exitContainer }

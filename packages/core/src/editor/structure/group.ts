@@ -26,7 +26,7 @@ export function ungroupSelected(ctx: EditorContext, selectedNode: SceneNode | un
   }
 
   ctx.graph.deleteNode(node.id)
-  ctx.state.selectedIds = new Set(childIds)
+  ctx.setSelectedIds(new Set(childIds))
 
   ctx.undo.push({
     label: 'Ungroup',
@@ -36,7 +36,7 @@ export function ungroupSelected(ctx: EditorContext, selectedNode: SceneNode | un
         ctx.graph.insertChildAt(childIds[i], parentId, groupIndex + i)
       }
       ctx.graph.deleteNode(groupId)
-      ctx.state.selectedIds = new Set(childIds)
+      ctx.setSelectedIds(new Set(childIds))
     },
     inverse: () => {
       const g = ctx.graph.createNode('GROUP', parentId, {
@@ -49,7 +49,7 @@ export function ungroupSelected(ctx: EditorContext, selectedNode: SceneNode | un
         ctx.graph.reparentNode(orig.id, g.id)
         ctx.graph.updateNode(orig.id, { x: orig.x, y: orig.y })
       }
-      ctx.state.selectedIds = prevSelection
+      ctx.setSelectedIds(prevSelection)
     }
   })
 }

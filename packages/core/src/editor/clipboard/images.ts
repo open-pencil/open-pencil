@@ -68,7 +68,7 @@ export function createClipboardImageActions(ctx: EditorContext) {
         ctx.graph.images.delete(hash)
         const next = new Set(ctx.state.selectedIds)
         next.delete(id)
-        ctx.state.selectedIds = next
+        ctx.setSelectedIds(next)
       }
     })
     return id
@@ -97,7 +97,7 @@ export function createClipboardImageActions(ctx: EditorContext) {
       curX += p.w + IMAGE_GAP
     }
     if (ids.length) {
-      ctx.state.selectedIds = new Set(ids)
+      ctx.setSelectedIds(new Set(ids))
       ctx.requestRender()
     }
   }

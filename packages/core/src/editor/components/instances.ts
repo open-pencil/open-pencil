@@ -14,17 +14,17 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     if (!instance) return null
 
     const instanceId = instance.id
-    ctx.state.selectedIds = new Set([instanceId])
+    ctx.setSelectedIds(new Set([instanceId]))
 
     ctx.undo.push({
       label: 'Create instance',
       forward: () => {
         ctx.graph.createInstance(componentId, parentId, { ...instance })
-        ctx.state.selectedIds = new Set([instanceId])
+        ctx.setSelectedIds(new Set([instanceId]))
       },
       inverse: () => {
         ctx.graph.deleteNode(instanceId)
-        ctx.state.selectedIds = new Set([componentId])
+        ctx.setSelectedIds(new Set([componentId]))
       }
     })
     return instanceId
@@ -36,7 +36,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     const prevComponentId = selectedNode.componentId
 
     ctx.graph.detachInstance(selectedNode.id)
-    ctx.state.selectedIds = new Set([selectedNode.id])
+    ctx.setSelectedIds(new Set([selectedNode.id]))
 
     ctx.undo.push({
       label: 'Detach instance',

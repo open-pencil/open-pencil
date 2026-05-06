@@ -71,7 +71,7 @@ export function createVectorEditLifecycle(
       hoveredHandleInfo: null
     }
 
-    state.selectedIds = new Set([nodeId])
+    editor.select([nodeId])
     editor.requestRender()
   }
 
