@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -40,21 +41,21 @@ test('fill visibility supports repeat click and undo redo', async () => {
 
   const fillButton = page.locator('[data-test-id="fill-visibility-0"]')
   await expect(fillButton).toBeVisible()
-  expect((await getSelectedNode())!.fills[0]?.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').fills[0]?.visible).toBe(true)
 
   await fillButton.click()
   await canvas.waitForRender()
-  expect((await getSelectedNode())!.fills[0]?.visible).toBe(false)
+  expect(expectDefined(await getSelectedNode(), 'selected node').fills[0]?.visible).toBe(false)
 
   await fillButton.click()
   await canvas.waitForRender()
-  expect((await getSelectedNode())!.fills[0]?.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').fills[0]?.visible).toBe(true)
 
   await canvas.undo()
-  expect((await getSelectedNode())!.fills[0]?.visible).toBe(false)
+  expect(expectDefined(await getSelectedNode(), 'selected node').fills[0]?.visible).toBe(false)
 
   await canvas.redo()
-  expect((await getSelectedNode())!.fills[0]?.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').fills[0]?.visible).toBe(true)
 })
 
 test('stroke visibility supports repeat click and undo redo', async () => {
@@ -63,39 +64,39 @@ test('stroke visibility supports repeat click and undo redo', async () => {
 
   const strokeButton = page.locator('[data-test-id="stroke-visibility-0"]')
   await expect(strokeButton).toBeVisible()
-  expect((await getSelectedNode())!.strokes[0]?.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').strokes[0]?.visible).toBe(true)
 
   await strokeButton.click()
   await canvas.waitForRender()
-  expect((await getSelectedNode())!.strokes[0]?.visible).toBe(false)
+  expect(expectDefined(await getSelectedNode(), 'selected node').strokes[0]?.visible).toBe(false)
 
   await strokeButton.click()
   await canvas.waitForRender()
-  expect((await getSelectedNode())!.strokes[0]?.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').strokes[0]?.visible).toBe(true)
 
   await canvas.undo()
-  expect((await getSelectedNode())!.strokes[0]?.visible).toBe(false)
+  expect(expectDefined(await getSelectedNode(), 'selected node').strokes[0]?.visible).toBe(false)
 
   await canvas.redo()
-  expect((await getSelectedNode())!.strokes[0]?.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').strokes[0]?.visible).toBe(true)
 })
 
 test('appearance visibility supports repeat click and undo redo in one step', async () => {
   const visibilityButton = page.locator('[data-test-id="appearance-visibility"]')
   await expect(visibilityButton).toBeVisible()
-  expect((await getSelectedNode())!.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').visible).toBe(true)
 
   await visibilityButton.click()
   await canvas.waitForRender()
-  expect((await getSelectedNode())!.visible).toBe(false)
+  expect(expectDefined(await getSelectedNode(), 'selected node').visible).toBe(false)
 
   await visibilityButton.click()
   await canvas.waitForRender()
-  expect((await getSelectedNode())!.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').visible).toBe(true)
 
   await canvas.undo()
-  expect((await getSelectedNode())!.visible).toBe(false)
+  expect(expectDefined(await getSelectedNode(), 'selected node').visible).toBe(false)
 
   await canvas.undo()
-  expect((await getSelectedNode())!.visible).toBe(true)
+  expect(expectDefined(await getSelectedNode(), 'selected node').visible).toBe(true)
 })

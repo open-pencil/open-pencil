@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
+import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { createHistoryFrame, setupEditorPage } from '#tests/helpers/editor-history'
 
 describe('undo/redo multi-step sequences', () => {
@@ -8,7 +9,7 @@ describe('undo/redo multi-step sequences', () => {
 
     const frame = createHistoryFrame(editor, pageId, { x: 100, y: 100 })
     editor.select([frame.id])
-    const createSnapshot = structuredClone(editor.graph.getNode(frame.id)!)
+    const createSnapshot = structuredClone(getNodeOrThrow(editor.graph, frame.id))
     editor.pushUndoEntry({
       label: 'Create',
       forward: () => {
@@ -21,13 +22,13 @@ describe('undo/redo multi-step sequences', () => {
     editor.graph.updateNode(frame.id, { x: 300, y: 50 })
     editor.commitMove(new Map([[frame.id, { x: 100, y: 100 }]]))
 
-    expect(editor.graph.getNode(frame.id)!.x).toBe(300)
-    expect(editor.graph.getNode(frame.id)!.y).toBe(50)
+    expect(getNodeOrThrow(editor.graph, frame.id).x).toBe(300)
+    expect(getNodeOrThrow(editor.graph, frame.id).y).toBe(50)
 
     editor.duplicateSelected()
     const dupIds = [...editor.state.selectedIds]
     expect(dupIds).toHaveLength(1)
-    const dupId = dupIds[0]
+    const dupId = expectDefined(dupIds[0], 'duplicate id')
     expect(dupId).not.toBe(frame.id)
 
     editor.graph.updateNode(dupId, { x: 500, y: 200 })
@@ -35,7 +36,7 @@ describe('undo/redo multi-step sequences', () => {
 
     // Undo move copy
     editor.undo.undo()
-    expect(editor.graph.getNode(dupId)!.x).toBe(320)
+    expect(getNodeOrThrow(editor.graph, dupId).x).toBe(320)
 
     // Undo duplicate
     editor.undo.undo()
@@ -43,7 +44,7 @@ describe('undo/redo multi-step sequences', () => {
 
     // Undo move
     editor.undo.undo()
-    expect(editor.graph.getNode(frame.id)!.x).toBe(100)
+    expect(getNodeOrThrow(editor.graph, frame.id).x).toBe(100)
 
     // Undo create
     editor.undo.undo()
@@ -52,11 +53,11 @@ describe('undo/redo multi-step sequences', () => {
     // Redo create
     editor.undo.redo()
     expect(editor.graph.getNode(frame.id)).not.toBeUndefined()
-    expect(editor.graph.getNode(frame.id)!.x).toBe(100)
+    expect(getNodeOrThrow(editor.graph, frame.id).x).toBe(100)
 
     // Redo move
     editor.undo.redo()
-    expect(editor.graph.getNode(frame.id)!.x).toBe(300)
+    expect(getNodeOrThrow(editor.graph, frame.id).x).toBe(300)
 
     // Redo duplicate — must recreate with SAME ID
     editor.undo.redo()
@@ -64,8 +65,8 @@ describe('undo/redo multi-step sequences', () => {
 
     // Redo move copy — must find the node by same ID
     editor.undo.redo()
-    expect(editor.graph.getNode(dupId)!.x).toBe(500)
-    expect(editor.graph.getNode(dupId)!.y).toBe(200)
+    expect(getNodeOrThrow(editor.graph, dupId).x).toBe(500)
+    expect(getNodeOrThrow(editor.graph, dupId).y).toBe(200)
   })
 
   test('duplicate with children preserves subtree on redo', () => {
@@ -84,11 +85,11 @@ describe('undo/redo multi-step sequences', () => {
     editor.select([frame.id])
     editor.duplicateSelected()
 
-    const dupFrameId = [...editor.state.selectedIds][0]
-    const dupChildren = editor.graph.getNode(dupFrameId)!.childIds
+    const dupFrameId = expectDefined([...editor.state.selectedIds][0], 'duplicated frame id')
+    const dupChildren = getNodeOrThrow(editor.graph, dupFrameId).childIds
     expect(dupChildren).toHaveLength(1)
-    const dupTextId = dupChildren[0]
-    expect(editor.graph.getNode(dupTextId)!.text).toBe('Hello')
+    const dupTextId = expectDefined(dupChildren[0], 'duplicated text id')
+    expect(getNodeOrThrow(editor.graph, dupTextId).text).toBe('Hello')
 
     // Undo
     editor.undo.undo()
@@ -99,8 +100,8 @@ describe('undo/redo multi-step sequences', () => {
     editor.undo.redo()
     expect(editor.graph.getNode(dupFrameId)).not.toBeUndefined()
     expect(editor.graph.getNode(dupTextId)).not.toBeUndefined()
-    expect(editor.graph.getNode(dupFrameId)!.childIds).toContain(dupTextId)
-    expect(editor.graph.getNode(dupTextId)!.text).toBe('Hello')
+    expect(getNodeOrThrow(editor.graph, dupFrameId).childIds).toContain(dupTextId)
+    expect(getNodeOrThrow(editor.graph, dupTextId).text).toBe('Hello')
   })
 
   test('page snapshot restore preserves node IDs', () => {
@@ -118,7 +119,7 @@ describe('undo/redo multi-step sequences', () => {
 
     expect(editor.graph.getNode(frame.id)).not.toBeUndefined()
     expect(editor.graph.getNode(child.id)).not.toBeUndefined()
-    expect(editor.graph.getNode(frame.id)!.childIds).toEqual([child.id])
+    expect(getNodeOrThrow(editor.graph, frame.id).childIds).toEqual([child.id])
   })
 
   test('delete frame with children → undo restores subtree', () => {
@@ -142,6 +143,6 @@ describe('undo/redo multi-step sequences', () => {
     editor.undo.undo()
     expect(editor.graph.getNode(frame.id)).not.toBeUndefined()
     expect(editor.graph.getNode(child.id)).not.toBeUndefined()
-    expect(editor.graph.getNode(frame.id)!.childIds).toContain(child.id)
+    expect(getNodeOrThrow(editor.graph, frame.id).childIds).toContain(child.id)
   })
 })

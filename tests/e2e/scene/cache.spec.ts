@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test.describe('SkPicture scene caching', () => {
@@ -78,7 +79,9 @@ test.describe('SkPicture scene caching', () => {
       const store = window.openPencil?.store
       if (!store) throw new Error('OpenPencil store not initialized')
       // Simulate what loadFonts() does: invalidate the cached picture
-      store.renderer!.invalidateScenePicture()
+      const renderer = store.renderer
+      if (!renderer) throw new Error('OpenPencil renderer not initialized')
+      renderer.invalidateScenePicture()
       store.requestRender()
     })
     await helper.waitForRender()
@@ -98,7 +101,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.page.evaluate(() => {
       const store = window.openPencil?.store
       if (!store) throw new Error('OpenPencil store not initialized')
-      const pg = store.graph.getNode(store.state.currentPageId)!
+      const pg = store.graph.getNode(store.state.currentPageId)
+      if (!pg) throw new Error(`Page ${store.state.currentPageId} not found`)
       const frame = pg.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       store.setHoveredNode(frame ?? null)
     })
@@ -137,7 +141,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.page.evaluate(() => {
       const store = window.openPencil?.store
       if (!store) throw new Error('OpenPencil store not initialized')
-      const page = store.graph.getNode(store.state.currentPageId)!
+      const page = store.graph.getNode(store.state.currentPageId)
+      if (!page) throw new Error(`Page ${store.state.currentPageId} not found`)
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       store.setHoveredNode(frame ?? null)
     })
@@ -162,7 +167,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.page.evaluate(() => {
       const store = window.openPencil?.store
       if (!store) throw new Error('OpenPencil store not initialized')
-      const page = store.graph.getNode(store.state.currentPageId)!
+      const page = store.graph.getNode(store.state.currentPageId)
+      if (!page) throw new Error(`Page ${store.state.currentPageId} not found`)
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
 
       for (let i = 0; i < 10; i++) {
@@ -186,15 +192,19 @@ test.describe('SkPicture scene caching', () => {
     await helper.waitForRender()
     const baseline = await helper.screenshotCanvas()
 
-    const box = await helper.canvas.boundingBox()
+    const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
     // Move mouse over the frame (at 200, 150 — center of the 300x200 frame at 50,50)
-    await helper.page.mouse.move(box!.x + 200, box!.y + 150)
+    await helper.page.mouse.move(box.x + 200, box.y + 150)
     await helper.waitForRender()
     await helper.page.waitForTimeout(100)
 
     // Move mouse to empty area (far from any node)
-    await helper.page.mouse.move(box!.x + 800, box!.y + 600)
-    await helper.page.evaluate(() => window.openPencil?.store!.setHoveredNode(null))
+    await helper.page.mouse.move(box.x + 800, box.y + 600)
+    await helper.page.evaluate(() => {
+      const store = window.openPencil?.store
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.setHoveredNode(null)
+    })
     await helper.waitForRender()
     await helper.page.waitForTimeout(100)
 
@@ -208,7 +218,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.page.evaluate(() => {
       const store = window.openPencil?.store
       if (!store) throw new Error('OpenPencil store not initialized')
-      const page = store.graph.getNode(store.state.currentPageId)!
+      const page = store.graph.getNode(store.state.currentPageId)
+      if (!page) throw new Error(`Page ${store.state.currentPageId} not found`)
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       if (frame) store.graph.updateNode(frame, { width: 310 })
       store.requestRender()
@@ -219,7 +230,8 @@ test.describe('SkPicture scene caching', () => {
     await helper.page.evaluate(() => {
       const store = window.openPencil?.store
       if (!store) throw new Error('OpenPencil store not initialized')
-      const page = store.graph.getNode(store.state.currentPageId)!
+      const page = store.graph.getNode(store.state.currentPageId)
+      if (!page) throw new Error(`Page ${store.state.currentPageId} not found`)
       const frame = page.childIds.find((id: string) => store.graph.getNode(id)?.type === 'FRAME')
       store.setHoveredNode(frame ?? null)
     })

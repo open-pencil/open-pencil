@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -61,9 +62,10 @@ test('create component from selection (⌘⌥K)', async () => {
   const ids = await getSelectedIds()
   expect(ids).toHaveLength(1)
 
-  const node = await getNodeById(ids[0])
-  expect(node!.type).toBe('COMPONENT')
-  componentId = ids[0]
+  const selectedId = expectDefined(ids[0], 'selected component id')
+  const node = await getNodeById(selectedId)
+  expect(node?.type).toBe('COMPONENT')
+  componentId = selectedId
 })
 
 test('component shows purple label in design panel', async () => {
@@ -94,21 +96,26 @@ test('create instance from component (context menu)', async () => {
     const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
     store.createInstanceFromComponent(compId, 300, 100)
-  }, comp!.id)
+  }, expectDefined(comp, 'component').id)
   await canvas.waitForRender()
 
   const updated = await getPageChildren()
   const instance = updated.find((c) => c.type === 'INSTANCE')
   expect(instance).toBeTruthy()
-  expect(instance!.componentId).toBe(comp!.id)
+  expect(instance?.componentId).toBe(expectDefined(comp, 'component').id)
 })
 
 test('instance shows INSTANCE type in design panel', async () => {
   const children = await getPageChildren()
-  const instance = children.find((c) => c.type === 'INSTANCE')!
+  const instance = expectDefined(
+    children.find((c) => c.type === 'INSTANCE'),
+    'instance node'
+  )
 
   await page.evaluate((id) => {
-    window.openPencil?.store!.select([id])
+    const store = window.openPencil?.store
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.select([id])
   }, instance.id)
   await canvas.waitForRender()
 
@@ -129,7 +136,9 @@ test('instance has "Detach" button', async () => {
 test('modifying component propagates to instance', async () => {
   // Select the component
   await page.evaluate((id) => {
-    window.openPencil?.store!.select([id])
+    const store = window.openPencil?.store
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.select([id])
   }, componentId)
   await canvas.waitForRender()
 
@@ -157,7 +166,10 @@ test('modifying component propagates to instance', async () => {
 
   // Check instance got the same fill
   const children = await getPageChildren()
-  const instance = children.find((c) => c.type === 'INSTANCE')!
+  const instance = expectDefined(
+    children.find((c) => c.type === 'INSTANCE'),
+    'instance node'
+  )
   const instanceNode = await page.evaluate((id) => {
     const store = window.openPencil?.store
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -171,21 +183,28 @@ test('modifying component propagates to instance', async () => {
 
 test('detach instance converts to frame', async () => {
   const children = await getPageChildren()
-  const instance = children.find((c) => c.type === 'INSTANCE')!
+  const instance = expectDefined(
+    children.find((c) => c.type === 'INSTANCE'),
+    'instance node'
+  )
 
   await page.evaluate((id) => {
-    window.openPencil?.store!.select([id])
+    const store = window.openPencil?.store
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.select([id])
   }, instance.id)
   await canvas.waitForRender()
 
   await page.evaluate(() => {
-    window.openPencil?.store!.detachInstance()
+    const store = window.openPencil?.store
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.detachInstance()
   })
   await canvas.waitForRender()
 
   const ids = await getSelectedIds()
-  const detached = await getNodeById(ids[0])
-  expect(detached!.type).toBe('FRAME')
+  const detached = await getNodeById(expectDefined(ids[0], 'detached selected id'))
+  expect(detached?.type).toBe('FRAME')
 
   canvas.assertNoErrors()
 })
