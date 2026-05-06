@@ -104,7 +104,7 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
                     data-test-id="layers-item-input"
                     class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-xs text-surface outline-none"
                     :value="node.name"
-                    @blur="rename.commit(node.id, $event.target as HTMLInputElement)"
+                    @blur="rename.commit(node.id, $event)"
                     @keydown.stop="rename.onKeydown"
                   />
                 </div>

@@ -5,7 +5,7 @@ export interface InlineRenameState<T extends string> {
   editingId: Ref<T | null>
   start: (id: T, currentName: string) => void
   focusInput: (input: HTMLInputElement | null) => Promise<void>
-  commit: (id: T, input: HTMLInputElement) => void
+  commit: (id: T, eventOrInput: Event | HTMLInputElement) => void
   cancel: () => void
   onKeydown: (e: KeyboardEvent) => void
 }
@@ -35,8 +35,13 @@ export function useInlineRename<T extends string>(
     input?.select()
   }
 
-  function commit(id: T, input: HTMLInputElement) {
+  function commit(id: T, eventOrInput: Event | HTMLInputElement) {
     if (editingId.value !== id) return
+    const input =
+      eventOrInput instanceof HTMLInputElement
+        ? eventOrInput
+        : (eventOrInput.target as HTMLInputElement | null)
+    if (!input) return
     const value = input.value.trim()
     if (value && value !== originalName) {
       onCommit(id, value)

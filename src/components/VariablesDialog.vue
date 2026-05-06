@@ -91,15 +91,11 @@ const collectionInput = templateRef<HTMLInputElement>('collectionInput')
 const modeInput = templateRef<HTMLInputElement>('modeInput')
 
 watch(collectionInput, (input) => {
-  void ctx.focusCollectionInput(input)
+  void ctx.collectionRename.focusInput(input)
 })
 watch(modeInput, (input) => {
-  void ctx.focusModeInput(input)
+  void ctx.modeRename.focusInput(input)
 })
-
-function blurOnEnter(e: KeyboardEvent) {
-  if (e.target instanceof HTMLInputElement) e.target.blur()
-}
 
 function getModeId(columnId: string): string | undefined {
   return columnId.startsWith('mode-') ? columnId.slice(5) : undefined
@@ -149,13 +145,12 @@ function modeId(columnId: string): string {
               <TabsList class="flex flex-1 gap-0.5 overflow-x-auto px-3 py-1">
                 <template v-for="col in ctx.collections.value" :key="col.id">
                   <input
-                    v-if="ctx.editingCollectionId.value === col.id"
+                    v-if="ctx.collectionRename.editingId.value === col.id"
                     ref="collectionInput"
                     class="w-24 rounded border border-accent bg-input px-2 py-0.5 text-xs text-surface outline-none"
                     :value="col.name"
-                    @blur="ctx.commitRenameCollection(col.id, $event)"
-                    @keydown.enter="blurOnEnter"
-                    @keydown.escape="ctx.editingCollectionId.value = null"
+                    @blur="ctx.collectionRename.commit(col.id, $event)"
+                    @keydown="ctx.collectionRename.onKeydown"
                   />
                   <TabsTrigger
                     v-else
@@ -257,13 +252,12 @@ function modeId(columnId: string): string {
                       >
                         <template v-if="getModeId(header.column.id)">
                           <input
-                            v-if="ctx.editingModeId.value === getModeId(header.column.id)"
+                            v-if="ctx.modeRename.editingId.value === getModeId(header.column.id)"
                             ref="modeInput"
                             class="-mx-1 w-full rounded border border-accent bg-input px-1 py-0 text-[11px] font-medium text-surface outline-none"
                             :value="header.column.columnDef.header"
-                            @blur="ctx.commitRenameMode(modeId(header.column.id), $event)"
-                            @keydown.enter="blurOnEnter"
-                            @keydown.escape="ctx.editingModeId.value = null"
+                            @blur="ctx.modeRename.commit(modeId(header.column.id), $event)"
+                            @keydown="ctx.modeRename.onKeydown"
                           />
                           <ContextMenuRoot v-else>
                             <ContextMenuTrigger as-child>

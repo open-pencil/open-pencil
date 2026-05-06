@@ -1,67 +1,32 @@
-import { nextTick, ref } from 'vue'
-
+import { useInlineRename } from '#vue/editor/inline-rename/use'
 import { useVariables } from '#vue/variables/use'
 
 export function useVariablesDialogState() {
   const variables = useVariables()
 
-  const editingCollectionId = ref<string | null>(null)
-  const editingModeId = ref<string | null>(null)
-  async function focusCollectionInput(input: HTMLInputElement | null) {
-    if (!input) return
-    await nextTick()
-    input.focus()
-    input.select()
-  }
+  const collectionRename = useInlineRename((id, newName) => {
+    variables.renameCollection(id, newName)
+  })
+
+  const modeRename = useInlineRename((modeId, newName) => {
+    variables.renameMode(modeId, newName)
+  })
 
   function startRenameCollection(id: string) {
-    editingCollectionId.value = id
-  }
-
-  function commitRenameCollection(id: string, event: Event) {
-    if (editingCollectionId.value !== id) return
-    const input = event.target
-    if (!(input instanceof HTMLInputElement)) return
-    const value = input.value.trim()
-    const col = variables.collections.value.find((collection) => collection.id === id)
-    if (col && value && value !== col.name) {
-      variables.renameCollection(id, value)
-    }
-    editingCollectionId.value = null
+    const col = variables.collections.value.find((c) => c.id === id)
+    if (col) collectionRename.start(id, col.name)
   }
 
   function startRenameMode(modeId: string) {
-    editingModeId.value = modeId
-  }
-
-  async function focusModeInput(input: HTMLInputElement | null) {
-    if (!input) return
-    await nextTick()
-    input.focus()
-    input.select()
-  }
-
-  function commitRenameMode(modeId: string, event: Event) {
-    if (editingModeId.value !== modeId) return
-    const input = event.target
-    if (!(input instanceof HTMLInputElement)) return
-    const value = input.value.trim()
     const mode = variables.activeModes.value.find((m) => m.modeId === modeId)
-    if (mode && value && value !== mode.name) {
-      variables.renameMode(modeId, value)
-    }
-    editingModeId.value = null
+    if (mode) modeRename.start(modeId, mode.name)
   }
 
   return {
     ...variables,
-    editingCollectionId,
-    editingModeId,
-    focusCollectionInput,
-    focusModeInput,
+    collectionRename,
+    modeRename,
     startRenameCollection,
-    commitRenameCollection,
-    startRenameMode,
-    commitRenameMode
+    startRenameMode
   }
 }
