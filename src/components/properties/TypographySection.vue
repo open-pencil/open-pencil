@@ -5,7 +5,6 @@ import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
 import FontPicker from '@/components/FontPicker.vue'
 import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
-import ScrubInput from '@/components/ScrubInput.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -64,30 +63,34 @@ const fontLoader = { load: loadFont }
       </div>
 
       <div class="mb-1.5 flex gap-1.5">
-        <ScrubInput
+        <VariableScrubInput
           class="flex-1"
           :model-value="
             ctx.node.value.lineHeight ?? Math.round((ctx.node.value.fontSize || 14) * 1.2)
           "
           :min="0"
+          :node-id="ctx.node.value.id"
+          binding-path="lineHeight"
           @update:model-value="ctx.actions.updateProp('lineHeight', $event)"
           @commit="(v: number, p: number) => ctx.actions.commitProp('lineHeight', v, p)"
         >
           <template #icon>
             <icon-lucide-baseline class="size-3" />
           </template>
-        </ScrubInput>
-        <ScrubInput
+        </VariableScrubInput>
+        <VariableScrubInput
           class="flex-1"
           suffix="%"
           :model-value="ctx.node.value.letterSpacing"
+          :node-id="ctx.node.value.id"
+          binding-path="letterSpacing"
           @update:model-value="ctx.actions.updateProp('letterSpacing', $event)"
           @commit="(v: number, p: number) => ctx.actions.commitProp('letterSpacing', v, p)"
         >
           <template #icon>
             <icon-lucide-a-large-small class="size-3" />
           </template>
-        </ScrubInput>
+        </VariableScrubInput>
       </div>
 
       <div class="mb-1.5">

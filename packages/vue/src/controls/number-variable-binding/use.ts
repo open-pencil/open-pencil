@@ -25,6 +25,11 @@ export type NumberBindingPath =
   | 'paddingLeft'
   | 'opacity'
   | 'fontSize'
+  | 'fontWeight'
+  | 'lineHeight'
+  | 'letterSpacing'
+  | 'paragraphSpacing'
+  | 'paragraphIndent'
 
 export function useNumberVariableBinding(path: NumberBindingPath) {
   const binding = useVariableBinding({
