@@ -175,7 +175,8 @@
     "create": "创建",
     "createNumberVariable": "从 {value} 创建数字变量",
     "strokeDash": "虚线描边",
-    "add": "添加"
+    "add": "添加",
+    "variants": "变体"
   },
   "pages": {
     "newPage": "新建页面",

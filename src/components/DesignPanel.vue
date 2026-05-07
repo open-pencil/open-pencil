@@ -14,6 +14,7 @@ import PositionSection from './properties/PositionSection.vue'
 import StrokeSection from './properties/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
+import VariantSection from './properties/VariantSection.vue'
 
 const variablesOpen = ref(false)
 const { selectedNode: node, selectedCount: multiCount } = useSelectionState()
@@ -86,6 +87,8 @@ const { panels } = useI18n()
         {{ panels.detachInstance }}
       </button>
     </div>
+
+    <VariantSection v-if="node.type === 'INSTANCE'" />
 
     <PositionSection />
     <LayoutSection />

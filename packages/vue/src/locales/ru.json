@@ -175,7 +175,8 @@
     "create": "Создать",
     "createNumberVariable": "Создать числовую переменную из {value}",
     "strokeDash": "Пунктирная обводка",
-    "add": "Добавить"
+    "add": "Добавить",
+    "variants": "Варианты"
   },
   "pages": {
     "newPage": "Новая страница",

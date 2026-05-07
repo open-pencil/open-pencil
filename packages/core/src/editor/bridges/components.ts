@@ -28,6 +28,13 @@ export function createComponentBridge(
     createInstanceFromComponent: components.createInstanceFromComponent,
     detachInstance: () => components.detachInstance(selection.getSelectedNode()),
     goToMainComponent: () =>
-      components.goToMainComponent(selection.getSelectedNode(), pages.switchPage)
+      components.goToMainComponent(selection.getSelectedNode(), pages.switchPage),
+    getComponentSetPropertyDefs: components.getComponentSetPropertyDefs,
+    addPropertyDefinition: components.addPropertyDefinition,
+    removePropertyDefinition: components.removePropertyDefinition,
+    renamePropertyDefinition: components.renamePropertyDefinition,
+    collectVariantOptions: components.collectVariantOptions,
+    findVariantByValues: components.findVariantByValues,
+    switchInstanceVariant: components.switchInstanceVariant
   }
 }
