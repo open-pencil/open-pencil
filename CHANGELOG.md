@@ -4,20 +4,12 @@
 
 ### Added
 
-- Add editor event bus with typed lifecycle events — `selection:changed`, `tool:changed`, `page:changed`, `viewport:changed`, `graph:replaced`, `render:requested`, `repaint:requested`, and all scene graph node events. Subscribe via `editor.onEditorEvent()` in core or `useEditorEvent()` composable in the Vue SDK.
-- Add variable mode management — create, rename, duplicate, delete modes and set the default mode per collection. Modes appear as interactive table column headers in the variables dialog (double-click to rename, right-click for context menu), matching Figma's layout.
-- Add collection deletion from the variables dialog via the ⋯ menu.
-- Add variable binding support for line height, letter spacing, font weight, paragraph spacing, and paragraph indent in the typography inspector.
-- Add shared DOM event helpers (`inputValue`, `inputNumberValue`, `blurTarget`, `selectTarget`) exported from `@open-pencil/vue` for cast-free template event handling.
+- Add variable mode management — create, rename, duplicate, delete modes and set the default mode per collection. Modes appear as interactive table column headers (double-click to rename, right-click for context menu).
+- Add collection deletion from the variables dialog.
+- Bind variables to line height, letter spacing, font weight, paragraph spacing, and paragraph indent in the typography inspector.
+- Add editor event bus with typed lifecycle events — subscribe via `editor.onEditorEvent()` in core or `useEditorEvent()` composable in the Vue SDK.
 
 ### Changed
-
-- Route all selection and tool mutations through `setSelectedIds()` / `setActiveTool()` in the editor core, replacing direct `state.selectedIds` / `state.activeTool` assignments. This ensures event bus subscribers receive consistent change notifications.
-- Reuse `useInlineRename` composable for collection and mode renaming in the variables dialog instead of hand-rolled state.
-- Replace all `as HTMLInputElement` template casts across the app with shared DOM event helpers.
-- Resolve bundled fonts from the package root via `createRequire` instead of fragile `../../assets` relative paths.
-- Split large test files into focused domain folders and remove all `max-lines`, `complexity`, and `no-empty-function` test lint exceptions.
-- Enforce `no-sibling-domain-prefixed-files` lint rule project-wide — files with prefixes matching an existing sibling folder must be moved into that folder.
 
 - Refactor the editor architecture across core, app, Vue SDK, CLI, MCP, docs, and desktop into smaller domain modules with structural lint rules to keep package boundaries explicit.
 - Add targeted core subpath exports and package-local import aliases for cleaner app, Vue SDK, CLI, and MCP imports.
