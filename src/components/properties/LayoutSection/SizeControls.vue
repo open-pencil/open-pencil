@@ -13,6 +13,7 @@ import {
 } from 'reka-ui'
 
 import ScrubInput from '@/components/ScrubInput.vue'
+import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useSelectUI } from '@/components/ui/select'
@@ -338,7 +339,52 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   >
     <template v-for="(item, index) in visibleSizeLimits" :key="item.prop">
       <div :ref="limitFieldRefs.set" class="min-w-0">
+        <VariableScrubInput
+          v-if="ctx.node"
+          :data-test-id="item.testId"
+          :icon="item.icon()"
+          :model-value="Math.round(item.value() ?? 0)"
+          :min="0"
+          :node-id="ctx.node.id"
+          :binding-path="item.prop"
+          @update:model-value="ctx.updateSizeLimit(item.prop, $event)"
+          @commit="(v: number, p: number) => ctx.commitSizeLimit(item.prop, v, p)"
+        >
+          <template #after-variable>
+            <SelectRoot
+              :model-value="'VALUE'"
+              @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
+            >
+              <SelectTrigger
+                :data-test-id="`${item.testId}-menu`"
+                :reference="limitFieldAnchor(index)"
+                class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
+                @pointerdown.stop
+              >
+                <icon-lucide-chevron-down class="size-3" />
+              </SelectTrigger>
+              <SelectPortal>
+                <SelectContent
+                  position="popper"
+                  align="start"
+                  :side-offset="4"
+                  :class="sizingSelect.content"
+                >
+                  <SelectViewport class="p-0.5">
+                    <SelectItem value="CURRENT" :class="sizingSelect.item">
+                      <SelectItemText>{{ item.setLabel() }}</SelectItemText>
+                    </SelectItem>
+                    <SelectItem value="REMOVE" :class="sizingSelect.item">
+                      <SelectItemText>{{ item.removeLabel() }}</SelectItemText>
+                    </SelectItem>
+                  </SelectViewport>
+                </SelectContent>
+              </SelectPortal>
+            </SelectRoot>
+          </template>
+        </VariableScrubInput>
         <ScrubInput
+          v-else
           :data-test-id="item.testId"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
