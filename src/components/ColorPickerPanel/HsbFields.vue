@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { inputNumberValue } from '@open-pencil/vue'
 import { colorToCSS } from '@open-pencil/core/color'
 
 import PickerSlider from '@/components/PickerSlider.vue'
@@ -17,7 +18,7 @@ const ctx = useColorPickerPanelContext()
       :value="Math.round(ctx.hsbColor.h)"
       min="0"
       max="360"
-      @change="ctx.updateHSBChannelValue('h', +($event.target as HTMLInputElement).value)"
+      @change="ctx.updateHSBChannelValue('h', inputNumberValue($event))"
     />
     <input
       type="number"
@@ -25,7 +26,7 @@ const ctx = useColorPickerPanelContext()
       :value="Math.round(ctx.hsbColor.s)"
       min="0"
       max="100"
-      @change="ctx.updateHSBChannelValue('s', +($event.target as HTMLInputElement).value)"
+      @change="ctx.updateHSBChannelValue('s', inputNumberValue($event))"
     />
     <input
       type="number"
@@ -33,7 +34,7 @@ const ctx = useColorPickerPanelContext()
       :value="Math.round(ctx.hsbColor.b)"
       min="0"
       max="100"
-      @change="ctx.updateHSBChannelValue('b', +($event.target as HTMLInputElement).value)"
+      @change="ctx.updateHSBChannelValue('b', inputNumberValue($event))"
     />
   </div>
 

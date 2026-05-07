@@ -8,6 +8,7 @@ import {
   GradientEditorRoot,
   GradientEditorBar,
   GradientEditorStop,
+  inputValue,
   useI18n
 } from '@open-pencil/vue'
 
@@ -98,7 +99,7 @@ const { panels } = useI18n()
               class="min-w-0 flex-1 rounded border border-border bg-input px-1 py-0.5 font-mono text-[11px] text-surface"
               :value="s.hex"
               maxlength="6"
-              @change="s.actions.updateColor(($event.target as HTMLInputElement).value)"
+              @change="s.actions.updateColor(inputValue($event))"
               @click.stop
             />
             <ScrubInput

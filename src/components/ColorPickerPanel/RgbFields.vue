@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { inputNumberValue } from '@open-pencil/vue'
 import { useColorPickerPanelContext } from '@/components/ColorPickerPanel/context'
 
 const ctx = useColorPickerPanelContext()
@@ -14,7 +15,7 @@ const ctx = useColorPickerPanelContext()
       :value="Math.round(ctx.rgbColor.r)"
       min="0"
       max="255"
-      @change="ctx.updateRGBChannelValue('r', +($event.target as HTMLInputElement).value)"
+      @change="ctx.updateRGBChannelValue('r', inputNumberValue($event))"
     />
     <input
       type="number"
@@ -22,7 +23,7 @@ const ctx = useColorPickerPanelContext()
       :value="Math.round(ctx.rgbColor.g)"
       min="0"
       max="255"
-      @change="ctx.updateRGBChannelValue('g', +($event.target as HTMLInputElement).value)"
+      @change="ctx.updateRGBChannelValue('g', inputNumberValue($event))"
     />
     <input
       type="number"
@@ -30,7 +31,7 @@ const ctx = useColorPickerPanelContext()
       :value="Math.round(ctx.rgbColor.b)"
       min="0"
       max="255"
-      @change="ctx.updateRGBChannelValue('b', +($event.target as HTMLInputElement).value)"
+      @change="ctx.updateRGBChannelValue('b', inputNumberValue($event))"
     />
   </div>
 </template>

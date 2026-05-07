@@ -16,8 +16,8 @@ export function useDocumentNameRename(store: EditorStore) {
     rename.start(DOCUMENT_NAME_ID, store.state.documentName)
   }
 
-  function commitRename(input: HTMLInputElement) {
-    rename.commit(DOCUMENT_NAME_ID, input)
+  function commitRename(e: Event) {
+    rename.commit(DOCUMENT_NAME_ID, e)
   }
 
   return { rename, editingName, startRename, commitRename }

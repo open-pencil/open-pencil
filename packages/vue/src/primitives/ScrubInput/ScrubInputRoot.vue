@@ -3,6 +3,7 @@ import { ref, computed, toRef, watch } from 'vue'
 import { useEventListener } from '@vueuse/core'
 
 import { provideScrubInput } from '#vue/primitives/ScrubInput/context'
+import { inputNumberValue } from '#vue/shared/dom-events'
 
 const {
   modelValue,
@@ -88,7 +89,7 @@ function startEdit() {
 
 function commitEdit(e: Event) {
   if (!editing.value) return
-  const val = +(e.target as HTMLInputElement).value
+  const val = inputNumberValue(e)
   const previous = numericValue.value
   editing.value = false
   if (!Number.isNaN(val)) {
@@ -99,7 +100,7 @@ function commitEdit(e: Event) {
 }
 
 function liveUpdate(e: Event) {
-  const val = +(e.target as HTMLInputElement).value
+  const val = inputNumberValue(e)
   if (!Number.isNaN(val)) {
     const clamped = Math.min(max, Math.max(min, val))
     emit('update:modelValue', clamped)

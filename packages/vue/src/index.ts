@@ -130,6 +130,9 @@ export { TypographyControlsRoot } from '#vue/primitives/TypographyControls'
 export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
 export type { ToolbarContext } from '#vue/primitives/Toolbar'
 
+/** DOM event helpers for cast-free template bindings. */
+export { blurTarget, inputNumberValue, inputValue, selectTarget } from '#vue/shared/dom-events'
+
 /** Internationalization. */
 export { useI18n } from '#vue/i18n'
 export { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '#vue/i18n'

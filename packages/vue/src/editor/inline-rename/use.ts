@@ -37,10 +37,12 @@ export function useInlineRename<T extends string>(
 
   function commit(id: T, eventOrInput: Event | HTMLInputElement) {
     if (editingId.value !== id) return
-    const input =
-      eventOrInput instanceof HTMLInputElement
-        ? eventOrInput
-        : (eventOrInput.target as HTMLInputElement | null)
+    let input: HTMLInputElement | null
+    if (eventOrInput instanceof HTMLInputElement) {
+      input = eventOrInput
+    } else {
+      input = eventOrInput.target instanceof HTMLInputElement ? eventOrInput.target : null
+    }
     if (!input) return
     const value = input.value.trim()
     if (value && value !== originalName) {
@@ -61,7 +63,7 @@ export function useInlineRename<T extends string>(
 
   function onKeydown(e: KeyboardEvent) {
     if (e.code === 'Enter') {
-      ;(e.target as HTMLInputElement).blur()
+      if (e.target instanceof HTMLElement) e.target.blur()
       return
     }
 

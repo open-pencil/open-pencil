@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { inputNumberValue } from '@open-pencil/vue'
 import { usePickerSliderUI } from './ui/picker-slider'
 
 const {
@@ -74,7 +75,7 @@ function thumbLeft(): string {
         :max="max"
         :step="step"
         :value="modelValue"
-        @input="emit('update:modelValue', +($event.target as HTMLInputElement).value)"
+        @input="emit('update:modelValue', inputNumberValue($event))"
       />
       <div :class="cls.thumb" :style="{ left: thumbLeft(), background: thumbFill }" />
     </div>
@@ -85,7 +86,7 @@ function thumbLeft(): string {
       :max="displayMax ?? max"
       :step="displayStep ?? step"
       :value="numberValue()"
-      @change="handleNumberChange(+($event.target as HTMLInputElement).value)"
+      @change="handleNumberChange(inputNumberValue($event))"
     />
   </div>
 </template>

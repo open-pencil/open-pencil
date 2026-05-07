@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { selectTarget } from '@open-pencil/vue'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
 
 const collab = useCollabPanelContext()
@@ -12,7 +13,7 @@ const collab = useCollabPanelContext()
       readonly
       data-test-id="collab-room-link"
       class="min-w-0 flex-1 rounded border border-border bg-input px-2 py-1 text-xs text-surface"
-      @focus="($event.target as HTMLInputElement).select()"
+      @focus="selectTarget($event)"
     />
     <button
       data-test-id="collab-copy-link"

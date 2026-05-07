@@ -67,8 +67,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
         data-test-id="app-document-name-input"
         class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0.5 text-xs text-surface outline-none"
         :value="store.state.documentName"
-        @blur="commitRename($event.target as HTMLInputElement)"
-        @keydown.enter="($event.target as HTMLInputElement).blur()"
+        @blur="commitRename($event)"
         @keydown="rename.onKeydown"
       />
       <span
