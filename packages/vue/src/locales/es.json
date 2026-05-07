@@ -175,7 +175,25 @@
     "create": "Crear",
     "createNumberVariable": "Crear variable numérica desde {value}",
     "strokeDash": "Trazo discontinuo",
-    "add": "Añadir"
+    "add": "Añadir",
+    "variants": "Variantes",
+    "gapAuto": "Espaciado auto",
+    "horizontalGap": "Espaciado horizontal",
+    "verticalGap": "Espaciado vertical",
+    "addMinWidth": "Agregar ancho min",
+    "removeMinWidth": "Eliminar ancho min",
+    "addMaxWidth": "Agregar ancho max",
+    "removeMaxWidth": "Eliminar ancho max",
+    "addMinHeight": "Agregar alto min",
+    "removeMinHeight": "Eliminar alto min",
+    "addMaxHeight": "Agregar alto max",
+    "removeMaxHeight": "Eliminar alto max",
+    "minWidthShort": "Min A",
+    "maxWidthShort": "Max A",
+    "minHeightShort": "Min Al",
+    "maxHeightShort": "Max Al",
+    "setToCurrentWidth": "Establecer ancho actual",
+    "setToCurrentHeight": "Establecer alto actual"
   },
   "pages": {
     "newPage": "Nueva página",
@@ -225,7 +243,15 @@
     "updateInstalledTitle": "Actualización instalada",
     "updateInstalled": "OpenPencil {version} se instaló{size}. Reiniciando ahora.",
     "updateCheckFailed": "No se pudo buscar actualizaciones: {error}",
-    "updateUnavailable": "Las actualizaciones aún no están disponibles. Publica primero una versión firmada con latest.json."
+    "updateUnavailable": "Las actualizaciones aún no están disponibles. Publica primero una versión firmada con latest.json.",
+    "renameCollection": "Renombrar coleccion",
+    "deleteCollection": "Eliminar coleccion",
+    "modes": "Modos",
+    "addMode": "Agregar modo",
+    "renameMode": "Renombrar modo",
+    "duplicateMode": "Duplicar modo",
+    "deleteMode": "Eliminar modo",
+    "setDefaultMode": "Establecer como predeterminado"
   },
   "variableTypes": {
     "color": "Color",

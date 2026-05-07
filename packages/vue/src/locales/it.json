@@ -175,7 +175,25 @@
     "create": "Crea",
     "createNumberVariable": "Crea variabile numerica da {value}",
     "strokeDash": "Tratto tratteggiato",
-    "add": "Aggiungi"
+    "add": "Aggiungi",
+    "variants": "Varianti",
+    "gapAuto": "Spaziatura auto",
+    "horizontalGap": "Spaziatura orizzontale",
+    "verticalGap": "Spaziatura verticale",
+    "addMinWidth": "Aggiungi larghezza min",
+    "removeMinWidth": "Rimuovi larghezza min",
+    "addMaxWidth": "Aggiungi larghezza max",
+    "removeMaxWidth": "Rimuovi larghezza max",
+    "addMinHeight": "Aggiungi altezza min",
+    "removeMinHeight": "Rimuovi altezza min",
+    "addMaxHeight": "Aggiungi altezza max",
+    "removeMaxHeight": "Rimuovi altezza max",
+    "minWidthShort": "Min L",
+    "maxWidthShort": "Max L",
+    "minHeightShort": "Min A",
+    "maxHeightShort": "Max A",
+    "setToCurrentWidth": "Imposta larghezza attuale",
+    "setToCurrentHeight": "Imposta altezza attuale"
   },
   "pages": {
     "newPage": "Nuova pagina",
@@ -225,7 +243,15 @@
     "updateInstalledTitle": "Aggiornamento installato",
     "updateInstalled": "OpenPencil {version} è stato installato{size}. Riavvio in corso.",
     "updateCheckFailed": "Impossibile controllare gli aggiornamenti: {error}",
-    "updateUnavailable": "Gli aggiornamenti non sono ancora disponibili. Pubblica prima una release firmata con latest.json."
+    "updateUnavailable": "Gli aggiornamenti non sono ancora disponibili. Pubblica prima una release firmata con latest.json.",
+    "renameCollection": "Rinomina raccolta",
+    "deleteCollection": "Elimina raccolta",
+    "modes": "Modalita",
+    "addMode": "Aggiungi modalita",
+    "renameMode": "Rinomina modalita",
+    "duplicateMode": "Duplica modalita",
+    "deleteMode": "Elimina modalita",
+    "setDefaultMode": "Imposta come predefinita"
   },
   "variableTypes": {
     "color": "Colore",

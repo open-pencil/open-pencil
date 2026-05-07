@@ -175,7 +175,25 @@
     "create": "Utwórz",
     "createNumberVariable": "Utwórz zmienną liczbową z {value}",
     "strokeDash": "Obrys przerywany",
-    "add": "Dodaj"
+    "add": "Dodaj",
+    "variants": "Warianty",
+    "gapAuto": "Automatyczny odstep",
+    "horizontalGap": "Odstep poziomy",
+    "verticalGap": "Odstep pionowy",
+    "addMinWidth": "Dodaj min. szerokosc",
+    "removeMinWidth": "Usun min. szerokosc",
+    "addMaxWidth": "Dodaj maks. szerokosc",
+    "removeMaxWidth": "Usun maks. szerokosc",
+    "addMinHeight": "Dodaj min. wysokosc",
+    "removeMinHeight": "Usun min. wysokosc",
+    "addMaxHeight": "Dodaj maks. wysokosc",
+    "removeMaxHeight": "Usun maks. wysokosc",
+    "minWidthShort": "Min Sz",
+    "maxWidthShort": "Maks Sz",
+    "minHeightShort": "Min W",
+    "maxHeightShort": "Maks W",
+    "setToCurrentWidth": "Ustaw biezaca szerokosc",
+    "setToCurrentHeight": "Ustaw biezaca wysokosc"
   },
   "pages": {
     "newPage": "Nowa strona",
@@ -225,7 +243,15 @@
     "updateInstalledTitle": "Aktualizacja zainstalowana",
     "updateInstalled": "OpenPencil {version} został zainstalowany{size}. Ponowne uruchamianie.",
     "updateCheckFailed": "Nie udało się sprawdzić aktualizacji: {error}",
-    "updateUnavailable": "Aktualizacje nie są jeszcze dostępne. Najpierw opublikuj podpisane wydanie z latest.json."
+    "updateUnavailable": "Aktualizacje nie są jeszcze dostępne. Najpierw opublikuj podpisane wydanie z latest.json.",
+    "renameCollection": "Zmien nazwe kolekcji",
+    "deleteCollection": "Usun kolekcje",
+    "modes": "Tryby",
+    "addMode": "Dodaj tryb",
+    "renameMode": "Zmien nazwe trybu",
+    "duplicateMode": "Duplikuj tryb",
+    "deleteMode": "Usun tryb",
+    "setDefaultMode": "Ustaw jako domyslny"
   },
   "variableTypes": {
     "color": "Kolor",

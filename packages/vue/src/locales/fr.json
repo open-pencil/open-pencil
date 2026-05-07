@@ -175,7 +175,25 @@
     "create": "Créer",
     "createNumberVariable": "Créer une variable numérique depuis {value}",
     "strokeDash": "Trait en pointillés",
-    "add": "Ajouter"
+    "add": "Ajouter",
+    "variants": "Variantes",
+    "gapAuto": "Espacement auto",
+    "horizontalGap": "Espacement horizontal",
+    "verticalGap": "Espacement vertical",
+    "addMinWidth": "Ajouter largeur min",
+    "removeMinWidth": "Supprimer largeur min",
+    "addMaxWidth": "Ajouter largeur max",
+    "removeMaxWidth": "Supprimer largeur max",
+    "addMinHeight": "Ajouter hauteur min",
+    "removeMinHeight": "Supprimer hauteur min",
+    "addMaxHeight": "Ajouter hauteur max",
+    "removeMaxHeight": "Supprimer hauteur max",
+    "minWidthShort": "Min L",
+    "maxWidthShort": "Max L",
+    "minHeightShort": "Min H",
+    "maxHeightShort": "Max H",
+    "setToCurrentWidth": "Largeur actuelle",
+    "setToCurrentHeight": "Hauteur actuelle"
   },
   "pages": {
     "newPage": "Nouvelle page",
@@ -225,7 +243,15 @@
     "updateInstalledTitle": "Mise à jour installée",
     "updateInstalled": "OpenPencil {version} a été installé{size}. Redémarrage maintenant.",
     "updateCheckFailed": "Impossible de rechercher des mises à jour : {error}",
-    "updateUnavailable": "Les mises à jour ne sont pas encore disponibles. Publiez d’abord une version signée avec latest.json."
+    "updateUnavailable": "Les mises à jour ne sont pas encore disponibles. Publiez d’abord une version signée avec latest.json.",
+    "renameCollection": "Renommer la collection",
+    "deleteCollection": "Supprimer la collection",
+    "modes": "Modes",
+    "addMode": "Ajouter un mode",
+    "renameMode": "Renommer le mode",
+    "duplicateMode": "Dupliquer le mode",
+    "deleteMode": "Supprimer le mode",
+    "setDefaultMode": "Definir par defaut"
   },
   "variableTypes": {
     "color": "Couleur",
