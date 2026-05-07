@@ -1,3 +1,4 @@
+import { resolvePasteTarget } from '#core/editor/clipboard/paste-target'
 import type { EditorContext } from '#core/editor/types'
 import { computeImageHash } from '#core/figma-api'
 import type { Fill } from '#core/scene-graph'
@@ -38,7 +39,7 @@ export function createClipboardImageActions(ctx: EditorContext) {
   ): string | null {
     const hash = storeImage(bytes)
     const displayName = name.replace(/\.[^.]+$/, '')
-    const pid = ctx.state.currentPageId
+    const pid = resolvePasteTarget(ctx)
     const fill: Fill = {
       type: 'IMAGE',
       imageHash: hash,

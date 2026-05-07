@@ -11,6 +11,7 @@ import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'
 import { createClipboardFontActions } from './clipboard/fonts'
 import { createClipboardImageActions } from './clipboard/images'
+import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import type { EditorContext } from './types'
@@ -68,14 +69,8 @@ export function createClipboardActions(ctx: EditorContext) {
     const figma = await parseFigmaClipboard(html)
     if (figma) {
       const prevSelection = new Set(ctx.state.selectedIds)
-      const created = importClipboardNodes(
-        figma.nodes,
-        ctx.graph,
-        ctx.state.currentPageId,
-        0,
-        0,
-        figma.blobs
-      )
+      const pasteTarget = resolvePasteTarget(ctx)
+      const created = importClipboardNodes(figma.nodes, ctx.graph, pasteTarget, 0, 0, figma.blobs)
       if (created.length > 0) {
         const { width: viewW, height: viewH } = ctx.getViewportSize()
         const cx = cursorPos?.x ?? (-ctx.state.panX + viewW / 2) / ctx.state.zoom
@@ -132,7 +127,8 @@ export function createClipboardActions(ctx: EditorContext) {
       return node.id
     }
 
-    for (const node of nodes) created.push(createNodeTree(node, ctx.state.currentPageId))
+    const pasteTarget = resolvePasteTarget(ctx)
+    for (const node of nodes) created.push(createNodeTree(node, pasteTarget))
     if (created.length === 0) return
 
     if (cursorPos) placementActions.centerNodesAt(created, cursorPos.x, cursorPos.y)
