@@ -1,6 +1,8 @@
 import { onClickOutside } from '@vueuse/core'
 import { nextTick, ref, type Ref } from 'vue'
 
+import { blurTarget } from '#vue/shared/dom-events'
+
 export interface InlineRenameState<T extends string> {
   editingId: Ref<T | null>
   start: (id: T, currentName: string) => void
@@ -63,7 +65,7 @@ export function useInlineRename<T extends string>(
 
   function onKeydown(e: KeyboardEvent) {
     if (e.code === 'Enter') {
-      if (e.target instanceof HTMLElement) e.target.blur()
+      blurTarget(e)
       return
     }
 
