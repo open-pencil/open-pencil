@@ -37,7 +37,9 @@ import type {
   TextAlignVertical,
   TextCase,
   ArcData,
-  VectorNetwork
+  VectorNetwork,
+  ComponentPropertyDefinition,
+  ComponentPropertyType
 } from '#core/scene-graph'
 import type { GUID } from '#core/types'
 
@@ -432,8 +434,49 @@ export function nodeChangeToProps(
     pluginData: extractPluginData(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
-    componentId: extractSymbolId(nc)
+    componentId: extractSymbolId(nc),
+    componentPropertyDefinitions: extractComponentPropertyDefs(nc),
+    componentPropertyValues: extractComponentPropertyValues(nc)
   }
+}
+
+const COMPONENT_PROP_TYPE_MAP: Record<string, ComponentPropertyType> = {
+  VARIANT: 'VARIANT',
+  TEXT: 'TEXT',
+  BOOLEAN: 'BOOLEAN',
+  INSTANCE_SWAP: 'INSTANCE_SWAP'
+}
+
+function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefinition[] {
+  const defs = nc.componentPropDefs as
+    | Array<{ id?: GUID; name?: string; type?: string; initialValue?: { textValue?: string } }>
+    | undefined
+  if (!defs?.length) return []
+  const result: ComponentPropertyDefinition[] = []
+  for (const def of defs) {
+    if (!def.id || !def.name) continue
+    const propType = COMPONENT_PROP_TYPE_MAP[def.type ?? ''] ?? 'VARIANT'
+    result.push({
+      id: guidToString(def.id),
+      name: def.name,
+      type: propType,
+      defaultValue: def.initialValue?.textValue ?? '',
+      variantOptions: propType === 'VARIANT' ? undefined : undefined
+    })
+  }
+  return result
+}
+
+function extractComponentPropertyValues(nc: NodeChange): Record<string, string> {
+  const name = nc.name
+  if (!name?.includes('=')) return {}
+  const values: Record<string, string> = {}
+  for (const part of name.split(',').map((s) => s.trim())) {
+    const eqIdx = part.indexOf('=')
+    if (eqIdx === -1) continue
+    values[part.slice(0, eqIdx).trim()] = part.slice(eqIdx + 1).trim()
+  }
+  return values
 }
 
 function isComponentSet(nc: NodeChange): boolean {

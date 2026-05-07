@@ -325,6 +325,8 @@ export interface SceneNode {
 
   componentId: string | null
   overrides: Record<string, unknown>
+  componentPropertyDefinitions: ComponentPropertyDefinition[]
+  componentPropertyValues: Record<string, string>
 
   boundVariables: Record<string, string>
 
@@ -337,6 +339,16 @@ export interface SceneNode {
   flipY: boolean
 
   textPicture: Uint8Array | null
+}
+
+export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP'
+
+export interface ComponentPropertyDefinition {
+  id: string
+  name: string
+  type: ComponentPropertyType
+  defaultValue: string
+  variantOptions?: string[]
 }
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN'

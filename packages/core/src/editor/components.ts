@@ -1,7 +1,9 @@
-import type { SceneNode } from '#core/scene-graph'
+import { randomHex } from '#core/random'
+import type { ComponentPropertyDefinition, SceneNode } from '#core/scene-graph'
 
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
+import { createVariantActions } from './components/variants'
 import type { EditorContext } from './types'
 
 export function createComponentActions(ctx: EditorContext) {
@@ -54,16 +56,57 @@ export function createComponentActions(ctx: EditorContext) {
   ) {
     if (selectedNodes.length < 2) return
     if (!selectedNodes.every((n) => n.type === 'COMPONENT')) return
-    wrapSelectionInContainer('COMPONENT_SET', selectedNodes)
+    const containerId = wrapSelectionInContainer('COMPONENT_SET', selectedNodes)
+    if (!containerId) return
+
+    const slashCounts = selectedNodes.map((n) => (n.name.match(/\//g) ?? []).length)
+    const hasConsistentSlashes =
+      slashCounts.every((c) => c === slashCounts[0]) && slashCounts[0] > 0
+
+    if (hasConsistentSlashes) {
+      const propCount = slashCounts[0]
+      const propDefs: ComponentPropertyDefinition[] = []
+      const propValues = new Map<string, Set<string>>()
+
+      for (let i = 0; i < propCount; i++) {
+        const propId = `prop:${randomHex(8)}`
+        const propName = i === 0 ? 'Variant' : `Property ${i + 1}`
+        propDefs.push({ id: propId, name: propName, type: 'VARIANT', defaultValue: '' })
+        propValues.set(propName, new Set())
+      }
+
+      for (const node of selectedNodes) {
+        const parts = node.name.split('/').slice(1)
+        const values: Record<string, string> = {}
+        for (let i = 0; i < propDefs.length; i++) {
+          const value = parts[i]?.trim() ?? ''
+          values[propDefs[i].name] = value
+          propValues.get(propDefs[i].name)?.add(value)
+        }
+        ctx.graph.updateNode(node.id, {
+          componentPropertyValues: values,
+          name: Object.values(values).join(', ')
+        })
+      }
+
+      for (const def of propDefs) {
+        def.variantOptions = [...(propValues.get(def.name) ?? [])]
+        if (!def.defaultValue && def.variantOptions[0]) def.defaultValue = def.variantOptions[0]
+      }
+
+      ctx.graph.updateNode(containerId, { componentPropertyDefinitions: propDefs })
+    }
   }
 
   const focusActions = createComponentFocusActions(ctx)
   const instanceActions = createComponentInstanceActions(ctx)
+  const variantActions = createVariantActions(ctx)
 
   return {
     createComponentFromSelection,
     createComponentSetFromComponents,
     ...instanceActions,
-    ...focusActions
+    ...focusActions,
+    ...variantActions
   }
 }

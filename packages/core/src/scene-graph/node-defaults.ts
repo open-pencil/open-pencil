@@ -104,6 +104,8 @@ export function createDefaultNode(
     starInnerRadius: 0.38,
     componentId: null,
     overrides: {},
+    componentPropertyDefinitions: [],
+    componentPropertyValues: {},
     boundVariables: {},
     pluginData: [],
     pluginRelaunchData: [],
