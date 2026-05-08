@@ -51,18 +51,52 @@ export function startServer(options: ServerOptions = {}) {
   // --- WebSocket: browser connects here ---
 
   const wss = new WebSocketServer({ port: wsPort, host: '127.0.0.1' })
+  let unconnected = (msg) => ({ error: true, message: 'Automation not connected' })
+  let automation = unconnected
+  let queue: Map<string, (response: any) => void> = new Map()
 
   wss.on('connection', (ws) => {
+    let clientId = Math.random().toString().slice(2)
+    let handler = (msg) => {
+      if (msg.type === 'request') {
+        console.log("Handling mcp client request", msg)
+        queue.set(msg.id, (msg) => ws.send(msg))
+        automation(msg)
+      }
+    }
+
     ws.on('message', (raw) => {
-      browserRpc.handleMessage(
-        typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8'),
-        ws
-      )
+      const msg = JSON.parse(typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8'))
+
+      if (msg.type === 'register') {
+        console.log('Registering automation')
+        automation = (req) => {
+          console.log("Forwarding to automation", req)
+          ws.send(JSON.stringify(req))
+        }
+        handler = (resp) => {
+          console.log('Message from automation!', resp)
+          if (resp.type == 'response') {
+            queue.get(resp.id)?.(JSON.stringify(resp))
+            queue.delete(resp.id)
+          } else {
+            console.log("Unknown message", resp)
+          }
+        }
+      } else if (msg.type === 'register') {
+        console.log('Registering browser')
+        handler = (msg) => browserRpc.handleMessage(msg, ws)
+      } else {
+        handler(msg)
+      }
     })
 
     ws.on('close', () => {
       browserRpc.handleClose(ws)
+      // TODO automation = unconnected
     })
+
+    ws.send(JSON.stringify({ type: 'register', token: authToken }))
   })
 
   // --- HTTP server ---

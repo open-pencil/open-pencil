@@ -62,9 +62,8 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     })
   }
 
-  function handleMessage(data: string, ws: WebSocket) {
+  function handleMessage(msg: BrowserMessage, ws: WebSocket) {
     try {
-      const msg = JSON.parse(data) as BrowserMessage
       if (msg.type === 'register' && msg.token) {
         if (authToken && msg.token !== authToken) {
           ws.close()

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 
 import type { Plugin } from 'vite'
 
-// TODO: production — bundle MCP server as Tauri sidecar or spawn via shell plugin
+// TODO: run native MCP server using rmcp
 export function automationPlugin(authToken: string | null, corsOrigin: string): Plugin {
   let child: ReturnType<typeof spawn> | null = null
 
@@ -11,8 +11,9 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
     configureServer() {
       if (child) return
 
-      child = spawn('bun', ['run', 'packages/mcp/src/index.ts'], {
+      child = spawn('bun', ['run', '--watch', 'index.ts'], {
         stdio: ['ignore', 'inherit', 'pipe'],
+        cwd: 'packages/mcp/src/',
         env: {
           ...process.env,
           PORT: '7600',
