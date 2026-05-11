@@ -1,4 +1,5 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import { wrapEvalCode } from '@open-pencil/core/tools'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -12,10 +13,7 @@ export function createAutomationEvalHandler(makeFigma: FigmaFactory) {
     const AsyncFunction = Object.getPrototypeOf(async function () {
       /* noop */
     }).constructor
-    const wrappedCode = code.trim().startsWith('return')
-      ? code
-      : `return (async () => { ${code} })()`
-    const fn = new AsyncFunction('figma', wrappedCode)
+    const fn = new AsyncFunction('figma', wrapEvalCode(code))
     const result = await fn(figma)
     store.requestRender()
     return { ok: true, result: result ?? null }

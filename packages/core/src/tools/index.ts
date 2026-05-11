@@ -5,6 +5,6 @@ export { defineTool, nodeToResult, nodeSummary, requireNode, NodeNotFoundError }
 export type { ToolDef, ParamDef, ParamType } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './ai-adapter'
-export { calcClusterConfidence } from './analyze'
+export { calcClusterConfidence, wrapEvalCode } from './analyze'
 export { setPexelsApiKey, setUnsplashAccessKey } from './stock-photo'
 export { importSvg } from './create'
