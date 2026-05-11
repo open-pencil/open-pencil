@@ -1,25 +1,36 @@
-const STATEMENT_START =
-  /^(const |let |var |if |else |for |while |do |switch |try |catch |throw |return |async function |function |class |\{|\}|\/\/|\/\*)/
+import { type Node, parse } from 'acorn'
 
 /**
  * Wrap eval code so the last bare expression is returned (REPL-style).
  *
- * - Already starts with `return` -> used verbatim
- * - Last non-empty line looks like a statement -> wrap everything in async IIFE
- * - Otherwise -> promote the last expression line to `return (expr)`
+ * Uses acorn to parse the code as a proper JS AST:
+ * - Already starts with `return` -> used verbatim (inside async function body)
+ * - Last statement is an ExpressionStatement -> replace it with `return (expr)`
+ * - Otherwise -> wrap in async IIFE so side-effects still execute
  */
 export function wrapEvalCode(code: string): string {
   const trimmed = code.trim()
   if (trimmed.startsWith('return')) return trimmed
 
-  const lines = trimmed.split('\n')
-  let lastIdx = lines.length - 1
-  while (lastIdx > 0 && !lines[lastIdx].trim()) lastIdx--
-  const lastLine = lines[lastIdx].trim()
+  let body: Node[]
+  try {
+    body = parse(trimmed, {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      allowAwaitOutsideFunction: true,
+      allowReturnOutsideFunction: true
+    }).body
+  } catch {
+    return `return (async () => { ${trimmed} })()`
+  }
 
-  if (lastLine && !STATEMENT_START.test(lastLine) && !lastLine.endsWith('}')) {
-    const body = lines.slice(0, lastIdx).join('\n')
-    return body ? `${body}\nreturn (${lastLine})` : `return (${lastLine})`
+  if (body.length === 0) return trimmed
+
+  const last = body[body.length - 1]
+  if (last.type === 'ExpressionStatement') {
+    const before = trimmed.slice(0, last.start)
+    const expr = trimmed.slice(last.start, last.end).replace(/;$/, '')
+    return `${before}return (${expr})`
   }
 
   return `return (async () => { ${trimmed} })()`

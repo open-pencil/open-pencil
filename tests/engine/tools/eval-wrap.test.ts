@@ -52,6 +52,18 @@ describe('wrapEvalCode', () => {
     expect(await run('JSON.stringify({ x: 1 })')).toBe('{"x":1}')
   })
 
+  test('expression with trailing semicolon is still returned', async () => {
+    expect(await run('42;')).toBe(42)
+  })
+
+  test('method chain result is returned', async () => {
+    expect(await run('const arr = [3,1,2]\narr.sort()')).toEqual([1, 2, 3])
+  })
+
+  test('syntax error falls back to IIFE', () => {
+    expect(wrapEvalCode('{')).toContain('async ()')
+  })
+
   test('closing brace wraps in IIFE', () => {
     expect(wrapEvalCode('function f() {}')).toContain('async ()')
   })
