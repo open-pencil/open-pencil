@@ -1,6 +1,6 @@
 import { defineTool } from '#core/tools/schema'
 
-import { wrapEvalCode } from './eval-wrap'
+import { wrapEvalCode } from './wrap'
 
 export const evalCode = defineTool({
   name: 'eval',
