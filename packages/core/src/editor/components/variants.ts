@@ -6,6 +6,15 @@ import type {
   SceneNode
 } from '#core/scene-graph'
 
+export type VariantConflict = {
+  values: Record<string, string>
+  componentIds: string[]
+}
+
+function sortByCanvasPosition(a: SceneNode, b: SceneNode) {
+  return a.y - b.y || a.x - b.x || a.name.localeCompare(b.name)
+}
+
 export function createVariantActions(ctx: EditorContext) {
   function getComponentSetPropertyDefs(componentSetId: string): ComponentPropertyDefinition[] {
     const node = ctx.graph.getNode(componentSetId)
@@ -181,20 +190,63 @@ export function createVariantActions(ctx: EditorContext) {
     return options
   }
 
+  function getComponentSetVariants(componentSetId: string): SceneNode[] {
+    const node = ctx.graph.getNode(componentSetId)
+    if (node?.type !== 'COMPONENT_SET') return []
+    return node.childIds
+      .map((id) => ctx.graph.getNode(id))
+      .filter((child): child is SceneNode => child?.type === 'COMPONENT')
+  }
+
   function findVariantByValues(
     componentSetId: string,
     values: Record<string, string>
   ): SceneNode | undefined {
-    const node = ctx.graph.getNode(componentSetId)
-    if (node?.type !== 'COMPONENT_SET') return undefined
-    for (const childId of node.childIds) {
-      const child = ctx.graph.getNode(childId)
-      if (child?.type !== 'COMPONENT') continue
+    for (const child of getComponentSetVariants(componentSetId).sort(sortByCanvasPosition)) {
       const childValues = child.componentPropertyValues
       const matches = Object.entries(values).every(([k, v]) => childValues[k] === v)
       if (matches) return child
     }
     return undefined
+  }
+
+  function getDefaultVariantForComponentSet(componentSetId: string): SceneNode | undefined {
+    const node = ctx.graph.getNode(componentSetId)
+    if (node?.type !== 'COMPONENT_SET') return undefined
+
+    const defaultValues = Object.fromEntries(
+      node.componentPropertyDefinitions
+        .filter((def) => def.type === 'VARIANT' && def.defaultValue)
+        .map((def) => [def.name, def.defaultValue])
+    )
+    if (Object.keys(defaultValues).length > 0) {
+      const explicitDefault = findVariantByValues(componentSetId, defaultValues)
+      if (explicitDefault) return explicitDefault
+    }
+
+    return getComponentSetVariants(componentSetId).sort(sortByCanvasPosition)[0]
+  }
+
+  function getComponentSetVariantConflicts(componentSetId: string): VariantConflict[] {
+    const node = ctx.graph.getNode(componentSetId)
+    if (node?.type !== 'COMPONENT_SET') return []
+
+    const propNames = node.componentPropertyDefinitions
+      .filter((def) => def.type === 'VARIANT')
+      .map((def) => def.name)
+    const byKey = new Map<string, { values: Record<string, string>; componentIds: string[] }>()
+
+    for (const variant of getComponentSetVariants(componentSetId)) {
+      const values = Object.fromEntries(
+        propNames.map((name) => [name, variant.componentPropertyValues[name] ?? ''])
+      )
+      const key = propNames.map((name) => `${name}=${values[name]}`).join('\u0000')
+      const entry = byKey.get(key) ?? { values, componentIds: [] }
+      entry.componentIds.push(variant.id)
+      byKey.set(key, entry)
+    }
+
+    return [...byKey.values()].filter((entry) => entry.componentIds.length > 1)
   }
 
   function switchInstanceVariant(instanceId: string, propertyName: string, newValue: string) {
@@ -238,6 +290,8 @@ export function createVariantActions(ctx: EditorContext) {
     buildVariantName,
     collectVariantOptions,
     findVariantByValues,
+    getDefaultVariantForComponentSet,
+    getComponentSetVariantConflicts,
     switchInstanceVariant
   }
 }

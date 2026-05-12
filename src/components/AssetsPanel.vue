@@ -17,6 +17,7 @@ type LocalAsset = {
   componentId: string | null
   variants: Array<{ name: string; values: string[] }>
   variantCount: number
+  hasConflicts: boolean
 }
 
 const editor = useEditorStore()
@@ -24,18 +25,6 @@ const { panels, commands } = useI18n()
 const query = ref('')
 const input = useInputUI({ size: 'sm' })
 const insertButton = useButtonUI({ tone: 'ghost', size: 'iconSm' })
-
-function sortByCanvasPosition(a: SceneNode, b: SceneNode) {
-  return a.y - b.y || a.x - b.x || a.name.localeCompare(b.name)
-}
-
-function componentSetDefaultVariant(componentSet: SceneNode): SceneNode | null {
-  const variants = componentSet.childIds
-    .map((id) => editor.graph.getNode(id))
-    .filter((node): node is SceneNode => node?.type === 'COMPONENT')
-    .sort(sortByCanvasPosition)
-  return variants[0] ?? null
-}
 
 function componentSetVariantInfo(componentSetId: string) {
   return [...editor.collectVariantOptions(componentSetId)].map(([name, values]) => ({
@@ -58,7 +47,10 @@ const assets = computed<LocalAsset[]>(() => {
       return parent?.type !== 'COMPONENT_SET'
     })
     .map((node) => {
-      const defaultVariant = node.type === 'COMPONENT_SET' ? componentSetDefaultVariant(node) : node
+      const defaultVariant =
+        node.type === 'COMPONENT_SET' ? editor.getDefaultVariantForComponentSet(node.id) : node
+      const conflicts =
+        node.type === 'COMPONENT_SET' ? editor.getComponentSetVariantConflicts(node.id) : []
       const variants = node.type === 'COMPONENT_SET' ? componentSetVariantInfo(node.id) : []
       return {
         id: node.id,
@@ -66,7 +58,8 @@ const assets = computed<LocalAsset[]>(() => {
         node,
         componentId: defaultVariant?.id ?? null,
         variants,
-        variantCount: node.type === 'COMPONENT_SET' ? node.childIds.length : 0
+        variantCount: node.type === 'COMPONENT_SET' ? node.childIds.length : 0,
+        hasConflicts: conflicts.length > 0
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -144,6 +137,13 @@ function insertAsset(asset: LocalAsset) {
           >
             {{ asset.variantCount }} variants ·
             {{ asset.variants.map((variant) => variant.name).join(', ') }}
+          </span>
+          <span
+            v-if="asset.hasConflicts"
+            data-test-id="asset-variant-conflict"
+            class="mt-0.5 block truncate text-[10px] text-[var(--color-warning-text)]"
+          >
+            Duplicate variant values
           </span>
         </span>
         <Tip :label="commands.createInstance">

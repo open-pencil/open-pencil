@@ -44,7 +44,7 @@ test('assets panel groups component sets and inserts the default variant', async
           id: 'prop:type',
           name: 'Type',
           type: 'VARIANT',
-          defaultValue: 'Primary',
+          defaultValue: 'Secondary',
           variantOptions: ['Primary', 'Secondary']
         }
       ]
@@ -65,6 +65,14 @@ test('assets panel groups component sets and inserts the default variant', async
       height: 40,
       componentPropertyValues: { Type: 'Secondary' }
     })
+    const duplicateSecondary = store.graph.createNode('COMPONENT', set.id, {
+      name: 'Type=Secondary duplicate',
+      x: 240,
+      y: 0,
+      width: 96,
+      height: 40,
+      componentPropertyValues: { Type: 'Secondary' }
+    })
     const card = store.graph.createNode('COMPONENT', pageNode.id, {
       name: 'Card',
       x: 80,
@@ -73,7 +81,13 @@ test('assets panel groups component sets and inserts the default variant', async
       height: 100
     })
     store.requestRender()
-    return { setId: set.id, primaryId: primary.id, secondaryId: secondary.id, cardId: card.id }
+    return {
+      setId: set.id,
+      primaryId: primary.id,
+      secondaryId: secondary.id,
+      duplicateSecondaryId: duplicateSecondary.id,
+      cardId: card.id
+    }
   })
   await canvas.waitForRender()
 
@@ -89,6 +103,9 @@ test('assets panel groups component sets and inserts the default variant', async
   await expect(
     page.locator(`[data-asset-id="${ids.setId}"] [data-test-id="asset-variant-summary"]`)
   ).toContainText('Type')
+  await expect(
+    page.locator(`[data-asset-id="${ids.setId}"] [data-test-id="asset-variant-conflict"]`)
+  ).toContainText('Duplicate variant values')
 
   await page.locator('[data-test-id="assets-search"]').fill('card')
   await expect(assetItems).toHaveCount(1)
@@ -112,13 +129,13 @@ test('assets panel groups component sets and inserts the default variant', async
   const inserted = await selectedNodeSnapshot(page)
 
   expect(inserted?.type).toBe('INSTANCE')
-  expect(inserted?.componentId).toBe(ids.primaryId)
+  expect(inserted?.componentId).toBe(ids.secondaryId)
   expect(inserted?.parentId).toBe(inserted?.pageId)
 
   await expect(page.locator('[data-test-id="variant-section"]')).toBeVisible()
 
   await page.locator('[data-test-id="variant-section"] [data-test-id="app-select-trigger"]').click()
-  await page.getByRole('option', { name: 'Secondary' }).click()
+  await page.getByRole('option', { name: 'Primary' }).click()
 
   const switchedComponentId = await page.evaluate(
     (instanceId) => {
@@ -128,7 +145,7 @@ test('assets panel groups component sets and inserts the default variant', async
     },
     expectDefined(inserted?.id, 'inserted instance id')
   )
-  expect(switchedComponentId).toBe(ids.secondaryId)
+  expect(switchedComponentId).toBe(ids.primaryId)
 
   canvas.assertNoErrors()
 })

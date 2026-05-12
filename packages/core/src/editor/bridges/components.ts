@@ -35,6 +35,8 @@ export function createComponentBridge(
     renamePropertyDefinition: components.renamePropertyDefinition,
     collectVariantOptions: components.collectVariantOptions,
     findVariantByValues: components.findVariantByValues,
+    getDefaultVariantForComponentSet: components.getDefaultVariantForComponentSet,
+    getComponentSetVariantConflicts: components.getComponentSetVariantConflicts,
     switchInstanceVariant: components.switchInstanceVariant
   }
 }
