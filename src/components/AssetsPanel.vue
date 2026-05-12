@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import {
   DialogClose,
   DialogContent,
@@ -38,6 +38,9 @@ const { panels, commands } = useI18n()
 const query = ref('')
 const detailsOpen = ref(false)
 const selectedAssetId = ref<string | null>(null)
+const previewUrl = ref<string | null>(null)
+const previewLoading = ref(false)
+let previewRequestId = 0
 const input = useInputUI({ size: 'sm' })
 const insertButton = useButtonUI({ tone: 'ghost', size: 'iconSm' })
 const primaryButton = useButtonUI({ tone: 'accent', size: 'md' })
@@ -94,6 +97,46 @@ const filteredAssets = computed(() => {
 const selectedAsset = computed(
   () => assets.value.find((asset) => asset.id === selectedAssetId.value) ?? null
 )
+const selectedPreviewNodeId = computed(() => selectedAsset.value?.componentId ?? null)
+
+function revokePreview() {
+  if (!previewUrl.value) return
+  URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value = null
+}
+
+async function updatePreview() {
+  const requestId = ++previewRequestId
+  const nodeId = selectedPreviewNodeId.value
+  if (!detailsOpen.value || !nodeId) {
+    revokePreview()
+    return
+  }
+
+  const node = editor.getNode(nodeId)
+  if (!node) {
+    revokePreview()
+    return
+  }
+
+  previewLoading.value = true
+  try {
+    const maxSize = Math.max(node.width, node.height, 1)
+    const scale = Math.min(176 / maxSize, 2)
+    const data = await editor.renderExportImage([nodeId], scale, 'PNG')
+    if (requestId !== previewRequestId) return
+    revokePreview()
+    if (data) previewUrl.value = URL.createObjectURL(new Blob([data], { type: 'image/png' }))
+  } finally {
+    if (requestId === previewRequestId) previewLoading.value = false
+  }
+}
+
+watch([detailsOpen, selectedPreviewNodeId, () => editor.state.sceneVersion], updatePreview, {
+  flush: 'post'
+})
+
+onScopeDispose(revokePreview)
 
 function openDetails(asset: LocalAsset) {
   selectedAssetId.value = asset.id
@@ -268,10 +311,22 @@ function insertSelectedAsset() {
             <div class="border-r border-border p-4">
               <div
                 data-test-id="asset-details-preview"
-                class="flex h-36 items-center justify-center rounded-lg border border-border bg-canvas/60"
+                class="flex h-36 items-center justify-center overflow-hidden rounded-lg border border-border bg-canvas/60"
               >
-                <div class="text-center">
+                <img
+                  v-if="previewUrl"
+                  data-test-id="asset-details-preview-image"
+                  :src="previewUrl"
+                  :alt="`${selectedAsset.name} preview`"
+                  class="max-h-[120px] max-w-[210px] object-contain"
+                />
+                <div v-else class="text-center">
+                  <icon-lucide-loader-2
+                    v-if="previewLoading"
+                    class="mx-auto size-5 animate-spin text-muted"
+                  />
                   <component
+                    v-else
                     :is="nodeIcon(selectedAsset.node)"
                     class="mx-auto size-8 text-component"
                   />

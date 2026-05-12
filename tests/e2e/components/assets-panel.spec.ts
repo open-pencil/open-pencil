@@ -136,6 +136,7 @@ test('assets panel groups component sets and inserts the default variant', async
   await expect(details).toBeVisible()
   await expect(details).toContainText('Button')
   await expect(details.locator('[data-test-id="asset-details-preview"]')).toBeVisible()
+  await expect(details.locator('[data-test-id="asset-details-preview-image"]')).toBeVisible()
   await expect(details.locator('[data-test-id="asset-details-description"]')).toContainText(
     'Reusable button component'
   )
