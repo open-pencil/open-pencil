@@ -247,10 +247,10 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'DeepSeek',
     keyPlaceholder: 'sk-…',
     keyURL: 'https://platform.deepseek.com/api_keys',
-    defaultModel: 'deepseek-chat',
+    defaultModel: 'deepseek-v4-flash',
     models: [
-      { id: 'deepseek-chat', name: 'DeepSeek V3', tag: 'Fast' },
-      { id: 'deepseek-reasoner', name: 'DeepSeek R1', tag: 'Reasoning' }
+      { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', tag: 'Fast' },
+      { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', tag: 'Reasoning' }
     ]
   },
   {
