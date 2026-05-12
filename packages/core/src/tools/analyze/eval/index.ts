@@ -1,5 +1,7 @@
 import { defineTool } from '#core/tools/schema'
 
+import { wrapEvalCode } from './wrap'
+
 export const evalCode = defineTool({
   name: 'eval',
   description:
@@ -14,8 +16,7 @@ export const evalCode = defineTool({
     ) => (...args: unknown[]) => Promise<unknown>
     const AsyncFunction = Object.getPrototypeOf(async () => undefined)
       .constructor as AsyncFunctionConstructor
-    const wrapped = code.trim().startsWith('return') ? code : `return (async () => { ${code} })()`
-    const fn = new AsyncFunction('figma', wrapped)
+    const fn = new AsyncFunction('figma', wrapEvalCode(code))
     const result = await fn(figma)
     if (result && typeof result === 'object') {
       const toJSON = Reflect.get(result, 'toJSON')

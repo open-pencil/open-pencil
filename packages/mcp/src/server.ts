@@ -53,6 +53,9 @@ export function startServer(options: ServerOptions = {}) {
   const wss = new WebSocketServer({ port: wsPort, host: '127.0.0.1' })
 
   wss.on('connection', (ws) => {
+    const token = browserRpc.currentRpcToken()
+    if (token) ws.send(JSON.stringify({ type: 'register', token }))
+
     ws.on('message', (raw) => {
       browserRpc.handleMessage(
         typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8'),
