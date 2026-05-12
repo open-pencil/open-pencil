@@ -24,9 +24,16 @@ export function createComponentsSection(store: EditorStore) {
   const compSectionId = store.createShape('SECTION', 60, 60, 920, 540)
   graph.updateNode(compSectionId, { name: 'Components' })
 
-  const btnId = store.createShape('FRAME', 32, 48, 120, 40, compSectionId)
+  const btnId = store.createShape('FRAME', 32, 48, 160, 72, compSectionId)
   graph.updateNode(btnId, {
     name: 'Button/Primary',
+    fills: [],
+    strokes: [],
+    clipsContent: false
+  })
+  const btnSurfaceId = store.createShape('FRAME', 0, 28, 120, 40, btnId)
+  graph.updateNode(btnSurfaceId, {
+    name: 'Surface',
     cornerRadius: 8,
     fills: [solid(BLUE)],
     layoutMode: 'HORIZONTAL',
@@ -39,7 +46,7 @@ export function createComponentsSection(store: EditorStore) {
     paddingLeft: 20,
     paddingRight: 20
   })
-  const btnTextId = store.createShape('TEXT', 0, 0, 80, 20, btnId)
+  const btnTextId = store.createShape('TEXT', 0, 0, 80, 20, btnSurfaceId)
   graph.updateNode(btnTextId, {
     name: 'Label',
     text: 'Get Started',
@@ -49,9 +56,16 @@ export function createComponentsSection(store: EditorStore) {
   })
   const btnCompId = makeComponent(store, [btnId])
 
-  const btn2Id = store.createShape('FRAME', 176, 48, 100, 40, compSectionId)
+  const btn2Id = store.createShape('FRAME', 216, 48, 160, 72, compSectionId)
   graph.updateNode(btn2Id, {
     name: 'Button/Secondary',
+    fills: [],
+    strokes: [],
+    clipsContent: false
+  })
+  const btn2SurfaceId = store.createShape('FRAME', 0, 28, 100, 40, btn2Id)
+  graph.updateNode(btn2SurfaceId, {
+    name: 'Surface',
     cornerRadius: 8,
     fills: [solid(WHITE)],
     strokes: thinStroke(GRAY_200),
@@ -65,7 +79,7 @@ export function createComponentsSection(store: EditorStore) {
     paddingLeft: 20,
     paddingRight: 20
   })
-  const btn2TextId = store.createShape('TEXT', 0, 0, 60, 20, btn2Id)
+  const btn2TextId = store.createShape('TEXT', 0, 0, 60, 20, btn2SurfaceId)
   graph.updateNode(btn2TextId, {
     name: 'Label',
     text: 'Cancel',
@@ -77,8 +91,12 @@ export function createComponentsSection(store: EditorStore) {
 
   store.select([btnCompId, btn2CompId])
   store.createComponentSetFromComponents()
+  const buttonSetId = [...store.state.selectedIds][0]
+  graph.updateNode(buttonSetId, { x: 32, y: 44, width: 400, height: 136, fills: [] })
+  graph.updateNode(btnCompId, { x: 40, y: 36 })
+  graph.updateNode(btn2CompId, { x: 224, y: 36 })
 
-  const chipId = store.createShape('FRAME', 304, 52, 80, 28, compSectionId)
+  const chipId = store.createShape('FRAME', 500, 72, 80, 28, compSectionId)
   graph.updateNode(chipId, {
     name: 'Tag',
     cornerRadius: 14,
@@ -103,7 +121,7 @@ export function createComponentsSection(store: EditorStore) {
   })
   makeComponent(store, [chipId])
 
-  const avatarId = store.createShape('ELLIPSE', 416, 48, 40, 40, compSectionId)
+  const avatarId = store.createShape('ELLIPSE', 640, 68, 40, 40, compSectionId)
   graph.updateNode(avatarId, {
     name: 'Avatar',
     fills: [
@@ -116,7 +134,7 @@ export function createComponentsSection(store: EditorStore) {
   const avatarCompId = makeComponent(store, [avatarId])
   graph.updateNode(avatarCompId, { name: 'Avatar' })
 
-  const cardId = store.createShape('FRAME', 32, 128, 280, 160, compSectionId)
+  const cardId = store.createShape('FRAME', 32, 216, 280, 160, compSectionId)
   graph.updateNode(cardId, {
     name: 'Card',
     cornerRadius: 12,
@@ -166,7 +184,7 @@ export function createComponentsSection(store: EditorStore) {
   })
   makeComponent(store, [cardId])
 
-  const inputId = store.createShape('FRAME', 344, 128, 240, 40, compSectionId)
+  const inputId = store.createShape('FRAME', 344, 216, 240, 40, compSectionId)
   graph.updateNode(inputId, {
     name: 'Input',
     cornerRadius: 8,
@@ -192,7 +210,7 @@ export function createComponentsSection(store: EditorStore) {
   })
   makeComponent(store, [inputId])
 
-  const badgeId = store.createShape('FRAME', 344, 196, 48, 24, compSectionId)
+  const badgeId = store.createShape('FRAME', 344, 284, 48, 24, compSectionId)
   graph.updateNode(badgeId, {
     name: 'Badge',
     cornerRadius: 12,
@@ -222,23 +240,6 @@ export function createComponentsSection(store: EditorStore) {
     fills: [solid(GREEN)]
   })
   const badgeCompId = makeComponent(store, [badgeId])
-
-  const helperTitleId = store.createShape('TEXT', 520, 36, 340, 20, compSectionId)
-  graph.updateNode(helperTitleId, {
-    name: 'Assets panel note',
-    text: 'Open Assets to insert Button variants',
-    fontSize: 14,
-    fontWeight: 600,
-    fills: [solid(BLACK)]
-  })
-  const helperBodyId = store.createShape('TEXT', 520, 62, 340, 42, compSectionId)
-  graph.updateNode(helperBodyId, {
-    name: 'Assets panel description',
-    text: 'The Button component set appears as one local asset. Insert it, then switch Variant in the inspector.',
-    fontSize: 12,
-    fontWeight: 400,
-    fills: [solid(GRAY_500)]
-  })
 
   const swatches = [
     { name: 'Blue', color: BLUE, x: 32 },
