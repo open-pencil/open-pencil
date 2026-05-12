@@ -186,6 +186,29 @@ export function populateInstanceChildren(
   cloneChildrenWithMapping(graph, componentId, instanceId)
 }
 
+export function swapInstanceComponent(
+  graph: SceneGraph,
+  instanceId: string,
+  componentId: string
+): void {
+  const instance = graph.nodes.get(instanceId)
+  const component = graph.nodes.get(componentId)
+  if (!instance || component?.type !== 'COMPONENT' || instance.type !== 'INSTANCE') return
+
+  const previousComponent = instance.componentId ? graph.nodes.get(instance.componentId) : undefined
+  const updates: Partial<SceneNode> = { componentId }
+  for (const key of INSTANCE_SYNC_PROPS) {
+    if (key in instance.overrides) continue
+    copyProp(updates, component, key)
+  }
+  if (!previousComponent || instance.name === previousComponent.name) updates.name = component.name
+
+  const childIds = Array.from(instance.childIds)
+  for (const childId of childIds) graph.deleteNode(childId)
+  graph.updateNode(instanceId, updates)
+  cloneChildrenWithMapping(graph, componentId, instanceId)
+}
+
 export function syncInstances(graph: SceneGraph, componentId: string): void {
   const component = graph.nodes.get(componentId)
   if (component?.type !== 'COMPONENT') return

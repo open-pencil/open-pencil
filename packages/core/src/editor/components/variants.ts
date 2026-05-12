@@ -266,15 +266,15 @@ export function createVariantActions(ctx: EditorContext) {
     if (!target || target.id === instance.componentId) return
 
     const prevComponentId = instance.componentId
-    ctx.graph.updateNode(instanceId, { componentId: target.id })
+    ctx.graph.swapInstanceComponent(instanceId, target.id)
     ctx.undo.push({
       label: 'Switch variant',
       forward: () => {
-        ctx.graph.updateNode(instanceId, { componentId: target.id })
+        ctx.graph.swapInstanceComponent(instanceId, target.id)
         ctx.requestRender()
       },
       inverse: () => {
-        ctx.graph.updateNode(instanceId, { componentId: prevComponentId })
+        ctx.graph.swapInstanceComponent(instanceId, prevComponentId)
         ctx.requestRender()
       }
     })

@@ -47,7 +47,9 @@ fn path_from_arg(arg: String, cwd: &Path) -> Option<PathBuf> {
     }
 
     if let Ok(url) = tauri::Url::parse(&arg) {
-        return url.to_file_path().ok();
+        if let Ok(path) = url.to_file_path() {
+            return Some(path);
+        }
     }
 
     let path = PathBuf::from(arg);

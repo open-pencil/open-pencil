@@ -15,7 +15,12 @@ async function selectedNodeSnapshot(page: Page) {
           type: selected.type,
           parentId: selected.parentId,
           componentId: selected.componentId,
-          pageId: store.state.currentPageId
+          pageId: store.state.currentPageId,
+          width: selected.width,
+          childTexts: store.graph
+            .getChildren(selected.id)
+            .filter((child) => child.type === 'TEXT')
+            .map((child) => child.text)
         }
       : null
   })
@@ -57,19 +62,31 @@ test('assets panel groups component sets and inserts the default variant', async
       height: 40,
       componentPropertyValues: { Type: 'Primary' }
     })
+    store.graph.createNode('TEXT', primary.id, {
+      name: 'Label',
+      text: 'Primary',
+      width: 72,
+      height: 20
+    })
     const secondary = store.graph.createNode('COMPONENT', set.id, {
       name: 'Type=Secondary',
       x: 120,
       y: 0,
-      width: 96,
+      width: 132,
       height: 40,
       componentPropertyValues: { Type: 'Secondary' }
     })
+    store.graph.createNode('TEXT', secondary.id, {
+      name: 'Label',
+      text: 'Secondary',
+      width: 96,
+      height: 20
+    })
     const duplicateSecondary = store.graph.createNode('COMPONENT', set.id, {
       name: 'Type=Secondary duplicate',
-      x: 240,
+      x: 280,
       y: 0,
-      width: 96,
+      width: 132,
       height: 40,
       componentPropertyValues: { Type: 'Secondary' }
     })
@@ -131,22 +148,85 @@ test('assets panel groups component sets and inserts the default variant', async
   expect(inserted?.type).toBe('INSTANCE')
   expect(inserted?.componentId).toBe(ids.secondaryId)
   expect(inserted?.parentId).toBe(inserted?.pageId)
+  expect(inserted?.width).toBe(132)
+  expect(inserted?.childTexts).toEqual(['Secondary'])
 
   await expect(page.locator('[data-test-id="variant-section"]')).toBeVisible()
 
   await page.locator('[data-test-id="variant-section"] [data-test-id="app-select-trigger"]').click()
   await page.getByRole('option', { name: 'Primary' }).click()
 
-  const switchedComponentId = await page.evaluate(
-    (instanceId) => {
-      const store = window.openPencil?.getStore?.()
-      if (!store) throw new Error('OpenPencil store not initialized')
-      return store.graph.getNode(instanceId)?.componentId
-    },
-    expectDefined(inserted?.id, 'inserted instance id')
-  )
-  expect(switchedComponentId).toBe(ids.primaryId)
+  expectDefined(inserted?.id, 'inserted instance id')
+  const switched = await selectedNodeSnapshot(page)
+  expect(switched?.componentId).toBe(ids.primaryId)
+  expect(switched?.width).toBe(96)
+  expect(switched?.childTexts).toEqual(['Primary'])
 
+  canvas.assertNoErrors()
+})
+
+test('assets insertion accounts for entered container coordinates', async ({ page }) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('/?test')
+  await canvas.waitForInit()
+
+  const setup = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.panX = 0
+    store.state.panY = 0
+    store.state.zoom = 1
+    const pageNode = store.graph.getNode(store.state.currentPageId)
+    if (!pageNode) throw new Error('Current page not found')
+    const frame = store.graph.createNode('FRAME', pageNode.id, {
+      name: 'Target Frame',
+      x: 200,
+      y: 150,
+      width: 300,
+      height: 240
+    })
+    const component = store.graph.createNode('COMPONENT', pageNode.id, {
+      name: 'Panel Card',
+      x: 40,
+      y: 40,
+      width: 120,
+      height: 60
+    })
+    store.state.enteredContainerId = frame.id
+    store.requestRender()
+    return { frameId: frame.id, componentId: component.id }
+  })
+  await canvas.waitForRender()
+
+  await page.locator('[data-test-id="left-panel-assets-tab"]').click()
+  await page.locator(`[data-asset-id="${setup.componentId}"] [data-test-id="asset-insert"]`).click()
+  await canvas.waitForRender()
+
+  const inserted = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const selectedId = [...store.state.selectedIds][0]
+    const selected = selectedId ? store.graph.getNode(selectedId) : null
+    if (!selected) return null
+    const abs = store.graph.getAbsolutePosition(selected.id)
+    const canvasEl = document.querySelector<HTMLElement>('[data-test-id="canvas-area"]')
+    const rect = canvasEl?.getBoundingClientRect()
+    const center = store.screenToCanvas(
+      (rect?.width ?? window.innerWidth) / 2,
+      (rect?.height ?? window.innerHeight) / 2
+    )
+    return {
+      parentId: selected.parentId,
+      centerX: abs.x + selected.width / 2,
+      centerY: abs.y + selected.height / 2,
+      expectedCenterX: center.x,
+      expectedCenterY: center.y
+    }
+  })
+
+  expect(inserted?.parentId).toBe(setup.frameId)
+  expect(inserted?.centerX).toBeCloseTo(inserted?.expectedCenterX ?? 0, 1)
+  expect(inserted?.centerY).toBeCloseTo(inserted?.expectedCenterY ?? 0, 1)
   canvas.assertNoErrors()
 })
 

@@ -71,16 +71,20 @@ const filteredAssets = computed(() => {
   return assets.value.filter((asset) => asset.name.toLowerCase().includes(normalized))
 })
 
-function insertionPoint(component: SceneNode) {
+function insertionPoint(component: SceneNode, parentId: string) {
   const canvas = document.querySelector<HTMLElement>('[data-test-id="canvas-area"]')
   const rect = canvas?.getBoundingClientRect()
   const center = editor.screenToCanvas(
     (rect?.width ?? window.innerWidth) / 2,
     (rect?.height ?? window.innerHeight) / 2
   )
+  const parentOffset =
+    parentId === editor.state.currentPageId
+      ? { x: 0, y: 0 }
+      : editor.graph.getAbsolutePosition(parentId)
   return {
-    x: center.x - component.width / 2,
-    y: center.y - component.height / 2
+    x: center.x - parentOffset.x - component.width / 2,
+    y: center.y - parentOffset.y - component.height / 2
   }
 }
 
@@ -88,13 +92,9 @@ function insertAsset(asset: LocalAsset) {
   if (!asset.componentId) return
   const component = editor.graph.getNode(asset.componentId)
   if (!component) return
-  const point = insertionPoint(component)
-  editor.createInstanceFromComponent(
-    asset.componentId,
-    point.x,
-    point.y,
-    editor.state.enteredContainerId ?? editor.state.currentPageId
-  )
+  const parentId = editor.state.enteredContainerId ?? editor.state.currentPageId
+  const point = insertionPoint(component, parentId)
+  editor.createInstanceFromComponent(asset.componentId, point.x, point.y, parentId)
   editor.requestRender()
 }
 </script>

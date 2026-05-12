@@ -1,6 +1,13 @@
 import type { EditorContext } from '#core/editor/types'
 import type { SceneNode } from '#core/scene-graph'
 
+type InstanceCreateSnapshot = Partial<SceneNode> & { id: string }
+
+function createInstanceSnapshot(instance: SceneNode): InstanceCreateSnapshot {
+  const { childIds: _childIds, parentId: _parentId, type: _type, ...snapshot } = instance
+  return snapshot
+}
+
 export function createComponentInstanceActions(ctx: EditorContext) {
   function createInstanceFromComponent(
     componentId: string,
@@ -18,12 +25,13 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     if (!instance) return null
 
     const instanceId = instance.id
+    const snapshot = createInstanceSnapshot(instance)
     ctx.setSelectedIds(new Set([instanceId]))
 
     ctx.undo.push({
       label: 'Create instance',
       forward: () => {
-        ctx.graph.createInstance(componentId, parentId, { ...instance })
+        ctx.graph.createInstance(componentId, parentId, { ...snapshot })
         ctx.setSelectedIds(new Set([instanceId]))
       },
       inverse: () => {
