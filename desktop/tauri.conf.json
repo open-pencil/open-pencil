@@ -32,6 +32,24 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "fileAssociations": [
+      {
+        "ext": ["pen"],
+        "name": "Pencil Design File",
+        "description": "Pencil design file",
+        "role": "Editor",
+        "mimeType": "application/x-pencil-pen",
+        "rank": "Alternate"
+      },
+      {
+        "ext": ["fig"],
+        "name": "Figma Design File",
+        "description": "Figma design file",
+        "role": "Editor",
+        "mimeType": "application/x-figma",
+        "rank": "Alternate"
+      }
+    ],
     "macOS": {
       "signingIdentity": "Developer ID Application: Danila Poyarkov (N7D7M3Q3CD)"
     }

@@ -8,6 +8,7 @@
 - Add collection deletion from the variables dialog.
 - Bind variables to line height, letter spacing, font weight, paragraph spacing, and paragraph indent in the typography inspector.
 - Add editor event bus with typed lifecycle events — subscribe via `editor.onEditorEvent()` in core or `useEditorEvent()` composable in the Vue SDK.
+- Register desktop file associations for `.fig` and `.pen` so supported design files can be opened from OS file browsers with OpenPencil.
 
 ### Changed
 

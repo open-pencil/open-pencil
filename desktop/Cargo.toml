@@ -33,3 +33,6 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch =
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 
+[target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
+tauri-plugin-single-instance = "2"
+
