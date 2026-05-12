@@ -131,6 +131,22 @@ test('assets panel groups component sets and inserts the default variant', async
     'Duplicate variant values'
   )
 
+  await buttonAsset.click()
+  const details = page.locator('[data-test-id="asset-details-dialog"]')
+  await expect(details).toBeVisible()
+  await expect(details).toContainText('Button')
+  await expect(details.locator('[data-test-id="asset-details-preview"]')).toBeVisible()
+  await expect(details.locator('[data-test-id="asset-details-description"]')).toContainText(
+    'Reusable button component'
+  )
+  await expect(details.locator('[data-test-id="asset-details-library"]')).toContainText(
+    'lk-test-library'
+  )
+  await expect(details.locator('[data-test-id="asset-details-docs"]')).toBeVisible()
+  await expect(details.locator('[data-test-id="asset-details-property"]')).toContainText('Type')
+  await page.locator('[data-test-id="asset-details-close"]').click()
+  await expect(details).toBeHidden()
+
   await page.locator('[data-test-id="assets-search"]').fill('card')
   await expect(assetItems).toHaveCount(1)
   await expect(assetsPanel).toContainText('Card')

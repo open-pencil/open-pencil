@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import {
+  DialogClose,
+  DialogContent,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle
+} from 'reka-ui'
 
 import type { SceneNode } from '@open-pencil/core/scene-graph'
 import { useI18n } from '@open-pencil/vue'
@@ -8,6 +16,7 @@ import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openExternalLink } from '@/app/shell/ui'
 import { useButtonUI } from '@/components/ui/button'
+import { useDialogUI } from '@/components/ui/dialog'
 import { useInputUI } from '@/components/ui/input'
 import Tip from '@/components/ui/Tip.vue'
 
@@ -27,8 +36,12 @@ type LocalAsset = {
 const editor = useEditorStore()
 const { panels, commands } = useI18n()
 const query = ref('')
+const detailsOpen = ref(false)
+const selectedAssetId = ref<string | null>(null)
 const input = useInputUI({ size: 'sm' })
 const insertButton = useButtonUI({ tone: 'ghost', size: 'iconSm' })
+const primaryButton = useButtonUI({ tone: 'accent', size: 'md' })
+const dialog = useDialogUI({ content: 'flex w-[720px] max-w-[92vw] flex-col overflow-hidden' })
 
 function componentSetVariantInfo(componentSetId: string) {
   return [...editor.collectVariantOptions(componentSetId)].map(([name, values]) => ({
@@ -78,6 +91,15 @@ const filteredAssets = computed(() => {
   return assets.value.filter((asset) => asset.name.toLowerCase().includes(normalized))
 })
 
+const selectedAsset = computed(
+  () => assets.value.find((asset) => asset.id === selectedAssetId.value) ?? null
+)
+
+function openDetails(asset: LocalAsset) {
+  selectedAssetId.value = asset.id
+  detailsOpen.value = true
+}
+
 function insertionPoint(component: SceneNode, parentId: string) {
   const canvas = document.querySelector<HTMLElement>('[data-test-id="canvas-area"]')
   const rect = canvas?.getBoundingClientRect()
@@ -104,6 +126,12 @@ function insertAsset(asset: LocalAsset) {
   editor.createInstanceFromComponent(asset.componentId, point.x, point.y, parentId)
   editor.requestRender()
 }
+
+function insertSelectedAsset() {
+  if (!selectedAsset.value) return
+  insertAsset(selectedAsset.value)
+  detailsOpen.value = false
+}
 </script>
 
 <template>
@@ -128,6 +156,7 @@ function insertAsset(asset: LocalAsset) {
         data-test-id="asset-item"
         :data-asset-id="asset.id"
         class="group/asset flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-surface hover:bg-hover"
+        @click="openDetails(asset)"
         @dblclick="insertAsset(asset)"
       >
         <component
@@ -200,5 +229,123 @@ function insertAsset(asset: LocalAsset) {
         No local components
       </div>
     </div>
+
+    <DialogRoot v-model:open="detailsOpen">
+      <DialogPortal>
+        <DialogOverlay :class="dialog.overlay" />
+        <DialogContent
+          v-if="selectedAsset"
+          data-test-id="asset-details-dialog"
+          :class="dialog.content"
+        >
+          <div class="flex items-center justify-between border-b border-border px-4 py-3">
+            <div class="flex min-w-0 items-center gap-2">
+              <component
+                :is="nodeIcon(selectedAsset.node)"
+                class="size-4 shrink-0 text-component"
+              />
+              <div class="min-w-0">
+                <DialogTitle :class="dialog.title" class="truncate">{{
+                  selectedAsset.name
+                }}</DialogTitle>
+                <p class="mt-0.5 text-[11px] text-muted">
+                  {{ selectedAsset.node.type === 'COMPONENT_SET' ? 'Component set' : 'Component' }}
+                  <span v-if="selectedAsset.variantCount > 0">
+                    · {{ selectedAsset.variantCount }} variants</span
+                  >
+                </p>
+              </div>
+            </div>
+            <DialogClose
+              data-test-id="asset-details-close"
+              class="flex size-7 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
+            >
+              <icon-lucide-x class="size-4" />
+            </DialogClose>
+          </div>
+
+          <div class="grid min-h-0 grid-cols-[260px_1fr] gap-0">
+            <div class="border-r border-border p-4">
+              <div
+                data-test-id="asset-details-preview"
+                class="flex h-36 items-center justify-center rounded-lg border border-border bg-canvas/60"
+              >
+                <div class="text-center">
+                  <component
+                    :is="nodeIcon(selectedAsset.node)"
+                    class="mx-auto size-8 text-component"
+                  />
+                  <p class="mt-2 max-w-44 truncate text-xs font-medium text-surface">
+                    {{ selectedAsset.name }}
+                  </p>
+                </div>
+              </div>
+              <button
+                data-test-id="asset-details-insert"
+                :class="primaryButton.base"
+                class="mt-3 w-full"
+                @click="insertSelectedAsset"
+              >
+                Insert instance
+              </button>
+            </div>
+
+            <div class="min-w-0 p-4">
+              <section v-if="selectedAsset.description" class="mb-4">
+                <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+                  Description
+                </h3>
+                <p
+                  data-test-id="asset-details-description"
+                  class="mt-1 text-xs leading-5 text-surface"
+                >
+                  {{ selectedAsset.description }}
+                </p>
+              </section>
+
+              <section v-if="selectedAsset.sourceLibraryKey" class="mb-4">
+                <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">Library</h3>
+                <p data-test-id="asset-details-library" class="mt-1 break-all text-xs text-muted">
+                  {{ selectedAsset.sourceLibraryKey }}
+                </p>
+              </section>
+
+              <section v-if="selectedAsset.docsUrl" class="mb-4">
+                <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+                  Documentation
+                </h3>
+                <button
+                  data-test-id="asset-details-docs"
+                  class="mt-1 inline-flex items-center gap-1 rounded px-1 py-0.5 text-xs text-component hover:bg-component/10"
+                  @click="
+                    selectedAsset.docsUrl ? openExternalLink(selectedAsset.docsUrl) : undefined
+                  "
+                >
+                  <icon-lucide-book-open class="size-3" />
+                  Open docs
+                </button>
+              </section>
+
+              <section v-if="selectedAsset.variants.length > 0">
+                <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+                  Properties
+                </h3>
+                <div class="mt-2 flex flex-col gap-2">
+                  <div
+                    v-for="variant in selectedAsset.variants"
+                    :key="variant.name"
+                    data-test-id="asset-details-property"
+                    class="rounded border border-border bg-input/40 px-2 py-1.5"
+                  >
+                    <div class="text-xs font-medium text-surface">{{ variant.name }}</div>
+                    <div class="mt-1 text-[11px] text-muted">{{ variant.values.join(', ') }}</div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
   </section>
 </template>
