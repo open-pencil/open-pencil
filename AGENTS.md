@@ -2,7 +2,7 @@
 
 Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also runs in browser.
 
-**Roadmap:** `docs/development/variables-ui-roadmap.md` tracks remaining variable-system UI work. Current architecture and commands live in this file.
+**Roadmap:** `packages/docs/development/variables-ui-roadmap.md` tracks remaining variable-system UI work. Current architecture and commands live in this file.
 
 ## Monorepo
 
