@@ -30,13 +30,22 @@ export interface ClipboardShapedText {
   logicalIndexToCharacterOffsetMap: number[]
 }
 
+const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
+
+function hasRequiredFallbackFonts(text: string): boolean {
+  if (CJK_RE.test(text) && fontManager.getCJKFallbackFamilies().length === 0) return false
+  if (ARABIC_RE.test(text) && fontManager.getArabicFallbackFamilies().length === 0) return false
+  return true
+}
+
 export function isNodeFontLoaded(_r: TextRenderer, node: SceneNode): boolean {
   const families = new Set<string>()
   families.add(node.fontFamily || DEFAULT_FONT_FAMILY)
   for (const run of node.styleRuns) {
     if (run.style.fontFamily) families.add(run.style.fontFamily)
   }
-  return [...families].every((f) => fontManager.isLoaded(f))
+  return hasRequiredFallbackFonts(node.text) && [...families].every((f) => fontManager.isLoaded(f))
 }
 
 export function measureTextNode(

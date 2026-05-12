@@ -65,7 +65,7 @@ export function createCanvasSurfaceManager({
     // has cleared the module-level fontProvider — the new renderer must reload.
     // On initial mount, kit-loader.init() handles loadFonts, so skip here.
     if (reloadFonts && !isDestroyed()) {
-      void state.renderer.loadFonts().then(() => {
+      void state.renderer.loadFonts(renderNow).then(() => {
         if (!isDestroyed()) renderNow()
       })
     }
@@ -145,7 +145,7 @@ export function useCanvasSurfaceLifecycle({
     lifecycle,
     setCanvasKit,
     createSurface: surface.createSurface,
-    loadFonts: () => surface.getRenderer()?.loadFonts(),
+    loadFonts: () => surface.getRenderer()?.loadFonts(surface.renderNow),
     renderNow: surface.renderNow,
     onReady
   })

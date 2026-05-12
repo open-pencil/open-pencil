@@ -545,6 +545,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   }
 
   const paragraphY = -1
+  if (!r.isNodeFontLoaded(node)) {
+    canvas.restore()
+    return
+  }
   if (isGradientFill(fill) && drawGradientText(r, canvas, node, paragraphY)) {
     canvas.restore()
     return
