@@ -330,6 +330,19 @@ function remapComponentIds(graph: SceneGraph, guidToNodeId: Map<string, string>)
   }
 }
 
+function applyVariantPropSpecs(graph: SceneGraph): void {
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'COMPONENT' || node.variantPropSpecs.length === 0 || !node.parentId) continue
+    const parent = graph.getNode(node.parentId)
+    if (parent?.type !== 'COMPONENT_SET') continue
+    const defs = new Map(parent.componentPropertyDefinitions.map((def) => [def.id, def.name]))
+    const values: Record<string, string> = {}
+    for (const spec of node.variantPropSpecs)
+      values[defs.get(spec.propDefId) ?? spec.propDefId] = spec.value
+    graph.updateNode(node.id, { componentPropertyValues: values })
+  }
+}
+
 function parseDocumentColorSpace(nodeChanges: NodeChange[]): 'srgb' | 'display-p3' {
   const documentNode = nodeChanges.find((nc) => nc.type === 'DOCUMENT')
   return documentNode?.documentColorProfile === 'DISPLAY_P3' ? 'display-p3' : 'srgb'
@@ -392,6 +405,7 @@ export function importNodeChanges(
   importVariableEntries(changeMap, parentMap, graph, assetRefs)
   importVariableBindings(changeMap, guidToNodeId, graph)
   remapComponentIds(graph, guidToNodeId)
+  applyVariantPropSpecs(graph)
 
   const firstPageId = graph.getPages()[0]?.id
   const componentPageIds = new Set<string>()

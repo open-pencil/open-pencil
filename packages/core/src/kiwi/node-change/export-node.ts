@@ -2,6 +2,7 @@ import type { NodeChange, Paint } from '#core/kiwi/binary/codec'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Color, GUID, Matrix } from '#core/types'
 
+import { stringToGuid } from './guid'
 import { mergePluginData, serializePluginRelaunchData } from './plugin-data'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
@@ -51,6 +52,51 @@ function createStrokePaints(context: SceneNodeToKiwiContext, node: SceneNode): P
     visible: stroke.visible,
     blendMode: 'NORMAL'
   }))
+}
+
+function componentPropertyValue(value: string) {
+  return { textValue: { characters: value } }
+}
+
+function parseGuidOrNull(value: string) {
+  return /^\d+:\d+$/.test(value) ? stringToGuid(value) : null
+}
+
+function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
+  if (node.componentKey) nc.componentKey = node.componentKey
+  if (node.sourceLibraryKey) nc.sourceLibraryKey = node.sourceLibraryKey
+  const publishId = node.publishId ? parseGuidOrNull(node.publishId) : null
+  const overrideKey = node.overrideKey ? parseGuidOrNull(node.overrideKey) : null
+  if (publishId) nc.publishID = publishId
+  if (overrideKey) nc.overrideKey = overrideKey
+  if (node.sharedSymbolVersion) nc.sharedSymbolVersion = node.sharedSymbolVersion
+  if (node.publishedVersion) nc.publishedVersion = node.publishedVersion
+  if (node.isPublishable) nc.isPublishable = true
+  if (node.isSymbolPublishable) nc.isSymbolPublishable = true
+  if (node.symbolDescription) nc.symbolDescription = node.symbolDescription
+  if (node.symbolLinks.length > 0) nc.symbolLinks = structuredClone(node.symbolLinks)
+  const componentPropDefs = node.componentPropertyDefinitions
+    .map((def) => {
+      const id = parseGuidOrNull(def.id)
+      return id
+        ? {
+            id,
+            name: def.name,
+            type: def.type,
+            initialValue: componentPropertyValue(def.defaultValue)
+          }
+        : null
+    })
+    .filter((def): def is NonNullable<typeof def> => def !== null)
+  if (componentPropDefs.length > 0) nc.componentPropDefs = componentPropDefs
+
+  const variantPropSpecs = node.variantPropSpecs
+    .map((spec) => {
+      const propDefId = parseGuidOrNull(spec.propDefId)
+      return propDefId ? { propDefId, value: spec.value } : null
+    })
+    .filter((spec): spec is NonNullable<typeof spec> => spec !== null)
+  if (variantPropSpecs.length > 0) nc.variantPropSpecs = variantPropSpecs
 }
 
 function applyNodeVisualProps(
@@ -130,6 +176,7 @@ export function sceneNodeToKiwiWithContext(
   }
 
   applyNodeVisualProps(context, node, nc)
+  applyComponentMetadata(node, nc)
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)

@@ -39,7 +39,9 @@ import type {
   ArcData,
   VectorNetwork,
   ComponentPropertyDefinition,
-  ComponentPropertyType
+  ComponentPropertyType,
+  SymbolLink,
+  VariantPropSpec
 } from '#core/scene-graph'
 import type { GUID } from '#core/types'
 
@@ -436,20 +438,37 @@ export function nodeChangeToProps(
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
     componentPropertyDefinitions: extractComponentPropertyDefs(nc),
-    componentPropertyValues: extractComponentPropertyValues(nc)
+    componentPropertyValues: extractComponentPropertyValues(nc),
+    ...extractComponentMetadata(nc)
   }
 }
 
 const COMPONENT_PROP_TYPE_MAP: Record<string, ComponentPropertyType> = {
   VARIANT: 'VARIANT',
   TEXT: 'TEXT',
+  BOOL: 'BOOLEAN',
   BOOLEAN: 'BOOLEAN',
   INSTANCE_SWAP: 'INSTANCE_SWAP'
 }
 
+function componentPropValueToString(value: unknown): string {
+  if (!value || typeof value !== 'object') return ''
+  const propValue = value as {
+    boolValue?: boolean
+    textValue?: string | { characters?: string }
+    guidValue?: GUID
+  }
+  if (typeof propValue.boolValue === 'boolean') return String(propValue.boolValue)
+  if (typeof propValue.textValue === 'string') return propValue.textValue
+  if (propValue.textValue && typeof propValue.textValue === 'object') {
+    return propValue.textValue.characters ?? ''
+  }
+  return propValue.guidValue ? guidToString(propValue.guidValue) : ''
+}
+
 function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefinition[] {
   const defs = nc.componentPropDefs as
-    | Array<{ id?: GUID; name?: string; type?: string; initialValue?: { textValue?: string } }>
+    | Array<{ id?: GUID; name?: string; type?: string; initialValue?: unknown }>
     | undefined
   if (!defs?.length) return []
   const result: ComponentPropertyDefinition[] = []
@@ -460,14 +479,30 @@ function extractComponentPropertyDefs(nc: NodeChange): ComponentPropertyDefiniti
       id: guidToString(def.id),
       name: def.name,
       type: propType,
-      defaultValue: def.initialValue?.textValue ?? '',
+      defaultValue: componentPropValueToString(def.initialValue),
       variantOptions: propType === 'VARIANT' ? undefined : undefined
     })
   }
   return result
 }
 
+function extractVariantPropSpecs(nc: NodeChange): VariantPropSpec[] {
+  const specs = nc.variantPropSpecs as Array<{ propDefId?: GUID; value?: string }> | undefined
+  if (!specs?.length) return []
+  return specs
+    .filter((spec): spec is { propDefId: GUID; value?: string } => !!spec.propDefId)
+    .map((spec) => ({ propDefId: guidToString(spec.propDefId), value: spec.value ?? '' }))
+}
+
 function extractComponentPropertyValues(nc: NodeChange): Record<string, string> {
+  const specs = extractVariantPropSpecs(nc)
+  const defs = new Map(extractComponentPropertyDefs(nc).map((def) => [def.id, def.name]))
+  if (specs.length > 0 && defs.size > 0) {
+    const values: Record<string, string> = {}
+    for (const spec of specs) values[defs.get(spec.propDefId) ?? spec.propDefId] = spec.value
+    return values
+  }
+
   const name = nc.name
   if (!name?.includes('=')) return {}
   const values: Record<string, string> = {}
@@ -477,6 +512,63 @@ function extractComponentPropertyValues(nc: NodeChange): Record<string, string> 
     values[part.slice(0, eqIdx).trim()] = part.slice(eqIdx + 1).trim()
   }
   return values
+}
+
+type ComponentMetadataProps = Pick<
+  SceneNode,
+  | 'componentKey'
+  | 'sourceLibraryKey'
+  | 'publishId'
+  | 'overrideKey'
+  | 'sharedSymbolVersion'
+  | 'publishedVersion'
+  | 'isPublishable'
+  | 'isSymbolPublishable'
+  | 'symbolDescription'
+  | 'symbolLinks'
+  | 'variantPropSpecs'
+>
+
+function guidToStringOrNull(value: unknown): string | null {
+  if (!value || typeof value !== 'object') return null
+  const guid = value as Partial<GUID>
+  if (typeof guid.sessionID !== 'number' || typeof guid.localID !== 'number') return null
+  return guidToString({ sessionID: guid.sessionID, localID: guid.localID })
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function stringOrEmpty(value: unknown): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function booleanOrFalse(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : false
+}
+
+function extractComponentMetadata(nc: NodeChange): ComponentMetadataProps {
+  const symbolLinks = (nc.symbolLinks as Array<Partial<SymbolLink>> | undefined) ?? []
+  return {
+    componentKey: stringOrNull(nc.componentKey),
+    sourceLibraryKey: stringOrNull(nc.sourceLibraryKey),
+    publishId: guidToStringOrNull(nc.publishID),
+    overrideKey: guidToStringOrNull(nc.overrideKey),
+    sharedSymbolVersion: stringOrNull(nc.sharedSymbolVersion),
+    publishedVersion: stringOrNull(nc.publishedVersion),
+    isPublishable: booleanOrFalse(nc.isPublishable),
+    isSymbolPublishable: booleanOrFalse(nc.isSymbolPublishable),
+    symbolDescription: stringOrEmpty(nc.symbolDescription),
+    symbolLinks: symbolLinks
+      .filter((link): link is SymbolLink => typeof link.uri === 'string')
+      .map((link) => ({
+        uri: link.uri,
+        displayName: link.displayName,
+        displayText: link.displayText
+      })),
+    variantPropSpecs: extractVariantPropSpecs(nc)
+  }
 }
 
 function isComponentSet(nc: NodeChange): boolean {

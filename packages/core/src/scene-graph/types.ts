@@ -209,6 +209,17 @@ export interface PluginRelaunchDataEntry {
   isDeleted: boolean
 }
 
+export interface SymbolLink {
+  uri: string
+  displayName?: string
+  displayText?: string
+}
+
+export interface VariantPropSpec {
+  propDefId: string
+  value: string
+}
+
 export interface SceneNode {
   id: string
   type: NodeType
@@ -327,6 +338,17 @@ export interface SceneNode {
   overrides: Record<string, unknown>
   componentPropertyDefinitions: ComponentPropertyDefinition[]
   componentPropertyValues: Record<string, string>
+  componentKey: string | null
+  sourceLibraryKey: string | null
+  publishId: string | null
+  overrideKey: string | null
+  sharedSymbolVersion: string | null
+  publishedVersion: string | null
+  isPublishable: boolean
+  isSymbolPublishable: boolean
+  symbolDescription: string
+  symbolLinks: SymbolLink[]
+  variantPropSpecs: VariantPropSpec[]
 
   boundVariables: Record<string, string>
 
