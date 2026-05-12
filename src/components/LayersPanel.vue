@@ -1,13 +1,16 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
 
 import AppMenu from './AppMenu.vue'
+import AssetsPanel from './AssetsPanel.vue'
 import LayerTree from './LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 
 const { panels } = useI18n()
+const activePanel = ref<'layers' | 'assets'>('layers')
 </script>
 
 <template>
@@ -17,7 +20,35 @@ const { panels } = useI18n()
     style="contain: paint layout style"
   >
     <AppMenu />
-    <SplitterGroup direction="vertical" auto-save-id="layers-layout" class="flex-1 overflow-hidden">
+    <div class="flex shrink-0 gap-1 border-b border-border px-2 py-1.5">
+      <button
+        data-test-id="left-panel-layers-tab"
+        class="flex-1 rounded px-2 py-1 text-xs transition-colors"
+        :class="
+          activePanel === 'layers' ? 'bg-hover text-surface' : 'text-muted hover:text-surface'
+        "
+        @click="activePanel = 'layers'"
+      >
+        {{ panels.layers }}
+      </button>
+      <button
+        data-test-id="left-panel-assets-tab"
+        class="flex-1 rounded px-2 py-1 text-xs transition-colors"
+        :class="
+          activePanel === 'assets' ? 'bg-hover text-surface' : 'text-muted hover:text-surface'
+        "
+        @click="activePanel = 'assets'"
+      >
+        {{ panels.assets }}
+      </button>
+    </div>
+    <AssetsPanel v-if="activePanel === 'assets'" />
+    <SplitterGroup
+      v-else
+      direction="vertical"
+      auto-save-id="layers-layout"
+      class="flex-1 overflow-hidden"
+    >
       <SplitterPanel
         :default-size="30"
         :min-size="10"

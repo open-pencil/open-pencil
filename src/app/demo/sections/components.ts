@@ -73,7 +73,10 @@ export function createComponentsSection(store: EditorStore) {
     fontWeight: 500,
     fills: [solid(BLACK)]
   })
-  makeComponent(store, [btn2Id])
+  const btn2CompId = makeComponent(store, [btn2Id])
+
+  store.select([btnCompId, btn2CompId])
+  store.createComponentSetFromComponents()
 
   const chipId = store.createShape('FRAME', 304, 52, 80, 28, compSectionId)
   graph.updateNode(chipId, {
@@ -110,7 +113,8 @@ export function createComponentsSection(store: EditorStore) {
       ])
     ]
   })
-  makeComponent(store, [avatarId])
+  const avatarCompId = makeComponent(store, [avatarId])
+  graph.updateNode(avatarCompId, { name: 'Avatar' })
 
   const cardId = store.createShape('FRAME', 32, 128, 280, 160, compSectionId)
   graph.updateNode(cardId, {
@@ -218,6 +222,23 @@ export function createComponentsSection(store: EditorStore) {
     fills: [solid(GREEN)]
   })
   const badgeCompId = makeComponent(store, [badgeId])
+
+  const helperTitleId = store.createShape('TEXT', 520, 36, 340, 20, compSectionId)
+  graph.updateNode(helperTitleId, {
+    name: 'Assets panel note',
+    text: 'Open Assets to insert Button variants',
+    fontSize: 14,
+    fontWeight: 600,
+    fills: [solid(BLACK)]
+  })
+  const helperBodyId = store.createShape('TEXT', 520, 62, 340, 42, compSectionId)
+  graph.updateNode(helperBodyId, {
+    name: 'Assets panel description',
+    text: 'The Button component set appears as one local asset. Insert it, then switch Variant in the inspector.',
+    fontSize: 12,
+    fontWeight: 400,
+    fills: [solid(GRAY_500)]
+  })
 
   const swatches = [
     { name: 'Blue', color: BLUE, x: 32 },

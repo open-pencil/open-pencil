@@ -2,11 +2,15 @@ import type { EditorContext } from '#core/editor/types'
 import type { SceneNode } from '#core/scene-graph'
 
 export function createComponentInstanceActions(ctx: EditorContext) {
-  function createInstanceFromComponent(componentId: string, x?: number, y?: number) {
+  function createInstanceFromComponent(
+    componentId: string,
+    x?: number,
+    y?: number,
+    parentId = ctx.state.currentPageId
+  ) {
     const component = ctx.graph.getNode(componentId)
     if (component?.type !== 'COMPONENT') return null
 
-    const parentId = component.parentId ?? ctx.state.currentPageId
     const instance = ctx.graph.createInstance(componentId, parentId, {
       x: x ?? component.x + component.width + 40,
       y: y ?? component.y

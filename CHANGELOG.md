@@ -9,6 +9,7 @@
 - Bind variables to line height, letter spacing, font weight, paragraph spacing, and paragraph indent in the typography inspector.
 - Add editor event bus with typed lifecycle events — subscribe via `editor.onEditorEvent()` in core or `useEditorEvent()` composable in the Vue SDK.
 - Register desktop file associations for `.fig` and `.pen` so supported design files can be opened from OS file browsers with OpenPencil.
+- Add a local Assets panel for document components and component sets, with grouped variant assets and instance insertion.
 
 ### Changed
 
