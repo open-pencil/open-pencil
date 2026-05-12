@@ -44,6 +44,9 @@ test('assets panel groups component sets and inserts the default variant', async
       y: 80,
       width: 260,
       height: 100,
+      sourceLibraryKey: 'lk-test-library',
+      symbolDescription: 'Reusable button component',
+      symbolLinks: [{ uri: 'https://example.com/button', displayName: 'Button docs' }],
       componentPropertyDefinitions: [
         {
           id: 'prop:type',
@@ -117,12 +120,16 @@ test('assets panel groups component sets and inserts the default variant', async
   await expect(assetsPanel).toContainText('Card')
   await expect(assetsPanel).not.toContainText('Type=Primary')
   await expect(assetsPanel).not.toContainText('Type=Secondary')
-  await expect(
-    page.locator(`[data-asset-id="${ids.setId}"] [data-test-id="asset-variant-summary"]`)
-  ).toContainText('Type')
-  await expect(
-    page.locator(`[data-asset-id="${ids.setId}"] [data-test-id="asset-variant-conflict"]`)
-  ).toContainText('Duplicate variant values')
+  const buttonAsset = page.locator(`[data-asset-id="${ids.setId}"]`)
+  await expect(buttonAsset.locator('[data-test-id="asset-variant-summary"]')).toContainText('Type')
+  await expect(buttonAsset.locator('[data-test-id="asset-library-badge"]')).toContainText('Library')
+  await expect(buttonAsset.locator('[data-test-id="asset-description"]')).toContainText(
+    'Reusable button component'
+  )
+  await expect(buttonAsset.locator('[data-test-id="asset-docs"]')).toBeVisible()
+  await expect(buttonAsset.locator('[data-test-id="asset-variant-conflict"]')).toContainText(
+    'Duplicate variant values'
+  )
 
   await page.locator('[data-test-id="assets-search"]').fill('card')
   await expect(assetItems).toHaveCount(1)

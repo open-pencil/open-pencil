@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
+import { openExternalLink } from '@/app/shell/ui'
 import { useButtonUI } from '@/components/ui/button'
 import { useInputUI } from '@/components/ui/input'
 import Tip from '@/components/ui/Tip.vue'
@@ -18,6 +19,9 @@ type LocalAsset = {
   variants: Array<{ name: string; values: string[] }>
   variantCount: number
   hasConflicts: boolean
+  sourceLibraryKey: string | null
+  description: string
+  docsUrl: string | null
 }
 
 const editor = useEditorStore()
@@ -59,7 +63,10 @@ const assets = computed<LocalAsset[]>(() => {
         componentId: defaultVariant?.id ?? null,
         variants,
         variantCount: node.type === 'COMPONENT_SET' ? node.childIds.length : 0,
-        hasConflicts: conflicts.length > 0
+        hasConflicts: conflicts.length > 0,
+        sourceLibraryKey: node.sourceLibraryKey,
+        description: node.symbolDescription,
+        docsUrl: node.symbolLinks[0]?.uri ?? null
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -129,7 +136,16 @@ function insertAsset(asset: LocalAsset) {
           aria-hidden="true"
         />
         <span class="min-w-0 flex-1">
-          <span data-test-id="asset-name" class="block truncate">{{ asset.name }}</span>
+          <span class="flex min-w-0 items-center gap-1.5">
+            <span data-test-id="asset-name" class="truncate">{{ asset.name }}</span>
+            <span
+              v-if="asset.sourceLibraryKey"
+              data-test-id="asset-library-badge"
+              class="shrink-0 rounded bg-component/15 px-1 py-px text-[9px] font-medium text-component uppercase"
+            >
+              Library
+            </span>
+          </span>
           <span
             v-if="asset.variants.length > 0"
             data-test-id="asset-variant-summary"
@@ -139,6 +155,13 @@ function insertAsset(asset: LocalAsset) {
             {{ asset.variants.map((variant) => variant.name).join(', ') }}
           </span>
           <span
+            v-if="asset.description"
+            data-test-id="asset-description"
+            class="mt-0.5 block truncate text-[10px] text-muted"
+          >
+            {{ asset.description }}
+          </span>
+          <span
             v-if="asset.hasConflicts"
             data-test-id="asset-variant-conflict"
             class="mt-0.5 block truncate text-[10px] text-[var(--color-warning-text)]"
@@ -146,6 +169,17 @@ function insertAsset(asset: LocalAsset) {
             Duplicate variant values
           </span>
         </span>
+        <Tip v-if="asset.docsUrl" label="Open documentation">
+          <span
+            :class="insertButton.base"
+            data-test-id="asset-docs"
+            @pointerdown.stop
+            @dblclick.stop
+            @click.stop="asset.docsUrl ? openExternalLink(asset.docsUrl) : undefined"
+          >
+            <icon-lucide-book-open class="size-3" />
+          </span>
+        </Tip>
         <Tip :label="commands.createInstance">
           <span
             :class="insertButton.base"
