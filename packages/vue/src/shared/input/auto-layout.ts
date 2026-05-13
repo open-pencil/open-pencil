@@ -64,12 +64,17 @@ export function computeIndicatorPosition(
   return (prevAbs.y + prev.height + nextAbs.y) / 2
 }
 
-export function filteredToRealIndex(parentId: string, insertIndex: number, editor: Editor): number {
+export function filteredToRealIndex(
+  parentId: string,
+  insertIndex: number,
+  editor: Editor,
+  movingIds = editor.state.selectedIds
+): number {
   const allChildren = editor.graph.getChildren(parentId)
   let realIndex = 0
   let filteredCount = 0
   for (const child of allChildren) {
-    if (editor.state.selectedIds.has(child.id)) continue
+    if (movingIds.has(child.id)) continue
     if (child.layoutPositioning === 'ABSOLUTE') {
       realIndex++
       continue
@@ -85,11 +90,12 @@ export function computeAutoLayoutIndicatorForFrame(
   parent: SceneNode,
   cx: number,
   cy: number,
-  editor: Editor
+  editor: Editor,
+  movingIds = editor.state.selectedIds
 ) {
   const children = editor.graph
     .getChildren(parent.id)
-    .filter((c) => c.layoutPositioning !== 'ABSOLUTE' && !editor.state.selectedIds.has(c.id))
+    .filter((c) => c.layoutPositioning !== 'ABSOLUTE' && !movingIds.has(c.id))
 
   const parentAbs = editor.graph.getAbsolutePosition(parent.id)
   const isRow = parent.layoutMode === 'HORIZONTAL'
@@ -104,6 +110,17 @@ export function computeAutoLayoutIndicatorForFrame(
     if (shouldInsertBefore) {
       insertIndex = i
       break
+    }
+  }
+
+  const realIndex = filteredToRealIndex(parent.id, insertIndex, editor, movingIds)
+  if (movingIds.size === 1) {
+    const movingId = [...movingIds][0]
+    const movingNode = editor.graph.getNode(movingId)
+    const currentIndex = parent.childIds.indexOf(movingId)
+    if (movingNode?.parentId === parent.id && realIndex === currentIndex) {
+      editor.setLayoutInsertIndicator(null)
+      return
     }
   }
 
@@ -122,7 +139,7 @@ export function computeAutoLayoutIndicatorForFrame(
 
   editor.setLayoutInsertIndicator({
     parentId: parent.id,
-    index: filteredToRealIndex(parent.id, insertIndex, editor),
+    index: realIndex,
     x: isRow ? indicatorPos : crossStart,
     y: isRow ? crossStart : indicatorPos,
     length: crossLength,
@@ -134,5 +151,5 @@ export function computeAutoLayoutIndicator(d: DragMove, cx: number, cy: number, 
   if (!d.autoLayoutParentId) return
   const parent = editor.graph.getNode(d.autoLayoutParentId)
   if (!parent || parent.layoutMode === 'NONE') return
-  computeAutoLayoutIndicatorForFrame(parent, cx, cy, editor)
+  computeAutoLayoutIndicatorForFrame(parent, cx, cy, editor, new Set(d.originals.keys()))
 }
