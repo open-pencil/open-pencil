@@ -111,7 +111,7 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
                       : 'bg-transparent text-surface hover:bg-hover',
                     draggingId === node.id ? 'opacity-30' : '',
                     instructionTargetId === node.id && instruction?.type === 'make-child'
-                      ? 'ring-2 ring-accent ring-inset'
+                      ? 'bg-accent/15 text-surface outline-2 outline-accent outline-offset-[-2px]'
                       : '',
                     !node.visible ? 'opacity-50' : ''
                   ]"
@@ -181,7 +181,16 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
                     </Tip>
                   </span>
 
-                  <!-- DnD indicator -->
+                  <div
+                    v-if="instructionTargetId === node.id && instruction?.type === 'make-child'"
+                    class="pointer-events-none absolute inset-y-1 rounded border border-accent bg-accent/10"
+                    :style="{
+                      left: `${item.level * INDENT}px`,
+                      right: '4px'
+                    }"
+                  />
+
+                  <!-- DnD reorder indicator -->
                   <div
                     v-if="
                       instructionTargetId === node.id &&

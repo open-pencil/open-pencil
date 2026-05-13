@@ -24,7 +24,11 @@ interface DragItem {
 
 type TreeInstruction = LayerDragInstruction
 
-export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
+export function useLayerDrag(
+  editor: Editor,
+  indentPerLevel = 16,
+  onMakeChildDrop?: (targetId: string) => void
+) {
   const draggingId = ref<string | null>(null)
   const instruction = ref<TreeInstruction | null>(null)
   const instructionTargetId = ref<string | null>(null)
@@ -36,6 +40,7 @@ export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
 
       const data = item()
 
+      const isContainer = editor.graph.isContainer(data.id)
       const mode: ItemMode = data.hasChildren ? 'expanded' : 'standard'
 
       const cleanup = combine(
@@ -60,14 +65,19 @@ export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
                 indentPerLevel,
                 currentLevel: data.level,
                 mode,
-                block: ['make-child', 'reparent']
+                block: isContainer ? ['reparent'] : ['make-child', 'reparent']
               }
             ),
           canDrop: ({ source }) => source.data.id !== data.id,
           onDrag: ({ self }) => {
-            const inst = extractInstruction(self.data) as TreeInstruction | null
-            instruction.value = inst
-            instructionTargetId.value = inst ? data.id : null
+            const inst = extractInstruction(self.data)
+            if (!inst || inst.type === 'instruction-blocked') {
+              instruction.value = null
+              instructionTargetId.value = null
+              return
+            }
+            instruction.value = inst as TreeInstruction
+            instructionTargetId.value = data.id
           },
           onDragLeave: () => {
             instruction.value = null
@@ -92,8 +102,10 @@ export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
 
       const sourceId = source.data.id as string
       const targetId = target.data.id as string
-      const inst = extractInstruction(target.data) as TreeInstruction | null
-      if (!inst || !sourceId || !targetId) return
+      const rawInstruction = extractInstruction(target.data)
+      if (!rawInstruction || rawInstruction.type === 'instruction-blocked') return
+      const inst = rawInstruction as TreeInstruction
+      if (!sourceId || !targetId) return
 
       if (editor.graph.isDescendant(targetId, sourceId)) return
 
@@ -110,7 +122,9 @@ export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
         editor.reorderChildWithUndo(sourceId, targetParentId, targetIndex + 1)
       } else {
         const container = editor.graph.getNode(targetId)
-        editor.reorderChildWithUndo(sourceId, targetId, container?.childIds.length ?? 0)
+        if (!container || !editor.graph.isContainer(targetId)) return
+        editor.reorderChildWithUndo(sourceId, targetId, container.childIds.length)
+        onMakeChildDrop?.(targetId)
       }
 
       draggingId.value = null

@@ -21,9 +21,15 @@ const emit = defineEmits<{
 }>()
 
 const editor = useEditor()
+
+function expandNode(id: string) {
+  if (!expanded.value.includes(id)) expanded.value = [...expanded.value, id]
+}
+
 const { draggingId, instruction, instructionTargetId, setupItem } = useLayerDrag(
   editor,
-  indentPerLevel
+  indentPerLevel,
+  expandNode
 )
 
 function buildTree(parentId: string): LayerNode[] {
@@ -108,7 +114,7 @@ function toggleExpand(id: string) {
   emit('toggleExpand', id)
   const idx = expanded.value.indexOf(id)
   if (idx !== -1) expanded.value = expanded.value.filter((e) => e !== id)
-  else expanded.value = [...expanded.value, id]
+  else expandNode(id)
 }
 
 function getKey(node: LayerNode) {
