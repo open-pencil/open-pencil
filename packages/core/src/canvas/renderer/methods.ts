@@ -136,8 +136,15 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Labels.drawComponentLabels(this, canvas, graph)
   },
 
-  renderNode(canvas: Canvas, graph: SceneGraph, nodeId: string, overlays: RenderOverlays): void {
-    SceneRender.renderNode(this, canvas, graph, nodeId, overlays)
+  renderNode(
+    canvas: Canvas,
+    graph: SceneGraph,
+    nodeId: string,
+    overlays: RenderOverlays,
+    parentAbsX?: number,
+    parentAbsY?: number
+  ): void {
+    SceneRender.renderNode(this, canvas, graph, nodeId, overlays, parentAbsX, parentAbsY)
   },
 
   renderSection(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {

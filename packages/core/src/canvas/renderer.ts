@@ -187,7 +187,9 @@ export class SkiaRenderer {
     canvas: Canvas,
     graph: SceneGraph,
     nodeId: string,
-    overlays: RenderOverlays
+    overlays: RenderOverlays,
+    parentAbsX?: number,
+    parentAbsY?: number
   ) => void
   declare renderSection: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
   declare renderComponentSet: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
