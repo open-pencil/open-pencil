@@ -97,7 +97,9 @@ export function createTextEditInput(options: TextEditInputOptions) {
         ? getContainerDescendantHit(selectedId, cx, cy)
         : hitTestInScope(cx, cy, false)
       editor.enterContainer(selectedId)
-      if (hit) {
+      if (hit?.type === 'TEXT') {
+        startTextEditingAt(hit, cx, cy)
+      } else if (hit) {
         editor.select([hit.id])
       } else {
         editor.clearSelection()
@@ -110,13 +112,6 @@ export function createTextEditInput(options: TextEditInputOptions) {
     if (!hit) return
 
     if (hit.type === 'TEXT') {
-      const isNestedOutsideEnteredContainer =
-        hit.parentId !== editor.state.currentPageId &&
-        hit.parentId !== editor.state.enteredContainerId
-      if (isNestedOutsideEnteredContainer) {
-        editor.select([hit.id])
-        return
-      }
       startTextEditingAt(hit, cx, cy)
       return
     }
