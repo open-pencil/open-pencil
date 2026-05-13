@@ -106,6 +106,8 @@ export function createStandaloneShapes(store: EditorStore) {
       text: t.text,
       fontSize: t.size,
       fontWeight: t.weight,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH',
       fills: [solid(BLACK)]
     })
   }

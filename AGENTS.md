@@ -237,6 +237,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 ## Code conventions
 
 - Do not place code or tests ad hoc. Before adding or moving files, inspect the existing folder structure and nearby patterns, then put changes in the established domain-specific location. If no proper location exists, create one deliberately and update docs/conventions as needed.
+- Test placement is strict: E2E tests live under `tests/e2e/**` and use `*.spec.ts`; engine/unit tests live under `tests/engine/**` and use `*.test.ts`. Do not put store-only/internal-state assertions in E2E. If a test drives the UI like a user and verifies visible behavior, it can be E2E; if it creates nodes through internals and asserts graph state, it belongs in engine/unit coverage.
 
 ### File and folder naming
 

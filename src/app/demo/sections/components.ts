@@ -52,6 +52,7 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Get Started',
     fontSize: 14,
     fontWeight: 600,
+    textAutoResize: 'WIDTH_AND_HEIGHT',
     fills: [solid(WHITE)]
   })
   const btnCompId = makeComponent(store, [btnId])
@@ -85,6 +86,7 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Cancel',
     fontSize: 14,
     fontWeight: 500,
+    textAutoResize: 'WIDTH_AND_HEIGHT',
     fills: [solid(BLACK)]
   })
   const btn2CompId = makeComponent(store, [btn2Id])
@@ -117,6 +119,7 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Design',
     fontSize: 12,
     fontWeight: 500,
+    textAutoResize: 'WIDTH_AND_HEIGHT',
     fills: [solid(INDIGO)]
   })
   makeComponent(store, [chipId])
@@ -155,6 +158,8 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Analytics Overview',
     fontSize: 16,
     fontWeight: 600,
+    textAutoResize: 'HEIGHT',
+    layoutAlignSelf: 'STRETCH',
     fills: [solid(BLACK)]
   })
   const cardDescId = store.createShape('TEXT', 0, 0, 240, 36, cardId)
@@ -163,6 +168,8 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Track your key metrics and performance indicators in real time.',
     fontSize: 13,
     fontWeight: 400,
+    textAutoResize: 'HEIGHT',
+    layoutAlignSelf: 'STRETCH',
     fills: [solid(GRAY_500)]
   })
   const cardBarBg = store.createShape('RECTANGLE', 0, 0, 240, 8, cardId)
@@ -206,6 +213,8 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Search...',
     fontSize: 14,
     fontWeight: 400,
+    textAutoResize: 'HEIGHT',
+    layoutAlignSelf: 'STRETCH',
     fills: [solid(GRAY_500)]
   })
   makeComponent(store, [inputId])
@@ -237,6 +246,7 @@ export function createComponentsSection(store: EditorStore) {
     text: 'Live',
     fontSize: 11,
     fontWeight: 600,
+    textAutoResize: 'WIDTH_AND_HEIGHT',
     fills: [solid(GREEN)]
   })
   const badgeCompId = makeComponent(store, [badgeId])

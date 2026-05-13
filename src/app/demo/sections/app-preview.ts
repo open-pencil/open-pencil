@@ -98,6 +98,8 @@ export function createAppPreviewSection(
       text: s.title,
       fontSize: 11,
       fontWeight: 500,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH',
       fills: [solid(GRAY_500)]
     })
     const valId = store.createShape('TEXT', 0, 0, 108, 24, cId)
@@ -106,6 +108,8 @@ export function createAppPreviewSection(
       text: s.value,
       fontSize: 22,
       fontWeight: 700,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH',
       fills: [solid(BLACK)]
     })
     const bId = store.createShape('TEXT', 0, 0, 108, 14, cId)
@@ -114,6 +118,8 @@ export function createAppPreviewSection(
       text: s.badge,
       fontSize: 11,
       fontWeight: 600,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH',
       fills: [solid(s.color)]
     })
   }
@@ -181,6 +187,7 @@ export function createAppPreviewSection(
       text: col,
       fontSize: 12,
       fontWeight: 600,
+      textAutoResize: 'WIDTH_AND_HEIGHT',
       fills: [solid(GRAY_500)]
     })
   }

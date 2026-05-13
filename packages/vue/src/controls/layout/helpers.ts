@@ -229,22 +229,30 @@ export function createLayoutActions({
   }
 
   function setWidthSizing(sizing: LayoutSizing) {
-    if (!node.value) return
+    const n = node.value
+    if (!n) return
     if (isFlex.value) {
-      const key = node.value.layoutMode === 'HORIZONTAL' ? 'primaryAxisSizing' : 'counterAxisSizing'
+      const key = n.layoutMode === 'HORIZONTAL' ? 'primaryAxisSizing' : 'counterAxisSizing'
       updateProp(key, sizing)
-    } else if (isInAutoLayout.value) {
-      updateProp('layoutGrow', sizing === 'FILL' ? 1 : 0)
+    } else if (sizing === 'HUG' && n.childIds.length > 0) {
+      updateProp('counterAxisSizing', 'HUG')
+    } else {
+      if (n.counterAxisSizing === 'HUG') updateProp('counterAxisSizing', 'FIXED')
+      if (isInAutoLayout.value) updateProp('layoutGrow', sizing === 'FILL' ? 1 : 0)
     }
   }
 
   function setHeightSizing(sizing: LayoutSizing) {
-    if (!node.value) return
+    const n = node.value
+    if (!n) return
     if (isFlex.value) {
-      const key = node.value.layoutMode === 'VERTICAL' ? 'primaryAxisSizing' : 'counterAxisSizing'
+      const key = n.layoutMode === 'VERTICAL' ? 'primaryAxisSizing' : 'counterAxisSizing'
       updateProp(key, sizing)
-    } else if (isInAutoLayout.value) {
-      updateProp('layoutAlignSelf', sizing === 'FILL' ? 'STRETCH' : 'AUTO')
+    } else if (sizing === 'HUG' && n.childIds.length > 0) {
+      updateProp('primaryAxisSizing', 'HUG')
+    } else {
+      if (n.primaryAxisSizing === 'HUG') updateProp('primaryAxisSizing', 'FIXED')
+      if (isInAutoLayout.value) updateProp('layoutAlignSelf', sizing === 'FILL' ? 'STRETCH' : 'AUTO')
     }
   }
 
@@ -292,6 +300,42 @@ export function createLayoutActions({
   }
 }
 
+export function canNodeHugContents(node: SceneNode | null): boolean {
+  return !!node && node.childIds.length > 0
+}
+
+export function widthSizingForNode(node: SceneNode | null, isInAutoLayout: boolean): LayoutSizing {
+  if (!node) return 'FIXED'
+  if (node.layoutMode === 'HORIZONTAL') return node.primaryAxisSizing
+  if (node.layoutMode === 'VERTICAL') return node.counterAxisSizing
+  if (canNodeHugContents(node) && node.counterAxisSizing === 'HUG') return 'HUG'
+  if (isInAutoLayout && node.layoutGrow > 0) return 'FILL'
+  return 'FIXED'
+}
+
+export function heightSizingForNode(node: SceneNode | null, isInAutoLayout: boolean): LayoutSizing {
+  if (!node) return 'FIXED'
+  if (node.layoutMode === 'VERTICAL') return node.primaryAxisSizing
+  if (node.layoutMode === 'HORIZONTAL') return node.counterAxisSizing
+  if (canNodeHugContents(node) && node.primaryAxisSizing === 'HUG') return 'HUG'
+  if (isInAutoLayout && node.layoutAlignSelf === 'STRETCH') return 'FILL'
+  return 'FIXED'
+}
+
+export function sizingOptionsForNode(
+  node: SceneNode | null,
+  isInAutoLayout: boolean,
+  labels: Partial<Record<LayoutSizing, string>> = {}
+): { value: LayoutSizing; label: string }[] {
+  const isFlex = node?.layoutMode === 'HORIZONTAL' || node?.layoutMode === 'VERTICAL'
+  const options: { value: LayoutSizing; label: string }[] = [
+    { value: 'FIXED', label: labels.FIXED ?? 'Fixed' }
+  ]
+  if (isFlex || canNodeHugContents(node)) options.push({ value: 'HUG', label: labels.HUG ?? 'Hug' })
+  if (isInAutoLayout || isFlex) options.push({ value: 'FILL', label: labels.FILL ?? 'Fill' })
+  return options
+}
+
 export function createLayoutSizingState(
   editor: Editor,
   node: ComputedRef<SceneNode | null>,
@@ -308,32 +352,20 @@ export function createLayoutSizingState(
   const isFlex = computed(
     () => node.value?.layoutMode === 'HORIZONTAL' || node.value?.layoutMode === 'VERTICAL'
   )
+  const widthSizing = computed<LayoutSizing>(() =>
+    widthSizingForNode(node.value, isInAutoLayout.value)
+  )
 
-  const widthSizing = computed<LayoutSizing>(() => {
-    const n = node.value
-    if (!n) return 'FIXED'
-    if (isFlex.value)
-      return n.layoutMode === 'HORIZONTAL' ? n.primaryAxisSizing : n.counterAxisSizing
-    if (isInAutoLayout.value && n.layoutGrow > 0) return 'FILL'
-    return 'FIXED'
-  })
-
-  const heightSizing = computed<LayoutSizing>(() => {
-    const n = node.value
-    if (!n) return 'FIXED'
-    if (isFlex.value) return n.layoutMode === 'VERTICAL' ? n.primaryAxisSizing : n.counterAxisSizing
-    if (isInAutoLayout.value && n.layoutAlignSelf === 'STRETCH') return 'FILL'
-    return 'FIXED'
-  })
+  const heightSizing = computed<LayoutSizing>(() =>
+    heightSizingForNode(node.value, isInAutoLayout.value)
+  )
 
   function sizingOptions() {
-    const options: { value: LayoutSizing; label: string }[] = [
-      { value: 'FIXED', label: panels.value.sizingFixed }
-    ]
-    if (isFlex.value) options.push({ value: 'HUG', label: panels.value.sizingHug })
-    if (isInAutoLayout.value || isFlex.value)
-      options.push({ value: 'FILL', label: panels.value.sizingFill })
-    return options
+    return sizingOptionsForNode(node.value, isInAutoLayout.value, {
+      FIXED: panels.value.sizingFixed,
+      HUG: panels.value.sizingHug,
+      FILL: panels.value.sizingFill
+    })
   }
 
   const widthSizingOptions = computed(sizingOptions)

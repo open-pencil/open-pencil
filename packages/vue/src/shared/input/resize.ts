@@ -1,6 +1,7 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
 import type { Editor } from '@open-pencil/core/editor'
+import { computeLayout } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
@@ -32,6 +33,10 @@ export function applyResize(
   editor: Editor
 ) {
   editor.graph.updateNodePreview(d.nodeId, resizeChanges(d, cx, cy, constrain))
+  const node = editor.graph.getNode(d.nodeId)
+  if (node?.layoutMode !== 'NONE') {
+    editor.graph.runPreviewUpdates(() => computeLayout(editor.graph, d.nodeId))
+  }
   editor.requestRepaint()
 }
 
