@@ -67,12 +67,9 @@ export function handleMoveMove(d: DragMove, cx: number, cy: number, editor: Edit
     computeAutoLayoutIndicatorForFrame(dropParent, cx, cy, editor)
     editor.setDropTarget(dropParent.id)
     for (const [id, orig] of d.originals) {
-      editor.graph.updateNode(id, {
-        x: Math.round(orig.x + dx),
-        y: Math.round(orig.y + dy)
-      })
+      editor.graph.updateNodePositionPreview(id, Math.round(orig.x + dx), Math.round(orig.y + dy))
     }
-    editor.requestRender()
+    editor.requestRepaint()
     return
   }
 
@@ -94,6 +91,27 @@ function getMoveDistance(d: DragMove) {
   return Math.hypot(d.currentX - d.startX, d.currentY - d.startY)
 }
 
+function hasMoved(d: DragMove, editor: Editor) {
+  return [...d.originals].some(([id, orig]) => {
+    const node = editor.graph.getNode(id)
+    return node && (node.x !== orig.x || node.y !== orig.y)
+  })
+}
+
+function restoreOriginalPositions(d: DragMove, editor: Editor) {
+  for (const [id, orig] of d.originals) {
+    editor.graph.updateNodePositionPreview(id, orig.x, orig.y)
+  }
+}
+
+function applyFinalPositions(d: DragMove, editor: Editor) {
+  const dx = d.currentX - d.startX
+  const dy = d.currentY - d.startY
+  for (const [id, orig] of d.originals) {
+    editor.updateNode(id, { x: Math.round(orig.x + dx), y: Math.round(orig.y + dy) })
+  }
+}
+
 export function handleMoveUp(d: DragMove, editor: Editor) {
   const indicator = editor.state.layoutInsertIndicator
   editor.setLayoutInsertIndicator(null)
@@ -111,12 +129,11 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     return
   }
 
-  const moved = [...d.originals].some(([id, orig]) => {
-    const node = editor.graph.getNode(id)
-    return node && (node.x !== orig.x || node.y !== orig.y)
-  })
+  const moved = hasMoved(d, editor)
 
   if (moved) {
+    restoreOriginalPositions(d, editor)
+    applyFinalPositions(d, editor)
     const dropId = editor.state.dropTargetId
     if (dropId) {
       editor.reparentNodes([...editor.state.selectedIds], dropId)

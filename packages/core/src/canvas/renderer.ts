@@ -76,6 +76,7 @@ export class SkiaRenderer {
   strokeGeometryCache = new Map<string, Path[]>()
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1
+  scenePicturePositionPreviewVersion = -1
   scenePicturePageId: string | null = null
   lastObservedSceneVersion = -1
   lastSceneVersionChangeAt = 0

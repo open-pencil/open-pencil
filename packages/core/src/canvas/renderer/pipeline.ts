@@ -126,12 +126,14 @@ export function render(
     h: r.viewportHeight / r.zoom
   }
 
+  const hasPositionPreview = graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion
   const hasVolatileOverlays =
-    hasVolatileOverlay(overlays) || hasLiveSceneChange(r, sceneVersion, layer)
+    hasPositionPreview || hasVolatileOverlay(overlays) || hasLiveSceneChange(r, sceneVersion, layer)
 
   const canUsePicture =
     !hasVolatileOverlays &&
     r.scenePicture &&
+    graph.positionPreviewVersion === r.scenePicturePositionPreviewVersion &&
     sceneVersion === r.scenePictureVersion &&
     r.pageId === r.scenePicturePageId
 
@@ -170,7 +172,7 @@ export function render(
   if (layer !== 'scene') {
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
-    r.labelCache.update(graph, r.pageId, sceneVersion)
+    r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
     p.beginPhase('render:sectionTitles')
     r.drawSectionTitles(canvas, graph)
     p.endPhase('render:sectionTitles')
@@ -271,6 +273,7 @@ function recordScenePicture(
   recorder.delete()
   r.worldViewport = prevViewport
   r.scenePictureVersion = sceneVersion
+  r.scenePicturePositionPreviewVersion = graph.positionPreviewVersion
   r.scenePicturePageId = r.pageId
   canvas.drawPicture(r.scenePicture)
 }

@@ -48,6 +48,7 @@ export class SceneGraph {
   documentColorSpace: DocumentColorSpace = 'display-p3'
   readonly emitter: Emitter<SceneGraphEvents> = createNanoEvents()
   private absPosCache = new Map<string, Vector>()
+  positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
 
   constructor() {
@@ -362,6 +363,7 @@ export class SceneGraph {
     if (!node) return
     if (node.x === x && node.y === y) return
     this.absPosCache.clear()
+    this.positionPreviewVersion++
     node.x = x
     node.y = y
   }
