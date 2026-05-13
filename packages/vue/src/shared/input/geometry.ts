@@ -47,8 +47,7 @@ export function hitTestInEditorScope(
   cx: number,
   cy: number,
   deep: boolean,
-  editor: Editor,
-  canvasToLocal: (cx: number, cy: number, scopeId: string) => { lx: number; ly: number }
+  editor: Editor
 ): SceneNode | null {
   const scopeId = editor.state.enteredContainerId
 
@@ -58,10 +57,9 @@ export function hitTestInEditorScope(
     if (!editor.graph.getNode(scopeId)) {
       editor.state.enteredContainerId = null
     } else {
-      const { lx, ly } = canvasToLocal(cx, cy, scopeId)
       return deep
-        ? editor.graph.hitTestDeep(lx, ly, scopeId)
-        : editor.graph.hitTest(lx, ly, scopeId)
+        ? editor.graph.hitTestDeep(cx, cy, scopeId)
+        : editor.graph.hitTest(cx, cy, scopeId)
     }
   }
   return deep

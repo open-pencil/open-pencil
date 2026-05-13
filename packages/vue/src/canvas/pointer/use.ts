@@ -21,7 +21,7 @@ export function createCanvasPointer(
   const canvasToLocal = (cx: number, cy: number, scopeId: string) =>
     canvasToLocalPoint(cx, cy, scopeId, editor)
   const hitTestInScope = (cx: number, cy: number, deep: boolean) =>
-    hitTestInEditorScope(cx, cy, deep, editor, canvasToLocal)
+    hitTestInEditorScope(cx, cy, deep, editor)
   const isInsideContainerBounds = (cx: number, cy: number, containerId: string) =>
     isInsideEditorContainerBounds(cx, cy, containerId, editor, canvasToLocal)
 

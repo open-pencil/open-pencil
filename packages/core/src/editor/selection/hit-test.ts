@@ -15,10 +15,7 @@ export function createSelectionHitTestActions(
       if (!scopeNode) {
         ctx.state.enteredContainerId = null
       } else {
-        const abs = ctx.graph.getAbsolutePosition(scopeId)
-        const lx = cx - abs.x
-        const ly = cy - abs.y
-        return deep ? ctx.graph.hitTestDeep(lx, ly, scopeId) : ctx.graph.hitTest(lx, ly, scopeId)
+        return deep ? ctx.graph.hitTestDeep(cx, cy, scopeId) : ctx.graph.hitTest(cx, cy, scopeId)
       }
     }
     return deep
