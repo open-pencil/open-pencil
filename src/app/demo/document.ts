@@ -30,4 +30,7 @@ export function createDemoShapes(store: EditorStore) {
 
   computeAllLayouts(store.graph)
   store.clearSelection()
+  void store.loadFontsForNodes(graph.getPages().flatMap((page) => page.childIds)).then(() => {
+    store.requestRender()
+  })
 }

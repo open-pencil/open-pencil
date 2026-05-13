@@ -88,6 +88,8 @@ describe('FontManager loaded font cache', () => {
     expect(fontManager.isLoaded(family)).toBe(false)
     fontManager.markLoaded(family, 'Bold', new ArrayBuffer(8))
     expect(fontManager.isLoaded(family)).toBe(true)
+    expect(fontManager.isStyleLoaded(family, 'Bold')).toBe(true)
+    expect(fontManager.isStyleLoaded(family, 'Regular')).toBe(false)
   })
 
   test('re-registers cached fonts when provider changes', () => {

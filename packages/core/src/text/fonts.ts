@@ -240,6 +240,10 @@ export class FontManager {
     return [...this.loadedFamilies.keys()].some((k) => k.startsWith(`${family}|`))
   }
 
+  isStyleLoaded(family: string, style: string): boolean {
+    return this.loadedFamilies.has(`${family}|${style}`)
+  }
+
   loadedData(family: string, style: string): ArrayBuffer | null {
     return this.loadedFamilies.get(`${family}|${style}`) ?? null
   }

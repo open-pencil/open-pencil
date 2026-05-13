@@ -5,7 +5,7 @@ import { resolveRGBAForPreview } from '#core/color/management'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import type { SceneNode } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
-import { fontManager } from '#core/text/fonts'
+import { fontManager, weightToStyle } from '#core/text/fonts'
 
 interface TextRenderer {
   ck: CanvasKit
@@ -40,12 +40,19 @@ function hasRequiredFallbackFonts(text: string): boolean {
 }
 
 export function isNodeFontLoaded(_r: TextRenderer, node: SceneNode): boolean {
-  const families = new Set<string>()
-  families.add(node.fontFamily || DEFAULT_FONT_FAMILY)
-  for (const run of node.styleRuns) {
-    if (run.style.fontFamily) families.add(run.style.fontFamily)
+  const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
+  if (!fontManager.isStyleLoaded(baseFamily, weightToStyle(node.fontWeight, node.italic))) {
+    return false
   }
-  return hasRequiredFallbackFonts(node.text) && [...families].every((f) => fontManager.isLoaded(f))
+
+  for (const run of node.styleRuns) {
+    const family = run.style.fontFamily ?? baseFamily
+    const weight = run.style.fontWeight ?? node.fontWeight
+    const italic = run.style.italic ?? node.italic
+    if (!fontManager.isStyleLoaded(family, weightToStyle(weight, italic))) return false
+  }
+
+  return hasRequiredFallbackFonts(node.text)
 }
 
 export function measureTextNode(
