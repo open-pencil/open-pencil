@@ -359,13 +359,29 @@ export class SceneGraph {
   ])
 
   updateNodePositionPreview(id: string, x: number, y: number): void {
+    this.updateNodePreview(id, { x, y })
+  }
+
+  updateNodePreview(id: string, changes: Partial<SceneNode>): void {
     const node = this.nodes.get(id)
     if (!node) return
-    if (node.x === x && node.y === y) return
-    this.absPosCache.clear()
+    if ((Object.keys(changes) as (keyof SceneNode)[]).every((key) => node[key] === changes[key])) {
+      return
+    }
+    const affectsLayout = Object.keys(changes).some((k) => SceneGraph.LAYOUT_AFFECTING_KEYS.has(k))
+    if (affectsLayout) this.absPosCache.clear()
+    if (
+      node.type === 'TEXT' &&
+      node.textPicture &&
+      Object.keys(changes).some((k) => SceneGraph.TEXT_PICTURE_KEYS.has(k))
+    ) {
+      node.textPicture = null
+    }
+    if (changes.vectorNetwork) {
+      changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
+    }
     this.positionPreviewVersion++
-    node.x = x
-    node.y = y
+    Object.assign(node, changes)
   }
 
   updateNode(id: string, changes: Partial<SceneNode>): void {

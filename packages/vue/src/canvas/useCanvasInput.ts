@@ -19,7 +19,7 @@ import { handleDrawMove, handleDrawUp } from '#vue/shared/input/draw'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
 import { handleNodeEditMove } from '#vue/shared/input/node-edit'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
-import { applyResize } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import type { DragState } from '#vue/shared/input/types'
@@ -178,7 +178,7 @@ export function useCanvasInput(
     else if (d.type === 'text-select') {
       drag.value = null
       return
-    } else if (d.type === 'resize') editor.commitResize(d.nodeId, d.origRect)
+    } else if (d.type === 'resize') commitResizePreview(d, editor)
     else if (d.type === 'pen-drag') {
       const penState = editor.state.penState as
         | (typeof editor.state.penState & {
