@@ -357,6 +357,15 @@ export class SceneGraph {
     'height'
   ])
 
+  updateNodePositionPreview(id: string, x: number, y: number): void {
+    const node = this.nodes.get(id)
+    if (!node) return
+    if (node.x === x && node.y === y) return
+    this.absPosCache.clear()
+    node.x = x
+    node.y = y
+  }
+
   updateNode(id: string, changes: Partial<SceneNode>): void {
     const node = this.nodes.get(id)
     if (!node) return

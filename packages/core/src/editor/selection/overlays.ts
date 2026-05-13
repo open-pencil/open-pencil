@@ -25,11 +25,13 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
   }
 
   function setDropTarget(id: string | null) {
+    if (ctx.state.dropTargetId === id) return
     ctx.state.dropTargetId = id
     ctx.requestRepaint()
   }
 
   function setLayoutInsertIndicator(indicator: typeof ctx.state.layoutInsertIndicator) {
+    if (ctx.state.layoutInsertIndicator === indicator) return
     ctx.state.layoutInsertIndicator = indicator
     ctx.requestRepaint()
   }
