@@ -192,6 +192,14 @@ export function safeColor(c: { r: number; g: number; b: number; a?: number }): C
   return { r: c.r, g: c.g, b: c.b, a: c.a ?? 1 }
 }
 
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  }
+  return bytes
+}
+
 function fillToKiwiPaint(f: SceneNode['fills'][number]): Paint {
   const paint: Paint = {
     type: f.type,
@@ -204,7 +212,7 @@ function fillToKiwiPaint(f: SceneNode['fills'][number]): Paint {
     paint.stops = f.gradientStops.map((s) => ({ color: safeColor(s.color), position: s.position }))
   }
   if (f.gradientTransform) paint.transform = f.gradientTransform
-  if (f.imageHash) paint.image = { hash: f.imageHash }
+  if (f.imageHash) paint.image = { hash: hexToBytes(f.imageHash) }
   if (f.imageScaleMode) paint.imageScaleMode = f.imageScaleMode
   if (f.imageTransform) paint.transform = f.imageTransform
   return paint
