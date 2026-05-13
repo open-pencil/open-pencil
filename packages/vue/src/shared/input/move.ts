@@ -83,10 +83,11 @@ export function handleMoveMove(d: DragMove, cx: number, cy: number, editor: Edit
   dy = snapped.dy
 
   for (const [id, orig] of d.originals) {
-    editor.updateNode(id, { x: Math.round(orig.x + dx), y: Math.round(orig.y + dy) })
+    editor.graph.updateNode(id, { x: Math.round(orig.x + dx), y: Math.round(orig.y + dy) })
   }
 
   editor.setDropTarget(dropTarget?.id ?? null)
+  editor.requestRender()
 }
 
 function getMoveDistance(d: DragMove) {
