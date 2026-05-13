@@ -50,8 +50,9 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
     :indent-per-level="INDENT"
   >
     <ContextMenuRoot :modal="false">
-      <ContextMenuTrigger as-child @contextmenu="onLayerRightClick">
-        <div v-bind="attrs" class="relative scrollbar-thin flex-1 overflow-y-auto px-1">
+      <div v-bind="attrs" class="relative min-h-0 flex-1 overflow-hidden">
+        <ContextMenuTrigger as-child @contextmenu="onLayerRightClick">
+          <div data-test-id="layers-scroll" class="scrollbar-thin h-full overflow-y-auto px-1">
           <template v-if="flattenItems">
             <LayerTreeItem
               v-for="item in flattenItems"
@@ -211,8 +212,9 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
               </TreeItem>
             </LayerTreeItem>
           </template>
-        </div>
-      </ContextMenuTrigger>
+          </div>
+        </ContextMenuTrigger>
+      </div>
       <ContextMenuPortal>
         <CanvasMenu />
       </ContextMenuPortal>

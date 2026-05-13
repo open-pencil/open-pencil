@@ -52,7 +52,8 @@ function handlePageDblClick(
           </button>
         </Tip>
       </div>
-      <div class="scrollbar-thin overflow-x-hidden overflow-y-auto px-1 pb-1">
+      <div class="min-h-0 flex-1 overflow-hidden">
+        <div data-test-id="pages-scroll" class="scrollbar-thin h-full overflow-x-hidden overflow-y-auto px-1 pb-1">
         <div v-for="pg in pages" :key="pg.id">
           <div
             v-if="rename.editingId.value === pg.id"
@@ -90,6 +91,7 @@ function handlePageDblClick(
             <icon-lucide-file class="size-3 shrink-0" />
             <span class="truncate">{{ pg.name }}</span>
           </button>
+        </div>
         </div>
       </div>
     </div>

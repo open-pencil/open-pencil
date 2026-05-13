@@ -163,6 +163,8 @@ provideLayerTree({
   <TreeRoot
     :key="treeKey"
     v-slot="{ flattenItems }"
+    as="div"
+    class="flex min-h-0 flex-1 flex-col overflow-hidden"
     :expanded="expanded"
     :items="items"
     :get-key="getKey"
