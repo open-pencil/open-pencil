@@ -41,6 +41,7 @@ export function useCanvasInput(
 ) {
   const drag = ref<DragState | null>(null)
   const cursorOverride = ref<string | null>(null)
+  const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
   const spaceHeld = useSpaceHeld()
   const { recordClick, getClickCount } = createClickCounter()
 
@@ -63,6 +64,7 @@ export function useCanvasInput(
     hitTestSectionTitle,
     hitTestComponentLabel,
     getClickCount,
+    wasSelectedBeforeClickSequence: (id) => selectedIdsBeforeClickSequence.value.has(id),
     setDrag
   })
 
@@ -79,7 +81,9 @@ export function useCanvasInput(
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
 
-    recordClick(sx, sy)
+    const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
+    const clickCount = recordClick(sx, sy)
+    if (clickCount === 1) selectedIdsBeforeClickSequence.value = selectedIdsBeforeMouseDown
     handleToolMouseDown({
       event: e,
       cx,

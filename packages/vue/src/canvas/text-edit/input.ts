@@ -15,6 +15,7 @@ type TextEditInputOptions = {
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   getClickCount: () => number
+  wasSelectedBeforeClickSequence: (id: string) => boolean
   setDrag: SetDrag
 }
 
@@ -26,6 +27,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
     hitTestSectionTitle,
     hitTestComponentLabel,
     getClickCount,
+    wasSelectedBeforeClickSequence,
     setDrag
   } = options
 
@@ -97,9 +99,7 @@ export function createTextEditInput(options: TextEditInputOptions) {
         ? getContainerDescendantHit(selectedId, cx, cy)
         : hitTestInScope(cx, cy, false)
       editor.enterContainer(selectedId)
-      if (hit?.type === 'TEXT') {
-        startTextEditingAt(hit, cx, cy)
-      } else if (hit) {
+      if (hit) {
         editor.select([hit.id])
       } else {
         editor.clearSelection()
@@ -112,6 +112,11 @@ export function createTextEditInput(options: TextEditInputOptions) {
     if (!hit) return
 
     if (hit.type === 'TEXT') {
+      const isTopLevelText = hit.parentId === editor.state.currentPageId
+      if (!isTopLevelText && !wasSelectedBeforeClickSequence(hit.id)) {
+        editor.select([hit.id])
+        return
+      }
       startTextEditingAt(hit, cx, cy)
       return
     }
