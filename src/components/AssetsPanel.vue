@@ -188,7 +188,7 @@ function insertSelectedAsset() {
         data-test-id="assets-search"
         :class="input.base"
         type="search"
-        placeholder="Search local components"
+        :placeholder="panels.searchLocalComponents"
       />
     </div>
 
@@ -215,7 +215,7 @@ function insertSelectedAsset() {
               data-test-id="asset-library-badge"
               class="shrink-0 rounded bg-component/15 px-1 py-px text-[9px] font-medium text-component uppercase"
             >
-              Library
+              {{ panels.assetLibraryBadge }}
             </span>
           </span>
           <span
@@ -223,8 +223,12 @@ function insertSelectedAsset() {
             data-test-id="asset-variant-summary"
             class="mt-0.5 block truncate text-[10px] text-muted"
           >
-            {{ asset.variantCount }} variants ·
-            {{ asset.variants.map((variant) => variant.name).join(', ') }}
+            {{
+              panels.assetVariantSummary({
+                count: asset.variantCount,
+                names: asset.variants.map((variant) => variant.name).join(', ')
+              })
+            }}
           </span>
           <span
             v-if="asset.description"
@@ -238,10 +242,10 @@ function insertSelectedAsset() {
             data-test-id="asset-variant-conflict"
             class="mt-0.5 block truncate text-[10px] text-[var(--color-warning-text)]"
           >
-            Duplicate variant values
+            {{ panels.duplicateVariantValues }}
           </span>
         </span>
-        <Tip v-if="asset.docsUrl" label="Open documentation">
+        <Tip v-if="asset.docsUrl" :label="panels.openDocumentation">
           <span
             :class="insertButton.base"
             data-test-id="asset-docs"
@@ -269,7 +273,7 @@ function insertSelectedAsset() {
         data-test-id="assets-empty"
         class="px-3 py-6 text-center text-xs text-muted"
       >
-        No local components
+        {{ panels.noLocalComponents }}
       </div>
     </div>
 
@@ -292,7 +296,11 @@ function insertSelectedAsset() {
                   selectedAsset.name
                 }}</DialogTitle>
                 <p class="mt-0.5 text-[11px] text-muted">
-                  {{ selectedAsset.node.type === 'COMPONENT_SET' ? 'Component set' : 'Component' }}
+                  {{
+                    selectedAsset.node.type === 'COMPONENT_SET'
+                      ? panels.componentSet
+                      : panels.component
+                  }}
                   <span v-if="selectedAsset.variantCount > 0">
                     · {{ selectedAsset.variantCount }} variants</span
                   >
@@ -341,14 +349,14 @@ function insertSelectedAsset() {
                 class="mt-3 w-full"
                 @click="insertSelectedAsset"
               >
-                Insert instance
+                {{ panels.insertInstance }}
               </button>
             </div>
 
             <div class="min-w-0 p-4">
               <section v-if="selectedAsset.description" class="mb-4">
                 <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
-                  Description
+                  {{ panels.description }}
                 </h3>
                 <p
                   data-test-id="asset-details-description"
@@ -359,7 +367,9 @@ function insertSelectedAsset() {
               </section>
 
               <section v-if="selectedAsset.sourceLibraryKey" class="mb-4">
-                <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">Library</h3>
+                <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
+                  {{ panels.assetLibraryBadge }}
+                </h3>
                 <p data-test-id="asset-details-library" class="mt-1 break-all text-xs text-muted">
                   {{ selectedAsset.sourceLibraryKey }}
                 </p>
@@ -367,7 +377,7 @@ function insertSelectedAsset() {
 
               <section v-if="selectedAsset.docsUrl" class="mb-4">
                 <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
-                  Documentation
+                  {{ panels.documentation }}
                 </h3>
                 <button
                   data-test-id="asset-details-docs"
@@ -377,13 +387,13 @@ function insertSelectedAsset() {
                   "
                 >
                   <icon-lucide-book-open class="size-3" />
-                  Open docs
+                  {{ panels.openDocs }}
                 </button>
               </section>
 
               <section v-if="selectedAsset.variants.length > 0">
                 <h3 class="text-[11px] font-medium tracking-wider text-muted uppercase">
-                  Properties
+                  {{ panels.properties }}
                 </h3>
                 <div class="mt-2 flex flex-col gap-2">
                   <div

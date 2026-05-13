@@ -83,7 +83,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             class="absolute inset-0 z-50 flex items-center justify-center bg-canvas"
           >
             <svg
-              class="size-8 text-white opacity-40"
+              class="size-8 text-surface opacity-45"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -96,10 +96,10 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
               />
             </svg>
             <div
-              class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-white/8"
+              class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
             >
               <div
-                class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] rounded-full bg-white/25"
+                class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] rounded-full bg-surface/25"
               />
             </div>
           </div>

@@ -193,7 +193,20 @@
     "minHeightShort": "最小高",
     "maxHeightShort": "最大高",
     "setToCurrentWidth": "设为当前宽度",
-    "setToCurrentHeight": "设为当前高度"
+    "setToCurrentHeight": "设为当前高度",
+    "searchLocalComponents": "搜索本地组件",
+    "assetLibraryBadge": "库",
+    "assetVariantSummary": "{count} 个变体 · {names}",
+    "duplicateVariantValues": "重复的变体值",
+    "openDocumentation": "打开文档",
+    "noLocalComponents": "没有本地组件",
+    "componentSet": "组件集",
+    "component": "组件",
+    "insertInstance": "插入实例",
+    "description": "描述",
+    "documentation": "文档",
+    "openDocs": "打开文档",
+    "properties": "属性"
   },
   "pages": {
     "newPage": "新建页面",

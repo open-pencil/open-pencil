@@ -193,7 +193,20 @@
     "minHeightShort": "Min W",
     "maxHeightShort": "Maks W",
     "setToCurrentWidth": "Ustaw biezaca szerokosc",
-    "setToCurrentHeight": "Ustaw biezaca wysokosc"
+    "setToCurrentHeight": "Ustaw biezaca wysokosc",
+    "searchLocalComponents": "Szukaj lokalnych komponentów",
+    "assetLibraryBadge": "Biblioteka",
+    "assetVariantSummary": "{count} wariantów · {names}",
+    "duplicateVariantValues": "Zduplikowane wartości wariantu",
+    "openDocumentation": "Otwórz dokumentację",
+    "noLocalComponents": "Brak lokalnych komponentów",
+    "componentSet": "Zestaw komponentów",
+    "component": "Komponent",
+    "insertInstance": "Wstaw instancję",
+    "description": "Opis",
+    "documentation": "Dokumentacja",
+    "openDocs": "Otwórz dokumentację",
+    "properties": "Właściwości"
   },
   "pages": {
     "newPage": "Nowa strona",

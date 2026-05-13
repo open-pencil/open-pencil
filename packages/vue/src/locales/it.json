@@ -193,7 +193,20 @@
     "minHeightShort": "Min A",
     "maxHeightShort": "Max A",
     "setToCurrentWidth": "Imposta larghezza attuale",
-    "setToCurrentHeight": "Imposta altezza attuale"
+    "setToCurrentHeight": "Imposta altezza attuale",
+    "searchLocalComponents": "Cerca componenti locali",
+    "assetLibraryBadge": "Libreria",
+    "assetVariantSummary": "{count} varianti · {names}",
+    "duplicateVariantValues": "Valori variante duplicati",
+    "openDocumentation": "Apri documentazione",
+    "noLocalComponents": "Nessun componente locale",
+    "componentSet": "Set di componenti",
+    "component": "Componente",
+    "insertInstance": "Inserisci istanza",
+    "description": "Descrizione",
+    "documentation": "Documentazione",
+    "openDocs": "Apri documentazione",
+    "properties": "Proprietà"
   },
   "pages": {
     "newPage": "Nuova pagina",

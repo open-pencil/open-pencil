@@ -9,8 +9,8 @@ import AssetsPanel from './AssetsPanel.vue'
 import LayerTree from './LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 
-const { panels } = useI18n()
-const activePanel = ref<'layers' | 'assets'>('layers')
+const { menu, panels } = useI18n()
+const activePanel = ref<'file' | 'assets'>('file')
 </script>
 
 <template>
@@ -24,12 +24,10 @@ const activePanel = ref<'layers' | 'assets'>('layers')
       <button
         data-test-id="left-panel-layers-tab"
         class="flex-1 rounded px-2 py-1 text-xs transition-colors"
-        :class="
-          activePanel === 'layers' ? 'bg-hover text-surface' : 'text-muted hover:text-surface'
-        "
-        @click="activePanel = 'layers'"
+        :class="activePanel === 'file' ? 'bg-hover text-surface' : 'text-muted hover:text-surface'"
+        @click="activePanel = 'file'"
       >
-        {{ panels.layers }}
+        {{ menu.file }}
       </button>
       <button
         data-test-id="left-panel-assets-tab"

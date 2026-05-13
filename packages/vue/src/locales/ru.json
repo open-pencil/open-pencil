@@ -193,7 +193,20 @@
     "minHeightShort": "Мин В",
     "maxHeightShort": "Макс В",
     "setToCurrentWidth": "Установить текущую ширину",
-    "setToCurrentHeight": "Установить текущую высоту"
+    "setToCurrentHeight": "Установить текущую высоту",
+    "searchLocalComponents": "Поиск локальных компонентов",
+    "assetLibraryBadge": "Библиотека",
+    "assetVariantSummary": "{count} вариантов · {names}",
+    "duplicateVariantValues": "Повторяющиеся значения вариантов",
+    "openDocumentation": "Открыть документацию",
+    "noLocalComponents": "Нет локальных компонентов",
+    "componentSet": "Набор компонентов",
+    "component": "Компонент",
+    "insertInstance": "Вставить экземпляр",
+    "description": "Описание",
+    "documentation": "Документация",
+    "openDocs": "Открыть документацию",
+    "properties": "Свойства"
   },
   "pages": {
     "newPage": "Новая страница",
