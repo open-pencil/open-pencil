@@ -496,6 +496,12 @@ describe('fetchBundledFont', () => {
     expect(expectDefined(buffer, 'Inter font buffer').byteLength).toBeGreaterThan(100_000)
   })
 
+  test('loads Inter-Bold.ttf from assets in headless', async () => {
+    const buffer = await fontManager.fetchBundledFont('/Inter-Bold.ttf')
+    expect(buffer).toBeInstanceOf(ArrayBuffer)
+    expect(expectDefined(buffer, 'Inter bold font buffer').byteLength).toBeGreaterThan(100_000)
+  })
+
   test('returns valid TTF data', async () => {
     const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
     const view = new DataView(expectDefined(buffer, 'Inter font buffer'))

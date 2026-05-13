@@ -25,6 +25,7 @@ const BUNDLED_FONTS: Record<string, string> = {
   'Inter|Regular': '/Inter-Regular.ttf',
   'Inter|Medium': '/Inter-Medium.ttf',
   'Inter|SemiBold': '/Inter-SemiBold.ttf',
+  'Inter|Bold': '/Inter-Bold.ttf',
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf'
 }
 
