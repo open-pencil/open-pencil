@@ -11,6 +11,26 @@ import { applyMoveSnap } from '#vue/shared/input/move-snap'
 import type { DragMove } from '#vue/shared/input/types'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
+const AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE = 96
+
+function isInsideAutoLayoutDragBounds(parentId: string, cx: number, cy: number, editor: Editor) {
+  const parent = editor.graph.getNode(parentId)
+  if (!parent) return false
+  const abs = editor.graph.getAbsolutePosition(parentId)
+  const isRow = parent.layoutMode === 'HORIZONTAL'
+  const mainStart = isRow ? abs.x : abs.y
+  const mainSize = isRow ? parent.width : parent.height
+  const crossStart = isRow ? abs.y : abs.x
+  const crossSize = isRow ? parent.height : parent.width
+  const main = isRow ? cx : cy
+  const cross = isRow ? cy : cx
+  return (
+    main >= mainStart - AUTO_LAYOUT_BREAK_THRESHOLD &&
+    main <= mainStart + mainSize + AUTO_LAYOUT_BREAK_THRESHOLD &&
+    cross >= crossStart - AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE &&
+    cross <= crossStart + crossSize + AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE
+  )
+}
 
 export function detectAutoLayoutParent(editor: Editor): string | undefined {
   if (editor.state.selectedIds.size !== 1) return undefined
@@ -32,8 +52,7 @@ export function handleMoveMove(d: DragMove, cx: number, cy: number, editor: Edit
   let dy = cy - d.startY
 
   if (d.autoLayoutParentId && !d.brokeFromAutoLayout) {
-    const dist = Math.sqrt(dx * dx + dy * dy)
-    if (dist < AUTO_LAYOUT_BREAK_THRESHOLD) {
+    if (isInsideAutoLayoutDragBounds(d.autoLayoutParentId, cx, cy, editor)) {
       computeAutoLayoutIndicator(d, cx, cy, editor)
       return
     }
@@ -84,7 +103,7 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
       editor.setDropTarget(null)
       return
     }
-    for (const id of editor.state.selectedIds) {
+    for (const id of d.originals.keys()) {
       editor.reorderInAutoLayout(id, indicator.parentId, indicator.index)
     }
     editor.setDropTarget(null)
