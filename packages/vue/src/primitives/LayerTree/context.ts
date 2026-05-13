@@ -12,6 +12,10 @@ export interface LayerNode {
   children?: LayerNode[]
 }
 
+export interface LayerDragInstruction {
+  type: 'reorder-above' | 'reorder-below' | 'make-child'
+}
+
 export interface LayerTreeContext {
   editor: Editor
   items: Ref<LayerNode[]>
@@ -19,6 +23,13 @@ export interface LayerTreeContext {
   treeKey: Ref<number>
   selectedIds: ComputedRef<Set<string>>
   indentPerLevel: number
+  draggingId: Ref<string | null>
+  instruction: Ref<LayerDragInstruction | null>
+  instructionTargetId: Ref<string | null>
+  setupDrag: (
+    el: Ref<HTMLElement | null>,
+    item: () => { id: string; level: number; hasChildren: boolean; parentId: string | null }
+  ) => void
   select: (id: string, additive: boolean) => void
   toggleExpand: (id: string) => void
   toggleVisibility: (id: string) => void

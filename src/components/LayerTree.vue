@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { useAttrs, watch } from 'vue'
 import { templateRef } from '@vueuse/core'
-import { TreeRoot, TreeItem, ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
+import { TreeItem, ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
 
 import {
   LayerTreeRoot,
   LayerTreeItem,
   useI18n,
-  useInlineRename,
-  useLayerDrag
+  useInlineRename
 } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { nodeIcon, COMPONENT_TYPES } from '@/app/editor/icons'
@@ -23,7 +22,6 @@ const store = useEditorStore()
 const renameInput = templateRef<HTMLInputElement>('renameInput')
 const rename = useInlineRename((id, name) => store.renameNode(id, name))
 const { menu: t } = useI18n()
-const { draggingId, instruction, instructionTargetId } = useLayerDrag(store, INDENT)
 
 watch(renameInput, (input) => {
   if (input) void rename.focusInput(input)
@@ -48,20 +46,13 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
 
 <template>
   <LayerTreeRoot
-    v-slot="{ items, expanded, treeKey, getKey, getChildren }"
+    v-slot="{ flattenItems, draggingId, instruction, instructionTargetId }"
     :indent-per-level="INDENT"
   >
     <ContextMenuRoot :modal="false">
       <ContextMenuTrigger as-child @contextmenu="onLayerRightClick">
         <div v-bind="attrs" class="relative scrollbar-thin flex-1 overflow-y-auto px-1">
-          <TreeRoot
-            :key="treeKey"
-            v-slot="{ flattenItems }"
-            :expanded="expanded"
-            :items="items"
-            :get-key="getKey"
-            :get-children="getChildren"
-          >
+          <template v-if="flattenItems">
             <LayerTreeItem
               v-for="item in flattenItems"
               :key="item._id"
@@ -210,7 +201,7 @@ function onTreeSelect(e: CustomEvent, select: (additive: boolean) => void) {
                 </button>
               </TreeItem>
             </LayerTreeItem>
-          </TreeRoot>
+          </template>
         </div>
       </ContextMenuTrigger>
       <ContextMenuPortal>

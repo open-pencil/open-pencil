@@ -22,7 +22,7 @@ const emit = defineEmits<{
 const ctx = useLayerTree()
 
 const isSelected = computed(() => ctx.selectedIds.value.has(node.id))
-const isDragging = computed(() => false)
+const isDragging = computed(() => ctx.draggingId.value === node.id)
 const padLeft = computed(() => `${8 + (level - 1) * ctx.indentPerLevel}px`)
 
 const rowEl = ref<HTMLElement | null>(null)
@@ -32,6 +32,13 @@ function onRef(el: unknown) {
   rowEl.value = htmlEl
   ctx.setRowRef(node.id, htmlEl)
 }
+
+ctx.setupDrag(rowEl, () => ({
+  id: node.id,
+  level,
+  hasChildren,
+  parentId: null
+}))
 
 const actions = {
   select: (additive: boolean) => {

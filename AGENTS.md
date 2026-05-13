@@ -236,6 +236,8 @@ Release commits are the exception: keep using `Release v0.x.y`.
 
 ## Code conventions
 
+- Do not place code or tests ad hoc. Before adding or moving files, inspect the existing folder structure and nearby patterns, then put changes in the established domain-specific location. If no proper location exists, create one deliberately and update docs/conventions as needed.
+
 ### File and folder naming
 
 OpenPencil follows a Reka UI-inspired component namespace structure:

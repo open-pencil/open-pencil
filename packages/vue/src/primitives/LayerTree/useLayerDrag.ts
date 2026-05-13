@@ -13,6 +13,8 @@ import { onScopeDispose, ref, watchEffect, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 
+import type { LayerDragInstruction } from '#vue/primitives/LayerTree/context'
+
 interface DragItem {
   id: string
   level: number
@@ -20,7 +22,7 @@ interface DragItem {
   parentId: string | null
 }
 
-type TreeInstruction = { type: 'reorder-above' | 'reorder-below' | 'make-child' }
+type TreeInstruction = LayerDragInstruction
 
 export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
   const draggingId = ref<string | null>(null)
@@ -58,7 +60,7 @@ export function useLayerDrag(editor: Editor, indentPerLevel = 16) {
                 indentPerLevel,
                 currentLevel: data.level,
                 mode,
-                block: []
+                block: ['make-child', 'reparent']
               }
             ),
           canDrop: ({ source }) => source.data.id !== data.id,
