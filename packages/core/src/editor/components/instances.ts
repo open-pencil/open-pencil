@@ -18,6 +18,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     const component = ctx.graph.getNode(componentId)
     if (component?.type !== 'COMPONENT') return null
 
+    const previousSelection = new Set(ctx.state.selectedIds)
     const instance = ctx.graph.createInstance(componentId, parentId, {
       x: x ?? component.x + component.width + 40,
       y: y ?? component.y
@@ -36,7 +37,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
       },
       inverse: () => {
         ctx.graph.deleteNode(instanceId)
-        ctx.setSelectedIds(new Set([componentId]))
+        ctx.setSelectedIds(new Set(previousSelection))
       }
     })
     return instanceId

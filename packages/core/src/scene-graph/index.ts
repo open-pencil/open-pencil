@@ -257,8 +257,14 @@ export class SceneGraph {
     }
   }
 
+  private generateNodeId(): string {
+    let id = generateId()
+    while (this.nodes.has(id)) id = generateId()
+    return id
+  }
+
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(generateId, type, overrides)
+    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
     node.parentId = parentId
     this.nodes.set(node.id, node)
 
