@@ -86,14 +86,14 @@ describe('renderText', () => {
     expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
   })
 
-  test('uses paragraph even when node font is NOT available (fallback to default)', () => {
+  test('skips text while the node font is not available', () => {
     const r = createMockRenderer({ isNodeFontLoaded: mock(() => false) })
     const canvas = createMockCanvas()
 
     renderText(r, canvas as never, textNode())
 
-    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
-    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+    expect(canvas.drawParagraph).not.toHaveBeenCalled()
     expect(canvas.drawText).not.toHaveBeenCalled()
   })
 
