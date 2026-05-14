@@ -40,8 +40,8 @@ function normalizePath(filePath: string) {
   return filePath.split(path.sep).join('/')
 }
 
-function relativePath(filePath: string) {
-  return normalizePath(path.relative(process.cwd(), filePath))
+function relativePath(rootPath: string, filePath: string) {
+  return normalizePath(path.relative(rootPath, filePath))
 }
 
 function collectFiles(entry: TreeEntry, files: string[] = []) {
@@ -97,7 +97,7 @@ function createImportRule(
     check(root) {
       const diagnostics: Diagnostic[] = []
       for (const file of collectFiles(root)) {
-        const sourceRel = relativePath(file)
+        const sourceRel = relativePath(root.path, file)
         const content = readFileSync(file, 'utf8')
         for (const imported of importsIn(content)) {
           const resolved = resolveImport(sourceRel, imported.specifier)
@@ -168,6 +168,30 @@ const noForeignPackageLocalAliases = createImportRule(
   }
 )
 
+const noAppImportsComponentsOrViews = createImportRule(
+  'open-pencil/no-app-imports-components-or-views',
+  (sourceRel, _specifier, resolved) => {
+    if (!sourceRel.startsWith('src/app/')) return null
+    const importsAppComponent =
+      resolved?.startsWith('src/components/') && !resolved.startsWith('src/components/ui/')
+    if (importsAppComponent || resolved?.startsWith('src/views/')) {
+      return 'App service/domain code must not import app component or view layers. Pass data/actions through app-owned entrypoints instead.'
+    }
+    return null
+  }
+)
+
+const noComponentsImportViews = createImportRule(
+  'open-pencil/no-components-import-views',
+  (sourceRel, _specifier, resolved) => {
+    if (!sourceRel.startsWith('src/components/')) return null
+    if (resolved?.startsWith('src/views/')) {
+      return 'Components must not import views. Views assemble components, not the other way around.'
+    }
+    return null
+  }
+)
+
 const noAppImportsInSharedUi = createImportRule(
   'open-pencil/no-app-imports-in-shared-ui',
   (sourceRel, _specifier, resolved) => {
@@ -213,6 +237,8 @@ export const openPencilArchitecturePlugin = {
     noAppImportsInWorkspacePackages,
     noPackageInternalsInApp,
     noForeignPackageLocalAliases,
+    noAppImportsComponentsOrViews,
+    noComponentsImportViews,
     noAppImportsInSharedUi,
     noPropertyPanelInternalsOutsidePanel,
     noUiImportsInCore
