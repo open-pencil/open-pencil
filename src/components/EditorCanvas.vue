@@ -78,8 +78,6 @@ const paddingSideIcons = {
   left: IconLucidePanelLeft
 } satisfies Record<'top' | 'right' | 'bottom' | 'left', Component>
 
-const paddingEditorRef = ref<HTMLElement | null>(null)
-
 const paddingEditorAnchor = computed(() => {
   const edit = autoLayoutPaddingEdit.value
   if (!edit) return null
@@ -102,7 +100,9 @@ const paddingEditorIcon = computed(() => {
 watch(autoLayoutPaddingEdit, async (edit) => {
   if (!edit) return
   await nextTick()
-  const input = paddingEditorRef.value?.querySelector<HTMLInputElement>('input')
+  const input = document.querySelector<HTMLInputElement>(
+    '[data-test-id="auto-layout-padding-editor"] input'
+  )
   input?.focus()
   input?.select()
 })
@@ -145,7 +145,6 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
           <PopoverPortal>
             <PopoverContent
               v-if="autoLayoutPaddingEdit && paddingEditorReference"
-              ref="paddingEditorRef"
               :reference="paddingEditorReference"
               side="top"
               align="center"
@@ -164,6 +163,12 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
                 data-test-id="auto-layout-padding-input"
                 @update:model-value="updateAutoLayoutPaddingEdit"
                 @commit="(value: number) => commitAutoLayoutPaddingEdit(value)"
+                @editing-change="
+                  (editing: boolean) =>
+                    !editing &&
+                    autoLayoutPaddingEdit &&
+                    commitAutoLayoutPaddingEdit(autoLayoutPaddingEdit.value)
+                "
               >
                 <template #icon>
                   <component :is="paddingEditorIcon" class="size-3.5" />
