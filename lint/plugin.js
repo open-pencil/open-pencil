@@ -175,6 +175,62 @@ const noStructuredCloneSceneArrays = {
   }
 }
 
+const noVueStyleBlocks = {
+  meta: {
+    docs: {
+      description: 'Disallow Vue component <style> blocks — use Tailwind utilities or global tokens'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue')) return {}
+    if (!file.includes('/src/') && !file.includes('/packages/vue/src/')) return {}
+
+    return {
+      Program(node) {
+        const source = context.sourceCode.getText()
+        if (/<style\b/i.test(source)) {
+          context.report({
+            node,
+            message:
+              'Vue components must not use <style> blocks. Use Tailwind utilities or global app.css tokens.'
+          })
+        }
+      }
+    }
+  }
+}
+
+const noDirectSelectionToolStateMutation = {
+  meta: {
+    docs: {
+      description: 'Disallow direct editor selection/tool state assignment outside core editor internals'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (file.includes('/packages/core/src/editor/')) return {}
+
+    return {
+      AssignmentExpression(node) {
+        if (node.operator !== '=') return
+        const left = node.left
+        if (left?.type !== 'MemberExpression') return
+        if (left.property?.type !== 'Identifier') return
+        if (left.property.name !== 'selectedIds' && left.property.name !== 'activeTool') return
+        const stateExpr = left.object
+        if (stateExpr?.type !== 'MemberExpression') return
+        if (stateExpr.property?.type !== 'Identifier' || stateExpr.property.name !== 'state') return
+        context.report({
+          node,
+          message:
+            'Do not assign editor.state.selectedIds or editor.state.activeTool directly. Use editor selection/tool actions.'
+        })
+      }
+    }
+  }
+}
+
 const noMathRandom = {
   meta: {
     docs: {
@@ -1200,6 +1256,8 @@ const plugin = {
   rules: {
     'no-inline-named-types': noInlineNamedTypes,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
+    'no-vue-style-blocks': noVueStyleBlocks,
+    'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
     'no-math-random': noMathRandom,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,

@@ -230,27 +230,6 @@ const noE2EImportsInEngineTests = createImportRule(
   }
 )
 
-const noVueStyleBlocks = createFileRule('open-pencil/no-vue-style-blocks', (sourceRel) => {
-  if (!sourceRel.endsWith('.vue')) return null
-  if (!sourceRel.startsWith('src/') && !sourceRel.startsWith('packages/vue/src/')) return null
-  const content = readFileSync(path.resolve(sourceRel), 'utf8')
-  return /<style\b/i.test(content)
-    ? 'Vue components must not use <style> blocks. Use Tailwind utilities or global app.css tokens.'
-    : null
-})
-
-const noDirectSelectionOrToolStateMutation = createFileRule(
-  'open-pencil/no-direct-selection-tool-state-mutation',
-  (sourceRel) => {
-    if (!sourceRel.endsWith('.ts') && !sourceRel.endsWith('.vue')) return null
-    if (sourceRel.startsWith('packages/core/src/editor/')) return null
-    const content = readFileSync(path.resolve(sourceRel), 'utf8')
-    return /\.state\.(selectedIds|activeTool)\s*=(?!=)/.test(content)
-      ? 'Do not assign editor.state.selectedIds or editor.state.activeTool directly. Use editor selection/tool actions.'
-      : null
-  }
-)
-
 const noRootMarkdownClutter = createFileRule('open-pencil/no-root-markdown-clutter', (sourceRel) => {
   if (sourceRel.includes('/')) return null
   if (!sourceRel.endsWith('.md')) return null
@@ -418,8 +397,6 @@ export const openPencilArchitecturePlugin = {
   meta: { name: 'open-pencil-architecture', version: '0.0.0' },
   ruleDefinitions: [
     preferDomainFoldersOverFilenamePrefixes,
-    noVueStyleBlocks,
-    noDirectSelectionOrToolStateMutation,
     strictTestFilePlacement,
     noEngineOnlyAssertionsInE2E,
     noE2EImportsInEngineTests,
