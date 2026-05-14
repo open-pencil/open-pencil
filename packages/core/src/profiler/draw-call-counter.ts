@@ -16,16 +16,30 @@ export class DrawCallCounter {
 
   constructor(gl: WebGL2RenderingContext | null) {
     this.gl = gl
-    if (!gl) return
+  }
+
+  enable(): void {
+    const gl = this.gl
+    if (!gl || this.originals.size > 0) return
 
     for (const method of DRAW_METHODS) {
-      const original = gl[method].bind(gl) as DrawFunction
+      const original = gl[method] as DrawFunction
       this.originals.set(method, original)
       ;(gl[method] as DrawFunction) = (...args: unknown[]) => {
         this.count++
-        original(...args)
+        original.apply(gl, args)
       }
     }
+  }
+
+  disable(): void {
+    const gl = this.gl
+    if (!gl || this.originals.size === 0) return
+
+    for (const [method, fn] of this.originals) {
+      ;(gl[method] as DrawFunction) = fn
+    }
+    this.originals.clear()
   }
 
   reset(): number {
@@ -35,12 +49,7 @@ export class DrawCallCounter {
   }
 
   destroy(): void {
-    const gl = this.gl
-    if (!gl) return
-
-    for (const [method, fn] of this.originals) {
-      ;(gl[method] as DrawFunction) = fn
-    }
-    this.originals.clear()
+    this.disable()
+    this.gl = null
   }
 }

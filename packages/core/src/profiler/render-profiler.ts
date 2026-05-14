@@ -37,6 +37,7 @@ export class RenderProfiler {
     this.hudVisible = !this.hudVisible
     this.enabled = this.hudVisible
     this.phases.enabled = this.enabled
+    this.syncInstrumentation()
   }
 
   beginFrame(): void {
@@ -83,6 +84,7 @@ export class RenderProfiler {
   beginCapture(): void {
     this.capturing = true
     this.captureSession = createCaptureSession(now())
+    this.syncInstrumentation()
   }
 
   endCapture(): FrameCapture | null {
@@ -92,6 +94,7 @@ export class RenderProfiler {
     const capture = createFrameCapture(this.captureSession, this.stats, this.gpuTimer, now)
     this.lastCapture = capture
     this.captureSession = null
+    this.syncInstrumentation()
     return capture
   }
 
@@ -121,6 +124,11 @@ export class RenderProfiler {
     a.download = `openpencil-frame-${Date.now()}.speedscope.json`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  private syncInstrumentation(): void {
+    if (this.enabled || this.capturing) this.drawCallCounter.enable()
+    else this.drawCallCounter.disable()
   }
 
   setTypeface(typeface: Typeface): void {
