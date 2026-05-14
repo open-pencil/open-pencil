@@ -15,6 +15,8 @@ type Diagnostic = {
 type RuleResult = { diagnostics: Diagnostic[] }
 type Rule = { name: string; check: (root: TreeEntry) => RuleResult }
 
+type FileRuleCheck = (sourceRel: string) => string | null
+
 type ImportRef = {
   specifier: string
   line: number
@@ -56,8 +58,8 @@ function collectFiles(entry: TreeEntry, files: string[] = []) {
 function importsIn(content: string): ImportRef[] {
   const imports: ImportRef[] = []
   const patterns = [
-    /(?:import|export)\s+(?:type\s+)?(?:[^'";]*?\s+from\s*)?['"]([^'"]+)['"]/g,
-    /import\(\s*['"]([^'"]+)['"]\s*\)/g
+    /^\s*(?:import|export)\s+(?:type\s+)?(?:[^'";]*?\s+from\s*)?['"]([^'"]+)['"]/gm,
+    /^\s*import\(\s*['"]([^'"]+)['"]\s*\)/gm
   ]
 
   for (const pattern of patterns) {
@@ -88,6 +90,22 @@ function resolveImport(sourceRel: string, specifier: string): string | null {
   return null
 }
 
+function createFileRule(name: string, checkFile: FileRuleCheck): Rule {
+  return {
+    name,
+    check(root) {
+      const diagnostics: Diagnostic[] = []
+      for (const file of collectFiles(root)) {
+        const sourceRel = relativePath(root.path, file)
+        const message = checkFile(sourceRel)
+        if (!message) continue
+        diagnostics.push({ message, location: { path: file } })
+      }
+      return { diagnostics }
+    }
+  }
+}
+
 function createImportRule(
   name: string,
   checkImport: (sourceRel: string, specifier: string, resolved: string | null) => string | null
@@ -113,6 +131,47 @@ function createImportRule(
     }
   }
 }
+
+const strictTestFilePlacement = createFileRule('open-pencil/strict-test-file-placement', (sourceRel) => {
+  if (!sourceRel.startsWith('tests/')) return null
+  if (!TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
+  if (sourceRel.startsWith('tests/e2e/')) {
+    return sourceRel.endsWith('.spec.ts') ? null : 'E2E tests must live under tests/e2e/** and use *.spec.ts.'
+  }
+  if (sourceRel.startsWith('tests/figma/')) {
+    return sourceRel.endsWith('.spec.ts') ? null : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'
+  }
+  if (sourceRel.startsWith('tests/engine/')) {
+    if (sourceRel.endsWith('.test.ts')) return null
+    if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
+    if (path.basename(sourceRel).startsWith('visual-')) return null
+    return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and visual-* support scripts are allowed.'
+  }
+  if (sourceRel.startsWith('tests/helpers/')) return null
+  return 'Tests must live under tests/e2e/** (*.spec.ts), tests/engine/** (*.test.ts), or tests/helpers/**.'
+})
+
+const noEngineOnlyAssertionsInE2E = createImportRule(
+  'open-pencil/no-engine-only-assertions-in-e2e',
+  (sourceRel, specifier, resolved) => {
+    if (!sourceRel.startsWith('tests/e2e/')) return null
+    if (specifier === 'bun:test' || resolved?.startsWith('tests/engine/')) {
+      return 'E2E tests must drive the UI and visible behavior. Put engine/internal-state assertions in tests/engine/**.'
+    }
+    return null
+  }
+)
+
+const noE2EImportsInEngineTests = createImportRule(
+  'open-pencil/no-e2e-imports-in-engine-tests',
+  (sourceRel, _specifier, resolved) => {
+    if (!sourceRel.startsWith('tests/engine/')) return null
+    if (resolved?.startsWith('tests/e2e/')) {
+      return 'Engine/unit tests must not import E2E tests or fixtures.'
+    }
+    return null
+  }
+)
 
 const noPropertyPanelImportsInCanvas = createImportRule(
   'open-pencil/no-property-panel-imports-in-canvas',
@@ -158,7 +217,7 @@ const noPackageInternalsInApp = createImportRule(
 const noForeignPackageLocalAliases = createImportRule(
   'open-pencil/no-foreign-package-local-aliases',
   (sourceRel, specifier) => {
-    if (sourceRel.startsWith('scripts/')) return null
+    if (sourceRel.startsWith('scripts/') || sourceRel.startsWith('tests/')) return null
     for (const [alias, owner] of Object.entries(PACKAGE_ALIAS_OWNERS)) {
       if (specifier.startsWith(alias) && !sourceRel.startsWith(owner)) {
         return `Package-local alias ${alias} can only be used inside ${owner}. Use a public package export across package boundaries.`
@@ -189,6 +248,26 @@ const noComponentsImportViews = createImportRule(
       return 'Components must not import views. Views assemble components, not the other way around.'
     }
     return null
+  }
+)
+
+const noNonUiImportsInSharedUi = createImportRule(
+  'open-pencil/no-non-ui-imports-in-shared-ui',
+  (sourceRel, _specifier, resolved) => {
+    if (!sourceRel.startsWith('src/components/ui/')) return null
+    if (resolved?.startsWith('src/components/') && !resolved.startsWith('src/components/ui/')) {
+      return 'Shared UI components must only import other shared UI modules from src/components/ui/**.'
+    }
+    return null
+  }
+)
+
+const noViewsImportedOutsideEntry = createImportRule(
+  'open-pencil/no-views-imported-outside-entry',
+  (sourceRel, _specifier, resolved) => {
+    if (!resolved?.startsWith('src/views/')) return null
+    if (sourceRel === 'src/App.vue' || sourceRel === 'src/main.ts' || sourceRel === 'src/router.ts') return null
+    return 'Views are top-level composition entrypoints and must not be imported by app services or reusable components.'
   }
 )
 
@@ -233,12 +312,17 @@ const noUiImportsInCore = createImportRule(
 export const openPencilArchitecturePlugin = {
   meta: { name: 'open-pencil-architecture', version: '0.0.0' },
   ruleDefinitions: [
+    strictTestFilePlacement,
+    noEngineOnlyAssertionsInE2E,
+    noE2EImportsInEngineTests,
     noPropertyPanelImportsInCanvas,
     noAppImportsInWorkspacePackages,
     noPackageInternalsInApp,
     noForeignPackageLocalAliases,
     noAppImportsComponentsOrViews,
     noComponentsImportViews,
+    noViewsImportedOutsideEntry,
+    noNonUiImportsInSharedUi,
     noAppImportsInSharedUi,
     noPropertyPanelInternalsOutsidePanel,
     noUiImportsInCore

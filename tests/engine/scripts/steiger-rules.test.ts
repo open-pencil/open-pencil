@@ -44,6 +44,35 @@ function ruleNamesFor(files: Record<string, string>) {
 }
 
 describe('OpenPencil architecture rules', () => {
+  test('enforces test file placement and naming', () => {
+    expect(ruleNamesFor({ 'tests/e2e/bad.test.ts': '' })).toContain(
+      'open-pencil/strict-test-file-placement'
+    )
+    expect(ruleNamesFor({ 'tests/engine/bad.spec.ts': '' })).toContain(
+      'open-pencil/strict-test-file-placement'
+    )
+    expect(ruleNamesFor({ 'tests/helpers/setup.ts': '' })).not.toContain(
+      'open-pencil/strict-test-file-placement'
+    )
+  })
+
+  test('blocks engine-only assertions in E2E tests', () => {
+    const names = ruleNamesFor({
+      'tests/e2e/editor/example.spec.ts':
+        "import { expect } from 'bun:test'\nimport { helper } from '../../engine/helper'\n"
+    })
+
+    expect(names).toContain('open-pencil/no-engine-only-assertions-in-e2e')
+  })
+
+  test('blocks E2E imports from engine tests', () => {
+    const names = ruleNamesFor({
+      'tests/engine/editor/example.test.ts': "import { fixture } from '../../e2e/editor/example.spec'\n"
+    })
+
+    expect(names).toContain('open-pencil/no-e2e-imports-in-engine-tests')
+  })
+
   test('blocks app code from importing app component layers', () => {
     const names = ruleNamesFor({
       'src/app/editor/service.ts': "import EditorCanvas from '@/components/EditorCanvas.vue'\n"
