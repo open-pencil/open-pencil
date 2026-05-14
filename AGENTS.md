@@ -93,7 +93,8 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 
 ## Commands
 
-- `bun run check` — type-aware lint + typecheck via oxlint + tsgo (run before committing)
+- `bun run check` — type-aware lint + typecheck via oxlint + tsgo + architecture checks (run before committing)
+- `bun run check:arch` — Steiger architecture lint for project-specific import boundaries
 - `bun run check:vue` — vue-tsc type-check for .vue files (has pre-existing errors, fix progressively)
 - `bun run test:dupes` — jscpd copy-paste detection across all TS sources
 - `bun run format` — oxfmt with import sorting
@@ -237,6 +238,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 ## Code conventions
 
 - Do not place code or tests ad hoc. Before adding or moving files, inspect the existing folder structure and nearby patterns, then put changes in the established domain-specific location. If no proper location exists, create one deliberately and update docs/conventions as needed.
+- Architecture boundaries are enforced by Steiger (`bun run check:arch`). App code must use public workspace package exports, workspace packages must not import app `src/` code, package-local aliases (`#core`, `#vue`, `#cli`, `#mcp`) are only for their owning package, core must stay framework-agnostic, and canvas/editor overlay code must not import property-panel internals.
 - Test placement is strict: E2E tests live under `tests/e2e/**` and use `*.spec.ts`; engine/unit tests live under `tests/engine/**` and use `*.test.ts`. Do not put store-only/internal-state assertions in E2E. If a test drives the UI like a user and verifies visible behavior, it can be E2E; if it creates nodes through internals and asserts graph state, it belongs in engine/unit coverage.
 
 ### File and folder naming

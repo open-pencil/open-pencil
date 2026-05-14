@@ -21,6 +21,8 @@ export default defineConfig([
     rules: {
       'open-pencil/no-property-panel-imports-in-canvas': 'error',
       'open-pencil/no-app-imports-in-workspace-packages': 'error',
+      'open-pencil/no-package-internals-in-app': 'error',
+      'open-pencil/no-foreign-package-local-aliases': 'error',
       'open-pencil/no-ui-imports-in-core': 'error'
     }
   }

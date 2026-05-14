@@ -29,6 +29,13 @@ const PACKAGE_ALIASES: Record<string, string> = {
   '#mcp/': 'packages/mcp/src/'
 }
 
+const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
+  '#core/': 'packages/core/src/',
+  '#vue/': 'packages/vue/src/',
+  '#cli/': 'packages/cli/src/',
+  '#mcp/': 'packages/mcp/src/'
+}
+
 function normalizePath(filePath: string) {
   return filePath.split(path.sep).join('/')
 }
@@ -134,6 +141,33 @@ const noAppImportsInWorkspacePackages = createImportRule(
   }
 )
 
+const noPackageInternalsInApp = createImportRule(
+  'open-pencil/no-package-internals-in-app',
+  (sourceRel, specifier, resolved) => {
+    if (!sourceRel.startsWith('src/')) return null
+    if (specifier in PACKAGE_ALIASES || Object.keys(PACKAGE_ALIASES).some((alias) => specifier.startsWith(alias))) {
+      return 'App code must use package public exports such as @open-pencil/core or @open-pencil/vue, not package-local aliases.'
+    }
+    if (resolved?.startsWith('packages/')) {
+      return 'App code must not import workspace package internals. Use package public exports instead.'
+    }
+    return null
+  }
+)
+
+const noForeignPackageLocalAliases = createImportRule(
+  'open-pencil/no-foreign-package-local-aliases',
+  (sourceRel, specifier) => {
+    if (sourceRel.startsWith('scripts/')) return null
+    for (const [alias, owner] of Object.entries(PACKAGE_ALIAS_OWNERS)) {
+      if (specifier.startsWith(alias) && !sourceRel.startsWith(owner)) {
+        return `Package-local alias ${alias} can only be used inside ${owner}. Use a public package export across package boundaries.`
+      }
+    }
+    return null
+  }
+)
+
 const noUiImportsInCore = createImportRule(
   'open-pencil/no-ui-imports-in-core',
   (sourceRel, specifier) => {
@@ -156,6 +190,8 @@ export const openPencilArchitecturePlugin = {
   ruleDefinitions: [
     noPropertyPanelImportsInCanvas,
     noAppImportsInWorkspacePackages,
+    noPackageInternalsInApp,
+    noForeignPackageLocalAliases,
     noUiImportsInCore
   ]
 }
