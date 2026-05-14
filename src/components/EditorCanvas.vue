@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch, type Component } from 'vue'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
@@ -26,6 +26,10 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import { fadeOutGlobalLoader } from '@/app/editor/canvas/loader-overlay'
+import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
+import IconLucidePanelLeft from '~icons/lucide/panel-left'
+import IconLucidePanelRight from '~icons/lucide/panel-right'
+import IconLucidePanelTop from '~icons/lucide/panel-top'
 import CanvasMenu from './CanvasMenu.vue'
 import ScrubInput from './ScrubInput.vue'
 
@@ -67,6 +71,13 @@ const {
 useTextEdit(canvasRef, store)
 const { isDraggingOver } = useCanvasDrop(canvasRef, store)
 
+const paddingSideIcons = {
+  top: IconLucidePanelTop,
+  right: IconLucidePanelRight,
+  bottom: IconLucidePanelBottom,
+  left: IconLucidePanelLeft
+} satisfies Record<'top' | 'right' | 'bottom' | 'left', Component>
+
 const paddingEditorRef = ref<HTMLElement | null>(null)
 
 const paddingEditorAnchor = computed(() => {
@@ -83,6 +94,10 @@ const paddingEditorAnchor = computed(() => {
   return { x: abs.x + node.width - node.paddingRight / 2, y: abs.y + node.height / 2 }
 })
 const paddingEditorReference = useCanvasVirtualReference(canvasRef, store, paddingEditorAnchor)
+const paddingEditorIcon = computed(() => {
+  const edit = autoLayoutPaddingEdit.value
+  return edit ? paddingSideIcons[edit.side] : IconLucidePanelTop
+})
 
 watch(autoLayoutPaddingEdit, async (edit) => {
   if (!edit) return
@@ -146,11 +161,14 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
                 :model-value="autoLayoutPaddingEdit.value"
                 :min="0"
                 :step="1"
-                icon="↔"
                 data-test-id="auto-layout-padding-input"
                 @update:model-value="updateAutoLayoutPaddingEdit"
                 @commit="(value: number) => commitAutoLayoutPaddingEdit(value)"
-              />
+              >
+                <template #icon>
+                  <component :is="paddingEditorIcon" class="size-3.5" />
+                </template>
+              </ScrubInput>
             </PopoverContent>
           </PopoverPortal>
         </PopoverRoot>

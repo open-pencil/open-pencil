@@ -15,7 +15,7 @@
     "lint": "bun run lint:structure && oxlint -c oxlint.json --type-aware --type-check src/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/",
     "lint:structure": "oxlint -c oxlint.json vite.config.ts vite/ src/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/ tests/ scripts/",
     "format": "oxfmt --write .oxfmtrc.json vite.config.ts vite/ src/ packages/core/src/ packages/cli/src/ packages/mcp/src/ packages/vue/src/ tests scripts/",
-    "check": "bun run lint && tsgo --noEmit && bun run check:vue && bun run check:i18n",
+    "check": "bun run lint && tsgo --noEmit && bun run check:vue && bun run check:i18n && bun run check:arch",
     "check:i18n": "bun scripts/check-locales.ts",
     "check:arch": "steiger .",
     "check:vue": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p packages/vue/tsconfig.json",
