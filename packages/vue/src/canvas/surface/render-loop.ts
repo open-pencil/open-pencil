@@ -1,6 +1,24 @@
 import type { Editor } from '@open-pencil/core/editor'
 
-export function createCanvasRenderLoop(editor: Editor, renderNow: () => void) {
+import type { CanvasRenderLayer } from './types'
+
+type RenderLoopOptions = {
+  layer?: CanvasRenderLayer
+}
+
+function shouldScheduleForRepaint(layer: CanvasRenderLayer | undefined) {
+  return layer !== 'scene'
+}
+
+function shouldScheduleForSelection(layer: CanvasRenderLayer | undefined) {
+  return layer !== 'scene'
+}
+
+export function createCanvasRenderLoop(
+  editor: Editor,
+  renderNow: () => void,
+  options: RenderLoopOptions = {}
+) {
   let dirty = true
   let frameId: number | null = null
   let lastRenderVersion = -1
@@ -26,10 +44,16 @@ export function createCanvasRenderLoop(editor: Editor, renderNow: () => void) {
 
   const unsubscribe = [
     editor.onEditorEvent('render:requested', scheduleRender),
-    editor.onEditorEvent('repaint:requested', scheduleRender),
-    editor.onEditorEvent('selection:changed', scheduleRender),
     editor.onEditorEvent('viewport:changed', scheduleRender)
   ]
+
+  if (shouldScheduleForRepaint(options.layer)) {
+    unsubscribe.push(editor.onEditorEvent('repaint:requested', scheduleRender))
+  }
+
+  if (shouldScheduleForSelection(options.layer)) {
+    unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleRender))
+  }
 
   function markRendered() {
     lastRenderVersion = editor.state.renderVersion

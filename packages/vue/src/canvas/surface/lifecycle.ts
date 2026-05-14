@@ -85,7 +85,7 @@ export function createCanvasSurfaceManager({
     renderLoop.markRendered()
   }
 
-  const renderLoop = createCanvasRenderLoop(editor, renderNow)
+  const renderLoop = createCanvasRenderLoop(editor, renderNow, { layer: options?.layer })
 
   function resizeCanvas(canvas: HTMLCanvasElement) {
     const ck = getCanvasKit()

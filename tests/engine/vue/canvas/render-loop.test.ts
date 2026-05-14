@@ -106,6 +106,55 @@ describe('canvas render loop', () => {
     }
   })
 
+  test('scene layers ignore overlay-only repaint and selection events', () => {
+    const scheduler = createFrameScheduler()
+    try {
+      const { editor, emit } = createEditor()
+      let renders = 0
+      createCanvasRenderLoop(
+        editor,
+        () => {
+          renders++
+        },
+        { layer: 'scene' }
+      )
+
+      emit('repaint:requested')
+      emit('selection:changed')
+      expect(scheduler.pendingCount).toBe(0)
+
+      emit('viewport:changed')
+      expect(scheduler.pendingCount).toBe(1)
+      scheduler.flush()
+      expect(renders).toBe(1)
+    } finally {
+      scheduler.restore()
+    }
+  })
+
+  test('overlay layers render on repaint and selection events', () => {
+    const scheduler = createFrameScheduler()
+    try {
+      const { editor, emit } = createEditor()
+      let renders = 0
+      createCanvasRenderLoop(
+        editor,
+        () => {
+          renders++
+        },
+        { layer: 'overlays' }
+      )
+
+      emit('repaint:requested')
+      emit('selection:changed')
+      expect(scheduler.pendingCount).toBe(1)
+      scheduler.flush()
+      expect(renders).toBe(1)
+    } finally {
+      scheduler.restore()
+    }
+  })
+
   test('cancels pending renders when paused', () => {
     const scheduler = createFrameScheduler()
     try {
