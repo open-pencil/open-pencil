@@ -109,6 +109,32 @@ body {
   -webkit-user-select: none;
 }
 
+.code-highlight .token.tag {
+  color: var(--color-code-tag);
+}
+
+.code-highlight .token.attr-name {
+  color: var(--color-code-attribute);
+}
+
+.code-highlight .token.attr-value,
+.code-highlight .token.string {
+  color: var(--color-code-string);
+}
+
+.code-highlight .token.number,
+.code-highlight .token.boolean {
+  color: var(--color-code-number);
+}
+
+.code-highlight .token.punctuation {
+  color: var(--color-code-punctuation);
+}
+
+.code-highlight .token.keyword {
+  color: var(--color-code-attribute);
+}
+
 input[type='number'] {
   appearance: textfield;
   -moz-appearance: textfield;

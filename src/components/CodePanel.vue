@@ -92,7 +92,7 @@ function copyReference() {
     </div>
 
     <ScrollAreaRoot class="min-h-0 flex-1">
-      <ScrollAreaViewport class="size-full">
+      <ScrollAreaViewport class="code-highlight size-full">
         <div class="p-3">
           <div v-for="(html, i) in highlightedLines" :key="i" class="flex text-xs leading-5">
             <span
@@ -113,27 +113,3 @@ function copyReference() {
   </div>
 </template>
 
-<style scoped>
-.token.tag {
-  color: var(--color-code-tag);
-}
-.token.attr-name {
-  color: var(--color-code-attribute);
-}
-.token.attr-value,
-.token.string {
-  color: var(--color-code-string);
-}
-.token.number {
-  color: var(--color-code-number);
-}
-.token.punctuation {
-  color: var(--color-code-punctuation);
-}
-.token.boolean {
-  color: var(--color-code-number);
-}
-.token.keyword {
-  color: var(--color-code-attribute);
-}
-</style>

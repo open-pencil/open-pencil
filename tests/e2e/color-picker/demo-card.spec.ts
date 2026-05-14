@@ -39,8 +39,7 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
           .map((n) => `${n.name}:${n.type}`)
           .join(', ')}`
       )
-    store.state.selectedIds = new Set([card.id])
-    store.requestRender()
+    store.select([card.id])
   })
   await canvas.waitForRender()
 

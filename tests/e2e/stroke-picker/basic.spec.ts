@@ -103,8 +103,7 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
       align: 'INSIDE'
     }
     store.updateNodeWithUndo(card.id, { strokes: [stroke] }, 'Add demo card stroke')
-    store.state.selectedIds = new Set([card.id])
-    store.requestRender()
+    store.select([card.id])
   })
   await canvas.waitForRender()
 
