@@ -95,6 +95,10 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawLayoutInsertIndicator(this, canvas, indicator)
   },
 
+  drawAutoLayoutHover(canvas: Canvas, graph: SceneGraph, hover?: RenderOverlays['autoLayoutHover']) {
+    Overlays.drawAutoLayoutHover(this, canvas, graph, hover)
+  },
+
   drawTextEditOverlay(canvas: Canvas, node: SceneNode, editor: TextEditor): void {
     Overlays.drawTextEditOverlay(this, canvas, node, editor)
   },

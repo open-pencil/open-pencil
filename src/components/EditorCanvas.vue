@@ -1,14 +1,33 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
+import { computed, nextTick, ref, watch } from 'vue'
+import {
+  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
+  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
+} from '@open-pencil/core/constants'
+import {
+  ContextMenuPortal,
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  PopoverContent,
+  PopoverPortal,
+  PopoverRoot
+} from 'reka-ui'
 
-import { toolCursor, useCanvas, useCanvasDrop, useCanvasInput, useTextEdit } from '@open-pencil/vue'
+import {
+  toolCursor,
+  useCanvas,
+  useCanvasDrop,
+  useCanvasInput,
+  useCanvasVirtualReference,
+  useTextEdit
+} from '@open-pencil/vue'
 import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import { fadeOutGlobalLoader } from '@/app/editor/canvas/loader-overlay'
 import CanvasMenu from './CanvasMenu.vue'
+import ScrubInput from './ScrubInput.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
@@ -30,7 +49,13 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCan
     layer: 'overlays'
   }
 )
-const { cursorOverride } = useCanvasInput(
+const {
+  cursorOverride,
+  autoLayoutPaddingEdit,
+  updateAutoLayoutPaddingEdit,
+  commitAutoLayoutPaddingEdit,
+  cancelAutoLayoutPaddingEdit
+} = useCanvasInput(
   canvasRef,
   store,
   hitTestSectionTitle,
@@ -41,6 +66,31 @@ const { cursorOverride } = useCanvasInput(
 
 useTextEdit(canvasRef, store)
 const { isDraggingOver } = useCanvasDrop(canvasRef, store)
+
+const paddingEditorRef = ref<HTMLElement | null>(null)
+
+const paddingEditorAnchor = computed(() => {
+  const edit = autoLayoutPaddingEdit.value
+  if (!edit) return null
+  const node = store.graph.getNode(edit.nodeId)
+  if (!node) return null
+  const abs = store.graph.getAbsolutePosition(node.id)
+  if (edit.side === 'top') return { x: abs.x + node.width / 2, y: abs.y + node.paddingTop / 2 }
+  if (edit.side === 'bottom') {
+    return { x: abs.x + node.width / 2, y: abs.y + node.height - node.paddingBottom / 2 }
+  }
+  if (edit.side === 'left') return { x: abs.x + node.paddingLeft / 2, y: abs.y + node.height / 2 }
+  return { x: abs.x + node.width - node.paddingRight / 2, y: abs.y + node.height / 2 }
+})
+const paddingEditorReference = useCanvasVirtualReference(canvasRef, store, paddingEditorAnchor)
+
+watch(autoLayoutPaddingEdit, async (edit) => {
+  if (!edit) return
+  await nextTick()
+  const input = paddingEditorRef.value?.querySelector<HTMLInputElement>('input')
+  input?.focus()
+  input?.select()
+})
 
 const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))
 </script>
@@ -76,6 +126,34 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             class="pointer-events-none absolute inset-0 z-40 border-2 border-dashed border-accent/60 bg-accent/5"
           />
         </Transition>
+        <PopoverRoot :open="!!autoLayoutPaddingEdit">
+          <PopoverPortal>
+            <PopoverContent
+              v-if="autoLayoutPaddingEdit && paddingEditorReference"
+              ref="paddingEditorRef"
+              :reference="paddingEditorReference"
+              side="top"
+              align="center"
+              :side-offset="AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y"
+              :align-offset="AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X"
+              :collision-padding="8"
+              class="z-50 w-20 rounded-md bg-panel p-1 shadow-lg"
+              data-test-id="auto-layout-padding-editor"
+              @keydown.escape.prevent="cancelAutoLayoutPaddingEdit"
+              @open-auto-focus.prevent
+            >
+              <ScrubInput
+                :model-value="autoLayoutPaddingEdit.value"
+                :min="0"
+                :step="1"
+                icon="↔"
+                data-test-id="auto-layout-padding-input"
+                @update:model-value="updateAutoLayoutPaddingEdit"
+                @commit="(value: number) => commitAutoLayoutPaddingEdit(value)"
+              />
+            </PopoverContent>
+          </PopoverPortal>
+        </PopoverRoot>
         <Transition leave-active-class="transition-opacity duration-300" leave-to-class="opacity-0">
           <div
             v-if="store.state.loading"

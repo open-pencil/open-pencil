@@ -25,6 +25,12 @@ export interface RenderOverlays {
     length: number
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
+  autoLayoutHover?: {
+    nodeId: string
+    kind: 'frame' | 'children' | 'spacing' | 'spacing-value' | 'padding' | 'padding-value'
+    index?: number
+    side?: 'top' | 'right' | 'bottom' | 'left'
+  } | null
   penState?: {
     vertices: Vector[]
     segments: Array<{

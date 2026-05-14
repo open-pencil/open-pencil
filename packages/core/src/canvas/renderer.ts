@@ -169,6 +169,11 @@ export class SkiaRenderer {
     canvas: Canvas,
     indicator?: RenderOverlays['layoutInsertIndicator']
   ) => void
+  declare drawAutoLayoutHover: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    hover?: RenderOverlays['autoLayoutHover']
+  ) => void
   declare drawTextEditOverlay: (canvas: Canvas, node: SceneNode, editor: TextEditor) => void
   declare drawNodeEditOverlay: (
     canvas: Canvas,

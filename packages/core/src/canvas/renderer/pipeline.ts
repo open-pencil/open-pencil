@@ -70,7 +70,8 @@ export function renderFromEditorState(
           } as RenderOverlays['penState'])
         : null,
       nodeEditState: state.nodeEditState ?? null,
-      remoteCursors: state.remoteCursors
+      remoteCursors: state.remoteCursors,
+      autoLayoutHover: state.autoLayoutHover
     },
     state.sceneVersion,
     layer
@@ -197,6 +198,7 @@ export function render(
     r.drawSnapGuides(canvas, overlays.snapGuides)
     r.drawMarquee(canvas, overlays.marquee)
     r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
+    r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
     r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
     r.drawPenOverlay(canvas, overlays.penState)
     r.drawRemoteCursors(canvas, graph, overlays.remoteCursors)

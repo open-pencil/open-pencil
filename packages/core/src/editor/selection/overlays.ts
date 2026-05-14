@@ -36,12 +36,27 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  function setAutoLayoutHover(hover: typeof ctx.state.autoLayoutHover) {
+    const current = ctx.state.autoLayoutHover
+    if (
+      current?.nodeId === hover?.nodeId &&
+      current?.kind === hover?.kind &&
+      current?.index === hover?.index &&
+      current?.side === hover?.side
+    ) {
+      return
+    }
+    ctx.state.autoLayoutHover = hover
+    ctx.requestRepaint()
+  }
+
   return {
     setMarquee,
     setSnapGuides,
     setRotationPreview,
     setHoveredNode,
     setDropTarget,
-    setLayoutInsertIndicator
+    setLayoutInsertIndicator,
+    setAutoLayoutHover
   }
 }

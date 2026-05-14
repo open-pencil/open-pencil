@@ -9,6 +9,7 @@ export {
   drawSelection,
   getRotatedCorners
 } from './selection'
+export { drawAutoLayoutHover } from './auto-layout-hover'
 export { drawFlashes, drawLayoutInsertIndicator, drawMarquee, drawSnapGuides } from './feedback'
 export { drawTextEditOverlay } from './text-edit'
 export { drawSelectionLabels } from '#core/canvas/selection-labels'

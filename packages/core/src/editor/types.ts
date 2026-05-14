@@ -59,6 +59,12 @@ export interface EditorState {
     y: number
     selection?: string[]
   }>
+  autoLayoutHover: {
+    nodeId: string
+    kind: 'frame' | 'children' | 'spacing' | 'spacing-value' | 'padding' | 'padding-value'
+    index?: number
+    side?: 'top' | 'right' | 'bottom' | 'left'
+  } | null
   documentName: string
   panX: number
   pageColor: Color
