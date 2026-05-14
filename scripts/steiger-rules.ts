@@ -168,6 +168,27 @@ const noForeignPackageLocalAliases = createImportRule(
   }
 )
 
+const noAppImportsInSharedUi = createImportRule(
+  'open-pencil/no-app-imports-in-shared-ui',
+  (sourceRel, _specifier, resolved) => {
+    if (!sourceRel.startsWith('src/components/ui/')) return null
+    if (resolved?.startsWith('src/app/')) {
+      return 'Shared UI components must not import app services or stores. Pass data/actions in or move app-specific wrappers outside src/components/ui.'
+    }
+    return null
+  }
+)
+
+const noPropertyPanelInternalsOutsidePanel = createImportRule(
+  'open-pencil/no-property-panel-internals-outside-panel',
+  (sourceRel, _specifier, resolved) => {
+    if (!resolved?.startsWith('src/components/properties/')) return null
+    if (sourceRel.startsWith('src/components/properties/')) return null
+    if (sourceRel === 'src/components/DesignPanel.vue') return null
+    return 'Property-panel internals must stay inside the property panel. Extract app-neutral UI before reusing elsewhere.'
+  }
+)
+
 const noUiImportsInCore = createImportRule(
   'open-pencil/no-ui-imports-in-core',
   (sourceRel, specifier) => {
@@ -192,6 +213,8 @@ export const openPencilArchitecturePlugin = {
     noAppImportsInWorkspacePackages,
     noPackageInternalsInApp,
     noForeignPackageLocalAliases,
+    noAppImportsInSharedUi,
+    noPropertyPanelInternalsOutsidePanel,
     noUiImportsInCore
   ]
 }

@@ -23,6 +23,8 @@ export default defineConfig([
       'open-pencil/no-app-imports-in-workspace-packages': 'error',
       'open-pencil/no-package-internals-in-app': 'error',
       'open-pencil/no-foreign-package-local-aliases': 'error',
+      'open-pencil/no-app-imports-in-shared-ui': 'error',
+      'open-pencil/no-property-panel-internals-outside-panel': 'error',
       'open-pencil/no-ui-imports-in-core': 'error'
     }
   }

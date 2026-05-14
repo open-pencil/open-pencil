@@ -2,8 +2,9 @@ import { useEventListener } from '@vueuse/core'
 import { ref } from 'vue'
 
 import { isTauri } from '@/app/tauri/env'
+import type { ToastVariant } from '@/components/ui/toast'
 
-export type ToastVariant = 'default' | 'warning' | 'error'
+export type { ToastVariant } from '@/components/ui/toast'
 
 export interface Toast {
   id: number
