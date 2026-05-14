@@ -24,6 +24,13 @@ type ImportRef = {
 }
 
 const TEXT_EXTENSIONS = new Set(['.ts', '.tsx', '.vue', '.js', '.jsx', '.mjs', '.mts'])
+const ROOT_MARKDOWN_ALLOWLIST = new Set([
+  'AGENTS.md',
+  'CHANGELOG.md',
+  'CONTRIBUTING.md',
+  'README.md',
+  'SECURITY.md'
+])
 const PACKAGE_ALIASES: Record<string, string> = {
   '#core/': 'packages/core/src/',
   '#vue/': 'packages/vue/src/',
@@ -135,6 +142,10 @@ function createImportRule(
 const strictTestFilePlacement = createFileRule('open-pencil/strict-test-file-placement', (sourceRel) => {
   if (!sourceRel.startsWith('tests/')) return null
   if (!TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
+  const name = path.basename(sourceRel)
+  if (name.includes('.tmp.') || name.includes('.profile.')) {
+    return 'Temporary/profile test files must not be committed. Move exploratory specs to scratch/ or delete them.'
+  }
   if (sourceRel.startsWith('tests/e2e/')) {
     return sourceRel.endsWith('.spec.ts') ? null : 'E2E tests must live under tests/e2e/** and use *.spec.ts.'
   }
@@ -168,6 +179,33 @@ const noE2EImportsInEngineTests = createImportRule(
     if (!sourceRel.startsWith('tests/engine/')) return null
     if (resolved?.startsWith('tests/e2e/')) {
       return 'Engine/unit tests must not import E2E tests or fixtures.'
+    }
+    return null
+  }
+)
+
+const noRootMarkdownClutter = createFileRule('open-pencil/no-root-markdown-clutter', (sourceRel) => {
+  if (sourceRel.includes('/')) return null
+  if (!sourceRel.endsWith('.md')) return null
+  if (ROOT_MARKDOWN_ALLOWLIST.has(sourceRel)) return null
+  return 'Do not add ad hoc root Markdown files. Put durable docs under packages/docs/** or update the root allowlist deliberately.'
+})
+
+const noPrototypeOrGeneratedImports = createImportRule(
+  'open-pencil/no-prototype-or-generated-imports',
+  (sourceRel, _specifier, resolved) => {
+    if (!resolved) return null
+    if (resolved.startsWith('scratch/')) {
+      return 'Committed code must not import scratch prototypes.'
+    }
+    if (resolved.startsWith('desktop/generated/')) {
+      return 'Do not import generated desktop artifacts from TypeScript/app code.'
+    }
+    if (
+      resolved.startsWith('packages/core/src/kiwi/kiwi-schema/') &&
+      !sourceRel.startsWith('packages/core/src/kiwi/kiwi-schema/')
+    ) {
+      return 'Do not import vendored Kiwi schema internals directly; use the supported Kiwi APIs.'
     }
     return null
   }
@@ -315,6 +353,8 @@ export const openPencilArchitecturePlugin = {
     strictTestFilePlacement,
     noEngineOnlyAssertionsInE2E,
     noE2EImportsInEngineTests,
+    noRootMarkdownClutter,
+    noPrototypeOrGeneratedImports,
     noPropertyPanelImportsInCanvas,
     noAppImportsInWorkspacePackages,
     noPackageInternalsInApp,

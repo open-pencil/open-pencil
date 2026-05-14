@@ -3,6 +3,9 @@ import { defineConfig } from 'steiger'
 
 import { openPencilArchitecturePlugin } from './scripts/steiger-rules.ts'
 
+// OpenPencil is not laid out as canonical Feature-Sliced Design layers.
+// Keep Steiger focused on project-specific architecture boundaries instead of
+// enabling fsd.configs.recommended, which treats src/ and packages/ as FSD layer typos.
 export default defineConfig([
   fsd.plugin,
   openPencilArchitecturePlugin,
@@ -21,6 +24,8 @@ export default defineConfig([
       'open-pencil/strict-test-file-placement': 'error',
       'open-pencil/no-engine-only-assertions-in-e2e': 'error',
       'open-pencil/no-e2e-imports-in-engine-tests': 'error',
+      'open-pencil/no-root-markdown-clutter': 'error',
+      'open-pencil/no-prototype-or-generated-imports': 'error',
       'open-pencil/no-property-panel-imports-in-canvas': 'error',
       'open-pencil/no-app-imports-in-workspace-packages': 'error',
       'open-pencil/no-package-internals-in-app': 'error',
