@@ -32,6 +32,8 @@ export interface ClipboardShapedText {
 
 const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
 const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
+const FONT_FAMILY_CACHE_LIMIT = 256
+const fontFamilyCache = new Map<string, string[]>()
 
 function hasRequiredFallbackFonts(text: string): boolean {
   if (CJK_RE.test(text) && fontManager.getCJKFallbackFamilies().length === 0) return false
@@ -112,6 +114,28 @@ function buildTruncateOpts(
     opts.maxLines = Math.max(1, Math.floor(node.height / lineH))
   }
   return opts
+}
+
+function resolveParagraphFontFamilies(
+  primary: string,
+  arabicFallbacks: readonly string[],
+  cjkFallbacks: readonly string[]
+): string[] {
+  const key = `${primary}\0${arabicFallbacks.join('\0')}\0${cjkFallbacks.join('\0')}`
+  const cached = fontFamilyCache.get(key)
+  if (cached) return cached
+
+  const families = [primary]
+  if (primary !== DEFAULT_FONT_FAMILY) families.push(DEFAULT_FONT_FAMILY)
+  families.push(...arabicFallbacks, ...cjkFallbacks)
+
+  const resolved = [...new Set(families)]
+  fontFamilyCache.set(key, resolved)
+  if (fontFamilyCache.size > FONT_FAMILY_CACHE_LIMIT) {
+    const oldestKey = fontFamilyCache.keys().next().value
+    if (oldestKey) fontFamilyCache.delete(oldestKey)
+  }
+  return resolved
 }
 
 function getParagraphTextAlign(
@@ -212,13 +236,8 @@ export function buildParagraph(
 
   const truncateOpts = buildTruncateOpts(node, baseFontSize)
 
-  const fontFamilies = (primary: string) => {
-    const families = [primary]
-    if (primary !== DEFAULT_FONT_FAMILY) families.push(DEFAULT_FONT_FAMILY)
-    families.push(...arabicFallbacks)
-    families.push(...cjkFallbacks)
-    return [...new Set(families)]
-  }
+  const fontFamilies = (primary: string) =>
+    resolveParagraphFontFamilies(primary, arabicFallbacks, cjkFallbacks)
 
   const paraStyle = new ck.ParagraphStyle({
     textAlign: getParagraphTextAlign(ck, node),
