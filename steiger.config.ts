@@ -21,6 +21,7 @@ export default defineConfig([
   },
   {
     rules: {
+      'open-pencil/prefer-domain-folders-over-filename-prefixes': 'error',
       'open-pencil/strict-test-file-placement': 'error',
       'open-pencil/no-engine-only-assertions-in-e2e': 'error',
       'open-pencil/no-e2e-imports-in-engine-tests': 'error',

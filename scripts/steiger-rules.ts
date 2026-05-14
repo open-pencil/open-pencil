@@ -17,6 +17,11 @@ type Rule = { name: string; check: (root: TreeEntry) => RuleResult }
 
 type FileRuleCheck = (sourceRel: string) => string | null
 
+const FILE_PREFIX_GROUP_ALLOWLIST = new Set([
+  'packages/core/src/lint/rules::no',
+  'tests/engine::visual'
+])
+
 type ImportRef = {
   specifier: string
   line: number
@@ -60,6 +65,13 @@ function collectFiles(entry: TreeEntry, files: string[] = []) {
   }
   for (const child of entry.children ?? []) collectFiles(child, files)
   return files
+}
+
+function collectFolders(entry: TreeEntry, folders: TreeEntry[] = []) {
+  if (entry.type !== 'folder') return folders
+  folders.push(entry)
+  for (const child of entry.children ?? []) collectFolders(child, folders)
+  return folders
 }
 
 function importsIn(content: string): ImportRef[] {
@@ -136,6 +148,40 @@ function createImportRule(
       }
       return { diagnostics }
     }
+  }
+}
+
+function filePrefix(filePath: string): string | null {
+  const name = path.basename(filePath).replace(/\.(test|spec|bench)?\.?[cm]?[tj]sx?$|\.vue$/, '')
+  const match = /^([a-z][a-z0-9]+)-[a-z0-9-]+$/.exec(name)
+  return match?.[1] ?? null
+}
+
+const preferDomainFoldersOverFilenamePrefixes: Rule = {
+  name: 'open-pencil/prefer-domain-folders-over-filename-prefixes',
+  check(root) {
+    const diagnostics: Diagnostic[] = []
+    for (const folder of collectFolders(root)) {
+      const folderRel = relativePath(root.path, folder.path)
+      const groups = new Map<string, string[]>()
+      for (const child of folder.children ?? []) {
+        if (child.type !== 'file' || !TEXT_EXTENSIONS.has(path.extname(child.path))) continue
+        const prefix = filePrefix(child.path)
+        if (!prefix) continue
+        const files = groups.get(prefix) ?? []
+        files.push(child.path)
+        groups.set(prefix, files)
+      }
+      for (const [prefix, files] of groups) {
+        if (files.length < 3) continue
+        if (FILE_PREFIX_GROUP_ALLOWLIST.has(`${folderRel}::${prefix}`)) continue
+        diagnostics.push({
+          message: `Use a ${prefix}/ domain folder instead of ${files.length} sibling files with the ${prefix}- filename prefix.`,
+          location: { path: folder.path }
+        })
+      }
+    }
+    return { diagnostics }
   }
 }
 
@@ -350,6 +396,7 @@ const noUiImportsInCore = createImportRule(
 export const openPencilArchitecturePlugin = {
   meta: { name: 'open-pencil-architecture', version: '0.0.0' },
   ruleDefinitions: [
+    preferDomainFoldersOverFilenamePrefixes,
     strictTestFilePlacement,
     noEngineOnlyAssertionsInE2E,
     noE2EImportsInEngineTests,
