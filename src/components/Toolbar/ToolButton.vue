@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { testId as testIdAttr, type RequiredTestIdProps } from '@open-pencil/vue'
+import { vTestId, type RequiredTestIdProps } from '@open-pencil/vue'
 import type { Component } from 'vue'
 
 interface ToolButtonProps extends RequiredTestIdProps {
@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 <template>
   <button
-    v-bind="testIdAttr(testId)"
+    v-test-id="testId"
     class="flex size-8 cursor-pointer items-center justify-center border-none transition-colors"
     :class="[
       mobile ? 'rounded-[6px] select-none' : 'rounded-lg',

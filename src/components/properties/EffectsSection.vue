@@ -4,7 +4,7 @@ import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
-import { PropertyListRoot, testId as testIdAttr, useEffectsControls, useI18n } from '@open-pencil/vue'
+import { PropertyListRoot, vTestId, useEffectsControls, useI18n } from '@open-pencil/vue'
 
 import { colorToCSS } from '@open-pencil/core/color'
 
@@ -65,7 +65,7 @@ const sectionCls = useSectionUI()
           />
 
           <button
-            v-bind="testIdAttr(`effect-visibility-${i}`)"
+            v-test-id="`effect-visibility-${i}`"
             :data-visible="effect.visible ? 'true' : 'false'"
             class="cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
             @click="actions.toggleVisibility(i)"

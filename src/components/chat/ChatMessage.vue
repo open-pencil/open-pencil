@@ -2,7 +2,7 @@
 import { isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
-import { testId as testIdAttr } from '@open-pencil/vue'
+import { vTestId } from '@open-pencil/vue'
 import 'vue-stream-markdown/index.css'
 
 import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
@@ -41,7 +41,7 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
 
 <template>
   <div
-    v-bind="testIdAttr(`chat-message-${message.role}`)"
+    v-test-id="`chat-message-${message.role}`"
     :class="message.role === 'user' ? 'flex justify-end' : ''"
   >
     <div class="min-w-0 space-y-1.5" :class="message.role === 'user' ? 'max-w-[85%]' : ''">

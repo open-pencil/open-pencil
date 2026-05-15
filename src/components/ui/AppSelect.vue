@@ -11,7 +11,7 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import { testId as testIdAttr, type TestIdProps } from '@open-pencil/vue'
+import { vTestId, type TestIdProps } from '@open-pencil/vue'
 
 import { useSelectUI } from '@/components/ui/select'
 import type { SelectUi } from '@/components/ui/select'
@@ -47,7 +47,7 @@ const indicator = ui?.indicator ?? 'absolute left-1.5 inline-flex items-center j
 
 <template>
   <SelectRoot v-model="modelValue">
-    <SelectTrigger v-bind="testIdAttr(testId)" :class="select.trigger">
+    <SelectTrigger v-test-id="testId" :class="select.trigger">
       <SelectValue :placeholder="placeholder" />
       <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
     </SelectTrigger>

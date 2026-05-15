@@ -9,7 +9,7 @@ import {
   ContextMenuPortal
 } from 'reka-ui'
 import {
-  testId as testIdAttr,
+  vTestId,
   useEditorCommands,
   useI18n,
   useMenuModel,
@@ -126,7 +126,7 @@ const contextCommandTestIds: Record<string, string> = {
       </ContextMenuSub>
       <ContextMenuItem
         v-else
-        v-bind="testIdAttr(item.id ? contextCommandTestIds[item.id] : undefined)"
+        v-test-id="item.id ? contextCommandTestIds[item.id] : undefined"
         :class="canvasMenuItemClass(item.label, cls)"
         :disabled="item.disabled"
         @select="item.action?.()"

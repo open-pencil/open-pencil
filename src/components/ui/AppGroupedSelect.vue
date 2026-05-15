@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
-import { testId as testIdAttr, type TestIdProps } from '@open-pencil/vue'
+import { vTestId, type TestIdProps } from '@open-pencil/vue'
 
 import { useSelectUI } from '@/components/ui/select'
 
@@ -57,7 +57,7 @@ const separator = ui?.separator ?? 'mx-1 my-1 h-px bg-border'
 
 <template>
   <SelectRoot v-model="modelValue">
-    <SelectTrigger v-bind="testIdAttr(testId)" :class="select.trigger">
+    <SelectTrigger v-test-id="testId" :class="select.trigger">
       <slot name="value">{{ displayValue }}</slot>
       <icon-lucide-chevron-down class="size-2.5 shrink-0 text-muted" />
     </SelectTrigger>

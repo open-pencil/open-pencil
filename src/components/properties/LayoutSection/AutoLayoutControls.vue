@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Tip from '@/components/ui/Tip.vue'
-import { testId as testIdAttr, useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { vTestId, useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import type { LayoutMode } from '@open-pencil/core/scene-graph'
 
@@ -42,7 +42,7 @@ const layoutModes: { mode: LayoutMode; test: string }[] = [
     <button
       v-for="dir in layoutModes"
       :key="dir.mode"
-      v-bind="testIdAttr(`layout-direction-${dir.test}`)"
+      v-test-id="`layout-direction-${dir.test}`"
       class="flex cursor-pointer items-center justify-center rounded border px-2 py-1"
       :class="
         (dir.mode === 'GRID' ? ctx.isGrid : ctx.node.layoutMode === dir.mode)

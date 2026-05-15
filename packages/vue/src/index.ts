@@ -48,6 +48,7 @@ export { useNodeFontStatus } from '#vue/shared/font-status/use'
 export { usePropScrub } from '#vue/controls/prop-scrub/use'
 export { toolCursor } from '#vue/editor/tool-cursor'
 export { testId, testIdSelector } from '#vue/testing/test-id'
+export { vTestId } from '#vue/testing/v-test-id'
 export type {
   RequiredTestIdProps,
   TestId,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { testId as testIdAttr, type TestIdProps } from '@open-pencil/vue'
+import { vTestId, type TestIdProps } from '@open-pencil/vue'
 
 import Tip from '@/components/ui/Tip.vue'
 
@@ -17,7 +17,7 @@ const emit = defineEmits<{
 <template>
   <Tip :label="label">
     <button
-      v-bind="testIdAttr(testId)"
+      v-test-id="testId"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-violet-400 hover:text-surface"
       @click="emit('detach')"
     >

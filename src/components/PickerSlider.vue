@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inputNumberValue, testId as testIdAttr, type TestIdProps } from '@open-pencil/vue'
+import { inputNumberValue, vTestId, type TestIdProps } from '@open-pencil/vue'
 import { usePickerSliderUI } from './ui/picker-slider'
 
 type PickerSliderDisplay = {
@@ -64,7 +64,7 @@ function thumbLeft(): string {
 </script>
 
 <template>
-  <div :class="cls.root" v-bind="testIdAttr(testId)">
+  <div :class="cls.root" v-test-id="testId">
     <span :class="cls.label">{{ label }}</span>
     <div :class="cls.track">
       <div :class="cls.gradient" :style="gradientStyle" />

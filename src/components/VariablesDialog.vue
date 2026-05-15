@@ -27,7 +27,7 @@ import {
 } from 'reka-ui'
 import { FlexRender } from '@tanstack/vue-table'
 
-import { testId as testIdAttr, useI18n, useVariablesEditor } from '@open-pencil/vue'
+import { vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
 
 import IconHash from '~icons/lucide/hash'
 import IconPalette from '~icons/lucide/palette'
@@ -390,7 +390,7 @@ function modeId(columnId: string): string {
                         v-for="item in variableTypes"
                         :key="item.type"
                         :class="menuCls.item"
-                        v-bind="testIdAttr(`variables-add-${item.type.toLowerCase()}`)"
+                        v-test-id="`variables-add-${item.type.toLowerCase()}`"
                         @select="ctx.addVariable(item.type)"
                       >
                         <component :is="variableTypeIcons[item.type]" :class="menuCls.icon" />

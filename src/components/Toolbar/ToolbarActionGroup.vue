@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { testId as testIdAttr } from '@open-pencil/vue'
+import { vTestId } from '@open-pencil/vue'
 
 import type { ToolbarActionItem } from '@/components/Toolbar/types'
 
@@ -17,7 +17,7 @@ const emit = defineEmits<{
   <button
     v-for="item in actions"
     :key="item.label"
-    v-bind="testIdAttr(`${testPrefix}-${item.label.toLowerCase()}`)"
+    v-test-id="`${testPrefix}-${item.label.toLowerCase()}`"
     class="flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted transition-colors select-none active:bg-hover active:text-surface"
     @click="emit('action', item)"
   >

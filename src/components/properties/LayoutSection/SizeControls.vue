@@ -19,6 +19,7 @@ import VariablePickerPopover from '@/components/properties/VariablePickerPopover
 import { useSelectUI } from '@/components/ui/select'
 import {
   testId as testIdAttr,
+  vTestId,
   useI18n,
   useLayoutControlsContext,
   useNumberVariableBinding
@@ -361,7 +362,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
             >
               <SelectTrigger
-                v-bind="testIdAttr(`${item.testId}-menu`)"
+                v-test-id="`${item.testId}-menu`"
                 :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop
@@ -403,7 +404,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
             >
               <SelectTrigger
-                v-bind="testIdAttr(`${item.testId}-menu`)"
+                v-test-id="`${item.testId}-menu`"
                 :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop
