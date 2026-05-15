@@ -201,6 +201,45 @@ const noVueStyleBlocks = {
   }
 }
 
+const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
+
+const noInvalidTestIdAttributes = {
+  meta: {
+    docs: {
+      description: 'Enforce data-test-id spelling and kebab-case static test ids in Vue components'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue')) return {}
+
+    return {
+      Program(node) {
+        const source = context.sourceCode.getText()
+        const invalidAttr = source.match(/\bdata-testid\s*=/)
+        if (invalidAttr) {
+          context.report({
+            node,
+            message: 'Use data-test-id instead of data-testid.'
+          })
+          return
+        }
+
+        const attrPattern = /\bdata-test-id\s*=\s*"([^"]+)"/g
+        for (const match of source.matchAll(attrPattern)) {
+          const id = match[1]
+          if (TEST_ID_FORMAT.test(id)) continue
+          context.report({
+            node,
+            message: `Static data-test-id values must be kebab-case. Invalid id: "${id}".`
+          })
+          return
+        }
+      }
+    }
+  }
+}
+
 const noDocumentQuerySelectorInVue = {
   meta: {
     docs: {
@@ -1286,6 +1325,7 @@ const plugin = {
     'no-inline-named-types': noInlineNamedTypes,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
+    'no-invalid-test-id-attributes': noInvalidTestIdAttributes,
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
     'no-math-random': noMathRandom,

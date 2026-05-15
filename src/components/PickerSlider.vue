@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inputNumberValue } from '@open-pencil/vue'
+import { inputNumberValue, testId as testIdAttr, type TestIdProps } from '@open-pencil/vue'
 import { usePickerSliderUI } from './ui/picker-slider'
 
 type PickerSliderDisplay = {
@@ -9,6 +9,21 @@ type PickerSliderDisplay = {
   step?: number
   format?: (value: number) => string | number
   parse?: (value: number) => number
+}
+
+type PickerSliderProps = TestIdProps & {
+  label: string
+  modelValue: number
+  min: number
+  max: number
+  step?: number
+  display?: PickerSliderDisplay
+  gradientStyle?: string
+  checkerboard?: boolean
+  thumbFill?: string
+  ui?: Partial<
+    Record<'root' | 'label' | 'track' | 'gradient' | 'range' | 'thumb' | 'input', string>
+  >
 }
 
 const {
@@ -23,21 +38,7 @@ const {
   thumbFill = '#fff',
   testId,
   ui
-} = defineProps<{
-  label: string
-  modelValue: number
-  min: number
-  max: number
-  step?: number
-  display?: PickerSliderDisplay
-  gradientStyle?: string
-  checkerboard?: boolean
-  thumbFill?: string
-  testId?: string
-  ui?: Partial<
-    Record<'root' | 'label' | 'track' | 'gradient' | 'range' | 'thumb' | 'input', string>
-  >
-}>()
+} = defineProps<PickerSliderProps>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -63,7 +64,7 @@ function thumbLeft(): string {
 </script>
 
 <template>
-  <div :class="cls.root" :data-test-id="testId">
+  <div :class="cls.root" v-bind="testIdAttr(testId)">
     <span :class="cls.label">{{ label }}</span>
     <div :class="cls.track">
       <div :class="cls.gradient" :style="gradientStyle" />
