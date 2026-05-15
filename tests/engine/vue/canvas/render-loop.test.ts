@@ -155,6 +155,37 @@ describe('canvas render loop', () => {
     }
   })
 
+  test('coalesces multiple canvas surfaces into one animation frame', () => {
+    const scheduler = createFrameScheduler()
+    try {
+      const { editor, emit } = createEditor()
+      let sceneRenders = 0
+      let overlayRenders = 0
+      createCanvasRenderLoop(
+        editor,
+        () => {
+          sceneRenders++
+        },
+        { layer: 'scene' }
+      )
+      createCanvasRenderLoop(
+        editor,
+        () => {
+          overlayRenders++
+        },
+        { layer: 'overlays' }
+      )
+
+      emit('viewport:changed')
+      expect(scheduler.pendingCount).toBe(1)
+      scheduler.flush()
+      expect(sceneRenders).toBe(1)
+      expect(overlayRenders).toBe(1)
+    } finally {
+      scheduler.restore()
+    }
+  })
+
   test('cancels pending renders when paused', () => {
     const scheduler = createFrameScheduler()
     try {
