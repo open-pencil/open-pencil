@@ -12,6 +12,8 @@ import {
 
 import { computed, nextTick, ref, watch } from 'vue'
 
+import { testId as testIdAttr } from '@open-pencil/vue'
+
 import type { Variable } from '@open-pencil/core/scene-graph'
 
 const searchTerm = defineModel<string>('searchTerm', { default: '' })
@@ -77,7 +79,7 @@ function submitCreate() {
 <template>
   <PopoverRoot v-model:open="open">
     <PopoverTrigger
-      :data-test-id="triggerTestId"
+      v-bind="testIdAttr(triggerTestId)"
       :aria-label="triggerLabel"
       :title="triggerLabel"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
@@ -144,7 +146,7 @@ function submitCreate() {
                 class="min-w-0 flex-1 rounded border border-border bg-transparent px-1.5 py-1 text-[11px] text-surface outline-none placeholder:text-muted focus:border-accent"
               />
               <button
-                :data-test-id="createTestId"
+                v-bind="testIdAttr(createTestId)"
                 :disabled="!canCreate"
                 class="rounded border border-border bg-panel px-1.5 py-1 text-[11px] text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                 type="submit"
@@ -154,7 +156,7 @@ function submitCreate() {
             </form>
             <button
               v-else
-              :data-test-id="createTestId"
+              v-bind="testIdAttr(createTestId)"
               class="flex w-full cursor-pointer items-center gap-1.5 bg-transparent px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface"
               @click="startCreate"
             >

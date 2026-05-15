@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { useAttrs } from 'vue'
-import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay } from '@open-pencil/vue'
+import { computed, useAttrs } from 'vue'
+import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay, testId } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 
 const attrs = useAttrs()
 
 const store = useEditorStore()
+
+const rootTestId = computed(() => (attrs['data-test-id'] as string | undefined) ?? 'scrub-input')
 
 const { modelValue, min, max, step, icon, label, suffix, sensitivity, placeholder } = defineProps<{
   modelValue: number | symbol
@@ -47,8 +49,7 @@ defineOptions({ inheritAttrs: false })
     "
   >
     <div
-      v-bind="attrs"
-      :data-test-id="(attrs['data-test-id'] as string | undefined) ?? 'scrub-input'"
+      v-bind="{ ...attrs, ...testId(rootTestId) }"
       :tabindex="editing ? undefined : 0"
       :class="[
         attrs.class,

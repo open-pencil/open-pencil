@@ -19,7 +19,7 @@ import {
 
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { useI18n } from '@open-pencil/vue'
+import { testId as testIdAttr, useI18n } from '@open-pencil/vue'
 import { useMenuUI } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
@@ -91,7 +91,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
       <MenubarRoot class="scrollbar-none flex items-center gap-0.5 overflow-x-auto">
         <MenubarMenu v-for="menu in topMenus" :key="menu.label">
           <MenubarTrigger
-            :data-test-id="`menubar-${menu.label.toLowerCase()}`"
+            v-bind="testIdAttr(`menubar-${menu.label.toLowerCase()}`)"
             class="flex cursor-pointer items-center rounded px-2 py-1 text-xs text-muted transition-colors select-none hover:bg-hover hover:text-surface data-[state=open]:bg-hover data-[state=open]:text-surface"
           >
             {{ menu.label }}

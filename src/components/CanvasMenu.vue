@@ -8,7 +8,13 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
-import { useEditorCommands, useI18n, useMenuModel, useSelectionState } from '@open-pencil/vue'
+import {
+  testId as testIdAttr,
+  useEditorCommands,
+  useI18n,
+  useMenuModel,
+  useSelectionState
+} from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu-actions'
@@ -120,7 +126,7 @@ const contextCommandTestIds: Record<string, string> = {
       </ContextMenuSub>
       <ContextMenuItem
         v-else
-        :data-test-id="item.id ? contextCommandTestIds[item.id] : undefined"
+        v-bind="testIdAttr(item.id ? contextCommandTestIds[item.id] : undefined)"
         :class="canvasMenuItemClass(item.label, cls)"
         :disabled="item.disabled"
         @select="item.action?.()"

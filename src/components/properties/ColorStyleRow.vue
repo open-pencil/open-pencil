@@ -4,7 +4,7 @@ import BoundVariableButton from '@/components/properties/BoundVariableButton.vue
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 
-import { useI18n } from '@open-pencil/vue'
+import { testId as testIdAttr, useI18n } from '@open-pencil/vue'
 
 import {
   opacityFromPercent,
@@ -99,7 +99,7 @@ const { panels, dialogs } = useI18n()
     />
 
     <button
-      :data-test-id="visibilityTestId"
+      v-bind="testIdAttr(visibilityTestId)"
       :data-visible="item.visible ? 'true' : 'false'"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
       @click="emit('toggleVisibility')"

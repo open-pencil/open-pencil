@@ -10,6 +10,7 @@ import {
   AlertDialogTitle
 } from 'reka-ui'
 import { computed } from 'vue'
+import { testId as testIdAttr } from '@open-pencil/vue'
 
 import {
   currentPermission,
@@ -85,7 +86,7 @@ function handleDismiss() {
           <AlertDialogAction
             v-for="opt in allowOptions"
             :key="opt.optionId"
-            :data-test-id="`acp-permission-option-${opt.kind}`"
+            v-bind="testIdAttr(`acp-permission-option-${opt.kind}`)"
             class="w-full rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
             @click="respondToPermission(opt.optionId)"
           >
@@ -95,7 +96,7 @@ function handleDismiss() {
           <AlertDialogCancel
             v-for="opt in rejectOptions"
             :key="opt.optionId"
-            :data-test-id="`acp-permission-option-${opt.kind}`"
+            v-bind="testIdAttr(`acp-permission-option-${opt.kind}`)"
             class="w-full rounded border border-border bg-canvas px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
             @click="respondToPermission(opt.optionId)"
           >
