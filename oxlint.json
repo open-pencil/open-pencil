@@ -95,7 +95,10 @@
     "vue/no-required-prop-with-default": "error",
     "vue/no-multiple-slot-args": "error",
     "vue/define-emits-declaration": "error",
+    "vue/define-props-declaration": "error",
     "vue/define-props-destructuring": "error",
+    "vue/max-props": ["error", { "maxProps": 16 }],
+    "vue/require-default-export": "error",
     "vue/require-typed-ref": "error",
     "open-pencil/no-inline-named-types": [
       "error",
