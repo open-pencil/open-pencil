@@ -54,10 +54,7 @@ test('selecting a rectangle shows JSX code', async () => {
 
   await expect(codePanel()).toBeVisible()
 
-  const code = await page.evaluate(() => {
-    const el = document.querySelector('[data-test-id="code-panel"]')
-    return el?.textContent ?? ''
-  })
+  const code = await codePanel().textContent()
   expect(code).toContain('Rectangle')
 })
 
@@ -70,10 +67,7 @@ test('format toggle switches between OpenPencil and Tailwind', async () => {
   await formatToggle().click()
   await expect(formatToggle()).toContainText('Tailwind')
 
-  const code = await page.evaluate(() => {
-    const el = document.querySelector('[data-test-id="code-panel"]')
-    return el?.textContent ?? ''
-  })
+  const code = await codePanel().textContent()
   expect(code).toContain('div')
 
   await formatToggle().click()
@@ -106,18 +100,12 @@ test('selecting a frame shows Frame in JSX', async () => {
   })
   await canvas.waitForRender()
 
-  const code = await page.evaluate(() => {
-    const el = document.querySelector('[data-test-id="code-panel"]')
-    return el?.textContent ?? ''
-  })
+  const code = await codePanel().textContent()
   expect(code).toContain('Frame')
 })
 
 test('switching back to Design tab works', async () => {
   await designTab().click()
 
-  const panel = page.locator(
-    '[data-test-id="design-panel-single"], [data-test-id="design-panel-empty"]'
-  )
-  await expect(panel.first()).toBeVisible()
+  await expect(page.getByTestId('design-panel-single').or(page.getByTestId('design-panel-empty')).first()).toBeVisible()
 })

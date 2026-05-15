@@ -252,7 +252,7 @@ test.describe('Zoom and pan', () => {
       store.state.panX = 0
       store.state.panY = 0
 
-      const canvas = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-ready="1"]')
       if (!canvas) throw new Error('Canvas element not found')
       const wheelStart = performance.now()
       for (let i = 0; i < iterations; i++) {

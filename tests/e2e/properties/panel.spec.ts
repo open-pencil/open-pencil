@@ -43,9 +43,7 @@ test('corner radius uniform sets cornerRadius', async () => {
   const scrubContainer = page.getByTestId('corner-radius-input')
   await scrubContainer.click()
   await canvas.waitForRender()
-  const input = page.locator(
-    '[data-test-id="corner-radius-input"] [data-test-id="scrub-input-field"]'
-  )
+  const input = page.getByTestId('corner-radius-input').getByTestId('scrub-input-field')
   await input.fill('12')
   await input.press('Enter')
   await canvas.waitForRender()

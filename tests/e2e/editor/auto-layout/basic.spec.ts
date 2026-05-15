@@ -118,18 +118,18 @@ test('padding controls set horizontal and vertical padding pairs', async () => {
 
   await page.getByTestId('layout-horizontal-padding-input').click()
   await canvas.waitForRender()
-  const horizontalInput = page.locator(
-    '[data-test-id="layout-horizontal-padding-input"] [data-test-id="scrub-input-field"]'
-  )
+  const horizontalInput = page
+    .getByTestId('layout-horizontal-padding-input')
+    .getByTestId('scrub-input-field')
   await horizontalInput.fill('24')
   await horizontalInput.press('Enter')
   await canvas.waitForRender()
 
   await page.getByTestId('layout-vertical-padding-input').click()
   await canvas.waitForRender()
-  const verticalInput = page.locator(
-    '[data-test-id="layout-vertical-padding-input"] [data-test-id="scrub-input-field"]'
-  )
+  const verticalInput = page
+    .getByTestId('layout-vertical-padding-input')
+    .getByTestId('scrub-input-field')
   await verticalInput.fill('16')
   await verticalInput.press('Enter')
   await canvas.waitForRender()

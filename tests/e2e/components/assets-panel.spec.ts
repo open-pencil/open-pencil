@@ -233,12 +233,7 @@ test('assets insertion accounts for entered container coordinates', async ({ pag
     const selected = selectedId ? store.graph.getNode(selectedId) : null
     if (!selected) return null
     const abs = store.graph.getAbsolutePosition(selected.id)
-    const canvasEl = document.querySelector<HTMLElement>('[data-test-id="canvas-area"]')
-    const rect = canvasEl?.getBoundingClientRect()
-    const center = store.screenToCanvas(
-      (rect?.width ?? window.innerWidth) / 2,
-      (rect?.height ?? window.innerHeight) / 2
-    )
+    const center = store.screenToCanvas(...Object.values(store.viewportCanvasCenter()) as [number, number])
     return {
       parentId: selected.parentId,
       centerX: abs.x + selected.width / 2,

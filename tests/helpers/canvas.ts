@@ -138,7 +138,7 @@ export class CanvasHelper {
     await this.waitForRender()
   }
 
-  /** Point `locator` at the outer ScrubInput container (`[data-test-id="scrub-input"]`), not the inner `<input>`. */
+  /** Point `locator` at the outer ScrubInput container, not the inner `<input>`. */
   async dragScrubInput(locator: Locator, deltaX: number) {
     await locator.scrollIntoViewIfNeeded()
     const box = await locator.boundingBox()
