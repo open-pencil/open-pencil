@@ -239,6 +239,54 @@ const noRawTestIdStringProps = {
   }
 }
 
+const noDynamicDataTestIdInVue = {
+  meta: {
+    docs: {
+      description: 'Disallow dynamic :data-test-id in Vue components — use v-test-id'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue')) return {}
+
+    return {
+      Program(node) {
+        const source = context.sourceCode.getText()
+        if (/\B:data-test-id\s*=|\bv-bind:data-test-id\s*=/.test(source)) {
+          context.report({
+            node,
+            message: 'Use v-test-id for dynamic/configurable test ids instead of :data-test-id.'
+          })
+        }
+      }
+    }
+  }
+}
+
+const noTestIdHelperBindInVue = {
+  meta: {
+    docs: {
+      description: 'Prefer v-test-id over v-bind="testId(...)" in Vue templates'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue')) return {}
+
+    return {
+      Program(node) {
+        const source = context.sourceCode.getText()
+        if (/\bv-bind\s*=\s*"testId(?:Attr)?\(/.test(source)) {
+          context.report({
+            node,
+            message: 'Use v-test-id instead of v-bind="testId(...)" in Vue templates.'
+          })
+        }
+      }
+    }
+  }
+}
+
 const noInvalidTestIdAttributes = {
   meta: {
     docs: {
@@ -1362,6 +1410,8 @@ const plugin = {
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-raw-test-id-string-props': noRawTestIdStringProps,
+    'no-dynamic-data-test-id-in-vue': noDynamicDataTestIdInVue,
+    'no-test-id-helper-bind-in-vue': noTestIdHelperBindInVue,
     'no-invalid-test-id-attributes': noInvalidTestIdAttributes,
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
