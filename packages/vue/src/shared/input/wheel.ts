@@ -1,8 +1,7 @@
+import { useEventListener } from '@vueuse/core'
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-
-import { useWheelGesture } from '#vue/shared/gesture/wheel'
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
 type WheelAccum = {
@@ -69,14 +68,13 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
     wheelScheduler.schedule()
   }
 
-  useWheelGesture(
+  useEventListener(
     canvasRef,
-    ({ event, last }) => {
-      if (!last) onWheel(event)
+    'wheel',
+    (event) => {
+      event.preventDefault()
+      onWheel(event)
     },
-    {
-      eventOptions: { passive: false },
-      preventDefault: true
-    }
+    { passive: false }
   )
 }
