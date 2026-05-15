@@ -324,6 +324,41 @@ const noInvalidTestIdAttributes = {
   }
 }
 
+const noRawTestIdSelectorsInTests = {
+  meta: {
+    docs: {
+      description: 'Disallow raw data-test-id CSS selectors in Playwright tests — use getByTestId()'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/tests/')) return {}
+
+    return {
+      CallExpression(node) {
+        const callee = node.callee
+        if (callee?.type !== 'MemberExpression') return
+        if (callee.property?.type !== 'Identifier' || callee.property.name !== 'locator') return
+        const firstArg = node.arguments?.[0]
+        if (!firstArg) return
+
+        const isRawTestIdSelector =
+          (firstArg.type === 'Literal' &&
+            typeof firstArg.value === 'string' &&
+            firstArg.value.includes('[data-test-id')) ||
+          (firstArg.type === 'TemplateLiteral' &&
+            firstArg.quasis?.some((part) => part.value.raw.includes('[data-test-id')))
+
+        if (!isRawTestIdSelector) return
+        context.report({
+          node,
+          message: 'Use getByTestId() instead of raw [data-test-id] CSS selectors in tests.'
+        })
+      }
+    }
+  }
+}
+
 const noGeneratedTestIdLiterals = {
   meta: {
     docs: {
@@ -1442,6 +1477,7 @@ const plugin = {
     'no-dynamic-data-test-id-in-vue': noDynamicDataTestIdInVue,
     'no-test-id-helper-bind-in-vue': noTestIdHelperBindInVue,
     'no-invalid-test-id-attributes': noInvalidTestIdAttributes,
+    'no-raw-test-id-selectors-in-tests': noRawTestIdSelectorsInTests,
     'no-generated-test-id-literals': noGeneratedTestIdLiterals,
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
