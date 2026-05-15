@@ -29,7 +29,6 @@ export default defineConfig({
       'canvaskit-wasm',
       'opentype.js',
       '@vueuse/core',
-      '@use-gesture/vanilla',
       '@nanostores/vue',
       '@nanostores/i18n',
       'nanostores',
