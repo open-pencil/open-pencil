@@ -78,14 +78,14 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
   await expect(toggle).toBeVisible({ timeout: 5000 })
 
   const sectionInputsBefore = await page
-    .locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]')
+    .getByTestId('stroke-section').getByTestId('scrub-input')
     .count()
 
   await toggle.click()
   await canvas.waitForRender()
 
   const sectionInputsAfter = await page
-    .locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]')
+    .getByTestId('stroke-section').getByTestId('scrub-input')
     .count()
   expect(sectionInputsAfter).toBeGreaterThan(sectionInputsBefore)
 
@@ -93,7 +93,7 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
   await canvas.waitForRender()
 
   const sectionInputsFinal = await page
-    .locator('[data-test-id="stroke-section"] [data-test-id="scrub-input"]')
+    .getByTestId('stroke-section').getByTestId('scrub-input')
     .count()
   expect(sectionInputsFinal).toBe(sectionInputsBefore)
 })

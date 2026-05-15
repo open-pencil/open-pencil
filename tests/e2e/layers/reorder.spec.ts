@@ -29,8 +29,8 @@ test('dragging layers reorders scene nodes', async ({ page }) => {
   })
   await canvas.waitForRender()
 
-  const source = page.locator(`[data-node-id="${ids.third}"] [data-test-id="layers-item"]`)
-  const target = page.locator(`[data-node-id="${ids.first}"] [data-test-id="layers-item"]`)
+  const source = page.locator(`[data-node-id="${ids.third}"]`).getByTestId('layers-item')
+  const target = page.locator(`[data-node-id="${ids.first}"]`).getByTestId('layers-item')
   await source.dragTo(target, { targetPosition: { x: 20, y: 2 } })
   await canvas.waitForRender()
 
@@ -70,12 +70,12 @@ test('dragging a layer into a container expands it and shows the child', async (
   })
   await canvas.waitForRender()
 
-  const source = page.locator(`[data-node-id="${ids.rect}"] [data-test-id="layers-item"]`)
-  const target = page.locator(`[data-node-id="${ids.frame}"] [data-test-id="layers-item"]`)
+  const source = page.locator(`[data-node-id="${ids.rect}"]`).getByTestId('layers-item')
+  const target = page.locator(`[data-node-id="${ids.frame}"]`).getByTestId('layers-item')
   await source.dragTo(target, { targetPosition: { x: 70, y: 12 } })
   await canvas.waitForRender()
 
-  await expect(page.locator(`[data-node-id="${ids.rect}"] [data-test-id="layers-item"]`)).toBeVisible()
+  await expect(page.locator(`[data-node-id="${ids.rect}"]`).getByTestId('layers-item')).toBeVisible()
   expect(await layerOrder(page, ids.frame)).toEqual([ids.rect])
   canvas.assertNoErrors()
 })

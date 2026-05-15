@@ -27,7 +27,7 @@ test('ScrubInput drag changes X position', async () => {
   const initialX = expectDefined(before, 'selected rectangle before drag').x
 
   const xScrub = page
-    .locator('[data-test-id="position-section"] [data-test-id="scrub-input"]')
+    .getByTestId('position-section').getByTestId('scrub-input')
     .first()
   await canvas.dragScrubInput(xScrub, 50)
 

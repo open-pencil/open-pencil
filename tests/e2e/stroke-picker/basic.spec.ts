@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, ratio: number) {
-  const slider = page.locator(`[data-test-id="${testId}"] input[type="range"]`)
+  const slider = page.getByTestId(testId).locator('input[type="range"]')
   const box = await slider.boundingBox()
   if (!box) throw new Error(`Missing slider: ${testId}`)
   const y = box.y + box.height / 2
@@ -18,10 +18,11 @@ async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, rati
 
 async function openStrokePicker(page: Page) {
   await page
-    .locator('[data-test-id="stroke-item"] [data-test-id="color-picker-popover"]')
+    .getByTestId('stroke-item')
+    .getByTestId('color-picker-popover')
     .waitFor({ state: 'detached' })
     .catch(() => undefined)
-  await page.locator('[data-test-id="stroke-item"] button').first().click()
+  await page.getByTestId('stroke-item').locator('button').first().click()
   await expect(page.getByTestId('color-picker-popover')).toBeVisible()
 }
 

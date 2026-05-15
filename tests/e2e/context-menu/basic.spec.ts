@@ -51,7 +51,7 @@ function contextMenu() {
 }
 
 function contextItem(testId: string) {
-  return page.locator(`[data-test-id="${testId}"]`)
+  return page.getByTestId(testId)
 }
 
 test('right-click on empty canvas shows context menu without selection items disabled', async () => {

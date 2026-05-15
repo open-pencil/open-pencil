@@ -83,7 +83,7 @@ test('gap menu sets auto space-between alignment', async () => {
   await canvas.waitForRender()
   let frame = await getNodeById(page, frameId)
   expect(expectDefined(frame, 'frame').primaryAxisAlign).toBe('SPACE_BETWEEN')
-  await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(9)
+  await expect(page.getByTestId('layout-alignment-grid').locator('button')).toHaveCount(9)
 
   await page.getByTestId('layout-gap-menu').click()
   await page
@@ -93,7 +93,7 @@ test('gap menu sets auto space-between alignment', async () => {
 
   frame = await getNodeById(page, frameId)
   expect(expectDefined(frame, 'frame').primaryAxisAlign).toBe('MIN')
-  await expect(page.locator('[data-test-id="layout-alignment-grid"] button')).toHaveCount(9)
+  await expect(page.getByTestId('layout-alignment-grid').locator('button')).toHaveCount(9)
   canvas.assertNoErrors()
 })
 
@@ -168,7 +168,7 @@ test('size dropdown adds and removes min width', async () => {
 test('alignment grid center sets CENTER alignment', async () => {
   await selectFrame()
 
-  const centerCell = page.locator('[data-test-id="layout-alignment-grid"] button').nth(4)
+  const centerCell = page.getByTestId('layout-alignment-grid').locator('button').nth(4)
   await centerCell.click()
   await canvas.waitForRender()
 

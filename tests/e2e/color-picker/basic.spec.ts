@@ -43,7 +43,7 @@ async function chooseFormat(label: 'RGB' | 'HSL' | 'HSB' | 'OkHCL') {
 }
 
 async function dragSlider(testId: string, ratio: number) {
-  const slider = page.locator(`[data-test-id="${testId}"] input[type="range"]`)
+  const slider = page.getByTestId(testId).locator('input[type="range"]')
   const box = await slider.boundingBox()
   if (!box) throw new Error(`Missing slider: ${testId}`)
   const y = box.y + box.height / 2

@@ -79,7 +79,7 @@ test('preview toggle shows image with blob src', async () => {
 
   await page.getByTestId('export-preview-toggle').click()
 
-  const img = page.locator('[data-test-id="export-section"] img')
+  const img = page.getByTestId('export-section').locator('img')
   await expect(img).toBeVisible({ timeout: 10000 })
 
   const src = await img.getAttribute('src')

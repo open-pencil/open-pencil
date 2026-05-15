@@ -151,7 +151,7 @@ test('assets panel groups component sets and inserts the default variant', async
   await page.getByTestId('assets-search').fill('card')
   await expect(assetItems).toHaveCount(1)
   await expect(assetsPanel).toContainText('Card')
-  await page.locator(`[data-asset-id="${ids.cardId}"] [data-test-id="asset-insert"]`).click()
+  await page.locator(`[data-asset-id="${ids.cardId}"]`).getByTestId('asset-insert').click()
   await canvas.waitForRender()
 
   const cardInstance = await selectedNodeSnapshot(page)
@@ -164,7 +164,7 @@ test('assets panel groups component sets and inserts the default variant', async
 
   await page.getByTestId('assets-search').fill('button')
   await expect(assetItems).toHaveCount(1)
-  await page.locator(`[data-asset-id="${ids.setId}"] [data-test-id="asset-insert"]`).click()
+  await page.locator(`[data-asset-id="${ids.setId}"]`).getByTestId('asset-insert').click()
   await canvas.waitForRender()
 
   const inserted = await selectedNodeSnapshot(page)
@@ -177,7 +177,7 @@ test('assets panel groups component sets and inserts the default variant', async
 
   await expect(page.getByTestId('variant-section')).toBeVisible()
 
-  await page.locator('[data-test-id="variant-section"] [data-test-id="app-select-trigger"]').click()
+  await page.getByTestId('variant-section').getByTestId('app-select-trigger').click()
   await page.getByRole('option', { name: 'Primary' }).click()
 
   expectDefined(inserted?.id, 'inserted instance id')
@@ -223,7 +223,7 @@ test('assets insertion accounts for entered container coordinates', async ({ pag
   await canvas.waitForRender()
 
   await page.getByTestId('left-panel-assets-tab').click()
-  await page.locator(`[data-asset-id="${setup.componentId}"] [data-test-id="asset-insert"]`).click()
+  await page.locator(`[data-asset-id="${setup.componentId}"]`).getByTestId('asset-insert').click()
   await canvas.waitForRender()
 
   const inserted = await page.evaluate(() => {
