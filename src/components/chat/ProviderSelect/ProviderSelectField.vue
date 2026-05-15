@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { TestIdProps } from '@open-pencil/vue'
+
 import ProviderSelect from '@/components/chat/ProviderSelect/ProviderSelect.vue'
 
-const { testId = 'provider-selector' } = defineProps<{
-  testId?: string
-}>()
+const { testId = 'provider-selector' } = defineProps<TestIdProps>()
 </script>
 
 <template>

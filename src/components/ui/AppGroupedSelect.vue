@@ -33,13 +33,13 @@ interface GroupedSelectUi {
   separator?: string
 }
 
-const { groups, displayValue, ui, testId } = defineProps<
-  TestIdProps & {
-    groups: SelectGroupDef<T>[]
-    displayValue: string
-    ui?: GroupedSelectUi
-  }
->()
+interface AppGroupedSelectProps<TValue extends string | number> extends TestIdProps {
+  groups: SelectGroupDef<TValue>[]
+  displayValue: string
+  ui?: GroupedSelectUi
+}
+
+const { groups, displayValue, ui, testId } = defineProps<AppGroupedSelectProps<T>>()
 
 const modelValue = defineModel<T>({ required: true })
 

@@ -20,13 +20,13 @@ import { useSelectUI } from '@/components/ui/select'
 import { useI18n, useLayoutControlsContext, useNumberVariableBinding } from '@open-pencil/vue'
 
 import type { LayoutSizing } from '@open-pencil/core/scene-graph'
-import type { SizeLimitProp } from '@open-pencil/vue'
+import type { SizeLimitProp, TestId } from '@open-pencil/vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 
 type ActiveSizeLimit = {
   prop: SizeLimitProp
-  testId: string
+  testId: TestId
   icon: () => string
   value: () => number | null
   setLabel: () => string

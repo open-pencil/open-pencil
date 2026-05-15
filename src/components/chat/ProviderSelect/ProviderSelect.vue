@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { promiseTimeout } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
+import type { TestIdProps } from '@open-pencil/vue'
 
 import AppGroupedSelect from '@/components/ui/AppGroupedSelect.vue'
 import {
@@ -53,7 +54,7 @@ const displayName = computed(() => {
   return providerDef.value.name
 })
 
-const { ui, testId } = defineProps<{
+interface ProviderSelectProps extends TestIdProps {
   ui?: {
     trigger?: string
     content?: string
@@ -61,8 +62,9 @@ const { ui, testId } = defineProps<{
     label?: string
     separator?: string
   }
-  testId?: string
-}>()
+}
+
+const { ui, testId } = defineProps<ProviderSelectProps>()
 
 const groups = computed(() => {
   const result: Array<{ label?: string; items: Array<{ value: string; label: string }> }> = []

@@ -48,7 +48,14 @@ export { useNodeFontStatus } from '#vue/shared/font-status/use'
 export { usePropScrub } from '#vue/controls/prop-scrub/use'
 export { toolCursor } from '#vue/editor/tool-cursor'
 export { testId, testIdSelector } from '#vue/testing/test-id'
-export type { TestId, TestIdProps } from '#vue/testing/test-id'
+export type {
+  RequiredTestIdProps,
+  TestId,
+  TestIdProps,
+  WithoutTestId,
+  WithRequiredTestId,
+  WithTestId
+} from '#vue/testing/test-id'
 
 /** Property-panel composables. */
 export { usePosition } from '#vue/controls/position/use'

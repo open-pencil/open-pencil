@@ -21,18 +21,18 @@ interface AppSelectUi extends SelectUi {
   indicator?: string
 }
 
+interface AppSelectProps<TValue extends string | number> extends TestIdProps {
+  options: { value: TValue; label: string }[]
+  placeholder?: string
+  ui?: AppSelectUi
+}
+
 const {
   options,
   placeholder,
   ui,
   testId = 'app-select-trigger'
-} = defineProps<
-  TestIdProps & {
-    options: { value: T; label: string }[]
-    placeholder?: string
-    ui?: AppSelectUi
-  }
->()
+} = defineProps<AppSelectProps<T>>()
 
 const modelValue = defineModel<T>({ required: true })
 

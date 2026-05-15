@@ -11,7 +11,7 @@ type PickerSliderDisplay = {
   parse?: (value: number) => number
 }
 
-type PickerSliderProps = TestIdProps & {
+interface PickerSliderProps extends TestIdProps {
   label: string
   modelValue: number
   min: number
