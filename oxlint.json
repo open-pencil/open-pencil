@@ -112,6 +112,7 @@
     ],
     "open-pencil/no-structuredclone-scene-arrays": "error",
     "open-pencil/no-vue-style-blocks": "error",
+    "open-pencil/no-raw-test-id-string-props": "error",
     "open-pencil/no-invalid-test-id-attributes": "error",
     "open-pencil/no-document-query-selector-in-vue": "error",
     "open-pencil/no-direct-selection-tool-state-mutation": "error",

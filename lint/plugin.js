@@ -203,6 +203,42 @@ const noVueStyleBlocks = {
 
 const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 
+const noRawTestIdStringProps = {
+  meta: {
+    docs: {
+      description: 'Disallow raw testId string props — use TestIdProps or RequiredTestIdProps'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (file.endsWith('/packages/vue/src/testing/test-id.ts')) return {}
+
+    function isTestIdKey(key) {
+      return key?.type === 'Identifier' && key.name === 'testId'
+    }
+
+    function isStringType(member) {
+      return member.typeAnnotation?.typeAnnotation?.type === 'TSStringKeyword'
+    }
+
+    function report(node, optional) {
+      context.report({
+        node,
+        message: optional
+          ? 'Use TestIdProps instead of declaring testId?: string directly.'
+          : 'Use RequiredTestIdProps or TestId instead of declaring testId: string directly.'
+      })
+    }
+
+    return {
+      TSPropertySignature(node) {
+        if (!isTestIdKey(node.key) || !isStringType(node)) return
+        report(node, !!node.optional)
+      }
+    }
+  }
+}
+
 const noInvalidTestIdAttributes = {
   meta: {
     docs: {
@@ -1325,6 +1361,7 @@ const plugin = {
     'no-inline-named-types': noInlineNamedTypes,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
+    'no-raw-test-id-string-props': noRawTestIdStringProps,
     'no-invalid-test-id-attributes': noInvalidTestIdAttributes,
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
