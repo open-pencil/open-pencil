@@ -10,10 +10,19 @@ export function createProfilerActions(editor: Editor) {
     return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
   }
 
+  function viewportCanvasCenter() {
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-test-id="canvas-element"]')
+    if (canvas) {
+      const rect = canvas.getBoundingClientRect()
+      return { x: rect.width / 2, y: rect.height / 2 }
+    }
+    return { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+  }
+
   function toggleProfiler() {
     editor.renderer?.profiler.toggle()
     editor.requestRepaint()
   }
 
-  return { viewportScreenCenter, toggleProfiler }
+  return { viewportScreenCenter, viewportCanvasCenter, toggleProfiler }
 }

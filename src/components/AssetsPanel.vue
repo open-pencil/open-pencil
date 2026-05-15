@@ -144,12 +144,8 @@ function openDetails(asset: LocalAsset) {
 }
 
 function insertionPoint(component: SceneNode, parentId: string) {
-  const canvas = document.querySelector<HTMLElement>('[data-test-id="canvas-area"]')
-  const rect = canvas?.getBoundingClientRect()
-  const center = editor.screenToCanvas(
-    (rect?.width ?? window.innerWidth) / 2,
-    (rect?.height ?? window.innerHeight) / 2
-  )
+  const canvasCenter = editor.viewportCanvasCenter()
+  const center = editor.screenToCanvas(canvasCenter.x, canvasCenter.y)
   const parentOffset =
     parentId === editor.state.currentPageId
       ? { x: 0, y: 0 }

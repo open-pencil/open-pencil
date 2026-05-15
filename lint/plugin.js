@@ -201,6 +201,35 @@ const noVueStyleBlocks = {
   }
 }
 
+const noDocumentQuerySelectorInVue = {
+  meta: {
+    docs: {
+      description: 'Disallow document.querySelector in Vue components — use template refs or composables'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue')) return {}
+
+    return {
+      CallExpression(node) {
+        const callee = node.callee
+        if (callee?.type !== 'MemberExpression') return
+        if (callee.object?.type !== 'Identifier' || callee.object.name !== 'document') return
+        if (callee.property?.type !== 'Identifier') return
+        if (callee.property.name !== 'querySelector' && callee.property.name !== 'querySelectorAll') {
+          return
+        }
+        context.report({
+          node,
+          message:
+            'Do not query the document from Vue components. Use template refs, component APIs, or a composable.'
+        })
+      }
+    }
+  }
+}
+
 const noDirectSelectionToolStateMutation = {
   meta: {
     docs: {
@@ -1257,6 +1286,7 @@ const plugin = {
     'no-inline-named-types': noInlineNamedTypes,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
+    'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
     'no-math-random': noMathRandom,
     'no-hand-rolled-color': noHandRolledColor,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, type Component } from 'vue'
+import { computed, ref, type Component } from 'vue'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
@@ -95,16 +95,6 @@ const paddingEditorReference = useCanvasVirtualReference(canvasRef, store, paddi
 const paddingEditorIcon = computed(() => {
   const edit = autoLayoutPaddingEdit.value
   return edit ? paddingSideIcons[edit.side] : IconLucidePanelTop
-})
-
-watch(autoLayoutPaddingEdit, async (edit) => {
-  if (!edit) return
-  await nextTick()
-  const input = document.querySelector<HTMLInputElement>(
-    '[data-test-id="auto-layout-padding-editor"] input'
-  )
-  input?.focus()
-  input?.select()
 })
 
 const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))

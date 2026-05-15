@@ -148,6 +148,10 @@ export function useCanvasInput(
   }
 
   function onMouseDown(e: MouseEvent) {
+    const paddingEdit = autoLayoutPaddingEdit.value
+    if (paddingEdit) {
+      commitAutoLayoutPaddingEdit(paddingEdit.value)
+    }
     if (!editor.state.editingTextId) canvasRef.value?.focus()
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)

@@ -21,6 +21,7 @@ const { modelValue, min, max, step, icon, label, suffix, sensitivity, placeholde
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
+  'editing-change': [editing: boolean]
   commit: [value: number, previous: number]
 }>()
 
@@ -38,7 +39,12 @@ defineOptions({ inheritAttrs: false })
     :placeholder="placeholder"
     @update:model-value="emit('update:modelValue', $event)"
     @commit="(val: number, prev: number) => emit('commit', val, prev)"
-    @editing-change="store.state.scrubInputFocused = $event"
+    @editing-change="
+      (editing: boolean) => {
+        store.state.scrubInputFocused = editing
+        emit('editing-change', editing)
+      }
+    "
   >
     <div
       v-bind="attrs"
