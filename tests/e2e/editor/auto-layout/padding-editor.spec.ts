@@ -3,14 +3,14 @@ import { expect, test, type Page } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function clickCanvas(page: Page, x: number, y: number) {
-  const canvas = page.locator('[data-test-id="canvas-element"]')
+  const canvas = page.getByTestId('canvas-element')
   const box = await canvas.boundingBox()
   if (!box) throw new Error('Canvas has no bounding box')
   await page.mouse.click(box.x + x, box.y + y)
 }
 
 async function dblclickCanvas(page: Page, x: number, y: number) {
-  const canvas = page.locator('[data-test-id="canvas-element"]')
+  const canvas = page.getByTestId('canvas-element')
   const box = await canvas.boundingBox()
   if (!box) throw new Error('Canvas has no bounding box')
   await canvas.dispatchEvent('dblclick', {
@@ -77,10 +77,10 @@ test('double-clicking an auto-layout padding handle opens a scrub editor', async
   await canvas.hover(300, 130)
   await dblclickCanvas(page, 300, 130)
 
-  const editor = page.locator('[data-test-id="auto-layout-padding-editor"]')
+  const editor = page.getByTestId('auto-layout-padding-editor')
   await expect(editor).toBeVisible()
 
-  await canvas.dragScrubInput(editor.locator('[data-test-id="auto-layout-padding-input"]'), 40)
+  await canvas.dragScrubInput(editor.getByTestId('auto-layout-padding-input'), 40)
 
   await expect(editor).toHaveCount(0)
   const changedPadding = await framePaddingTop(page, frameId)
@@ -103,7 +103,7 @@ test('clicking the canvas closes the auto-layout padding editor', async ({ page 
 
   await canvas.hover(300, 130)
   await dblclickCanvas(page, 300, 130)
-  const editor = page.locator('[data-test-id="auto-layout-padding-editor"]')
+  const editor = page.getByTestId('auto-layout-padding-editor')
   await expect(editor).toBeVisible()
 
   await clickCanvas(page, 80, 80)
@@ -122,7 +122,7 @@ test('auto-layout padding editor follows canvas pan while open', async ({ page }
 
   await canvas.hover(300, 130)
   await dblclickCanvas(page, 300, 130)
-  const editor = page.locator('[data-test-id="auto-layout-padding-editor"]')
+  const editor = page.getByTestId('auto-layout-padding-editor')
   await expect(editor).toBeVisible()
   const before = await editor.boundingBox()
   if (!before) throw new Error('Padding editor has no bounding box')

@@ -20,11 +20,11 @@ test.afterAll(async () => {
 })
 
 test('layers panel resize increases width', async () => {
-  const panel = page.locator('[data-test-id="layers-panel"]')
+  const panel = page.getByTestId('layers-panel')
   const before = await panel.boundingBox()
   expect(before).not.toBeNull()
 
-  const handle = page.locator('[data-test-id="left-splitter-handle"]')
+  const handle = page.getByTestId('left-splitter-handle')
   const handleBox = await handle.boundingBox()
   expect(handleBox).not.toBeNull()
 
@@ -48,7 +48,7 @@ test('panel width persists after page reload', async () => {
   // Allow Reka's auto-save debounce to flush before recording the width
   await page.waitForTimeout(300)
   const recordedWidth = expectDefined(
-    await page.locator('[data-test-id="layers-panel"]').boundingBox(),
+    await page.getByTestId('layers-panel').boundingBox(),
     'persisted layers panel bounds'
   ).width
 
@@ -57,7 +57,7 @@ test('panel width persists after page reload', async () => {
   await canvas.waitForInit()
 
   const after = expectDefined(
-    await page.locator('[data-test-id="layers-panel"]').boundingBox(),
+    await page.getByTestId('layers-panel').boundingBox(),
     'reloaded layers panel bounds'
   )
   expect(Math.abs(after.width - recordedWidth)).toBeLessThanOrEqual(2)
@@ -68,7 +68,7 @@ test('Cmd+Backslash hides panels', async () => {
   await page.keyboard.press('Meta+\\')
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="layers-panel"]')).not.toBeVisible()
+  await expect(page.getByTestId('layers-panel')).not.toBeVisible()
   canvas.assertNoErrors()
 })
 
@@ -76,6 +76,6 @@ test('Cmd+Backslash shows panels again', async () => {
   await page.keyboard.press('Meta+\\')
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="layers-panel"]')).toBeVisible()
+  await expect(page.getByTestId('layers-panel')).toBeVisible()
   canvas.assertNoErrors()
 })

@@ -7,7 +7,7 @@ export class CanvasHelper {
 
   constructor(page: Page) {
     this.page = page
-    this.canvas = page.locator('[data-test-id="canvas-area"]')
+    this.canvas = page.getByTestId('canvas-area')
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
       if (msg.type() === 'error') this.errors.push(msg.text())
@@ -27,12 +27,8 @@ export class CanvasHelper {
   }
 
   async waitForInit() {
-    await this.page
-      .locator('[data-test-id="canvas-element"][data-ready="1"]')
-      .waitFor({ timeout: 30000 })
-    await this.page
-      .locator('[data-test-id="canvas-loading"]')
-      .waitFor({ state: 'hidden', timeout: 30000 })
+    await this.page.getByTestId('canvas-element').and(this.page.locator('[data-ready="1"]')).waitFor({ timeout: 30000 })
+    await this.page.getByTestId('canvas-loading').waitFor({ state: 'hidden', timeout: 30000 })
     await this.page.locator('#loader').waitFor({ state: 'detached', timeout: 30000 })
   }
 

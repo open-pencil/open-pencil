@@ -39,7 +39,7 @@ test('fill visibility supports repeat click and undo redo', async () => {
   await canvas.drawRect(120, 120, 120, 80)
   await canvas.waitForRender()
 
-  const fillButton = page.locator('[data-test-id="fill-visibility-0"]')
+  const fillButton = page.getByTestId('fill-visibility-0')
   await expect(fillButton).toBeVisible()
   expect(expectDefined(await getSelectedNode(), 'selected node').fills[0]?.visible).toBe(true)
 
@@ -59,10 +59,10 @@ test('fill visibility supports repeat click and undo redo', async () => {
 })
 
 test('stroke visibility supports repeat click and undo redo', async () => {
-  await page.locator('[data-test-id="stroke-section-add"]').click()
+  await page.getByTestId('stroke-section-add').click()
   await canvas.waitForRender()
 
-  const strokeButton = page.locator('[data-test-id="stroke-visibility-0"]')
+  const strokeButton = page.getByTestId('stroke-visibility-0')
   await expect(strokeButton).toBeVisible()
   expect(expectDefined(await getSelectedNode(), 'selected node').strokes[0]?.visible).toBe(true)
 
@@ -82,7 +82,7 @@ test('stroke visibility supports repeat click and undo redo', async () => {
 })
 
 test('appearance visibility supports repeat click and undo redo in one step', async () => {
-  const visibilityButton = page.locator('[data-test-id="appearance-visibility"]')
+  const visibilityButton = page.getByTestId('appearance-visibility')
   await expect(visibilityButton).toBeVisible()
   expect(expectDefined(await getSelectedNode(), 'selected node').visible).toBe(true)
 

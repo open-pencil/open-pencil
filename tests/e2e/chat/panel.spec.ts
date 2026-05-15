@@ -123,7 +123,7 @@ function chatInput() {
 }
 
 function apiKeyInput() {
-  return page.locator('[data-test-id="api-key-input"]')
+  return page.getByTestId('api-key-input')
 }
 
 test('⌘J switches to AI tab', async () => {
@@ -182,7 +182,7 @@ test('assistant responds', async () => {
 })
 
 test('model selector is visible and clickable', async () => {
-  const trigger = page.locator('[data-test-id="chat-model-selector"]')
+  const trigger = page.getByTestId('chat-model-selector')
   await expect(trigger).toBeVisible()
   await trigger.click()
 
@@ -225,7 +225,7 @@ test('transport errors show an actionable toast', async () => {
   await chatInput().press('Enter')
 
   await expect(
-    page.locator('[data-test-id="toast-item"]').filter({
+    page.getByTestId('toast-item').filter({
       hasText: 'Install it with: npm i -g @agentclientprotocol/claude-agent-acp'
     })
   ).toBeVisible({ timeout: 5000 })
@@ -237,7 +237,7 @@ test('"Get API key" link opens external URL via window.open', async () => {
   await canvas.waitForInit()
   await chatTab().click()
 
-  const link = page.locator('[data-test-id="api-key-get-link"]')
+  const link = page.getByTestId('api-key-get-link')
   await expect(link).toBeVisible()
 
   // Intercept window.open to verify it's called with the right URL

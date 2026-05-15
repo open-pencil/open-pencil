@@ -104,7 +104,7 @@ test('resize corner handle drag increases node dimensions', async () => {
   })
   expect(viewport).not.toBeNull()
 
-  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('No canvas')
 
   const hx = box.x + expectDefined(viewport, 'viewport state').handleX
@@ -152,7 +152,7 @@ test('rotation handle drag rotates node', async () => {
   })
   expect(viewport).not.toBeNull()
 
-  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('No canvas')
 
   const rx = box.x + expectDefined(viewport, 'viewport state').cx
@@ -326,7 +326,7 @@ test('rotation drag exposes live rotation preview state', async () => {
   })
   expect(viewport).not.toBeNull()
 
-  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('No canvas')
 
   const rx = box.x + expectDefined(viewport, 'viewport state').cx

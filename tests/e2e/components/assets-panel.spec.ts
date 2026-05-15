@@ -111,44 +111,44 @@ test('assets panel groups component sets and inserts the default variant', async
   })
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="left-panel-assets-tab"]').click()
+  await page.getByTestId('left-panel-assets-tab').click()
 
-  const assetsPanel = page.locator('[data-test-id="assets-panel"]')
-  const assetItems = page.locator('[data-test-id="asset-item"]')
+  const assetsPanel = page.getByTestId('assets-panel')
+  const assetItems = page.getByTestId('asset-item')
   await expect(assetItems).toHaveCount(2)
   await expect(assetsPanel).toContainText('Button')
   await expect(assetsPanel).toContainText('Card')
   await expect(assetsPanel).not.toContainText('Type=Primary')
   await expect(assetsPanel).not.toContainText('Type=Secondary')
   const buttonAsset = page.locator(`[data-asset-id="${ids.setId}"]`)
-  await expect(buttonAsset.locator('[data-test-id="asset-variant-summary"]')).toContainText('Type')
-  await expect(buttonAsset.locator('[data-test-id="asset-library-badge"]')).toContainText('Library')
-  await expect(buttonAsset.locator('[data-test-id="asset-description"]')).toContainText(
+  await expect(buttonAsset.getByTestId('asset-variant-summary')).toContainText('Type')
+  await expect(buttonAsset.getByTestId('asset-library-badge')).toContainText('Library')
+  await expect(buttonAsset.getByTestId('asset-description')).toContainText(
     'Reusable button component'
   )
-  await expect(buttonAsset.locator('[data-test-id="asset-docs"]')).toBeVisible()
-  await expect(buttonAsset.locator('[data-test-id="asset-variant-conflict"]')).toContainText(
+  await expect(buttonAsset.getByTestId('asset-docs')).toBeVisible()
+  await expect(buttonAsset.getByTestId('asset-variant-conflict')).toContainText(
     'Duplicate variant values'
   )
 
   await buttonAsset.click()
-  const details = page.locator('[data-test-id="asset-details-dialog"]')
+  const details = page.getByTestId('asset-details-dialog')
   await expect(details).toBeVisible()
   await expect(details).toContainText('Button')
-  await expect(details.locator('[data-test-id="asset-details-preview"]')).toBeVisible()
-  await expect(details.locator('[data-test-id="asset-details-preview-image"]')).toBeVisible()
-  await expect(details.locator('[data-test-id="asset-details-description"]')).toContainText(
+  await expect(details.getByTestId('asset-details-preview')).toBeVisible()
+  await expect(details.getByTestId('asset-details-preview-image')).toBeVisible()
+  await expect(details.getByTestId('asset-details-description')).toContainText(
     'Reusable button component'
   )
-  await expect(details.locator('[data-test-id="asset-details-library"]')).toContainText(
+  await expect(details.getByTestId('asset-details-library')).toContainText(
     'lk-test-library'
   )
-  await expect(details.locator('[data-test-id="asset-details-docs"]')).toBeVisible()
-  await expect(details.locator('[data-test-id="asset-details-property"]')).toContainText('Type')
-  await page.locator('[data-test-id="asset-details-close"]').click()
+  await expect(details.getByTestId('asset-details-docs')).toBeVisible()
+  await expect(details.getByTestId('asset-details-property')).toContainText('Type')
+  await page.getByTestId('asset-details-close').click()
   await expect(details).toBeHidden()
 
-  await page.locator('[data-test-id="assets-search"]').fill('card')
+  await page.getByTestId('assets-search').fill('card')
   await expect(assetItems).toHaveCount(1)
   await expect(assetsPanel).toContainText('Card')
   await page.locator(`[data-asset-id="${ids.cardId}"] [data-test-id="asset-insert"]`).click()
@@ -158,11 +158,11 @@ test('assets panel groups component sets and inserts the default variant', async
   expect(cardInstance?.type).toBe('INSTANCE')
   expect(cardInstance?.componentId).toBe(ids.cardId)
 
-  await page.locator('[data-test-id="assets-search"]').fill('missing asset')
-  await expect(page.locator('[data-test-id="assets-empty"]')).toBeVisible()
+  await page.getByTestId('assets-search').fill('missing asset')
+  await expect(page.getByTestId('assets-empty')).toBeVisible()
   await expect(assetItems).toHaveCount(0)
 
-  await page.locator('[data-test-id="assets-search"]').fill('button')
+  await page.getByTestId('assets-search').fill('button')
   await expect(assetItems).toHaveCount(1)
   await page.locator(`[data-asset-id="${ids.setId}"] [data-test-id="asset-insert"]`).click()
   await canvas.waitForRender()
@@ -175,7 +175,7 @@ test('assets panel groups component sets and inserts the default variant', async
   expect(inserted?.width).toBe(132)
   expect(inserted?.childTexts).toEqual(['Secondary'])
 
-  await expect(page.locator('[data-test-id="variant-section"]')).toBeVisible()
+  await expect(page.getByTestId('variant-section')).toBeVisible()
 
   await page.locator('[data-test-id="variant-section"] [data-test-id="app-select-trigger"]').click()
   await page.getByRole('option', { name: 'Primary' }).click()
@@ -222,7 +222,7 @@ test('assets insertion accounts for entered container coordinates', async ({ pag
   })
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="left-panel-assets-tab"]').click()
+  await page.getByTestId('left-panel-assets-tab').click()
   await page.locator(`[data-asset-id="${setup.componentId}"] [data-test-id="asset-insert"]`).click()
   await canvas.waitForRender()
 
@@ -259,8 +259,8 @@ test('demo exposes component set assets', async ({ page }) => {
   await page.goto('/demo')
   await canvas.waitForInit()
 
-  await page.locator('[data-test-id="left-panel-assets-tab"]').click()
-  const assetsPanel = page.locator('[data-test-id="assets-panel"]')
+  await page.getByTestId('left-panel-assets-tab').click()
+  const assetsPanel = page.getByTestId('assets-panel')
 
   await expect(assetsPanel).toContainText('Button')
   await expect(assetsPanel).toContainText('2 variants · Variant')

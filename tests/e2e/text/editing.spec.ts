@@ -90,7 +90,7 @@ test('typography section appears for text node', async () => {
   await canvas.click(200, 200)
   await canvas.waitForRender()
 
-  const typoSection = page.locator('[data-test-id="typography-section"]')
+  const typoSection = page.getByTestId('typography-section')
   await expect(typoSection).toBeVisible()
 })
 

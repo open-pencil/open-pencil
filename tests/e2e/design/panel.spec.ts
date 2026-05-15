@@ -20,27 +20,27 @@ test.afterAll(async () => {
 })
 
 function designPanel() {
-  return page.locator('[data-test-id="design-panel-single"]')
+  return page.getByTestId('design-panel-single')
 }
 
 function nodeHeader() {
-  return page.locator('[data-test-id="design-node-header"]')
+  return page.getByTestId('design-node-header')
 }
 
 function fillSection() {
-  return page.locator('[data-test-id="fill-section"]')
+  return page.getByTestId('fill-section')
 }
 
 function strokeSection() {
-  return page.locator('[data-test-id="stroke-section"]')
+  return page.getByTestId('stroke-section')
 }
 
 function positionSection() {
-  return page.locator('[data-test-id="position-section"]')
+  return page.getByTestId('position-section')
 }
 
 function effectsSection() {
-  return page.locator('[data-test-id="effects-section"]')
+  return page.getByTestId('effects-section')
 }
 
 function getNode(id: string) {
@@ -84,7 +84,7 @@ test('selecting a rectangle shows design panel with type and name', async () => 
 test('position section shows X, Y, rotation inputs', async () => {
   await expect(positionSection()).toBeVisible()
 
-  const inputs = positionSection().locator('[data-test-id="scrub-input"]')
+  const inputs = positionSection().getByTestId('scrub-input')
   const count = await inputs.count()
   expect(count).toBeGreaterThanOrEqual(3)
 })
@@ -92,12 +92,12 @@ test('position section shows X, Y, rotation inputs', async () => {
 test('fill section appears with default fill', async () => {
   await expect(fillSection()).toBeVisible()
 
-  const fillItems = fillSection().locator('[data-test-id="fill-item"]')
+  const fillItems = fillSection().getByTestId('fill-item')
   await expect(fillItems.first()).toBeVisible()
 })
 
 test('fill item shows color swatch', async () => {
-  const swatch = fillSection().locator('[data-test-id="fill-picker-swatch"]').first()
+  const swatch = fillSection().getByTestId('fill-picker-swatch').first()
   await expect(swatch).toBeVisible()
 })
 
@@ -105,7 +105,7 @@ test('clicking color area changes fill color', async () => {
   const id = await getSelectedId()
   const before = await getNode(expectDefined(id, 'selected id'))
 
-  const swatch = fillSection().locator('[data-test-id="fill-picker-swatch"]').first()
+  const swatch = fillSection().getByTestId('fill-picker-swatch').first()
   await swatch.click()
 
   const colorArea = page.locator('.cursor-crosshair').first()
@@ -130,11 +130,11 @@ test('clicking color area changes fill color', async () => {
 })
 
 test('adding a stroke creates stroke section item', async () => {
-  const addBtn = strokeSection().locator('[data-test-id="stroke-section-add"]')
+  const addBtn = strokeSection().getByTestId('stroke-section-add')
   await addBtn.click()
   await canvas.waitForRender()
 
-  const strokeItems = strokeSection().locator('[data-test-id="stroke-item"]')
+  const strokeItems = strokeSection().getByTestId('stroke-item')
   await expect(strokeItems.first()).toBeVisible()
 
   const id = await getSelectedId()
@@ -143,11 +143,11 @@ test('adding a stroke creates stroke section item', async () => {
 })
 
 test('adding an effect creates effect item', async () => {
-  const addBtn = effectsSection().locator('[data-test-id="effects-section-add"]')
+  const addBtn = effectsSection().getByTestId('effects-section-add')
   await addBtn.click()
   await canvas.waitForRender()
 
-  const effectItems = effectsSection().locator('[data-test-id="effect-item"]')
+  const effectItems = effectsSection().getByTestId('effect-item')
   await expect(effectItems.first()).toBeVisible()
 
   const id = await getSelectedId()
@@ -156,11 +156,11 @@ test('adding an effect creates effect item', async () => {
 })
 
 test('adding a second fill shows two fill items', async () => {
-  const addBtn = fillSection().locator('[data-test-id="fill-section-add"]')
+  const addBtn = fillSection().getByTestId('fill-section-add')
   await addBtn.click()
   await canvas.waitForRender()
 
-  const fillItems = fillSection().locator('[data-test-id="fill-item"]')
+  const fillItems = fillSection().getByTestId('fill-item')
   expect(await fillItems.count()).toBe(2)
 
   const id = await getSelectedId()
@@ -169,7 +169,7 @@ test('adding a second fill shows two fill items', async () => {
 })
 
 test('visibility toggle in appearance section works', async () => {
-  const visBtn = page.locator('[data-test-id="appearance-visibility"]')
+  const visBtn = page.getByTestId('appearance-visibility')
   await expect(visBtn).toBeVisible()
 
   const id = await getSelectedId()
@@ -193,7 +193,7 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
   const id = await getSelectedId()
   expect(id).toBeTruthy()
 
-  const fillButton = page.locator('[data-test-id="fill-visibility-0"]')
+  const fillButton = page.getByTestId('fill-visibility-0')
   await expect(fillButton).toBeVisible()
 
   const initial = await getNode(expectDefined(id, 'selected id'))
@@ -226,11 +226,11 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
       ?.visible
   ).toBe(true)
 
-  const strokeAddButton = strokeSection().locator('[data-test-id="stroke-section-add"]')
+  const strokeAddButton = strokeSection().getByTestId('stroke-section-add')
   await strokeAddButton.click()
   await canvas.waitForRender()
 
-  const strokeButton = page.locator('[data-test-id="stroke-visibility-0"]')
+  const strokeButton = page.getByTestId('stroke-visibility-0')
   await expect(strokeButton).toBeVisible()
   expect(
     expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').strokes[0]
@@ -264,11 +264,11 @@ test('fill stroke and effect visibility toggles update on repeated clicks and su
       ?.visible
   ).toBe(true)
 
-  const effectAddButton = effectsSection().locator('[data-test-id="effects-section-add"]')
+  const effectAddButton = effectsSection().getByTestId('effects-section-add')
   await effectAddButton.click()
   await canvas.waitForRender()
 
-  const effectButton = page.locator('[data-test-id="effect-visibility-0"]')
+  const effectButton = page.getByTestId('effect-visibility-0')
   await expect(effectButton).toBeVisible()
   expect(
     expectDefined(await getNode(expectDefined(id, 'selected id')), 'selected node').effects[0]
@@ -307,7 +307,7 @@ test('deselecting shows empty design panel', async () => {
   await page.keyboard.press('Escape')
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="design-panel-empty"]')).toBeVisible()
+  await expect(page.getByTestId('design-panel-empty')).toBeVisible()
 })
 
 test('multi-select shows mixed header', async () => {
@@ -316,7 +316,7 @@ test('multi-select shows mixed header', async () => {
   await canvas.selectAll()
   await canvas.waitForRender()
 
-  const multiHeader = page.locator('[data-test-id="design-multi-header"]')
+  const multiHeader = page.getByTestId('design-multi-header')
   await expect(multiHeader).toBeVisible()
   await expect(multiHeader).toContainText('Mixed')
   await expect(multiHeader).toContainText('layers')

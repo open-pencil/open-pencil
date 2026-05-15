@@ -173,7 +173,7 @@ test('double-click layer to rename', async () => {
   const row = layerRows().filter({ hasText: 'Rectangle' }).first()
   await row.dblclick()
 
-  const input = page.locator('[data-test-id="layers-item-input"]')
+  const input = page.getByTestId('layers-item-input')
   await expect(input).toBeVisible()
   await input.fill('Renamed Layer')
   await input.press('Enter')
@@ -189,7 +189,7 @@ test('clicking outside rename input commits', async () => {
   const row = layerRows().filter({ hasText: 'Renamed Layer' }).first()
   await row.dblclick()
 
-  const input = page.locator('[data-test-id="layers-item-input"]')
+  const input = page.getByTestId('layers-item-input')
   await expect(input).toBeVisible()
   await input.fill('After Outside Click')
 
@@ -212,7 +212,7 @@ test('clearing a layer name falls back to the default node name', async () => {
 
   await row.dblclick()
 
-  const input = page.locator('[data-test-id="layers-item-input"]')
+  const input = page.getByTestId('layers-item-input')
   await expect(input).toBeVisible()
   await input.clear()
   await input.press('Enter')
@@ -235,7 +235,7 @@ test('double-click does not toggle tree expand', async () => {
   await containerRow.dblclick()
   await canvas.waitForRender()
 
-  const input = page.locator('[data-test-id="layers-item-input"]')
+  const input = page.getByTestId('layers-item-input')
   await expect(input).toBeVisible()
   await input.press('Escape')
 

@@ -25,7 +25,7 @@ test.beforeEach(async () => {
 test('draw section in full editor without browser errors', async () => {
   await canvas.drawSection(100, 100, 240, 160)
 
-  await expect(page.locator('[data-test-id="design-node-header"]')).toContainText('SECTION')
+  await expect(page.getByTestId('design-node-header')).toContainText('SECTION')
   await expect
     .poll(async () => {
       return page.evaluate(() => {

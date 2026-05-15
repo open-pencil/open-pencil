@@ -20,13 +20,13 @@ test.afterAll(async () => {
 })
 
 test('shapes flyout opens', async () => {
-  await page.locator('[data-test-id="toolbar-flyout-rectangle"]').click()
-  await expect(page.locator('[data-test-id="toolbar-flyout-item-polygon"]')).toBeVisible()
+  await page.getByTestId('toolbar-flyout-rectangle').click()
+  await expect(page.getByTestId('toolbar-flyout-item-polygon')).toBeVisible()
   canvas.assertNoErrors()
 })
 
 test('Polygon tool creates POLYGON node', async () => {
-  await page.locator('[data-test-id="toolbar-flyout-item-polygon"]').click()
+  await page.getByTestId('toolbar-flyout-item-polygon').click()
   await canvas.drag(300, 200, 400, 300)
   await canvas.waitForRender()
 
@@ -36,8 +36,8 @@ test('Polygon tool creates POLYGON node', async () => {
 })
 
 test('Star tool creates STAR node', async () => {
-  await page.locator('[data-test-id="toolbar-flyout-rectangle"]').click()
-  await page.locator('[data-test-id="toolbar-flyout-item-star"]').click()
+  await page.getByTestId('toolbar-flyout-rectangle').click()
+  await page.getByTestId('toolbar-flyout-item-star').click()
   await canvas.drag(150, 150, 250, 250)
   await canvas.waitForRender()
 
@@ -105,8 +105,8 @@ test('Pen close path creates VECTOR with closed region', async () => {
 })
 
 test('Frame flyout shows Frame and Section items', async () => {
-  await page.locator('[data-test-id="toolbar-flyout-frame"]').click()
-  await expect(page.locator('[data-test-id="toolbar-flyout-item-frame"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="toolbar-flyout-item-section"]')).toBeVisible()
+  await page.getByTestId('toolbar-flyout-frame').click()
+  await expect(page.getByTestId('toolbar-flyout-item-frame')).toBeVisible()
+  await expect(page.getByTestId('toolbar-flyout-item-section')).toBeVisible()
   canvas.assertNoErrors()
 })

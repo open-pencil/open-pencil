@@ -15,12 +15,12 @@ test('font settings popover is available from typography panel', async ({ page }
     store.select([id])
   })
 
-  await expect(page.locator('[data-test-id="typography-section"]')).toBeVisible()
-  await page.locator('[data-test-id="font-settings-trigger"]').click()
+  await expect(page.getByTestId('typography-section')).toBeVisible()
+  await page.getByTestId('font-settings-trigger').click()
 
   await expect(page.getByText('Access system fonts')).toBeVisible()
-  await expect(page.locator('[data-test-id="font-settings-request-access"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="font-settings-download-fallbacks"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="font-settings-refresh-cache"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="font-settings-clear-cache"]')).toBeVisible()
+  await expect(page.getByTestId('font-settings-request-access')).toBeVisible()
+  await expect(page.getByTestId('font-settings-download-fallbacks')).toBeVisible()
+  await expect(page.getByTestId('font-settings-refresh-cache')).toBeVisible()
+  await expect(page.getByTestId('font-settings-clear-cache')).toBeVisible()
 })

@@ -30,15 +30,15 @@ async function getSelectedFill() {
 }
 
 async function openFillPicker() {
-  const solidTab = page.locator('[data-test-id="fill-picker-tab-solid"]')
+  const solidTab = page.getByTestId('fill-picker-tab-solid')
   if (await solidTab.isVisible().catch(() => false)) return
-  const swatch = page.locator('[data-test-id="fill-picker-swatch"]').first()
+  const swatch = page.getByTestId('fill-picker-swatch').first()
   await swatch.click()
   await expect(solidTab).toBeVisible()
 }
 
 async function chooseFormat(label: 'RGB' | 'HSL' | 'HSB' | 'OkHCL') {
-  await page.locator('[data-test-id="color-format-select"]').click()
+  await page.getByTestId('color-format-select').click()
   await page.getByRole('option', { name: label, exact: true }).click()
 }
 

@@ -21,13 +21,13 @@ test.afterAll(async () => {
 })
 
 function exportItems() {
-  return page.locator('[data-test-id="export-item"]')
+  return page.getByTestId('export-item')
 }
 
 test('add export row increases row count', async () => {
   const before = await exportItems().count()
 
-  await page.locator('[data-test-id="export-section-add"]').click()
+  await page.getByTestId('export-section-add').click()
   await canvas.waitForRender()
 
   const after = await exportItems().count()
@@ -36,7 +36,7 @@ test('add export row increases row count', async () => {
 })
 
 test('remove export row decreases row count', async () => {
-  await page.locator('[data-test-id="export-section-add"]').click()
+  await page.getByTestId('export-section-add').click()
   await canvas.waitForRender()
 
   const before = await exportItems().count()
@@ -49,7 +49,7 @@ test('remove export row decreases row count', async () => {
 })
 
 test('format selector changes to JPG', async () => {
-  const formatTrigger = exportItems().first().locator('[data-test-id="app-select-trigger"]').last()
+  const formatTrigger = exportItems().first().getByTestId('app-select-trigger').last()
   await formatTrigger.click()
 
   await page.locator('[role="option"]').filter({ hasText: 'JPG' }).click()
@@ -60,24 +60,24 @@ test('format selector changes to JPG', async () => {
 })
 
 test('SVG format hides scale selector', async () => {
-  const formatTrigger = exportItems().first().locator('[data-test-id="app-select-trigger"]').last()
+  const formatTrigger = exportItems().first().getByTestId('app-select-trigger').last()
   await formatTrigger.click()
 
   await page.locator('[role="option"]').filter({ hasText: 'SVG' }).click()
   await canvas.waitForRender()
 
-  const selects = exportItems().first().locator('[data-test-id="app-select-trigger"]')
+  const selects = exportItems().first().getByTestId('app-select-trigger')
   await expect(selects).toHaveCount(1)
   canvas.assertNoErrors()
 })
 
 test('preview toggle shows image with blob src', async () => {
-  const formatTrigger = exportItems().first().locator('[data-test-id="app-select-trigger"]').last()
+  const formatTrigger = exportItems().first().getByTestId('app-select-trigger').last()
   await formatTrigger.click()
   await page.locator('[role="option"]').filter({ hasText: 'PNG' }).click()
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="export-preview-toggle"]').click()
+  await page.getByTestId('export-preview-toggle').click()
 
   const img = page.locator('[data-test-id="export-section"] img')
   await expect(img).toBeVisible({ timeout: 10000 })

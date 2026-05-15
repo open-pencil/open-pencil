@@ -48,16 +48,16 @@ test('independent corners toggle shows per-corner inputs', async () => {
   expect(flags?.type).toBe('FRAME')
   expect(flags?.independentCorners).toBe(false)
 
-  const toggle = page.locator('[data-test-id="independent-corners-toggle"]')
+  const toggle = page.getByTestId('independent-corners-toggle')
   await expect(toggle).toBeVisible()
 
   await toggle.click()
   await canvas.waitForRender()
 
   expect((await getSelectedNodeFlags())?.independentCorners).toBe(true)
-  const grid = page.locator('[data-test-id="independent-corners-grid"]')
+  const grid = page.getByTestId('independent-corners-grid')
   await expect(grid).toBeVisible()
-  const cornerInputs = grid.locator('[data-test-id="scrub-input"]')
+  const cornerInputs = grid.getByTestId('scrub-input')
   expect(await cornerInputs.count()).toBe(4)
 
   await toggle.click()
@@ -69,12 +69,12 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
   await drawFrame(300, 50, 120, 80)
   await canvas.waitForRender()
 
-  const addStroke = page.locator('[data-test-id="stroke-section-add"]')
+  const addStroke = page.getByTestId('stroke-section-add')
   await expect(addStroke).toBeVisible()
   await addStroke.click()
   await canvas.waitForRender()
 
-  const toggle = page.locator('[data-test-id="stroke-sides-toggle"]')
+  const toggle = page.getByTestId('stroke-sides-toggle')
   await expect(toggle).toBeVisible({ timeout: 5000 })
 
   const sectionInputsBefore = await page

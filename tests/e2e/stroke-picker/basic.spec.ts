@@ -22,11 +22,11 @@ async function openStrokePicker(page: Page) {
     .waitFor({ state: 'detached' })
     .catch(() => undefined)
   await page.locator('[data-test-id="stroke-item"] button').first().click()
-  await expect(page.locator('[data-test-id="color-picker-popover"]')).toBeVisible()
+  await expect(page.getByTestId('color-picker-popover')).toBeVisible()
 }
 
 async function chooseFormat(page: Page, label: 'RGB' | 'HSL' | 'HSB' | 'OkHCL') {
-  await page.locator('[data-test-id="color-format-select"]').click()
+  await page.getByTestId('color-format-select').click()
   await page.getByRole('option', { name: label, exact: true }).click()
 }
 
@@ -46,7 +46,7 @@ test('stroke picker updates stroke color on a rectangle', async ({ page }) => {
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)
-  await page.locator('[data-test-id="stroke-section-add"]').click()
+  await page.getByTestId('stroke-section-add').click()
   await canvas.waitForRender()
 
   const before = await getSelectedStroke(page)
@@ -68,7 +68,7 @@ test('stroke picker alpha slider updates stroke opacity and alpha', async ({ pag
   await canvas.waitForInit()
 
   await canvas.drawRect(120, 120, 180, 120)
-  await page.locator('[data-test-id="stroke-section-add"]').click()
+  await page.getByTestId('stroke-section-add').click()
   await canvas.waitForRender()
 
   await openStrokePicker(page)
@@ -107,7 +107,7 @@ test('stroke picker hsb saturation and brightness sliders update stroke color on
   })
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="stroke-item"]')).toBeVisible()
+  await expect(page.getByTestId('stroke-item')).toBeVisible()
   await openStrokePicker(page)
   await chooseFormat(page, 'HSB')
 

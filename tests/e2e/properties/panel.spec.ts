@@ -40,7 +40,7 @@ test('corner radius uniform sets cornerRadius', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 80, 80)
 
-  const scrubContainer = page.locator('[data-test-id="corner-radius-input"]')
+  const scrubContainer = page.getByTestId('corner-radius-input')
   await scrubContainer.click()
   await canvas.waitForRender()
   const input = page.locator(
@@ -56,13 +56,13 @@ test('corner radius uniform sets cornerRadius', async () => {
 })
 
 test('independent corners toggle shows four corner inputs', async () => {
-  await page.locator('[data-test-id="independent-corners-toggle"]').click()
+  await page.getByTestId('independent-corners-toggle').click()
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="corner-tl-input"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="corner-tr-input"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="corner-br-input"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="corner-bl-input"]')).toBeVisible()
+  await expect(page.getByTestId('corner-tl-input')).toBeVisible()
+  await expect(page.getByTestId('corner-tr-input')).toBeVisible()
+  await expect(page.getByTestId('corner-br-input')).toBeVisible()
+  await expect(page.getByTestId('corner-bl-input')).toBeVisible()
   canvas.assertNoErrors()
 })
 
@@ -74,16 +74,16 @@ test('fill gradient switch changes fill type', async () => {
   await canvas.drawRect(300, 300, 80, 80)
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="fill-section"]')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByTestId('fill-section')).toBeVisible({ timeout: 5000 })
 
-  const fillItem = page.locator('[data-test-id="fill-item"]').first()
+  const fillItem = page.getByTestId('fill-item').first()
   await expect(fillItem).toBeVisible({ timeout: 5000 })
-  const fillSwatch = fillItem.locator('[data-test-id="fill-picker-swatch"]')
+  const fillSwatch = fillItem.getByTestId('fill-picker-swatch')
   await expect(fillSwatch).toBeVisible({ timeout: 5000 })
   await fillSwatch.click()
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="fill-picker-tab-gradient"]').click()
+  await page.getByTestId('fill-picker-tab-gradient').click()
   await canvas.waitForRender()
 
   const node = expectDefined(await getSelectedNode(page), 'gradient-filled node')
@@ -107,7 +107,7 @@ test('variable bind badge appears on fill', async () => {
   })
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeVisible()
+  await expect(page.getByTestId('fill-unbind-variable')).toBeVisible()
   canvas.assertNoErrors()
 })
 
@@ -130,12 +130,12 @@ test('fill color can bind an existing variable', async () => {
   })
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="fill-apply-variable-0"]').click()
+  await page.getByTestId('fill-apply-variable-0').click()
   await page.getByText('test-brand-red', { exact: true }).click()
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeVisible()
-  const fillSwatch = page.locator('[data-test-id="fill-picker-swatch"]')
+  await expect(page.getByTestId('fill-unbind-variable')).toBeVisible()
+  const fillSwatch = page.getByTestId('fill-picker-swatch')
   await expect(fillSwatch).toHaveCSS('background-color', 'rgb(255, 0, 0)')
   await fillSwatch.click()
   const colorInputs = page.locator('[role="dialog"] input[type="number"]:not(.hidden)')
@@ -143,7 +143,7 @@ test('fill color can bind an existing variable', async () => {
   await colorInputs.first().fill('0')
   await colorInputs.first().press('Enter')
   await canvas.waitForRender()
-  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeHidden()
+  await expect(page.getByTestId('fill-unbind-variable')).toBeHidden()
   const boundVariableId = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -158,14 +158,14 @@ test('fill color can create and bind a variable', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 80, 80)
 
-  await page.locator('[data-test-id="fill-apply-variable-0"]').click()
+  await page.getByTestId('fill-apply-variable-0').click()
   await expect(page.getByText(/Create color variable from #?[0-9A-F]{6}/)).toBeVisible()
-  await page.locator('[data-test-id="fill-apply-variable-0-create"]').click()
+  await page.getByTestId('fill-apply-variable-0-create').click()
   await page.getByPlaceholder('Variable name').fill('Surface/default')
-  await page.locator('[data-test-id="fill-apply-variable-0-create"]').click()
+  await page.getByTestId('fill-apply-variable-0-create').click()
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="fill-unbind-variable"]')).toBeVisible()
+  await expect(page.getByTestId('fill-unbind-variable')).toBeVisible()
   const boundVariable = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -182,16 +182,16 @@ test('fill color can create and bind a variable', async () => {
 test('width can create, bind, and detach a number variable', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 80, 80)
-  await page.locator('[data-test-id="layout-height-input"]').click()
+  await page.getByTestId('layout-height-input').click()
 
-  await page.locator('[data-test-id="layout-width-apply-variable"]').click()
+  await page.getByTestId('layout-width-apply-variable').click()
   await expect(page.getByText('Create number variable from 80')).toBeVisible()
-  await page.locator('[data-test-id="layout-width-apply-variable-create"]').click()
+  await page.getByTestId('layout-width-apply-variable-create').click()
   await page.getByPlaceholder('Variable name').fill('Card/width')
-  await page.locator('[data-test-id="layout-width-apply-variable-create"]').click()
+  await page.getByTestId('layout-width-apply-variable-create').click()
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="layout-width-unbind-variable"]')).toBeVisible()
+  await expect(page.getByTestId('layout-width-unbind-variable')).toBeVisible()
   const boundVariable = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -203,14 +203,14 @@ test('width can create, bind, and detach a number variable', async () => {
   })
   expect(boundVariable).toBe('Card/width')
 
-  const widthField = page.locator('[data-test-id="layout-width-input"]')
+  const widthField = page.getByTestId('layout-width-input')
   await widthField.click()
-  const widthInput = widthField.locator('[data-test-id="scrub-input-field"]')
+  const widthInput = widthField.getByTestId('scrub-input-field')
   await widthInput.fill('120')
   await widthInput.press('Enter')
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="layout-width-unbind-variable"]')).toBeHidden()
+  await expect(page.getByTestId('layout-width-unbind-variable')).toBeHidden()
   const directWidth = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -229,7 +229,7 @@ test('alignment buttons align nodes to same X', async () => {
   await canvas.pressKey('Meta+a')
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="position-align-left"]').click()
+  await page.getByTestId('position-align-left').click()
   await canvas.waitForRender()
 
   const children = await getPageChildren(page)
@@ -242,7 +242,7 @@ test('flip horizontal sets flipX', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 80, 80)
 
-  await page.locator('[data-test-id="position-flip-horizontal"]').click()
+  await page.getByTestId('position-flip-horizontal').click()
   await canvas.waitForRender()
 
   const node = await getSelectedNode(page)
@@ -263,7 +263,7 @@ test('clip content checkbox toggles clipsContent', async () => {
   const before = expectDefined(await getSelectedNode(page), 'selected frame before clipping')
   const initialValue = before.clipsContent
 
-  await page.locator('[data-test-id="clip-content-checkbox"]').click()
+  await page.getByTestId('clip-content-checkbox').click()
   await canvas.waitForRender()
 
   const after = await getSelectedNode(page)

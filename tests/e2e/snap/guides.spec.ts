@@ -40,7 +40,7 @@ test('edge snap guide: canvas differs at snap vs non-snap position', async () =>
 
   await createRects()
 
-  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('No canvas')
 
   // drag to a non-snap position first, capture screenshot
@@ -68,7 +68,7 @@ test('center snap guide: canvas differs at snap vs non-snap position', async () 
 
   await createRects()
 
-  const box = await page.locator('[data-test-id="canvas-element"]').boundingBox()
+  const box = await page.getByTestId('canvas-element').boundingBox()
   if (!box) throw new Error('No canvas')
 
   // drag to a non-snap position first

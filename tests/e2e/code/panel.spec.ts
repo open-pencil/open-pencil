@@ -19,27 +19,27 @@ test.afterAll(async () => {
 })
 
 function codeTab() {
-  return page.locator('[data-test-id="properties-tab-code"]')
+  return page.getByTestId('properties-tab-code')
 }
 
 function designTab() {
-  return page.locator('[data-test-id="properties-tab-design"]')
+  return page.getByTestId('properties-tab-design')
 }
 
 function codePanel() {
-  return page.locator('[data-test-id="code-panel"]')
+  return page.getByTestId('code-panel')
 }
 
 function codePanelEmpty() {
-  return page.locator('[data-test-id="code-panel-empty"]')
+  return page.getByTestId('code-panel-empty')
 }
 
 function formatToggle() {
-  return page.locator('[data-test-id="code-panel-format-toggle"]')
+  return page.getByTestId('code-panel-format-toggle')
 }
 
 function copyButton() {
-  return page.locator('[data-test-id="code-panel-copy"]')
+  return page.getByTestId('code-panel-copy')
 }
 
 test('Code tab shows empty state with no selection', async () => {

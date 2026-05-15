@@ -31,7 +31,7 @@ async function rectangleCount() {
 }
 
 async function layerItems() {
-  return page.locator('[data-test-id="layers-item"]').allTextContents()
+  return page.getByTestId('layers-item').allTextContents()
 }
 
 async function historyState() {

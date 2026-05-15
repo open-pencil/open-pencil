@@ -62,7 +62,7 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
   }, nodeId)
   await canvas.waitForRender()
 
-  const boldBtn = page.locator('[data-test-id="typography-bold-button"]')
+  const boldBtn = page.getByTestId('typography-bold-button')
   await expect(boldBtn).toBeVisible({ timeout: 3000 })
   await page.waitForTimeout(200)
   await boldBtn.click()
@@ -72,7 +72,7 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
   const bold = await getNodeById(page, nodeId)
   expect(bold?.fontWeight).toBe(700)
 
-  await page.locator('[data-test-id="typography-bold-button"]').click()
+  await page.getByTestId('typography-bold-button').click()
   await page.waitForTimeout(500)
   await canvas.waitForRender()
 

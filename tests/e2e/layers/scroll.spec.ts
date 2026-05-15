@@ -26,8 +26,8 @@ test('pages and layers panels scroll inside splitter panes', async ({ page }) =>
   })
   await canvas.waitForRender()
 
-  const pagesScroller = page.locator('[data-test-id="pages-scroll"]')
-  const layersScroller = page.locator('[data-test-id="layers-scroll"]')
+  const pagesScroller = page.getByTestId('pages-scroll')
+  const layersScroller = page.getByTestId('layers-scroll')
 
   await pagesScroller.evaluate((el) => {
     el.scrollTop = el.scrollHeight

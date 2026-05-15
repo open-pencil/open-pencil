@@ -69,7 +69,7 @@ test('create component from selection (⌘⌥K)', async () => {
 })
 
 test('component shows purple label in design panel', async () => {
-  const header = page.locator('[data-test-id="design-node-header"]')
+  const header = page.getByTestId('design-node-header')
   await expect(header).toContainText('COMPONENT')
 })
 
@@ -119,17 +119,17 @@ test('instance shows INSTANCE type in design panel', async () => {
   }, instance.id)
   await canvas.waitForRender()
 
-  const header = page.locator('[data-test-id="design-node-header"]')
+  const header = page.getByTestId('design-node-header')
   await expect(header).toContainText('INSTANCE')
 })
 
 test('instance has "Go to Main Component" button', async () => {
-  const goToBtn = page.locator('[data-test-id="design-go-to-component"]')
+  const goToBtn = page.getByTestId('design-go-to-component')
   await expect(goToBtn).toBeVisible()
 })
 
 test('instance has "Detach" button', async () => {
-  const detachBtn = page.locator('[data-test-id="design-detach-instance"]')
+  const detachBtn = page.getByTestId('design-detach-instance')
   await expect(detachBtn).toBeVisible()
 })
 

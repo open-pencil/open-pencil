@@ -43,15 +43,15 @@ function getPageChildCount() {
 }
 
 function pagesPanel() {
-  return page.locator('[data-test-id="pages-panel"]')
+  return page.getByTestId('pages-panel')
 }
 
 function pageItems() {
-  return page.locator('[data-test-id="pages-item"]')
+  return page.getByTestId('pages-item')
 }
 
 function addPageButton() {
-  return page.locator('[data-test-id="pages-add"]')
+  return page.getByTestId('pages-add')
 }
 
 test('initial state has one page', async () => {
@@ -164,7 +164,7 @@ test('double-click page to rename', async () => {
   const item = pageItems().first()
   await item.dblclick()
 
-  const input = page.locator('[data-test-id="pages-item-input"]')
+  const input = page.getByTestId('pages-item-input')
   await expect(input).toBeVisible()
   await input.fill('My Page')
   await input.press('Enter')
@@ -180,12 +180,12 @@ test('clicking outside page rename input commits', async () => {
   const item = pageItems().first()
   await item.dblclick()
 
-  const input = page.locator('[data-test-id="pages-item-input"]')
+  const input = page.getByTestId('pages-item-input')
   await expect(input).toBeVisible()
   await input.fill('Outside Click Page')
 
   // Click on the page header label to trigger blur (outside the input but still in the panel)
-  await page.locator('[data-test-id="pages-header"]').click()
+  await page.getByTestId('pages-header').click()
   await canvas.waitForRender()
 
   await expect(input).not.toBeVisible()

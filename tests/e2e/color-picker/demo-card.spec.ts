@@ -43,8 +43,8 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
   })
   await canvas.waitForRender()
 
-  await expect(page.locator('[data-test-id="design-panel-single"]')).toBeVisible()
-  await expect(page.locator('[data-test-id="design-node-header"]')).toContainText('Card')
+  await expect(page.getByTestId('design-panel-single')).toBeVisible()
+  await expect(page.getByTestId('design-node-header')).toContainText('Card')
 }
 
 async function getSelectedFill(page: Parameters<typeof test>[0]['page']) {
@@ -87,8 +87,8 @@ test('demo card fill changes through color picker', async ({ page }) => {
 
   const before = await getSelectedFillOrThrow(page)
 
-  await page.locator('[data-test-id="fill-picker-swatch"]').first().click()
-  await expect(page.locator('[data-test-id="fill-picker-tab-solid"]')).toBeVisible()
+  await page.getByTestId('fill-picker-swatch').first().click()
+  await expect(page.getByTestId('fill-picker-tab-solid')).toBeVisible()
 
   await dragSlider(page, canvas, 'color-slider-hue', 0.7)
 
@@ -102,10 +102,10 @@ test('demo card fill changes from hsb saturation and brightness sliders', async 
   const canvas = new CanvasHelper(page)
   await selectDemoCard(page, canvas)
 
-  await page.locator('[data-test-id="fill-picker-swatch"]').first().click()
-  await expect(page.locator('[data-test-id="fill-picker-tab-solid"]')).toBeVisible()
+  await page.getByTestId('fill-picker-swatch').first().click()
+  await expect(page.getByTestId('fill-picker-tab-solid')).toBeVisible()
   await canvas.waitForRender()
-  await page.locator('[data-test-id="color-format-select"]').click()
+  await page.getByTestId('color-format-select').click()
   await page.getByRole('option', { name: 'HSB', exact: true }).click()
   await canvas.waitForRender()
 

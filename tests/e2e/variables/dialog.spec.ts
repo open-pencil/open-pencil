@@ -31,14 +31,14 @@ async function createColorVariable(name: string) {
 }
 
 function variableRows() {
-  return page.locator('[data-test-id="variable-row"]')
+  return page.getByTestId('variable-row')
 }
 
 test('variables dialog opens', async () => {
   await createColorVariable('primary-color')
 
-  await page.locator('[data-test-id="variables-section-open"]').click()
-  await expect(page.locator('[data-test-id="variables-dialog"]')).toBeVisible()
+  await page.getByTestId('variables-section-open').click()
+  await expect(page.getByTestId('variables-dialog')).toBeVisible()
   canvas.assertNoErrors()
 })
 
@@ -52,7 +52,7 @@ test('search filters variable rows', async () => {
   })
   await canvas.waitForRender()
 
-  const searchInput = page.locator('[data-test-id="variables-search-input"]')
+  const searchInput = page.getByTestId('variables-search-input')
   await searchInput.fill('primary')
 
   await expect(variableRows()).toHaveCount(1, { timeout: 3000 })
@@ -60,31 +60,31 @@ test('search filters variable rows', async () => {
 })
 
 test('add variable menu creates non-color variable types', async () => {
-  await page.locator('[data-test-id="variables-search-input"]').fill('')
+  await page.getByTestId('variables-search-input').fill('')
   await canvas.waitForRender()
 
-  await page.locator('[data-test-id="variables-add-variable"]').click()
-  await page.locator('[data-test-id="variables-add-float"]').click()
+  await page.getByTestId('variables-add-variable').click()
+  await page.getByTestId('variables-add-float').click()
   await expect(
-    page.locator('[data-test-id="variable-row"]').filter({ hasText: 'New number' })
+    page.getByTestId('variable-row').filter({ hasText: 'New number' })
   ).toHaveCount(1)
 
-  await page.locator('[data-test-id="variables-add-variable"]').click()
-  await page.locator('[data-test-id="variables-add-string"]').click()
+  await page.getByTestId('variables-add-variable').click()
+  await page.getByTestId('variables-add-string').click()
   await expect(
-    page.locator('[data-test-id="variable-row"]').filter({ hasText: 'New text' })
+    page.getByTestId('variable-row').filter({ hasText: 'New text' })
   ).toHaveCount(1)
 
-  await page.locator('[data-test-id="variables-add-variable"]').click()
-  await page.locator('[data-test-id="variables-add-boolean"]').click()
+  await page.getByTestId('variables-add-variable').click()
+  await page.getByTestId('variables-add-boolean').click()
   await expect(
-    page.locator('[data-test-id="variable-row"]').filter({ hasText: 'New boolean' })
+    page.getByTestId('variable-row').filter({ hasText: 'New boolean' })
   ).toHaveCount(1)
   canvas.assertNoErrors()
 })
 
 test('click name cell activates editable input', async () => {
-  await page.locator('[data-test-id="variables-search-input"]').fill('')
+  await page.getByTestId('variables-search-input').fill('')
   await canvas.waitForRender()
 
   const firstRow = variableRows().first()
@@ -102,15 +102,15 @@ test('color swatch opens color picker', async () => {
   // close dialog if open from previous test
   await page.keyboard.press('Escape')
   await page.waitForTimeout(200)
-  await page.locator('[data-test-id="variables-section-open"]').click()
-  await expect(page.locator('[data-test-id="variables-dialog"]')).toBeVisible({ timeout: 3000 })
+  await page.getByTestId('variables-section-open').click()
+  await expect(page.getByTestId('variables-dialog')).toBeVisible({ timeout: 3000 })
 
   const swatch = page
-    .locator('[data-test-id="variable-row"]')
+    .getByTestId('variable-row')
     .first()
-    .locator('[data-test-id="color-picker-swatch"]')
+    .getByTestId('color-picker-swatch')
   await expect(swatch).toBeVisible({ timeout: 3000 })
   await swatch.click()
-  await expect(page.locator('[data-test-id="color-picker-popover"]')).toBeVisible({ timeout: 5000 })
+  await expect(page.getByTestId('color-picker-popover')).toBeVisible({ timeout: 5000 })
   canvas.assertNoErrors()
 })
