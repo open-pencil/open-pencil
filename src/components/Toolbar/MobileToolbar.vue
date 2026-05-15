@@ -7,7 +7,7 @@ import IconChevronRight from '~icons/lucide/chevron-right'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
 import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
-import { ToolbarItem } from '@open-pencil/vue'
+import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
@@ -118,7 +118,7 @@ function activeKeyForTool(tool: EditorToolDef) {
             <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
               <ToolButton
                 mobile
-                :test-id="`mobile-toolbar-tool-${tool.key.toLowerCase()}`"
+                :test-id="toolbarToolTestId(tool.key, true)"
                 :icon="toolIcons[tool.key]"
                 :active="active || activeKeyForTool(tool) === activeTool"
                 @click="actions.select"

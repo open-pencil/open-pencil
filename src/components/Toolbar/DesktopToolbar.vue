@@ -2,7 +2,7 @@
 import Tip from '@/components/ui/Tip.vue'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
-import { ToolbarItem } from '@open-pencil/vue'
+import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
@@ -55,7 +55,7 @@ function activeKeyForTool(tool: EditorToolDef) {
         <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
           <Tip :label="`${toolLabels[tool.key]} (${tool.shortcut})`">
             <ToolButton
-              :test-id="`toolbar-tool-${tool.key.toLowerCase()}`"
+              :test-id="toolbarToolTestId(tool.key)"
               :icon="toolIcons[tool.key]"
               :active="active || isActive(tool)"
               @click="actions.select"
