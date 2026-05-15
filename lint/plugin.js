@@ -324,6 +324,35 @@ const noInvalidTestIdAttributes = {
   }
 }
 
+const noGeneratedTestIdLiterals = {
+  meta: {
+    docs: {
+      description: 'Disallow hand-written generated test-id literals — use shared helper functions'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (file.endsWith('/packages/vue/src/testing/test-id.ts')) return {}
+    if (file.endsWith('/tests/helpers/test-ids.ts')) return {}
+    if (!file.includes('/src/') && !file.includes('/tests/')) return {}
+
+    return {
+      Program(node) {
+        const source = context.sourceCode.getText()
+        const match = source.match(
+          /["'`](?:mobile-)?toolbar-(?:tool|flyout|flyout-item)-|["'`]variables-add-(?:float|string|boolean)["'`]|["'`]acp-permission-option-/
+        )
+        if (!match) return
+        context.report({
+          node,
+          message:
+            'Use shared generated test-id helpers instead of hand-written toolbar/variable/permission id literals.'
+        })
+      }
+    }
+  }
+}
+
 const noDocumentQuerySelectorInVue = {
   meta: {
     docs: {
@@ -1413,6 +1442,7 @@ const plugin = {
     'no-dynamic-data-test-id-in-vue': noDynamicDataTestIdInVue,
     'no-test-id-helper-bind-in-vue': noTestIdHelperBindInVue,
     'no-invalid-test-id-attributes': noInvalidTestIdAttributes,
+    'no-generated-test-id-literals': noGeneratedTestIdLiterals,
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
     'no-math-random': noMathRandom,

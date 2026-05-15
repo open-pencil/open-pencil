@@ -116,6 +116,7 @@
     "open-pencil/no-dynamic-data-test-id-in-vue": "error",
     "open-pencil/no-test-id-helper-bind-in-vue": "error",
     "open-pencil/no-invalid-test-id-attributes": "error",
+    "open-pencil/no-generated-test-id-literals": "error",
     "open-pencil/no-document-query-selector-in-vue": "error",
     "open-pencil/no-direct-selection-tool-state-mutation": "error",
     "open-pencil/no-math-random": "error",
