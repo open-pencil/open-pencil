@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { variablesAddTestId } from '#tests/helpers/test-ids'
 
 let page: Page
 let canvas: CanvasHelper
@@ -64,19 +65,19 @@ test('add variable menu creates non-color variable types', async () => {
   await canvas.waitForRender()
 
   await page.getByTestId('variables-add-variable').click()
-  await page.getByTestId('variables-add-float').click()
+  await page.getByTestId(variablesAddTestId('FLOAT')).click()
   await expect(
     page.getByTestId('variable-row').filter({ hasText: 'New number' })
   ).toHaveCount(1)
 
   await page.getByTestId('variables-add-variable').click()
-  await page.getByTestId('variables-add-string').click()
+  await page.getByTestId(variablesAddTestId('STRING')).click()
   await expect(
     page.getByTestId('variable-row').filter({ hasText: 'New text' })
   ).toHaveCount(1)
 
   await page.getByTestId('variables-add-variable').click()
-  await page.getByTestId('variables-add-boolean').click()
+  await page.getByTestId(variablesAddTestId('BOOLEAN')).click()
   await expect(
     page.getByTestId('variable-row').filter({ hasText: 'New boolean' })
   ).toHaveCount(1)

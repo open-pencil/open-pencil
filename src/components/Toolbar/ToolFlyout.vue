@@ -11,7 +11,13 @@ import IconChevronDown from '~icons/lucide/chevron-down'
 
 import { menu } from '@/components/ui/menu'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
-import { vTestId, ToolbarItem } from '@open-pencil/vue'
+import {
+  toolbarFlyoutItemTestId,
+  toolbarFlyoutTestId,
+  toolbarToolTestId,
+  vTestId,
+  ToolbarItem
+} from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
@@ -58,7 +64,7 @@ function activeKeyForTool() {
   <div class="flex items-center">
     <slot :label="`${toolLabels[activeKeyForTool()]} (${tool.shortcut})`">
       <ToolButton
-        :test-id="`${mobile ? 'mobile-' : ''}toolbar-tool-${activeKeyForTool().toLowerCase()}`"
+        :test-id="toolbarToolTestId(activeKeyForTool(), mobile)"
         :icon="toolIcons[activeKeyForTool()]"
         :active="isActiveTool(activeKeyForTool())"
         :mobile="mobile"
@@ -69,7 +75,7 @@ function activeKeyForTool() {
     <DropdownMenuRoot>
       <DropdownMenuTrigger as-child>
         <button
-          v-test-id="`${mobile ? 'mobile-' : ''}toolbar-flyout-${tool.key.toLowerCase()}`"
+          v-test-id="toolbarFlyoutTestId(tool.key, mobile)"
           class="flex h-8 w-3 cursor-pointer items-center justify-center border-none transition-colors"
           :class="[
             mobile ? 'rounded-[6px] select-none' : 'rounded-lg',
@@ -93,7 +99,7 @@ function activeKeyForTool() {
             :tool="sub"
           >
             <DropdownMenuItem
-              v-test-id="`${mobile ? 'mobile-' : ''}toolbar-flyout-item-${sub.toLowerCase()}`"
+              v-test-id="toolbarFlyoutItemTestId(sub, mobile)"
               :class="menu().item({ class: subActive ? 'bg-accent text-white' : undefined })"
               @select="actions.select"
             >

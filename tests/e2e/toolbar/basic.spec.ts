@@ -2,6 +2,7 @@ import { test, expect, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 import { getPageChildren } from '#tests/helpers/store'
+import { toolbarFlyoutItemTestId, toolbarFlyoutTestId } from '#tests/helpers/test-ids'
 
 let page: Page
 let canvas: CanvasHelper
@@ -20,13 +21,13 @@ test.afterAll(async () => {
 })
 
 test('shapes flyout opens', async () => {
-  await page.getByTestId('toolbar-flyout-rectangle').click()
-  await expect(page.getByTestId('toolbar-flyout-item-polygon')).toBeVisible()
+  await page.getByTestId(toolbarFlyoutTestId('RECTANGLE')).click()
+  await expect(page.getByTestId(toolbarFlyoutItemTestId('POLYGON'))).toBeVisible()
   canvas.assertNoErrors()
 })
 
 test('Polygon tool creates POLYGON node', async () => {
-  await page.getByTestId('toolbar-flyout-item-polygon').click()
+  await page.getByTestId(toolbarFlyoutItemTestId('POLYGON')).click()
   await canvas.drag(300, 200, 400, 300)
   await canvas.waitForRender()
 
@@ -36,8 +37,8 @@ test('Polygon tool creates POLYGON node', async () => {
 })
 
 test('Star tool creates STAR node', async () => {
-  await page.getByTestId('toolbar-flyout-rectangle').click()
-  await page.getByTestId('toolbar-flyout-item-star').click()
+  await page.getByTestId(toolbarFlyoutTestId('RECTANGLE')).click()
+  await page.getByTestId(toolbarFlyoutItemTestId('STAR')).click()
   await canvas.drag(150, 150, 250, 250)
   await canvas.waitForRender()
 
@@ -105,8 +106,8 @@ test('Pen close path creates VECTOR with closed region', async () => {
 })
 
 test('Frame flyout shows Frame and Section items', async () => {
-  await page.getByTestId('toolbar-flyout-frame').click()
-  await expect(page.getByTestId('toolbar-flyout-item-frame')).toBeVisible()
-  await expect(page.getByTestId('toolbar-flyout-item-section')).toBeVisible()
+  await page.getByTestId(toolbarFlyoutTestId('FRAME')).click()
+  await expect(page.getByTestId(toolbarFlyoutItemTestId('FRAME'))).toBeVisible()
+  await expect(page.getByTestId(toolbarFlyoutItemTestId('SECTION'))).toBeVisible()
   canvas.assertNoErrors()
 })
