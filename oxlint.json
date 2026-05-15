@@ -118,6 +118,7 @@
     "open-pencil/no-invalid-test-id-attributes": "error",
     "open-pencil/no-raw-test-id-selectors-in-tests": "error",
     "open-pencil/no-generated-test-id-literals": "error",
+    "open-pencil/no-browser-side-effects-in-vue": "error",
     "open-pencil/no-document-query-selector-in-vue": "error",
     "open-pencil/no-direct-selection-tool-state-mutation": "error",
     "open-pencil/no-math-random": "error",
