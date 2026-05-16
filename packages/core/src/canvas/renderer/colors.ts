@@ -1,5 +1,7 @@
 import { resolveNodeFillColor, resolveNodeStrokeColor } from '#core/color/management'
 import type { ResolvedRenderColor } from '#core/color/management'
+import { normalizeColor } from '#core/color/normalize'
+import { getFillOkHCL, getStrokeOkHCL } from '#core/color/okhcl'
 import type { Fill, SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
 import type { Color } from '#core/types'
 
@@ -35,6 +37,8 @@ export function resolveFillColor(
   node: SceneNode,
   graph: SceneGraph
 ): Color {
+  const varId = node.boundVariables[`fills/${fillIndex}/color`]
+  if (!varId && !getFillOkHCL(node, fillIndex)) return normalizeColor(fill.color)
   return resolveFillColorInfo(fill, fillIndex, node, graph).color
 }
 
@@ -60,5 +64,7 @@ export function resolveStrokeColor(
   node: SceneNode,
   graph: SceneGraph
 ): Color {
+  const varId = node.boundVariables[`strokes/${strokeIndex}/color`]
+  if (!varId && !getStrokeOkHCL(node, strokeIndex)) return normalizeColor(stroke.color)
   return resolveStrokeColorInfo(stroke, strokeIndex, node, graph).color
 }
