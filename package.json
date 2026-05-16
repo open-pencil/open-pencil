@@ -25,7 +25,7 @@
     "figma:debug": "open -a Figma --args --remote-debugging-port=9222",
     "test:unit": "bun test ./tests/engine",
     "test:coverage": "bun test --coverage ./tests/engine",
-    "test:dupes": "jscpd packages/core/src packages/cli/src src --min-lines 5 --min-tokens 50 --format typescript",
+    "test:dupes": "jscpd packages/core/src packages/cli/src src --min-lines 5 --min-tokens 50 --format typescript --threshold 0",
     "open-pencil": "bun packages/cli/src/index.ts",
     "docs:dev": "bun --filter @open-pencil/docs dev",
     "docs:build": "bun --filter @open-pencil/docs build",

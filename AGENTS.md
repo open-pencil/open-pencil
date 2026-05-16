@@ -145,7 +145,7 @@ Run all quality gates (see [Code quality](#code-quality) for the self-review che
 ```sh
 bun run check          # oxlint + tsgo type-aware lint & typecheck
 bun run format         # oxfmt
-bun run test:dupes     # jscpd < 3%
+bun run test:dupes     # jscpd — zero clones
 bun run test:unit      # bun:test
 bun run test           # Playwright E2E
 ```
@@ -279,7 +279,7 @@ Before submitting a PR, run the full quality gate and do a self-review:
 ```sh
 bun run check          # oxlint + tsgo type-aware lint & typecheck — zero errors required
 bun run format         # oxfmt with import sorting
-bun run test:dupes     # jscpd — must stay under 3% duplication
+bun run test:dupes     # jscpd — zero clones required
 bun run test:unit      # bun:test
 bun run test           # Playwright E2E
 ```
