@@ -182,7 +182,6 @@ export function render(
       r._culledCount = 0
       p.beginPhase('render:recordPicture')
       recordScenePicture(r, canvas, graph, sceneVersion)
-      if (r.scenePicture) canvas.drawPicture(r.scenePicture)
       p.endPhase('render:recordPicture')
     }
     p.endPhase('render:scene')
