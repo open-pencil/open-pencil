@@ -546,7 +546,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }
 
-  const paragraphY = -1
+  const paragraphY = 0
   if (!r.isNodeFontLoaded(node)) {
     canvas.restore()
     return
