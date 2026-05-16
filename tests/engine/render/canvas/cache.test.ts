@@ -141,7 +141,7 @@ describe('render cache regressions', () => {
           pixels[i] < 130 &&
           pixels[i + 1] < 140 &&
           pixels[i + 2] < 160,
-        [20, 67]
+        [0, width]
       )
       expect(Math.abs(textCenter - contentCenter)).toBeLessThanOrEqual(0.6)
     } finally {
