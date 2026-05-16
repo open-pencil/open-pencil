@@ -306,7 +306,7 @@ export function drawGroupBounds(
 
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
 
-  drawBoundsHandles(r, canvas, minX, minY, maxX, maxY)
+  drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY)
 }
 
 export function getRotatedCorners(r: SkiaRenderer, n: SceneNode, abs: Vector): Vector[] {
@@ -319,12 +319,43 @@ export function getRotatedCorners(r: SkiaRenderer, n: SceneNode, abs: Vector): V
 
 export function drawHandle(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
   r.auxFill.setColor(r.ck.WHITE)
+  const s = HANDLE_HALF_SIZE / r.zoom
+  const rect = r.ck.LTRBRect(x - s, y - s, x + s, y + s)
+  canvas.drawRect(rect, r.auxFill)
+  canvas.drawRect(rect, r.selectionPaint)
+}
+
+function drawHandleScreenSpace(r: SkiaRenderer, canvas: Canvas, x: number, y: number): void {
+  r.auxFill.setColor(r.ck.WHITE)
   const rect = r.ck.LTRBRect(
-    x - HANDLE_HALF_SIZE / r.zoom,
-    y - HANDLE_HALF_SIZE / r.zoom,
-    x + HANDLE_HALF_SIZE / r.zoom,
-    y + HANDLE_HALF_SIZE / r.zoom
+    x - HANDLE_HALF_SIZE,
+    y - HANDLE_HALF_SIZE,
+    x + HANDLE_HALF_SIZE,
+    y + HANDLE_HALF_SIZE
   )
   canvas.drawRect(rect, r.auxFill)
   canvas.drawRect(rect, r.selectionPaint)
+}
+
+function drawBoundsHandlesScreenSpace(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+): void {
+  drawHandleScreenSpace(r, canvas, minX, minY)
+  drawHandleScreenSpace(r, canvas, maxX, minY)
+  drawHandleScreenSpace(r, canvas, minX, maxY)
+  drawHandleScreenSpace(r, canvas, maxX, maxY)
+  const midX = (minX + maxX) / 2
+  const midY = (minY + maxY) / 2
+  const rotationHandleY = minY - 24
+  canvas.drawLine(midX, minY, midX, rotationHandleY, r.selectionPaint)
+  drawHandleScreenSpace(r, canvas, midX, rotationHandleY)
+  drawHandleScreenSpace(r, canvas, midX, minY)
+  drawHandleScreenSpace(r, canvas, midX, maxY)
+  drawHandleScreenSpace(r, canvas, minX, midY)
+  drawHandleScreenSpace(r, canvas, maxX, midY)
 }
