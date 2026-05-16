@@ -47,6 +47,11 @@
 - Fix inner shadow rendering on text nodes.
 - Fix exponential `.fig` file growth on repeated save/load cycles.
 - Fix canvas size badges scaling with zoom.
+- Fix layout inspector dropdown anchoring and spacing/padding icon clarity.
+- Fix section drawing and color input forwarding in the property panel.
+- Fix asset insertion coordinates inside entered containers.
+- Fix MCP stdio handshake and eval return values.
+- Fix `@open-pencil/vue` npm imports referencing an unexported core subpath.
 
 ### Performance
 
