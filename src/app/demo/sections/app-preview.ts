@@ -47,26 +47,32 @@ export function createAppPreviewSection(
     })
   }
 
-  const headerId = store.createShape('RECTANGLE', 56, 0, 464, 52, frameId)
+  const headerId = store.createShape('FRAME', 56, 0, 464, 52, frameId)
   graph.updateNode(headerId, {
     name: 'Header',
     fills: [solid(WHITE)],
-    strokes: thinStroke(GRAY_200)
+    strokes: thinStroke(GRAY_200),
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'FIXED',
+    counterAxisSizing: 'FIXED',
+    counterAxisAlign: 'CENTER',
+    primaryAxisAlign: 'SPACE_BETWEEN',
+    paddingLeft: 20,
+    paddingRight: 20,
+    itemSpacing: 8
   })
-  const headerTitle = store.createShape('TEXT', 76, 16, 120, 20, frameId)
+  const headerTitle = store.createShape('TEXT', 0, 0, 120, 20, headerId)
   graph.updateNode(headerTitle, {
     name: 'Page Title',
     text: 'Dashboard',
     fontSize: 16,
     fontWeight: 600,
+    textAutoResize: 'WIDTH_AND_HEIGHT' as const,
     fills: [solid(BLACK)]
   })
 
-  const headerBtn = graph.createInstance(btnCompId, frameId, { x: 400, y: 8 })
-  if (headerBtn) graph.updateNode(headerBtn.id, { x: 400, y: 8 })
-
-  const headerBadge = graph.createInstance(badgeCompId, frameId, { x: 200, y: 18 })
-  if (headerBadge) graph.updateNode(headerBadge.id, { x: 200, y: 18 })
+  graph.createInstance(badgeCompId, headerId)
+  graph.createInstance(btnCompId, headerId)
 
   const stats = [
     { title: 'Revenue', value: '$12,480', badge: '+14%', color: GREEN },
