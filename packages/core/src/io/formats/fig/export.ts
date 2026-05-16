@@ -318,22 +318,11 @@ function compressViaWorker(
       worker.terminate()
     }
 
-    const imgCopies = imageEntries.map((e) => ({
-      name: e.name,
-      data: new Uint8Array(e.data)
-    }))
-
-    const transferables = [
-      schemaDeflated.buffer,
-      kiwiData.buffer,
-      thumbnailPng.buffer,
-      ...imgCopies.map((e) => e.data.buffer)
-    ]
-
-    worker.postMessage(
-      { schemaDeflated, kiwiData, thumbnailPng, metaJson, images: imgCopies },
-      transferables
-    )
+    // Do NOT use transferables here. toUint8Array() in ByteBuffer returns a view of the
+    // internal buffer, so transferring kiwiData.buffer or schemaDeflated.buffer detaches
+    // buffers that may be shared with other views, causing "already detached" errors on
+    // subsequent saves. Structured clone (the default) copies the data safely.
+    worker.postMessage({ schemaDeflated, kiwiData, thumbnailPng, metaJson, images: imageEntries })
   })
 }
 

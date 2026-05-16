@@ -195,7 +195,7 @@ export interface Paint {
   blendMode?: string
   stops?: { color: Color; position: number }[]
   transform?: Matrix
-  image?: { hash: string }
+  image?: { hash: string | Uint8Array }
   imageScaleMode?: string
   colorVariableBinding?: VariableBinding
   colorVar?: {
