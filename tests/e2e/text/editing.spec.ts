@@ -1,28 +1,13 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { getSelectedNode } from '#tests/helpers/store'
 
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
+const editor = useEditorSetup()
 
 
 function getPageChildren() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
@@ -34,9 +19,9 @@ function getPageChildren() {
 }
 
 test('pressing T activates text tool', async () => {
-  await page.keyboard.press('t')
+  await editor.page.keyboard.press('t')
 
-  const tool = await page.evaluate(() => {
+  const tool = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.activeTool
@@ -45,11 +30,11 @@ test('pressing T activates text tool', async () => {
 })
 
 test('clicking with text tool creates a text node', async () => {
-  await canvas.click(200, 200)
-  await canvas.waitForRender()
+  await editor.canvas.click(200, 200)
+  await editor.canvas.waitForRender()
 
   // Wait a tick for text editing mode to activate
-  await page.waitForTimeout(200)
+  await editor.page.waitForTimeout(200)
 
   const children = await getPageChildren()
   const textNode = children.find((c) => c.type === 'TEXT')
@@ -57,43 +42,43 @@ test('clicking with text tool creates a text node', async () => {
 })
 
 test('text node is selected after creation', async () => {
-  const node = await getSelectedNode(page)
+  const node = await getSelectedNode(editor.page)
   expect(node?.type).toBe('TEXT')
 })
 
 test('typography section appears for text node', async () => {
   // Exit text editing mode
-  await page.keyboard.press('Escape')
-  await canvas.waitForRender()
+  await editor.page.keyboard.press('Escape')
+  await editor.canvas.waitForRender()
 
   // Re-select the text node
-  await canvas.click(200, 200)
-  await canvas.waitForRender()
+  await editor.canvas.click(200, 200)
+  await editor.canvas.waitForRender()
 
-  const typoSection = page.getByTestId('typography-section')
+  const typoSection = editor.page.getByTestId('typography-section')
   await expect(typoSection).toBeVisible()
 })
 
 test('text node has default font properties', async () => {
-  const node = await getSelectedNode(page)
+  const node = await getSelectedNode(editor.page)
   expect(node?.fontSize).toBeGreaterThan(0)
   expect(node?.fontFamily).toBeTruthy()
 })
 
 test('creating text via store works', async () => {
-  await page.keyboard.press('Escape')
-  await canvas.waitForRender()
+  await editor.page.keyboard.press('Escape')
+  await editor.canvas.waitForRender()
 
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('TEXT', 100, 300, 200, 30)
     store.graph.updateNode(id, { text: 'Hello World', fontSize: 24, fontFamily: 'Inter' })
     store.select([id])
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  const node = await getSelectedNode(page)
+  const node = await getSelectedNode(editor.page)
   expect(node?.text).toBe('Hello World')
   expect(node?.fontSize).toBe(24)
 })
@@ -101,31 +86,31 @@ test('creating text via store works', async () => {
 test('undo removes text node', async () => {
   const beforeCount = (await getPageChildren()).length
 
-  await canvas.undo()
-  await canvas.waitForRender()
+  await editor.canvas.undo()
+  await editor.canvas.waitForRender()
 
   const afterCount = (await getPageChildren()).length
   expect(afterCount).toBe(beforeCount - 1)
 })
 
 test('frame tool creates FRAME node', async () => {
-  await page.keyboard.press('f')
-  await canvas.drag(400, 100, 600, 250)
-  await canvas.waitForRender()
+  await editor.page.keyboard.press('f')
+  await editor.canvas.drag(400, 100, 600, 250)
+  await editor.canvas.waitForRender()
 
-  const node = expectDefined(await getSelectedNode(page), 'selected frame')
+  const node = expectDefined(await getSelectedNode(editor.page), 'selected frame')
   expect(node.type).toBe('FRAME')
   expect(node.width).toBeGreaterThan(0)
   expect(node.height).toBeGreaterThan(0)
 
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('Enter key opens text editing and selects all without erasing', async () => {
-  await page.keyboard.press('Escape')
-  await canvas.waitForRender()
+  await editor.page.keyboard.press('Escape')
+  await editor.canvas.waitForRender()
 
-  const textId = await page.evaluate(() => {
+  const textId = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('TEXT', 300, 300, 200, 30)
@@ -134,23 +119,23 @@ test('Enter key opens text editing and selects all without erasing', async () =>
     store.requestRender()
     return id
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  const before = await getSelectedNode(page)
+  const before = await getSelectedNode(editor.page)
   expect(before?.text).toBe('Keep this text')
   expect(before?.type).toBe('TEXT')
 
-  await page.keyboard.press('Enter')
-  await page.waitForTimeout(200)
+  await editor.page.keyboard.press('Enter')
+  await editor.page.waitForTimeout(200)
 
-  const editing = await page.evaluate(() => {
+  const editing = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.editingTextId
   })
   expect(editing).toBe(textId)
 
-  const after = await page.evaluate(() => {
+  const after = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.state.editingTextId

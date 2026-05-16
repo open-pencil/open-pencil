@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { getSelectedNode } from '#tests/helpers/store'
 
 let page: Page
 let canvas: CanvasHelper
@@ -19,6 +18,21 @@ test.afterAll(async () => {
   await page.close()
 })
 
+async function getSelectedNodeFlags() {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const id = [...store.state.selectedIds][0]
+    if (!id) return null
+    const n = store.graph.getNode(id)
+    if (!n) return null
+    return {
+      type: n.type,
+      independentCorners: n.independentCorners,
+      independentStrokeWeights: n.independentStrokeWeights
+    }
+  })
+}
 
 async function drawFrame(x: number, y: number, w: number, h: number) {
   await canvas.pressKey('f')
@@ -30,7 +44,7 @@ test('independent corners toggle shows per-corner inputs', async () => {
   await drawFrame(120, 120, 120, 80)
   await canvas.waitForRender()
 
-  const flags = await getSelectedNode(page)
+  const flags = await getSelectedNodeFlags()
   expect(flags?.type).toBe('FRAME')
   expect(flags?.independentCorners).toBe(false)
 
@@ -40,7 +54,7 @@ test('independent corners toggle shows per-corner inputs', async () => {
   await toggle.click()
   await canvas.waitForRender()
 
-  expect((await getSelectedNode(page))?.independentCorners).toBe(true)
+  expect((await getSelectedNodeFlags())?.independentCorners).toBe(true)
   const grid = page.getByTestId('independent-corners-grid')
   await expect(grid).toBeVisible()
   const cornerInputs = grid.getByTestId('scrub-input')

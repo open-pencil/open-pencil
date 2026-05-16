@@ -1,99 +1,84 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { CanvasHelper } from '#tests/helpers/canvas'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
+const editor = useEditorSetup()
 
 test('ScrubInput drag changes X position', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(100, 100, 80, 80)
-  const before = await getSelectedNode(page)
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(100, 100, 80, 80)
+  const before = await getSelectedNode(editor.page)
   const initialX = expectDefined(before, 'selected rectangle before drag').x
 
-  const xScrub = page
+  const xScrub = editor.page
     .getByTestId('position-section').getByTestId('scrub-input')
     .first()
-  await canvas.dragScrubInput(xScrub, 50)
+  await editor.canvas.dragScrubInput(xScrub, 50)
 
-  const after = await getSelectedNode(page)
+  const after = await getSelectedNode(editor.page)
   expect(after?.x).not.toBe(initialX)
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('corner radius uniform sets cornerRadius', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(200, 200, 80, 80)
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
 
-  const scrubContainer = page.getByTestId('corner-radius-input')
+  const scrubContainer = editor.page.getByTestId('corner-radius-input')
   await scrubContainer.click()
-  await canvas.waitForRender()
-  const input = page.getByTestId('corner-radius-input').getByTestId('scrub-input-field')
+  await editor.canvas.waitForRender()
+  const input = editor.page.getByTestId('corner-radius-input').getByTestId('scrub-input-field')
   await input.fill('12')
   await input.press('Enter')
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  const node = await getSelectedNode(page)
+  const node = await getSelectedNode(editor.page)
   expect(node?.cornerRadius).toBe(12)
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('independent corners toggle shows four corner inputs', async () => {
-  await page.getByTestId('independent-corners-toggle').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('independent-corners-toggle').click()
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('corner-tl-input')).toBeVisible()
-  await expect(page.getByTestId('corner-tr-input')).toBeVisible()
-  await expect(page.getByTestId('corner-br-input')).toBeVisible()
-  await expect(page.getByTestId('corner-bl-input')).toBeVisible()
-  canvas.assertNoErrors()
+  await expect(editor.page.getByTestId('corner-tl-input')).toBeVisible()
+  await expect(editor.page.getByTestId('corner-tr-input')).toBeVisible()
+  await expect(editor.page.getByTestId('corner-br-input')).toBeVisible()
+  await expect(editor.page.getByTestId('corner-bl-input')).toBeVisible()
+  editor.canvas.assertNoErrors()
 })
 
 test('fill gradient switch changes fill type', async () => {
-  await canvas.clearCanvas()
-  await canvas.pressKey('Escape')
-  await canvas.waitForRender()
+  await editor.canvas.clearCanvas()
+  await editor.canvas.pressKey('Escape')
+  await editor.canvas.waitForRender()
   // fresh rect with default solid fill
-  await canvas.drawRect(300, 300, 80, 80)
-  await canvas.waitForRender()
+  await editor.canvas.drawRect(300, 300, 80, 80)
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('fill-section')).toBeVisible({ timeout: 5000 })
+  await expect(editor.page.getByTestId('fill-section')).toBeVisible({ timeout: 5000 })
 
-  const fillItem = page.getByTestId('fill-item').first()
+  const fillItem = editor.page.getByTestId('fill-item').first()
   await expect(fillItem).toBeVisible({ timeout: 5000 })
   const fillSwatch = fillItem.getByTestId('fill-picker-swatch')
   await expect(fillSwatch).toBeVisible({ timeout: 5000 })
   await fillSwatch.click()
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await page.getByTestId('fill-picker-tab-gradient').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('fill-picker-tab-gradient').click()
+  await editor.canvas.waitForRender()
 
-  const node = expectDefined(await getSelectedNode(page), 'gradient-filled node')
+  const node = expectDefined(await getSelectedNode(editor.page), 'gradient-filled node')
   expect(node.fills[0]?.type).toBe('GRADIENT_LINEAR')
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('variable bind badge appears on fill', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(200, 200, 80, 80)
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
 
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const col = store.graph.createCollection('Colors')
@@ -103,17 +88,17 @@ test('variable bind badge appears on fill', async () => {
     store.graph.bindVariable(id, 'fills/0/color', v.id)
     store.state.sceneVersion++
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('fill-unbind-variable')).toBeVisible()
-  canvas.assertNoErrors()
+  await expect(editor.page.getByTestId('fill-unbind-variable')).toBeVisible()
+  editor.canvas.assertNoErrors()
 })
 
 test('fill color can bind an existing variable', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(200, 200, 80, 80)
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
 
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const col = store.graph.createCollection('Colors')
@@ -126,45 +111,45 @@ test('fill color can bind an existing variable', async () => {
     store.state.sceneVersion++
     return variable.id
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await page.getByTestId('fill-apply-variable-0').click()
-  await page.getByText('test-brand-red', { exact: true }).click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('fill-apply-variable-0').click()
+  await editor.page.getByText('test-brand-red', { exact: true }).click()
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('fill-unbind-variable')).toBeVisible()
-  const fillSwatch = page.getByTestId('fill-picker-swatch')
+  await expect(editor.page.getByTestId('fill-unbind-variable')).toBeVisible()
+  const fillSwatch = editor.page.getByTestId('fill-picker-swatch')
   await expect(fillSwatch).toHaveCSS('background-color', 'rgb(255, 0, 0)')
   await fillSwatch.click()
-  const colorInputs = page.locator('[role="dialog"] input[type="number"]:not(.hidden)')
+  const colorInputs = editor.page.locator('[role="dialog"] input[type="number"]:not(.hidden)')
   await expect(colorInputs.first()).toHaveValue('255')
   await colorInputs.first().fill('0')
   await colorInputs.first().press('Enter')
-  await canvas.waitForRender()
-  await expect(page.getByTestId('fill-unbind-variable')).toBeHidden()
-  const boundVariableId = await page.evaluate(() => {
+  await editor.canvas.waitForRender()
+  await expect(editor.page.getByTestId('fill-unbind-variable')).toBeHidden()
+  const boundVariableId = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
     return id ? (store.getNode(id)?.boundVariables['fills/0/color'] ?? null) : null
   })
   expect(boundVariableId).toBeNull()
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('fill color can create and bind a variable', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(200, 200, 80, 80)
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
 
-  await page.getByTestId('fill-apply-variable-0').click()
-  await expect(page.getByText(/Create color variable from #?[0-9A-F]{6}/)).toBeVisible()
-  await page.getByTestId('fill-apply-variable-0-create').click()
-  await page.getByPlaceholder('Variable name').fill('Surface/default')
-  await page.getByTestId('fill-apply-variable-0-create').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('fill-apply-variable-0').click()
+  await expect(editor.page.getByText(/Create color variable from #?[0-9A-F]{6}/)).toBeVisible()
+  await editor.page.getByTestId('fill-apply-variable-0-create').click()
+  await editor.page.getByPlaceholder('Variable name').fill('Surface/default')
+  await editor.page.getByTestId('fill-apply-variable-0-create').click()
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('fill-unbind-variable')).toBeVisible()
-  const boundVariable = await page.evaluate(() => {
+  await expect(editor.page.getByTestId('fill-unbind-variable')).toBeVisible()
+  const boundVariable = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
@@ -174,23 +159,23 @@ test('fill color can create and bind a variable', async () => {
     return variableId ? store.getVariable(variableId)?.name : null
   })
   expect(boundVariable).toBe('Surface/default')
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('width can create, bind, and detach a number variable', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(200, 200, 80, 80)
-  await page.getByTestId('layout-height-input').click()
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
+  await editor.page.getByTestId('layout-height-input').click()
 
-  await page.getByTestId('layout-width-apply-variable').click()
-  await expect(page.getByText('Create number variable from 80')).toBeVisible()
-  await page.getByTestId('layout-width-apply-variable-create').click()
-  await page.getByPlaceholder('Variable name').fill('Card/width')
-  await page.getByTestId('layout-width-apply-variable-create').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('layout-width-apply-variable').click()
+  await expect(editor.page.getByText('Create number variable from 80')).toBeVisible()
+  await editor.page.getByTestId('layout-width-apply-variable-create').click()
+  await editor.page.getByPlaceholder('Variable name').fill('Card/width')
+  await editor.page.getByTestId('layout-width-apply-variable-create').click()
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('layout-width-unbind-variable')).toBeVisible()
-  const boundVariable = await page.evaluate(() => {
+  await expect(editor.page.getByTestId('layout-width-unbind-variable')).toBeVisible()
+  const boundVariable = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
@@ -201,15 +186,15 @@ test('width can create, bind, and detach a number variable', async () => {
   })
   expect(boundVariable).toBe('Card/width')
 
-  const widthField = page.getByTestId('layout-width-input')
+  const widthField = editor.page.getByTestId('layout-width-input')
   await widthField.click()
   const widthInput = widthField.getByTestId('scrub-input-field')
   await widthInput.fill('120')
   await widthInput.press('Enter')
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await expect(page.getByTestId('layout-width-unbind-variable')).toBeHidden()
-  const directWidth = await page.evaluate(() => {
+  await expect(editor.page.getByTestId('layout-width-unbind-variable')).toBeHidden()
+  const directWidth = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
@@ -217,54 +202,54 @@ test('width can create, bind, and detach a number variable', async () => {
     return node ? { width: node.width, binding: node.boundVariables.width ?? null } : null
   })
   expect(directWidth).toEqual({ width: 120, binding: null })
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('alignment buttons align nodes to same X', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(50, 200, 60, 60)
-  await canvas.drawRect(250, 200, 60, 60)
-  await canvas.pressKey('Meta+a')
-  await canvas.waitForRender()
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(50, 200, 60, 60)
+  await editor.canvas.drawRect(250, 200, 60, 60)
+  await editor.canvas.pressKey('Meta+a')
+  await editor.canvas.waitForRender()
 
-  await page.getByTestId('position-align-left').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('position-align-left').click()
+  await editor.canvas.waitForRender()
 
-  const children = await getPageChildren(page)
+  const children = await getPageChildren(editor.page)
   expect(children.length).toBe(2)
   expect(children[0].x).toBe(children[1].x)
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('flip horizontal sets flipX', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(200, 200, 80, 80)
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
 
-  await page.getByTestId('position-flip-horizontal').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('position-flip-horizontal').click()
+  await editor.canvas.waitForRender()
 
-  const node = await getSelectedNode(page)
+  const node = await getSelectedNode(editor.page)
   expect(node?.flipX).toBe(true)
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })
 
 test('clip content checkbox toggles clipsContent', async () => {
-  await canvas.clearCanvas()
-  await canvas.pressKey('f')
-  await canvas.drag(100, 100, 300, 300)
-  await canvas.waitForRender()
+  await editor.canvas.clearCanvas()
+  await editor.canvas.pressKey('f')
+  await editor.canvas.drag(100, 100, 300, 300)
+  await editor.canvas.waitForRender()
 
   // Enable auto-layout so the clip-content checkbox is visible
-  await canvas.pressKey('Shift+a')
-  await canvas.waitForRender()
+  await editor.canvas.pressKey('Shift+a')
+  await editor.canvas.waitForRender()
 
-  const before = expectDefined(await getSelectedNode(page), 'selected frame before clipping')
+  const before = expectDefined(await getSelectedNode(editor.page), 'selected frame before clipping')
   const initialValue = before.clipsContent
 
-  await page.getByTestId('clip-content-checkbox').click()
-  await canvas.waitForRender()
+  await editor.page.getByTestId('clip-content-checkbox').click()
+  await editor.canvas.waitForRender()
 
-  const after = await getSelectedNode(page)
+  const after = await getSelectedNode(editor.page)
   expect(after?.clipsContent).toBe(!initialValue)
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })

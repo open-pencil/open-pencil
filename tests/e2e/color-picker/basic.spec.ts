@@ -1,9 +1,25 @@
-import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { expect, test, type Page } from '@playwright/test'
 
-const editor = useEditorSetup()
+import { CanvasHelper } from '#tests/helpers/canvas'
+
+let page: Page
+let canvas: CanvasHelper
+
+test.describe.configure({ mode: 'serial' })
+
+test.beforeAll(async ({ browser }) => {
+  page = await browser.newPage()
+  await page.goto('/')
+  canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+})
+
+test.afterAll(async () => {
+  await page.close()
+})
 
 async function getSelectedFill() {
-  return editor.page.evaluate(() => {
+  return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
@@ -14,36 +30,36 @@ async function getSelectedFill() {
 }
 
 async function openFillPicker() {
-  const solidTab = editor.page.getByTestId('fill-picker-tab-solid')
+  const solidTab = page.getByTestId('fill-picker-tab-solid')
   if (await solidTab.isVisible().catch(() => false)) return
-  const swatch = editor.page.getByTestId('fill-picker-swatch').first()
+  const swatch = page.getByTestId('fill-picker-swatch').first()
   await swatch.click()
   await expect(solidTab).toBeVisible()
 }
 
 async function chooseFormat(label: 'RGB' | 'HSL' | 'HSB' | 'OkHCL') {
-  await editor.page.getByTestId('color-format-select').click()
-  await editor.page.getByRole('option', { name: label, exact: true }).click()
+  await page.getByTestId('color-format-select').click()
+  await page.getByRole('option', { name: label, exact: true }).click()
 }
 
 async function dragSlider(testId: string, ratio: number) {
-  const slider = editor.page.getByTestId(testId).locator('input[type="range"]')
+  const slider = page.getByTestId(testId).locator('input[type="range"]')
   const box = await slider.boundingBox()
   if (!box) throw new Error(`Missing slider: ${testId}`)
   const y = box.y + box.height / 2
-  await editor.page.mouse.move(box.x + 2, y)
-  await editor.page.mouse.down()
-  await editor.page.mouse.move(box.x + Math.max(2, Math.min(box.width - 2, box.width * ratio)), y, {
+  await page.mouse.move(box.x + 2, y)
+  await page.mouse.down()
+  await page.mouse.move(box.x + Math.max(2, Math.min(box.width - 2, box.width * ratio)), y, {
     steps: 20
   })
-  await editor.page.mouse.up()
-  await editor.canvas.waitForRender()
+  await page.mouse.up()
+  await canvas.waitForRender()
 }
 
 test('rgb hue slider updates selected fill color', async () => {
-  await editor.canvas.clearCanvas()
-  await editor.canvas.drawRect(100, 100, 160, 120)
-  await editor.canvas.waitForRender()
+  await canvas.clearCanvas()
+  await canvas.drawRect(100, 100, 160, 120)
+  await canvas.waitForRender()
 
   await openFillPicker()
   const before = await getSelectedFill()
