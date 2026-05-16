@@ -93,5 +93,8 @@ describe('clipboard derived text export', () => {
     const derived = expectDefined(await buildDerivedTextDataV4(text, fontDigestMap), 'derived text')
 
     expect(derived.fontMetaData[0].key.style).toBe('Semi Bold')
+    expect(derived.glyphs[1].position.x).toBeGreaterThan(0)
+    expect(derived.glyphs[1].advance).toBeGreaterThan(0)
+    expect(derived.logicalIndexToCharacterOffsetMap[1]).toBeGreaterThan(0)
   })
 })

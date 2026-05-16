@@ -3,7 +3,7 @@ import type { SceneNode } from '#core/scene-graph'
 
 import { buildDerivedTextData } from './derived-text-data'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from './fonts'
-import { getGlyphOutlineCommandsSync } from './opentype'
+import { getGlyphOutlineMetricsSync } from './opentype'
 
 export interface ShapedClipboardText {
   lineHeight: number
@@ -28,20 +28,22 @@ export async function buildDerivedTextDataV4(
   const normalizedFamily = normalizeFontFamily(node.fontFamily)
   const key = `${normalizedFamily}|${style}`
   const lineHeightFallback = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
-  const glyphCommandLists =
-    getGlyphOutlineCommandsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
+  const glyphMetrics = getGlyphOutlineMetricsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
 
-  const glyphs = glyphCommandLists.map((commands, index) => {
+  const fallbackAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
+  const glyphs = glyphMetrics.map((glyph, index) => {
     const shapedGlyph = shaped?.glyphs[index]
+    const fallbackX = glyph.x || index * fallbackAdvance
+    const fallbackGlyphAdvance = glyph.advance || fallbackAdvance
     return {
-      commands,
+      commands: glyph.commands,
       position: {
-        x: shapedGlyph?.x ?? 0,
+        x: shapedGlyph?.x ?? fallbackX,
         y: shapedGlyph?.y ?? shaped?.baseline ?? lineHeightFallback
       },
       fontSize: node.fontSize,
       firstCharacter: shapedGlyph?.firstCharacter ?? index,
-      advance: shapedGlyph?.advance ?? 0,
+      advance: shapedGlyph?.advance ?? fallbackGlyphAdvance,
       rotation: 0
     }
   })
@@ -64,6 +66,6 @@ export async function buildDerivedTextDataV4(
     lineAscent: shaped?.lineAscent ?? Math.max(lineHeightFallback - node.fontSize * 0.2, 0),
     logicalIndexToCharacterOffsetMap:
       shaped?.logicalIndexToCharacterOffsetMap ??
-      Array.from({ length: node.text.length + 1 }, () => 0)
+      Array.from({ length: node.text.length + 1 }, (_, index) => index * fallbackAdvance)
   })
 }

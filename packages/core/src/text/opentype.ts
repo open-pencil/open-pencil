@@ -18,6 +18,7 @@ interface OutlinePath {
 
 interface OutlineGlyph {
   path: OutlinePath
+  advanceWidth?: number
   getPath(x: number, y: number, fontSize: number): OutlinePath
 }
 
@@ -93,17 +94,40 @@ function commandsToFigmaNumbers(commands: OutlineCommand[]): Array<string | numb
   return result
 }
 
+export interface GlyphOutlineMetrics {
+  commands: Array<string | number>
+  x: number
+  advance: number
+}
+
+export function getGlyphOutlineMetricsSync(
+  family: string,
+  style: string,
+  text: string,
+  fontSize: number
+): GlyphOutlineMetrics[] | null {
+  const font = getParsedFont(family, style)
+  if (!font) return null
+
+  const glyphs = font.stringToGlyphs(text)
+  let x = 0
+  const scale = fontSize / font.unitsPerEm
+  return glyphs.map((glyph) => {
+    const commands = commandsToFigmaNumbers(glyph.getPath(0, 0, fontSize).commands)
+    const advance = (glyph.advanceWidth ?? 0) * scale
+    const metrics = { commands, x, advance }
+    x += advance
+    return metrics
+  })
+}
+
 export function getGlyphOutlineCommandsSync(
   family: string,
   style: string,
   text: string,
   fontSize: number
 ): Array<Array<string | number>> | null {
-  const font = getParsedFont(family, style)
-  if (!font) return null
-
-  const glyphs = font.stringToGlyphs(text)
-  return glyphs.map((glyph) => commandsToFigmaNumbers(glyph.getPath(0, 0, fontSize).commands))
+  return getGlyphOutlineMetricsSync(family, style, text, fontSize)?.map((glyph) => glyph.commands) ?? null
 }
 
 export async function probeGlyphOutlineCommands(
