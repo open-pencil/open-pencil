@@ -143,7 +143,9 @@ export function render(
     h: r.viewportHeight / r.zoom
   }
 
-  const hasPositionPreview = graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion
+  const hasPositionPreview =
+    graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
+    sceneVersion === r.scenePictureVersion
   const hasVolatileOverlays = hasPositionPreview || hasVolatileOverlay(overlays)
 
   const canUsePicture = canUseScenePicture(r, graph, sceneVersion, hasVolatileOverlays)
