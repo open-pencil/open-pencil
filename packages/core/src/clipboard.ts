@@ -17,6 +17,7 @@ import {
 } from './kiwi/node-change/serialize'
 import { randomInt } from './random'
 import type { SceneGraph, SceneNode } from './scene-graph'
+import { shapeTextForClipboard } from './canvas/text'
 import { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 
 interface FigmaClipboardMeta {
@@ -335,7 +336,8 @@ export async function buildFigmaClipboardHTML(
       const source = textNodeQueue.shift()
       if (!source) return
       change.textUserLayoutVersion = 4
-      change.derivedTextData = await buildDerivedTextDataV4(source, fontDigestMap, null, blobs)
+      const shaped = await shapeTextForClipboard(source).catch(() => null)
+      change.derivedTextData = await buildDerivedTextDataV4(source, fontDigestMap, shaped, blobs)
     })
   )
 

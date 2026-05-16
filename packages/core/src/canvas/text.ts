@@ -284,36 +284,46 @@ export async function shapeTextForClipboard(node: SceneNode): Promise<ClipboardS
   if (!fontProvider) return null
 
   const paragraph = buildParagraph({ ck, fontProvider, fontsLoaded: true }, node)
+  paragraph.layout(node.textAutoResize === 'WIDTH_AND_HEIGHT' ? 1e6 : node.width)
   const shapedLines = paragraph.getShapedLines()
   const lineMetrics = paragraph.getLineMetrics()
-  const firstLine = shapedLines[0]
+  if (shapedLines.length === 0 || lineMetrics.length === 0) {
+    paragraph.delete()
+    return null
+  }
   const firstMetrics = lineMetrics[0]
 
   const glyphs: ClipboardShapedGlyph[] = []
   const logicalIndexToCharacterOffsetMap = Array.from({ length: node.text.length + 1 }, () => 0)
 
-  for (const run of firstLine.runs) {
-    const positions = run.positions
-    for (let i = 0; i < run.glyphs.length; i++) {
-      const x = positions[i * 2] ?? 0
-      const y = positions[i * 2 + 1] ?? firstLine.baseline
-      const nextX = positions[(i + 1) * 2] ?? x
-      const firstCharacter = run.offsets[i] ?? i
-      glyphs.push({
-        glyphIndex: i,
-        firstCharacter,
-        x,
-        y,
-        advance: nextX - x
-      })
-      if (firstCharacter >= 0 && firstCharacter < logicalIndexToCharacterOffsetMap.length) {
-        logicalIndexToCharacterOffsetMap[firstCharacter] = x
+  for (let lineIdx = 0; lineIdx < shapedLines.length; lineIdx++) {
+    const line = shapedLines[lineIdx]
+    const metrics = lineMetrics[lineIdx] ?? firstMetrics
+    const lineY = metrics.baseline
+
+    for (const run of line.runs) {
+      const positions = run.positions
+      for (let i = 0; i < run.glyphs.length; i++) {
+        const x = positions[i * 2] ?? 0
+        const y = positions[i * 2 + 1] ?? lineY
+        const nextX = positions[(i + 1) * 2] ?? x
+        const firstCharacter = run.offsets[i] ?? i
+        glyphs.push({
+          glyphIndex: i,
+          firstCharacter,
+          x,
+          y,
+          advance: nextX - x
+        })
+        if (firstCharacter >= 0 && firstCharacter < logicalIndexToCharacterOffsetMap.length) {
+          logicalIndexToCharacterOffsetMap[firstCharacter] = x
+        }
       }
-    }
-    const finalOffset = run.offsets[run.offsets.length - 1]
-    const finalX = positions[positions.length - 2] ?? firstMetrics.width
-    if (finalOffset >= 0 && finalOffset < logicalIndexToCharacterOffsetMap.length) {
-      logicalIndexToCharacterOffsetMap[finalOffset] = finalX
+      const finalOffset = run.offsets[run.offsets.length - 1]
+      const finalX = positions[positions.length - 2] ?? metrics.width
+      if (finalOffset >= 0 && finalOffset < logicalIndexToCharacterOffsetMap.length) {
+        logicalIndexToCharacterOffsetMap[finalOffset] = finalX
+      }
     }
   }
 

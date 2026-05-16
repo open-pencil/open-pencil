@@ -1,12 +1,74 @@
+import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
+
 import type { NodeChange } from '#core/kiwi/binary/codec'
 import type { SceneNode } from '#core/scene-graph'
 
 import { encodePathCommandsBlob } from '#core/kiwi/node-change/path-commands'
 
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
-import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+import { type GlyphOutlineMetrics, getGlyphOutlineMetricsSync } from '#core/text/opentype'
 
 import { buildDerivedTextData } from './data'
+
+function computeWordWrapBreaks(
+  text: string,
+  glyphMetrics: GlyphOutlineMetrics[],
+  fallbackAdvance: number,
+  maxWidth: number,
+  fontSize: number,
+  fontFamily: string
+): number[] {
+  try {
+    const font = `${fontSize}px ${fontFamily}`
+    const prepared = prepareWithSegments(text, font)
+    const lineHeight = Math.ceil(fontSize * 1.2)
+    const { lines } = layoutWithLines(prepared, maxWidth, lineHeight)
+    const breaks: number[] = []
+    let charOffset = 0
+    for (const line of lines) {
+      if (charOffset > 0) breaks.push(charOffset)
+      charOffset += line.text.length
+    }
+    return breaks
+  } catch {
+    return computeFallbackBreaks(text, glyphMetrics, fallbackAdvance, maxWidth)
+  }
+}
+
+function computeFallbackBreaks(
+  text: string,
+  glyphMetrics: GlyphOutlineMetrics[],
+  fallbackAdvance: number,
+  maxWidth: number
+): number[] {
+  const breaks: number[] = []
+  let x = 0
+  let lastBreak = 0
+  let lastBreakX = 0
+
+  for (let i = 0; i < glyphMetrics.length; i++) {
+    const advance = glyphMetrics[i].advance || fallbackAdvance
+    const ch = text[i]
+    if (ch === ' ' || ch === '\t' || (ch === '-' && i + 1 < text.length)) {
+      lastBreak = i + 1
+      lastBreakX = x + advance
+    }
+    if (x > 0 && x + advance > maxWidth) {
+      const lineStart = breaks.length > 0 ? breaks[breaks.length - 1] : 0
+      if (lastBreak > lineStart) {
+        breaks.push(lastBreak)
+        x -= lastBreakX
+      } else {
+        breaks.push(i)
+        x = 0
+      }
+      lastBreak = breaks[breaks.length - 1]
+      lastBreakX = 0
+    }
+    x += advance
+  }
+  return breaks
+}
 
 export interface ShapedClipboardText {
   lineHeight: number
@@ -35,17 +97,22 @@ export async function buildDerivedTextDataV4(
   const glyphMetrics = getGlyphOutlineMetricsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
 
   const fallbackAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
+  const lineAscent = Math.max(lineHeightFallback - node.fontSize * 0.2, 0)
+  const lineBreaks = shaped
+    ? []
+    : computeWordWrapBreaks(node.text, glyphMetrics, fallbackAdvance, node.width, node.fontSize, node.fontFamily)
+  const lineBreakSet = new Set(lineBreaks)
+
   const fallbackBaselines: NonNullable<NodeChange['derivedTextData']>['baselines'] = []
   const fallbackOffsets = Array.from({ length: node.text.length + 1 }, () => 0)
   let fallbackX = 0
   let fallbackY = lineHeightFallback
   let lineStart = 0
-  const lineAscent = Math.max(lineHeightFallback - node.fontSize * 0.2, 0)
 
   const glyphs = glyphMetrics.map((glyph, index) => {
     const shapedGlyph = shaped?.glyphs[index]
     const fallbackGlyphAdvance = glyph.advance || fallbackAdvance
-    if (!shapedGlyph && fallbackX > 0 && fallbackX + fallbackGlyphAdvance > node.width) {
+    if (!shapedGlyph && lineBreakSet.has(index)) {
       fallbackBaselines.push({
         firstCharacter: lineStart,
         endCharacter: Math.max(index - 1, lineStart),
