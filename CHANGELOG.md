@@ -27,11 +27,14 @@
 - Add targeted core subpath exports and package-local import aliases for cleaner app, Vue SDK, CLI, and MCP imports.
 - Split the canvas into separate scene and overlay render layers so rulers, labels, selections, and input overlays are isolated from scene rendering.
 - Share one generated menu schema between browser and Tauri menus for more consistent app commands.
-- Use `@use-gesture/vanilla` for wheel gesture lifecycle handling and faster trackpad zoom behavior.
+- Remove `@use-gesture/vanilla` — canvas wheel handling uses a direct passive-false listener with RAF batching.
 - Reorganize development docs and roadmap notes under the VitePress docs package.
+- Reorganize engine tests to mirror source domain structure — IO formats, text, clipboard, vector, geometry, and profiler modules each have their own test folders.
 
 ### Fixes
 
+- Fix `.fig` export of component variant property definitions — variant types are now serialized as the Kiwi `TEXT` enum value instead of the invalid `VARIANT` literal.
+- Fix `.fig` export of text `layoutAlignSelf` — stretch alignment on text nodes is now preserved through Figma clipboard and file roundtrips.
 - Fix CJK and Arabic fallback font rendering so text waits for required fallback fonts and repaints after async fallback loading completes.
 - Fix large `.fig` files freezing during open — parsing and scene graph import now run in the worker, and opened files fit to the canvas viewport after loading.
 - Improve Figma import fidelity for Preline UI files — preserve variable aliases, derived instance layout, nested instance scaling, avatar swaps, badge internals, and input text alignment.
@@ -65,6 +68,10 @@
 
 ### Performance
 
+- Render canvas on editor events instead of continuous RAF polling — scene and overlay layers invalidate independently.
+- Coalesce canvas surface frames across scene and overlay surfaces using a shared per-editor RAF scheduler.
+- Cache paragraph font-family fallback arrays to avoid repeated allocation during text rendering.
+- Gate WebGL draw-call instrumentation — GL method wrapping is only active while the profiler HUD or capture is running.
 - Cache downloaded remote fonts in app-local storage so reopened documents can reuse them without repeated network fetches.
 - Add a curated fallback font manifest for CJK and Arabic font downloads.
 - Cache instance override resolution and lazily populate opened `.fig` pages to reduce load time for large community files.
@@ -75,6 +82,12 @@
 
 - Add Tauri API mock coverage for font loading, font cache, external links, document read/write, save dialogs, process helpers, and remaining desktop integrations.
 - Add scheduled/manual heavy `.fig` import coverage and mark large fixture metadata tests as heavy.
+- Hide rulers in E2E visual regression snapshots so ruler rendering changes don't break unrelated canvas assertions.
+- Enforce zero code duplication via jscpd (`--threshold 0`) as part of the `check` gate.
+- Add Steiger architecture rule to flag broad engine `basic.test.ts` files (>250 lines, 4+ describe blocks).
+- Add oxlint rules for Vue test-id conventions, browser side-effect guards, document.querySelector restrictions, and generated test-id literal drift.
+- Standardize E2E selectors on Playwright `getByTestId()` with `data-test-id` attribute and shared test-id helpers/directive.
+- Guard Tauri font cache against headless/non-Tauri environments to eliminate spurious test warnings.
 
 ## 0.11.8 — 2026-04-23
 
