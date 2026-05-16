@@ -79,6 +79,14 @@ export class RenderProfiler {
 
   setCacheHit(hit: boolean): void {
     this.stats.scenePictureCacheHit = hit
+    this.stats.scenePictureMode = hit ? 'hit' : 'none'
+    if (hit) this.stats.scenePictureMissReason = ''
+  }
+
+  setScenePictureMode(mode: 'hit' | 'record' | 'volatile' | 'none', reason = ''): void {
+    this.stats.scenePictureCacheHit = mode === 'hit'
+    this.stats.scenePictureMode = mode
+    this.stats.scenePictureMissReason = reason
   }
 
   beginCapture(): void {
