@@ -24,14 +24,14 @@ export function createComponentsSection(store: EditorStore) {
   const compSectionId = store.createShape('SECTION', 60, 60, 920, 540)
   graph.updateNode(compSectionId, { name: 'Components' })
 
-  const btnId = store.createShape('FRAME', 32, 48, 160, 72, compSectionId)
+  const btnId = store.createShape('FRAME', 32, 76, 120, 40, compSectionId)
   graph.updateNode(btnId, {
     name: 'Button/Primary',
     fills: [],
     strokes: [],
     clipsContent: false
   })
-  const btnSurfaceId = store.createShape('FRAME', 0, 28, 120, 40, btnId)
+  const btnSurfaceId = store.createShape('FRAME', 0, 0, 120, 40, btnId)
   graph.updateNode(btnSurfaceId, {
     name: 'Surface',
     cornerRadius: 8,
@@ -57,14 +57,14 @@ export function createComponentsSection(store: EditorStore) {
   })
   const btnCompId = makeComponent(store, [btnId])
 
-  const btn2Id = store.createShape('FRAME', 216, 48, 160, 72, compSectionId)
+  const btn2Id = store.createShape('FRAME', 216, 76, 100, 40, compSectionId)
   graph.updateNode(btn2Id, {
     name: 'Button/Secondary',
     fills: [],
     strokes: [],
     clipsContent: false
   })
-  const btn2SurfaceId = store.createShape('FRAME', 0, 28, 100, 40, btn2Id)
+  const btn2SurfaceId = store.createShape('FRAME', 0, 0, 100, 40, btn2Id)
   graph.updateNode(btn2SurfaceId, {
     name: 'Surface',
     cornerRadius: 8,
@@ -95,8 +95,8 @@ export function createComponentsSection(store: EditorStore) {
   store.createComponentSetFromComponents()
   const buttonSetId = [...store.state.selectedIds][0]
   graph.updateNode(buttonSetId, { x: 32, y: 44, width: 400, height: 136, fills: [] })
-  graph.updateNode(btnCompId, { x: 40, y: 36 })
-  graph.updateNode(btn2CompId, { x: 224, y: 36 })
+  graph.updateNode(btnCompId, { x: 40, y: 64 })
+  graph.updateNode(btn2CompId, { x: 224, y: 64 })
 
   const chipId = store.createShape('FRAME', 500, 72, 80, 28, compSectionId)
   graph.updateNode(chipId, {

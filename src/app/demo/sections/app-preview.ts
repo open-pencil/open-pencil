@@ -71,8 +71,10 @@ export function createAppPreviewSection(
     fills: [solid(BLACK)]
   })
 
-  graph.createInstance(badgeCompId, headerId)
-  graph.createInstance(btnCompId, headerId)
+  const badgeInstance = graph.createInstance(badgeCompId, headerId)
+  if (badgeInstance) graph.updateNode(badgeInstance.id, { x: 264, y: 15 })
+  const buttonInstance = graph.createInstance(btnCompId, headerId)
+  if (buttonInstance) graph.updateNode(buttonInstance.id, { x: 324, y: 6 })
 
   const stats = [
     { title: 'Revenue', value: '$12,480', badge: '+14%', color: GREEN },
