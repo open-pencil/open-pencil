@@ -167,6 +167,7 @@ export {
   FontManager,
   fontManager,
   styleToWeight,
+  weightToFigmaStyle,
   weightToStyle,
   normalizeFontFamily,
   isVariableFont,

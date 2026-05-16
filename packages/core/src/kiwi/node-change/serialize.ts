@@ -1,5 +1,5 @@
 import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text-data'
-import { normalizeFontFamily, weightToStyle } from '#core/text/fonts'
+import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
 import { getGlyphOutlineCommandsSync } from '#core/text/opentype'
 import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
 export {
@@ -85,7 +85,7 @@ function buildDerivedTextData(
     if (seen.has(key)) return
     seen.add(key)
     fontMeta.push({
-      key: { family: normalized, style, postscript: '' },
+      key: { family: normalized, style: weightToFigmaStyle(weight, italic), postscript: '' },
       fontLineHeight: 1.2,
       fontDigest: digestMap.get(key),
       fontStyle: italic ? 'ITALIC' : 'NORMAL',
@@ -163,7 +163,7 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
     const italic = style.italic ?? node.italic
     override.fontName = {
       family: normalizeFontFamily(style.fontFamily ?? node.fontFamily),
-      style: weightToStyle(weight, italic),
+      style: weightToFigmaStyle(weight, italic),
       postscript: ''
     }
     if (style.fontSize !== undefined) override.fontSize = style.fontSize
@@ -256,7 +256,7 @@ function serializeTextProps(
   nc.fontSize = node.fontSize
   nc.fontName = {
     family: normalizeFontFamily(node.fontFamily),
-    style: weightToStyle(node.fontWeight, node.italic),
+    style: weightToFigmaStyle(node.fontWeight, node.italic),
     postscript: ''
   }
   nc.textData = exportTextData(node)

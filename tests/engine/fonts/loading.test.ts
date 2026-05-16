@@ -8,6 +8,7 @@ import {
   normalizeFontFamily,
   styleToVariant,
   styleToWeight,
+  weightToFigmaStyle,
   weightToStyle,
   FontManager,
   SceneGraph,
@@ -62,6 +63,18 @@ describe('weightToStyle', () => {
   test('appends Italic suffix', () => {
     expect(weightToStyle(400, true)).toBe('Regular Italic')
     expect(weightToStyle(700, true)).toBe('Bold Italic')
+  })
+})
+
+describe('weightToFigmaStyle', () => {
+  test('preserves Figma weight name spacing', () => {
+    expect(weightToFigmaStyle(200)).toBe('Extra Light')
+    expect(weightToFigmaStyle(600)).toBe('Semi Bold')
+    expect(weightToFigmaStyle(800)).toBe('Extra Bold')
+  })
+
+  test('appends Italic suffix', () => {
+    expect(weightToFigmaStyle(600, true)).toBe('Semi Bold Italic')
   })
 })
 

@@ -88,6 +88,12 @@ export function weightToStyle(weight: number, italic = false): string {
   return italic ? `${label} Italic` : label
 }
 
+export function weightToFigmaStyle(weight: number, italic = false): string {
+  const rounded = Math.round(weight / 100) * 100
+  const label = FONT_WEIGHT_NAMES[rounded] ?? 'Regular'
+  return italic ? `${label} Italic` : label
+}
+
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private fontProvider: TypefaceFontProvider | null = null

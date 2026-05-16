@@ -111,9 +111,51 @@ describe('text node export', () => {
 
     expect(textNc.derivedTextData.fontMetaData).toBeDefined()
     expect(textNc.derivedTextData.fontMetaData.length).toBe(1)
+    expect(textNc.fontName.style).toBe('Bold')
     expect(textNc.derivedTextData.fontMetaData[0].key.family).toBe('Roboto')
+    expect(textNc.derivedTextData.fontMetaData[0].key.style).toBe('Bold')
     expect(textNc.derivedTextData.fontMetaData[0].fontWeight).toBe(700)
     expect(textNc.derivedTextData.fontMetaData[0].fontStyle).toBe('NORMAL')
+  })
+
+  test('uses Figma font style names for weighted text', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import('#core/kiwi/kiwi-schema')
+    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.createNode('TEXT', page.id, {
+      name: 'Weighted',
+      text: 'Semi bold',
+      width: 120,
+      height: 24,
+      fontFamily: 'Inter',
+      fontWeight: 600,
+      fontSize: 16
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const chunks = parseFigKiwiChunks(zip['canvas.fig'] ?? zip['canvas'])
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const message = compiled.decodeMessage(inflateSync(chunks?.[1] ?? new Uint8Array()))
+    const nodeChanges = message.nodeChanges as Array<Record<string, unknown>>
+    const textNc = expectDefined(nodeChanges.find((nc) => nc.type === 'TEXT'), 'text node change')
+    const derivedTextData = textNc.derivedTextData as Record<string, unknown>
+    const fontMetaData = expectDefined(
+      derivedTextData.fontMetaData as Array<Record<string, unknown>> | undefined,
+      'font metadata'
+    )
+
+    expect((textNc.fontName as Record<string, unknown>).style).toBe('Semi Bold')
+    expect((fontMetaData[0].key as Record<string, unknown>).style).toBe('Semi Bold')
   })
 
   test('style runs produce multiple fontMetaData entries', async () => {

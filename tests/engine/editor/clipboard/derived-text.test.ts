@@ -55,6 +55,7 @@ describe('clipboard derived text export', () => {
     const line = expectDefined(derivedTextData.derivedLines[0], 'first derived line')
 
     expect(derivedTextData.fontMetaData.length).toBeGreaterThan(0)
+    expect(derivedTextData.fontMetaData[0].key.style).toBe('Regular')
     expect(derivedTextData.glyphs.length).toBeGreaterThan(0)
     expect(derivedTextData.baselines.length).toBeGreaterThan(0)
     expect(derivedTextData.logicalIndexToCharacterOffsetMap.length).toBe(text.text.length + 1)
@@ -68,5 +69,29 @@ describe('clipboard derived text export', () => {
     expect(baseline.lineHeight).toBe(20)
     expect(baseline.lineAscent).toBe(15)
     expect(baseline.width).toBe(42)
+  })
+
+  test('uses Figma font style names in metadata', async () => {
+    await initCodec()
+
+    const font = expectDefined(
+      await fontManager.fetchBundledFont('/Inter-SemiBold.ttf'),
+      'bundled Inter font'
+    )
+    fontManager.markLoaded('Inter', 'SemiBold', font)
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, {
+      text: 'Title',
+      fontFamily: 'Inter',
+      fontSize: 16,
+      fontWeight: 600
+    })
+
+    const fontDigestMap = await buildFontDigestMap(graph)
+    const derived = expectDefined(await buildDerivedTextDataV4(text, fontDigestMap), 'derived text')
+
+    expect(derived.fontMetaData[0].key.style).toBe('Semi Bold')
   })
 })

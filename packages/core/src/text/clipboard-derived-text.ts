@@ -2,7 +2,7 @@ import type { NodeChange } from '#core/kiwi/binary/codec'
 import type { SceneNode } from '#core/scene-graph'
 
 import { buildDerivedTextData } from './derived-text-data'
-import { normalizeFontFamily, weightToStyle } from './fonts'
+import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from './fonts'
 import { getGlyphOutlineCommandsSync } from './opentype'
 
 export interface ShapedClipboardText {
@@ -51,7 +51,7 @@ export async function buildDerivedTextDataV4(
     glyphs,
     fontMetaData: [
       {
-        key: { family: normalizedFamily, style, postscript: '' },
+        key: { family: normalizedFamily, style: weightToFigmaStyle(node.fontWeight, node.italic), postscript: '' },
         fontLineHeight: 1.2,
         fontDigest: digestMap.get(key),
         fontStyle: node.italic ? 'ITALIC' : 'NORMAL',
