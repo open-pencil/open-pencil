@@ -72,7 +72,7 @@ export async function buildDerivedTextDataV4(
       },
       fontSize: node.fontSize,
       firstCharacter: shapedGlyph?.firstCharacter ?? index,
-      advance: shapedGlyph?.advance ?? fallbackGlyphAdvance,
+      advance: (shapedGlyph?.advance ?? fallbackGlyphAdvance) / node.fontSize,
       rotation: 0
     }
   })

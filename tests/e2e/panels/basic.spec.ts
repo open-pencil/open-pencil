@@ -1,6 +1,5 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
-import { CanvasHelper } from '#tests/helpers/canvas'
 
 const editor = useEditorSetup()
 
