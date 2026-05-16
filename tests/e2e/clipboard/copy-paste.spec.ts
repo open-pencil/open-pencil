@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { getSelectedNodes } from '#tests/helpers/store'
 
 let page: Page
 let canvas: CanvasHelper
@@ -34,26 +35,6 @@ function getSelectedCount() {
   })
 }
 
-function getSelectedNodes() {
-  return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    return [...store.state.selectedIds].map((id) => {
-      const n = store.graph.getNode(id)
-      if (!n) throw new Error(`Selected node ${id} not found`)
-      return {
-        id: n.id,
-        name: n.name,
-        type: n.type,
-        x: n.x,
-        y: n.y,
-        width: n.width,
-        height: n.height,
-        fills: n.fills
-      }
-    })
-  })
-}
 
 test('copy + paste via store duplicates a shape', async () => {
   await canvas.drawRect(100, 100, 120, 80)
@@ -76,7 +57,7 @@ test('copy + paste via store duplicates a shape', async () => {
 })
 
 test('pasted node is offset from original', async () => {
-  const nodes = await getSelectedNodes()
+  const nodes = await getSelectedNodes(page)
   expect(nodes).toHaveLength(1)
 
   const pasted = nodes[0]
@@ -123,7 +104,7 @@ test('duplicate preserves fills', async () => {
 
   await canvas.duplicate()
 
-  const nodes = await getSelectedNodes()
+  const nodes = await getSelectedNodes(page)
   expect(nodes[0].fills[0].color.b).toBeCloseTo(1, 1)
 })
 

@@ -1,34 +1,14 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
-
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/?test')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
-
-test.beforeEach(async () => {
-  await canvas.clearCanvas()
-})
+const editor = useEditorSetupWithClear('/?test')
 
 test('draw section in full editor without browser errors', async () => {
-  await canvas.drawSection(100, 100, 240, 160)
+  await editor.canvas.drawSection(100, 100, 240, 160)
 
-  await expect(page.getByTestId('design-node-header')).toContainText('SECTION')
+  await expect(editor.page.getByTestId('design-node-header')).toContainText('SECTION')
   await expect
     .poll(async () => {
-      return page.evaluate(() => {
+      return editor.page.evaluate(() => {
         const store = window.openPencil?.getStore?.()
         const selectedId = [...store.state.selectedIds][0]
         return selectedId ? store.graph.getNode(selectedId)?.type : null
@@ -36,5 +16,5 @@ test('draw section in full editor without browser errors', async () => {
     })
     .toBe('SECTION')
 
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })

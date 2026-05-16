@@ -1,35 +1,15 @@
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
-
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/?test&no-chrome&no-rulers')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
-
-test.beforeEach(async () => {
-  await canvas.clearCanvas()
-})
+const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function expectCanvas(name: string) {
-  canvas.assertNoErrors()
-  const buffer = await canvas.canvas.screenshot()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.canvas.screenshot()
   expect(buffer).toMatchSnapshot(`${name}.png`)
 }
 
 async function createOverlayDemo(rotation: number) {
-  await page.evaluate((frameRotation) => {
+  await editor.page.evaluate((frameRotation) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -91,7 +71,7 @@ async function createOverlayDemo(rotation: number) {
     store.requestRender()
   }, rotation)
 
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 }
 
 test('rotated frame selection labels render with hovered child', async () => {
@@ -102,7 +82,7 @@ test('rotated frame selection labels render with hovered child', async () => {
 test('rotation preview updates frame labels before mouse up', async () => {
   await createOverlayDemo(0)
 
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const frameId = [...store.state.selectedIds][0]
@@ -110,7 +90,7 @@ test('rotation preview updates frame labels before mouse up', async () => {
     store.requestRepaint()
   })
 
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('rotated-frame-selection-labels-preview')
 })
 

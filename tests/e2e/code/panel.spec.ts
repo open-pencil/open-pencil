@@ -1,45 +1,29 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
-
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
+const editor = useEditorSetup()
 
 function codeTab() {
-  return page.getByTestId('properties-tab-code')
+  return editor.page.getByTestId('properties-tab-code')
 }
 
 function designTab() {
-  return page.getByTestId('properties-tab-design')
+  return editor.page.getByTestId('properties-tab-design')
 }
 
 function codePanel() {
-  return page.getByTestId('code-panel')
+  return editor.page.getByTestId('code-panel')
 }
 
 function codePanelEmpty() {
-  return page.getByTestId('code-panel-empty')
+  return editor.page.getByTestId('code-panel-empty')
 }
 
 function formatToggle() {
-  return page.getByTestId('code-panel-format-toggle')
+  return editor.page.getByTestId('code-panel-format-toggle')
 }
 
 function copyButton() {
-  return page.getByTestId('code-panel-copy')
+  return editor.page.getByTestId('code-panel-copy')
 }
 
 test('Code tab shows empty state with no selection', async () => {
@@ -49,8 +33,8 @@ test('Code tab shows empty state with no selection', async () => {
 })
 
 test('selecting a rectangle shows JSX code', async () => {
-  await canvas.drawRect(100, 100, 200, 150)
-  await canvas.waitForRender()
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await editor.canvas.waitForRender()
 
   await expect(codePanel()).toBeVisible()
 
@@ -79,26 +63,26 @@ test('copy button works and shows confirmation', async () => {
 
   await expect(copyButton()).toContainText('Copied')
 
-  await page.waitForTimeout(2500)
+  await editor.page.waitForTimeout(2500)
   await expect(copyButton()).toContainText('Copy')
 })
 
 test('deselecting shows empty state again', async () => {
-  await page.keyboard.press('Escape')
-  await canvas.waitForRender()
+  await editor.page.keyboard.press('Escape')
+  await editor.canvas.waitForRender()
 
   await expect(codePanelEmpty()).toBeVisible()
 })
 
 test('selecting a frame shows Frame in JSX', async () => {
   // Create a frame via store to avoid click-targeting issues
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('FRAME', 300, 100, 200, 200)
     store.select([id])
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
   const code = await codePanel().textContent()
   expect(code).toContain('Frame')
@@ -107,5 +91,5 @@ test('selecting a frame shows Frame in JSX', async () => {
 test('switching back to Design tab works', async () => {
   await designTab().click()
 
-  await expect(page.getByTestId('design-panel-single').or(page.getByTestId('design-panel-empty')).first()).toBeVisible()
+  await expect(editor.page.getByTestId('design-panel-single').or(editor.page.getByTestId('design-panel-empty')).first()).toBeVisible()
 })

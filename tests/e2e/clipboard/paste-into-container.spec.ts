@@ -1,25 +1,9 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
-
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
+const editor = useEditorSetup()
 
 function getNodeChildren(nodeId: string) {
-  return page.evaluate((id) => {
+  return editor.page.evaluate((id) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(id).map((n) => ({
@@ -32,7 +16,7 @@ function getNodeChildren(nodeId: string) {
 }
 
 function getSelectedParent() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = [...store.state.selectedIds][0]
@@ -43,7 +27,7 @@ function getSelectedParent() {
 }
 
 function createFrameWithChild() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -57,7 +41,7 @@ function createFrameWithChild() {
 }
 
 function selectNode(nodeId: string) {
-  return page.evaluate((id) => {
+  return editor.page.evaluate((id) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     store.select([id])
@@ -66,7 +50,7 @@ function selectNode(nodeId: string) {
 }
 
 function copyAndPaste() {
-  return page.evaluate(async () => {
+  return editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const data = new DataTransfer()
@@ -77,20 +61,20 @@ function copyAndPaste() {
 }
 
 test('paste into selected frame places node as child', async () => {
-  await canvas.clearCanvas()
+  await editor.canvas.clearCanvas()
   const { frameId } = await createFrameWithChild()
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await canvas.drawRect(400, 50, 60, 60)
-  await canvas.waitForRender()
+  await editor.canvas.drawRect(400, 50, 60, 60)
+  await editor.canvas.waitForRender()
 
   await copyAndPaste()
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
   await selectNode(frameId)
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await page.evaluate(async () => {
+  await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const rect = [...store.graph.nodes.values()].find(
@@ -109,7 +93,7 @@ test('paste into selected frame places node as child', async () => {
 
     if (html) await store.pasteFromHTML(html)
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
   const children = await getNodeChildren(frameId)
   const pastedChild = children.find((c) => c.name === 'Rectangle')
@@ -118,14 +102,14 @@ test('paste into selected frame places node as child', async () => {
 })
 
 test('paste with child selected places node as sibling in parent frame', async () => {
-  await canvas.clearCanvas()
+  await editor.canvas.clearCanvas()
   const { frameId, childId } = await createFrameWithChild()
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
-  await canvas.drawRect(400, 50, 60, 60)
-  await canvas.waitForRender()
+  await editor.canvas.drawRect(400, 50, 60, 60)
+  await editor.canvas.waitForRender()
 
-  await page.evaluate(
+  await editor.page.evaluate(
     async ({ childId: cid }) => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -144,7 +128,7 @@ test('paste with child selected places node as sibling in parent frame', async (
     },
     { childId }
   )
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
   const parent = await getSelectedParent()
   expect(parent).toBe(frameId)
@@ -154,11 +138,11 @@ test('paste with child selected places node as sibling in parent frame', async (
 })
 
 test('paste with no selection places on page', async () => {
-  await canvas.clearCanvas()
-  await canvas.drawRect(100, 100, 60, 60)
-  await canvas.waitForRender()
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(100, 100, 60, 60)
+  await editor.canvas.waitForRender()
 
-  await page.evaluate(async () => {
+  await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const data = new DataTransfer()
@@ -167,15 +151,15 @@ test('paste with no selection places on page', async () => {
     store.clearSelection()
     if (html) await store.pasteFromHTML(html)
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
 
   const parent = await getSelectedParent()
-  const pageId = await page.evaluate(() => {
+  const pageId = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.currentPageId
   })
   expect(parent).toBe(pageId)
 
-  canvas.assertNoErrors()
+  editor.canvas.assertNoErrors()
 })

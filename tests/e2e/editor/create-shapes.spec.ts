@@ -1,30 +1,10 @@
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
-
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/?test&no-chrome&no-rulers')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
-
-test.beforeEach(async () => {
-  await canvas.clearCanvas()
-})
+const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function expectCanvas(name: string) {
-  canvas.assertNoErrors()
-  const buffer = await canvas.canvas.screenshot()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.canvas.screenshot()
   expect(buffer).toMatchSnapshot(`${name}.png`)
 }
 
@@ -33,31 +13,31 @@ test('empty canvas', async () => {
 })
 
 test('draw rectangle', async () => {
-  await canvas.drawRect(100, 100, 200, 150)
+  await editor.canvas.drawRect(100, 100, 200, 150)
   await expectCanvas('draw-rectangle')
 })
 
 test('draw ellipse', async () => {
-  await canvas.drawEllipse(100, 100, 200, 150)
+  await editor.canvas.drawEllipse(100, 100, 200, 150)
   await expectCanvas('draw-ellipse')
 })
 
 test('draw rectangle then move it', async () => {
-  await canvas.drawRect(100, 100, 200, 150)
-  await canvas.selectTool('select')
-  await canvas.drag(200, 175, 400, 300)
-  await canvas.waitForRender()
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await editor.canvas.selectTool('select')
+  await editor.canvas.drag(200, 175, 400, 300)
+  await editor.canvas.waitForRender()
   await expectCanvas('draw-rectangle-then-move-it')
 })
 
 test('draw and delete', async () => {
-  await canvas.drawRect(100, 100, 200, 150)
-  await canvas.deleteSelection()
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await editor.canvas.deleteSelection()
   await expectCanvas('draw-and-delete')
 })
 
 test('draw and undo', async () => {
-  await canvas.drawRect(100, 100, 200, 150)
-  await canvas.undo()
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await editor.canvas.undo()
   await expectCanvas('draw-and-undo')
 })

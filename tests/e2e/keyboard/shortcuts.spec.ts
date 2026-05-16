@@ -1,26 +1,10 @@
-import { expect, test, type Page } from '@playwright/test'
-
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
-import { CanvasHelper } from '#tests/helpers/canvas'
 
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
+const editor = useEditorSetup()
 
 function getActiveTool() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.activeTool
@@ -28,7 +12,7 @@ function getActiveTool() {
 }
 
 function getSelectedCount() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.selectedIds.size
@@ -36,7 +20,7 @@ function getSelectedCount() {
 }
 
 function getPageChildren() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.graph.getChildren(store.state.currentPageId).map((n) => ({
@@ -49,7 +33,7 @@ function getPageChildren() {
 }
 
 function getUIVisible() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.showUI
@@ -57,7 +41,7 @@ function getUIVisible() {
 }
 
 function getZoom() {
-  return page.evaluate(() => {
+  return editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.state.zoom
@@ -66,74 +50,74 @@ function getZoom() {
 
 test.describe('tool switching', () => {
   test('V → SELECT', async () => {
-    await page.keyboard.press('v')
+    await editor.page.keyboard.press('v')
     expect(await getActiveTool()).toBe('SELECT')
   })
 
   test('R → RECTANGLE', async () => {
-    await page.keyboard.press('r')
+    await editor.page.keyboard.press('r')
     expect(await getActiveTool()).toBe('RECTANGLE')
   })
 
   test('O → ELLIPSE', async () => {
-    await page.keyboard.press('o')
+    await editor.page.keyboard.press('o')
     expect(await getActiveTool()).toBe('ELLIPSE')
   })
 
   test('F → FRAME', async () => {
-    await page.keyboard.press('f')
+    await editor.page.keyboard.press('f')
     expect(await getActiveTool()).toBe('FRAME')
   })
 
   test('T → TEXT', async () => {
-    await page.keyboard.press('t')
+    await editor.page.keyboard.press('t')
     expect(await getActiveTool()).toBe('TEXT')
   })
 
   test('L → LINE', async () => {
-    await page.keyboard.press('l')
+    await editor.page.keyboard.press('l')
     expect(await getActiveTool()).toBe('LINE')
   })
 
   test('P → PEN', async () => {
-    await page.keyboard.press('p')
+    await editor.page.keyboard.press('p')
     expect(await getActiveTool()).toBe('PEN')
   })
 
   test('H → HAND', async () => {
-    await page.keyboard.press('h')
+    await editor.page.keyboard.press('h')
     expect(await getActiveTool()).toBe('HAND')
   })
 
   test('S → SECTION', async () => {
-    await page.keyboard.press('s')
+    await editor.page.keyboard.press('s')
     expect(await getActiveTool()).toBe('SECTION')
   })
 })
 
 test.describe('selection shortcuts', () => {
   test('⌘A selects all', async () => {
-    await page.keyboard.press('v')
-    await canvas.drawRect(100, 100, 60, 60)
-    await canvas.drawRect(200, 100, 60, 60)
+    await editor.page.keyboard.press('v')
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.drawRect(200, 100, 60, 60)
 
-    await page.keyboard.press('Meta+a')
+    await editor.page.keyboard.press('Meta+a')
     expect(await getSelectedCount()).toBe(2)
   })
 
   test('Escape clears selection and resets to SELECT tool', async () => {
-    await page.keyboard.press('Escape')
+    await editor.page.keyboard.press('Escape')
     expect(await getSelectedCount()).toBe(0)
     expect(await getActiveTool()).toBe('SELECT')
   })
 
   test('Backspace deletes selected', async () => {
-    await canvas.selectAll()
+    await editor.canvas.selectAll()
     const beforeCount = await getSelectedCount()
     expect(beforeCount).toBeGreaterThan(0)
 
-    await page.keyboard.press('Backspace')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Backspace')
+    await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
     expect(children).toHaveLength(0)
@@ -142,22 +126,22 @@ test.describe('selection shortcuts', () => {
 
 test.describe('z-order shortcuts', () => {
   test('] brings to front', async () => {
-    await canvas.drawRect(100, 100, 60, 60)
-    await canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.drawRect(100, 100, 60, 60)
 
     const childrenBefore = await getPageChildren()
     const firstId = expectDefined(childrenBefore[0], 'first page child').id
 
     // Select the first (bottom) node
-    await page.evaluate((id) => {
+    await editor.page.evaluate((id) => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.select([id])
     }, firstId)
-    await canvas.waitForRender()
+    await editor.canvas.waitForRender()
 
-    await page.keyboard.press(']')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press(']')
+    await editor.canvas.waitForRender()
 
     const childrenAfter = await getPageChildren()
     expect(childrenAfter[childrenAfter.length - 1].id).toBe(firstId)
@@ -168,15 +152,15 @@ test.describe('z-order shortcuts', () => {
     const lastId = expectDefined(children.at(-1), 'last page child').id
 
     // Select the last (top) node
-    await page.evaluate((id) => {
+    await editor.page.evaluate((id) => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.select([id])
     }, lastId)
-    await canvas.waitForRender()
+    await editor.canvas.waitForRender()
 
-    await page.keyboard.press('[')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('[')
+    await editor.canvas.waitForRender()
 
     const after = await getPageChildren()
     expect(after[0].id).toBe(lastId)
@@ -185,11 +169,11 @@ test.describe('z-order shortcuts', () => {
 
 test.describe('group/ungroup shortcuts', () => {
   test('⌘G groups selection', async () => {
-    await canvas.selectAll()
+    await editor.canvas.selectAll()
     expect(await getSelectedCount()).toBeGreaterThanOrEqual(2)
 
-    await page.keyboard.press('Meta+g')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+g')
+    await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
     const group = children.find((c) => c.type === 'GROUP')
@@ -198,8 +182,8 @@ test.describe('group/ungroup shortcuts', () => {
   })
 
   test('⌘⇧G ungroups', async () => {
-    await page.keyboard.press('Meta+Shift+g')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+Shift+g')
+    await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
     expect(children.every((c) => c.type !== 'GROUP')).toBe(true)
@@ -210,28 +194,28 @@ test.describe('UI toggles', () => {
   test('⌘\\ toggles UI visibility', async () => {
     const before = await getUIVisible()
 
-    await page.keyboard.press('Meta+\\')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+\\')
+    await editor.canvas.waitForRender()
 
     const after = await getUIVisible()
     expect(after).toBe(!before)
 
     // Restore
-    await page.keyboard.press('Meta+\\')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+\\')
+    await editor.canvas.waitForRender()
     expect(await getUIVisible()).toBe(before)
   })
 })
 
 test.describe('duplicate', () => {
   test('⌘D duplicates selection', async () => {
-    await canvas.clearCanvas()
-    await canvas.drawRect(100, 100, 60, 60)
-    await canvas.selectAll()
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.selectAll()
     expect(await getSelectedCount()).toBe(1)
 
-    await page.keyboard.press('Meta+d')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+d')
+    await editor.canvas.waitForRender()
 
     const children = await getPageChildren()
     expect(children).toHaveLength(2)
@@ -240,27 +224,27 @@ test.describe('duplicate', () => {
 
 test.describe('zoom shortcuts', () => {
   test('⌘0 zooms to 100%', async () => {
-    await canvas.clearCanvas()
-    await canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
 
     // Set zoom to something other than 100%
-    await page.evaluate(() => {
+    await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       store.state.zoom = 2
     })
-    await canvas.waitForRender()
+    await editor.canvas.waitForRender()
 
-    await page.keyboard.press('Meta+0')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+0')
+    await editor.canvas.waitForRender()
 
     const zoomAfter = await getZoom()
     expect(zoomAfter).toBe(1)
   })
 
   test('⌘1 zooms to fit', async () => {
-    await page.keyboard.press('Meta+1')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+1')
+    await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
@@ -268,10 +252,10 @@ test.describe('zoom shortcuts', () => {
   })
 
   test('⌘2 zooms to selection', async () => {
-    await canvas.selectAll()
+    await editor.canvas.selectAll()
 
-    await page.keyboard.press('Meta+2')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+2')
+    await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
@@ -279,8 +263,8 @@ test.describe('zoom shortcuts', () => {
   })
 
   test('⇧1 zooms to fit (same as ⌘1)', async () => {
-    await page.keyboard.press('Shift+1')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Shift+1')
+    await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
@@ -288,10 +272,10 @@ test.describe('zoom shortcuts', () => {
   })
 
   test('⇧2 zooms to selection (same as ⌘2)', async () => {
-    await canvas.selectAll()
+    await editor.canvas.selectAll()
 
-    await page.keyboard.press('Shift+2')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Shift+2')
+    await editor.canvas.waitForRender()
 
     const zoom = await getZoom()
     expect(zoom).toBeGreaterThan(0)
@@ -301,19 +285,19 @@ test.describe('zoom shortcuts', () => {
 
 test.describe('undo/redo', () => {
   test('⌘Z undoes last action', async () => {
-    await canvas.clearCanvas()
-    await canvas.drawRect(100, 100, 60, 60)
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
     expect((await getPageChildren()).length).toBe(1)
 
-    await page.keyboard.press('Meta+z')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+z')
+    await editor.canvas.waitForRender()
 
     expect((await getPageChildren()).length).toBe(0)
   })
 
   test('⌘⇧Z redoes undone action', async () => {
-    await page.keyboard.press('Meta+Shift+z')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Meta+Shift+z')
+    await editor.canvas.waitForRender()
 
     expect((await getPageChildren()).length).toBe(1)
   })
@@ -321,20 +305,20 @@ test.describe('undo/redo', () => {
 
 test.describe('auto-layout shortcut', () => {
   test('⇧A toggles auto-layout on frame', async () => {
-    await canvas.clearCanvas()
-    await canvas.drawRect(100, 100, 200, 200)
-    await canvas.selectAll()
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 200, 200)
+    await editor.canvas.selectAll()
 
     // Change to frame type for auto-layout
-    await page.evaluate(() => {
+    await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
       if (nodes[0]) store.updateNode(nodes[0], { type: 'FRAME' })
     })
-    await canvas.waitForRender()
+    await editor.canvas.waitForRender()
 
-    const layoutBefore = await page.evaluate(() => {
+    const layoutBefore = await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
@@ -342,10 +326,10 @@ test.describe('auto-layout shortcut', () => {
     })
     expect(layoutBefore).toBe('NONE')
 
-    await page.keyboard.press('Shift+a')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Shift+a')
+    await editor.canvas.waitForRender()
 
-    const layoutAfter = await page.evaluate(() => {
+    const layoutAfter = await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]
@@ -354,10 +338,10 @@ test.describe('auto-layout shortcut', () => {
     expect(layoutAfter).toBe('VERTICAL')
 
     // Toggle off
-    await page.keyboard.press('Shift+a')
-    await canvas.waitForRender()
+    await editor.page.keyboard.press('Shift+a')
+    await editor.canvas.waitForRender()
 
-    const layoutFinal = await page.evaluate(() => {
+    const layoutFinal = await editor.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
       const nodes = [...store.state.selectedIds]

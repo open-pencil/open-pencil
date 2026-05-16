@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { getSelectedNode } from '#tests/helpers/store'
 
 let page: Page
 let canvas: CanvasHelper
@@ -19,27 +20,6 @@ test.afterAll(async () => {
   await page.close()
 })
 
-function getSelectedNode() {
-  return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = [...store.state.selectedIds][0]
-    if (!id) return null
-    const n = store.graph.getNode(id)
-    if (!n) return null
-    return {
-      id: n.id,
-      type: n.type,
-      name: n.name,
-      text: n.text,
-      fontSize: n.fontSize,
-      fontFamily: n.fontFamily,
-      fontWeight: n.fontWeight,
-      width: n.width,
-      height: n.height
-    }
-  })
-}
 
 function getPageChildren() {
   return page.evaluate(() => {
@@ -77,7 +57,7 @@ test('clicking with text tool creates a text node', async () => {
 })
 
 test('text node is selected after creation', async () => {
-  const node = await getSelectedNode()
+  const node = await getSelectedNode(page)
   expect(node?.type).toBe('TEXT')
 })
 
@@ -95,7 +75,7 @@ test('typography section appears for text node', async () => {
 })
 
 test('text node has default font properties', async () => {
-  const node = await getSelectedNode()
+  const node = await getSelectedNode(page)
   expect(node?.fontSize).toBeGreaterThan(0)
   expect(node?.fontFamily).toBeTruthy()
 })
@@ -113,7 +93,7 @@ test('creating text via store works', async () => {
   })
   await canvas.waitForRender()
 
-  const node = await getSelectedNode()
+  const node = await getSelectedNode(page)
   expect(node?.text).toBe('Hello World')
   expect(node?.fontSize).toBe(24)
 })
@@ -133,7 +113,7 @@ test('frame tool creates FRAME node', async () => {
   await canvas.drag(400, 100, 600, 250)
   await canvas.waitForRender()
 
-  const node = expectDefined(await getSelectedNode(), 'selected frame')
+  const node = expectDefined(await getSelectedNode(page), 'selected frame')
   expect(node.type).toBe('FRAME')
   expect(node.width).toBeGreaterThan(0)
   expect(node.height).toBeGreaterThan(0)
@@ -156,7 +136,7 @@ test('Enter key opens text editing and selects all without erasing', async () =>
   })
   await canvas.waitForRender()
 
-  const before = await getSelectedNode()
+  const before = await getSelectedNode(page)
   expect(before?.text).toBe('Keep this text')
   expect(before?.type).toBe('TEXT')
 

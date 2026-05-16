@@ -193,7 +193,8 @@ const strictTestFilePlacement = createFileRule('open-pencil/strict-test-file-pla
     return 'Temporary/profile test files must not be committed. Move exploratory specs to scratch/ or delete them.'
   }
   if (sourceRel.startsWith('tests/e2e/')) {
-    return sourceRel.endsWith('.spec.ts') ? null : 'E2E tests must live under tests/e2e/** and use *.spec.ts.'
+    if (sourceRel.endsWith('.spec.ts') || sourceRel.endsWith('/fixtures.ts')) return null
+    return 'E2E tests must live under tests/e2e/** and use *.spec.ts.'
   }
   if (sourceRel.startsWith('tests/figma/')) {
     return sourceRel.endsWith('.spec.ts') ? null : 'Figma Playwright tests must live under tests/figma/** and use *.spec.ts.'

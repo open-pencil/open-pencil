@@ -1,35 +1,15 @@
-import { test, expect, type Page } from '@playwright/test'
+import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
-import { CanvasHelper } from '#tests/helpers/canvas'
-
-let page: Page
-let canvas: CanvasHelper
-
-test.describe.configure({ mode: 'serial' })
-
-test.beforeAll(async ({ browser }) => {
-  page = await browser.newPage()
-  await page.goto('/?test&no-chrome&no-rulers')
-  canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-})
-
-test.afterAll(async () => {
-  await page.close()
-})
-
-test.beforeEach(async () => {
-  await canvas.clearCanvas()
-})
+const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function expectCanvas(name: string) {
-  canvas.assertNoErrors()
-  const buffer = await canvas.canvas.screenshot()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.canvas.screenshot()
   expect(buffer).toMatchSnapshot(`${name}.png`)
 }
 
 test('drop shadow on white card', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -55,12 +35,12 @@ test('drop shadow on white card', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('drop-shadow-white-card')
 })
 
 test('drop shadow with spread', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -86,12 +66,12 @@ test('drop shadow with spread', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('drop-shadow-with-spread')
 })
 
 test('inner shadow', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -119,12 +99,12 @@ test('inner shadow', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('inner-shadow')
 })
 
 test('inner shadow with spread', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -152,12 +132,12 @@ test('inner shadow with spread', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('inner-shadow-with-spread')
 })
 
 test('drop shadow on ellipse', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -184,12 +164,12 @@ test('drop shadow on ellipse', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('drop-shadow-ellipse')
 })
 
 test('combined drop and inner shadow', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -223,12 +203,12 @@ test('combined drop and inner shadow', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('combined-drop-inner-shadow')
 })
 
 test('text drop shadow on glyphs', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -257,14 +237,14 @@ test('text drop shadow on glyphs', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
-  await page.waitForTimeout(500)
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
+  await editor.page.waitForTimeout(500)
+  await editor.canvas.waitForRender()
   await expectCanvas('text-drop-shadow')
 })
 
 test('layer blur', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -292,12 +272,12 @@ test('layer blur', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('layer-blur')
 })
 
 test('invisible effect has no visual impact', async () => {
-  await page.evaluate(() => {
+  await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -323,6 +303,6 @@ test('invisible effect has no visual impact', async () => {
     store.clearSelection()
     store.requestRender()
   })
-  await canvas.waitForRender()
+  await editor.canvas.waitForRender()
   await expectCanvas('invisible-effect')
 })
