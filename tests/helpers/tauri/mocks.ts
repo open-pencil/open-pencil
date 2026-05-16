@@ -24,4 +24,5 @@ export async function clearTauriMocks() {
   if (!('window' in globalThis)) return
   const { clearMocks } = await import('@tauri-apps/api/mocks')
   clearMocks()
+  delete (globalThis as typeof globalThis & { window?: unknown }).window
 }

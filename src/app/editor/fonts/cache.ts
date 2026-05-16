@@ -45,6 +45,14 @@ function hexDigest(data: ArrayBuffer) {
   return [...new Uint8Array(data)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
+function isTauriRuntime() {
+  return 'window' in globalThis && '__TAURI_INTERNALS__' in globalThis.window
+}
+
+function isUnavailableTauriRuntimeError(error: unknown) {
+  return error instanceof ReferenceError && error.message.includes('window is not defined')
+}
+
 async function readManifest(): Promise<FontCacheManifest> {
   const { BaseDirectory, readFile } = await import('@tauri-apps/plugin-fs')
   try {
@@ -89,41 +97,53 @@ export async function clearDownloadedFontCache(): Promise<void> {
 export function createTauriDownloadedFontCache(): DownloadedFontCache {
   return {
     async read(family, style) {
-      const { BaseDirectory, readFile } = await import('@tauri-apps/plugin-fs')
-      const manifest = await readManifest()
-      const entry = manifest.entries[await cacheKey(family, style)]
-      if (!entry) return null
+      if (!isTauriRuntime()) return null
+      try {
+        const { BaseDirectory, readFile } = await import('@tauri-apps/plugin-fs')
+        const manifest = await readManifest()
+        const entry = manifest.entries[await cacheKey(family, style)]
+        if (!entry) return null
 
-      const data = await readFile(`${CACHE_DIR}/${entry.file}`, {
-        baseDir: BaseDirectory.AppLocalData
-      })
-      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-      if (buffer.byteLength !== entry.byteLength) return null
-      if ((await hashBytes(buffer)) !== entry.sha256) return null
-      return buffer
+        const data = await readFile(`${CACHE_DIR}/${entry.file}`, {
+          baseDir: BaseDirectory.AppLocalData
+        })
+        const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
+        if (buffer.byteLength !== entry.byteLength) return null
+        if ((await hashBytes(buffer)) !== entry.sha256) return null
+        return buffer
+      } catch (error) {
+        if (isUnavailableTauriRuntimeError(error)) return null
+        throw error
+      }
     },
 
     async write(family, style, data) {
-      const { BaseDirectory, mkdir, writeFile } = await import('@tauri-apps/plugin-fs')
-      await mkdir(CACHE_DIR, { baseDir: BaseDirectory.AppLocalData, recursive: true })
+      if (!isTauriRuntime()) return
+      try {
+        const { BaseDirectory, mkdir, writeFile } = await import('@tauri-apps/plugin-fs')
+        await mkdir(CACHE_DIR, { baseDir: BaseDirectory.AppLocalData, recursive: true })
 
-      const key = await cacheKey(family, style)
-      const sha256 = await hashBytes(data)
-      const file = `${key}.ttf`
-      await writeFile(`${CACHE_DIR}/${file}`, new Uint8Array(data), {
-        baseDir: BaseDirectory.AppLocalData
-      })
+        const key = await cacheKey(family, style)
+        const sha256 = await hashBytes(data)
+        const file = `${key}.ttf`
+        await writeFile(`${CACHE_DIR}/${file}`, new Uint8Array(data), {
+          baseDir: BaseDirectory.AppLocalData
+        })
 
-      const manifest = await readManifest()
-      manifest.entries[key] = {
-        family,
-        style,
-        file,
-        byteLength: data.byteLength,
-        sha256,
-        updatedAt: Date.now()
+        const manifest = await readManifest()
+        manifest.entries[key] = {
+          family,
+          style,
+          file,
+          byteLength: data.byteLength,
+          sha256,
+          updatedAt: Date.now()
+        }
+        await writeManifest(manifest)
+      } catch (error) {
+        if (isUnavailableTauriRuntimeError(error)) return
+        throw error
       }
-      await writeManifest(manifest)
     }
   }
 }
