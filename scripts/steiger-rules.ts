@@ -201,8 +201,8 @@ const strictTestFilePlacement = createFileRule('open-pencil/strict-test-file-pla
   if (sourceRel.startsWith('tests/engine/')) {
     if (sourceRel.endsWith('.test.ts')) return null
     if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
-    if (path.basename(sourceRel).startsWith('visual-')) return null
-    return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and visual-* support scripts are allowed.'
+    if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
+    return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
   }
   if (sourceRel.startsWith('tests/helpers/')) return null
   return 'Tests must live under tests/e2e/** (*.spec.ts), tests/engine/** (*.test.ts), or tests/helpers/**.'
@@ -239,8 +239,13 @@ const noMisplacedEngineTestDomainPaths = createFileRule(
   'open-pencil/no-misplaced-engine-test-domain-paths',
   (sourceRel) => {
     const redirect = ENGINE_TEST_DOMAIN_REDIRECTS.find(({ from }) => sourceRel.startsWith(from))
-    if (!redirect) return null
-    return `Move tests from ${redirect.from} under ${redirect.to} to mirror ${redirect.source}.`
+    if (redirect) {
+      return `Move tests from ${redirect.from} under ${redirect.to} to mirror ${redirect.source}.`
+    }
+    if (/^tests\/engine\/[^/]+\.test\.ts$/.test(sourceRel)) {
+      return 'Move root-level engine tests under a domain folder that mirrors the source module under test.'
+    }
+    return null
   }
 )
 

@@ -160,7 +160,7 @@ async function main() {
   await mkdir(outputDir, { recursive: true })
 
   const matrix = generateMatrix()
-  console.log(`Generated ${matrix.length} test cases`)
+  console.warn(`Generated ${matrix.length} test cases`)
 
   let generated = 0
   let failed = 0
@@ -234,7 +234,7 @@ async function main() {
     renderer.destroy()
   }
 
-  console.log(`\nResult: ${generated} generated, ${failed} failed out of ${matrix.length}`)
+  console.warn(`\nResult: ${generated} generated, ${failed} failed out of ${matrix.length}`)
 }
 
 main()

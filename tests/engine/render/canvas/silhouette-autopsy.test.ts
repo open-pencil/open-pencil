@@ -291,8 +291,8 @@ describe('Doc 02 — Formula Deconstruction: Static Code Claims', () => {
 // ============================================================
 
 describe('Doc 03 — Artifact Analysis: Static + Runtime Verification', () => {
-  test('C03-01: visual-inner-shadow-counter.ts exists and checks for right-edge shadow', () => {
-    const visualTestPath = repoTestPath('engine/visual-inner-shadow-counter.ts')
+  test('C03-01: render visual inner-shadow counter script exists and checks for right-edge shadow', () => {
+    const visualTestPath = repoTestPath('engine/render/canvas/visual/inner-shadow-counter.ts')
     const src = readFileSync(visualTestPath, 'utf-8')
     expect(src).toContain('hasShadowOnRightInnerEdge')
     expect(src).toContain("t.color === 'black'")

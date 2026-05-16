@@ -101,7 +101,7 @@ async function main() {
     }
   }
 
-  console.log('Transitions at centerY:', transitions)
+  console.warn('Transitions at centerY:', transitions)
 
   // Expected transitions for a physically correct inner shadow (light from left):
   // 1. blue -> black (left outer edge, shadow starts)
@@ -120,7 +120,7 @@ async function main() {
   const data = image.encodeToBytes(ck.ImageFormat.PNG, 100)
   if (data) {
     await Bun.write('scratch/escher-trap-detected.png', data)
-    console.log('Saved scratch/escher-trap-detected.png')
+    console.warn('Saved scratch/escher-trap-detected.png')
   }
   surface.delete()
 
@@ -131,7 +131,7 @@ async function main() {
     )
     process.exit(1)
   } else {
-    console.log(
+    console.warn(
       '✅ PASSED: Physically accurate shadow detected on the right inner edge of the counter'
     )
     process.exit(0)

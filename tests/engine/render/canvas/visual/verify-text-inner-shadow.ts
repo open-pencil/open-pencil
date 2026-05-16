@@ -19,7 +19,7 @@ async function main() {
 
   // Load Inter font from public dir
   const fontPath = join(process.cwd(), 'public/Inter-SemiBold.ttf')
-  console.log('Loading font from:', fontPath)
+  console.warn('Loading font from:', fontPath)
   const fontData = await readFile(fontPath)
   fontManager.markLoaded(
     'Inter',
@@ -62,9 +62,9 @@ async function main() {
   renderer.fontProvider = fontProvider
   renderer.fontsLoaded = true
 
-  console.log('Node created:', nodeId)
-  console.log('Font loaded for node:', renderer.isNodeFontLoaded(textNode))
-  console.log('Absolute position:', graph.getAbsolutePosition(nodeId))
+  console.warn('Node created:', nodeId)
+  console.warn('Font loaded for node:', renderer.isNodeFontLoaded(textNode))
+  console.warn('Absolute position:', graph.getAbsolutePosition(nodeId))
 
   // Render with scale 2
   const data = renderNodesToImage(ck, renderer, graph, pageId, [nodeId], {
@@ -75,7 +75,7 @@ async function main() {
   surface.delete()
 
   if (data && data.length > 2000) {
-    console.log(`✅ Generated scratch/text-inner-shadow-verification.png (${data.length} bytes)`)
+    console.warn(`✅ Generated scratch/text-inner-shadow-verification.png (${data.length} bytes)`)
   } else {
     console.error(`❌ Failed to generate useful image (size: ${data?.length ?? 0} bytes)`)
     if (data) {
