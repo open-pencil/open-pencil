@@ -208,22 +208,39 @@ const strictTestFilePlacement = createFileRule('open-pencil/strict-test-file-pla
   return 'Tests must live under tests/e2e/** (*.spec.ts), tests/engine/** (*.test.ts), or tests/helpers/**.'
 })
 
-const noLegacyEngineTestDomainPaths = createFileRule(
-  'open-pencil/no-legacy-engine-test-domain-paths',
+const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
+  from: string
+  to: string
+  source: string
+}> = [
+  {
+    from: 'tests/engine/fig/',
+    to: 'tests/engine/io/fig/',
+    source: 'packages/core/src/io/formats/fig/'
+  },
+  {
+    from: 'tests/engine/svg/',
+    to: 'tests/engine/io/svg/',
+    source: 'packages/core/src/io/formats/svg/'
+  },
+  {
+    from: 'tests/engine/fonts/',
+    to: 'tests/engine/text/fonts/',
+    source: 'packages/core/src/text/fonts.ts'
+  },
+  {
+    from: 'tests/engine/editor/clipboard/derived-text',
+    to: 'tests/engine/text/derived-text/',
+    source: 'packages/core/src/text/derived-text/'
+  }
+]
+
+const noMisplacedEngineTestDomainPaths = createFileRule(
+  'open-pencil/no-misplaced-engine-test-domain-paths',
   (sourceRel) => {
-    if (sourceRel.startsWith('tests/engine/fig/')) {
-      return 'Move .fig import/export tests under tests/engine/io/fig/** to mirror packages/core/src/io/formats/fig/**.'
-    }
-    if (sourceRel.startsWith('tests/engine/svg/')) {
-      return 'Move SVG import/export tests under tests/engine/io/svg/** to mirror packages/core/src/io/formats/svg/**.'
-    }
-    if (sourceRel.startsWith('tests/engine/fonts/')) {
-      return 'Move font tests under tests/engine/text/fonts/** to mirror packages/core/src/text/fonts.ts.'
-    }
-    if (sourceRel.startsWith('tests/engine/editor/clipboard/derived-text')) {
-      return 'Move derived text data tests under tests/engine/text/derived-text/**.'
-    }
-    return null
+    const redirect = ENGINE_TEST_DOMAIN_REDIRECTS.find(({ from }) => sourceRel.startsWith(from))
+    if (!redirect) return null
+    return `Move tests from ${redirect.from} under ${redirect.to} to mirror ${redirect.source}.`
   }
 )
 
@@ -417,7 +434,7 @@ export const openPencilArchitecturePlugin = {
   ruleDefinitions: [
     preferDomainFoldersOverFilenamePrefixes,
     strictTestFilePlacement,
-    noLegacyEngineTestDomainPaths,
+    noMisplacedEngineTestDomainPaths,
     noEngineOnlyAssertionsInE2E,
     noE2EImportsInEngineTests,
     noRootMarkdownClutter,
