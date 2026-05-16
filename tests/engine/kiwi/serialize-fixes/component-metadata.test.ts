@@ -46,7 +46,7 @@ describe('component metadata serialization', () => {
       {
         id: { sessionID: 90, localID: 1 },
         name: 'State',
-        type: 'VARIANT',
+        type: 'TEXT',
         initialValue: { textValue: { characters: 'Enabled' } }
       }
     ])

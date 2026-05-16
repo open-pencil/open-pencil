@@ -59,6 +59,12 @@ function componentPropertyValue(value: string) {
   return { textValue: { characters: value } }
 }
 
+function componentPropertyTypeForKiwi(type: string) {
+  if (type === 'BOOLEAN') return 'BOOL'
+  if (type === 'VARIANT') return 'TEXT'
+  return type
+}
+
 function parseGuidOrNull(value: string) {
   return /^\d+:\d+$/.test(value) ? stringToGuid(value) : null
 }
@@ -83,7 +89,7 @@ function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
         ? {
             id,
             name: def.name,
-            type: def.type,
+            type: componentPropertyTypeForKiwi(def.type),
             initialValue: componentPropertyValue(def.defaultValue)
           }
         : null
