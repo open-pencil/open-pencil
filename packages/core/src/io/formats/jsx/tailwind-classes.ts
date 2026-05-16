@@ -1,31 +1,14 @@
+import { twirl } from 'twirlwind'
+
+import { colorToCSSCompact } from '#core/color'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import {
-  pxToSpacing,
-  colorToTwClass,
-  fontSizeToTw,
-  fontWeightToTw,
-  borderRadiusToTw,
-  opacityToTw
-} from '#core/design-jsx/tailwind'
 import type { GridTrack, SceneGraph, SceneNode } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
-import {
-  collectCornerRadii,
-  collectPadding,
-  emitPadding,
-  formatTailwindAngle,
-  formatTailwindFontFamily,
-  formatTailwindShadow,
-  formatTrack,
-  getNodeContext,
-  solidFillColor,
-  solidStroke
-} from './helpers'
+import { formatTrack, getNodeContext, solidFillColor, solidStroke } from './helpers'
 
-function twRounded(prefix: string, px: number): string {
-  const r = borderRadiusToTw(px)
-  return r ? `${prefix}-${r}` : prefix
+function px(v: number): string {
+  return `${v}px`
 }
 
 function gridTemplateTw(tracks: GridTrack[]): string {
@@ -34,159 +17,168 @@ function gridTemplateTw(tracks: GridTrack[]): string {
   return `[${tracks.map(formatTrack).join('_')}]`
 }
 
-function collectTwGridClasses(node: SceneNode, classes: string[]): void {
-  classes.push('grid')
+function collectGridClasses(node: SceneNode): string[] {
+  const classes = ['grid']
   if (node.gridTemplateColumns.length > 0)
     classes.push(`grid-cols-${gridTemplateTw(node.gridTemplateColumns)}`)
   if (node.gridTemplateRows.length > 0)
     classes.push(`grid-rows-${gridTemplateTw(node.gridTemplateRows)}`)
-  if (node.width > 0) classes.push(`w-${pxToSpacing(node.width)}`)
-  if (node.gridTemplateRows.length > 0 && node.height > 0)
-    classes.push(`h-${pxToSpacing(node.height)}`)
-  if (node.gridColumnGap > 0) classes.push(`gap-x-${pxToSpacing(node.gridColumnGap)}`)
-  if (node.gridRowGap > 0) classes.push(`gap-y-${pxToSpacing(node.gridRowGap)}`)
+  return classes
 }
 
-function collectTwFlexSizingClasses(node: SceneNode, classes: string[]): void {
-  classes.push('flex')
-  if (node.layoutDirection === 'RTL') classes.push('[direction:rtl]')
-  if (node.layoutMode === 'VERTICAL') classes.push('flex-col')
-
-  const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
-  const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
-  const wProp = primaryAxis === 'width' ? 'w' : 'h'
-  const hProp = crossAxis === 'width' ? 'w' : 'h'
-
-  if (node.primaryAxisSizing === 'FILL') classes.push(`${wProp}-full`)
-  else if (node.primaryAxisSizing !== 'HUG')
-    classes.push(`${wProp}-${pxToSpacing(node[primaryAxis])}`)
-
-  if (node.counterAxisSizing === 'FILL') classes.push(`${hProp}-full`)
-  else if (node.counterAxisSizing !== 'HUG')
-    classes.push(`${hProp}-${pxToSpacing(node[crossAxis])}`)
-}
-
-function collectTwGridPositionClasses(node: SceneNode, classes: string[]): void {
-  if (!node.gridPosition) return
+function collectGridPositionClasses(node: SceneNode): string[] {
+  if (!node.gridPosition) return []
+  const classes: string[] = []
   const pos = node.gridPosition
   if (pos.column > 0) classes.push(`col-start-${pos.column}`)
   if (pos.row > 0) classes.push(`row-start-${pos.row}`)
   if (pos.columnSpan > 1) classes.push(`col-span-${pos.columnSpan}`)
   if (pos.rowSpan > 1) classes.push(`row-span-${pos.rowSpan}`)
+  return classes
 }
 
-function collectTwFlexAlignmentClasses(node: SceneNode, classes: string[]): void {
-  if (node.itemSpacing > 0) classes.push(`gap-${pxToSpacing(node.itemSpacing)}`)
-
-  if (node.layoutWrap === 'WRAP') {
-    classes.push('flex-wrap')
-    if (node.counterAxisSpacing > 0) classes.push(`gap-y-${pxToSpacing(node.counterAxisSpacing)}`)
-  }
-
-  if (node.primaryAxisAlign === 'CENTER') classes.push('justify-center')
-  else if (node.primaryAxisAlign === 'MAX') classes.push('justify-end')
-  else if (node.primaryAxisAlign === 'SPACE_BETWEEN') classes.push('justify-between')
-
-  if (node.counterAxisAlign === 'CENTER') classes.push('items-center')
-  else if (node.counterAxisAlign === 'MAX') classes.push('items-end')
-  else if (node.counterAxisAlign === 'STRETCH') classes.push('items-stretch')
+const JUSTIFY_MAP: Record<string, string> = {
+  CENTER: 'center',
+  MAX: 'flex-end',
+  SPACE_BETWEEN: 'space-between'
 }
 
-function collectTwPaddingClasses(node: SceneNode, classes: string[]): void {
-  const pad = collectPadding(node)
-  if (!pad) return
-  classes.push(
-    ...emitPadding(
-      pad,
-      (v) => `p-${pxToSpacing(v)}`,
-      (y, x) => [`py-${pxToSpacing(y)}`, `px-${pxToSpacing(x)}`],
-      ({ pt, pr, pb, pl }) => {
-        const r: string[] = []
-        if (pt > 0) r.push(`pt-${pxToSpacing(pt)}`)
-        if (pr > 0) r.push(`pr-${pxToSpacing(pr)}`)
-        if (pb > 0) r.push(`pb-${pxToSpacing(pb)}`)
-        if (pl > 0) r.push(`pl-${pxToSpacing(pl)}`)
-        return r
-      }
-    )
-  )
+const ALIGN_MAP: Record<string, string> = {
+  CENTER: 'center',
+  MAX: 'flex-end',
+  STRETCH: 'stretch'
 }
 
-function collectTwCornerRadiiClasses(node: SceneNode, classes: string[]): void {
-  const corners = collectCornerRadii(node)
-  if (!corners) return
-  const { tl, tr, br, bl } = corners
-  if (tl === tr && tr === br && br === bl) {
-    classes.push(twRounded('rounded', tl))
+function applyFlexStyle(style: Record<string, string>, node: SceneNode): void {
+  style.display = 'flex'
+  if (node.layoutMode === 'VERTICAL') style.flexDirection = 'column'
+  if (node.layoutWrap === 'WRAP') style.flexWrap = 'wrap'
+  if (node.itemSpacing > 0) style.gap = px(node.itemSpacing)
+  if (node.layoutWrap === 'WRAP' && node.counterAxisSpacing > 0)
+    style.rowGap = px(node.counterAxisSpacing)
+  if (JUSTIFY_MAP[node.primaryAxisAlign]) style.justifyContent = JUSTIFY_MAP[node.primaryAxisAlign]
+  if (ALIGN_MAP[node.counterAxisAlign]) style.alignItems = ALIGN_MAP[node.counterAxisAlign]
+}
+
+function applyFlexSizing(style: Record<string, string>, node: SceneNode): void {
+  const primaryAxis = node.layoutMode === 'HORIZONTAL' ? 'width' : 'height'
+  const crossAxis = node.layoutMode === 'HORIZONTAL' ? 'height' : 'width'
+  if (node.primaryAxisSizing === 'FILL') style[primaryAxis] = '100%'
+  else if (node.primaryAxisSizing !== 'HUG') style[primaryAxis] = px(node[primaryAxis])
+  if (node.counterAxisSizing === 'FILL') style[crossAxis] = '100%'
+  else if (node.counterAxisSizing !== 'HUG') style[crossAxis] = px(node[crossAxis])
+}
+
+function applyPadding(style: Record<string, string>, node: SceneNode): void {
+  const { paddingTop: pt, paddingRight: pr, paddingBottom: pb, paddingLeft: pl } = node
+  if (pt === 0 && pr === 0 && pb === 0 && pl === 0) return
+  if (pt === pr && pr === pb && pb === pl) style.padding = px(pt)
+  else if (pt === pb && pl === pr) style.padding = `${px(pt)} ${px(pl)}`
+  else style.padding = `${px(pt)} ${px(pr)} ${px(pb)} ${px(pl)}`
+}
+
+function applyLayoutStyle(
+  style: Record<string, string>,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  const ctx = getNodeContext(node, graph)
+
+  if (ctx.isGrid) {
+    style.display = 'grid'
+    if (node.gridColumnGap > 0) style.columnGap = px(node.gridColumnGap)
+    if (node.gridRowGap > 0) style.rowGap = px(node.gridRowGap)
+    if (node.width > 0) style.width = px(node.width)
+    if (node.gridTemplateRows.length > 0 && node.height > 0) style.height = px(node.height)
+  } else if (ctx.isFlex) {
+    applyFlexStyle(style, node)
+    applyFlexSizing(style, node)
   } else {
-    if (tl > 0) classes.push(twRounded('rounded-tl', tl))
-    if (tr > 0) classes.push(twRounded('rounded-tr', tr))
-    if (br > 0) classes.push(twRounded('rounded-br', br))
-    if (bl > 0) classes.push(twRounded('rounded-bl', bl))
+    if (node.width > 0) style.width = px(node.width)
+    if (node.height > 0) style.height = px(node.height)
   }
+
+  if (ctx.parentIsAutoLayout && node.layoutGrow > 0) style.flexGrow = '1'
+  if (ctx.isAutoLayout) applyPadding(style, node)
 }
 
-function collectTwAppearanceClasses(node: SceneNode, classes: string[]): void {
+function applyAppearanceStyle(style: Record<string, string>, node: SceneNode): void {
   const bg = solidFillColor(node.fills)
-  if (bg && node.type !== 'TEXT') classes.push(`bg-${colorToTwClass(bg)}`)
+  if (bg && node.type !== 'TEXT') style.backgroundColor = bg
 
   const stroke = solidStroke(node.strokes)
   if (stroke) {
-    if (stroke.weight !== 1) classes.push(`border-${pxToSpacing(stroke.weight)}`)
-    else classes.push('border')
-    classes.push(`border-${colorToTwClass(stroke.color)}`)
+    style.borderWidth = px(stroke.weight)
+    style.borderColor = stroke.color
+    style.borderStyle = 'solid'
   }
 
-  collectTwCornerRadiiClasses(node, classes)
+  if (node.cornerRadius > 0) {
+    if (node.independentCorners) {
+      style.borderRadius = `${px(node.topLeftRadius)} ${px(node.topRightRadius)} ${px(node.bottomRightRadius)} ${px(node.bottomLeftRadius)}`
+    } else {
+      style.borderRadius = node.cornerRadius >= 9999 ? '9999px' : px(node.cornerRadius)
+    }
+  }
 
-  if (node.opacity < 1) classes.push(`opacity-${opacityToTw(node.opacity)}`)
-  if (node.rotation !== 0) classes.push(`rotate-${formatTailwindAngle(node.rotation)}`)
-  if (node.clipsContent) classes.push('overflow-hidden')
+  if (node.opacity < 1) style.opacity = String(node.opacity)
+  if (node.rotation !== 0) style.transform = `rotate(${node.rotation}deg)`
+  if (node.clipsContent) style.overflow = 'hidden'
 
   for (const effect of node.effects) {
     if (!effect.visible) continue
     if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
-      const shadow = formatTailwindShadow(effect)
-      if (shadow) classes.push(`shadow-[${shadow}]`)
+      const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
+      const spread = effect.spread !== 0 ? ` ${px(effect.spread)}` : ''
+      const color = colorToCSSCompact(effect.color)
+      style.boxShadow = `${inset}${px(effect.offset.x)} ${px(effect.offset.y)} ${px(effect.radius)}${spread} ${color}`
     } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
-      classes.push(`blur-[${effect.radius}px]`)
+      style.filter = `blur(${px(effect.radius)})`
     } else {
-      classes.push(`backdrop-blur-[${effect.radius}px]`)
+      style.backdropFilter = `blur(${px(effect.radius)})`
     }
   }
 }
 
-function collectTwTextClasses(node: SceneNode, classes: string[]): void {
-  classes.push(`text-${fontSizeToTw(node.fontSize)}`)
-  if (resolveNodeTextDirection(node) === 'RTL') classes.push('[direction:rtl]')
-  if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY) {
-    classes.push(`font-${formatTailwindFontFamily(node.fontFamily)}`)
-  }
-  if (node.fontWeight !== 400) classes.push(`font-${fontWeightToTw(node.fontWeight)}`)
-  if (node.textAlignHorizontal !== 'LEFT') {
-    classes.push(`text-${node.textAlignHorizontal.toLowerCase()}`)
-  }
+function applyTextStyle(style: Record<string, string>, node: SceneNode): void {
+  if (node.type !== 'TEXT') return
+  style.fontSize = px(node.fontSize)
+  if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY)
+    style.fontFamily = node.fontFamily
+  if (node.fontWeight !== 400) style.fontWeight = String(node.fontWeight)
+  if (node.textAlignHorizontal !== 'LEFT')
+    style.textAlign = node.textAlignHorizontal.toLowerCase()
   const textColor = solidFillColor(node.fills)
-  if (textColor) classes.push(`text-${colorToTwClass(textColor)}`)
+  if (textColor) style.color = textColor
+}
+
+function nodeToStyle(node: SceneNode, graph: SceneGraph): Record<string, string> {
+  const style: Record<string, string> = {}
+  applyLayoutStyle(style, node, graph)
+  applyAppearanceStyle(style, node)
+  applyTextStyle(style, node)
+  return style
 }
 
 export function collectTailwindClasses(node: SceneNode, graph: SceneGraph): string[] {
-  const classes: string[] = []
+  const style = nodeToStyle(node, graph)
   const ctx = getNodeContext(node, graph)
 
-  if (ctx.isGrid) collectTwGridClasses(node, classes)
-  else if (ctx.isFlex) collectTwFlexSizingClasses(node, classes)
-  else {
-    if (node.width > 0) classes.push(`w-${pxToSpacing(node.width)}`)
-    if (node.height > 0) classes.push(`h-${pxToSpacing(node.height)}`)
+  const extraClasses: string[] = []
+
+  if (ctx.isGrid) extraClasses.push(...collectGridClasses(node))
+  if (ctx.parentIsGrid) extraClasses.push(...collectGridPositionClasses(node))
+  if (node.layoutDirection === 'RTL') extraClasses.push('[direction:rtl]')
+  if (node.type === 'TEXT' && resolveNodeTextDirection(node) === 'RTL')
+    extraClasses.push('[direction:rtl]')
+
+  const twirlClasses = twirl(style)
+  const combined = twirlClasses ? twirlClasses.split(' ') : []
+
+  if (style.display === 'grid') {
+    const filtered = combined.filter((c) => c !== 'grid')
+    return [...extraClasses, ...filtered]
   }
 
-  if (ctx.parentIsAutoLayout && node.layoutGrow > 0) classes.push('grow')
-  if (ctx.parentIsGrid) collectTwGridPositionClasses(node, classes)
-  if (ctx.isFlex) collectTwFlexAlignmentClasses(node, classes)
-  if (ctx.isAutoLayout) collectTwPaddingClasses(node, classes)
-  collectTwAppearanceClasses(node, classes)
-  if (node.type === 'TEXT') collectTwTextClasses(node, classes)
-
-  return classes
+  return [...extraClasses, ...combined]
 }

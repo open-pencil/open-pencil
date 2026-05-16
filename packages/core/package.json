@@ -327,6 +327,7 @@
     "opentype.js": "^1.3.4",
     "sucrase": "^3.35.1",
     "svgpath": "^2.6.0",
+    "twirlwind": "^0.3.0",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3"
   },
   "devDependencies": {

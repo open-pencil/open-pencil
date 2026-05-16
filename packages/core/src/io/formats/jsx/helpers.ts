@@ -1,4 +1,4 @@
-import { colorToHex8, colorToCSSCompact } from '#core/color'
+import { colorToHex8 } from '#core/color'
 import type {
   SceneGraph,
   SceneNode,
@@ -35,27 +35,6 @@ export function solidStroke(
 export function formatShadow(e: Effect): string | null {
   if (e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW') return null
   return `${e.offset.x} ${e.offset.y} ${e.radius} ${formatColor(e.color, e.color.a)}`
-}
-
-export function formatTailwindShadow(e: Effect): string | null {
-  if (e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW') return null
-  const color = colorToCSSCompact(e.color)
-  const inset = e.type === 'INNER_SHADOW' ? 'inset_' : ''
-  const spread = e.spread !== 0 ? `_${e.spread}px` : ''
-  return `${inset}${e.offset.x}px_${e.offset.y}px_${e.radius}px${spread}_${color}`
-}
-
-export function formatTailwindAngle(degrees: number): string {
-  const rounded = Number(degrees.toFixed(2))
-  const integer = Math.round(rounded)
-  const named = new Set([0, 1, 2, 3, 6, 12, 45, 90, 180])
-  if (rounded === integer && named.has(integer)) return String(integer)
-  return `[${rounded}deg]`
-}
-
-export function formatTailwindFontFamily(fontFamily: string): string {
-  const escaped = fontFamily.replace(/\\/g, '\\\\').replace(/'/g, "\\'")
-  return `['${escaped}']`
 }
 
 const JSX_ENTITY: Record<string, string> = {
