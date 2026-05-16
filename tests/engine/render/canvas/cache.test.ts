@@ -175,4 +175,38 @@ describe('render cache regressions', () => {
       surface.delete()
     }
   })
+
+  test('scene picture cache recovers after position preview commits', async () => {
+    const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    renderer.viewportWidth = 900
+    renderer.viewportHeight = 700
+    renderer.dpr = 1
+    renderer.panX = 0
+    renderer.panY = 0
+    renderer.zoom = 0.75
+    renderer.pageId = graph.getPages()[0].id
+
+    try {
+      renderPreview(renderer, 10)
+      expect(renderer.profiler.stats.scenePictureMode).toBe('record')
+
+      const movingNode = expectDefined(graph.getNode(movingNodeId), 'moving node')
+      const originalX = movingNode.x
+      graph.updateNodePositionPreview(movingNodeId, originalX + 20, movingNode.y)
+      renderPreview(renderer, 10)
+      expect(renderer.profiler.stats.scenePictureMode).toBe('volatile')
+      expect(renderer.profiler.stats.scenePictureMissReason).toBe('position-preview')
+
+      graph.updateNode(movingNodeId, { x: originalX + 20 })
+      renderPreview(renderer, 11)
+      expect(renderer.profiler.stats.scenePictureMode).toBe('record')
+      expect(renderer.profiler.stats.scenePictureMissReason).toBe('position-preview-version')
+
+      renderPreview(renderer, 11)
+      expect(renderer.profiler.stats.scenePictureMode).toBe('hit')
+    } finally {
+      surface.delete()
+    }
+  })
 })
