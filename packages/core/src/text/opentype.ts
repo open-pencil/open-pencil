@@ -2,7 +2,7 @@ import * as OpenTypeSync from 'opentype.js'
 
 import { fontManager } from './fonts'
 
-interface OutlineCommand {
+export interface OutlineCommand {
   type: string
   x?: number
   y?: number
@@ -81,57 +81,9 @@ export function measureTextWithOpenType(
 }
 
 export interface GlyphOutlineMetrics {
-  commandsBlob: Uint8Array
+  commands: OutlineCommand[]
   x: number
   advance: number
-}
-
-const CMD_CLOSE = 0
-const CMD_MOVE_TO = 1
-const CMD_LINE_TO = 2
-const CMD_CUBIC_TO = 4
-
-function commandsToBlob(commands: OutlineCommand[], fontSize: number): Uint8Array {
-  const bytes: number[] = []
-  const pushFloat = (value: number | undefined) => {
-    const buf = new ArrayBuffer(4)
-    new DataView(buf).setFloat32(0, (value ?? 0) / fontSize, true)
-    bytes.push(...new Uint8Array(buf))
-  }
-
-  for (const command of commands) {
-    switch (command.type) {
-      case 'M':
-        bytes.push(CMD_MOVE_TO)
-        pushFloat(command.x)
-        pushFloat(command.y)
-        break
-      case 'L':
-        bytes.push(CMD_LINE_TO)
-        pushFloat(command.x)
-        pushFloat(command.y)
-        break
-      case 'C':
-        bytes.push(CMD_CUBIC_TO)
-        pushFloat(command.x1)
-        pushFloat(command.y1)
-        pushFloat(command.x2)
-        pushFloat(command.y2)
-        pushFloat(command.x)
-        pushFloat(command.y)
-        break
-      case 'Q':
-        bytes.push(CMD_LINE_TO)
-        pushFloat(command.x)
-        pushFloat(command.y)
-        break
-      case 'Z':
-        bytes.push(CMD_CLOSE)
-        break
-    }
-  }
-
-  return new Uint8Array(bytes)
 }
 
 export function getGlyphOutlineMetricsSync(
@@ -147,9 +99,9 @@ export function getGlyphOutlineMetricsSync(
   let x = 0
   const scale = fontSize / font.unitsPerEm
   return glyphs.map((glyph) => {
-    const commandsBlob = commandsToBlob(glyph.getPath(0, 0, fontSize).commands, fontSize)
+    const commands = glyph.getPath(0, 0, fontSize).commands
     const advance = (glyph.advanceWidth ?? 0) * scale
-    const metrics = { commandsBlob, x, advance }
+    const metrics = { commands, x, advance }
     x += advance
     return metrics
   })

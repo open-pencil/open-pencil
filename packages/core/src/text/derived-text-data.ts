@@ -9,6 +9,7 @@ interface DerivedTextDataOptions {
   width: number
   lineHeight: number
   lineAscent: number
+  baselines?: NonNullable<NodeChange['derivedTextData']>['baselines']
   logicalIndexToCharacterOffsetMap: number[]
 }
 
@@ -17,7 +18,7 @@ export function buildDerivedTextData(
 ): NodeChange['derivedTextData'] {
   return {
     layoutSize: { x: options.node.width, y: options.node.height },
-    baselines: [
+    baselines: options.baselines ?? [
       {
         firstCharacter: 0,
         endCharacter: Math.max(options.node.text.length - 1, 0),

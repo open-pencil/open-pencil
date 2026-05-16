@@ -1,5 +1,6 @@
 import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text-data'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
+import { encodePathCommandsBlob } from '#core/kiwi/node-change/path-commands'
 import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
 import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
 export {
@@ -109,7 +110,7 @@ function buildDerivedTextData(
   const glyphAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
 
   const glyphs = glyphMetrics.map((glyph, index) => ({
-    commandsBlob: blobs.push(glyph.commandsBlob) - 1,
+    commandsBlob: blobs.push(encodePathCommandsBlob(glyph.commands, node.fontSize)) - 1,
     position: { x: glyph.x || index * glyphAdvance, y: lineHeight },
     fontSize: node.fontSize,
     firstCharacter: index,
