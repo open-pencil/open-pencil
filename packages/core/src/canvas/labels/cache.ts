@@ -93,8 +93,8 @@ export class LabelCache {
     graph: SceneGraph,
     viewport: Viewport
   ): Array<{ node: SceneNode; absX: number; absY: number; inside: boolean }> {
-    return collectVisibleLabels(graph, viewport, this.components, (cached) => ({
-      inside: cached.parentType === 'COMPONENT_SET'
+    return collectVisibleLabels(graph, viewport, this.components, () => ({
+      inside: false
     }))
   }
 

@@ -112,14 +112,14 @@ export function hitTestComponentLabel(
 
   const LABEL_TYPES = new Set(['COMPONENT', 'COMPONENT_SET'])
 
-  return walkLabelTree(graph, pageId, (child, parent, ax, ay) => {
+  return walkLabelTree(graph, pageId, (child, _parent, ax, ay) => {
     if (!LABEL_TYPES.has(child.type)) return undefined
 
     const textW = measureGlyphWidth(font, child.name)
     const labelW = (COMPONENT_LABEL_ICON_SIZE + COMPONENT_LABEL_ICON_GAP + textW) / zoom
     const labelH = COMPONENT_LABEL_FONT_SIZE / zoom
     const gap = COMPONENT_LABEL_GAP / zoom
-    const labelY = parent.type === 'COMPONENT_SET' ? ay + gap : ay - labelH - gap
+    const labelY = ay - labelH - gap
 
     return hitInRect(canvasX, canvasY, ax, labelY, labelW, labelH) ? child : undefined
   })

@@ -46,10 +46,6 @@ function getRenderScheduler(editor: Editor): EditorRenderScheduler {
   return scheduler
 }
 
-function shouldScheduleForRepaint(layer: CanvasRenderLayer | undefined) {
-  return layer !== 'scene'
-}
-
 function shouldScheduleForSelection(layer: CanvasRenderLayer | undefined) {
   return layer !== 'scene'
 }
@@ -92,9 +88,7 @@ export function createCanvasRenderLoop(
     editor.onEditorEvent('viewport:changed', scheduleRender)
   ]
 
-  if (shouldScheduleForRepaint(options.layer)) {
-    unsubscribe.push(editor.onEditorEvent('repaint:requested', scheduleRender))
-  }
+  unsubscribe.push(editor.onEditorEvent('repaint:requested', scheduleRender))
 
   if (shouldScheduleForSelection(options.layer)) {
     unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleRender))
