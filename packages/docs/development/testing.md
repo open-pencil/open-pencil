@@ -51,7 +51,7 @@ bun run test:unit
 Tests cover:
 
 - Scene graph CRUD operations, parent-child relationships, z-ordering, hit testing
-- **Fig-import pipeline** — node type mapping, transforms, fills/strokes/effects, gradients, images, arcs, nested hierarchies (`tests/engine/fig/import/legacy.test.ts`)
+- **Fig-import pipeline** — node type mapping, transforms, fills/strokes/effects, gradients, images, arcs, nested hierarchies (`tests/engine/io/fig/import/legacy/*.test.ts`)
 - **Layout computation** — Yoga auto-layout: direction, gap, padding, justify, align, child sizing (fixed/fill/hug), cross-axis sizing, wrap, nested layouts (`tests/engine/layout/`)
 
 ### Writing Unit Tests
