@@ -12,6 +12,8 @@ export {
 
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
+import { addOpenSegmentsToPath, addSegmentDirected } from './path-helpers'
+
 import type {
   HandleMirroring,
   VectorNetwork,
@@ -236,33 +238,8 @@ export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path
     return paths
   }
 
-  // No regions — draw all segments as open paths, tracking direction
   const path = new ck.Path()
-  const visited = new Set<number>()
-  const chains = buildChains(segments, vertices.length)
-
-  for (const chain of chains) {
-    if (chain.length === 0) continue
-    // Determine starting vertex by tracing chain direction
-    let current = findChainStart(chain, segments)
-    path.moveTo(vertices[current].x, vertices[current].y)
-
-    for (const segIdx of chain) {
-      visited.add(segIdx)
-      const seg = segments[segIdx]
-      const forward = seg.start === current
-      addSegmentDirected(path, seg, vertices, forward)
-      current = forward ? seg.end : seg.start
-    }
-  }
-
-  for (let i = 0; i < segments.length; i++) {
-    if (visited.has(i)) continue
-    const seg = segments[i]
-    path.moveTo(vertices[seg.start].x, vertices[seg.start].y)
-    addSegmentDirected(path, seg, vertices, true)
-  }
-
+  addOpenSegmentsToPath(path, segments, vertices)
   return [path]
 }
 
@@ -301,85 +278,6 @@ function addLoopToPath(
   }
 
   path.close()
-}
-
-function addSegmentDirected(
-  path: Path,
-  seg: VectorSegment,
-  vertices: VectorVertex[],
-  forward: boolean
-): void {
-  const p0 = forward ? vertices[seg.start] : vertices[seg.end]
-  const p3 = forward ? vertices[seg.end] : vertices[seg.start]
-  const ts = seg.tangentStart
-  const te = seg.tangentEnd
-
-  const isLine = ts.x === 0 && ts.y === 0 && te.x === 0 && te.y === 0
-  if (isLine) {
-    path.lineTo(p3.x, p3.y)
-  } else if (forward) {
-    path.cubicTo(p0.x + ts.x, p0.y + ts.y, p3.x + te.x, p3.y + te.y, p3.x, p3.y)
-  } else {
-    // Reversed cubic: swap control points
-    path.cubicTo(p0.x + te.x, p0.y + te.y, p3.x + ts.x, p3.y + ts.y, p3.x, p3.y)
-  }
-}
-
-function findChainStart(chain: number[], segments: VectorSegment[]): number {
-  if (chain.length < 2) return segments[chain[0]].start
-
-  const first = segments[chain[0]]
-  const second = segments[chain[1]]
-  // The shared vertex between first and second is the "end" of the first
-  // segment in this chain — so the start is the other vertex.
-  if (first.start === second.start || first.start === second.end) return first.end
-  return first.start
-}
-
-function buildChains(segments: VectorSegment[], _vertexCount: number): number[][] {
-  if (segments.length === 0) return []
-
-  // Build adjacency: for each vertex, which segments connect to it
-  const adj = new Map<number, number[]>()
-  for (let i = 0; i < segments.length; i++) {
-    const s = segments[i]
-    if (!adj.has(s.start)) adj.set(s.start, [])
-    if (!adj.has(s.end)) adj.set(s.end, [])
-    adj.get(s.start)?.push(i)
-    adj.get(s.end)?.push(i)
-  }
-
-  const visited = new Set<number>()
-  const chains: number[][] = []
-
-  // Start from degree-1 vertices (endpoints) or any unvisited
-  const degree1 = [...adj.entries()].filter(([, segs]) => segs.length === 1).map(([v]) => v)
-
-  const startVertices = degree1.length > 0 ? degree1 : [segments[0].start]
-
-  for (const startVertex of startVertices) {
-    let current = startVertex
-    const chain: number[] = []
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    while (true) {
-      const segs = adj.get(current)
-      if (!segs) break
-
-      const nextSeg = segs.find((s) => !visited.has(s))
-      if (nextSeg === undefined) break
-
-      visited.add(nextSeg)
-      chain.push(nextSeg)
-
-      const seg = segments[nextSeg]
-      current = seg.start === current ? seg.end : seg.start
-    }
-
-    if (chain.length > 0) chains.push(chain)
-  }
-
-  return chains
 }
 
 export function computeVectorBounds(network: VectorNetwork): Rect {

@@ -2,7 +2,13 @@ import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { RenderOverlays } from '#core/canvas/renderer/types'
-import type { SceneGraph, SceneNode, VectorSegment, VectorVertex } from '#core/scene-graph'
+import type {
+  SceneGraph,
+  SceneGraphEvents,
+  SceneNode,
+  VectorSegment,
+  VectorVertex
+} from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { UndoManager } from '#core/scene-graph/undo'
 import type { TextEditor } from '#core/text/editor'
@@ -80,15 +86,10 @@ export interface EditorState {
   cursorCanvasY?: number | null
 }
 
-export interface EditorEvents {
+export interface EditorEvents extends SceneGraphEvents {
   'render:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'graph:replaced': (graph: SceneGraph) => void
-  'node:created': (node: SceneNode) => void
-  'node:updated': (id: string, changes: Partial<SceneNode>) => void
-  'node:deleted': (id: string) => void
-  'node:reparented': (nodeId: string, oldParentId: string | null, newParentId: string) => void
-  'node:reordered': (nodeId: string, parentId: string, index: number) => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
   'page:changed': (pageId: string, previousPageId: string) => void

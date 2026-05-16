@@ -4,6 +4,7 @@ import { useEditorCommands, useI18n } from '@open-pencil/vue'
 import type { MenuEntry } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { openFileDialog } from '@/app/shell/menu/use'
@@ -46,24 +47,6 @@ export function useAppMenu(mod: string) {
     if (store.state.selectedIds.size > 0) void store.exportSelection(1, format)
   }
 
-  function alignSelected(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max') {
-    store.alignNodes([...store.state.selectedIds], axis, align)
-  }
-
-  function updateSelectedText(updates: {
-    fontWeight?: number
-    italic?: boolean
-    textDecoration?: 'NONE' | 'UNDERLINE'
-  }) {
-    for (const node of store.selectedNodes.value) {
-      if (node.type === 'TEXT') store.updateNodeWithUndo(node.id, updates, 'Format text')
-    }
-  }
-
-  function selectedTextNode() {
-    return store.selectedNodes.value.find((item) => item.type === 'TEXT')
-  }
-
   const actions: Partial<Record<string, () => void>> = {
     new: () => {
       void import('@/app/tabs').then((m) => m.createTab())
@@ -75,34 +58,7 @@ export function useAppMenu(mod: string) {
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-fig': () => exportSelection('fig'),
-    'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),
-    'zoom-out': () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2),
-    'toggle-ui': () => {
-      store.state.showUI = !store.state.showUI
-    },
-    'theme-light': () => setTheme('light'),
-    'theme-dark': () => setTheme('dark'),
-    'theme-auto': () => setTheme('auto'),
-    'text.bold': () => {
-      const node = selectedTextNode()
-      updateSelectedText({ fontWeight: node && node.fontWeight >= 700 ? 400 : 700 })
-    },
-    'text.italic': () => {
-      const node = selectedTextNode()
-      updateSelectedText({ italic: node ? !node.italic : true })
-    },
-    'text.underline': () => {
-      const node = selectedTextNode()
-      updateSelectedText({
-        textDecoration: node?.textDecoration === 'UNDERLINE' ? 'NONE' : 'UNDERLINE'
-      })
-    },
-    'align-left': () => alignSelected('horizontal', 'min'),
-    'align-center': () => alignSelected('horizontal', 'center'),
-    'align-right': () => alignSelected('horizontal', 'max'),
-    'align-top': () => alignSelected('vertical', 'min'),
-    'align-middle': () => alignSelected('vertical', 'center'),
-    'align-bottom': () => alignSelected('vertical', 'max')
+    ...createSharedEditorMenuActions(setTheme)
   }
 
   function itemAction(item: AppMenuActionItem): (() => void) | undefined {

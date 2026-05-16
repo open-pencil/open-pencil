@@ -1,20 +1,9 @@
 import { parseColor } from '#core/color'
-import type { SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
+import { createPathStroke } from '#core/icons/path-style'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Color } from '#core/types'
 
 import type { IconData } from './types'
-
-const STROKE_CAP_MAP: Record<string, SceneNode['strokeCap']> = {
-  butt: 'NONE',
-  round: 'ROUND',
-  square: 'SQUARE'
-}
-
-const STROKE_JOIN_MAP: Record<string, SceneNode['strokeJoin']> = {
-  miter: 'MITER',
-  round: 'ROUND',
-  bevel: 'BEVEL'
-}
 
 export function createIconFromPaths(
   graph: SceneGraph,
@@ -54,16 +43,9 @@ export function createIconFromPaths(
 
     if (path.stroke) {
       const strokeColor = path.stroke === 'currentColor' ? color : parseColor(path.stroke)
-      const stroke: Stroke = {
-        color: strokeColor,
-        weight: path.strokeWidth,
-        opacity: 1,
-        visible: true,
-        align: 'CENTER',
-        cap: STROKE_CAP_MAP[path.strokeCap] ?? 'NONE',
-        join: STROKE_JOIN_MAP[path.strokeJoin] ?? 'MITER'
-      }
-      graph.updateNode(vector.id, { strokes: [stroke] })
+      graph.updateNode(vector.id, {
+        strokes: [createPathStroke(strokeColor, path.strokeWidth, path.strokeCap, path.strokeJoin)]
+      })
     }
   }
 

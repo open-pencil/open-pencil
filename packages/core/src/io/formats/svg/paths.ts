@@ -1,4 +1,5 @@
 import { polygonVertices } from '#core/geometry'
+import { nodeHasRadius } from '#core/canvas/shapes'
 import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
 
 const CMD_CLOSE = 0
@@ -113,16 +114,7 @@ export function makePolygonPoints(node: SceneNode): string {
     .join(' ')
 }
 
-export function hasRadius(node: SceneNode): boolean {
-  return (
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
-  )
-}
+export const hasRadius = nodeHasRadius
 
 export function roundedRectPath(node: SceneNode): string {
   const w = node.width

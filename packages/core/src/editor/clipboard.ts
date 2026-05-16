@@ -59,6 +59,29 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
+  function pushPasteUndo(created: string[], prevSelection: Set<string>) {
+    const allNodes = collectSubtrees(ctx.graph, created)
+    const pageId = ctx.state.currentPageId
+    ctx.undo.push({
+      label: 'Paste',
+      forward: () => {
+        for (const snapshot of allNodes) {
+          ctx.graph.createNode(snapshot.type, snapshot.parentId ?? pageId, {
+            ...snapshot,
+            childIds: []
+          })
+        }
+        computeAllLayouts(ctx.graph, pageId)
+        ctx.setSelectedIds(new Set(created))
+      },
+      inverse: () => {
+        for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
+        computeAllLayouts(ctx.graph, pageId)
+        ctx.setSelectedIds(prevSelection)
+      }
+    })
+  }
+
   async function pasteFromHTML(html: string, cursorPos?: Vector) {
     const openPencil = parseOpenPencilClipboard(html)
     if (openPencil) {
@@ -79,26 +102,7 @@ export function createClipboardActions(ctx: EditorContext) {
         computeAllLayouts(ctx.graph, ctx.state.currentPageId)
         ctx.setSelectedIds(new Set(created))
 
-        const allNodes = collectSubtrees(ctx.graph, created)
-        const pageId = ctx.state.currentPageId
-        ctx.undo.push({
-          label: 'Paste',
-          forward: () => {
-            for (const snapshot of allNodes) {
-              ctx.graph.createNode(snapshot.type, snapshot.parentId ?? pageId, {
-                ...snapshot,
-                childIds: []
-              })
-            }
-            computeAllLayouts(ctx.graph, pageId)
-            ctx.setSelectedIds(new Set(created))
-          },
-          inverse: () => {
-            for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
-            computeAllLayouts(ctx.graph, pageId)
-            ctx.setSelectedIds(prevSelection)
-          }
-        })
+        pushPasteUndo(created, prevSelection)
         void fontActions.loadFontsForNodes(created)
         warnMissingImages(created)
         ctx.requestRender()
@@ -135,26 +139,7 @@ export function createClipboardActions(ctx: EditorContext) {
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     ctx.setSelectedIds(new Set(created))
 
-    const allNodes = collectSubtrees(ctx.graph, created)
-    const pageId = ctx.state.currentPageId
-    ctx.undo.push({
-      label: 'Paste',
-      forward: () => {
-        for (const snapshot of allNodes) {
-          ctx.graph.createNode(snapshot.type, snapshot.parentId ?? pageId, {
-            ...snapshot,
-            childIds: []
-          })
-        }
-        computeAllLayouts(ctx.graph, pageId)
-        ctx.setSelectedIds(new Set(created))
-      },
-      inverse: () => {
-        for (const id of [...created].reverse()) ctx.graph.deleteNode(id)
-        computeAllLayouts(ctx.graph, pageId)
-        ctx.setSelectedIds(prevSelection)
-      }
-    })
+    pushPasteUndo(created, prevSelection)
   }
 
   function warnMissingImages(nodeIds: string[]) {

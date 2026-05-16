@@ -5,8 +5,8 @@ import type { SceneNode } from '#core/scene-graph'
 import type { SkiaRenderer } from './renderer'
 import { nodeHasRadius } from './shapes'
 
-function drawChildTransform(canvas: Canvas, child: SceneNode): void {
-  canvas.translate(child.x, child.y)
+function drawChildTransform(canvas: Canvas, child: SceneNode, offset = { x: 0, y: 0 }): void {
+  canvas.translate(child.x + offset.x, child.y + offset.y)
   if (child.rotation !== 0) {
     canvas.rotate(child.rotation, child.width / 2, child.height / 2)
   }
@@ -14,6 +14,25 @@ function drawChildTransform(canvas: Canvas, child: SceneNode): void {
     canvas.translate(child.flipX ? child.width : 0, child.flipY ? child.height : 0)
     canvas.scale(child.flipX ? -1 : 1, child.flipY ? -1 : 1)
   }
+}
+
+function localEffectOffset(effect: SceneNode['effects'][number], child?: SceneNode | null) {
+  let x = effect.offset.x
+  let y = effect.offset.y
+  if (!child) return { x, y }
+
+  if (child.rotation !== 0) {
+    const rad = (-child.rotation * Math.PI) / 180
+    const cos = Math.cos(rad)
+    const sin = Math.sin(rad)
+    const nx = x * cos - y * sin
+    const ny = x * sin + y * cos
+    x = nx
+    y = ny
+  }
+  if (child.flipX) x = -x
+  if (child.flipY) y = -y
+  return { x, y }
 }
 
 function drawShapeDropShadow(
@@ -37,25 +56,8 @@ function drawShapeDropShadow(
   r.auxFill.setImageFilter(null)
   canvas.save()
 
-  if (shadowShapeChild) {
-    canvas.translate(shadowShapeChild.x + effect.offset.x, shadowShapeChild.y + effect.offset.y)
-    if (shadowShapeChild.rotation !== 0) {
-      canvas.rotate(
-        shadowShapeChild.rotation,
-        shadowShapeChild.width / 2,
-        shadowShapeChild.height / 2
-      )
-    }
-    if (shadowShapeChild.flipX || shadowShapeChild.flipY) {
-      canvas.translate(
-        shadowShapeChild.flipX ? shadowShapeChild.width : 0,
-        shadowShapeChild.flipY ? shadowShapeChild.height : 0
-      )
-      canvas.scale(shadowShapeChild.flipX ? -1 : 1, shadowShapeChild.flipY ? -1 : 1)
-    }
-  } else {
-    canvas.translate(effect.offset.x, effect.offset.y)
-  }
+  if (shadowShapeChild) drawChildTransform(canvas, shadowShapeChild, effect.offset)
+  else canvas.translate(effect.offset.x, effect.offset.y)
 
   if (strokeShadow) {
     for (const path of strokeShadow) canvas.drawPath(path, r.auxFill)
@@ -97,25 +99,8 @@ function renderDropShadow(
   const dropFilter = r.getCachedDropShadow(0, 0, effect.radius / 2, shadowColor)
 
   canvas.save()
-  if (shadowShapeChild) {
-    canvas.translate(shadowShapeChild.x + effect.offset.x, shadowShapeChild.y + effect.offset.y)
-    if (shadowShapeChild.rotation !== 0) {
-      canvas.rotate(
-        shadowShapeChild.rotation,
-        shadowShapeChild.width / 2,
-        shadowShapeChild.height / 2
-      )
-    }
-    if (shadowShapeChild.flipX || shadowShapeChild.flipY) {
-      canvas.translate(
-        shadowShapeChild.flipX ? shadowShapeChild.width : 0,
-        shadowShapeChild.flipY ? shadowShapeChild.height : 0
-      )
-      canvas.scale(shadowShapeChild.flipX ? -1 : 1, shadowShapeChild.flipY ? -1 : 1)
-    }
-  } else {
-    canvas.translate(effect.offset.x, effect.offset.y)
-  }
+  if (shadowShapeChild) drawChildTransform(canvas, shadowShapeChild, effect.offset)
+  else canvas.translate(effect.offset.x, effect.offset.y)
 
   r.effectLayerPaint.setImageFilter(dropFilter)
   canvas.saveLayer(r.effectLayerPaint)
@@ -164,22 +149,7 @@ function drawTextInnerShadow(
   r.effectLayerPaint.setColorFilter(tintFilter)
   canvas.saveLayer(r.effectLayerPaint)
 
-  // 4. Calculate local offset for parent-space parity
-  let localOffsetX = effect.offset.x
-  let localOffsetY = effect.offset.y
-  if (shadowShapeChild) {
-    if (shadowShapeChild.rotation !== 0) {
-      const rad = (-shadowShapeChild.rotation * Math.PI) / 180
-      const cos = Math.cos(rad)
-      const sin = Math.sin(rad)
-      const nx = localOffsetX * cos - localOffsetY * sin
-      const ny = localOffsetX * sin + localOffsetY * cos
-      localOffsetX = nx
-      localOffsetY = ny
-    }
-    if (shadowShapeChild.flipX) localOffsetX = -localOffsetX
-    if (shadowShapeChild.flipY) localOffsetY = -localOffsetY
-  }
+  const { x: localOffsetX, y: localOffsetY } = localEffectOffset(effect, shadowShapeChild)
 
   // 5. Apply Transform: Move the canvas by the local offset
   canvas.save()
@@ -267,21 +237,7 @@ function drawShapeInnerShadow(
   }
 
   const expand = effect.radius * 2
-  let localOffsetX = effect.offset.x
-  let localOffsetY = effect.offset.y
-  if (shadowShapeChild) {
-    if (shadowShapeChild.rotation !== 0) {
-      const rad = (-shadowShapeChild.rotation * Math.PI) / 180
-      const cos = Math.cos(rad)
-      const sin = Math.sin(rad)
-      const nx = localOffsetX * cos - localOffsetY * sin
-      const ny = localOffsetX * sin + localOffsetY * cos
-      localOffsetX = nx
-      localOffsetY = ny
-    }
-    if (shadowShapeChild.flipX) localOffsetX = -localOffsetX
-    if (shadowShapeChild.flipY) localOffsetY = -localOffsetY
-  }
+  const { x: localOffsetX, y: localOffsetY } = localEffectOffset(effect, shadowShapeChild)
 
   const spreadPadding = sp < 0 ? -sp : 0
   const big = r.ck.LTRBRect(

@@ -1,5 +1,6 @@
 import type { EditorContext } from '#core/editor/types'
 import { randomHex } from '#core/random'
+import { buildVariantName, parseVariantName } from '#core/scene-graph/variant-name'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyType,
@@ -130,48 +131,22 @@ export function createVariantActions(ctx: EditorContext) {
         ctx.graph.updateNode(childId, { componentPropertyValues: values })
       }
     }
+    const renamePropertyDef = (name: string) => {
+      const n = ctx.graph.getNode(componentSetId)
+      if (!n) return
+      ctx.graph.updateNode(componentSetId, {
+        componentPropertyDefinitions: n.componentPropertyDefinitions.map((d) =>
+          d.id === propertyId ? { ...d, name } : d
+        )
+      })
+      ctx.requestRender()
+    }
     ctx.undo.push({
       label: 'Rename property',
-      forward: () => {
-        const n = ctx.graph.getNode(componentSetId)
-        if (n) {
-          ctx.graph.updateNode(componentSetId, {
-            componentPropertyDefinitions: n.componentPropertyDefinitions.map((d) =>
-              d.id === propertyId ? { ...d, name: newName } : d
-            )
-          })
-        }
-        ctx.requestRender()
-      },
-      inverse: () => {
-        const n = ctx.graph.getNode(componentSetId)
-        if (n) {
-          ctx.graph.updateNode(componentSetId, {
-            componentPropertyDefinitions: n.componentPropertyDefinitions.map((d) =>
-              d.id === propertyId ? { ...d, name: prevName } : d
-            )
-          })
-        }
-        ctx.requestRender()
-      }
+      forward: () => renamePropertyDef(newName),
+      inverse: () => renamePropertyDef(prevName)
     })
     ctx.requestRender()
-  }
-
-  function parseVariantName(name: string): Record<string, string> {
-    const values: Record<string, string> = {}
-    for (const part of name.split(',').map((s) => s.trim())) {
-      const eqIdx = part.indexOf('=')
-      if (eqIdx === -1) continue
-      values[part.slice(0, eqIdx).trim()] = part.slice(eqIdx + 1).trim()
-    }
-    return values
-  }
-
-  function buildVariantName(values: Record<string, string>): string {
-    return Object.entries(values)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(', ')
   }
 
   function collectVariantOptions(componentSetId: string): Map<string, Set<string>> {

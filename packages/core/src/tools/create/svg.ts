@@ -1,21 +1,9 @@
 import { parseColor } from '#core/color'
+import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
-import type { SceneNode, Stroke } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
-
-const STROKE_CAP_MAP: Record<string, SceneNode['strokeCap']> = {
-  butt: 'NONE',
-  round: 'ROUND',
-  square: 'SQUARE'
-}
-
-const STROKE_JOIN_MAP: Record<string, SceneNode['strokeJoin']> = {
-  miter: 'MITER',
-  round: 'ROUND',
-  bevel: 'BEVEL'
-}
 
 import type { Rect } from '#core/types'
 
@@ -79,16 +67,9 @@ function createVectorFromPath(
   if (path.stroke && path.stroke !== 'none') {
     const strokeColor =
       path.stroke === 'currentColor' ? parseColor(defaultColor) : parseColor(path.stroke)
-    const stroke: Stroke = {
-      color: strokeColor,
-      weight: path.strokeWidth,
-      opacity: 1,
-      visible: true,
-      align: 'CENTER',
-      cap: STROKE_CAP_MAP[path.strokeCap] ?? 'NONE',
-      join: STROKE_JOIN_MAP[path.strokeJoin] ?? 'MITER'
-    }
-    figma.graph.updateNode(vector.id, { strokes: [stroke] })
+    figma.graph.updateNode(vector.id, {
+      strokes: [createPathStroke(strokeColor, path.strokeWidth, path.strokeCap, path.strokeJoin)]
+    })
   }
 
   return vector

@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
+import { parseVariantName } from '#core/scene-graph/variant-name'
 import { styleToWeight } from '#core/text/fonts'
 
 import { guidToString } from './guid'
@@ -505,13 +506,7 @@ function extractComponentPropertyValues(nc: NodeChange): Record<string, string> 
 
   const name = nc.name
   if (!name?.includes('=')) return {}
-  const values: Record<string, string> = {}
-  for (const part of name.split(',').map((s) => s.trim())) {
-    const eqIdx = part.indexOf('=')
-    if (eqIdx === -1) continue
-    values[part.slice(0, eqIdx).trim()] = part.slice(eqIdx + 1).trim()
-  }
-  return values
+  return parseVariantName(name)
 }
 
 type ComponentMetadataProps = Pick<

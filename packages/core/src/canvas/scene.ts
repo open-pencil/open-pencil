@@ -5,7 +5,7 @@ import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
 import type { Color } from '#core/types'
 import { vectorNetworkToCenterlinePath } from '#core/vector'
 
-import { nodeHasRadius } from './effects'
+import { nodeHasRadius } from './shapes'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
 function drawVisibleFills(
