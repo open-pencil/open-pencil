@@ -299,6 +299,29 @@ const noMisplacedEngineTestDomainPaths = createFileRule(
   }
 )
 
+const noKitchenSinkEngineBasicTests: Rule = {
+  name: 'open-pencil/no-kitchen-sink-engine-basic-tests',
+  check(root) {
+    const diagnostics: Diagnostic[] = []
+    for (const file of collectFiles(root)) {
+      const sourceRel = relativePath(root.path, file)
+      if (!sourceRel.startsWith('tests/engine/') || !sourceRel.endsWith('/basic.test.ts')) continue
+
+      const content = readFileSync(file, 'utf8')
+      const lineCount = content.split('\n').length
+      const describeCount = content.match(/\bdescribe\s*\(/g)?.length ?? 0
+      if (lineCount <= 250 || describeCount < 4) continue
+
+      diagnostics.push({
+        message:
+          'Split broad engine basic.test.ts files into focused domain/module tests, or add a deliberate narrow redirect/allowlist.',
+        location: { path: file }
+      })
+    }
+    return { diagnostics }
+  }
+}
+
 const noEngineOnlyAssertionsInE2E = createImportRule(
   'open-pencil/no-engine-only-assertions-in-e2e',
   (sourceRel, specifier, resolved) => {
@@ -490,6 +513,7 @@ export const openPencilArchitecturePlugin = {
     preferDomainFoldersOverFilenamePrefixes,
     strictTestFilePlacement,
     noMisplacedEngineTestDomainPaths,
+    noKitchenSinkEngineBasicTests,
     noEngineOnlyAssertionsInE2E,
     noE2EImportsInEngineTests,
     noRootMarkdownClutter,
