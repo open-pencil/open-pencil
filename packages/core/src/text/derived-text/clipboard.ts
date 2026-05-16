@@ -3,9 +3,10 @@ import type { SceneNode } from '#core/scene-graph'
 
 import { encodePathCommandsBlob } from '#core/kiwi/node-change/path-commands'
 
-import { buildDerivedTextData } from './derived-text-data'
-import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from './fonts'
-import { getGlyphOutlineMetricsSync } from './opentype'
+import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
+import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
+
+import { buildDerivedTextData } from './data'
 
 export interface ShapedClipboardText {
   lineHeight: number

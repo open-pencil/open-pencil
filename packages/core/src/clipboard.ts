@@ -17,7 +17,7 @@ import {
 } from './kiwi/node-change/serialize'
 import { randomInt } from './random'
 import type { SceneGraph, SceneNode } from './scene-graph'
-import { buildDerivedTextDataV4 } from './text/clipboard-derived-text'
+import { buildDerivedTextDataV4 } from './text/derived-text/clipboard'
 
 interface FigmaClipboardMeta {
   fileKey: string

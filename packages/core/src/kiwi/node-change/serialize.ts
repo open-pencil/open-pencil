@@ -1,4 +1,4 @@
-import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text-data'
+import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text/data'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
 import { encodePathCommandsBlob } from '#core/kiwi/node-change/path-commands'
 import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
