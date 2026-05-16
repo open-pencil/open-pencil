@@ -322,6 +322,8 @@ function drawVectorStrokeGeometry(
 
 function vectorStrokePaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
   if (!node.vectorNetwork) return null
+  const cached = r.vectorStrokePathCache.get(node.id)
+  if (cached) return cached
 
   const paths: Path[] = []
   for (const segment of node.vectorNetwork.segments) {
@@ -350,7 +352,9 @@ function vectorStrokePaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
     paths.push(path)
   }
 
-  return paths.length > 0 ? paths : null
+  if (paths.length === 0) return null
+  r.vectorStrokePathCache.set(node.id, paths)
+  return paths
 }
 
 function drawVectorPathStrokes(
@@ -358,7 +362,8 @@ function drawVectorPathStrokes(
   canvas: Canvas,
   vectorPaths: Path[],
   stroke: SceneNode['strokes'][0],
-  sc: Color
+  sc: Color,
+  outlineCacheKey?: string
 ): void {
   const dash = stroke.dashPattern
   if (dash && dash.length > 0) {
@@ -384,13 +389,17 @@ function drawVectorPathStrokes(
   r.fillPaint.setColor(r.ck.Color4f(sc.r, sc.g, sc.b, sc.a))
   r.fillPaint.setAlphaf(stroke.opacity)
   r.fillPaint.setShader(null)
-  for (const vp of vectorPaths) {
-    const outline = vp.copy().stroke(strokeOpts)
-    if (outline) {
-      canvas.drawPath(outline, r.fillPaint)
-      outline.delete()
+
+  let outlines = outlineCacheKey ? r.vectorStrokeOutlineCache.get(outlineCacheKey) : undefined
+  if (!outlines) {
+    outlines = []
+    for (const vp of vectorPaths) {
+      const outline = vp.copy().stroke(strokeOpts)
+      if (outline) outlines.push(outline)
     }
+    if (outlineCacheKey) r.vectorStrokeOutlineCache.set(outlineCacheKey, outlines)
   }
+  for (const outline of outlines) canvas.drawPath(outline, r.fillPaint)
 }
 
 function drawRegularStroke(
@@ -438,7 +447,8 @@ function drawNodeStroke(
   vectorStroke: Path[] | null
 ): void {
   if (vectorStroke && stroke.align === 'CENTER' && node.cornerRadius === 0) {
-    drawVectorPathStrokes(r, canvas, vectorStroke, stroke, sc)
+    const outlineKey = `${node.id}|${stroke.weight}|${stroke.cap ?? 'NONE'}|${stroke.join ?? 'MITER'}`
+    drawVectorPathStrokes(r, canvas, vectorStroke, stroke, sc, outlineKey)
     return
   }
   if (!sg) {
@@ -498,10 +508,6 @@ export function renderShapeUncached(
     }
     drawNodeStroke(r, canvas, node, rect, hasRadius, stroke, color, sg, vectorPaths, vectorStroke)
   })
-  if (vectorStroke) {
-    for (const path of vectorStroke) path.delete()
-  }
-
   r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)
 }
 

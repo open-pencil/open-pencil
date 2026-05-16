@@ -72,6 +72,8 @@ export class SkiaRenderer {
   fontsLoaded = false
   imageCache = new Map<string, CKImage>()
   vectorPathCache = new Map<string, Path[]>()
+  vectorStrokePathCache = new Map<string, Path[]>()
+  vectorStrokeOutlineCache = new Map<string, Path[]>()
   fillGeometryCache = new Map<string, Path[]>()
   strokeGeometryCache = new Map<string, Path[]>()
   scenePicture: SkPicture | null = null
@@ -485,10 +487,16 @@ export class SkiaRenderer {
   }
 
   invalidateVectorPath(nodeId: string): void {
-    const old = this.vectorPathCache.get(nodeId)
-    if (old) {
+    for (const cache of [this.vectorPathCache, this.vectorStrokePathCache]) {
+      const old = cache.get(nodeId)
+      if (!old) continue
       for (const p of old) p.delete()
-      this.vectorPathCache.delete(nodeId)
+      cache.delete(nodeId)
+    }
+    for (const [key, paths] of this.vectorStrokeOutlineCache) {
+      if (!key.startsWith(`${nodeId}|`)) continue
+      for (const p of paths) p.delete()
+      this.vectorStrokeOutlineCache.delete(key)
     }
     for (const cache of [this.fillGeometryCache, this.strokeGeometryCache]) {
       const oldGeom = cache.get(nodeId)
