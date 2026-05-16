@@ -277,6 +277,11 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
     from: 'tests/engine/geometry/basic',
     to: 'tests/engine/geometry/angles.test.ts, tests/engine/geometry/rotation.test.ts, tests/engine/geometry/bounds.test.ts, or tests/engine/geometry/visual-bounds.test.ts',
     source: 'the geometry module under test'
+  },
+  {
+    from: 'tests/engine/profiler/basic',
+    to: 'tests/engine/profiler/frame-stats.test.ts, draw-call-counter.test.ts, gpu-timer.test.ts, phase-timer.test.ts, capture-stack.test.ts, or speedscope.test.ts',
+    source: 'the profiler module under test'
   }
 ]
 
