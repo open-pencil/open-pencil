@@ -14,7 +14,7 @@ import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(30_000)
 
-const FIXTURES = resolve(import.meta.dir, '../fixtures')
+const FIXTURES = resolve(import.meta.dir, '../../../../fixtures')
 
 describe('fig export compression', () => {
   test('compressFigDataSync produces valid zip', async () => {

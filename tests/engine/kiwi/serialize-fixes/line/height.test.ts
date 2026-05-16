@@ -26,7 +26,7 @@ describe('Fix 4: text lineHeight serialization', () => {
     expect(changes[0].lineHeight).toEqual({ value: 24, units: 'PIXELS' })
   })
 
-  test('text node without lineHeight defaults to ceil(fontSize * 1.2)', () => {
+  test('text node without lineHeight omits lineHeight', () => {
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
       name: 'DefaultLH',
@@ -38,31 +38,10 @@ describe('Fix 4: text lineHeight serialization', () => {
       fontFamily: 'Inter',
       fontWeight: 400,
       fontSize: 16
-      // lineHeight not set — defaults to null
     })
 
     const changes = toKiwi(node, graph) as Record<string, unknown>[]
-    // ceil(16 * 1.2) = ceil(19.2) = 20
-    expect(changes[0].lineHeight).toEqual({ value: 20, units: 'PIXELS' })
-  })
-
-  test('lineHeight default for odd fontSize', () => {
-    const graph = new SceneGraph()
-    const node = graph.createNode('TEXT', pageId(graph), {
-      name: 'OddSize',
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 20,
-      text: 'Hello',
-      fontFamily: 'Inter',
-      fontWeight: 400,
-      fontSize: 14
-    })
-
-    const changes = toKiwi(node, graph) as Record<string, unknown>[]
-    // ceil(14 * 1.2) = ceil(16.8) = 17
-    expect(changes[0].lineHeight).toEqual({ value: 17, units: 'PIXELS' })
+    expect(changes[0].lineHeight).toBeUndefined()
   })
 
   test('lineHeight survives roundtrip through export/parse', async () => {

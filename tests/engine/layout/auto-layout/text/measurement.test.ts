@@ -76,6 +76,7 @@ describe('text measurement', () => {
     // an older layout implementation. Post-layout, left-aligned HUG content retains x=8.
     expect(visibleToolbar.x).toBe(8)
 
+    setTextMeasurer(null)
     computeAllLayouts(graph, graph.getPages()[0].id)
 
     expect(graph.getNode(visibleToolbar.id)?.x).toBe(8)
