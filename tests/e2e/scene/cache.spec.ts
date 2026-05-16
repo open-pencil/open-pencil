@@ -9,7 +9,7 @@ test.describe('SkPicture scene caching', () => {
   test.beforeAll(async ({ browser }) => {
     const page = await browser.newPage()
     helper = new CanvasHelper(page)
-    await page.goto('http://localhost:1420/?test&no-chrome')
+    await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
     await helper.waitForInit()
 
     await page.evaluate(() => {
