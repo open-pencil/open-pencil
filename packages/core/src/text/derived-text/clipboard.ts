@@ -103,6 +103,11 @@ export async function buildDerivedTextDataV4(
     : computeWordWrapBreaks(node.text, glyphMetrics, fallbackAdvance, node.width, node.fontSize, node.fontFamily)
   const lineBreakSet = new Set(lineBreaks)
 
+  const shapedByChar = new Map<number, (typeof shaped extends null | undefined ? never : NonNullable<typeof shaped>)['glyphs'][number]>()
+  if (shaped) {
+    for (const g of shaped.glyphs) shapedByChar.set(g.firstCharacter, g)
+  }
+
   const fallbackBaselines: NonNullable<NodeChange['derivedTextData']>['baselines'] = []
   const fallbackOffsets = Array.from({ length: node.text.length + 1 }, () => 0)
   let fallbackX = 0
@@ -110,7 +115,7 @@ export async function buildDerivedTextDataV4(
   let lineStart = 0
 
   const glyphs = glyphMetrics.map((glyph, index) => {
-    const shapedGlyph = shaped?.glyphs[index]
+    const shapedGlyph = shapedByChar.get(index)
     const fallbackGlyphAdvance = glyph.advance || fallbackAdvance
     if (!shapedGlyph && lineBreakSet.has(index)) {
       fallbackBaselines.push({
