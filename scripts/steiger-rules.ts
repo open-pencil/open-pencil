@@ -232,6 +232,46 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
     from: 'tests/engine/editor/clipboard/derived-text',
     to: 'tests/engine/text/derived-text/',
     source: 'packages/core/src/text/derived-text/'
+  },
+  {
+    from: 'tests/engine/images/',
+    to: 'tests/engine/figma/api/, tests/engine/tools/modify/, tests/engine/clipboard/openpencil/, or tests/engine/io/fig/export/',
+    source: 'the image API, tool, clipboard, or IO module under test'
+  },
+  {
+    from: 'tests/engine/figma-api/',
+    to: 'tests/engine/figma/api/',
+    source: 'packages/core/src/figma-api/'
+  },
+  {
+    from: 'tests/engine/scene-graph/mutation',
+    to: 'tests/engine/text/style-runs/, tests/engine/vector/blob/, or tests/engine/scene-graph/undo/',
+    source: 'the text, vector, or undo module under test'
+  },
+  {
+    from: 'tests/engine/editor/clipboard/bounds',
+    to: 'tests/engine/clipboard/figma/',
+    source: 'packages/core/src/clipboard.ts'
+  },
+  {
+    from: 'tests/engine/editor/clipboard/html',
+    to: 'tests/engine/clipboard/figma/',
+    source: 'packages/core/src/clipboard.ts'
+  },
+  {
+    from: 'tests/engine/editor/clipboard/fixture-roundtrip',
+    to: 'tests/engine/clipboard/fixtures/',
+    source: 'packages/core/src/clipboard.ts'
+  },
+  {
+    from: 'tests/engine/editor/clipboard/text-outlines',
+    to: 'tests/engine/text/opentype/',
+    source: 'packages/core/src/text/opentype.ts'
+  },
+  {
+    from: 'tests/engine/vector/basic',
+    to: 'tests/engine/vector/blob/, tests/engine/vector/normalize.test.ts, tests/engine/vector/validate.test.ts, or tests/engine/vector/bounds.test.ts',
+    source: 'the vector module under test'
   }
 ]
 

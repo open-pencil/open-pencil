@@ -292,7 +292,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
   }
   if (node.layoutPositioning === 'ABSOLUTE') nc.stackPositioning = 'ABSOLUTE'
   if (node.layoutGrow > 0) nc.stackChildPrimaryGrow = node.layoutGrow
-  if (node.type !== 'TEXT' && node.layoutAlignSelf !== 'AUTO') {
+  if (node.layoutAlignSelf !== 'AUTO') {
     nc.stackChildAlignSelf = node.layoutAlignSelf
   }
 }
