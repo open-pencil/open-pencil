@@ -208,6 +208,25 @@ const strictTestFilePlacement = createFileRule('open-pencil/strict-test-file-pla
   return 'Tests must live under tests/e2e/** (*.spec.ts), tests/engine/** (*.test.ts), or tests/helpers/**.'
 })
 
+const noLegacyEngineTestDomainPaths = createFileRule(
+  'open-pencil/no-legacy-engine-test-domain-paths',
+  (sourceRel) => {
+    if (sourceRel.startsWith('tests/engine/fig/')) {
+      return 'Move .fig import/export tests under tests/engine/io/fig/** to mirror packages/core/src/io/formats/fig/**.'
+    }
+    if (sourceRel.startsWith('tests/engine/svg/')) {
+      return 'Move SVG import/export tests under tests/engine/io/svg/** to mirror packages/core/src/io/formats/svg/**.'
+    }
+    if (sourceRel.startsWith('tests/engine/fonts/')) {
+      return 'Move font tests under tests/engine/text/fonts/** to mirror packages/core/src/text/fonts.ts.'
+    }
+    if (sourceRel.startsWith('tests/engine/editor/clipboard/derived-text')) {
+      return 'Move derived text data tests under tests/engine/text/derived-text/**.'
+    }
+    return null
+  }
+)
+
 const noEngineOnlyAssertionsInE2E = createImportRule(
   'open-pencil/no-engine-only-assertions-in-e2e',
   (sourceRel, specifier, resolved) => {
@@ -398,6 +417,7 @@ export const openPencilArchitecturePlugin = {
   ruleDefinitions: [
     preferDomainFoldersOverFilenamePrefixes,
     strictTestFilePlacement,
+    noLegacyEngineTestDomainPaths,
     noEngineOnlyAssertionsInE2E,
     noE2EImportsInEngineTests,
     noRootMarkdownClutter,
