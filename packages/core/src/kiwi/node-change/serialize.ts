@@ -1,6 +1,6 @@
 import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text-data'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
-import { getGlyphOutlineCommandsSync } from '#core/text/opentype'
+import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
 import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
 export {
   buildFigKiwi,
@@ -73,7 +73,8 @@ function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
 
 function buildDerivedTextData(
   node: SceneNode,
-  digestMap: Map<string, Uint8Array>
+  digestMap: Map<string, Uint8Array>,
+  blobs: Uint8Array[]
 ): NodeChange['derivedTextData'] {
   const fontMeta: NonNullable<NodeChange['derivedTextData']>['fontMetaData'] = []
   const seen = new Set<string>()
@@ -103,17 +104,16 @@ function buildDerivedTextData(
   }
 
   const style = weightToStyle(node.fontWeight, node.italic)
-  const glyphCommandLists =
-    getGlyphOutlineCommandsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
+  const glyphMetrics = getGlyphOutlineMetricsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
   const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
   const glyphAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
 
-  const glyphs = glyphCommandLists.map((commands, index) => ({
-    commands,
-    position: { x: index * glyphAdvance, y: lineHeight },
+  const glyphs = glyphMetrics.map((glyph, index) => ({
+    commandsBlob: blobs.push(glyph.commandsBlob) - 1,
+    position: { x: glyph.x || index * glyphAdvance, y: lineHeight },
     fontSize: node.fontSize,
     firstCharacter: index,
-    advance: glyphAdvance,
+    advance: glyph.advance || glyphAdvance,
     rotation: 0
   }))
 
@@ -233,7 +233,6 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
 }
 
 function resolveTextAutoResize(node: SceneNode, graph: SceneGraph): SceneNode['textAutoResize'] {
-  if (node.textAutoResize === 'NONE') return 'NONE'
   const parent = node.parentId ? graph.getNode(node.parentId) : undefined
   if (
     parent &&
@@ -241,7 +240,7 @@ function resolveTextAutoResize(node: SceneNode, graph: SceneGraph): SceneNode['t
     parent.layoutMode !== 'GRID' &&
     node.layoutPositioning !== 'ABSOLUTE'
   ) {
-    return 'NONE'
+    return 'HEIGHT'
   }
   return node.textAutoResize
 }
@@ -250,7 +249,8 @@ function serializeTextProps(
   node: SceneNode,
   nc: KiwiNodeChange,
   graph: SceneGraph,
-  fontDigestMap?: Map<string, Uint8Array>
+  fontDigestMap: Map<string, Uint8Array> | undefined,
+  blobs: Uint8Array[]
 ): void {
   upsertPluginData(node, TEXT_DIRECTION_PLUGIN_KEY, node.textDirection)
   nc.fontSize = node.fontSize
@@ -264,11 +264,8 @@ function serializeTextProps(
   if (autoResize !== 'NONE') nc.textAutoResize = autoResize
   nc.textAlignHorizontal = node.textAlignHorizontal
   nc.textUserLayoutVersion = 4
-  if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap)
-  // Figma needs explicit lineHeight to compute text bounding boxes.
-  // Without it (and without baselines/glyphs data), text gets 0 height.
-  const lh = node.lineHeight != null ? node.lineHeight : Math.ceil(node.fontSize * 1.2)
-  nc.lineHeight = { value: lh, units: 'PIXELS' }
+  if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap, blobs)
+  if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
   if (node.letterSpacing !== 0) nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
   if (node.textDecoration !== 'NONE') {
     nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
@@ -294,7 +291,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
   }
   if (node.layoutPositioning === 'ABSOLUTE') nc.stackPositioning = 'ABSOLUTE'
   if (node.layoutGrow > 0) nc.stackChildPrimaryGrow = node.layoutGrow
-  if (node.layoutAlignSelf !== 'AUTO') {
+  if (node.type !== 'TEXT' && node.layoutAlignSelf !== 'AUTO') {
     nc.stackChildAlignSelf = node.layoutAlignSelf
   }
 }

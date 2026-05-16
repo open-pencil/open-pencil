@@ -33,6 +33,7 @@ describe('clipboard derived text export', () => {
     })
 
     const fontDigestMap = await buildFontDigestMap(graph)
+    const blobs: Uint8Array[] = []
     const derived = await buildDerivedTextDataV4(text, fontDigestMap, {
       lineHeight: 20,
       lineAscent: 15,
@@ -46,7 +47,7 @@ describe('clipboard derived text export', () => {
         { firstCharacter: 4, x: 32, y: 16, advance: 10 }
       ],
       logicalIndexToCharacterOffsetMap: [0, 8, 16, 24, 32, 42]
-    })
+    }, blobs)
 
     const derivedTextData = expectDefined(derived, 'derived text data')
     const firstGlyph = expectDefined(derivedTextData.glyphs[0], 'first glyph')
@@ -63,7 +64,8 @@ describe('clipboard derived text export', () => {
     expect(line.directionality).toBe('LTR')
     expect(derivedTextData.truncationStartIndex).toBe(-1)
     expect(derivedTextData.truncatedHeight).toBe(-1)
-    expect(firstGlyph.commands.length).toBeGreaterThan(0)
+    expect(firstGlyph.commandsBlob).toBe(0)
+    expect(blobs[0].length).toBeGreaterThan(0)
     expect(firstGlyph.position.x).toBe(0)
     expect(lastGlyph.position.x).toBe(32)
     expect(baseline.lineHeight).toBe(20)
@@ -90,9 +92,12 @@ describe('clipboard derived text export', () => {
     })
 
     const fontDigestMap = await buildFontDigestMap(graph)
-    const derived = expectDefined(await buildDerivedTextDataV4(text, fontDigestMap), 'derived text')
+    const blobs: Uint8Array[] = []
+    const derived = expectDefined(await buildDerivedTextDataV4(text, fontDigestMap, null, blobs), 'derived text')
 
     expect(derived.fontMetaData[0].key.style).toBe('Semi Bold')
+    expect(derived.glyphs[0].commandsBlob).toBe(0)
+    expect(blobs[0].length).toBeGreaterThan(0)
     expect(derived.glyphs[1].position.x).toBeGreaterThan(0)
     expect(derived.glyphs[1].advance).toBeGreaterThan(0)
     expect(derived.logicalIndexToCharacterOffsetMap[1]).toBeGreaterThan(0)

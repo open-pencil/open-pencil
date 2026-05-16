@@ -23,7 +23,8 @@ interface SceneNodeToKiwiContext {
     node: SceneNode,
     nc: KiwiNodeChange,
     graph: SceneGraph,
-    fontDigestMap?: Map<string, Uint8Array>
+    fontDigestMap: Map<string, Uint8Array> | undefined,
+    blobs: Uint8Array[]
   ) => void
   serializeLayoutProps: (node: SceneNode, nc: KiwiNodeChange) => void
   serializeGeometry: (node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]) => void
@@ -128,7 +129,7 @@ function applyNodeVisualProps(
   }
 
   if (node.type === 'TEXT') {
-    context.serializeTextProps(node, nc, context.graph, context.fontDigestMap)
+    context.serializeTextProps(node, nc, context.graph, context.fontDigestMap, context.blobs)
   }
 
   nc.frameMaskDisabled = !node.clipsContent

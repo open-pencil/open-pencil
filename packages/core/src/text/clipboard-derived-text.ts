@@ -22,7 +22,8 @@ export interface ShapedClipboardText {
 export async function buildDerivedTextDataV4(
   node: SceneNode,
   digestMap: Map<string, Uint8Array>,
-  shaped?: ShapedClipboardText | null
+  shaped?: ShapedClipboardText | null,
+  blobs?: Uint8Array[]
 ): Promise<NodeChange['derivedTextData']> {
   const style = weightToStyle(node.fontWeight, node.italic)
   const normalizedFamily = normalizeFontFamily(node.fontFamily)
@@ -35,8 +36,9 @@ export async function buildDerivedTextDataV4(
     const shapedGlyph = shaped?.glyphs[index]
     const fallbackX = glyph.x || index * fallbackAdvance
     const fallbackGlyphAdvance = glyph.advance || fallbackAdvance
+    const commandsBlob = blobs ? blobs.push(glyph.commandsBlob) - 1 : undefined
     return {
-      commands: glyph.commands,
+      commandsBlob,
       position: {
         x: shapedGlyph?.x ?? fallbackX,
         y: shapedGlyph?.y ?? shaped?.baseline ?? lineHeightFallback

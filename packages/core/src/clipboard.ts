@@ -335,7 +335,7 @@ export async function buildFigmaClipboardHTML(
       const source = textNodeQueue.shift()
       if (!source) return
       change.textUserLayoutVersion = 4
-      change.derivedTextData = await buildDerivedTextDataV4(source, fontDigestMap)
+      change.derivedTextData = await buildDerivedTextDataV4(source, fontDigestMap, null, blobs)
     })
   )
 

@@ -158,6 +158,49 @@ describe('text node export', () => {
     expect((fontMetaData[0].key as Record<string, unknown>).style).toBe('Semi Bold')
   })
 
+  test('auto-layout text children export height auto-resize for Figma rendering', async () => {
+    await initCodec()
+
+    const { unzipSync, inflateSync } = await import('fflate')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import('#core/kiwi/kiwi-schema')
+    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, {
+      name: 'Card',
+      layoutMode: 'VERTICAL',
+      width: 280,
+      height: 160
+    })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Body',
+      text: 'Track your key metrics and performance indicators in real time.',
+      width: 240,
+      height: 36,
+      fontFamily: 'Inter',
+      fontSize: 13,
+      fontWeight: 400,
+      textAutoResize: 'NONE'
+    })
+
+    const exported = await exportFigFile(graph)
+    const zip = unzipSync(new Uint8Array(exported))
+    const chunks = parseFigKiwiChunks(zip['canvas.fig'] ?? zip['canvas'])
+    const schemaBytes = inflateSync(chunks?.[0] ?? new Uint8Array())
+    const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(schema) as {
+      decodeMessage(data: Uint8Array): Record<string, unknown>
+    }
+    const message = compiled.decodeMessage(inflateSync(chunks?.[1] ?? new Uint8Array()))
+    const nodeChanges = message.nodeChanges as Array<Record<string, unknown>>
+    const textNc = expectDefined(nodeChanges.find((nc) => nc.type === 'TEXT'), 'text node change')
+
+    expect(textNc.textAutoResize).toBe('HEIGHT')
+    expect(textNc.lineHeight).toBeUndefined()
+    expect(textNc.stackChildAlignSelf).toBeUndefined()
+  })
+
   test('style runs produce multiple fontMetaData entries', async () => {
     await initCodec()
 

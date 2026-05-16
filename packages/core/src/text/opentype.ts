@@ -80,24 +80,58 @@ export function measureTextWithOpenType(
   return { width: Math.ceil(singleLineWidth), height: lineH }
 }
 
-function commandsToFigmaNumbers(commands: OutlineCommand[]): Array<string | number> {
-  const result: Array<string | number> = []
-  for (const command of commands) {
-    result.push(command.type)
-    if (command.x1 !== undefined) result.push(command.x1)
-    if (command.y1 !== undefined) result.push(command.y1)
-    if (command.x2 !== undefined) result.push(command.x2)
-    if (command.y2 !== undefined) result.push(command.y2)
-    if (command.x !== undefined) result.push(command.x)
-    if (command.y !== undefined) result.push(command.y)
-  }
-  return result
-}
-
 export interface GlyphOutlineMetrics {
-  commands: Array<string | number>
+  commandsBlob: Uint8Array
   x: number
   advance: number
+}
+
+const CMD_CLOSE = 0
+const CMD_MOVE_TO = 1
+const CMD_LINE_TO = 2
+const CMD_CUBIC_TO = 4
+
+function commandsToBlob(commands: OutlineCommand[], fontSize: number): Uint8Array {
+  const bytes: number[] = []
+  const pushFloat = (value: number | undefined) => {
+    const buf = new ArrayBuffer(4)
+    new DataView(buf).setFloat32(0, (value ?? 0) / fontSize, true)
+    bytes.push(...new Uint8Array(buf))
+  }
+
+  for (const command of commands) {
+    switch (command.type) {
+      case 'M':
+        bytes.push(CMD_MOVE_TO)
+        pushFloat(command.x)
+        pushFloat(command.y)
+        break
+      case 'L':
+        bytes.push(CMD_LINE_TO)
+        pushFloat(command.x)
+        pushFloat(command.y)
+        break
+      case 'C':
+        bytes.push(CMD_CUBIC_TO)
+        pushFloat(command.x1)
+        pushFloat(command.y1)
+        pushFloat(command.x2)
+        pushFloat(command.y2)
+        pushFloat(command.x)
+        pushFloat(command.y)
+        break
+      case 'Q':
+        bytes.push(CMD_LINE_TO)
+        pushFloat(command.x)
+        pushFloat(command.y)
+        break
+      case 'Z':
+        bytes.push(CMD_CLOSE)
+        break
+    }
+  }
+
+  return new Uint8Array(bytes)
 }
 
 export function getGlyphOutlineMetricsSync(
@@ -113,21 +147,12 @@ export function getGlyphOutlineMetricsSync(
   let x = 0
   const scale = fontSize / font.unitsPerEm
   return glyphs.map((glyph) => {
-    const commands = commandsToFigmaNumbers(glyph.getPath(0, 0, fontSize).commands)
+    const commandsBlob = commandsToBlob(glyph.getPath(0, 0, fontSize).commands, fontSize)
     const advance = (glyph.advanceWidth ?? 0) * scale
-    const metrics = { commands, x, advance }
+    const metrics = { commandsBlob, x, advance }
     x += advance
     return metrics
   })
-}
-
-export function getGlyphOutlineCommandsSync(
-  family: string,
-  style: string,
-  text: string,
-  fontSize: number
-): Array<Array<string | number>> | null {
-  return getGlyphOutlineMetricsSync(family, style, text, fontSize)?.map((glyph) => glyph.commands) ?? null
 }
 
 export async function probeGlyphOutlineCommands(

@@ -331,7 +331,7 @@ export interface NodeChange {
       lineAscent: number
     }>
     glyphs?: Array<{
-      commands: Array<string | number>
+      commandsBlob?: number
       position: Vector
       fontSize: number
       firstCharacter: number
