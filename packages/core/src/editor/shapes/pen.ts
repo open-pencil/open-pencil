@@ -1,3 +1,4 @@
+import { BLACK } from '#core/constants'
 import type { EditorContext } from '#core/editor/types'
 import type { SceneNode, VectorNetwork, VectorRegion, VectorSegment } from '#core/scene-graph'
 import type { Vector } from '#core/types'
@@ -19,7 +20,7 @@ type CreateShape = (
 ) => string
 
 const PEN_DEFAULT_STROKE: SceneNode['strokes'][number] = {
-  color: { r: 0, g: 0, b: 0, a: 1 },
+  color: BLACK,
   weight: 2,
   opacity: 1,
   visible: true,

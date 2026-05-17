@@ -533,6 +533,44 @@ const noMathRandom = {
   }
 }
 
+function isNumericLiteral(node, value) {
+  return node?.type === 'Literal' && node.value === value
+}
+
+function colorObjectLiteral(node, color) {
+  if (node?.type !== 'ObjectExpression') return false
+  const props = new Map()
+  for (const prop of node.properties ?? []) {
+    if (prop.type !== 'Property') return false
+    const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value
+    props.set(key, prop.value)
+  }
+  return Object.entries(color).every(([key, value]) => isNumericLiteral(props.get(key), value))
+}
+
+const noHardcodedColorConstants = {
+  meta: {
+    docs: {
+      description: 'Use named color constants instead of inline Color object literals for shared colors'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (file.includes('/tests/') || file.endsWith('/packages/core/src/constants.ts')) return {}
+
+    return {
+      ObjectExpression(node) {
+        if (colorObjectLiteral(node, { r: 0, g: 0, b: 0, a: 1 })) {
+          context.report({ node, message: 'Use BLACK from constants instead of an inline black Color literal.' })
+        }
+        if (colorObjectLiteral(node, { r: 0, g: 0, b: 0, a: 0 })) {
+          context.report({ node, message: 'Use TRANSPARENT from constants instead of an inline transparent Color literal.' })
+        }
+      }
+    }
+  }
+}
+
 const noHandRolledColor = {
   meta: {
     docs: {
@@ -1553,6 +1591,7 @@ const plugin = {
     'no-document-query-selector-in-vue': noDocumentQuerySelectorInVue,
     'no-direct-selection-tool-state-mutation': noDirectSelectionToolStateMutation,
     'no-math-random': noMathRandom,
+    'no-hardcoded-color-constants': noHardcodedColorConstants,
     'no-hand-rolled-color': noHandRolledColor,
     'no-raw-console-format': noRawConsoleFormat,
     'no-silent-catch': noSilentCatch,

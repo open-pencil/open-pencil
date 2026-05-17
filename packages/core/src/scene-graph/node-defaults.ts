@@ -1,4 +1,4 @@
-import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
+import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
 
 import type { NodeType, SceneNode } from './types'
 
@@ -21,7 +21,7 @@ export function createDefaultNode(
     figmaDerivedLayout: null,
     fills:
       type === 'TEXT'
-        ? [{ type: 'SOLID' as const, color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+        ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }]
         : [],
     strokes: [],
     effects: [],

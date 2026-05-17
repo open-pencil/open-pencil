@@ -1,7 +1,9 @@
+import { BLACK } from '@open-pencil/core/constants'
 import type { Color, Fill, GradientStop, Stroke } from '@open-pencil/core/scene-graph'
 
+export { BLACK }
+
 export const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }
-export const BLACK: Color = { r: 0, g: 0, b: 0, a: 1 }
 export const GRAY_50: Color = { r: 0.98, g: 0.98, b: 0.98, a: 1 }
 export const GRAY_100: Color = { r: 0.96, g: 0.96, b: 0.97, a: 1 }
 export const GRAY_200: Color = { r: 0.9, g: 0.9, b: 0.92, a: 1 }

@@ -1,3 +1,4 @@
+import { TRANSPARENT } from '#core/constants'
 import { resolvePasteTarget } from '#core/editor/clipboard/paste-target'
 import type { EditorContext } from '#core/editor/types'
 import { computeImageHash } from '#core/figma-api'
@@ -44,7 +45,7 @@ export function createClipboardImageActions(ctx: EditorContext) {
       type: 'IMAGE',
       imageHash: hash,
       imageScaleMode: 'FILL',
-      color: { r: 0, g: 0, b: 0, a: 0 },
+      color: TRANSPARENT,
       opacity: 1,
       visible: true
     }

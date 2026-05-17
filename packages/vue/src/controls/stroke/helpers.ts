@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 
+import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
 
@@ -16,7 +17,7 @@ export const SIDE_OPTIONS: { value: StrokeSides; label: string }[] = [
 
 export const BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const
 export const DEFAULT_STROKE: Stroke = {
-  color: { r: 0, g: 0, b: 0, a: 1 },
+  color: BLACK,
   weight: 1,
   opacity: 1,
   visible: true,

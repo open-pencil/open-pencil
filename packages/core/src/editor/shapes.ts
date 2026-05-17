@@ -1,4 +1,5 @@
 import {
+  BLACK,
   DEFAULT_FRAME_FILL,
   DEFAULT_SHAPE_FILL,
   SECTION_DEFAULT_FILL,
@@ -13,7 +14,7 @@ export type { PenDragOptions } from './shapes/pen'
 
 const BLACK_FILL: Fill = {
   type: 'SOLID',
-  color: { r: 0, g: 0, b: 0, a: 1 },
+  color: BLACK,
   opacity: 1,
   visible: true
 }

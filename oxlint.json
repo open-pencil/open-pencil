@@ -122,6 +122,7 @@
     "open-pencil/no-document-query-selector-in-vue": "error",
     "open-pencil/no-direct-selection-tool-state-mutation": "error",
     "open-pencil/no-math-random": "error",
+    "open-pencil/no-hardcoded-color-constants": "error",
     "open-pencil/no-hand-rolled-color": "error",
     "open-pencil/no-raw-console-format": "off",
     "open-pencil/no-silent-catch": "error",

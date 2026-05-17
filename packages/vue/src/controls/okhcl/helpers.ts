@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 
+import { BLACK } from '@open-pencil/core/constants'
 import {
   getFillOkHCL,
   getStrokeOkHCL,
@@ -31,14 +32,14 @@ export function getStrokeOkHCLColor(node: SceneNode | null, index: number): OkHC
 function fallbackFillOkHCL(node: SceneNode, index: number) {
   return (
     getFillOkHCLColor(node, index) ??
-    rgbaToOkHCL(node.fills[index]?.color ?? { r: 0, g: 0, b: 0, a: 1 })
+    rgbaToOkHCL(node.fills[index]?.color ?? BLACK)
   )
 }
 
 function fallbackStrokeOkHCL(node: SceneNode, index: number) {
   return (
     getStrokeOkHCLColor(node, index) ??
-    rgbaToOkHCL(node.strokes[index]?.color ?? { r: 0, g: 0, b: 0, a: 1 })
+    rgbaToOkHCL(node.strokes[index]?.color ?? BLACK)
   )
 }
 

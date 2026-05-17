@@ -1,4 +1,5 @@
 import { parseColor } from '#core/color'
+import { BLACK } from '#core/constants'
 import { generateId } from '#core/scene-graph'
 import type {
   Color,
@@ -136,7 +137,7 @@ function penValueToSceneValue(raw: string | number, type: VariableType): Variabl
 }
 
 function defaultForType(type: VariableType): VariableValue {
-  if (type === 'COLOR') return { r: 0, g: 0, b: 0, a: 1 }
+  if (type === 'COLOR') return { ...BLACK }
   if (type === 'FLOAT') return 0
   if (type === 'BOOLEAN') return false
   return ''
@@ -252,7 +253,7 @@ export function buildVarContext(
       if (val === undefined) return parseColor(ref)
       if (typeof val === 'object' && 'r' in val) return val
       if (typeof val === 'string') return parseColor(val)
-      return { r: 0, g: 0, b: 0, a: 1 }
+      return { ...BLACK }
     },
     resolveNumber(ref: string): number {
       const val = resolveVal(ref)

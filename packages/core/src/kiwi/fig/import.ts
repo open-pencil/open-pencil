@@ -1,3 +1,4 @@
+import { BLACK } from '#core/constants'
 import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '#core/kiwi/binary/codec'
 import { populateAndApplyOverrides } from '#core/kiwi/instance-overrides'
 import type { InstanceNodeChange } from '#core/kiwi/instance-overrides'
@@ -164,7 +165,7 @@ function resolveVariableValue(
 function resolveDefaultValue(type: VariableType): VariableValue {
   if (type === 'BOOLEAN') return false
   if (type === 'STRING') return ''
-  if (type === 'COLOR') return { r: 0, g: 0, b: 0, a: 1 }
+  if (type === 'COLOR') return { ...BLACK }
   return 0
 }
 

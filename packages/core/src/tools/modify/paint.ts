@@ -1,4 +1,5 @@
 import { parseColor } from '#core/color'
+import { BLACK } from '#core/constants'
 import { defineTool } from '#core/tools/schema'
 import type { Matrix } from '#core/types'
 
@@ -116,7 +117,7 @@ export const setImageFill = defineTool({
     node.fills = [
       {
         type: 'IMAGE',
-        color: { r: 0, g: 0, b: 0, a: 1 },
+        color: BLACK,
         opacity: 1,
         visible: true,
         imageHash: image.hash,

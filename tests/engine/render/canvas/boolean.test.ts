@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { initCanvasKit } from '#cli/headless'
+import { BLACK } from '#core/constants'
 import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -144,8 +145,8 @@ describe('boolean operation paths', () => {
     expect(firstNode).toBeDefined()
     expect(secondNode).toBeDefined()
     if (!firstNode || !secondNode) return
-    firstNode.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, weight: 12, align: 'CENTER' }]
-    secondNode.strokes = [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true, weight: 12, align: 'CENTER' }]
+    firstNode.strokes = [{ type: 'SOLID', color: BLACK, opacity: 1, visible: true, weight: 12, align: 'CENTER' }]
+    secondNode.strokes = [{ type: 'SOLID', color: BLACK, opacity: 1, visible: true, weight: 12, align: 'CENTER' }]
 
     const booleanNode = api.union([first, second], api.currentPage)
     const node = api.graph.getNode(booleanNode.id)

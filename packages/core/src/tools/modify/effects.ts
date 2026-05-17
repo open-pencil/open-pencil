@@ -1,5 +1,5 @@
 import { parseColor } from '#core/color'
-import { DEFAULT_SHADOW_COLOR } from '#core/constants'
+import { DEFAULT_SHADOW_COLOR, TRANSPARENT } from '#core/constants'
 import type { Effect } from '#core/scene-graph'
 import { defineTool, nodeNotFound } from '#core/tools/schema'
 
@@ -28,7 +28,7 @@ export const setEffects = defineTool({
 
     const isBlur = args.type === 'FOREGROUND_BLUR' || args.type === 'BACKGROUND_BLUR'
     let color = { ...DEFAULT_SHADOW_COLOR }
-    if (isBlur) color = { r: 0, g: 0, b: 0, a: 0 }
+    if (isBlur) color = { ...TRANSPARENT }
     else if (args.color) color = parseColor(args.color)
     const effect: Effect = {
       type: args.type as Effect['type'],
