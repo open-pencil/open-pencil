@@ -13,12 +13,10 @@ type CanvasMenuCommand =
   | 'selection.instanceActions'
   | 'selection.ungroupWhenGroup'
   | 'selection.moveToPageWhenAvailable'
-  | 'selection.booleanOperationsWhenAvailable'
 
 type CanvasMenuGroup = readonly CanvasMenuCommand[]
 
 type CanvasMenuTranslations = {
-  booleanOperations: string
   moveToPage: string
 }
 
@@ -34,7 +32,6 @@ const CANVAS_MENU_GROUPS = [
   ['selection.duplicate', 'selection.delete'],
   ['selection.moveToPageWhenAvailable', 'selection.bringToFront', 'selection.sendToBack'],
   ['selection.group', 'selection.frameSelection', 'selection.ungroupWhenGroup', 'selection.wrapInAutoLayout'],
-  ['selection.booleanOperationsWhenAvailable'],
   ['selection.componentAction', 'selection.componentSetAction', 'selection.instanceActions'],
   ['selection.toggleVisibility', 'selection.toggleLock'],
   ['selection.flipHorizontal', 'selection.flipVertical']
@@ -51,17 +48,6 @@ function moveToPageItem({ otherPages, moveSelectionToPage, selection, t }: Canva
     action: () => moveSelectionToPage(page.id)
   }))
   return [{ label: t.moveToPage, sub } satisfies MenuActionNode]
-}
-
-function booleanOperationItems({ commandMenuItem, selection, t }: CanvasMenuOptions): MenuEntry[] {
-  if (!selection.hasSelection.value) return []
-  const commands: EditorCommandId[] = [
-    'selection.booleanUnion',
-    'selection.booleanSubtract',
-    'selection.booleanIntersect',
-    'selection.booleanExclude'
-  ]
-  return [{ label: t.booleanOperations, sub: commands.map((command) => commandMenuItem(command)) }]
 }
 
 function componentItems({ commandMenuItem, selection }: CanvasMenuOptions): MenuEntry[] {
@@ -88,8 +74,6 @@ function conditionalCommand(command: CanvasMenuCommand, options: CanvasMenuOptio
   switch (command) {
     case 'selection.moveToPageWhenAvailable':
       return moveToPageItem(options)
-    case 'selection.booleanOperationsWhenAvailable':
-      return booleanOperationItems(options)
     case 'selection.componentAction':
       return componentItems(options)
     case 'selection.componentSetAction':

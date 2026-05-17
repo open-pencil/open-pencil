@@ -24,7 +24,7 @@ function options(overrides: Partial<CanvasMenuOptions> = {}): CanvasMenuOptions 
     otherPages: [],
     moveSelectionToPage: (pageId: string) => pageId,
     selection: selection(),
-    t: { booleanOperations: 'Boolean operations', moveToPage: 'Move to page' },
+    t: { moveToPage: 'Move to page' },
     ...overrides
   } as CanvasMenuOptions
 }
@@ -45,8 +45,6 @@ describe('buildCanvasContextMenu', () => {
       'selection.group',
       'selection.frameSelection',
       'selection.wrapInAutoLayout',
-      '---',
-      'Boolean operations',
       '---',
       'selection.createComponent',
       '---',
