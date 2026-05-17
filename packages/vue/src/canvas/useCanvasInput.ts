@@ -49,7 +49,6 @@ export function useCanvasInput(
     previous: number
   } | null>(null)
   const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
-  const panPreviewOffset = ref({ x: 0, y: 0 })
   const spaceHeld = useSpaceHeld()
   const { recordClick, getClickCount } = createClickCounter()
 
@@ -65,43 +64,6 @@ export function useCanvasInput(
     drag.value = d
   }
 
-  function panPreviewCanvases() {
-    return canvasRef.value?.parentElement?.querySelectorAll<HTMLCanvasElement>('canvas') ?? []
-  }
-
-  function applyPanPreview(dx: number, dy: number) {
-    panPreviewOffset.value = { x: dx, y: dy }
-    for (const canvas of panPreviewCanvases()) {
-      canvas.style.transform = `translate3d(${dx}px, ${dy}px, 0)`
-      canvas.style.transformOrigin = '0 0'
-      canvas.style.willChange = 'transform'
-    }
-  }
-
-  function clearPanPreview() {
-    panPreviewOffset.value = { x: 0, y: 0 }
-    for (const canvas of panPreviewCanvases()) {
-      canvas.style.transform = ''
-      canvas.style.transformOrigin = ''
-      canvas.style.willChange = ''
-    }
-  }
-
-  function updatePanPreview(d: DragState, e: MouseEvent): boolean {
-    if (d.type !== 'pan') return false
-    applyPanPreview(e.clientX - d.startScreenX, e.clientY - d.startScreenY)
-    return true
-  }
-
-  function commitPanPreview(d: DragState): boolean {
-    if (d.type !== 'pan') return false
-    editor.state.panX = d.startPanX + panPreviewOffset.value.x
-    editor.state.panY = d.startPanY + panPreviewOffset.value.y
-    editor.requestRepaint()
-    requestAnimationFrame(clearPanPreview)
-    return true
-  }
-
   const { handleTextEditClick, onDblClick: onTextDblClick } = createTextEditInput({
     editor,
     getCoords,
@@ -115,6 +77,7 @@ export function useCanvasInput(
 
   const {
     tryStartRotation,
+    handlePanMove,
     handleRotateMove,
     handleTextSelectMove,
     handleMarqueeMove
@@ -235,7 +198,7 @@ export function useCanvasInput(
     const d = drag.value
 
     if (d.type === 'pan') {
-      updatePanPreview(d, e)
+      handlePanMove(d, e)
       return
     }
 
@@ -286,12 +249,6 @@ export function useCanvasInput(
     const d = drag.value
 
     if (handleNodeEditMouseUp(drag, editor)) return
-
-    if (commitPanPreview(d)) {
-      drag.value = null
-      cursorOverride.value = null
-      return
-    }
 
     if (d.type === 'move') handleMoveUp(d, editor)
     else if (d.type === 'text-select') {
