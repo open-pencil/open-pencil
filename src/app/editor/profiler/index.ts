@@ -20,7 +20,10 @@ export function createProfilerActions(editor: Editor) {
   }
 
   function toggleProfiler() {
-    editor.renderer?.profiler.toggle()
+    const visible = !(editor.renderer?.profiler.hudVisible ?? false)
+    for (const renderer of editor.canvasRenderers) {
+      renderer.profiler.setVisible(visible)
+    }
     editor.requestRepaint()
   }
 

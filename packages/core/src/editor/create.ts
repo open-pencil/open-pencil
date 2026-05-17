@@ -206,6 +206,9 @@ export function createEditor(options?: EditorOptions) {
     get renderer() {
       return _renderer
     },
+    get canvasRenderers() {
+      return [..._renderers]
+    },
     get textEditor() {
       return _textEditor
     },

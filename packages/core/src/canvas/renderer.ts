@@ -416,7 +416,8 @@ export class SkiaRenderer {
       canvasY,
       this.zoom,
       this.pageId ?? graph.rootId,
-      this.sectionTitleFont
+      this.sectionTitleFont,
+      this.labelCache
     )
   }
 
@@ -427,7 +428,8 @@ export class SkiaRenderer {
       canvasY,
       this.zoom,
       this.pageId ?? graph.rootId,
-      this.componentLabelFont
+      this.componentLabelFont,
+      this.labelCache
     )
   }
 

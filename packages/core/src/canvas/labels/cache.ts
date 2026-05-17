@@ -98,6 +98,14 @@ export class LabelCache {
     }))
   }
 
+  getAllSections(): readonly CachedSection[] {
+    return this.sections
+  }
+
+  getAllComponents(): readonly CachedComponent[] {
+    return this.components
+  }
+
   private rebuild(graph: SceneGraph, pageId: string | null): void {
     this.sections = []
     this.components = []

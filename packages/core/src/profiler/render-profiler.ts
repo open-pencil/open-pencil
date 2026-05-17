@@ -33,11 +33,15 @@ export class RenderProfiler {
     this.hud = new HudController(ck)
   }
 
-  toggle(): void {
-    this.hudVisible = !this.hudVisible
-    this.enabled = this.hudVisible
+  setVisible(visible: boolean): void {
+    this.hudVisible = visible
+    this.enabled = visible
     this.phases.enabled = this.enabled
     this.syncInstrumentation()
+  }
+
+  toggle(): void {
+    this.setVisible(!this.hudVisible)
   }
 
   beginFrame(): void {
