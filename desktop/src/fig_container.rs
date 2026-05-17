@@ -1,6 +1,10 @@
 use serde::Deserialize;
 use std::io::{Cursor, Write};
 
+fn is_safe_path(name: &str) -> bool {
+    !name.contains("..") && !name.starts_with('/') && !name.contains(':')
+}
+
 #[derive(Deserialize)]
 pub struct ImageEntry {
     name: String,
@@ -56,6 +60,9 @@ pub fn build_fig_file(
 
     if let Some(image_entries) = images {
         for entry in image_entries {
+            if !is_safe_path(&entry.name) {
+                return Err("Invalid image entry name: path traversal not allowed".to_string());
+            }
             zip.start_file(&entry.name, options)
                 .map_err(|e| e.to_string())?;
             zip.write_all(&entry.data).map_err(|e| e.to_string())?;
