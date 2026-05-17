@@ -65,7 +65,7 @@ test('double-clicking top-level text enters text edit mode', async ({ page }) =>
   await expect.poll(() => getEditingTextId(page), { timeout: 3000 }).toBe(textId)
 })
 
-test('double-click drill selects nested text before editing it', async ({ page }) => {
+test('double-click drill enters nested text edit mode', async ({ page }) => {
   await page.goto('/')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
@@ -77,7 +77,7 @@ test('double-click drill selects nested text before editing it', async ({ page }
 
   await canvas.dblclick(125, 125)
 
-  await expect.poll(() => getEditingTextId(page), { timeout: 1000 }).toBeNull()
+  await expect.poll(() => getEditingTextId(page), { timeout: 3000 }).toBe(ids.textId)
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -87,8 +87,4 @@ test('double-click drill selects nested text before editing it', async ({ page }
       })
     )
     .toEqual([ids.textId])
-
-  await page.waitForTimeout(600)
-  await canvas.dblclick(125, 125)
-  await expect.poll(() => getEditingTextId(page), { timeout: 3000 }).toBe(ids.textId)
 })
