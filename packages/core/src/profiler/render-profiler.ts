@@ -89,6 +89,18 @@ export class RenderProfiler {
     this.stats.scenePictureMissReason = reason
   }
 
+  setScenePictureDrawTime(ms: number): void {
+    this.stats.scenePictureDrawTime = ms
+  }
+
+  setScenePictureRecordTime(ms: number): void {
+    this.stats.scenePictureRecordTime = ms
+  }
+
+  setFlushTime(ms: number): void {
+    this.stats.flushTime = ms
+  }
+
   beginCapture(): void {
     this.capturing = true
     this.captureSession = createCaptureSession(now())

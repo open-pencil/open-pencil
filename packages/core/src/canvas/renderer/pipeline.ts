@@ -116,6 +116,14 @@ function canUseScenePicture(
   )
 }
 
+const now = typeof performance !== 'undefined' ? () => performance.now() : () => 0
+
+function measure<T>(fn: () => T): { value: T; duration: number } {
+  const start = now()
+  const value = fn()
+  return { value, duration: now() - start }
+}
+
 export function render(
   r: SkiaRenderer,
   graph: SceneGraph,
@@ -126,6 +134,9 @@ export function render(
 ): void {
   const p = r.profiler
   p.beginFrame()
+  p.setScenePictureDrawTime(0)
+  p.setScenePictureRecordTime(0)
+  p.setFlushTime(0)
 
   graph.clearAbsPosCache()
 
@@ -167,7 +178,11 @@ export function render(
     if (canUsePicture) {
       p.setScenePictureMode('hit')
       p.beginPhase('render:drawPicture')
-      if (r.scenePicture) canvas.drawPicture(r.scenePicture)
+      if (r.scenePicture) {
+        const picture = r.scenePicture
+        const { duration } = measure(() => canvas.drawPicture(picture))
+        p.setScenePictureDrawTime(duration)
+      }
       p.endPhase('render:drawPicture')
     } else if (hasVolatileOverlays) {
       p.setScenePictureMode('volatile', cacheMissReason)
@@ -181,7 +196,8 @@ export function render(
       r._nodeCount = 0
       r._culledCount = 0
       p.beginPhase('render:recordPicture')
-      recordScenePicture(r, canvas, graph, sceneVersion)
+      const { duration } = measure(() => recordScenePicture(r, canvas, graph, sceneVersion))
+      p.setScenePictureRecordTime(duration)
       p.endPhase('render:recordPicture')
     }
     p.endPhase('render:scene')
@@ -231,7 +247,8 @@ export function render(
   }
 
   p.beginPhase('render:flush')
-  r.surface.flush()
+  const { duration: flushDuration } = measure(() => r.surface.flush())
+  p.setFlushTime(flushDuration)
   p.endPhase('render:flush')
 
   p.setNodeCounts(r._nodeCount, r._culledCount)

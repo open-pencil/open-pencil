@@ -106,7 +106,7 @@ export class HudRenderer {
     ]
     const visiblePhases = phaseNames.filter((n) => (phases.get(n) ?? 0) > 0.01)
 
-    const statsRows = 3
+    const statsRows = 4
     const phaseRows = visiblePhases.length > 0 ? 1 + visiblePhases.length : 0
     const statsHeight = (statsRows + phaseRows) * LINE_HEIGHT
     const graphSection = hasGraph ? GRAPH_HEIGHT + PADDING + LINE_HEIGHT : 0
@@ -151,6 +151,13 @@ export class HudRenderer {
       this.hudFont
     )
     canvas.drawText(`Cache: ${cacheStatus}`, col2, y, this.textPaint, this.hudFont)
+    y += LINE_HEIGHT
+
+    const pictureLabel = stats.scenePictureMode === 'record' ? 'record' : 'picture'
+    const pictureTime =
+      stats.scenePictureMode === 'record' ? stats.scenePictureRecordTime : stats.scenePictureDrawTime
+    canvas.drawText(`${pictureLabel}: ${pictureTime.toFixed(1)}ms`, col1, y, this.textPaint, this.hudFont)
+    canvas.drawText(`flush: ${stats.flushTime.toFixed(1)}ms`, col2, y, this.textPaint, this.hudFont)
 
     if (visiblePhases.length > 0) {
       y += LINE_HEIGHT

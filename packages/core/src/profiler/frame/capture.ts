@@ -22,6 +22,11 @@ export interface FrameCapture {
   culledNodes: number
   drawCalls: number
   scenePictureCacheHit: boolean
+  scenePictureMode: 'hit' | 'record' | 'volatile' | 'none'
+  scenePictureMissReason: string
+  scenePictureDrawTimeMs: number
+  scenePictureRecordTimeMs: number
+  flushTimeMs: number
   rootProfiles: NodeProfile[]
 }
 

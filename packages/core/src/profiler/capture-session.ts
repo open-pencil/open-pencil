@@ -29,6 +29,11 @@ export function createFrameCapture(
     culledNodes: stats.culledNodes,
     drawCalls: stats.drawCalls,
     scenePictureCacheHit: stats.scenePictureCacheHit,
+    scenePictureMode: stats.scenePictureMode,
+    scenePictureMissReason: stats.scenePictureMissReason,
+    scenePictureDrawTimeMs: stats.scenePictureDrawTime,
+    scenePictureRecordTimeMs: stats.scenePictureRecordTime,
+    flushTimeMs: stats.flushTime,
     rootProfiles: session.stack.getRootProfiles()
   }
 }
