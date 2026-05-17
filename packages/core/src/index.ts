@@ -165,6 +165,7 @@ export {
 export {
   FONT_WEIGHT_NAMES,
   FontManager,
+  chooseLocalFontMatch,
   fontManager,
   styleToWeight,
   weightToFigmaStyle,

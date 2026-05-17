@@ -22,6 +22,44 @@ export interface DownloadedFontCache {
 
 type FindLocalFontOptions = { allowVariable?: boolean }
 
+type LocalFontMatch = Pick<FontInfo, 'family' | 'style'>
+
+export function chooseLocalFontMatch<T extends LocalFontMatch>(
+  fonts: T[],
+  family: string,
+  style?: string
+): T | undefined {
+  const families = [family]
+  const normalized = normalizeFontFamily(family)
+  if (normalized !== family) families.push(normalized)
+  const requested = parseFontStyle(style)
+
+  for (const f of families) {
+    const exact = style ? fonts.find((x) => x.family === f && x.style === style) : undefined
+    if (exact) return exact
+
+    const candidates = fonts.filter((x) => x.family === f)
+    const sameStyle = candidates.find((x) => {
+      const parsed = parseFontStyle(x.style)
+      return parsed.weight === requested.weight && parsed.italic === requested.italic
+    })
+    if (sameStyle) return sameStyle
+
+    const sameSlant = candidates.filter((x) => parseFontStyle(x.style).italic === requested.italic)
+    if (sameSlant.length > 0) {
+      return sameSlant.sort(
+        (a, b) =>
+          Math.abs(parseFontStyle(a.style).weight - requested.weight) -
+          Math.abs(parseFontStyle(b.style).weight - requested.weight)
+      )[0]
+    }
+
+    if (!style && candidates.length > 0) return candidates[0]
+  }
+
+  return undefined
+}
+
 const BUNDLED_FONTS: Record<string, string> = {
   'Inter|Regular': '/Inter-Regular.ttf',
   'Inter|Medium': '/Inter-Medium.ttf',
@@ -448,17 +486,7 @@ export class FontManager {
     if (!IS_BROWSER || !window.queryLocalFonts) return null
     try {
       const fonts = await window.queryLocalFonts()
-      const families = [family]
-      const normalized = normalizeFontFamily(family)
-      if (normalized !== family) families.push(normalized)
-
-      let match: (typeof fonts)[number] | undefined
-      for (const f of families) {
-        match = style ? fonts.find((x) => x.family === f && x.style === style) : undefined
-        match ??= fonts.find((x) => x.family === f)
-        if (match) break
-      }
-
+      const match = chooseLocalFontMatch(fonts, family, style)
       if (!match) return null
       const blob: Blob = await match.blob()
       const buffer = await blob.arrayBuffer()

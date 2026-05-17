@@ -3,6 +3,7 @@ import { describe, test, expect } from 'bun:test'
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import {
+  chooseLocalFontMatch,
   fontManager,
   isVariableFont,
   normalizeFontFamily,
@@ -90,6 +91,24 @@ function createRecordingProvider() {
   } as TypefaceFontProvider
   return { provider, registrations }
 }
+
+describe('chooseLocalFontMatch', () => {
+  const fonts = [
+    { family: 'Inter', style: 'Italic' },
+    { family: 'Inter', style: 'Regular' },
+    { family: 'Inter', style: 'Semi Bold' },
+    { family: 'Inter', style: 'Bold Italic' }
+  ]
+
+  test('prefers parsed weight and slant over first family match', () => {
+    expect(chooseLocalFontMatch(fonts, 'Inter', 'SemiBold')?.style).toBe('Semi Bold')
+    expect(chooseLocalFontMatch(fonts, 'Inter', 'Regular')?.style).toBe('Regular')
+  })
+
+  test('does not fall back from upright requests to italic when upright faces exist', () => {
+    expect(chooseLocalFontMatch(fonts, 'Inter', 'Bold')?.style).toBe('Semi Bold')
+  })
+})
 
 describe('FontManager loaded font cache', () => {
   test('marks and checks font', () => {
