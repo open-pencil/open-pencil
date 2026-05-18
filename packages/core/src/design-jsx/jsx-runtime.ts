@@ -31,6 +31,6 @@ export namespace JSX {
   }
 
   export interface ElementChildrenAttribute {
-    children: {}
+    children: unknown
   }
 }

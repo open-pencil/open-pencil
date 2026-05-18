@@ -124,7 +124,7 @@ export const analyzeColorsCommand: RpcCommand<AnalyzeColorsArgs, AnalyzeColorsRe
 
 // ── analyze typography ──
 
-export interface AnalyzeTypographyArgs {}
+export type AnalyzeTypographyArgs = Record<string, never>
 
 export interface TypographyStyle {
   family: string

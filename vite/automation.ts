@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 
 import { automationPlugin } from '../src/app/automation/bridge/vite-plugin'
 

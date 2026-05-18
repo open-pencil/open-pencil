@@ -49,8 +49,13 @@ export function removeStyleFromRange(
 
   for (let i = start; i < end && i < textLength; i++) {
     if (chars[i]) {
-      const copy = { ...chars[i] }
-      for (const k of keys) delete copy[k]
+      const current = chars[i]
+      if (!current) continue
+      const copy = Object.fromEntries(
+        Object.entries(current).filter(
+          ([key]) => !keys.includes(key as keyof CharacterStyleOverride)
+        )
+      ) as CharacterStyleOverride
       chars[i] = Object.keys(copy).length > 0 ? copy : null
     }
   }

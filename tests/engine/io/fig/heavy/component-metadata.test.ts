@@ -1,5 +1,5 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 
 import { importNodeChanges } from '#core/kiwi'
 import { parseFigBuffer } from '#core/kiwi/fig/parse/core'

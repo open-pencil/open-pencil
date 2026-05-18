@@ -13,7 +13,7 @@ function attrValue(tag: string, attr: string): string | null {
 
 function num(tag: string, attr: string, fallback = 0): number {
   const value = attrValue(tag, attr)
-  return value !== null ? parseFloat(value) : fallback
+  return value !== null ? Number.parseFloat(value) : fallback
 }
 
 function shapeToD(tagName: string, tag: string): string | null {
@@ -118,7 +118,7 @@ export function extractPaths(svgBody: string): IconPathInfo[] {
       d,
       fill: resolveAttr(attrValue(tag, 'fill'), groupAttrs.fill, 'currentColor'),
       stroke: resolveAttr(attrValue(tag, 'stroke'), groupAttrs.stroke, null),
-      strokeWidth: parseFloat(attrValue(tag, 'stroke-width') ?? groupAttrs.strokeWidth ?? '1'),
+      strokeWidth: Number.parseFloat(attrValue(tag, 'stroke-width') ?? groupAttrs.strokeWidth ?? '1'),
       strokeCap: attrValue(tag, 'stroke-linecap') ?? groupAttrs.strokeCap ?? 'butt',
       strokeJoin: attrValue(tag, 'stroke-linejoin') ?? groupAttrs.strokeJoin ?? 'miter',
       fillRule: fillRuleAttr === 'evenodd' ? 'EVENODD' : 'NONZERO'

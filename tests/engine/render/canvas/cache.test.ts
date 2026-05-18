@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 
 import {
   computeAllLayouts,

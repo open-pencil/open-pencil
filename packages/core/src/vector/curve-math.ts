@@ -285,7 +285,7 @@ function nearestPointOnLine(px: number, py: number, p0: Vector, p1: Vector): Nea
   const y = p0.y + t * dy
   const ddx = x - px
   const ddy = y - py
-  return { t, x, y, distance: Math.sqrt(ddx * ddx + ddy * ddy) }
+  return { t, x, y, distance: Math.hypot(ddx, ddy) }
 }
 
 /** Find nearest point across all segments in a VectorNetwork. */

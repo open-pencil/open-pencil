@@ -181,12 +181,12 @@ function hasAutoLayoutTriggerProps(props: Record<string, unknown>): boolean {
 
 function parseTrack(token: string): GridTrack {
   if (token.endsWith('fr')) {
-    return { sizing: 'FR', value: parseFloat(token) || 1 }
+    return { sizing: 'FR', value: Number.parseFloat(token) || 1 }
   }
   if (token === 'auto') {
     return { sizing: 'AUTO', value: 0 }
   }
-  return { sizing: 'FIXED', value: parseFloat(token) || 0 }
+  return { sizing: 'FIXED', value: Number.parseFloat(token) || 0 }
 }
 
 function parseTrackList(value: string): GridTrack[] {
@@ -410,8 +410,8 @@ function applyShapeAndEffectOverrides(props: Record<string, unknown>, o: Partial
         {
           type: 'DROP_SHADOW',
           color: c,
-          offset: { x: parseFloat(parts[0]), y: parseFloat(parts[1]) },
-          radius: parseFloat(parts[2]),
+          offset: { x: Number.parseFloat(parts[0]), y: Number.parseFloat(parts[1]) },
+          radius: Number.parseFloat(parts[2]),
           spread: 0,
           visible: true
         }

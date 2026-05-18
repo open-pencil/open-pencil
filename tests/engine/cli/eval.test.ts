@@ -1,7 +1,7 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
-import { randomUUID } from 'crypto'
-import { tmpdir } from 'os'
-import { join } from 'path'
+import { randomUUID } from 'node:crypto'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import { cliSourcePath, repoPath } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
@@ -54,7 +54,7 @@ heavy('eval CLI', () => {
       'return figma.root.children.length'
     ])
     expect(exitCode).toBe(0)
-    const count = parseInt(stdout, 10)
+    const count = Number.parseInt(stdout, 10)
     expect(count).toBeGreaterThan(0)
   })
 

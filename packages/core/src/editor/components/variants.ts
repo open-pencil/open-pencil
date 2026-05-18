@@ -77,8 +77,9 @@ export function createVariantActions(ctx: EditorContext) {
     for (const childId of node.childIds) {
       const child = ctx.graph.getNode(childId)
       if (!child) continue
-      const values = { ...child.componentPropertyValues }
-      delete values[def.name]
+      const values = Object.fromEntries(
+        Object.entries(child.componentPropertyValues).filter(([key]) => key !== def.name)
+      )
       ctx.graph.updateNode(childId, { componentPropertyValues: values })
     }
     ctx.undo.push({
@@ -94,8 +95,9 @@ export function createVariantActions(ctx: EditorContext) {
           for (const cid of n.childIds) {
             const c = ctx.graph.getNode(cid)
             if (!c) continue
-            const v = { ...c.componentPropertyValues }
-            delete v[def.name]
+            const v = Object.fromEntries(
+              Object.entries(c.componentPropertyValues).filter(([key]) => key !== def.name)
+            )
             ctx.graph.updateNode(cid, { componentPropertyValues: v })
           }
         }
@@ -126,9 +128,11 @@ export function createVariantActions(ctx: EditorContext) {
       if (!child) continue
       const values = { ...child.componentPropertyValues }
       if (prevName in values) {
-        values[newName] = values[prevName]
-        delete values[prevName]
-        ctx.graph.updateNode(childId, { componentPropertyValues: values })
+        const nextValues = Object.fromEntries(
+          Object.entries(values).filter(([key]) => key !== prevName)
+        )
+        nextValues[newName] = values[prevName]
+        ctx.graph.updateNode(childId, { componentPropertyValues: nextValues })
       }
     }
     const renamePropertyDef = (name: string) => {

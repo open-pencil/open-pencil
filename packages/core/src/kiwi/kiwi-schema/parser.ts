@@ -191,14 +191,14 @@ function verify(root: Schema): void {
   // Define definitions
   for (let i = 0; i < root.definitions.length; i++) {
     let definition = root.definitions[i]
-    if (definedTypes.indexOf(definition.name) !== -1) {
+    if (definedTypes.includes(definition.name)) {
       error(
         'The type ' + quote(definition.name) + ' is defined twice',
         definition.line,
         definition.column
       )
     }
-    if (reservedNames.indexOf(definition.name) !== -1) {
+    if (reservedNames.includes(definition.name)) {
       error(
         'The type name ' + quote(definition.name) + ' is reserved',
         definition.line,
@@ -221,7 +221,7 @@ function verify(root: Schema): void {
     // Check types
     for (let j = 0; j < fields.length; j++) {
       let field = fields[j]
-      if (definedTypes.indexOf(field.type!) === -1) {
+      if (!definedTypes.includes(field.type!)) {
         error(
           'The type ' + quote(field.type!) + ' is not defined for field ' + quote(field.name),
           field.line,
@@ -234,7 +234,7 @@ function verify(root: Schema): void {
     let values: number[] = []
     for (let j = 0; j < fields.length; j++) {
       let field = fields[j]
-      if (values.indexOf(field.value) !== -1) {
+      if (values.includes(field.value)) {
         error('The id for field ' + quote(field.name) + ' is used twice', field.line, field.column)
       }
       if (field.value <= 0) {

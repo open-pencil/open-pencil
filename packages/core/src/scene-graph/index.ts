@@ -463,7 +463,7 @@ export class SceneGraph {
     let idx = insertIndex
     if (
       oldParent === newParent &&
-      idx > (oldParent.childIds.indexOf(nodeId) === -1 ? idx : oldParent.childIds.length)
+      idx > (!oldParent.childIds.includes(nodeId) ? idx : oldParent.childIds.length)
     ) {
       // Already removed above, no adjustment needed
     }

@@ -10,7 +10,7 @@ export class GPUTimer {
   private ext: EXTDisjointTimerQuery | null = null
   private pending: WebGLQuery[] = []
   private activeQuery: WebGLQuery | null = null
-  private _lastGpuTimeMs = NaN
+  private _lastGpuTimeMs = Number.NaN
 
   get available(): boolean {
     return this.ext !== null

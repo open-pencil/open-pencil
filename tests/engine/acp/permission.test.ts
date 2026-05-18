@@ -107,7 +107,9 @@ describe('acp-permission', () => {
     const result = await promise
     expect(result.outcome.optionId).toBe('allow')
     // Timer should be cleared — wait to ensure no stale timeout fires
-    await new Promise((r) => setTimeout(r, 50))
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50)
+    })
     expect(permissionQueue.value).toHaveLength(0)
   })
 

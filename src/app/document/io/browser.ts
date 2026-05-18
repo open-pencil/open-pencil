@@ -1,5 +1,7 @@
 export function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()))
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve())
+  })
 }
 
 type ViewportSize = { width: number; height: number }

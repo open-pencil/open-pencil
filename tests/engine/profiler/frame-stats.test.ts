@@ -29,7 +29,7 @@ describe('FrameStats', () => {
     expect(stats.scenePictureCacheHit).toBe(true)
   })
 
-  it('handles GPU time as NaN initially', () => {
+  it('handles GPU time as Number.NaN initially', () => {
     const stats = new FrameStats()
     stats.recordFrame(1)
     expect(stats.gpuTime).toBe(0)

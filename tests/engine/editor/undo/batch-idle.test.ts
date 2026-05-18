@@ -2,26 +2,24 @@ import { describe, test, expect } from 'bun:test'
 
 import { createUndoManager, noop, undoEntry } from '#tests/helpers/undo'
 
+function assignValue(setValue: (value: number) => void, value: number) {
+  return () => setValue(value)
+}
+
 describe('UndoManager idle-timer batching', () => {
   test('rapid pushes inside a batch produce a single undo entry', () => {
     const undo = createUndoManager()
     let value = 0
 
+    const setValue = (nextValue: number) => {
+      value = nextValue
+    }
+
     undo.beginBatch('drag color')
     for (let i = 1; i <= 10; i++) {
       const prev = value
       const next = i
-      undo.push(
-        undoEntry(
-          `step ${i}`,
-          () => {
-            value = next
-          },
-          () => {
-            value = prev
-          }
-        )
-      )
+      undo.push(undoEntry(`step ${i}`, assignValue(setValue, next), assignValue(setValue, prev)))
       value = next
     }
     undo.commitBatch()

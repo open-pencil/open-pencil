@@ -18,7 +18,7 @@ function parseSvgViewBox(svg: string): Rect | null {
 function parseSvgDimension(svg: string, attr: string): number | null {
   const match = svg.match(new RegExp(`\\b${attr}="([^"]+)"`))
   if (!match) return null
-  const n = parseFloat(match[1])
+  const n = Number.parseFloat(match[1])
   return Number.isFinite(n) && n > 0 ? n : null
 }
 

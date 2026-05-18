@@ -86,7 +86,9 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       const beforeFallbackRenderCount = fallbackRenderCount
 
       releaseCJKFallback?.()
-      await new Promise((resolve) => setTimeout(resolve, 0))
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0)
+      })
       await new Promise(requestAnimationFrame)
 
       return {

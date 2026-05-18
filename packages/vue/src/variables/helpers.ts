@@ -153,8 +153,8 @@ export function createVariableValueActions(
   function parseVariableValue(variable: Variable, raw: string): VariableValue | undefined {
     if (variable.type === 'COLOR') return parseColor(raw.startsWith('#') ? raw : `#${raw}`)
     if (variable.type === 'FLOAT') {
-      const num = parseFloat(raw)
-      return isNaN(num) ? undefined : num
+      const num = Number.parseFloat(raw)
+      return Number.isNaN(num) ? undefined : num
     }
     if (variable.type === 'BOOLEAN') return raw.toLowerCase() === 'true'
     return raw

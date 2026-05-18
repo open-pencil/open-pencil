@@ -5,7 +5,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { MCP_VERSION, registerTools } from './server.js'
 import { createStdioRpcBridge } from './stdio-bridge.js'
 
-const wsPort = parseInt(process.env.WS_PORT ?? '7601', 10)
+const wsPort = Number.parseInt(process.env.WS_PORT ?? '7601', 10)
 const wsHost = process.env.HOST ?? '127.0.0.1'
 const enableEval = process.env.OPENPENCIL_MCP_EVAL === '1'
 const mcpRoot = process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd()

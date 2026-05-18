@@ -187,7 +187,7 @@ export class ByteBuffer {
   writeVarUint64(value: bigint | string): void {
     if (typeof value === 'string') value = BigInt(value)
     else if (typeof value !== 'bigint')
-      throw new Error('Expected bigint but got ' + typeof value + ': ' + value)
+      throw new Error(`Expected bigint but got ${typeof value}: ${String(value)}`)
     if (value < 0 || value > BigInt('0xFFFFFFFFFFFFFFFF'))
       throw new Error('Outside uint64 range: ' + value)
     let mask = BigInt(127)
@@ -202,7 +202,7 @@ export class ByteBuffer {
   writeVarInt64(value: bigint | string): void {
     if (typeof value === 'string') value = BigInt(value)
     else if (typeof value !== 'bigint')
-      throw new Error('Expected bigint but got ' + typeof value + ': ' + value)
+      throw new Error(`Expected bigint but got ${typeof value}: ${String(value)}`)
     if (value < -BigInt('0x8000000000000000') || value > BigInt('0x7FFFFFFFFFFFFFFF'))
       throw new Error('Outside int64 range: ' + value)
     let one = BigInt(1)

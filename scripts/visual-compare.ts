@@ -187,7 +187,7 @@ async function diff() {
       .quiet()
       .nothrow()
 
-  const diffPixels = parseInt(result.stderr.toString().trim(), 10) || 0
+  const diffPixels = Number.parseInt(result.stderr.toString().trim(), 10) || 0
   const [w, h] = figmaSize.split('x').map(Number)
   const total = w * h
   const pct = ((diffPixels / total) * 100).toFixed(2)

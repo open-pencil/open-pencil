@@ -1,4 +1,4 @@
-import { copyFileSync, createReadStream, existsSync, mkdirSync } from 'fs'
+import { copyFileSync, createReadStream, existsSync, mkdirSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 import type { Connect, Plugin, ResolvedConfig } from 'vite'

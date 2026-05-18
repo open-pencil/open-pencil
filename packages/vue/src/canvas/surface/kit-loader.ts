@@ -32,7 +32,9 @@ export function useCanvasKitLoader({
     setCanvasKit(await getCanvasKit())
     if (isDestroyed()) return
 
-    await new Promise((resolve) => requestAnimationFrame(resolve))
+    await new Promise((resolve) => {
+      requestAnimationFrame(resolve)
+    })
     createSurface(canvas)
     await loadFonts()
     if (isDestroyed()) return

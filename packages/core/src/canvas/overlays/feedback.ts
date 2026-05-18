@@ -66,7 +66,7 @@ export function drawFlashes(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph):
 
     if (elapsed < FLASH_ATTACK_MS) {
       const t = elapsed / FLASH_ATTACK_MS
-      const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+      const ease = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2
       opacity = ease
       extraPad = (1 - ease) * FLASH_OVERSHOOT
     } else if (elapsed < FLASH_ATTACK_MS + FLASH_HOLD_MS) {

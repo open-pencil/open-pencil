@@ -85,7 +85,9 @@ export function closeTab(tabId: string) {
 }
 
 function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()))
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => resolve())
+  })
 }
 
 export async function openFileInNewTab(

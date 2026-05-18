@@ -14,16 +14,18 @@ function walkNodes(graph: SceneGraph, rootId: string, fn: (node: SceneNode) => b
   return true
 }
 
-function countNodes(graph: SceneGraph, pageId: string): number {
+function countDescendants(graph: SceneGraph, rootId: string): number {
   let count = 0
-  const page = graph.getNode(pageId)
-  if (page)
-    for (const cid of page.childIds)
-      walkNodes(graph, cid, () => {
-        count++
-        return true
-      })
+  walkNodes(graph, rootId, () => {
+    count++
+    return true
+  })
   return count
+}
+
+function countNodes(graph: SceneGraph, pageId: string): number {
+  const page = graph.getNode(pageId)
+  return page?.childIds.reduce((count, id) => count + countDescendants(graph, id), 0) ?? 0
 }
 
 function nodeFrame(node: SceneNode) {
@@ -54,18 +56,19 @@ export const infoCommand: RpcCommand<void, InfoResult> = {
     const fonts = new Set<string>()
     const pageCounts: Record<string, number> = {}
 
+    const countNode = (node: SceneNode) => {
+      totalNodes++
+      types[node.type] = (types[node.type] ?? 0) + 1
+      if (node.fontFamily) fonts.add(node.fontFamily)
+      return true
+    }
+
     for (const page of pages) {
-      let pageCount = 0
+      const beforePage = totalNodes
       for (const cid of page.childIds) {
-        walkNodes(graph, cid, (node) => {
-          totalNodes++
-          pageCount++
-          types[node.type] = (types[node.type] ?? 0) + 1
-          if (node.fontFamily) fonts.add(node.fontFamily)
-          return true
-        })
+        walkNodes(graph, cid, countNode)
       }
-      pageCounts[page.name] = pageCount
+      pageCounts[page.name] = totalNodes - beforePage
     }
 
     return { pages: pages.length, totalNodes, types, fonts: [...fonts].sort(), pageCounts }

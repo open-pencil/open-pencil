@@ -74,7 +74,7 @@ function createGradientDef(
   if (fill.type === 'GRADIENT_RADIAL' || fill.type === 'GRADIENT_DIAMOND') {
     const cx = round(t.m02 * 100)
     const cy = round(t.m12 * 100)
-    const r = round(Math.sqrt(t.m00 * t.m00 + t.m10 * t.m10) * 100)
+    const r = round(Math.hypot(t.m00, t.m10) * 100)
     return {
       id,
       node: svg(

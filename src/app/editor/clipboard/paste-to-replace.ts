@@ -6,7 +6,7 @@ async function readClipboardHtml() {
   const items = await navigator.clipboard.read()
   for (const item of items) {
     if (!item.types.includes('text/html')) continue
-    return await (await item.getType('text/html')).text()
+    return (await item.getType('text/html')).text()
   }
   return null
 }

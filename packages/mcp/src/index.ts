@@ -3,8 +3,8 @@ import { serve } from '@hono/node-server'
 
 import { startServer } from './server.js'
 
-const port = parseInt(process.env.PORT ?? '7600', 10)
-const wsPort = parseInt(process.env.WS_PORT ?? '7601', 10)
+const port = Number.parseInt(process.env.PORT ?? '7600', 10)
+const wsPort = Number.parseInt(process.env.WS_PORT ?? '7601', 10)
 const host = process.env.HOST ?? '127.0.0.1'
 
 const { app, httpPort } = startServer({

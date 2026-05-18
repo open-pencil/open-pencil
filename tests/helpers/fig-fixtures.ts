@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
 import { parseFigFile } from '@open-pencil/core'
 import type { SceneGraph, SceneNode } from '@open-pencil/core'

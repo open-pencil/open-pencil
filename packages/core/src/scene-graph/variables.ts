@@ -21,9 +21,9 @@ export function removeVariable(graph: SceneGraph, id: string): void {
     collection.variableIds = collection.variableIds.filter((vid) => vid !== id)
   }
   for (const node of graph.nodes.values()) {
-    for (const [field, varId] of Object.entries(node.boundVariables)) {
-      if (varId === id) delete node.boundVariables[field]
-    }
+    node.boundVariables = Object.fromEntries(
+      Object.entries(node.boundVariables).filter(([, varId]) => varId !== id)
+    )
   }
 }
 
@@ -140,7 +140,11 @@ export function removeMode(graph: SceneGraph, collectionId: string, modeId: stri
   }
   for (const varId of collection.variableIds) {
     const variable = graph.variables.get(varId)
-    if (variable) delete variable.valuesByMode[modeId]
+    if (variable) {
+      variable.valuesByMode = Object.fromEntries(
+        Object.entries(variable.valuesByMode).filter(([id]) => id !== modeId)
+      )
+    }
   }
   if (graph.activeMode.get(collectionId) === modeId) {
     graph.activeMode.set(collectionId, collection.defaultModeId)
@@ -232,5 +236,9 @@ export function bindVariable(
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
   const node = graph.nodes.get(nodeId)
-  if (node) delete node.boundVariables[field]
+  if (node) {
+    node.boundVariables = Object.fromEntries(
+      Object.entries(node.boundVariables).filter(([key]) => key !== field)
+    )
+  }
 }

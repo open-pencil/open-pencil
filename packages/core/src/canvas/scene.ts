@@ -43,7 +43,7 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
   const bw = node.width
   const bh = node.height
   if (node.rotation !== 0) {
-    const diag = Math.sqrt(bw * bw + bh * bh)
+    const diag = Math.hypot(bw, bh)
     const cx = absX + bw / 2
     const cy = absY + bh / 2
     return (

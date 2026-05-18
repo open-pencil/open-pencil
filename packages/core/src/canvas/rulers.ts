@@ -249,7 +249,7 @@ export function drawRulerBadge(
 export function rulerStep(r: SkiaRenderer): number {
   const pixelsPerUnit = r.zoom
   const rawStep = RULER_TARGET_PIXEL_SPACING / pixelsPerUnit
-  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)))
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep))
   const normalized = rawStep / magnitude
 
   if (normalized <= 1) return magnitude
