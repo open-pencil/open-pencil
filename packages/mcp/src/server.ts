@@ -5,7 +5,7 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer } from 'ws'
 
-import packageJson from '../package.json'
+import packageJson from '../package.json' with { type: 'json' }
 import { bearerToken, isAuthorized, mcpRequestToken } from './auth'
 import { createBrowserRpcBridge } from './browser-rpc'
 import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from './http-options'
