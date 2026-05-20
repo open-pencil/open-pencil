@@ -10,14 +10,8 @@ export interface ExtractedGraph {
 
 function cloneIntoGraph(source: SceneGraph, ids: Set<string>): SceneGraph {
   const graph = new SceneGraph()
-  const root = graph.getNode(graph.rootId)
-  if (root) {
-    root.childIds = []
-    root.width = 0
-    root.height = 0
-  }
+  graph.rootId = source.rootId
   graph.nodes = new Map()
-  if (root) graph.nodes.set(root.id, root)
   graph.images = new Map(source.images)
   graph.variables = new Map()
   graph.variableCollections = new Map()
@@ -116,6 +110,43 @@ function collectDescendants(source: SceneGraph, id: string, out: Set<string>) {
   }
 }
 
+function collectAncestors(source: SceneGraph, id: string, out: Set<string>) {
+  let current = source.getNode(id)
+  while (current?.parentId) {
+    out.add(current.parentId)
+    current = source.getNode(current.parentId)
+  }
+}
+
+function resolveInstanceComponentId(source: SceneGraph, componentId: string): string {
+  const seen = new Set<string>()
+  let currentId = componentId
+  while (!seen.has(currentId)) {
+    seen.add(currentId)
+    const node = source.getNode(currentId)
+    if (node?.type !== 'INSTANCE' || !node.componentId) return currentId
+    currentId = node.componentId
+  }
+  return componentId
+}
+
+function collectComponentDependencies(source: SceneGraph, ids: Set<string>) {
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const id of Array.from(ids)) {
+      const node = source.getNode(id)
+      if (node?.type !== 'INSTANCE' || !node.componentId) continue
+      const componentId = resolveInstanceComponentId(source, node.componentId)
+      if (ids.has(componentId)) continue
+      const before = ids.size
+      collectAncestors(source, componentId, ids)
+      collectDescendants(source, componentId, ids)
+      changed ||= ids.size !== before
+    }
+  }
+}
+
 export function findPageId(source: SceneGraph, nodeId: string): string | null {
   let current = source.getNode(nodeId)
   while (current?.parentId) {
@@ -156,12 +187,14 @@ function collectSelectionIds(source: SceneGraph, nodeIds: string[]): Set<string>
     ids.add(pageId)
   }
 
+  collectComponentDependencies(source, ids)
   return ids
 }
 
 function pageNodeIds(source: SceneGraph, pageId: string): Set<string> {
-  const ids = new Set<string>([source.rootId, pageId])
+  const ids = new Set<string>([source.rootId])
   collectDescendants(source, pageId, ids)
+  collectComponentDependencies(source, ids)
   return ids
 }
 

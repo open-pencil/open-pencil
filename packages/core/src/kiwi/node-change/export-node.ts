@@ -99,6 +99,31 @@ function parseGuidOrNull(value: string) {
   return /^\d+:\d+$/.test(value) ? stringToGuid(value) : null
 }
 
+function resolveInstanceComponentId(context: SceneNodeToKiwiContext, componentId: string): string {
+  const seen = new Set<string>()
+  let currentId = componentId
+  while (!seen.has(currentId)) {
+    seen.add(currentId)
+    const node = context.graph.getNode(currentId)
+    if (node?.type !== 'INSTANCE' || !node.componentId) return currentId
+    currentId = node.componentId
+  }
+  return componentId
+}
+
+function getOrCreateNodeGuid(
+  context: SceneNodeToKiwiContext,
+  nodeId: string,
+  localIdCounter: { value: number }
+): GUID | undefined {
+  if (!context.graph.getNode(nodeId)) return undefined
+  const existing = context.nodeIdToGuid?.get(nodeId)
+  if (existing) return existing
+  const guid = { sessionID: 1, localID: localIdCounter.value++ }
+  context.nodeIdToGuid?.set(nodeId, guid)
+  return guid
+}
+
 function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
   if (node.componentKey) nc.componentKey = node.componentKey
   if (node.sourceLibraryKey) nc.sourceLibraryKey = node.sourceLibraryKey
@@ -209,9 +234,10 @@ export function sceneNodeToKiwiWithContext(
   localIdCounter: { value: number },
   context: SceneNodeToKiwiContext
 ): KiwiNodeChange[] {
-  const localID = localIdCounter.value++
-  const guid = { sessionID: 1, localID }
-  context.nodeIdToGuid?.set(node.id, guid)
+  const guid = getOrCreateNodeGuid(context, node.id, localIdCounter) ?? {
+    sessionID: 1,
+    localID: localIdCounter.value++
+  }
 
   const strokePaints = createStrokePaints(context, node)
 
@@ -231,6 +257,14 @@ export function sceneNodeToKiwiWithContext(
 
   applyNodeVisualProps(context, node, nc)
   applyComponentMetadata(node, nc)
+  if (node.type === 'INSTANCE' && node.componentId) {
+    const symbolID = getOrCreateNodeGuid(
+      context,
+      resolveInstanceComponentId(context, node.componentId),
+      localIdCounter
+    )
+    if (symbolID) nc.symbolData = { symbolID }
+  }
   if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
