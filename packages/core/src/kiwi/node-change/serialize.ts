@@ -1,5 +1,4 @@
 import { hexToBytes } from '#core/bytes/hex'
-import { encodePathCommandsBlob } from '#core/kiwi/node-change/path-commands'
 import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text/data'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
 import { getGlyphOutlineMetricsSync } from '#core/text/opentype'
@@ -76,8 +75,7 @@ function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
 
 function buildDerivedTextData(
   node: SceneNode,
-  digestMap: Map<string, Uint8Array>,
-  blobs: Uint8Array[]
+  digestMap: Map<string, Uint8Array>
 ): NodeChange['derivedTextData'] {
   const fontMeta: NonNullable<NodeChange['derivedTextData']>['fontMetaData'] = []
   const seen = new Set<string>()
@@ -112,8 +110,11 @@ function buildDerivedTextData(
   const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
   const glyphAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
 
+  // Glyph path commands (commandsBlob) are NOT stored in .fig exports —
+  // they are derivable from font data at render time. Including them
+  // causes ~16× file size bloat for text-heavy documents (2 MB → 32 MB).
+  // The original Figma format stores glyph positions but omits commandsBlob.
   const glyphs = glyphMetrics.map((glyph, index) => ({
-    commandsBlob: blobs.push(encodePathCommandsBlob(glyph.commands, node.fontSize)) - 1,
     position: { x: glyph.x || index * glyphAdvance, y: lineHeight },
     fontSize: node.fontSize,
     firstCharacter: index,
@@ -253,8 +254,7 @@ function serializeTextProps(
   node: SceneNode,
   nc: KiwiNodeChange,
   graph: SceneGraph,
-  fontDigestMap: Map<string, Uint8Array> | undefined,
-  blobs: Uint8Array[]
+  fontDigestMap: Map<string, Uint8Array> | undefined
 ): void {
   upsertPluginData(node, TEXT_DIRECTION_PLUGIN_KEY, node.textDirection)
   nc.fontSize = node.fontSize
@@ -276,7 +276,7 @@ function serializeTextProps(
   nc.fontVariantContextualLigatures = true
   nc.fontVersion = ''
   nc.emojiImageSet = 'APPLE'
-  if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap, blobs)
+  if (fontDigestMap) nc.derivedTextData = buildDerivedTextData(node, fontDigestMap)
   if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
   nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
   if (node.textDecoration !== 'NONE') {
