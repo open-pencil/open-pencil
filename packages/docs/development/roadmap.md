@@ -43,12 +43,20 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 - Better renderer profiling surfaces for slow nodes, effects, masks, and imported files.
 - Smarter raster/retained caching that preserves fidelity during zoom and pan.
 
+### Interactive shader layers
+
+- Add Unicorn Studio-style shader scenes as first-class design layers: animated gradients, particles, noise fields, metaballs, lighting, displacement, and pointer-reactive backgrounds.
+- Provide a preset-first editor for common generative visuals before exposing raw shader code.
+- Support timeline and interaction inputs such as time, pointer position, scroll, layer bounds, colors, variables, and imported image textures.
+- Render shader layers through CanvasKit/WebGL while keeping deterministic raster export for PNG/JPG/WEBP and thumbnails.
+- Store shader layer configuration in OpenPencil documents and export graceful fallbacks when a target format cannot preserve the live effect.
+
 ## Later
 
 - Prototyping: frame connections, triggers, overlays, transitions, and preview mode.
 - Comments: pins, threads, resolution state, and collaboration-aware display.
 - Shared libraries: publish, consume, and update components/styles across files.
-- More platform polish: Windows code signing, PWA support, and packaged updater improvements.
+- Platform polish: Windows code signing, PWA support, packaged updater improvements, and desktop-side MCP bundling.
 
 ## Non-goals
 
