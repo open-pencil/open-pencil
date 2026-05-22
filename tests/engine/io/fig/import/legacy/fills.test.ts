@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { importNodeChanges } from '@open-pencil/core'
+import type { GradientFill } from '@open-pencil/core/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -30,11 +31,14 @@ describe('fig-import: gradient fills', () => {
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills).toHaveLength(1)
     expect(n.fills[0].type).toBe('GRADIENT_LINEAR')
-    expect(n.fills[0].gradientStops).toHaveLength(2)
-    const gradientStops = expectDefined(n.fills[0].gradientStops, 'linear gradient stops')
+    expect((n.fills[0] as GradientFill).gradientStops).toHaveLength(2)
+    const gradientStops = expectDefined(
+      (n.fills[0] as GradientFill).gradientStops,
+      'linear gradient stops'
+    )
     expect(gradientStops[0]?.color.r).toBe(1)
     expect(gradientStops[1]?.color.b).toBe(1)
-    expect(n.fills[0].gradientTransform).toBeDefined()
+    expect((n.fills[0] as GradientFill).gradientTransform).toBeDefined()
   })
 
   test('radial gradient', () => {
@@ -60,6 +64,6 @@ describe('fig-import: gradient fills', () => {
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills[0].type).toBe('GRADIENT_RADIAL')
     expect(n.fills[0].opacity).toBe(0.8)
-    expect(n.fills[0].gradientStops).toHaveLength(2)
+    expect((n.fills[0] as GradientFill).gradientStops).toHaveLength(2)
   })
 })

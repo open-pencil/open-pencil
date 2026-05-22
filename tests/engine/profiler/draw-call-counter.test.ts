@@ -38,4 +38,3 @@ describe('DrawCallCounter', () => {
     expect(rawDrawCalls).toBe(3)
   })
 })
-

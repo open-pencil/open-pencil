@@ -1,10 +1,8 @@
 import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { NodeChange } from '#core/kiwi/fig/codec'
-import type { SceneNode } from '#core/scene-graph'
-
 import { encodePathCommandsBlob } from '#core/kiwi/fig/node-change/path-commands'
-
+import type { SceneNode } from '#core/scene-graph'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
 import { type GlyphOutlineMetrics, getGlyphOutlineMetricsSync } from '#core/text/opentype'
 
@@ -136,7 +134,8 @@ export async function buildDerivedTextDataV4(
   const normalizedFamily = normalizeFontFamily(node.fontFamily)
   const key = `${normalizedFamily}|${style}`
   const lineHeightFallback = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
-  const glyphMetrics = getGlyphOutlineMetricsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
+  const glyphMetrics =
+    getGlyphOutlineMetricsSync(node.fontFamily, style, node.text, node.fontSize) ?? []
 
   const fallbackAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
   const textGlyphs = buildTextGlyphs(node.text, glyphMetrics, fallbackAdvance, node.fontSize)
@@ -144,7 +143,10 @@ export async function buildDerivedTextDataV4(
   const lineBreaks = computeLineBreaks(node, glyphMetrics, textGlyphs, fallbackAdvance, shaped)
   const lineBreakSet = new Set(lineBreaks)
 
-  const shapedByChar = new Map<number, (typeof shaped extends null | undefined ? never : NonNullable<typeof shaped>)['glyphs'][number]>()
+  const shapedByChar = new Map<
+    number,
+    (typeof shaped extends null | undefined ? never : NonNullable<typeof shaped>)['glyphs'][number]
+  >()
   if (shaped) {
     for (const g of shaped.glyphs) shapedByChar.set(g.firstCharacter, g)
   }
@@ -207,7 +209,11 @@ export async function buildDerivedTextDataV4(
     glyphs,
     fontMetaData: [
       {
-        key: { family: normalizedFamily, style: weightToFigmaStyle(node.fontWeight, node.italic), postscript: '' },
+        key: {
+          family: normalizedFamily,
+          style: weightToFigmaStyle(node.fontWeight, node.italic),
+          postscript: ''
+        },
         fontLineHeight: 1.2,
         fontDigest: digestMap.get(key),
         fontStyle: node.italic ? 'ITALIC' : 'NORMAL',

@@ -1,4 +1,3 @@
-import { TRANSPARENT } from '@open-pencil/core/constants'
 import type { Color, Effect } from '@open-pencil/core/scene-graph'
 
 export function dropShadow(
@@ -35,13 +34,13 @@ export function innerShadow(
   }
 }
 
-export function blurEffect(type: Effect['type'], radius: number): Effect {
+export function blurEffect(
+  type: 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR',
+  radius: number
+): Effect {
   return {
     type,
-    color: TRANSPARENT,
-    offset: { x: 0, y: 0 },
     radius,
-    spread: 0,
     visible: true
   }
 }

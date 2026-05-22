@@ -69,12 +69,15 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         ? `Save the current document to disk. If path is provided, it must be inside ${resolvedRoot}.`
         : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
       inputSchema: resolvedRoot
-        ? z.object({ path: z.string().describe('Optional absolute path for the .fig file').optional() })
+        ? z.object({
+            path: z.string().describe('Optional absolute path for the .fig file').optional()
+          })
         : z.object({})
     },
     async (args: { path?: string }) => {
       try {
-        const safePath = args.path && resolvedRoot ? resolveSafePath(args.path, resolvedRoot) : undefined
+        const safePath =
+          args.path && resolvedRoot ? resolveSafePath(args.path, resolvedRoot) : undefined
         const result = await sendRpc({ command: 'save_file', args: { path: safePath } })
         const res = result as { ok?: boolean; error?: string }
         if (res.ok === false) return fail(new Error(res.error))

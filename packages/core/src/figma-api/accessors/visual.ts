@@ -5,7 +5,7 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import type { Effect, Fill, SceneNode, Stroke } from '#core/scene-graph'
+import type { Effect, Fill, GradientFill, SceneNode, Stroke } from '#core/scene-graph'
 import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
 
 export function installVisualNodeProxyAccessors(
@@ -20,14 +20,23 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly Fill[]) {
         updateNode(this, internals, {
-          fills: value.map((fill) => ({
-            ...fill,
-            color: normalizeColor(fill.color),
-            gradientStops: fill.gradientStops?.map((stop) => ({
-              ...stop,
-              color: normalizeColor(stop.color)
-            }))
-          }))
+          fills: value.map((fill) => {
+            if (fill.type === 'SOLID') {
+              return { ...fill, color: normalizeColor(fill.color) }
+            }
+            if (fill.type.startsWith('GRADIENT')) {
+              const gf = fill as GradientFill
+              return {
+                ...gf,
+                gradientStops: gf.gradientStops.map((stop) => ({
+                  ...stop,
+                  color: normalizeColor(stop.color)
+                }))
+              }
+            }
+            // IMAGE fills — no color to normalize
+            return { ...fill }
+          })
         })
       }
     },
@@ -47,7 +56,13 @@ export function installVisualNodeProxyAccessors(
       },
       set(this: ProxyThis, value: readonly Effect[]) {
         updateNode(this, internals, {
-          effects: value.map((effect) => ({ ...effect, color: normalizeColor(effect.color) }))
+          effects: value.map((effect) => {
+            if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+              return { ...effect, color: normalizeColor(effect.color) }
+            }
+            // Blur effects — no color to normalize
+            return { ...effect }
+          })
         })
       }
     },

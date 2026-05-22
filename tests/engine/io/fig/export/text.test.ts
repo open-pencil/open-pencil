@@ -62,7 +62,8 @@ describe('text node export', () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
-    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import('#core/kiwi/schema-runtime')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('#core/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -123,7 +124,8 @@ describe('text node export', () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
-    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import('#core/kiwi/schema-runtime')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('#core/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -148,7 +150,10 @@ describe('text node export', () => {
     }
     const message = compiled.decodeMessage(inflateSync(chunks?.[1] ?? new Uint8Array()))
     const nodeChanges = message.nodeChanges as Array<Record<string, unknown>>
-    const textNc = expectDefined(nodeChanges.find((nc) => nc.type === 'TEXT'), 'text node change')
+    const textNc = expectDefined(
+      nodeChanges.find((nc) => nc.type === 'TEXT'),
+      'text node change'
+    )
     const derivedTextData = textNc.derivedTextData as Record<string, unknown>
     const fontMetaData = expectDefined(
       derivedTextData.fontMetaData as Array<Record<string, unknown>> | undefined,
@@ -163,7 +168,8 @@ describe('text node export', () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
-    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import('#core/kiwi/schema-runtime')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('#core/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -195,7 +201,10 @@ describe('text node export', () => {
     }
     const message = compiled.decodeMessage(inflateSync(chunks?.[1] ?? new Uint8Array()))
     const nodeChanges = message.nodeChanges as Array<Record<string, unknown>>
-    const textNc = expectDefined(nodeChanges.find((nc) => nc.type === 'TEXT'), 'text node change')
+    const textNc = expectDefined(
+      nodeChanges.find((nc) => nc.type === 'TEXT'),
+      'text node change'
+    )
 
     expect(textNc.textAutoResize).toBe('HEIGHT')
     expect(textNc.lineHeight).toBeUndefined()
@@ -206,7 +215,8 @@ describe('text node export', () => {
     await initCodec()
 
     const { unzipSync, inflateSync } = await import('fflate')
-    const { decodeBinarySchema, compileSchema, ByteBuffer } = await import('#core/kiwi/schema-runtime')
+    const { decodeBinarySchema, compileSchema, ByteBuffer } =
+      await import('#core/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -253,20 +263,23 @@ describe('text node export', () => {
     expect(families).toContain('Regular')
   })
 
-  test.if(runsHeavyTests)('material3.fig text nodes have derivedTextData after round-trip', async () => {
-    const original = await parseFixture('material3.fig')
+  test.if(runsHeavyTests)(
+    'material3.fig text nodes have derivedTextData after round-trip',
+    async () => {
+      const original = await parseFixture('material3.fig')
 
-    const textNodes = [...original.getAllNodes()].filter((n) => n.type === 'TEXT')
-    expect(textNodes.length).toBeGreaterThan(0)
+      const textNodes = [...original.getAllNodes()].filter((n) => n.type === 'TEXT')
+      expect(textNodes.length).toBeGreaterThan(0)
 
-    const exported = await exportFigFile(original)
-    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+      const exported = await exportFigFile(original)
+      const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    const reimportedText = [...reimported.getAllNodes()].filter((n) => n.type === 'TEXT')
-    expect(reimportedText.length).toBe(textNodes.length)
+      const reimportedText = [...reimported.getAllNodes()].filter((n) => n.type === 'TEXT')
+      expect(reimportedText.length).toBe(textNodes.length)
 
-    for (const node of reimportedText.slice(0, 10)) {
-      expect(node.text.length).toBeGreaterThan(0)
+      for (const node of reimportedText.slice(0, 10)) {
+        expect(node.text.length).toBeGreaterThan(0)
+      }
     }
-  })
+  )
 })

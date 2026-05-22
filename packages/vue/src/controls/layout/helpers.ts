@@ -252,7 +252,8 @@ export function createLayoutActions({
       updateProp('primaryAxisSizing', 'HUG')
     } else {
       if (n.primaryAxisSizing === 'HUG') updateProp('primaryAxisSizing', 'FIXED')
-      if (isInAutoLayout.value) updateProp('layoutAlignSelf', sizing === 'FILL' ? 'STRETCH' : 'AUTO')
+      if (isInAutoLayout.value)
+        updateProp('layoutAlignSelf', sizing === 'FILL' ? 'STRETCH' : 'AUTO')
     }
   }
 

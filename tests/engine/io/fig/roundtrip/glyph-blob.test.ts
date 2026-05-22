@@ -3,14 +3,17 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 import { fontManager } from '@open-pencil/core/text'
+
+import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 
 const FIXTURES = resolve(import.meta.dir, '../../../../fixtures')
 const INTER_ASSETS = resolve(import.meta.dir, '../../../../../packages/core/assets')
 
 function countGlyphBlobs(bytes: Uint8Array) {
-  const parsed = parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
+  const parsed = parseFigBuffer(
+    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+  )
   let glyphs = 0
   let glyphsWithBlob = 0
   const uniqueGlyphBlobs = new Set<number>()
@@ -50,7 +53,10 @@ describe('roundtrip: text glyph blobs', () => {
     const input = countGlyphBlobs(fixtureBytes)
 
     const graph = await parseFigFile(
-      fixtureBytes.buffer.slice(fixtureBytes.byteOffset, fixtureBytes.byteOffset + fixtureBytes.byteLength)
+      fixtureBytes.buffer.slice(
+        fixtureBytes.byteOffset,
+        fixtureBytes.byteOffset + fixtureBytes.byteLength
+      )
     )
     const exported = await exportFigFile(graph)
     const output = countGlyphBlobs(exported)

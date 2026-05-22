@@ -707,7 +707,9 @@ function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown
       } else {
         result[key] = {
           __openPencilFigmaBlob:
-            blob instanceof Uint8Array ? blob : new Uint8Array(Object.values(blob as Record<string, number>))
+            blob instanceof Uint8Array
+              ? blob
+              : new Uint8Array(Object.values(blob as Record<string, number>))
         } satisfies PreservedFigmaBlob
       }
     } else {
@@ -798,10 +800,15 @@ function extractFigmaSymbolMetadata(
     | undefined
   return {
     symbolOverrides: preserveFigmaPayloadBlobs(sd?.symbolOverrides ?? [], blobs) as unknown[],
-    componentPropAssignments: preserveFigmaPayloadBlobs(nc.componentPropAssignments ?? [], blobs) as unknown[],
+    componentPropAssignments: preserveFigmaPayloadBlobs(
+      nc.componentPropAssignments ?? [],
+      blobs
+    ) as unknown[],
     derivedSymbolData: preserveFigmaPayloadBlobs(nc.derivedSymbolData ?? [], blobs) as unknown[],
     derivedSymbolDataLayoutVersion:
-      typeof nc.derivedSymbolDataLayoutVersion === 'number' ? nc.derivedSymbolDataLayoutVersion : null,
+      typeof nc.derivedSymbolDataLayoutVersion === 'number'
+        ? nc.derivedSymbolDataLayoutVersion
+        : null,
     uniformScaleFactor: typeof sd?.uniformScaleFactor === 'number' ? sd.uniformScaleFactor : null
   }
 }

@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('dragging selected nested instance content reorders its auto-layout item', async ({ page }) => {
+test('dragging selected nested instance content reorders its auto-layout item', async ({
+  page
+}) => {
   await page.goto('/')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
@@ -83,7 +85,9 @@ test('dragging selected nested instance content reorders its auto-layout item', 
   canvas.assertNoErrors()
 })
 
-test('auto-layout drag does not show an insert indicator before order changes', async ({ page }) => {
+test('auto-layout drag does not show an insert indicator before order changes', async ({
+  page
+}) => {
   await page.goto('/')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()

@@ -2,9 +2,11 @@ import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { RenderColorSpace } from '#core/color/management'
-import { computeDescendantVisualBounds } from '#core/geometry'
+import { computeContentBounds } from '#core/geometry'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 import type { SceneGraph } from '#core/scene-graph'
+
+export { computeContentBounds }
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
 export type ExportFormat = RasterExportFormat | 'SVG'
@@ -29,14 +31,6 @@ function nodeNeedsSceneBackdrop(graph: SceneGraph, nodeId: string): boolean {
     return true
   }
   return node.childIds.some((childId) => nodeNeedsSceneBackdrop(graph, childId))
-}
-
-export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
-  return computeDescendantVisualBounds(
-    nodeIds,
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
 }
 
 function ckImageFormat(ck: CanvasKit, format: ExportFormat) {

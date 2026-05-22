@@ -111,7 +111,9 @@ describe('fig-import: text properties', () => {
         styleIdForText: { guid: { sessionID: 1, localID: 20 } }
       } as Partial<NodeChange>)
     ])
-    const styled = graph.getChildren(graph.getPages()[0].id).find((node) => node.text === 'Styled text')
+    const styled = graph
+      .getChildren(graph.getPages()[0].id)
+      .find((node) => node.text === 'Styled text')
     expect(styled?.fontSize).toBe(16)
     expect(styled?.fontWeight).toBe(400)
     expect(styled?.lineHeight).toBe(24)
@@ -148,7 +150,9 @@ describe('fig-import: text properties', () => {
         styleIdForFill: { guid: { sessionID: 1, localID: 30 } }
       } as Partial<NodeChange>)
     ])
-    const styled = graph.getChildren(graph.getPages()[0].id).find((node) => node.name === 'ROUNDED_RECTANGLE_10')
+    const styled = graph
+      .getChildren(graph.getPages()[0].id)
+      .find((node) => node.name === 'ROUNDED_RECTANGLE_10')
     expect(styled?.fills[0]?.color).toEqual({
       r: 0.05882352963089943,
       g: 0.09019608050584793,

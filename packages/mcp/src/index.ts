@@ -4,7 +4,9 @@ import { serve } from '@hono/node-server'
 import { startServer } from './server.js'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  process.stdout.write(`openpencil-mcp-http\n\nStart the OpenPencil MCP HTTP and WebSocket server.\n\nOptions:\n  --help, -h    Show this help message\n`)
+  process.stdout.write(
+    `openpencil-mcp-http\n\nStart the OpenPencil MCP HTTP and WebSocket server.\n\nOptions:\n  --help, -h    Show this help message\n`
+  )
   process.exit(0)
 }
 

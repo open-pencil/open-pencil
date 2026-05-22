@@ -56,15 +56,23 @@ function makePair(name: CaseName, x: number, y: number) {
     secondNode.type = 'ELLIPSE'
     if (name === 'arc') {
       firstNode.arcData = { startingAngle: 0, endingAngle: Math.PI * 1.5, innerRadius: 0.35 }
-      secondNode.arcData = { startingAngle: Math.PI * 0.25, endingAngle: Math.PI * 1.75, innerRadius: 0.2 }
+      secondNode.arcData = {
+        startingAngle: Math.PI * 0.25,
+        endingAngle: Math.PI * 1.75,
+        innerRadius: 0.2
+      }
     }
   } else if (name === 'line') {
     firstNode.type = 'LINE'
     secondNode.type = 'LINE'
     firstNode.height = 54
     secondNode.height = 54
-    firstNode.strokes = [{ type: 'SOLID', color: color(1), opacity: 1, visible: true, weight: 14, align: 'CENTER' }]
-    secondNode.strokes = [{ type: 'SOLID', color: color(2), opacity: 1, visible: true, weight: 14, align: 'CENTER' }]
+    firstNode.strokes = [
+      { type: 'SOLID', color: color(1), opacity: 1, visible: true, weight: 14, align: 'CENTER' }
+    ]
+    secondNode.strokes = [
+      { type: 'SOLID', color: color(2), opacity: 1, visible: true, weight: 14, align: 'CENTER' }
+    ]
   } else if (name === 'polygon' || name === 'star') {
     firstNode.type = name === 'polygon' ? 'POLYGON' : 'STAR'
     secondNode.type = name === 'polygon' ? 'POLYGON' : 'STAR'

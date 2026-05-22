@@ -14,7 +14,7 @@ export {
 export { buildFontDigestMap } from './font-digests'
 
 import type { NodeChange, Paint, VariableConsumptionEntry } from '#core/kiwi/fig/codec'
-import type { SceneGraph, SceneNode, CharacterStyleOverride } from '#core/scene-graph'
+import type { SceneGraph, SceneNode, CharacterStyleOverride, GradientFill } from '#core/scene-graph'
 import type { Color, GUID, Matrix } from '#core/types'
 
 import { guidToString, stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
@@ -137,12 +137,13 @@ function buildDerivedTextData(
               : glyphAdvance,
           rotation: 0
         }))
-      : (getGlyphOutlineMetricsSync(
-          node.fontFamily,
-          weightToStyle(node.fontWeight, node.italic),
-          node.text,
-          node.fontSize
-        ) ?? []
+      : (
+          getGlyphOutlineMetricsSync(
+            node.fontFamily,
+            weightToStyle(node.fontWeight, node.italic),
+            node.text,
+            node.fontSize
+          ) ?? []
         ).map((glyph, index) => ({
           commandsBlob: appendGlyphBlob(
             blobs,
@@ -234,18 +235,23 @@ export function safeColor(c: Color | Omit<Color, 'a'>): Color {
 function fillToKiwiPaint(f: SceneNode['fills'][number]): Paint {
   const paint: Paint = {
     type: f.type,
-    color: safeColor(f.color),
     opacity: f.opacity,
     visible: f.visible,
     blendMode: f.blendMode ?? 'NORMAL'
   }
-  if (f.gradientStops) {
-    paint.stops = f.gradientStops.map((s) => ({ color: safeColor(s.color), position: s.position }))
+  if (f.type === 'SOLID') {
+    paint.color = safeColor(f.color)
   }
-  if (f.gradientTransform) paint.transform = f.gradientTransform
-  if (f.imageHash) paint.image = { hash: hexToBytes(f.imageHash) }
-  if (f.imageScaleMode) paint.imageScaleMode = f.imageScaleMode
-  if (f.imageTransform) paint.transform = f.imageTransform
+  if (f.type.startsWith('GRADIENT')) {
+    const gf = f as GradientFill
+    paint.stops = gf.gradientStops.map((s) => ({ color: safeColor(s.color), position: s.position }))
+    paint.transform = gf.gradientTransform
+  }
+  if (f.type === 'IMAGE') {
+    paint.image = { hash: hexToBytes(f.imageHash) }
+    paint.imageScaleMode = f.imageScaleMode
+    if (f.imageTransform) paint.transform = f.imageTransform
+  }
   return paint
 }
 
@@ -322,16 +328,14 @@ function serializeTextProps(
   }
 }
 
-function normalizeStackMode(
-  value: string | undefined
-): KiwiNodeChange['stackMode'] {
+function normalizeStackMode(value: string | undefined): KiwiNodeChange['stackMode'] {
   return value === 'HORIZONTAL' || value === 'VERTICAL' || value === 'NONE' ? value : undefined
 }
 
-function normalizeStackSizing(
-  value: string | undefined
-): KiwiNodeChange['stackPrimarySizing'] {
-  return value === 'FIXED' || value === 'RESIZE_TO_FIT' || value === 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE'
+function normalizeStackSizing(value: string | undefined): KiwiNodeChange['stackPrimarySizing'] {
+  return value === 'FIXED' ||
+    value === 'RESIZE_TO_FIT' ||
+    value === 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE'
     ? value
     : undefined
 }

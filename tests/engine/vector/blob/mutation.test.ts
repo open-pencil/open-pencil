@@ -1,6 +1,10 @@
 import { describe, test, expect } from 'bun:test'
 
-import { decodeVectorNetworkBlob, encodeVectorNetworkBlob, type VectorNetwork } from '@open-pencil/core'
+import {
+  decodeVectorNetworkBlob,
+  encodeVectorNetworkBlob,
+  type VectorNetwork
+} from '@open-pencil/core'
 
 // ---------------------------------------------------------------------------
 // vectorNetworkBlob — precision and handleMirroring round-trip
@@ -105,4 +109,3 @@ describe('vectorNetworkBlob — precision and mirroring', () => {
     expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true)
   })
 })
-

@@ -21,7 +21,11 @@ function isNear(value: number, target: number, tolerance = AUTO_LAYOUT_HOVER_TIC
   return Math.abs(value - target) <= tolerance
 }
 
-function resolvePaddingHover(node: SceneNode, localX: number, localY: number): AutoLayoutHover | null {
+function resolvePaddingHover(
+  node: SceneNode,
+  localX: number,
+  localY: number
+): AutoLayoutHover | null {
   const centerX = node.width / 2
   const centerY = node.height / 2
 
@@ -40,7 +44,10 @@ function resolvePaddingHover(node: SceneNode, localX: number, localY: number): A
     if (isNear(localX, centerX) && isNear(localY, tickY)) {
       return { nodeId: node.id, kind: 'padding-value', side: 'bottom' }
     }
-    if (localY >= node.height - Math.min(node.paddingBottom, AUTO_LAYOUT_HOVER_PADDING_REGION_TOLERANCE)) {
+    if (
+      localY >=
+      node.height - Math.min(node.paddingBottom, AUTO_LAYOUT_HOVER_PADDING_REGION_TOLERANCE)
+    ) {
       return { nodeId: node.id, kind: 'padding', side: 'bottom' }
     }
   }
@@ -60,7 +67,10 @@ function resolvePaddingHover(node: SceneNode, localX: number, localY: number): A
     if (isNear(localX, tickX) && isNear(localY, centerY)) {
       return { nodeId: node.id, kind: 'padding-value', side: 'right' }
     }
-    if (localX >= node.width - Math.min(node.paddingRight, AUTO_LAYOUT_HOVER_PADDING_REGION_TOLERANCE)) {
+    if (
+      localX >=
+      node.width - Math.min(node.paddingRight, AUTO_LAYOUT_HOVER_PADDING_REGION_TOLERANCE)
+    ) {
       return { nodeId: node.id, kind: 'padding', side: 'right' }
     }
   }
@@ -124,7 +134,11 @@ function resolveChildrenHover(
   return null
 }
 
-export function resolveAutoLayoutHover(cx: number, cy: number, editor: Editor): AutoLayoutHover | null {
+export function resolveAutoLayoutHover(
+  cx: number,
+  cy: number,
+  editor: Editor
+): AutoLayoutHover | null {
   if (editor.state.selectedIds.size !== 1) return null
   const nodeId = [...editor.state.selectedIds][0]
   const node = editor.graph.getNode(nodeId)
@@ -139,7 +153,6 @@ export function resolveAutoLayoutHover(cx: number, cy: number, editor: Editor): 
   return (
     resolveSpacingHover(node, children, localX, localY) ??
     resolvePaddingHover(node, localX, localY) ??
-    resolveChildrenHover(node, children, localX, localY) ??
-    { nodeId: node.id, kind: 'frame' }
+    resolveChildrenHover(node, children, localX, localY) ?? { nodeId: node.id, kind: 'frame' }
   )
 }

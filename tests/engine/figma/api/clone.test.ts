@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { SolidFill } from '@open-pencil/core/scene-graph'
+
 import { createAPI } from './helpers'
 
 describe('clone', () => {
@@ -15,7 +17,7 @@ describe('clone', () => {
     const cloned = frame.clone()
     expect(cloned.id).not.toBe(frame.id)
     expect(cloned.name).toBe('Original')
-    expect(cloned.fills[0].color.r).toBe(1)
+    expect((cloned.fills[0] as SolidFill).color.r).toBe(1)
     expect(cloned.children.length).toBe(1)
     expect(cloned.children[0].name).toBe('Child')
     expect(cloned.children[0].id).not.toBe(child.id)

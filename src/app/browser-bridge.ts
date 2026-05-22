@@ -1,5 +1,8 @@
 import type { ChatTransport, UIMessage } from 'ai'
 
+import type { FontManager } from '@open-pencil/core/text'
+import { fontManager } from '@open-pencil/core/text'
+
 import type { EditorStore } from '@/app/editor/session/create'
 
 export interface OpenPencilTestHooks {
@@ -10,6 +13,7 @@ export interface OpenPencilTestHooks {
 
 export interface OpenPencilWindowAPI {
   getStore?: () => EditorStore
+  getFontManager?: () => FontManager
   setChatTransport?: (factory: () => ChatTransport<UIMessage>) => void
   openFile?: (path: string) => Promise<void>
   test?: OpenPencilTestHooks
@@ -29,6 +33,7 @@ function windowApi(): OpenPencilWindowAPI {
     if (!activeStore) throw new Error('OpenPencil store not initialized')
     return activeStore
   }
+  window.openPencil.getFontManager ??= () => fontManager
   return window.openPencil
 }
 

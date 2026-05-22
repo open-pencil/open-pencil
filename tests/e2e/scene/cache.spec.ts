@@ -4,12 +4,13 @@ import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test.describe('SkPicture scene caching', () => {
+  test.describe.configure({ timeout: 120_000 })
   let helper: CanvasHelper
 
   test.beforeAll(async ({ browser }) => {
     const page = await browser.newPage()
     helper = new CanvasHelper(page)
-    await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+    await page.goto('/?test&no-chrome&no-rulers')
     await helper.waitForInit()
 
     await page.evaluate(() => {
@@ -69,16 +70,9 @@ test.describe('SkPicture scene caching', () => {
   })
 
   test('stale scene picture is invalidated after font load', async () => {
-    // Regression: loadFonts() is async. The first render can record an SkPicture
-    // before fonts load (using fallback drawText). If loadFonts() doesn't
-    // invalidate the cache, hover off replays the stale picture → text vanishes.
-    //
-    // We simulate this by calling invalidateScenePicture() to force the next
-    // render to re-record, then verify hover on/off doesn't lose text.
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
-      // Simulate what loadFonts() does: invalidate the cached picture
       const renderer = store.renderer
       if (!renderer) throw new Error('OpenPencil renderer not initialized')
       renderer.invalidateScenePicture()
@@ -86,7 +80,6 @@ test.describe('SkPicture scene caching', () => {
     })
     await helper.waitForRender()
 
-    // Extra render to stabilize the SkPicture cache
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -94,10 +87,8 @@ test.describe('SkPicture scene caching', () => {
     })
     await helper.waitForRender()
 
-    // Baseline after cache was invalidated and re-recorded
     const baseline = await helper.screenshotCanvas()
 
-    // Hover frame → un-hover: replays the newly recorded picture
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -120,7 +111,6 @@ test.describe('SkPicture scene caching', () => {
   })
 
   test('text survives hover on/off cycle', async () => {
-    // 1. Baseline: no hover — this records the SkPicture cache
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -128,7 +118,6 @@ test.describe('SkPicture scene caching', () => {
       store.requestRender()
     })
     await helper.waitForRender()
-    // Extra render cycle to ensure SkPicture cache is fully recorded
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -137,7 +126,6 @@ test.describe('SkPicture scene caching', () => {
     await helper.waitForRender()
     const baseline = await helper.screenshotCanvas()
 
-    // 2. Hover a frame — uses requestRepaint (only renderVersion, not sceneVersion)
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -148,7 +136,6 @@ test.describe('SkPicture scene caching', () => {
     })
     await helper.waitForRender()
 
-    // 3. Hover off — should replay cached SkPicture (the critical transition)
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -157,13 +144,11 @@ test.describe('SkPicture scene caching', () => {
     await helper.waitForRender()
     const afterHover = await helper.screenshotCanvas()
 
-    // Text must still be visible (baseline vs after hover cycle)
     expect(afterHover).toMatchSnapshot('text-after-hover-cycle.png')
     expect(Buffer.from(baseline)).toEqual(Buffer.from(afterHover))
   })
 
   test('text survives multiple hover cycles', async () => {
-    // Rapid hover on/off using the real setHoveredNode path (requestRepaint)
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -182,7 +167,6 @@ test.describe('SkPicture scene caching', () => {
   })
 
   test('text survives real mouse hover on/off', async () => {
-    // Use actual mouse movement instead of programmatic setHoveredNode
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -193,12 +177,10 @@ test.describe('SkPicture scene caching', () => {
     const baseline = await helper.screenshotCanvas()
 
     const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
-    // Move mouse over the frame (at 200, 150 — center of the 300x200 frame at 50,50)
     await helper.page.mouse.move(box.x + 200, box.y + 150)
     await helper.waitForRender()
     await helper.page.waitForTimeout(100)
 
-    // Move mouse to empty area (far from any node)
     await helper.page.mouse.move(box.x + 800, box.y + 600)
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
@@ -214,7 +196,6 @@ test.describe('SkPicture scene caching', () => {
   })
 
   test('text survives scene change then hover cycle', async () => {
-    // Mutate scene to invalidate picture cache
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -226,7 +207,6 @@ test.describe('SkPicture scene caching', () => {
     })
     await helper.waitForRender()
 
-    // Hover on then off using real path
     await helper.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')

@@ -17,8 +17,10 @@ function buildCloneUpdates(
   if (source.x !== clone.x) updates.x = source.x
   if (source.y !== clone.y) updates.y = source.y
   if (!ctx.geometryOverrideNodes.has(cloneId)) {
-    if (source.fillGeometry !== clone.fillGeometry) updates.fillGeometry = copyGeometryPaths(source.fillGeometry)
-    if (source.strokeGeometry !== clone.strokeGeometry) updates.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
+    if (source.fillGeometry !== clone.fillGeometry)
+      updates.fillGeometry = copyGeometryPaths(source.fillGeometry)
+    if (source.strokeGeometry !== clone.strokeGeometry)
+      updates.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
   }
   if (source.text === clone.text && source.figmaDerivedTextGlyphs) {
     updates.figmaDerivedTextGlyphs = structuredClone(source.figmaDerivedTextGlyphs)

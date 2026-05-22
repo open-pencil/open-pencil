@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { importNodeChanges } from '@open-pencil/core'
+import type { ShadowEffect } from '@open-pencil/core/scene-graph'
 
 import { canvas, doc, node } from './helpers'
 
@@ -26,7 +27,7 @@ describe('fig-import: effects', () => {
     expect(n.effects).toHaveLength(1)
     expect(n.effects[0].type).toBe('DROP_SHADOW')
     expect(n.effects[0].radius).toBe(8)
-    expect(n.effects[0].offset.x).toBe(4)
+    expect((n.effects[0] as ShadowEffect).offset.x).toBe(4)
   })
 
   test('inner shadow', () => {

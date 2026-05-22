@@ -84,7 +84,9 @@ function collectColors(graph: SceneGraph): { colors: ColorInfo[]; totalNodes: nu
     }
     for (const effect of node.effects) {
       if (!effect.visible) continue
-      addColor(effect.color, null)
+      if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+        addColor(effect.color, null)
+      }
     }
 
     for (const [field, varId] of Object.entries(node.boundVariables)) {

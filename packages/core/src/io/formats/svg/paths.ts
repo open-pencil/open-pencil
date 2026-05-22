@@ -1,5 +1,5 @@
 import { polygonVertices } from '#core/geometry'
-import { nodeHasRadius } from '#core/canvas/shapes'
+import { nodeHasRadius } from '#core/scene-graph'
 import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
 
 const CMD_CLOSE = 0

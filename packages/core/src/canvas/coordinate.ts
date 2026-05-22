@@ -101,6 +101,28 @@ export function getAbsolutePositionFull(node: SceneNode, graph: SceneGraph) {
     centerY
   }
 }
+
+/** Cached absolute position info, identical to getAbsolutePositionFull return. */
+export type AbsPosFullInfo = ReturnType<typeof getAbsolutePositionFull>
+
+/**
+ * Cached variant of getAbsolutePositionFull. Checks the provided cache first;
+ * on miss, computes via getAbsolutePositionFull and stores the result.
+ * The cache is owned by the caller (typically per-frame on SkiaRenderer).
+ */
+export function getAbsolutePositionFullCached(
+  node: SceneNode,
+  graph: SceneGraph,
+  cache: Map<string, AbsPosFullInfo> | null | undefined
+): AbsPosFullInfo {
+  if (!cache) return getAbsolutePositionFull(node, graph)
+  const cached = cache.get(node.id)
+  if (cached) return cached
+  const result = getAbsolutePositionFull(node, graph)
+  cache.set(node.id, result)
+  return result
+}
+
 export function getNodeLocalMatrix(n: SceneNode) {
   const rad = (n.rotation * Math.PI) / 180
 

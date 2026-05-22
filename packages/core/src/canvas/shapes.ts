@@ -1,21 +1,12 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
 import { polygonVertices } from '#core/geometry'
-import type { SceneNode } from '#core/scene-graph'
+import { nodeHasRadius, type SceneNode } from '#core/scene-graph'
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
 import type { SkiaRenderer } from './renderer'
 
-export function nodeHasRadius(node: SceneNode): boolean {
-  return (
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
-  )
-}
+export { nodeHasRadius }
 
 export function makeNodeShapePath(
   r: SkiaRenderer,

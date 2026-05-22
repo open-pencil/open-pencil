@@ -58,7 +58,7 @@ function collectImageHashes(nodes: SceneNode[], graph: SceneGraph): Set<string> 
   function walk(nodeList: SceneNode[]) {
     for (const node of nodeList) {
       for (const fill of node.fills) {
-        if (fill.imageHash) hashes.add(fill.imageHash)
+        if (fill.type === 'IMAGE') hashes.add(fill.imageHash)
       }
       walk(graph.getChildren(node.id))
     }

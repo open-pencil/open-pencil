@@ -24,11 +24,7 @@ export function derivedUnderlineRect(node: Pick<SceneNode, 'width'>, baselineY: 
   }
 }
 
-export function drawFigmaDerivedText(
-  r: SkiaRenderer,
-  canvas: Canvas,
-  node: SceneNode
-): boolean {
+export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   if (!node.figmaDerivedTextGlyphs?.length) return false
 
   let underlineBaselineY = 0

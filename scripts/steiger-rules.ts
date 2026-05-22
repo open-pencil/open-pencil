@@ -232,13 +232,13 @@ const strictTestFilePlacement = createFileRule(
       if (sourceRel.endsWith('.test.ts')) return null
       if (sourceRel.endsWith('/helpers.ts') || sourceRel.endsWith('.bench.ts')) return null
       if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
-      return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
+      if (path.basename(sourceRel).startsWith('visual-')) return null
+      return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and visual-* support scripts are allowed.'
     }
     if (sourceRel.startsWith('tests/helpers/')) return null
     return 'Tests must live under tests/e2e/** (*.spec.ts), tests/engine/** (*.test.ts), or tests/helpers/**.'
   }
 )
-
 const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
   from: string
   to: string

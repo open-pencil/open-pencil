@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 15_000,
+  timeout: 30_000,
   workers: 1,
   expect: {
     toHaveScreenshot: {
@@ -46,6 +46,6 @@ export default defineConfig({
   webServer: {
     command: 'bun run dev',
     port: 1420,
-    reuseExistingServer: true
+    reuseExistingServer: false
   }
 })

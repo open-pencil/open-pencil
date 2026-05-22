@@ -43,7 +43,9 @@ function copyAction(
 ): () => void {
   switch (id) {
     case 'copy-as-text':
-      return runAsync(() => actions.clipboardWrite(editor.copySelectionAsText(actions.ids()), 'text'))
+      return runAsync(() =>
+        actions.clipboardWrite(editor.copySelectionAsText(actions.ids()), 'text')
+      )
     case 'copy-as-svg':
       return runAsync(() => actions.clipboardWrite(editor.copySelectionAsSVG(actions.ids()), 'SVG'))
     case 'copy-as-png':

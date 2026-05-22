@@ -35,4 +35,3 @@ describe('FrameStats', () => {
     expect(stats.gpuTime).toBe(0)
   })
 })
-

@@ -1,16 +1,17 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import type { Canvas, Path } from 'canvaskit-wasm'
+import type { Canvas } from 'canvaskit-wasm'
 
 import { renderEffects } from '#core/canvas/shadows'
 import type { SceneNode } from '#core/scene-graph'
 
-import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
+import { createMockCanvas, createMockRenderer, mockCalls, MockPath } from './helpers'
 
 describe('Edge cases and bug fixes', () => {
   test('drop shadow cast from stroke when node has no fill', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
+    const mockPath = new MockPath()
     const node: Partial<SceneNode> = {
       type: 'RECTANGLE',
       width: 100,
@@ -27,9 +28,9 @@ describe('Edge cases and bug fixes', () => {
         }
       ],
       strokes: [{ visible: true, weight: 2, opacity: 1 }],
-      strokeGeometry: [{} as Path]
+      strokeGeometry: [mockPath]
     }
-    r.getStrokeGeometry = mock(() => [{} as Path])
+    r.getStrokeGeometry = mock(() => [mockPath])
 
     renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
 

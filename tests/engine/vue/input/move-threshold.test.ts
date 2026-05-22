@@ -6,7 +6,11 @@ import { handleMoveMove, handleMoveUp, MOVE_DRAG_START_THRESHOLD_PX } from '#vue
 import { createSelectionMoveDrag } from '#vue/shared/input/select/move'
 import type { DragMove } from '#vue/shared/input/types'
 
-function setupMoveDrag(): { editor: ReturnType<typeof createEditor>; drag: DragMove; nodeId: string } {
+function setupMoveDrag(): {
+  editor: ReturnType<typeof createEditor>
+  drag: DragMove
+  nodeId: string
+} {
   const editor = createEditor()
   const pageId = editor.state.currentPageId
   const node = editor.graph.createNode('RECTANGLE', pageId, {

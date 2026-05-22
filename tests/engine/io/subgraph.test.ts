@@ -1,11 +1,10 @@
-import { readFileSync } from 'node:fs'
-
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 
 import { exportFigFile, extractExportGraph, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
-import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
 import { guidToString } from '@open-pencil/core/kiwi/fig/node-change/guid'
+import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
 import { SceneGraph } from '@open-pencil/core/scene-graph'
 
 describe('export subgraph extraction', () => {
@@ -96,7 +95,10 @@ describe('export subgraph extraction', () => {
     await initCodec()
     const fixture = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
     const graph = await parseFigFile(
-      fixture.buffer.slice(fixture.byteOffset, fixture.byteOffset + fixture.byteLength) as ArrayBuffer
+      fixture.buffer.slice(
+        fixture.byteOffset,
+        fixture.byteOffset + fixture.byteLength
+      ) as ArrayBuffer
     )
     const exported = await exportFigFile(graph)
     const parsed = parseFigBuffer(exported.buffer as ArrayBuffer)

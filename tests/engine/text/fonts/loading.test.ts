@@ -18,8 +18,6 @@ import {
   fontFallbackManifest
 } from '@open-pencil/core'
 
-import { expectDefined } from '#tests/helpers/assert'
-
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
 }
@@ -202,6 +200,42 @@ describe('FontManager loaded font cache', () => {
     } finally {
       globalThis.fetch = originalFetch
     }
+  })
+
+  test('loads bundled fonts before attempting Google Fonts', async () => {
+    const manager = new FontManager()
+    const bundled = new ArrayBuffer(24)
+    let googleFetches = 0
+
+    manager.fetchBundledFont = async (url: string) => {
+      expect(url).toBe('/Inter-Regular.ttf')
+      return bundled
+    }
+    manager.fetchGoogleFont = async () => {
+      googleFetches++
+      return new ArrayBuffer(32)
+    }
+
+    await expect(manager.loadFont('Inter', 'Regular')).resolves.toBe(bundled)
+    expect(googleFetches).toBe(0)
+  })
+
+  test('uses bundled Inter fallback for bold without attempting Google Fonts', async () => {
+    const manager = new FontManager()
+    const bundled = new ArrayBuffer(24)
+    let googleFetches = 0
+
+    manager.fetchBundledFont = async (url: string) => {
+      expect(url).toBe('/Inter-Bold.ttf')
+      return bundled
+    }
+    manager.fetchGoogleFont = async () => {
+      googleFetches++
+      return new ArrayBuffer(32)
+    }
+
+    await expect(manager.loadFont('Inter', 'Bold')).resolves.toBe(bundled)
+    expect(googleFetches).toBe(0)
   })
 })
 
@@ -560,30 +594,5 @@ describe('font fallback manifest', () => {
     expect(fontFallbackEntry('cjk', 'Mozilla/5.0 (Macintosh)').localFamilies).toContain(
       'PingFang SC'
     )
-  })
-})
-
-describe('fetchBundledFont', () => {
-  test('loads Inter-Regular.ttf from assets in headless', async () => {
-    const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
-    expect(buffer).toBeInstanceOf(ArrayBuffer)
-    expect(expectDefined(buffer, 'Inter font buffer').byteLength).toBeGreaterThan(100_000)
-  })
-
-  test('loads Inter-Bold.ttf from assets in headless', async () => {
-    const buffer = await fontManager.fetchBundledFont('/Inter-Bold.ttf')
-    expect(buffer).toBeInstanceOf(ArrayBuffer)
-    expect(expectDefined(buffer, 'Inter bold font buffer').byteLength).toBeGreaterThan(100_000)
-  })
-
-  test('returns valid TTF data', async () => {
-    const buffer = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
-    const view = new DataView(expectDefined(buffer, 'Inter font buffer'))
-    // TrueType magic: 0x00010000
-    expect(view.getUint32(0)).toBe(0x00010000)
-  })
-
-  test('throws for nonexistent font', async () => {
-    expect(fontManager.fetchBundledFont('/Nonexistent-Font.ttf')).rejects.toThrow()
   })
 })

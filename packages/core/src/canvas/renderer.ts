@@ -11,12 +11,21 @@ import {
   IS_BROWSER
 } from '#core/constants'
 import type { EditorState } from '#core/editor/types'
+import { LRUMap } from '#core/lru-map'
 import { RenderProfiler } from '#core/profiler'
-import type { SceneNode, SceneGraph, Fill, Stroke } from '#core/scene-graph'
+import type {
+  SceneNode,
+  SceneGraph,
+  Fill,
+  GradientFill,
+  ImageFill,
+  Stroke
+} from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
 import type { Color, Rect, Vector } from '#core/types'
 
+import type { AbsPosFullInfo } from './coordinate'
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'
 import * as RenderColors from './renderer/colors'
@@ -31,6 +40,7 @@ export type { RenderOverlays, RulerTheme } from './renderer/types'
 import type {
   Image as CKImage,
   Path,
+  PathEffect,
   CanvasKit,
   Surface,
   Canvas,
@@ -38,6 +48,7 @@ import type {
   Font,
   FontMgr,
   TypefaceFontProvider,
+  Shader,
   SkPicture,
   ImageFilter,
   MaskFilter,
@@ -51,6 +62,7 @@ export interface SubtreePictureCacheEntry {
   positionPreviewVersion: number
 }
 
+import type { ShaderCacheEntry } from './renderer/shader-cache-entry'
 import type { RenderOverlays, RulerTheme } from './renderer/types'
 
 export class SkiaRenderer {
@@ -60,13 +72,14 @@ export class SkiaRenderer {
   declare strokePaint: Paint
   declare selectionPaint: Paint
   declare parentOutlinePaint: Paint
+  declare parentOutlineDashEffect: PathEffect
   declare snapPaint: Paint
   declare auxFill: Paint
   declare auxStroke: Paint
   declare opacityPaint: Paint
   declare effectLayerPaint: Paint
-  imageFilterCache = new Map<string, ImageFilter | null>()
-  maskFilterCache = new Map<number, MaskFilter | null>()
+  imageFilterCache = new LRUMap<string, ImageFilter | null>(100)
+  maskFilterCache = new LRUMap<number, MaskFilter | null>(100)
   _tmpColor = new Float32Array(4)
   _tmpRect = new Float32Array(4)
   textFont: Font | null = null
@@ -77,12 +90,13 @@ export class SkiaRenderer {
   fontMgr: FontMgr | null = null
   fontProvider: TypefaceFontProvider | null = null
   fontsLoaded = false
-  imageCache = new Map<string, CKImage>()
-  vectorPathCache = new Map<string, Path[]>()
-  vectorStrokePathCache = new Map<string, Path[]>()
-  vectorStrokeOutlineCache = new Map<string, Path[]>()
-  fillGeometryCache = new Map<string, Path[]>()
-  strokeGeometryCache = new Map<string, Path[]>()
+  requestRepaint?: () => void
+  imageCache = new LRUMap<string, CKImage>(200)
+  vectorPathCache = new LRUMap<string, Path[]>(500)
+  vectorStrokePathCache = new LRUMap<string, Path[]>(200)
+  vectorStrokeOutlineCache = new LRUMap<string, Path[]>(200)
+  fillGeometryCache = new LRUMap<string, Path[]>(500)
+  strokeGeometryCache = new LRUMap<string, Path[]>(500)
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1
   scenePicturePositionPreviewVersion = -1
@@ -129,11 +143,29 @@ export class SkiaRenderer {
   sceneBackingAverageViewportIntervalMs = 80
   sceneBackingLastViewportEventAt = 0
   lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
-  nodePictureCache = new Map<string, SkPicture | null>()
   subtreePictureCache = new Map<string, SubtreePictureCacheEntry>()
   subtreePictureCachePageId: string | null = null
   subtreePictureCacheSceneVersion = -1
   subtreePictureCachePositionPreviewVersion = -1
+  lastObservedSceneVersion = -1
+  lastSceneVersionChangeAt = 0
+  /** Cached countDescendants result, invalidated when sceneVersion changes */
+  _cachedLargeGraphVersion = -1
+  _cachedLargeGraphResult = false
+  _cachedLargeGraphPageId: string | null = null
+  /** Cached getAbsolutePositionFull results, invalidated when sceneVersion or pageId changes */
+  _absPosFullCache = new Map<string, AbsPosFullInfo>()
+  _absPosFullSceneVersion = -1
+  _absPosFullPageId: string | null = null
+  /** Current node's absInfo during renderNode execution — used by LOD metric
+   * functions (effectLodScreenMetric, tryRenderTextLOD) to compute world-space
+   * screen area instead of local node dimensions. Saved and restored across
+   * recursive renderNode calls so each frame maintains the parent's value.
+   * Null when no renderNode is active (top-level or between frames). */
+  _currentAbsInfo: AbsPosFullInfo | null = null
+  nodePictureCache = new LRUMap<string, SkPicture | null>(500)
+  shaderCache = new LRUMap<number, ShaderCacheEntry[]>(200)
+  imageFillShader: Shader | null = null
   readonly labelCache = new LabelCache()
   readonly profiler: RenderProfiler
 
@@ -163,6 +195,148 @@ export class SkiaRenderer {
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
   _nodeCount = 0
   _culledCount = 0
+  _lodCulledCount = 0
+
+  /**
+   * Minimum screen-space area (in px²) below which nodes are skipped.
+   * Nodes whose on-screen bounding box area is less than this value are
+   * not rendered — their fills, strokes, effects, and children are all
+   * skipped. This is a Level-of-Detail optimization for zoomed-out views.
+   *
+   * Default 4 (2×2 CSS px on screen). Nodes smaller than this are
+   * perceptually negligible — even on high-DPI displays, a 2×2 CSS px
+   * square occupies only 4×4 physical pixels at 2× Retina, which is
+   * indistinguishable from rendering artifacts at normal viewing distance.
+   * Set to 0 to force full fidelity at all zoom levels (useful for tests
+   * or screenshots).
+   *
+   * Structural nodes (SECTION, COMPONENT_SET, containers with children,
+   * nodes with visible effects) are never LOD-culled regardless of size.
+   *
+   * Memory impact: ZERO — no additional caches or data structures.
+   * CPU impact: One float multiply + compare per visible node.
+   */
+  minScreenSize = 4
+
+  /**
+   * Minimum base-LOD threshold applied while the viewport is actively
+   * panning or zooming, independent of the idle `minScreenSize` setting.
+   *
+   * The effective animated threshold is:
+   * `max(minScreenSize, adaptiveMinScreenSize) * _adaptiveLodBoost`
+   * when `_isViewportAnimating` is true.
+   *
+   * Default 4 matches minScreenSize, so the animated floor is redundant
+   * at the default settings. It becomes meaningful when minScreenSize is
+   * overridden to 0 (full idle fidelity) but adaptive culling during
+   * navigation is still desired.
+   */
+  adaptiveMinScreenSize = 4
+
+  /**
+   * Minimum screen-space area (in px²) below which TEXT nodes render
+   * as simplified gray rectangles instead of full Paragraphs.
+   * Separate from base LOD (minScreenSize) — base LOD skips the node
+   * entirely; text LOD keeps the node visible but replaces expensive
+   * Paragraph construction with a cheap rect fill.
+   *
+   * Default 100 (10×10px on screen). Text smaller than this is unreadable
+   * and the Paragraph construction is the most expensive per-node operation.
+   * Set to 0 to disable text LOD (render all text as Paragraphs regardless of size).
+   *
+   * Text Paragraph construction is the single most expensive per-node
+   * operation in the render pipeline. Skipping it for tiny text nodes
+   * at low zoom levels yields significant frame time improvements.
+   *
+   * Memory impact: ZERO. CPU impact: One float multiply + compare per
+   * visible TEXT node.
+   */
+  minScreenSizeForText = 100
+
+  /**
+   * Counter: number of TEXT nodes that were replaced with simplified
+   * rectangles due to minScreenSizeForText LOD threshold. Reset to 0
+   * at the start of each frame in the direct-render pipeline path.
+   */
+  _textLodCulledCount = 0
+
+  /**
+   * Minimum screen-space area (in px²) below which effects (shadows,
+   * blurs) are skipped. Nodes below this threshold still render their
+   * fills and strokes, but expensive saveLayer-based effect rendering
+   * is skipped entirely.
+   *
+   * Default 9 (3×3 CSS px on screen). Below this size, even the
+   * worst-case effect (inner shadow covering the entire node surface)
+   * is indistinguishable from the node's own fill — the shadow occupies
+   * every pixel of a < 3×3px element. This provides a conservative bound
+   * that prevents wasteful saveLayer/restore + ImageFilter construction
+   * on nodes where no human observer could perceive the effect.
+   *
+   * Drop shadows (truly peripheral effects) are imperceptible well above
+   * this threshold, but inner shadows, glass, and layer blur affect the
+   * entire surface — the threshold must be sized for the worst case.
+   *
+   * Set to 0 to disable effect LOD entirely (force full fidelity).
+   * Set to 50–100 for zoomed-out views where more visual fidelity loss
+   * is acceptable. The adaptive LOD boost during pan/zoom still applies
+   * when this is > 0.
+   *
+   * Memory/CPU impact: Zero. One float multiply + compare per visible node.
+   */
+  minScreenSizeForEffects = 9
+
+  /**
+   * Counter: number of nodes whose effects were skipped due to
+   * minScreenSizeForEffects LOD threshold. Reset to 0 at the start
+   * of each frame in the direct-render pipeline path.
+   */
+  _effectLodCulledCount = 0
+
+  /**
+   * Whether the viewport is currently being panned or zoomed.
+   * When true, LOD thresholds are multiplied by _adaptiveLodBoost
+   * to keep frame times under 16ms during navigation.
+   */
+  _isViewportAnimating = false
+
+  /**
+   * Timestamp (performance.now) when the last viewport animation
+   * (pan/zoom change) ended. Used with ADAPTIVE_LOD_RESTORE_MS to
+   * determine when to restore full detail.
+   */
+  _animationStopTime = 0
+
+  /**
+   * Multiplier applied to all LOD thresholds during active pan/zoom.
+   * Default 4 means thresholds are 4× more aggressive during navigation.
+   * Set to 1 to disable adaptive boost (same as idle state).
+   */
+  _adaptiveLodBoost = 4
+
+  /**
+   * Milliseconds after the last pan/zoom change before full detail
+   * is restored. During this window, LOD thresholds remain boosted
+   * to handle rapid successive interactions.
+   */
+  _adaptiveLodRestoreMs = 200
+
+  /**
+   * Tracks whether the cached scene picture was recorded with the
+   * animation boost active. Used to invalidate the cache when the
+   * animation state changes (since boosted/unboosted renders differ).
+   */
+  _scenePictureAnimating = false
+
+  /** Previous frame's panX for viewport animation detection */
+  _prevPanX: number | null = null
+
+  /** Previous frame's panY for viewport animation detection */
+  _prevPanY: number | null = null
+
+  /** Previous frame's zoom for viewport animation detection */
+  _prevZoom: number | null = null
+
   _flashes: Array<{ nodeId: string; startTime: number }> = []
   _flashPaint: Paint | null = null
   _aiActiveNodes: Set<string> = new Set()
@@ -246,9 +420,7 @@ export class SkiaRenderer {
     canvas: Canvas,
     graph: SceneGraph,
     nodeId: string,
-    overlays: RenderOverlays,
-    parentAbsX?: number,
-    parentAbsY?: number
+    overlays: RenderOverlays
   ) => void
   declare renderSection: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
   declare renderComponentSet: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => void
@@ -262,17 +434,23 @@ export class SkiaRenderer {
     pass: 'behind' | 'front',
     shadowShapeChild?: SceneNode | null
   ) => void
-  declare renderText: (canvas: Canvas, node: SceneNode, fill?: Fill) => void
+  declare renderText: (
+    canvas: Canvas,
+    node: SceneNode,
+    fill?: Fill,
+    isFirstDrawnFill?: boolean
+  ) => void
   declare drawNodeFill: (
     canvas: Canvas,
     node: SceneNode,
     rect: Float32Array,
     hasRadius: boolean,
-    fill?: Fill
+    fill?: Fill,
+    isFirstDrawnFill?: boolean
   ) => void
   declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
-  declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => void
-  declare applyImageFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean
+  declare applyGradientFill: (fill: GradientFill, node: SceneNode, graph: SceneGraph) => boolean
+  declare applyImageFill: (fill: ImageFill, node: SceneNode, graph: SceneGraph) => boolean
   declare drawArc: (canvas: Canvas, node: SceneNode, paint: Paint) => void
   declare drawNodeStroke: (
     canvas: Canvas,
@@ -381,10 +559,13 @@ export class SkiaRenderer {
     for (const e of node.effects) {
       if (!e.visible) continue
       const blur = e.radius
-      const spread = e.spread
-      const ox = Math.abs(e.offset.x)
-      const oy = Math.abs(e.offset.y)
-      expand = Math.max(expand, blur + spread + ox, blur + spread + oy)
+      if (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW') {
+        const ox = Math.abs(e.offset.x)
+        const oy = Math.abs(e.offset.y)
+        expand = Math.max(expand, blur + (e.spread ?? 0) + ox, blur + (e.spread ?? 0) + oy)
+      } else {
+        expand = Math.max(expand, blur)
+      }
     }
     return expand
   }
@@ -404,8 +585,8 @@ export class SkiaRenderer {
     return this.destroyed
   }
 
-  async loadFonts(onFallbackFontsLoaded?: () => void): Promise<void> {
-    await RendererFonts.loadFonts(this, onFallbackFontsLoaded)
+  async loadFonts(): Promise<void> {
+    await RendererFonts.loadFonts(this)
   }
 
   async prepareForExport(
@@ -428,6 +609,8 @@ export class SkiaRenderer {
 
   invalidateAllPictures(): void {
     RendererState.invalidateAllPictures(this)
+    this.fillPaint.setShader(null)
+    this.shaderCache.clear()
   }
 
   invalidateNodePicture(nodeId: string): void {
@@ -540,24 +723,9 @@ export class SkiaRenderer {
   }
 
   invalidateVectorPath(nodeId: string): void {
-    for (const cache of [this.vectorPathCache, this.vectorStrokePathCache]) {
-      const old = cache.get(nodeId)
-      if (!old) continue
-      for (const p of old) p.delete()
-      cache.delete(nodeId)
-    }
-    for (const [key, paths] of this.vectorStrokeOutlineCache) {
-      if (!key.startsWith(`${nodeId}|`)) continue
-      for (const p of paths) p.delete()
-      this.vectorStrokeOutlineCache.delete(key)
-    }
-    for (const cache of [this.fillGeometryCache, this.strokeGeometryCache]) {
-      const oldGeom = cache.get(nodeId)
-      if (oldGeom) {
-        for (const p of oldGeom) p.delete()
-        cache.delete(nodeId)
-      }
-    }
+    this.vectorPathCache.delete(nodeId)
+    this.fillGeometryCache.delete(nodeId)
+    this.strokeGeometryCache.delete(nodeId)
   }
 
   measureTextNode(node: SceneNode, maxWidth?: number): { width: number; height: number } | null {

@@ -74,7 +74,7 @@ describe('flattenSelected', () => {
       y: 30,
       width: 40,
       height: 30,
-      fills: [TRANSPARENT],
+      fills: [{ type: 'SOLID', color: TRANSPARENT, opacity: 0, visible: true }],
       strokes: [{ type: 'SOLID', color: BLACK, weight: 8, opacity: 1, visible: true }]
     })
 
@@ -102,7 +102,7 @@ describe('flattenSelected', () => {
       y: 30,
       width: 40,
       height: 30,
-      fills: [TRANSPARENT],
+      fills: [{ type: 'SOLID', color: TRANSPARENT, opacity: 0, visible: true }],
       strokes: [{ type: 'SOLID', color: BLACK, weight: 8, opacity: 1, visible: true }]
     })
     editor.select([rect.id])

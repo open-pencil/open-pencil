@@ -92,4 +92,3 @@ describe('rotatedBBox', () => {
     expect(pos.bottom - pos.top).toBeCloseTo(neg.bottom - neg.top, 5)
   })
 })
-

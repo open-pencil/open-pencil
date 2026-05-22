@@ -1,7 +1,5 @@
 import process from 'node:process'
 
-import packageJson from './package.json'
-
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import IconsResolver from 'unplugin-icons/resolver'
@@ -9,6 +7,7 @@ import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
+import packageJson from './package.json'
 import { createOpenPencilAliases } from './vite/aliases'
 import { localAutomationToken, openPencilAutomationPlugin } from './vite/automation'
 import { copyCanvasKitAssetsPlugin } from './vite/canvaskit-assets'

@@ -1,9 +1,7 @@
-import {
-  applyInstanceDirectAssignments,
-  applyOverrideAssignments
-} from './assignments'
-import { collectAssignmentsMap, collectPropRefsMap } from './maps'
 import type { OverrideContext } from '#core/kiwi/fig/instance-overrides/types'
+
+import { applyInstanceDirectAssignments, applyOverrideAssignments } from './assignments'
+import { collectAssignmentsMap, collectPropRefsMap } from './maps'
 
 /**
  * Apply all component property assignments (visibility toggles, instance swaps).

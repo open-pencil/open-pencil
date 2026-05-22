@@ -7,8 +7,18 @@ describe('booleanOperationSelected', () => {
   test('wraps selected nodes in a boolean operation container', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    const first = editor.graph.createNode('RECTANGLE', pageId, { x: 10, y: 20, width: 30, height: 40 })
-    const second = editor.graph.createNode('ELLIPSE', pageId, { x: 80, y: 90, width: 20, height: 10 })
+    const first = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 10,
+      y: 20,
+      width: 30,
+      height: 40
+    })
+    const second = editor.graph.createNode('ELLIPSE', pageId, {
+      x: 80,
+      y: 90,
+      width: 20,
+      height: 10
+    })
 
     editor.select([first.id, second.id])
     editor.booleanOperationSelected('UNION')
@@ -26,7 +36,10 @@ describe('booleanOperationSelected', () => {
   test('does not wrap unsupported text nodes', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    const first = editor.graph.createNode('TEXT', pageId, { text: 'Nope', fontFamily: 'Definitely Missing Font' })
+    const first = editor.graph.createNode('TEXT', pageId, {
+      text: 'Nope',
+      fontFamily: 'Definitely Missing Font'
+    })
     const second = editor.graph.createNode('RECTANGLE', pageId)
 
     editor.select([first.id, second.id])
@@ -57,7 +70,16 @@ describe('booleanOperationSelected', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const first = editor.graph.createNode('RECTANGLE', pageId, {
-      fills: [{ type: 'IMAGE', imageHash: 'image', imageScaleMode: 'FILL', color: TRANSPARENT, opacity: 1, visible: true }]
+      fills: [
+        {
+          type: 'IMAGE',
+          imageHash: 'image',
+          imageScaleMode: 'FILL',
+          color: TRANSPARENT,
+          opacity: 1,
+          visible: true
+        }
+      ]
     })
     const second = editor.graph.createNode('RECTANGLE', pageId)
 
@@ -82,7 +104,12 @@ describe('booleanOperationSelected', () => {
     expect(editor.graph.getNode(pageId)?.childIds).toEqual([before.id, booleanId, after.id])
 
     editor.undo.undo()
-    expect(editor.graph.getNode(pageId)?.childIds).toEqual([before.id, first.id, second.id, after.id])
+    expect(editor.graph.getNode(pageId)?.childIds).toEqual([
+      before.id,
+      first.id,
+      second.id,
+      after.id
+    ])
     expect(editor.state.selectedIds).toEqual(new Set([first.id, second.id]))
 
     editor.undo.redo()

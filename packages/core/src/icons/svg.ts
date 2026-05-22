@@ -118,7 +118,9 @@ export function extractPaths(svgBody: string): IconPathInfo[] {
       d,
       fill: resolveAttr(attrValue(tag, 'fill'), groupAttrs.fill, 'currentColor'),
       stroke: resolveAttr(attrValue(tag, 'stroke'), groupAttrs.stroke, null),
-      strokeWidth: Number.parseFloat(attrValue(tag, 'stroke-width') ?? groupAttrs.strokeWidth ?? '1'),
+      strokeWidth: Number.parseFloat(
+        attrValue(tag, 'stroke-width') ?? groupAttrs.strokeWidth ?? '1'
+      ),
       strokeCap: attrValue(tag, 'stroke-linecap') ?? groupAttrs.strokeCap ?? 'butt',
       strokeJoin: attrValue(tag, 'stroke-linejoin') ?? groupAttrs.strokeJoin ?? 'miter',
       fillRule: fillRuleAttr === 'evenodd' ? 'EVENODD' : 'NONZERO'

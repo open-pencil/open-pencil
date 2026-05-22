@@ -1,5 +1,10 @@
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
+function clearStrokePathCaches(r: SkiaRenderer): void {
+  r.vectorStrokePathCache.clear()
+  r.vectorStrokeOutlineCache.clear()
+}
+
 export function invalidateScenePicture(r: SkiaRenderer): void {
   r.scenePicture?.delete()
   r.scenePicture = null
@@ -8,6 +13,8 @@ export function invalidateScenePicture(r: SkiaRenderer): void {
   r.sceneBacking = null
   r.sceneBackingBuild?.surface.delete()
   r.sceneBackingBuild = null
+  clearSubtreePictureCache(r)
+  r._scenePictureAnimating = false
 }
 
 export function clearSubtreePictureCache(r: SkiaRenderer): void {
@@ -20,22 +27,28 @@ export function clearSubtreePictureCache(r: SkiaRenderer): void {
 
 export function invalidateAllPictures(r: SkiaRenderer): void {
   invalidateScenePicture(r)
-  for (const pic of r.nodePictureCache.values()) pic?.delete()
   r.nodePictureCache.clear()
-  clearSubtreePictureCache(r)
+  clearStrokePathCaches(r)
+  r._absPosFullCache.clear()
+  r._absPosFullSceneVersion = -1
+  r._absPosFullPageId = r.pageId
 }
 
 export function invalidateNodePicture(r: SkiaRenderer, nodeId: string): void {
-  const pic = r.nodePictureCache.get(nodeId)
-  if (pic) {
-    pic.delete()
-    r.nodePictureCache.delete(nodeId)
+  r.nodePictureCache.delete(nodeId)
+  // Invalidate stroke path cache for this node — vector network
+  // or stroke property changes render old cached paths stale.
+  r.vectorStrokePathCache.delete(nodeId)
+  // Outline cache keys are composite (nodeId|weight|cap|join) —
+  // clear all entries whose key starts with this node's ID.
+  for (const key of r.vectorStrokeOutlineCache.keys()) {
+    if (key.startsWith(nodeId)) r.vectorStrokeOutlineCache.delete(key)
   }
-  const subtree = r.subtreePictureCache.get(nodeId)
-  if (subtree) {
-    subtree.picture.delete()
-    r.subtreePictureCache.delete(nodeId)
-  }
+  // Clear all subtree pictures — a descendant change may have invalidated
+  // a top-level page child's subtree picture that includes this node.
+  // We can't cheaply map from a descendant to its top-level page child,
+  // so clearing the entire cache is the conservative correct choice.
+  clearSubtreePictureCache(r)
 }
 
 export function flashNode(r: SkiaRenderer, nodeId: string): void {

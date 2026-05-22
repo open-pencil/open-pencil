@@ -27,12 +27,24 @@ function assignDirectUpdate(
   updates: Partial<SceneNode>
 ): void {
   switch (key) {
-    case 'text': updates.text = source.text; break
-    case 'visible': updates.visible = source.visible; break
-    case 'opacity': updates.opacity = source.opacity; break
-    case 'locked': updates.locked = source.locked; break
-    case 'layoutGrow': updates.layoutGrow = source.layoutGrow; break
-    case 'textAutoResize': updates.textAutoResize = source.textAutoResize; break
+    case 'text':
+      updates.text = source.text
+      break
+    case 'visible':
+      updates.visible = source.visible
+      break
+    case 'opacity':
+      updates.opacity = source.opacity
+      break
+    case 'locked':
+      updates.locked = source.locked
+      break
+    case 'layoutGrow':
+      updates.layoutGrow = source.layoutGrow
+      break
+    case 'textAutoResize':
+      updates.textAutoResize = source.textAutoResize
+      break
   }
 }
 
@@ -59,10 +71,18 @@ function assignCopiedUpdate(
   updates: Partial<SceneNode>
 ): void {
   switch (key) {
-    case 'fills': updates.fills = copyFills(source.fills); break
-    case 'strokes': updates.strokes = copyStrokes(source.strokes); break
-    case 'effects': updates.effects = copyEffects(source.effects); break
-    case 'styleRuns': updates.styleRuns = copyStyleRuns(source.styleRuns); break
+    case 'fills':
+      updates.fills = copyFills(source.fills)
+      break
+    case 'strokes':
+      updates.strokes = copyStrokes(source.strokes)
+      break
+    case 'effects':
+      updates.effects = copyEffects(source.effects)
+      break
+    case 'styleRuns':
+      updates.styleRuns = copyStyleRuns(source.styleRuns)
+      break
   }
 }
 

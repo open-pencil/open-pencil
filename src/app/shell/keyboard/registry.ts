@@ -6,13 +6,13 @@ import { editorCommandMetadata } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
-import { appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
   KeyboardShortcutOptions,
   KeyboardShortcutRunOptions
 } from '@/app/shell/keyboard/types'
+import { appMenuTinykeysShortcut } from '@/app/shell/menu/shortcut'
 
 type ShortcutAction = (options: KeyboardShortcutRunOptions) => void
 

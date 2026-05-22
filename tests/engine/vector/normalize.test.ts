@@ -1,6 +1,11 @@
 import { describe, test, expect } from 'bun:test'
 
-import { decodeVectorNetworkBlob, encodeVectorNetworkBlob, normalizeVectorNetwork, type VectorNetwork } from '@open-pencil/core'
+import {
+  decodeVectorNetworkBlob,
+  encodeVectorNetworkBlob,
+  normalizeVectorNetwork,
+  type VectorNetwork
+} from '@open-pencil/core'
 
 describe('normalizeVectorNetwork', () => {
   test('passes through segments that already have tangents', () => {
@@ -73,4 +78,3 @@ describe('normalizeVectorNetwork', () => {
     expect(decoded.regions[0].loops).toEqual([[0, 1, 2]])
   })
 })
-

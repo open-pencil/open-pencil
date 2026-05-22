@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { computeAllLayouts, SceneGraph, setTextMeasurer } from '@open-pencil/core'
 
@@ -6,6 +6,8 @@ import { createEditorStore } from '@/app/editor/session'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, loadFixtureGraph, pageId, rect } from '#tests/helpers/layout'
+
+setDefaultTimeout(15_000)
 
 describe('text measurement', () => {
   test('derived text layout preserves imported auto-layout text bounds during measurement', () => {

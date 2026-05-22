@@ -64,7 +64,8 @@ export function createSelectionMoveDrag(
   editor: Editor,
   duplicate: boolean
 ): DragState {
-  if (duplicate && editor.state.selectedIds.size > 0) return duplicateAndDrag(cx, cy, sx, sy, editor).drag
+  if (duplicate && editor.state.selectedIds.size > 0)
+    return duplicateAndDrag(cx, cy, sx, sy, editor).drag
 
   const originals = collectMoveOriginals(editor)
 

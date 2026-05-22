@@ -12,6 +12,7 @@ import {
   rgbaToOkHCL,
   SceneGraph
 } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -24,7 +25,9 @@ describe('OkHCL metadata', () => {
 
     frame.setFillOkHCL({ h: 240, c: 0.12, l: 0.7, a: 0.8 })
 
-    expect(frame.fills[0]?.color).toEqual(okhclToRGBA({ h: 240, c: 0.12, l: 0.7, a: 0.8 }))
+    expect((frame.fills[0] as SolidFill)?.color).toEqual(
+      okhclToRGBA({ h: 240, c: 0.12, l: 0.7, a: 0.8 })
+    )
     expect(frame.getFillOkHCL()).toMatchObject({
       version: 1,
       kind: 'fill',

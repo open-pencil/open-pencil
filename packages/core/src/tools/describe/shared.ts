@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode, SolidFill } from '#core/scene-graph'
 import type { Color } from '#core/types'
 
 export const CONTAINER_TYPES = new Set(['FRAME', 'COMPONENT', 'INSTANCE'])
@@ -11,7 +11,9 @@ export const BUTTON_MIN_RADIUS = 2
 export function findAncestorBackground(node: SceneNode, graph: SceneGraph): Color | null {
   let current = node.parentId ? graph.getNode(node.parentId) : null
   while (current) {
-    const solidFill = current.fills.find((f) => f.visible && f.type === 'SOLID' && f.opacity > 0.5)
+    const solidFill = current.fills.find(
+      (f): f is SolidFill => f.visible && f.type === 'SOLID' && f.opacity > 0.5
+    )
     if (solidFill) return solidFill.color
     current = current.parentId ? graph.getNode(current.parentId) : null
   }

@@ -6,7 +6,9 @@ import { MCP_VERSION, registerTools } from './server.js'
 import { createStdioRpcBridge } from './stdio-bridge.js'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  process.stdout.write(`openpencil-mcp\n\nStart the OpenPencil MCP stdio bridge.\n\nOptions:\n  --help, -h    Show this help message\n`)
+  process.stdout.write(
+    `openpencil-mcp\n\nStart the OpenPencil MCP stdio bridge.\n\nOptions:\n  --help, -h    Show this help message\n`
+  )
   process.exit(0)
 }
 

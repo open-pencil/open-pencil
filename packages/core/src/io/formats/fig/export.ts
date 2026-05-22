@@ -4,9 +4,9 @@ import { deflateSync } from 'fflate'
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { renderThumbnail } from '#core/io/formats/raster'
-import { populateAllLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '#core/kiwi/fig/codec'
 import type { NodeChange } from '#core/kiwi/fig/codec'
+import { populateAllLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import { stringToGuid } from '#core/kiwi/fig/node-change/convert'
 import { buildFigmaPaintVariableColorMap } from '#core/kiwi/fig/node-change/export-node'
 import {
@@ -91,11 +91,17 @@ async function renderFigThumbnail(
 ): Promise<Uint8Array> {
   if (!pageId) return THUMBNAIL_1X1
   if (ck && renderer) {
-    return renderThumbnail(ck, renderer, graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) ?? THUMBNAIL_1X1
+    return (
+      renderThumbnail(ck, renderer, graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT) ??
+      THUMBNAIL_1X1
+    )
   }
   if (!renderHeadless || IS_BROWSER || IS_TAURI) return THUMBNAIL_1X1
   const { headlessRenderThumbnail } = await import('#core/io/formats/raster')
-  return (await headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)) ?? THUMBNAIL_1X1
+  return (
+    (await headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)) ??
+    THUMBNAIL_1X1
+  )
 }
 
 function assignVariableGuids(
@@ -340,7 +346,11 @@ export async function exportFigFile(
     msg.blobs = blobs.map((bytes) => ({ bytes }))
   }
 
-  const kiwiData = compiled.encodeMessage(msg)
+  // ByteBuffer.toUint8Array() returns a subarray view into the internal buffer.
+  // Explicit copy before the data transits to the worker thread via transferables.
+  // Without this, transferring .buffer detaches the underlying ArrayBuffer and
+  // corrupts any other views sharing it (including cached ByteBuffer internals).
+  const kiwiData = new Uint8Array(compiled.encodeMessage(msg))
 
   const currentPageId = pageId ?? pages[0]?.id
   const thumbnailPng = await renderFigThumbnail(

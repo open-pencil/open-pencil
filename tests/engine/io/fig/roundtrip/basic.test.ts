@@ -7,6 +7,7 @@ import {
   SceneGraph,
   type SceneNode
 } from '@open-pencil/core'
+import type { SolidFill, GradientFill, ShadowEffect } from '@open-pencil/core/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { collectAllNodes, countByType } from '#tests/helpers/fig-traversal'
@@ -218,10 +219,10 @@ describe('roundtrip: export → re-import', () => {
     expect(headerBg).toBeDefined()
     expect(expectDefined(headerBg, 'headerBg').fills).toHaveLength(2)
     expect(headerBg.fills[0].type).toBe('SOLID')
-    expect(headerBg.fills[0].color.r).toBeCloseTo(0.2, 1)
+    expect((headerBg.fills[0] as SolidFill).color.r).toBeCloseTo(0.2, 1)
     expect(headerBg.fills[1].type).toBe('GRADIENT_LINEAR')
     expect(headerBg.fills[1].opacity).toBeCloseTo(0.5, 1)
-    expect(headerBg.fills[1].gradientStops).toHaveLength(2)
+    expect((headerBg.fills[1] as GradientFill).gradientStops).toHaveLength(2)
   })
 
   test('preserves text content', () => {
@@ -277,7 +278,7 @@ describe('roundtrip: export → re-import', () => {
     expect(expectDefined(headerBg, 'headerBg').effects).toHaveLength(1)
     expect(headerBg.effects[0].type).toBe('DROP_SHADOW')
     expect(headerBg.effects[0].radius).toBe(8)
-    expect(headerBg.effects[0].offset.y).toBe(4)
+    expect((headerBg.effects[0] as ShadowEffect).offset.y).toBe(4)
   })
 
   test('preserves dimensions', () => {

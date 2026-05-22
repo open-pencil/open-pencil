@@ -1,11 +1,18 @@
+import type {
+  DerivedSymbolOverride,
+  OverrideContext
+} from '#core/kiwi/fig/instance-overrides/types'
 import { convertLetterSpacing, convertLineHeight } from '#core/kiwi/fig/node-change/convert'
 import { convertFigmaDerivedTextGlyphs } from '#core/kiwi/fig/node-change/derived-text-glyphs'
-import type { DerivedSymbolOverride, OverrideContext } from '#core/kiwi/fig/instance-overrides/types'
 import type { SceneNode } from '#core/scene-graph'
 
 import { resolveDsdGeometry } from './geometry'
 
-function getVisibleSiblingCount(ctx: OverrideContext, cache: Map<string, number>, parentId: string): number {
+function getVisibleSiblingCount(
+  ctx: OverrideContext,
+  cache: Map<string, number>,
+  parentId: string
+): number {
   const cached = cache.get(parentId)
   if (cached !== undefined) return cached
   const count = ctx.graph.getChildren(parentId).filter((child) => child.visible).length
@@ -18,12 +25,21 @@ function resolveSizeOnlyPosition(
   visibleSiblingCount: Map<string, number>,
   node: SceneNode
 ): Pick<SceneNode, 'x' | 'y'> | null {
-  if (!node.parentId || getVisibleSiblingCount(ctx, visibleSiblingCount, node.parentId) !== 1 || !node.componentId) return null
+  if (
+    !node.parentId ||
+    getVisibleSiblingCount(ctx, visibleSiblingCount, node.parentId) !== 1 ||
+    !node.componentId
+  )
+    return null
   const source = ctx.graph.getNode(node.componentId)
   if (!source) return null
   const sourceParent = source.parentId ? ctx.graph.getNode(source.parentId) : null
   if (!sourceParent) return { x: source.x, y: source.y }
-  const withinParent = source.x >= 0 && source.y >= 0 && source.x + source.width <= sourceParent.width + 0.01 && source.y + source.height <= sourceParent.height + 0.01
+  const withinParent =
+    source.x >= 0 &&
+    source.y >= 0 &&
+    source.x + source.width <= sourceParent.width + 0.01 &&
+    source.y + source.height <= sourceParent.height + 0.01
   return withinParent ? { x: source.x, y: source.y } : { x: 0, y: 0 }
 }
 
@@ -35,9 +51,13 @@ function buildDsdTextUpdates(
   const updates: Partial<SceneNode> = {}
   if (d.fontSize !== undefined) updates.fontSize = d.fontSize
   if (d.lineHeight !== undefined) updates.lineHeight = convertLineHeight(d.lineHeight, d.fontSize)
-  if (d.letterSpacing !== undefined) updates.letterSpacing = convertLetterSpacing(d.letterSpacing, d.fontSize)
+  if (d.letterSpacing !== undefined)
+    updates.letterSpacing = convertLetterSpacing(d.letterSpacing, d.fontSize)
   if (d.strokeWeight !== undefined && target.strokes.length > 0) {
-    updates.strokes = target.strokes.map((stroke) => ({ ...stroke, weight: d.strokeWeight as number }))
+    updates.strokes = target.strokes.map((stroke) => ({
+      ...stroke,
+      weight: d.strokeWeight as number
+    }))
   }
   const figmaDerivedTextGlyphs = convertFigmaDerivedTextGlyphs(d.derivedTextData, blobs)
   if (figmaDerivedTextGlyphs.length > 0) updates.figmaDerivedTextGlyphs = figmaDerivedTextGlyphs

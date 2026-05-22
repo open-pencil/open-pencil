@@ -61,6 +61,10 @@ export function createCanvasRenderLoop(
   let lastRenderVersion = -1
   let lastSelectedIds: Set<string> | null = null
 
+  function hasPendingAdaptiveLodRestore(): boolean {
+    return editor.renderer?._isViewportAnimating === true
+  }
+
   function renderFrame() {
     frameScheduled = false
     if (editor.state.loading) {
@@ -70,7 +74,7 @@ export function createCanvasRenderLoop(
 
     const versionChanged = editor.state.renderVersion !== lastRenderVersion
     const selectionChanged = editor.state.selectedIds !== lastSelectedIds
-    if (dirty || versionChanged || selectionChanged) {
+    if (dirty || versionChanged || selectionChanged || hasPendingAdaptiveLodRestore()) {
       dirty = false
       renderNow()
     }

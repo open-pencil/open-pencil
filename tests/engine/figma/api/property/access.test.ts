@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { SolidFill } from '@open-pencil/core/scene-graph'
+
 import { createAPI } from '../helpers'
 
 describe('property access', () => {
@@ -32,7 +34,7 @@ describe('property access', () => {
     const rect = api.createRectangle()
     rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     expect(rect.fills.length).toBe(1)
-    expect(rect.fills[0].color.r).toBe(1)
+    expect((rect.fills[0] as SolidFill).color.r).toBe(1)
   })
 
   test('opacity get/set', () => {

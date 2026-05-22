@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 
 import { importClipboardNodes } from '@open-pencil/core'
 import type { NodeChange } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { createClipboardGraph } from '#tests/helpers/clipboard'
@@ -38,7 +39,7 @@ describe('importClipboardNodes: styling', () => {
     const created = importClipboardNodes(nodeChanges, graph, pageId)
     const node = getNodeOrThrow(graph, created[0])
     expect(node.fills).toHaveLength(1)
-    expect(node.fills[0].color.r).toBe(1)
+    expect((node.fills[0] as SolidFill).color.r).toBe(1)
     expect(node.strokes).toHaveLength(1)
     expect(node.strokes[0].color.b).toBe(1)
     expect(node.strokes[0].weight).toBe(2)

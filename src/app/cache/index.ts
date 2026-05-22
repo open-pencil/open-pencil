@@ -10,8 +10,18 @@ function isTauriRuntime() {
   return IS_TAURI || ('window' in globalThis && '__TAURI_INTERNALS__' in window)
 }
 
-function isStorageAvailable() {
-  return 'window' in globalThis && !!window.localStorage
+function isStorageAvailable(): boolean {
+  // Runtime check — do NOT use module-level IS_BROWSER here because it is
+  // evaluated once at import time.  In test environments other suites may
+  // import this module before globalThis.window is installed, so IS_BROWSER
+  // would be false even though localStorage is now available.
+  // eslint-disable-next-line open-pencil/no-typeof-window-check — intentional runtime guard
+  if (typeof window === 'undefined') return false
+  try {
+    return typeof window.localStorage.getItem === 'function'
+  } catch {
+    return false
+  }
 }
 
 function cachePath(key: string) {

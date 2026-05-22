@@ -1,6 +1,5 @@
 import type { Ref } from 'vue'
 
-import { BLACK } from '@open-pencil/core/constants'
 import {
   getFillOkHCL,
   getStrokeOkHCL,
@@ -10,6 +9,7 @@ import {
   setNodeStrokeOkHCL
 } from '@open-pencil/core/color'
 import type { OkHCLColor } from '@open-pencil/core/color'
+import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
 
@@ -30,17 +30,12 @@ export function getStrokeOkHCLColor(node: SceneNode | null, index: number): OkHC
 }
 
 function fallbackFillOkHCL(node: SceneNode, index: number) {
-  return (
-    getFillOkHCLColor(node, index) ??
-    rgbaToOkHCL(node.fills[index]?.color ?? BLACK)
-  )
+  const fill = index < node.fills.length ? node.fills[index] : null
+  return getFillOkHCLColor(node, index) ?? rgbaToOkHCL(fill?.type === 'SOLID' ? fill.color : BLACK)
 }
 
 function fallbackStrokeOkHCL(node: SceneNode, index: number) {
-  return (
-    getStrokeOkHCLColor(node, index) ??
-    rgbaToOkHCL(node.strokes[index]?.color ?? BLACK)
-  )
+  return getStrokeOkHCLColor(node, index) ?? rgbaToOkHCL(node.strokes[index]?.color ?? BLACK)
 }
 
 export function createOkHCLActions(editor: Editor) {

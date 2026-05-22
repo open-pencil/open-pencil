@@ -3,7 +3,9 @@ import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
 import type { SceneNode, Stroke } from '#core/scene-graph'
 import type { Color } from '#core/types'
 
+import { hasValidDimensions, hasValidLineDimensions } from './fills'
 import type { SkiaRenderer } from './renderer'
+import { nodeHasRadius } from './shapes'
 
 export function getStrokeCapEntity(r: SkiaRenderer, cap: string | undefined): EmbindEnumEntity {
   switch (cap) {
@@ -86,12 +88,20 @@ export function drawDashedRRectWithSolidCorners(
     r.strokePaint
   )
 
-  r.strokePaint.setPathEffect(dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, dashPhase) : null)
-  canvas.drawLine(left + radius, top, right - radius, top, r.strokePaint)
-  canvas.drawLine(right, top + radius, right, bottom - radius, r.strokePaint)
-  canvas.drawLine(right - radius, bottom, left + radius, bottom, r.strokePaint)
-  canvas.drawLine(left, bottom - radius, left, top + radius, r.strokePaint)
-  r.strokePaint.setPathEffect(null)
+  const dashEffect = dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, dashPhase) : null
+  try {
+    r.strokePaint.setPathEffect(dashEffect)
+    canvas.drawLine(left + radius, top, right - radius, top, r.strokePaint)
+    canvas.drawLine(right, top + radius, right, bottom - radius, r.strokePaint)
+    canvas.drawLine(right - radius, bottom, left + radius, bottom, r.strokePaint)
+    canvas.drawLine(left, bottom - radius, left, top + radius, r.strokePaint)
+  } finally {
+    try {
+      r.strokePaint.setPathEffect(null)
+    } finally {
+      dashEffect?.delete()
+    }
+  }
 }
 
 export function drawStyledRRectStroke(
@@ -109,9 +119,17 @@ export function drawStyledRRectStroke(
   r.strokePaint.setAlphaf(stroke.opacity)
   r.strokePaint.setStrokeCap(getStrokeCapEntity(r, stroke.cap))
   r.strokePaint.setStrokeJoin(getStrokeJoinEntity(r, stroke.join))
-  r.strokePaint.setPathEffect(dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, dashPhase) : null)
-  r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
-  r.strokePaint.setPathEffect(null)
+  const dashEffect = dash.length > 0 ? r.ck.PathEffect.MakeDash(dash, dashPhase) : null
+  try {
+    r.strokePaint.setPathEffect(dashEffect)
+    r.drawRRectStrokeWithAlign(canvas, rrect, node, stroke)
+  } finally {
+    try {
+      r.strokePaint.setPathEffect(null)
+    } finally {
+      dashEffect?.delete()
+    }
+  }
 }
 
 export function drawNodeStroke(
@@ -121,6 +139,12 @@ export function drawNodeStroke(
   rect: Float32Array,
   hasRadius: boolean
 ): void {
+  // Guard dimension-dependent stroke operations against NaN/Infinity.
+  // VECTOR and TEXT nodes don't depend on width/height for stroke rendering,
+  // so they are allowed through even with degenerate dimensions.
+  const dimsValid = hasValidDimensions(node.width, node.height)
+  const lineValid = hasValidLineDimensions(node.width, node.height)
+
   switch (node.type) {
     case 'VECTOR': {
       const vps = r.getVectorPaths(node)
@@ -129,29 +153,39 @@ export function drawNodeStroke(
       }
       break
     }
+    case 'TEXT':
+      break
     case 'ELLIPSE': {
       const fg = r.getFillGeometry(node)
       if (fg) {
         for (const p of fg) canvas.drawPath(p, r.strokePaint)
       } else if (node.arcData) {
         r.drawArc(canvas, node, r.strokePaint)
-      } else {
+      } else if (dimsValid) {
         canvas.drawOval(rect, r.strokePaint)
       }
       break
     }
+    case 'LINE':
+      if (lineValid) {
+        canvas.drawLine(0, 0, node.width, node.height, r.strokePaint)
+      }
+      break
     case 'POLYGON':
     case 'STAR': {
+      if (!dimsValid) break
       const path = r.makePolygonPath(node)
       canvas.drawPath(path, r.strokePaint)
       path.delete()
       break
     }
     default:
-      if (hasRadius) {
-        canvas.drawRRect(r.makeRRect(node), r.strokePaint)
-      } else {
-        canvas.drawRect(rect, r.strokePaint)
+      if (dimsValid) {
+        if (hasRadius) {
+          canvas.drawRRect(r.makeRRect(node), r.strokePaint)
+        } else {
+          canvas.drawRect(rect, r.strokePaint)
+        }
       }
   }
 }
@@ -165,6 +199,9 @@ export function drawStrokeWithAlign(
   align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
 ): void {
   if (align === 'INSIDE') {
+    // Guard INSIDE stroke alignment — clipNodeShape receives rect constructed
+    // from node dimensions, and a NaN-bearing clip corrupts canvas state.
+    if (!hasValidDimensions(node.width, node.height)) return
     canvas.save()
     r.clipNodeShape(canvas, node, rect, hasRadius)
     const origWidth = r.strokePaint.getStrokeWidth()
@@ -173,6 +210,10 @@ export function drawStrokeWithAlign(
     r.strokePaint.setStrokeWidth(origWidth)
     canvas.restore()
   } else if (align === 'OUTSIDE') {
+    // Guard OUTSIDE stroke alignment against NaN/Infinity dimensions.
+    // The bigRect calculation uses node.width/height directly — NaN would
+    // produce degenerate clip paths and corrupt CanvasKit Path operations.
+    if (!hasValidDimensions(node.width, node.height)) return
     canvas.save()
     const bigRect = r.ck.LTRBRect(-node.width, -node.height, node.width * 2, node.height * 2)
     const outerPath = new r.ck.Path()
@@ -200,6 +241,7 @@ export function drawRRectStrokeWithAlign(
   stroke: Stroke
 ): void {
   if (stroke.align === 'INSIDE') {
+    if (!hasValidDimensions(node.width, node.height)) return
     canvas.save()
     canvas.clipRRect(rrect, r.ck.ClipOp.Intersect, true)
     r.strokePaint.setStrokeWidth(stroke.weight * 2)
@@ -207,6 +249,7 @@ export function drawRRectStrokeWithAlign(
     r.strokePaint.setStrokeWidth(stroke.weight)
     canvas.restore()
   } else if (stroke.align === 'OUTSIDE') {
+    if (!hasValidDimensions(node.width, node.height)) return
     canvas.save()
     const outerPath = new r.ck.Path()
     outerPath.addRect(r.ck.LTRBRect(-node.width, -node.height, node.width * 2, node.height * 2))
@@ -221,7 +264,10 @@ export function drawRRectStrokeWithAlign(
     r.strokePaint.setStrokeWidth(stroke.weight)
     canvas.restore()
   } else {
-    canvas.drawRRect(rrect, r.strokePaint)
+    // CENTER alignment — guard against degenerate dimensions in rrect
+    if (hasValidDimensions(node.width, node.height)) {
+      canvas.drawRRect(rrect, r.strokePaint)
+    }
   }
 }
 
@@ -231,6 +277,7 @@ export function drawIndividualSideStrokes(
   node: SceneNode,
   align: 'INSIDE' | 'CENTER' | 'OUTSIDE'
 ): void {
+  if (!hasValidDimensions(node.width, node.height)) return
   const w = node.width
   const h = node.height
   const inside = align === 'INSIDE'
@@ -279,11 +326,19 @@ export function strokeNodeShape(
   node: SceneNode,
   paint: Paint
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+  // VECTOR nodes use pre-computed vector paths, not node dimensions.
+  // Exempt them from the dimension guard.
+  const dimsValid = hasValidDimensions(node.width, node.height)
+  const lineValid = hasValidLineDimensions(node.width, node.height)
 
   switch (node.type) {
     case 'ELLIPSE':
-      canvas.drawOval(rect, paint)
+      if (node.arcData) {
+        r.drawArc(canvas, node, paint)
+      } else if (dimsValid) {
+        const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+        canvas.drawOval(rect, paint)
+      }
       return
     case 'VECTOR': {
       const vps = r.getVectorPaths(node)
@@ -293,10 +348,11 @@ export function strokeNodeShape(
       return
     }
     case 'LINE':
-      canvas.drawLine(0, 0, node.width, node.height, paint)
+      if (lineValid) canvas.drawLine(0, 0, node.width, node.height, paint)
       return
     case 'POLYGON':
     case 'STAR': {
+      if (!dimsValid) return
       const path = r.makePolygonPath(node)
       canvas.drawPath(path, paint)
       path.delete()
@@ -304,15 +360,11 @@ export function strokeNodeShape(
     }
   }
 
-  const hasRadius =
-    node.cornerRadius > 0 ||
-    (node.independentCorners &&
-      (node.topLeftRadius > 0 ||
-        node.topRightRadius > 0 ||
-        node.bottomRightRadius > 0 ||
-        node.bottomLeftRadius > 0))
+  // Default: rect/RRect — guard against invalid dimensions
+  if (!dimsValid) return
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
 
-  if (hasRadius) {
+  if (nodeHasRadius(node)) {
     if (node.independentCorners) {
       const rrect = new Float32Array([
         0,

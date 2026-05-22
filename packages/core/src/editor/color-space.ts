@@ -1,14 +1,45 @@
 import { resolveOkHCLForPreview } from '#core/color/management'
 import { rgbaToOkHCL } from '#core/color/okhcl'
-import type { DocumentColorSpace, SceneNode } from '#core/scene-graph'
+import type {
+  Color,
+  DocumentColorSpace,
+  Fill,
+  GradientFill,
+  SceneNode,
+  SolidFill
+} from '#core/scene-graph'
 import { copyEffects, copyFill, copyStyleRuns, copyStroke } from '#core/scene-graph/copy'
 
 import type { EditorContext } from './types'
 
 export type DocumentColorProfileMode = 'assign' | 'convert'
 
-function remapColor(color: SceneNode['fills'][number]['color'], target: DocumentColorSpace) {
+function remapColor(color: Color, target: DocumentColorSpace) {
   return resolveOkHCLForPreview(rgbaToOkHCL(color), { documentColorSpace: target }).color
+}
+
+function isGradientFill(fill: Fill): fill is GradientFill {
+  return fill.type.startsWith('GRADIENT')
+}
+
+function remapFills(fills: SceneNode['fills'], target: DocumentColorSpace) {
+  return fills.map((fill) => {
+    if (fill.type === 'SOLID') {
+      const next = copyFill(fill) as SolidFill
+      next.color = remapColor(fill.color, target)
+      next.opacity = next.color.a
+      return next
+    }
+    if (isGradientFill(fill)) {
+      const next = copyFill(fill) as GradientFill
+      next.gradientStops = fill.gradientStops.map((stop) => ({
+        ...stop,
+        color: remapColor(stop.color, target)
+      }))
+      return next
+    }
+    return copyFill(fill)
+  })
 }
 
 function remapNodeColors(
@@ -18,22 +49,7 @@ function remapNodeColors(
 ): Partial<SceneNode> | null {
   if (mode === 'assign') return null
 
-  const fills = node.fills.map((fill) => {
-    const next = copyFill(fill)
-    if (fill.type === 'SOLID') {
-      const resolved = remapColor(fill.color, target)
-      next.color = resolved
-      next.opacity = resolved.a
-      return next
-    }
-    if (fill.gradientStops) {
-      next.gradientStops = fill.gradientStops.map((stop) => ({
-        ...stop,
-        color: remapColor(stop.color, target)
-      }))
-    }
-    return next
-  })
+  const fills = remapFills(node.fills, target)
 
   const strokes = node.strokes.map((stroke) => {
     const next = copyStroke(stroke)
@@ -43,24 +59,18 @@ function remapNodeColors(
     return next
   })
 
-  const effects = copyEffects(node.effects).map((effect) => ({
-    ...effect,
-    color: remapColor(effect.color, target)
-  }))
+  const effects = copyEffects(node.effects).map((effect) => {
+    if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+      return { ...effect, color: remapColor(effect.color, target) }
+    }
+    return effect
+  })
 
   const styleRuns = copyStyleRuns(node.styleRuns).map((run) => ({
     ...run,
     style: {
       ...run.style,
-      fills: run.style.fills?.map((fill) => {
-        const next = copyFill(fill)
-        if (fill.type === 'SOLID') {
-          const resolved = remapColor(fill.color, target)
-          next.color = resolved
-          next.opacity = resolved.a
-        }
-        return next
-      })
+      fills: run.style.fills ? remapFills(run.style.fills, target) : undefined
     }
   }))
 

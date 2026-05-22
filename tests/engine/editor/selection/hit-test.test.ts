@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { setTextMeasurer } from '@open-pencil/core'
 import { createEditor } from '@open-pencil/core/editor'
 
 describe('editor scoped hit testing', () => {
@@ -21,7 +22,14 @@ describe('editor scoped hit testing', () => {
     })
 
     editor.state.enteredContainerId = frame.id
-    editor.setCanvasKit({} as Parameters<typeof editor.setCanvasKit>[0], {} as Parameters<typeof editor.setCanvasKit>[1])
+    editor.setCanvasKit(
+      {} as Parameters<typeof editor.setCanvasKit>[0],
+      {} as Parameters<typeof editor.setCanvasKit>[1]
+    )
+    // setCanvasKit registers a global text measurer via the mock renderer {} which
+    // lacks measureTextNode. Clear it immediately to prevent polluting subsequent
+    // tests that share the same module scope (bun test runs files in shared workers).
+    setTextMeasurer(null)
 
     expect(editor.hitTestAtPoint(130, 130)?.id).toBe(child.id)
   })

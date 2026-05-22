@@ -1,12 +1,14 @@
 import { colorToHex8 } from '#core/color'
-import type {
-  SceneGraph,
-  SceneNode,
-  Fill,
-  Stroke,
-  Effect,
-  Color,
-  GridTrack
+import {
+  nodeHasRadius,
+  type SceneGraph,
+  type SceneNode,
+  type Fill,
+  type SolidFill,
+  type Stroke,
+  type Effect,
+  type Color,
+  type GridTrack
 } from '#core/scene-graph'
 
 export function formatColor(color: Color, opacity = 1): string {
@@ -14,7 +16,7 @@ export function formatColor(color: Color, opacity = 1): string {
 }
 
 export function solidFillColor(fills: Fill[]): string | null {
-  const visible = fills.filter((f) => f.visible && f.type === 'SOLID')
+  const visible = fills.filter((f): f is SolidFill => f.visible && f.type === 'SOLID')
   if (visible.length !== 1) return null
   return formatColor(visible[0].color, visible[0].opacity)
 }
@@ -34,7 +36,8 @@ export function solidStroke(
 
 export function formatShadow(e: Effect): string | null {
   if (e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW') return null
-  return `${e.offset.x} ${e.offset.y} ${e.radius} ${formatColor(e.color, e.color.a)}`
+  const shadow = e
+  return `${shadow.offset.x} ${shadow.offset.y} ${shadow.radius} ${formatColor(shadow.color, shadow.color.a)}`
 }
 
 const JSX_ENTITY: Record<string, string> = {
@@ -95,7 +98,7 @@ export interface CornerRadii {
 }
 
 export function collectCornerRadii(node: SceneNode): CornerRadii | null {
-  if (node.cornerRadius <= 0) return null
+  if (!nodeHasRadius(node)) return null
   if (node.independentCorners) {
     return {
       tl: node.topLeftRadius,

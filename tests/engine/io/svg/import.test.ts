@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 
 import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 import { importSvg } from '@open-pencil/core/tools'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
@@ -85,8 +86,8 @@ describe('import_svg', () => {
 
     const children = graph.getChildren(result.id)
     expect(children[0].fills.length).toBe(1)
-    expect(children[0].fills[0].color.r).toBeCloseTo(1, 1)
-    expect(children[0].fills[0].color.g).toBeCloseTo(0, 1)
+    expect((children[0].fills[0] as SolidFill).color.r).toBeCloseTo(1, 1)
+    expect((children[0].fills[0] as SolidFill).color.g).toBeCloseTo(0, 1)
   })
 
   test('applies stroke', async () => {
@@ -108,8 +109,8 @@ describe('import_svg', () => {
     })) as { id: string }
 
     const children = graph.getChildren(result.id)
-    expect(children[0].fills[0].color.b).toBeCloseTo(1, 1)
-    expect(children[0].fills[0].color.r).toBeCloseTo(0, 1)
+    expect((children[0].fills[0] as SolidFill).color.b).toBeCloseTo(1, 1)
+    expect((children[0].fills[0] as SolidFill).color.r).toBeCloseTo(0, 1)
   })
 
   test('sets position', async () => {

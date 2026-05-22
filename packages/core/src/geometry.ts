@@ -1,4 +1,6 @@
-import type { Effect, Stroke } from './scene-graph'
+import { getWorldMatrix } from './canvas/coordinate'
+import Matrix, { type Mat3 } from './canvas/matrix'
+import type { Effect, SceneGraph, Stroke } from './scene-graph'
 import type { Rect, Vector } from './types'
 
 export function degToRad(degrees: number): number {
@@ -43,6 +45,12 @@ export function rotatedBBox(
   h: number,
   rotationDeg: number
 ): { left: number; right: number; top: number; bottom: number; centerX: number; centerY: number } {
+  // Guard against non-finite dimensions that would propagate NaN through
+  // Math.min/Math.max in bounds computations, corrupting computed bounds
+  // and downstream operations (scene picture recording, viewport culling, etc).
+  if (!Number.isFinite(w) || !Number.isFinite(h)) {
+    return { left: x, right: x, top: y, bottom: y, centerX: x, centerY: y }
+  }
   if (rotationDeg === 0) {
     return {
       left: x,
@@ -79,6 +87,9 @@ function createBoundsAccumulator(): BoundsAccumulator {
 }
 
 function includePoint(bounds: BoundsAccumulator, x: number, y: number): void {
+  // Guard against NaN/Infinity which would propagate through Math.min/Math.max
+  // and corrupt all downstream bounds computations.
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return
   bounds.minX = Math.min(bounds.minX, x)
   bounds.minY = Math.min(bounds.minY, y)
   bounds.maxX = Math.max(bounds.maxX, x)
@@ -155,18 +166,21 @@ function effectOverflow(effects?: Effect[]) {
 
   for (const effect of effects ?? []) {
     if (!effect.visible) continue
-    if (
-      effect.type !== 'DROP_SHADOW' &&
-      effect.type !== 'LAYER_BLUR' &&
-      effect.type !== 'FOREGROUND_BLUR'
-    ) {
-      continue
+    if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+      const ox = effect.offset.x
+      const oy = effect.offset.y
+      const blurSpread = effect.radius + (effect.spread ?? 0)
+      left = Math.max(left, blurSpread + Math.max(0, -ox))
+      right = Math.max(right, blurSpread + Math.max(0, ox))
+      top = Math.max(top, blurSpread + Math.max(0, -oy))
+      bottom = Math.max(bottom, blurSpread + Math.max(0, oy))
+    } else if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR') {
+      const blurSpread = effect.radius
+      left = Math.max(left, blurSpread)
+      right = Math.max(right, blurSpread)
+      top = Math.max(top, blurSpread)
+      bottom = Math.max(bottom, blurSpread)
     }
-    const blurSpread = effect.radius + effect.spread
-    left = Math.max(left, blurSpread + Math.max(0, -effect.offset.x))
-    right = Math.max(right, blurSpread + Math.max(0, effect.offset.x))
-    top = Math.max(top, blurSpread + Math.max(0, -effect.offset.y))
-    bottom = Math.max(bottom, blurSpread + Math.max(0, effect.offset.y))
   }
 
   return { left, right, top, bottom }
@@ -298,6 +312,64 @@ function transformLocalPoint(node: VisualBoundsNode, point: Vector): Vector {
   return { x, y }
 }
 
+function rectToVisualBounds(rect: Rect): VisualBounds {
+  return {
+    minX: rect.x,
+    minY: rect.y,
+    maxX: rect.x + rect.width,
+    maxY: rect.y + rect.height
+  }
+}
+
+function transformRectBounds(rect: Rect, matrix: Mat3): VisualBounds {
+  if (
+    !Number.isFinite(rect.x) ||
+    !Number.isFinite(rect.y) ||
+    !Number.isFinite(rect.width) ||
+    !Number.isFinite(rect.height) ||
+    matrix.some((value) => !Number.isFinite(value))
+  ) {
+    const safeX = Number.isFinite(rect.x) ? rect.x : 0
+    const safeY = Number.isFinite(rect.y) ? rect.y : 0
+    if (matrix.every((value) => Number.isFinite(value))) {
+      const [x, y] = Matrix.mapPoints(matrix, [safeX, safeY])
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        return { minX: x, minY: y, maxX: x, maxY: y }
+      }
+    }
+    return { minX: 0, minY: 0, maxX: 0, maxY: 0 }
+  }
+
+  const points = Matrix.mapPoints(matrix, [
+    rect.x,
+    rect.y,
+    rect.x + rect.width,
+    rect.y,
+    rect.x + rect.width,
+    rect.y + rect.height,
+    rect.x,
+    rect.y + rect.height
+  ])
+  const [x1, y1, x2, y2, x3, y3, x4, y4] = points
+  return {
+    minX: Math.min(x1, x2, x3, x4),
+    minY: Math.min(y1, y2, y3, y4),
+    maxX: Math.max(x1, x2, x3, x4),
+    maxY: Math.max(y1, y2, y3, y4)
+  }
+}
+
+function localNodeVisualRect(node: VisualBoundsNode): Rect {
+  const stroke = strokeOverflow(node.strokes)
+  const effects = effectOverflow(node.effects)
+  return {
+    x: -stroke - effects.left,
+    y: -stroke - effects.top,
+    width: node.width + stroke * 2 + effects.left + effects.right,
+    height: node.height + stroke * 2 + effects.top + effects.bottom
+  }
+}
+
 function transformedLocalBounds(node: VisualBoundsNode, local: Rect, abs: Vector): VisualBounds {
   const points = [
     { x: local.x, y: local.y },
@@ -316,8 +388,22 @@ function transformedLocalBounds(node: VisualBoundsNode, local: Rect, abs: Vector
 
 export function nodeVisualBounds(
   node: VisualBoundsNode,
-  getAbsolutePosition: (id: string) => Vector
+  getAbsolutePosition: (id: string) => Vector,
+  getWorldMatrix?: (id: string) => Mat3 | null
 ): VisualBounds {
+  const worldMatrix = getWorldMatrix?.(node.id)
+  if (worldMatrix) {
+    let bounds = transformRectBounds(localNodeVisualRect(node), worldMatrix)
+    const localGeometry = geometryBlobBounds([
+      ...(node.fillGeometry ?? []),
+      ...(node.strokeGeometry ?? [])
+    ])
+    if (localGeometry) {
+      bounds = unionVisualBounds(bounds, transformRectBounds(localGeometry, worldMatrix)) ?? bounds
+    }
+    return bounds
+  }
+
   const abs = getAbsolutePosition(node.id)
   const base = computeVisualBounds([node], getAbsolutePosition)
   let bounds: VisualBounds = {
@@ -345,25 +431,28 @@ function collectDescendantVisualBounds(
   nodeId: string,
   getNode: (id: string) => VisualBoundsNode | undefined,
   getAbsolutePosition: (id: string) => Vector,
+  getWorldMatrix?: (id: string) => Mat3 | null,
   clip: VisualBounds | null = null
 ): VisualBounds | null {
   const node = getNode(nodeId)
   if (!node?.visible) return null
 
-  const own = nodeVisualBounds(node, getAbsolutePosition)
+  const own = nodeVisualBounds(node, getAbsolutePosition, getWorldMatrix)
   let bounds = clip ? intersectVisualBounds(own, clip) : own
 
   const isClippableContainer =
     node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE'
   let childClip = clip
   if (isClippableContainer && node.clipsContent) {
-    const abs = getAbsolutePosition(node.id)
-    const nodeClip = {
-      minX: abs.x,
-      minY: abs.y,
-      maxX: abs.x + node.width,
-      maxY: abs.y + node.height
-    }
+    const worldMatrix = getWorldMatrix?.(node.id) ?? null
+    const nodeClip = worldMatrix
+      ? transformRectBounds({ x: 0, y: 0, width: node.width, height: node.height }, worldMatrix)
+      : rectToVisualBounds({
+          x: getAbsolutePosition(node.id).x,
+          y: getAbsolutePosition(node.id).y,
+          width: node.width,
+          height: node.height
+        })
     childClip = childClip ? intersectVisualBounds(childClip, nodeClip) : nodeClip
     if (!childClip) return bounds
   }
@@ -371,7 +460,13 @@ function collectDescendantVisualBounds(
   for (const childId of node.childIds ?? []) {
     bounds = unionVisualBounds(
       bounds,
-      collectDescendantVisualBounds(childId, getNode, getAbsolutePosition, childClip)
+      collectDescendantVisualBounds(
+        childId,
+        getNode,
+        getAbsolutePosition,
+        getWorldMatrix,
+        childClip
+      )
     )
   }
 
@@ -381,14 +476,27 @@ function collectDescendantVisualBounds(
 export function computeDescendantVisualBounds(
   nodeIds: string[],
   getNode: (id: string) => VisualBoundsNode | undefined,
-  getAbsolutePosition: (id: string) => Vector
+  getAbsolutePosition: (id: string) => Vector,
+  getWorldMatrix?: (id: string) => Mat3 | null
 ): VisualBounds | null {
   let bounds: VisualBounds | null = null
   for (const nodeId of nodeIds) {
     bounds = unionVisualBounds(
       bounds,
-      collectDescendantVisualBounds(nodeId, getNode, getAbsolutePosition)
+      collectDescendantVisualBounds(nodeId, getNode, getAbsolutePosition, getWorldMatrix)
     )
   }
   return bounds
+}
+
+export function computeContentBounds(graph: SceneGraph, nodeIds: string[]) {
+  return computeDescendantVisualBounds(
+    nodeIds,
+    (id) => graph.getNode(id),
+    (id) => graph.getAbsolutePosition(id),
+    (id) => {
+      const node = graph.getNode(id)
+      return node ? getWorldMatrix(node, graph) : null
+    }
+  )
 }

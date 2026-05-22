@@ -1,5 +1,4 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-
 import { getSelectedNodes } from '#tests/helpers/store'
 
 const editor = useEditorSetup()
@@ -19,7 +18,6 @@ function getSelectedCount() {
     return store.state.selectedIds.size
   })
 }
-
 
 test('copy + paste via store duplicates a shape', async () => {
   await editor.canvas.drawRect(100, 100, 120, 80)

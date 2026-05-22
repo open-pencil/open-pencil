@@ -9,8 +9,8 @@ import type { StepBudget, ToolLogEntry } from '@open-pencil/core/tools'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { getActiveEditorStore } from '@/app/editor/active-store'
-import { ensureGraphFonts } from '@/app/editor/fonts'
 import type { EditorStore } from '@/app/editor/active-store'
+import { ensureGraphFonts } from '@/app/editor/fonts'
 
 export const MAX_AGENT_STEPS = 50
 

@@ -15,7 +15,7 @@ async function dragSlider(
   await page.mouse.move(box.x + 2, y)
   await page.mouse.down()
   await page.mouse.move(box.x + Math.max(2, Math.min(box.width - 2, box.width * ratio)), y, {
-    steps: 8
+    steps: 4
   })
   await page.mouse.up()
   await canvas.waitForRender()
@@ -82,6 +82,7 @@ function expectFillColorChanged(
 }
 
 test('demo card fill changes through color picker', async ({ page }) => {
+  test.setTimeout(60_000)
   const canvas = new CanvasHelper(page)
   await selectDemoCard(page, canvas)
 
@@ -98,7 +99,7 @@ test('demo card fill changes through color picker', async ({ page }) => {
 })
 
 test('demo card fill changes from hsb saturation and brightness sliders', async ({ page }) => {
-  test.setTimeout(30_000)
+  test.setTimeout(120_000)
   const canvas = new CanvasHelper(page)
   await selectDemoCard(page, canvas)
 

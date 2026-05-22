@@ -10,7 +10,11 @@ function isActionItem(entry: AppMenuEntry): entry is AppMenuActionItem {
 function findShortcutInEntries(entries: readonly AppMenuEntry[], id: string): string | undefined {
   for (const entry of entries) {
     if (!isActionItem(entry)) continue
-    if (entry.id === id) return entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
+    if (entry.id === id)
+      return (
+        entry.shortcut ??
+        (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
+      )
     const shortcut = entry.sub ? findShortcutInEntries(entry.sub, id) : undefined
     if (shortcut) return shortcut
   }

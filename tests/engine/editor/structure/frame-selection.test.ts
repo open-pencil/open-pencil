@@ -45,8 +45,18 @@ describe('frameSelection', () => {
   test('undo and redo restore frame selection state', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    const first = editor.graph.createNode('RECTANGLE', pageId, { x: 20, y: 30, width: 40, height: 50 })
-    const second = editor.graph.createNode('ELLIPSE', pageId, { x: 100, y: 120, width: 30, height: 20 })
+    const first = editor.graph.createNode('RECTANGLE', pageId, {
+      x: 20,
+      y: 30,
+      width: 40,
+      height: 50
+    })
+    const second = editor.graph.createNode('ELLIPSE', pageId, {
+      x: 100,
+      y: 120,
+      width: 30,
+      height: 20
+    })
 
     editor.select([first.id, second.id])
     editor.frameSelection()

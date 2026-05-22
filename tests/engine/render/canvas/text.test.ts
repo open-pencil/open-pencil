@@ -10,25 +10,14 @@ import {
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
-import type { SceneNode } from '#core/scene-graph'
 import { buildParagraph } from '#core/canvas/text'
+import type { SceneNode } from '#core/scene-graph'
 import { fontManager } from '#core/text/fonts'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
 
-function createMockCanvas() {
-  return {
-    drawParagraph: mock(() => undefined),
-    drawPicture: mock(() => undefined),
-    drawText: mock(() => undefined),
-    drawRect: mock(() => undefined),
-    save: mock(() => undefined),
-    saveLayer: mock(() => undefined),
-    restore: mock(() => undefined),
-    clipRect: mock(() => undefined)
-  }
-}
+import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 
 function createMockParagraph() {
   return { delete: mock(() => undefined) }
@@ -38,31 +27,31 @@ function createMockPicture() {
   return { delete: mock(() => undefined) }
 }
 
-function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
+function createMockTextRenderer(overrides: Partial<Record<string, unknown>> = {}) {
   const paragraph = createMockParagraph()
-  return {
+  const base = createMockRenderer()
+  const renderer = createMockRenderer({
     fontsLoaded: true,
     fontProvider: {},
     textFont: {},
-    fillPaint: { getColor: () => new Float32Array([0, 0, 0, 1]) },
-    effectLayerPaint: {
-      setBlendMode: mock(() => undefined),
-      setColorFilter: mock(() => undefined),
-      setImageFilter: mock(() => undefined)
-    },
-    ck: {
-      MakePicture: mock(() => createMockPicture()),
-      LTRBRect: mock((...args: number[]) => args),
-      Color4f: mock((...args: number[]) => new Float32Array(args)),
-      BlendMode: { SrcOver: 0, SrcIn: 1 },
-      ClipOp: { Intersect: 0 }
-    },
-    DEFAULT_FONT_SIZE: 14,
+    buildParagraph: mock((_node: unknown, _color?: unknown) => paragraph),
     isNodeFontLoaded: mock(() => true),
-    buildParagraph: mock(() => paragraph),
-    _paragraph: paragraph,
+    ck: {
+      ...base.ck,
+      MakePicture: mock(() => createMockPicture())
+    } as SkiaRenderer['ck'],
     ...overrides
-  } as SkiaRenderer & { _paragraph: ReturnType<typeof createMockParagraph> }
+  })
+  return Object.assign(renderer, { _paragraph: paragraph }) as typeof renderer & {
+    _paragraph: ReturnType<typeof createMockParagraph>
+  }
+}
+
+async function createTextRenderer() {
+  const ck = await initCanvasKit()
+  const surface = expectDefined(ck.MakeSurface(400, 120), 'surface')
+  const renderer = new SkiaRendererClass(ck, surface)
+  return { renderer, surface }
 }
 
 function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
@@ -84,41 +73,20 @@ function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
   } as SceneNode
 }
 
-async function createTextRenderer() {
-  const ck = await initCanvasKit()
-  const surface = expectDefined(ck.MakeSurface(400, 120), 'surface')
-  const renderer = new SkiaRendererClass(ck, surface)
-  return { renderer, surface }
-}
-
 describe('renderText', () => {
   test('uses buildParagraph when fonts are loaded and node font is available', () => {
-    const r = createMockRenderer()
+    const r = createMockTextRenderer()
     const canvas = createMockCanvas()
-
     renderText(r, canvas as never, textNode())
-
     expect(r.buildParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.drawText).not.toHaveBeenCalled()
     expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
   })
 
-  test('skips text while the node font is not available', () => {
-    const r = createMockRenderer({ isNodeFontLoaded: mock(() => false) })
-    const canvas = createMockCanvas()
-
-    renderText(r, canvas as never, textNode())
-
-    expect(r.buildParagraph).not.toHaveBeenCalled()
-    expect(canvas.drawParagraph).not.toHaveBeenCalled()
-    expect(canvas.drawText).not.toHaveBeenCalled()
-  })
-
   test('renders gradient text through a paragraph mask', () => {
-    const r = createMockRenderer()
+    const r = createMockTextRenderer()
     const canvas = createMockCanvas()
-
     renderText(r, canvas as never, textNode(), {
       type: 'GRADIENT_LINEAR',
       visible: true,
@@ -126,7 +94,6 @@ describe('renderText', () => {
       gradientStops: [],
       gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     })
-
     expect(r.buildParagraph).toHaveBeenCalledTimes(1)
     expect(canvas.saveLayer).toHaveBeenCalledTimes(2)
     expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
@@ -136,7 +103,7 @@ describe('renderText', () => {
   })
 
   test('prefers textPicture over paragraph', () => {
-    const r = createMockRenderer()
+    const r = createMockTextRenderer()
     const canvas = createMockCanvas()
     const node = textNode({ textPicture: new Uint8Array([1, 2, 3]) })
 
@@ -147,7 +114,7 @@ describe('renderText', () => {
   })
 
   test('falls back to drawText only when fonts are NOT loaded', () => {
-    const r = createMockRenderer({ fontsLoaded: false, fontProvider: null })
+    const r = createMockTextRenderer({ fontsLoaded: false, fontProvider: null })
     const canvas = createMockCanvas()
 
     renderText(r, canvas as never, textNode())
@@ -157,7 +124,7 @@ describe('renderText', () => {
   })
 
   test('does nothing for empty text', () => {
-    const r = createMockRenderer()
+    const r = createMockTextRenderer()
     const canvas = createMockCanvas()
 
     renderText(r, canvas as never, textNode({ text: '' }))
@@ -165,6 +132,196 @@ describe('renderText', () => {
     expect(r.buildParagraph).not.toHaveBeenCalled()
     expect(canvas.drawText).not.toHaveBeenCalled()
     expect(canvas.drawPicture).not.toHaveBeenCalled()
+  })
+
+  test('text LOD uses the first visible fill for the gray rect color', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const fills = [
+      { type: 'SOLID', visible: true, opacity: 0.25, color: { r: 1, g: 0, b: 0, a: 1 } },
+      { type: 'SOLID', visible: true, opacity: 0.75, color: { r: 0, g: 0, b: 1, a: 1 } }
+    ]
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({
+        width: 20,
+        height: 10,
+        fills
+      }),
+      fills[0] as never,
+      true
+    )
+
+    expect(canvas.drawRect).toHaveBeenCalledTimes(1)
+    expect(r._textLodCulledCount).toBe(1)
+    const setColorCalls = mockCalls(r.auxFill.setColor as ReturnType<typeof mock>)
+    expect(Array.from(setColorCalls.at(-1)?.[0] as Float32Array)).toEqual([1, 0, 0, 0.25])
+  })
+
+  test('text LOD skips drawRect for non-first fills (overdraw guard)', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const fills = [
+      { type: 'SOLID', visible: true, opacity: 0.25, color: { r: 1, g: 0, b: 0, a: 1 } },
+      { type: 'SOLID', visible: true, opacity: 0.75, color: { r: 0, g: 0, b: 1, a: 1 } }
+    ]
+    const node = textNode({
+      width: 20,
+      height: 10,
+      fills
+    })
+
+    renderText(r, canvas as never, node, fills[1] as never, false)
+
+    expect(canvas.drawRect).not.toHaveBeenCalled()
+    expect(r._textLodCulledCount).toBe(0)
+  })
+
+  test('text LOD counts a multi-fill node once even when rendered for each fill', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const fills = [
+      { type: 'SOLID', visible: true, opacity: 0.25, color: { r: 1, g: 0, b: 0, a: 1 } },
+      { type: 'SOLID', visible: true, opacity: 0.75, color: { r: 0, g: 0, b: 1, a: 1 } }
+    ]
+    const node = textNode({
+      width: 20,
+      height: 10,
+      fills
+    })
+
+    renderText(r, canvas as never, node, fills[0] as never, true)
+    renderText(r, canvas as never, node, fills[1] as never, false)
+
+    expect(r._textLodCulledCount).toBe(1)
+  })
+
+  test('text LOD only draws the gray rect once for multi-fill text (no overdraw)', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const fills = [
+      { type: 'SOLID', visible: true, opacity: 0.5, color: { r: 1, g: 0, b: 0, a: 1 } },
+      { type: 'SOLID', visible: true, opacity: 0.5, color: { r: 0, g: 1, b: 0, a: 1 } },
+      { type: 'SOLID', visible: true, opacity: 0.5, color: { r: 0, g: 0, b: 1, a: 1 } }
+    ]
+    const node = textNode({
+      width: 20,
+      height: 10,
+      fills
+    })
+
+    renderText(r, canvas as never, node, fills[0] as never, true)
+    renderText(r, canvas as never, node, fills[1] as never, false)
+    renderText(r, canvas as never, node, fills[2] as never, false)
+
+    expect(canvas.drawRect).toHaveBeenCalledTimes(1)
+    expect(r._textLodCulledCount).toBe(1)
+  })
+
+  test('text LOD does not crash on gradient fills (fallback to neutral gray)', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const gradientFill = {
+      type: 'GRADIENT_LINEAR' as const,
+      visible: true,
+      opacity: 0.8,
+      gradientStops: [
+        { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+        { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+      ],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    }
+    const node = textNode({
+      width: 20,
+      height: 10,
+      fills: [gradientFill]
+    })
+
+    expect(() => {
+      renderText(r, canvas as never, node, gradientFill as never, true)
+    }).not.toThrow()
+
+    expect(canvas.drawRect).toHaveBeenCalledTimes(1)
+    expect(r._textLodCulledCount).toBe(1)
+    const setColorCalls = mockCalls(r.auxFill.setColor as ReturnType<typeof mock>)
+    const lastSetColor = setColorCalls.at(-1)?.[0] as Float32Array
+    expect(lastSetColor[0]).toBeCloseTo(0.5)
+    expect(lastSetColor[1]).toBeCloseTo(0.5)
+    expect(lastSetColor[2]).toBeCloseTo(0.5)
+    expect(lastSetColor[3]).toBeCloseTo(0.8)
+  })
+
+  test('text LOD does not crash on image fills (fallback to neutral gray)', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const imageFill = {
+      type: 'IMAGE' as const,
+      visible: true,
+      opacity: 0.6,
+      imageHash: 'abc123',
+      imageScaleMode: 'FILL' as const
+    }
+    const node = textNode({
+      width: 20,
+      height: 10,
+      fills: [imageFill]
+    })
+
+    expect(() => {
+      renderText(r, canvas as never, node, imageFill as never, true)
+    }).not.toThrow()
+
+    expect(canvas.drawRect).toHaveBeenCalledTimes(1)
+    expect(r._textLodCulledCount).toBe(1)
+    const setColorCalls = mockCalls(r.auxFill.setColor as ReturnType<typeof mock>)
+    const lastSetColor = setColorCalls.at(-1)?.[0] as Float32Array
+    expect(lastSetColor[0]).toBeCloseTo(0.5)
+    expect(lastSetColor[1]).toBeCloseTo(0.5)
+    expect(lastSetColor[2]).toBeCloseTo(0.5)
+    expect(lastSetColor[3]).toBeCloseTo(0.6)
+  })
+
+  test('text LOD ignores fill-less effect/shadow passes (no gray rect in shadows)', () => {
+    const r = createMockTextRenderer({
+      zoom: 0.1,
+      minScreenSizeForText: 100
+    })
+    const canvas = createMockCanvas()
+    const fills = [{ type: 'SOLID', visible: true, opacity: 1, color: { r: 0, g: 0, b: 1, a: 1 } }]
+    const node = textNode({
+      width: 20,
+      height: 10,
+      fills
+    })
+
+    renderText(r, canvas as never, node)
+    expect(r._textLodCulledCount).toBe(0)
+    expect(canvas.drawRect).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalled()
+
+    renderText(r, canvas as never, node, fills[0] as never, true)
+    expect(r._textLodCulledCount).toBe(1)
+    expect(canvas.drawRect).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -266,8 +423,6 @@ describe('renderText headless visual', () => {
         darkPixels++
       }
     }
-    // CJK characters are dense — should have many dark pixels if rendering correctly
-    // Tofu boxes would have far fewer (just outlines)
     expect(darkPixels).toBeGreaterThan(500)
   })
 
@@ -336,8 +491,8 @@ describe('renderText headless visual', () => {
         const g = pixels[i + 1]
         const b = pixels[i + 2]
         if (g > 220) continue
-        if (x < 110 && b > r + 40) blueTextPixels++
-        if (x >= 110 && r > b + 40) redTextPixels++
+        if (x < 110 && r > b + 40) redTextPixels++
+        if (x >= 110 && b > r + 40) blueTextPixels++
       }
     }
 

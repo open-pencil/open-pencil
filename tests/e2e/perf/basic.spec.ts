@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type BrowserContext } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -6,12 +6,16 @@ const NODE_COUNT = 500
 const ITERATIONS = 200
 
 test.describe('Render performance', () => {
+  test.describe.configure({ timeout: 60_000 })
+
   let helper: CanvasHelper
+  let perfContext: BrowserContext | null = null
 
   test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage()
+    perfContext = await browser.newContext()
+    const page = await perfContext.newPage()
     helper = new CanvasHelper(page)
-    await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+    await page.goto('/?test&no-chrome&no-rulers')
     await helper.waitForInit()
 
     await page.evaluate((count: number) => {
@@ -82,7 +86,12 @@ test.describe('Render performance', () => {
   })
 
   test.afterAll(async () => {
-    await helper.page.close()
+    // Close the entire context to release WebGL resources for later tests
+    if (perfContext) {
+      await perfContext.close()
+    } else {
+      await helper.page.close()
+    }
   })
 
   test('benchmark: synchronous render throughput', async () => {

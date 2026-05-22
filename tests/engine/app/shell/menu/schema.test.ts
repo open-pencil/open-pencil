@@ -16,7 +16,9 @@ function actionItems(entries: readonly AppMenuEntry[]): AppMenuEntry[] {
 describe('APP_MENU_SCHEMA', () => {
   test('does not duplicate shortcuts for command-backed entries', () => {
     const duplicated = APP_MENU_SCHEMA.flatMap((group) =>
-      actionItems(group.items).filter((entry) => !('type' in entry) && entry.command && entry.shortcut)
+      actionItems(group.items).filter(
+        (entry) => !('type' in entry) && entry.command && entry.shortcut
+      )
     )
 
     expect(duplicated).toEqual([])

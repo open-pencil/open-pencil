@@ -2,7 +2,7 @@ import type { Canvas, Image as CKImage, Surface } from 'canvaskit-wasm'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
-import { computeDescendantVisualBounds } from '#core/geometry'
+import { computeContentBounds } from '#core/geometry'
 import type { SceneGraph } from '#core/scene-graph'
 
 import type { RenderLayer } from './pipeline'
@@ -45,10 +45,7 @@ export function updateSceneBackingPreviewState(r: SkiaRenderer, layer: RenderLay
   if (layer !== 'scene') return
   const previous = r.lastSceneViewport
   const viewportChanged =
-    !previous ||
-    previous.panX !== r.panX ||
-    previous.panY !== r.panY ||
-    previous.zoom !== r.zoom
+    !previous || previous.panX !== r.panX || previous.panY !== r.panY || previous.zoom !== r.zoom
   if (viewportChanged) {
     const timestamp = now()
     if (r.sceneBackingLastViewportEventAt > 0) {
@@ -81,7 +78,12 @@ function backingScreenCoverageContainsViewport(r: SkiaRenderer): boolean {
   const scale = r.zoom / backing.zoom
   const x = r.panX - backing.panX * scale
   const y = r.panY - backing.panY * scale
-  return x <= 0 && y <= 0 && x + backing.width * scale >= r.viewportWidth && y + backing.height * scale >= r.viewportHeight
+  return (
+    x <= 0 &&
+    y <= 0 &&
+    x + backing.width * scale >= r.viewportWidth &&
+    y + backing.height * scale >= r.viewportHeight
+  )
 }
 
 function backingWorldCoverageContainsLiveViewport(r: SkiaRenderer): boolean {
@@ -117,7 +119,8 @@ function drawSceneBacking(
   allowStaleZoom: boolean
 ): boolean {
   const backing = r.sceneBacking
-  if (!backing || !backingCoverageContainsLiveViewport(r, sceneVersion, allowStaleZoom)) return false
+  if (!backing || !backingCoverageContainsLiveViewport(r, sceneVersion, allowStaleZoom))
+    return false
 
   const scale = r.zoom / backing.zoom
   const x = r.panX - backing.panX * scale
@@ -200,11 +203,7 @@ function cachedSubtreePicture(
   }
 
   cached?.picture.delete()
-  const bounds = computeDescendantVisualBounds(
-    [childId],
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
+  const bounds = computeContentBounds(graph, [childId])
   if (!bounds) return null
 
   const recorder = new r.ck.PictureRecorder()
@@ -218,10 +217,14 @@ function cachedSubtreePicture(
     w: bounds.maxX - bounds.minX,
     h: bounds.maxY - bounds.minY
   }
-  r.renderNode(recCanvas, graph, childId, {})
-  r.worldViewport = prevViewport
-  const picture = recorder.finishRecordingAsPicture()
-  recorder.delete()
+  let picture
+  try {
+    r.renderNode(recCanvas, graph, childId, {})
+    picture = recorder.finishRecordingAsPicture()
+  } finally {
+    r.worldViewport = prevViewport
+    recorder.delete()
+  }
   r.subtreePictureCache.set(childId, {
     picture,
     pageId: r.pageId,
@@ -251,11 +254,14 @@ function renderBackingChild(
   canvas.scale(r.dpr, r.dpr)
   canvas.translate(backing.panX, backing.panY)
   canvas.scale(r.zoom, r.zoom)
-  const picture = cachedSubtreePicture(r, graph, childId, sceneVersion)
-  if (picture) canvas.drawPicture(picture)
-  else r.renderNode(canvas, graph, childId, {})
-  canvas.restore()
-  r.worldViewport = prevViewport
+  try {
+    const picture = cachedSubtreePicture(r, graph, childId, sceneVersion)
+    if (picture) canvas.drawPicture(picture)
+    else r.renderNode(canvas, graph, childId, {})
+  } finally {
+    canvas.restore()
+    r.worldViewport = prevViewport
+  }
 }
 
 function sceneBackingMetrics(backing: ReturnType<typeof sceneBackingGeometry>) {
@@ -288,9 +294,6 @@ function installSceneBackingImage(
     positionPreviewVersion,
     ...sceneBackingMetrics(backing)
   }
-  r.scenePictureVersion = sceneVersion
-  r.scenePicturePositionPreviewVersion = positionPreviewVersion
-  r.scenePicturePageId = r.pageId
   r.sceneBackingNeedsCrispRender = false
 }
 
@@ -410,7 +413,11 @@ export function renderSceneBacking(
   const allowStaleZoom = now() < r.sceneBackingPreviewUntil
   const hasCoverage = backingCoverageContainsLiveViewport(r, sceneVersion, allowStaleZoom)
   if (!hasCoverage) {
-    if (!r.sceneBacking || !backingMetadataMatches(r, sceneVersion) || !backingScreenCoverageContainsViewport(r)) {
+    if (
+      !r.sceneBacking ||
+      !backingMetadataMatches(r, sceneVersion) ||
+      !backingScreenCoverageContainsViewport(r)
+    ) {
       cancelSceneBackingBuild(r)
       recordSceneBacking(r, graph, sceneVersion)
     } else {
@@ -425,4 +432,3 @@ export function renderSceneBacking(
   r.sceneBackingNeedsCrispRender = !crisp || !!r.sceneBackingBuild
   return drawSceneBacking(r, canvas, sceneVersion, allowStaleZoom || !!r.sceneBackingBuild)
 }
-

@@ -57,7 +57,6 @@ describe('computeVisualBounds', () => {
       [{ id: 'rotated', width: 100, height: 50, rotation: 45 }],
       idPos
     )
-    // Rotated bbox should be larger
     expect(rotated.width).toBeGreaterThan(noRot.width)
     expect(rotated.height).toBeGreaterThan(noRot.height)
   })
@@ -83,7 +82,6 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // OUTSIDE stroke of weight 10 adds 10 to each side
     expect(withStroke.width).toBe(noStroke.width + 20)
     expect(withStroke.height).toBe(noStroke.height + 20)
   })
@@ -134,7 +132,6 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // CENTER stroke of weight 10 adds 5 to each side
     expect(centerStroke.width).toBe(noStroke.width + 10)
     expect(centerStroke.height).toBe(noStroke.height + 10)
   })
@@ -186,11 +183,6 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // blurSpread = radius + spread = 10 + 0 = 10
-    // left expansion: max(0, blurSpread + max(0, -offset.x)) = max(0, 10 + 0) = 10
-    // right expansion: max(0, blurSpread + max(0, offset.x)) = max(0, 10 + 5) = 15
-    // top expansion: max(0, blurSpread + max(0, -offset.y)) = max(0, 10 + 3) = 13
-    // bottom expansion: max(0, blurSpread + max(0, offset.y)) = max(0, 10 + 0) = 10
     expect(withShadow.x).toBe(noEffect.x - 10)
     expect(withShadow.y).toBe(noEffect.y - 13)
     expect(withShadow.width).toBe(noEffect.width + 10 + 15)
@@ -219,8 +211,6 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // blurSpread = 20, offset = (0,0)
-    // All sides expand by 20
     expect(withBlur.width).toBe(noEffect.width + 40)
     expect(withBlur.height).toBe(noEffect.height + 40)
   })
@@ -281,20 +271,10 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // strokeOverflow: OUTSIDE weight=5 → overflow=5
-    // effectOverflow: blurSpread=10, offset=(3,3)
-    //   left   = 10 + max(0, -3) = 10
-    //   right  = 10 + max(0,  3) = 13
-    //   top    = 10 + max(0, -3) = 10
-    //   bottom = 10 + max(0,  3) = 13
-    // Total left expansion: 5 (stroke) + 10 (effect) = 15
-    // Total right expansion: 5 (stroke) + 13 (effect) = 18
-    // Total top expansion: 5 (stroke) + 10 (effect) = 15
-    // Total bottom expansion: 5 (stroke) + 13 (effect) = 18
     expect(combined.x).toBe(noEffects.x - 15)
     expect(combined.y).toBe(noEffects.y - 15)
-    expect(combined.width).toBe(noEffects.width + 15 + 18) // 50 + 33 = 83
-    expect(combined.height).toBe(noEffects.height + 15 + 18) // 60 + 33 = 93
+    expect(combined.width).toBe(noEffects.width + 15 + 18)
+    expect(combined.height).toBe(noEffects.height + 15 + 18)
   })
 
   test('multiple strokes takes maximum overflow', () => {
@@ -332,8 +312,7 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // strokeOverflow takes max: OUTSIDE(2)=2, CENTER(4)=4, INSIDE(0)=0 → max=4
-    expect(multiStroke.width).toBe(noEffects.width + 8) // 4 per side × 2
+    expect(multiStroke.width).toBe(noEffects.width + 8)
     expect(multiStroke.height).toBe(noEffects.height + 8)
   })
 
@@ -474,12 +453,9 @@ describe('computeVisualBounds', () => {
       ],
       idPos
     )
-    // Effect 1: blurSpread=5, offset=(10,0) → left=5, right=15, top=5, bottom=5
-    // Effect 2: blurSpread=3, offset=(-10,0) → left=13, right=3, top=3, bottom=3
-    // After Math.max: left=max(5,13)=13, right=max(15,3)=15, top=max(5,3)=5, bottom=max(5,3)=5
     expect(multiEffect.x).toBe(noEffects.x - 13)
-    expect(multiEffect.width).toBe(noEffects.width + 13 + 15) // 50 + 28 = 78
+    expect(multiEffect.width).toBe(noEffects.width + 13 + 15)
     expect(multiEffect.y).toBe(noEffects.y - 5)
-    expect(multiEffect.height).toBe(noEffects.height + 5 + 5) // 60 + 10 = 70
+    expect(multiEffect.height).toBe(noEffects.height + 5 + 5)
   })
 })

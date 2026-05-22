@@ -2,7 +2,11 @@ import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { CharacterStyleOverride, SceneNode } from '#core/scene-graph'
 import { fontManager, weightToStyle } from '#core/text/fonts'
-import { fontHasGlyphSync, getGlyphOutlineMetricsSync, type OutlineCommand } from '#core/text/opentype'
+import {
+  fontHasGlyphSync,
+  getGlyphOutlineMetricsSync,
+  type OutlineCommand
+} from '#core/text/opentype'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'
@@ -29,7 +33,12 @@ export interface TextOutlineLayout {
 
 const COMPLEX_SCRIPT_PATTERN = /[\u0590-\u08ff\u0900-\u0dff\ufb1d-\ufdff\ufe70-\ufeff]/
 
-type TextStyle = Required<Pick<CharacterStyleOverride, 'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'letterSpacing'>>
+type TextStyle = Required<
+  Pick<
+    CharacterStyleOverride,
+    'fontFamily' | 'fontSize' | 'fontWeight' | 'italic' | 'letterSpacing'
+  >
+>
 
 function baseTextStyle(node: SceneNode): TextStyle {
   return {
@@ -66,7 +75,10 @@ function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
   if (fontHasGlyphSync(style.fontFamily, styleName(style), char)) return style
   const family = fallbackFamilies().find((candidate) => {
     const next = fallbackStyle(style, candidate)
-    return fontManager.loadedData(next.fontFamily, styleName(next)) && fontHasGlyphSync(next.fontFamily, styleName(next), char)
+    return (
+      fontManager.loadedData(next.fontFamily, styleName(next)) &&
+      fontHasGlyphSync(next.fontFamily, styleName(next), char)
+    )
   })
   return family ? fallbackStyle(style, family) : null
 }
@@ -130,7 +142,12 @@ function glyphAdvance(node: SceneNode, absoluteIndex: number): number | null {
   const char = node.text[absoluteIndex]
   const style = resolvedGlyphStyle(textStyleAt(node, absoluteIndex), char)
   if (!style) return null
-  const metrics = getGlyphOutlineMetricsSync(style.fontFamily, styleName(style), char, style.fontSize)
+  const metrics = getGlyphOutlineMetricsSync(
+    style.fontFamily,
+    styleName(style),
+    char,
+    style.fontSize
+  )
   const glyph = metrics?.[0]
   return glyph ? glyph.advance + style.letterSpacing : null
 }
@@ -211,7 +228,12 @@ function verticalOffset(node: SceneNode, contentHeight: number): number {
   }
 }
 
-function lineGlyphs(node: SceneNode, line: TextLine, baseline: number, xOffset: number): { glyphs: TextOutlineGlyph[]; width: number } | null {
+function lineGlyphs(
+  node: SceneNode,
+  line: TextLine,
+  baseline: number,
+  xOffset: number
+): { glyphs: TextOutlineGlyph[]; width: number } | null {
   const glyphs: TextOutlineGlyph[] = []
   let cursorX = xOffset
   let index = 0
@@ -229,7 +251,12 @@ function lineGlyphs(node: SceneNode, line: TextLine, baseline: number, xOffset: 
     }
 
     const segment = line.text.slice(index, end)
-    const metrics = getGlyphOutlineMetricsSync(style.fontFamily, styleName(style), segment, style.fontSize)
+    const metrics = getGlyphOutlineMetricsSync(
+      style.fontFamily,
+      styleName(style),
+      segment,
+      style.fontSize
+    )
     if (!metrics) return null
 
     for (const glyph of metrics) {
@@ -258,7 +285,10 @@ export function textNodeToOutlineLayout(node: SceneNode): TextOutlineLayout | nu
     if (!measured) return null
     const xOffset = lineOffsetX(node, measured.width)
     maxWidth = Math.max(maxWidth, measured.width)
-    const placed = xOffset === 0 ? measured.glyphs : measured.glyphs.map((glyph) => ({ ...glyph, x: glyph.x + xOffset }))
+    const placed =
+      xOffset === 0
+        ? measured.glyphs
+        : measured.glyphs.map((glyph) => ({ ...glyph, x: glyph.x + xOffset }))
     glyphs.push(...placed)
   }
 

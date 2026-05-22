@@ -1,9 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-
-import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
 import { guidToString } from '@open-pencil/core/kiwi/fig/node-change/convert'
+import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
 
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))

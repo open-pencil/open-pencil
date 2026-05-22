@@ -1,10 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
-import { buildOpenPencilClipboardHTML, FigmaAPI, parseOpenPencilClipboard, SceneGraph } from '@open-pencil/core'
+import {
+  buildOpenPencilClipboardHTML,
+  FigmaAPI,
+  parseOpenPencilClipboard,
+  SceneGraph
+} from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/core'
 
 import { expectDefined } from '#tests/helpers/assert'
-
-import type { SceneNode } from '@open-pencil/core'
 
 describe('clipboard roundtrip with images', () => {
   function graphWithImageNode(): {
@@ -159,4 +163,3 @@ describe('clipboard roundtrip with images', () => {
     expect(clipboard.images.get(hash)).toEqual(bytes)
   })
 })
-

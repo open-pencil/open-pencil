@@ -1,5 +1,6 @@
 import { converter, formatCss, formatRgb, inGamut, toGamut } from 'culori'
 
+import { BLACK } from '#core/constants'
 import type { DocumentColorSpace, Fill, SceneNode, Stroke } from '#core/scene-graph'
 import type { Color } from '#core/types'
 
@@ -147,7 +148,11 @@ export function resolveNodeFillColor(
 ): ResolvedRenderColor {
   const okhcl = getFillOkHCL(node, fillIndex)?.color
   if (okhcl) return resolveOkHCLForPreview(okhcl, options)
-  return resolveRGBAForPreview(fill.color, options)
+  if (fill.type === 'SOLID') return resolveRGBAForPreview(fill.color, options)
+  // Gradient and IMAGE fills have no single resolved color.
+  // Return black as a neutral fallback (gradient stops are resolved
+  // individually by the gradient renderer).
+  return resolveRGBAForPreview(BLACK, options)
 }
 
 export function resolveNodeStrokeColor(

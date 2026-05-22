@@ -32,9 +32,8 @@ export function initializeRendererPaints(r: SkiaRenderer): void {
   r.parentOutlinePaint.setStrokeWidth(1)
   r.parentOutlinePaint.setColor(r.selColor(PARENT_OUTLINE_ALPHA))
   r.parentOutlinePaint.setAntiAlias(true)
-  r.parentOutlinePaint.setPathEffect(
-    ck.PathEffect.MakeDash([PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH], 0)
-  )
+  r.parentOutlineDashEffect = ck.PathEffect.MakeDash([PARENT_OUTLINE_DASH, PARENT_OUTLINE_DASH], 0)
+  r.parentOutlinePaint.setPathEffect(r.parentOutlineDashEffect)
 
   r.snapPaint = new ck.Paint()
   r.snapPaint.setStyle(ck.PaintStyle.Stroke)

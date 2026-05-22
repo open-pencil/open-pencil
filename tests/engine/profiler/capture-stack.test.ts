@@ -20,4 +20,3 @@ describe('CaptureStack', () => {
     expect(roots[0].children[0].drawCalls).toBe(2)
   })
 })
-

@@ -117,17 +117,21 @@ describe('variable roundtrip', () => {
     expect(Object.keys(reimportedRect.boundVariables)).toContain('strokes/0/color')
   })
 
-  test.if(runsHeavyTests)('material3.fig variables survive round-trip', async () => {
-    const original = await parseFixture('material3.fig')
+  test.if(runsHeavyTests)(
+    'material3.fig variables survive round-trip',
+    async () => {
+      const original = await parseFixture('material3.fig')
 
-    const exported = await exportFigFile(original)
-    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+      const exported = await exportFigFile(original)
+      const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
 
-    expect(reimported.variables.size).toBe(original.variables.size)
-    expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
-      [...original.variableCollections.values()].filter((c) => c.variableIds.length > 0).length
-    )
-  }, 120_000)
+      expect(reimported.variables.size).toBe(original.variables.size)
+      expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
+        [...original.variableCollections.values()].filter((c) => c.variableIds.length > 0).length
+      )
+    },
+    120_000
+  )
 
   test('pluginID casing is consistent across full codec pipeline', async () => {
     await initCodec()

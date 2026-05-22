@@ -123,4 +123,3 @@ describe('set_image_fill tool', () => {
     expect(graph.images.get(result.imageHash)).toEqual(PNG_MAGIC)
   })
 })
-

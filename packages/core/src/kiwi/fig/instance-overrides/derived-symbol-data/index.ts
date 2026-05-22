@@ -1,6 +1,9 @@
 import { applyOverridePatch } from '#core/kiwi/fig/instance-overrides/patches'
 import { resolveOverrideTarget } from '#core/kiwi/fig/instance-overrides/resolve'
-import type { DerivedSymbolOverride, OverrideContext } from '#core/kiwi/fig/instance-overrides/types'
+import type {
+  DerivedSymbolOverride,
+  OverrideContext
+} from '#core/kiwi/fig/instance-overrides/types'
 
 import { buildDsdLayoutUpdates } from './layout'
 import { propagateDsdChanges } from './propagate'
@@ -45,7 +48,8 @@ function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeS
     const nodeId = ctx.guidToNodeId.get(ncId)
     if (!nodeId || (ctx.activeNodeIds && !ctx.activeNodeIds.has(nodeId))) continue
 
-    for (const d of derived) applyDsdOverride(ctx, visibleSiblingCount, nodeId, d, modified, sizeSet)
+    for (const d of derived)
+      applyDsdOverride(ctx, visibleSiblingCount, nodeId, d, modified, sizeSet)
   }
 
   return { modified, sizeSet }

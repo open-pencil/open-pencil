@@ -4,7 +4,6 @@ import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { defineTool } from '#core/tools/schema'
-
 import type { Rect } from '#core/types'
 
 function parseSvgViewBox(svg: string): Rect | null {

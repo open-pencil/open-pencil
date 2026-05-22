@@ -1,5 +1,4 @@
 import { colorToFill, parseColor } from '#core/color'
-import { TRANSPARENT } from '#core/constants'
 import type { GridTrack, LayoutMode, SceneNode, Stroke } from '#core/scene-graph'
 
 const WEIGHT_MAP: Record<string, number> = {
@@ -395,10 +394,7 @@ function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<Scen
   applyTextAlignmentOverrides(props, o)
 }
 
-function applyTextAlignmentOverrides(
-  props: Record<string, unknown>,
-  o: Partial<SceneNode>
-): void {
+function applyTextAlignmentOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   const textAlign = props.textAlign ?? props.textAlignHorizontal ?? props.textHorizontalAlignment
   if (typeof textAlign === 'string') {
     o.textAlignHorizontal = TEXT_ALIGN_ALIAS_MAP[textAlign.toLowerCase()] ?? 'LEFT'
@@ -472,10 +468,7 @@ function applyShapeAndEffectOverrides(props: Record<string, unknown>, o: Partial
       {
         type: 'LAYER_BLUR',
         radius: props.blur,
-        visible: true,
-        color: { ...TRANSPARENT },
-        offset: { x: 0, y: 0 },
-        spread: 0
+        visible: true
       }
     ]
   }

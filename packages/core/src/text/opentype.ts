@@ -1,5 +1,7 @@
 import * as OpenTypeSync from 'opentype.js'
 
+import { LRUMap } from '#core/lru-map'
+
 import { fontManager } from './fonts'
 
 export interface OutlineCommand {
@@ -44,7 +46,29 @@ interface OpenTypeModule {
   parse(buffer: ArrayBuffer): OutlineFont
 }
 
-const parsedFontCache = new Map<string, OutlineFont>()
+export const PARSED_FONT_CACHE_LIMIT = 128
+
+const parsedFontCache = new LRUMap<string, OutlineFont>(PARSED_FONT_CACHE_LIMIT)
+
+/** Glyph-level LRU cache keyed by `${family}|${style}|${text}|${fontSize}`.
+ *  Eliminates redundant recomputation of identical glyph outlines across
+ *  multiple TEXT nodes with the same text content (GAP-004).
+ *
+ *  IMPORTANT: Returned arrays are shared mutable references. Callers MUST
+ *  treat them as read-only — mutation would silently corrupt the cache. */
+const glyphOutlineCache = new LRUMap<string, Array<Array<string | number>>>(500)
+
+export function clearOpenTypeCaches(): void {
+  parsedFontCache.clear()
+  glyphOutlineCache.clear()
+}
+
+export function getOpenTypeCacheSizes(): { parsedFont: number; glyphOutline: number } {
+  return {
+    parsedFont: parsedFontCache.size,
+    glyphOutline: glyphOutlineCache.size
+  }
+}
 
 function getParsedFont(family: string, style: string): OutlineFont | null {
   const key = `${family}|${style}`
@@ -112,6 +136,43 @@ export function getGlyphOutlineMetricsSync(
     x += advance
     return metrics
   })
+}
+
+function commandsToFigmaNumbers(commands: OutlineCommand[]): Array<string | number> {
+  const result: Array<string | number> = []
+  for (const command of commands) {
+    result.push(command.type)
+    if (command.x1 !== undefined) result.push(command.x1)
+    if (command.y1 !== undefined) result.push(command.y1)
+    if (command.x2 !== undefined) result.push(command.x2)
+    if (command.y2 !== undefined) result.push(command.y2)
+    if (command.x !== undefined) result.push(command.x)
+    if (command.y !== undefined) result.push(command.y)
+  }
+  return result
+}
+
+export function getGlyphOutlineCommandsSync(
+  family: string,
+  style: string,
+  text: string,
+  fontSize: number
+): Array<Array<string | number>> | null {
+  const cacheKey = `${family}|${style}|${text}|${fontSize}`
+  const cached = glyphOutlineCache.get(cacheKey)
+  if (cached !== undefined) return cached
+
+  const font = getParsedFont(family, style)
+  if (!font) return null
+
+  const glyphs = font.stringToGlyphs(text)
+  const result = glyphs.map((glyph) =>
+    commandsToFigmaNumbers(glyph.getPath(0, 0, fontSize).commands)
+  )
+
+  glyphOutlineCache.set(cacheKey, result)
+
+  return result
 }
 
 export async function probeGlyphOutlineCommands(

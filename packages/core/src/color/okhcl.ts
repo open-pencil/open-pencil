@@ -146,10 +146,16 @@ export function setNodeFillOkHCL(
   if (index < 0 || index >= fills.length) throw new Error(`Fill ${index} not found`)
   const fill = fills[index]
   const rgba = okhclToRGBA(color)
-  fills[index] = {
-    ...fill,
-    color: rgba,
-    opacity: rgba.a
+
+  // OkHCL round-trip only makes sense for SOLID fills.
+  // For gradient fills, the color intent applies to each stop individually.
+  // For IMAGE fills, there is no meaningful color to set.
+  if (fill.type === 'SOLID') {
+    fills[index] = {
+      ...fill,
+      color: rgba,
+      opacity: rgba.a
+    }
   }
 
   const payloads = filterOkHCLPayloads(

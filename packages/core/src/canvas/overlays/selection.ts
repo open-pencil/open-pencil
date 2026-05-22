@@ -70,19 +70,25 @@ export function drawEnteredContainer(
 
   r.auxStroke.setStrokeWidth(1)
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
-  r.auxStroke.setPathEffect(r.ck.PathEffect.MakeDash([4, 4], 0))
-
-  canvas.save()
-  canvas.translate(sx, sy)
-  if (node.rotation !== 0) {
-    const cx = (node.width / 2) * r.zoom
-    const cy = (node.height / 2) * r.zoom
-    canvas.rotate(node.rotation, cx, cy)
+  const dashEffect = r.ck.PathEffect.MakeDash([4, 4], 0)
+  try {
+    r.auxStroke.setPathEffect(dashEffect)
+    canvas.save()
+    canvas.translate(sx, sy)
+    if (node.rotation !== 0) {
+      const cx = (node.width / 2) * r.zoom
+      const cy = (node.height / 2) * r.zoom
+      canvas.rotate(node.rotation, cx, cy)
+    }
+    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width * r.zoom, node.height * r.zoom), r.auxStroke)
+    canvas.restore()
+  } finally {
+    try {
+      r.auxStroke.setPathEffect(null)
+    } finally {
+      dashEffect.delete()
+    }
   }
-  canvas.drawRect(r.ck.LTRBRect(0, 0, node.width * r.zoom, node.height * r.zoom), r.auxStroke)
-  canvas.restore()
-
-  r.auxStroke.setPathEffect(null)
 }
 
 export function drawSelection(

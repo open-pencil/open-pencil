@@ -88,13 +88,13 @@ export const analyzeClusters = defineTool({
       [...signatureMap.entries()]
         .filter(([, nodes]) => nodes.length >= minCount)
         .map(([signature, nodes]) => {
-        const avgWidth = nodes.reduce((sum, node) => sum + node.width, 0) / nodes.length
-        const avgHeight = nodes.reduce((sum, node) => sum + node.height, 0) / nodes.length
-        const widths = nodes.map((node) => node.width)
-        const heights = nodes.map((node) => node.height)
-        const widthRange = Math.max(...widths) - Math.min(...widths)
-        const heightRange = Math.max(...heights) - Math.min(...heights)
-        const confidence = calcClusterConfidence(nodes)
+          const avgWidth = nodes.reduce((sum, node) => sum + node.width, 0) / nodes.length
+          const avgHeight = nodes.reduce((sum, node) => sum + node.height, 0) / nodes.length
+          const widths = nodes.map((node) => node.width)
+          const heights = nodes.map((node) => node.height)
+          const widthRange = Math.max(...widths) - Math.min(...widths)
+          const heightRange = Math.max(...heights) - Math.min(...heights)
+          const confidence = calcClusterConfidence(nodes)
 
           return {
             signature,

@@ -11,7 +11,6 @@ import {
   snapshotPage as createPageSnapshot,
   type PageSnapshot
 } from './history/snapshot'
-
 import type { EditorContext } from './types'
 
 export function createUndoActions(ctx: EditorContext) {

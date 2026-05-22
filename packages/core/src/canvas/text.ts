@@ -5,7 +5,7 @@ import { getCanvasKit } from '#core/canvaskit'
 import { resolveRGBAForPreview } from '#core/color/management'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import type { NodeChange } from '#core/kiwi/fig/codec'
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode, SolidFill } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 
@@ -13,6 +13,31 @@ interface TextRenderer {
   ck: CanvasKit
   fontProvider: TypefaceFontProvider | null
   fontsLoaded: boolean
+  invalidateAllPictures?: () => void
+  requestRepaint?: () => void
+  isDestroyed?: () => boolean
+}
+
+const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
+
+export function requestFallbackFamiliesIfNeeded(r: TextRenderer, text: string): void {
+  if (CJK_RE.test(text) && fontManager.getCJKFallbackFamilies().length === 0) {
+    void fontManager.ensureCJKFallback().then((families) => {
+      if (families.length === 0) return
+      if (r.isDestroyed?.()) return
+      r.invalidateAllPictures?.()
+      r.requestRepaint?.()
+    })
+  }
+  if (ARABIC_RE.test(text) && fontManager.getArabicFallbackFamilies().length === 0) {
+    void fontManager.ensureArabicFallback().then((families) => {
+      if (families.length === 0) return
+      if (r.isDestroyed?.()) return
+      r.invalidateAllPictures?.()
+      r.requestRepaint?.()
+    })
+  }
 }
 
 export interface ClipboardShapedGlyph {
@@ -33,8 +58,6 @@ export interface ClipboardShapedText {
   logicalIndexToCharacterOffsetMap: number[]
 }
 
-const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
-const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
 const FONT_FAMILY_CACHE_LIMIT = 256
 const fontFamilyCache = new Map<string, string[]>()
 
@@ -194,7 +217,7 @@ function addStyledRuns(
 
     let runColor = baseColor
     if (s.fills) {
-      const visibleFill = s.fills.find((f) => f.visible && f.type === 'SOLID')
+      const visibleFill = s.fills.find((f): f is SolidFill => f.visible && f.type === 'SOLID')
       if (visibleFill) {
         const c = resolveRGBAForPreview(visibleFill.color).color
         runColor = ck.Color4f(c.r, c.g, c.b, c.a * visibleFill.opacity)
@@ -239,6 +262,7 @@ export function buildParagraph(
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
+  requestFallbackFamiliesIfNeeded(r, node.text)
   const cjkFallbacks = fontManager.getCJKFallbackFamilies()
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)

@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
 import { SceneGraph, type Effect, type Rect } from '@open-pencil/core'
+import type { ShadowEffect } from '@open-pencil/core/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -32,7 +33,7 @@ describe('Effect types on scene graph', () => {
       effects: [makeEffect({ spread: 10 })]
     })
     const updated = getNodeOrThrow(graph, node.id)
-    expect(updated.effects[0].spread).toBe(10)
+    expect((updated.effects[0] as ShadowEffect).spread).toBe(10)
   })
 
   test('inner shadow with spread value', () => {
@@ -47,7 +48,7 @@ describe('Effect types on scene graph', () => {
     })
     const updated = getNodeOrThrow(graph, node.id)
     expect(updated.effects[0].type).toBe('INNER_SHADOW')
-    expect(updated.effects[0].spread).toBe(5)
+    expect((updated.effects[0] as ShadowEffect).spread).toBe(5)
   })
 
   test('background blur effect', () => {
@@ -175,7 +176,7 @@ describe('Effect types on scene graph', () => {
     graph.updateNode(node.id, {
       effects: [makeEffect({ spread: -5 })]
     })
-    expect(getNodeOrThrow(graph, node.id).effects[0].spread).toBe(-5)
+    expect((getNodeOrThrow(graph, node.id).effects[0] as ShadowEffect).spread).toBe(-5)
   })
 })
 

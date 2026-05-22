@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { type Fill } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { createAPI } from '../helpers'
 
@@ -22,10 +23,10 @@ describe('frozen arrays', () => {
     rect.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     const fills = rect.fills as Fill[]
     try {
-      fills[0].color.r = 0
+      ;(fills[0] as SolidFill).color.r = 0
     } catch (error) {
       expect(error).toBeInstanceOf(TypeError)
     }
-    expect(rect.fills[0].color.r).toBe(1)
+    expect((rect.fills[0] as SolidFill).color.r).toBe(1)
   })
 })

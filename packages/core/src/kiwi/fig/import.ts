@@ -1,10 +1,10 @@
 import { isNotNil } from 'es-toolkit/predicate'
 
 import { BLACK } from '#core/constants'
-import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '#core/kiwi/fig/codec'
 import { populateAndApplyOverrides } from '#core/kiwi/fig/instance-overrides'
 import type { InstanceNodeChange } from '#core/kiwi/fig/instance-overrides'
+import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 import {
   guidToString,
   nodeChangeToProps,
@@ -19,10 +19,14 @@ import type { VariableType, VariableValue } from '#core/scene-graph'
 type AssetRef = { key: string; version?: string }
 type AliasRef = { guid?: GUID; assetRef?: AssetRef }
 
-function applyImportedCanvasMetadata(page: ReturnType<SceneGraph['addPage']>, canvasNc: NodeChange) {
+function applyImportedCanvasMetadata(
+  page: ReturnType<SceneGraph['addPage']>,
+  canvasNc: NodeChange
+) {
   page.source.format = 'fig'
   page.source.orderKey = canvasNc.parentIndex?.position ?? null
-  if (canvasNc.backgroundColor) page.source.fig.rawNodeFields.backgroundColor = structuredClone(canvasNc.backgroundColor)
+  if (canvasNc.backgroundColor)
+    page.source.fig.rawNodeFields.backgroundColor = structuredClone(canvasNc.backgroundColor)
   page.source.fig.rawNodeFields.strokeJoin = canvasNc.strokeJoin
   page.source.fig.rawNodeFields.strokeWeight = canvasNc.strokeWeight
   if (canvasNc.pageType) page.source.fig.rawNodeFields.pageType = canvasNc.pageType
@@ -476,7 +480,8 @@ export function importNodeChanges(
     )
   })
 
-  if (activeRootIds) rememberLazyFigImportContext(graph, changeMap, guidToNodeId, blobs, activeRootIds)
+  if (activeRootIds)
+    rememberLazyFigImportContext(graph, changeMap, guidToNodeId, blobs, activeRootIds)
 
   setVariableColorResolver(null)
 

@@ -471,10 +471,8 @@ describe('MCP server with mcpRoot', () => {
     } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: TEST_MCP_ROOT })
     const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
     const actualWsPort = await waitForWsListening(wss)
-
     const graph = new SceneGraph()
     const browser = await connectMockBrowser(actualWsPort, graph)
-
     const client = new Client({ name: 'test-root-save-outside', version: '0.0.0' })
     const transport = new StreamableHTTPClientTransport(
       new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
@@ -485,10 +483,8 @@ describe('MCP server with mcpRoot', () => {
       name: 'save_file',
       arguments: { path: path.join(path.dirname(TEST_MCP_ROOT), 'outside.fig') }
     })
-
     expect(result.isError).toBe(true)
     expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
-
     await client.close()
     browser.close()
     closeServer()
@@ -518,6 +514,61 @@ describe('MCP server with mcpRoot', () => {
     browser.close()
     closeServer()
     httpServer.close()
+  })
+})
+
+describe('MCP server CORS', () => {
+  test('accepts both localhost and 127.0.0.1 loopback origins regardless of port', async () => {
+    const { app, close: closeServer } = startServer({
+      httpPort: 0,
+      wsPort: 0,
+      corsOrigin: 'http://localhost:1420'
+    })
+
+    try {
+      // Same host, same port
+      const localhost1420 = await app.request('/health', {
+        headers: { origin: 'http://localhost:1420' }
+      })
+      expect(localhost1420.headers.get('access-control-allow-origin')).toBe('http://localhost:1420')
+
+      // Alternate loopback, same port
+      const loopback1420 = await app.request('/health', {
+        headers: { origin: 'http://127.0.0.1:1420' }
+      })
+      expect(loopback1420.headers.get('access-control-allow-origin')).toBe('http://127.0.0.1:1420')
+
+      // Alternate loopback, different port (Playwright uses 1422)
+      const loopback1422 = await app.request('/health', {
+        headers: { origin: 'http://127.0.0.1:1422' }
+      })
+      expect(loopback1422.headers.get('access-control-allow-origin')).toBe('http://127.0.0.1:1422')
+
+      // Localhost, different port
+      const localhost1422 = await app.request('/health', {
+        headers: { origin: 'http://localhost:1422' }
+      })
+      expect(localhost1422.headers.get('access-control-allow-origin')).toBe('http://localhost:1422')
+    } finally {
+      closeServer()
+    }
+  })
+
+  test('rejects non-loopback origins', async () => {
+    const { app, close: closeServer } = startServer({
+      httpPort: 0,
+      wsPort: 0,
+      corsOrigin: 'http://localhost:1420'
+    })
+
+    try {
+      const external = await app.request('/health', {
+        headers: { origin: 'http://evil.example.com:1420' }
+      })
+      expect(external.headers.get('access-control-allow-origin')).toBeNull()
+    } finally {
+      closeServer()
+    }
   })
 })
 

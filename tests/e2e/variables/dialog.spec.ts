@@ -1,5 +1,4 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-
 import { variablesAddTestId } from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
@@ -57,9 +56,9 @@ test('add variable menu creates non-color variable types', async () => {
 
   await editor.page.getByTestId('variables-add-variable').click()
   await editor.page.getByTestId(variablesAddTestId('STRING')).click()
-  await expect(
-    editor.page.getByTestId('variable-row').filter({ hasText: 'New text' })
-  ).toHaveCount(1)
+  await expect(editor.page.getByTestId('variable-row').filter({ hasText: 'New text' })).toHaveCount(
+    1
+  )
 
   await editor.page.getByTestId('variables-add-variable').click()
   await editor.page.getByTestId(variablesAddTestId('BOOLEAN')).click()
@@ -91,10 +90,7 @@ test('color swatch opens color picker', async () => {
   await editor.page.getByTestId('variables-section-open').click()
   await expect(editor.page.getByTestId('variables-dialog')).toBeVisible({ timeout: 3000 })
 
-  const swatch = editor.page
-    .getByTestId('variable-row')
-    .first()
-    .getByTestId('color-picker-swatch')
+  const swatch = editor.page.getByTestId('variable-row').first().getByTestId('color-picker-swatch')
   await expect(swatch).toBeVisible({ timeout: 3000 })
   await swatch.click()
   await expect(editor.page.getByTestId('color-picker-popover')).toBeVisible({ timeout: 5000 })

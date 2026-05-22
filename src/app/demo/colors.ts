@@ -24,7 +24,6 @@ export function solid(color: Color, opacity = 1): Fill {
 export function gradient(stops: GradientStop[]): Fill {
   return {
     type: 'GRADIENT_LINEAR',
-    color: stops[0].color,
     opacity: 1,
     visible: true,
     gradientStops: stops,

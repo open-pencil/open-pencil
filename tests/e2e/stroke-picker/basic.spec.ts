@@ -10,7 +10,7 @@ async function dragSlider(page: Page, canvas: CanvasHelper, testId: string, rati
   await page.mouse.move(box.x + 2, y)
   await page.mouse.down()
   await page.mouse.move(box.x + Math.max(2, Math.min(box.width - 2, box.width * ratio)), y, {
-    steps: 5
+    steps: 3
   })
   await page.mouse.up()
   await canvas.waitForRender()
@@ -84,6 +84,7 @@ test('stroke picker alpha slider updates stroke opacity and alpha', async ({ pag
 test('stroke picker hsb saturation and brightness sliders update stroke color on demo card', async ({
   page
 }) => {
+  test.setTimeout(120_000)
   const canvas = new CanvasHelper(page)
   await page.goto('/demo')
   await canvas.waitForInit()

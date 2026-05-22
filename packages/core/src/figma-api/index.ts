@@ -219,7 +219,11 @@ export class FigmaAPI implements NodeProxyHost {
     return (node as BaseNode & { [INTERNAL_ID]: string })[INTERNAL_ID]
   }
 
-  group(nodes: ReadonlyArray<FigmaNodeProxy>, parent: FigmaNodeProxy, index?: number): FigmaGroupNode
+  group(
+    nodes: ReadonlyArray<FigmaNodeProxy>,
+    parent: FigmaNodeProxy,
+    index?: number
+  ): FigmaGroupNode
   group(nodes: ReadonlyArray<BaseNode>, parent: BaseNode & ChildrenMixin, index?: number): GroupNode
   group(
     nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
@@ -424,8 +428,16 @@ export class FigmaAPI implements NodeProxyHost {
 
   // --- Flatten ---
 
-  flatten(nodes: ReadonlyArray<FigmaNodeProxy>, parent?: FigmaNodeProxy, index?: number): FigmaVectorNode
-  flatten(nodes: ReadonlyArray<BaseNode>, parent?: BaseNode & ChildrenMixin, index?: number): VectorNode
+  flatten(
+    nodes: ReadonlyArray<FigmaNodeProxy>,
+    parent?: FigmaNodeProxy,
+    index?: number
+  ): FigmaVectorNode
+  flatten(
+    nodes: ReadonlyArray<BaseNode>,
+    parent?: BaseNode & ChildrenMixin,
+    index?: number
+  ): VectorNode
   flatten(
     nodes: ReadonlyArray<BaseNode | FigmaNodeProxy>,
     parent?: (BaseNode & ChildrenMixin) | FigmaNodeProxy,

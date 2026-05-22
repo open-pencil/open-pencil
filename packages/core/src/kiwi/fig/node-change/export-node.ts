@@ -1,5 +1,5 @@
 import { bytesToHex } from '#core/bytes/hex'
-import type { NodeChange, Paint } from '#core/kiwi/fig/codec'
+import type { NodeChange, Paint, Effect as KiwiEffect } from '#core/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import type { Color, GUID, Matrix, Vector } from '#core/types'
 
@@ -92,17 +92,21 @@ function componentPropertyValue(value: string) {
   return { textValue: { characters: value } }
 }
 
-function componentPropertyTypeForKiwi(type: string) {
-  if (type === 'BOOLEAN') return 'BOOL'
-  if (type === 'VARIANT') return 'TEXT'
-  return type
+const KIWI_COMPONENT_PROP_TYPE: Record<string, string> = {
+  BOOLEAN: 'BOOL',
+  TEXT: 'TEXT',
+  INSTANCE_SWAP: 'INSTANCE_SWAP',
+  VARIANT: 'VARIANT'
 }
 
 function parseGuidOrNull(value: string) {
   return /^\d+:\d+$/.test(value) ? stringToGuid(value) : null
 }
 
-const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set(['variableConsumptionMap', 'parameterConsumptionMap'])
+const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
+  'variableConsumptionMap',
+  'parameterConsumptionMap'
+])
 const FIGMA_PAYLOAD_PAINT_VARIABLE_FIELDS = new Set(['colorVar', 'opacityVar'])
 
 const SUPPORTED_VARIABLE_DATA_TYPES = new Set([
@@ -118,14 +122,21 @@ const SUPPORTED_VARIABLE_DATA_TYPES = new Set([
 
 function isSupportedVariableMapEntry(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
-  const entry = value as { variableData?: { dataType?: string; value?: { propRefValue?: unknown } } }
+  const entry = value as {
+    variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
+  }
   const dataType = entry.variableData?.dataType
-  return (typeof dataType === 'string' && SUPPORTED_VARIABLE_DATA_TYPES.has(dataType)) || !!entry.variableData?.value?.propRefValue
+  return (
+    (typeof dataType === 'string' && SUPPORTED_VARIABLE_DATA_TYPES.has(dataType)) ||
+    !!entry.variableData?.value?.propRefValue
+  )
 }
 
 function isPropRefVariableMapEntry(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
-  const entry = value as { variableData?: { dataType?: string; value?: { propRefValue?: unknown } } }
+  const entry = value as {
+    variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
+  }
   return entry.variableData?.dataType === 'PROP_REF' || !!entry.variableData?.value?.propRefValue
 }
 
@@ -143,8 +154,9 @@ function materializeSafeVariableMap(
 
 function paintVariableKey(value: unknown): string | null {
   if (!value || typeof value !== 'object') return null
-  const assetRef = (value as { value?: { alias?: { assetRef?: { key?: unknown; version?: unknown } } } })
-    .value?.alias?.assetRef
+  const assetRef = (
+    value as { value?: { alias?: { assetRef?: { key?: unknown; version?: unknown } } } }
+  ).value?.alias?.assetRef
   return typeof assetRef?.key === 'string'
     ? `${assetRef.key}:${typeof assetRef.version === 'string' ? assetRef.version : ''}`
     : null
@@ -192,7 +204,8 @@ function materializeFigmaPayload(
   options: MaterializeFigmaPayloadOptions = {}
 ): unknown {
   if (value instanceof Uint8Array) return value
-  if (Array.isArray(value)) return value.map((item) => materializeFigmaPayload(item, blobs, options))
+  if (Array.isArray(value))
+    return value.map((item) => materializeFigmaPayload(item, blobs, options))
   if (!value || typeof value !== 'object') return value
   if ('__openPencilFigmaBlob' in value) {
     return materializeFigmaBlob(
@@ -326,11 +339,15 @@ function applyInstancePayload(
   if (symbolID) {
     const symbolData: Record<string, unknown> = { symbolID }
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolData.symbolOverrides = materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
-        blobIndexByHex: context.blobIndexByHex,
-        includeVariableMaps: true,
-        paintVariableColorMap: context.paintVariableColorMap
-      })
+      symbolData.symbolOverrides = materializeFigmaPayload(
+        node.source.fig.symbolOverrides,
+        context.blobs,
+        {
+          blobIndexByHex: context.blobIndexByHex,
+          includeVariableMaps: true,
+          paintVariableColorMap: context.paintVariableColorMap
+        }
+      )
     }
     if (node.source.fig.uniformScaleFactor != null) {
       symbolData.uniformScaleFactor = node.source.fig.uniformScaleFactor
@@ -349,11 +366,15 @@ function applyInstancePayload(
     )
   }
   if (node.source.fig.derivedSymbolData.length > 0) {
-    nc.derivedSymbolData = materializeFigmaPayload(node.source.fig.derivedSymbolData, context.blobs, {
-      blobIndexByHex: context.blobIndexByHex,
-      includeVariableMaps: true,
-      paintVariableColorMap: context.paintVariableColorMap
-    })
+    nc.derivedSymbolData = materializeFigmaPayload(
+      node.source.fig.derivedSymbolData,
+      context.blobs,
+      {
+        blobIndexByHex: context.blobIndexByHex,
+        includeVariableMaps: true,
+        paintVariableColorMap: context.paintVariableColorMap
+      }
+    )
   }
   if (node.source.fig.derivedSymbolDataLayoutVersion != null) {
     nc.derivedSymbolDataLayoutVersion = node.source.fig.derivedSymbolDataLayoutVersion
@@ -382,7 +403,7 @@ function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
         ? {
             id,
             name: def.name,
-            type: componentPropertyTypeForKiwi(def.type),
+            type: KIWI_COMPONENT_PROP_TYPE[def.type] ?? def.type,
             initialValue: componentPropertyValue(def.defaultValue)
           }
         : null
@@ -400,15 +421,22 @@ function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  return node.source.fig.rawSize ? { ...node.source.fig.rawSize } : { x: node.width, y: node.height }
+  return node.source.fig.rawSize
+    ? { ...node.source.fig.rawSize }
+    : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
-  return node.source.fig.rawTransform ? { ...node.source.fig.rawTransform } : context.computeExportTransform(node)
+  return node.source.fig.rawTransform
+    ? { ...node.source.fig.rawTransform }
+    : context.computeExportTransform(node)
 }
 
 function hasRawGeometryPayload(node: SceneNode): boolean {
-  return 'fillGeometry' in node.source.fig.rawNodeFields || 'strokeGeometry' in node.source.fig.rawNodeFields
+  return (
+    'fillGeometry' in node.source.fig.rawNodeFields ||
+    'strokeGeometry' in node.source.fig.rawNodeFields
+  )
 }
 
 function hasRawVectorPayload(node: SceneNode): boolean {
@@ -452,15 +480,21 @@ function applyNodeVisualProps(
   context.serializeCornerRadii(node, nc)
 
   if (node.effects.length > 0) {
-    nc.effects = node.effects.map((effect) => ({
-      type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
-      color: context.safeColor(effect.color),
-      offset: effect.offset,
-      radius: effect.radius,
-      spread: effect.spread,
-      visible: effect.visible,
-      showShadowBehindNode: effect.showShadowBehindNode
-    }))
+    nc.effects = node.effects.map((effect) => {
+      const base = {
+        type: effect.type === 'LAYER_BLUR' ? 'FOREGROUND_BLUR' : effect.type,
+        radius: effect.radius,
+        visible: effect.visible
+      } as KiwiEffect
+      if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+        const shadow = effect
+        base.color = context.safeColor(shadow.color)
+        base.offset = shadow.offset
+        base.spread = shadow.spread
+        base.showShadowBehindNode = shadow.showShadowBehindNode
+      }
+      return base
+    })
   }
 
   if (node.type === 'TEXT') {

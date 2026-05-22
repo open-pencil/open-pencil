@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
-import { BLACK } from '@open-pencil/core/constants'
 import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
+import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 import { randomHex } from '@open-pencil/core/random'
 import type {

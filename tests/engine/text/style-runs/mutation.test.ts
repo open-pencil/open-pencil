@@ -147,4 +147,3 @@ describe('removeStyleFromRange — edge cases', () => {
     expect(getStyleAt(result, 7).fontWeight).toBe(700)
   })
 })
-

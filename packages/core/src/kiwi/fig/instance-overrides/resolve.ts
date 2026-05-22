@@ -325,7 +325,10 @@ export function resolveOverrideTarget(
  * Only renames when the current name matches the root component name (preserves
  * user-given names). Clears the componentIdRoot cache after changing the tree.
  */
-function collectStyledStrokeDescendants(ctx: OverrideContext, nodeId: string): SceneNode['strokes'][] {
+function collectStyledStrokeDescendants(
+  ctx: OverrideContext,
+  nodeId: string
+): SceneNode['strokes'][] {
   const result: SceneNode['strokes'][] = []
   const visit = (id: string) => {
     const node = ctx.graph.getNode(id)
@@ -337,7 +340,11 @@ function collectStyledStrokeDescendants(ctx: OverrideContext, nodeId: string): S
   return result
 }
 
-function applyStrokeDescendants(ctx: OverrideContext, nodeId: string, strokes: SceneNode['strokes'][]): void {
+function applyStrokeDescendants(
+  ctx: OverrideContext,
+  nodeId: string,
+  strokes: SceneNode['strokes'][]
+): void {
   let index = 0
   const visit = (id: string) => {
     const node = ctx.graph.getNode(id)

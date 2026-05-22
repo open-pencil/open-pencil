@@ -68,6 +68,7 @@ export function displayFillWithBoundVariable(
   index: number,
   fill: Fill
 ): Fill {
-  const color = fill.type === 'SOLID' ? boundVariableColor(bindingApi, nodeId, index) : undefined
+  if (fill.type !== 'SOLID') return fill
+  const color = boundVariableColor(bindingApi, nodeId, index)
   return color ? { ...fill, color } : fill
 }

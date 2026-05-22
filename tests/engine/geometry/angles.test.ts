@@ -21,4 +21,3 @@ describe('degToRad / radToDeg', () => {
     expect(radToDeg(degToRad(-90))).toBeCloseTo(-90, 10)
   })
 })
-

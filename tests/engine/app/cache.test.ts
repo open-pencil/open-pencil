@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeAll, describe, expect, test } from 'bun:test'
 
 function installLocalStorage() {
   const data = new Map<string, string>()
@@ -16,6 +16,13 @@ function installLocalStorage() {
   Object.assign(globalThis, { window: Object.fromEntries([[storageProp, storage]]) })
   return data
 }
+
+// Install globalThis.window BEFORE any dynamic imports resolve so that
+// IS_BROWSER (typeof window !== 'undefined') in @open-pencil/core/constants
+// evaluates to true when the cache module loads its dependency chain.
+beforeAll(() => {
+  installLocalStorage()
+})
 
 afterEach(() => {
   Reflect.deleteProperty(globalThis, 'window')

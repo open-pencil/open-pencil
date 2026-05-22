@@ -3,4 +3,10 @@ export { ByteBuffer } from './bb'
 export { compileSchema } from './js'
 export { decodeBinarySchema, encodeBinarySchema } from './binary'
 export { parseSchema } from './parser'
-export { validateSchema, expectFieldNumber, expectEnumValue, findDefinition, findField } from './validate'
+export {
+  validateSchema,
+  expectFieldNumber,
+  expectEnumValue,
+  findDefinition,
+  findField
+} from './validate'

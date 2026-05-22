@@ -1,5 +1,4 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-
 import { expectDefined } from '#tests/helpers/assert'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
@@ -11,9 +10,7 @@ test('ScrubInput drag changes X position', async () => {
   const before = await getSelectedNode(editor.page)
   const initialX = expectDefined(before, 'selected rectangle before drag').x
 
-  const xScrub = editor.page
-    .getByTestId('position-section').getByTestId('scrub-input')
-    .first()
+  const xScrub = editor.page.getByTestId('position-section').getByTestId('scrub-input').first()
   await editor.canvas.dragScrubInput(xScrub, 50)
 
   const after = await getSelectedNode(editor.page)

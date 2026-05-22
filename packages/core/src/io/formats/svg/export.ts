@@ -1,4 +1,5 @@
 import { computeContentBounds } from '#core/io/formats/raster'
+import { nodeHasRadius } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import {
@@ -15,14 +16,20 @@ import {
   geometryBlobToSVGPath,
   vectorNetworkToSVGPaths,
   makePolygonPoints,
-  hasRadius,
   roundedRectPath,
   arcPath
 } from './paths'
 
 export { geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './paths'
 
-import type { SceneGraph, SceneNode, Fill, Stroke, CharacterStyleOverride } from '#core/scene-graph'
+import type {
+  SceneGraph,
+  SceneNode,
+  Fill,
+  SolidFill,
+  Stroke,
+  CharacterStyleOverride
+} from '#core/scene-graph'
 
 import type { SVGExportContext } from './defs'
 import { svg, renderSVGNode } from './node'
@@ -121,7 +128,7 @@ function nodeShapeElements(
       return vectorShapeElements(node, common, strokeAttrs)
 
     default: {
-      if (hasRadius(node)) {
+      if (nodeHasRadius(node)) {
         if (node.independentCorners) {
           return [svg('path', { d: roundedRectPath(node), ...common })]
         }
@@ -153,7 +160,7 @@ function styleOverrideToTspanAttrs(
   if (style.textDecoration === 'UNDERLINE') attrs['text-decoration'] = 'underline'
   if (style.textDecoration === 'STRIKETHROUGH') attrs['text-decoration'] = 'line-through'
   if (style.fills) {
-    const visibleFill = style.fills.find((f) => f.visible && f.type === 'SOLID')
+    const visibleFill = style.fills.find((f): f is SolidFill => f.visible && f.type === 'SOLID')
     if (visibleFill) {
       attrs.fill = formatColor(visibleFill.color, visibleFill.opacity, colorSpace)
     }

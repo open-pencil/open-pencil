@@ -1,9 +1,11 @@
 import { colorToHex } from '#core/color'
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode, SolidFill } from '#core/scene-graph'
 
 export function describeVisual(node: SceneNode): string {
   const parts: string[] = []
-  const fill = node.fills.find((candidate) => candidate.type === 'SOLID' && candidate.visible)
+  const fill = node.fills.find(
+    (candidate): candidate is SolidFill => candidate.type === 'SOLID' && candidate.visible
+  )
   if (fill) parts.push(`${colorToHex(fill.color)} fill`)
   if (node.strokes.length > 0 && node.strokes[0]?.visible) parts.push('bordered')
   if (node.cornerRadius > 0) parts.push('rounded')
@@ -60,7 +62,9 @@ export function describeLayout(node: SceneNode): string | null {
 
 export function summarizeContainer(node: SceneNode): string {
   const parts = [`${node.width}×${node.height}`]
-  const fill = node.fills.find((candidate) => candidate.type === 'SOLID' && candidate.visible)
+  const fill = node.fills.find(
+    (candidate): candidate is SolidFill => candidate.type === 'SOLID' && candidate.visible
+  )
   if (fill) parts.push(colorToHex(fill.color))
   if (node.cornerRadius > 0) parts.push('rounded')
   const layout = describeLayout(node)
@@ -73,7 +77,9 @@ export function summarizeText(node: SceneNode): string {
   let summary = `"${text}" ${node.fontSize}px ${node.fontFamily}`
   if (node.fontWeight >= 700) summary += ' bold'
   else if (node.fontWeight >= 500) summary += ' medium'
-  const textColor = node.fills.find((fill) => fill.type === 'SOLID' && fill.visible)
+  const textColor = node.fills.find(
+    (fill): fill is SolidFill => fill.type === 'SOLID' && fill.visible
+  )
   if (textColor) summary += `, ${colorToHex(textColor.color)}`
   if (node.textAutoResize === 'HEIGHT') summary += ', wraps'
   else if (node.textAutoResize === 'NONE') summary += ', fixed-size'

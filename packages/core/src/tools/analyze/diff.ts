@@ -6,7 +6,9 @@ import type { SceneNode } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
 
 function serializePaintProps(raw: SceneNode, lines: string[]): void {
-  const solidFill = raw.fills.find((f) => f.type === 'SOLID' && f.visible)
+  const solidFill = raw.fills.find(
+    (f): f is typeof f & { type: 'SOLID' } => f.type === 'SOLID' && f.visible
+  )
   if (solidFill) lines.push(`fill: ${colorToHex(solidFill.color)}`)
 
   const solidStroke = raw.strokes.find((s) => s.visible)
@@ -34,9 +36,11 @@ function serializeEffects(raw: SceneNode, lines: string[]): void {
   for (const effect of raw.effects) {
     const parts: string[] = [effect.type]
     parts.push(`r=${effect.radius}`)
-    parts.push(`c=${colorToHex(effect.color)}`)
-    parts.push(`x=${effect.offset.x} y=${effect.offset.y}`)
-    parts.push(`s=${effect.spread}`)
+    if (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW') {
+      parts.push(`c=${colorToHex(effect.color)}`)
+      parts.push(`x=${effect.offset.x} y=${effect.offset.y}`)
+      parts.push(`s=${effect.spread}`)
+    }
     lines.push(`effect: ${parts.join(' ')}`)
   }
 }

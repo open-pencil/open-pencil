@@ -1,6 +1,5 @@
-import { normalizeVectorNetwork } from './vector-network'
-
 import type { SceneNode } from './types'
+import { normalizeVectorNetwork } from './vector-network'
 
 type PreviewGraph = {
   nodes: Map<string, SceneNode>

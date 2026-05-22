@@ -36,8 +36,14 @@ function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: Yog
 
   const derived = child.figmaDerivedLayout
   graph.updateNode(child.id, {
-    x: child.type === 'INSTANCE' ? yogaChild.getComputedLeft() : (derived?.x ?? yogaChild.getComputedLeft()),
-    y: child.type === 'INSTANCE' ? yogaChild.getComputedTop() : (derived?.y ?? yogaChild.getComputedTop()),
+    x:
+      child.type === 'INSTANCE'
+        ? yogaChild.getComputedLeft()
+        : (derived?.x ?? yogaChild.getComputedLeft()),
+    y:
+      child.type === 'INSTANCE'
+        ? yogaChild.getComputedTop()
+        : (derived?.y ?? yogaChild.getComputedTop()),
     width: derived?.width ?? yogaChild.getComputedWidth(),
     height: derived?.height ?? yogaChild.getComputedHeight()
   })

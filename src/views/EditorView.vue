@@ -32,6 +32,7 @@ import Toolbar from '@/components/Toolbar/Toolbar.vue'
 const route = useRoute()
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
+const isTestMode = 'test' in params
 
 const createdInitialTab = tabCount() === 0
 const firstTab = createdInitialTab ? createTab() : (activeTab.value ?? createTab())
@@ -86,15 +87,20 @@ async function bindAssociatedFileOpen() {
 }
 
 onMounted(async () => {
-  try {
-    const mcp = await spawnMCPIfNeeded()
-    mcpCleanup.value = mcp?.disconnect ?? null
-    const tauri = isTauri()
-    if (import.meta.env.DEV || tauri) {
-      automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
+  if (!isTestMode) {
+    try {
+      const mcp = await spawnMCPIfNeeded()
+      mcpCleanup.value = mcp?.disconnect ?? null
+      const tauri = isTauri()
+      if (tauri || mcp) {
+        automationCleanup.value = connectAutomation(
+          getActiveStore,
+          mcp?.authToken ?? null
+        ).disconnect
+      }
+    } catch (e) {
+      console.warn('[MCP]', e)
     }
-  } catch (e) {
-    console.warn('[MCP]', e)
   }
 
   try {

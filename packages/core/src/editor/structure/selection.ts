@@ -11,7 +11,8 @@ export function selectedNodesInSharedParent(ctx: EditorContext, selectedNodes: S
   if (topLevel.length === 0 || topLevel.some((node) => node.locked)) return null
 
   const parentId = topLevel[0].parentId ?? ctx.state.currentPageId
-  if (!topLevel.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId)) return null
+  if (!topLevel.every((node) => (node.parentId ?? ctx.state.currentPageId) === parentId))
+    return null
 
   const parent = ctx.graph.getNode(parentId)
   return parent ? { topLevel, parentId, parent } : null

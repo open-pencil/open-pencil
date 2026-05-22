@@ -158,7 +158,7 @@ export function createYjsGraphSync({
 
       if (localYimages) {
         for (const fill of node.fills) {
-          if (fill.imageHash && !localYimages.has(fill.imageHash)) {
+          if (fill.type === 'IMAGE' && fill.imageHash && !localYimages.has(fill.imageHash)) {
             const data = store.graph.images.get(fill.imageHash)
             if (data) localYimages.set(fill.imageHash, data)
           }

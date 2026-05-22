@@ -14,10 +14,10 @@ import { guidToString } from '#core/kiwi/fig/node-change/convert'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import { copyFills, copyStyleRuns } from '#core/scene-graph/copy'
 
+import { applyComponentProperties } from './component-props'
 import { applyConstraintScaling } from './constraints'
 import { applyDerivedSymbolData } from './derived-symbol-data'
 import { populateInstances } from './populate'
-import { applyComponentProperties } from './component-props'
 import { preComputeRoots } from './resolve'
 import { applySymbolOverrides } from './symbol/overrides'
 import { propagateOverridesTransitively } from './sync'
@@ -100,7 +100,11 @@ function propagateResolvedChildPlacementClones(graph: SceneGraph): void {
         const sourceChild = graph.getNode(source.childIds[i])
         const child = graph.getNode(node.childIds[i])
         if (!sourceChild || !child) continue
-        if (sourceChild.overrideKey && child.overrideKey && sourceChild.overrideKey !== child.overrideKey) {
+        if (
+          sourceChild.overrideKey &&
+          child.overrideKey &&
+          sourceChild.overrideKey !== child.overrideKey
+        ) {
           continue
         }
         const updates: Partial<SceneNode> = {}

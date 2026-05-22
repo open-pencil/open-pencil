@@ -1,7 +1,14 @@
 import { colorToHex } from '#core/color'
 import { colorToDisplayCss, getDefaultRenderColorSpace } from '#core/color/management'
 import type { RenderColorSpace } from '#core/color/management'
-import type { Effect, Fill, SceneGraph, SceneNode } from '#core/scene-graph'
+import type {
+  Effect,
+  Fill,
+  GradientFill,
+  ImageFill,
+  SceneGraph,
+  SceneNode
+} from '#core/scene-graph'
 import type { Color } from '#core/types'
 
 import { svg, type SVGNode } from './node'
@@ -31,13 +38,12 @@ export function formatColor(
 }
 
 function createGradientDef(
-  fill: Fill,
+  fill: GradientFill,
   node: SceneNode,
   ctx: SVGExportContext
 ): { id: string; node: SVGNode } | null {
   const stops = fill.gradientStops
   const t = fill.gradientTransform
-  if (!stops || !t) return null
 
   const stopNodes = stops.map((s) =>
     svg('stop', {
@@ -85,26 +91,22 @@ function createGradientDef(
     }
   }
 
-  if (fill.type === 'GRADIENT_ANGULAR') {
-    const cx = round(t.m02 * node.width)
-    const cy = round(t.m12 * node.height)
-    const r = Math.max(node.width, node.height)
-    return {
-      id,
-      node: svg('radialGradient', { id, cx, cy, r, gradientUnits: 'userSpaceOnUse' }, ...stopNodes)
-    }
+  const cx = round(t.m02 * node.width)
+  const cy = round(t.m12 * node.height)
+  const r = Math.max(node.width, node.height)
+  return {
+    id,
+    node: svg('radialGradient', { id, cx, cy, r, gradientUnits: 'userSpaceOnUse' }, ...stopNodes)
   }
-
-  return null
 }
 
 function createImagePattern(
-  fill: Fill,
+  fill: ImageFill,
   node: SceneNode,
   ctx: SVGExportContext
 ): { id: string; node: SVGNode } | null {
-  if (!fill.imageHash) return null
-  const data = ctx.graph.images.get(fill.imageHash)
+  const imageHash = fill.imageHash
+  const data = ctx.graph.images.get(imageHash)
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
@@ -208,7 +210,12 @@ export function resolveFill(fill: Fill, node: SceneNode, ctx: SVGExportContext):
     return formatColor(fill.color, fill.opacity, ctx.colorSpace)
   }
 
-  if (fill.type.startsWith('GRADIENT')) {
+  if (
+    fill.type === 'GRADIENT_LINEAR' ||
+    fill.type === 'GRADIENT_RADIAL' ||
+    fill.type === 'GRADIENT_ANGULAR' ||
+    fill.type === 'GRADIENT_DIAMOND'
+  ) {
     const grad = createGradientDef(fill, node, ctx)
     if (grad) {
       ctx.defs.push(grad.node)

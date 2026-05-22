@@ -13,4 +13,3 @@ describe('GPUTimer', () => {
     timer.destroy()
   })
 })
-

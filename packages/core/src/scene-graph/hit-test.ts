@@ -3,6 +3,25 @@ import Matrix from '#core/canvas/matrix'
 
 import type { SceneGraph, SceneNode, NodeType } from './'
 
+/**
+ * Hit testing behavior:
+ *
+ * - **visible: false**: Node and its subtree are completely skipped (hitTestChildren).
+ *
+ * - **locked: true**:
+ *   - GROUP: lock state is irrelevant. Non-deep mode always returns the GROUP.
+ *     Deep mode recurses into children regardless of lock.
+ *   - FRAME/SECTION/COMPONENT_SET (transparent, non-GROUP): children ARE recursed into,
+ *     but if a child is hit, the locked parent is returned instead of the child.
+ *     This prevents selecting children of a locked container.
+ *   - COMPONENT/INSTANCE (opaque): in non-deep mode, always returns the container
+ *     regardless of lock state. In deep mode (hitTestDeep), routes through the
+ *     transparent container path which does check `.locked`.
+ *
+ * - **opacity: 0**: Opacity is NOT checked during hit testing. Zero-opacity nodes are
+ *   still hit-testable because opacity is visual, not structural. Matches Figma behavior.
+ */
+
 const CONTAINER_TYPES = new Set<NodeType>([
   'CANVAS',
   'FRAME',

@@ -36,8 +36,7 @@ async function readHealth(): Promise<AutomationHealth | null> {
     })
     if (!res.ok) return null
     return (await res.json()) as AutomationHealth
-  } catch (e) {
-    console.error('[MCP] health check failed:', e instanceof Error ? e.message : e)
+  } catch {
     return null
   }
 }
@@ -73,9 +72,11 @@ export async function getAutomationAuthToken(): Promise<string | null> {
 
 export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   if (import.meta.env.DEV || !isTauri()) {
-    return DEV_AUTOMATION_AUTH_TOKEN
-      ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN }
-      : null
+    if (!DEV_AUTOMATION_AUTH_TOKEN) return null
+    const health = await pollHealth(5, 200)
+    if (!health) return null
+    runtimeAutomationAuthToken = health.token ?? DEV_AUTOMATION_AUTH_TOKEN
+    return { disconnect: noop, authToken: runtimeAutomationAuthToken }
   }
 
   const existing = await readHealth()

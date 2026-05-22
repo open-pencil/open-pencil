@@ -9,8 +9,13 @@ import ImageFillPicker from './ImageFillPicker.vue'
 import Tip from './ui/Tip.vue'
 import { usePopoverUI } from './ui/popover'
 
-import type { Fill } from '@open-pencil/core/scene-graph'
+import type { Fill, SolidFill } from '@open-pencil/core/scene-graph'
 import type { OkHCLControls } from '@open-pencil/vue'
+
+/** Narrow Fill to SolidFill for template use inside v-if="category === 'SOLID'" guards. */
+function asSolid(fill: Fill): SolidFill {
+  return fill as SolidFill
+}
 
 const TAB_BASE =
   'flex size-6 cursor-pointer items-center justify-center rounded border-none p-0 transition-colors'
@@ -85,7 +90,7 @@ const { panels } = useI18n()
 
       <ColorPickerPanel
         v-if="category === 'SOLID'"
-        :color="currentFill.color"
+        :color="asSolid(currentFill).color"
         :okhcl="okhcl"
         @update="emit('update', applySolidFillColor(currentFill, $event))"
       />

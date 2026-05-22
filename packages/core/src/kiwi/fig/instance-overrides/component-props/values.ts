@@ -1,11 +1,10 @@
 import type { GUID } from '#core/kiwi/fig/codec'
-import { guidToString } from '#core/kiwi/fig/node-change/convert'
-
 import type {
   ComponentPropAssignment,
   ComponentPropValue,
   OverrideContext
 } from '#core/kiwi/fig/instance-overrides/types'
+import { guidToString } from '#core/kiwi/fig/node-change/convert'
 
 export function normalizePropName(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -42,7 +41,8 @@ function resolveAssignmentValue(
   if (variableValue?.symbolIdValue?.guid) return { guidValue: variableValue.symbolIdValue.guid }
   if (variableValue?.boolValue !== undefined) return { boolValue: variableValue.boolValue }
   if (variableValue?.textValue !== undefined) return { textValue: variableValue.textValue }
-  if (variableValue?.textDataValue !== undefined) return { textDataValue: variableValue.textDataValue }
+  if (variableValue?.textDataValue !== undefined)
+    return { textDataValue: variableValue.textDataValue }
 
   return resolveDefaults ? (ctx.propDefaults.get(key) ?? assignment.value) : assignment.value
 }

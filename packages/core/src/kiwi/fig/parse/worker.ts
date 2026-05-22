@@ -22,7 +22,10 @@ self.onmessage = (e: MessageEvent<ArrayBuffer | WorkerParseRequest>) => {
     const graph = importNodeChanges(nodeChanges, blobs, new Map(images), request.options)
     graph.figKiwiVersion = figKiwiVersion
     const serialized = serializeSceneGraph(graph)
-    ;(self as WorkerScope).postMessage({ graph: serialized }, serializedSceneGraphTransferList(serialized))
+    ;(self as WorkerScope).postMessage(
+      { graph: serialized },
+      serializedSceneGraphTransferList(serialized)
+    )
   } catch (err) {
     self.postMessage({ error: err instanceof Error ? err.message : String(err) })
   }

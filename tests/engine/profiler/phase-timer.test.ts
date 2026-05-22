@@ -22,4 +22,3 @@ describe('PhaseTimer', () => {
     timer.endPhase('test')
   })
 })
-

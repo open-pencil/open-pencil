@@ -91,5 +91,10 @@ test('selecting a frame shows Frame in JSX', async () => {
 test('switching back to Design tab works', async () => {
   await designTab().click()
 
-  await expect(editor.page.getByTestId('design-panel-single').or(editor.page.getByTestId('design-panel-empty')).first()).toBeVisible()
+  await expect(
+    editor.page
+      .getByTestId('design-panel-single')
+      .or(editor.page.getByTestId('design-panel-empty'))
+      .first()
+  ).toBeVisible()
 })

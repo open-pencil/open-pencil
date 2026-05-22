@@ -36,6 +36,35 @@ function mcpInstallCommand(): Promise<string> {
   return installCommandPromise
 }
 
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+/**
+ * When the configured CORS origin is a loopback address, return a validator
+ * that accepts any loopback host regardless of port. This allows Playwright
+ * (which may use 127.0.0.1) to connect when the app serves on localhost.
+ * Non-loopback origins are returned as-is (exact match only).
+ */
+function isLoopbackOrigin(
+  configuredOrigin: string
+): string | ((origin: string) => string | undefined) {
+  try {
+    const url = new URL(configuredOrigin)
+    if (!LOOPBACK_HOSTS.has(url.hostname)) return configuredOrigin
+  } catch {
+    return configuredOrigin
+  }
+  return (requestOrigin: string): string | undefined => {
+    try {
+      const parsed = new URL(requestOrigin)
+      if (LOOPBACK_HOSTS.has(parsed.hostname) && parsed.protocol === 'http:') return requestOrigin
+    } catch {
+      // Malformed origin URL — reject by falling through
+      console.warn(`[MCP CORS] Rejecting malformed origin: ${requestOrigin}`)
+    }
+    return undefined
+  }
+}
+
 export { fail, ok, type MCPContent, type MCPResult } from './result'
 
 export { registerTools, type RegisterToolsOptions, type RpcSender } from './tool/registration'
@@ -94,7 +123,7 @@ export function startServer(options: ServerOptions = {}) {
     app.use(
       '*',
       cors({
-        origin: corsOrigin,
+        origin: isLoopbackOrigin(corsOrigin),
         allowMethods: MCP_CORS_METHODS,
         allowHeaders: MCP_CORS_HEADERS,
         exposeHeaders: MCP_EXPOSED_HEADERS

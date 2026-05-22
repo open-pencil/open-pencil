@@ -21,15 +21,16 @@ export const WATCH_IGNORED = [
 ]
 
 export function createDevServerOptions(host: string | undefined): ServerOptions {
+  const port = process.env.VITE_PORT ? Number.parseInt(process.env.VITE_PORT, 10) : 1420
   return {
-    port: 1420,
+    port,
     strictPort: true,
     host: host || false,
     hmr: host
       ? {
           protocol: 'ws',
           host,
-          port: 1421
+          port: port + 1
         }
       : undefined,
     watch: {

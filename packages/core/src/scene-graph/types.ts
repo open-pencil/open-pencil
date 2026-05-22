@@ -126,18 +126,36 @@ export interface GradientStop {
 
 export type GradientTransform = Matrix
 
-export interface Fill {
-  type: FillType
-  color: Color
+/** Fields present on ALL fill types. */
+interface FillBase {
   opacity: number
   visible: boolean
   blendMode?: BlendMode
-  gradientStops?: GradientStop[]
-  gradientTransform?: GradientTransform
-  imageHash?: string
-  imageScaleMode?: ImageScaleMode
+}
+
+/** SOLID fills have a required color. */
+export interface SolidFill extends FillBase {
+  type: 'SOLID'
+  color: Color
+}
+
+/** GRADIENT fills have gradientStops + gradientTransform — no color. */
+export interface GradientFill extends FillBase {
+  type: 'GRADIENT_LINEAR' | 'GRADIENT_RADIAL' | 'GRADIENT_ANGULAR' | 'GRADIENT_DIAMOND'
+  gradientStops: GradientStop[]
+  gradientTransform: GradientTransform
+}
+
+/** IMAGE fills have imageHash + imageScaleMode — no color. */
+export interface ImageFill extends FillBase {
+  type: 'IMAGE'
+  imageHash: string
+  imageScaleMode: ImageScaleMode
   imageTransform?: GradientTransform
 }
+
+/** Discriminated union — access fill.color only after narrowing to SolidFill. */
+export type Fill = SolidFill | GradientFill | ImageFill
 
 export type StrokeCap = 'NONE' | 'ROUND' | 'SQUARE' | 'ARROW_LINES' | 'ARROW_EQUILATERAL'
 export type StrokeJoin = 'MITER' | 'BEVEL' | 'ROUND'
@@ -154,16 +172,29 @@ export interface Stroke {
   dashPattern?: number[]
 }
 
-export interface Effect {
-  type: 'DROP_SHADOW' | 'INNER_SHADOW' | 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
-  color: Color
-  offset: Vector
+/** Fields present on ALL effect types. */
+interface EffectBase {
   radius: number
-  spread: number
   visible: boolean
   blendMode?: BlendMode
+}
+
+/** Shadow effects have color, offset, and spread. */
+export interface ShadowEffect extends EffectBase {
+  type: 'DROP_SHADOW' | 'INNER_SHADOW'
+  color: Color
+  offset: Vector
+  spread?: number
   showShadowBehindNode?: boolean
 }
+
+/** Blur effects have only radius — no color, offset, or spread. */
+export interface BlurEffect extends EffectBase {
+  type: 'LAYER_BLUR' | 'BACKGROUND_BLUR' | 'FOREGROUND_BLUR'
+}
+
+/** Discriminated union — access effect.color/offset/spread only after narrowing to ShadowEffect. */
+export type Effect = ShadowEffect | BlurEffect
 
 export type ConstraintType = 'MIN' | 'CENTER' | 'MAX' | 'STRETCH' | 'SCALE'
 export type TextAutoResize = 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT' | 'TRUNCATE'

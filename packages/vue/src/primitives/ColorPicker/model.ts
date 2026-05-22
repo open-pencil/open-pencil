@@ -224,11 +224,16 @@ function clampPercent(value: number): number {
 }
 
 export function applySolidFillColor(fill: Fill, color: Color): Fill {
-  return {
-    ...fill,
-    color,
-    opacity: color.a
+  if (fill.type !== 'SOLID') {
+    return {
+      type: 'SOLID',
+      color,
+      opacity: color.a,
+      visible: fill.visible,
+      blendMode: fill.blendMode
+    }
   }
+  return { ...fill, color, opacity: color.a }
 }
 
 export function applySolidStrokeColor(color: Color): Partial<Stroke> {

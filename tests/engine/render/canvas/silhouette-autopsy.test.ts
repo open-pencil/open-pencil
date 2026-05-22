@@ -247,14 +247,18 @@ describe('Doc 02 — Formula Deconstruction: Static Code Claims', () => {
     const body = expectDefined(drawTextInnerShadowMatch, 'drawTextInnerShadowMatch')[0]
 
     // 4 saveLayer: Master, Restrictive, Blur, DstOut
-    // 2 save: child transform, offset transform
-    // 6 restore: one per save/saveLayer
+    // 2 save: child transform (inside try), offset transform (inside try)
+    // 7 restore in source: 5 in try block (happy path) + 1 in while loop
+    // (exception path, skips on happy path) + 1 conditional for child transform
+    // in finally (guarded by childTransformSaved flag).
+    // On the happy path, 6 restores execute (5 inner + 1 child transform).
+    // On the exception path, the while loop restores any un-popped inner saves.
     const saveLayers = (body.match(/canvas\.saveLayer/g) || []).length
     const saves = (body.match(/canvas\.save\(\)/g) || []).length
     const restores = (body.match(/canvas\.restore\(\)/g) || []).length
     expect(saveLayers).toBe(4)
     expect(saves).toBe(2)
-    expect(restores).toBe(6) // 4 saveLayer + 2 save = 6 restores
+    expect(restores).toBe(7) // 4 saveLayer + 2 save + 1 exception-path restore = 7
   })
 
   test('C02-03: DecalBlur is used (not Clamp) for inner shadow (shadows.ts:184)', () => {

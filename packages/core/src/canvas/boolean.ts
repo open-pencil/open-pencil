@@ -282,8 +282,20 @@ export function renderBooleanOperation(
     const fill = node.fills[fillIndex]
     if (!fill.visible || !r.applyFill(fill, node, graph, fillIndex)) continue
     r.fillPaint.setAlphaf(fill.opacity)
-    canvas.drawPath(path, r.fillPaint)
-    r.fillPaint.setShader(null)
+    // Capture any image shader created by applyFill so we can delete it
+    // after the draw. Boolean operations bypass drawVisibleFills, which
+    // normally handles shader cleanup via try/finally.
+    const imageShader = r.imageFillShader
+    if (imageShader) r.imageFillShader = null
+    try {
+      canvas.drawPath(path, r.fillPaint)
+    } finally {
+      try {
+        r.fillPaint.setShader(null)
+      } finally {
+        if (imageShader) imageShader.delete()
+      }
+    }
   }
 
   for (const stroke of node.strokes) {

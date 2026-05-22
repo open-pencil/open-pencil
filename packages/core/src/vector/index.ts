@@ -12,8 +12,6 @@ export {
 
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 
-import { addOpenSegmentsToPath, addSegmentDirected } from './path-helpers'
-
 import type {
   HandleMirroring,
   VectorNetwork,
@@ -22,6 +20,8 @@ import type {
   VectorVertex,
   WindingRule
 } from '#core/scene-graph'
+
+import { addOpenSegmentsToPath, addSegmentDirected } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 
 // --- vectorNetworkBlob binary format ---

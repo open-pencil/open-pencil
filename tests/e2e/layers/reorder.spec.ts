@@ -75,7 +75,9 @@ test('dragging a layer into a container expands it and shows the child', async (
   await source.dragTo(target, { targetPosition: { x: 70, y: 12 } })
   await canvas.waitForRender()
 
-  await expect(page.locator(`[data-node-id="${ids.rect}"]`).getByTestId('layers-item')).toBeVisible()
+  await expect(
+    page.locator(`[data-node-id="${ids.rect}"]`).getByTestId('layers-item')
+  ).toBeVisible()
   expect(await layerOrder(page, ids.frame)).toEqual([ids.rect])
   canvas.assertNoErrors()
 })

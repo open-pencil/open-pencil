@@ -1,5 +1,4 @@
 import { parseColor } from '#core/color'
-import { BLACK } from '#core/constants'
 import { defineTool } from '#core/tools/schema'
 import type { Matrix } from '#core/types'
 
@@ -39,7 +38,6 @@ export const setFill = defineTool({
       node.fills = [
         {
           type: 'GRADIENT_LINEAR',
-          color: c,
           opacity: 1,
           visible: true,
           gradientStops: [
@@ -117,7 +115,6 @@ export const setImageFill = defineTool({
     node.fills = [
       {
         type: 'IMAGE',
-        color: BLACK,
         opacity: 1,
         visible: true,
         imageHash: image.hash,

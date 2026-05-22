@@ -6,7 +6,12 @@ import AppSelect from './ui/AppSelect.vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 
-import type { Fill, ImageScaleMode } from '@open-pencil/core/scene-graph'
+import type { Fill, ImageFill, ImageScaleMode } from '@open-pencil/core/scene-graph'
+
+/** Narrow Fill to ImageFill for template use inside IMAGE-only components. */
+function asImage(fill: Fill): ImageFill {
+  return fill as ImageFill
+}
 
 const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
   { value: 'FILL', label: 'Fill' },
@@ -24,7 +29,7 @@ const imageBlob = shallowRef<Blob | null>(null)
 const imagePreviewUrl = useObjectUrl(imageBlob)
 
 watch(
-  () => fill.imageHash,
+  () => asImage(fill).imageHash,
   (hash) => {
     if (!hash) {
       imageBlob.value = null
@@ -47,16 +52,26 @@ onFileChange(async (files) => {
   const bytes = new Uint8Array(await file.arrayBuffer())
   const hash = store.storeImage(bytes)
   emit('update', {
-    ...fill,
     type: 'IMAGE',
     imageHash: hash,
-    imageScaleMode: fill.imageScaleMode ?? 'FILL'
+    imageScaleMode: asImage(fill).imageScaleMode,
+    opacity: fill.opacity,
+    visible: fill.visible,
+    blendMode: fill.blendMode
   })
 })
 
 const scaleMode = computed({
-  get: () => fill.imageScaleMode ?? ('FILL' as ImageScaleMode),
-  set: (mode: ImageScaleMode) => emit('update', { ...fill, imageScaleMode: mode })
+  get: () => asImage(fill).imageScaleMode,
+  set: (mode: ImageScaleMode) =>
+    emit('update', {
+      type: 'IMAGE',
+      imageHash: asImage(fill).imageHash,
+      imageScaleMode: mode,
+      opacity: fill.opacity,
+      visible: fill.visible,
+      blendMode: fill.blendMode
+    })
 })
 </script>
 
@@ -74,7 +89,7 @@ const scaleMode = computed({
       @click="pickImage()"
     >
       <icon-lucide-image class="size-3" />
-      {{ fill.imageHash ? 'Replace' : 'Choose image' }}
+      {{ asImage(fill).imageHash ? 'Replace' : 'Choose image' }}
     </button>
     <AppSelect
       :model-value="scaleMode"

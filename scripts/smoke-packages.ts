@@ -30,7 +30,10 @@ try {
 
   const tarballs: string[] = []
   for (const packageDir of packageDirs) {
-    const output = run(['bun', 'pm', 'pack', '--destination', tempDir, '--quiet'], join(rootDir, packageDir))
+    const output = run(
+      ['bun', 'pm', 'pack', '--destination', tempDir, '--quiet'],
+      join(rootDir, packageDir)
+    )
     const filename = output
       .split('\n')
       .map((line) => line.trim())

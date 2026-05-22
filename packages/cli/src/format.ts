@@ -15,7 +15,7 @@ import {
 } from 'agentfmt'
 import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneGraph, SceneNode, SolidFill } from '@open-pencil/core/scene-graph'
 
 export {
   ok,
@@ -87,8 +87,8 @@ export function formatBox(node: SceneNode): string {
 
 function formatFill(node: SceneNode): string | null {
   if (!node.fills.length) return null
-  const solid = node.fills.find((f) => f.type === 'SOLID' && f.visible)
-  if (!solid?.color) return null
+  const solid = node.fills.find((f): f is SolidFill => f.type === 'SOLID' && f.visible)
+  if (!solid) return null
   const { r, g, b } = solid.color
   const hex =
     '#' +

@@ -70,7 +70,13 @@ function toScreenRect(r: SkiaRenderer, [x, y, width, height]: RectTuple) {
   )
 }
 
-function drawStripedRect(r: SkiaRenderer, canvas: Canvas, rectTuple: RectTuple, color: Color, fill: Color) {
+function drawStripedRect(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  rectTuple: RectTuple,
+  color: Color,
+  fill: Color
+) {
   const [, , width, height] = rectTuple
   if (width <= 0 || height <= 0) return
   const rect = toScreenRect(r, rectTuple)
@@ -209,13 +215,7 @@ function drawSpacingHover(
 ) {
   const rects = gapRects(node, graph)
   for (const rect of rects) {
-    drawStripedRect(
-      r,
-      canvas,
-      rect,
-      AUTO_LAYOUT_HOVER_MAGENTA,
-      AUTO_LAYOUT_HOVER_MAGENTA_FILL
-    )
+    drawStripedRect(r, canvas, rect, AUTO_LAYOUT_HOVER_MAGENTA, AUTO_LAYOUT_HOVER_MAGENTA_FILL)
   }
   if (!showValue || rects.length === 0) return
   const [x, y, width, height] = rects[0]
@@ -254,22 +254,31 @@ function drawPaddingHover(
 function drawChildrenHover(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, node: SceneNode) {
   r.auxStroke.setStrokeWidth(1)
   r.auxStroke.setColor(r.selColor())
-  r.auxStroke.setPathEffect(
-    r.ck.PathEffect.MakeDash([AUTO_LAYOUT_HOVER_CHILD_DASH, AUTO_LAYOUT_HOVER_CHILD_DASH], 0)
+  const dashEffect = r.ck.PathEffect.MakeDash(
+    [AUTO_LAYOUT_HOVER_CHILD_DASH, AUTO_LAYOUT_HOVER_CHILD_DASH],
+    0
   )
-  for (const child of visibleLayoutChildren(node, graph)) {
-    const abs = graph.getAbsolutePosition(child.id)
-    canvas.drawRect(
-      r.ck.LTRBRect(
-        abs.x * r.zoom + r.panX,
-        abs.y * r.zoom + r.panY,
-        (abs.x + child.width) * r.zoom + r.panX,
-        (abs.y + child.height) * r.zoom + r.panY
-      ),
-      r.auxStroke
-    )
+  try {
+    r.auxStroke.setPathEffect(dashEffect)
+    for (const child of visibleLayoutChildren(node, graph)) {
+      const abs = graph.getAbsolutePosition(child.id)
+      canvas.drawRect(
+        r.ck.LTRBRect(
+          abs.x * r.zoom + r.panX,
+          abs.y * r.zoom + r.panY,
+          (abs.x + child.width) * r.zoom + r.panX,
+          (abs.y + child.height) * r.zoom + r.panY
+        ),
+        r.auxStroke
+      )
+    }
+  } finally {
+    try {
+      r.auxStroke.setPathEffect(null)
+    } finally {
+      dashEffect.delete()
+    }
   }
-  r.auxStroke.setPathEffect(null)
 }
 
 export function drawAutoLayoutHover(

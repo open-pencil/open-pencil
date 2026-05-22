@@ -1,6 +1,10 @@
 import { describe, test, expect } from 'bun:test'
 
-import { encodeVectorNetworkBlob, decodeVectorNetworkBlob, type VectorNetwork } from '@open-pencil/core'
+import {
+  encodeVectorNetworkBlob,
+  decodeVectorNetworkBlob,
+  type VectorNetwork
+} from '@open-pencil/core'
 
 import {
   lineNetwork,
@@ -101,4 +105,3 @@ describe('vectorNetworkBlob round-trip', () => {
     expect(decoded.regions[1].loops).toEqual([[0, 2]])
   })
 })
-

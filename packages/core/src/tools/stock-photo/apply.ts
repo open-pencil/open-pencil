@@ -61,7 +61,6 @@ export async function applyPhoto(
   node.fills = [
     {
       type: 'IMAGE',
-      color: { r: 1, g: 1, b: 1, a: 1 },
       imageHash: image.hash,
       imageScaleMode: 'FILL',
       visible: true,

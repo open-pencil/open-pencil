@@ -1,7 +1,13 @@
 import { computed, ref, type Ref } from 'vue'
 
 import { colorToCSS, parseColor } from '@open-pencil/core/color'
-import type { Fill, GradientStop, GradientTransform } from '@open-pencil/core/scene-graph'
+import { BLACK } from '@open-pencil/core/constants'
+import type {
+  Fill,
+  GradientFill,
+  GradientStop,
+  GradientTransform
+} from '@open-pencil/core/scene-graph'
 import type { Color } from '@open-pencil/core/types'
 
 type GradientSubtype =
@@ -32,12 +38,15 @@ const DEFAULT_TRANSFORMS: Record<GradientSubtype, GradientTransform> = {
  */
 export function useGradientStops(fill: Ref<Fill>, onUpdate: (fill: Fill) => void) {
   const activeStopIndex = ref(0)
-  const stops = computed(() => fill.value.gradientStops ?? [])
+  const gf = computed(() =>
+    fill.value.type.startsWith('GRADIENT') ? (fill.value as GradientFill) : null
+  )
+  const stops = computed(() => gf.value?.gradientStops ?? [])
   const subtype = computed(() => fill.value.type as GradientSubtype)
 
   const activeColor = computed(() => {
     const s = stops.value
-    if (!s.length) return fill.value.color
+    if (!s.length) return BLACK
     return s[Math.min(activeStopIndex.value, s.length - 1)].color
   })
 
@@ -48,12 +57,30 @@ export function useGradientStops(fill: Ref<Fill>, onUpdate: (fill: Fill) => void
   )
 
   function emitStops(newStops: GradientStop[]) {
-    onUpdate({ ...fill.value, gradientStops: newStops })
+    if (!gf.value) return
+    const base = gf.value
+    onUpdate({
+      type: base.type,
+      gradientStops: newStops,
+      gradientTransform: base.gradientTransform,
+      opacity: base.opacity,
+      visible: base.visible,
+      blendMode: base.blendMode
+    })
   }
 
   function setSubtype(type: GradientSubtype) {
     if (type === fill.value.type) return
-    onUpdate({ ...fill.value, type, gradientTransform: DEFAULT_TRANSFORMS[type] })
+    if (!gf.value) return
+    const base = gf.value
+    onUpdate({
+      type,
+      gradientStops: base.gradientStops,
+      gradientTransform: DEFAULT_TRANSFORMS[type],
+      opacity: base.opacity,
+      visible: base.visible,
+      blendMode: base.blendMode
+    })
   }
 
   function selectStop(index: number) {

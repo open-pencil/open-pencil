@@ -1,6 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import { getAbsolutePosition, getWorldMatrix } from '#core/canvas/coordinate'
+import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer'
 import {
   LABEL_OFFSET_Y,
   SIZE_PILL_PADDING_X,
@@ -11,8 +12,6 @@ import {
 } from '#core/constants'
 import { rotatedCorners } from '#core/geometry'
 import type { SceneNode, SceneGraph } from '#core/scene-graph'
-
-import type { SkiaRenderer, RenderOverlays } from '#core/canvas/renderer'
 
 import { ellipsizeLabelText } from './text'
 

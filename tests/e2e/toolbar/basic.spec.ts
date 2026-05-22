@@ -1,5 +1,4 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
-
 import { getPageChildren } from '#tests/helpers/store'
 import { toolbarFlyoutItemTestId, toolbarFlyoutTestId } from '#tests/helpers/test-ids'
 

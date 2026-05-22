@@ -1,15 +1,10 @@
+import type { EditorContext } from '#core/editor/types'
 import { computeAbsoluteBounds } from '#core/geometry'
 import { computeAllLayouts } from '#core/layout'
 import type { SceneNode } from '#core/scene-graph'
 
-import type { EditorContext } from '#core/editor/types'
+import { deleteIds, type DeletedEntry, recreateSnapshots, restoreDeletedEntries } from './history'
 import { collectSubtrees, snapshotSubtree } from './subtree-history'
-import {
-  deleteIds,
-  type DeletedEntry,
-  recreateSnapshots,
-  restoreDeletedEntries
-} from './history'
 
 type CenterNodesAt = (nodeIds: string[], cx: number, cy: number) => void
 

@@ -63,7 +63,8 @@ function applySwapProp(
   val: ComponentPropValue,
   modified?: Set<string>
 ): void {
-  const swapId = propTextCharacters(val) ?? (val.guidValue ? guidToString(val.guidValue) : undefined)
+  const swapId =
+    propTextCharacters(val) ?? (val.guidValue ? guidToString(val.guidValue) : undefined)
   const newCompId = swapId ? ctx.guidToNodeId.get(swapId) : undefined
   if (!newCompId) return
   applyPatchAndMark(

@@ -54,4 +54,3 @@ describe('validateVectorNetwork', () => {
     expect(errors[0]).toContain('x and y must be numbers')
   })
 })
-

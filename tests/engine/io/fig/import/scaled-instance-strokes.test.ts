@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { importNodeChanges } from '@open-pencil/core'
+
 import type { NodeChange } from '#core/kiwi/fig/codec'
 
 import { canvas, doc, node } from './legacy/helpers'
@@ -47,7 +48,9 @@ describe('fig import scaled instance strokes', () => {
       { populate: 'all' }
     )
 
-    const instance = Array.from(graph.getAllNodes()).find((sceneNode) => sceneNode.name === 'INSTANCE_20')
+    const instance = Array.from(graph.getAllNodes()).find(
+      (sceneNode) => sceneNode.name === 'INSTANCE_20'
+    )
     const vector = instance?.childIds.map((id) => graph.getNode(id)).find(Boolean)
 
     expect(vector?.strokes[0]?.weight).toBe(2)
@@ -94,7 +97,9 @@ describe('fig import scaled instance strokes', () => {
       { populate: 'all' }
     )
 
-    const instance = Array.from(graph.getAllNodes()).find((sceneNode) => sceneNode.name === 'INSTANCE_40')
+    const instance = Array.from(graph.getAllNodes()).find(
+      (sceneNode) => sceneNode.name === 'INSTANCE_40'
+    )
     const vector = instance?.childIds.map((id) => graph.getNode(id)).find(Boolean)
 
     expect(vector?.strokes[0]?.weight).toBeCloseTo(4 / 3, 6)

@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 
 import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -114,10 +115,10 @@ describe('TEXT node default fill', () => {
     )
     expect(textNode.fills.length).toBe(1)
     expect(textNode.fills[0].type).toBe('SOLID')
-    expect(textNode.fills[0].color.r).toBe(0)
-    expect(textNode.fills[0].color.g).toBe(0)
-    expect(textNode.fills[0].color.b).toBe(0)
-    expect(textNode.fills[0].color.a).toBe(1)
+    expect((textNode.fills[0] as SolidFill).color.r).toBe(0)
+    expect((textNode.fills[0] as SolidFill).color.g).toBe(0)
+    expect((textNode.fills[0] as SolidFill).color.b).toBe(0)
+    expect((textNode.fills[0] as SolidFill).color.a).toBe(1)
   })
 
   test('TEXT node with explicit fill preserves it', async () => {
@@ -144,9 +145,9 @@ describe('TEXT node default fill', () => {
       'text node'
     )
     expect(textNode.fills.length).toBe(1)
-    expect(textNode.fills[0].color.r).toBeCloseTo(0.96, 1)
-    expect(textNode.fills[0].color.g).toBeCloseTo(0.72, 1)
-    expect(textNode.fills[0].color.b).toBeCloseTo(0, 1)
+    expect((textNode.fills[0] as SolidFill).color.r).toBeCloseTo(0.96, 1)
+    expect((textNode.fills[0] as SolidFill).color.g).toBeCloseTo(0.72, 1)
+    expect((textNode.fills[0] as SolidFill).color.b).toBeCloseTo(0, 1)
   })
 
   test('non-TEXT node still defaults to empty fills', async () => {

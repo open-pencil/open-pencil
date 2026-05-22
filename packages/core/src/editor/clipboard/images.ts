@@ -1,8 +1,7 @@
-import { TRANSPARENT } from '#core/constants'
 import { resolvePasteTarget } from '#core/editor/clipboard/paste-target'
 import type { EditorContext } from '#core/editor/types'
 import { computeImageHash } from '#core/figma-api'
-import type { Fill } from '#core/scene-graph'
+import type { ImageFill } from '#core/scene-graph'
 
 const IMAGE_MAX_DIMENSION = 4096
 const IMAGE_GAP = 20
@@ -41,11 +40,10 @@ export function createClipboardImageActions(ctx: EditorContext) {
     const hash = storeImage(bytes)
     const displayName = name.replace(/\.[^.]+$/, '')
     const pid = resolvePasteTarget(ctx)
-    const fill: Fill = {
+    const fill: ImageFill = {
       type: 'IMAGE',
       imageHash: hash,
       imageScaleMode: 'FILL',
-      color: TRANSPARENT,
       opacity: 1,
       visible: true
     }

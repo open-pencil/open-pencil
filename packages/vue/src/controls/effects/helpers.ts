@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { Effect, SceneNode } from '@open-pencil/core/scene-graph'
+import type { Effect, SceneNode, ShadowEffect, BlurEffect } from '@open-pencil/core/scene-graph'
 import type { Color } from '@open-pencil/core/types'
 
 type EffectType = Effect['type']
@@ -21,7 +21,7 @@ export function isShadow(type: string) {
   return type === 'DROP_SHADOW' || type === 'INNER_SHADOW'
 }
 
-export function createDefaultEffect(): Effect {
+export function createDefaultEffect(): ShadowEffect {
   return {
     type: 'DROP_SHADOW',
     color: { r: 0, g: 0, b: 0, a: 0.25 },
@@ -32,28 +32,32 @@ export function createDefaultEffect(): Effect {
   }
 }
 
+type EffectPatch = Partial<ShadowEffect> | Partial<BlurEffect>
+
 export function createEffectEditActions(editor: Editor, effectsBeforeScrub: Ref<Effect[] | null>) {
-  function scrubEffect(node: SceneNode | null, index: number, changes: Partial<Effect>) {
+  function scrubEffect(node: SceneNode | null, index: number, changes: EffectPatch) {
     if (!node) return
     if (!effectsBeforeScrub.value) {
-      effectsBeforeScrub.value = node.effects.map((e) => ({
-        ...e,
-        color: { ...e.color },
-        offset: { ...e.offset }
-      }))
+      effectsBeforeScrub.value = node.effects.map((e) => {
+        if (isShadow(e.type)) {
+          const s = e as ShadowEffect
+          return { ...s, color: { ...s.color }, offset: { ...s.offset } }
+        }
+        return { ...e }
+      })
     }
-    const effects = [...node.effects]
-    effects[index] = { ...effects[index], ...changes }
+    const effects: Effect[] = [...node.effects]
+    effects[index] = { ...effects[index], ...changes } as Effect
     editor.updateNode(node.id, { effects })
     editor.requestRender()
   }
 
-  function commitEffect(node: SceneNode | null, index: number, changes: Partial<Effect>) {
+  function commitEffect(node: SceneNode | null, index: number, changes: EffectPatch) {
     if (!node) return
     const previous = effectsBeforeScrub.value
     effectsBeforeScrub.value = null
-    const effects = [...node.effects]
-    effects[index] = { ...effects[index], ...changes }
+    const effects: Effect[] = [...node.effects]
+    effects[index] = { ...effects[index], ...changes } as Effect
     editor.updateNode(node.id, { effects })
     editor.requestRender()
     if (previous) {
@@ -66,29 +70,37 @@ export function createEffectEditActions(editor: Editor, effectsBeforeScrub: Ref<
 
 export function createEffectControlActions(expandedIndex: Ref<number | null>) {
   function updateType(
-    patch: (index: number, changes: Partial<Effect>) => void,
+    patch: (index: number, changes: EffectPatch) => void,
     node: SceneNode | null,
     index: number,
     type: EffectType
   ) {
     if (!node) return
-    const changes: Partial<Effect> = { type }
+    const current = node.effects[index]
     if (!isShadow(type)) {
-      changes.offset = { x: 0, y: 0 }
-      changes.spread = 0
-    } else if (!isShadow(node.effects[index].type)) {
-      changes.offset = { x: 0, y: 4 }
-      changes.spread = 0
+      const changes: Partial<BlurEffect> = { type }
+      if (isShadow(current.type)) {
+        changes.radius = current.radius
+      }
+      patch(index, changes)
+    } else if (!isShadow(current.type)) {
+      patch(index, {
+        type,
+        offset: { x: 0, y: 4 },
+        spread: 0,
+        color: { r: 0, g: 0, b: 0, a: 0.25 }
+      })
+    } else {
+      patch(index, { type })
     }
-    patch(index, changes)
   }
 
   function updateColor(
-    patch: (index: number, changes: Partial<Effect>) => void,
+    patch: (index: number, changes: EffectPatch) => void,
     index: number,
     color: Color
   ) {
-    patch(index, { color })
+    patch(index, { color } as Partial<ShadowEffect>)
   }
 
   function handleRemove(removeFn: (index: number) => void, index: number) {

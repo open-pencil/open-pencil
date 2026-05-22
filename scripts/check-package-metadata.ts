@@ -31,7 +31,8 @@ function checkRuntimePath(packageName: string, field: string, value: string): vo
 function walkExports(packageName: string, value: unknown, path: string[] = []): void {
   if (typeof value === 'string') {
     const key = path.at(-1)
-    if (key !== 'types' && key !== 'bun') checkRuntimePath(packageName, `exports.${path.join('.')}`, value)
+    if (key !== 'types' && key !== 'bun')
+      checkRuntimePath(packageName, `exports.${path.join('.')}`, value)
     return
   }
   if (!value || typeof value !== 'object') return
@@ -59,7 +60,10 @@ for (const packageDir of publicPackages) {
 
   walkExports(pkg.name, pkg.exports)
 
-  if (pkg.publishConfig && ('exports' in pkg.publishConfig || 'main' in pkg.publishConfig || 'types' in pkg.publishConfig)) {
+  if (
+    pkg.publishConfig &&
+    ('exports' in pkg.publishConfig || 'main' in pkg.publishConfig || 'types' in pkg.publishConfig)
+  ) {
     errors.push(`${pkg.name}: publishConfig must not rewrite runtime entrypoints`)
   }
 }

@@ -10,7 +10,10 @@ type TextFormatUpdates = {
 
 const store = useEditorStore()
 
-export function alignSelected(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max'): void {
+export function alignSelected(
+  axis: 'horizontal' | 'vertical',
+  align: 'min' | 'center' | 'max'
+): void {
   store.alignNodes([...store.state.selectedIds], axis, align)
 }
 
@@ -41,7 +44,9 @@ export function toggleSelectedTextUnderline(): void {
   })
 }
 
-export function createSharedEditorMenuActions(setTheme: (theme: 'light' | 'dark' | 'auto') => void) {
+export function createSharedEditorMenuActions(
+  setTheme: (theme: 'light' | 'dark' | 'auto') => void
+) {
   return {
     'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),
     'zoom-out': () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2),

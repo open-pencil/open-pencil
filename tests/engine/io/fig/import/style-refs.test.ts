@@ -13,7 +13,8 @@ describe('fig import style refs', () => {
       visible: true,
       blendMode: 'NORMAL' as const
     }
-    const fields: Record<string, unknown> & Pick<NodeChange, 'styleIdForStrokeFill' | 'strokePaints'> = {
+    const fields: Record<string, unknown> &
+      Pick<NodeChange, 'styleIdForStrokeFill' | 'strokePaints'> = {
       styleIdForStrokeFill: { guid: styleGuid },
       strokePaints: [
         {

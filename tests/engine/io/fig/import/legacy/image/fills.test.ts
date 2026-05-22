@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { importNodeChanges } from '@open-pencil/core'
+import type { ImageFill } from '@open-pencil/core/scene-graph'
 
 import { canvas, doc, node } from '../helpers'
 
@@ -28,9 +29,9 @@ describe('fig-import: image fills', () => {
     ])
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills[0].type).toBe('IMAGE')
-    expect(n.fills[0].imageHash).toBeDefined()
-    expect(n.fills[0].imageHash?.length).toBe(40)
-    expect(n.fills[0].imageScaleMode).toBe('FILL')
+    expect((n.fills[0] as ImageFill).imageHash).toBeDefined()
+    expect((n.fills[0] as ImageFill).imageHash?.length).toBe(40)
+    expect((n.fills[0] as ImageFill).imageScaleMode).toBe('FILL')
   })
 
   test('images stored on graph', () => {

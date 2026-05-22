@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { OverrideContext } from '#core/kiwi/fig/instance-overrides'
 import { buildDsdLayoutUpdates } from '#core/kiwi/fig/instance-overrides/derived-symbol-data/layout'
 import { propagateDsdChanges } from '#core/kiwi/fig/instance-overrides/derived-symbol-data/propagate'
-import type { OverrideContext } from '#core/kiwi/fig/instance-overrides'
 import { SceneGraph } from '#core/scene-graph'
 
 function pageId(graph: SceneGraph): string {
@@ -17,7 +17,10 @@ describe('fig import derived symbol data', () => {
       figmaDerivedTextGlyphs: [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 14 }],
       figmaDerivedLayout: { width: 56, height: 20 }
     })
-    const clone = graph.createNode('TEXT', pageId(graph), { text: 'Account', componentId: source.id })
+    const clone = graph.createNode('TEXT', pageId(graph), {
+      text: 'Account',
+      componentId: source.id
+    })
     const ctx = {
       graph,
       activeNodeIds: new Set([source.id, clone.id]),

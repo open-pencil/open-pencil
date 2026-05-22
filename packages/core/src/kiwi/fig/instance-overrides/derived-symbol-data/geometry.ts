@@ -1,5 +1,5 @@
-import { resolveGeometryPaths } from '#core/kiwi/fig/node-change/convert'
 import type { DerivedSymbolOverride } from '#core/kiwi/fig/instance-overrides/types'
+import { resolveGeometryPaths } from '#core/kiwi/fig/node-change/convert'
 import type { GeometryPath, SceneNode } from '#core/scene-graph'
 
 function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): GeometryPath[] {
@@ -36,12 +36,20 @@ export function resolveDsdGeometry(
 
   if (fg.length > 0) result.fillGeometry = fg
   else if (d.size && target.fillGeometry.length > 0 && target.width > 0 && target.height > 0) {
-    result.fillGeometry = scaleGeometryBlobs(target.fillGeometry, d.size.x / target.width, d.size.y / target.height)
+    result.fillGeometry = scaleGeometryBlobs(
+      target.fillGeometry,
+      d.size.x / target.width,
+      d.size.y / target.height
+    )
   }
 
   if (sg.length > 0) result.strokeGeometry = sg
   else if (d.size && target.strokeGeometry.length > 0 && target.width > 0 && target.height > 0) {
-    result.strokeGeometry = scaleGeometryBlobs(target.strokeGeometry, d.size.x / target.width, d.size.y / target.height)
+    result.strokeGeometry = scaleGeometryBlobs(
+      target.strokeGeometry,
+      d.size.x / target.width,
+      d.size.y / target.height
+    )
   }
 
   return result

@@ -173,12 +173,14 @@ export function createEditor(options?: EditorOptions) {
     _ck = ck
     _renderer = renderer
     _renderers.add(renderer)
+    renderer.requestRepaint = requestRepaint
     _textEditor ??= new TextEditor(ck)
     setTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {
     _renderers.delete(renderer)
+    renderer.requestRepaint = undefined
     if (_renderer === renderer) {
       _renderer = _renderers.values().next().value ?? null
     }

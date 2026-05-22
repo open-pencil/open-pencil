@@ -34,20 +34,25 @@ describe('clipboard derived text export', () => {
 
     const fontDigestMap = await buildFontDigestMap(graph)
     const blobs: Uint8Array[] = []
-    const derived = await buildDerivedTextDataV4(text, fontDigestMap, {
-      lineHeight: 20,
-      lineAscent: 15,
-      lineWidth: 42,
-      baseline: 16,
-      glyphs: [
-        { firstCharacter: 0, x: 0, y: 16, advance: 8 },
-        { firstCharacter: 1, x: 8, y: 16, advance: 8 },
-        { firstCharacter: 2, x: 16, y: 16, advance: 8 },
-        { firstCharacter: 3, x: 24, y: 16, advance: 8 },
-        { firstCharacter: 4, x: 32, y: 16, advance: 10 }
-      ],
-      logicalIndexToCharacterOffsetMap: [0, 8, 16, 24, 32, 42]
-    }, blobs)
+    const derived = await buildDerivedTextDataV4(
+      text,
+      fontDigestMap,
+      {
+        lineHeight: 20,
+        lineAscent: 15,
+        lineWidth: 42,
+        baseline: 16,
+        glyphs: [
+          { firstCharacter: 0, x: 0, y: 16, advance: 8 },
+          { firstCharacter: 1, x: 8, y: 16, advance: 8 },
+          { firstCharacter: 2, x: 16, y: 16, advance: 8 },
+          { firstCharacter: 3, x: 24, y: 16, advance: 8 },
+          { firstCharacter: 4, x: 32, y: 16, advance: 10 }
+        ],
+        logicalIndexToCharacterOffsetMap: [0, 8, 16, 24, 32, 42]
+      },
+      blobs
+    )
 
     const derivedTextData = expectDefined(derived, 'derived text data')
     const firstGlyph = expectDefined(derivedTextData.glyphs[0], 'first glyph')
@@ -89,37 +94,42 @@ describe('clipboard derived text export', () => {
     })
 
     const derived = expectDefined(
-      await buildDerivedTextDataV4(text, await buildFontDigestMap(graph), {
-        lineHeight: 68,
-        lineAscent: 54,
-        lineWidth: 272,
-        baseline: 54.36,
-        baselines: [
-          {
-            firstCharacter: 0,
-            endCharacter: 10,
-            position: { x: 0, y: 54.36 },
-            width: 271.58,
-            lineY: 0,
-            lineHeight: 68,
-            lineAscent: 54
-          },
-          {
-            firstCharacter: 10,
-            endCharacter: 18,
-            position: { x: 0, y: 122.36 },
-            width: 261.9,
-            lineY: 68,
-            lineHeight: 68,
-            lineAscent: 54
-          }
-        ],
-        glyphs: [
-          { firstCharacter: 0, x: 0, y: 54.36, advance: 42 },
-          { firstCharacter: 10, x: 0, y: 122.36, advance: 44 }
-        ],
-        logicalIndexToCharacterOffsetMap: Array.from({ length: 19 }, () => 0)
-      }, null),
+      await buildDerivedTextDataV4(
+        text,
+        await buildFontDigestMap(graph),
+        {
+          lineHeight: 68,
+          lineAscent: 54,
+          lineWidth: 272,
+          baseline: 54.36,
+          baselines: [
+            {
+              firstCharacter: 0,
+              endCharacter: 10,
+              position: { x: 0, y: 54.36 },
+              width: 271.58,
+              lineY: 0,
+              lineHeight: 68,
+              lineAscent: 54
+            },
+            {
+              firstCharacter: 10,
+              endCharacter: 18,
+              position: { x: 0, y: 122.36 },
+              width: 261.9,
+              lineY: 68,
+              lineHeight: 68,
+              lineAscent: 54
+            }
+          ],
+          glyphs: [
+            { firstCharacter: 0, x: 0, y: 54.36, advance: 42 },
+            { firstCharacter: 10, x: 0, y: 122.36, advance: 44 }
+          ],
+          logicalIndexToCharacterOffsetMap: Array.from({ length: 19 }, () => 0)
+        },
+        null
+      ),
       'derived text'
     )
 
@@ -150,7 +160,10 @@ describe('clipboard derived text export', () => {
 
     const fontDigestMap = await buildFontDigestMap(graph)
     const blobs: Uint8Array[] = []
-    const derived = expectDefined(await buildDerivedTextDataV4(text, fontDigestMap, null, blobs), 'derived text')
+    const derived = expectDefined(
+      await buildDerivedTextDataV4(text, fontDigestMap, null, blobs),
+      'derived text'
+    )
 
     expect(derived.fontMetaData[0].key.style).toBe('Semi Bold')
     expect(derived.glyphs[0].commandsBlob).toBe(0)

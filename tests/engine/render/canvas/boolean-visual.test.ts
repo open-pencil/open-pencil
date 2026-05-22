@@ -1,6 +1,5 @@
-import { existsSync } from 'node:fs'
-
 import { describe, expect, test } from 'bun:test'
+import { existsSync } from 'node:fs'
 
 import { initCanvasKit } from '#cli/headless'
 

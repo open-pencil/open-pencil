@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { widthSizingForNode, heightSizingForNode, sizingOptionsForNode } from '#vue/controls/layout/helpers'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
+
+import {
+  widthSizingForNode,
+  heightSizingForNode,
+  sizingOptionsForNode
+} from '#vue/controls/layout/helpers'
 
 function node(overrides: Partial<SceneNode>): SceneNode {
   return {

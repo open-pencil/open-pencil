@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { computeAllLayouts } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'
@@ -16,9 +17,9 @@ describe('set_fill', () => {
 
     const fills = expectDefined(figma.getNodeById(frame.id), 'frame node').fills
     expect(fills.length).toBe(1)
-    expect(fills[0].color.r).toBeCloseTo(1)
-    expect(fills[0].color.g).toBeCloseTo(0)
-    expect(fills[0].color.b).toBeCloseTo(0)
+    expect((fills[0] as SolidFill).color.r).toBeCloseTo(1)
+    expect((fills[0] as SolidFill).color.g).toBeCloseTo(0)
+    expect((fills[0] as SolidFill).color.b).toBeCloseTo(0)
   })
 
   test('returns error for missing node', () => {
@@ -276,8 +277,12 @@ describe('set_font_range', () => {
     const colorRun = node.styleRuns.find((r) => r.style.fills?.length)
     expect(colorRun).toBeDefined()
     expect(
-      expectDefined(expectDefined(colorRun, 'color style run').style.fills, 'color style fills')[0]
-        ?.color.r
+      (
+        expectDefined(
+          expectDefined(colorRun, 'color style run').style.fills,
+          'color style fills'
+        )[0] as SolidFill
+      )?.color.r
     ).toBeCloseTo(1)
   })
 })

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { importNodeChanges } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -87,8 +88,8 @@ describe('fig-import: variable asset refs', () => {
       [...graph.getAllNodes()].find((n) => n.type === 'TEXT' && n.text === 'browse'),
       'browse text node'
     )
-    expect(text.fills[0].color.r).toBeCloseTo(0.14)
-    expect(text.fills[0].color.g).toBeCloseTo(0.39)
-    expect(text.fills[0].color.b).toBeCloseTo(0.92)
+    expect((text.fills[0] as SolidFill).color.r).toBeCloseTo(0.14)
+    expect((text.fills[0] as SolidFill).color.g).toBeCloseTo(0.39)
+    expect((text.fills[0] as SolidFill).color.b).toBeCloseTo(0.92)
   })
 })

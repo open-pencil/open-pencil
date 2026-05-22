@@ -6,7 +6,9 @@ export function findDefinition(schema: Schema, name: string): Definition | null 
 }
 
 export function findField(schema: Schema, definitionName: string, fieldName: string): Field | null {
-  return findDefinition(schema, definitionName)?.fields.find((field) => field.name === fieldName) ?? null
+  return (
+    findDefinition(schema, definitionName)?.fields.find((field) => field.name === fieldName) ?? null
+  )
 }
 
 export function expectFieldNumber(

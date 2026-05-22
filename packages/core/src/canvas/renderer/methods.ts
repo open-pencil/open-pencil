@@ -1,12 +1,12 @@
 import type { ImageFilter, MaskFilter, Canvas, Paint, Path } from 'canvaskit-wasm'
 
-import * as AiOverlays from '#core/canvas/overlays/ai'
 import * as Effects from '#core/canvas/effects'
 import * as Fills from '#core/canvas/fills'
 import * as Labels from '#core/canvas/labels/draw'
 import * as NodeEditOverlay from '#core/canvas/node-edit-overlay'
 import type { NodeEditOverlayState } from '#core/canvas/node-edit-overlay'
 import * as Overlays from '#core/canvas/overlays'
+import * as AiOverlays from '#core/canvas/overlays/ai'
 import * as PenOverlay from '#core/canvas/pen-overlay'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import type { RenderOverlays } from '#core/canvas/renderer/types'
@@ -15,7 +15,14 @@ import * as SceneRender from '#core/canvas/scene'
 import { renderEffects as renderShadowEffects } from '#core/canvas/shadows'
 import * as Shapes from '#core/canvas/shapes'
 import * as Strokes from '#core/canvas/strokes'
-import type { Fill, SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
+import type {
+  Fill,
+  GradientFill,
+  ImageFill,
+  SceneGraph,
+  SceneNode,
+  Stroke
+} from '#core/scene-graph'
 import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
 import type { Rect, Vector } from '#core/types'
@@ -95,7 +102,11 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawLayoutInsertIndicator(this, canvas, indicator)
   },
 
-  drawAutoLayoutHover(canvas: Canvas, graph: SceneGraph, hover?: RenderOverlays['autoLayoutHover']) {
+  drawAutoLayoutHover(
+    canvas: Canvas,
+    graph: SceneGraph,
+    hover?: RenderOverlays['autoLayoutHover']
+  ) {
     Overlays.drawAutoLayoutHover(this, canvas, graph, hover)
   },
 
@@ -140,15 +151,43 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Labels.drawComponentLabels(this, canvas, graph)
   },
 
-  renderNode(
-    canvas: Canvas,
-    graph: SceneGraph,
-    nodeId: string,
-    overlays: RenderOverlays,
-    parentAbsX?: number,
-    parentAbsY?: number
-  ): void {
-    SceneRender.renderNode(this, canvas, graph, nodeId, overlays, parentAbsX, parentAbsY)
+  renderNode(canvas: Canvas, graph: SceneGraph, nodeId: string, overlays: RenderOverlays): void {
+    // Record save depth before rendering this node so we can properly restore
+    // on error, regardless of how many save() calls the render function made.
+    const saveDepth = canvas.getSaveCount()
+    try {
+      SceneRender.renderNode(this, canvas, graph, nodeId, overlays)
+    } catch (err) {
+      // Error boundary: catch CanvasKit errors (NaN coords, zero-size paths, etc.)
+      // and continue rendering other nodes instead of crashing the editor.
+      // eslint-disable-next-line no-console -- error reporting for rendering failures
+      console.warn(`[OpenPencil] Render error on node ${nodeId}:`, err)
+
+      // Restore to the save depth before this node started rendering.
+      const toRestore = canvas.getSaveCount() - saveDepth
+      for (let i = 0; i < toRestore; i++) canvas.restore()
+
+      // Draw a red bounding box as visual indicator of the error
+      try {
+        const node = graph.getNode(nodeId)
+        if (node) {
+          const paint = new this.ck.Paint()
+          try {
+            paint.setColor(this.ck.Color(255, 0, 0, 0.5))
+            paint.setStyle(this.ck.PaintStyle.Fill)
+            canvas.drawRect(
+              this.ck.XYWHRect(node.x, node.y, node.width || 10, node.height || 10),
+              paint
+            )
+          } finally {
+            paint.delete()
+          }
+        }
+      } catch (_fallbackErr) {
+        // Intentionally caught: original error already logged, fallback draw also failed
+        void _fallbackErr
+      }
+    }
   },
 
   renderSection(canvas: Canvas, node: SceneNode, graph: SceneGraph): void {
@@ -178,8 +217,8 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     renderShadowEffects(this, canvas, node, rect, hasRadius, pass, shadowShapeChild)
   },
 
-  renderText(canvas: Canvas, node: SceneNode, fill?: Fill): void {
-    SceneRender.renderText(this, canvas, node, fill)
+  renderText(canvas: Canvas, node: SceneNode, fill?: Fill, isFirstDrawnFill?: boolean): void {
+    SceneRender.renderText(this, canvas, node, fill, isFirstDrawnFill)
   },
 
   drawNodeFill(
@@ -187,20 +226,21 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     node: SceneNode,
     rect: Float32Array,
     hasRadius: boolean,
-    fill?: Fill
+    fill?: Fill,
+    isFirstDrawnFill?: boolean
   ): void {
-    Fills.drawNodeFill(this, canvas, node, rect, hasRadius, fill)
+    Fills.drawNodeFill(this, canvas, node, rect, hasRadius, fill, isFirstDrawnFill)
   },
 
   applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
     return Fills.applyFill(this, fill, node, graph, fillIndex)
   },
 
-  applyGradientFill(fill: Fill, node: SceneNode, graph: SceneGraph): void {
-    Fills.applyGradientFill(this, fill, node, graph)
+  applyGradientFill(fill: GradientFill, node: SceneNode, graph: SceneGraph): boolean {
+    return Fills.applyGradientFill(this, fill, node, graph)
   },
 
-  applyImageFill(fill: Fill, node: SceneNode, graph: SceneGraph): boolean {
+  applyImageFill(fill: ImageFill, node: SceneNode, graph: SceneGraph): boolean {
     return Fills.applyImageFill(this, fill, node, graph)
   },
 

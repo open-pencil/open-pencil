@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 
 import { importClipboardNodes } from '@open-pencil/core'
 import type { NodeChange } from '@open-pencil/core'
+import type { SolidFill } from '@open-pencil/core/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { createClipboardGraph } from '#tests/helpers/clipboard'
@@ -240,7 +241,7 @@ describe('importClipboardNodes: components', () => {
     expect(button.name).toBe('Button')
     expect(button.componentId).toBe('')
     expect(button.fills).toHaveLength(1)
-    expect(button.fills[0].color.b).toBe(1)
+    expect((button.fills[0] as SolidFill).color.b).toBe(1)
     expect(button.cornerRadius).toBe(8)
     expect(button.width).toBe(120)
     expect(button.height).toBe(40)

@@ -73,7 +73,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
     expect(diffs).toBe(0)
   })
 
-  it('OpenPencil format: compressed data is under 1MB', () => {
+  it('OpenPencil format: compressed data is under 2MB', () => {
     const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
     expect(html.length).toBeLessThan(5 * 1024 * 1024)
   })

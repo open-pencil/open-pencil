@@ -1,4 +1,4 @@
-import type { CanvasKit, Canvas, Paint, Font, Typeface } from 'canvaskit-wasm'
+import type { CanvasKit, Canvas, Paint, PathEffect, Font, Typeface } from 'canvaskit-wasm'
 
 import type { FrameStats } from './frame/stats'
 
@@ -30,6 +30,7 @@ export class HudRenderer {
   private redPaint: Paint
   private gpuPaint: Paint
   private budgetLinePaint: Paint
+  private budgetDashEffect: PathEffect
   private graphBgPaint: Paint
   private hudFont: Font
 
@@ -74,7 +75,8 @@ export class HudRenderer {
     this.budgetLinePaint.setStrokeWidth(1)
     this.budgetLinePaint.setColor(ck.Color4f(1, 1, 1, 0.3))
     this.budgetLinePaint.setAntiAlias(true)
-    this.budgetLinePaint.setPathEffect(ck.PathEffect.MakeDash([3, 3], 0))
+    this.budgetDashEffect = ck.PathEffect.MakeDash([3, 3], 0)
+    this.budgetLinePaint.setPathEffect(this.budgetDashEffect)
 
     this.graphBgPaint = new ck.Paint()
     this.graphBgPaint.setStyle(ck.PaintStyle.Fill)
@@ -155,8 +157,16 @@ export class HudRenderer {
 
     const pictureLabel = stats.scenePictureMode === 'record' ? 'record' : 'picture'
     const pictureTime =
-      stats.scenePictureMode === 'record' ? stats.scenePictureRecordTime : stats.scenePictureDrawTime
-    canvas.drawText(`${pictureLabel}: ${pictureTime.toFixed(1)}ms`, col1, y, this.textPaint, this.hudFont)
+      stats.scenePictureMode === 'record'
+        ? stats.scenePictureRecordTime
+        : stats.scenePictureDrawTime
+    canvas.drawText(
+      `${pictureLabel}: ${pictureTime.toFixed(1)}ms`,
+      col1,
+      y,
+      this.textPaint,
+      this.hudFont
+    )
     canvas.drawText(`flush: ${stats.flushTime.toFixed(1)}ms`, col2, y, this.textPaint, this.hudFont)
 
     if (visiblePhases.length > 0) {
@@ -254,6 +264,7 @@ export class HudRenderer {
     this.yellowPaint.delete()
     this.redPaint.delete()
     this.gpuPaint.delete()
+    this.budgetDashEffect.delete()
     this.budgetLinePaint.delete()
     this.graphBgPaint.delete()
     this.hudFont.delete()

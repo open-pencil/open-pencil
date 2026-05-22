@@ -1,5 +1,5 @@
 import { colorDistance, colorToHex } from '#core/color'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode, SolidFill } from '#core/scene-graph'
 
 import { detectLayoutIssues } from './layout-issues'
 import { CONTAINER_TYPES, findAncestorBackground, looksLikeButton } from './shared'
@@ -144,11 +144,11 @@ function checkExcessiveNesting(node: SceneNode, graph: SceneGraph, issues: Descr
 function checkSameFillAsParent(node: SceneNode, graph: SceneGraph, issues: DescribeIssue[]): void {
   if (node.type === 'TEXT') return
   if (!node.parentId) return
-  const nodeFill = node.fills.find((f) => f.visible && f.type === 'SOLID')
+  const nodeFill = node.fills.find((f): f is SolidFill => f.visible && f.type === 'SOLID')
   if (!nodeFill) return
   const parent = graph.getNode(node.parentId)
   if (!parent) return
-  const parentFill = parent.fills.find((f) => f.visible && f.type === 'SOLID')
+  const parentFill = parent.fills.find((f): f is SolidFill => f.visible && f.type === 'SOLID')
   if (!parentFill) return
   if (colorDistance(nodeFill.color, parentFill.color) < 3) {
     issues.push({
@@ -273,7 +273,7 @@ function detectVisibilityIssues(node: SceneNode, graph: SceneGraph, issues: Desc
     })
   }
   if (node.type !== 'TEXT' || !node.parentId) return
-  const textFill = node.fills.find((f) => f.visible && f.type === 'SOLID')
+  const textFill = node.fills.find((f): f is SolidFill => f.visible && f.type === 'SOLID')
   if (!textFill) return
   const parentBg = findAncestorBackground(node, graph)
   if (!parentBg) return

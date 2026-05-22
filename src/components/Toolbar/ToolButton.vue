@@ -8,12 +8,7 @@ interface ToolButtonProps extends RequiredTestIdProps {
   mobile?: boolean
 }
 
-const {
-  icon,
-  active = false,
-  mobile = false,
-  testId
-} = defineProps<ToolButtonProps>()
+const { icon, active = false, mobile = false, testId } = defineProps<ToolButtonProps>()
 
 const emit = defineEmits<{
   click: []

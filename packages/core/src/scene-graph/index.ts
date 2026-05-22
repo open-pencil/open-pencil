@@ -1,6 +1,5 @@
 export * from './snap'
 export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
-
 import { createNanoEvents } from 'nanoevents'
 
 import * as HitTest from './hit-test'
@@ -14,6 +13,7 @@ import { normalizeVectorNetwork } from './vector-network'
 
 export type { GUID, Color } from '#core/types'
 export * from './types'
+export * from './utils'
 
 import type { Emitter } from 'nanoevents'
 
@@ -324,8 +324,6 @@ export class SceneGraph {
     'minHeight',
     'maxHeight'
   ])
-
-
 
   runPreviewUpdates(fn: () => void): void {
     this.previewMutationDepth++

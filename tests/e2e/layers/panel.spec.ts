@@ -1,6 +1,6 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
-const editor = useEditorSetup('/demo')
+const editor = useEditorSetup('/')
 
 function layerRows() {
   return editor.page.locator('[data-node-id]')
@@ -52,6 +52,8 @@ async function getSelectedCount(): Promise<number> {
 }
 
 test('demo layers visible in panel', async () => {
+  await editor.page.goto('/demo')
+  await editor.canvas.waitForInit()
   const names = await getLayerNames()
   expect(names).toContain('Components')
   expect(names).toContain('App Preview')
@@ -76,6 +78,13 @@ test('clicking a node inside a frame does not reparent it', async () => {
   expect(afterDashboard?.children.find((c) => c.name === 'Sidebar')).toBeTruthy()
 
   editor.canvas.assertNoErrors()
+})
+
+// Navigate to blank canvas for remaining tests — demo scene causes WebGL
+// context exhaustion when many CanvasKit tests have already run in the suite
+test('blank canvas setup for layer operations', async () => {
+  await editor.page.goto('/')
+  await editor.canvas.waitForInit()
 })
 
 test('creating a shape updates layers', async () => {
@@ -213,9 +222,17 @@ test('clearing a layer name falls back to the default node name', async () => {
 })
 
 test('double-click does not toggle tree expand', async () => {
+  // Create a container with children: draw two rects, wrap in auto-layout
+  await editor.canvas.drawRect(200, 200, 50, 50)
+  await editor.canvas.drawRect(300, 200, 50, 50)
+  await editor.canvas.selectAll()
+  await editor.page.keyboard.press('Shift+A')
+  await editor.canvas.waitForRender()
+
   const rowCountBefore = await layerRows().count()
 
-  const containerRow = layerRows().filter({ hasText: 'Components' }).first()
+  // Double-click the Frame row — should open rename input, NOT toggle expand
+  const containerRow = layerRows().filter({ hasText: 'Frame' }).first()
   await containerRow.dblclick()
   await editor.canvas.waitForRender()
 

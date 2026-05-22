@@ -1,5 +1,5 @@
-import { getLazyFigImportContext, setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 import type { InstanceNodeChange } from '#core/kiwi/fig/instance-overrides'
+import { getLazyFigImportContext, setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 import { SceneGraph } from '#core/scene-graph'
 import type { SceneNode, Variable, VariableCollection, DocumentColorSpace } from '#core/scene-graph'
 

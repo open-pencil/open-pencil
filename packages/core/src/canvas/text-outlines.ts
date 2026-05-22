@@ -1,12 +1,17 @@
 import type { Path } from 'canvaskit-wasm'
 
 import type { SceneNode } from '#core/scene-graph'
-import { textNodeToOutlineLayout } from '#core/text/outlines'
 import type { OutlineCommand } from '#core/text/opentype'
+import { textNodeToOutlineLayout } from '#core/text/outlines'
 
 import type { SkiaRenderer } from './renderer'
 
-function appendOutlineCommand(path: Path, command: OutlineCommand, xOffset: number, yOffset: number): void {
+function appendOutlineCommand(
+  path: Path,
+  command: OutlineCommand,
+  xOffset: number,
+  yOffset: number
+): void {
   switch (command.type) {
     case 'M':
       path.moveTo((command.x ?? 0) + xOffset, (command.y ?? 0) + yOffset)

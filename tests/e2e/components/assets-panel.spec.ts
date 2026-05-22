@@ -140,9 +140,7 @@ test('assets panel groups component sets and inserts the default variant', async
   await expect(details.getByTestId('asset-details-description')).toContainText(
     'Reusable button component'
   )
-  await expect(details.getByTestId('asset-details-library')).toContainText(
-    'lk-test-library'
-  )
+  await expect(details.getByTestId('asset-details-library')).toContainText('lk-test-library')
   await expect(details.getByTestId('asset-details-docs')).toBeVisible()
   await expect(details.getByTestId('asset-details-property')).toContainText('Type')
   await page.getByTestId('asset-details-close').click()
@@ -233,7 +231,9 @@ test('assets insertion accounts for entered container coordinates', async ({ pag
     const selected = selectedId ? store.graph.getNode(selectedId) : null
     if (!selected) return null
     const abs = store.graph.getAbsolutePosition(selected.id)
-    const center = store.screenToCanvas(...Object.values(store.viewportCanvasCenter()) as [number, number])
+    const center = store.screenToCanvas(
+      ...(Object.values(store.viewportCanvasCenter()) as [number, number])
+    )
     return {
       parentId: selected.parentId,
       centerX: abs.x + selected.width / 2,
@@ -250,6 +250,7 @@ test('assets insertion accounts for entered container coordinates', async ({ pag
 })
 
 test('demo exposes component set assets', async ({ page }) => {
+  test.setTimeout(60_000)
   const canvas = new CanvasHelper(page)
   await page.goto('/demo')
   await canvas.waitForInit()

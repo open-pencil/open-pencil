@@ -3,8 +3,8 @@ import { describe, expect, mock, test } from 'bun:test'
 import type { Canvas } from 'canvaskit-wasm'
 
 import { renderShapeUncached } from '#core/canvas/scene'
-import { createDefaultNode } from '#core/scene-graph/node-defaults'
 import type { SceneGraph } from '#core/scene-graph'
+import { createDefaultNode } from '#core/scene-graph/node-defaults'
 
 import { createMockCanvas, createMockRenderer } from './helpers'
 

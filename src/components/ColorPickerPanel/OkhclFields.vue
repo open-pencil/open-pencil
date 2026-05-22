@@ -29,7 +29,13 @@ const ctx = useColorPickerPanelContext()
       :min="0"
       :max="0.4"
       :step="0.001"
-      :display="{ value: toPercent(ctx.okhcl.okhcl.c), min: 0, max: 40, step: 1, parse: fromPercent }"
+      :display="{
+        value: toPercent(ctx.okhcl.okhcl.c),
+        min: 0,
+        max: 40,
+        step: 1,
+        parse: fromPercent
+      }"
       :gradient-style="ctx.okhclSliderGradient?.okhclChroma ?? undefined"
       :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclChroma ?? ctx.color)"
       test-id="color-slider-okhcl-c"
@@ -42,7 +48,13 @@ const ctx = useColorPickerPanelContext()
       :min="0"
       :max="1"
       :step="0.001"
-      :display="{ value: toPercent(ctx.okhcl.okhcl.l), min: 0, max: 100, step: 1, parse: fromPercent }"
+      :display="{
+        value: toPercent(ctx.okhcl.okhcl.l),
+        min: 0,
+        max: 100,
+        step: 1,
+        parse: fromPercent
+      }"
       :gradient-style="ctx.okhclSliderGradient?.okhclLightness ?? undefined"
       :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclLightness ?? ctx.color)"
       test-id="color-slider-okhcl-l"
@@ -55,7 +67,13 @@ const ctx = useColorPickerPanelContext()
       :min="0"
       :max="1"
       :step="0.001"
-      :display="{ value: toPercent(ctx.okhcl.okhcl.a ?? 1), min: 0, max: 100, step: 1, parse: fromPercent }"
+      :display="{
+        value: toPercent(ctx.okhcl.okhcl.a ?? 1),
+        min: 0,
+        max: 100,
+        step: 1,
+        parse: fromPercent
+      }"
       checkerboard
       :gradient-style="`background: linear-gradient(to right, transparent, ${colorToCSS(ctx.color)})`"
       :thumb-fill="colorToCSS(ctx.color)"

@@ -1,7 +1,7 @@
 import { wcagLuminance } from 'culori'
 
 import { colorToHex } from '#core/color'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode, SolidFill } from '#core/scene-graph'
 import type { Color } from '#core/types'
 
 import type { DescribeIssue } from './issues'
@@ -203,7 +203,7 @@ function checkTextVisibility(ctx: LayoutContext): void {
   for (const childId of node.childIds) {
     const child = graph.getNode(childId)
     if (!child?.visible || child.type !== 'TEXT') continue
-    const textFill = child.fills.find((f) => f.visible && f.type === 'SOLID')
+    const textFill = child.fills.find((f): f is SolidFill => f.visible && f.type === 'SOLID')
     if (!textFill) {
       issues.push({
         message: `"${child.name || child.text.slice(0, 20) || 'Text'}" has no color — invisible`,

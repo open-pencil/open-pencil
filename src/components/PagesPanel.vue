@@ -53,45 +53,48 @@ function handlePageDblClick(
         </Tip>
       </div>
       <div class="min-h-0 flex-1 overflow-hidden">
-        <div data-test-id="pages-scroll" class="scrollbar-thin h-full overflow-x-hidden overflow-y-auto px-1 pb-1">
-        <div v-for="pg in pages" :key="pg.id">
-          <div
-            v-if="rename.editingId.value === pg.id"
-            class="flex w-full items-center gap-1.5 rounded px-2 py-1"
-          >
-            <icon-lucide-file class="size-3 shrink-0 opacity-70" />
-            <input
-              ref="pageInput"
-              data-test-id="pages-item-input"
-              class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-xs text-surface outline-none"
-              :value="pg.name"
-              @blur="rename.commit(pg.id, $event)"
-              @keydown.stop="rename.onKeydown"
-            />
+        <div
+          data-test-id="pages-scroll"
+          class="scrollbar-thin h-full overflow-x-hidden overflow-y-auto px-1 pb-1"
+        >
+          <div v-for="pg in pages" :key="pg.id">
+            <div
+              v-if="rename.editingId.value === pg.id"
+              class="flex w-full items-center gap-1.5 rounded px-2 py-1"
+            >
+              <icon-lucide-file class="size-3 shrink-0 opacity-70" />
+              <input
+                ref="pageInput"
+                data-test-id="pages-item-input"
+                class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-xs text-surface outline-none"
+                :value="pg.name"
+                @blur="rename.commit(pg.id, $event)"
+                @keydown.stop="rename.onKeydown"
+              />
+            </div>
+            <div
+              v-else-if="isDivider(pg)"
+              class="my-1 flex items-center px-2"
+              @dblclick="startRename(pg)"
+            >
+              <div class="h-px flex-1 bg-border" />
+            </div>
+            <button
+              v-else
+              data-test-id="pages-item"
+              class="flex w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 py-1 text-left text-xs"
+              :class="
+                pg.id === currentPageId
+                  ? 'bg-hover text-surface'
+                  : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
+              "
+              @click="actions.switch(pg.id)"
+              @dblclick="handlePageDblClick(pg, actions.rename)"
+            >
+              <icon-lucide-file class="size-3 shrink-0" />
+              <span class="truncate">{{ pg.name }}</span>
+            </button>
           </div>
-          <div
-            v-else-if="isDivider(pg)"
-            class="my-1 flex items-center px-2"
-            @dblclick="startRename(pg)"
-          >
-            <div class="h-px flex-1 bg-border" />
-          </div>
-          <button
-            v-else
-            data-test-id="pages-item"
-            class="flex w-full cursor-pointer items-center gap-1.5 rounded border-none px-2 py-1 text-left text-xs"
-            :class="
-              pg.id === currentPageId
-                ? 'bg-hover text-surface'
-                : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
-            "
-            @click="actions.switch(pg.id)"
-            @dblclick="handlePageDblClick(pg, actions.rename)"
-          >
-            <icon-lucide-file class="size-3 shrink-0" />
-            <span class="truncate">{{ pg.name }}</span>
-          </button>
-        </div>
         </div>
       </div>
     </div>

@@ -348,10 +348,13 @@ export class FontManager {
     if (this.cjkFallbackFamilies.length > 0) return this.cjkFallbackFamilies
     if (this.cjkFallbackPromise) return this.cjkFallbackPromise
 
-    this.cjkFallbackPromise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies, {
+    const promise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies, {
       allowVariableLocalFonts: true
+    }).finally(() => {
+      if (this.cjkFallbackPromise === promise) this.cjkFallbackPromise = null
     })
-    return this.cjkFallbackPromise
+    this.cjkFallbackPromise = promise
+    return promise
   }
 
   getCJKFallbackFamilies(): string[] {
@@ -368,8 +371,13 @@ export class FontManager {
     if (this.arabicFallbackFamilies.length > 0) return this.arabicFallbackFamilies
     if (this.arabicFallbackPromise) return this.arabicFallbackPromise
 
-    this.arabicFallbackPromise = this.ensureFallbackFamilies('arabic', this.arabicFallbackFamilies)
-    return this.arabicFallbackPromise
+    const promise = this.ensureFallbackFamilies('arabic', this.arabicFallbackFamilies).finally(
+      () => {
+        if (this.arabicFallbackPromise === promise) this.arabicFallbackPromise = null
+      }
+    )
+    this.arabicFallbackPromise = promise
+    return promise
   }
 
   async ensureFallbackPack(

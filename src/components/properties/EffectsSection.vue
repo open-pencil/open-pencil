@@ -9,11 +9,16 @@ import { PropertyListRoot, vTestId, useEffectsControls, useI18n } from '@open-pe
 
 import { colorToCSS } from '@open-pencil/core/color'
 
-import type { Effect } from '@open-pencil/core/scene-graph'
+import type { Effect, ShadowEffect } from '@open-pencil/core/scene-graph'
 
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()
 const sectionCls = useSectionUI()
+
+/** Narrow Effect to ShadowEffect for template use inside v-if="isShadow" guards. */
+function asShadow(effect: Effect): ShadowEffect {
+  return effect as ShadowEffect
+}
 </script>
 
 <template>
@@ -55,7 +60,7 @@ const sectionCls = useSectionUI()
             <button
               v-if="effectsCtx.isShadow(effect.type)"
               class="size-5 shrink-0 cursor-pointer rounded border border-border"
-              :style="{ background: colorToCSS(effect.color) }"
+              :style="{ background: colorToCSS(asShadow(effect).color) }"
               @click="effectsCtx.toggleExpand(i)"
             />
             <button
@@ -105,25 +110,29 @@ const sectionCls = useSectionUI()
             <div class="flex items-center gap-1.5">
               <ScrubInput
                 icon="X"
-                :model-value="effect.offset.x"
+                :model-value="asShadow(effect).offset.x"
                 @update:model-value="
-                  effectsCtx.scrubEffect(activeNode, i, { offset: { ...effect.offset, x: $event } })
+                  effectsCtx.scrubEffect(activeNode, i, {
+                    offset: { ...asShadow(effect).offset, x: $event }
+                  })
                 "
                 @commit="
                   effectsCtx.commitEffect(activeNode, i, {
-                    offset: { ...effect.offset, x: $event }
+                    offset: { ...asShadow(effect).offset, x: $event }
                   })
                 "
               />
               <ScrubInput
                 icon="Y"
-                :model-value="effect.offset.y"
+                :model-value="asShadow(effect).offset.y"
                 @update:model-value="
-                  effectsCtx.scrubEffect(activeNode, i, { offset: { ...effect.offset, y: $event } })
+                  effectsCtx.scrubEffect(activeNode, i, {
+                    offset: { ...asShadow(effect).offset, y: $event }
+                  })
                 "
                 @commit="
                   effectsCtx.commitEffect(activeNode, i, {
-                    offset: { ...effect.offset, y: $event }
+                    offset: { ...asShadow(effect).offset, y: $event }
                   })
                 "
               />
@@ -139,7 +148,7 @@ const sectionCls = useSectionUI()
               />
               <ScrubInput
                 icon="S"
-                :model-value="effect.spread"
+                :model-value="asShadow(effect).spread ?? 0"
                 @update:model-value="effectsCtx.scrubEffect(activeNode, i, { spread: $event })"
                 @commit="effectsCtx.commitEffect(activeNode, i, { spread: $event })"
               />
@@ -147,24 +156,24 @@ const sectionCls = useSectionUI()
 
             <div class="flex items-center gap-1.5">
               <ColorInput
-                :color="effect.color"
+                :color="asShadow(effect).color"
                 editable
                 @update="effectsCtx.updateColor(actions.patch, i, $event)"
               />
               <ScrubInput
                 class="w-14"
                 suffix="%"
-                :model-value="Math.round(effect.color.a * 100)"
+                :model-value="Math.round(asShadow(effect).color.a * 100)"
                 :min="0"
                 :max="100"
                 @update:model-value="
                   effectsCtx.scrubEffect(activeNode, i, {
-                    color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
+                    color: { ...asShadow(effect).color, a: Math.max(0, Math.min(1, $event / 100)) }
                   })
                 "
                 @commit="
                   effectsCtx.commitEffect(activeNode, i, {
-                    color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
+                    color: { ...asShadow(effect).color, a: Math.max(0, Math.min(1, $event / 100)) }
                   })
                 "
               />

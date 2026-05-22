@@ -8,14 +8,42 @@
  * no shared references between source and copy.
  */
 
-import type { Effect, Fill, GeometryPath, GradientStop, Stroke, StyleRun } from './'
+import type {
+  BlurEffect,
+  Effect,
+  Fill,
+  GeometryPath,
+  GradientFill,
+  GradientStop,
+  ImageFill,
+  ShadowEffect,
+  SolidFill,
+  Stroke,
+  StyleRun
+} from './'
 
 // --- Individual copy functions ---
 
 export function copyFill(f: Fill): Fill {
-  const copy: Fill = { ...f, color: { ...f.color } }
-  if (f.gradientStops) copy.gradientStops = f.gradientStops.map(copyGradientStop)
-  if (f.gradientTransform) copy.gradientTransform = { ...f.gradientTransform }
+  if (f.type === 'SOLID') return copySolidFill(f)
+  if (f.type === 'IMAGE') return copyImageFill(f)
+  return copyGradientFill(f)
+}
+
+function copySolidFill(f: SolidFill): SolidFill {
+  return { ...f, color: { ...f.color } }
+}
+
+function copyGradientFill(f: GradientFill): GradientFill {
+  return {
+    ...f,
+    gradientStops: f.gradientStops.map(copyGradientStop),
+    gradientTransform: { ...f.gradientTransform }
+  }
+}
+
+function copyImageFill(f: ImageFill): ImageFill {
+  const copy: ImageFill = { ...f }
   if (f.imageTransform) copy.imageTransform = { ...f.imageTransform }
   return copy
 }
@@ -29,11 +57,16 @@ export function copyStroke(s: Stroke): Stroke {
 }
 
 export function copyEffect(e: Effect): Effect {
-  return {
-    ...e,
-    color: { ...e.color },
-    offset: { ...e.offset }
-  }
+  if (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW') return copyShadowEffect(e)
+  return copyBlurEffect(e as BlurEffect)
+}
+
+function copyShadowEffect(e: ShadowEffect): ShadowEffect {
+  return { ...e, color: { ...e.color }, offset: { ...e.offset } }
+}
+
+function copyBlurEffect(e: BlurEffect): BlurEffect {
+  return { ...e }
 }
 
 export function copyStyleRun(r: StyleRun): StyleRun {

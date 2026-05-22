@@ -1,6 +1,4 @@
 import { describe, test, expect, beforeAll, setDefaultTimeout } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 
 import { unzipSync } from 'fflate'
 
@@ -12,11 +10,11 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
+import { readFixtureBytes } from '#tests/helpers/fig-fixtures'
 import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(30_000)
 
-const FIXTURES = resolve(import.meta.dir, '../../../../fixtures')
 const CUSTOM_FIG_KIWI_VERSION = 77
 
 function canvasFigVersion(figData: Uint8Array): number {
@@ -53,7 +51,6 @@ function compressInWorker(message: {
     worker.postMessage(message, [])
   })
 }
-
 describe('fig export compression', () => {
   test('compressFigDataSync produces valid zip', async () => {
     await initCodec()
@@ -121,7 +118,7 @@ heavy('fig export roundtrip', () => {
   let parsed: SceneGraph
 
   beforeAll(async () => {
-    const buf = readFileSync(resolve(FIXTURES, 'gold-preview.fig'))
+    const buf = readFixtureBytes('gold-preview.fig')
     parsed = await parseFigFile(buf.buffer as ArrayBuffer)
   })
 
@@ -139,5 +136,15 @@ heavy('fig export roundtrip', () => {
     const reparsed = await parseFigFile(exported.buffer as ArrayBuffer)
     expect(reparsed).toBeInstanceOf(SceneGraph)
     expect(reparsed.getPages().length).toBeGreaterThan(0)
+  })
+
+  test('exportFigFile kiwiData is an independent copy (not a subarray view)', async () => {
+    const exported = await exportFigFile(parsed)
+    // The exported buffer must be a standalone ArrayBuffer, not a view into
+    // a shared ByteBuffer. If kiwiData were a subarray view, transferring
+    // its .buffer via postMessage transferables would detach the underlying
+    // ArrayBuffer and corrupt any other views sharing it.
+    expect(exported.buffer.byteLength).toBe(exported.byteLength)
+    expect(exported.byteOffset).toBe(0)
   })
 })

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '#core/kiwi/fig/import'
 import type { NodeChange } from '#core/kiwi/fig/codec'
+import { importNodeChanges } from '#core/kiwi/fig/import'
 
 const documentGuid = { sessionID: 0, localID: 0 }
 const pageGuid = { sessionID: 0, localID: 1 }
@@ -39,7 +39,13 @@ describe('Figma component property import', () => {
   test('applies text data component prop assignments', () => {
     const nodeChanges: NodeChange[] = [
       { guid: documentGuid, phase: 'CREATED', type: 'DOCUMENT', name: 'Document' },
-      { guid: pageGuid, phase: 'CREATED', parentIndex: { guid: documentGuid, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: pageGuid,
+        phase: 'CREATED',
+        parentIndex: { guid: documentGuid, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       {
         guid: componentGuid,
         phase: 'CREATED',
@@ -80,7 +86,13 @@ describe('Figma component property import', () => {
   test('propagates nested instance swaps through clone chains', () => {
     const nodeChanges: NodeChange[] = [
       { guid: documentGuid, phase: 'CREATED', type: 'DOCUMENT', name: 'Document' },
-      { guid: pageGuid, phase: 'CREATED', parentIndex: { guid: documentGuid, position: '!' }, type: 'CANVAS', name: 'Page' },
+      {
+        guid: pageGuid,
+        phase: 'CREATED',
+        parentIndex: { guid: documentGuid, position: '!' },
+        type: 'CANVAS',
+        name: 'Page'
+      },
       {
         guid: strokeStyleGuid,
         phase: 'CREATED',
@@ -177,9 +189,7 @@ describe('Figma component property import', () => {
         symbolData: { symbolID: mailIconGuid },
         size: { x: 16, y: 16 },
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 },
-        componentPropRefs: [
-          { defID: iconPropGuid, componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }
-        ]
+        componentPropRefs: [{ defID: iconPropGuid, componentPropNodeField: 'OVERRIDDEN_SYMBOL_ID' }]
       },
       {
         guid: sourceInstanceGuid,
@@ -220,7 +230,9 @@ describe('Figma component property import', () => {
 
     const graph = importNodeChanges(nodeChanges, [], undefined, { populate: 'all' })
     const clone = Array.from(graph.getAllNodes()).find((node) => node.name === 'Menu item clone')
-    const icon = clone?.childIds.map((id) => graph.getNode(id)).find((node) => node?.type === 'INSTANCE')
+    const icon = clone?.childIds
+      .map((id) => graph.getNode(id))
+      .find((node) => node?.type === 'INSTANCE')
     const iconChild = icon?.childIds.map((id) => graph.getNode(id)).find(Boolean)
     expect(icon?.name).toBe('icon/user')
     expect(iconChild?.name).toBe('user-path')
