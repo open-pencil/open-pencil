@@ -85,6 +85,42 @@ describe('canvas masks', () => {
     expect(canvas.saveLayer).toHaveBeenCalledTimes(2)
   })
 
+  test('combines consecutive mask nodes before clipping following siblings', () => {
+    const graph = new SceneGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), { width: 200, height: 200 })
+    const firstMask = graph.createNode('RECTANGLE', frame.id, {
+      width: 80,
+      height: 80,
+      isMask: true
+    })
+    const secondMask = graph.createNode('ELLIPSE', frame.id, {
+      width: 80,
+      height: 80,
+      isMask: true
+    })
+    const clipped = graph.createNode('RECTANGLE', frame.id, { width: 200, height: 200 })
+    const nextMask = graph.createNode('RECTANGLE', frame.id, {
+      width: 40,
+      height: 40,
+      isMask: true
+    })
+    const nextClipped = graph.createNode('RECTANGLE', frame.id, { width: 100, height: 100 })
+    const { renderer, rendered } = createRenderer()
+    const canvas = createCanvas()
+
+    renderNode(renderer, canvas as Canvas, graph, frame.id, {})
+
+    expect(rendered).toEqual([
+      frame.id,
+      clipped.id,
+      firstMask.id,
+      secondMask.id,
+      nextClipped.id,
+      nextMask.id
+    ])
+    expect(canvas.saveLayer).toHaveBeenCalledTimes(4)
+  })
+
   test('applies luminance masks through a luma color filter', () => {
     const graph = new SceneGraph()
     const frame = graph.createNode('FRAME', pageId(graph), { width: 200, height: 200 })

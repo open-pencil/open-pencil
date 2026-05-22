@@ -136,7 +136,9 @@ export function encodeMessage(message: FigmaMessage): Uint8Array {
   const ncHex = Buffer.from(ncBytes).toString('hex')
   const finalHex = beforeArray + ncHex + afterArray
 
-  const finalBytes = new Uint8Array(finalHex.match(/.{2}/g)?.map((b) => Number.parseInt(b, 16)) ?? [])
+  const finalBytes = new Uint8Array(
+    finalHex.match(/.{2}/g)?.map((b) => Number.parseInt(b, 16)) ?? []
+  )
   return compress(finalBytes)
 }
 
@@ -306,6 +308,7 @@ export interface NodeChange {
   frameMaskDisabled?: boolean
   resizeToFit?: boolean
   // Vector
+  booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
   vectorData?: unknown
   fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
@@ -362,6 +365,7 @@ export interface NodeChange {
   textBidiVersion?: number
   textDecoration?: string
   textDecorationSkipInk?: boolean
+  fontVariations?: Array<{ axisTag?: number; axisName?: string; value?: number }>
   fontVariantCommonLigatures?: boolean
   fontVariantContextualLigatures?: boolean
   fontVersion?: string

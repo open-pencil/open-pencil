@@ -20,8 +20,8 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 
 - Preserve and round-trip more Figma metadata safely.
 - Add visual regression coverage for full multi-page `.fig` documents.
-- Close high-impact renderer gaps: masks, blend modes, corner smoothing, pattern fills, and variable font axes.
-- Improve boolean operation import so Figma `BOOLEAN_OPERATION` nodes remain editable where possible.
+- Close high-impact renderer gaps: remaining mask edge cases, blend isolation, pattern fills, and broader variable-font fixtures.
+- Improve boolean operation editing/export now that imported Figma `BOOLEAN_OPERATION` nodes remain boolean operations.
 
 ### Editor depth
 
@@ -117,7 +117,7 @@ Figma's design documentation groups features into these areas:
 | Polygons / stars | ✅ | ✅ | ◐ | ✅ | ✅ | `pointCount` and `starInnerRadius` modeled. |
 | Text | ✅ | ✅ | ◐ | ✅ | ✅ | Derived Figma glyphs improve fidelity; advanced typography is partial. |
 | Vectors / vector networks | ✅ | ✅ | ◐ | ✅ | ✅ | Vector edit support exists; Figma Draw tools are not fully replicated. |
-| Boolean operations | ◐ | ✅ | ◐ | ◐ | ✅ | Engine/renderer support exists, but `.fig` import currently maps Figma `BOOLEAN_OPERATION` nodes to `VECTOR`. |
+| Boolean operations | ✅ | ✅ | ◐ | ✅ | ✅ | Figma `BOOLEAN_OPERATION` nodes import/export as boolean operations; inspector editing remains limited. |
 | Components | ✅ | ✅ | ◐ | ✅ | ✅ | Component metadata, descriptions, links, and publish fields mostly round-trip. |
 | Component sets / variants | ✅ | ✅ | ◐ | ✅ | ✅ | Variant values are usable; full component property authoring is incomplete. |
 | Instances / overrides | ✅ | ✅ | ◐ | ✅ | ✅ | Raw symbol overrides and derived symbol data are preserved for fidelity. |
@@ -139,7 +139,7 @@ Figma's design documentation groups features into these areas:
 | Effect styles | ↩ | — | — | ↩ | — | Style IDs round-trip; no style manager. |
 | Corner radius | ✅ | ✅ | ✅ | ✅ | ✅ | Uniform and independent radii supported. |
 | Corner smoothing | ✅ | ✅ | — | ✅ | ✅ | Figma-style smoothed corners render for common uniform and independent-radius rectangles; exact parity still needs broader fixture tuning. |
-| Masks | ✅ | ◐ | — | ✅ | ✅ | Common sibling alpha/vector/luminance mask stacks render; UI controls and edge-case Figma semantics remain incomplete. |
+| Masks | ✅ | ◐ | — | ✅ | ✅ | Common sibling alpha/vector/luminance mask stacks render, including consecutive mask layers; UI controls and deeper Figma edge cases remain incomplete. |
 | Auto layout: vertical/horizontal | ✅ | ✅ | ✅ | ✅ | ✅ | Yoga-backed layout. |
 | Auto layout: wrap | ✅ | ✅ | ✅ | ✅ | ✅ | UI toggle exists. |
 | Auto layout: grid | ✅ | ◐ | ◐ | ✅ | ✅ | CSS-grid-like support is partial. |
@@ -157,7 +157,7 @@ Figma's design documentation groups features into these areas:
 | Text case | ✅ | ◐ | — | ✅ | ✅ | Model/export/JSX support; UI missing. |
 | Vertical text alignment | ✅ | ◐ | — | ✅ | ✅ | Modeled; UI/render parity needs more coverage. |
 | Justified text | ✅ | ◐ | — | ✅ | ✅ | Modeled; UI does not expose it. |
-| Font variations / OpenType features | ↩ | — | — | ↩ | — | `fontVariations` are preserved only. |
+| Font variations / OpenType features | ✅ | ✅ | — | ✅ | — | Imported `fontVariations` are applied to CanvasKit text styles and exported; OpenType feature controls are not exposed. |
 | Variables: collections/modes/aliases | ✅ | ◐ | ◐ | ✅ | ✅ | Color/number/string/boolean model exists; inspector coverage is still incomplete. |
 | Variables bound to fills/strokes | ✅ | ✅ | ✅ | ✅ | ✅ | Common color bindings render and edit. |
 | Variables bound to text/layout/visibility/effects | ◐ | ◐ | ◐ | ◐ | ✅ | Some bindings exist; not full Figma property coverage. |
@@ -196,18 +196,18 @@ OpenPencil deliberately preserves many Figma/Kiwi fields even when they are not 
 | Variable and parameter consumption maps | ✅ | ◐ | ◐ | Filtered/preserved for safe round-trip; normalized bindings cover common cases. |
 | Page fields: background, page type, guides | ↩ | ◐ | — | Background/page type/guides mostly round-trip. Guides are not rendered/editable. |
 | Text internals: `textData`, layout versions, font version, derived data | ✅ | ✅ | — | Important for text fidelity; most internals are not editable. |
-| `fontVariations` | ↩ | — | — | Variable font data is preserved, not rendered. |
+| `fontVariations` | ✅ | ✅ | — | Variable font axes are imported, rendered, and exported for text nodes and style runs. |
 | Raw paint/effect/vector/geometry payloads | ✅ | ✅ | ◐ | Converted fields render; raw payloads preserve Figma import/export details. |
 
 ## Highest-priority visual gaps
 
 These are parsed or visible in Figma docs and most likely to cause visible differences in real design files:
 
-1. **Masks** — tune multi-mask stacks and exact Figma edge cases beyond the common alpha/vector/luminance path.
+1. **Masks** — tune remaining exact Figma stack semantics beyond common alpha/vector/luminance and consecutive-mask paths.
 2. **Corner smoothing** — expand Figma fixture comparisons and tune remaining stroke/effect edge cases.
 3. **Pattern fills/strokes** — support Figma pattern paint objects and transforms beyond image tile fills.
-4. **Font variations** — apply variable-font axes from imported Figma metadata.
-5. **Boolean operation import** — keep Figma `BOOLEAN_OPERATION` nodes as boolean operations where possible instead of importing them as vectors.
+4. **Variable-font fixtures** — broaden real-file coverage for variable axes and OpenType feature metadata.
+5. **Boolean operation editing** — improve inspector/tooling workflows for imported boolean-operation nodes.
 6. **Layout grids and guides** — render/edit page guides and Figma layout grids, or clearly keep them round-trip-only.
 7. **Full component property and slot workflows** — support authoring, not just preserving imported payloads.
 8. **Prototype metadata** — start by preserving prototype flows/connections even before building playback.

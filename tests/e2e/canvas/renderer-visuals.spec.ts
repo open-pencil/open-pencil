@@ -104,7 +104,9 @@ test('gradients and image fill modes', async () => {
       width: 700,
       height: 250,
       cornerRadius: 22,
-      fills: [{ type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.97, a: 1 }, visible: true, opacity: 1 }]
+      fills: [
+        { type: 'SOLID', color: { r: 0.95, g: 0.95, b: 0.97, a: 1 }, visible: true, opacity: 1 }
+      ]
     })
 
     const gradientStops = [
@@ -112,7 +114,12 @@ test('gradients and image fill modes', async () => {
       { color: { r: 0.58, g: 0.27, b: 0.95, a: 1 }, position: 0.55 },
       { color: { r: 0.08, g: 0.73, b: 0.73, a: 1 }, position: 1 }
     ]
-    const gradientTypes = ['GRADIENT_LINEAR', 'GRADIENT_RADIAL', 'GRADIENT_ANGULAR', 'GRADIENT_DIAMOND'] as const
+    const gradientTypes = [
+      'GRADIENT_LINEAR',
+      'GRADIENT_RADIAL',
+      'GRADIENT_ANGULAR',
+      'GRADIENT_DIAMOND'
+    ] as const
     for (const [index, type] of gradientTypes.entries()) {
       store.graph.createNode('RECTANGLE', pageId, {
         name: `${type} visual`,
@@ -121,7 +128,9 @@ test('gradients and image fill modes', async () => {
         width: 92,
         height: 72,
         cornerRadius: 16,
-        fills: [{ type, color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1, gradientStops }]
+        fills: [
+          { type, color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1, gradientStops }
+        ]
       })
     }
 
@@ -233,7 +242,9 @@ test('luminance masks and transformed tile fills', async () => {
       width: 240,
       height: 130,
       cornerRadius: 18,
-      fills: [{ type: 'SOLID', color: { r: 0.08, g: 0.1, b: 0.18, a: 1 }, visible: true, opacity: 1 }]
+      fills: [
+        { type: 'SOLID', color: { r: 0.08, g: 0.1, b: 0.18, a: 1 }, visible: true, opacity: 1 }
+      ]
     })
     store.graph.createNode('RECTANGLE', frame.id, {
       name: 'Luminance mask gradient',
@@ -280,6 +291,57 @@ test('luminance masks and transformed tile fills', async () => {
         ]
       })
     }
+
+    const multiMaskFrame = store.graph.createNode('FRAME', pageId, {
+      name: 'Consecutive mask stack visual',
+      x: 620,
+      y: 76,
+      width: 220,
+      height: 130,
+      cornerRadius: 18,
+      fills: [
+        { type: 'SOLID', color: { r: 0.08, g: 0.1, b: 0.18, a: 1 }, visible: true, opacity: 1 }
+      ]
+    })
+    store.graph.createNode('ELLIPSE', multiMaskFrame.id, {
+      name: 'First combined mask',
+      x: 18,
+      y: 16,
+      width: 112,
+      height: 98,
+      isMask: true,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    store.graph.createNode('ELLIPSE', multiMaskFrame.id, {
+      name: 'Second combined mask',
+      x: 90,
+      y: 16,
+      width: 112,
+      height: 98,
+      isMask: true,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    store.graph.createNode('RECTANGLE', multiMaskFrame.id, {
+      name: 'Consecutively masked content',
+      x: 18,
+      y: 16,
+      width: 184,
+      height: 98,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          visible: true,
+          opacity: 1,
+          gradientStops: [
+            { color: { r: 0.96, g: 0.35, b: 0.35, a: 1 }, position: 0 },
+            { color: { r: 0.08, g: 0.73, b: 0.73, a: 1 }, position: 0.5 },
+            { color: { r: 0.58, g: 0.27, b: 0.95, a: 1 }, position: 1 }
+          ],
+          gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        }
+      ]
+    })
 
     store.clearSelection()
     store.requestRender()

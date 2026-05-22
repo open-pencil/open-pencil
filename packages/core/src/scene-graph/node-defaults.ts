@@ -36,9 +36,7 @@ export function createDefaultNode(
     },
     figmaDerivedLayout: null,
     fills:
-      type === 'TEXT'
-        ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }]
-        : [],
+      type === 'TEXT' ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }] : [],
     strokes: [],
     effects: [],
     opacity: 1,
@@ -88,6 +86,7 @@ export function createDefaultNode(
     textDecoration: 'NONE',
     maxLines: null,
     styleRuns: [],
+    fontVariations: [],
     horizontalConstraint: 'MIN',
     verticalConstraint: 'MIN',
     strokeCap: 'NONE',

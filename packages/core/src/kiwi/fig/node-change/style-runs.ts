@@ -2,6 +2,7 @@ import type { NodeChange } from '#core/kiwi/fig/codec'
 import type { CharacterStyleOverride, StyleRun } from '#core/scene-graph'
 import { styleToWeight } from '#core/text/fonts'
 
+import { convertFontVariations } from './font-variations'
 import { convertFills } from './paint'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
 
@@ -16,6 +17,8 @@ function convertStyleOverride(
     style.italic = override.fontName.style.toLowerCase().includes('italic')
   }
   if (override.fontSize !== undefined) style.fontSize = override.fontSize
+  const fontVariations = convertFontVariations(override)
+  if (fontVariations.length > 0) style.fontVariations = fontVariations
   if (override.letterSpacing) {
     style.letterSpacing = convertLetterSpacing(
       override.letterSpacing,

@@ -1,4 +1,10 @@
-import type { CanvasKit, FontWeight, Paragraph, TypefaceFontProvider } from 'canvaskit-wasm'
+import type {
+  CanvasKit,
+  FontWeight,
+  Paragraph,
+  TextFontVariations,
+  TypefaceFontProvider
+} from 'canvaskit-wasm'
 import { uniq } from 'es-toolkit/array'
 
 import { getCanvasKit } from '#core/canvaskit'
@@ -160,6 +166,13 @@ function getParagraphTextAlign(
   }
 }
 
+export function textFontVariations(
+  variations: SceneNode['fontVariations'] | undefined
+): TextFontVariations[] | undefined {
+  if (!variations || variations.length === 0) return undefined
+  return variations.map((variation) => ({ axis: variation.axis, value: variation.value }))
+}
+
 function textDecorationValue(ck: CanvasKit, decoration: string): number {
   switch (decoration) {
     case 'UNDERLINE':
@@ -214,6 +227,7 @@ function addStyledRuns(
           weight: { value: s.fontWeight ?? node.fontWeight } as FontWeight,
           slant: (s.italic ?? node.italic) ? ck.FontSlant.Italic : ck.FontSlant.Upright
         },
+        fontVariations: textFontVariations(s.fontVariations ?? node.fontVariations),
         letterSpacing: s.letterSpacing ?? (node.letterSpacing || 0),
         decoration: textDecorationValue(ck, s.textDecoration ?? node.textDecoration),
         heightMultiplier: runLineHeight ? runLineHeight / runFontSize : undefined,
@@ -269,6 +283,7 @@ export function buildParagraph(
         weight: { value: node.fontWeight } as FontWeight,
         slant: node.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
       },
+      fontVariations: textFontVariations(node.fontVariations),
       letterSpacing: node.letterSpacing || 0,
       decoration: textDecorationValue(ck, node.textDecoration),
       heightMultiplier: node.lineHeight ? node.lineHeight / baseFontSize : undefined,

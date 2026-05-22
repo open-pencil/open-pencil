@@ -173,6 +173,11 @@ export type TextDecoration = 'NONE' | 'UNDERLINE' | 'STRIKETHROUGH'
 export type TextDirection = 'AUTO' | 'LTR' | 'RTL'
 export type LayoutDirection = 'AUTO' | 'LTR' | 'RTL'
 
+export interface FontVariation {
+  axis: string
+  value: number
+}
+
 export interface CharacterStyleOverride {
   fontWeight?: number
   italic?: boolean
@@ -182,6 +187,7 @@ export interface CharacterStyleOverride {
   letterSpacing?: number
   lineHeight?: number | null
   fills?: Fill[]
+  fontVariations?: FontVariation[]
 }
 
 export interface StyleRun {
@@ -326,6 +332,7 @@ export interface SceneNode {
   maxLines: number | null
 
   styleRuns: StyleRun[]
+  fontVariations: FontVariation[]
 
   horizontalConstraint: ConstraintType
   verticalConstraint: ConstraintType

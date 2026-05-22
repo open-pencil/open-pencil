@@ -46,6 +46,8 @@ export function mapToFigmaType(type: SceneNode['type']): string {
       return 'REGULAR_POLYGON'
     case 'VECTOR':
       return 'VECTOR'
+    case 'BOOLEAN_OPERATION':
+      return 'BOOLEAN_OPERATION'
     case 'GROUP':
       return 'FRAME'
     case 'SECTION':
@@ -137,12 +139,13 @@ function buildDerivedTextData(
               : glyphAdvance,
           rotation: 0
         }))
-      : (getGlyphOutlineMetricsSync(
-          node.fontFamily,
-          weightToStyle(node.fontWeight, node.italic),
-          node.text,
-          node.fontSize
-        ) ?? []
+      : (
+          getGlyphOutlineMetricsSync(
+            node.fontFamily,
+            weightToStyle(node.fontWeight, node.italic),
+            node.text,
+            node.fontSize
+          ) ?? []
         ).map((glyph, index) => ({
           commandsBlob: appendGlyphBlob(
             blobs,
@@ -171,6 +174,10 @@ function buildDerivedTextData(
     lineAscent: Math.max(lineHeight - node.fontSize * 0.2, 0),
     logicalIndexToCharacterOffsetMap
   })
+}
+
+function fontVariationToKiwi(variation: SceneNode['fontVariations'][number]) {
+  return { axisName: variation.axis, value: variation.value }
 }
 
 function exportTextData(node: SceneNode): NodeChange['textData'] {
@@ -206,6 +213,9 @@ function exportTextData(node: SceneNode): NodeChange['textData'] {
       postscript: ''
     }
     if (style.fontSize !== undefined) override.fontSize = style.fontSize
+    if (style.fontVariations && style.fontVariations.length > 0) {
+      override.fontVariations = style.fontVariations.map(fontVariationToKiwi)
+    }
     if (style.letterSpacing !== undefined) {
       override.letterSpacing = { value: style.letterSpacing, units: 'PIXELS' }
     }
@@ -300,6 +310,9 @@ function serializeTextProps(
     postscript: ''
   }
   nc.textData = exportTextData(node)
+  if (node.fontVariations.length > 0) {
+    nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
+  }
   const autoResize = resolveTextAutoResize(node, graph)
   nc.textAutoResize = autoResize
   nc.textAlignHorizontal = node.textAlignHorizontal
@@ -322,16 +335,14 @@ function serializeTextProps(
   }
 }
 
-function normalizeStackMode(
-  value: string | undefined
-): KiwiNodeChange['stackMode'] {
+function normalizeStackMode(value: string | undefined): KiwiNodeChange['stackMode'] {
   return value === 'HORIZONTAL' || value === 'VERTICAL' || value === 'NONE' ? value : undefined
 }
 
-function normalizeStackSizing(
-  value: string | undefined
-): KiwiNodeChange['stackPrimarySizing'] {
-  return value === 'FIXED' || value === 'RESIZE_TO_FIT' || value === 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE'
+function normalizeStackSizing(value: string | undefined): KiwiNodeChange['stackPrimarySizing'] {
+  return value === 'FIXED' ||
+    value === 'RESIZE_TO_FIT' ||
+    value === 'RESIZE_TO_FIT_WITH_IMPLICIT_SIZE'
     ? value
     : undefined
 }

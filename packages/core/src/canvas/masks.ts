@@ -20,18 +20,32 @@ export function renderMaskedChildIds(
 ): void {
   for (let index = 0; index < childIds.length; index++) {
     const childId = childIds[index]
-    const maskType = getVisibleMaskType(childId)
-    if (!maskType) {
+    const firstMaskType = getVisibleMaskType(childId)
+    if (!firstMaskType) {
       renderChild(childId)
       continue
     }
 
-    const start = index + 1
+    const masks: Array<{ id: string; type: MaskType }> = []
+    let maskIndex = index
+    while (maskIndex < childIds.length) {
+      const maskType = getVisibleMaskType(childIds[maskIndex])
+      if (!maskType) break
+      masks.push({ id: childIds[maskIndex], type: maskType })
+      maskIndex++
+    }
+
+    const start = maskIndex
     let end = start
     while (end < childIds.length && !getVisibleMaskType(childIds[end])) end++
-    if (start === end) continue
+    if (start === end) {
+      index = maskIndex - 1
+      continue
+    }
 
-    const lumaFilter = maskType === 'LUMINANCE' ? r.ck.ColorFilter.MakeLuma() : null
+    const lumaFilter = masks.some((mask) => mask.type === 'LUMINANCE')
+      ? r.ck.ColorFilter.MakeLuma()
+      : null
     try {
       resetMaskPaint(r)
       canvas.save()
@@ -41,9 +55,18 @@ export function renderMaskedChildIds(
 
       resetMaskPaint(r)
       r.effectLayerPaint.setBlendMode(r.ck.BlendMode.DstIn)
-      if (lumaFilter) r.effectLayerPaint.setColorFilter(lumaFilter)
       canvas.saveLayer(r.effectLayerPaint)
-      renderMask(childId)
+      for (const mask of masks) {
+        if (mask.type === 'LUMINANCE' && lumaFilter) {
+          resetMaskPaint(r)
+          r.effectLayerPaint.setColorFilter(lumaFilter)
+          canvas.saveLayer(r.effectLayerPaint)
+          renderMask(mask.id)
+          canvas.restore()
+          continue
+        }
+        renderMask(mask.id)
+      }
       canvas.restore()
 
       canvas.restore()

@@ -102,7 +102,10 @@ function parseGuidOrNull(value: string) {
   return /^\d+:\d+$/.test(value) ? stringToGuid(value) : null
 }
 
-const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set(['variableConsumptionMap', 'parameterConsumptionMap'])
+const FIGMA_PAYLOAD_VARIABLE_MAP_FIELDS = new Set([
+  'variableConsumptionMap',
+  'parameterConsumptionMap'
+])
 const FIGMA_PAYLOAD_PAINT_VARIABLE_FIELDS = new Set(['colorVar', 'opacityVar'])
 
 const SUPPORTED_VARIABLE_DATA_TYPES = new Set([
@@ -118,14 +121,21 @@ const SUPPORTED_VARIABLE_DATA_TYPES = new Set([
 
 function isSupportedVariableMapEntry(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
-  const entry = value as { variableData?: { dataType?: string; value?: { propRefValue?: unknown } } }
+  const entry = value as {
+    variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
+  }
   const dataType = entry.variableData?.dataType
-  return (typeof dataType === 'string' && SUPPORTED_VARIABLE_DATA_TYPES.has(dataType)) || !!entry.variableData?.value?.propRefValue
+  return (
+    (typeof dataType === 'string' && SUPPORTED_VARIABLE_DATA_TYPES.has(dataType)) ||
+    !!entry.variableData?.value?.propRefValue
+  )
 }
 
 function isPropRefVariableMapEntry(value: unknown): boolean {
   if (!value || typeof value !== 'object') return false
-  const entry = value as { variableData?: { dataType?: string; value?: { propRefValue?: unknown } } }
+  const entry = value as {
+    variableData?: { dataType?: string; value?: { propRefValue?: unknown } }
+  }
   return entry.variableData?.dataType === 'PROP_REF' || !!entry.variableData?.value?.propRefValue
 }
 
@@ -143,8 +153,9 @@ function materializeSafeVariableMap(
 
 function paintVariableKey(value: unknown): string | null {
   if (!value || typeof value !== 'object') return null
-  const assetRef = (value as { value?: { alias?: { assetRef?: { key?: unknown; version?: unknown } } } })
-    .value?.alias?.assetRef
+  const assetRef = (
+    value as { value?: { alias?: { assetRef?: { key?: unknown; version?: unknown } } } }
+  ).value?.alias?.assetRef
   return typeof assetRef?.key === 'string'
     ? `${assetRef.key}:${typeof assetRef.version === 'string' ? assetRef.version : ''}`
     : null
@@ -192,7 +203,8 @@ function materializeFigmaPayload(
   options: MaterializeFigmaPayloadOptions = {}
 ): unknown {
   if (value instanceof Uint8Array) return value
-  if (Array.isArray(value)) return value.map((item) => materializeFigmaPayload(item, blobs, options))
+  if (Array.isArray(value))
+    return value.map((item) => materializeFigmaPayload(item, blobs, options))
   if (!value || typeof value !== 'object') return value
   if ('__openPencilFigmaBlob' in value) {
     return materializeFigmaBlob(
@@ -326,11 +338,15 @@ function applyInstancePayload(
   if (symbolID) {
     const symbolData: Record<string, unknown> = { symbolID }
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolData.symbolOverrides = materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
-        blobIndexByHex: context.blobIndexByHex,
-        includeVariableMaps: true,
-        paintVariableColorMap: context.paintVariableColorMap
-      })
+      symbolData.symbolOverrides = materializeFigmaPayload(
+        node.source.fig.symbolOverrides,
+        context.blobs,
+        {
+          blobIndexByHex: context.blobIndexByHex,
+          includeVariableMaps: true,
+          paintVariableColorMap: context.paintVariableColorMap
+        }
+      )
     }
     if (node.source.fig.uniformScaleFactor != null) {
       symbolData.uniformScaleFactor = node.source.fig.uniformScaleFactor
@@ -349,11 +365,15 @@ function applyInstancePayload(
     )
   }
   if (node.source.fig.derivedSymbolData.length > 0) {
-    nc.derivedSymbolData = materializeFigmaPayload(node.source.fig.derivedSymbolData, context.blobs, {
-      blobIndexByHex: context.blobIndexByHex,
-      includeVariableMaps: true,
-      paintVariableColorMap: context.paintVariableColorMap
-    })
+    nc.derivedSymbolData = materializeFigmaPayload(
+      node.source.fig.derivedSymbolData,
+      context.blobs,
+      {
+        blobIndexByHex: context.blobIndexByHex,
+        includeVariableMaps: true,
+        paintVariableColorMap: context.paintVariableColorMap
+      }
+    )
   }
   if (node.source.fig.derivedSymbolDataLayoutVersion != null) {
     nc.derivedSymbolDataLayoutVersion = node.source.fig.derivedSymbolDataLayoutVersion
@@ -400,15 +420,22 @@ function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  return node.source.fig.rawSize ? { ...node.source.fig.rawSize } : { x: node.width, y: node.height }
+  return node.source.fig.rawSize
+    ? { ...node.source.fig.rawSize }
+    : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
-  return node.source.fig.rawTransform ? { ...node.source.fig.rawTransform } : context.computeExportTransform(node)
+  return node.source.fig.rawTransform
+    ? { ...node.source.fig.rawTransform }
+    : context.computeExportTransform(node)
 }
 
 function hasRawGeometryPayload(node: SceneNode): boolean {
-  return 'fillGeometry' in node.source.fig.rawNodeFields || 'strokeGeometry' in node.source.fig.rawNodeFields
+  return (
+    'fillGeometry' in node.source.fig.rawNodeFields ||
+    'strokeGeometry' in node.source.fig.rawNodeFields
+  )
 }
 
 function hasRawVectorPayload(node: SceneNode): boolean {
@@ -527,6 +554,7 @@ export function sceneNodeToKiwiWithContext(
   applyInstancePayload(context, node, nc, localIdCounter)
   if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
+  if (node.type === 'BOOLEAN_OPERATION') nc.booleanOperation = node.booleanOperation ?? 'UNION'
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
