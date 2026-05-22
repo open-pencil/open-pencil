@@ -297,13 +297,9 @@ export function renderShape(
   }
 }
 
-/**
- * When a container has no visible fills, Figma renders drop shadows
- * using the shape of its children rather than its own rectangle.
- * Returns the child to use for shadow shape, or null to use the node itself.
- */
 function getShadowShapeChild(node: SceneNode, graph: SceneGraph): SceneNode | null {
   if (node.fills.some((f) => f.visible)) return null
+  if (node.strokes.some((stroke) => stroke.visible)) return null
   if (node.childIds.length === 0) return null
   const child = graph.getNode(node.childIds[0])
   if (!child?.visible) return null

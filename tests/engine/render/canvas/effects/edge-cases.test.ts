@@ -27,7 +27,8 @@ describe('Edge cases and bug fixes', () => {
         }
       ],
       strokes: [{ visible: true, weight: 2, opacity: 1 }],
-      strokeGeometry: [{} as Path]
+      strokeGeometry: [{} as Path],
+      childIds: []
     }
     r.getStrokeGeometry = mock(() => [{} as Path])
 
@@ -35,6 +36,37 @@ describe('Edge cases and bug fixes', () => {
 
     expect(r.getStrokeGeometry).toHaveBeenCalledWith(node)
     expect(canvas.drawPath).toHaveBeenCalled()
+  })
+
+  test('drop shadow on stroked containers uses the container bounds', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node: Partial<SceneNode> = {
+      type: 'FRAME',
+      width: 224,
+      height: 424,
+      fills: [],
+      effects: [
+        {
+          type: 'DROP_SHADOW',
+          visible: true,
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          offset: { x: 0, y: 2 },
+          radius: 4,
+          spread: 0,
+          showShadowBehindNode: false
+        }
+      ],
+      strokes: [{ visible: true, weight: 1, opacity: 1 }],
+      strokeGeometry: [{} as Path],
+      childIds: ['header']
+    }
+    r.getStrokeGeometry = mock(() => [{} as Path])
+
+    renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), true, 'behind')
+
+    expect(r.getStrokeGeometry).not.toHaveBeenCalled()
+    expect(canvas.drawRRect).toHaveBeenCalled()
   })
 
   test('drop shadow from child applies child transforms (geometric parity)', () => {
@@ -333,7 +365,8 @@ describe('Edge cases and bug fixes', () => {
           spread: 0
         }
       ],
-      strokeGeometry: []
+      strokeGeometry: [],
+      childIds: []
     }
 
     expect(() =>

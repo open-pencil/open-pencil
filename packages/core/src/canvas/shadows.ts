@@ -135,7 +135,7 @@ function drawShapeDropShadow(
   if (!shadowShapeChild) {
     if (hasVisibleFill) {
       geometryShadow = r.getFillGeometry(node)
-    } else if (node.strokeGeometry.length > 0) {
+    } else if (node.childIds.length === 0 && node.strokeGeometry.length > 0) {
       geometryShadow = r.getStrokeGeometry(node)
     }
   }
