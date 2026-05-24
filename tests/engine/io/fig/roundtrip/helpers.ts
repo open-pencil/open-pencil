@@ -92,11 +92,7 @@ export const SCENE_VERIFIERS = new Map<string, Verifier>([
       if (!ctx.key.includes('componentPropertyDefinitions')) return false
       return ctx.a === 'VARIANT' && ctx.b === 'TEXT'
     }
-  ],
-  ['topLeftRadius', (ctx) => !isIdempotent(ctx) && ctx.a === 999 && ctx.b === 0],
-  ['topRightRadius', (ctx) => !isIdempotent(ctx) && ctx.a === 999 && ctx.b === 0],
-  ['bottomRightRadius', (ctx) => !isIdempotent(ctx) && ctx.a === 999 && ctx.b === 0],
-  ['bottomLeftRadius', (ctx) => !isIdempotent(ctx) && ctx.a === 999 && ctx.b === 0]
+  ]
 ])
 
 function verifyAEntries(

@@ -61,8 +61,8 @@ const SPECS: FixtureSpec[] = [
     thumbnailHeight: 239,
     imageCount: 3,
     figKiwiVersion: 101,
-    g1ExportSize: 594522,
-    g2ExportSize: 594522
+    g1ExportSize: 594517,
+    g2ExportSize: 594517
   }
 ]
 
@@ -584,10 +584,6 @@ function verifyFixture(spec: FixtureSpec): void {
       await ensureG2()
       compareRawNodeFields(spec, g1Graph, g2Graph, g1, g2, 'G1->G2')
     })
-
-    test.todo(
-      'BUG: corner radius 999 sentinel lost for non-pill nodes on scene import (40 nodes, raw data preserved)'
-    )
   })
 }
 

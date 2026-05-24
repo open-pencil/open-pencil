@@ -80,6 +80,10 @@ export interface InstanceNodeChange {
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeWeight?: number
   derivedSymbolData?: DerivedSymbolOverride[]
+  key?: string
+  version?: string
+  userFacingVersion?: string
+  variableDataValues?: NodeChange['variableDataValues']
 }
 
 /**
