@@ -17,6 +17,9 @@
     "zoomIn": "放大",
     "zoomOut": "缩小",
     "profiler": "性能分析器",
+    "theme": "特马",
+    "themeLight": "光",
+    "themeDark": "",
     "language": "语言",
     "moveToPage": "移动到页面",
     "createInstance": "创建实例",
@@ -43,7 +46,13 @@
     "checkUpdates": "检查更新…",
     "booleanOperations": "布尔运算",
     "strikethrough": "删除线",
-    "closeTab": "关闭标签页"
+    "closeTab": "关闭标签页",
+    "arrangeAlignLeft": "左对齐",
+    "arrangeAlignCenter": "水平居中",
+    "arrangeAlignRight": "右对齐",
+    "arrangeAlignTop": "顶部对齐",
+    "arrangeAlignMiddle": "垂直居中",
+    "arrangeAlignBottom": "底部对齐"
   },
   "commands": {
     "undo": "撤销",

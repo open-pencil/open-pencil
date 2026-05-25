@@ -18,6 +18,9 @@
     "zoomOut": "Уменьшить",
     "profiler": "Профилирование",
     "language": "Язык",
+    "theme": "Тема",
+    "themeLight": "Свет",
+    "themeDark": "Темный",
     "moveToPage": "Переместить на страницу",
     "createInstance": "Создать экземпляр",
     "hide": "Скрыть",
@@ -43,7 +46,13 @@
     "checkUpdates": "Проверить обновления…",
     "booleanOperations": "Boolean operations",
     "strikethrough": "Зачёркивание",
-    "closeTab": "Закрыть вкладку"
+    "closeTab": "Закрыть вкладку",
+    "arrangeAlignLeft": "Выровнять по левому краю",
+    "arrangeAlignCenter": "Выровнять по центру по горизонтали",
+    "arrangeAlignRight": "Выровнять по правому краю",
+    "arrangeAlignTop": "Выровнять по верхнему краю",
+    "arrangeAlignMiddle": "Выровнять по центру по вертикали",
+    "arrangeAlignBottom": "Выровнять по нижнему краю"
   },
   "commands": {
     "undo": "Отменить",

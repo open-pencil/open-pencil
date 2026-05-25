@@ -17,6 +17,9 @@
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "profiler": "Profileur de performance",
+    "theme": "Thème",
+    "themeLight": "Lumière",
+    "themeDark": "Sombre",
     "language": "Langue",
     "moveToPage": "Déplacer vers la page",
     "createInstance": "Créer une instance",
@@ -43,7 +46,13 @@
     "checkUpdates": "Rechercher des mises à jour…",
     "booleanOperations": "Boolean operations",
     "strikethrough": "Barré",
-    "closeTab": "Fermer l’onglet"
+    "closeTab": "Fermer l’onglet",
+    "arrangeAlignLeft": "Aligner à gauche",
+    "arrangeAlignCenter": "Centrer",
+    "arrangeAlignRight": "Aligner à droite",
+    "arrangeAlignTop": "Aligner en haut",
+    "arrangeAlignMiddle": "Centrer verticalement",
+    "arrangeAlignBottom": "Aligner en bas"
   },
   "commands": {
     "undo": "Annuler",

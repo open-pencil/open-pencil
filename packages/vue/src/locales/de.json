@@ -17,6 +17,9 @@
     "zoomIn": "Vergrößern",
     "zoomOut": "Verkleinern",
     "profiler": "Leistungsprofil",
+    "theme": "Thema",
+    "themeLight": "Licht",
+    "themeDark": "Dunkel",
     "language": "Sprache",
     "moveToPage": "Auf Seite verschieben",
     "createInstance": "Instanz erstellen",
@@ -43,7 +46,13 @@
     "checkUpdates": "Nach Updates suchen…",
     "booleanOperations": "Boolean operations",
     "strikethrough": "Durchstreichen",
-    "closeTab": "Tab schließen"
+    "closeTab": "Tab schließen",
+    "arrangeAlignLeft": "Links ausrichten",
+    "arrangeAlignCenter": "Zentrieren",
+    "arrangeAlignRight": "Rechts ausrichten",
+    "arrangeAlignTop": "Oben ausrichten",
+    "arrangeAlignMiddle": "Mittig ausrichten",
+    "arrangeAlignBottom": "Unten ausrichten"
   },
   "commands": {
     "undo": "Rückgängig",

@@ -9,6 +9,7 @@ const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: Comp
   es: () => import('#vue/locales/es.json'),
   fr: () => import('#vue/locales/fr.json'),
   it: () => import('#vue/locales/it.json'),
+  ja: () => import('#vue/locales/ja.json'),
   pl: () => import('#vue/locales/pl.json'),
   ru: () => import('#vue/locales/ru.json'),
   'zh-CN': () => import('#vue/locales/zh-CN.json')
