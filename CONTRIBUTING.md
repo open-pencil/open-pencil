@@ -16,7 +16,7 @@ bun run dev          # Vite dev server on localhost:1420
 bun run tauri dev    # Tauri desktop app with hot reload
 
 # For macOS release builds with ad-hoc signing (no Apple Developer account, local testing only):
-APPLE_SIGNING_IDENTITY=- bun run tauri build
+APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArtifacts": false }}'
 ```
 
 ## Quality checks
