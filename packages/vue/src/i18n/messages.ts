@@ -46,6 +46,7 @@ export const menuMessages = i18n('menu', {
   theme: 'Theme',
   themeLight: 'Light',
   themeDark: 'Dark',
+  themeAuto: 'Auto',
   profiler: 'Performance profiler',
   language: 'Language',
   checkUpdates: 'Check for updates…',

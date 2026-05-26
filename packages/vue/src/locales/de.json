@@ -20,6 +20,7 @@
     "theme": "Thema",
     "themeLight": "Licht",
     "themeDark": "Dunkel",
+    "themeAuto": "Automatisch",
     "language": "Sprache",
     "moveToPage": "Auf Seite verschieben",
     "createInstance": "Instanz erstellen",

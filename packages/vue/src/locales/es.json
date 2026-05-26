@@ -17,6 +17,7 @@
     "theme": "Tema",
     "themeLight": "Claro",
     "themeDark": "Oscuro",
+    "themeAuto": "Automático",
     "profiler": "Perfil de rendimiento",
     "language": "Idioma",
     "toggleUI": "Alternar interfaz",

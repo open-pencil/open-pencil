@@ -21,6 +21,7 @@
     "theme": "Тема",
     "themeLight": "Свет",
     "themeDark": "Темный",
+    "themeAuto": "Автоматический",
     "moveToPage": "Переместить на страницу",
     "createInstance": "Создать экземпляр",
     "hide": "Скрыть",
