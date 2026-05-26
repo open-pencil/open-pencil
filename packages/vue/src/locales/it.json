@@ -20,6 +20,7 @@
     "theme": "Tema",
     "themeLight": "Chiaro",
     "themeDark": "Oscuro",
+    "themeAuto": "Automatico",
     "language": "Lingua",
     "moveToPage": "Sposta nella pagina",
     "createInstance": "Crea istanza",

@@ -17,6 +17,7 @@
     "theme": "テーマ",
     "themeLight": "ライト",
     "themeDark": "ダーク",
+    "themeAuto": "自動",
     "profiler": "パフォーマンスプロファイラー",
     "language": "言語",
     "toggleUI": "UIの切り替え",

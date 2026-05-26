@@ -48,6 +48,7 @@ export function useAppMenu() {
     theme: 'theme',
     'theme-light': 'themeLight',
     'theme-dark': 'themeDark',
+    'theme-auto': 'themeAuto',
     'zoom-in': 'zoomIn',
     'zoom-out': 'zoomOut',
     'text.bold': 'bold',
