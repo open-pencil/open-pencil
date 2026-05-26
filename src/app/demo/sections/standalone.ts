@@ -65,9 +65,9 @@ export function createStandaloneShapes(store: EditorStore) {
     fills: [solid(DEMO_COLORS.white)]
   })
 
-  const typoFrame = store.createShape('FRAME', 700, 660, 300, 120)
+  const typoFrame = store.createShape('FRAME', 700, 660, 320, 164)
   graph.updateNode(typoFrame, {
-    name: 'Typography',
+    name: 'Typography & OpenType',
     cornerRadius: 12,
     fills: [solid(DEMO_COLORS.white)],
     strokes: thinStroke(DEMO_COLORS.gray200),
@@ -84,15 +84,30 @@ export function createStandaloneShapes(store: EditorStore) {
     { text: 'Heading', size: 24, weight: 700 },
     { text: 'Subheading', size: 16, weight: 600 },
     { text: 'Body text — The quick brown fox jumps.', size: 13, weight: 400 },
-    { text: 'CAPTION · OVERLINE', size: 10, weight: 500 }
+    {
+      text: 'Ligatures off — office affine',
+      size: 13,
+      weight: 500,
+      features: [{ tag: 'LIGA', enabled: false }]
+    },
+    {
+      text: 'Raw OT tags — DLIG on · KERN off',
+      size: 11,
+      weight: 500,
+      features: [
+        { tag: 'DLIG', enabled: true },
+        { tag: 'KERN', enabled: false }
+      ]
+    }
   ]
   for (const t of typoItems) {
-    const tid = store.createShape('TEXT', 0, 0, 260, t.size + 4, typoFrame)
+    const tid = store.createShape('TEXT', 0, 0, 280, t.size + 4, typoFrame)
     graph.updateNode(tid, {
       name: t.text.split(' ')[0],
       text: t.text,
       fontSize: t.size,
       fontWeight: t.weight,
+      fontFeatures: t.features ?? [],
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
       fills: [solid(DEMO_COLORS.black)]
