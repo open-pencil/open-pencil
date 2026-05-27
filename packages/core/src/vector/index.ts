@@ -39,6 +39,7 @@ export function decodeVectorNetworkBlob(
   data: Uint8Array,
   styleOverrideTable?: StyleOverride[]
 ): VectorNetwork {
+  if (!(data.buffer instanceof ArrayBuffer)) return { vertices: [], segments: [], regions: [] }
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   let o = 0
 

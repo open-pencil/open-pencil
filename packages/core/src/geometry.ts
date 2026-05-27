@@ -262,6 +262,7 @@ export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): 
 
   for (const path of paths) {
     const blob = path.commandsBlob
+    if (!(blob.buffer instanceof ArrayBuffer)) return null
     const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
     let offset = 0
     while (offset < blob.length) {

@@ -13,13 +13,14 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     componentId: string,
     x?: number,
     y?: number,
-    parentId = ctx.state.currentPageId
+    parentId?: string
   ) {
     const component = ctx.graph.getNode(componentId)
     if (component?.type !== 'COMPONENT') return null
 
+    const targetParentId = parentId ?? component.parentId ?? ctx.state.currentPageId
     const previousSelection = new Set(ctx.state.selectedIds)
-    const instance = ctx.graph.createInstance(componentId, parentId, {
+    const instance = ctx.graph.createInstance(componentId, targetParentId, {
       x: x ?? component.x + component.width + 40,
       y: y ?? component.y
     })
@@ -32,7 +33,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Create instance',
       forward: () => {
-        ctx.graph.createInstance(componentId, parentId, { ...snapshot })
+        ctx.graph.createInstance(componentId, targetParentId, { ...snapshot })
         ctx.setSelectedIds(new Set([instanceId]))
       },
       inverse: () => {
