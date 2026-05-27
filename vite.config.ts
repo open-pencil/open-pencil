@@ -35,6 +35,11 @@ export default defineConfig(async ({ command }) => ({
     vue(),
     openPencilPwaPlugin()
   ],
+  css: {
+    postcss: {
+      plugins: []
+    }
+  },
   clearScreen: false,
   build: {
     chunkSizeWarningLimit: 2500

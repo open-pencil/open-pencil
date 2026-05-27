@@ -13,6 +13,7 @@ import { setPexelsApiKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
 
 const STORAGE_PREFIX = 'open-pencil:'
 const LEGACY_KEY_STORAGE = `${STORAGE_PREFIX}openrouter-api-key`
+export const DEFAULT_MCP_SERVER_URL = 'http://127.0.0.1:7600/mcp'
 
 export function keyStorageKey(id: string) {
   return `${STORAGE_PREFIX}ai-key:${id}`
@@ -47,6 +48,8 @@ export const customAPIType = useLocalStorage<'completions' | 'responses'>(
 export const maxOutputTokens = useLocalStorage(`${STORAGE_PREFIX}ai-max-output-tokens`, 16384)
 export const pexelsApiKey = useLocalStorage(`${STORAGE_PREFIX}pexels-api-key`, '')
 export const unsplashAccessKey = useLocalStorage(`${STORAGE_PREFIX}unsplash-access-key`, '')
+export const mcpServerURL = useLocalStorage(`${STORAGE_PREFIX}mcp-server-url`, DEFAULT_MCP_SERVER_URL)
+export const mcpServerAuthToken = useLocalStorage(`${STORAGE_PREFIX}mcp-server-auth-token`, '')
 
 export const providerDef = computed(
   () => AI_PROVIDERS.find((p) => p.id === providerID.value) ?? AI_PROVIDERS[0]
@@ -97,4 +100,6 @@ export function registerAIChatEffects(markTransportDirty: () => void) {
   watch(customAPIType, markTransportDirty)
   watch(apiKey, markTransportDirty)
   watch(customBaseURL, markTransportDirty)
+  watch(mcpServerURL, markTransportDirty)
+  watch(mcpServerAuthToken, markTransportDirty)
 }

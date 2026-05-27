@@ -11,6 +11,7 @@ import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
+import { DEFAULT_MCP_SERVER_URL, mcpServerAuthToken, mcpServerURL } from '@/app/ai/chat/storage'
 
 import { mapUpdate } from './map-update'
 import { spawnAcpProcess } from './process'
@@ -29,6 +30,27 @@ interface ACPSession {
   child: TauriChild
   onUpdate: ((params: SessionNotification) => void) | null
   dead: boolean
+}
+
+function getMcpServerURL(): string {
+  return mcpServerURL.value.trim() || DEFAULT_MCP_SERVER_URL
+}
+
+async function getMcpServerHeaders(url: string): Promise<Array<{ name: string; value: string }>> {
+  const configuredToken = mcpServerAuthToken.value.trim()
+  if (configuredToken) {
+    return [{ name: 'Authorization', value: `Bearer ${configuredToken}` }]
+  }
+
+  if (url === DEFAULT_MCP_SERVER_URL) {
+    const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
+    const automationAuthToken = await getAutomationAuthToken()
+    return automationAuthToken
+      ? [{ name: 'Authorization', value: `Bearer ${automationAuthToken}` }]
+      : []
+  }
+
+  return []
 }
 
 const MAX_LOG_AGE_MS = 5 * 60 * 1000
@@ -247,8 +269,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     }
 
     const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
-    const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
-    const automationAuthToken = await getAutomationAuthToken()
+    const mcpServerURL = getMcpServerURL()
+    const headers = await getMcpServerHeaders(mcpServerURL)
 
     await connection.initialize({
       protocolVersion: PROTOCOL_VERSION,
@@ -263,10 +285,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           {
             type: 'http' as const,
             name: 'open-pencil',
-            url: 'http://127.0.0.1:7600/mcp',
-            headers: automationAuthToken
-              ? [{ name: 'Authorization', value: `Bearer ${automationAuthToken}` }]
-              : []
+            url: mcpServerURL,
+            headers
           }
         ]
       })

@@ -16,6 +16,7 @@ import { useI18n } from '@open-pencil/vue'
 import ApiKeySection from '@/components/chat/ProviderSettings/ApiKeySection.vue'
 import ApiTypeSection from '@/components/chat/ProviderSettings/ApiTypeSection.vue'
 import CustomEndpointSection from '@/components/chat/ProviderSettings/CustomEndpointSection.vue'
+import McpServerSection from '@/components/chat/ProviderSettings/McpServerSection.vue'
 import MaxTokensSection from '@/components/chat/ProviderSettings/MaxTokensSection.vue'
 import ProviderSelectField from '@/components/chat/ProviderSelect/ProviderSelectField.vue'
 import StockPhotoKeysSection from '@/components/chat/ProviderSettings/StockPhotoKeysSection.vue'
@@ -74,6 +75,7 @@ function onInteractOutside(e: Event) {
             <MaxTokensSection />
             <StockPhotoKeysSection />
             <CustomEndpointSection />
+            <McpServerSection />
             <ApiTypeSection />
             <ApiKeySection />
 
