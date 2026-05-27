@@ -89,49 +89,51 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     }
   )
 
-  if (resolvedRoot) {
-    register(
-      'open_file',
-      {
-        description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
-        inputSchema: z.object({
-          path: z.string().describe('Absolute path to the design file')
-        })
-      },
-      async (args: { path: string }) => {
-        try {
-          const safe = resolveSafePath(args.path, resolvedRoot)
-          const result = await sendRpc({ command: 'open_file', args: { path: safe } })
-          const res = result as { ok?: boolean; error?: string }
-          if (res.ok === false) return fail(new Error(res.error))
-          return ok({ opened: true })
-        } catch (e) {
-          return fail(e)
-        }
+  register(
+    'open_file',
+    {
+      description: resolvedRoot
+        ? `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`
+        : 'Open a .fig or .pen file from disk into a new tab.',
+      inputSchema: z.object({
+        path: z.string().describe('Absolute path to the design file')
+      })
+    },
+    async (args: { path: string }) => {
+      try {
+        const safe = resolvedRoot ? resolveSafePath(args.path, resolvedRoot) : args.path
+        const result = await sendRpc({ command: 'open_file', args: { path: safe } })
+        const res = result as { ok?: boolean; error?: string }
+        if (res.ok === false) return fail(new Error(res.error))
+        return ok({ opened: true })
+      } catch (e) {
+        return fail(e)
       }
-    )
+    }
+  )
 
-    register(
-      'new_document',
-      {
-        description: `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`,
-        inputSchema: z.object({
-          path: z.string().describe('Optional absolute path for the new file').optional()
-        })
-      },
-      async (args: { path?: string }) => {
-        try {
-          const safePath = args.path ? resolveSafePath(args.path, resolvedRoot) : undefined
-          const result = await sendRpc({ command: 'new_document', args: { path: safePath } })
-          const res = result as { ok?: boolean; error?: string }
-          if (res.ok === false) return fail(new Error(res.error))
-          return ok({ created: true })
-        } catch (e) {
-          return fail(e)
-        }
+  register(
+    'new_document',
+    {
+      description: resolvedRoot
+        ? `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`
+        : 'Create a new empty document. Optionally set a save path.',
+      inputSchema: z.object({
+        path: z.string().describe('Optional absolute path for the new file').optional()
+      })
+    },
+    async (args: { path?: string }) => {
+      try {
+        const safePath = args.path && resolvedRoot ? resolveSafePath(args.path, resolvedRoot) : args.path
+        const result = await sendRpc({ command: 'new_document', args: { path: safePath } })
+        const res = result as { ok?: boolean; error?: string }
+        if (res.ok === false) return fail(new Error(res.error))
+        return ok({ created: true })
+      } catch (e) {
+        return fail(e)
       }
-    )
-  }
+    }
+  )
 
   register(
     'get_codegen_prompt',

@@ -1,3 +1,4 @@
+import { SUPPORTED_PROTOCOL_VERSIONS } from '@modelcontextprotocol/sdk/types.js'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -85,6 +86,7 @@ export function startServer(options: ServerOptions = {}) {
 
     ws.on('close', () => {
       browserRpc.handleClose(ws)
+      mcpSessions.clear()
     })
   })
 
@@ -104,15 +106,16 @@ export function startServer(options: ServerOptions = {}) {
     )
   }
 
-  app.get('/health', async (c) =>
-    c.json({
+  app.get('/health', async (c) => {
+    const healthToken = authToken === null ? browserRpc.currentRpcToken() : null
+    return c.json({
       status: browserRpc.isConnected() ? 'ok' : 'no_app',
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
       authRequired: authToken !== null,
-      ...(browserRpc.currentRpcToken() ? { token: browserRpc.currentRpcToken() } : {})
+      ...(healthToken ? { token: healthToken } : {})
     })
-  )
+  })
 
   app.use('/rpc', async (c, next) => {
     const rpcToken = browserRpc.currentRpcToken()
@@ -141,14 +144,52 @@ export function startServer(options: ServerOptions = {}) {
     }
   })
 
+  // --- OAuth auto-discovery for MCP clients (OpenCode, etc.) ---
+
+  const serverBase = `http://127.0.0.1:${httpPort}`
+
+  app.get('/.well-known/oauth-authorization-server', async (c) =>
+    c.json({
+      issuer: serverBase,
+      authorization_endpoint: `${serverBase}/oauth/authorize`,
+      token_endpoint: `${serverBase}/oauth/token`,
+      token_endpoint_auth_methods_supported: ['none'],
+      response_types_supported: ['token'],
+      grant_types_supported: ['client_credentials']
+    })
+  )
+
+  app.post('/oauth/token', async (c) => {
+    if (!authToken) {
+      return c.json({ error: 'No auth configured on this server' }, 400)
+    }
+    return c.json({ access_token: authToken, token_type: 'bearer' })
+  })
+
   // --- MCP Streamable HTTP ---
 
   app.all('/mcp', async (c) => {
     if (authToken) {
       const token = mcpRequestToken(c.req.header('authorization'), c.req.header('x-mcp-token'))
       if (!isAuthorized(token, authToken)) {
-        return c.json({ error: 'Unauthorized' }, 401)
+        return c.json({ error: 'Unauthorized' }, 401, {
+          'WWW-Authenticate': `Bearer realm="${serverBase}"`
+        })
       }
+    }
+    const protocolVersion = c.req.header('mcp-protocol-version')
+    if (protocolVersion && !SUPPORTED_PROTOCOL_VERSIONS.includes(protocolVersion)) {
+      return c.json(
+        {
+          jsonrpc: '2.0',
+          error: {
+            code: -32000,
+            message: `Unsupported protocol version "${protocolVersion}". Supported versions: ${SUPPORTED_PROTOCOL_VERSIONS.join(', ')}`
+          },
+          id: null
+        },
+        400
+      )
     }
     const sessionId = c.req.header('mcp-session-id') ?? undefined
     const transport = mcpSessions.resolveTransport(sessionId)
