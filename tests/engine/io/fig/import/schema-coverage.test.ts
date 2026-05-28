@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import ts from 'typescript'
 
 import { FIGMA_RAW_NODE_FIELD_KEYS } from '#core/kiwi/fig/node-change/convert'
-import { parseSchema } from '#core/kiwi/schema-runtime/parser'
+import { parseSchema } from '#core/kiwi/schema-runtime'
 
 interface SchemaField {
   name: string
