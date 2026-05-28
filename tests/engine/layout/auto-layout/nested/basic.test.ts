@@ -94,4 +94,36 @@ describe('nested auto layout', () => {
     expect(outerChildren[0].y).toBe(0)
     expect(outerChildren[1].y).toBe(40)
   })
+
+  test('computeAllLayouts preserves fixed children inside instances', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const outer = autoFrame(graph, page, {
+      width: 500,
+      height: 300,
+      paddingTop: 20,
+      paddingBottom: 20
+    })
+    const instance = graph.createNode('INSTANCE', outer.id, {
+      width: 120,
+      height: 120,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED',
+      paddingTop: 20,
+      paddingBottom: 20
+    })
+    const fixedChild = autoFrame(graph, instance.id, {
+      width: 80,
+      height: 80,
+      paddingTop: 1665,
+      paddingBottom: 1665
+    })
+
+    computeAllLayouts(graph, page)
+
+    const childNode = getNodeOrThrow(graph, fixedChild.id)
+    expect(childNode.height).toBe(80)
+    expect(childNode.y).toBe(0)
+  })
 })

@@ -90,6 +90,8 @@ export function applyYogaLayout(
 
     updateChildFromYoga(graph, child, yogaChild)
 
+    if (child.type === 'INSTANCE') continue
+
     if (child.layoutMode !== 'NONE') {
       if (child.layoutMode === 'GRID' && child.visible && child.layoutPositioning !== 'ABSOLUTE') {
         computeLayout(graph, child.id)

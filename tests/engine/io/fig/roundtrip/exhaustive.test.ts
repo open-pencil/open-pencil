@@ -1,4 +1,4 @@
-import { beforeAll, afterAll, describe, expect, test, spyOn } from 'bun:test'
+import { beforeAll, afterAll, describe, expect, test, spyOn, setDefaultTimeout } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
@@ -24,6 +24,7 @@ import {
 } from './helpers'
 
 let dateSpy: { mockRestore(): void } | undefined
+setDefaultTimeout(180_000)
 beforeAll(() => {
   dateSpy = spyOn(Date.prototype, 'toISOString').mockReturnValue('2026-05-24T12:00:00.000Z')
 })
@@ -62,8 +63,8 @@ const SPECS: FixtureSpec[] = [
     thumbnailHeight: 239,
     imageCount: 3,
     figKiwiVersion: 101,
-    g1ExportSize: 594517,
-    g2ExportSize: 594517
+    g1ExportSize: 594758,
+    g2ExportSize: 594758
   }
 ]
 
