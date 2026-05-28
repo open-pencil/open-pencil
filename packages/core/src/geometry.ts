@@ -253,15 +253,35 @@ export function intersectVisualBounds(a: VisualBounds, b: VisualBounds): VisualB
 function geometryCommandCoordCount(command: number): number | null {
   if (command === 0) return 0
   if (command === 1 || command === 2) return 1
+  if (command === 3) return 2
   if (command === 4) return 3
   return null
+}
+
+function isValidGeometryCommandsBlob(blob: Uint8Array): boolean {
+  let offset = 0
+  while (offset < blob.length) {
+    const command = blob[offset]
+    const coords = geometryCommandCoordCount(command)
+    if (coords == null) return false
+    offset += 1 + coords * 8
+    if (offset > blob.length) return false
+  }
+  return true
+}
+
+export function getGeometryCommandsBlob(path: { commandsBlob: Uint8Array }): Uint8Array | null {
+  const blob = (path as { commandsBlob?: unknown }).commandsBlob
+  if (!(blob instanceof Uint8Array) || blob.byteLength === 0) return null
+  return isValidGeometryCommandsBlob(blob) ? blob : null
 }
 
 export function geometryBlobBounds(paths: Array<{ commandsBlob: Uint8Array }>): Rect | null {
   const bounds = createBoundsAccumulator()
 
   for (const path of paths) {
-    const blob = path.commandsBlob
+    const blob = getGeometryCommandsBlob(path)
+    if (!blob) continue
     const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
     let offset = 0
     while (offset < blob.length) {

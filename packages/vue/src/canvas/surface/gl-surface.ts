@@ -8,10 +8,18 @@ type GLContext = ReturnType<CanvasKit['MakeGrContext']>
 
 export type CanvasGLContext = GLContext
 
-export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor) {
+export function sizeCanvas(
+  canvas: HTMLCanvasElement,
+  editor: Editor,
+  options?: Pick<UseCanvasOptions, 'onViewportResize'>
+) {
   const dpr = window.devicePixelRatio || 1
   canvas.width = canvas.clientWidth * dpr
   canvas.height = canvas.clientHeight * dpr
+  if (options?.onViewportResize) {
+    options.onViewportResize(canvas.clientWidth, canvas.clientHeight)
+    return
+  }
   if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
     editor.setViewportSize(canvas.clientWidth, canvas.clientHeight)
   }

@@ -42,7 +42,11 @@ function wheelZoomDelta(event: WheelEvent) {
   return -event.deltaY * wheelDeltaModeScale(event) * factor * WHEEL_ZOOM_SPEED
 }
 
-export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
+export function setupWheelPanZoom(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  editor: Editor,
+  activate?: () => void
+) {
   const wheelAccum: WheelAccum = {
     deltaX: 0,
     deltaY: 0,
@@ -53,6 +57,7 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
   }
 
   function flushWheel() {
+    activate?.()
     editor.setHoveredNode(null)
     if (wheelAccum.hasZoom) {
       editor.setZoomAroundPoint(
@@ -72,6 +77,7 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
   const wheelScheduler = createRafScheduler(flushWheel)
 
   function onWheel(e: WheelEvent) {
+    activate?.()
     const canvas = canvasRef.value
     if (!canvas) return
     const { dx, dy } = normalizeWheelDelta(e)

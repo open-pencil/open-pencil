@@ -228,7 +228,8 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - P2P via Trystero (WebRTC) — no server relay. Signaling over MQTT public brokers.
 - Yjs CRDT for document state sync. Awareness protocol for cursors/selections/presence.
 - y-indexeddb for local persistence — room survives page refresh.
-- Constants in `src/constants.ts`: `TRYSTERO_APP_ID`, `PEER_COLORS`, `ROOM_ID_LENGTH`, `ROOM_ID_CHARS`, `YJS_JSON_FIELDS`
+- Constants in `src/constants.ts`: `TRYSTERO_APP_ID`, `PEER_COLORS`, `ROOM_ID_LENGTH`, `ROOM_ID_CHARS`
+- Collaboration node encoding/decoding lives in `src/app/collab/node-codec.ts`; do not add ad-hoc Yjs JSON field allow-lists.
 - `src/app/collab/use.ts` — composable: connect/disconnect, cursor/selection broadcasting, follow mode, Yjs ↔ SceneGraph sync
 - Provided via `COLLAB_KEY` injection — `useCollabInjected()` in child components
 - ICE servers: Google STUN + Cloudflare STUN + Open Relay TURN (TCP + UDP)

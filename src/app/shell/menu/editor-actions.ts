@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { paneScreenCenter } from '@/app/editor/panes/viewport'
 
 type TextFormatUpdates = {
   fontWeight?: number
@@ -47,9 +48,14 @@ export function toggleSelectedTextUnderline(): void {
 export function createSharedEditorMenuActions(
   setTheme: (theme: 'light' | 'dark' | 'auto') => void
 ) {
+  function zoomActivePane(delta: number) {
+    const center = paneScreenCenter(store.getActivePane())
+    store.applyZoom(delta, center.x, center.y)
+  }
+
   return {
-    'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),
-    'zoom-out': () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2),
+    'zoom-in': () => zoomActivePane(-100),
+    'zoom-out': () => zoomActivePane(100),
     'toggle-ui': () => {
       store.state.showUI = !store.state.showUI
     },

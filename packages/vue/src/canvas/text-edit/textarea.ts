@@ -26,18 +26,20 @@ export function useTextEditingSession({
   textareaRef,
   resetBlink,
   stopBlink,
-  resetComposition
+  resetComposition,
+  isEnabled
 }: {
   store: Editor
   textareaRef: ShallowRef<HTMLTextAreaElement | null>
   resetBlink: () => void
   stopBlink: () => void
   resetComposition: () => void
+  isEnabled?: () => boolean
 }) {
   watch(
     () => store.state.editingTextId,
     (id, _, onCleanup) => {
-      if (id) {
+      if (id && (isEnabled?.() ?? true)) {
         const el = createHiddenTextArea()
         textareaRef.value = el
         el.focus()

@@ -5,6 +5,7 @@ import { randomIndex } from '@open-pencil/core/random'
 import type { Color } from '@open-pencil/core/types'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { paneScreenCenter } from '@/app/editor/panes/viewport'
 import { PEER_COLORS, ROOM_ID_CHARS, ROOM_ID_LENGTH } from '@/constants'
 
 import type { RemotePeer } from './types'
@@ -40,9 +41,9 @@ export function buildRemotePeers(
   return peers
 }
 
-export function remotePeersToCursors(peers: RemotePeer[], currentPageId: string) {
+export function remotePeersToCursors(peers: RemotePeer[], currentPageId?: string) {
   return peers
-    .filter((p) => p.cursor && p.cursor.pageId === currentPageId)
+    .filter((p) => p.cursor && (!currentPageId || p.cursor.pageId === currentPageId))
     .map((p) => {
       const cursor = p.cursor as NonNullable<RemotePeer['cursor']>
       return {
@@ -50,7 +51,8 @@ export function remotePeersToCursors(peers: RemotePeer[], currentPageId: string)
         color: p.color,
         x: cursor.x,
         y: cursor.y,
-        selection: p.selection
+        selection: p.selection,
+        pageId: cursor.pageId
       }
     })
 }
@@ -82,13 +84,10 @@ export function createFollowActions(
     if (cursor.pageId !== store.state.currentPageId) {
       void store.switchPage(cursor.pageId)
     }
-    const canvas = document.querySelector('canvas')
-    if (!canvas) return
     if (cursor.zoom) store.state.zoom = cursor.zoom
-    const cw = canvas.width / devicePixelRatio
-    const ch = canvas.height / devicePixelRatio
-    store.state.panX = cw / 2 - cursor.x * store.state.zoom
-    store.state.panY = ch / 2 - cursor.y * store.state.zoom
+    const center = paneScreenCenter(store.getActivePane())
+    store.state.panX = center.x - cursor.x * store.state.zoom
+    store.state.panY = center.y - cursor.y * store.state.zoom
     store.requestRender()
   }
 

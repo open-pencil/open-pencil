@@ -64,6 +64,7 @@ export interface EditorState {
     x: number
     y: number
     selection?: string[]
+    pageId?: string
   }>
   autoLayoutHover: {
     nodeId: string

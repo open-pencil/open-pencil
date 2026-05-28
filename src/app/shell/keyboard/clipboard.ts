@@ -3,6 +3,7 @@ import { useEventListener } from '@vueuse/core'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { paneCanvasCenter } from '@/app/editor/panes/viewport'
 import { isEditing } from '@/app/shell/keyboard/focus'
 
 export function bindEditorClipboard(store: EditorStore) {
@@ -28,8 +29,9 @@ export function bindEditorClipboard(store: EditorStore) {
 
     const imageFiles = extractImageFilesFromClipboard(e)
     if (imageFiles.length) {
-      const cx = cursorPos?.x ?? (-store.state.panX + window.innerWidth / 2) / store.state.zoom
-      const cy = cursorPos?.y ?? (-store.state.panY + window.innerHeight / 2) / store.state.zoom
+      const center = paneCanvasCenter(store.getActivePane())
+      const cx = cursorPos?.x ?? center.x
+      const cy = cursorPos?.y ?? center.y
       void store.placeImageFiles(imageFiles, cx, cy)
       return
     }

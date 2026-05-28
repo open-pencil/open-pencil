@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Add split canvas panes with independent page, viewport, selection, and cursor state inside a shared editor tab.
+
 ### Fixes
 
 - Greatly improve importing Figma `.fig` files with complex component systems: badges, avatars, icons, links, input fields, lists, date pickers, nested instances, component swaps, and variant properties now open much closer to their original Figma appearance.

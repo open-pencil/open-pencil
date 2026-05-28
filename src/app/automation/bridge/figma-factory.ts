@@ -2,6 +2,7 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { listFonts } from '@/app/editor/fonts'
+import { paneCanvasCenter } from '@/app/editor/panes/viewport'
 
 export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
   const api = new FigmaAPI(store.graph)
@@ -11,10 +12,7 @@ export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
     .map((id) => api.getNodeById(id))
     .filter((n): n is NonNullable<typeof n> => n !== null)
   api.viewport = {
-    center: {
-      x: (-store.state.panX + window.innerWidth / 2) / store.state.zoom,
-      y: (-store.state.panY + window.innerHeight / 2) / store.state.zoom
-    },
+    center: paneCanvasCenter(store.getActivePane()),
     zoom: store.state.zoom
   }
   api.exportImage = (nodeIds, opts) =>

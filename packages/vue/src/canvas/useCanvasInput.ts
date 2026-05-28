@@ -38,7 +38,9 @@ export function useCanvasInput(
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null,
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null,
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
-  onCursorMove?: (cx: number, cy: number) => void
+  onCursorMove?: (cx: number, cy: number) => void,
+  activate?: () => void,
+  isActive: () => boolean = () => true
 ) {
   const drag = ref<DragState | null>(null)
   const cursorOverride = ref<string | null>(null)
@@ -148,6 +150,7 @@ export function useCanvasInput(
   }
 
   function onMouseDown(e: MouseEvent) {
+    activate?.()
     const paddingEdit = autoLayoutPaddingEdit.value
     if (paddingEdit) {
       commitAutoLayoutPaddingEdit(paddingEdit.value)
@@ -174,7 +177,16 @@ export function useCanvasInput(
     })
   }
 
+  function shouldIgnoreInactiveMouseMove() {
+    if (isActive()) return false
+    if (!drag.value) return true
+    activate?.()
+    return false
+  }
+
   function onMouseMove(e: MouseEvent) {
+    if (shouldIgnoreInactiveMouseMove()) return
+
     if (onCursorMove) {
       const { cx, cy } = getCoords(e)
       onCursorMove(cx, cy)
@@ -247,6 +259,7 @@ export function useCanvasInput(
   }
 
   function onMouseUp() {
+    activate?.()
     if (!drag.value) return
     const d = drag.value
 
@@ -282,6 +295,13 @@ export function useCanvasInput(
     cursorOverride.value = null
   }
 
+  function cleanupInteractions() {
+    const paddingEdit = autoLayoutPaddingEdit.value
+    if (paddingEdit) commitAutoLayoutPaddingEdit(paddingEdit.value)
+    if (drag.value) onMouseUp()
+    cursorOverride.value = null
+  }
+
   useEventListener(canvasRef, 'dblclick', onDblClick)
   useEventListener(canvasRef, 'mousedown', onMouseDown)
   useEventListener(canvasRef, 'mousemove', onMouseMove)
@@ -295,13 +315,14 @@ export function useCanvasInput(
     if (drag.value) onMouseUp()
   })
 
-  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp)
+  setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp, activate)
   return {
     drag,
     cursorOverride,
     autoLayoutPaddingEdit,
     updateAutoLayoutPaddingEdit,
     commitAutoLayoutPaddingEdit,
-    cancelAutoLayoutPaddingEdit
+    cancelAutoLayoutPaddingEdit,
+    cleanupInteractions
   }
 }

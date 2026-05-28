@@ -5,12 +5,17 @@ import type { Editor } from '@open-pencil/core/editor'
 
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
-export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
+export function setupSafariGestureZoom(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  editor: Editor,
+  activate?: () => void
+) {
   let gestureStartZoom = 1
   let pendingGesture: { scale: number; sx: number; sy: number } | null = null
 
   function flushGesture() {
     if (!pendingGesture) return
+    activate?.()
     editor.setHoveredNode(null)
     const { scale, sx, sy } = pendingGesture
     pendingGesture = null
@@ -23,6 +28,7 @@ export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>,
     canvasRef,
     'gesturestart' as keyof HTMLElementEventMap,
     (e: Event) => {
+      activate?.()
       e.preventDefault()
       gestureStartZoom = editor.state.zoom
     },
@@ -32,6 +38,7 @@ export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>,
     canvasRef,
     'gesturechange' as keyof HTMLElementEventMap,
     (e: Event) => {
+      activate?.()
       e.preventDefault()
       const ge = e as GestureEvent
       const canvas = canvasRef.value
@@ -50,6 +57,7 @@ export function setupSafariGestureZoom(canvasRef: Ref<HTMLCanvasElement | null>,
     canvasRef,
     'gestureend' as keyof HTMLElementEventMap,
     (e: Event) => {
+      activate?.()
       e.preventDefault()
     },
     { passive: false }

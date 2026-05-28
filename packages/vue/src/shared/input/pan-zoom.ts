@@ -13,7 +13,8 @@ export function setupPanZoom(
   drag: Ref<DragState | null>,
   onMouseDown: (e: MouseEvent) => void,
   onMouseMove: (e: MouseEvent) => void,
-  onMouseUp: () => void
+  onMouseUp: () => void,
+  activate?: () => void
 ) {
   let activeTouches: Touch[] = []
   let pinchStartDist = 0
@@ -40,6 +41,7 @@ export function setupPanZoom(
   }
 
   function onTouchStart(e: TouchEvent) {
+    activate?.()
     e.preventDefault()
     activeTouches = Array.from(e.touches)
     const canvas = canvasRef.value
@@ -77,6 +79,7 @@ export function setupPanZoom(
   }
 
   function onTouchMove(e: TouchEvent) {
+    activate?.()
     e.preventDefault()
     activeTouches = Array.from(e.touches)
     const canvas = canvasRef.value
@@ -117,6 +120,7 @@ export function setupPanZoom(
   }
 
   function onTouchEnd(e: TouchEvent) {
+    activate?.()
     e.preventDefault()
     activeTouches = Array.from(e.touches)
 
@@ -143,11 +147,11 @@ export function setupPanZoom(
     }
   }
 
-  setupWheelPanZoom(canvasRef, editor)
+  setupWheelPanZoom(canvasRef, editor, activate)
   useEventListener(canvasRef, 'touchstart', onTouchStart, { passive: false })
   useEventListener(canvasRef, 'touchmove', onTouchMove, { passive: false })
   useEventListener(canvasRef, 'touchend', onTouchEnd, { passive: false })
   useEventListener(canvasRef, 'touchcancel', onTouchEnd, { passive: false })
 
-  setupSafariGestureZoom(canvasRef, editor)
+  setupSafariGestureZoom(canvasRef, editor, activate)
 }

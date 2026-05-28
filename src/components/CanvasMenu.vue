@@ -8,6 +8,7 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
+import { computed } from 'vue'
 import IconCombine from '~icons/lucide/combine'
 import IconCopyMinus from '~icons/lucide/copy-minus'
 import IconCopyX from '~icons/lucide/copy-x'
@@ -22,7 +23,8 @@ import {
   useMenuModel,
   useSelectionState,
   editorCommandMetadata,
-  formatShortcut
+  formatShortcut,
+  useViewportKind
 } from '@open-pencil/vue'
 import type { Component } from 'vue'
 import type { EditorCommandId } from '@open-pencil/vue'
@@ -41,6 +43,7 @@ const { editor, selectedIds, hasSelection } = useSelectionState()
 const { getCommand } = useEditorCommands()
 const { canvasMenu } = useMenuModel()
 const { menu: t } = useI18n()
+const { isMobile } = useViewportKind()
 
 const canvasMenuActions = createCanvasMenuActions(store, selectedIds)
 const { execCommand } = canvasMenuActions
@@ -70,6 +73,11 @@ const booleanCommandIcons = {
   'selection.outlineStroke': IconSpline
 } satisfies Partial<Record<EditorCommandId, Component>>
 
+const canSplitPane = computed(
+  () => !isMobile.value && store.visiblePaneCount.value < store.maxVisiblePanes
+)
+const canClosePane = computed(() => !isMobile.value && store.visiblePaneCount.value > 1)
+
 function contextCommandTestId(id: EditorCommandId | undefined): string | undefined {
   return id ? editorCommandMetadata(id).contextTestId : undefined
 }
@@ -77,6 +85,14 @@ function contextCommandTestId(id: EditorCommandId | undefined): string | undefin
 function contextCommandIcon(id: EditorCommandId | undefined): Component | undefined {
   if (!id) return undefined
   return (booleanCommandIcons as Partial<Record<EditorCommandId, Component>>)[id]
+}
+
+function splitPane(direction: 'horizontal' | 'vertical') {
+  store.splitPane(store.activePaneId.value, direction)
+}
+
+function closeActivePane() {
+  store.closePane(store.activePaneId.value)
 }
 </script>
 
@@ -112,6 +128,34 @@ function contextCommandIcon(id: EditorCommandId | undefined): Component | undefi
     >
       <span>{{ t.pasteToReplace }}</span>
     </ContextMenuItem>
+    <template v-if="!isMobile">
+      <ContextMenuSeparator :class="cls.sep" />
+      <ContextMenuItem
+        data-test-id="context-split-pane-right"
+        :class="cls.item"
+        :disabled="!canSplitPane"
+        @select="splitPane('horizontal')"
+      >
+        <span>Split Pane Right</span>
+      </ContextMenuItem>
+      <ContextMenuItem
+        data-test-id="context-split-pane-down"
+        :class="cls.item"
+        :disabled="!canSplitPane"
+        @select="splitPane('vertical')"
+      >
+        <span>Split Pane Down</span>
+      </ContextMenuItem>
+      <ContextMenuItem
+        data-test-id="context-close-pane"
+        :class="cls.item"
+        :disabled="!canClosePane"
+        @select="closeActivePane"
+      >
+        <span>Close Pane</span>
+      </ContextMenuItem>
+    </template>
+    <ContextMenuSeparator :class="cls.sep" />
     <ContextMenuItem
       data-test-id="context-duplicate"
       :class="cls.item"

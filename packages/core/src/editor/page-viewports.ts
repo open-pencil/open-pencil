@@ -3,7 +3,7 @@ import type { Color } from '#core/types'
 
 import type { EditorContext } from './types'
 
-interface PageViewport {
+export interface PageViewport {
   panX: number
   panY: number
   zoom: number

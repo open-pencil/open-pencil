@@ -1,6 +1,6 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
-import { polygonVertices } from '#core/geometry'
+import { getGeometryCommandsBlob, polygonVertices } from '#core/geometry'
 import type { SceneNode } from '#core/scene-graph'
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
@@ -527,20 +527,26 @@ export function getFillGeometry(r: SkiaRenderer, node: SceneNode): Path[] | null
   if (node.fillGeometry.length === 0) return null
   const cached = r.fillGeometryCache.get(node.id)
   if (cached) return cached
-  const paths = node.fillGeometry.map((g) =>
-    geometryBlobToPath(r.ck, g.commandsBlob, g.windingRule)
-  )
+  const paths: Path[] = []
+  for (const geometry of node.fillGeometry) {
+    const commandsBlob = getGeometryCommandsBlob(geometry)
+    if (!commandsBlob) continue
+    paths.push(geometryBlobToPath(r.ck, commandsBlob, geometry.windingRule))
+  }
   r.fillGeometryCache.set(node.id, paths)
-  return paths
+  return paths.length > 0 ? paths : null
 }
 
 export function getStrokeGeometry(r: SkiaRenderer, node: SceneNode): Path[] | null {
   if (node.strokeGeometry.length === 0) return null
   const cached = r.strokeGeometryCache.get(node.id)
   if (cached) return cached
-  const paths = node.strokeGeometry.map((g) =>
-    geometryBlobToPath(r.ck, g.commandsBlob, g.windingRule)
-  )
+  const paths: Path[] = []
+  for (const geometry of node.strokeGeometry) {
+    const commandsBlob = getGeometryCommandsBlob(geometry)
+    if (!commandsBlob) continue
+    paths.push(geometryBlobToPath(r.ck, commandsBlob, geometry.windingRule))
+  }
   r.strokeGeometryCache.set(node.id, paths)
-  return paths
+  return paths.length > 0 ? paths : null
 }

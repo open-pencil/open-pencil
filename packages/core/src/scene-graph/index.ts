@@ -32,6 +32,7 @@ import type {
   VariableValue
 } from './types'
 
+export { createDefaultSourceMetadata, normalizeSourceMetadata } from './source-metadata'
 export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
 
 let nextLocalID = 1

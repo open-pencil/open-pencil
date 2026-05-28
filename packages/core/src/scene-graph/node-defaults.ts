@@ -1,5 +1,6 @@
 import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
 
+import { createDefaultSourceMetadata } from './source-metadata'
 import type { NodeType, SceneNode } from './types'
 
 export function createDefaultNode(
@@ -18,22 +19,7 @@ export function createDefaultNode(
     width: 100,
     height: 100,
     rotation: 0,
-    source: {
-      format: null,
-      id: null,
-      orderKey: null,
-      fig: {
-        rawSize: null,
-        rawTransform: null,
-        rawNodeFields: {},
-        layout: null,
-        symbolOverrides: [],
-        componentPropAssignments: [],
-        derivedSymbolData: [],
-        derivedSymbolDataLayoutVersion: null,
-        uniformScaleFactor: null
-      }
-    },
+    source: createDefaultSourceMetadata(),
     figmaDerivedLayout: null,
     fills:
       type === 'TEXT' ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }] : [],

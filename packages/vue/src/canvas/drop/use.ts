@@ -5,11 +5,16 @@ import type { Editor } from '@open-pencil/core/editor'
 
 const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'])
 
-export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
+export function useCanvasDrop(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  editor: Editor,
+  activate?: () => void
+) {
   const isDraggingOver = ref(false)
 
   useEventListener(canvasRef, 'dragover', (e: DragEvent) => {
     if (!hasImageFiles(e)) return
+    activate?.()
     e.preventDefault()
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
     isDraggingOver.value = true
@@ -17,6 +22,7 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: 
 
   useEventListener(canvasRef, 'dragenter', (e: DragEvent) => {
     if (!hasImageFiles(e)) return
+    activate?.()
     e.preventDefault()
     isDraggingOver.value = true
   })
@@ -26,6 +32,7 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: 
   })
 
   useEventListener(canvasRef, 'drop', (e: DragEvent) => {
+    activate?.()
     e.preventDefault()
     isDraggingOver.value = false
 

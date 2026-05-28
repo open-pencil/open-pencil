@@ -19,7 +19,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
-import EditorCanvas from '@/components/EditorCanvas.vue'
+import CanvasSplitRoot from '@/components/CanvasPanes/CanvasSplitRoot.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
@@ -141,7 +141,7 @@ onUnmounted(() => {
       </SplitterResizeHandle>
       <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
         <div class="relative flex min-w-0 flex-1">
-          <EditorCanvas />
+          <CanvasSplitRoot />
           <Toolbar />
         </div>
       </SplitterPanel>
@@ -171,7 +171,7 @@ onUnmounted(() => {
       class="flex flex-1 overflow-hidden"
     >
       <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
+        <CanvasSplitRoot single-pane-only />
         <MobileHud />
         <Toolbar />
       </div>
@@ -185,7 +185,7 @@ onUnmounted(() => {
       class="flex flex-1 overflow-hidden"
     >
       <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
+        <CanvasSplitRoot :single-pane-only="isMobile" />
         <div
           v-if="!isMobile"
           class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
@@ -214,7 +214,7 @@ onUnmounted(() => {
     <!-- Bare canvas (no chrome, e.g. ?no-chrome) -->
     <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
       <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
+        <CanvasSplitRoot />
       </div>
     </div>
   </div>

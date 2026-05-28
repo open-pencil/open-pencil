@@ -50,7 +50,7 @@ export function createLocalAwarenessActions({
     )
 
     state.value.peers = peers
-    store.state.remoteCursors = remotePeersToCursors(peers, store.state.currentPageId)
+    store.state.remoteCursors = remotePeersToCursors(peers)
     store.requestRender()
   }
 

@@ -53,50 +53,63 @@ function shouldScheduleForSelection(layer: CanvasRenderLayer | undefined) {
 export function createCanvasRenderLoop(
   editor: Editor,
   renderNow: () => void,
-  options: RenderLoopOptions = {}
+  options: RenderLoopOptions = {},
+  getRenderState: () => Editor['state'] = () => editor.state
 ) {
   const scheduler = getRenderScheduler(editor)
   let dirty = true
   let frameScheduled = false
   let lastRenderVersion = -1
+  let lastSceneVersion = -1
   let lastSelectedIds: Set<string> | null = null
 
   function renderFrame() {
     frameScheduled = false
-    if (editor.state.loading) {
-      scheduleRender()
+    const state = getRenderState()
+    if (state.loading) {
+      scheduleFrame()
       return
     }
 
-    const versionChanged = editor.state.renderVersion !== lastRenderVersion
-    const selectionChanged = editor.state.selectedIds !== lastSelectedIds
-    if (dirty || versionChanged || selectionChanged) {
+    const versionChanged = state.renderVersion !== lastRenderVersion
+    const sceneChanged = state.sceneVersion !== lastSceneVersion
+    const selectionChanged = state.selectedIds !== lastSelectedIds
+    if (dirty || versionChanged || sceneChanged || selectionChanged) {
       dirty = false
       renderNow()
     }
   }
 
-  const scheduleRender = () => {
-    dirty = true
+  const scheduleFrame = () => {
     if (frameScheduled) return
     frameScheduled = true
     scheduler.schedule(renderFrame)
   }
 
+  const scheduleVersionCheck = () => {
+    scheduleFrame()
+  }
+
+  const scheduleDirtyRender = () => {
+    dirty = true
+    scheduleFrame()
+  }
+
   const unsubscribe = [
-    editor.onEditorEvent('render:requested', scheduleRender),
-    editor.onEditorEvent('viewport:changed', scheduleRender)
+    editor.onEditorEvent('render:requested', scheduleVersionCheck),
+    editor.onEditorEvent('viewport:changed', scheduleVersionCheck),
+    editor.onEditorEvent('repaint:requested', scheduleVersionCheck)
   ]
 
-  unsubscribe.push(editor.onEditorEvent('repaint:requested', scheduleRender))
-
   if (shouldScheduleForSelection(options.layer)) {
-    unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleRender))
+    unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleVersionCheck))
   }
 
   function markRendered() {
-    lastRenderVersion = editor.state.renderVersion
-    lastSelectedIds = editor.state.selectedIds
+    const state = getRenderState()
+    lastRenderVersion = state.renderVersion
+    lastSceneVersion = state.sceneVersion
+    lastSelectedIds = state.selectedIds
   }
 
   function pause() {
@@ -110,6 +123,6 @@ export function createCanvasRenderLoop(
   return {
     pause,
     markRendered,
-    markDirty: scheduleRender
+    markDirty: scheduleDirtyRender
   }
 }
