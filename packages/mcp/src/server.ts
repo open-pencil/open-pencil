@@ -24,7 +24,10 @@ const MCP_VERSION: string = (require('../package.json') as { version: string }).
 type MCPContent = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }
 type MCPResult = { content: MCPContent[]; isError?: boolean }
 
-const RPC_TIMEOUT = 30_000
+const RPC_TIMEOUT = 20_000
+// How often the bridge pings the browser socket to detect a dead connection.
+// Two missed sweeps (~10s) reap a zombie before an RPC can wait out its timeout.
+const HEARTBEAT_INTERVAL = 5_000
 
 // Cap result size below the MCP client limit (~1MB). Emitting a body the client
 // rejects mid-read leaves the keep-alive connection half-consumed and wedges the
@@ -107,17 +110,46 @@ export function startServer(options: ServerOptions = {}) {
 
   function sendToBrowser(body: Record<string, unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      if (!browserWs || browserWs.readyState !== browserWs.OPEN || !browserRegistered) {
+      const ws = browserWs
+      if (!ws || ws.readyState !== ws.OPEN || !browserRegistered) {
         reject(new Error('OpenPencil app is not connected'))
         return
       }
       const id = randomUUID()
+      // Single-shot settle guards against the same request resolving twice
+      // (e.g. timeout firing just as a late response arrives) and leaking timers.
+      let settled = false
       const timer = setTimeout(() => {
+        if (settled) return
+        settled = true
         pending.delete(id)
-        reject(new Error('RPC timeout (30s)'))
+        reject(new Error(`RPC timeout (${Math.round(RPC_TIMEOUT / 1000)}s)`))
       }, RPC_TIMEOUT)
-      pending.set(id, { resolve, reject, timer })
-      browserWs.send(JSON.stringify({ type: 'request', id, ...body }))
+      pending.set(id, {
+        resolve: (v) => {
+          if (settled) return
+          settled = true
+          resolve(v)
+        },
+        reject: (e) => {
+          if (settled) return
+          settled = true
+          reject(e)
+        },
+        timer
+      })
+      // A throwing send (socket flipped to CLOSING mid-call) must reject now,
+      // not wait out the full RPC timeout.
+      try {
+        ws.send(JSON.stringify({ type: 'request', id, ...body }))
+      } catch (e) {
+        clearTimeout(timer)
+        pending.delete(id)
+        if (!settled) {
+          settled = true
+          reject(e instanceof Error ? e : new Error(String(e)))
+        }
+      }
     })
   }
 
@@ -172,8 +204,19 @@ export function startServer(options: ServerOptions = {}) {
 
   const wss = new WebSocketServer({ port: wsPort, host: '127.0.0.1' })
 
+  // Liveness tracking. The browser WebSocket can die without a clean close
+  // (tab navigated away, laptop slept, HMR reload) and linger in readyState OPEN.
+  // Sending into such a zombie socket succeeds silently, then every RPC waits out
+  // the full timeout — the "first call works, the rest hang" symptom. A protocol
+  // ping forces an auto-pong from the browser; a missed pong terminates the socket.
+  const alive = new WeakMap<WebSocket, boolean>()
+
   wss.on('connection', (ws) => {
+    alive.set(ws, true)
+    ws.on('pong', () => alive.set(ws, true))
+
     ws.on('message', (raw) => {
+      alive.set(ws, true)
       handleBrowserMessage(
         typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8'),
         ws
@@ -188,7 +231,40 @@ export function startServer(options: ServerOptions = {}) {
         rejectAllPending('Browser disconnected')
       }
     })
+
+    ws.on('error', () => {
+      try {
+        ws.terminate()
+      } catch {
+        /* already gone */
+      }
+    })
   })
+
+  const heartbeat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (alive.get(ws) === false) {
+        // No pong since the last sweep → dead. Terminate; the 'close' handler
+        // clears browser state and rejects pending RPCs immediately.
+        try {
+          ws.terminate()
+        } catch {
+          /* already gone */
+        }
+        continue
+      }
+      alive.set(ws, false)
+      try {
+        ws.ping()
+      } catch {
+        /* will be reaped next sweep */
+      }
+    }
+  }, HEARTBEAT_INTERVAL)
+  // Don't keep the process alive solely for the heartbeat.
+  if (typeof heartbeat.unref === 'function') heartbeat.unref()
+
+  wss.on('close', () => clearInterval(heartbeat))
 
   // --- JSX preprocessing ---
 
