@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto'
 import { resolve } from 'path'
 
 import { defineConfig } from 'vite'
@@ -12,7 +11,9 @@ import { copyFileSync, existsSync, mkdirSync } from 'fs'
 
 import { automationPlugin } from './src/automation/vite-plugin'
 
-const devAutomationAuthToken = randomUUID()
+// Stable in dev so external MCP clients (Claude Desktop via mcp-remote) keep a
+// working token across `bun run dev` restarts. Override with OPENPENCIL_DEV_TOKEN.
+const devAutomationAuthToken = process.env.OPENPENCIL_DEV_TOKEN ?? 'open-pencil-dev'
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST
