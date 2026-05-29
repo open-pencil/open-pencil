@@ -1,10 +1,19 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
 import { polygonVertices } from '#core/geometry'
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode, VectorNetwork } from '#core/scene-graph'
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
 import type { SkiaRenderer } from './renderer'
+
+function isSimpleRectNetwork(vn: VectorNetwork): boolean {
+  if (vn.vertices.length !== 4 || vn.segments.length !== 4) return false
+  for (const seg of vn.segments) {
+    if (seg.tangentStart.x !== 0 || seg.tangentStart.y !== 0) return false
+    if (seg.tangentEnd.x !== 0 || seg.tangentEnd.y !== 0) return false
+  }
+  return true
+}
 
 export function nodeHasRadius(node: SceneNode): boolean {
   return (
@@ -371,9 +380,20 @@ export function makeNodeShapePath(
       path.addOval(rect)
       break
     case 'VECTOR': {
-      const vps = r.getVectorPaths(node)
-      if (vps) {
-        for (const vp of vps) path.addPath(vp)
+      const vn = node.vectorNetwork
+      if (hasRadius && vn && isSimpleRectNetwork(vn)) {
+        if (nodeHasSmoothCorners(node)) {
+          const smoothPath = makeSmoothRRectPath(r, node)
+          path.addPath(smoothPath)
+          smoothPath.delete()
+        } else {
+          path.addRRect(r.makeRRect(node))
+        }
+      } else {
+        const vps = r.getVectorPaths(node)
+        if (vps) {
+          for (const vp of vps) path.addPath(vp)
+        }
       }
       break
     }

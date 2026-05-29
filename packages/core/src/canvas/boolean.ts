@@ -251,6 +251,13 @@ export function makeBooleanOperationPath(
   node: SceneNode,
   graph: SceneGraph
 ): Path | null {
+  const fg = r.getFillGeometry(node)
+  if (fg) {
+    const result = new r.ck.Path()
+    for (const p of fg) result.addPath(p)
+    return result
+  }
+
   const childPaths: Path[] = []
   for (const childId of node.childIds) {
     const child = graph.getNode(childId)
@@ -263,7 +270,11 @@ export function makeBooleanOperationPath(
 
   const first = childPaths[0]
   for (const path of childPaths.slice(1)) {
-    first.op(path, operationForNode(r, node))
+    if (!first.op(path, operationForNode(r, node))) {
+      path.delete()
+      for (const p of childPaths) p.delete()
+      return null
+    }
     path.delete()
   }
   return first

@@ -329,7 +329,7 @@ export interface NodeChange {
   frameMaskDisabled?: boolean
   resizeToFit?: boolean
   // Vector
-  booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
+  booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | 'XOR'
   vectorData?: unknown
   fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
