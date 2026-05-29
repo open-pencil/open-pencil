@@ -26,14 +26,31 @@ type MCPResult = { content: MCPContent[]; isError?: boolean }
 
 const RPC_TIMEOUT = 30_000
 
+// Cap result size below the MCP client limit (~1MB). Emitting a body the client
+// rejects mid-read leaves the keep-alive connection half-consumed and wedges the
+// transport, so every later request times out. Guarding here keeps each call isolated.
+const MAX_RESULT_BYTES = 900_000
+
 interface PendingRequest {
   resolve: (value: unknown) => void
   reject: (error: Error) => void
   timer: ReturnType<typeof setTimeout>
 }
 
-function ok(data: unknown): MCPResult {
-  return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+function ok(data: unknown, toolName?: string): MCPResult {
+  const text = JSON.stringify(data, null, 2)
+  const bytes = Buffer.byteLength(text, 'utf-8')
+  if (bytes > MAX_RESULT_BYTES) {
+    return fail(
+      new Error(
+        `Result${toolName ? ` from "${toolName}"` : ''} is too large ` +
+          `(${Math.round(bytes / 1024)}KB, limit ${Math.round(MAX_RESULT_BYTES / 1024)}KB). ` +
+          'Narrow the request: use get_page_tree with depth/root_id/node_types, ' +
+          'get_node for a single node, or find_nodes/query_nodes to locate specific nodes.'
+      )
+    )
+  }
+  return { content: [{ type: 'text', text }] }
 }
 
 function fail(e: unknown): MCPResult {
@@ -292,17 +309,28 @@ export function startServer(options: ServerOptions = {}) {
             if (res.ok === false) return fail(new Error(res.error))
             const r = res.result as Record<string, unknown> | undefined
             if (r && 'base64' in r && 'mimeType' in r) {
+              const base64 = r.base64 as string
+              if (Buffer.byteLength(base64, 'utf-8') > MAX_RESULT_BYTES) {
+                return fail(
+                  new Error(
+                    `Image from "${def.name}" is too large ` +
+                      `(${Math.round(Buffer.byteLength(base64, 'utf-8') / 1024)}KB, ` +
+                      `limit ${Math.round(MAX_RESULT_BYTES / 1024)}KB). ` +
+                      'Export a smaller region or lower the scale/resolution.'
+                  )
+                )
+              }
               return {
                 content: [
                   {
                     type: 'image' as const,
-                    data: r.base64 as string,
+                    data: base64,
                     mimeType: r.mimeType as string
                   }
                 ]
               }
             }
-            return ok(r)
+            return ok(r, def.name)
           } catch (e) {
             return fail(e)
           }
@@ -321,7 +349,13 @@ export function startServer(options: ServerOptions = {}) {
     )
 
     const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: () => id
+      sessionIdGenerator: () => id,
+      // Return plain application/json instead of an SSE (text/event-stream) body.
+      // This server never streams partial results, and the SSE + keep-alive
+      // ReadableStream path is poorly handled by proxies like mcp-remote — the
+      // client reads the first response, then waits on the half-open stream and
+      // every later request times out. JSON responses close cleanly per request.
+      enableJsonResponse: true
     })
     void mcpServer.connect(transport)
     mcpSessions.set(id, { transport, lastSeen: Date.now() })

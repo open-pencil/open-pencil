@@ -42,6 +42,93 @@ describe('MCP tool execution', () => {
     expect(result.children).toBeArray()
   })
 
+  test('get_page_tree depth limits nesting', () => {
+    const { api } = setup()
+    const parent = findTool('create_shape').execute(api, {
+      type: 'FRAME',
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 400
+    }) as { id: string }
+    findTool('create_shape').execute(api, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20,
+      parent_id: parent.id
+    })
+
+    const tree = findTool('get_page_tree').execute(api, { depth: 1 }) as {
+      children: { id: string; children?: unknown[] }[]
+    }
+    const parentNode = tree.children.find((c) => c.id === parent.id)
+    expect(parentNode).toBeDefined()
+    expect(parentNode!.children).toBeUndefined()
+  })
+
+  test('get_page_tree root_id returns a single subtree', () => {
+    const { api } = setup()
+    const parent = findTool('create_shape').execute(api, {
+      type: 'FRAME',
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 400
+    }) as { id: string }
+    const child = findTool('create_shape').execute(api, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20,
+      parent_id: parent.id
+    }) as { id: string }
+
+    const result = findTool('get_page_tree').execute(api, { root_id: parent.id }) as {
+      root: string
+      tree: { id: string; children?: { id: string }[] }
+    }
+    expect(result.root).toBe(parent.id)
+    expect(result.tree.id).toBe(parent.id)
+    expect(result.tree.children?.[0]?.id).toBe(child.id)
+  })
+
+  test('get_page_tree node_types keeps matches and their ancestors', () => {
+    const { api } = setup()
+    const parent = findTool('create_shape').execute(api, {
+      type: 'FRAME',
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 400
+    }) as { id: string }
+    findTool('create_shape').execute(api, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20,
+      parent_id: parent.id
+    })
+    findTool('create_shape').execute(api, {
+      type: 'RECTANGLE',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+
+    const tree = findTool('get_page_tree').execute(api, { node_types: ['TEXT'] }) as {
+      children: { id: string; type: string; children?: { type: string }[] }[]
+    }
+    expect(tree.children.every((c) => c.type !== 'RECTANGLE')).toBeTrue()
+    const frame = tree.children.find((c) => c.id === parent.id)
+    expect(frame).toBeDefined()
+    expect(frame!.children?.[0]?.type).toBe('TEXT')
+  })
+
   test('create_shape creates a frame', () => {
     const { api } = setup()
     const result = findTool('create_shape').execute(api, {

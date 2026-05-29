@@ -26,31 +26,66 @@ interface TreeEntry {
   children?: TreeEntry[]
 }
 
-function nodeToTreeEntry(node: FigmaNodeProxy): TreeEntry {
-  const entry: TreeEntry = {
-    id: node.id,
-    type: node.type,
-    name: node.name,
-    w: node.width,
-    h: node.height
-  }
-  if (node.children.length > 0) {
-    entry.children = node.children.map(nodeToTreeEntry)
-  }
-  return entry
-}
-
 export const getPageTree = defineTool({
   name: 'get_page_tree',
   description:
-    'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size. Use get_node for full properties of a specific node.',
-  params: {},
-  execute: (figma) => {
-    const page = figma.currentPage
-    return {
-      page: page.name,
-      children: page.children.map(nodeToTreeEntry)
+    'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size. ' +
+    'Large pages can exceed the response size limit — narrow the result with depth (max nesting), ' +
+    'root_id (return a single subtree), or node_types (keep only matching types and their ancestors). ' +
+    'Use get_node for full properties of a specific node.',
+  params: {
+    depth: {
+      type: 'number',
+      description: 'Max nesting depth of children (1 = top-level only). Default: unlimited',
+      min: 1
+    },
+    root_id: {
+      type: 'string',
+      description: 'Start from this node ID and return only its subtree, instead of the whole page'
+    },
+    node_types: {
+      type: 'string[]',
+      description:
+        'Keep only nodes of these types (e.g. FRAME, TEXT). Ancestors of matching nodes are retained.'
     }
+  },
+  execute: (figma, { depth, root_id, node_types }) => {
+    const typeFilter = node_types && node_types.length > 0 ? new Set(node_types) : null
+
+    function build(node: FigmaNodeProxy, level: number): TreeEntry | null {
+      const children: TreeEntry[] = []
+      if ((depth === undefined || level < depth) && node.children.length > 0) {
+        for (const child of node.children) {
+          const childEntry = build(child, level + 1)
+          if (childEntry) children.push(childEntry)
+        }
+      }
+      const matches = !typeFilter || typeFilter.has(node.type)
+      if (!matches && children.length === 0) return null
+      const entry: TreeEntry = {
+        id: node.id,
+        type: node.type,
+        name: node.name,
+        w: node.width,
+        h: node.height
+      }
+      if (children.length > 0) entry.children = children
+      return entry
+    }
+
+    if (root_id !== undefined) {
+      const root = figma.getNodeById(root_id)
+      if (!root) return { error: `Node "${root_id}" not found` }
+      return { root: root.id, tree: build(root, 0) }
+    }
+
+    const page = figma.currentPage
+    const children: TreeEntry[] = []
+    for (const child of page.children) {
+      const entry = build(child, 1)
+      if (entry) children.push(entry)
+    }
+    return { page: page.name, children }
   }
 })
 
