@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update the Homebrew install command to use the published `openpencil` cask.
+
 ## 0.13.1 — 2026-05-29
 
 ### Fixes
