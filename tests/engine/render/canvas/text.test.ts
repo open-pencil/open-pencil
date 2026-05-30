@@ -22,6 +22,7 @@ function createMockCanvas() {
     drawParagraph: mock(() => undefined),
     drawPicture: mock(() => undefined),
     drawText: mock(() => undefined),
+    drawPath: mock(() => undefined),
     drawRect: mock(() => undefined),
     save: mock(() => undefined),
     saveLayer: mock(() => undefined),
@@ -52,6 +53,14 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     },
     ck: {
       MakePicture: mock(() => createMockPicture()),
+      Path: class {
+        moveTo = mock(() => undefined)
+        lineTo = mock(() => undefined)
+        cubicTo = mock(() => undefined)
+        quadTo = mock(() => undefined)
+        close = mock(() => undefined)
+        delete = mock(() => undefined)
+      },
       LTRBRect: mock((...args: number[]) => args),
       Color4f: mock((...args: number[]) => new Float32Array(args)),
       BlendMode: { SrcOver: 0, SrcIn: 1 },
@@ -67,6 +76,7 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
 
 function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
   return {
+    type: 'TEXT',
     text: 'Hello 你好',
     fontSize: 16,
     fontFamily: 'Arial',
@@ -115,7 +125,7 @@ describe('renderText', () => {
     expect(canvas.drawText).not.toHaveBeenCalled()
   })
 
-  test('renders gradient text through a paragraph mask', () => {
+  test('renders gradient text through a paragraph mask without outline font data', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
 
@@ -133,6 +143,30 @@ describe('renderText', () => {
     expect(canvas.drawRect).toHaveBeenCalledTimes(1)
     expect(r.effectLayerPaint.setBlendMode).toHaveBeenCalledWith(r.ck.BlendMode.SrcIn)
     expect(r._paragraph.delete).toHaveBeenCalledTimes(1)
+  })
+
+  test('renders non-solid text fills as vector outlines when outline font data is available', async () => {
+    const interData = await Bun.file(repoPath('public/Inter-Regular.ttf')).arrayBuffer()
+    fontManager.markLoaded('Inter', 'Regular', interData)
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({ text: 'OPEN', fontFamily: 'Inter', width: 120, height: 40 }),
+      {
+        type: 'GRADIENT_LINEAR',
+        visible: true,
+        opacity: 1,
+        gradientStops: [],
+        gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+      }
+    )
+
+    expect(canvas.drawPath).toHaveBeenCalledTimes(1)
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+    expect(canvas.saveLayer).not.toHaveBeenCalled()
   })
 
   test('prefers textPicture over paragraph', () => {

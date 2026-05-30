@@ -19,7 +19,7 @@
 - Improve imported tiled image fills by applying Figma image transforms when repeating image patterns.
 - Keep imported Figma boolean operations editable as boolean-operation nodes instead of flattening them to vectors.
 - Apply imported variable font axes from Figma `fontVariations` when rendering text.
-- Render more imported Figma visual metadata, including text decoration styles, leading trim, pattern fills, layout grids, page guides, and deterministic fallbacks for raw noise effects.
+- Render more imported Figma visual metadata, including text decoration styles, leading trim, pattern fills, layout grids, page guides, vector-outline text fills, and deterministic fallbacks for raw noise effects.
 
 ### Performance
 

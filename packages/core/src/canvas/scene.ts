@@ -20,6 +20,7 @@ import {
   getStrokeJoinEntity
 } from './strokes'
 import { drawFigmaDerivedText } from './text-derived'
+import { textNodeToOutlinePath } from './text-outlines'
 
 function drawVisibleFills(
   r: SkiaRenderer,
@@ -592,6 +593,18 @@ function isGradientFill(fill?: Fill): boolean {
   return fill?.type.startsWith('GRADIENT') === true
 }
 
+function shouldRenderTextAsOutline(fill?: Fill): boolean {
+  return fill !== undefined && fill.type !== 'SOLID'
+}
+
+function drawOutlinedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
+  const path = textNodeToOutlinePath(r, node)
+  if (!path) return false
+  canvas.drawPath(path, r.fillPaint)
+  path.delete()
+  return true
+}
+
 function drawGradientText(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -649,6 +662,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   }
 
   if (!r.isNodeFontLoaded(node)) {
+    canvas.restore()
+    return
+  }
+  if (shouldRenderTextAsOutline(fill) && drawOutlinedText(r, canvas, node)) {
     canvas.restore()
     return
   }
