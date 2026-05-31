@@ -28,6 +28,9 @@ export namespace JSX {
     vector: BaseProps
     group: BaseProps
     section: BaseProps
+    component: BaseProps
+    'component-set': BaseProps
+    instance: BaseProps & { component?: string; componentId?: string; of?: string }
   }
 
   export interface ElementChildrenAttribute {

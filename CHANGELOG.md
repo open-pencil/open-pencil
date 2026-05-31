@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Add JSX authoring support for components, component sets, and instances.
+
 ### Fixes
 
 - Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.

@@ -154,6 +154,7 @@ export type BaseProps = StyleProps & {
   name?: string
   key?: string | number
   children?: unknown
+  [key: string]: unknown
 }
 
 export type TextProps = BaseProps
