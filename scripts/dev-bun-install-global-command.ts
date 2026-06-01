@@ -118,15 +118,14 @@ function findWorkspaceRoot(startDir: string): string {
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
         if (pkg.workspaces) return current
       } catch {
-        // Ignore parse errors, continue up
+        console.warn('Ignoring unparseable package.json during workspace discovery')
       }
     }
     const parent = dirname(current)
-    if (parent === current) {
+    if (parent === current)
       die(
         "Could not auto-discover workspace root. No package.json with a 'workspaces' field found in any parent directory."
       )
-    }
     current = parent
   }
 }
@@ -161,8 +160,9 @@ function topologicalSort(packages: Map<string, PackageData>): string[] {
   for (const [name, pkg] of packages.entries()) {
     for (const dep of pkg.localDeps) {
       if (packages.has(dep)) {
-        adjList.get(dep)!.push(name)
-        inDegree.set(name, inDegree.get(name)! + 1)
+        const list = adjList.get(dep)
+        if (list) list.push(name)
+        inDegree.set(name, (inDegree.get(name) ?? 0) + 1)
       }
     }
   }
@@ -174,13 +174,17 @@ function topologicalSort(packages: Map<string, PackageData>): string[] {
 
   const result: string[] = []
   while (queue.length > 0) {
-    const current = queue.shift()!
+    const current = queue.shift() as string
     result.push(current)
 
-    for (const neighbor of adjList.get(current)!) {
-      inDegree.set(neighbor, inDegree.get(neighbor)! - 1)
-      if (inDegree.get(neighbor) === 0) {
-        queue.push(neighbor)
+    const neighbors = adjList.get(current)
+    if (neighbors) {
+      for (const neighbor of neighbors) {
+        const degree = (inDegree.get(neighbor) ?? 1) - 1
+        inDegree.set(neighbor, degree)
+        if (degree === 0) {
+          queue.push(neighbor)
+        }
       }
     }
   }
@@ -305,14 +309,13 @@ function moveIntoStore(srcPath: string, destPath: string): void {
       renameSync(srcPath, destPath)
       return
     } catch {
-      // Fall through to copy + remove.
+      console.warn('Atom rename failed on Windows, falling back to copy + remove')
     }
     cpSync(srcPath, destPath, { force: true })
     try {
       rmSync(srcPath, { force: true })
     } catch {
-      // The script-level temp-dir cleanup at the end of main() will sweep
-      // up the leftover source.
+      console.warn('Could not remove source after cross-device copy; temp cleanup will sweep it')
     }
     return
   }
@@ -334,29 +337,12 @@ function moveIntoStore(srcPath: string, destPath: string): void {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Main Pipeline
-// ---------------------------------------------------------------------------
+// ------------ Pipeline Helpers (extracted for complexity) ------------
 
-function main(): void {
-  // 1. Auto-discover workspace
-  const repoRoot = findWorkspaceRoot(import.meta.dir)
-  const rootPkgPath = join(repoRoot, 'package.json')
-  const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf-8'))
-
-  log(`=== Starting Command Installation ===`)
-  log(`Workspace Root: ${repoRoot}`)
-
-  let workspaceGlobs: string[] = []
-  if (Array.isArray(rootPkg.workspaces)) {
-    workspaceGlobs = rootPkg.workspaces
-  } else if (rootPkg.workspaces?.packages) {
-    workspaceGlobs = rootPkg.workspaces.packages
-  } else {
-    workspaceGlobs = ['.']
-  }
-
-  // 2. Discover all packages in the workspace
+function discoverWorkspacePackages(
+  repoRoot: string,
+  workspaceGlobs: string[]
+): Map<string, PackageData> {
   const allPackagesMap = new Map<string, PackageData>()
 
   for (const globStr of workspaceGlobs) {
@@ -387,19 +373,15 @@ function main(): void {
           hasBuildScript: !!pkgData.scripts?.build
         })
       } catch {
-        // Ignore unparseable package.json files
+        console.warn(`Ignoring unparseable package.json at ${absPath}`)
       }
     }
   }
 
-  if (allPackagesMap.size === 0) die('No packages found in workspace.')
+  return allPackagesMap
+}
 
-  // Clean local dependencies to only reference other valid local packages
-  for (const pkg of allPackagesMap.values()) {
-    pkg.localDeps = pkg.localDeps.filter((dep) => allPackagesMap.has(dep))
-  }
-
-  // 3. Map available commands to their parent packages
+function buildCommandToPackageMap(allPackagesMap: Map<string, PackageData>): Map<string, string> {
   const commandToPackage = new Map<string, string>()
   for (const [pkgName, pkg] of allPackagesMap.entries()) {
     for (const bin of pkg.bins) {
@@ -409,17 +391,25 @@ function main(): void {
       commandToPackage.set(bin, pkgName)
     }
   }
+  return commandToPackage
+}
 
-  if (commandToPackage.size === 0) {
-    die('No commands (binaries) found in any workspace packages. Nothing to install.')
+function resolveWorkspaceGlobs(rootPkg: Record<string, unknown>): string[] {
+  if (Array.isArray(rootPkg.workspaces)) {
+    return rootPkg.workspaces
   }
+  const workspaces = rootPkg.workspaces as { packages?: string[] } | undefined
+  if (workspaces?.packages) {
+    return workspaces.packages
+  }
+  return ['.']
+}
 
-  // 4. Determine target commands from CLI arguments
-  const requestedCommands = process.argv.slice(2)
-  const targetCommands =
-    requestedCommands.length > 0 ? requestedCommands : Array.from(commandToPackage.keys())
-
-  // 5. Prune the graph: Keep only entry-point packages and their transitive dependencies
+function computeTopologicalOrder(
+  targetCommands: string[],
+  allPackagesMap: Map<string, PackageData>,
+  commandToPackage: Map<string, string>
+): string[] {
   const entryPackages = new Set<string>()
   for (const cmd of targetCommands) {
     const pkgName = commandToPackage.get(cmd)
@@ -428,34 +418,27 @@ function main(): void {
   }
 
   const requiredPackages = new Set<string>()
-  const queue = Array.from(entryPackages)
+  const bfsQueue = Array.from(entryPackages)
 
-  while (queue.length > 0) {
-    const current = queue.shift()!
+  while (bfsQueue.length > 0) {
+    const current = bfsQueue.shift() as string
     if (!requiredPackages.has(current)) {
       requiredPackages.add(current)
-      const deps = allPackagesMap.get(current)!.localDeps
-      queue.push(...deps)
+      const pkgData = allPackagesMap.get(current)
+      if (pkgData) bfsQueue.push(...pkgData.localDeps)
     }
   }
 
-  // Build the final pruned map
   const prunedPackagesMap = new Map<string, PackageData>()
   for (const pkgName of requiredPackages) {
-    prunedPackagesMap.set(pkgName, allPackagesMap.get(pkgName)!)
+    const pkgData = allPackagesMap.get(pkgName)
+    if (pkgData) prunedPackagesMap.set(pkgName, pkgData)
   }
 
-  // 6. Topologically Sort the pruned packages
-  const topoOrder = topologicalSort(prunedPackagesMap)
+  return topologicalSort(prunedPackagesMap)
+}
 
-  log(`\nTarget commands: ${targetCommands.join(', ')}`)
-  log(`Graph pruned to ${topoOrder.length} required packages. Build order:`)
-  topoOrder.forEach((p, i) => log(`  ${i + 1}. ${p}`))
-
-  // 7. Setup Temp and Cleanup logic
-  const tmpDir = join(tmpdir(), `bun-install-cmd-${randomUUID()}`)
-  mkdirSync(tmpDir, { recursive: true })
-
+function setupCleanup(tmpDir: string): () => void {
   let cleanedUp = false
   function cleanup(): void {
     if (cleanedUp) return
@@ -477,88 +460,139 @@ function main(): void {
     })
   }
 
+  return cleanup
+}
+
+function buildAndPackPackages(
+  topoOrder: string[],
+  packagesMap: Map<string, PackageData>,
+  archiveStoreDir: string,
+  tmpDir: string
+): void {
+  log('\nBuilding and Packaging required modules...')
+  for (const pkgName of topoOrder) {
+    const pkg = packagesMap.get(pkgName)
+    if (!pkg) die(`Package ${pkgName} not found in map`)
+
+    log(`\n--- Processing ${pkgName} ---`)
+
+    if (pkg.hasBuildScript) {
+      log(`Building ${pkgName}...`)
+      run('bun', ['run', 'build'], { cwd: pkg.dir })
+    }
+
+    log(`Packing ${pkgName}...`)
+    const isolatedPkgTmp = join(tmpDir, randomUUID())
+    mkdirSync(isolatedPkgTmp, { recursive: true })
+
+    run('bun', ['pm', 'pack', '--destination', isolatedPkgTmp], {
+      cwd: pkg.dir
+    })
+
+    const archives = readdirSync(isolatedPkgTmp).filter((f) => f.endsWith('.tgz'))
+    if (archives.length !== 1) {
+      die(`Expected exactly 1 archive in ${isolatedPkgTmp}, found ${archives.length}`)
+    }
+
+    const archiveFilename = archives[0]
+    const sourceArchive = join(isolatedPkgTmp, archiveFilename)
+    const persistentArchive = join(archiveStoreDir, archiveFilename)
+
+    moveIntoStore(sourceArchive, persistentArchive)
+    pkg.archivePath = persistentArchive
+  }
+}
+
+function uninstallOldGlobals(topoOrder: string[]): void {
+  log('\nRemoving existing global installations (reverse topological order)...')
+  const removeOrder = [...topoOrder].reverse()
+  for (const pkgName of removeOrder) {
+    runBestEffort('bun', ['remove', '-g', pkgName])
+  }
+}
+
+function verifyCommandsAbsent(targetCommands: string[]): void {
+  log('\nVerifying absence of target commands in PATH...')
+  for (const bin of targetCommands) {
+    const resolved = which(bin)
+    if (resolved !== null) {
+      die(`Binary '${bin}' is still present at: ${resolved}`)
+    }
+  }
+}
+
+function installPackages(topoOrder: string[], packagesMap: Map<string, PackageData>): void {
+  log('\nInstalling packages globally...')
+  for (const pkgName of topoOrder) {
+    const pkg = packagesMap.get(pkgName)
+    if (!pkg) die(`Package ${pkgName} not found in map`)
+    if (!pkg.archivePath) die(`Archive path missing for ${pkgName}`)
+
+    log(`  Installing ${pkgName}...`)
+    run('bun', ['add', '-g', '--minimum-release-age=0', pkg.archivePath])
+  }
+}
+
+function verifyCommandsPresent(targetCommands: string[]): void {
+  log('\nVerifying presence of target commands in PATH...')
+  for (const bin of targetCommands) {
+    const resolved = which(bin)
+    if (resolved === null) {
+      die(`Binary '${bin}' was not found in PATH after installation!`)
+    }
+    log(`  Verified: '${bin}' -> ${resolved}`)
+  }
+}
+
+// ------------------------- Main Pipeline -------------------------------
+
+function main(): void {
+  const repoRoot = findWorkspaceRoot(import.meta.dir)
+  const rootPkgPath = join(repoRoot, 'package.json')
+  const rootPkg = JSON.parse(readFileSync(rootPkgPath, 'utf-8'))
+
+  log(`=== Starting Command Installation ===`)
+  log(`Workspace Root: ${repoRoot}`)
+
+  const workspaceGlobs = resolveWorkspaceGlobs(rootPkg)
+  const allPackagesMap = discoverWorkspacePackages(repoRoot, workspaceGlobs)
+  if (allPackagesMap.size === 0) die('No packages found in workspace.')
+
+  for (const pkg of allPackagesMap.values()) {
+    pkg.localDeps = pkg.localDeps.filter((dep) => allPackagesMap.has(dep))
+  }
+
+  const commandToPackage = buildCommandToPackageMap(allPackagesMap)
+  if (commandToPackage.size === 0) {
+    die('No commands (binaries) found in any workspace packages. Nothing to install.')
+  }
+
+  const requestedCommands = process.argv.slice(2)
+  const targetCommands =
+    requestedCommands.length > 0 ? requestedCommands : Array.from(commandToPackage.keys())
+
+  const topoOrder = computeTopologicalOrder(targetCommands, allPackagesMap, commandToPackage)
+
+  log(`\nTarget commands: ${targetCommands.join(', ')}`)
+  log(`Graph pruned to ${topoOrder.length} required packages. Build order:`)
+  topoOrder.forEach((p, i) => log(`  ${i + 1}. ${p}`))
+
+  const tmpDir = join(tmpdir(), `bun-install-cmd-${randomUUID()}`)
+  mkdirSync(tmpDir, { recursive: true })
+  const cleanup = setupCleanup(tmpDir)
+
   try {
     ensureBunBinInPath()
 
-    // Resolve the persistent archive store directory once for the whole run.
-    // See `resolveArchiveStoreDir` for the per-platform conventions used.
     const projectId = deriveProjectId(repoRoot, rootPkg.name)
     const archiveStoreDir = resolveArchiveStoreDir(projectId)
     log(`Archive store: ${archiveStoreDir}`)
 
-    // 8. Build and Pack
-    log('\nBuilding and Packaging required modules...')
-    for (const pkgName of topoOrder) {
-      const pkg = prunedPackagesMap.get(pkgName)!
-      log(`\n--- Processing ${pkgName} ---`)
-
-      if (pkg.hasBuildScript) {
-        log(`Building ${pkgName}...`)
-        run('bun', ['run', 'build'], { cwd: pkg.dir })
-      }
-
-      log(`Packing ${pkgName}...`)
-      const isolatedPkgTmp = join(tmpDir, randomUUID())
-      mkdirSync(isolatedPkgTmp, { recursive: true })
-
-      run('bun', ['pm', 'pack', '--destination', isolatedPkgTmp], {
-        cwd: pkg.dir
-      })
-
-      const archives = readdirSync(isolatedPkgTmp).filter((f) => f.endsWith('.tgz'))
-      if (archives.length !== 1) {
-        die(`Expected exactly 1 archive in ${isolatedPkgTmp}, found ${archives.length}`)
-      }
-
-      const archiveFilename = archives[0]
-      const sourceArchive = join(isolatedPkgTmp, archiveFilename)
-      const persistentArchive = join(archiveStoreDir, archiveFilename)
-
-      // Move the freshly packed tarball into the persistent store. The temp
-      // path will be swept up by cleanup() below, but `bun add -g` records
-      // the absolute path we hand it, so it MUST live somewhere that
-      // outlives the per-run temp dir. `moveIntoStore` does an atomic
-      // rename on Unix so any consumer that still holds the previous
-      // tarball cannot observe a partial write.
-      moveIntoStore(sourceArchive, persistentArchive)
-      pkg.archivePath = persistentArchive
-    }
-
-    // 9. Uninstall old global versions
-    log('\nRemoving existing global installations (reverse topological order)...')
-    const removeOrder = [...topoOrder].reverse()
-    for (const pkgName of removeOrder) {
-      runBestEffort('bun', ['remove', '-g', pkgName])
-    }
-
-    // 10. Verify absence in PATH
-    log('\nVerifying absence of target commands in PATH...')
-    for (const bin of targetCommands) {
-      const resolved = which(bin)
-      if (resolved !== null) {
-        die(`Binary '${bin}' is still present at: ${resolved}`)
-      }
-    }
-
-    // 11. Install packages globally
-    log('\nInstalling packages globally...')
-    for (const pkgName of topoOrder) {
-      const pkg = prunedPackagesMap.get(pkgName)!
-      if (!pkg.archivePath) die(`Archive path missing for ${pkgName}`)
-
-      log(`  Installing ${pkgName}...`)
-      run('bun', ['add', '-g', '--minimum-release-age=0', pkg.archivePath])
-    }
-
-    // 12. Verify binaries presence
-    log('\nVerifying presence of target commands in PATH...')
-    for (const bin of targetCommands) {
-      const resolved = which(bin)
-      if (resolved === null) {
-        die(`Binary '${bin}' was not found in PATH after installation!`)
-      }
-      log(`  Verified: '${bin}' -> ${resolved}`)
-    }
+    buildAndPackPackages(topoOrder, allPackagesMap, archiveStoreDir, tmpDir)
+    uninstallOldGlobals(topoOrder)
+    verifyCommandsAbsent(targetCommands)
+    installPackages(topoOrder, allPackagesMap)
+    verifyCommandsPresent(targetCommands)
 
     log('\n=== Success! Requested commands have been globally installed. ===')
   } finally {
