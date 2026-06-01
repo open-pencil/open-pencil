@@ -49,3 +49,7 @@ export {
   parseVarint,
   FIG_WIRE_MAGIC
 } from './fig/codec/protocol'
+
+export { deserializeSceneGraph, serializeSceneGraph } from './fig/parse/transfer'
+
+export type { SerializedSceneGraph } from './fig/parse/transfer'
