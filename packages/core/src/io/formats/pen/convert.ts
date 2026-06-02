@@ -275,18 +275,20 @@ export function buildVarContext(
 
 function parseFillColor(fill: string | PenFillObject, ctx: VarContext): Color {
   const raw = typeof fill === 'string' ? fill : fill.color
+  if (!raw) return { ...BLACK }
   return isVarRef(raw) ? ctx.resolveColor(raw) : parseColor(raw)
 }
 
 export function convertFill(fill: PenFill | undefined, ctx: VarContext, node?: SceneNode): Fill[] {
   if (fill === undefined) return []
   const fills = Array.isArray(fill) ? fill : [fill]
-  return fills.map((item, index) => {
+  return fills.flatMap((item, index) => {
+    if (typeof item === 'object' && item.type !== 'color') return []
     const visible = typeof item === 'string' ? true : item.enabled !== false
     const color = parseFillColor(item, ctx)
     const result: Fill = { type: 'SOLID', visible, opacity: color.a, color }
     if (node) bindIfVar(node, `fills[${index}]`, typeof item === 'string' ? item : item.color, ctx)
-    return result
+    return [result]
   })
 }
 
@@ -385,10 +387,19 @@ export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?:
   const resolve = (v: number | string): number =>
     typeof v === 'string' ? (isVarRef(v) && ctx ? ctx.resolveNumber(v) : Number(v) || 0) : v
   if (Array.isArray(padding)) {
-    node.paddingTop = resolve(padding[0] ?? 0)
-    node.paddingRight = resolve(padding[1] ?? 0)
-    node.paddingBottom = resolve(padding[2] ?? 0)
-    node.paddingLeft = resolve(padding[3] ?? 0)
+    if (padding.length === 2) {
+      const v = resolve(padding[0] ?? 0)
+      const h = resolve(padding[1] ?? 0)
+      node.paddingTop = v
+      node.paddingRight = h
+      node.paddingBottom = v
+      node.paddingLeft = h
+    } else {
+      node.paddingTop = resolve(padding[0] ?? 0)
+      node.paddingRight = resolve(padding[1] ?? 0)
+      node.paddingBottom = resolve(padding[2] ?? 0)
+      node.paddingLeft = resolve(padding[3] ?? 0)
+    }
     return
   }
   const resolved = resolve(padding)
@@ -401,24 +412,36 @@ export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?:
 export function parseSize(value: number | string | undefined, fallback: number, ctx?: VarContext) {
   if (value === undefined) return { value: fallback, sizing: 'FIXED' as LayoutSizing }
   if (typeof value === 'number') return { value, sizing: 'FIXED' as LayoutSizing }
-  if (value === 'fill_container') return { value: fallback, sizing: 'FILL' as LayoutSizing }
-  if (value === 'hug_content') return { value: fallback, sizing: 'HUG' as LayoutSizing }
-  if (isVarRef(value) && ctx)
-    return { value: ctx.resolveNumber(value), sizing: 'FIXED' as LayoutSizing }
-  const parsed = Number(value)
-  return { value: Number.isFinite(parsed) ? parsed : fallback, sizing: 'FIXED' as LayoutSizing }
+  if (typeof value === 'string') {
+    if (value.startsWith('fill_container')) {
+      const m = value.match(/\((-?\d+(?:\.\d+)?)\)/)
+      return { value: m ? Number(m[1]) : fallback, sizing: 'FILL' as LayoutSizing }
+    }
+    if (value.startsWith('fit_content') || value.startsWith('hug_content')) {
+      const m = value.match(/\((-?\d+(?:\.\d+)?)\)/)
+      return { value: m ? Number(m[1]) : fallback, sizing: 'HUG' as LayoutSizing }
+    }
+    if (isVarRef(value) && ctx)
+      return { value: ctx.resolveNumber(value), sizing: 'FIXED' as LayoutSizing }
+    const parsed = Number(value)
+    return { value: Number.isFinite(parsed) ? parsed : fallback, sizing: 'FIXED' as LayoutSizing }
+  }
+  return { value: fallback, sizing: 'FIXED' as LayoutSizing }
 }
 
 export function mapLayoutMode(pen: PenNode): LayoutMode {
   if (pen.layout === 'row' || pen.layout === 'horizontal') return 'HORIZONTAL'
   if (pen.layout === 'column' || pen.layout === 'vertical') return 'VERTICAL'
+  if (pen.layout === 'none') return 'NONE'
+  if (pen.type === 'frame' || pen.type === 'ref') return 'HORIZONTAL'
   return 'NONE'
 }
 
 export function mapJustifyContent(value: string | undefined): LayoutAlign {
   if (value === 'center') return 'CENTER'
   if (value === 'end') return 'MAX'
-  if (value === 'space-between') return 'SPACE_BETWEEN'
+  if (value === 'space-between' || value === 'space_between') return 'SPACE_BETWEEN'
+  if (value === 'space-around' || value === 'space_around') return 'SPACE_BETWEEN'
   return 'MIN'
 }
 
@@ -461,6 +484,7 @@ export function mapNodeType(pen: PenNode): NodeType {
   if (pen.type === 'ellipse') return 'ELLIPSE'
   if (pen.type === 'text' || pen.type === 'icon_font') return 'TEXT'
   if (pen.type === 'path') return 'VECTOR'
+  if (pen.type === 'line') return 'LINE'
   if (pen.type === 'ref') return 'INSTANCE'
   return 'FRAME'
 }

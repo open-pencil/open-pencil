@@ -77,6 +77,15 @@ function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<
   if (node.layoutMode !== 'NONE' && node.type !== 'INSTANCE') {
     computeLayout(graph, nodeId)
   }
+
+  if (node.layoutMode === 'NONE') {
+    for (const childId of node.childIds) {
+      const child = graph.getNode(childId)
+      if (child && child.layoutMode !== 'NONE') {
+        computeLayout(graph, childId)
+      }
+    }
+  }
 }
 
 // --- Flex layout ---

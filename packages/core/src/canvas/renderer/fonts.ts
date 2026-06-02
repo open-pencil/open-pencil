@@ -48,6 +48,14 @@ export async function loadFonts(
   r.fontsLoaded = true
   r.invalidateAllPictures()
 
+  // Preload the bundled icon font so that .pen files containing icon_font
+  // nodes (Lucide slug text like "home") render the actual icon glyph from
+  // the very first paint. Otherwise the icon node is recorded into the
+  // scene picture as raw latin shapes before Lucide.ttf is registered.
+  void fontManager.loadFont('lucide', 'Regular').then(() => {
+    if (!r.isDestroyed()) r.invalidateAllPictures()
+  })
+
   void fontManager.ensureCJKFallback().then((families) => {
     if (!r.isDestroyed() && families.length > 0) {
       r.invalidateAllPictures()

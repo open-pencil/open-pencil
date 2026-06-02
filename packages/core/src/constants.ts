@@ -341,8 +341,9 @@ export const AUTOMATION_WS_PORT = 7601
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [
-  'PingFang SC',
   'Hiragino Sans',
+  'Hiragino Kaku Gothic ProN',
+  'PingFang SC',
   'Apple SD Gothic Neo',
   'Heiti SC'
 ]
@@ -365,7 +366,7 @@ export const CJK_FALLBACK_FAMILIES_LINUX = [
   'Droid Sans Fallback'
 ]
 
-export const CJK_GOOGLE_FONTS = ['Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR']
+export const CJK_GOOGLE_FONTS = ['Noto Sans JP', 'Noto Sans SC', 'Noto Sans KR']
 
 export const DEFAULT_SHAPE_FILL: Fill = {
   type: 'SOLID',

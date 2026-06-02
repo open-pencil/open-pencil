@@ -45,6 +45,44 @@ const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\
 const FONT_FAMILY_CACHE_LIMIT = 256
 const fontFamilyCache = new Map<string, string[]>()
 
+// Track which (provider, family|style) pairs we have already registered for
+// CJK self-heal so the registration runs at most once per provider lifetime,
+// not on every paragraph paint. The WeakMap key is the provider object, so
+// the entry is GCed automatically when the provider is replaced.
+const cjkRegisteredKeys = new WeakMap<object, Set<string>>()
+
+function isCJKPrimaryFamily(family: string): boolean {
+  return (
+    family === 'Noto Sans JP' ||
+    family === 'Noto Sans SC' ||
+    family === 'Noto Sans KR' ||
+    family.startsWith('Noto Sans CJK')
+  )
+}
+
+function ensureFamilyRegistered(r: TextRenderer, family: string, style: string): void {
+  if (!r.fontProvider) return
+  let keys = cjkRegisteredKeys.get(r.fontProvider as unknown as object)
+  if (!keys) {
+    keys = new Set()
+    cjkRegisteredKeys.set(r.fontProvider as unknown as object, keys)
+  }
+  const key = `${family}|${style}`
+  if (keys.has(key)) return
+  const data = fontManager.loadedData(family, style) ?? fontManager.loadedData(family, 'Regular')
+  if (!data) return
+  try {
+    r.fontProvider.registerFont(data, family)
+    keys.add(key)
+  } catch {}
+}
+
+function ensureCJKRegistered(r: TextRenderer, cjkFallbacks: readonly string[]): void {
+  for (const family of cjkFallbacks) {
+    ensureFamilyRegistered(r, family, 'Regular')
+  }
+}
+
 function hasRequiredFallbackFonts(text: string): boolean {
   if (CJK_RE.test(text) && fontManager.getCJKFallbackFamilies().length === 0) return false
   if (ARABIC_RE.test(text) && fontManager.getArabicFallbackFamilies().length === 0) return false
@@ -133,13 +171,30 @@ function resolveParagraphFontFamilies(
   cjkFallbacks: readonly string[]
 ): string[] {
   const renderPrimary = fontManager.renderFamily(primary, style)
+  // Icon fonts (Lucide / Material Symbols / etc.) only render correctly when
+  // the GSUB ligatures fire on the slug text ("home" -> 🏠). Skia's paragraph
+  // shaper short-circuits the ligature pass when the run can also be shaped
+  // by a fallback family present in the fontFamilies array, so we deliberately
+  // drop the CJK / Arabic / Latin fallbacks for icon-font primaries.
+  if (isIconFontFamily(primary)) {
+    return [renderPrimary]
+  }
   const key = `${renderPrimary}\0${arabicFallbacks.join('\0')}\0${cjkFallbacks.join('\0')}`
   const cached = fontFamilyCache.get(key)
   if (cached) return cached
 
   const families = [renderPrimary]
+  // Resolve CJK / Arabic fallbacks through renderFamily so each weight gets its
+  // own canonical name in CanvasKit. Without this, multiple weights registered
+  // under the same family name (e.g. "Noto Sans JP" Regular + Bold) collide and
+  // Skia picks the last one, which may not have the right glyph weight.
+  for (const family of cjkFallbacks) {
+    families.push(fontManager.renderFamily(family, 'Regular'))
+  }
   if (primary !== DEFAULT_FONT_FAMILY) families.push(DEFAULT_FONT_FAMILY)
-  families.push(...arabicFallbacks, ...cjkFallbacks)
+  for (const family of arabicFallbacks) {
+    families.push(fontManager.renderFamily(family, 'Regular'))
+  }
 
   const resolved = uniq(families)
   fontFamilyCache.set(key, resolved)
@@ -182,6 +237,45 @@ export function textFontFeatures(
     name: feature.tag.toLowerCase(),
     value: feature.enabled ? 1 : 0
   }))
+}
+
+// Icon fonts (Lucide / Material Symbols / Phosphor / etc.) deliver their
+// glyphs as GSUB ligatures keyed by icon slug ("home" -> 🏠). CanvasKit's
+// ParagraphBuilder disables those ligature features by default, so if we
+// don't explicitly enable them the icon text gets rendered as the raw
+// latin glyphs ("home", "bell", ...) instead of the icon. Force the
+// standard set of ligature features on when the primary family is an icon
+// font.
+const ICON_FONT_FAMILIES = new Set([
+  'lucide',
+  'material symbols',
+  'material symbols sharp',
+  'material symbols rounded',
+  'material symbols outlined',
+  'material icons',
+  'material icons sharp',
+  'material icons round',
+  'material icons outlined',
+  'phosphor',
+  'phosphor regular',
+  'remix',
+  'tabler icons'
+])
+
+function isIconFontFamily(family: string): boolean {
+  return ICON_FONT_FAMILIES.has(family.trim().toLowerCase())
+}
+
+function ensureIconLigatureFeatures(
+  base: TextFontFeatures[] | undefined,
+  primary: string
+): TextFontFeatures[] | undefined {
+  if (!isIconFontFamily(primary)) return base
+  const out = base ? [...base] : []
+  for (const tag of ['liga', 'clig', 'dlig', 'rlig']) {
+    if (!out.some((f) => f.name === tag)) out.push({ name: tag, value: 1 })
+  }
+  return out
 }
 
 function textDecorationValue(ck: CanvasKit, decoration: string): number {
@@ -267,7 +361,10 @@ function pushStyleRun(
         slant: (style.italic ?? node.italic) ? ck.FontSlant.Italic : ck.FontSlant.Upright
       },
       fontVariations: textFontVariations(style.fontVariations ?? node.fontVariations),
-      fontFeatures: textFontFeatures(style.fontFeatures ?? node.fontFeatures),
+      fontFeatures: ensureIconLigatureFeatures(
+        textFontFeatures(style.fontFeatures ?? node.fontFeatures),
+        style.fontFamily ?? node.fontFamily ?? DEFAULT_FONT_FAMILY
+      ),
       letterSpacing: style.letterSpacing ?? (node.letterSpacing || 0),
       decoration: textDecorationValue(ck, style.textDecoration ?? node.textDecoration),
       decorationStyle: textDecorationStyleValue(
@@ -351,7 +448,10 @@ export function buildParagraph(
         slant: node.italic ? ck.FontSlant.Italic : ck.FontSlant.Upright
       },
       fontVariations: textFontVariations(node.fontVariations),
-      fontFeatures: textFontFeatures(node.fontFeatures),
+      fontFeatures: ensureIconLigatureFeatures(
+        textFontFeatures(node.fontFeatures),
+        node.fontFamily || DEFAULT_FONT_FAMILY
+      ),
       letterSpacing: node.letterSpacing || 0,
       decoration: textDecorationValue(ck, node.textDecoration),
       decorationStyle: textDecorationStyleValue(ck, node.textDecorationStyle),
@@ -363,6 +463,19 @@ export function buildParagraph(
   })
 
   if (!r.fontProvider) throw new Error('Font provider not initialized')
+  // Self-heal (once per provider per family): make sure CJK fallbacks +
+  // CJK primary are registered on the active provider before paint. The
+  // provider can get rebuilt (tab switch, renderer reload) without
+  // re-playing loadedFamilies, leaving CJK glyphs unresolved. Doing this
+  // once per (provider, family) avoids per-frame re-register cost.
+  if (CJK_RE.test(node.text)) {
+    ensureCJKRegistered(r, cjkFallbacks)
+    const primaryFamily = node.fontFamily || DEFAULT_FONT_FAMILY
+    if (isCJKPrimaryFamily(primaryFamily)) {
+      const style = weightToStyle(node.fontWeight, node.italic)
+      ensureFamilyRegistered(r, primaryFamily, style)
+    }
+  }
   const builder = ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, r.fontProvider)
 
   if (node.styleRuns.length === 0) {

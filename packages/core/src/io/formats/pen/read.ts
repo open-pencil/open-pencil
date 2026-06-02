@@ -101,12 +101,19 @@ function applyAutoLayout(
   }
 }
 
+const CJK_RE = /[぀-ヿ㐀-鿿豈-﫿가-힯]/u
+
 function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): void {
   node.text = pen.type === 'icon_font' ? (pen.iconFontName ?? '') : (pen.content ?? '')
-  node.fontFamily =
+  const resolved =
     pen.type === 'icon_font'
       ? (pen.iconFontFamily ?? 'Material Symbols Sharp')
       : resolveFontFamily(pen.fontFamily, ctx)
+  // If the text contains CJK characters and the resolved family is Latin-only
+  // (e.g. Inter), switch to Noto Sans JP. CanvasKit's TypefaceFontProvider
+  // does not reliably fall through to CJK fonts per-glyph.
+  node.fontFamily =
+    pen.type !== 'icon_font' && CJK_RE.test(node.text) ? 'Noto Sans JP' : resolved
   node.fontSize = pen.fontSize ?? 14
   node.fontWeight = mapFontWeight(
     pen.fontWeight ?? (pen.type === 'icon_font' ? pen.weight : undefined)
@@ -123,10 +130,37 @@ function applyTextProps(node: SceneNode, pen: PenNode, ctx: VarContext): void {
   }
 }
 
+function isWideChar(code: number): boolean {
+  return (
+    (code >= 0x3000 && code <= 0x9fff) ||
+    (code >= 0xac00 && code <= 0xd7af) ||
+    (code >= 0xf900 && code <= 0xfaff) ||
+    (code >= 0xfe30 && code <= 0xfe4f) ||
+    (code >= 0xff00 && code <= 0xff60) ||
+    (code >= 0x20000 && code <= 0x2fa1f)
+  )
+}
+
+function estimateTextWidth(pen: PenNode): number {
+  const text = pen.type === 'icon_font' ? (pen.iconFontName ?? '') : (pen.content ?? '')
+  const fontSize = pen.fontSize ?? 14
+  const weight = typeof pen.fontWeight === 'number' ? pen.fontWeight : 400
+  const boldFactor = weight >= 700 ? 1.08 : 1.0
+  let units = 0
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    if (isWideChar(code)) units += 1.0
+    else if (code >= 0x30 && code <= 0x39) units += 0.6
+    else if (code >= 0x41 && code <= 0x5a) units += 0.65
+    else units += 0.52
+  }
+  return Math.max(1, units * fontSize * boldFactor)
+}
+
 function resolveSizing(pen: PenNode, ctx: VarContext) {
   const isTextLike = pen.type === 'text' || pen.type === 'icon_font'
   const defaultSize = isTextLike ? 20 : 100
-  const defaultW = isTextLike && pen.width === undefined ? 10_000 : defaultSize
+  const defaultW = isTextLike && pen.width === undefined ? estimateTextWidth(pen) : defaultSize
   const w = parseSize(pen.width, defaultW, ctx)
   const h = parseSize(pen.height, defaultSize, ctx)
   const layout = mapLayoutMode(pen)
@@ -255,7 +289,7 @@ function createSceneNode(
     applyTextProps(node, pen, ctx)
     if (parentLayout === 'NONE' && pen.width === undefined && !pen.textGrowth) {
       node.textAutoResize = 'NONE'
-      node.width = node.text.length * node.fontSize * 0.65
+      node.width = estimateTextWidth(pen)
       node.height = node.fontSize * (node.lineHeight ? node.lineHeight / node.fontSize : 1.2)
     }
   }

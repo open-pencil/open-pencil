@@ -69,7 +69,12 @@ const {
 )
 
 useTextEdit(canvasRef, store)
-const { isDraggingOver } = useCanvasDrop(canvasRef, store)
+
+const { isDraggingOver } = useCanvasDrop(canvasRef, store, (file: File) => {
+  import('@/app/tabs').then(({ openFileInNewTab }) => {
+    void openFileInNewTab(file)
+  })
+})
 
 const paddingSideIcons = {
   top: IconLucidePanelTop,

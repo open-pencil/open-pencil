@@ -69,7 +69,11 @@ const BUNDLED_FONTS: Record<string, string> = {
   'Inter|SemiBold': '/Inter-SemiBold.ttf',
   'Inter|Bold': '/Inter-Bold.ttf',
   'Inter|ExtraBold': '/Inter-ExtraBold.ttf',
-  'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf'
+  'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf',
+  'Noto Sans JP|Regular': '/NotoSansJP-Regular.ttf',
+  'Noto Sans JP|Bold': '/NotoSansJP-Bold.ttf',
+  'lucide|Regular': '/Lucide.ttf',
+  'Lucide|Regular': '/Lucide.ttf'
 }
 
 export const FONT_WEIGHT_NAMES: Record<number, string> = {
@@ -258,18 +262,22 @@ export class FontManager {
     const downloadedBuffer = await this.loadCachedFont(family, style)
     if (downloadedBuffer) return downloadedBuffer
 
-    const localBuffer = await this.findLocalFont(family, style)
-    if (localBuffer) return this.registerAndCache(family, style, localBuffer)
-
+    // Bundled fonts have priority over local fonts to guarantee predictable rendering
+    // across machines, and to avoid SecurityError noise from queryLocalFonts.
     const bundledUrl = BUNDLED_FONTS[cacheKey]
     if (bundledUrl) {
       try {
         const buffer = await this.fetchBundledFont(bundledUrl)
-        if (buffer && !isVariableFont(buffer)) return this.registerAndCache(family, style, buffer)
+        if (buffer && buffer.byteLength > 1000 && !isVariableFont(buffer)) {
+          return this.registerAndCache(family, style, buffer)
+        }
       } catch (e) {
         console.warn(`Bundled font load failed for "${family}" ${style}:`, e)
       }
     }
+
+    const localBuffer = await this.findLocalFont(family, style)
+    if (localBuffer) return this.registerAndCache(family, style, localBuffer)
 
     if (typeof fetch !== 'undefined') {
       try {
@@ -307,19 +315,14 @@ export class FontManager {
     return this.loadedFamilies.get(`${family}|${style}`) ?? null
   }
 
-  renderFamily(family: string, style: string): string {
-    const data = this.loadedData(family, style)
-    if (!data) return family
-
-    const renderFamily = fontFaceRenderFamily(family, style)
-    if (!this.registeredRenderFamilies.has(renderFamily)) {
-      if (this.registerFontInCanvasKit(renderFamily, data)) {
-        this.registeredRenderFamilies.add(renderFamily)
-      } else {
-        return family
-      }
-    }
-    return renderFamily
+  renderFamily(family: string, _style: string): string {
+    // Skip the synthetic `__op_font__<family>__<style>` alias to avoid
+    // double-registering every TTF in CanvasKit's TypefaceFontProvider, which
+    // bloats WASM heap (Noto Sans JP alone is 5.3MB) and can cause later
+    // typefaces to be registered with empty glyph tables under memory
+    // pressure. Skia handles weight selection from a single family name based
+    // on the TTF's OS/2 table, so the bare family is sufficient.
+    return family
   }
 
   collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[string, string]> {
@@ -402,24 +405,17 @@ export class FontManager {
   ): Promise<string[]> {
     const manifest = fontFallbackEntry(script, this.fallbackUserAgent)
 
-    for (const family of manifest.localFamilies) {
-      const buffer = await this.findLocalFont(family, undefined, {
-        allowVariable: options.allowVariableLocalFonts
+    // Use bundled Noto fonts. loadFont() now prefers BUNDLED_FONTS over local
+    // queryLocalFonts, so this gets the predictable bundled TTF.
+    const results = await Promise.allSettled(
+      manifest.remoteFamilies.map(async (family) => {
+        const data = await this.loadFont(family, 'Regular')
+        return data ? family : null
       })
-      if (buffer && this.registerAndCache(family, 'Regular', buffer)) {
-        targetFamilies.push(family)
-      }
-    }
-
-    if (targetFamilies.length === 0) {
-      const results = await Promise.allSettled(
-        manifest.remoteFamilies.map(async (family) => {
-          const data = await this.loadFont(family, 'Regular')
-          return data ? family : null
-        })
-      )
-      for (const result of results) {
-        if (result.status === 'fulfilled' && result.value) targetFamilies.push(result.value)
+    )
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value && !targetFamilies.includes(result.value)) {
+        targetFamilies.push(result.value)
       }
     }
 
@@ -550,7 +546,8 @@ export class FontManager {
   }
 
   private registerFontInCanvasKit(family: string, data: ArrayBuffer): boolean {
-    if (!this.fontProvider || data.byteLength < 4) return false
+    if (!this.fontProvider) return false
+    if (data.byteLength < 4) return false
     try {
       this.fontProvider.registerFont(data, family)
       return true

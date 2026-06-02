@@ -3,7 +3,9 @@ import { shallowRef, computed, triggerRef } from 'vue'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
+import { fetchIcons } from '@open-pencil/core/icons'
+import { fontManager } from '@open-pencil/core/text/fonts'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { setActiveEditorStore } from '@/app/editor/active-store'
@@ -16,6 +18,97 @@ export interface Tab {
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
+
+function weightToStyleName(weight: number): string {
+  if (weight <= 100) return 'Thin'
+  if (weight <= 200) return 'ExtraLight'
+  if (weight <= 300) return 'Light'
+  if (weight <= 400) return 'Regular'
+  if (weight <= 500) return 'Medium'
+  if (weight <= 600) return 'SemiBold'
+  if (weight <= 700) return 'Bold'
+  if (weight <= 800) return 'ExtraBold'
+  return 'Black'
+}
+
+function collectExtraFontStyles(graph: SceneGraph): Array<[string, string]> {
+  const seen = new Set<string>()
+  const result: Array<[string, string]> = []
+
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'TEXT') continue
+    const family = node.fontFamily
+    if (!family || family === 'lucide' || family === 'Material Symbols Sharp') continue
+    const style = weightToStyleName(node.fontWeight ?? 400)
+    const key = `${family}|${style}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push([family, style])
+  }
+
+  const defaultFonts: Array<[string, string[]]> = [
+    ['Noto Sans JP', ['Regular', 'Bold']],
+    ['Inter', ['Regular', 'Medium', 'SemiBold', 'Bold']],
+  ]
+  for (const [f, styles] of defaultFonts) {
+    for (const s of styles) {
+      const key = `${f}|${s}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        result.push([f, s])
+      }
+    }
+  }
+
+  return result
+}
+
+const ICON_FAMILY_MAP: Record<string, string> = {
+  lucide: 'lucide',
+  feather: 'feather',
+  'material symbols sharp': 'material-symbols',
+  'material symbols': 'material-symbols',
+  phosphor: 'ph'
+}
+
+// Icon fonts (lucide, Material Symbols, etc.) are bundled in /public.
+// fontManager.loadFont automatically picks them up via BUNDLED_FONTS in fonts.ts.
+
+async function resolveIconFontNodes(graph: SceneGraph): Promise<void> {
+  const iconNodes: Array<{ node: SceneNode; prefix: string; iconName: string }> = []
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'TEXT' || !node.text) continue
+    const family = node.fontFamily?.toLowerCase() ?? ''
+    const prefix = ICON_FAMILY_MAP[family]
+    if (!prefix) continue
+    iconNodes.push({ node, prefix, iconName: node.text })
+  }
+  if (iconNodes.length === 0) return
+
+  const names = [...new Set(iconNodes.map((i) => `${i.prefix}:${i.iconName}`))]
+  const icons = await fetchIcons(names).catch(() => new Map())
+
+  for (const { node, prefix, iconName } of iconNodes) {
+    const data = icons.get(`${prefix}:${iconName}`)
+    if (!data || data.paths.length === 0) continue
+    const path = data.paths[0]
+    node.vectorNetwork = path.vectorNetwork
+    ;(node as any).type = 'VECTOR'
+    node.text = ''
+    const fillColor = node.fills[0]?.color
+    if (path.stroke && !path.fill) {
+      node.strokes = [{
+        visible: true,
+        color: fillColor ?? { r: 0, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        weight: path.strokeWidth || 1.5,
+        align: 'CENTER',
+        dashPattern: []
+      }]
+      node.fills = []
+    }
+  }
+}
 
 let nextTabId = 1
 
@@ -116,12 +209,31 @@ export async function openFileInNewTab(
           data: new Uint8Array(await file.arrayBuffer())
         })
 
+    // Trigger CJK fallback EARLY (before any awaits that may block on CanvasKit)
+    const cjkPromise = fontManager.ensureCJKFallback().catch(() => [])
+
     const firstPageId = imported.getPages()[0]?.id
     if (firstPageId) computeAllLayouts(imported, firstPageId)
     store.replaceGraph(imported)
     store.undo.clear()
     store.setDocumentSource(file.name, sourceFormat, handle, path)
     store.clearSelection()
+
+    const allNodeIds = imported.getPages().flatMap((p) => p.childIds)
+    const extraFonts = collectExtraFontStyles(imported)
+
+    const fontPromise = Promise.all([
+      cjkPromise,
+      store.loadFontsForNodes(allNodeIds).catch(() => []),
+      ...extraFonts.map(([f, s]) => fontManager.loadFont(f, s).catch(() => null)),
+      // lucide icon font (bundled in /public)
+      fontManager.loadFont('lucide', 'Regular').catch(() => null),
+    ])
+    fontPromise.then(() => {
+      const pid = store.graph.getPages()[0]?.id ?? store.graph.rootId
+      computeAllLayouts(store.graph, pid)
+      store.requestRender()
+    })
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
     await store.fitCurrentPageToViewport()

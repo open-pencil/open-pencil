@@ -647,7 +647,22 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   }
 
   const paragraphY = 0
-  if (node.textPicture) {
+  // Skip the figma-derived (pre-shaped path) fast path AND the cached
+  // textPicture for icon fonts. The derived glyphs were precomputed from
+  // the original tool (pencil.dev / Figma) using Latin shaping of the raw
+  // icon slug ("home"), so they bypass the icon font's GSUB ligatures and
+  // render the raw letters. Forcing the paragraph path makes CanvasKit
+  // re-shape with Lucide ligatures and produce the icon glyph.
+  const fontFamily = node.fontFamily ?? ''
+  const isIconFont =
+    fontFamily === 'lucide' ||
+    fontFamily === 'Lucide' ||
+    /^material symbols/i.test(fontFamily) ||
+    /^material icons/i.test(fontFamily) ||
+    /^phosphor/i.test(fontFamily) ||
+    /^tabler/i.test(fontFamily) ||
+    /^remix/i.test(fontFamily)
+  if (!isIconFont && node.textPicture) {
     const pic = r.ck.MakePicture(node.textPicture)
     if (pic) {
       canvas.drawPicture(pic)
@@ -656,7 +671,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
       return
     }
   }
-  if (drawFigmaDerivedText(r, canvas, node)) {
+  if (!isIconFont && drawFigmaDerivedText(r, canvas, node)) {
     canvas.restore()
     return
   }

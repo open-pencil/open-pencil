@@ -5,6 +5,7 @@ import { locale } from '#vue/i18n/locale'
 import type { Locale } from '#vue/i18n/locale'
 
 const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: ComponentsJSON }>> = {
+  ja: () => import('#vue/locales/ja.json'),
   de: () => import('#vue/locales/de.json'),
   es: () => import('#vue/locales/es.json'),
   fr: () => import('#vue/locales/fr.json'),

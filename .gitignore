@@ -48,3 +48,12 @@ vue-stream-markdown/
 
 # Agent scratch space (reviews, test artifacts)
 scratch/
+
+# Local verification artifacts (scripts/)
+scripts/*.svg
+scripts/*.html
+scripts/*.png
+scripts/debug-*.ts
+scripts/export-svg.ts
+scripts/render-to-svg.ts
+scripts/test-pen-render.ts
