@@ -71,6 +71,59 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(html).toContain('box-shadow')
   })
 
+  it('maps CSS flex alignment into scene graph auto-layout alignment', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { class: 'toolbar' },
+          computedStyle: {
+            display: 'inline-flex',
+            'align-items': 'center',
+            'justify-content': 'space-between',
+            gap: '8px',
+            width: '240px',
+            height: '40px'
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'span',
+              attrs: {},
+              children: [{ type: 'text', text: 'File' }]
+            },
+            {
+              type: 'element',
+              tagName: 'span',
+              attrs: {},
+              children: [{ type: 'text', text: 'Edit' }]
+            }
+          ]
+        }
+      ]
+    })
+    const page = graph.getPages()[0]
+    const toolbar = page ? graph.getChildren(page.id)[0] : undefined
+
+    expect(toolbar?.type).toBe('FRAME')
+    if (toolbar?.type !== 'FRAME') return
+    expect(toolbar.layoutMode).toBe('HORIZONTAL')
+    expect(toolbar.primaryAxisAlign).toBe('SPACE_BETWEEN')
+    expect(toolbar.counterAxisAlign).toBe('CENTER')
+
+    const roundTrip = sceneGraphToDesignDocument(graph)
+    const root = roundTrip.children[0]
+    expect(root?.type).toBe('element')
+    if (root?.type !== 'element') return
+    const roundTripToolbar = root.children[0]
+    expect(roundTripToolbar?.type).toBe('element')
+    if (roundTripToolbar?.type !== 'element') return
+    expect(roundTripToolbar.inlineStyle?.['justify-content']).toBe('space-between')
+    expect(roundTripToolbar.inlineStyle?.['align-items']).toBe('center')
+  })
+
   it('projects a Tailwind card through generated CSS into a scene graph', async () => {
     const runtime = createHeadlessCSSRuntime()
     const classes = [...tailwindCardClasses]

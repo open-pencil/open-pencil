@@ -16,6 +16,21 @@ function nodeChildren(graph: SceneGraph, node: SceneNode): SceneNode[] {
     .filter((child): child is SceneNode => child !== undefined)
 }
 
+function justifyContentToCSS(value: SceneNode['primaryAxisAlign']): string | undefined {
+  if (value === 'CENTER') return 'center'
+  if (value === 'MAX') return 'flex-end'
+  if (value === 'SPACE_BETWEEN') return 'space-between'
+  return undefined
+}
+
+function alignItemsToCSS(value: SceneNode['counterAxisAlign']): string | undefined {
+  if (value === 'CENTER') return 'center'
+  if (value === 'MAX') return 'flex-end'
+  if (value === 'STRETCH') return 'stretch'
+  if (value === 'BASELINE') return 'baseline'
+  return undefined
+}
+
 function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
   const fill = fillToCSS(node.fills[0])
@@ -30,6 +45,10 @@ function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
   if (node.layoutMode !== 'NONE') {
     style.display = 'flex'
     style['flex-direction'] = node.layoutMode === 'HORIZONTAL' ? 'row' : 'column'
+    const justifyContent = justifyContentToCSS(node.primaryAxisAlign)
+    const alignItems = alignItemsToCSS(node.counterAxisAlign)
+    if (justifyContent) style['justify-content'] = justifyContent
+    if (alignItems) style['align-items'] = alignItems
     if (node.itemSpacing > 0) style.gap = `${node.itemSpacing}px`
     if (node.paddingTop > 0) style['padding-top'] = `${node.paddingTop}px`
     if (node.paddingRight > 0) style['padding-right'] = `${node.paddingRight}px`

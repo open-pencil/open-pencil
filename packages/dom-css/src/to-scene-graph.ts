@@ -56,6 +56,21 @@ function setNodeBox(node: SceneNode, style: DesignStyleDeclaration): void {
   if (height !== null) node.height = height
 }
 
+function primaryAxisAlignFromCSS(value: string | undefined): SceneNode['primaryAxisAlign'] {
+  if (value === 'center') return 'CENTER'
+  if (value === 'end' || value === 'flex-end') return 'MAX'
+  if (value === 'space-between') return 'SPACE_BETWEEN'
+  return 'MIN'
+}
+
+function counterAxisAlignFromCSS(value: string | undefined): SceneNode['counterAxisAlign'] {
+  if (value === 'center') return 'CENTER'
+  if (value === 'end' || value === 'flex-end') return 'MAX'
+  if (value === 'stretch') return 'STRETCH'
+  if (value === 'baseline') return 'BASELINE'
+  return 'MIN'
+}
+
 function applyElementStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   setNodeBox(node, style)
 
@@ -77,8 +92,11 @@ function applyElementStyle(node: SceneNode, style: DesignStyleDeclaration): void
   const cornerRadius = firstCSSNumber(style, 'border-radius')
   if (cornerRadius !== null) node.cornerRadius = cornerRadius
 
-  if (pickStyle(style, 'display') === 'flex') {
+  const display = pickStyle(style, 'display')
+  if (display === 'flex' || display === 'inline-flex') {
     node.layoutMode = pickStyle(style, 'flex-direction') === 'column' ? 'VERTICAL' : 'HORIZONTAL'
+    node.primaryAxisAlign = primaryAxisAlignFromCSS(pickStyle(style, 'justify-content'))
+    node.counterAxisAlign = counterAxisAlignFromCSS(pickStyle(style, 'align-items'))
     node.itemSpacing = firstCSSNumber(style, 'gap', 'column-gap', 'row-gap') ?? 0
     node.paddingTop = firstCSSNumber(style, 'padding-top', 'padding') ?? 0
     node.paddingRight = firstCSSNumber(style, 'padding-right', 'padding') ?? 0
