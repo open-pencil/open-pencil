@@ -597,6 +597,8 @@ function shouldRenderTextAsOutline(fill?: Fill): boolean {
   return fill !== undefined && fill.type !== 'SOLID'
 }
 
+const CJK_TEXT_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+
 function drawOutlinedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   const path = textNodeToOutlinePath(r, node)
   if (!path) return false
@@ -665,7 +667,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.restore()
     return
   }
-  if (shouldRenderTextAsOutline(fill) && drawOutlinedText(r, canvas, node)) {
+  if ((shouldRenderTextAsOutline(fill) || CJK_TEXT_RE.test(text)) && drawOutlinedText(r, canvas, node)) {
     canvas.restore()
     return
   }

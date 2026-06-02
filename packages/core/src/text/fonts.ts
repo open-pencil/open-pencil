@@ -69,6 +69,7 @@ const BUNDLED_FONTS: Record<string, string> = {
   'Inter|SemiBold': '/Inter-SemiBold.ttf',
   'Inter|Bold': '/Inter-Bold.ttf',
   'Inter|ExtraBold': '/Inter-ExtraBold.ttf',
+  'Noto Sans SC|Regular': '/NotoSansSC-Regular.ttf',
   'Noto Naskh Arabic|Regular': '/NotoNaskhArabic-Regular.ttf'
 }
 
@@ -352,6 +353,13 @@ export class FontManager {
       allowVariableLocalFonts: true
     })
     return this.cjkFallbackPromise
+  }
+
+  async ensureBundledCJKFallback(): Promise<string[]> {
+    const family = 'Noto Sans SC'
+    const data = await this.loadFont(family, 'Regular')
+    if (data) this.setCJKFallbackFamily(family)
+    return this.cjkFallbackFamilies
   }
 
   getCJKFallbackFamilies(): string[] {

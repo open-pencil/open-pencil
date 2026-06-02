@@ -45,6 +45,9 @@ export async function loadFonts(
     r.fontMgr = r.ck.FontMgr.FromData(fontData) ?? null
   }
 
+  await fontManager.ensureBundledCJKFallback()
+  if (r.isDestroyed()) return
+
   r.fontsLoaded = true
   r.invalidateAllPictures()
 
