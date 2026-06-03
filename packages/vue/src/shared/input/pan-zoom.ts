@@ -13,7 +13,7 @@ export function setupPanZoom(
   drag: Ref<DragState | null>,
   onMouseDown: (e: MouseEvent) => void,
   onMouseMove: (e: MouseEvent) => void,
-  onMouseUp: () => void
+  onMouseUp: (e: MouseEvent) => void
 ) {
   let activeTouches: Touch[] = []
   let pinchStartDist = 0
@@ -39,6 +39,10 @@ export function setupPanZoom(
     })
   }
 
+  function syntheticMouseUpFromTouch(touch?: Touch): MouseEvent {
+    return touch ? syntheticMouse('mouseup', touch) : new MouseEvent('mouseup', { bubbles: true })
+  }
+
   function onTouchStart(e: TouchEvent) {
     e.preventDefault()
     activeTouches = Array.from(e.touches)
@@ -47,7 +51,7 @@ export function setupPanZoom(
 
     if (activeTouches.length === 2) {
       if (touchAsMouse) {
-        onMouseUp()
+        onMouseUp(syntheticMouseUpFromTouch(activeTouches[0] ?? e.changedTouches[0]))
         touchAsMouse = false
       }
       drag.value = null
@@ -122,7 +126,7 @@ export function setupPanZoom(
 
     if (activeTouches.length === 0) {
       if (touchAsMouse) {
-        onMouseUp()
+        onMouseUp(syntheticMouseUpFromTouch(e.changedTouches[0]))
         touchAsMouse = false
       } else {
         drag.value = null

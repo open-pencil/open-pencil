@@ -37,7 +37,8 @@ function collectMoveOriginals(editor: Editor) {
       originals.set(id, {
         x: node.x,
         y: node.y,
-        parentId: node.parentId ?? editor.state.currentPageId
+        parentId: node.parentId ?? editor.state.currentPageId,
+        layoutPositioning: node.layoutPositioning
       })
     }
   }

@@ -2,6 +2,8 @@ import type { Tool } from '@open-pencil/core/editor'
 import type { NodeType, VectorNetwork } from '@open-pencil/core/scene-graph'
 import type { Rect, Vector } from '@open-pencil/core/types'
 
+import type { DragOriginal } from '#vue/shared/input/drag-original'
+
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
 
 export type CornerPosition = 'nw' | 'ne' | 'se' | 'sw'
@@ -22,7 +24,7 @@ export interface DragMove {
   startScreenX: number
   startScreenY: number
   dragStarted: boolean
-  originals: Map<string, { x: number; y: number; parentId: string }>
+  originals: Map<string, DragOriginal>
   duplicated?: boolean
   duplicatedPreviousSelection?: Set<string>
   autoLayoutParentId?: string

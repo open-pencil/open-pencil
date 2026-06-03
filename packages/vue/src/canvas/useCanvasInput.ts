@@ -211,7 +211,7 @@ export function useCanvasInput(
       return
     }
     if (d.type === 'move') {
-      handleMoveMove(d, cx, cy, sx, sy, editor)
+      handleMoveMove(d, cx, cy, sx, sy, editor, e.metaKey || e.ctrlKey)
       return
     }
     if (d.type === 'text-select') {
@@ -246,13 +246,13 @@ export function useCanvasInput(
     handleMarqueeMove(d, cx, cy)
   }
 
-  function onMouseUp() {
+  function onMouseUp(e: MouseEvent) {
     if (!drag.value) return
     const d = drag.value
 
     if (handleNodeEditMouseUp(drag, editor)) return
 
-    if (d.type === 'move') handleMoveUp(d, editor)
+    if (d.type === 'move') handleMoveUp(d, editor, e.metaKey || e.ctrlKey)
     else if (d.type === 'text-select') {
       drag.value = null
       return
@@ -291,8 +291,8 @@ export function useCanvasInput(
       editor.setHoveredNode(null)
     }
   })
-  useEventListener(window, 'mouseup', () => {
-    if (drag.value) onMouseUp()
+  useEventListener(window, 'mouseup', (e: MouseEvent) => {
+    if (drag.value) onMouseUp(e)
   })
 
   setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp)

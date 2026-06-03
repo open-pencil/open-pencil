@@ -57,10 +57,12 @@ export function handleMoveMove(
   cy: number,
   sx: number,
   sy: number,
-  editor: Editor
+  editor: Editor,
+  bypassAutoLayout = false
 ) {
   d.currentX = cx
   d.currentY = cy
+  const bypassingAutoLayout = Boolean(d.autoLayoutParentId && bypassAutoLayout)
 
   if (!d.dragStarted) {
     if (!isPastDragStartThreshold(d, sx, sy)) return
@@ -70,19 +72,21 @@ export function handleMoveMove(
   let dx = cx - d.startX
   let dy = cy - d.startY
 
-  if (d.autoLayoutParentId && !d.brokeFromAutoLayout) {
+  if (d.autoLayoutParentId && !d.brokeFromAutoLayout && !bypassAutoLayout) {
     if (isInsideAutoLayoutDragBounds(d.autoLayoutParentId, cx, cy, editor)) {
       computeAutoLayoutIndicator(d, cx, cy, editor)
       return
     }
     d.brokeFromAutoLayout = true
     editor.setLayoutInsertIndicator(null)
+  } else if (bypassingAutoLayout) {
+    editor.setLayoutInsertIndicator(null)
   }
 
   const dropTarget = findMoveDropTarget(cx, cy, editor)
   const dropParent = dropTarget ? editor.graph.getNode(dropTarget.id) : null
 
-  if (dropParent && dropParent.layoutMode !== 'NONE') {
+  if (!bypassingAutoLayout && dropParent && dropParent.layoutMode !== 'NONE') {
     computeAutoLayoutIndicatorForFrame(dropParent, cx, cy, editor)
     editor.setDropTarget(dropParent.id)
     for (const [id, orig] of d.originals) {
@@ -131,7 +135,45 @@ function applyFinalPositions(d: DragMove, editor: Editor) {
   }
 }
 
-export function handleMoveUp(d: DragMove, editor: Editor) {
+function applyFinalPinnedPositions(d: DragMove, editor: Editor) {
+  const dx = d.currentX - d.startX
+  const dy = d.currentY - d.startY
+  for (const [id, orig] of d.originals) {
+    editor.updateNode(id, {
+      x: Math.round(orig.x + dx),
+      y: Math.round(orig.y + dy),
+      layoutPositioning: 'ABSOLUTE'
+    })
+  }
+}
+
+function applyMovedFinalPosition(
+  d: DragMove,
+  editor: Editor,
+  shouldPinAbsolute: boolean,
+  dropId: string | null
+) {
+  if (shouldPinAbsolute) {
+    applyFinalPinnedPositions(d, editor)
+  } else {
+    applyFinalPositions(d, editor)
+  }
+  if (dropId) {
+    editor.reparentNodes([...editor.state.selectedIds], dropId)
+  } else {
+    reparentOutsideNodes(editor)
+  }
+}
+
+function commitMovedDrag(d: DragMove, editor: Editor, shouldPinAbsolute: boolean) {
+  if (shouldPinAbsolute) {
+    editor.commitMoveWithAbsolutePin(d.originals)
+  } else {
+    editor.commitMoveWithReparent(d.originals)
+  }
+}
+
+export function handleMoveUp(d: DragMove, editor: Editor, pinAsAbsolute = false) {
   if (!d.dragStarted) {
     editor.setLayoutInsertIndicator(null)
     editor.setSnapGuides([])
@@ -139,11 +181,14 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     return
   }
 
+  const shouldPinAbsolute =
+    pinAsAbsolute && Boolean(d.autoLayoutParentId) && d.originals.size === 1
+
   const indicator = editor.state.layoutInsertIndicator
   editor.setLayoutInsertIndicator(null)
   editor.setSnapGuides([])
 
-  if (indicator) {
+  if (indicator && !shouldPinAbsolute) {
     if (getMoveDistance(d) < AUTO_LAYOUT_REORDER_CLICK_SLOP) {
       editor.setDropTarget(null)
       return
@@ -155,17 +200,15 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     return
   }
 
-  const moved = hasMoved(d, editor)
+  const moved =
+    hasMoved(d, editor) ||
+    (shouldPinAbsolute &&
+      Boolean(indicator) &&
+      getMoveDistance(d) >= AUTO_LAYOUT_REORDER_CLICK_SLOP)
 
   if (moved) {
     restoreOriginalPositions(d, editor)
-    applyFinalPositions(d, editor)
-    const dropId = editor.state.dropTargetId
-    if (dropId) {
-      editor.reparentNodes([...editor.state.selectedIds], dropId)
-    } else {
-      reparentOutsideNodes(editor)
-    }
+    applyMovedFinalPosition(d, editor, shouldPinAbsolute, editor.state.dropTargetId)
   }
 
   if (d.duplicated) {
@@ -179,7 +222,7 @@ export function handleMoveUp(d: DragMove, editor: Editor) {
     }
     editor.commitDuplicateMove([...d.originals.keys()], previousSelection)
   } else if (moved) {
-    editor.commitMoveWithReparent(d.originals)
+    commitMovedDrag(d, editor, shouldPinAbsolute)
   }
   editor.setDropTarget(null)
 }

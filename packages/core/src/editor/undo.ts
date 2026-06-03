@@ -13,15 +13,20 @@ import {
 } from './history/snapshot'
 import type { EditorContext } from './types'
 
+type MoveWithReparentPosition = {
+  x: number
+  y: number
+  parentId: string
+  layoutPositioning?: 'AUTO' | 'ABSOLUTE'
+}
+
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
     pushPositionUndo(ctx, 'Move', originals, collectNodePositions(ctx, originals.keys()))
   }
 
-  function commitMoveWithReparent(
-    originals: Map<string, { x: number; y: number; parentId: string }>
-  ) {
-    const finals = new Map<string, { x: number; y: number; parentId: string }>()
+  function commitMoveWithReparent(originals: Map<string, MoveWithReparentPosition>) {
+    const finals = new Map<string, MoveWithReparentPosition>()
     for (const [id] of originals) {
       const n = ctx.graph.getNode(id)
       if (n) finals.set(id, { x: n.x, y: n.y, parentId: n.parentId ?? ctx.state.currentPageId })
@@ -39,6 +44,48 @@ export function createUndoActions(ctx: EditorContext) {
         for (const [id, pos] of originals) {
           ctx.graph.reparentNode(id, pos.parentId)
           ctx.graph.updateNode(id, { x: pos.x, y: pos.y })
+          ctx.runLayoutForNode(id)
+        }
+      }
+    })
+  }
+
+  function commitMoveWithAbsolutePin(originals: Map<string, MoveWithReparentPosition>) {
+    const finals = new Map<string, MoveWithReparentPosition>()
+    for (const [id] of originals) {
+      const n = ctx.graph.getNode(id)
+      if (!n) continue
+      finals.set(id, {
+        x: n.x,
+        y: n.y,
+        parentId: n.parentId ?? ctx.state.currentPageId,
+        layoutPositioning: 'ABSOLUTE'
+      })
+    }
+    ctx.undo.push({
+      label: 'Move (pin absolute)',
+      forward: () => {
+        for (const [id, pos] of finals) {
+          ctx.graph.reparentNode(id, pos.parentId)
+          ctx.graph.updateNode(id, {
+            x: pos.x,
+            y: pos.y,
+            layoutPositioning: pos.layoutPositioning
+          })
+          ctx.runLayoutForNode(id)
+        }
+      },
+      inverse: () => {
+        for (const [id, pos] of originals) {
+          ctx.graph.reparentNode(id, pos.parentId)
+          const restore: { x: number; y: number; layoutPositioning?: 'AUTO' | 'ABSOLUTE' } = {
+            x: pos.x,
+            y: pos.y
+          }
+          if (pos.layoutPositioning) {
+            restore.layoutPositioning = pos.layoutPositioning
+          }
+          ctx.graph.updateNode(id, restore)
           ctx.runLayoutForNode(id)
         }
       }
@@ -153,6 +200,7 @@ export function createUndoActions(ctx: EditorContext) {
   return {
     commitMove,
     commitMoveWithReparent,
+    commitMoveWithAbsolutePin,
     commitDuplicateMove,
     commitResize,
     commitRotation,
