@@ -10,7 +10,7 @@ import {
   AlertDialogTitle
 } from 'reka-ui'
 import { computed } from 'vue'
-import { acpPermissionOptionTestId, vTestId } from '@open-pencil/vue'
+import { acpPermissionOptionTestId, vTestId } from '@inkly/vue'
 
 import {
   currentPermission,

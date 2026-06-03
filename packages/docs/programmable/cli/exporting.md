@@ -10,12 +10,12 @@ Export designs from the terminal — raster images, vectors, `.fig` subsets, or 
 ## Image Export
 
 ```sh
-openpencil export design.fig                           # PNG (default)
-openpencil export design.fig -f jpg -s 2 -q 90        # JPG at 2×, quality 90
-openpencil export design.fig -f webp -s 3             # WEBP at 3×
-openpencil export design.fig -f svg                   # SVG vector
-openpencil export design.fig -f fig --page "Page 1"   # export one page as .fig
-openpencil export design.fig -f fig --node 1:23        # export one node as .fig
+inkly export design.fig                           # PNG (default)
+inkly export design.fig -f jpg -s 2 -q 90        # JPG at 2×, quality 90
+inkly export design.fig -f webp -s 3             # WEBP at 3×
+inkly export design.fig -f svg                   # SVG vector
+inkly export design.fig -f fig --page "Page 1"   # export one page as .fig
+inkly export design.fig -f fig --node 1:23        # export one node as .fig
 ```
 
 Options:
@@ -32,7 +32,7 @@ Options:
 Export as JSX with Tailwind utility classes:
 
 ```sh
-openpencil export design.fig -f jsx --style tailwind
+inkly export design.fig -f jsx --style tailwind
 ```
 
 Output:
@@ -44,12 +44,12 @@ Output:
 </div>
 ```
 
-Also supports `--style openpencil` for the native JSX format (see [JSX Renderer](../jsx-renderer)).
+Also supports `--style inkly` for the native JSX format (see [JSX Renderer](../jsx-renderer)).
 
 ## Thumbnails
 
 ```sh
-openpencil export design.fig --thumbnail --width 1920 --height 1080
+inkly export design.fig --thumbnail --width 1920 --height 1080
 ```
 
 ## Live App Mode
@@ -57,5 +57,5 @@ openpencil export design.fig --thumbnail --width 1920 --height 1080
 Omit the file to export from the running app:
 
 ```sh
-openpencil export -f png    # screenshot the current canvas
+inkly export -f png    # screenshot the current canvas
 ```

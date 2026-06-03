@@ -1,6 +1,6 @@
 ---
 title: Canvas Navigation
-description: Panning, zooming, and the hand tool in OpenPencil.
+description: Panning, zooming, and the hand tool in Inkly.
 ---
 
 # Canvas Navigation

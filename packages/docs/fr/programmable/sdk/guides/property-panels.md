@@ -5,7 +5,7 @@ description: Créez des panneaux de propriétés avec des composables de contrô
 
 # Panneaux de propriétés
 
-Les panneaux de propriétés dans `@open-pencil/vue` sont intentionnellement axés sur les composables.
+Les panneaux de propriétés dans `@inkly/vue` sont intentionnellement axés sur les composables.
 
 Si un panneau n'a besoin que de valeurs dérivées de la sélection et d'actions de mise à jour, préférez les composables.
 Si un panneau nécessite une structure de tableau/liste réutilisable, utilisez une primitive headless comme `PropertyListRoot`.
@@ -30,7 +30,7 @@ Pour les panneaux en forme de liste, utilisez :
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue'
+import { usePosition } from '@inkly/vue'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -49,7 +49,7 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import { PropertyListRoot, useFillControls } from '@inkly/vue'
 
 const fillControls = useFillControls()
 </script>

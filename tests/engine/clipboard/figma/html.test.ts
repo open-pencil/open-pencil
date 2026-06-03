@@ -6,7 +6,7 @@ import {
   initCodec,
   parseFigmaClipboard,
   SceneGraph
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 

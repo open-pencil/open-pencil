@@ -9,7 +9,7 @@ test('draw section in full editor without browser errors', async () => {
   await expect
     .poll(async () => {
       return editor.page.evaluate(() => {
-        const store = window.openPencil?.getStore?.()
+        const store = window.inkly?.getStore?.()
         const selectedId = [...store.state.selectedIds][0]
         return selectedId ? store.graph.getNode(selectedId)?.type : null
       })

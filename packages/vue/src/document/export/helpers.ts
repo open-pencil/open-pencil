@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import type { Editor } from '@inkly/core/editor'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@inkly/core/io'
 
 import type { ExportFormatId, ExportPanelTarget, ExportSetting } from '#vue/document/export/use'
 

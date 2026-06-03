@@ -4,19 +4,19 @@
 
 ```
 packages/
-  core/              @open-pencil/core — движок (без DOM-зависимостей)
+  core/              @inkly/core — движок (без DOM-зависимостей)
     src/             Граф сцены, отрисовщик, компоновка, кодек, kiwi, типы
-  cli/               @open-pencil/cli — headless CLI для операций с .fig
+  cli/               @inkly/cli — headless CLI для операций с .fig
     src/commands/    info, tree, find, export, eval, analyze
-  mcp/               @open-pencil/mcp — MCP-сервер для AI-инструментов
+  mcp/               @inkly/mcp — MCP-сервер для AI-инструментов
     src/             stdio + HTTP (Hono) транспорты, 87 инструментов
 src/
   components/        Vue SFC (холст, панели, панель инструментов, палитра цветов)
     properties/      Секции панели свойств (Внешний вид, Заливка, Обводка и др.)
   composables/       Ввод на холсте, сочетания клавиш, хуки отрисовки
   stores/            Состояние редактора (реактивность Vue)
-  engine/            Шимы реэкспорта из @open-pencil/core
-  kiwi/              Шимы реэкспорта из @open-pencil/core
+  engine/            Шимы реэкспорта из @inkly/core
+  kiwi/              Шимы реэкспорта из @inkly/core
   types.ts           Общие типы (реэкспорт из core)
   constants.ts       Цвета UI, значения по умолчанию, пороги
 desktop/             Tauri v2 (Rust + конфигурация)
@@ -62,7 +62,7 @@ bun run check
 
 ### Соглашения для AI-агентов
 
-Разработчики и AI-агенты, работающие с кодовой базой, должны прочитать `AGENTS.md` в корне репозитория ([посмотреть на GitHub](https://github.com/open-pencil/open-pencil/blob/master/AGENTS.md)). Файл охватывает отрисовку, граф сцены, компоненты и экземпляры, компоновку, UI, формат файлов, соглашения Tauri и известные проблемы.
+Разработчики и AI-агенты, работающие с кодовой базой, должны прочитать `AGENTS.md` в корне репозитория ([посмотреть на GitHub](https://github.com/cardene777/open-pencil/blob/master/AGENTS.md)). Файл охватывает отрисовку, граф сцены, компоненты и экземпляры, компоновку, UI, формат файлов, соглашения Tauri и известные проблемы.
 
 ## Внесение изменений
 

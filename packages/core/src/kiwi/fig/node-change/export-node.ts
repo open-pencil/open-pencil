@@ -203,11 +203,11 @@ interface MaterializeFigmaPayloadOptions {
 }
 
 function materializeFigmaBlob(
-  value: { __openPencilFigmaBlob?: Uint8Array | Record<string, number> },
+  value: { __inklyFigmaBlob?: Uint8Array | Record<string, number> },
   blobs: Uint8Array[],
   options: MaterializeFigmaPayloadOptions
 ): number {
-  const blob = value.__openPencilFigmaBlob
+  const blob = value.__inklyFigmaBlob
   const bytes = blob instanceof Uint8Array ? blob : new Uint8Array(Object.values(blob ?? {}))
   const key = bytesToHex(bytes)
   const existing = options.blobIndexByHex?.get(key)
@@ -240,9 +240,9 @@ function materializeFigmaPayload(
   if (Array.isArray(value))
     return value.map((item) => materializeFigmaPayload(item, blobs, options))
   if (!value || typeof value !== 'object') return value
-  if ('__openPencilFigmaBlob' in value) {
+  if ('__inklyFigmaBlob' in value) {
     return materializeFigmaBlob(
-      value as { __openPencilFigmaBlob?: Uint8Array | Record<string, number> },
+      value as { __inklyFigmaBlob?: Uint8Array | Record<string, number> },
       blobs,
       options
     )

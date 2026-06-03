@@ -1,7 +1,7 @@
 import { useClipboard } from '@vueuse/core'
 import type { Ref } from 'vue'
 
-import { nodeToXPath } from '@open-pencil/core/xpath'
+import { nodeToXPath } from '@inkly/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'

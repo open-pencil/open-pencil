@@ -12,7 +12,7 @@ description: Gestiona el estado de edición del diálogo de variables sobre useV
 ## Uso
 
 ```ts
-import { useVariablesDialogState } from '@open-pencil/vue'
+import { useVariablesDialogState } from '@inkly/vue'
 
 const variablesDialog = useVariablesDialogState()
 ```

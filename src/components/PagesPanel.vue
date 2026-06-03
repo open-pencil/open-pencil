@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { templateRef } from '@vueuse/core'
 
-import { PageListRoot, useI18n, useInlineRename } from '@open-pencil/vue'
+import { PageListRoot, useI18n, useInlineRename } from '@inkly/vue'
 
 import Tip from '@/components/ui/Tip.vue'
 

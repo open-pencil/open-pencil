@@ -1,6 +1,6 @@
 ---
 title: Warstwy i strony
-description: Zarządzanie warstwami, stronami i panelem właściwości w OpenPencil.
+description: Zarządzanie warstwami, stronami i panelem właściwości w Inkly.
 ---
 # Warstwy i strony
 

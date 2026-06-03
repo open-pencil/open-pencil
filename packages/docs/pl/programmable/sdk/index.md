@@ -1,15 +1,15 @@
 ---
 title: Vue SDK
-description: Buduj edytory oparte na OpenPencil z bezstanowymi kompozytami i prymitywami Vue.
+description: Buduj edytory oparte na Inkly z bezstanowymi kompozytami i prymitywami Vue.
 ---
 
 # Vue SDK
 
-`@open-pencil/vue` istnieje po to, by OpenPencil mógł być czymś więcej niż samodzielną aplikacją do projektowania.
+`@inkly/vue` istnieje po to, by Inkly mógł być czymś więcej niż samodzielną aplikacją do projektowania.
 
-Celem jest uczynienie OpenPencil zestawem narzędzi, który można wbudować w inne produkty, narzędzia wewnętrzne i edytory dopasowane do konkretnych przepływów pracy — a nie tylko jednym domyślnym interfejsem.
+Celem jest uczynienie Inkly zestawem narzędzi, który można wbudować w inne produkty, narzędzia wewnętrzne i edytory dopasowane do konkretnych przepływów pracy — a nie tylko jednym domyślnym interfejsem.
 
-Aplikacja OpenPencil jest jedną z kompozycji tego zestawu. SDK to sposób na zbudowanie innej.
+Aplikacja Inkly jest jedną z kompozycji tego zestawu. SDK to sposób na zbudowanie innej.
 
 Udostępnia:
 
@@ -41,7 +41,7 @@ SDK to warstwa, która to umożliwia.
 - **Headless na pierwszym miejscu**: logika i struktura, bez stylowania aplikacji
 - **Kompozyty zamiast opakowań**: używaj kompozytów, gdy nie ma znaczącej koordynacji strukturalnej
 - **Przemyślane publiczne API**: stabilne eksporty z `packages/vue/src/index.ts`
-- **Świadomość frameworka**: integracja Vue nad `@open-pencil/core`
+- **Świadomość frameworka**: integracja Vue nad `@inkly/core`
 
 ## Jak myśleć o pakiecie
 

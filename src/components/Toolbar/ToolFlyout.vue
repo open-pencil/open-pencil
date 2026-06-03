@@ -18,10 +18,10 @@ import {
   toolbarToolTestId,
   vTestId,
   ToolbarItem
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
-import type { Tool } from '@open-pencil/vue'
-import type { EditorToolDef } from '@open-pencil/core/editor'
+import type { Tool } from '@inkly/vue'
+import type { EditorToolDef } from '@inkly/core/editor'
 import type { ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
 const {

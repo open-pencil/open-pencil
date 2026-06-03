@@ -33,12 +33,12 @@ const TARGETS: FixtureExportTarget[] = [
 
 const { values } = parseArgs({
   options: {
-    output: { type: 'string', short: 'o', default: '/tmp/open-pencil-fixture-visuals' },
+    output: { type: 'string', short: 'o', default: '/tmp/inkly-fixture-visuals' },
     heavy: { type: 'boolean', default: false }
   }
 })
 
-const outputDir = values.output ?? '/tmp/open-pencil-fixture-visuals'
+const outputDir = values.output ?? '/tmp/inkly-fixture-visuals'
 mkdirSync(outputDir, { recursive: true })
 
 for (const target of TARGETS) {
@@ -49,7 +49,7 @@ for (const target of TARGETS) {
 
   const outputPath = `${outputDir}/${target.outputName}`
   console.log(`Exporting ${target.file} / ${target.page} → ${outputPath}`)
-  await $`bun open-pencil export ${target.file} --page ${target.page} --output ${outputPath}`
+  await $`bun inkly export ${target.file} --page ${target.page} --output ${outputPath}`
 }
 
 console.log(`Fixture visuals written to ${outputDir}`)

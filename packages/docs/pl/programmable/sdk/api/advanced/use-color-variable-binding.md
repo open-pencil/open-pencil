@@ -12,7 +12,7 @@ Użyj go przy budowaniu UI kolorów, które muszą łączyć wypełnienia lub ob
 ## Użycie
 
 ```ts
-import { useColorVariableBinding } from '@open-pencil/vue'
+import { useColorVariableBinding } from '@inkly/vue'
 
 const fillBinding = useColorVariableBinding('fills')
 const strokeBinding = useColorVariableBinding('strokes')

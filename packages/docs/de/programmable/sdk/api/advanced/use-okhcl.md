@@ -12,7 +12,7 @@ Verwenden Sie es, wenn Sie fortgeschrittene Farbwerkzeuge erstellen, die zwische
 ## Verwendung
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue'
+import { useOkHCL } from '@inkly/vue'
 
 const okhcl = useOkHCL()
 ```

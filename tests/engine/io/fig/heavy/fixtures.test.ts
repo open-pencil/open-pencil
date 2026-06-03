@@ -1,6 +1,6 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { SceneGraph, type SceneNode } from '@open-pencil/core'
+import { SceneGraph, type SceneNode } from '@inkly/core'
 
 import { parseFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
 import { collectAllNodes } from '#tests/helpers/fig-traversal'

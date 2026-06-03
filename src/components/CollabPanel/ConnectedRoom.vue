@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { selectTarget } from '@open-pencil/vue'
+import { selectTarget } from '@inkly/vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
 

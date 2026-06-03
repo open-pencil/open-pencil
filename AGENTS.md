@@ -1,4 +1,4 @@
-# OpenPencil
+# Inkly
 
 Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also runs in browser.
 
@@ -8,38 +8,38 @@ Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also 
 
 Bun workspace with three packages:
 
-- `packages/core` — `@open-pencil/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
-- `packages/cli` — `@open-pencil/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
-- `packages/docs` — `@open-pencil/docs`: VitePress documentation site. Run with `cd packages/docs && bun run dev`.
-- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Stdio + HTTP (Hono). Reuses `createServer()` factory with all core tools.
+- `packages/core` — `@inkly/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
+- `packages/cli` — `@inkly/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
+- `packages/docs` — `@inkly/docs`: VitePress documentation site. Run with `cd packages/docs && bun run dev`.
+- `packages/mcp` — `@inkly/mcp`: MCP server for AI coding tools. Stdio + HTTP (Hono). Reuses `createServer()` factory with all core tools.
 
-- `packages/vue` — `@open-pencil/vue`: headless Vue 3 SDK (Reka UI-style) for building custom OpenPencil-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
+- `packages/vue` — `@inkly/vue`: headless Vue 3 SDK (Reka UI-style) for building custom Inkly-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
 
-The root app (`src/`) is the Tauri/Vite desktop editor. App-specific editor, document, AI, collaboration, shell, tabs, demo, and automation code lives under `src/app/*`. The app consumes `@open-pencil/core` through targeted core subpath exports and `@open-pencil/vue` through the public Vue SDK entrypoint.
+The root app (`src/`) is the Tauri/Vite desktop editor. App-specific editor, document, AI, collaboration, shell, tabs, demo, and automation code lives under `src/app/*`. The app consumes `@inkly/core` through targeted core subpath exports and `@inkly/vue` through the public Vue SDK entrypoint.
 
 ### Core subpath exports
 
-`@open-pencil/core` exposes domain-specific subpath exports for targeted imports. The main `"."` entry re-exports everything for backward compatibility.
+`@inkly/core` exposes domain-specific subpath exports for targeted imports. The main `"."` entry re-exports everything for backward compatibility.
 
 | Subpath | What | Heavy dep isolated |
 |---|---|---|
-| `@open-pencil/core` | everything (barrel) | all |
-| `@open-pencil/core/scene-graph` | SceneGraph, node types, hit-test, copy, snap, undo | — |
-| `@open-pencil/core/color` | parseColor, colorToHex, color management, OkHCL | culori |
-| `@open-pencil/core/text` | fonts, text editor, style runs, direction | — |
-| `@open-pencil/core/vector` | vector network encode/decode, bezier math | — |
-| `@open-pencil/core/figma-api` | FigmaAPI, FigmaNodeProxy | — |
-| `@open-pencil/core/icons` | Iconify API client, icon rendering | @iconify/utils |
-| `@open-pencil/core/canvas` | SkiaRenderer (Skia/CanvasKit painting engine) | — |
-| `@open-pencil/core/design-jsx` | JSX-to-design renderer | sucrase |
-| `@open-pencil/core/editor` | createEditor, Editor, EditorState | — |
-| `@open-pencil/core/tools` | ToolDef, ALL_TOOLS, AI adapter | diff |
-| `@open-pencil/core/kiwi` | .fig parse/serialize, codec, protocol | fflate, fzstd |
-| `@open-pencil/core/rpc` | RPC commands for CLI | — |
-| `@open-pencil/core/lint` | design linter rules and presets | — |
-| `@open-pencil/core/profiler` | render profiling | — |
-| `@open-pencil/core/canvaskit` | getCanvasKit loader | canvaskit-wasm |
-| `@open-pencil/core/layout` | computeLayout | yoga-layout |
+| `@inkly/core` | everything (barrel) | all |
+| `@inkly/core/scene-graph` | SceneGraph, node types, hit-test, copy, snap, undo | — |
+| `@inkly/core/color` | parseColor, colorToHex, color management, OkHCL | culori |
+| `@inkly/core/text` | fonts, text editor, style runs, direction | — |
+| `@inkly/core/vector` | vector network encode/decode, bezier math | — |
+| `@inkly/core/figma-api` | FigmaAPI, FigmaNodeProxy | — |
+| `@inkly/core/icons` | Iconify API client, icon rendering | @iconify/utils |
+| `@inkly/core/canvas` | SkiaRenderer (Skia/CanvasKit painting engine) | — |
+| `@inkly/core/design-jsx` | JSX-to-design renderer | sucrase |
+| `@inkly/core/editor` | createEditor, Editor, EditorState | — |
+| `@inkly/core/tools` | ToolDef, ALL_TOOLS, AI adapter | diff |
+| `@inkly/core/kiwi` | .fig parse/serialize, codec, protocol | fflate, fzstd |
+| `@inkly/core/rpc` | RPC commands for CLI | — |
+| `@inkly/core/lint` | design linter rules and presets | — |
+| `@inkly/core/profiler` | render profiling | — |
+| `@inkly/core/canvaskit` | getCanvasKit loader | canvaskit-wasm |
+| `@inkly/core/layout` | computeLayout | yoga-layout |
 
 Runtime `canvaskit-wasm` import exists only in `canvaskit.ts` — all other files use `import type`. CanvasKit instance is passed as a parameter everywhere.
 
@@ -101,18 +101,18 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 - `bun test ./tests/engine` — unit tests
 - `bun run test` — Playwright visual regression
 - `bun run tauri dev` — desktop app with hot reload
-- `bun open-pencil info <file>` — document stats
-- `bun open-pencil tree <file>` — node tree
-- `bun open-pencil find <file>` — search nodes
-- `bun open-pencil node <file> --id <id>` — detailed node properties
-- `bun open-pencil pages <file>` — list pages
-- `bun open-pencil variables <file>` — list design variables
-- `bun open-pencil export <file>` — headless render to PNG/JPG/WEBP
-- `bun open-pencil analyze colors <file>` — color palette usage
-- `bun open-pencil analyze typography <file>` — font/size/weight stats
-- `bun open-pencil analyze spacing <file>` — gap/padding values
-- `bun open-pencil analyze clusters <file>` — repeated patterns
-- `bun open-pencil eval <file> --code '<js>'` — execute JS with Figma Plugin API
+- `bun inkly info <file>` — document stats
+- `bun inkly tree <file>` — node tree
+- `bun inkly find <file>` — search nodes
+- `bun inkly node <file> --id <id>` — detailed node properties
+- `bun inkly pages <file>` — list pages
+- `bun inkly variables <file>` — list design variables
+- `bun inkly export <file>` — headless render to PNG/JPG/WEBP
+- `bun inkly analyze colors <file>` — color palette usage
+- `bun inkly analyze typography <file>` — font/size/weight stats
+- `bun inkly analyze spacing <file>` — gap/padding values
+- `bun inkly analyze clusters <file>` — repeated patterns
+- `bun inkly eval <file> --code '<js>'` — execute JS with Figma Plugin API
 
 ## Releases & CI
 
@@ -126,17 +126,17 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 6. The `build.yml` workflow triggers on `v*` tags and:
    - Builds Tauri binaries for macOS (arm64 + x64), Windows (x64 + arm64), Linux (x64)
    - Creates a draft GitHub Release with all platform binaries
-   - Publishes `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` to npm with provenance
+   - Publishes `@inkly/core`, `@inkly/cli`, `@inkly/mcp`, and `@inkly/vue` to npm with provenance
 7. Go to GitHub Releases → edit the draft → paste changelog section → publish
 
 ### CI workflows
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `build.yml` | `v*` tag push or manual | Build Tauri desktop apps (5 targets), create GitHub Release, publish `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` |
-| `homebrew.yml` | Release published | Update `open-pencil/homebrew-tap` cask with new version + SHA256 hashes |
-| `app.yml` | Push to `master` (non-docs) | Build web app, deploy to Cloudflare Pages (`app.openpencil.dev`) |
-| `docs.yml` | Push to `master` (`packages/docs/**`) | Build VitePress docs, deploy to Cloudflare Pages (`openpencil.dev`) |
+| `build.yml` | `v*` tag push or manual | Build Tauri desktop apps (5 targets), create GitHub Release, publish `@inkly/core`, `@inkly/cli`, `@inkly/mcp`, and `@inkly/vue` |
+| `homebrew.yml` | Release published | Update `inkly/homebrew-tap` cask with new version + SHA256 hashes |
+| `app.yml` | Push to `master` (non-docs) | Build web app, deploy to Cloudflare Pages (`app.inkly.dev`) |
+| `docs.yml` | Push to `master` (`packages/docs/**`) | Build VitePress docs, deploy to Cloudflare Pages (`inkly.dev`) |
 
 ### Before committing
 
@@ -155,7 +155,7 @@ bun run test           # Playwright E2E
 - `CHANGELOG.md` — all user-facing changes, grouped by version. "Unreleased" section at top for in-progress work.
 - `README.md` — user-facing: features, getting started, CLI, project structure. No implementation details.
 - `AGENTS.md` (this file) — contributor/agent reference: architecture, conventions, how to release.
-- `packages/docs/` — VitePress site deployed at `openpencil.dev`. User guide, SDK, automation, reference, and development docs.
+- `packages/docs/` — VitePress site deployed at `inkly.dev`. User guide, SDK, automation, reference, and development docs.
 
 When adding features, update `CHANGELOG.md` (Unreleased section) and `README.md` (if user-facing). Update `AGENTS.md` when architecture or conventions change.
 
@@ -205,8 +205,8 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - CLI commands (`packages/cli/src/commands/`) are **not** generated from ToolDefs — they have custom agentfmt formatting, tree walking, pagination. The `eval` command is the CLI's access to all ToolDef operations via FigmaAPI.
 - MCP adapter (`packages/mcp/src/server.ts`): `startServer()` creates unified HTTP + WebSocket server. Registers all ToolDefs as MCP tools (zod schemas). Single entry point: `index.ts` (Hono + Streamable HTTP with sessions). Browser connects via WebSocket, tool calls proxied through.
 - MCP-only tools (`open_file`, `new_document`, `save_file`, `get_codegen_prompt`) are registered directly in `server.ts`, not as ToolDefs — they need Node.js fs access or don't operate on the scene graph
-- `open_file` and `new_document` are only registered when `OPENPENCIL_MCP_ROOT` is set (path scoping for security)
-- Export tools (`export_image`, `export_svg`, `get_jsx`) accept an optional `path` param — when provided and `OPENPENCIL_MCP_ROOT` is set, the MCP server writes output to disk and returns `{ written, byteLength }` instead of the raw data
+- `open_file` and `new_document` are only registered when `INKLY_MCP_ROOT` is set (path scoping for security)
+- Export tools (`export_image`, `export_svg`, `get_jsx`) accept an optional `path` param — when provided and `INKLY_MCP_ROOT` is set, the MCP server writes output to disk and returns `{ written, byteLength }` instead of the raw data
 - Core prompts (`CODEGEN_PROMPT`, `JSX_REFERENCE`) live as markdown files in `packages/core/src/tools/prompts/`, loaded via raw-md bundler plugin; app chat/ACP prompts live under `src/app/ai/**` markdown files.
 - To add a new tool: add a `defineTool()` in the appropriate domain file, add to `ALL_TOOLS` in `registry.ts` — it's instantly available in AI chat, MCP, and via `eval` in CLI
 - `FigmaAPI` (`packages/core/src/figma-api/`) is the execution target for all tools — Figma Plugin API compatible, uses Symbols for hidden internals
@@ -217,7 +217,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - Pure mapping logic in `src/app/ai/acp/map-update.ts` — converts `SessionUpdate` → `UIMessageChunk`
 - ACP design context prompt (`ACP_DESIGN_CONTEXT`) is authored in `src/app/ai/acp/design-context.md` and re-exported from `src/constants.ts`
 - Agent definitions (`ACP_AGENTS`) in `packages/core/src/constants.ts`
-- MCP server: Vite plugin in dev, `openpencil-mcp` via shell plugin in production Tauri (requires `npm i -g @open-pencil/mcp`; follow-up: bundle as Tauri sidecar)
+- MCP server: Vite plugin in dev, `inkly-mcp` via shell plugin in production Tauri (requires `npm i -g @inkly/mcp`; follow-up: bundle as Tauri sidecar)
 - Architecture: browser ↔ WebSocket :7601 ↔ MCP server :7600 ↔ HTTP ↔ agent subprocess
 - Shell permissions scoped per-command in `desktop/capabilities/default.json` (`args: true` — agents need dynamic SDK flags)
 - ACP providers visible only in Tauri desktop when MCP server is reachable
@@ -243,7 +243,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 
 ### File and folder naming
 
-OpenPencil follows a Reka UI-inspired component namespace structure:
+Inkly follows a Reka UI-inspired component namespace structure:
 
 - Vue component namespace folders use PascalCase: `ColorPicker/`, `Toolbar/`, `ProviderSettings/`.
 - Vue component files use PascalCase: `ColorPickerRoot.vue`, `ToolbarItem.vue`.
@@ -258,9 +258,9 @@ OpenPencil follows a Reka UI-inspired component namespace structure:
 - No `any` — use proper types, generics, declaration merging
 - No `!` non-null assertions — use guards, `?.`, `??`
 - No `Math.random()` — use `crypto.getRandomValues()` everywhere
-- No inline type definitions when a named type exists — use `Color` not `{ r: number; g: number; b: number; a: number }`, use `Vector` not `{ x: number; y: number }`, use `SceneNode` / `Effect` / `Fill` / `Stroke` from `@open-pencil/core/scene-graph` instead of re-spelling their shapes inline
+- No inline type definitions when a named type exists — use `Color` not `{ r: number; g: number; b: number; a: number }`, use `Vector` not `{ x: number; y: number }`, use `SceneNode` / `Effect` / `Fill` / `Stroke` from `@inkly/core/scene-graph` instead of re-spelling their shapes inline
 - Shared types (GUID, Color, Vector, Matrix, Rect) live in `packages/core/src/types.ts`
-- Domain types (SceneNode, Fill, Stroke, Effect, BlendMode, etc.) live in `packages/core/src/scene-graph/` and are exported from `@open-pencil/core/scene-graph`
+- Domain types (SceneNode, Fill, Stroke, Effect, BlendMode, etc.) live in `packages/core/src/scene-graph/` and are exported from `@inkly/core/scene-graph`
 - Window API extensions (showOpenFilePicker, queryLocalFonts) live in `src/global.d.ts` and `packages/core/src/global.d.ts`
 - Use `culori` for color conversions — don't reimplement parseColor/colorToRgba
 - Use `@vueuse/core` hooks — prefer higher-level composables (`useBreakpoints`, `useEventListener`, `onClickOutside`, etc.) over raw APIs (`useMediaQuery`, manual `addEventListener`)
@@ -308,7 +308,7 @@ Self-review checklist:
 - Section/frame title text never scales — render at fixed font size, ellipsize to fit
 - Rulers are rendered on the canvas (not DOM), with selection range badges that don't overlap tick numbers
 - Remote cursors: Figma-style colored arrows with white border + name pill, rendered in screen space
-- Pixel-affecting renderer features need committed visual coverage, not just mock/geometry assertions. Add or update a Playwright canvas snapshot for changes to fills, gradients, images, blend modes, masks, boolean geometry, corners, strokes, shadows, blur, text rendering, or demo showcase scenes. Use targeted snapshot updates such as `bunx playwright test tests/e2e/canvas/renderer-visuals.spec.ts --project=openpencil --update-snapshots` and then rerun the same test without `--update-snapshots`.
+- Pixel-affecting renderer features need committed visual coverage, not just mock/geometry assertions. Add or update a Playwright canvas snapshot for changes to fills, gradients, images, blend modes, masks, boolean geometry, corners, strokes, shadows, blur, text rendering, or demo showcase scenes. Use targeted snapshot updates such as `bunx playwright test tests/e2e/canvas/renderer-visuals.spec.ts --project=inkly --update-snapshots` and then rerun the same test without `--update-snapshots`.
 
 ## Scene graph
 
@@ -378,7 +378,7 @@ Self-review checklist:
 - `bun publish` from package dirs — resolves `workspace:*` → actual versions
 - Public packages publish built `dist/` output, not runtime TypeScript entrypoints
 - Core, Vue, MCP, and CLI build with tsdown before publishing
-- CLI publishes a Node-compatible `bin/openpencil.js` wrapper; do not point package `bin` entries at TypeScript source
+- CLI publishes a Node-compatible `bin/inkly.js` wrapper; do not point package `bin` entries at TypeScript source
 
 ## Reference
 

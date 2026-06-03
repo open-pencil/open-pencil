@@ -17,7 +17,7 @@ Es gibt auswahlabgeleiteten UI-Zustand zurück für:
 ## Verwendung
 
 ```ts
-import { useAppearance } from '@open-pencil/vue'
+import { useAppearance } from '@inkly/vue'
 
 const appearance = useAppearance()
 ```

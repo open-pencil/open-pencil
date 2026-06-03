@@ -5,15 +5,15 @@ description: Создайте собственную оболочку редак
 
 # Кастомная оболочка редактора
 
-Типичное Vue-приложение OpenPencil состоит из трёх слоёв:
+Типичное Vue-приложение Inkly состоит из трёх слоёв:
 
-1. `@open-pencil/core` создаёт редактор
-2. `@open-pencil/vue` адаптирует его в Vue-компосаблы и headless-примитивы
+1. `@inkly/core` создаёт редактор
+2. `@inkly/vue` адаптирует его в Vue-компосаблы и headless-примитивы
 3. ваше приложение рендерит оболочку, стили и UX продукта
 
 ## Зачем это важно
 
-Встроенное приложение OpenPencil — лишь одна возможная оболочка.
+Встроенное приложение Inkly — лишь одна возможная оболочка.
 
 Вы можете создать совершенно другую — для узкого рабочего процесса: встроенный редактор внутри другого продукта, внутренний инструмент для работы с ассетами, редактор шаблонов, UI для аннотаций или поверхность для редактирования с ИИ-помощником и кастомными элементами управления.
 
@@ -33,7 +33,7 @@ description: Создайте собственную оболочку редак
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 import {
   provideEditor,
   CanvasRoot,
@@ -41,7 +41,7 @@ import {
   ToolbarRoot,
   PageListRoot,
   LayerTreeRoot,
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

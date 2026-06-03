@@ -2,11 +2,11 @@
 
 ## Wypróbuj online
 
-OpenPencil działa w przeglądarce — bez instalacji. Otwórz [app.openpencil.dev](https://app.openpencil.dev).
+Inkly działa w przeglądarce — bez instalacji. Otwórz [app.inkly.dev](https://app.inkly.dev).
 
 ## Pobierz aplikację desktopową
 
-Binaria dla macOS, Windows i Linux na [stronie wydań](https://github.com/open-pencil/open-pencil/releases/latest).
+Binaria dla macOS, Windows i Linux na [stronie wydań](https://github.com/cardene777/open-pencil/releases/latest).
 
 | Platforma | Pobieranie |
 |-----------|-----------|
@@ -19,8 +19,8 @@ Binaria dla macOS, Windows i Linux na [stronie wydań](https://github.com/open-p
 ## Kompilacja ze źródeł
 
 ```sh
-git clone https://github.com/open-pencil/open-pencil.git
-cd open-pencil
+git clone https://github.com/cardene777/open-pencil.git
+cd inkly
 bun install
 bun run dev
 ```

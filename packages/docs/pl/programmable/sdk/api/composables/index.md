@@ -1,11 +1,11 @@
 ---
 title: Kompozyty
-description: Podstawowe API kompozytów w @open-pencil/vue.
+description: Podstawowe API kompozytów w @inkly/vue.
 ---
 
 # Kompozyty
 
-Są to główne kompozyty, z których korzysta większość konsumentów `@open-pencil/vue`.
+Są to główne kompozyty, z których korzysta większość konsumentów `@inkly/vue`.
 
 ## Kontekst i kanvas
 

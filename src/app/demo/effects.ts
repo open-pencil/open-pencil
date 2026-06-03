@@ -1,5 +1,5 @@
-import { TRANSPARENT } from '@open-pencil/core/constants'
-import type { Color, Effect } from '@open-pencil/core/scene-graph'
+import { TRANSPARENT } from '@inkly/core/constants'
+import type { Color, Effect } from '@inkly/core/scene-graph'
 
 export function dropShadow(
   ox = 0,

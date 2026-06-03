@@ -27,7 +27,7 @@ import {
 } from 'reka-ui'
 import { FlexRender } from '@tanstack/vue-table'
 
-import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
+import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@inkly/vue'
 
 import IconHash from '~icons/lucide/hash'
 import IconPalette from '~icons/lucide/palette'
@@ -39,7 +39,7 @@ import Tip from './ui/Tip.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 import { useMenuUI } from '@/components/ui/menu'
 
-import type { VariableType } from '@open-pencil/core/scene-graph'
+import type { VariableType } from '@inkly/core/scene-graph'
 
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI({ content: 'flex h-[75vh] w-[800px] max-w-[90vw] flex-col' })

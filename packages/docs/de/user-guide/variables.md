@@ -1,6 +1,6 @@
 ---
 title: Variablen
-description: Design-Variablen, Sammlungen, Modi und Füllbindungen in OpenPencil.
+description: Design-Variablen, Sammlungen, Modi und Füllbindungen in Inkly.
 ---
 
 # Variablen

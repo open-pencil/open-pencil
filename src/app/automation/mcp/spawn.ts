@@ -1,7 +1,7 @@
 import { promiseTimeout } from '@vueuse/core'
 
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { randomHex } from '@open-pencil/core/random'
+import { AUTOMATION_HTTP_PORT } from '@inkly/core/constants'
+import { randomHex } from '@inkly/core/random'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
@@ -20,11 +20,11 @@ export interface AutomationServerHandle {
 }
 
 const DEV_AUTOMATION_AUTH_TOKEN =
-  import.meta.env.DEV && typeof __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__ === 'string'
-    ? __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__
+  import.meta.env.DEV && typeof __INKLY_LOCAL_AUTOMATION_TOKEN__ === 'string'
+    ? __INKLY_LOCAL_AUTOMATION_TOKEN__
     : null
 const APP_VERSION =
-  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
+  typeof __INKLY_APP_VERSION__ === 'string' ? __INKLY_APP_VERSION__ : '0.0.0-test'
 const noop = () => undefined
 
 let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN
@@ -46,10 +46,10 @@ function assertCompatibleMcpVersion(health: AutomationHealth): void {
   if (health.version === APP_VERSION) return
   const runningVersion = health.version ? `v${health.version}` : 'an older version'
   const updateHint = health.installCommand
-    ? `Run: ${health.installCommand}, then restart OpenPencil.`
-    : `Update the global @open-pencil/mcp package to v${APP_VERSION} with your package manager, then restart OpenPencil.`
+    ? `Run: ${health.installCommand}, then restart Inkly.`
+    : `Update the global @inkly/mcp package to v${APP_VERSION} with your package manager, then restart Inkly.`
   throw new Error(
-    `OpenPencil desktop v${APP_VERSION} requires @open-pencil/mcp v${APP_VERSION}, ` +
+    `Inkly desktop v${APP_VERSION} requires @inkly/mcp v${APP_VERSION}, ` +
       `but the running MCP server is ${runningVersion}. ${updateHint}`
   )
 }
@@ -94,16 +94,16 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   const { Command } = await import('@tauri-apps/plugin-shell')
   const isWindows = navigator.platform.includes('Win')
   const command = isWindows
-    ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
+    ? Command.create('cmd', ['/c', 'inkly-mcp-http'], {
         env: {
-          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+          INKLY_MCP_AUTH_TOKEN: authToken,
+          INKLY_MCP_CORS_ORIGIN: window.location.origin
         }
       })
-    : Command.create('openpencil-mcp-http', [], {
+    : Command.create('inkly-mcp-http', [], {
         env: {
-          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+          INKLY_MCP_AUTH_TOKEN: authToken,
+          INKLY_MCP_CORS_ORIGIN: window.location.origin
         }
       })
 
@@ -131,6 +131,6 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
 
   await child.kill()
   throw new Error(
-    `Failed to start MCP server. Install @open-pencil/mcp@${APP_VERSION} globally with your package manager, then restart OpenPencil.`
+    `Failed to start MCP server. Install @inkly/mcp@${APP_VERSION} globally with your package manager, then restart Inkly.`
   )
 }

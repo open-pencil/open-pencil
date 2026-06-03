@@ -1,6 +1,6 @@
 ---
 title: Componentes
-description: Componentes reutilizables, instancias, overrides y sincronización en OpenPencil.
+description: Componentes reutilizables, instancias, overrides y sincronización en Inkly.
 ---
 # Componentes
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor, type EditorState } from '@open-pencil/core/editor'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { createEditor, type EditorState } from '@inkly/core/editor'
+import { SceneGraph } from '@inkly/core/scene-graph'
 
 import { resolvePasteTarget } from '#core/editor/clipboard/paste-target'
 

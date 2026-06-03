@@ -1,10 +1,10 @@
 import { useFilter } from 'reka-ui'
 import { computed, ref, watch } from 'vue'
 
-import type { FontFamilyOption } from '@open-pencil/core/text'
+import type { FontFamilyOption } from '@inkly/core/text'
 
 export type FontAccessState = 'unsupported' | 'prompt' | 'granted' | 'denied'
-export type { FontFamilyOption, FontFamilySource } from '@open-pencil/core/text'
+export type { FontFamilyOption, FontFamilySource } from '@inkly/core/text'
 
 export interface FontAccessController {
   state: () => FontAccessState

@@ -3,15 +3,15 @@ import { readFileSync } from 'node:fs'
 
 import {
   buildFigmaClipboardHTML,
-  buildOpenPencilClipboardHTML,
+  buildInklyClipboardHTML,
   importClipboardNodes,
   parseFigmaClipboard,
-  parseOpenPencilClipboard,
+  parseInklyClipboard,
   readFigFile,
   initCodec,
   type SceneNode,
   SceneGraph
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -39,10 +39,10 @@ describe('gold-preview.fig clipboard roundtrip', () => {
     topLevelNodes = graph.getChildren(pageId)
   })
 
-  it('OpenPencil format: zero property differences', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
-    const parsed = parseOpenPencilClipboard(html)
-    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+  it('Inkly format: zero property differences', () => {
+    const html = buildInklyClipboardHTML(topLevelNodes, graph)
+    const parsed = parseInklyClipboard(html)
+    const clipboard = expectDefined(parsed, 'Inkly clipboard')
 
     const origAll = flatten(graph, pageId)
 
@@ -73,8 +73,8 @@ describe('gold-preview.fig clipboard roundtrip', () => {
     expect(diffs).toBe(0)
   })
 
-  it('OpenPencil format: compressed data is under 1MB', () => {
-    const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
+  it('Inkly format: compressed data is under 1MB', () => {
+    const html = buildInklyClipboardHTML(topLevelNodes, graph)
     expect(html.length).toBeLessThan(5 * 1024 * 1024)
   })
 

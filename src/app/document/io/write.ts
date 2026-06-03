@@ -1,4 +1,4 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import type { EditorState } from '@inkly/core/editor'
 
 import { isTauri } from '@/app/tauri/env'
 

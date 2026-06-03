@@ -1,6 +1,6 @@
 import { computed, type Ref } from 'vue'
 
-import { formatShortcut, type Editor, type MenuEntry } from '@open-pencil/vue'
+import { formatShortcut, type Editor, type MenuEntry } from '@inkly/vue'
 
 import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import {

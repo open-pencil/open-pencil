@@ -26,8 +26,8 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
   await canvas.waitForInit()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const nodes = Array.from(store.graph.nodes.values())
     const card =
       nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT') ??
@@ -49,8 +49,8 @@ async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: 
 
 async function getSelectedFill(page: Parameters<typeof test>[0]['page']) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = store.graph.getNode(id)
     return node

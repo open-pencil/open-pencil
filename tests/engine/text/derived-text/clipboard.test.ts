@@ -6,7 +6,7 @@ import {
   buildFontDigestMap,
   buildDerivedTextDataV4,
   initCodec
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 

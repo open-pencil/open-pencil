@@ -1,6 +1,6 @@
 ---
 title: Selezione e manipolazione
-description: Selezionare, spostare, ridimensionare, ruotare e organizzare nodi in OpenPencil.
+description: Selezionare, spostare, ridimensionare, ruotare e organizzare nodi in Inkly.
 ---
 # Selezione e manipolazione
 

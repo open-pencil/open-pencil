@@ -10,8 +10,8 @@ test('dragging a nested card uses repaint-only position previews', async ({ page
   await canvas.clearCanvas()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -47,8 +47,8 @@ test('dragging a nested card uses repaint-only position previews', async ({ page
   await canvas.waitForRender()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const originalStoreUpdate = store.updateNode.bind(store)
     const originalGraphUpdate = store.graph.updateNode.bind(store.graph)
     let storeUpdateCount = 0
@@ -66,7 +66,7 @@ test('dragging a nested card uses repaint-only position previews', async ({ page
       repaintCount++
     })
     Object.assign(window, {
-      __openPencilDragCounters: () => ({
+      __inklyDragCounters: () => ({
         storeUpdateCount,
         graphUpdateCount,
         repaintCount
@@ -79,13 +79,13 @@ test('dragging a nested card uses repaint-only position previews', async ({ page
   const counters = await page.evaluate(() => {
     const getCounters = (
       window as typeof window & {
-        __openPencilDragCounters?: () => {
+        __inklyDragCounters?: () => {
           storeUpdateCount: number
           graphUpdateCount: number
           repaintCount: number
         }
       }
-    ).__openPencilDragCounters
+    ).__inklyDragCounters
     return getCounters?.() ?? null
   })
 

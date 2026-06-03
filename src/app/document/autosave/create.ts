@@ -1,6 +1,6 @@
 import { watchDebounced } from '@vueuse/core'
 
-import type { EditorState } from '@open-pencil/core/editor'
+import type { EditorState } from '@inkly/core/editor'
 
 type AutosaveState = EditorState & { autosaveEnabled: boolean }
 

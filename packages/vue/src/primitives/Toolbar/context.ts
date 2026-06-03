@@ -1,6 +1,6 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { Editor, EditorToolDef, Tool } from '@open-pencil/core/editor'
+import type { Editor, EditorToolDef, Tool } from '@inkly/core/editor'
 
 export interface ToolbarContext {
   editor: Editor
@@ -20,6 +20,6 @@ export function provideToolbar(ctx: ToolbarContext) {
 
 export function useToolbar(): ToolbarContext {
   const ctx = inject(TOOLBAR_KEY)
-  if (!ctx) throw new Error('[open-pencil] useToolbar() called outside <ToolbarRoot>')
+  if (!ctx) throw new Error('[inkly] useToolbar() called outside <ToolbarRoot>')
   return ctx
 }

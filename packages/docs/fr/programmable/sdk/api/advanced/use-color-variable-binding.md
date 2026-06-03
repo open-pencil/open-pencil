@@ -12,7 +12,7 @@ Utilisez-le pour construire des interfaces de couleur qui ont besoin de connecte
 ## Utilisation
 
 ```ts
-import { useColorVariableBinding } from '@open-pencil/vue'
+import { useColorVariableBinding } from '@inkly/vue'
 
 const fillBinding = useColorVariableBinding('fills')
 const strokeBinding = useColorVariableBinding('strokes')

@@ -9,9 +9,9 @@ Le CLI vous permet d'explorer des fichiers `.fig` sans ouvrir l'éditeur. Chaque
 
 ::: tip Installation
 ```sh
-npm install -g @open-pencil/cli
+npm install -g @inkly/cli
 # ou
-brew install open-pencil/tap/open-pencil
+brew install inkly/tap/inkly
 ```
 :::
 
@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Obtenez un aperçu rapide — nombre de pages, nombre total de nœuds, polices utilisées, taille du fichier :
 
 ```sh
-openpencil info design.fig
+inkly info design.fig
 ```
 
 ## Arborescence des nœuds
@@ -28,7 +28,7 @@ openpencil info design.fig
 Affichez la hiérarchie complète des nœuds :
 
 ```sh
-openpencil tree design.fig
+inkly tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ openpencil tree design.fig
 Rechercher par type :
 
 ```sh
-openpencil find design.fig --type TEXT
+inkly find design.fig --type TEXT
 ```
 
 Rechercher par nom :
 
 ```sh
-openpencil find design.fig --name "Button"
+inkly find design.fig --name "Button"
 ```
 
 Les deux options peuvent être combinées pour affiner les résultats.
@@ -61,7 +61,7 @@ Les deux options peuvent être combinées pour affiner les résultats.
 Inspectez toutes les propriétés d'un nœud spécifique par son identifiant :
 
 ```sh
-openpencil node design.fig --id 1:23
+inkly node design.fig --id 1:23
 ```
 
 ## Pages
@@ -69,7 +69,7 @@ openpencil node design.fig --id 1:23
 Listez toutes les pages du document :
 
 ```sh
-openpencil pages design.fig
+inkly pages design.fig
 ```
 
 ## Variables
@@ -77,7 +77,7 @@ openpencil pages design.fig
 Listez les variables de design et leurs collections :
 
 ```sh
-openpencil variables design.fig
+inkly variables design.fig
 ```
 
 ## Mode application en direct
@@ -85,8 +85,8 @@ openpencil variables design.fig
 Quand l'application de bureau est en cours d'exécution, omettez l'argument fichier — le CLI se connecte via RPC et opère sur le canevas en direct :
 
 ```sh
-openpencil tree              # inspecter le document en direct
-openpencil eval -c "..."     # interroger l'éditeur
+inkly tree              # inspecter le document en direct
+inkly eval -c "..."     # interroger l'éditeur
 ```
 
 ## Sortie JSON
@@ -94,5 +94,5 @@ openpencil eval -c "..."     # interroger l'éditeur
 Toutes les commandes supportent `--json` pour une sortie lisible par machine — redirigez vers `jq`, alimentez des scripts CI, ou traitez avec d'autres outils :
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+inkly tree design.fig --json | jq '.[] | .name'
 ```

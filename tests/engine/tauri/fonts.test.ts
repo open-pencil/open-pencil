@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { fontManager } from '@open-pencil/core/text'
+import { fontManager } from '@inkly/core/text'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 

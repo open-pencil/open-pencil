@@ -12,7 +12,7 @@ description: Trabaja con los modelos de color RGBA y OkHCL para rellenos y trazo
 ## Uso
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue'
+import { useOkHCL } from '@inkly/vue'
 
 const okhcl = useOkHCL()
 ```

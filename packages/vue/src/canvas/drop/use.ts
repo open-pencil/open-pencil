@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'])
 const DESIGN_EXTENSIONS = new Set(['.pen', '.fig'])

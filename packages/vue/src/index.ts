@@ -6,8 +6,8 @@ export type {
   EditorEventName,
   Tool,
   EditorToolDef
-} from '@open-pencil/core/editor'
-export { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core/editor'
+} from '@inkly/core/editor'
+export { createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS } from '@inkly/core/editor'
 
 /**
  * Public editor-context API for the Vue SDK.

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OpenPencil",
+  "productName": "Inkly",
   "version": "0.13.2",
-  "identifier": "net.dannote.open-pencil",
+  "identifier": "net.dannote.inkly",
   "build": {
     "beforeDevCommand": "bun run generate:tauri-menu && bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "OpenPencil",
+        "title": "Inkly",
         "width": 1280,
         "height": 800
       }
@@ -35,8 +35,8 @@
     "fileAssociations": [
       {
         "ext": ["pen"],
-        "name": "Pencil Design File",
-        "description": "Pencil design file",
+        "name": "Inkly Design File",
+        "description": "Inkly design file",
         "role": "Editor",
         "mimeType": "application/x-pencil-pen",
         "rank": "Alternate"
@@ -57,7 +57,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4QzBCRjBFNzhFNEVEMDEKUldRQjdlUjREci9BV0hLaEJPeG5tRXdsWkhQWFdEa0VxcEtNR1o1S2VJeGlKU1VDTldQTi9wYncK",
-      "endpoints": ["https://github.com/open-pencil/open-pencil/releases/latest/download/latest.json"],
+      "endpoints": ["https://github.com/cardene777/open-pencil/releases/latest/download/latest.json"],
       "windows": {
         "installMode": "passive"
       }

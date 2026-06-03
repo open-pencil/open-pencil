@@ -59,8 +59,8 @@ export default defineConfig({
     neverBundle: [
       'vue',
       /^vue\//,
-      '@open-pencil/core',
-      /^@open-pencil\/core\//,
+      '@inkly/core',
+      /^@inkly\/core\//,
       'canvaskit-wasm',
       'opentype.js',
       '@vueuse/core',

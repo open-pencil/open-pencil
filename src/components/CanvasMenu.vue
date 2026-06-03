@@ -23,9 +23,9 @@ import {
   useSelectionState,
   editorCommandMetadata,
   formatShortcut
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 import type { Component } from 'vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+import type { EditorCommandId } from '@inkly/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'

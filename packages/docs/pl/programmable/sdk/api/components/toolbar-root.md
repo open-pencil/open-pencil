@@ -5,7 +5,7 @@ description: Bezstanowy prymityw strukturalny dla UI paska narzędzi edytora.
 
 # ToolbarRoot
 
-`ToolbarRoot` to bezstanowy prymityw paska narzędzi z `@open-pencil/vue`.
+`ToolbarRoot` to bezstanowy prymityw paska narzędzi z `@inkly/vue`.
 
 Użyj go, gdy chcesz wielokrotnie używalną strukturę paska narzędzi i kontekst z własnymi przyciskami, stylowaniem i layoutem.
 

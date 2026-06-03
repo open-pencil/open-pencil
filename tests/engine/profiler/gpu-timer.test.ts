@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { GPUTimer } from '@open-pencil/core'
+import { GPUTimer } from '@inkly/core'
 
 describe('GPUTimer', () => {
   it('handles null GL context', () => {

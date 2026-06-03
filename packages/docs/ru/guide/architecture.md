@@ -51,7 +51,7 @@ graph TB
 
 ### Движок макетов (Yoga WASM)
 
-Yoga от Meta обеспечивает вычисление макета CSS flexbox и grid через [форк](https://github.com/open-pencil/yoga/tree/grid) с поддержкой CSS Grid. Тонкий адаптер сопоставляет имена свойств Figma с эквивалентами Yoga:
+Yoga от Meta обеспечивает вычисление макета CSS flexbox и grid через [форк](https://github.com/inkly/yoga/tree/grid) с поддержкой CSS Grid. Тонкий адаптер сопоставляет имена свойств Figma с эквивалентами Yoga:
 
 | Свойство Figma | Эквивалент Yoga |
 |---|---|

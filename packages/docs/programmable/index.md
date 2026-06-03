@@ -1,18 +1,18 @@
 ---
 layout: doc
 title: Automation
-description: AI chat, CLI, JSX renderer, MCP server, and other automation surfaces built on the OpenPencil editor engine.
+description: AI chat, CLI, JSX renderer, MCP server, and other automation surfaces built on the Inkly editor engine.
 ---
 
 # Automation
 
-OpenPencil treats design files as data. Every operation available in the editor — creating shapes, setting fills, managing auto-layout, exporting assets — is also available from the terminal, from AI agents, and from code. No plugins to install, no API keys, no waiting list.
+Inkly treats design files as data. Every operation available in the editor — creating shapes, setting fills, managing auto-layout, exporting assets — is also available from the terminal, from AI agents, and from code. No plugins to install, no API keys, no waiting list.
 
 The editor UI and the automation interfaces use the same engine. If you can do it by clicking, you can do it by scripting.
 
 ## The bigger idea
 
-OpenPencil is not just meant to be a design app.
+Inkly is not just meant to be a design app.
 
 It is also meant to be a toolkit: something you can embed into other products, wrap with your own UI, and use to build editing workflows that fit your own domain.
 
@@ -32,7 +32,7 @@ Real-time multiplayer editing over peer-to-peer WebRTC. No server, no account. S
 
 ## Vue SDK
 
-Build OpenPencil-powered editors with the same Vue SDK the app uses internally. The SDK exposes editor context, canvas wiring, selection state, command models, property-panel composables, and headless primitives.
+Build Inkly-powered editors with the same Vue SDK the app uses internally. The SDK exposes editor context, canvas wiring, selection state, command models, property-panel composables, and headless primitives.
 
 [Vue SDK →](./sdk/)
 
@@ -54,7 +54,7 @@ The CLI also connects to the running desktop app via RPC, so you can script the 
 
 ## MCP Server
 
-Connect Claude Code, Cursor, Windsurf, or any MCP-compatible client to OpenPencil. The server exposes 90 tools for reading, creating, and modifying designs — the same tools the built-in AI chat uses. Runs over stdio or HTTP with session support.
+Connect Claude Code, Cursor, Windsurf, or any MCP-compatible client to Inkly. The server exposes 90 tools for reading, creating, and modifying designs — the same tools the built-in AI chat uses. Runs over stdio or HTTP with session support.
 
 [MCP Server →](./mcp-server)
 
@@ -62,4 +62,4 @@ Connect Claude Code, Cursor, Windsurf, or any MCP-compatible client to OpenPenci
 
 Figma is a closed platform. Their MCP server is read-only. CDP browser access was killed in version 126. Design files live in a proprietary format on someone else's servers. Plugin development requires a custom runtime with limited APIs.
 
-OpenPencil is the alternative: open source, MIT licensed, every operation scriptable, data stored locally. Your design files are yours — inspect them, transform them, pipe them into CI, feed them to an LLM. No permission needed.
+Inkly is the alternative: open source, MIT licensed, every operation scriptable, data stored locally. Your design files are yours — inspect them, transform them, pipe them into CI, feed them to an LLM. No permission needed.

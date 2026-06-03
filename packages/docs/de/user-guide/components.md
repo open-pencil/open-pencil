@@ -1,6 +1,6 @@
 ---
 title: Komponenten
-description: Wiederverwendbare Komponenten, Instanzen, Komponenten-Sets, Overrides und Live-Synchronisation in OpenPencil.
+description: Wiederverwendbare Komponenten, Instanzen, Komponenten-Sets, Overrides und Live-Synchronisation in Inkly.
 ---
 
 # Komponenten

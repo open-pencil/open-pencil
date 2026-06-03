@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { validateVectorNetwork, type VectorNetwork } from '@open-pencil/core'
+import { validateVectorNetwork, type VectorNetwork } from '@inkly/core'
 
 describe('validateVectorNetwork', () => {
   test('valid network returns no errors', () => {

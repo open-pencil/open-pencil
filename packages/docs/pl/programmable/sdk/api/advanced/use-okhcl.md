@@ -12,7 +12,7 @@ Użyj go, gdy budujesz zaawansowane narzędzia kolorów, które muszą przełąc
 ## Użycie
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue'
+import { useOkHCL } from '@inkly/vue'
 
 const okhcl = useOkHCL()
 ```

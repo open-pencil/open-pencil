@@ -5,12 +5,12 @@ description: JavaScript mit der Figma Plugin API ausführen — Knoten abfragen,
 
 # Skripting
 
-`openpencil eval` bietet dir die vollständige Figma Plugin API im Terminal. Knoten lesen, Eigenschaften ändern, Formen erstellen — und Änderungen zurück in die Datei schreiben.
+`inkly eval` bietet dir die vollständige Figma Plugin API im Terminal. Knoten lesen, Eigenschaften ändern, Formen erstellen — und Änderungen zurück in die Datei schreiben.
 
 ## Grundlegende Verwendung
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
+inkly eval design.fig -c "figma.currentPage.children.length"
 ```
 
 Das `-c`-Flag nimmt JavaScript entgegen. Das `figma`-Global funktioniert wie die Figma Plugin API.
@@ -18,7 +18,7 @@ Das `-c`-Flag nimmt JavaScript entgegen. Das `figma`-Global funktioniert wie die
 ## Knoten abfragen
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
     .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
 "
@@ -27,7 +27,7 @@ openpencil eval design.fig -c "
 ## Bearbeiten und speichern
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   figma.currentPage.children.forEach(n => n.opacity = 0.5)
 " -w
 ```
@@ -39,7 +39,7 @@ openpencil eval design.fig -c "
 Für längere Skripte:
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin -w
+cat transform.js | inkly eval design.fig --stdin -w
 ```
 
 ## Live-App-Modus
@@ -47,7 +47,7 @@ cat transform.js | openpencil eval design.fig --stdin -w
 Lass die Datei weg, um gegen die laufende Desktop-App auszuführen:
 
 ```sh
-openpencil eval -c "figma.currentPage.name"
+inkly eval -c "figma.currentPage.name"
 ```
 
 ## Verfügbare API
@@ -66,5 +66,5 @@ Dies ist dieselbe API, die Figma-Plugins verwenden, sodass bestehendes Wissen un
 ## JSON-Ausgabe
 
 ```sh
-openpencil eval design.fig -c "..." --json
+inkly eval design.fig -c "..." --json
 ```

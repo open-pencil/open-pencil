@@ -1,6 +1,6 @@
 ---
 title: useCanvas
-description: Attach CanvasKit-backed rendering to a canvas element for an OpenPencil editor.
+description: Attach CanvasKit-backed rendering to a canvas element for an Inkly editor.
 ---
 
 # useCanvas
@@ -21,7 +21,7 @@ It handles:
 ```ts
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas, useEditor } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -35,7 +35,7 @@ useCanvas(canvasRef, editor)
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas, useEditor } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

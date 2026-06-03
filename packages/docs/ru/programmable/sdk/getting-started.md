@@ -1,6 +1,6 @@
 ---
 title: Начало работы с SDK
-description: Настройка @open-pencil/vue с createEditor, provideEditor и холстом.
+description: Настройка @inkly/vue с createEditor, provideEditor и холстом.
 ---
 
 # Начало работы с SDK
@@ -8,22 +8,22 @@ description: Настройка @open-pencil/vue с createEditor, provideEditor 
 ## Установка
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @inkly/core @inkly/vue canvaskit-wasm
 ```
 
-SDK находится в монорепозитории и также опубликован как `@open-pencil/vue`.
+SDK находится в монорепозитории и также опубликован как `@inkly/vue`.
 
 ```ts
-import { createEditor } from '@open-pencil/core/editor'
-import { provideEditor, useCanvas } from '@open-pencil/vue'
+import { createEditor } from '@inkly/core/editor'
+import { provideEditor, useCanvas } from '@inkly/vue'
 ```
 
 ## Концептуальная модель
 
 Три уровня:
 
-1. `@open-pencil/core` — не зависящий от фреймворка движок редактора
-2. `@open-pencil/vue` — Vue-компосаблы и headless-примитивы
+1. `@inkly/core` — не зависящий от фреймворка движок редактора
+2. `@inkly/vue` — Vue-компосаблы и headless-примитивы
 3. ваше приложение — стили, маршрутизация, файловые потоки, UI под конкретный продукт
 
 ## Минимальная настройка
@@ -31,7 +31,7 @@ import { provideEditor, useCanvas } from '@open-pencil/vue'
 ### 1. Создайте редактор
 
 ```ts
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 
 const editor = createEditor({
   width: 1200,
@@ -43,9 +43,9 @@ const editor = createEditor({
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@inkly/vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 const props = defineProps<{
   editor: Editor
@@ -67,7 +67,7 @@ provideEditor(props.editor)
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas, useEditor } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -85,7 +85,7 @@ useCanvas(canvasRef, editor)
 После того как редактор передан через провайдер, дочерние компоненты могут читать выделение и вызывать команды:
 
 ```ts
-import { useEditorCommands, useSelectionState } from '@open-pencil/vue'
+import { useEditorCommands, useSelectionState } from '@inkly/vue'
 
 const selection = useSelectionState()
 const commands = useEditorCommands()
@@ -97,7 +97,7 @@ const commands = useEditorCommands()
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor, useSelectionState } from '@open-pencil/vue'
+import { useCanvas, useEditor, useSelectionState } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

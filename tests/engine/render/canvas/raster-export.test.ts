@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@open-pencil/core'
+import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@inkly/core'
 
 import { initCanvasKit } from '#cli/headless'
 

@@ -1,6 +1,6 @@
 ---
 title: Navigazione canvas
-description: Panoramica, zoom e strumento mano in OpenPencil.
+description: Panoramica, zoom e strumento mano in Inkly.
 ---
 
 # Navigazione canvas

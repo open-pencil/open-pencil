@@ -5,7 +5,7 @@ description: Build page and layer sidebars with PageListRoot, LayerTreeRoot, and
 
 # Navigation Panels
 
-OpenPencil sidebars usually combine two concerns:
+Inkly sidebars usually combine two concerns:
 
 - page navigation
 - layer navigation

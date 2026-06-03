@@ -27,7 +27,7 @@ test.afterAll(async () => {
 
 async function injectMockTransport(page: Page) {
   await page.evaluate(() => {
-    const setChatTransport = window.openPencil?.setChatTransport
+    const setChatTransport = window.inkly?.setChatTransport
     if (!setChatTransport) throw new Error('Transport override not available')
 
     let msgCounter = 0
@@ -254,7 +254,7 @@ test('transport errors show an actionable toast', async () => {
 })
 
 test('"Get API key" link opens external URL via window.open', async () => {
-  await page.evaluate("localStorage.removeItem('open-pencil:ai-key:openrouter')")
+  await page.evaluate("localStorage.removeItem('inkly:ai-key:openrouter')")
   await page.reload()
   await canvas.waitForInit()
   await chatTab().click()
@@ -266,8 +266,8 @@ test('"Get API key" link opens external URL via window.open', async () => {
   const openedUrls: string[] = []
   await page.exposeFunction('mockWindowOpen', (url: string) => openedUrls.push(url))
   await page.evaluate(() => {
-    window.openPencil ??= {}
-    window.openPencil.test = { ...window.openPencil.test, savedOpen: window.open }
+    window.inkly ??= {}
+    window.inkly.test = { ...window.inkly.test, savedOpen: window.open }
     window.open = (url: string | URL) => {
       window.mockWindowOpen?.(String(url))
       return null
@@ -283,7 +283,7 @@ test('"Get API key" link opens external URL via window.open', async () => {
 
   // Restore
   await page.evaluate(() => {
-    const savedOpen = window.openPencil?.test?.savedOpen
+    const savedOpen = window.inkly?.test?.savedOpen
     if (savedOpen) window.open = savedOpen
   })
 })

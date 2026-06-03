@@ -1,5 +1,5 @@
-import { createEditor } from '@open-pencil/core/editor'
-import type { Editor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 export function setupEditorPage() {
   const editor = createEditor()

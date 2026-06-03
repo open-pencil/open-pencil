@@ -19,7 +19,7 @@ Es gibt zurück:
 ## Verwendung
 
 ```ts
-import { usePageList } from '@open-pencil/vue'
+import { usePageList } from '@inkly/vue'
 
 const pageList = usePageList()
 ```

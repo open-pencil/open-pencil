@@ -5,7 +5,7 @@ description: Créez des barres latérales de pages et de calques avec PageListRo
 
 # Panneaux de navigation
 
-Les barres latérales OpenPencil combinent généralement deux préoccupations :
+Les barres latérales Inkly combinent généralement deux préoccupations :
 
 - la navigation entre pages
 - la navigation entre calques

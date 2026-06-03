@@ -4,8 +4,8 @@ import {
   populateAllLazyFigImportRoots,
   populateLazyFigImportRoots,
   setLazyFigImportContext
-} from '@open-pencil/core/kiwi/fig/lazy-import'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+} from '@inkly/core/kiwi/fig/lazy-import'
+import { SceneGraph } from '@inkly/core/scene-graph'
 
 function createLazyGraph() {
   const graph = new SceneGraph()

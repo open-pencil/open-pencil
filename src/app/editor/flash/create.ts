@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@inkly/core/editor'
 
 export function createFlashActions(editor: Editor, state: EditorState) {
   let flashRafId = 0

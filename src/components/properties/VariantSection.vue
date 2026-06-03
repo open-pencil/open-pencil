@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useI18n, useSelectionState } from '@open-pencil/vue'
+import { useI18n, useSelectionState } from '@inkly/vue'
 
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { useSectionUI } from '@/components/ui/section'

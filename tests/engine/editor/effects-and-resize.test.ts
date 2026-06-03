@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { SceneGraph, type Effect, type Rect } from '@open-pencil/core'
+import { SceneGraph, type Effect, type Rect } from '@inkly/core'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 

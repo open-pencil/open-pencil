@@ -1,6 +1,6 @@
 ---
 title: Pen Tool
-description: Drawing vector paths with bezier curves using the pen tool in OpenPencil.
+description: Drawing vector paths with bezier curves using the pen tool in Inkly.
 ---
 
 # Pen Tool
@@ -28,7 +28,7 @@ Press <kbd>Escape</kbd> to commit the current path as an open path. Open paths r
 
 ## Vector Networks
 
-Paths in OpenPencil use vector networks — a more flexible model than simple point lists that supports branching paths and complex topology. This is the same model Figma uses, so paths round-trip perfectly in .fig files.
+Paths in Inkly use vector networks — a more flexible model than simple point lists that supports branching paths and complex topology. This is the same model Figma uses, so paths round-trip perfectly in .fig files.
 
 ## Keyboard Shortcuts
 

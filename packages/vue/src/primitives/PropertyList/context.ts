@@ -1,7 +1,7 @@
 import { type ComputedRef, type InjectionKey, inject, provide } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { SceneNode } from '@inkly/core/scene-graph'
 
 type ArrayPropKey = 'fills' | 'strokes' | 'effects'
 
@@ -27,6 +27,6 @@ export function providePropertyList<T>(ctx: PropertyListContext<T>) {
 
 export function usePropertyList<T = unknown>(): PropertyListContext<T> {
   const ctx = inject(PROPERTY_LIST_KEY)
-  if (!ctx) throw new Error('[open-pencil] usePropertyList() called outside <PropertyListRoot>')
+  if (!ctx) throw new Error('[inkly] usePropertyList() called outside <PropertyListRoot>')
   return ctx as PropertyListContext<T>
 }

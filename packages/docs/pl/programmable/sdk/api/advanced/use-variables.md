@@ -12,7 +12,7 @@ Użyj go, gdy chcesz bezpośrednią kontrolę nad kolekcjami, aktywnymi trybami,
 ## Użycie
 
 ```ts
-import { useVariables } from '@open-pencil/vue'
+import { useVariables } from '@inkly/vue'
 
 const variables = useVariables()
 ```

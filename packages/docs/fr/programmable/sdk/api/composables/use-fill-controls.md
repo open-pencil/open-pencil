@@ -12,7 +12,7 @@ Il ajoute une valeur de remplissage par défaut réutilisable.
 ## Utilisation
 
 ```ts
-import { useFillControls } from '@open-pencil/vue'
+import { useFillControls } from '@inkly/vue'
 
 const fills = useFillControls()
 ```

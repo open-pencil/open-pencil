@@ -5,12 +5,12 @@ description: Ejecuta JavaScript con la API de Plugins de Figma — consulta nodo
 
 # Scripting
 
-`openpencil eval` te da acceso a la API completa de Plugins de Figma en la terminal. Lee nodos, modifica propiedades, crea formas — y luego guarda los cambios en el archivo.
+`inkly eval` te da acceso a la API completa de Plugins de Figma en la terminal. Lee nodos, modifica propiedades, crea formas — y luego guarda los cambios en el archivo.
 
 ## Uso Básico
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
+inkly eval design.fig -c "figma.currentPage.children.length"
 ```
 
 El flag `-c` recibe JavaScript. El global `figma` funciona como la API de Plugins de Figma.
@@ -18,7 +18,7 @@ El flag `-c` recibe JavaScript. El global `figma` funciona como la API de Plugin
 ## Consultar Nodos
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
     .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
 "
@@ -27,7 +27,7 @@ openpencil eval design.fig -c "
 ## Modificar y Guardar
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   figma.currentPage.children.forEach(n => n.opacity = 0.5)
 " -w
 ```
@@ -39,7 +39,7 @@ openpencil eval design.fig -c "
 Para scripts más largos:
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin -w
+cat transform.js | inkly eval design.fig --stdin -w
 ```
 
 ## Modo Aplicación en Vivo
@@ -47,7 +47,7 @@ cat transform.js | openpencil eval design.fig --stdin -w
 Omite el archivo para ejecutar contra la aplicación de escritorio en ejecución:
 
 ```sh
-openpencil eval -c "figma.currentPage.name"
+inkly eval -c "figma.currentPage.name"
 ```
 
 ## API Disponible
@@ -66,5 +66,5 @@ Esta es la misma API que usan los plugins de Figma, por lo que el conocimiento e
 ## Salida JSON
 
 ```sh
-openpencil eval design.fig -c "..." --json
+inkly eval design.fig -c "..." --json
 ```

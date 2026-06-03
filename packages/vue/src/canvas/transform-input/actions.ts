@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import { handleMarqueeMove as handleMarqueeMoveAction } from '#vue/canvas/transform-input/marquee'
 import { handlePanMove as handlePanMoveAction } from '#vue/canvas/transform-input/pan'

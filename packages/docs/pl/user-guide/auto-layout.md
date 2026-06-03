@@ -1,6 +1,6 @@
 ---
 title: Auto-layout
-description: Layout flex i grid w OpenPencil — kierunek, odstępy, padding, wyrównanie, rozmiary i ścieżki CSS Grid.
+description: Layout flex i grid w Inkly — kierunek, odstępy, padding, wyrównanie, rozmiary i ścieżki CSS Grid.
 ---
 # Auto-layout
 

@@ -1,10 +1,10 @@
 import { convertToHsb, convertToHsl, convertToRgb } from 'reka-ui'
 import type { Color as RekaColor, HSBColor, HSLColor, RGBColor } from 'reka-ui'
 
-import { colorToCSS, okhclToRGBA, rgba255ToColor } from '@open-pencil/core/color'
-import type { OkHCLColor } from '@open-pencil/core/color'
-import type { Fill, Stroke } from '@open-pencil/core/scene-graph'
-import type { Color } from '@open-pencil/core/types'
+import { colorToCSS, okhclToRGBA, rgba255ToColor } from '@inkly/core/color'
+import type { OkHCLColor } from '@inkly/core/color'
+import type { Fill, Stroke } from '@inkly/core/scene-graph'
+import type { Color } from '@inkly/core/types'
 
 export interface ColorPickerModel {
   rekaColor: RekaColor

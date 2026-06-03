@@ -1,5 +1,5 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import { prefetchFigmaSchema } from '@open-pencil/core/kiwi'
+import type { Editor, EditorState } from '@inkly/core/editor'
+import { prefetchFigmaSchema } from '@inkly/core/kiwi'
 
 import { createDocumentViewportActions, downloadBlob } from '@/app/document/io/browser'
 import { createOpenActions, createReloadActions } from '@/app/document/io/read'

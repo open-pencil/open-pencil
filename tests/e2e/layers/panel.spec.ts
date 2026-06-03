@@ -25,7 +25,7 @@ interface SceneTreeNode {
 
 async function getSceneTree(): Promise<SceneTreeNode> {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
+    const store = window.inkly?.getStore?.()
     if (!store) return null
 
     function nodeTree(id: string): SceneTreeNode | null {
@@ -45,8 +45,8 @@ async function getSceneTree(): Promise<SceneTreeNode> {
 
 async function getSelectedCount(): Promise<number> {
   return editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     return store.state.selectedIds.size
   })
 }

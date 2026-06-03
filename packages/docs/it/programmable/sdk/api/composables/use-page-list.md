@@ -19,7 +19,7 @@ Espone:
 ## Utilizzo
 
 ```ts
-import { usePageList } from '@open-pencil/vue'
+import { usePageList } from '@inkly/vue'
 
 const pageList = usePageList()
 ```

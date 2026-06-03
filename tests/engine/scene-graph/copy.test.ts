@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/core'
+import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@inkly/core'
 
 import {
   copyFill,

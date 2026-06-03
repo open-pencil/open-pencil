@@ -14,11 +14,11 @@ import AppTextButton from '@/components/ui/AppTextButton.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/app/ai/chat/use'
 import { toast } from '@/app/shell/ui'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@inkly/core/types'
 
 const IS_DEV = import.meta.env.DEV
 

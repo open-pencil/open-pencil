@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Guía del usuario
-description: Aprende a usar OpenPencil — navegación del lienzo, dibujo, texto, componentes, auto-layout y más.
+description: Aprende a usar Inkly — navegación del lienzo, dibujo, texto, componentes, auto-layout y más.
 ---
 
 # Guía del usuario
 
-OpenPencil es un editor de diseño open-source, compatible con Figma — completamente local, IA-nativo y programable.
+Inkly es un editor de diseño open-source, compatible con Figma — completamente local, IA-nativo y programable.
 
 ::: tip Atajos multiplataforma
 <kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> en Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.

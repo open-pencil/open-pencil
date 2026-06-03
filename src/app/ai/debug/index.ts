@@ -1,8 +1,8 @@
 import type { UIMessage } from 'ai'
 
-import { buildDebugLog } from '@open-pencil/core/tools'
-import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
-import type { JsonObject } from '@open-pencil/core/types'
+import { buildDebugLog } from '@inkly/core/tools'
+import type { ToolDebugLog, ToolLogEntry } from '@inkly/core/tools'
+import type { JsonObject } from '@inkly/core/types'
 
 import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
 

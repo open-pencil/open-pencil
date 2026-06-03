@@ -1,5 +1,5 @@
-import type { VectorSegment, VectorVertex } from '@open-pencil/core/scene-graph'
-import type { Vector } from '@open-pencil/core/types'
+import type { VectorSegment, VectorVertex } from '@inkly/core/scene-graph'
+import type { Vector } from '@inkly/core/types'
 
 import type { HandleInfo, NodeEditState } from './types'
 

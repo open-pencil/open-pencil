@@ -23,7 +23,7 @@ function nodeEval(code: string, cwd: string): void {
   run(['node', '--input-type=module', '--eval', code], cwd)
 }
 
-const tempDir = mkdtempSync(join(tmpdir(), 'open-pencil-package-smoke-'))
+const tempDir = mkdtempSync(join(tmpdir(), 'inkly-package-smoke-'))
 
 try {
   run(['bun', 'run', 'build:packages'])
@@ -55,14 +55,14 @@ try {
   run(['npm', 'init', '-y'], tempDir)
   run(['npm', 'install', '--ignore-scripts', '--no-audit', '--no-fund', ...tarballs], tempDir)
 
-  nodeEval("await import('@open-pencil/core')", tempDir)
-  nodeEval("await import('@open-pencil/core/scene-graph')", tempDir)
-  nodeEval("await import('@open-pencil/vue')", tempDir)
-  nodeEval("await import('@open-pencil/mcp')", tempDir)
+  nodeEval("await import('@inkly/core')", tempDir)
+  nodeEval("await import('@inkly/core/scene-graph')", tempDir)
+  nodeEval("await import('@inkly/vue')", tempDir)
+  nodeEval("await import('@inkly/mcp')", tempDir)
 
-  run(['node', 'node_modules/.bin/openpencil', '--help'], tempDir)
-  run(['node', 'node_modules/.bin/openpencil-mcp', '--help'], tempDir)
-  run(['node', 'node_modules/.bin/openpencil-mcp-http', '--help'], tempDir)
+  run(['node', 'node_modules/.bin/inkly', '--help'], tempDir)
+  run(['node', 'node_modules/.bin/inkly-mcp', '--help'], tempDir)
+  run(['node', 'node_modules/.bin/inkly-mcp-http', '--help'], tempDir)
 
   console.log('Packed package smoke tests passed.')
 } finally {

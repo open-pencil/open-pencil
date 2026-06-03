@@ -2,37 +2,37 @@ import type { ChatTransport, UIMessage } from 'ai'
 
 import type { EditorStore } from '@/app/editor/session/create'
 
-export interface OpenPencilTestHooks {
+export interface InklyTestHooks {
   writeCount?: () => number
   mockHandle?: FileSystemFileHandle
   savedOpen?: Window['open']
 }
 
-export interface OpenPencilWindowAPI {
+export interface InklyWindowAPI {
   getStore?: () => EditorStore
   setChatTransport?: (factory: () => ChatTransport<UIMessage>) => void
   openFile?: (path: string) => Promise<void>
-  test?: OpenPencilTestHooks
+  test?: InklyTestHooks
 }
 
 declare global {
   interface Window {
-    openPencil?: OpenPencilWindowAPI
+    inkly?: InklyWindowAPI
   }
 }
 
 let activeStore: EditorStore | null = null
 
-function windowApi(): OpenPencilWindowAPI {
-  window.openPencil ??= {}
-  window.openPencil.getStore ??= () => {
-    if (!activeStore) throw new Error('OpenPencil store not initialized')
+function windowApi(): InklyWindowAPI {
+  window.inkly ??= {}
+  window.inkly.getStore ??= () => {
+    if (!activeStore) throw new Error('Inkly store not initialized')
     return activeStore
   }
-  return window.openPencil
+  return window.inkly
 }
 
-export function setOpenPencilStore(store: EditorStore) {
+export function setInklyStore(store: EditorStore) {
   activeStore = store
   windowApi()
 }
@@ -43,6 +43,6 @@ export function exposeChatTransportOverride(
   windowApi().setChatTransport = setChatTransport
 }
 
-export function setOpenPencilOpenFileHandler(openFile: (path: string) => Promise<void>) {
+export function setInklyOpenFileHandler(openFile: (path: string) => Promise<void>) {
   windowApi().openFile = openFile
 }

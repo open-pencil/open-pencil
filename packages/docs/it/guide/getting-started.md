@@ -2,11 +2,11 @@
 
 ## Prova online
 
-OpenPencil funziona nel browser — nessuna installazione richiesta. Apri [app.openpencil.dev](https://app.openpencil.dev) per iniziare a progettare.
+Inkly funziona nel browser — nessuna installazione richiesta. Apri [app.inkly.dev](https://app.inkly.dev) per iniziare a progettare.
 
 ## Scarica l'app desktop
 
-Binari precompilati per macOS, Windows e Linux sono disponibili nella [pagina dei rilasci](https://github.com/open-pencil/open-pencil/releases/latest).
+Binari precompilati per macOS, Windows e Linux sono disponibili nella [pagina dei rilasci](https://github.com/cardene777/open-pencil/releases/latest).
 
 | Piattaforma | Download |
 |-------------|----------|
@@ -26,8 +26,8 @@ Binari precompilati per macOS, Windows e Linux sono disponibili nella [pagina de
 ## Installazione
 
 ```sh
-git clone https://github.com/open-pencil/open-pencil.git
-cd open-pencil
+git clone https://github.com/cardene777/open-pencil.git
+cd inkly
 bun install
 ```
 

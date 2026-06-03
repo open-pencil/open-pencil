@@ -1,4 +1,4 @@
-# OpenPencil JSX Reference
+# Inkly JSX Reference
 
 ## Elements
 

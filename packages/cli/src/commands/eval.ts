@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { FigmaAPI } from '@open-pencil/core/figma-api'
+import { FigmaAPI } from '@inkly/core/figma-api'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { printError } from '#cli/format'
@@ -92,7 +92,7 @@ export default defineCommand({
     }
 
     if (args.write || args.output) {
-      const { BUILTIN_IO_FORMATS, IORegistry } = await import('@open-pencil/core/io')
+      const { BUILTIN_IO_FORMATS, IORegistry } = await import('@inkly/core/io')
       const io = new IORegistry(BUILTIN_IO_FORMATS)
       const outPath = args.output ? args.output : file
       const result = await io.writeDocument('fig', graph)

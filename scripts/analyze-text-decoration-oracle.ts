@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 
-import { initCanvasKit } from '@open-pencil/core/io'
+import { initCanvasKit } from '@inkly/core/io'
 
 import type { PixelImage } from './pixel-image'
 
@@ -15,11 +15,11 @@ const { values: opts } = parseArgs({
   options: {
     figma: {
       type: 'string',
-      default: '/tmp/open-pencil-oracles/rich-text/derived-decorations3/figma.png'
+      default: '/tmp/inkly-oracles/rich-text/derived-decorations3/figma.png'
     },
     ours: {
       type: 'string',
-      default: '/tmp/open-pencil-oracles/rich-text/derived-decorations3/ours.png'
+      default: '/tmp/inkly-oracles/rich-text/derived-decorations3/ours.png'
     }
   }
 })
@@ -27,7 +27,7 @@ const { values: opts } = parseArgs({
 const figmaPath = opts.figma ?? ''
 const oursPath = opts.ours ?? ''
 if (!existsSync(figmaPath)) throw new Error(`Missing Figma image: ${figmaPath}`)
-if (!existsSync(oursPath)) throw new Error(`Missing OpenPencil image: ${oursPath}`)
+if (!existsSync(oursPath)) throw new Error(`Missing Inkly image: ${oursPath}`)
 
 const figma = await loadImage(figmaPath)
 const ours = await loadImage(oursPath)

@@ -1,6 +1,6 @@
 ---
 title: Keyboard Shortcuts
-description: Figma-compatible keyboard shortcut reference for OpenPencil tools, editing commands, view controls, and layer actions.
+description: Figma-compatible keyboard shortcut reference for Inkly tools, editing commands, view controls, and layer actions.
 ---
 
 # Keyboard Shortcuts

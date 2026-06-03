@@ -1,4 +1,4 @@
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
+import type { FigmaAPI } from '@inkly/core/figma-api'
 
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJsx } from '@/app/automation/bridge/export-handlers'

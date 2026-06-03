@@ -1,6 +1,6 @@
 ---
 title: Variables
-description: Variables de diseño, colecciones, modos y vinculaciones en OpenPencil.
+description: Variables de diseño, colecciones, modos y vinculaciones en Inkly.
 ---
 # Variables
 

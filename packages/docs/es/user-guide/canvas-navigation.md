@@ -1,6 +1,6 @@
 ---
 title: Navegación del lienzo
-description: Panorámica, zoom y herramienta mano en OpenPencil.
+description: Panorámica, zoom y herramienta mano en Inkly.
 ---
 
 # Navegación del lienzo

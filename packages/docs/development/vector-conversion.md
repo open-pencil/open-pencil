@@ -1,11 +1,11 @@
 ---
 title: Vector Conversion
-description: Development notes for OpenPencil boolean operations, flattening, text outlines, stroke outlines, and vector geometry conversion.
+description: Development notes for Inkly boolean operations, flattening, text outlines, stroke outlines, and vector geometry conversion.
 ---
 
 # Vector conversion
 
-OpenPencil has a shared path-conversion pipeline for commands that turn scene nodes into vector geometry.
+Inkly has a shared path-conversion pipeline for commands that turn scene nodes into vector geometry.
 
 ## Commands
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 
 import { expectDefined } from '#tests/helpers/assert'
 

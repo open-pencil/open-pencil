@@ -1,6 +1,6 @@
 ---
 title: Ebenen & Seiten
-description: Ebenen, Seiten und das Eigenschaftspanel in OpenPencil verwalten.
+description: Ebenen, Seiten und das Eigenschaftspanel in Inkly verwalten.
 ---
 
 # Ebenen & Seiten

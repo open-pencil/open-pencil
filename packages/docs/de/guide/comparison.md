@@ -1,10 +1,10 @@
 # Vergleich mit Penpot
 
-OpenPencil und Penpot sind beides Open-Source-Design-Tools, aber sie unterscheiden sich grundlegend in Architektur, Rendering und Dateiformaten.
+Inkly und Penpot sind beides Open-Source-Design-Tools, aber sie unterscheiden sich grundlegend in Architektur, Rendering und Dateiformaten.
 
 ## 1. Auf einen Blick
 
-| Metrik | Open Pencil | Penpot |
+| Metrik | Inkly | Penpot |
 |--------|-------------|--------|
 | Total LOC | **~26.000** | **~299.000** |
 | Quelldateien | ~143 | ~2.900 |
@@ -14,11 +14,11 @@ OpenPencil und Penpot sind beides Open-Source-Design-Tools, aber sie unterscheid
 | Backend | Keines (local-first) | 32.600 LOC + 151 SQL-Dateien |
 | LOC-Verhältnis | **1×** | **~11×** |
 
-Open Pencil ist **~11× kleiner** — und das ist der Punkt. Es ist keine Vereinfachung; es ist eine grundlegend andere Architektur.
+Inkly ist **~11× kleiner** — und das ist der Punkt. Es ist keine Vereinfachung; es ist eine grundlegend andere Architektur.
 
 ## 2. Architektur
 
-| Aspekt | Open Pencil | Penpot |
+| Aspekt | Inkly | Penpot |
 |--------|-------------|--------|
 | Rendering | Skia CanvasKit (GPU, WASM) | Skia Rust/WASM (render-wasm v1) |
 | Layout | Yoga WASM (CSS-Flexbox) | Eigene CLJS-Engine |
@@ -29,14 +29,14 @@ Open Pencil ist **~11× kleiner** — und das ist der Punkt. Es ist keine Verein
 
 ## 3. Rendering
 
-Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Implementierungen unterscheiden sich:
+Inkly und Penpot verwenden beide Skia für das Rendering, aber die Implementierungen unterscheiden sich:
 
-- **Open Pencil**: CanvasKit WASM — bewährt, GPU-beschleunigt, dieselbe Engine wie Figma
+- **Inkly**: CanvasKit WASM — bewährt, GPU-beschleunigt, dieselbe Engine wie Figma
 - **Penpot**: Eigener Rust/Skia-WASM-Renderer (render-wasm), ersetzt den früheren SVG-Renderer
 
 ## 4. Dateiformat
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Native-Format | .fig (Kiwi-Binär) | .penpot (SVG + Metadaten) |
 | Figma-Import | Nativ | Plugin/Konverter |
@@ -46,7 +46,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 5. Layout
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Engine | Yoga WASM (CSS-Flexbox) | Eigene CLJS-Implementierung |
 | CSS Grid | Nicht unterstützt | Unterstützt |
@@ -55,7 +55,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 6. Kollaboration
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Modell | P2P (Trystero + Yjs CRDT) | Client-Server |
 | Cursor | ✅ Echtzeit | ✅ Echtzeit |
@@ -64,7 +64,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 7. Entwicklererlebnis
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Beitragsumfang | ~143 TS-Dateien | 2.900+ Dateien, 4 Sprachen |
 | Build-System | Vite + Bun (Sekunden) | Shadow-CLJS + Docker (Minuten) |
@@ -74,7 +74,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 8. Programmierbarkeit
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | CLI | ✅ Headless .fig-Operationen | ❌ Kein CLI |
 | AI-Werkzeuge | **87 Werkzeuge** + MCP-Server | Plugin-System |
@@ -84,7 +84,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 9. Desktop
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Native App | ✅ Tauri v2 (~5 MB) | ❌ |
 | Offline | ✅ Vollständig | Erfordert Server |
@@ -94,7 +94,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 10. KI-Integration
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Integrierter Chat | ✅ OpenRouter-Integration | ❌ |
 | Werkzeugnutzung | 87 Design-Werkzeuge | ❌ |
@@ -103,7 +103,7 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 ## 11. Skripting & Erweiterbarkeit
 
-| | Open Pencil | Penpot |
+| | Inkly | Penpot |
 |---|-------------|--------|
 | Headless CLI | ✅ 12 Befehle | ❌ |
 | Plugin API | Figma-kompatibel | Eigene Plugin API |
@@ -115,14 +115,14 @@ Open Pencil und Penpot verwenden beide Skia für das Rendering, aber die Impleme
 
 | Stärke | Gewinner | Grund |
 |--------|----------|-------|
-| **Figma-Kompatibilität** | Open Pencil | Natives .fig + Zwischenablage |
-| **Programmierbarkeit** | Open Pencil | CLI, eval, JSX, MCP-Server |
-| **Desktop-Erlebnis** | Open Pencil | Native Tauri-App, ~5 MB |
-| **KI-Integration** | Open Pencil | 90 Werkzeuge, MCP, integrierter Chat |
-| **Codebasis-Einfachheit** | Open Pencil | 11× weniger Code, 1 Sprache |
+| **Figma-Kompatibilität** | Inkly | Natives .fig + Zwischenablage |
+| **Programmierbarkeit** | Inkly | CLI, eval, JSX, MCP-Server |
+| **Desktop-Erlebnis** | Inkly | Native Tauri-App, ~5 MB |
+| **KI-Integration** | Inkly | 90 Werkzeuge, MCP, integrierter Chat |
+| **Codebasis-Einfachheit** | Inkly | 11× weniger Code, 1 Sprache |
 | **CSS Grid** | Penpot | Yoga unterstützt es noch nicht |
 | **SVG-native** | Penpot | SVG ist die Muttersprache |
 | **Self-Hosting** | Penpot | Docker-bereit vs. Desktop-only |
 | **Ökosystem-Reife** | Penpot | Jahre der Produktion vs. frühe Phase |
 
-Open Pencil ist architektonisch schlanker — ein Single-Process-CanvasKit-Renderer in ~26K LOC TypeScript, Figma-kompatibel by Design. Penpot ist eine Full-Stack-Plattform mit ~299K LOC über Clojure, ClojureScript, Rust und SCSS, plus eine Docker-Service-Flotte. Beide bieten jetzt Echtzeit-Kollaboration (unterschiedliche Architekturen: P2P vs. Server). Penpot hat ein Plugin-Ökosystem und serverseitigen PDF-Export; Open Pencil hat Figma-kompatibles Headless-Scripting, **90 KI/MCP-Werkzeuge**, SVG-Export und eine native Desktop-App.
+Inkly ist architektonisch schlanker — ein Single-Process-CanvasKit-Renderer in ~26K LOC TypeScript, Figma-kompatibel by Design. Penpot ist eine Full-Stack-Plattform mit ~299K LOC über Clojure, ClojureScript, Rust und SCSS, plus eine Docker-Service-Flotte. Beide bieten jetzt Echtzeit-Kollaboration (unterschiedliche Architekturen: P2P vs. Server). Penpot hat ein Plugin-Ökosystem und serverseitigen PDF-Export; Inkly hat Figma-kompatibles Headless-Scripting, **90 KI/MCP-Werkzeuge**, SVG-Export und eine native Desktop-App.

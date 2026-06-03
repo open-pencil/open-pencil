@@ -51,7 +51,7 @@ Siehe [Szenengraph-Referenz](/reference/scene-graph) für Interna.
 
 ### Layout-Engine (Yoga WASM)
 
-Metas Yoga bietet CSS-Flexbox- und Grid-Layout-Berechnung über einen [Fork](https://github.com/open-pencil/yoga/tree/grid) mit CSS-Grid-Unterstützung. Ein dünner Adapter mappt Figma-Eigenschaftsnamen auf Yoga-Äquivalente:
+Metas Yoga bietet CSS-Flexbox- und Grid-Layout-Berechnung über einen [Fork](https://github.com/inkly/yoga/tree/grid) mit CSS-Grid-Unterstützung. Ein dünner Adapter mappt Figma-Eigenschaftsnamen auf Yoga-Äquivalente:
 
 | Figma-Eigenschaft | Yoga-Äquivalent |
 |---|---|

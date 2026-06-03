@@ -1,4 +1,4 @@
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
+import { AUTOMATION_HTTP_PORT } from '@inkly/core/constants'
 
 const HEALTH_URL = `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`
 const RPC_URL = `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/rpc`
@@ -10,14 +10,14 @@ export async function getAppToken(): Promise<string> {
   const res = await fetch(HEALTH_URL).catch(() => null)
   if (!res || !res.ok) {
     throw new Error(
-      `Could not connect to OpenPencil app on localhost:${AUTOMATION_HTTP_PORT}.\n` +
+      `Could not connect to Inkly app on localhost:${AUTOMATION_HTTP_PORT}.\n` +
         'Is the app running? Start it with: bun run tauri dev'
     )
   }
   const data = (await res.json()) as { status: string; token?: string }
   if (data.status !== 'ok' || !data.token) {
     throw new Error(
-      'OpenPencil app is running but no document is open.\n' +
+      'Inkly app is running but no document is open.\n' +
         'Open a document in the app, or provide a .fig file path.'
     )
   }

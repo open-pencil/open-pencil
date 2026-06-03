@@ -7,7 +7,7 @@ import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { providePropertyList } from '#vue/primitives/PropertyList/context'
 
-import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/core/scene-graph'
+import type { Effect, Fill, SceneNode, Stroke } from '@inkly/core/scene-graph'
 
 type ArrayPropKey = 'fills' | 'strokes' | 'effects'
 type ArrayItemType = Fill | Stroke | Effect

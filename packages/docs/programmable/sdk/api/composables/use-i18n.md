@@ -1,18 +1,18 @@
 ---
 title: useI18n
-description: Read localized OpenPencil UI messages and switch the active SDK locale.
+description: Read localized Inkly UI messages and switch the active SDK locale.
 ---
 
 # useI18n
 
-`useI18n()` returns reactive translation groups plus locale controls for OpenPencil-powered editor shells.
+`useI18n()` returns reactive translation groups plus locale controls for Inkly-powered editor shells.
 
 Use it when you want SDK-backed labels for menus, commands, panels, pages, and dialogs, or when you need to let users switch locales.
 
 ## Usage
 
 ```ts
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { menu, commands, panels, locale, availableLocales, localeLabels, setLocale } = useI18n()
 ```
@@ -34,7 +34,7 @@ const { menu, commands, panels, locale, availableLocales, localeLabels, setLocal
 
 ```vue
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
 </script>

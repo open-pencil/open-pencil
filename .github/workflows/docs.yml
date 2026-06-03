@@ -18,10 +18,10 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - run: bun run --filter @open-pencil/docs build
+      - run: bun run --filter @inkly/docs build
 
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy packages/docs/.vitepress/dist --project-name=openpencil-docs
+          command: pages deploy packages/docs/.vitepress/dist --project-name=inkly-docs

@@ -1,6 +1,6 @@
 ---
 title: Textbearbeitung
-description: Text erstellen und bearbeiten mit Rich-Formatierung, Schriften und Inline-Bearbeitung in OpenPencil.
+description: Text erstellen und bearbeiten mit Rich-Formatierung, Schriften und Inline-Bearbeitung in Inkly.
 ---
 
 # Textbearbeitung

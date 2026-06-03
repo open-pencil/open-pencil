@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import { setupSafariGestureZoom } from '#vue/shared/input/gesture'
 import type { DragState } from '#vue/shared/input/types'

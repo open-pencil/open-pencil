@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { ref } from 'vue'
 
-import { createEditor } from '@open-pencil/core/editor'
-import { computeAllLayouts } from '@open-pencil/core/layout'
+import { createEditor } from '@inkly/core/editor'
+import { computeAllLayouts } from '@inkly/core/layout'
 
 import {
   cancelMoveDragInterruption,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 import { listProviderModels } from '@/app/ai/chat/provider-models'
 import AppComboboxInput from '@/components/ui/AppComboboxInput.vue'

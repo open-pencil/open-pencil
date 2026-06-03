@@ -1,4 +1,4 @@
-import { UndoManager } from '@open-pencil/core'
+import { UndoManager } from '@inkly/core'
 
 export function noop() {
   return undefined

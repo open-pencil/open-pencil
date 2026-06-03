@@ -6,10 +6,10 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { parseColor } from '@open-pencil/core/color'
-import { headlessRenderNodes, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import { parseColor } from '@inkly/core/color'
+import { headlessRenderNodes, initCanvasKit, parseFigFile } from '@inkly/core/io'
+import { computeAllLayouts } from '@inkly/core/layout'
+import type { SceneGraph } from '@inkly/core/scene-graph'
 
 interface DiffMetrics {
   mean: number
@@ -26,7 +26,7 @@ interface BisectResult {
   names: string[]
   metrics: DiffMetrics
   figmaPath: string
-  openPencilPath: string
+  inklyPath: string
 }
 
 const { values, positionals } = parseArgs({
@@ -34,7 +34,7 @@ const { values, positionals } = parseArgs({
   options: {
     page: { type: 'string', short: 'p' },
     'figma-page-id': { type: 'string' },
-    output: { type: 'string', short: 'o', default: '/tmp/open-pencil-visual-bisect' },
+    output: { type: 'string', short: 'o', default: '/tmp/inkly-visual-bisect' },
     scale: { type: 'string', default: '1' },
     threshold: { type: 'string', default: '0.25' },
     depth: { type: 'string', default: '8' },
@@ -51,18 +51,18 @@ if (!figPath || !values.page || !values['figma-page-id']) {
   bun scripts/visual-bisect.ts <file.fig> --page Primitives --figma-page-id 1:22 [options]
 
 Options:
-  --output DIR          Output directory (default: /tmp/open-pencil-visual-bisect)
+  --output DIR          Output directory (default: /tmp/inkly-visual-bisect)
   --scale N             Export scale (default: 1)
   --threshold PERCENT   Stop splitting groups under this >40 diff percent (default: 0.25)
   --depth N             Max bisection depth (default: 8)
   --min-size N          Stop splitting groups at this child count (default: 1)
   --background HEX      Matte color for transparent pixels (default: #f9f9f9)
-  --root-node-id ID     OpenPencil node whose children should be bisected
+  --root-node-id ID     Inkly node whose children should be bisected
   --figma-root-id ID    Matching Figma node whose children should be bisected
 
 What it does:
   It hides all top-level page children except a candidate subset in both Figma
-  and OpenPencil, exports that subset from both renderers, diffs the images,
+  and Inkly, exports that subset from both renderers, diffs the images,
   then recursively splits only subsets that still differ. This isolates which
   top-level page children introduce visual differences without staring at the
   full-page diff.`)
@@ -71,7 +71,7 @@ What it does:
 
 const pageName = values.page
 const figmaPageId = values['figma-page-id']
-const outputDir = values.output ?? '/tmp/open-pencil-visual-bisect'
+const outputDir = values.output ?? '/tmp/inkly-visual-bisect'
 const scale = Number(values.scale ?? '1')
 const threshold = Number(values.threshold ?? '0.25')
 const maxDepth = Number(values.depth ?? '8')
@@ -150,22 +150,22 @@ async function bisect(indices: number[], depth: number): Promise<void> {
 async function compareSubset(indices: number[], depth: number): Promise<BisectResult> {
   const stem = `d${depth}-${indices[0]}-${indices.at(-1)}-${indices.length}`
   const figmaPath = `${outputDir}/${stem}-figma.png`
-  const openPencilPath = `${outputDir}/${stem}-open-pencil.png`
+  const inklyPath = `${outputDir}/${stem}-inkly.png`
 
   await exportFigmaSubset(figmaRootId, indices, figmaPath)
-  await exportOpenPencilSubset(indices, openPencilPath)
+  await exportInklySubset(indices, inklyPath)
 
   return {
     depth,
     indices,
     names: indices.map((index) => childNames[index]),
-    metrics: await diffImages(figmaPath, openPencilPath),
+    metrics: await diffImages(figmaPath, inklyPath),
     figmaPath,
-    openPencilPath
+    inklyPath
   }
 }
 
-async function exportOpenPencilSubset(indices: number[], path: string): Promise<void> {
+async function exportInklySubset(indices: number[], path: string): Promise<void> {
   const indexSet = new Set(indices)
   const changed: Array<{ id: string; visible: boolean }> = []
   for (let index = 0; index < childIds.length; index++) {
@@ -183,7 +183,7 @@ async function exportOpenPencilSubset(indices: number[], path: string): Promise<
       format: 'PNG',
       trimTransparent: nodeIds.every((id) => graph.getNode(id)?.type === 'TEXT')
     })
-    if (!data) throw new Error(`OpenPencil render produced no image for ${indices.join(',')}`)
+    if (!data) throw new Error(`Inkly render produced no image for ${indices.join(',')}`)
     await Bun.write(path, data)
   } finally {
     for (const entry of changed) {
@@ -302,7 +302,7 @@ async function writeReport(items: BisectResult[]): Promise<void> {
 
   for (const item of items) {
     lines.push(
-      `| ${item.depth} | ${item.indices.join(',')} | ${item.metrics.above40.toFixed(3)}% | ${item.metrics.above20.toFixed(3)}% | ${item.metrics.mean.toFixed(3)} | ${item.names.map(escapePipes).join('<br>')} | [figma](${item.figmaPath}) / [open-pencil](${item.openPencilPath}) |`
+      `| ${item.depth} | ${item.indices.join(',')} | ${item.metrics.above40.toFixed(3)}% | ${item.metrics.above20.toFixed(3)}% | ${item.metrics.mean.toFixed(3)} | ${item.names.map(escapePipes).join('<br>')} | [figma](${item.figmaPath}) / [inkly](${item.inklyPath}) |`
     )
   }
 

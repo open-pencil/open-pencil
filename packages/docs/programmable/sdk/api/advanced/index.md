@@ -1,6 +1,6 @@
 ---
 title: Advanced
-description: Lower-level and specialized APIs in @open-pencil/vue.
+description: Lower-level and specialized APIs in @inkly/vue.
 ---
 
 # Advanced

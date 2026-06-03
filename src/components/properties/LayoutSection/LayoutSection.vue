@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutControlsRoot, useI18n } from '@open-pencil/vue'
+import { LayoutControlsRoot, useI18n } from '@inkly/vue'
 
 import AutoLayoutControls from '@/components/properties/LayoutSection/AutoLayoutControls.vue'
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'

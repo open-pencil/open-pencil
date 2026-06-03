@@ -19,7 +19,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     { text: 'SDK', link: '/programmable/sdk/' },
     { text: 'Reference', link: '/reference/keyboard-shortcuts' },
     { text: 'Development', link: '/development/contributing' },
-    { text: 'Open App', link: 'https://app.openpencil.dev' },
+    { text: 'Open App', link: 'https://app.inkly.dev' },
   ],
 
   sidebar: {
@@ -40,10 +40,10 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     ],
   },
 
-  socialLinks: [{ icon: 'github', link: 'https://github.com/open-pencil/open-pencil' }],
+  socialLinks: [{ icon: 'github', link: 'https://github.com/cardene777/open-pencil' }],
 
   editLink: {
-    pattern: 'https://github.com/open-pencil/open-pencil/edit/main/packages/docs/:path',
+    pattern: 'https://github.com/cardene777/open-pencil/edit/main/packages/docs/:path',
   },
 
   footer: {

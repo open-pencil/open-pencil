@@ -20,8 +20,8 @@ test.afterAll(async () => {
 
 async function getSelectedNodeFlags() {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const n = store.graph.getNode(id)

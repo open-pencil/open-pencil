@@ -1,6 +1,6 @@
 Fixes #
 
-> Security vulnerability? Please do not open a public PR. Report it privately through GitHub Security Advisories: https://github.com/open-pencil/open-pencil/security/advisories/new
+> Security vulnerability? Please do not open a public PR. Report it privately through GitHub Security Advisories: https://github.com/cardene777/open-pencil/security/advisories/new
 
 ---
 

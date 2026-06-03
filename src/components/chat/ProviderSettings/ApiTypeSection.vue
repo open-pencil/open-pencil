@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 import ProviderSettingsField from '@/components/chat/ProviderSettings/ProviderSettingsField.vue'
 import { useProviderSettingsContext } from '@/components/chat/ProviderSettings/context'

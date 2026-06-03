@@ -1,6 +1,6 @@
-import type { Tool } from '@open-pencil/core/editor'
-import type { NodeType, VectorNetwork } from '@open-pencil/core/scene-graph'
-import type { Rect, Vector } from '@open-pencil/core/types'
+import type { Tool } from '@inkly/core/editor'
+import type { NodeType, VectorNetwork } from '@inkly/core/scene-graph'
+import type { Rect, Vector } from '@inkly/core/types'
 
 import type { DragOriginal } from '#vue/shared/input/drag-original'
 

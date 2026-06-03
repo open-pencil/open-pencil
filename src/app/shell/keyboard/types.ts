@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue'
 
-import type { useEditorCommands } from '@open-pencil/vue'
+import type { useEditorCommands } from '@inkly/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

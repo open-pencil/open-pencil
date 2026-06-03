@@ -30,8 +30,8 @@ async function resolveMcpInstallCommand(): Promise<string> {
       })
     )?.agent ??
     'npm'
-  const resolved = resolveCommand(agent, 'global', [`@open-pencil/mcp@${MCP_VERSION}`])
-  if (!resolved) return `npm install -g @open-pencil/mcp@${MCP_VERSION}`
+  const resolved = resolveCommand(agent, 'global', [`@inkly/mcp@${MCP_VERSION}`])
+  if (!resolved) return `npm install -g @inkly/mcp@${MCP_VERSION}`
   return [resolved.command, ...resolved.args].join(' ')
 }
 
@@ -152,7 +152,7 @@ export function startServer(options: ServerOptions = {}) {
   app.use('/rpc', async (c, next) => {
     const rpcToken = browserRpc.currentRpcToken()
     if (!browserRpc.isConnected() || !rpcToken) {
-      return c.json({ error: 'OpenPencil app is not connected. Is a document open?' }, 503)
+      return c.json({ error: 'Inkly app is not connected. Is a document open?' }, 503)
     }
     const provided = bearerToken(c.req.header('authorization'))
     if (!isAuthorized(provided, rpcToken)) {

@@ -12,7 +12,7 @@ Utilisez-le quand vous construisez un dialogue de variables personnalisé plutô
 ## Utilisation
 
 ```ts
-import { useVariablesDialogState } from '@open-pencil/vue'
+import { useVariablesDialogState } from '@inkly/vue'
 
 const variablesDialog = useVariablesDialogState()
 ```

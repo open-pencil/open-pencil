@@ -1,6 +1,6 @@
 ---
 title: Komponenty
-description: Komponenty wielokrotnego użytku, instancje, nadpisania i synchronizacja w OpenPencil.
+description: Komponenty wielokrotnego użytku, instancje, nadpisania i synchronizacja w Inkly.
 ---
 # Komponenty
 

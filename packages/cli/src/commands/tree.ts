@@ -1,7 +1,7 @@
 import type { TreeNode } from 'agentfmt'
 import { defineCommand } from 'citty'
 
-import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
+import type { TreeNodeResult, TreeResult } from '@inkly/core/rpc'
 
 import { fmtTree, printError, entity, formatType } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'

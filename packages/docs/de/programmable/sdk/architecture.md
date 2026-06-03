@@ -1,11 +1,11 @@
 ---
 title: SDK-Architektur
-description: Ordnerstruktur, öffentliche API-Grenzen und Kompositionsmuster in @open-pencil/vue.
+description: Ordnerstruktur, öffentliche API-Grenzen und Kompositionsmuster in @inkly/vue.
 ---
 
 # SDK-Architektur
 
-`@open-pencil/vue` ist die Vue-seitige Schicht über `@open-pencil/core`.
+`@inkly/vue` ist die Vue-seitige Schicht über `@inkly/core`.
 
 Das Paket besitzt das Editor-Modell selbst nicht. Es passt den Kern-Editor an in:
 
@@ -107,7 +107,7 @@ Fokussierte Slot-Props oder direkte Composable-Verwendung gegenüber großen `v-
 
 ## Praktische Faustregel
 
-Wenn ein Stück Logik in einer anderen OpenPencil-basierten App wiederverwendet werden könnte, ohne App-Styling mitzubringen, gehört es wahrscheinlich in `@open-pencil/vue`.
+Wenn ein Stück Logik in einer anderen Inkly-basierten App wiederverwendet werden könnte, ohne App-Styling mitzubringen, gehört es wahrscheinlich in `@inkly/vue`.
 
 ## Verwandte Seiten
 

@@ -5,15 +5,15 @@ description: Construye tu propio shell de editor con provideEditor, CanvasRoot, 
 
 # Shell de Editor Personalizado
 
-Una app Vue típica de OpenPencil tiene tres capas:
+Una app Vue típica de Inkly tiene tres capas:
 
-1. `@open-pencil/core` crea el editor
-2. `@open-pencil/vue` lo adapta en composables de Vue y primitivos headless
+1. `@inkly/core` crea el editor
+2. `@inkly/vue` lo adapta en composables de Vue y primitivos headless
 3. tu app renderiza el shell, los estilos y la UX del producto
 
 ## Por qué esto importa
 
-La app integrada de OpenPencil es solo un shell posible.
+La app integrada de Inkly es solo un shell posible.
 
 Puedes construir uno muy diferente para un flujo de trabajo enfocado: un editor integrado dentro de otro producto, una herramienta interna de recursos, un editor de plantillas, una interfaz de anotaciones, o una superficie de edición asistida por IA con controles personalizados.
 
@@ -33,7 +33,7 @@ Un shell práctico a menudo tiene esta estructura:
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 import {
   provideEditor,
   CanvasRoot,
@@ -41,7 +41,7 @@ import {
   ToolbarRoot,
   PageListRoot,
   LayerTreeRoot,
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

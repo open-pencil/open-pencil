@@ -52,12 +52,12 @@ describe('Tauri MCP spawning', () => {
     expect(handle?.authToken).toBe('server-token')
     expect(calls[0]?.cmd).toBe('plugin:shell|spawn')
     expect(calls[0]?.args).toMatchObject({
-      program: 'openpencil-mcp-http',
+      program: 'inkly-mcp-http',
       args: [],
       options: {
         env: {
-          OPENPENCIL_MCP_AUTH_TOKEN: expect.any(String),
-          OPENPENCIL_MCP_CORS_ORIGIN: 'tauri://localhost'
+          INKLY_MCP_AUTH_TOKEN: expect.any(String),
+          INKLY_MCP_CORS_ORIGIN: 'tauri://localhost'
         }
       }
     })

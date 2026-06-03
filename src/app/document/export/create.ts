@@ -1,5 +1,5 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import type { ExportRequest, IORegistry } from '@open-pencil/core/io'
+import type { Editor, EditorState } from '@inkly/core/editor'
+import type { ExportRequest, IORegistry } from '@inkly/core/io'
 
 import {
   createExportTargetActions,

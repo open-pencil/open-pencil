@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { vTestId } from '@open-pencil/vue'
+import { vTestId } from '@inkly/vue'
 
 import type { ToolbarActionItem } from '@/components/Toolbar/types'
 

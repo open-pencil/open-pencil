@@ -2,21 +2,21 @@
   "source": {
     "tool": "scripts/visual-compare.ts",
     "captured": "2026-05-22",
-    "outputRoot": "/tmp/open-pencil-oracles"
+    "outputRoot": "/tmp/inkly-oracles"
   },
   "comparisons": [
     {
       "name": "pattern-visible-source-frame",
       "nodeId": "296784:2258",
-      "output": "/tmp/open-pencil-oracles/pattern-visible-source-tuned",
+      "output": "/tmp/inkly-oracles/pattern-visible-source-tuned",
       "figmaSize": "190x110",
-      "openPencilSize": "190x110",
+      "inklySize": "190x110",
       "differentPixels": 7180,
       "differentPercent": 34.35,
       "rmseNormalized": 0.235698,
       "previousDifferentPixels": 13026,
       "previousDifferentPercent": 62.33,
-      "finding": "This is the reliable pattern oracle: source and target are copied together and Figma renders the pattern. OpenPencil resolves the source and now uses a closer Figma-like pattern origin, but exact row spacing/tile origin still differs.",
+      "finding": "This is the reliable pattern oracle: source and target are copied together and Figma renders the pattern. Inkly resolves the source and now uses a closer Figma-like pattern origin, but exact row spacing/tile origin still differs.",
       "fuzz": "2%",
       "fuzzDifferentPixels": 6337,
       "fuzzDifferentPercent": 30.32,
@@ -25,9 +25,9 @@
     {
       "name": "rich-text-decorations",
       "nodeId": "297274:2265",
-      "output": "/tmp/open-pencil-oracles/rich-text/recreated-decoration-metric-derived",
+      "output": "/tmp/inkly-oracles/rich-text/recreated-decoration-metric-derived",
       "figmaSize": "493x41",
-      "openPencilSize": "493x42",
+      "inklySize": "493x42",
       "normalization": "Padded/cropped without scaling before diff",
       "differentPixels": 7734,
       "differentPercent": 38.26,
@@ -41,9 +41,9 @@
     {
       "name": "nested-luminance-mask",
       "nodeId": "296616:2249",
-      "output": "/tmp/open-pencil-oracles/masks/nested-norm",
+      "output": "/tmp/inkly-oracles/masks/nested-norm",
       "figmaSize": "240x120",
-      "openPencilSize": "240x120",
+      "inklySize": "240x120",
       "differentPixels": 12944,
       "differentPercent": 44.94,
       "rmseNormalized": 0.00385526,
@@ -52,22 +52,22 @@
     {
       "name": "pattern-target-without-source",
       "nodeId": "296519:2245",
-      "output": "/tmp/open-pencil-oracles/pattern-scale1",
+      "output": "/tmp/inkly-oracles/pattern-scale1",
       "figmaSize": "160x100",
-      "openPencilSize": "160x100",
+      "inklySize": "160x100",
       "differentPixels": 16000,
       "differentPercent": 100,
-      "finding": "Copying/exporting only a pattern-filled target does not include its source node in clipboard data; OpenPencil must fall back without whole-document context."
+      "finding": "Copying/exporting only a pattern-filled target does not include its source node in clipboard data; Inkly must fall back without whole-document context."
     },
     {
       "name": "pattern-frame-with-hidden-source",
       "nodeId": "296731:2254",
-      "output": "/tmp/open-pencil-oracles/pattern-frame-scale1-after-sourceid",
+      "output": "/tmp/inkly-oracles/pattern-frame-scale1-after-sourceid",
       "figmaSize": "180x100",
-      "openPencilSize": "180x100",
+      "inklySize": "180x100",
       "differentPixels": 9102,
       "differentPercent": 50.57,
-      "finding": "Resolving pattern sources by imported Figma source id works in OpenPencil, but this hidden-source frame oracle renders blank in Figma and is not a parity baseline."
+      "finding": "Resolving pattern sources by imported Figma source id works in Inkly, but this hidden-source frame oracle renders blank in Figma and is not a parity baseline."
     }
   ],
   "nextActions": [

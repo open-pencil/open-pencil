@@ -1,7 +1,7 @@
 import {
   importClipboardNodes,
   parseFigmaClipboard,
-  parseOpenPencilClipboard
+  parseInklyClipboard
 } from '#core/clipboard'
 import { computeAllLayouts } from '#core/layout'
 import type { SceneNode } from '#core/scene-graph'
@@ -84,9 +84,9 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   async function pasteFromHTML(html: string, cursorPos?: Vector, options: PasteOptions = {}) {
-    const openPencil = parseOpenPencilClipboard(html)
-    if (openPencil) {
-      pasteOpenPencilNodes(openPencil.nodes, openPencil.images, cursorPos, options)
+    const inkly = parseInklyClipboard(html)
+    if (inkly) {
+      pasteInklyNodes(inkly.nodes, inkly.images, cursorPos, options)
       return
     }
 
@@ -125,7 +125,7 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function pasteOpenPencilNodes(
+  function pasteInklyNodes(
     nodes: Array<SceneNode & { children?: SceneNode[] }>,
     images: Map<string, Uint8Array>,
     cursorPos?: Vector,

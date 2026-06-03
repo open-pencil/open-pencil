@@ -1,4 +1,4 @@
-import { nodeToXPath } from '@open-pencil/core/xpath'
+import { nodeToXPath } from '@inkly/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

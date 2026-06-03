@@ -1,4 +1,4 @@
-import { executeRpcCommand } from '@open-pencil/core/rpc'
+import { executeRpcCommand } from '@inkly/core/rpc'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { loadDocument } from '#cli/headless'

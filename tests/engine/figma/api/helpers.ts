@@ -1,4 +1,4 @@
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { FigmaAPI, SceneGraph } from '@inkly/core'
 export function createAPI(): FigmaAPI {
   return new FigmaAPI(new SceneGraph())
 }

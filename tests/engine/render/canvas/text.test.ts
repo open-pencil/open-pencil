@@ -5,7 +5,7 @@ import {
   resolveTextDirection,
   SceneGraph,
   SkiaRenderer as SkiaRendererClass
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'

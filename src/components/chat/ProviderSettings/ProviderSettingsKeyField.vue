@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 import ProviderSettingsField from '@/components/chat/ProviderSettings/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/chat/ProviderSettings/ProviderSettingsInput.vue'

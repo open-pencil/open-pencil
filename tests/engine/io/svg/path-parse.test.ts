@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseSVGPath, vectorNetworkToSVGPaths } from '@open-pencil/core'
+import { parseSVGPath, vectorNetworkToSVGPaths } from '@inkly/core'
 
 describe('parseSVGPath', () => {
   test('simple rectangle M L L L Z', () => {

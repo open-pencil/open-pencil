@@ -1,6 +1,6 @@
 ---
 title: Eksportowanie
-description: Eksport obrazów (PNG, JPG, WEBP, SVG) i zarządzanie plikami .fig w OpenPencil.
+description: Eksport obrazów (PNG, JPG, WEBP, SVG) i zarządzanie plikami .fig w Inkly.
 ---
 # Eksportowanie
 
@@ -40,7 +40,7 @@ Menu kontekstowe **Kopiuj jako** oferuje dodatkowe formaty:
 | Zapisz | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
 | Zapisz jako | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
 
-Pliki eksportowane z OpenPencil można otwierać w Figmie i odwrotnie.
+Pliki eksportowane z Inkly można otwierać w Figmie i odwrotnie.
 
 ## Wskazówki
 

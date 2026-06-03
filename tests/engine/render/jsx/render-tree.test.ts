@@ -15,7 +15,7 @@ import {
   Component,
   ComponentSet,
   Instance
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined, getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

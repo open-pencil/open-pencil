@@ -1,6 +1,6 @@
 ---
 title: Layers & Pages
-description: Managing layers, pages, and the properties panel in OpenPencil.
+description: Managing layers, pages, and the properties panel in Inkly.
 ---
 
 # Layers & Pages
@@ -63,7 +63,7 @@ When no nodes are selected, the Design tab shows page-level properties including
 
 Displays the selected node as code with syntax highlighting, line numbers, and a copy button. A format toggle lets you switch between two output modes:
 
-- **OpenPencil JSX** — custom component tree compatible with `renderJsx()` for programmatic round-trip
+- **Inkly JSX** — custom component tree compatible with `renderJsx()` for programmatic round-trip
 - **Tailwind CSS v4** — HTML with utility classes (`<div className="flex gap-4 p-3">`) ready to paste into React/Vue projects
 
 ### AI Tab

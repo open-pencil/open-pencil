@@ -9,8 +9,8 @@ import {
   DialogTitle
 } from 'reka-ui'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import type { SceneNode } from '@inkly/core/scene-graph'
+import { useI18n } from '@inkly/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'

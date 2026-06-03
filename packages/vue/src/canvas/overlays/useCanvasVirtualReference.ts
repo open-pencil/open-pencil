@@ -1,7 +1,7 @@
 import { computed, type ComputedRef, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { Vector } from '@open-pencil/core/types'
+import type { Editor } from '@inkly/core/editor'
+import type { Vector } from '@inkly/core/types'
 
 type CanvasVirtualReference = {
   getBoundingClientRect: () => DOMRect

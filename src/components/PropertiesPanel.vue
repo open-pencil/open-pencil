@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 import { useAIChat } from '@/app/ai/chat/use'
 
 import ChatPanel from './ChatPanel.vue'

@@ -1,6 +1,6 @@
 ---
 title: Strumento penna
-description: Percorsi vettoriali con curve di Bézier in OpenPencil.
+description: Percorsi vettoriali con curve di Bézier in Inkly.
 ---
 # Strumento penna
 
@@ -19,7 +19,7 @@ Clicca sul primo punto del percorso per chiuderlo in un anello. I percorsi chius
 Premi <kbd>Escape</kbd> per confermare il percorso corrente come percorso aperto.
 
 ## Reti vettoriali
-I percorsi in OpenPencil usano reti vettoriali — un modello più flessibile delle semplici liste di punti, che supporta percorsi ramificati e topologie complesse. Questo è lo stesso modello usato da Figma, quindi i percorsi si preservano perfettamente nei file .fig.
+I percorsi in Inkly usano reti vettoriali — un modello più flessibile delle semplici liste di punti, che supporta percorsi ramificati e topologie complesse. Questo è lo stesso modello usato da Figma, quindi i percorsi si preservano perfettamente nei file .fig.
 
 | Azione | Mac | Windows / Linux |
 |--------|-----|-----------------|

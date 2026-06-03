@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { EDITOR_TOOLS } from '@open-pencil/core/editor'
+import { EDITOR_TOOLS } from '@inkly/core/editor'
 
 import { useEditor } from '#vue/editor/context'
 import { provideToolbar } from '#vue/primitives/Toolbar/context'
 
-import type { EditorToolDef, Tool } from '@open-pencil/core/editor'
+import type { EditorToolDef, Tool } from '@inkly/core/editor'
 
 const { tools = EDITOR_TOOLS } = defineProps<{
   tools?: EditorToolDef[]

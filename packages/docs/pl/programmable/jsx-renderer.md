@@ -5,7 +5,7 @@ description: Twórz projekty za pomocą JSX — składni, którą LLM-y już zna
 
 # Renderer JSX
 
-OpenPencil używa JSX jako języka tworzenia projektów. LLM-y widziały miliony komponentów React — opisanie layoutu jako `<Frame><Text>` jest naturalne, bez potrzeby specjalnego trenowania. Każdy token ma znaczenie, gdy agent AI wykonuje dziesiątki operacji, a JSX jest najbardziej zwięzłą deklaratywną reprezentacją.
+Inkly używa JSX jako języka tworzenia projektów. LLM-y widziały miliony komponentów React — opisanie layoutu jako `<Frame><Text>` jest naturalne, bez potrzeby specjalnego trenowania. Każdy token ma znaczenie, gdy agent AI wykonuje dziesiątki operacji, a JSX jest najbardziej zwięzłą deklaratywną reprezentacją.
 
 JSX jest również porównywalny w diffach. Gdy AI modyfikuje projekt, zmiana jest diffem JSX — czytelnym, weryfikowalnym, kontrolowalnym wersyjnie.
 
@@ -95,8 +95,8 @@ Zwięzłe skrócone właściwości inspirowane nazewnictwem Tailwind.
 Konwertuj istniejące projekty z powrotem do JSX:
 
 ```sh
-openpencil export design.fig -f jsx                   # format OpenPencil
-openpencil export design.fig -f jsx --style tailwind  # klasy Tailwind
+inkly export design.fig -f jsx                   # format Inkly
+inkly export design.fig -f jsx --style tailwind  # klasy Tailwind
 ```
 
 Pełen cykl działa: wyeksportuj projekt jako JSX, zmodyfikuj kod, wyrenderuj z powrotem.

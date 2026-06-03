@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { vTestId, type TestIdProps } from '@open-pencil/vue'
+import { vTestId, type TestIdProps } from '@inkly/vue'
 
 import Tip from '@/components/ui/Tip.vue'
 

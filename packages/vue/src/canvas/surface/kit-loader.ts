@@ -2,7 +2,7 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { onMounted, onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
-import { getCanvasKit } from '@open-pencil/core/canvaskit'
+import { getCanvasKit } from '@inkly/core/canvaskit'
 
 type CanvasKitLoaderOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>

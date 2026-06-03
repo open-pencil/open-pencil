@@ -1,6 +1,6 @@
 ---
 title: Context Menu
-description: Right-click context menu actions in OpenPencil — clipboard, z-order, grouping, components, and more.
+description: Right-click context menu actions in Inkly — clipboard, z-order, grouping, components, and more.
 ---
 
 # Context Menu
@@ -20,7 +20,7 @@ The **Copy/Paste as** submenu offers additional clipboard formats for the select
 - **Copy as text** — copies visible text content from the selection
 - **Copy as SVG** — copies the node tree as SVG markup
 - **Copy as PNG** — renders at 2× and places on the system clipboard (paste into Slack, Notion, etc.)
-- **Copy as JSX** — copies the OpenPencil JSX representation for use with `renderJsx()`
+- **Copy as JSX** — copies the Inkly JSX representation for use with `renderJsx()`
 
 ## Clipboard Actions
 

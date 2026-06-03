@@ -1,8 +1,8 @@
-import { renderTreeNode } from '@open-pencil/core/design-jsx'
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
-import type { JsonObject } from '@open-pencil/core/types'
+import { renderTreeNode } from '@inkly/core/design-jsx'
+import type { FigmaAPI } from '@inkly/core/figma-api'
+import { computeAllLayouts } from '@inkly/core/layout'
+import { ALL_TOOLS } from '@inkly/core/tools'
+import type { JsonObject } from '@inkly/core/types'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph, computeLayout } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { SceneGraph, computeLayout } from '@inkly/core'
+import { createEditor } from '@inkly/core/editor'
 
 import { computeAutoLayoutIndicatorForFrame } from '#vue/shared/input/auto-layout'
 import { handleMoveUp } from '#vue/shared/input/move'

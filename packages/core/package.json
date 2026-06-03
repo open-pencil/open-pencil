@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/core",
+  "name": "@inkly/core",
   "version": "0.13.2",
   "license": "MIT",
   "type": "module",
@@ -161,7 +161,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/cardene777/open-pencil.git",
     "directory": "packages/core"
   },
   "publishConfig": {
@@ -188,7 +188,7 @@
     "svg2pdf.js": "^2.7.0",
     "svgpath": "^2.6.0",
     "twirlwind": "^0.3.0",
-    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3"
+    "yoga-layout": "npm:@inkly/yoga-layout@3.3.0-grid.3"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",

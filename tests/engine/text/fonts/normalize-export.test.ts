@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll } from 'bun:test'
 
-import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@open-pencil/core'
+import { exportFigFile, parseFigFile, initCodec, SceneGraph } from '@inkly/core'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 

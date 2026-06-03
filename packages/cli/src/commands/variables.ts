@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { VariablesResult } from '@open-pencil/core/rpc'
+import type { VariablesResult } from '@inkly/core/rpc'
 
 import { bold, entity, fmtList, fmtSummary } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Tip from '@/components/ui/Tip.vue'
-import { vTestId, useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { vTestId, useI18n, useLayoutControlsContext } from '@inkly/vue'
 
-import type { LayoutMode } from '@open-pencil/core/scene-graph'
+import type { LayoutMode } from '@inkly/core/scene-graph'
 
 const ctx = useLayoutControlsContext()
 

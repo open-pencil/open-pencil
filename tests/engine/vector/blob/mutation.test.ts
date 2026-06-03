@@ -4,7 +4,7 @@ import {
   decodeVectorNetworkBlob,
   encodeVectorNetworkBlob,
   type VectorNetwork
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 // ---------------------------------------------------------------------------
 // vectorNetworkBlob — precision and handleMirroring round-trip

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core'
+import { FigmaAPI } from '@inkly/core'
 
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
 

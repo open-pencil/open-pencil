@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@inkly/core/scene-graph'
 
 import {
   widthSizingForNode,

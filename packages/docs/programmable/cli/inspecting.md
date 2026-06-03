@@ -9,9 +9,9 @@ The CLI lets you explore design documents without opening the editor. Every comm
 
 ::: tip Install
 ```sh
-npm install -g @open-pencil/cli
+npm install -g @inkly/cli
 # or
-brew install open-pencil/tap/open-pencil
+brew install inkly/tap/inkly
 ```
 :::
 
@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Get a quick overview — page count, total nodes, fonts used, file size:
 
 ```sh
-openpencil info design.fig
+inkly info design.fig
 ```
 
 ## Node Tree
@@ -28,7 +28,7 @@ openpencil info design.fig
 Print the full node hierarchy:
 
 ```sh
-openpencil tree design.fig
+inkly tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ openpencil tree design.fig
 Search by type:
 
 ```sh
-openpencil find design.fig --type TEXT
+inkly find design.fig --type TEXT
 ```
 
 Search by name:
 
 ```sh
-openpencil find design.fig --name "Button"
+inkly find design.fig --name "Button"
 ```
 
 Both flags can be combined to narrow results further.
@@ -61,7 +61,7 @@ Both flags can be combined to narrow results further.
 Use XPath selectors to find nodes by type, attributes, and tree structure:
 
 ```sh
-openpencil query design.fig "//FRAME"
+inkly query design.fig "//FRAME"
 ```
 
 ### Useful patterns
@@ -69,34 +69,34 @@ openpencil query design.fig "//FRAME"
 **By type:**
 
 ```sh
-openpencil query design.fig "//TEXT"                    # All text nodes
-openpencil query design.fig "//COMPONENT"               # All components
-openpencil query design.fig "//INSTANCE"                # All instances
+inkly query design.fig "//TEXT"                    # All text nodes
+inkly query design.fig "//COMPONENT"               # All components
+inkly query design.fig "//INSTANCE"                # All instances
 ```
 
 **By attributes:**
 
 ```sh
-openpencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px wide
-openpencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
-openpencil query design.fig "//*[@visible = false]"                # Hidden nodes
-openpencil query design.fig "//TEXT[@fontSize >= 24]"              # Large text
-openpencil query design.fig "//*[@opacity < 1]"                    # Semi-transparent nodes
+inkly query design.fig "//FRAME[@width < 300]"                # Frames under 300px wide
+inkly query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
+inkly query design.fig "//*[@visible = false]"                # Hidden nodes
+inkly query design.fig "//TEXT[@fontSize >= 24]"              # Large text
+inkly query design.fig "//*[@opacity < 1]"                    # Semi-transparent nodes
 ```
 
 **By name and text content:**
 
 ```sh
-openpencil query design.fig "//TEXT[contains(@name, 'Button')]"    # Name contains 'Button'
-openpencil query design.fig "//TEXT[contains(@text, 'Hello')]"     # Text content contains 'Hello'
+inkly query design.fig "//TEXT[contains(@name, 'Button')]"    # Name contains 'Button'
+inkly query design.fig "//TEXT[contains(@text, 'Hello')]"     # Text content contains 'Hello'
 ```
 
 **By hierarchy:**
 
 ```sh
-openpencil query design.fig "//SECTION//TEXT"            # Text inside sections
-openpencil query design.fig "//FRAME/TEXT"               # Direct text children of frames
-openpencil query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside component sets
+inkly query design.fig "//SECTION//TEXT"            # Text inside sections
+inkly query design.fig "//FRAME/TEXT"               # Direct text children of frames
+inkly query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside component sets
 ```
 
 ### Queryable attributes
@@ -120,7 +120,7 @@ openpencil query design.fig "//COMPONENT_SET//INSTANCE"  # Instances inside comp
 Inspect all properties of a specific node by its ID:
 
 ```sh
-openpencil node design.fig --id 1:23
+inkly node design.fig --id 1:23
 ```
 
 ## Pages
@@ -128,7 +128,7 @@ openpencil node design.fig --id 1:23
 List all pages in the document:
 
 ```sh
-openpencil pages design.fig
+inkly pages design.fig
 ```
 
 ## Variables
@@ -136,7 +136,7 @@ openpencil pages design.fig
 List design variables and their collections:
 
 ```sh
-openpencil variables design.fig
+inkly variables design.fig
 ```
 
 ## Live App Mode
@@ -144,8 +144,8 @@ openpencil variables design.fig
 When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas:
 
 ```sh
-openpencil tree              # inspect the live document
-openpencil eval -c "..."     # query the editor
+inkly tree              # inspect the live document
+inkly eval -c "..."     # query the editor
 ```
 
 ## Lint Designs
@@ -153,10 +153,10 @@ openpencil eval -c "..."     # query the editor
 Check documents for naming, layout, structure, and accessibility issues:
 
 ```sh
-openpencil lint design.fig
-openpencil lint design.pen --preset strict
-openpencil lint design.fig --rule color-contrast
-openpencil lint design.fig --list-rules
+inkly lint design.fig
+inkly lint design.pen --preset strict
+inkly lint design.fig --rule color-contrast
+inkly lint design.fig --list-rules
 ```
 
 Use `--json` for machine-readable output.
@@ -166,5 +166,5 @@ Use `--json` for machine-readable output.
 All commands support `--json` for machine-readable output — pipe into `jq`, feed to CI scripts, or process with other tools:
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+inkly tree design.fig --json | jq '.[] | .name'
 ```

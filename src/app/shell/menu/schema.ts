@@ -1,4 +1,4 @@
-import type { EditorCommandId } from '@open-pencil/vue'
+import type { EditorCommandId } from '@inkly/vue'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
 

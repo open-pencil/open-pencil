@@ -5,7 +5,7 @@ description: Use the CanvasKit renderer profiler HUD and frame capture tools to 
 
 # Renderer Profiler
 
-OpenPencil includes a CanvasKit renderer profiler for debugging frame time, GPU timing, draw calls, cache behavior, and expensive render phases.
+Inkly includes a CanvasKit renderer profiler for debugging frame time, GPU timing, draw calls, cache behavior, and expensive render phases.
 
 ## Enable the HUD
 

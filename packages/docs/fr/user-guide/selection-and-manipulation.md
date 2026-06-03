@@ -1,6 +1,6 @@
 ---
 title: Sélection et manipulation
-description: Sélectionner, déplacer, redimensionner, tourner et organiser les nœuds dans OpenPencil.
+description: Sélectionner, déplacer, redimensionner, tourner et organiser les nœuds dans Inkly.
 ---
 # Sélection et manipulation
 

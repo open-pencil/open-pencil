@@ -1,11 +1,11 @@
 ---
 title: useEditor
-description: Accede all'istanza corrente dell'editor OpenPencil iniettata.
+description: Accede all'istanza corrente dell'editor Inkly iniettata.
 ---
 
 # useEditor
 
-`useEditor()` restituisce l'editor OpenPencil iniettato corrente.
+`useEditor()` restituisce l'editor Inkly iniettato corrente.
 
 È il punto di ingresso principale per i composable SDK e le primitive headless che necessitano di accesso all'editor.
 
@@ -14,7 +14,7 @@ description: Accede all'istanza corrente dell'editor OpenPencil iniettata.
 `useEditor()` deve essere chiamato all'interno di un sottoalbero dove `provideEditor(editor)` è già stato chiamato.
 
 ```ts
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@inkly/vue'
 
 const editor = useEditor()
 ```
@@ -25,7 +25,7 @@ const editor = useEditor()
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useEditor } from '@open-pencil/vue'
+import { useEditor } from '@inkly/vue'
 
 const editor = useEditor()
 const pageId = computed(() => editor.state.currentPageId)

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { wrapEvalCode } from '@open-pencil/core/tools'
+import { wrapEvalCode } from '@inkly/core/tools'
 
 type AsyncFn = (...args: unknown[]) => Promise<unknown>
 const AsyncFunction = Object.getPrototypeOf(async () => undefined).constructor as new (

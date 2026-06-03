@@ -1,4 +1,4 @@
-import { executeRpcCommand } from '@open-pencil/core/rpc'
+import { executeRpcCommand } from '@inkly/core/rpc'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

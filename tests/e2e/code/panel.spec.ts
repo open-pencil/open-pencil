@@ -42,11 +42,11 @@ test('selecting a rectangle shows JSX code', async () => {
   expect(code).toContain('Rectangle')
 })
 
-test('format toggle switches between OpenPencil and Tailwind', async () => {
+test('format toggle switches between Inkly and Tailwind', async () => {
   await expect(formatToggle()).toBeVisible()
 
   const initialFormat = await formatToggle().textContent()
-  expect(initialFormat).toContain('OpenPencil')
+  expect(initialFormat).toContain('Inkly')
 
   await formatToggle().click()
   await expect(formatToggle()).toContainText('Tailwind')
@@ -55,7 +55,7 @@ test('format toggle switches between OpenPencil and Tailwind', async () => {
   expect(code).toContain('div')
 
   await formatToggle().click()
-  await expect(formatToggle()).toContainText('OpenPencil')
+  await expect(formatToggle()).toContainText('Inkly')
 })
 
 test('copy button works and shows confirmation', async () => {
@@ -77,8 +77,8 @@ test('deselecting shows empty state again', async () => {
 test('selecting a frame shows Frame in JSX', async () => {
   // Create a frame via store to avoid click-targeting issues
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = store.createShape('FRAME', 300, 100, 200, 200)
     store.select([id])
   })

@@ -5,7 +5,7 @@ description: Seiten- und Ebenen-Seitenleisten mit PageListRoot, LayerTreeRoot un
 
 # Navigations-Panels
 
-OpenPencil-Seitenleisten kombinieren gewöhnlich zwei Belange:
+Inkly-Seitenleisten kombinieren gewöhnlich zwei Belange:
 
 - Seitennavigation
 - Ebenennavigation

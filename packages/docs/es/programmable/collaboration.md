@@ -10,7 +10,7 @@ Edita diseños juntos en tiempo real. Los pares se conectan directamente — nin
 ## Compartir una Sala
 
 1. Haz clic en el botón de compartir en la esquina superior derecha
-2. Copia el enlace generado (`app.openpencil.dev/share/<room-id>`)
+2. Copia el enlace generado (`app.inkly.dev/share/<room-id>`)
 3. Envíalo a tus colaboradores
 
 Cualquiera con el enlace puede unirse. La sala permanece activa mientras al menos un participante tenga la página abierta.

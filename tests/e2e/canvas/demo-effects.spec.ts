@@ -10,8 +10,8 @@ async function expectCanvas(name: string) {
 
 test('demo effects section showcases renderer features', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     store.state.zoom = 0.82
     store.state.panX = 8
     store.state.panY = -556

@@ -12,7 +12,7 @@ description: Costruisci modelli di menu per app e canvas dallo stato corrente de
 ## Utilizzo
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue'
+import { useMenuModel } from '@inkly/vue'
 
 const { appMenu, canvasMenu, selectionLabelMenu } = useMenuModel()
 ```

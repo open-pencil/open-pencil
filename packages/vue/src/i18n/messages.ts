@@ -383,14 +383,14 @@ export const dialogMessages = i18n('dialogs', {
   search: 'Search…',
   noResults: 'No results',
   share: 'Share',
-  appUpToDate: 'OpenPencil is up to date',
-  updateAvailableTitle: 'Update OpenPencil',
-  updateAvailable: params('OpenPencil {version} is available.'),
+  appUpToDate: 'Inkly is up to date',
+  updateAvailableTitle: 'Update Inkly',
+  updateAvailable: params('Inkly {version} is available.'),
   updateInstallPrompt:
     'Download and install it now? The app will restart after the update is installed.',
-  downloadingUpdate: params('Downloading OpenPencil {version}'),
+  downloadingUpdate: params('Downloading Inkly {version}'),
   updateInstalledTitle: 'Update installed',
-  updateInstalled: params('OpenPencil {version} was installed{size}. Restarting now.'),
+  updateInstalled: params('Inkly {version} was installed{size}. Restarting now.'),
   updateUnavailable:
     'Updates are not available yet. Publish a signed release with latest.json first.',
   updateCheckFailed: params('Could not check for updates: {error}')

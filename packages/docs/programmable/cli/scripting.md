@@ -5,18 +5,18 @@ description: Execute JavaScript with a Figma-compatible Plugin API to query, bat
 
 # Scripting
 
-`openpencil eval` runs JavaScript against an OpenPencil document with a Figma-compatible `figma` global. Use it for headless batch edits, inspection, fixture setup, and automation without opening the editor UI.
+`inkly eval` runs JavaScript against an Inkly document with a Figma-compatible `figma` global. Use it for headless batch edits, inspection, fixture setup, and automation without opening the editor UI.
 
 ## Basic usage
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.length"
+inkly eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-The `-c` flag accepts JavaScript. If the code does not start with `return`, OpenPencil wraps it in an async function and returns the value from that function when present.
+The `-c` flag accepts JavaScript. If the code does not start with `return`, Inkly wraps it in an async function and returns the value from that function when present.
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   const frame = figma.createFrame()
   frame.name = 'Card'
   frame.resize(300, 200)
@@ -29,7 +29,7 @@ openpencil eval design.fig -c "
 ## Query nodes
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   return figma.currentPage
     .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
     .map((button) => ({
@@ -46,7 +46,7 @@ openpencil eval design.fig -c "
 Use `--write` / `-w` to write changes back to the input file:
 
 ```sh
-openpencil eval design.fig -c "
+inkly eval design.fig -c "
   figma.currentPage.children.forEach((node) => {
     node.opacity = 0.5
   })
@@ -56,13 +56,13 @@ openpencil eval design.fig -c "
 Use `--output` / `-o` to write to a new file:
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
+inkly eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
 ```
 
 ## Read scripts from stdin
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin --write
+cat transform.js | inkly eval design.fig --stdin --write
 ```
 
 ## Live app mode
@@ -70,7 +70,7 @@ cat transform.js | openpencil eval design.fig --stdin --write
 Omit the file path to run against the currently open document in the desktop app:
 
 ```sh
-openpencil eval -c "return figma.currentPage.name"
+inkly eval -c "return figma.currentPage.name"
 ```
 
 The desktop app must be running with a document open.
@@ -80,14 +80,14 @@ The desktop app must be running with a document open.
 By default, non-TTY output is JSON. Use `--json` to force JSON output:
 
 ```sh
-openpencil eval design.fig -c "return figma.currentPage.children.map((n) => n.name)" --json
+inkly eval design.fig -c "return figma.currentPage.children.map((n) => n.name)" --json
 ```
 
 Use `--quiet` / `-q` to suppress output when only writing a file.
 
 ## Supported API surface
 
-The API is intentionally close to Figma's Plugin API, but it maps to OpenPencil's scene graph and file format.
+The API is intentionally close to Figma's Plugin API, but it maps to Inkly's scene graph and file format.
 
 ### Document and pages
 
@@ -160,7 +160,7 @@ Common node properties are readable/writable through the proxy, including:
 
 - `figma.mixed`
 - `figma.createImage(data)`
-- `figma.loadFontAsync(fontName)` no-ops because OpenPencil does not gate text edits on plugin font loading
+- `figma.loadFontAsync(fontName)` no-ops because Inkly does not gate text edits on plugin font loading
 - `figma.listAvailableFontsAsync()` returns host-provided fonts when available
 - `figma.notify(message)` logs a warning in headless mode
 - `figma.viewport`
@@ -176,4 +176,4 @@ These Figma APIs are not exposed as compatible helpers yet:
 - Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity
 
-Use OpenPencil CLI export commands, core tools, or direct scene-graph helpers where available.
+Use Inkly CLI export commands, core tools, or direct scene-graph helpers where available.

@@ -10,7 +10,7 @@ import {
   compressFigDataSync,
   initCodec,
   SceneGraph
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { heavy } from '#tests/helpers/test-utils'
 

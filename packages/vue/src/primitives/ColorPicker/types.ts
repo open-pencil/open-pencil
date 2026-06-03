@@ -1,4 +1,4 @@
-import type { OkHCLColor, RenderColorSpace } from '@open-pencil/core/color'
+import type { OkHCLColor, RenderColorSpace } from '@inkly/core/color'
 
 export type ColorFieldFormat = 'rgb' | 'hsl' | 'hsb' | 'okhcl'
 

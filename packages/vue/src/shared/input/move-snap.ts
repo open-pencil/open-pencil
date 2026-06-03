@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { computeSelectionBounds, computeSnap } from '@open-pencil/core/scene-graph'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import { computeSelectionBounds, computeSnap } from '@inkly/core/scene-graph'
+import type { SceneNode } from '@inkly/core/scene-graph'
 
 import type { DragMove } from '#vue/shared/input/types'
 

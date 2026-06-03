@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/core'
+import type { SceneGraph, SceneNode } from '@inkly/core'
 
 export function expectDefined<T>(value: T | null | undefined, label = 'value'): NonNullable<T> {
   if (value == null) {

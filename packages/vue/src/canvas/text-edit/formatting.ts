@@ -1,10 +1,10 @@
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { SceneNode } from '@inkly/core/scene-graph'
 import {
   toggleBoldInRange,
   toggleDecorationInRange,
   toggleItalicInRange
-} from '@open-pencil/core/text'
+} from '@inkly/core/text'
 
 export function createTextFormattingActions(store: Editor) {
   function applyFormatting(nodeId: string, changes: Partial<SceneNode>, label: string) {

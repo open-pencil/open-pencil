@@ -1,11 +1,11 @@
 ---
 title: Componenti
-description: Riferimento ai componenti per le primitive Vue headless in @open-pencil/vue.
+description: Riferimento ai componenti per le primitive Vue headless in @inkly/vue.
 ---
 
 # Componenti
 
-`@open-pencil/vue` espone primitive strutturali headless per il cablaggio del canvas, UI di navigazione, pannelli proprietà e controlli di input mirati.
+`@inkly/vue` espone primitive strutturali headless per il cablaggio del canvas, UI di navigazione, pannelli proprietà e controlli di input mirati.
 
 ## Primitive principali dell'editor
 

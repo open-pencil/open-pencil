@@ -10,8 +10,8 @@ async function expectCanvas(name: string) {
 
 test('boolean operations', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
     const operations = ['UNION', 'SUBTRACT', 'INTERSECT', 'EXCLUDE'] as const
     const colors = [
@@ -66,8 +66,8 @@ test('boolean operations', async () => {
 
 test('gradients and image fill modes', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
 
     const imageCanvas = document.createElement('canvas')
@@ -178,8 +178,8 @@ test('gradients and image fill modes', async () => {
 
 test('complex text fills render as glyph outlines', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
 
     store.graph.createNode('FRAME', pageId, {
@@ -246,8 +246,8 @@ test('complex text fills render as glyph outlines', async () => {
 
 test('text decoration styles and OpenType features', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
 
     store.graph.createNode('FRAME', pageId, {
@@ -336,8 +336,8 @@ test('text decoration styles and OpenType features', async () => {
 
 test('pattern fills from source nodes', async () => {
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
 
     const source = store.graph.createNode('ELLIPSE', pageId, {
@@ -393,8 +393,8 @@ test('pattern fills from source nodes', async () => {
 
 test('luminance masks and transformed tile fills', async () => {
   await editor.page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
 
     const imageCanvas = document.createElement('canvas')

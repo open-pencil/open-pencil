@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 type TextEditor = NonNullable<Editor['textEditor']>
 

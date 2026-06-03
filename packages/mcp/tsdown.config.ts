@@ -17,8 +17,8 @@ export default defineConfig({
     neverBundle: [
       '@hono/node-server',
       '@modelcontextprotocol/sdk',
-      '@open-pencil/core',
-      /^@open-pencil\/core\//,
+      '@inkly/core',
+      /^@inkly\/core\//,
       'hono',
       /^hono\//,
       'package-manager-detector',

@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import { useI18n } from '#vue/i18n/useI18n.js'
 import type { DragOriginal } from '#vue/shared/input/drag-original'

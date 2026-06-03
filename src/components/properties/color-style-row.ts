@@ -1,5 +1,5 @@
-import { colorToCSS } from '@open-pencil/core/color'
-import type { Color, Fill, Variable } from '@open-pencil/core/scene-graph'
+import { colorToCSS } from '@inkly/core/color'
+import type { Color, Fill, Variable } from '@inkly/core/scene-graph'
 
 export type ColorVariableBindingApi = {
   store: {

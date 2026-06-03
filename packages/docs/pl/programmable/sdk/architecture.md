@@ -1,11 +1,11 @@
 ---
 title: Architektura SDK
-description: Struktura katalogów, granice publicznego API i wzorce kompozycji w @open-pencil/vue.
+description: Struktura katalogów, granice publicznego API i wzorce kompozycji w @inkly/vue.
 ---
 
 # Architektura SDK
 
-`@open-pencil/vue` to warstwa Vue nad `@open-pencil/core`.
+`@inkly/vue` to warstwa Vue nad `@inkly/core`.
 
 Nie jest właścicielem samego modelu edytora. Adaptuje rdzeń edytora do:
 
@@ -107,7 +107,7 @@ Preferuj skupione właściwości slotów lub bezpośrednie użycie kompozytu zam
 
 ## Praktyczna zasada
 
-Jeśli logika mogłaby być użyta ponownie w innej aplikacji opartej na OpenPencil bez przenoszenia stylowania aplikacji, prawdopodobnie należy do `@open-pencil/vue`.
+Jeśli logika mogłaby być użyta ponownie w innej aplikacji opartej na Inkly bez przenoszenia stylowania aplikacji, prawdopodobnie należy do `@inkly/vue`.
 
 ## Powiązane strony
 

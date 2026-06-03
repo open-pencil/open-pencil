@@ -1,6 +1,6 @@
 import { ref, computed, watch } from 'vue'
 
-import type { Variable } from '@open-pencil/core/scene-graph'
+import type { Variable } from '@inkly/core/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

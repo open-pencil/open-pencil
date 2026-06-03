@@ -9,7 +9,7 @@ import {
   SkiaRenderer,
   type SceneGraph,
   type SceneNode
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { initCanvasKit } from '#cli/headless'
 

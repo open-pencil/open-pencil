@@ -17,7 +17,7 @@ Expone el estado de UI derivado de la selección para:
 ## Uso
 
 ```ts
-import { useAppearance } from '@open-pencil/vue'
+import { useAppearance } from '@inkly/vue'
 
 const appearance = useAppearance()
 ```

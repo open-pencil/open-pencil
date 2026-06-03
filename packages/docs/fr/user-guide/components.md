@@ -1,6 +1,6 @@
 ---
 title: Composants
-description: Composants réutilisables, instances, surcharges et synchronisation live dans OpenPencil.
+description: Composants réutilisables, instances, surcharges et synchronisation live dans Inkly.
 ---
 # Composants
 

@@ -1,5 +1,5 @@
-import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { wrapEvalCode } from '@open-pencil/core/tools'
+import type { FigmaAPI } from '@inkly/core/figma-api'
+import { wrapEvalCode } from '@inkly/core/tools'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

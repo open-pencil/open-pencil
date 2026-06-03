@@ -20,7 +20,7 @@
 │           └──────────────┬───────────┘                         │
 │                          ↓                                      │
 │  ┌────────────────────────────────────────────────────────────┐ │
-│  │ @open-pencil/core (TypeScript)                              │ │
+│  │ @inkly/core (TypeScript)                              │ │
 │  │ ─ SceneGraph (ノードツリー)                                 │ │
 │  │ ─ Yoga レイアウト計算 (CSS Flexbox 同等)                    │ │
 │  │ ─ Skia 描画 (canvas/text.ts, canvas/renderer.ts)            │ │
@@ -40,7 +40,7 @@
 
 ## 主要パッケージ
 
-### @open-pencil/core
+### @inkly/core
 
 レンダリングエンジンと I/O の中心。
 
@@ -54,7 +54,7 @@
 | `io/formats/pen/` | `.pen` ファイルのパーサー |
 | `io/formats/fig/` | `.fig` (Figma) ファイルのパーサー |
 
-### @open-pencil/vue
+### @inkly/vue
 
 Vue 3 ベースの UI コンポーネント・i18n。
 
@@ -125,10 +125,10 @@ SceneGraph
 bun install
 
 # core パッケージビルド (TypeScript → tsdown)
-bun --filter @open-pencil/core build
+bun --filter @inkly/core build
 
 # vue パッケージビルド
-bun --filter @open-pencil/vue build
+bun --filter @inkly/vue build
 
 # 開発サーバー起動
 bun run dev

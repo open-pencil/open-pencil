@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@inkly/core'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { createRect, firstPageId } from '#tests/helpers/scene'

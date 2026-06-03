@@ -1,6 +1,6 @@
 ---
 title: Auto-layout
-description: Layout flex e griglia in OpenPencil — direzione, spaziatura, padding, allineamento, dimensionamento e track CSS Grid.
+description: Layout flex e griglia in Inkly — direzione, spaziatura, padding, allineamento, dimensionamento e track CSS Grid.
 ---
 # Auto-layout
 

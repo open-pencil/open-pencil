@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { SceneGraph, FigmaAPI, sceneNodeToKiwi, type Stroke } from '@open-pencil/core'
+import { SceneGraph, FigmaAPI, sceneNodeToKiwi, type Stroke } from '@inkly/core'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 

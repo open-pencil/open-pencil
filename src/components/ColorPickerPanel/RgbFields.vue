@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inputNumberValue } from '@open-pencil/vue'
+import { inputNumberValue } from '@inkly/vue'
 import { useColorPickerPanelContext } from '@/components/ColorPickerPanel/context'
 
 const ctx = useColorPickerPanelContext()

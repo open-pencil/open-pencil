@@ -5,7 +5,7 @@ description: Construye barras laterales de páginas y capas con PageListRoot, La
 
 # Paneles de Navegación
 
-Las barras laterales de OpenPencil suelen combinar dos preocupaciones:
+Las barras laterales de Inkly suelen combinar dos preocupaciones:
 
 - navegación de páginas
 - navegación de capas

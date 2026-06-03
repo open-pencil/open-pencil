@@ -1,7 +1,7 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/core/types'
+import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@inkly/core'
+import type { JsonObject } from '@inkly/core/types'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'
@@ -65,7 +65,7 @@ describe('text node export', () => {
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
       await import('#core/kiwi/schema-runtime')
-    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+    const { parseFigKiwiChunks } = await import('@inkly/core')
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -127,7 +127,7 @@ describe('text node export', () => {
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
       await import('#core/kiwi/schema-runtime')
-    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+    const { parseFigKiwiChunks } = await import('@inkly/core')
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -171,7 +171,7 @@ describe('text node export', () => {
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
       await import('#core/kiwi/schema-runtime')
-    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+    const { parseFigKiwiChunks } = await import('@inkly/core')
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
@@ -218,7 +218,7 @@ describe('text node export', () => {
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
       await import('#core/kiwi/schema-runtime')
-    const { parseFigKiwiChunks } = await import('@open-pencil/core')
+    const { parseFigKiwiChunks } = await import('@inkly/core')
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

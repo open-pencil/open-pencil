@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { vTestId, type RequiredTestIdProps } from '@open-pencil/vue'
+import { vTestId, type RequiredTestIdProps } from '@inkly/vue'
 import type { Component } from 'vue'
 
 interface ToolButtonProps extends RequiredTestIdProps {

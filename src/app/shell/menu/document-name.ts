@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import { useInlineRename } from '@open-pencil/vue'
+import { useInlineRename } from '@inkly/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

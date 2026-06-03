@@ -2,7 +2,7 @@
 import { templateRef } from '@vueuse/core'
 import { ref } from 'vue'
 
-import type { GradientStop } from '@open-pencil/core/scene-graph'
+import type { GradientStop } from '@inkly/core/scene-graph'
 
 const { stops, ui } = defineProps<{
   stops: GradientStop[]

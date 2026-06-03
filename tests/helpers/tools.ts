@@ -1,4 +1,4 @@
-import { ALL_TOOLS, FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { ALL_TOOLS, FigmaAPI, SceneGraph } from '@inkly/core'
 
 export { ALL_TOOLS }
 

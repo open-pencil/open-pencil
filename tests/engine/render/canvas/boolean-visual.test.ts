@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 
 import { initCanvasKit } from '#cli/headless'
 
-const MATRIX_PATH = '/tmp/open-pencil-boolean-matrix.png'
+const MATRIX_PATH = '/tmp/inkly-boolean-matrix.png'
 const CELL_W = 180
 const CELL_H = 150
 const MATRIX_COLUMNS = 4

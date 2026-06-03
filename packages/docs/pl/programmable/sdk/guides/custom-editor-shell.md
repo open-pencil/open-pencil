@@ -5,15 +5,15 @@ description: Zbuduj własną powłokę edytora z provideEditor, CanvasRoot, menu
 
 # Niestandardowa powłoka edytora
 
-Typowa aplikacja Vue z OpenPencil ma trzy warstwy:
+Typowa aplikacja Vue z Inkly ma trzy warstwy:
 
-1. `@open-pencil/core` tworzy edytor
-2. `@open-pencil/vue` adaptuje go do kompozytów Vue i bezstanowych prymitywów
+1. `@inkly/core` tworzy edytor
+2. `@inkly/vue` adaptuje go do kompozytów Vue i bezstanowych prymitywów
 3. twoja aplikacja renderuje powłokę, stylowanie i UX specyficzny dla produktu
 
 ## Dlaczego to ważne
 
-Wbudowana aplikacja OpenPencil to tylko jedna możliwa powłoka.
+Wbudowana aplikacja Inkly to tylko jedna możliwa powłoka.
 
 Możesz zbudować zupełnie inną dla skupionego przepływu pracy: edytor wbudowany w inny produkt, wewnętrzne narzędzie do zasobów, edytor szablonów, UI do adnotacji lub powierzchnię edycji wspomaganą AI z niestandardowymi kontrolkami.
 
@@ -33,7 +33,7 @@ Praktyczna powłoka często wygląda tak:
 
 ```vue
 <script setup lang="ts">
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 import {
   provideEditor,
   CanvasRoot,
@@ -41,7 +41,7 @@ import {
   ToolbarRoot,
   PageListRoot,
   LayerTreeRoot,
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
 const editor = createEditor({ width: 1440, height: 900 })
 provideEditor(editor)

@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import type { Vector } from '@open-pencil/core/types'
+import type { Editor } from '@inkly/core/editor'
+import type { Vector } from '@inkly/core/types'
 
 import type { DragState } from '#vue/shared/input/types'
 

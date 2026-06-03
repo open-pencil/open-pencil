@@ -14,7 +14,7 @@ import {
 } from '#vue/i18n/messages'
 
 /**
- * Reactive i18n composable for OpenPencil Vue components.
+ * Reactive i18n composable for Inkly Vue components.
  *
  * Returns reactive translation objects grouped by domain, plus locale
  * controls. All values update automatically when the locale changes.

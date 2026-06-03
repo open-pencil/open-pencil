@@ -1,6 +1,6 @@
 ---
 title: Esportazione
-description: Esportare immagini (PNG, JPG, WEBP, SVG) e gestire file .fig in OpenPencil.
+description: Esportare immagini (PNG, JPG, WEBP, SVG) e gestire file .fig in Inkly.
 ---
 # Esportazione
 

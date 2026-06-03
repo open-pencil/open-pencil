@@ -1,6 +1,6 @@
 ---
 title: Stiftwerkzeug
-description: Vektorpfade mit Bézier-Kurven zeichnen mit dem Stiftwerkzeug in OpenPencil.
+description: Vektorpfade mit Bézier-Kurven zeichnen mit dem Stiftwerkzeug in Inkly.
 ---
 
 # Stiftwerkzeug

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { twMerge } from 'tailwind-merge'
-import type { TestIdProps } from '@open-pencil/vue'
+import type { TestIdProps } from '@inkly/vue'
 
 interface AppTextButtonProps extends TestIdProps {
   ui?: {

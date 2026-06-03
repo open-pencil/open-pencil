@@ -5,22 +5,22 @@ import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewpor
 import { useClipboard } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
-import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
-import { useI18n, useSceneComputed } from '@open-pencil/vue'
+import { JSX_REFERENCE, selectionToJSX } from '@inkly/core/design-jsx'
+import { useI18n, useSceneComputed } from '@inkly/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import Tip from '@/components/ui/Tip.vue'
 
-import type { JSXFormat } from '@open-pencil/core/design-jsx'
+import type { JSXFormat } from '@inkly/core/design-jsx'
 
 const store = useEditorStore()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 const { dialogs } = useI18n()
-const jsxFormat = ref<JSXFormat>('openpencil')
+const jsxFormat = ref<JSXFormat>('inkly')
 
 function toggleFormat() {
-  jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
+  jsxFormat.value = jsxFormat.value === 'inkly' ? 'tailwind' : 'inkly'
 }
 
 const jsxCode = useSceneComputed(() => {
@@ -68,7 +68,7 @@ function copyReference() {
           :ui="{ base: 'rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
           @click="toggleFormat"
         >
-          {{ jsxFormat === 'openpencil' ? 'OpenPencil' : 'Tailwind' }}
+          {{ jsxFormat === 'inkly' ? 'Inkly' : 'Tailwind' }}
         </AppTextButton>
       </div>
       <div class="flex items-center gap-1">

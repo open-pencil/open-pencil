@@ -1,11 +1,11 @@
 ---
 title: Komponenty
-description: Dokumentacja komponentów bezstanowych prymitywów Vue w @open-pencil/vue.
+description: Dokumentacja komponentów bezstanowych prymitywów Vue w @inkly/vue.
 ---
 
 # Komponenty
 
-`@open-pencil/vue` udostępnia bezstanowe prymitywy strukturalne do okablowania kanvasu, UI nawigacji, paneli właściwości i skupionych kontrolek wejścia.
+`@inkly/vue` udostępnia bezstanowe prymitywy strukturalne do okablowania kanvasu, UI nawigacji, paneli właściwości i skupionych kontrolek wejścia.
 
 ## Podstawowe prymitywy edytora
 

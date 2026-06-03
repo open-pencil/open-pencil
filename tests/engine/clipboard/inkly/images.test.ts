@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  buildOpenPencilClipboardHTML,
+  buildInklyClipboardHTML,
   FigmaAPI,
-  parseOpenPencilClipboard,
+  parseInklyClipboard,
   SceneGraph
-} from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/core'
+} from '@inkly/core'
+import type { SceneNode } from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -45,10 +45,10 @@ describe('clipboard roundtrip with images', () => {
   test('round-trips image bytes through clipboard', () => {
     const { graph, node, imageHash, imageBytes } = graphWithImageNode()
 
-    const html = buildOpenPencilClipboardHTML([node], graph)
-    const parsed = parseOpenPencilClipboard(html)
+    const html = buildInklyClipboardHTML([node], graph)
+    const parsed = parseInklyClipboard(html)
 
-    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+    const clipboard = expectDefined(parsed, 'Inkly clipboard')
     expect(clipboard.images.size).toBe(1)
     expect(clipboard.images.get(imageHash)).toEqual(imageBytes)
   })
@@ -56,10 +56,10 @@ describe('clipboard roundtrip with images', () => {
   test('preserves imageHash on the fill', () => {
     const { graph, node, imageHash } = graphWithImageNode()
 
-    const html = buildOpenPencilClipboardHTML([node], graph)
-    const parsed = parseOpenPencilClipboard(html)
+    const html = buildInklyClipboardHTML([node], graph)
+    const parsed = parseInklyClipboard(html)
 
-    const fill = expectDefined(parsed, 'OpenPencil clipboard').nodes[0]?.fills[0]
+    const fill = expectDefined(parsed, 'Inkly clipboard').nodes[0]?.fills[0]
     expect(fill.type).toBe('IMAGE')
     expect(fill.imageHash).toBe(imageHash)
   })
@@ -105,10 +105,10 @@ describe('clipboard roundtrip with images', () => {
       ]
     })
 
-    const html = buildOpenPencilClipboardHTML([node1, node2], graph)
-    const parsed = parseOpenPencilClipboard(html)
+    const html = buildInklyClipboardHTML([node1, node2], graph)
+    const parsed = parseInklyClipboard(html)
 
-    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+    const clipboard = expectDefined(parsed, 'Inkly clipboard')
     expect(clipboard.images.size).toBe(2)
     expect(clipboard.images.get(hash1)).toEqual(bytes1)
     expect(clipboard.images.get(hash2)).toEqual(bytes2)
@@ -124,10 +124,10 @@ describe('clipboard roundtrip with images', () => {
       fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
     })
 
-    const html = buildOpenPencilClipboardHTML([node], graph)
-    const parsed = parseOpenPencilClipboard(html)
+    const html = buildInklyClipboardHTML([node], graph)
+    const parsed = parseInklyClipboard(html)
 
-    expect(expectDefined(parsed, 'OpenPencil clipboard').images.size).toBe(0)
+    expect(expectDefined(parsed, 'Inkly clipboard').images.size).toBe(0)
   })
 
   test('child node image hashes are collected', () => {
@@ -155,10 +155,10 @@ describe('clipboard roundtrip with images', () => {
       ]
     })
 
-    const html = buildOpenPencilClipboardHTML([frame], graph)
-    const parsed = parseOpenPencilClipboard(html)
+    const html = buildInklyClipboardHTML([frame], graph)
+    const parsed = parseInklyClipboard(html)
 
-    const clipboard = expectDefined(parsed, 'OpenPencil clipboard')
+    const clipboard = expectDefined(parsed, 'Inkly clipboard')
     expect(clipboard.images.size).toBe(1)
     expect(clipboard.images.get(hash)).toEqual(bytes)
   })

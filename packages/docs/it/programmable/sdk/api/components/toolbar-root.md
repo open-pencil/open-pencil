@@ -5,7 +5,7 @@ description: Primitiva strutturale headless per le UI toolbar dell'editor.
 
 # ToolbarRoot
 
-`ToolbarRoot` è la primitiva toolbar headless di `@open-pencil/vue`.
+`ToolbarRoot` è la primitiva toolbar headless di `@inkly/vue`.
 
 Usala quando vuoi struttura e contesto della toolbar riutilizzabili, con i tuoi pulsanti, stile e layout.
 

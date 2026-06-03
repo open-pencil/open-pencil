@@ -1,18 +1,18 @@
 ---
 title: useI18n
-description: Lee los mensajes de UI localizados de OpenPencil y cambia el idioma activo del SDK.
+description: Lee los mensajes de UI localizados de Inkly y cambia el idioma activo del SDK.
 ---
 
 # useI18n
 
-`useI18n()` devuelve grupos de traducción reactivos más controles de idioma para los shells de editor potenciados por OpenPencil.
+`useI18n()` devuelve grupos de traducción reactivos más controles de idioma para los shells de editor potenciados por Inkly.
 
 Úsalo cuando quieras etiquetas respaldadas por el SDK para menús, comandos, paneles, páginas y diálogos, o cuando necesites que los usuarios puedan cambiar de idioma.
 
 ## Uso
 
 ```ts
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { menu, commands, panels, locale, availableLocales, localeLabels, setLocale } = useI18n()
 ```
@@ -34,7 +34,7 @@ const { menu, commands, panels, locale, availableLocales, localeLabels, setLocal
 
 ```vue
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
 </script>

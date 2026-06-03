@@ -1,4 +1,4 @@
-import { selectionToJSX, sceneNodeToJSX, type RasterExportFormat } from '@open-pencil/core/io'
+import { selectionToJSX, sceneNodeToJSX, type RasterExportFormat } from '@inkly/core/io'
 
 import type { EditorStore } from '@/app/editor/active-store'
 
@@ -23,7 +23,7 @@ export async function handleExport(store: EditorStore, args: unknown): Promise<u
 
 export async function handleExportJsx(store: EditorStore, args: unknown): Promise<unknown> {
   const jsxArgs = args as { nodeIds?: string[]; style?: string } | undefined
-  const style = (jsxArgs?.style ?? 'openpencil') as 'openpencil' | 'tailwind'
+  const style = (jsxArgs?.style ?? 'inkly') as 'inkly' | 'tailwind'
   const currentPage = store.graph.getNode(store.state.currentPageId)
   const nodeIds = jsxArgs?.nodeIds ?? currentPage?.childIds ?? []
   const jsx =

@@ -4,7 +4,7 @@ import { onMounted } from 'vue'
 
 import { isTauri } from '@/app/tauri/env'
 import { useFontSettings } from '@/components/FontSettings/use'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { usePopoverUI } from '@/components/ui/popover'

@@ -1,6 +1,6 @@
 ---
 title: useVariablesTable
-description: TanStack Table-Spaltendefinitionen für OpenPencil-Variablen-UIs erstellen.
+description: TanStack Table-Spaltendefinitionen für Inkly-Variablen-UIs erstellen.
 ---
 
 # useVariablesTable
@@ -12,7 +12,7 @@ Verwenden Sie es, wenn Sie das SDK-Variablen-Tabellen-Verhalten möchten, aber I
 ## Verwendung
 
 ```ts
-import { useVariablesTable } from '@open-pencil/vue'
+import { useVariablesTable } from '@inkly/vue'
 
 const { columns } = useVariablesTable(options)
 ```

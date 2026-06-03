@@ -1,12 +1,12 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@inkly/core/editor'
 import type {
   ExportRequest,
   IOFormatAdapter,
   IORegistry,
   RasterExportFormat
-} from '@open-pencil/core/io'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+} from '@inkly/core/io'
+import { renderNodesToImage } from '@inkly/core/io/formats/raster'
+import type { SceneGraph } from '@inkly/core/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
 import { isTauri } from '@/app/tauri/env'
@@ -32,7 +32,7 @@ export function getExportOptions(formatId: string, options?: ExportOptions): unk
       quality: options?.quality
     }
   }
-  if (formatId === 'jsx') return { format: options?.jsxFormat ?? 'openpencil' }
+  if (formatId === 'jsx') return { format: options?.jsxFormat ?? 'inkly' }
   return undefined
 }
 

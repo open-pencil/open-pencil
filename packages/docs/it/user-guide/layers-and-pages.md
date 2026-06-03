@@ -1,6 +1,6 @@
 ---
 title: Livelli e pagine
-description: Gestire livelli, pagine e pannello proprietà in OpenPencil.
+description: Gestire livelli, pagine e pannello proprietà in Inkly.
 ---
 # Livelli e pagine
 

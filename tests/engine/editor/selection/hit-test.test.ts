@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 
 describe('editor scoped hit testing', () => {
   test('uses world coordinates inside entered containers', () => {

@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/core/types'
+import type { SceneGraph, SceneNode } from '@inkly/core'
+import type { JsonObject } from '@inkly/core/types'
 
 import { verifyComponentPropDefs, verifyDerivedTextData } from './raw-verifiers/helpers'
 

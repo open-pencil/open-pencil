@@ -1,6 +1,6 @@
 ---
 title: Text Editing
-description: Creating and editing text with rich formatting, fonts, and inline editing in OpenPencil.
+description: Creating and editing text with rich formatting, fonts, and inline editing in Inkly.
 ---
 
 # Text Editing

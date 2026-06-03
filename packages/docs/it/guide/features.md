@@ -4,7 +4,7 @@
 
 Apri e salva file nativi di Figma direttamente. La pipeline di importazione/esportazione utilizza lo stesso codec binario Kiwi di Figma — 194 definizioni di schema, ~390 campi per nodo. Salva con <kbd>⌘</kbd><kbd>S</kbd>, Salva con nome con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd>.
 
-**Copia e incolla con Figma** — seleziona i nodi in Figma, <kbd>⌘</kbd><kbd>C</kbd>, passa a OpenPencil, <kbd>⌘</kbd><kbd>V</kbd>. Riempimenti, bordi, auto-layout, testo, effetti, raggi degli angoli e reti vettoriali vengono preservati. Funziona in entrambe le direzioni.
+**Copia e incolla con Figma** — seleziona i nodi in Figma, <kbd>⌘</kbd><kbd>C</kbd>, passa a Inkly, <kbd>⌘</kbd><kbd>V</kbd>. Riempimenti, bordi, auto-layout, testo, effetti, raggi degli angoli e reti vettoriali vengono preservati. Funziona in entrambe le direzioni.
 
 ## Disegno e Modifica
 
@@ -61,7 +61,7 @@ Apri più documenti in schede. <kbd>⌘</kbd><kbd>T</kbd> nuova scheda, <kbd>⌘
 - **Tailwind JSX** — HTML con classi utility Tailwind v4, pronto per React o Vue
 - **Copia come** — testo, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), o JSX tramite menu contestuale
 
-CLI: `openpencil export design.fig -f jsx --style tailwind`
+CLI: `inkly export design.fig -f jsx --style tailwind`
 
 ## Chat AI
 
@@ -76,14 +76,14 @@ Vedi [Chat AI](/programmable/ai-chat) per configurazione e dettagli sui provider
 Connetti Claude Code, Cursor, Windsurf o qualsiasi client MCP per leggere e scrivere file `.fig` in modalità headless. 90+ strumenti. Due trasporti: stdio e HTTP.
 
 ```sh
-npm install -g @open-pencil/mcp
+npm install -g @inkly/mcp
 ```
 
 ```json
 {
   "mcpServers": {
-    "open-pencil": {
-      "command": "openpencil-mcp"
+    "inkly": {
+      "command": "inkly-mcp"
     }
   }
 }
@@ -96,22 +96,22 @@ Consulta il [riferimento strumenti MCP](/programmable/mcp-server) per l'elenco c
 Ispeziona, esporta e analizza file `.fig` dal terminale:
 
 ```sh
-openpencil tree design.fig          # Albero dei nodi
-openpencil find design.fig --type TEXT  # Ricerca
-openpencil export design.fig -f png     # Render
-openpencil analyze colors design.fig    # Audit colori
-openpencil analyze clusters design.fig  # Pattern ripetuti
-openpencil eval design.fig -c "..."     # Figma Plugin API
+inkly tree design.fig          # Albero dei nodi
+inkly find design.fig --type TEXT  # Ricerca
+inkly export design.fig -f png     # Render
+inkly analyze colors design.fig    # Audit colori
+inkly analyze clusters design.fig  # Pattern ripetuti
+inkly eval design.fig -c "..."     # Figma Plugin API
 ```
 
 Quando l'app desktop è in esecuzione, ometti il file per controllare l'editor live tramite RPC:
 
 ```sh
-openpencil tree                     # Documento live
-openpencil export -f png            # Screenshot del canvas
+inkly tree                     # Documento live
+inkly export -f png            # Screenshot del canvas
 ```
 
-Tutti i comandi supportano `--json`. Installazione: `npm install -g @open-pencil/cli`
+Tutti i comandi supportano `--json`. Installazione: `npm install -g @inkly/cli`
 
 ## Collaborazione in Tempo Reale
 
@@ -127,14 +127,14 @@ P2P tramite WebRTC — nessun server necessario. Condividi un link e modifica in
 
 **Desktop** — Tauri v2, ~7 MB. macOS (firmato e autenticato), Windows, Linux. Menu nativi, offline, salvataggio automatico.
 
-**Web** — disponibile su [app.openpencil.dev](https://app.openpencil.dev), installabile come PWA su mobile con interfaccia ottimizzata per il touch.
+**Web** — disponibile su [app.inkly.dev](https://app.inkly.dev), installabile come PWA su mobile con interfaccia ottimizzata per il touch.
 
 **Homebrew:**
 
 ```sh
-brew install open-pencil/tap/open-pencil
+brew install inkly/tap/inkly
 ```
 
 ## Fallback Google Fonts
 
-Quando un font non è disponibile localmente, OpenPencil lo scarica automaticamente da Google Fonts. Nessuna installazione manuale necessaria quando si aprono file .fig con font non familiari.
+Quando un font non è disponibile localmente, Inkly lo scarica automaticamente da Google Fonts. Nessuna installazione manuale necessaria quando si aprono file .fig con font non familiari.

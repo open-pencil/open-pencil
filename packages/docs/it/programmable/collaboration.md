@@ -10,7 +10,7 @@ Modifica i design insieme in tempo reale. I peer si connettono direttamente — 
 ## Condivisione di una Stanza
 
 1. Clicca il pulsante di condivisione nell'angolo in alto a destra
-2. Copia il link generato (`app.openpencil.dev/share/<room-id>`)
+2. Copia il link generato (`app.inkly.dev/share/<room-id>`)
 3. Invialo ai tuoi collaboratori
 
 Chiunque abbia il link può partecipare. La stanza rimane attiva finché almeno un partecipante ha la pagina aperta.

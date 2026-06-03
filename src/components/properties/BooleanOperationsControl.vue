@@ -13,8 +13,8 @@ import IconCopyX from '~icons/lucide/copy-x'
 import IconListCollapse from '~icons/lucide/list-collapse'
 import IconSquaresIntersect from '~icons/lucide/squares-intersect'
 
-import { editorCommandMetadata, formatShortcut, useEditorCommands, useI18n } from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+import { editorCommandMetadata, formatShortcut, useEditorCommands, useI18n } from '@inkly/vue'
+import type { EditorCommandId } from '@inkly/vue'
 
 import Tip from '@/components/ui/Tip.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu'

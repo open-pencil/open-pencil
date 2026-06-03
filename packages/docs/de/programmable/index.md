@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: KI & Automatisierung
-description: Jede Operation in OpenPencil ist skriptfähig — KI-Chat, CLI, JSX-Renderer, MCP-Server, Echtzeit-Zusammenarbeit.
+description: Jede Operation in Inkly ist skriptfähig — KI-Chat, CLI, JSX-Renderer, MCP-Server, Echtzeit-Zusammenarbeit.
 ---
 
 # KI & Automatisierung
 
-OpenPencil behandelt Designdateien als Daten. Jede im Editor verfügbare Operation — Formen erstellen, Füllungen setzen, Auto-Layout verwalten, Assets exportieren — ist auch über das Terminal, über KI-Agenten und aus Code heraus verfügbar. Keine Plugins zu installieren, keine API-Schlüssel, keine Warteliste.
+Inkly behandelt Designdateien als Daten. Jede im Editor verfügbare Operation — Formen erstellen, Füllungen setzen, Auto-Layout verwalten, Assets exportieren — ist auch über das Terminal, über KI-Agenten und aus Code heraus verfügbar. Keine Plugins zu installieren, keine API-Schlüssel, keine Warteliste.
 
 Die Editor-Oberfläche und die Automatisierungsschnittstellen verwenden dieselbe Engine. Was du per Klick machen kannst, kannst du auch per Skript machen.
 
@@ -40,7 +40,7 @@ Das CLI verbindet sich auch über RPC mit der laufenden Desktop-App, sodass du d
 
 ## MCP-Server
 
-Verbinde Claude Code, Cursor, Windsurf oder jeden MCP-kompatiblen Client mit OpenPencil. Der Server stellt 90 Werkzeuge zum Lesen, Erstellen und Bearbeiten von Designs bereit — dieselben Werkzeuge, die der integrierte KI-Chat verwendet. Läuft über stdio oder HTTP mit Session-Unterstützung.
+Verbinde Claude Code, Cursor, Windsurf oder jeden MCP-kompatiblen Client mit Inkly. Der Server stellt 90 Werkzeuge zum Lesen, Erstellen und Bearbeiten von Designs bereit — dieselben Werkzeuge, die der integrierte KI-Chat verwendet. Läuft über stdio oder HTTP mit Session-Unterstützung.
 
 [MCP-Server →](./mcp-server)
 
@@ -48,4 +48,4 @@ Verbinde Claude Code, Cursor, Windsurf oder jeden MCP-kompatiblen Client mit Ope
 
 Figma ist eine geschlossene Plattform. Ihr MCP-Server ist schreibgeschützt. Der CDP-Browserzugang wurde in Version 126 abgeschafft. Designdateien liegen in einem proprietären Format auf fremden Servern. Plugin-Entwicklung erfordert eine eigene Laufzeitumgebung mit eingeschränkten APIs.
 
-OpenPencil ist die Alternative: Open Source, MIT-lizenziert, jede Operation skriptfähig, Daten lokal gespeichert. Deine Designdateien gehören dir — inspiziere sie, transformiere sie, leite sie in die CI weiter, speise sie in ein LLM ein. Keine Erlaubnis nötig.
+Inkly ist die Alternative: Open Source, MIT-lizenziert, jede Operation skriptfähig, Daten lokal gespeichert. Deine Designdateien gehören dir — inspiziere sie, transformiere sie, leite sie in die CI weiter, speise sie in ein LLM ein. Keine Erlaubnis nötig.

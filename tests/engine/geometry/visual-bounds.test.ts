@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { Vector } from '@open-pencil/core'
+import type { Vector } from '@inkly/core'
 
 import { computeDescendantVisualBounds, computeVisualBounds } from '#core/geometry'
 

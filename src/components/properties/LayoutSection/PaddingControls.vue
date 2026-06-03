@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
-import { useLayoutControlsContext } from '@open-pencil/vue'
+import { useLayoutControlsContext } from '@inkly/vue'
 
 import type { PaddingProp } from '@/components/properties/LayoutSection/types'
 

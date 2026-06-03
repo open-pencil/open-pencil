@@ -1,24 +1,24 @@
-# OpenPencil
+# Inkly
 
 Open-source design editor. Opens `.fig` and `.pen` design files, includes built-in AI, and ships as a programmable toolkit with a headless Vue SDK for building custom editors.
 
 > **Status:** Active development. Not ready for production use.
 >
-> **Note:** There is another open-source project with the same name — [OpenPencil by ZSeven-W](https://github.com/ZSeven-W/openpencil), focused on AI-native design-to-code workflows. This project focuses on Figma-compatible visual design with real-time collaboration.
+> **Note:** There is another open-source project with the same name — [Inkly by ZSeven-W](https://github.com/ZSeven-W/inkly), focused on AI-native design-to-code workflows. This project focuses on Figma-compatible visual design with real-time collaboration.
 
-**[Try it online →](https://app.openpencil.dev/demo)** · [Download](https://github.com/open-pencil/open-pencil/releases/latest) · [Documentation](https://openpencil.dev) · [llms.txt](https://openpencil.dev/llms.txt)
+**[Try it online →](https://app.inkly.dev/demo)** · [Download](https://github.com/cardene777/open-pencil/releases/latest) · [Documentation](https://inkly.dev) · [llms.txt](https://inkly.dev/llms.txt)
 
-![OpenPencil](packages/docs/public/screenshot.png)
+![Inkly](packages/docs/public/screenshot.png)
 
 ## Installation
 
 **macOS (Homebrew):**
 
 ```sh
-brew install openpencil
+brew install inkly
 ```
 
-Or download from the [releases page](https://github.com/open-pencil/open-pencil/releases/latest), or [use the web app](https://app.openpencil.dev) — no install needed.
+Or download from the [releases page](https://github.com/cardene777/open-pencil/releases/latest), or [use the web app](https://app.inkly.dev) — no install needed.
 
 ## What it does
 
@@ -28,7 +28,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 - **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
 - **Components and variants** — create reusable components, group variants into component sets, insert local assets as instances, and switch variants from the inspector
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
-- **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
+- **Vue SDK for custom editors** — headless components and composables for embedding Inkly into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://inkly.dev/programmable/sdk/)
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
 - **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
 - **~7 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
@@ -36,8 +36,8 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 ## CLI
 
 ```sh
-npm install -g @open-pencil/cli
-# or: bun add -g @open-pencil/cli
+npm install -g @inkly/cli
+# or: bun add -g @inkly/cli
 ```
 
 ### Inspect design files
@@ -45,10 +45,10 @@ npm install -g @open-pencil/cli
 Browse node trees, search by name or type, dig into properties — all without opening the editor:
 
 ```sh
-openpencil tree design.fig
-openpencil find design.pen --type TEXT
-openpencil node design.fig --id 1:23
-openpencil info design.fig
+inkly tree design.fig
+inkly find design.pen --type TEXT
+inkly node design.fig --id 1:23
+inkly info design.fig
 ```
 
 ```
@@ -65,11 +65,11 @@ openpencil info design.fig
 Use XPath selectors to find nodes by type, attributes, and structure:
 
 ```sh
-openpencil query design.fig "//FRAME"                              # All frames
-openpencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px
-openpencil query design.fig "//TEXT[contains(@name, 'Button')]"     # Text with 'Button' in name
-openpencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
-openpencil query design.fig "//SECTION//TEXT"                       # Text inside sections
+inkly query design.fig "//FRAME"                              # All frames
+inkly query design.fig "//FRAME[@width < 300]"                # Frames under 300px
+inkly query design.fig "//TEXT[contains(@name, 'Button')]"     # Text with 'Button' in name
+inkly query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
+inkly query design.fig "//SECTION//TEXT"                       # Text inside sections
 ```
 
 ### Export
@@ -77,11 +77,11 @@ openpencil query design.fig "//SECTION//TEXT"                       # Text insid
 Render to PNG, JPG, WEBP, SVG, `.fig`, or JSX — or export selections/pages as `.fig` and convert whole documents between supported formats:
 
 ```sh
-openpencil export design.fig                           # PNG
-openpencil export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
-openpencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
-openpencil export design.fig -f jsx --style tailwind   # Tailwind JSX
-openpencil convert design.pen output.fig               # Convert between document formats
+inkly export design.fig                           # PNG
+inkly export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
+inkly export design.fig -f fig --page "Page 1"   # Export a page as .fig
+inkly export design.fig -f jsx --style tailwind   # Tailwind JSX
+inkly convert design.pen output.fig               # Convert between document formats
 ```
 
 ```html
@@ -96,10 +96,10 @@ openpencil convert design.pen output.fig               # Convert between documen
 Catch naming, layout, structure, and accessibility issues from the terminal:
 
 ```sh
-openpencil lint design.fig
-openpencil lint design.pen --preset strict
-openpencil lint design.fig --rule color-contrast
-openpencil lint design.fig --list-rules
+inkly lint design.fig
+inkly lint design.pen --preset strict
+inkly lint design.fig --rule color-contrast
+inkly lint design.fig --list-rules
 ```
 
 ### Analyze and extract design tokens
@@ -107,11 +107,11 @@ openpencil lint design.fig --list-rules
 Audit an entire design system from the terminal — find inconsistencies, extract the real palette, and spot components waiting to be extracted:
 
 ```sh
-openpencil analyze colors design.fig
-openpencil analyze typography design.fig
-openpencil analyze spacing design.fig
-openpencil analyze clusters design.fig
-openpencil variables design.fig
+inkly analyze colors design.fig
+inkly analyze typography design.fig
+inkly analyze spacing design.fig
+inkly analyze clusters design.fig
+inkly variables design.fig
 ```
 
 ```
@@ -132,8 +132,8 @@ openpencil variables design.fig
 `eval` gives you the full Figma Plugin API. Modify the file, write it back:
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
-openpencil eval design.fig -c "figma.currentPage.selection.forEach(n => n.opacity = 0.5)" -w
+inkly eval design.fig -c "figma.currentPage.children.length"
+inkly eval design.fig -c "figma.currentPage.selection.forEach(n => n.opacity = 0.5)" -w
 ```
 
 ### Control the running app
@@ -141,9 +141,9 @@ openpencil eval design.fig -c "figma.currentPage.selection.forEach(n => n.opacit
 When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas. Useful for automation scripts, CI pipelines, or AI agents that need to interact with the editor:
 
 ```sh
-openpencil tree                               # Inspect the live document
-openpencil export -f png                      # Screenshot the current canvas
-openpencil eval -c "figma.currentPage.name"   # Query the editor
+inkly tree                               # Inspect the live document
+inkly export -f png                      # Screenshot the current canvas
+inkly eval -c "figma.currentPage.name"   # Query the editor
 ```
 
 All commands support `--json` for machine-readable output.
@@ -165,7 +165,7 @@ Use Claude Code, Codex, or Gemini CLI directly in the chat panel. The agent conn
    ```json
    {
      "permissions": {
-       "allow": ["mcp__open-pencil__*"]
+       "allow": ["mcp__inkly__*"]
      }
    }
    ```
@@ -173,13 +173,13 @@ Use Claude Code, Codex, or Gemini CLI directly in the chat panel. The agent conn
 
 ### MCP server
 
-Connect Claude Code, Cursor, Windsurf, or any MCP client to inspect, modify, and export design documents headlessly. 100+ tools. [Full docs →](https://openpencil.dev/reference/mcp-tools)
+Connect Claude Code, Cursor, Windsurf, or any MCP client to inspect, modify, and export design documents headlessly. 100+ tools. [Full docs →](https://inkly.dev/reference/mcp-tools)
 
 **Stdio** (Claude Code, Cursor, Windsurf):
 
 ```sh
-npm install -g @open-pencil/mcp
-claude mcp add --scope user open-pencil -- openpencil-mcp
+npm install -g @inkly/mcp
+claude mcp add --scope user inkly -- inkly-mcp
 ```
 
 For other MCP clients:
@@ -187,8 +187,8 @@ For other MCP clients:
 ```json
 {
   "mcpServers": {
-    "open-pencil": {
-      "command": "openpencil-mcp"
+    "inkly": {
+      "command": "inkly-mcp"
     }
   }
 }
@@ -197,29 +197,29 @@ For other MCP clients:
 **HTTP** (scripts, CI):
 
 ```sh
-openpencil-mcp-http   # http://localhost:3100/mcp
+inkly-mcp-http   # http://localhost:3100/mcp
 ```
 
-**File access:** Set `OPENPENCIL_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. Defaults to the current working directory.
+**File access:** Set `INKLY_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. Defaults to the current working directory.
 
 ### AI agent skill
 
-Teach your AI coding agent to use OpenPencil — inspect designs, export assets, analyze tokens, modify .fig files:
+Teach your AI coding agent to use Inkly — inspect designs, export assets, analyze tokens, modify .fig files:
 
 ```sh
-npx skills add open-pencil/skills@open-pencil
+npx skills add inkly/skills@inkly
 ```
 
 Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh).
 
-For documentation-aware agents, the docs site publishes [llms.txt](https://openpencil.dev/llms.txt), [llms-full.txt](https://openpencil.dev/llms-full.txt), and per-page Markdown files generated from the VitePress docs.
+For documentation-aware agents, the docs site publishes [llms.txt](https://inkly.dev/llms.txt), [llms-full.txt](https://inkly.dev/llms-full.txt), and per-page Markdown files generated from the VitePress docs.
 
 ## Collaboration
 
 Share a link to co-edit in real time. No server, no account — peers connect directly via WebRTC.
 
 1. Click the share button in the top-right panel
-2. Share the generated link (`app.openpencil.dev/share/<room-id>`)
+2. Share the generated link (`app.inkly.dev/share/<room-id>`)
 3. Collaborators see your cursor, selection, and edits in real time
 4. Click a peer's avatar to follow their viewport
 
@@ -227,9 +227,9 @@ Share a link to co-edit in real time. No server, no account — peers connect di
 
 Figma is a closed platform that actively fights programmatic access. Their MCP server is read-only. [figma-use](https://github.com/dannote/figma-use) added full read/write automation via CDP — then [Figma 126 killed CDP](https://forum.figma.com/report-a-problem-6/remote-debugging-port-not-working-in-figma-desktop-126-1-2-50858). Your design files are in a proprietary binary format that only their software can fully read. Your workflows break when they decide to ship a point release.
 
-OpenPencil is the alternative: open source (MIT), reads .fig files natively, every operation is scriptable, and your data never leaves your machine.
+Inkly is the alternative: open source (MIT), reads .fig files natively, every operation is scriptable, and your data never leaves your machine.
 
-See the [roadmap](https://openpencil.dev/development/roadmap) for product direction and current Figma compatibility gaps.
+See the [roadmap](https://inkly.dev/development/roadmap) for product direction and current Figma compatibility gaps.
 
 ## Contributing
 
@@ -254,11 +254,11 @@ bun run tauri dev  # Desktop app (requires Rust)
 
 ```
 packages/
-  core/           @open-pencil/core — engine (scene graph, renderer, layout, file formats, tools)
-  vue/            @open-pencil/vue — headless Vue SDK
-  cli/            @open-pencil/cli — headless CLI
-  mcp/            @open-pencil/mcp — MCP server (stdio + HTTP)
-  docs/           Documentation site (openpencil.dev)
+  core/           @inkly/core — engine (scene graph, renderer, layout, file formats, tools)
+  vue/            @inkly/vue — headless Vue SDK
+  cli/            @inkly/cli — headless CLI
+  mcp/            @inkly/mcp — MCP server (stdio + HTTP)
+  docs/           Documentation site (inkly.dev)
 src/              Vue app (components, composables, stores)
 desktop/          Tauri v2 (Rust + config)
 tests/            E2E (188 tests) + unit (764 tests)
@@ -269,7 +269,7 @@ tests/            E2E (188 tests) + unit (764 tests)
 | Layer | Tech |
 |-------|------|
 | Rendering | Skia (CanvasKit WASM) |
-| Layout | Yoga WASM (flex + grid via [fork](https://github.com/open-pencil/yoga/tree/grid)) |
+| Layout | Yoga WASM (flex + grid via [fork](https://github.com/inkly/yoga/tree/grid)) |
 | UI | Vue 3, Reka UI, Tailwind CSS 4 |
 | File format | Kiwi binary + Zstd + ZIP |
 | Collaboration | Trystero (WebRTC P2P) + Yjs (CRDT) |
@@ -286,7 +286,7 @@ bun run tauri build
 
 ## Acknowledgments
 
-Thanks to [@sld0Ant](https://github.com/sld0Ant) (Anton Soldatov) for creating and maintaining the [documentation site](https://openpencil.dev).
+Thanks to [@sld0Ant](https://github.com/sld0Ant) (Anton Soldatov) for creating and maintaining the [documentation site](https://inkly.dev).
 
 ## License
 

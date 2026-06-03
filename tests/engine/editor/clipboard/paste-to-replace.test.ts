@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { buildOpenPencilClipboardHTML } from '@open-pencil/core/clipboard'
-import { createEditor } from '@open-pencil/core/editor'
-import type { Editor } from '@open-pencil/core/editor'
+import { buildInklyClipboardHTML } from '@inkly/core/clipboard'
+import { createEditor } from '@inkly/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 function copiedRectangleHtml(name = 'Pasted') {
   const source = createEditor()
@@ -14,7 +14,7 @@ function copiedRectangleHtml(name = 'Pasted') {
     width: 20,
     height: 20
   })
-  return buildOpenPencilClipboardHTML([pasted], source.graph)
+  return buildInklyClipboardHTML([pasted], source.graph)
 }
 
 function copiedFrameHtml() {
@@ -34,7 +34,7 @@ function copiedFrameHtml() {
     width: 10,
     height: 12
   })
-  return buildOpenPencilClipboardHTML([frame], source.graph)
+  return buildInklyClipboardHTML([frame], source.graph)
 }
 
 function createTarget(editor: Editor, parentId = editor.state.currentPageId) {
@@ -48,7 +48,7 @@ function createTarget(editor: Editor, parentId = editor.state.currentPageId) {
 }
 
 describe('paste to replace', () => {
-  test('replaces selected nodes with pasted OpenPencil nodes', async () => {
+  test('replaces selected nodes with pasted Inkly nodes', async () => {
     const html = copiedRectangleHtml()
     const editor = createEditor()
     const pageId = editor.state.currentPageId

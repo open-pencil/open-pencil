@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n, useLayoutControlsContext } from '@inkly/vue'
 
 import type { GridTrackProp } from '@/components/properties/LayoutSection/types'
-import type { GridTrackSizing } from '@open-pencil/core/scene-graph'
+import type { GridTrackSizing } from '@inkly/core/scene-graph'
 
 const ctx = useLayoutControlsContext()
 

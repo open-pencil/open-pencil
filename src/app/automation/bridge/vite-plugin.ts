@@ -7,7 +7,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
   let child: ReturnType<typeof spawn> | null = null
 
   return {
-    name: 'open-pencil-automation',
+    name: 'inkly-automation',
     configureServer() {
       if (child) return
 
@@ -17,8 +17,8 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
           ...process.env,
           PORT: '7600',
           WS_PORT: '7601',
-          ...(authToken ? { OPENPENCIL_MCP_AUTH_TOKEN: authToken } : {}),
-          OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin
+          ...(authToken ? { INKLY_MCP_AUTH_TOKEN: authToken } : {}),
+          INKLY_MCP_CORS_ORIGIN: corsOrigin
         }
       })
 
@@ -26,7 +26,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         const text = data.toString()
         if (text.includes('EADDRINUSE')) {
           console.error(
-            '\x1b[31m[MCP] Port 7600 already in use. Is another OpenPencil instance running?\x1b[0m'
+            '\x1b[31m[MCP] Port 7600 already in use. Is another Inkly instance running?\x1b[0m'
           )
           child?.kill()
           child = null

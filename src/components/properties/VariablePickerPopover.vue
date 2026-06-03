@@ -12,11 +12,11 @@ import {
 
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { vTestId } from '@open-pencil/vue'
+import { vTestId } from '@inkly/vue'
 
 import { useTooltipUI } from '@/components/ui/tooltip'
 
-import type { Variable } from '@open-pencil/core/scene-graph'
+import type { Variable } from '@inkly/core/scene-graph'
 
 const searchTerm = defineModel<string>('searchTerm', { default: '' })
 

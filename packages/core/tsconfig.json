@@ -16,8 +16,8 @@
     "rootDir": "src",
     "paths": {
       "#core/*": ["./src/*"],
-      "@open-pencil/core": ["./src/index.ts"],
-      "@open-pencil/core/*": ["./src/*"]
+      "@inkly/core": ["./src/index.ts"],
+      "@inkly/core/*": ["./src/*"]
     }
   },
   "include": ["src"]

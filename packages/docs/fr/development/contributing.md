@@ -4,19 +4,19 @@
 
 ```
 packages/
-  core/              @open-pencil/core — moteur (zéro dépendance DOM)
+  core/              @inkly/core — moteur (zéro dépendance DOM)
     src/             Graphe de scène, renderer, layout, codec, kiwi, types
-  cli/               @open-pencil/cli — CLI headless pour opérations .fig
+  cli/               @inkly/cli — CLI headless pour opérations .fig
     src/commands/    info, tree, find, export, eval, analyze
-  mcp/               @open-pencil/mcp — serveur MCP pour outils IA
+  mcp/               @inkly/mcp — serveur MCP pour outils IA
     src/             Transports stdio + HTTP (Hono), 87 outils
 src/
   components/        Vue SFCs (canevas, panneaux, barre d'outils, sélecteur de couleur)
     properties/      Sections du panneau de propriétés (Apparence, Remplissage, Contour, etc.)
   composables/       Entrée canevas, raccourcis clavier, hooks de rendu
   stores/            État de l'éditeur (réactivité Vue)
-  engine/            Shims de ré-exportation depuis @open-pencil/core
-  kiwi/              Shims de ré-exportation depuis @open-pencil/core
+  engine/            Shims de ré-exportation depuis @inkly/core
+  kiwi/              Shims de ré-exportation depuis @inkly/core
   types.ts           Types partagés (ré-exportés depuis core)
   constants.ts       Couleurs UI, défauts, seuils
 desktop/             Tauri v2 (Rust + config)
@@ -62,7 +62,7 @@ bun run check
 
 ### Conventions pour agents IA
 
-Les développeurs et agents IA doivent lire `AGENTS.md` à la racine du repo ([voir sur GitHub](https://github.com/open-pencil/open-pencil/blob/master/AGENTS.md)). Couvre le rendu, le graphe de scène, les composants et instances, le layout, l'UI, le format de fichier, les conventions Tauri et les problèmes connus.
+Les développeurs et agents IA doivent lire `AGENTS.md` à la racine du repo ([voir sur GitHub](https://github.com/cardene777/open-pencil/blob/master/AGENTS.md)). Couvre le rendu, le graphe de scène, les composants et instances, le layout, l'UI, le format de fichier, les conventions Tauri et les problèmes connus.
 
 ## Apporter des changements
 

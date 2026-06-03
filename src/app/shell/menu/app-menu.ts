@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
-import type { MenuEntry } from '@open-pencil/vue'
+import { useEditorCommands, useI18n } from '@inkly/vue'
+import type { MenuEntry } from '@inkly/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'

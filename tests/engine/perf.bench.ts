@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 
 import { bench, group, run } from 'mitata'
 
-import { parseFigFile, exportFigFile, initCodec, SceneGraph } from '@open-pencil/core'
+import { parseFigFile, exportFigFile, initCodec, SceneGraph } from '@inkly/core'
 
 import { copyFills } from '#core/scene-graph/copy'
 

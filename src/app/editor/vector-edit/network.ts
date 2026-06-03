@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core/editor'
-import type { VectorNetwork } from '@open-pencil/core/scene-graph'
-import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@open-pencil/core/vector'
+import type { Editor } from '@inkly/core/editor'
+import type { VectorNetwork } from '@inkly/core/scene-graph'
+import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@inkly/core/vector'
 
 import type { NodeEditState, VectorEditState } from './types'
 

@@ -15,7 +15,7 @@ import {
 } from 'agentfmt'
 import type { TreeNode, ListItem, NodeData } from 'agentfmt'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneGraph, SceneNode } from '@inkly/core/scene-graph'
 
 export {
   ok,

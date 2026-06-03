@@ -17,7 +17,7 @@ Gestiona:
 ## Uso
 
 ```ts
-import { useExport } from '@open-pencil/vue'
+import { useExport } from '@inkly/vue'
 
 const exportState = useExport()
 ```

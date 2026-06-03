@@ -39,7 +39,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=openpencil-app --branch=${{ github.event.pull_request.head.ref }}
+          command: pages deploy dist --project-name=inkly-app --branch=${{ github.event.pull_request.head.ref }}
 
       - name: Comment preview URL
         uses: actions/github-script@v7

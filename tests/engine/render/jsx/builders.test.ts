@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { Frame, Text, Rectangle, isTreeNode, node } from '@open-pencil/core'
+import { Frame, Text, Rectangle, isTreeNode, node } from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 

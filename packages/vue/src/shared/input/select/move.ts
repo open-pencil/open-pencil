@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import type { DragOriginal as MoveOriginal } from '#vue/shared/input/drag-original'
 import { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'

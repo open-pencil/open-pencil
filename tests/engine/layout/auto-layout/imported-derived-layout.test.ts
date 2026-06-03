@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts, SceneGraph } from '@open-pencil/core'
+import { computeAllLayouts, SceneGraph } from '@inkly/core'
 
 describe('imported auto-layout bounds', () => {
   test('preserves visible hug container bounds when hidden children would collapse layout', () => {

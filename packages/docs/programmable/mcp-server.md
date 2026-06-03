@@ -1,31 +1,31 @@
 ---
 title: MCP Server
-description: Connect Claude Code, Cursor, Windsurf, and other MCP clients to OpenPencil for AI-assisted design inspection and editing.
+description: Connect Claude Code, Cursor, Windsurf, and other MCP clients to Inkly for AI-assisted design inspection and editing.
 ---
 
 # MCP Server
 
-OpenPencil includes an MCP (Model Context Protocol) server that lets AI coding tools — Claude Code, Cursor, Windsurf, etc. — read and modify designs through the running app.
+Inkly includes an MCP (Model Context Protocol) server that lets AI coding tools — Claude Code, Cursor, Windsurf, etc. — read and modify designs through the running app.
 
 Two transports: **stdio** for MCP clients, **HTTP** for browser extensions and scripts.
 
 ## Install
 
 ```sh
-npm install -g @open-pencil/mcp
+npm install -g @inkly/mcp
 ```
 
 ## Stdio (Claude Code, Cursor, etc.)
 
-The stdio server connects to the running OpenPencil app via WebSocket (port 7601). Make sure the desktop app is open with a document loaded.
+The stdio server connects to the running Inkly app via WebSocket (port 7601). Make sure the desktop app is open with a document loaded.
 
 ### Claude Code
 
 Install the MCP package and register it with Claude Code:
 
 ```sh
-npm install -g @open-pencil/mcp
-claude mcp add --scope user open-pencil -- openpencil-mcp
+npm install -g @inkly/mcp
+claude mcp add --scope user inkly -- inkly-mcp
 ```
 
 Check the connection:
@@ -34,12 +34,12 @@ Check the connection:
 claude mcp list
 ```
 
-Claude Code asks before using each MCP tool unless you allow the server's tools. To auto-approve OpenPencil tools only, add this to `~/.claude/settings.json`:
+Claude Code asks before using each MCP tool unless you allow the server's tools. To auto-approve Inkly tools only, add this to `~/.claude/settings.json`:
 
 ```json
 {
   "permissions": {
-    "allow": ["mcp__open-pencil__*"]
+    "allow": ["mcp__inkly__*"]
   }
 }
 ```
@@ -49,7 +49,7 @@ This is narrower than `--permission-mode bypassPermissions`, which skips prompts
 Example prompt:
 
 ```text
-Use the open-pencil MCP server to inspect the current page and create a small hero section on the canvas.
+Use the inkly MCP server to inspect the current page and create a small hero section on the canvas.
 ```
 
 ### Other MCP clients
@@ -59,8 +59,8 @@ Add to your MCP config (for example `.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
-    "open-pencil": {
-      "command": "openpencil-mcp"
+    "inkly": {
+      "command": "inkly-mcp"
     }
   }
 }
@@ -72,9 +72,9 @@ Or run from source without installing:
 ```json [Bun]
 {
   "mcpServers": {
-    "open-pencil": {
+    "inkly": {
       "command": "bun",
-      "args": ["/path/to/open-pencil/packages/mcp/src/stdio.ts"]
+      "args": ["/path/to/inkly/packages/mcp/src/stdio.ts"]
     }
   }
 }
@@ -82,9 +82,9 @@ Or run from source without installing:
 ```json [Node.js]
 {
   "mcpServers": {
-    "open-pencil": {
+    "inkly": {
       "command": "npx",
-      "args": ["tsx", "/path/to/open-pencil/packages/mcp/src/stdio.ts"]
+      "args": ["tsx", "/path/to/inkly/packages/mcp/src/stdio.ts"]
     }
   }
 }
@@ -96,7 +96,7 @@ Or run from source without installing:
 For browser extensions, scripts, CI, or any HTTP client:
 
 ```sh
-openpencil-mcp-http
+inkly-mcp-http
 ```
 
 Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/index.ts`
@@ -105,9 +105,9 @@ Security defaults (HTTP transport):
 
 - Binds to `127.0.0.1` by default (`HOST` to override)
 - `eval` tool is disabled
-- File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to current working directory)
-- CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin
-- Optional auth token: `OPENPENCIL_MCP_AUTH_TOKEN` (client sends `Authorization: Bearer <token>` or `x-mcp-token`)
+- File operations are limited to `INKLY_MCP_ROOT` (defaults to current working directory)
+- CORS is disabled by default; set `INKLY_MCP_CORS_ORIGIN` to allow one origin
+- Optional auth token: `INKLY_MCP_AUTH_TOKEN` (client sends `Authorization: Bearer <token>` or `x-mcp-token`)
 
 Server starts on port 7600 (override with `PORT` env var). Endpoints:
 
@@ -125,10 +125,10 @@ Server starts on port 7600 (override with `PORT` env var). Endpoints:
 
 ## AI Agent Skill
 
-Teach your AI coding agent to use OpenPencil tools:
+Teach your AI coding agent to use Inkly tools:
 
 ```sh
-npx skills add open-pencil/skills@open-pencil
+npx skills add inkly/skills@inkly
 ```
 
 Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh). The skill covers the CLI, MCP tools, JSX rendering, eval, and the running app's automation bridge.

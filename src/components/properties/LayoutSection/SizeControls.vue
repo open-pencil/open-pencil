@@ -23,10 +23,10 @@ import {
   useI18n,
   useLayoutControlsContext,
   useNumberVariableBinding
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
-import type { LayoutSizing } from '@open-pencil/core/scene-graph'
-import type { SizeLimitProp, TestId } from '@open-pencil/vue'
+import type { LayoutSizing } from '@inkly/core/scene-graph'
+import type { SizeLimitProp, TestId } from '@inkly/vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 

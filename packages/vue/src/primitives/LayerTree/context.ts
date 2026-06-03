@@ -1,6 +1,6 @@
 import { type ComputedRef, type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 export interface LayerNode {
   id: string
@@ -46,6 +46,6 @@ export function provideLayerTree(ctx: LayerTreeContext) {
 
 export function useLayerTree(): LayerTreeContext {
   const ctx = inject(LAYER_TREE_KEY)
-  if (!ctx) throw new Error('[open-pencil] useLayerTree() called outside <LayerTreeRoot>')
+  if (!ctx) throw new Error('[inkly] useLayerTree() called outside <LayerTreeRoot>')
   return ctx
 }

@@ -25,7 +25,7 @@ export const exportSvg = defineTool({
     },
     path: {
       type: 'string',
-      description: 'Write SVG to this path instead of returning it (requires OPENPENCIL_MCP_ROOT)'
+      description: 'Write SVG to this path instead of returning it (requires INKLY_MCP_ROOT)'
     }
   },
   execute: async (figma, args) => {
@@ -51,7 +51,7 @@ export const exportPdf = defineTool({
     path: {
       type: 'string',
       description:
-        'Write PDF to this path instead of returning base64 (requires OPENPENCIL_MCP_ROOT)'
+        'Write PDF to this path instead of returning base64 (requires INKLY_MCP_ROOT)'
     }
   },
   execute: async (figma, args) => {
@@ -91,7 +91,7 @@ export const exportImage = defineTool({
     path: {
       type: 'string',
       description:
-        'Write image to this path instead of returning base64 (requires OPENPENCIL_MCP_ROOT)'
+        'Write image to this path instead of returning base64 (requires INKLY_MCP_ROOT)'
     }
   },
   execute: async (figma, args) => {

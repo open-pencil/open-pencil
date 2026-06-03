@@ -1,7 +1,7 @@
 import { useFilter } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import type { Variable, VariableType } from '@open-pencil/core/scene-graph'
+import type { Variable, VariableType } from '@inkly/core/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

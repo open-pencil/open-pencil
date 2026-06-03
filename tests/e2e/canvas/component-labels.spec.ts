@@ -24,8 +24,8 @@ test.beforeEach(async () => {
 
 test('component labels in component sets are hit-tested above the component bounds', async () => {
   const componentId = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const graph = store.graph
     const pageId = graph.getPages()[0].id
     const set = graph.createNode('COMPONENT_SET', pageId, {
@@ -66,8 +66,8 @@ test('component labels in component sets are hit-tested above the component boun
   await canvas.waitForRender()
 
   const selected = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     return [...store.state.selectedIds]
   })
   expect(selected).toEqual([componentId])

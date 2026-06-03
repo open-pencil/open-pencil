@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { type Fill } from '@open-pencil/core'
+import { type Fill } from '@inkly/core'
 
 import { createAPI } from '../helpers'
 

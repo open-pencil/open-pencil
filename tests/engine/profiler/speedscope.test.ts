@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { toSpeedscopeJSON } from '@open-pencil/core'
+import { toSpeedscopeJSON } from '@inkly/core'
 
 describe('toSpeedscopeJSON', () => {
   it('produces valid speedscope JSON', () => {

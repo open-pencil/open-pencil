@@ -1,6 +1,6 @@
 ---
 title: Zaznaczanie i edycja
-description: Zaznaczanie, przesuwanie, skalowanie, obracanie i organizowanie węzłów w OpenPencil.
+description: Zaznaczanie, przesuwanie, skalowanie, obracanie i organizowanie węzłów w Inkly.
 ---
 # Zaznaczanie i edycja
 

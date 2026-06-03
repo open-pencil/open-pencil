@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Color } from '@open-pencil/core'
+import type { Color } from '@inkly/core'
 import {
   createColorPickerModel,
   fromPercent,
@@ -10,7 +10,7 @@ import {
   updateHSLChannel,
   updateHue,
   updateRGBChannel
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
 describe('color picker model', () => {
   const base: Color = { r: 0.4, g: 0.2, b: 0.6, a: 0.75 }

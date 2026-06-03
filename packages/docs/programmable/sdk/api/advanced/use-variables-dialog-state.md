@@ -12,7 +12,7 @@ Use it when you are building a custom variables dialog rather than only consumin
 ## Usage
 
 ```ts
-import { useVariablesDialogState } from '@open-pencil/vue'
+import { useVariablesDialogState } from '@inkly/vue'
 
 const variablesDialog = useVariablesDialogState()
 ```

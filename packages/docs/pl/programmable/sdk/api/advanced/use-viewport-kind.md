@@ -5,14 +5,14 @@ description: Odczytuj uproszczone flagi mobilnego i desktopowego widoku dla resp
 
 # useViewportKind
 
-`useViewportKind()` zwraca proste flagi responsywności używane przez UI edytora OpenPencil.
+`useViewportKind()` zwraca proste flagi responsywności używane przez UI edytora Inkly.
 
 Użyj go, gdy twoja powłoka potrzebuje lekkiej abstrakcji nad punktami przełamania zamiast bezpośredniego okablowania `useBreakpoints()`.
 
 ## Użycie
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@inkly/vue'
 
 const { isMobile, isDesktop } = useViewportKind()
 ```

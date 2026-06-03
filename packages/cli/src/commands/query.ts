@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { QueryNodeResult } from '@open-pencil/core/rpc'
+import type { QueryNodeResult } from '@inkly/core/rpc'
 
 import { printNodeResults, printError } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'

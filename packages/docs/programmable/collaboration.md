@@ -10,7 +10,7 @@ Edit designs together in real time. Peers connect directly — no server relays 
 ## Sharing a Room
 
 1. Click the share button in the top-right corner
-2. Copy the generated link (`app.openpencil.dev/share/<room-id>`)
+2. Copy the generated link (`app.inkly.dev/share/<room-id>`)
 3. Send it to your collaborators
 
 Anyone with the link can join. The room stays active as long as at least one participant has the page open.

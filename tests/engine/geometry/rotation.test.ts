@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { rotatePoint, rotatedBBox, rotatedCorners } from '@open-pencil/core'
+import { rotatePoint, rotatedBBox, rotatedCorners } from '@inkly/core'
 
 describe('rotatePoint', () => {
   test('no rotation returns same point', () => {

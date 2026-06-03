@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { Effect, Fill, SceneNode, Stroke } from '@inkly/core/scene-graph'
 
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 

@@ -10,8 +10,8 @@ async function expectCanvas(name: string) {
 
 async function createOverlayDemo(rotation: number) {
   await editor.page.evaluate((frameRotation) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
 
     const frame = store.graph.createNode('FRAME', pageId, {
@@ -83,8 +83,8 @@ test('rotation preview updates frame labels before mouse up', async () => {
   await createOverlayDemo(0)
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const frameId = [...store.state.selectedIds][0]
     store.state.rotationPreview = { nodeId: frameId, angle: 28 }
     store.requestRepaint()

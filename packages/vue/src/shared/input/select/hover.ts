@@ -1,5 +1,5 @@
-import { getAbsoluteRotation } from '@open-pencil/core/canvas'
-import type { Editor } from '@open-pencil/core/editor'
+import { getAbsoluteRotation } from '@inkly/core/canvas'
+import type { Editor } from '@inkly/core/editor'
 
 import {
   buildResizeCursor,

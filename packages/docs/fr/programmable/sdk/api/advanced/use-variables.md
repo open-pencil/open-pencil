@@ -12,7 +12,7 @@ Utilisez-le quand vous voulez un contrôle direct sur les collections, les modes
 ## Utilisation
 
 ```ts
-import { useVariables } from '@open-pencil/vue'
+import { useVariables } from '@inkly/vue'
 
 const variables = useVariables()
 ```

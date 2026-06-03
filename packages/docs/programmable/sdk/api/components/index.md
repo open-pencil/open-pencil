@@ -1,11 +1,11 @@
 ---
 title: Components
-description: Component reference for headless Vue primitives in @open-pencil/vue.
+description: Component reference for headless Vue primitives in @inkly/vue.
 ---
 
 # Components
 
-`@open-pencil/vue` exposes headless structural primitives for canvas wiring, navigation UI, property panels, and focused input controls.
+`@inkly/vue` exposes headless structural primitives for canvas wiring, navigation UI, property panels, and focused input controls.
 
 ## Core editor primitives
 

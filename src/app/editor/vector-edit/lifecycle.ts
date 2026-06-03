@@ -1,7 +1,7 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { cloneVectorNetwork } from '@open-pencil/core/scene-graph'
-import type { SceneGraph, VectorNetwork } from '@open-pencil/core/scene-graph'
-import { computeAccurateBounds } from '@open-pencil/core/vector'
+import type { Editor } from '@inkly/core/editor'
+import { cloneVectorNetwork } from '@inkly/core/scene-graph'
+import type { SceneGraph, VectorNetwork } from '@inkly/core/scene-graph'
+import { computeAccurateBounds } from '@inkly/core/vector'
 
 import { getLiveNetwork } from './network'
 import type { VectorEditState } from './types'

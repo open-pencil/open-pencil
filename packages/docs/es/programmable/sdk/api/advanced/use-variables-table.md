@@ -1,6 +1,6 @@
 ---
 title: useVariablesTable
-description: Construye definiciones de columnas de TanStack Table para interfaces de variables de OpenPencil.
+description: Construye definiciones de columnas de TanStack Table para interfaces de variables de Inkly.
 ---
 
 # useVariablesTable
@@ -12,7 +12,7 @@ description: Construye definiciones de columnas de TanStack Table para interface
 ## Uso
 
 ```ts
-import { useVariablesTable } from '@open-pencil/vue'
+import { useVariablesTable } from '@inkly/vue'
 
 const { columns } = useVariablesTable(options)
 ```

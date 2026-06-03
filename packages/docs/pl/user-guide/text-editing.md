@@ -1,6 +1,6 @@
 ---
 title: Edycja tekstu
-description: Tworzenie i edycja tekstu z formatowaniem w OpenPencil.
+description: Tworzenie i edycja tekstu z formatowaniem w Inkly.
 ---
 # Edycja tekstu
 

@@ -121,7 +121,7 @@ const noInlineNamedTypes = {
         if (namedType) {
           context.report({
             node,
-            message: `Use '${namedType}' instead of inline type literal. Import from '@open-pencil/core'.`
+            message: `Use '${namedType}' instead of inline type literal. Import from '@inkly/core'.`
           })
         }
       }
@@ -163,7 +163,7 @@ const noStructuredCloneSceneArrays = {
           if (props.has(arg.property.name)) {
             context.report({
               node,
-              message: `Use the typed copy helper instead of structuredClone for '${arg.property.name}'. Import from '@open-pencil/core'.`
+              message: `Use the typed copy helper instead of structuredClone for '${arg.property.name}'. Import from '@inkly/core'.`
             })
           }
         }
@@ -743,10 +743,10 @@ const noTypeofWindowCheck = {
 }
 
 const noVueSelfPackageImports = createImportSourceRule({
-  description: 'Disallow @open-pencil/vue self-imports inside the Vue SDK — use #vue/* aliases',
+  description: 'Disallow @inkly/vue self-imports inside the Vue SDK — use #vue/* aliases',
   applies: (file) => file.includes('/packages/vue/src/'),
   check: (source) =>
-    source.startsWith('@open-pencil/vue') &&
+    source.startsWith('@inkly/vue') &&
     `Use #vue/* for internal Vue SDK imports instead of self-package import '${source}'.`
 })
 
@@ -829,37 +829,37 @@ function createExactCoreBarrelImportRule({ description, applies, message }) {
   return createImportSourceRule({
     description,
     applies,
-    check: (source) => source === '@open-pencil/core' && message
+    check: (source) => source === '@inkly/core' && message
   })
 }
 
 const noMcpCoreBarrelImports = createExactCoreBarrelImportRule({
-  description: 'Disallow MCP imports from @open-pencil/core root barrel — use domain subpaths',
+  description: 'Disallow MCP imports from @inkly/core root barrel — use domain subpaths',
   applies: (file) => file.includes('/packages/mcp/src/'),
   message:
-    'Use a targeted @open-pencil/core subpath in MCP code instead of the compatibility barrel.'
+    'Use a targeted @inkly/core subpath in MCP code instead of the compatibility barrel.'
 })
 
 const noCliCoreBarrelImports = createExactCoreBarrelImportRule({
-  description: 'Disallow CLI imports from @open-pencil/core root barrel — use domain subpaths',
+  description: 'Disallow CLI imports from @inkly/core root barrel — use domain subpaths',
   applies: (file) => file.includes('/packages/cli/src/'),
   message:
-    'Use a targeted @open-pencil/core subpath in CLI code instead of the compatibility barrel.'
+    'Use a targeted @inkly/core subpath in CLI code instead of the compatibility barrel.'
 })
 
 const noScriptCoreBarrelImports = createExactCoreBarrelImportRule({
-  description: 'Disallow script imports from @open-pencil/core root barrel — use domain subpaths',
+  description: 'Disallow script imports from @inkly/core root barrel — use domain subpaths',
   applies: (file) => file.includes('/scripts/'),
   message:
-    'Use a targeted @open-pencil/core subpath or #core/* alias in scripts instead of the compatibility barrel.'
+    'Use a targeted @inkly/core subpath or #core/* alias in scripts instead of the compatibility barrel.'
 })
 
 const noCoreSelfPackageImports = createImportSourceRule({
-  description: 'Disallow @open-pencil/core self-imports inside packages/core/src',
+  description: 'Disallow @inkly/core self-imports inside packages/core/src',
   applies: (file) => file.includes('/packages/core/src/'),
   check: (source) =>
-    source.startsWith('@open-pencil/core') &&
-    'Core internals must import local modules directly instead of importing the @open-pencil/core public package entrypoints.'
+    source.startsWith('@inkly/core') &&
+    'Core internals must import local modules directly instead of importing the @inkly/core public package entrypoints.'
 })
 
 const noInlinePromptConstants = {
@@ -886,11 +886,11 @@ const noInlinePromptConstants = {
 
 const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
   description:
-    'Disallow app and Vue SDK imports from @open-pencil/core root barrel — use domain subpaths',
+    'Disallow app and Vue SDK imports from @inkly/core root barrel — use domain subpaths',
   applies: (file) =>
     (file.includes('/src/') && !file.includes('/packages/')) || file.includes('/packages/vue/src/'),
   message:
-    'Use a targeted @open-pencil/core subpath (editor, scene-graph, constants, io, etc.) instead of the compatibility barrel.'
+    'Use a targeted @inkly/core subpath (editor, scene-graph, constants, io, etc.) instead of the compatibility barrel.'
 })
 
 const noAppImportsInPackages = createImportSourceRule({
@@ -900,14 +900,14 @@ const noAppImportsInPackages = createImportSourceRule({
     source.startsWith('@/') && `Workspace packages must not import app-shell alias '${source}'.`
 })
 
-const frameworkImportPrefixes = ['@vue/', '@open-pencil/vue', '@tauri-apps/', '@/']
+const frameworkImportPrefixes = ['@vue/', '@inkly/vue', '@tauri-apps/', '@/']
 
 const noCoreFrameworkImports = createImportSourceRule({
-  description: 'Keep @open-pencil/core framework-agnostic by disallowing Vue/Tauri/app imports',
+  description: 'Keep @inkly/core framework-agnostic by disallowing Vue/Tauri/app imports',
   applies: (file) => file.includes('/packages/core/src/'),
   check: (source) =>
     (source === 'vue' || frameworkImportPrefixes.some((prefix) => source.startsWith(prefix))) &&
-    `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
+    `@inkly/core must stay framework-agnostic; do not import '${source}'.`
 })
 
 const noDirectStorageAccess = {
@@ -1514,10 +1514,10 @@ const noFunctionAliasImports = {
   }
 }
 
-const noDirectOpenPencilBrowserStore = {
+const noDirectInklyBrowserStore = {
   meta: {
     docs: {
-      description: 'Disallow direct window.openPencil.store access'
+      description: 'Disallow direct window.inkly.store access'
     }
   },
   create(context) {
@@ -1527,10 +1527,10 @@ const noDirectOpenPencilBrowserStore = {
       return null
     }
 
-    function isOpenPencilMember(node) {
+    function isInklyMember(node) {
       return (
         node?.type === 'MemberExpression' &&
-        propertyName(node.property) === 'openPencil' &&
+        propertyName(node.property) === 'inkly' &&
         ((node.object?.type === 'Identifier' && node.object.name === 'window') ||
           (node.object?.type === 'Identifier' && node.object.name === 'globalThis'))
       )
@@ -1539,20 +1539,20 @@ const noDirectOpenPencilBrowserStore = {
     return {
       MemberExpression(node) {
         if (propertyName(node.property) !== 'store') return
-        if (!isOpenPencilMember(node.object)) return
+        if (!isInklyMember(node.object)) return
         context.report({
           node,
-          message: 'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
+          message: 'Use window.inkly.getStore() instead of accessing window.inkly.store directly.'
         })
       }
     }
   }
 }
 
-const noDirectOpenPencilWindowInternals = {
+const noDirectInklyWindowInternals = {
   meta: {
     docs: {
-      description: 'Disallow direct access to private OpenPencil window internals'
+      description: 'Disallow direct access to private Inkly window internals'
     }
   },
   create(context) {
@@ -1565,11 +1565,11 @@ const noDirectOpenPencilWindowInternals = {
     return {
       MemberExpression(node) {
         const name = propertyName(node.property)
-        if (!name?.startsWith('__OPEN_PENCIL')) return
+        if (!name?.startsWith('__INKLY')) return
         context.report({
           node,
           message:
-            'Do not access window.__OPEN_PENCIL* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
+            'Do not access window.__INKLY* directly. Use src/app/browser-bridge.ts or tests/helpers/store.ts instead.'
         })
       }
     }
@@ -1807,7 +1807,7 @@ const noLocalJsonObjectAliases = {
         if (!isRecordStringUnknownType(node.typeAnnotation)) return
         context.report({
           node,
-          message: 'Import JsonObject from @open-pencil/core/types instead of declaring a local alias.'
+          message: 'Import JsonObject from @inkly/core/types instead of declaring a local alias.'
         })
       }
     }
@@ -1830,7 +1830,7 @@ const noFlatKiwiModules = createProgramFilenameRule({
 })
 
 const plugin = {
-  meta: { name: 'open-pencil' },
+  meta: { name: 'inkly' },
   rules: {
     'no-inline-named-types': noInlineNamedTypes,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
@@ -1877,8 +1877,8 @@ const plugin = {
     'no-function-type': noFunctionType,
     'no-reflect-delete-global-this-outside-tests': noReflectDeleteGlobalThisOutsideTests,
     'no-core-browser-globals': noCoreBrowserGlobals,
-    'no-direct-open-pencil-window-internals': noDirectOpenPencilWindowInternals,
-    'no-direct-open-pencil-browser-store': noDirectOpenPencilBrowserStore,
+    'no-direct-inkly-window-internals': noDirectInklyWindowInternals,
+    'no-direct-inkly-browser-store': noDirectInklyBrowserStore,
     'no-direct-graph-emitter-subscriptions': noDirectGraphEmitterSubscriptions,
     'no-on-unmounted-in-composition-roots': noOnUnmountedInCompositionRoots,
     'no-composable-state-wrappers': noComposableStateWrappers,

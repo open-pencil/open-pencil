@@ -2,8 +2,8 @@
 /// <reference types="vite-plugin-pwa/vanillajs" />
 /// <reference types="unplugin-icons/types/vue" />
 
-declare const __OPENPENCIL_APP_VERSION__: string
-declare const __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: string | null
+declare const __INKLY_APP_VERSION__: string
+declare const __INKLY_LOCAL_AUTOMATION_TOKEN__: string | null
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'

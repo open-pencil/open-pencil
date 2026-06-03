@@ -57,11 +57,11 @@ export {
   COMPONENT_LABEL_ICON_GAP,
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
-} from '@open-pencil/core/constants'
+} from '@inkly/core/constants'
 
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@inkly/core/types'
 
-export const TRYSTERO_APP_ID = 'openpencil'
+export const TRYSTERO_APP_ID = 'inkly'
 export const ROOM_ID_LENGTH = 8
 export const ROOM_ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
 
@@ -94,7 +94,7 @@ export {
   ZOOM_DIVISOR,
   ZOOM_SCALE_MIN,
   ZOOM_SCALE_MAX
-} from '@open-pencil/core/constants'
+} from '@inkly/core/constants'
 
 export const HANDLE_SIZE = 6
 

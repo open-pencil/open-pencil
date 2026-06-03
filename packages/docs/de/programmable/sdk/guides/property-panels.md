@@ -5,7 +5,7 @@ description: Eigenschafts-Panels mit Steuerelemente-Composables und headless Lis
 
 # Eigenschafts-Panels
 
-Eigenschafts-Panels in `@open-pencil/vue` sind bewusst composable-first gestaltet.
+Eigenschafts-Panels in `@inkly/vue` sind bewusst composable-first gestaltet.
 
 Wenn ein Panel hauptsächlich auswahlabgeleitete Werte und Aktualisierungsaktionen benötigt, bevorzugen Sie Composables.
 Wenn ein Panel wiederverwendbare Array/Listen-Struktur benötigt, verwenden Sie ein headless Primitiv wie `PropertyListRoot`.
@@ -30,7 +30,7 @@ Für listenbasierte Panels verwenden Sie:
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue'
+import { usePosition } from '@inkly/vue'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -49,7 +49,7 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import { PropertyListRoot, useFillControls } from '@inkly/vue'
 
 const fillControls = useFillControls()
 </script>

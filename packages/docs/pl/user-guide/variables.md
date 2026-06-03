@@ -1,6 +1,6 @@
 ---
 title: Zmienne
-description: Zmienne projektowe, kolekcje, tryby i wiązania w OpenPencil.
+description: Zmienne projektowe, kolekcje, tryby i wiązania w Inkly.
 ---
 # Zmienne
 

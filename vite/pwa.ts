@@ -1,6 +1,6 @@
 import { VitePWA } from 'vite-plugin-pwa'
 
-export function openPencilPwaPlugin() {
+export function inklyPwaPlugin() {
   return VitePWA({
     registerType: 'autoUpdate',
     devOptions: { enabled: false },
@@ -10,8 +10,8 @@ export function openPencilPwaPlugin() {
       navigateFallback: '/index.html'
     },
     manifest: {
-      name: 'OpenPencil',
-      short_name: 'OpenPencil',
+      name: 'Inkly',
+      short_name: 'Inkly',
       description: 'Open-source design editor',
       display: 'standalone',
       orientation: 'any',

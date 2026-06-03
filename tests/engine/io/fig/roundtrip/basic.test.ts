@@ -6,7 +6,7 @@ import {
   parseFigFile,
   SceneGraph,
   type SceneNode
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { collectAllNodes, countByType } from '#tests/helpers/fig-traversal'

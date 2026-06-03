@@ -111,7 +111,7 @@ jobs:
           tauriScript: bunx tauri
           args: --target ${{ matrix.target }}
           tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
-          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('OpenPencil {0}', github.ref_name) || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('Inkly {0}', github.ref_name) || '' }}
           releaseBody: ${{ steps.release_body.outputs.body || steps.changelog.outputs.release_notes }}
           releaseDraft: true
           uploadUpdaterJson: true
@@ -236,9 +236,9 @@ jobs:
           pack_if_new packages/mcp
           pack_if_new packages/vue
           ls -la .npm-packages
-          tar -tf .npm-packages/open-pencil-cli-*.tgz | sed -n '1,40p' || true
-          tar -tf .npm-packages/open-pencil-mcp-*.tgz | sed -n '1,40p' || true
-          tar -tf .npm-packages/open-pencil-vue-*.tgz | sed -n '1,60p' || true
+          tar -tf .npm-packages/inkly-cli-*.tgz | sed -n '1,40p' || true
+          tar -tf .npm-packages/inkly-mcp-*.tgz | sed -n '1,40p' || true
+          tar -tf .npm-packages/inkly-vue-*.tgz | sed -n '1,60p' || true
           node --input-type=module <<'NODE'
           import fs from 'node:fs'
           import { execFileSync } from 'node:child_process'
@@ -264,7 +264,7 @@ jobs:
               echo "${name}@${version} already published, skipping"
             else
               local tarball
-              tarball=$(cd .npm-packages && ls open-pencil-$(basename "$dir")-${version}.tgz)
+              tarball=$(cd .npm-packages && ls inkly-$(basename "$dir")-${version}.tgz)
               npm publish "./.npm-packages/${tarball}" --access public --provenance
             fi
           }

@@ -12,7 +12,7 @@ Es útil cuando quieres grupos de menú listos para renderizar en lugar de compo
 ## Uso
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue'
+import { useMenuModel } from '@inkly/vue'
 
 const { appMenu, canvasMenu, selectionLabelMenu } = useMenuModel()
 ```

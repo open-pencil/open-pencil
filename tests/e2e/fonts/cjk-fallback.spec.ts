@@ -8,10 +8,10 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
   await canvas.waitForInit()
 
   const result = await page.evaluate(async () => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const renderer = store.renderer
-    if (!renderer) throw new Error('OpenPencil renderer not initialized')
+    if (!renderer) throw new Error('Inkly renderer not initialized')
 
     const { fontManager } = await import('/packages/core/src/text/fonts.ts')
     const manager = fontManager as typeof fontManager & {

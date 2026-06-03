@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 
-import type { FontFamilyOption, LocalFontAccessState } from '@open-pencil/core/text'
+import type { FontFamilyOption, LocalFontAccessState } from '@inkly/core/text'
 
 import {
   clearDownloadedFontCache,

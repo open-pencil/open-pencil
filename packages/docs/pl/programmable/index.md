@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: AI i automatyzacja
-description: Każda operacja w OpenPencil jest skryptowalna — czat AI, CLI, renderer JSX, serwer MCP, współpraca w czasie rzeczywistym.
+description: Każda operacja w Inkly jest skryptowalna — czat AI, CLI, renderer JSX, serwer MCP, współpraca w czasie rzeczywistym.
 ---
 
 # AI i automatyzacja
 
-OpenPencil traktuje pliki projektowe jako dane. Każda operacja dostępna w edytorze — tworzenie kształtów, ustawianie wypełnień, zarządzanie auto-layoutem, eksportowanie zasobów — jest również dostępna z terminala, z agentów AI i z kodu. Bez wtyczek do instalowania, bez kluczy API, bez listy oczekujących.
+Inkly traktuje pliki projektowe jako dane. Każda operacja dostępna w edytorze — tworzenie kształtów, ustawianie wypełnień, zarządzanie auto-layoutem, eksportowanie zasobów — jest również dostępna z terminala, z agentów AI i z kodu. Bez wtyczek do instalowania, bez kluczy API, bez listy oczekujących.
 
 Interfejs edytora i interfejsy automatyzacji korzystają z tego samego silnika. Jeśli możesz coś zrobić kliknięciem, możesz to zrobić skryptem.
 
@@ -40,7 +40,7 @@ CLI łączy się również z uruchomioną aplikacją desktopową przez RPC, wię
 
 ## Serwer MCP
 
-Połącz Claude Code, Cursor, Windsurf lub dowolnego klienta kompatybilnego z MCP z OpenPencil. Serwer udostępnia 90 narzędzi do odczytywania, tworzenia i modyfikowania projektów — te same narzędzia, z których korzysta wbudowany czat AI. Działa przez stdio lub HTTP z obsługą sesji.
+Połącz Claude Code, Cursor, Windsurf lub dowolnego klienta kompatybilnego z MCP z Inkly. Serwer udostępnia 90 narzędzi do odczytywania, tworzenia i modyfikowania projektów — te same narzędzia, z których korzysta wbudowany czat AI. Działa przez stdio lub HTTP z obsługą sesji.
 
 [Serwer MCP →](./mcp-server)
 
@@ -48,4 +48,4 @@ Połącz Claude Code, Cursor, Windsurf lub dowolnego klienta kompatybilnego z MC
 
 Figma to zamknięta platforma. Ich serwer MCP jest tylko do odczytu. Dostęp przez CDP w przeglądarce został usunięty w wersji 126. Pliki projektowe żyją w zastrzeżonym formacie na cudzych serwerach. Rozwój wtyczek wymaga niestandardowego środowiska uruchomieniowego z ograniczonymi API.
 
-OpenPencil to alternatywa: open source, licencja MIT, każda operacja skryptowalna, dane przechowywane lokalnie. Twoje pliki projektowe są Twoje — przeglądaj je, przekształcaj, przesyłaj do CI, zasilaj nimi LLM. Bez potrzeby pozwolenia.
+Inkly to alternatywa: open source, licencja MIT, każda operacja skryptowalna, dane przechowywane lokalnie. Twoje pliki projektowe są Twoje — przeglądaj je, przekształcaj, przesyłaj do CI, zasilaj nimi LLM. Bez potrzeby pozwolenia.

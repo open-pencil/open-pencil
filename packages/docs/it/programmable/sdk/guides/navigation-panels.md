@@ -5,7 +5,7 @@ description: Crea sidebar per pagine e layer con PageListRoot, LayerTreeRoot e l
 
 # Pannelli di Navigazione
 
-Le sidebar di OpenPencil di solito combinano due aspetti:
+Le sidebar di Inkly di solito combinano due aspetti:
 
 - navigazione tra pagine
 - navigazione tra layer

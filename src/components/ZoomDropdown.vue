@@ -9,7 +9,7 @@ import {
 } from 'reka-ui'
 import { nextTick, ref, watch } from 'vue'
 
-import { useEditorCommands, useI18n, formatShortcut } from '@open-pencil/vue'
+import { useEditorCommands, useI18n, formatShortcut } from '@inkly/vue'
 import AppShortcutText from '@/components/ui/AppShortcutText.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu'
 import { useEditorStore } from '@/app/editor/active-store'

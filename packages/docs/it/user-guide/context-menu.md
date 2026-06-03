@@ -1,6 +1,6 @@
 ---
 title: Menu contestuale
-description: Azioni del menu contestuale con click destro in OpenPencil.
+description: Azioni del menu contestuale con click destro in Inkly.
 ---
 # Menu contestuale
 

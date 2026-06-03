@@ -4,7 +4,7 @@ import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 import { useEditorStore } from '@/app/editor/active-store'
-import { PositionControlsRoot, useI18n } from '@open-pencil/vue'
+import { PositionControlsRoot, useI18n } from '@inkly/vue'
 
 const { panels } = useI18n()
 const store = useEditorStore()

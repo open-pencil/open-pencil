@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { SceneNode } from '@open-pencil/core'
-import { applyPadding, isVarRef, type VarContext } from '@open-pencil/core/io/formats/pen'
+import type { SceneNode } from '@inkly/core'
+import { applyPadding, isVarRef, type VarContext } from '@inkly/core/io/formats/pen'
 
 /**
- * Regression test for open-pencil/open-pencil#201
+ * Regression test for inkly/inkly#201
  *
  * Design token variables ($--spacing-lg etc.) in padding and gap fields
  * must be resolved to numeric values before reaching yoga-layout.

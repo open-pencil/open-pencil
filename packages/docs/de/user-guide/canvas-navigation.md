@@ -1,6 +1,6 @@
 ---
 title: Canvas-Navigation
-description: Schwenken, Zoomen und das Handwerkzeug in OpenPencil.
+description: Schwenken, Zoomen und das Handwerkzeug in Inkly.
 ---
 
 # Canvas-Navigation

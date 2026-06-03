@@ -1,11 +1,11 @@
 ---
 title: CanvasRoot
-description: Primitive canvas headless pour les surfaces de rendu OpenPencil.
+description: Primitive canvas headless pour les surfaces de rendu Inkly.
 ---
 
 # CanvasRoot
 
-`CanvasRoot` est la primitive canvas structurelle dans `@open-pencil/vue`.
+`CanvasRoot` est la primitive canvas structurelle dans `@inkly/vue`.
 
 Utilisez-la quand vous voulez la structure canvas et le contexte fournis par le SDK, avec une mise en page et des styles appartenant à votre application.
 

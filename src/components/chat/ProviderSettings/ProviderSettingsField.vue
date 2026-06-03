@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppTextButton from '@/components/ui/AppTextButton.vue'
-import type { TestIdProps } from '@open-pencil/vue'
+import type { TestIdProps } from '@inkly/vue'
 
 interface ProviderSettingsFieldProps extends TestIdProps {
   label: string

@@ -24,8 +24,8 @@ test.beforeEach(async () => {
 
 test('scene canvas repaints selected node during drag', async () => {
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = store.createShape('RECTANGLE', 120, 120, 80, 80)
     store.updateNode(id, {
       fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.45, b: 1, a: 1 }, opacity: 1, visible: true }]

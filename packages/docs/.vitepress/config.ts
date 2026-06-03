@@ -6,7 +6,7 @@ import { rootThemeConfig } from './root-theme'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo'
 
 export default defineConfig({
-  title: 'OpenPencil',
+  title: 'Inkly',
   description:
     'Open-source, AI-native design editor. Figma alternative built from scratch with full .fig file compatibility.',
   cleanUrls: true,
@@ -30,11 +30,11 @@ export default defineConfig({
         generateLLMFriendlyDocsForEachPage: true,
         injectLLMHint: false,
         customTemplateVariables: {
-          title: 'OpenPencil',
+          title: 'Inkly',
           description:
             'Open-source, AI-native design editor and toolkit. Opens Figma .fig files, provides a programmable scene graph, CLI, MCP server, and Vue SDK for custom editor shells.',
           details:
-            'Use this file as the compact map for agents. For complete Markdown content, fetch https://openpencil.dev/llms-full.txt.'
+            'Use this file as the compact map for agents. For complete Markdown content, fetch https://inkly.dev/llms-full.txt.'
         }
       })
     ]

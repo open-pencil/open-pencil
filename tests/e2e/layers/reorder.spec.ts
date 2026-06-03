@@ -4,8 +4,8 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function layerOrder(page: Page, parentId?: string) {
   return page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     return store.graph.getNode(id ?? store.state.currentPageId)?.childIds ?? []
   }, parentId)
 }
@@ -18,8 +18,8 @@ test('dragging layers reorders scene nodes', async ({ page }) => {
   await canvas.clearCanvas()
 
   const ids = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
     const first = store.graph.createNode('RECTANGLE', pageId, { name: 'Layer A', x: 0, y: 0 })
     const second = store.graph.createNode('RECTANGLE', pageId, { name: 'Layer B', x: 120, y: 0 })
@@ -48,8 +48,8 @@ test('dragging a layer into a container expands it and shows the child', async (
   await canvas.clearCanvas()
 
   const ids = await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const pageId = store.state.currentPageId
     const frame = store.graph.createNode('FRAME', pageId, {
       name: 'Drop Frame',

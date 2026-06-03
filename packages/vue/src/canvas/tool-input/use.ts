@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import { startPenInput } from '#vue/canvas/pen-input/use'
 import { startShapeDraw, startTextTool } from '#vue/shared/input/draw'

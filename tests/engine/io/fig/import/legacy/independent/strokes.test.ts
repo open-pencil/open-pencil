@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { importNodeChanges } from '@inkly/core'
 
 import { canvas, doc, node } from '../helpers'
 

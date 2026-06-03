@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 

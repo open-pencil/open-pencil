@@ -5,7 +5,7 @@ description: Construye paneles de propiedades con composables de control y primi
 
 # Paneles de Propiedades
 
-Los paneles de propiedades en `@open-pencil/vue` están diseñados de forma intencionalmente composable primero.
+Los paneles de propiedades en `@inkly/vue` están diseñados de forma intencionalmente composable primero.
 
 Si un panel principalmente necesita valores derivados de la selección y acciones de actualización, prefiere composables.
 Si un panel necesita estructura reutilizable de array/lista, usa un primitivo headless como `PropertyListRoot`.
@@ -30,7 +30,7 @@ Para paneles de tipo lista, usa:
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue'
+import { usePosition } from '@inkly/vue'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -49,7 +49,7 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import { PropertyListRoot, useFillControls } from '@inkly/vue'
 
 const fillControls = useFillControls()
 </script>

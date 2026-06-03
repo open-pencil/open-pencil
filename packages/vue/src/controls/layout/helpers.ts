@@ -1,14 +1,14 @@
 import { computed, ref } from 'vue'
 import type { ComputedRef } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 import type {
   GridTrack,
   LayoutAlign,
   LayoutCounterAlign,
   LayoutSizing,
   SceneNode
-} from '@open-pencil/core/scene-graph'
+} from '@inkly/core/scene-graph'
 
 import type { useI18n } from '#vue/i18n'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

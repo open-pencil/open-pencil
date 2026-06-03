@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { DEFAULT_FRAME_FILL } from '@open-pencil/core'
-import { createEditor } from '@open-pencil/core/editor'
+import { DEFAULT_FRAME_FILL } from '@inkly/core'
+import { createEditor } from '@inkly/core/editor'
 
 describe('frameSelection', () => {
   test('wraps selected nodes in a frame and preserves visual positions', () => {

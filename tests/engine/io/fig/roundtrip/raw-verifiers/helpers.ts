@@ -1,4 +1,4 @@
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@inkly/core/types'
 
 import type { VerifierContext } from '../helpers'
 

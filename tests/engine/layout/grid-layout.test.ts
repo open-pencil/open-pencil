@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeLayout, computeAllLayouts, FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { computeLayout, computeAllLayouts, FigmaAPI, SceneGraph } from '@inkly/core'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, fixed, fr, gridFrame, pageId, rect } from '#tests/helpers/layout'

@@ -406,7 +406,7 @@ export async function exportFigFile(
 
   const metaJson = JSON.stringify({
     version: 1,
-    app: 'OpenPencil',
+    app: 'Inkly',
     createdAt: new Date().toISOString()
   })
 

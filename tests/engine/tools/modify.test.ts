@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { computeAllLayouts } from '@open-pencil/core'
+import { computeAllLayouts } from '@inkly/core'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { getTool, setupToolTest, type ToolResult } from '#tests/helpers/tools'

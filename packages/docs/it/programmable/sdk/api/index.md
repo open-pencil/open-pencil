@@ -1,6 +1,6 @@
 ---
 title: Riferimento API
-description: Documentazione di riferimento per componenti, composable e API avanzate di @open-pencil/vue.
+description: Documentazione di riferimento per componenti, composable e API avanzate di @inkly/vue.
 ---
 
 # Riferimento API

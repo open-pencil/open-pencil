@@ -9,7 +9,7 @@
  * panel if needed.
  */
 
-const DB_NAME = 'open-pencil-document-cache'
+const DB_NAME = 'inkly-document-cache'
 const DB_VERSION = 1
 const STORE_NAME = 'documents'
 const ENTRY_KEY = 'latest'

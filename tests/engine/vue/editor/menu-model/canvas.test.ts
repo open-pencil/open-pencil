@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { computed, ref } from 'vue'
 
-import type { EditorCommandId } from '@open-pencil/vue'
+import type { EditorCommandId } from '@inkly/vue'
 
 import { buildCanvasContextMenu } from '#vue/editor/menu-model/canvas'
 import type { CanvasMenuOptions } from '#vue/editor/menu-model/canvas'

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@inkly/core/color'
 
 import Tip from '@/components/ui/Tip.vue'
 import { initials } from '@/app/shell/ui'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const collab = useCollabPanelContext()
 const { dialogs } = useI18n()

@@ -14,20 +14,20 @@ describe('Tauri automation file handling', () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
-      if (cmd === 'plugin:path|dirname') return '/tmp/open-pencil/nested'
+      if (cmd === 'plugin:path|dirname') return '/tmp/inkly/nested'
       return null
     })
 
-    await ensureTauriParentDirectory('/tmp/open-pencil/nested/file.fig')
+    await ensureTauriParentDirectory('/tmp/inkly/nested/file.fig')
 
     expect(calls).toEqual([
       {
         cmd: 'plugin:path|dirname',
-        args: { path: '/tmp/open-pencil/nested/file.fig' }
+        args: { path: '/tmp/inkly/nested/file.fig' }
       },
       {
         cmd: 'plugin:fs|mkdir',
-        args: { path: '/tmp/open-pencil/nested', options: { recursive: true } }
+        args: { path: '/tmp/inkly/nested', options: { recursive: true } }
       }
     ])
   })

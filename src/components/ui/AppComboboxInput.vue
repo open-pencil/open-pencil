@@ -10,7 +10,7 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 
-import type { TestIdProps } from '@open-pencil/vue'
+import type { TestIdProps } from '@inkly/vue'
 
 import AppBadge from '@/components/ui/AppBadge.vue'
 import { useInputUI } from '@/components/ui/input'

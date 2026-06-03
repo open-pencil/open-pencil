@@ -1,11 +1,11 @@
 ---
 title: Composable
-description: API composable principali in @open-pencil/vue.
+description: API composable principali in @inkly/vue.
 ---
 
 # Composable
 
-Questi sono i composable principali che la maggior parte dei consumatori di `@open-pencil/vue` utilizzerà.
+Questi sono i composable principali che la maggior parte dei consumatori di `@inkly/vue` utilizzerà.
 
 ## Contesto e canvas
 

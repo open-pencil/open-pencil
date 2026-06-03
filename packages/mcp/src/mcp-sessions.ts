@@ -45,7 +45,7 @@ export function createMcpSessionManager({
   }
 
   function createSession(id: string): MCPTransport {
-    const server = new McpServer({ name: 'open-pencil', version: serverVersion })
+    const server = new McpServer({ name: 'inkly', version: serverVersion })
     registerTools(server)
 
     const transport = new WebStandardStreamableHTTPServerTransport({

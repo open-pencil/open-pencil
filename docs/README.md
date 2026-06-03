@@ -1,20 +1,19 @@
-# OpenPencil カスタム fork (pencil-editor)
+# Inkly カスタム構成 (pencil-editor)
 
-OSS デザインツール **OpenPencil** を fork し、pencil.dev で作成した `.pen` ファイルを正しく表示・編集できるようにカスタマイズしたプロジェクトです。
+private 利用向けに **Inkly** を調整し、pencil.dev で作成した `.pen` ファイルを正しく表示・編集できるようにしたプロジェクトです。
 
 ## プロジェクト構成
 
 ```
 pencil-editor/
-├── open-pencil/              ← OpenPencil fork (本体)
-│   ├── docs/                 ← 本リポジトリ独自の仕様・設計ドキュメント
-│   ├── packages/
-│   │   ├── core/             ← Skia + Yoga ベースのレンダリングエンジン
-│   │   ├── vue/              ← Vue 3 UI コンポーネント (i18n を含む)
-│   │   ├── cli/              ← CLI ツール
-│   │   └── mcp/              ← MCP サーバー (AI 連携)
-│   ├── src/                  ← アプリケーション本体 (Vite + Vue 3)
-│   └── public/               ← 同梱フォント・WASM
+├── docs/                     ← 本リポジトリ独自の仕様・設計ドキュメント
+├── packages/
+│   ├── core/                 ← Skia + Yoga ベースのレンダリングエンジン
+│   ├── vue/                  ← Vue 3 UI コンポーネント (i18n を含む)
+│   ├── cli/                  ← CLI ツール
+│   └── mcp/                  ← MCP サーバー (AI 連携)
+├── src/                      ← アプリケーション本体 (Vite + Vue 3)
+├── public/                   ← 同梱フォント・WASM
 └── pencil-dev-analysis/      ← pencil.dev (デスクトップアプリ) のリバースエンジニアリング結果
 ```
 
@@ -30,10 +29,9 @@ pencil-editor/
 ## 起動方法
 
 ```bash
-cd open-pencil
 bun install
-bun --filter @open-pencil/core build
-bun --filter @open-pencil/vue build
+bun --filter @inkly/core build
+bun --filter @inkly/vue build
 bun run dev
 ```
 
@@ -47,9 +45,9 @@ bun run dev
 - **アイコンフォント**: lucide アイコンをローカル同梱
 - **多言語 UI**: 日本語・英語・中国語等のローカライズ対応
 
-## 既存 OpenPencil との差分
+## 標準 Inkly との差分
 
-| 項目 | OpenPencil 公式 | 本 fork |
+| 項目 | 標準 Inkly | このリポジトリ |
 |---|---|---|
 | `.pen` パーサー | 一部互換 | pencil.dev 仕様準拠 |
 | 日本語フォント | 動的ダウンロード | 同梱 |

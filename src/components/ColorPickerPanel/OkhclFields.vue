@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/core/color'
-import { fromPercent, toPercent } from '@open-pencil/vue'
+import { colorToCSS } from '@inkly/core/color'
+import { fromPercent, toPercent } from '@inkly/vue'
 
 import PickerSlider from '@/components/PickerSlider.vue'
 import { useColorPickerPanelContext } from '@/components/ColorPickerPanel/context'

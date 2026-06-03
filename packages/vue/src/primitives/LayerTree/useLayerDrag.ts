@@ -11,7 +11,7 @@ import {
 } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { onScopeDispose, ref, watchEffect, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import type { LayerDragInstruction } from '#vue/primitives/LayerTree/context'
 

@@ -1,4 +1,4 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import type { EditorState } from '@inkly/core/editor'
 
 import { downloadBlob } from '@/app/document/io/browser'
 import { documentNameFromFigPath } from '@/app/document/io/names'

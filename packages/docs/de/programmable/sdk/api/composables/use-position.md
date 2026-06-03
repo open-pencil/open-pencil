@@ -25,7 +25,7 @@ sowie Aktionen wie:
 ## Verwendung
 
 ```ts
-import { usePosition } from '@open-pencil/vue'
+import { usePosition } from '@inkly/vue'
 
 const position = usePosition()
 ```

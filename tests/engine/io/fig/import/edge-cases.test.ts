@@ -1,6 +1,6 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { importNodeChanges, parseFigFile } from '@open-pencil/core'
+import { importNodeChanges, parseFigFile } from '@inkly/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'

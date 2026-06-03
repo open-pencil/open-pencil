@@ -5,7 +5,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import type { LanguageModel } from 'ai'
 
-import type { AIProviderID } from '@open-pencil/core/constants'
+import type { AIProviderID } from '@inkly/core/constants'
 
 export type ModelConfig = {
   providerID: AIProviderID
@@ -35,8 +35,8 @@ export function createLanguageModel(config: ModelConfig): LanguageModel {
       const openrouter = createOpenRouter({
         apiKey: config.apiKey,
         headers: {
-          'X-OpenRouter-Title': 'OpenPencil',
-          'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
+          'X-OpenRouter-Title': 'Inkly',
+          'HTTP-Referer': 'https://github.com/cardene777/open-pencil'
         }
       })
       return openrouter(effectiveModelID)

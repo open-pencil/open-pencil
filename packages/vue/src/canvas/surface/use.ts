@@ -1,7 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 import type { Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import {
   createCanvasSurfaceManager,
@@ -13,7 +13,7 @@ import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 export type { UseCanvasOptions } from '#vue/canvas/surface/types'
 
 /**
- * Connects an OpenPencil editor to a real canvas element using CanvasKit.
+ * Connects an Inkly editor to a real canvas element using CanvasKit.
  *
  * This composable owns renderer creation, surface recreation on resize,
  * render scheduling, and renderer-backed hit testing helpers used by higher-

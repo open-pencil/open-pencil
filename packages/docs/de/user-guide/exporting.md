@@ -1,6 +1,6 @@
 ---
 title: Exportieren
-description: Bilder exportieren (PNG, JPG, WEBP) und .fig-Dateien speichern/öffnen in OpenPencil.
+description: Bilder exportieren (PNG, JPG, WEBP) und .fig-Dateien speichern/öffnen in Inkly.
 ---
 
 # Exportieren
@@ -40,7 +40,7 @@ Das Kontextmenü bietet **Als kopieren** mit mehreren Zwischenablage-Formaten:
 
 ## .fig-Dateioperationen
 
-OpenPencil verwendet das .fig-Format — kompatibel mit Figma. Gespeicherte Dateien werden komprimiert und enthalten ein Vorschaubild.
+Inkly verwendet das .fig-Format — kompatibel mit Figma. Gespeicherte Dateien werden komprimiert und enthalten ein Vorschaubild.
 
 ### Dateien öffnen
 
@@ -60,7 +60,7 @@ OpenPencil verwendet das .fig-Format — kompatibel mit Figma. Gespeicherte Date
 
 ### Round-Trip-Kompatibilität
 
-Aus OpenPencil exportierte Dateien können in Figma geöffnet werden und umgekehrt.
+Aus Inkly exportierte Dateien können in Figma geöffnet werden und umgekehrt.
 
 ## Tastenkürzel
 

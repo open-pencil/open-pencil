@@ -1,6 +1,6 @@
 # Node Types
 
-The scene graph supports 28 node types from Figma's Kiwi schema. Each node is identified by a GUID (`sessionID:localID`) and has a parent reference via `parentIndex`. The OpenPencil engine's `NodeType` union currently uses 17 of these types.
+The scene graph supports 28 node types from Figma's Kiwi schema. Each node is identified by a GUID (`sessionID:localID`) and has a parent reference via `parentIndex`. The Inkly engine's `NodeType` union currently uses 17 of these types.
 
 ## Type Table
 

@@ -10,7 +10,7 @@ Die `analyze`-Befehle prüfen ein gesamtes Designsystem vom Terminal aus — Ink
 ## Farben
 
 ```sh
-openpencil analyze colors design.fig
+inkly analyze colors design.fig
 ```
 
 Findet jede Farbe in der Datei, zählt die Verwendung und zeigt ein visuelles Histogramm:
@@ -25,7 +25,7 @@ Findet jede Farbe in der Datei, zählt die Verwendung und zeigt ein visuelles Hi
 ## Typografie
 
 ```sh
-openpencil analyze typography design.fig
+inkly analyze typography design.fig
 ```
 
 Listet jede Kombination aus Schriftfamilie, -größe und -gewicht mit Nutzungszahlen auf. Nützlich, um einmalige Textstile zu erkennen, die konsolidiert werden sollten.
@@ -33,7 +33,7 @@ Listet jede Kombination aus Schriftfamilie, -größe und -gewicht mit Nutzungsza
 ## Abstände
 
 ```sh
-openpencil analyze spacing design.fig
+inkly analyze spacing design.fig
 ```
 
 Prüft Gap- und Padding-Werte über alle Auto-Layout-Frames hinweg. Hilft, Inkonsistenzen in der Abstandsskala zu identifizieren — z.B. ein einzelner `13px`-Gap zwischen ansonsten `8/16/24`-Werten.
@@ -41,7 +41,7 @@ Prüft Gap- und Padding-Werte über alle Auto-Layout-Frames hinweg. Hilft, Inkon
 ## Cluster
 
 ```sh
-openpencil analyze clusters design.fig
+inkly analyze clusters design.fig
 ```
 
 Findet wiederkehrende Knotenmuster, die in Komponenten extrahiert werden könnten:
@@ -59,7 +59,7 @@ Findet wiederkehrende Knotenmuster, die in Komponenten extrahiert werden könnte
 Alle Analyse-Befehle unterstützen `--json` für maschinenlesbare Ausgabe:
 
 ```sh
-openpencil analyze colors design.fig --json
+inkly analyze colors design.fig --json
 ```
 
 Weiterleiten an `jq`, in CI-Prüfungen einspeisen oder in Skripten verwenden, die Design-Token-Budgets durchsetzen.

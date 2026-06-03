@@ -11,7 +11,7 @@ import {
   SceneGraph,
   computeAllLayouts,
   executeRpcCommand
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -98,7 +98,7 @@ async function createStdioClient(wsPort: number) {
     const stderr = transport.stderr
     if (stderr && 'on' in stderr) {
       ;(stderr as NodeJS.ReadableStream).on('data', (chunk: Buffer) => {
-        if (chunk.toString().includes('Connected to OpenPencil app')) {
+        if (chunk.toString().includes('Connected to Inkly app')) {
           resolve()
         }
       })

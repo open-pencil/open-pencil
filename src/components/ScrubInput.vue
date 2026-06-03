@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
-import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay, testId } from '@open-pencil/vue'
+import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay, testId } from '@inkly/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 
 const attrs = useAttrs()

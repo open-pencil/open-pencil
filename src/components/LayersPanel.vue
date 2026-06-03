@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 import AppMenu from './AppMenu.vue'
 import AssetsPanel from './AssetsPanel.vue'

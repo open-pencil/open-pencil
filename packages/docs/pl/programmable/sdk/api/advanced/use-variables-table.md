@@ -1,6 +1,6 @@
 ---
 title: useVariablesTable
-description: Buduj definicje kolumn TanStack Table dla UI zmiennych OpenPencil.
+description: Buduj definicje kolumn TanStack Table dla UI zmiennych Inkly.
 ---
 
 # useVariablesTable
@@ -12,7 +12,7 @@ Użyj go, gdy chcesz zachowanie tabeli zmiennych SDK, ale musisz dostarczyć wł
 ## Użycie
 
 ```ts
-import { useVariablesTable } from '@open-pencil/vue'
+import { useVariablesTable } from '@inkly/vue'
 
 const { columns } = useVariablesTable(options)
 ```

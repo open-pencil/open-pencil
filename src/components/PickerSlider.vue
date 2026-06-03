@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inputNumberValue, vTestId, type TestIdProps } from '@open-pencil/vue'
+import { inputNumberValue, vTestId, type TestIdProps } from '@inkly/vue'
 import { usePickerSliderUI } from './ui/picker-slider'
 
 type PickerSliderDisplay = {

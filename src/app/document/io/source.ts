@@ -1,5 +1,5 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import { exportFigFile } from '@open-pencil/core/io/formats/fig'
+import type { Editor, EditorState } from '@inkly/core/editor'
+import { exportFigFile } from '@inkly/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import {

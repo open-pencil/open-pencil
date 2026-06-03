@@ -2,7 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
 import { initials } from '@/app/shell/ui'
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@inkly/core/color'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 
 const hud = useMobileHudContext()

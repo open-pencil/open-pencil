@@ -5,14 +5,14 @@ description: Grobe Mobile- und Desktop-Viewport-Flags für responsive Editor-She
 
 # useViewportKind
 
-`useViewportKind()` gibt einfache Responsive-Flags zurück, die von der OpenPencil-Editor-UI verwendet werden.
+`useViewportKind()` gibt einfache Responsive-Flags zurück, die von der Inkly-Editor-UI verwendet werden.
 
 Verwenden Sie es, wenn Ihre Shell eine leichte Abstraktion über Breakpoints anstatt einer direkten `useBreakpoints()`-Verdrahtung benötigt.
 
 ## Verwendung
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@inkly/vue'
 
 const { isMobile, isDesktop } = useViewportKind()
 ```

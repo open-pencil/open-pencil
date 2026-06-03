@@ -8,9 +8,9 @@ import AppInput from '@/components/ui/AppInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useAIChat } from '@/app/ai/chat/use'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@inkly/core/constants'
 
 const { providerID, providerDef, modelID, customModelID } = useAIChat()
 const { dialogs } = useI18n()

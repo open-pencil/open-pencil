@@ -1,8 +1,8 @@
 import { defineCommand } from 'citty'
 
-import { colorToHex } from '@open-pencil/core/color'
-import type { NodeResult } from '@open-pencil/core/rpc'
-import type { Color } from '@open-pencil/core/types'
+import { colorToHex } from '@inkly/core/color'
+import type { NodeResult } from '@inkly/core/rpc'
+import type { Color } from '@inkly/core/types'
 
 import { fmtNode, printError, formatType } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'

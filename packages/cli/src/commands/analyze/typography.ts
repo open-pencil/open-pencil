@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import type { AnalyzeTypographyResult } from '@open-pencil/core/rpc'
+import type { AnalyzeTypographyResult } from '@inkly/core/rpc'
 
 import { bold, fmtHistogram, fmtSummary } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'

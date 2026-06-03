@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 
-import { DEFAULT_FONT_FAMILY } from '@open-pencil/core/constants'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
-import { fontManager } from '@open-pencil/core/text'
+import { DEFAULT_FONT_FAMILY } from '@inkly/core/constants'
+import type { SceneNode } from '@inkly/core/scene-graph'
+import { fontManager } from '@inkly/core/text'
 
 /**
  * Returns missing-font information for a text node getter.

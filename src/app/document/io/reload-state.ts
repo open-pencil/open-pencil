@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@inkly/core/editor'
 
 type ReloadViewport = {
   panX: number

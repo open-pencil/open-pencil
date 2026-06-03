@@ -1,6 +1,6 @@
 ---
 title: Disegno forme
-description: Creare rettangoli, ellissi, linee, frame e sezioni in OpenPencil.
+description: Creare rettangoli, ellissi, linee, frame e sezioni in Inkly.
 ---
 # Disegno forme
 

@@ -1,6 +1,6 @@
 import type { CanvasKit, Surface } from 'canvaskit-wasm'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 

@@ -5,7 +5,7 @@ description: Designs mit JSX erstellen — die Syntax, die LLMs bereits von Mill
 
 # JSX-Renderer
 
-OpenPencil verwendet JSX als Sprache zur Designerstellung. LLMs haben Millionen von React-Komponenten gesehen — ein Layout als `<Frame><Text>` zu beschreiben ist natürlich, kein spezielles Training nötig. Jedes Token zählt, wenn ein KI-Agent Dutzende von Operationen durchführt, und JSX ist die kompakteste deklarative Darstellung.
+Inkly verwendet JSX als Sprache zur Designerstellung. LLMs haben Millionen von React-Komponenten gesehen — ein Layout als `<Frame><Text>` zu beschreiben ist natürlich, kein spezielles Training nötig. Jedes Token zählt, wenn ein KI-Agent Dutzende von Operationen durchführt, und JSX ist die kompakteste deklarative Darstellung.
 
 JSX ist auch diff-fähig. Wenn eine KI ein Design ändert, ist die Änderung ein JSX-Diff — lesbar, überprüfbar, versionierbar.
 
@@ -95,8 +95,8 @@ Kompakte Kurzschreibweisen, inspiriert von Tailwinds Benennung.
 Bestehende Designs zurück in JSX konvertieren:
 
 ```sh
-openpencil export design.fig -f jsx                   # OpenPencil-Format
-openpencil export design.fig -f jsx --style tailwind  # Tailwind-Klassen
+inkly export design.fig -f jsx                   # Inkly-Format
+inkly export design.fig -f jsx --style tailwind  # Tailwind-Klassen
 ```
 
 Der Roundtrip funktioniert: Exportiere ein Design als JSX, bearbeite den Code, rendere es zurück.

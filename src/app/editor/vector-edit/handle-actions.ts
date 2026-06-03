@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core/editor'
-import type { Vector } from '@open-pencil/core/types'
-import { findAllHandles, findOppositeHandle, mirrorHandle } from '@open-pencil/core/vector'
+import type { Editor } from '@inkly/core/editor'
+import type { Vector } from '@inkly/core/types'
+import { findAllHandles, findOppositeHandle, mirrorHandle } from '@inkly/core/vector'
 
 import { constrainContinuousTangent } from './handles'
 import { getLiveNetwork } from './network'

@@ -6,7 +6,7 @@ import { useClipboard } from '@vueuse/core'
 import Tip from '@/components/ui/Tip.vue'
 import { toast } from '@/app/shell/ui'
 import { useToastUI } from '@/components/ui/toast'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const { dialogs } = useI18n()

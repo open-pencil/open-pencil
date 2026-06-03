@@ -19,7 +19,7 @@ import {
 
 import IconChevronRight from '~icons/lucide/chevron-right'
 
-import { vTestId, useI18n } from '@open-pencil/vue'
+import { vTestId, useI18n } from '@inkly/vue'
 import AppShortcutText from '@/components/ui/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
@@ -60,7 +60,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 <template>
   <div class="shrink-0 border-b border-border">
     <div class="flex items-center gap-2 px-2 py-1.5">
-      <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
+      <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="Inkly" />
       <input
         v-if="editingName"
         ref="nameInput"

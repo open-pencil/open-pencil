@@ -11,7 +11,7 @@ import IconScissors from '~icons/lucide/scissors'
 import IconTrash2 from '~icons/lucide/trash-2'
 import IconUngroup from '~icons/lucide/ungroup'
 
-import type { useEditorCommands } from '@open-pencil/vue'
+import type { useEditorCommands } from '@inkly/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import type { ToolbarActionItem } from '@/components/Toolbar/types'

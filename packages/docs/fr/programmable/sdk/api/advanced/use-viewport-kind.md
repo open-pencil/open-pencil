@@ -5,14 +5,14 @@ description: Lit des indicateurs viewport mobile et bureau grossiers pour les sh
 
 # useViewportKind
 
-`useViewportKind()` retourne de simples indicateurs adaptatifs utilisés par l'interface d'éditeur OpenPencil.
+`useViewportKind()` retourne de simples indicateurs adaptatifs utilisés par l'interface d'éditeur Inkly.
 
 Utilisez-le quand votre shell a besoin d'une légère abstraction au-dessus des points de rupture plutôt que de câbler `useBreakpoints()` directement.
 
 ## Utilisation
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue'
+import { useViewportKind } from '@inkly/vue'
 
 const { isMobile, isDesktop } = useViewportKind()
 ```

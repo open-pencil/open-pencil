@@ -1,6 +1,6 @@
-import type { SkiaRenderer } from '@open-pencil/core/canvas'
-import { IS_BROWSER } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
+import type { SkiaRenderer } from '@inkly/core/canvas'
+import { IS_BROWSER } from '@inkly/core/constants'
+import type { Editor } from '@inkly/core/editor'
 
 import { useViewportKind } from '#vue/editor/viewport-kind/use'
 

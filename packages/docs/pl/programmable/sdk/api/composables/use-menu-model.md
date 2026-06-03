@@ -12,7 +12,7 @@ Przydatny, gdy chcesz gotowe do renderowania grupy menu zamiast ręcznego kompon
 ## Użycie
 
 ```ts
-import { useMenuModel } from '@open-pencil/vue'
+import { useMenuModel } from '@inkly/vue'
 
 const { appMenu, canvasMenu, selectionLabelMenu } = useMenuModel()
 ```

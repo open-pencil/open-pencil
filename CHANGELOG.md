@@ -19,29 +19,29 @@
 
 ### Changed
 
-- Update the Homebrew install command to use the published `openpencil` cask.
+- Update the Homebrew install command to use the published `inkly` cask.
 
 ### Fixes
 
-- Fix the published MCP package so global installs include the `openpencil-mcp` and `openpencil-mcp-http` launchers required by desktop app integrations.
+- Fix the published MCP package so global installs include the `inkly-mcp` and `inkly-mcp-http` launchers required by desktop app integrations.
 
 ## 0.13.1 — 2026-05-29
 
 ### Fixes
 
-- Fix the npm package contents for the CLI so Bun installs include the built `openpencil` binary and runtime bundle.
+- Fix the npm package contents for the CLI so Bun installs include the built `inkly` binary and runtime bundle.
 
 ## 0.13.0 — 2026-05-29
 
 ### Fixes
 
-- Fix the published CLI package so Bun global installs run the built `openpencil` binary instead of raw TypeScript sources.
+- Fix the published CLI package so Bun global installs run the built `inkly` binary instead of raw TypeScript sources.
 
 - Greatly improve importing Figma `.fig` files with complex component systems: badges, avatars, icons, links, input fields, lists, date pickers, nested instances, component swaps, and variant properties now open much closer to their original Figma appearance.
 - Fix missing or white content in imported `.fig` files caused by unresolved Figma variable bindings, including image/avatar badges, icon colors, text colors, and variable-backed component overrides.
 - Preserve more Figma document details when opening and saving `.fig` files, including internal component pages, component ordering, page metadata, canvas backgrounds, text layout, glyph rendering, vector geometry, effects, shadows, and instance overrides.
 - Keep user edits after opening an imported `.fig` file: changing size, position, fills, text, or layout now wins over preserved Figma round-trip data when the document is saved again.
-- Fix `.fig` exports so files reopened in Figma or OpenPencil keep their pages, components, instances, text wrapping, icons, avatars, and preview thumbnail intact.
+- Fix `.fig` exports so files reopened in Figma or Inkly keep their pages, components, instances, text wrapping, icons, avatars, and preview thumbnail intact.
 - Fix live canvas updates during move/resize/edit previews so visible scene changes repaint immediately.
 - Fix accidental duplicate creation when Alt-clicking without dragging.
 - Fix MCP startup in the browser.
@@ -74,8 +74,8 @@
 
 ### Fixes
 
-- Route Claude Code stdio MCP requests through the live OpenPencil app connection, including immediate disconnected errors when no document is connected.
-- Keep MCP disconnected guidance focused on starting OpenPencil and opening a document.
+- Route Claude Code stdio MCP requests through the live Inkly app connection, including immediate disconnected errors when no document is connected.
+- Keep MCP disconnected guidance focused on starting Inkly and opening a document.
 - Improve agent-rendered JSX compatibility with Figma-style text, alignment, and rotation aliases; strip HTML comments; and report unsupported props from render tools.
 - Load exact text font styles after MCP and AI tool mutations so newly created bold/weighted text renders immediately.
 - Include text style fields in MCP `get_node` output so agents can verify generated text accurately.
@@ -85,7 +85,7 @@
 
 ### Fixes
 
-- Fix `.fig` round-trips for OpenPencil component sets and variable bindings, and recompute imported layouts after opening documents.
+- Fix `.fig` round-trips for Inkly component sets and variable bindings, and recompute imported layouts after opening documents.
 - Report desktop/MCP package version mismatches explicitly and include package-manager-aware install guidance from the MCP server.
 - Support scoped MCP `save_file({ path })` workflows while keeping file saving in the desktop app.
 - Use native Tauri path handling for save parent directories so Unicode and Windows paths are handled correctly.
@@ -99,7 +99,7 @@
 - Assets panel — browse, search, and insert document components directly from the left sidebar.
 - Component variants — switch instance variants from the right inspector; default variant respects property definitions.
 - Figma library metadata — component keys, source libraries, version IDs, descriptions, and docs links are preserved on import/export.
-- Desktop file associations — double-click `.fig` or `.pen` files in Finder/Explorer to open them in OpenPencil.
+- Desktop file associations — double-click `.fig` or `.pen` files in Finder/Explorer to open them in Inkly.
 - Auto-update — startup update checks and a Check for Updates menu item on desktop.
 - Light theme with theme-aware canvas rulers.
 - PDF export — available in the export panel, CLI (`--format pdf`), and MCP.
@@ -149,8 +149,8 @@
 - Fix section drawing and color input forwarding in the property panel.
 - Fix asset insertion coordinates inside entered containers.
 - Fix MCP stdio handshake and eval return values.
-- Fix `@open-pencil/vue` npm imports referencing an unexported core subpath.
-- Fix Figma clipboard text compatibility — pasted OpenPencil text keeps editable fixed bounds, line wrapping, baselines, glyph offsets, and Figma edit-mode layout.
+- Fix `@inkly/vue` npm imports referencing an unexported core subpath.
+- Fix Figma clipboard text compatibility — pasted Inkly text keeps editable fixed bounds, line wrapping, baselines, glyph offsets, and Figma edit-mode layout.
 - Fix local font matching so requested upright and weighted faces do not fall back to italic or regular faces.
 - Fix CanvasKit paragraph rendering to preserve requested text weights and slants.
 - Fix nested text editing interactions — drill double-click enters nested text edit mode, and clicking another text node switches edit targets while editing.
@@ -179,7 +179,7 @@
 
 ### Features
 
-- Add stdio transport for MCP server — `openpencil-mcp` now works as a proper stdio MCP server for Claude Code, Cursor, etc. HTTP server available as `openpencil-mcp-http`.
+- Add stdio transport for MCP server — `inkly-mcp` now works as a proper stdio MCP server for Claude Code, Cursor, etc. HTTP server available as `inkly-mcp-http`.
 - Default canvas background to dark when system prefers dark color scheme
 - Add `list_available_fonts` MCP tool for font discovery
 - Copy node ID / XPath from context menu; CLI selection command
@@ -187,7 +187,7 @@
 - JSX renderer: `position="absolute"`, `top`, `left` props for absolute children inside auto-layout containers
 - MCP server sends `notifications/tools/list_changed` when the desktop app connects or disconnects
 - Headless text measurement via opentype.js per-glyph advance widths — no CanvasKit needed
-- Add `open_file` and `new_document` MCP tools with `OPENPENCIL_MCP_ROOT` path scoping
+- Add `open_file` and `new_document` MCP tools with `INKLY_MCP_ROOT` path scoping
 - Optional `path` param on `export_image`, `export_svg`, `get_jsx` — write output to disk instead of returning base64/string
 - Multi-root JSX support — multiple top-level elements auto-wrapped in a fragment
 - `Component` and `Instance` tag aliases in JSX renderer
@@ -216,7 +216,7 @@
 - Show "Create Instance" instead of "Create Component" in context menu when a component is selected
 - Fix headless layout: use stored .fig dimensions instead of rough text size estimates (26K → 11K mismatches on material3.fig)
 - Fix `--help` output with huge vertical gaps between commands — remove inline examples from query description
-- Fix `openpencil-mcp` npm package missing `dist/stdio.js` — explicitly list entry points in tsconfig
+- Fix `inkly-mcp` npm package missing `dist/stdio.js` — explicitly list entry points in tsconfig
 - Show toast when MCP server fails to start instead of silently swallowing the error
 - Fix provider settings popover not appearing — tooltip wrapper broke floating-ui positioning
 - Fix `set_font_range` producing invalid style runs that crash `.fig` export — use `applyStyleToRange`, apply color and fontWeight from style name
@@ -227,7 +227,7 @@
 
 ### Fixes
 
-- Switch `@open-pencil/core` build from `tsgo` + `fix-esm-import-path` to `tsdown` — fixes bare directory imports that broke Node.js and Bun consumers
+- Switch `@inkly/core` build from `tsgo` + `fix-esm-import-path` to `tsdown` — fixes bare directory imports that broke Node.js and Bun consumers
 
 ## 0.11.5 — 2026-04-08
 
@@ -240,7 +240,7 @@
 
 ### Fixes
 
-- Fix `@open-pencil/core` published package containing stale import paths from before the domain module restructuring — CLI and MCP installs from npm now resolve correctly
+- Fix `@inkly/core` published package containing stale import paths from before the domain module restructuring — CLI and MCP installs from npm now resolve correctly
 - Add `save_file` MCP tool for saving the current document to disk
 - Clipboard text export now writes richer v4 `derivedTextData` payloads with glyph outlines for better paste fidelity
 
@@ -265,16 +265,16 @@
 
 - Stabilize npm publishing with isolated temp publish directories instead of mutating tracked package manifests in CI
 - Strip build-time scripts and dev dependencies from generated publish manifests so tarballs pack from verified artifacts only
-- Fix `@open-pencil/mcp` release packaging so the published npm tarball includes its built `dist/` CLI and server entrypoints deterministically
-- Fix `@open-pencil/core` release build configuration so CI publish jobs include Node and Bun ambient types when compiling package artifacts
+- Fix `@inkly/mcp` release packaging so the published npm tarball includes its built `dist/` CLI and server entrypoints deterministically
+- Fix `@inkly/core` release build configuration so CI publish jobs include Node and Bun ambient types when compiling package artifacts
 
 ## 0.11.1 — 2026-03-30
 
 ### Fixes
 
 - Fix npm publishing pipeline to publish packed tarballs instead of raw package folders
-- Attempt to fix `@open-pencil/mcp` npm package contents so the published CLI includes its built `dist/` entrypoints
-- Fix `@open-pencil/vue` npm package metadata and build output so the published package resolves from `dist/` while local workspace development keeps using source aliases
+- Attempt to fix `@inkly/mcp` npm package contents so the published CLI includes its built `dist/` entrypoints
+- Fix `@inkly/vue` npm package metadata and build output so the published package resolves from `dist/` while local workspace development keeps using source aliases
 
 ## 0.11.0 — 2026-03-30
 
@@ -287,7 +287,7 @@
 - Layer panel click syncs canvas scope automatically
 - Vue SDK internationalization primitives — `useI18n()`, locale detection, persisted locale selection, lazy-loaded locale JSON files, and exported locale metadata for custom editor shells
 - Vue SDK docs and public API audit — documented advanced exports (`useOkHCL()`, variables helpers, viewport and locale APIs), aligned docs with the actual `provideEditor()` injection model, and expanded release-ready SDK guidance
-- npm release pipeline now publishes `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` together on version tags
+- npm release pipeline now publishes `@inkly/core`, `@inkly/cli`, `@inkly/mcp`, and `@inkly/vue` together on version tags
 - App language picker in the menu bar — switch UI locale without reloading
 - Added a vector curve editor and improved drawing experience with the pen tool
 - Resume pen drawing from existing open path endpoints — click an endpoint to continue the curve
@@ -295,7 +295,7 @@
 - Align selected anchor points relative to each other in vector edit mode — the standard alignment buttons in the position panel now operate on selected vertices when 2 or more are selected
 - Unified core IO format registry — `.fig` is now modeled as the native document format alongside shared export adapters for PNG, JPG, WEBP, SVG, and JSX
 - Export selection or current page as `.fig` from the app export UI and app menu
-- New CLI commands: `open-pencil convert` for document conversion, `open-pencil formats` to inspect readable/writable/exportable formats, and `open-pencil lint` for design consistency, structure, and accessibility checks
+- New CLI commands: `inkly convert` for document conversion, `inkly formats` to inspect readable/writable/exportable formats, and `inkly lint` for design consistency, structure, and accessibility checks
 - CLI export now supports `.fig` output and routes PNG/JPG/WEBP/SVG/JSX/`.fig` through the shared IO layer
 - `Open…` now supports `.pen` Pencil documents through the shared document reader pipeline while keeping `.fig` as the native save format
 - Display‑P3 document color space pipeline — documents now default to Display‑P3, `.fig` import/export preserves document color profiles, the live canvas requests P3 surfaces with sRGB fallback, and raster/SVG export paths accept explicit color-space targets
@@ -323,7 +323,7 @@
 - TEXT nodes now default to a solid black fill — previously exported with no fill, making text invisible when opened in Figma
 - Fix save crash when COLOR variable is missing alpha channel
 - Fix console error spam on deployed web app from automation WebSocket reconnect loop
-- Fix headless CLI font fallback — bundled Inter font now ships with `@open-pencil/core` and loads without a web server
+- Fix headless CLI font fallback — bundled Inter font now ships with `@inkly/core` and loads without a web server
 - Locked nodes now block move, resize, rotate, and delete on canvas
 - Locked containers block double-click enter
 - Marquee selection skips locked and hidden nodes
@@ -404,8 +404,8 @@
 
 ### Features
 
-- XPath query command — `open-pencil query design.fig "//FRAME[@width < 300]"` to find nodes by type, attributes, and tree structure using XPath selectors
-- CSS Grid layout mode — select a frame, click the grid icon in the auto layout toolbar to switch from flex to grid. Configure column/row tracks (fr, fixed px, auto), column and row gaps, and per-side padding. Powered by a [Yoga fork](https://github.com/open-pencil/yoga/tree/grid) with cherry-picked CSS Grid PRs from upstream
+- XPath query command — `inkly query design.fig "//FRAME[@width < 300]"` to find nodes by type, attributes, and tree structure using XPath selectors
+- CSS Grid layout mode — select a frame, click the grid icon in the auto layout toolbar to switch from flex to grid. Configure column/row tracks (fr, fixed px, auto), column and row gaps, and per-side padding. Powered by a [Yoga fork](https://github.com/inkly/yoga/tree/grid) with cherry-picked CSS Grid PRs from upstream
 - JSX and Tailwind CSS export for grid layouts — `grid grid-cols-N`, `gap-x-*`/`gap-y-*`, child `col-start-*`/`row-start-*`/`col-span-*`/`row-span-*`
 - Multi-provider AI support — connect to Anthropic, OpenAI, Google AI, or any OpenAI-compatible endpoint directly, in addition to OpenRouter. Per-provider API key storage, provider settings popover, automatic migration from single OpenRouter key
 - Anthropic-compatible provider for custom API endpoints
@@ -465,13 +465,13 @@
 ### Features
 
 - Mobile layout & PWA — responsive editor with touch-optimized toolbar, swipeable bottom drawer (layers/properties/design/code), HUD overlay, and installable PWA with icons and service worker
-- Tailwind CSS v4 JSX export — export selections as HTML with Tailwind utility classes (`<div className="flex gap-4 p-3">`) from the Code panel, CLI (`bun open-pencil export --format jsx --style tailwind`), or programmatically via `sceneNodeToJSX(id, graph, 'tailwind')`. Supports layout, sizing, colors, border radius, opacity, rotation, overflow, shadows, blur, and typography. Uses v4 spacing semantics (px/4 multiplier) with automatic fallback to arbitrary values.
-- Code panel format toggle — switch between OpenPencil (custom components) and Tailwind (HTML + utility classes) output
-- Homebrew tap — `brew install open-pencil/tap/open-pencil` for macOS (arm64 + x64), auto-updated on each release
+- Tailwind CSS v4 JSX export — export selections as HTML with Tailwind utility classes (`<div className="flex gap-4 p-3">`) from the Code panel, CLI (`bun inkly export --format jsx --style tailwind`), or programmatically via `sceneNodeToJSX(id, graph, 'tailwind')`. Supports layout, sizing, colors, border radius, opacity, rotation, overflow, shadows, blur, and typography. Uses v4 spacing semantics (px/4 multiplier) with automatic fallback to arbitrary values.
+- Code panel format toggle — switch between Inkly (custom components) and Tailwind (HTML + utility classes) output
+- Homebrew tap — `brew install inkly/tap/inkly` for macOS (arm64 + x64), auto-updated on each release
 - Double-click to rename layers — inline rename in layer panel, shared `useInlineRename` composable
 - New AI/MCP tools: `analyze_colors`, `analyze_typography`, `analyze_spacing`, `analyze_clusters`, `diff_create`, `diff_show`, `get_components`, `get_current_page`, `arrange`, `node_to_component`
-- CLI-to-app RPC bridge — all CLI commands work against the running app when no file is specified. Start the app, then run `bun open-pencil tree` to inspect the live document
-- VitePress docs site — user guide, reference, architecture, and development docs at openpencil.dev with 6 locales (en, de, fr, es, it, pl), SEO (OG tags, hreflang, JSON-LD, sitemap), and dark theme
+- CLI-to-app RPC bridge — all CLI commands work against the running app when no file is specified. Start the app, then run `bun inkly tree` to inspect the live document
+- VitePress docs site — user guide, reference, architecture, and development docs at inkly.dev with 6 locales (en, de, fr, es, it, pl), SEO (OG tags, hreflang, JSON-LD, sitemap), and dark theme
 
 ### Improvements
 
@@ -492,7 +492,7 @@
 - Fix `ALL_TOOLS` registry missing newer tools (`analyzeColors`, `diffCreate`, `exportImage`, `arrangeNodes`)
 - Fix `renderJSX` typo in tool definitions (`renderJsx` → `renderJSX`)
 - Fix all oxlint warnings and tsgo errors — replace `!` non-null assertions in `use-collab.ts` with local const captures
-- Fix broken test imports — stale `../../src/engine/` paths updated to `@open-pencil/core`
+- Fix broken test imports — stale `../../src/engine/` paths updated to `@inkly/core`
 - Fix flaky E2E tests: layers panel navigates to `/demo`, zoom-to-fit test zooms in first, snapshot rendering stabilized with `workers: 1` and `colorScheme: dark`
 - Fix bogus .fig import mappings for `expanded` and `strokeMiterLimit` fields
 - Fix PWA manifest error in dev mode, handle invalid font data gracefully
@@ -515,7 +515,7 @@
 
 ### Features
 
-- SVG export — export selections as SVG from the export panel, context menu, CLI (`bun open-pencil export --format svg`), or MCP/AI tools (`export_svg`). Supports rectangles, ellipses, lines, stars, polygons, vectors, text with style runs, gradients, image fills, effects, blend modes, clip paths, and nested groups (#46)
+- SVG export — export selections as SVG from the export panel, context menu, CLI (`bun inkly export --format svg`), or MCP/AI tools (`export_svg`). Supports rectangles, ellipses, lines, stars, polygons, vectors, text with style runs, gradients, image fills, effects, blend modes, clip paths, and nested groups (#46)
 - Copy/Paste as submenu in context menu — Copy as text, Copy as SVG, Copy as PNG (⇧⌘C), Copy as JSX
 - Stroke align (Inside/Center/Outside) with clip-based rendering matching Figma behavior
 - Individual stroke weights per side (Top/Right/Bottom/Left) with side selector dropdown
@@ -666,7 +666,7 @@
 
 - Extract shared color constants (`BLACK`, `TRANSPARENT`, `DEFAULT_SHADOW_COLOR`) — replaces 8 inline literals across core
 - Extract shared `NodeContextMenuContent` component to avoid menu duplication
-- Fix `@open-pencil/core` dep in MCP package: `workspace:*` for local dev (pnpm resolves at publish time)
+- Fix `@inkly/core` dep in MCP package: `workspace:*` for local dev (pnpm resolves at publish time)
 - Replace store thunks with a late-binding proxy
 
 ### Tests
@@ -712,14 +712,14 @@
 
 ### Features
 
-- MCP server (`@open-pencil/mcp`) — 29 tools for headless .fig editing via stdio (Claude Code, Cursor, Windsurf) or HTTP (Hono + Streamable HTTP with sessions)
-- `openpencil-mcp` and `openpencil-mcp-http` binaries — install globally via `bun add -g @open-pencil/mcp`
+- MCP server (`@inkly/mcp`) — 29 tools for headless .fig editing via stdio (Claude Code, Cursor, Windsurf) or HTTP (Hono + Streamable HTTP with sessions)
+- `inkly-mcp` and `inkly-mcp-http` binaries — install globally via `bun add -g @inkly/mcp`
 
 ### Build
 
-- All packages emit JS via tsgo + fix-esm-import-path — `@open-pencil/core` and `@open-pencil/mcp` work on Node.js without Bun
+- All packages emit JS via tsgo + fix-esm-import-path — `@inkly/core` and `@inkly/mcp` work on Node.js without Bun
 - Core package exports: `bun` condition → src (dev), `import` condition → dist (npm consumers)
-- `@open-pencil/mcp` added to CI publish workflow
+- `@inkly/mcp` added to CI publish workflow
 
 ## [0.3.2] (2026-03-02)
 
@@ -730,7 +730,7 @@
 ### Tests
 
 - Visual regression tests for SkPicture cache: hover on/off cycle, multiple cycles, mouse hover, scene change + hover
-- Type `window.__OPEN_PENCIL_STORE__` globally, remove ad-hoc casts from tests
+- Type `window.__INKLY_STORE__` globally, remove ad-hoc casts from tests
 
 ## [0.3.1] (2026-03-02)
 
@@ -829,7 +829,7 @@ First public alpha. The editor is functional but not production-ready.
 
 - .fig file import via Kiwi binary codec (194 definitions, ~390 fields)
 - .fig file export with Kiwi encoding, Zstd compression, thumbnail generation
-- Figma clipboard: copy/paste between OpenPencil and Figma
+- Figma clipboard: copy/paste between Inkly and Figma
 - Round-trip fidelity for supported node types
 
 ### AI Integration
@@ -847,7 +847,7 @@ First public alpha. The editor is functional but not production-ready.
 - Syntax highlighting via Prism.js
 - Copy to clipboard
 
-### CLI (`@open-pencil/cli`)
+### CLI (`@inkly/cli`)
 
 - `info` — document stats, node types, fonts
 - `tree` — visual node tree
@@ -863,7 +863,7 @@ First public alpha. The editor is functional but not production-ready.
 - `analyze clusters` — repeated patterns
 - All commands support `--json`
 
-### Core (`@open-pencil/core`)
+### Core (`@inkly/core`)
 
 - Scene graph with flat Map storage and parentIndex tree
 - FigmaAPI with ~65% Figma plugin API compatibility
@@ -881,11 +881,11 @@ First public alpha. The editor is functional but not production-ready.
 
 ### Web App
 
-- Runs at [app.openpencil.dev](https://app.openpencil.dev)
+- Runs at [app.inkly.dev](https://app.inkly.dev)
 - No installation required
 - File System Access API for save/open (Chrome/Edge), download fallback elsewhere
 
 ### Documentation
 
-- [openpencil.dev](https://openpencil.dev) — VitePress site with user guide, reference, and development docs
+- [inkly.dev](https://inkly.dev) — VitePress site with user guide, reference, and development docs
 - Deployed via Cloudflare Pages

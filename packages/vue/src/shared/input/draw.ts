@@ -1,5 +1,5 @@
-import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
+import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@inkly/core/constants'
+import type { Editor } from '@inkly/core/editor'
 
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'

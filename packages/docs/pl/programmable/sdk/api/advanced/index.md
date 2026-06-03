@@ -1,6 +1,6 @@
 ---
 title: Zaawansowane
-description: API niższego poziomu i wyspecjalizowane w @open-pencil/vue.
+description: API niższego poziomu i wyspecjalizowane w @inkly/vue.
 ---
 
 # Zaawansowane

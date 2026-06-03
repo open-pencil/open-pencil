@@ -1,4 +1,4 @@
-import { editorCommandMetadata, formatShortcut } from '@open-pencil/vue'
+import { editorCommandMetadata, formatShortcut } from '@inkly/vue'
 
 import type { AppMenuActionItem, AppMenuEntry } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'

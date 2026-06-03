@@ -17,9 +17,9 @@ import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
 import { useSelectUI } from '@/components/ui/select'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n, useLayoutControlsContext } from '@inkly/vue'
 
-import type { LayoutDirection, LayoutAlign } from '@open-pencil/core/scene-graph'
+import type { LayoutDirection, LayoutAlign } from '@inkly/core/scene-graph'
 
 const ctx = useLayoutControlsContext()
 const gapFieldRef = ref<HTMLElement | null>(null)

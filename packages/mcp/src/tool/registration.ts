@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 
-import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
+import { ALL_TOOLS, CODEGEN_PROMPT } from '@inkly/core/tools'
 
 import type { RpcJsonObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'

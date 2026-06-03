@@ -1,6 +1,6 @@
-# Open Pencil vs Penpot : Comparaison d'architecture et de performances
+# Inkly vs Penpot : Comparaison d'architecture et de performances
 
-Pourquoi comparer ? OpenPencil existe parce que les plateformes de design fermées contrôlent ce qui est possible. Comprendre les différences architecturales montre ce qu'une alternative ouverte et local-first peut faire différemment.
+Pourquoi comparer ? Inkly existe parce que les plateformes de design fermées contrôlent ce qui est possible. Comprendre les différences architecturales montre ce qu'une alternative ouverte et local-first peut faire différemment.
 
 ::: info Renderer WASM de Penpot
 Penpot 2.x inclut un renderer Rust/Skia WASM (`render-wasm/v1`) activable via les flags du serveur ou le paramètre URL `?wasm=true`. Le renderer SVG reste le défaut. Cette page couvre les deux.
@@ -8,7 +8,7 @@ Penpot 2.x inclut un renderer Rust/Skia WASM (`render-wasm/v1`) activable via le
 
 ## 1. Échelle et taille du code
 
-| Métrique | Open Pencil | Penpot |
+| Métrique | Inkly | Penpot |
 |----------|-------------|--------|
 | LOC total | **~26 000** | **~299 000** |
 | Fichiers source | ~143 | ~2 900 |
@@ -18,11 +18,11 @@ Penpot 2.x inclut un renderer Rust/Skia WASM (`render-wasm/v1`) activable via le
 | Backend | Aucun (local-first) | 32 600 LOC + 151 fichiers SQL |
 | Ratio LOC | **1×** | **~11×** |
 
-Open Pencil est **~11× plus petit** — et c'est tout l'intérêt. Ce n'est pas une simplification ; c'est une architecture fondamentalement différente.
+Inkly est **~11× plus petit** — et c'est tout l'intérêt. Ce n'est pas une simplification ; c'est une architecture fondamentalement différente.
 
 ## 2. Architecture
 
-### Open Pencil : Client monolithique
+### Inkly : Client monolithique
 
 ```
 ┌─────────────────────────────────┐
@@ -74,11 +74,11 @@ Open Pencil est **~11× plus petit** — et c'est tout l'intérêt. Ce n'est pas
 
 ### Verdict : Architecture
 
-L'architecture monoprocessus d'Open Pencil élimine : la latence réseau, l'overhead de sérialisation aux frontières de services, la complexité d'orchestration de conteneurs et l'overhead de requêtes base de données.
+L'architecture monoprocessus d'Inkly élimine : la latence réseau, l'overhead de sérialisation aux frontières de services, la complexité d'orchestration de conteneurs et l'overhead de requêtes base de données.
 
 ## 3. Pipeline de rendu
 
-### Open Pencil : TS → CanvasKit WASM (direct)
+### Inkly : TS → CanvasKit WASM (direct)
 
 ```typescript
 renderSceneToCanvas(canvas, graph, pageId) {
@@ -105,7 +105,7 @@ Quand désactivé (défaut), les formes sont rendues comme un arbre DOM SVG. Qua
 
 ### Verdict : Rendu
 
-| Aspect | Open Pencil | Penpot |
+| Aspect | Inkly | Penpot |
 |--------|-------------|--------|
 | Frontière JS→WASM | Direct (objets TS) | Empaquetage binaire (104 octets par forme) |
 | Modèle de rendu | Immédiat/redessin complet | Cache par tuiles |
@@ -116,7 +116,7 @@ Quand désactivé (défaut), les formes sont rendues comme un arbre DOM SVG. Qua
 
 ## 4. Graphe de scène et modèle de données
 
-### Open Pencil
+### Inkly
 
 ```typescript
 nodes: Map<string, SceneNode>
@@ -135,11 +135,11 @@ nodes: Map<string, SceneNode>
 
 ### Verdict : Modèle de données
 
-Open Pencil réutilise le schéma éprouvé de Figma directement en TypeScript — zéro traduction. Penpot maintient son propre système de types à travers trois langages.
+Inkly réutilise le schéma éprouvé de Figma directement en TypeScript — zéro traduction. Penpot maintient son propre système de types à travers trois langages.
 
 ## 5. Moteur de layout
 
-### Open Pencil : Yoga WASM (314 LOC)
+### Inkly : Yoga WASM (314 LOC)
 
 ```typescript
 import Yoga from 'yoga-layout'
@@ -156,11 +156,11 @@ Penpot maintient **deux moteurs de layout indépendants** (CLJS et Rust) qui doi
 
 ### Verdict : Layout
 
-Open Pencil délègue à Yoga (utilisé par React Native sur des milliards d'appareils) en 314 lignes.
+Inkly délègue à Yoga (utilisé par React Native sur des milliards d'appareils) en 314 lignes.
 
 ## 6. Format de fichier et compatibilité Figma
 
-### Open Pencil
+### Inkly
 
 - **Format binaire Kiwi natif** — même sérialisation que Figma
 - Import direct `.fig`, collage depuis le presse-papiers Figma
@@ -174,11 +174,11 @@ Open Pencil délègue à Yoga (utilisé par React Native sur des milliards d'app
 
 ### Verdict : Format de fichier
 
-Open Pencil a un avantage significatif — il peut lire les fichiers Figma nativement et coller les données du presse-papiers Figma.
+Inkly a un avantage significatif — il peut lire les fichiers Figma nativement et coller les données du presse-papiers Figma.
 
 ## 7. Gestion d'état et annulation
 
-### Open Pencil
+### Inkly
 
 ```typescript
 // 110 LOC — patron de commande inverse
@@ -196,7 +196,7 @@ Gestion d'état via Potok (bibliothèque Redux-like pour atomes ClojureScript). 
 
 ## 8. Expérience développeur
 
-| Métrique | Open Pencil | Penpot |
+| Métrique | Inkly | Penpot |
 |----------|-------------|--------|
 | Setup dev | `bun install && bun dev` | Docker Compose + JVM + Node + Rust |
 | Rechargement à chaud | Vite HMR (~50ms) | shadow-cljs (secondes) |
@@ -208,7 +208,7 @@ Gestion d'état via Potok (bibliothèque Redux-like pour atomes ClojureScript). 
 
 ## 9. Caractéristiques de performance
 
-| Scénario | Open Pencil | Penpot |
+| Scénario | Inkly | Penpot |
 |----------|-------------|--------|
 | Démarrage à froid | <2s (chargement WASM) | 10s+ (serveur + client + WASM) |
 | Latence d'opération | <1ms (dans le processus) | 10-50ms (aller-retour réseau) |
@@ -220,30 +220,30 @@ Gestion d'état via Potok (bibliothèque Redux-like pour atomes ClojureScript). 
 ## 10. Ce que Penpot fait mieux
 
 1. **Collaboration serveur** — édition multi-utilisateurs centralisée avec WebSockets, comptes et contrôle d'accès
-2. **Export PDF serveur** — service d'export Chromium headless pour PDF (Open Pencil exporte déjà en SVG nativement)
+2. **Export PDF serveur** — service d'export Chromium headless pour PDF (Inkly exporte déjà en SVG nativement)
 3. **Système de plugins** — API complète avec exécution sandboxée
 4. **Tokens de design** — support natif des design tokens
-5. **CSS Grid layout** — implémentation personnalisée (Open Pencil attend Yoga Grid)
+5. **CSS Grid layout** — implémentation personnalisée (Inkly attend Yoga Grid)
 6. **Self-hosting** — déploiement Docker pour les équipes
 7. **Maturité** — années d'utilisation en production
 
 ## 11. Scripting et extensibilité
 
-OpenPencil inclut une [commande `eval`](/programmable/cli/scripting) offrant une API Plugin compatible Figma pour le scripting headless. De plus, 90 outils IA sont disponibles via le chat intégré, le serveur MCP (stdio + HTTP) et le CLI. Penpot a un système de plugins avec exécution sandboxée mais pas d'API de scripting headless ni d'intégration MCP.
+Inkly inclut une [commande `eval`](/programmable/cli/scripting) offrant une API Plugin compatible Figma pour le scripting headless. De plus, 90 outils IA sont disponibles via le chat intégré, le serveur MCP (stdio + HTTP) et le CLI. Penpot a un système de plugins avec exécution sandboxée mais pas d'API de scripting headless ni d'intégration MCP.
 
 ## Résumé
 
 | Dimension | Gagnant | Pourquoi |
 |-----------|---------|----------|
-| **Simplicité architecturale** | Open Pencil | Un processus vs 5+ services |
-| **Performance de rendu** | Open Pencil | CanvasKit direct vs SVG DOM (défaut) ou WASM empaqueté |
-| **Maintenabilité du code** | Open Pencil | ~26K LOC en 1 langage vs 299K en 4+ |
-| **Compatibilité Figma** | Open Pencil | Codec Kiwi natif vs pas de support .fig |
-| **Onboarding développeur** | Open Pencil | TS/Vue vs Clojure/Rust/Docker |
-| **Expérience desktop** | Open Pencil | Tauri natif vs navigateur uniquement |
-| **Moteur de layout** | Open Pencil | Yoga (éprouvé) vs double implémentation |
-| **Collaboration** | Égalité | Penpot : serveur avec contrôle d'accès ; Open Pencil : P2P via Trystero + Yjs |
+| **Simplicité architecturale** | Inkly | Un processus vs 5+ services |
+| **Performance de rendu** | Inkly | CanvasKit direct vs SVG DOM (défaut) ou WASM empaqueté |
+| **Maintenabilité du code** | Inkly | ~26K LOC en 1 langage vs 299K en 4+ |
+| **Compatibilité Figma** | Inkly | Codec Kiwi natif vs pas de support .fig |
+| **Onboarding développeur** | Inkly | TS/Vue vs Clojure/Rust/Docker |
+| **Expérience desktop** | Inkly | Tauri natif vs navigateur uniquement |
+| **Moteur de layout** | Inkly | Yoga (éprouvé) vs double implémentation |
+| **Collaboration** | Égalité | Penpot : serveur avec contrôle d'accès ; Inkly : P2P via Trystero + Yjs |
 | **Self-hosting** | Penpot | Prêt Docker vs desktop uniquement |
 | **Maturité écosystème** | Penpot | Années de production vs stade précoce |
 
-Open Pencil est architecturalement plus léger — un renderer CanvasKit monoprocessus en ~26K LOC TypeScript, compatible Figma par conception. Penpot est une plateforme full-stack avec ~299K LOC. Open Pencil a le scripting headless, **90 outils AI/MCP**, export SVG et une app desktop native.
+Inkly est architecturalement plus léger — un renderer CanvasKit monoprocessus en ~26K LOC TypeScript, compatible Figma par conception. Penpot est une plateforme full-stack avec ~299K LOC. Inkly a le scripting headless, **90 outils AI/MCP**, export SVG et une app desktop native.

@@ -10,7 +10,7 @@ Edytujcie projekty razem w czasie rzeczywistym. Uczestnicy łączą się bezpoś
 ## Udostępnianie pokoju
 
 1. Kliknij przycisk udostępniania w prawym górnym rogu
-2. Skopiuj wygenerowany link (`app.openpencil.dev/share/<room-id>`)
+2. Skopiuj wygenerowany link (`app.inkly.dev/share/<room-id>`)
 3. Wyślij go swoim współpracownikom
 
 Każdy z linkiem może dołączyć. Pokój pozostaje aktywny, dopóki przynajmniej jeden uczestnik ma otwartą stronę.

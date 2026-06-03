@@ -8,7 +8,7 @@ import IconImageDown from '~icons/lucide/image-down'
 import IconSave from '~icons/lucide/save'
 import IconZoomIn from '~icons/lucide/zoom-in'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import { useEditorCommands, useI18n } from '@inkly/vue'
 
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'

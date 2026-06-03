@@ -4,7 +4,7 @@ import {
   encodeVectorNetworkBlob,
   decodeVectorNetworkBlob,
   type VectorNetwork
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import {
   lineNetwork,

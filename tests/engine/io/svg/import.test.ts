@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
-import { importSvg } from '@open-pencil/core/tools'
+import { FigmaAPI, SceneGraph } from '@inkly/core'
+import { importSvg } from '@inkly/core/tools'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 

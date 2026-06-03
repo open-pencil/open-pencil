@@ -9,9 +9,9 @@ CLI pozwala eksplorować pliki `.fig` bez otwierania edytora. Każde polecenie d
 
 ::: tip Instalacja
 ```sh
-npm install -g @open-pencil/cli
+npm install -g @inkly/cli
 # lub
-brew install open-pencil/tap/open-pencil
+brew install inkly/tap/inkly
 ```
 :::
 
@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Szybki przegląd — liczba stron, łączna liczba węzłów, użyte czcionki, rozmiar pliku:
 
 ```sh
-openpencil info design.fig
+inkly info design.fig
 ```
 
 ## Drzewo węzłów
@@ -28,7 +28,7 @@ openpencil info design.fig
 Wyświetl pełną hierarchię węzłów:
 
 ```sh
-openpencil tree design.fig
+inkly tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ openpencil tree design.fig
 Szukaj po typie:
 
 ```sh
-openpencil find design.fig --type TEXT
+inkly find design.fig --type TEXT
 ```
 
 Szukaj po nazwie:
 
 ```sh
-openpencil find design.fig --name "Button"
+inkly find design.fig --name "Button"
 ```
 
 Obie flagi można łączyć, aby zawęzić wyniki.
@@ -61,7 +61,7 @@ Obie flagi można łączyć, aby zawęzić wyniki.
 Sprawdź wszystkie właściwości konkretnego węzła po jego ID:
 
 ```sh
-openpencil node design.fig --id 1:23
+inkly node design.fig --id 1:23
 ```
 
 ## Strony
@@ -69,7 +69,7 @@ openpencil node design.fig --id 1:23
 Wylistuj wszystkie strony w dokumencie:
 
 ```sh
-openpencil pages design.fig
+inkly pages design.fig
 ```
 
 ## Zmienne
@@ -77,7 +77,7 @@ openpencil pages design.fig
 Wylistuj zmienne projektowe i ich kolekcje:
 
 ```sh
-openpencil variables design.fig
+inkly variables design.fig
 ```
 
 ## Tryb żywej aplikacji
@@ -85,8 +85,8 @@ openpencil variables design.fig
 Gdy aplikacja desktopowa jest uruchomiona, pomiń argument pliku — CLI łączy się przez RPC i operuje na żywym płótnie:
 
 ```sh
-openpencil tree              # przeglądaj żywy dokument
-openpencil eval -c "..."     # odpytuj edytor
+inkly tree              # przeglądaj żywy dokument
+inkly eval -c "..."     # odpytuj edytor
 ```
 
 ## Wyjście JSON
@@ -94,5 +94,5 @@ openpencil eval -c "..."     # odpytuj edytor
 Wszystkie polecenia obsługują `--json` dla wyjścia w formacie do odczytu maszynowego — przekieruj do `jq`, zasilaj skrypty CI lub przetwarzaj innymi narzędziami:
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+inkly tree design.fig --json | jq '.[] | .name'
 ```

@@ -351,7 +351,7 @@ export async function buildFigmaClipboardHTML(
     sessionID: 0,
     ackID: 0,
     pasteID: randomInt(),
-    pasteFileKey: 'openpencil',
+    pasteFileKey: 'inkly',
     nodeChanges
   }
 
@@ -364,7 +364,7 @@ export async function buildFigmaClipboardHTML(
   const bufferB64 = figKiwiBinary.toBase64()
 
   const meta: FigmaClipboardMeta = {
-    fileKey: 'openpencil',
+    fileKey: 'inkly',
     pasteID: msg.pasteID as number,
     dataType: 'scene'
   }
@@ -378,8 +378,8 @@ export async function buildFigmaClipboardHTML(
 }
 
 export {
-  buildOpenPencilClipboardHTML,
-  parseOpenPencilClipboard,
-  type OpenPencilClipboardData,
+  buildInklyClipboardHTML,
+  parseInklyClipboard,
+  type InklyClipboardData,
   type TextPictureBuilder
-} from './clipboard/openpencil'
+} from './clipboard/inkly'

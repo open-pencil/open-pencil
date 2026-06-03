@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { SceneNode } from '@inkly/core/scene-graph'
 
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 

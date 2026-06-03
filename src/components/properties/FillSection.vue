@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls, useOkHCL, useI18n } from '@open-pencil/vue'
+import { PropertyListRoot, useFillControls, useOkHCL, useI18n } from '@inkly/vue'
 
 import FillPicker from '@/components/FillPicker.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -13,7 +13,7 @@ import { createFillOkhclAdapter } from '@/components/properties/fill-okhcl'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { Fill, SceneNode } from '@open-pencil/core/scene-graph'
+import type { Fill, SceneNode } from '@inkly/core/scene-graph'
 
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()

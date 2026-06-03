@@ -1,6 +1,6 @@
 # Figma Feature Matrix
 
-Feature-by-feature comparison of Figma Design capabilities with Open Pencil's current implementation status.
+Feature-by-feature comparison of Figma Design capabilities with Inkly's current implementation status.
 
 ::: tip Status Legend
 ✅ Supported — feature works end-to-end · 🟡 Partial — core behavior exists, some sub-features missing · 🔲 Not yet implemented
@@ -218,7 +218,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Code snippets | 🟡 | JSX export with syntax highlighting and copy; no CSS/Swift/Kotlin snippets |
 | Tailwind CSS v4 export | ✅ | Export as HTML with Tailwind utility classes from Code panel, CLI, or programmatically |
 | Figma for VS Code | 🔲 | Editor plugin integration |
-| MCP server | ✅ | @open-pencil/mcp with stdio + HTTP transports; 87 core tools + 3 file management tools = 90 total |
+| MCP server | ✅ | @inkly/mcp with stdio + HTTP transports; 87 core tools + 3 file management tools = 90 total |
 | CLI tools | ✅ | Headless CLI: info, tree, find, export, analyze, node, pages, variables, eval; MCP server with stdio + HTTP |
 
 ## Figma Draw

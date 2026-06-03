@@ -1,6 +1,6 @@
 ---
 title: Dibujar formas
-description: Crear rectángulos, elipses, líneas, marcos y secciones en OpenPencil.
+description: Crear rectángulos, elipses, líneas, marcos y secciones en Inkly.
 ---
 # Dibujar formas
 

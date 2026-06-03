@@ -1,15 +1,15 @@
 import type { Ref } from 'vue'
 
-import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
-import { BLACK } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
-import { randomHex } from '@open-pencil/core/random'
+import { colorToHexRaw, parseColor } from '@inkly/core/color'
+import { BLACK } from '@inkly/core/constants'
+import type { Editor } from '@inkly/core/editor'
+import { randomHex } from '@inkly/core/random'
 import type {
   Variable,
   VariableCollection,
   VariableType,
   VariableValue
-} from '@open-pencil/core/scene-graph'
+} from '@inkly/core/scene-graph'
 
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
   function setActiveCollection(id: string) {

@@ -9,9 +9,9 @@ El CLI te permite explorar archivos `.fig` sin abrir el editor. Cada comando tam
 
 ::: tip Instalar
 ```sh
-npm install -g @open-pencil/cli
+npm install -g @inkly/cli
 # o
-brew install open-pencil/tap/open-pencil
+brew install inkly/tap/inkly
 ```
 :::
 
@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Obtén un resumen rápido — cantidad de páginas, nodos totales, fuentes utilizadas, tamaño del archivo:
 
 ```sh
-openpencil info design.fig
+inkly info design.fig
 ```
 
 ## Árbol de Nodos
@@ -28,7 +28,7 @@ openpencil info design.fig
 Imprime la jerarquía completa de nodos:
 
 ```sh
-openpencil tree design.fig
+inkly tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ openpencil tree design.fig
 Buscar por tipo:
 
 ```sh
-openpencil find design.fig --type TEXT
+inkly find design.fig --type TEXT
 ```
 
 Buscar por nombre:
 
 ```sh
-openpencil find design.fig --name "Button"
+inkly find design.fig --name "Button"
 ```
 
 Ambos flags se pueden combinar para refinar aún más los resultados.
@@ -61,7 +61,7 @@ Ambos flags se pueden combinar para refinar aún más los resultados.
 Inspecciona todas las propiedades de un nodo específico por su ID:
 
 ```sh
-openpencil node design.fig --id 1:23
+inkly node design.fig --id 1:23
 ```
 
 ## Páginas
@@ -69,7 +69,7 @@ openpencil node design.fig --id 1:23
 Lista todas las páginas del documento:
 
 ```sh
-openpencil pages design.fig
+inkly pages design.fig
 ```
 
 ## Variables
@@ -77,7 +77,7 @@ openpencil pages design.fig
 Lista las variables de diseño y sus colecciones:
 
 ```sh
-openpencil variables design.fig
+inkly variables design.fig
 ```
 
 ## Modo Aplicación en Vivo
@@ -85,8 +85,8 @@ openpencil variables design.fig
 Cuando la aplicación de escritorio está en ejecución, omite el argumento de archivo — el CLI se conecta vía RPC y opera sobre el lienzo en vivo:
 
 ```sh
-openpencil tree              # inspeccionar el documento en vivo
-openpencil eval -c "..."     # consultar el editor
+inkly tree              # inspeccionar el documento en vivo
+inkly eval -c "..."     # consultar el editor
 ```
 
 ## Salida JSON
@@ -94,5 +94,5 @@ openpencil eval -c "..."     # consultar el editor
 Todos los comandos soportan `--json` para salida legible por máquinas — envía a `jq`, alimenta scripts de CI, o procesa con otras herramientas:
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+inkly tree design.fig --json | jq '.[] | .name'
 ```

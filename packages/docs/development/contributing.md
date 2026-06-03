@@ -4,19 +4,19 @@
 
 ```
 packages/
-  core/              @open-pencil/core — engine (zero DOM deps)
+  core/              @inkly/core — engine (zero DOM deps)
     src/             Scene graph, renderer, layout, codec, kiwi, types
-  cli/               @open-pencil/cli — headless CLI for .fig operations
+  cli/               @inkly/cli — headless CLI for .fig operations
     src/commands/    info, tree, find, export, eval, analyze
-  mcp/               @open-pencil/mcp — MCP server for AI tools
+  mcp/               @inkly/mcp — MCP server for AI tools
     src/             stdio + HTTP (Hono) transports, 87 tools
 src/
   components/        Vue SFCs (canvas, panels, toolbar, color picker)
     properties/      Property panel sections (Appearance, Fill, Stroke, etc.)
   composables/       Canvas input, keyboard shortcuts, rendering hooks
   stores/            Editor state (Vue reactivity)
-  engine/            Re-export shims from @open-pencil/core
-  kiwi/              Re-export shims from @open-pencil/core
+  engine/            Re-export shims from @inkly/core
+  kiwi/              Re-export shims from @inkly/core
   types.ts           Shared types (re-exported from core)
   constants.ts       UI colors, defaults, thresholds
 desktop/             Tauri v2 (Rust + config)
@@ -60,7 +60,7 @@ bun run check
 
 ### AI Agent Conventions
 
-Developers and AI agents working on the codebase should read `AGENTS.md` in the repo root ([view on GitHub](https://github.com/open-pencil/open-pencil/blob/master/AGENTS.md)). Covers rendering, scene graph, components & instances, layout, UI, file format, Tauri conventions, and known issues.
+Developers and AI agents working on the codebase should read `AGENTS.md` in the repo root ([view on GitHub](https://github.com/cardene777/open-pencil/blob/master/AGENTS.md)). Covers rendering, scene graph, components & instances, layout, UI, file format, Tauri conventions, and known issues.
 
 ## Making Changes
 

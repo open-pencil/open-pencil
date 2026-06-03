@@ -7,7 +7,7 @@ import {
   computeAllLayouts,
   Frame,
   Rectangle
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

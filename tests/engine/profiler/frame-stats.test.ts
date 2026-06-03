@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { FrameStats } from '@open-pencil/core'
+import { FrameStats } from '@inkly/core'
 
 describe('FrameStats', () => {
   it('records frames and computes rolling averages', () => {

@@ -5,7 +5,7 @@ description: Buduj panele właściwości z kompozytami kontrolek i bezstanowymi 
 
 # Panele właściwości
 
-Panele właściwości w `@open-pencil/vue` są celowo oparte na kompozytach.
+Panele właściwości w `@inkly/vue` są celowo oparte na kompozytach.
 
 Jeśli panel potrzebuje głównie wartości pochodnych od selekcji i akcji aktualizacji, preferuj kompozyty.
 Jeśli panel potrzebuje wielokrotnie używalnej struktury tablicowej/listowej, użyj bezstanowego prymitywu jak `PropertyListRoot`.
@@ -30,7 +30,7 @@ Dla paneli listowych użyj:
 
 ```vue
 <script setup lang="ts">
-import { usePosition } from '@open-pencil/vue'
+import { usePosition } from '@inkly/vue'
 
 const { x, y, width, height, updateProp, commitProp } = usePosition()
 </script>
@@ -49,7 +49,7 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import { PropertyListRoot, useFillControls } from '@inkly/vue'
 
 const fillControls = useFillControls()
 </script>

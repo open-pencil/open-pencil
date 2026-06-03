@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import { renderJSX, sceneNodeToJSX } from '@open-pencil/core'
+import { renderJSX, sceneNodeToJSX } from '@inkly/core'
 
 import { getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
 import { makeSceneGraph } from '#tests/helpers/scene'

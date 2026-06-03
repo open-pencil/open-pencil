@@ -10,8 +10,8 @@ import {
   parseFigKiwiChunks,
   type SceneGraph,
   type SceneNode
-} from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/core/types'
+} from '@inkly/core'
+import type { JsonObject } from '@inkly/core/types'
 
 import {
   type Mismatch,

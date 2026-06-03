@@ -13,7 +13,7 @@ const { frontmatter } = useData()
       <div v-if="frontmatter.layout === 'home'" class="screenshot">
         <img
           src="/screenshot.png"
-          alt="OpenPencil editor with a Material 3 design file open"
+          alt="Inkly editor with a Material 3 design file open"
         />
       </div>
     </template>

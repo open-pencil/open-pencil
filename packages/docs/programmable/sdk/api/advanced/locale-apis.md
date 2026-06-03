@@ -1,6 +1,6 @@
 ---
 title: Locale APIs
-description: Lower-level locale stores and metadata exported by @open-pencil/vue.
+description: Lower-level locale stores and metadata exported by @inkly/vue.
 ---
 
 # Locale APIs
@@ -24,7 +24,7 @@ import {
   setLocale,
   AVAILABLE_LOCALES,
   LOCALE_LABELS,
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 ```
 
 ## Notes

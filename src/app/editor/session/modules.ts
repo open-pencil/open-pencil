@@ -1,8 +1,8 @@
 import { computed } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { IORegistry } from '@open-pencil/core/io'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { IORegistry } from '@inkly/core/io'
+import type { SceneGraph } from '@inkly/core/scene-graph'
 
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'

@@ -1,11 +1,11 @@
 ---
 title: Composables
-description: Kern-Composable-APIs in @open-pencil/vue.
+description: Kern-Composable-APIs in @inkly/vue.
 ---
 
 # Composables
 
-Dies sind die wichtigsten Composables, die die meisten `@open-pencil/vue`-Nutzer verwenden werden.
+Dies sind die wichtigsten Composables, die die meisten `@inkly/vue`-Nutzer verwenden werden.
 
 ## Kontext und Canvas
 

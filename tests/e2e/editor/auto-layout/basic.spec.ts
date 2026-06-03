@@ -25,8 +25,8 @@ test.afterAll(async () => {
 async function selectFrame() {
   expect(frameId, 'frameId must be set — did the Shift+A test run?').toBeTruthy()
   await page.evaluate((id: string) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     store.select([id])
   }, frameId)
   await canvas.waitForRender()

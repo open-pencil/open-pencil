@@ -10,8 +10,8 @@ test('font settings popover exposes web font access without desktop-only cache a
   await canvas.waitForInit()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = store.createShape('TEXT', 120, 120, 240, 40)
     store.updateNode(id, { characters: 'Font settings smoke' })
     store.select([id])

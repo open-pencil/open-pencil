@@ -5,17 +5,17 @@ import VariablePickerPopover from '@/components/properties/VariablePickerPopover
 import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 
-import { vTestId, useI18n } from '@open-pencil/vue'
+import { vTestId, useI18n } from '@inkly/vue'
 
 import {
   opacityFromPercent,
   opacityPercent,
   variableSwatchBackground
 } from '@/components/properties/color-style-row'
-import { colorToHexRaw } from '@open-pencil/core/color'
+import { colorToHexRaw } from '@inkly/core/color'
 
 import type { ColorVariableBindingApi } from '@/components/properties/color-style-row'
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@inkly/core/types'
 
 const {
   item,

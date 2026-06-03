@@ -1,5 +1,5 @@
-import { SceneGraph } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/core'
+import { SceneGraph } from '@inkly/core'
+import type { SceneNode } from '@inkly/core'
 
 export function makeSceneGraph(pageName = 'Test'): SceneGraph {
   const graph = new SceneGraph()

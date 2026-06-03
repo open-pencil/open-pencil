@@ -1,6 +1,6 @@
 ---
 title: Dokumentacja API
-description: Dokumentacja referencyjna komponentów, kompozytów i zaawansowanych API @open-pencil/vue.
+description: Dokumentacja referencyjna komponentów, kompozytów i zaawansowanych API @inkly/vue.
 ---
 
 # Dokumentacja API

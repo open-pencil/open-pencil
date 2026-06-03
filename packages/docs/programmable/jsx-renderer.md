@@ -5,7 +5,7 @@ description: Create designs with JSX — the syntax LLMs already know from milli
 
 # JSX Renderer
 
-OpenPencil uses JSX as its design creation language. LLMs have seen millions of React components — describing a layout as `<Frame><Text>` is natural, no special training needed. Every token matters when an AI agent performs dozens of operations, and JSX is the most compact declarative representation.
+Inkly uses JSX as its design creation language. LLMs have seen millions of React components — describing a layout as `<Frame><Text>` is natural, no special training needed. Every token matters when an AI agent performs dozens of operations, and JSX is the most compact declarative representation.
 
 JSX is also diffable. When an AI modifies a design, the change is a JSX diff — readable, reviewable, version-controllable.
 
@@ -95,8 +95,8 @@ Compact shorthand props inspired by Tailwind's naming.
 Convert existing designs back to JSX:
 
 ```sh
-openpencil export design.fig -f jsx                   # OpenPencil format
-openpencil export design.fig -f jsx --style tailwind  # Tailwind classes
+inkly export design.fig -f jsx                   # Inkly format
+inkly export design.fig -f jsx --style tailwind  # Tailwind classes
 ```
 
 The round-trip works: export a design as JSX, modify the code, render it back.

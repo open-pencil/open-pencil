@@ -1,6 +1,6 @@
 ---
 title: Exportar
-description: Exportar imágenes (PNG, JPG, WEBP, SVG) y gestionar archivos .fig en OpenPencil.
+description: Exportar imágenes (PNG, JPG, WEBP, SVG) y gestionar archivos .fig en Inkly.
 ---
 # Exportar
 
@@ -44,7 +44,7 @@ Los archivos guardados se comprimen e incluyen una imagen en miniatura para vist
 
 ### Compatibilidad de ida y vuelta
 
-Los archivos exportados desde OpenPencil se pueden abrir en Figma, y viceversa. El formato .fig preserva todos los tipos de nodos, propiedades, rellenos, trazos, efectos, datos vectoriales y configuración de layout.
+Los archivos exportados desde Inkly se pueden abrir en Figma, y viceversa. El formato .fig preserva todos los tipos de nodos, propiedades, rellenos, trazos, efectos, datos vectoriales y configuración de layout.
 
 ## Consejos
 

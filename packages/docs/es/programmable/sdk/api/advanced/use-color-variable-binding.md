@@ -12,7 +12,7 @@ description: Helper de vinculación de variables para editores de color de relle
 ## Uso
 
 ```ts
-import { useColorVariableBinding } from '@open-pencil/vue'
+import { useColorVariableBinding } from '@inkly/vue'
 
 const fillBinding = useColorVariableBinding('fills')
 const strokeBinding = useColorVariableBinding('strokes')

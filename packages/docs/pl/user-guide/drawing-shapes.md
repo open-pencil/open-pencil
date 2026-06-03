@@ -1,6 +1,6 @@
 ---
 title: Rysowanie kształtów
-description: Tworzenie prostokątów, elips, linii, ramek i sekcji w OpenPencil.
+description: Tworzenie prostokątów, elips, linii, ramek i sekcji w Inkly.
 ---
 # Rysowanie kształtów
 

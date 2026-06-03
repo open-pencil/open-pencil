@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { computeAllLayouts, parseFigFile, type SceneGraph, type SceneNode } from '@open-pencil/core'
+import { computeAllLayouts, parseFigFile, type SceneGraph, type SceneNode } from '@inkly/core'
 
 import { computeContentBounds } from '#core/io/formats/raster/render'
 

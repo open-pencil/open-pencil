@@ -145,7 +145,7 @@ export class RenderProfiler {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `openpencil-frame-${Date.now()}.speedscope.json`
+    a.download = `inkly-frame-${Date.now()}.speedscope.json`
     a.click()
     URL.revokeObjectURL(url)
   }

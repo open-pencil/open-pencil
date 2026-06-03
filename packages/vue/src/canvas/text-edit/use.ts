@@ -1,7 +1,7 @@
 import { useEventListener } from '@vueuse/core'
 import { shallowRef, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 import { createTextClipboardActions } from './clipboard'
 import { createCaretBlink, createTextCompositionHandlers, createTextEditActions } from './editing'

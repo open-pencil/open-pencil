@@ -23,8 +23,8 @@ async function dblclickCanvas(page: Page, x: number, y: number) {
 
 async function setupAutoLayoutFrame(page: Page) {
   return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
 
     store.state.panX = 0
     store.state.panY = 0
@@ -59,8 +59,8 @@ async function setupAutoLayoutFrame(page: Page) {
 
 async function framePaddingTop(page: Page, frameId: string) {
   return page.evaluate((id) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     return store.graph.getNode(id)?.paddingTop ?? null
   }, frameId)
 }
@@ -128,8 +128,8 @@ test('auto-layout padding editor follows canvas pan while open', async ({ page }
   if (!before) throw new Error('Padding editor has no bounding box')
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     store.pan(40, 0)
   })
   await canvas.waitForRender()

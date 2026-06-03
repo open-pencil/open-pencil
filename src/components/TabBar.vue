@@ -4,7 +4,7 @@ import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 import Tip from '@/components/ui/Tip.vue'
 import { useTabsStore, createTab } from '@/app/tabs'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { dialogs } = useI18n()
 

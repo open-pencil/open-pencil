@@ -1,6 +1,6 @@
 ---
 title: Erweitert
-description: Hilfsmittel auf niedrigerem Level und spezialisierte APIs in @open-pencil/vue.
+description: Hilfsmittel auf niedrigerem Level und spezialisierte APIs in @inkly/vue.
 ---
 
 # Erweitert

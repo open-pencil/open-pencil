@@ -9,8 +9,8 @@ test('pages and layers panels scroll inside splitter panes', async ({ page }) =>
   canvas.errors.length = 0
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     for (let i = 0; i < 40; i++) store.addPage(`Page ${i + 2}`)
     const pageId = store.state.currentPageId
     for (let i = 0; i < 80; i++) {

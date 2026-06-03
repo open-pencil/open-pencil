@@ -1,27 +1,27 @@
 ---
 layout: home
-title: OpenPencil — Open-Source'owy Edytor Graficzny
+title: Inkly — Open-Source'owy Edytor Graficzny
 description: Open-source'owa alternatywa dla Figma. Otwiera pliki .fig, wbudowane AI, w pełni programowalny.
 
 hero:
-  name: OpenPencil
+  name: Inkly
   text: Open-Source'owy Edytor Graficzny
   tagline: Otwiera pliki Figmy. Wbudowane AI. W pełni programowalny. Za darmo na zawsze.
   actions:
     - theme: brand
       text: Wypróbuj online
-      link: https://app.openpencil.dev/demo
+      link: https://app.inkly.dev/demo
     - theme: alt
       text: Pobierz
-      link: https://github.com/open-pencil/open-pencil/releases/latest
+      link: https://github.com/cardene777/open-pencil/releases/latest
     - theme: alt
       text: GitHub
-      link: https://github.com/open-pencil/open-pencil
+      link: https://github.com/cardene777/open-pencil
 
 features:
   - icon: 📂
     title: Kompatybilny z Figmą
-    details: Otwiera pliki .fig natywnie. Kopiuj i wklej między Figmą a OpenPencil. Kodek binarny Kiwi z wiernością round-trip.
+    details: Otwiera pliki .fig natywnie. Kopiuj i wklej między Figmą a Inkly. Kodek binarny Kiwi z wiernością round-trip.
   - icon: ⚡
     title: Programowalny
     details: Headless CLI do inspekcji, eksportu i analizy plików .fig. Figma Plugin API przez eval. Eksport Tailwind CSS. Wyjście JSON dla CI.

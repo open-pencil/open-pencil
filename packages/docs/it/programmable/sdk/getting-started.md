@@ -1,6 +1,6 @@
 ---
 title: Per Iniziare con l'SDK
-description: Configura @open-pencil/vue con createEditor, provideEditor e un canvas.
+description: Configura @inkly/vue con createEditor, provideEditor e un canvas.
 ---
 
 # Per Iniziare con l'SDK
@@ -8,22 +8,22 @@ description: Configura @open-pencil/vue con createEditor, provideEditor e un can
 ## Installazione
 
 ```bash
-bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
+bun add @inkly/core @inkly/vue canvaskit-wasm
 ```
 
-L'SDK risiede oggi nel monorepo ed è pubblicato anche come `@open-pencil/vue`.
+L'SDK risiede oggi nel monorepo ed è pubblicato anche come `@inkly/vue`.
 
 ```ts
-import { createEditor } from '@open-pencil/core/editor'
-import { provideEditor, useCanvas } from '@open-pencil/vue'
+import { createEditor } from '@inkly/core/editor'
+import { provideEditor, useCanvas } from '@inkly/vue'
 ```
 
 ## Modello concettuale
 
 Ci sono tre livelli:
 
-1. `@open-pencil/core` — motore editor indipendente dal framework
-2. `@open-pencil/vue` — composable Vue e primitive headless
+1. `@inkly/core` — motore editor indipendente dal framework
+2. `@inkly/vue` — composable Vue e primitive headless
 3. la tua app — stile, routing, flussi di file, UI specifica del prodotto
 
 ## Configurazione minimale
@@ -31,7 +31,7 @@ Ci sono tre livelli:
 ### 1. Crea un editor
 
 ```ts
-import { createEditor } from '@open-pencil/core/editor'
+import { createEditor } from '@inkly/core/editor'
 
 const editor = createEditor({
   width: 1200,
@@ -43,9 +43,9 @@ const editor = createEditor({
 
 ```vue
 <script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
+import { provideEditor } from '@inkly/vue'
 
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor } from '@inkly/core/editor'
 
 const props = defineProps<{
   editor: Editor
@@ -67,7 +67,7 @@ Puoi considerarlo il livello provider per l'albero dell'editor. La documentazion
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas, useEditor } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -85,7 +85,7 @@ useCanvas(canvasRef, editor)
 Una volta fornito l'editor, i componenti figli possono leggere la selezione e invocare comandi:
 
 ```ts
-import { useEditorCommands, useSelectionState } from '@open-pencil/vue'
+import { useEditorCommands, useSelectionState } from '@inkly/vue'
 
 const selection = useSelectionState()
 const commands = useEditorCommands()
@@ -97,7 +97,7 @@ const commands = useEditorCommands()
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor, useSelectionState } from '@open-pencil/vue'
+import { useCanvas, useEditor, useSelectionState } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

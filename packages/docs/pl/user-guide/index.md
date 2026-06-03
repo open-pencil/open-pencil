@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: Podręcznik użytkownika
-description: Naucz się korzystać z OpenPencil — nawigacja po płótnie, rysowanie, tekst, komponenty, auto-layout i więcej.
+description: Naucz się korzystać z Inkly — nawigacja po płótnie, rysowanie, tekst, komponenty, auto-layout i więcej.
 ---
 
 # Podręcznik użytkownika
 
-OpenPencil to open-source'owy edytor graficzny, kompatybilny z Figmą — w pełni lokalny, natywnie AI i programowalny.
+Inkly to open-source'owy edytor graficzny, kompatybilny z Figmą — w pełni lokalny, natywnie AI i programowalny.
 
 ::: tip Skróty klawiszowe
 <kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> na Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.

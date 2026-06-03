@@ -1,6 +1,6 @@
 ---
 title: Avancé
-description: API de bas niveau et spécialisées dans @open-pencil/vue.
+description: API de bas niveau et spécialisées dans @inkly/vue.
 ---
 
 # Avancé

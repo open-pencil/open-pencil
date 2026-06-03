@@ -1,6 +1,6 @@
 ---
 title: useCanvas
-description: Подключение рендеринга на базе CanvasKit к элементу canvas для редактора OpenPencil.
+description: Подключение рендеринга на базе CanvasKit к элементу canvas для редактора Inkly.
 ---
 
 # useCanvas
@@ -21,7 +21,7 @@ description: Подключение рендеринга на базе CanvasKit
 ```ts
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas, useEditor } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()
@@ -35,7 +35,7 @@ useCanvas(canvasRef, editor)
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
+import { useCanvas, useEditor } from '@inkly/vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const editor = useEditor()

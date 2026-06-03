@@ -2,7 +2,7 @@
 import { isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
-import { vTestId } from '@open-pencil/vue'
+import { vTestId } from '@inkly/vue'
 import 'vue-stream-markdown/index.css'
 
 import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import Tip from '@/components/ui/Tip.vue'
 import { useSectionUI } from '@/components/ui/section'
-import { useI18n, useSceneComputed } from '@open-pencil/vue'
+import { useI18n, useSceneComputed } from '@inkly/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 

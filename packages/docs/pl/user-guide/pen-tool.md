@@ -1,6 +1,6 @@
 ---
 title: Narzędzie pióro
-description: Ścieżki wektorowe z krzywymi Béziera in OpenPencil.
+description: Ścieżki wektorowe z krzywymi Béziera in Inkly.
 ---
 # Narzędzie pióro
 
@@ -19,7 +19,7 @@ Click the first point to close into a loop.
 <kbd>Escape</kbd> to commit as open path.
 
 ## Sieci wektorowe
-Ścieżki w OpenPencil korzystają z sieci wektorowych — elastycznego modelu obsługującego rozgałęzione ścieżki i złożoną topologię. Jest to ten sam model, co w Figmie, więc ścieżki zachowują pełną kompatybilność z plikami .fig.
+Ścieżki w Inkly korzystają z sieci wektorowych — elastycznego modelu obsługującego rozgałęzione ścieżki i złożoną topologię. Jest to ten sam model, co w Figmie, więc ścieżki zachowują pełną kompatybilność z plikami .fig.
 
 ## Skróty klawiszowe
 

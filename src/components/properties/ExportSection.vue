@@ -6,9 +6,9 @@ import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 import { useEditorStore } from '@/app/editor/active-store'
-import { useExport, useI18n } from '@open-pencil/vue'
+import { useExport, useI18n } from '@inkly/vue'
 
-import type { ExportFormatId } from '@open-pencil/vue'
+import type { ExportFormatId } from '@inkly/vue'
 
 const editorStore = useEditorStore()
 const { panels } = useI18n()

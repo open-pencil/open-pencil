@@ -1,27 +1,27 @@
 ---
 layout: home
-title: OpenPencil — Дизайн-редактор с открытым кодом
+title: Inkly — Дизайн-редактор с открытым кодом
 description: Альтернатива Figma с открытым исходным кодом. Открывает файлы .fig, встроенный ИИ, полностью программируемый.
 
 hero:
-  name: OpenPencil
+  name: Inkly
   text: Дизайн-редактор с открытым кодом
   tagline: Открывает файлы Figma. Встроенный ИИ. Полностью программируемый. Бесплатно навсегда.
   actions:
     - theme: brand
       text: Попробовать онлайн
-      link: https://app.openpencil.dev/demo
+      link: https://app.inkly.dev/demo
     - theme: alt
       text: Скачать
-      link: https://github.com/open-pencil/open-pencil/releases/latest
+      link: https://github.com/cardene777/open-pencil/releases/latest
     - theme: alt
       text: GitHub
-      link: https://github.com/open-pencil/open-pencil
+      link: https://github.com/cardene777/open-pencil
 
 features:
   - icon: 📂
     title: Совместимость с Figma
-    details: Нативное открытие файлов .fig. Копирование и вставка между Figma и OpenPencil. Бинарный кодек Kiwi с точным сохранением данных.
+    details: Нативное открытие файлов .fig. Копирование и вставка между Figma и Inkly. Бинарный кодек Kiwi с точным сохранением данных.
   - icon: ⚡
     title: Программируемый
     details: Headless CLI для инспекции, экспорта и анализа файлов .fig. Figma Plugin API через eval. Экспорт в Tailwind CSS. JSON-вывод для CI.

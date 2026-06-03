@@ -1,6 +1,6 @@
 ---
 title: Auto Layout
-description: Flex and grid layout in OpenPencil — direction, gap, padding, alignment, child sizing, and CSS Grid tracks.
+description: Flex and grid layout in Inkly — direction, gap, padding, alignment, child sizing, and CSS Grid tracks.
 ---
 
 # Auto Layout

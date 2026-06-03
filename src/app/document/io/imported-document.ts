@@ -1,6 +1,6 @@
-import type { Editor } from '@open-pencil/core/editor'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import { computeAllLayouts } from '@inkly/core/layout'
+import type { SceneGraph, SceneNode } from '@inkly/core/scene-graph'
 
 export async function applyImportedDocument(editor: Editor, imported: SceneGraph) {
   const firstPage = imported.getPages()[0] as SceneNode | undefined

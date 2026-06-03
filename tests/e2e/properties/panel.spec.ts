@@ -76,8 +76,8 @@ test('variable bind badge appears on fill', async () => {
   await editor.canvas.drawRect(200, 200, 80, 80)
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const col = store.graph.createCollection('Colors')
     const v = store.graph.createVariable('brand-red', 'COLOR', col.id, { r: 1, g: 0, b: 0, a: 1 })
     const id = [...store.state.selectedIds][0]
@@ -96,8 +96,8 @@ test('fill color can bind an existing variable', async () => {
   await editor.canvas.drawRect(200, 200, 80, 80)
 
   await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const col = store.graph.createCollection('Colors')
     const variable = store.graph.createVariable('test-brand-red', 'COLOR', col.id, {
       r: 1,
@@ -125,8 +125,8 @@ test('fill color can bind an existing variable', async () => {
   await editor.canvas.waitForRender()
   await expect(editor.page.getByTestId('fill-unbind-variable')).toBeHidden()
   const boundVariableId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = [...store.state.selectedIds][0]
     return id ? (store.getNode(id)?.boundVariables['fills/0/color'] ?? null) : null
   })
@@ -147,8 +147,8 @@ test('fill color can create and bind a variable', async () => {
 
   await expect(editor.page.getByTestId('fill-unbind-variable')).toBeVisible()
   const boundVariable = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const node = store.getNode(id)
@@ -173,8 +173,8 @@ test('width can create, bind, and detach a number variable', async () => {
 
   await expect(editor.page.getByTestId('layout-width-unbind-variable')).toBeVisible()
   const boundVariable = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = [...store.state.selectedIds][0]
     if (!id) return null
     const node = store.getNode(id)
@@ -192,8 +192,8 @@ test('width can create, bind, and detach a number variable', async () => {
 
   await expect(editor.page.getByTestId('layout-width-unbind-variable')).toBeHidden()
   const directWidth = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     const id = [...store.state.selectedIds][0]
     const node = id ? store.getNode(id) : null
     return node ? { width: node.width, binding: node.boundVariables.width ?? null } : null

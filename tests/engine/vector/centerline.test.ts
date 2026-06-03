@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { Vector } from '@open-pencil/core'
-import type { VectorNetwork } from '@open-pencil/core/scene-graph'
-import { fitCircleArc, isClosedThinCrescent } from '@open-pencil/core/vector'
+import type { Vector } from '@inkly/core'
+import type { VectorNetwork } from '@inkly/core/scene-graph'
+import { fitCircleArc, isClosedThinCrescent } from '@inkly/core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
 

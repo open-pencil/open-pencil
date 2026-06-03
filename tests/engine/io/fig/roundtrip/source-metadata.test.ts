@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { guidToString } from '@open-pencil/core/kiwi/fig/node-change/convert'
-import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
+import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@inkly/core'
+import { guidToString } from '@inkly/core/kiwi/fig/node-change/convert'
+import { parseFigBuffer } from '@inkly/core/kiwi/fig/parse/core'
 
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
@@ -382,7 +382,7 @@ describe('fig roundtrip source metadata', () => {
     vector.source.id = '4:465'
     vector.source.fig.rawNodeFields.vectorData = {
       normalizedSize: { x: 0, y: 0 },
-      vectorNetworkBlob: { __openPencilFigmaBlob: rawVectorBlob }
+      vectorNetworkBlob: { __inklyFigmaBlob: rawVectorBlob }
     }
 
     const decoded = decodeExport(await exportFigFile(graph))

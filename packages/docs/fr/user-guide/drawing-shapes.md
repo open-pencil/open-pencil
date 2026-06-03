@@ -1,6 +1,6 @@
 ---
 title: Dessiner des formes
-description: Créer des rectangles, ellipses, lignes, cadres et sections dans OpenPencil.
+description: Créer des rectangles, ellipses, lignes, cadres et sections dans Inkly.
 ---
 # Dessiner des formes
 

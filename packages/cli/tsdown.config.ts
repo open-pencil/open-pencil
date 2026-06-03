@@ -11,7 +11,7 @@ export default defineConfig({
   outDir: './dist',
   treeshake: false,
   deps: {
-    neverBundle: ['@open-pencil/core', /^@open-pencil\/core\//, 'canvaskit-wasm', /^node:/],
+    neverBundle: ['@inkly/core', /^@inkly\/core\//, 'canvaskit-wasm', /^node:/],
     onlyBundle: false
   }
 })

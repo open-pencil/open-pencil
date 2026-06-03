@@ -1,6 +1,6 @@
 ---
 title: Selection & Manipulation
-description: Selecting, moving, resizing, rotating, duplicating, and organizing nodes in OpenPencil.
+description: Selecting, moving, resizing, rotating, duplicating, and organizing nodes in Inkly.
 ---
 
 # Selection & Manipulation

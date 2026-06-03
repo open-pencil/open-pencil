@@ -1,4 +1,4 @@
-import { buildComponent, createElement, resolveToTree } from '@open-pencil/core/design-jsx'
+import { buildComponent, createElement, resolveToTree } from '@inkly/core/design-jsx'
 
 export function preprocessRpc(body: Record<string, unknown>): Record<string, unknown> {
   if (body.command !== 'tool') return body

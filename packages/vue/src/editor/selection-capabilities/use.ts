@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import { canMakeBooleanSourceNode, hasVisibleStrokeSourceNode } from '@open-pencil/core/canvas'
+import { canMakeBooleanSourceNode, hasVisibleStrokeSourceNode } from '@inkly/core/canvas'
 
 import { useSelectionState } from '#vue/editor/selection-state/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

@@ -1,6 +1,6 @@
 ---
 title: Calques et pages
-description: Gérer les calques, pages et le panneau des propriétés dans OpenPencil.
+description: Gérer les calques, pages et le panneau des propriétés dans Inkly.
 ---
 # Calques et pages
 

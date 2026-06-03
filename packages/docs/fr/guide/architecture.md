@@ -51,7 +51,7 @@ Voir la [Référence du graphe de scène](/reference/scene-graph) pour les déta
 
 ### Moteur de layout (Yoga WASM)
 
-Yoga de Meta fournit le calcul de layout CSS flexbox et grid via un [fork](https://github.com/open-pencil/yoga/tree/grid) avec support CSS Grid. Un adaptateur fin mappe les noms de propriétés Figma vers les équivalents Yoga :
+Yoga de Meta fournit le calcul de layout CSS flexbox et grid via un [fork](https://github.com/inkly/yoga/tree/grid) avec support CSS Grid. Un adaptateur fin mappe les noms de propriétés Figma vers les équivalents Yoga :
 
 | Propriété Figma | Équivalent Yoga |
 |---|---|

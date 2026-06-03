@@ -19,7 +19,7 @@ Proporciona helpers para:
 ## Uso
 
 ```ts
-import { useEffectsControls } from '@open-pencil/vue'
+import { useEffectsControls } from '@inkly/vue'
 
 const effects = useEffectsControls()
 ```

@@ -17,7 +17,7 @@ Fornisce:
 ## Utilizzo
 
 ```ts
-import { useStrokeControls } from '@open-pencil/vue'
+import { useStrokeControls } from '@inkly/vue'
 
 const strokes = useStrokeControls()
 ```

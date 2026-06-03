@@ -1,5 +1,5 @@
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { SceneGraph } from '@inkly/core/scene-graph'
 
 import { createVectorEditHandleActions } from './handle-actions'
 import { createVectorEditLifecycle } from './lifecycle'

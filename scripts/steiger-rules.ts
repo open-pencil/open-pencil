@@ -183,7 +183,7 @@ function filePrefix(filePath: string): string | null {
 }
 
 const preferDomainFoldersOverFilenamePrefixes: Rule = {
-  name: 'open-pencil/prefer-domain-folders-over-filename-prefixes',
+  name: 'inkly/prefer-domain-folders-over-filename-prefixes',
   check(root) {
     const diagnostics: Diagnostic[] = []
     for (const folder of collectFolders(root)) {
@@ -211,7 +211,7 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
 }
 
 const strictTestFilePlacement = createFileRule(
-  'open-pencil/strict-test-file-placement',
+  'inkly/strict-test-file-placement',
   (sourceRel) => {
     if (!sourceRel.startsWith('tests/')) return null
     if (!TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
@@ -267,7 +267,7 @@ const ENGINE_TEST_DOMAIN_REDIRECTS: Array<{
 ]
 
 const noMisplacedEngineTestDomainPaths = createFileRule(
-  'open-pencil/no-misplaced-engine-test-domain-paths',
+  'inkly/no-misplaced-engine-test-domain-paths',
   (sourceRel) => {
     const redirect = ENGINE_TEST_DOMAIN_REDIRECTS.find(({ from }) => sourceRel.startsWith(from))
     if (redirect) {
@@ -281,7 +281,7 @@ const noMisplacedEngineTestDomainPaths = createFileRule(
 )
 
 const noKitchenSinkEngineBasicTests: Rule = {
-  name: 'open-pencil/no-kitchen-sink-engine-basic-tests',
+  name: 'inkly/no-kitchen-sink-engine-basic-tests',
   check(root) {
     const diagnostics: Diagnostic[] = []
     for (const file of collectFiles(root)) {
@@ -304,7 +304,7 @@ const noKitchenSinkEngineBasicTests: Rule = {
 }
 
 const noEngineOnlyAssertionsInE2E = createImportRule(
-  'open-pencil/no-engine-only-assertions-in-e2e',
+  'inkly/no-engine-only-assertions-in-e2e',
   (sourceRel, specifier, resolved) => {
     if (!sourceRel.startsWith('tests/e2e/')) return null
     if (specifier === 'bun:test' || resolved?.startsWith('tests/engine/')) {
@@ -315,7 +315,7 @@ const noEngineOnlyAssertionsInE2E = createImportRule(
 )
 
 const noE2EImportsInEngineTests = createImportRule(
-  'open-pencil/no-e2e-imports-in-engine-tests',
+  'inkly/no-e2e-imports-in-engine-tests',
   (sourceRel, _specifier, resolved) => {
     if (!sourceRel.startsWith('tests/engine/')) return null
     if (resolved?.startsWith('tests/e2e/')) {
@@ -326,7 +326,7 @@ const noE2EImportsInEngineTests = createImportRule(
 )
 
 const noRootMarkdownClutter = createFileRule(
-  'open-pencil/no-root-markdown-clutter',
+  'inkly/no-root-markdown-clutter',
   (sourceRel) => {
     if (sourceRel.includes('/')) return null
     if (!sourceRel.endsWith('.md')) return null
@@ -336,7 +336,7 @@ const noRootMarkdownClutter = createFileRule(
 )
 
 const noPrototypeOrGeneratedImports = createImportRule(
-  'open-pencil/no-prototype-or-generated-imports',
+  'inkly/no-prototype-or-generated-imports',
   (sourceRel, _specifier, resolved) => {
     if (!resolved) return null
     if (resolved.startsWith('scratch/')) {
@@ -357,7 +357,7 @@ const noPrototypeOrGeneratedImports = createImportRule(
 )
 
 const noPropertyPanelImportsInCanvas = createImportRule(
-  'open-pencil/no-property-panel-imports-in-canvas',
+  'inkly/no-property-panel-imports-in-canvas',
   (sourceRel, _specifier, resolved) => {
     const isCanvasSurface =
       sourceRel === 'src/components/EditorCanvas.vue' ||
@@ -373,7 +373,7 @@ const noPropertyPanelImportsInCanvas = createImportRule(
 )
 
 const noAppImportsInWorkspacePackages = createImportRule(
-  'open-pencil/no-app-imports-in-workspace-packages',
+  'inkly/no-app-imports-in-workspace-packages',
   (sourceRel, specifier, resolved) => {
     const isWorkspacePackage = /^packages\/[^/]+\/src\//.test(sourceRel)
     if (isWorkspacePackage && (specifier.startsWith('@/') || resolved?.startsWith('src/'))) {
@@ -384,14 +384,14 @@ const noAppImportsInWorkspacePackages = createImportRule(
 )
 
 const noPackageInternalsInApp = createImportRule(
-  'open-pencil/no-package-internals-in-app',
+  'inkly/no-package-internals-in-app',
   (sourceRel, specifier, resolved) => {
     if (!sourceRel.startsWith('src/')) return null
     if (
       specifier in PACKAGE_ALIASES ||
       Object.keys(PACKAGE_ALIASES).some((alias) => specifier.startsWith(alias))
     ) {
-      return 'App code must use package public exports such as @open-pencil/core or @open-pencil/vue, not package-local aliases.'
+      return 'App code must use package public exports such as @inkly/core or @inkly/vue, not package-local aliases.'
     }
     if (resolved?.startsWith('packages/')) {
       return 'App code must not import workspace package internals. Use package public exports instead.'
@@ -401,7 +401,7 @@ const noPackageInternalsInApp = createImportRule(
 )
 
 const noForeignPackageLocalAliases = createImportRule(
-  'open-pencil/no-foreign-package-local-aliases',
+  'inkly/no-foreign-package-local-aliases',
   (sourceRel, specifier) => {
     if (sourceRel.startsWith('scripts/') || sourceRel.startsWith('tests/')) return null
     for (const [alias, owner] of Object.entries(PACKAGE_ALIAS_OWNERS)) {
@@ -414,7 +414,7 @@ const noForeignPackageLocalAliases = createImportRule(
 )
 
 const noAppImportsComponentsOrViews = createImportRule(
-  'open-pencil/no-app-imports-components-or-views',
+  'inkly/no-app-imports-components-or-views',
   (sourceRel, _specifier, resolved) => {
     if (!sourceRel.startsWith('src/app/')) return null
     const importsAppComponent =
@@ -427,7 +427,7 @@ const noAppImportsComponentsOrViews = createImportRule(
 )
 
 const noComponentsImportViews = createImportRule(
-  'open-pencil/no-components-import-views',
+  'inkly/no-components-import-views',
   (sourceRel, _specifier, resolved) => {
     if (!sourceRel.startsWith('src/components/')) return null
     if (resolved?.startsWith('src/views/')) {
@@ -438,7 +438,7 @@ const noComponentsImportViews = createImportRule(
 )
 
 const noNonUiImportsInSharedUi = createImportRule(
-  'open-pencil/no-non-ui-imports-in-shared-ui',
+  'inkly/no-non-ui-imports-in-shared-ui',
   (sourceRel, _specifier, resolved) => {
     if (!sourceRel.startsWith('src/components/ui/')) return null
     if (resolved?.startsWith('src/components/') && !resolved.startsWith('src/components/ui/')) {
@@ -449,7 +449,7 @@ const noNonUiImportsInSharedUi = createImportRule(
 )
 
 const noViewsImportedOutsideEntry = createImportRule(
-  'open-pencil/no-views-imported-outside-entry',
+  'inkly/no-views-imported-outside-entry',
   (sourceRel, _specifier, resolved) => {
     if (!resolved?.startsWith('src/views/')) return null
     if (sourceRel === 'src/App.vue' || sourceRel === 'src/main.ts' || sourceRel === 'src/router.ts')
@@ -459,7 +459,7 @@ const noViewsImportedOutsideEntry = createImportRule(
 )
 
 const noAppImportsInSharedUi = createImportRule(
-  'open-pencil/no-app-imports-in-shared-ui',
+  'inkly/no-app-imports-in-shared-ui',
   (sourceRel, _specifier, resolved) => {
     if (!sourceRel.startsWith('src/components/ui/')) return null
     if (resolved?.startsWith('src/app/')) {
@@ -470,7 +470,7 @@ const noAppImportsInSharedUi = createImportRule(
 )
 
 const noPropertyPanelInternalsOutsidePanel = createImportRule(
-  'open-pencil/no-property-panel-internals-outside-panel',
+  'inkly/no-property-panel-internals-outside-panel',
   (sourceRel, _specifier, resolved) => {
     if (!resolved?.startsWith('src/components/properties/')) return null
     if (sourceRel.startsWith('src/components/properties/')) return null
@@ -482,7 +482,7 @@ const noPropertyPanelInternalsOutsidePanel = createImportRule(
 const MACOS_MODIFIER_GLYPH_PATTERN = /[⌘⌥⌃]/u
 
 const noHardcodedMacOSShortcutGlyphs = createTextRule(
-  'open-pencil/no-hardcoded-macos-shortcut-glyphs',
+  'inkly/no-hardcoded-macos-shortcut-glyphs',
   (sourceRel, content) => {
     if (!sourceRel.endsWith('.vue')) return []
     const diagnostics: Array<{ message: string; line?: number; column?: number }> = []
@@ -502,7 +502,7 @@ const noHardcodedMacOSShortcutGlyphs = createTextRule(
 const SHORTCUT_LABEL_PATTERN = /(?:Shift|Ctrl|Alt|Option|Cmd|Command|⌘|⇧|⌥|⌃)\s*[+)\w]/u
 
 const noShortcutTextInLabels = createTextRule(
-  'open-pencil/no-shortcut-text-in-labels',
+  'inkly/no-shortcut-text-in-labels',
   (sourceRel, content) => {
     if (
       sourceRel !== 'packages/vue/src/i18n/messages.ts' &&
@@ -529,7 +529,7 @@ const noShortcutTextInLabels = createTextRule(
 )
 
 const noUiImportsInCore = createImportRule(
-  'open-pencil/no-ui-imports-in-core',
+  'inkly/no-ui-imports-in-core',
   (sourceRel, specifier) => {
     if (!sourceRel.startsWith('packages/core/src/')) return null
     if (
@@ -537,7 +537,7 @@ const noUiImportsInCore = createImportRule(
       specifier.startsWith('@vueuse/') ||
       specifier === 'reka-ui' ||
       specifier.startsWith('#vue/') ||
-      specifier.startsWith('@open-pencil/vue')
+      specifier.startsWith('@inkly/vue')
     ) {
       return 'Core must stay framework-agnostic and cannot import Vue/UI modules.'
     }
@@ -545,8 +545,8 @@ const noUiImportsInCore = createImportRule(
   }
 )
 
-export const openPencilArchitecturePlugin = {
-  meta: { name: 'open-pencil-architecture', version: '0.0.0' },
+export const inklyArchitecturePlugin = {
+  meta: { name: 'inkly-architecture', version: '0.0.0' },
   ruleDefinitions: [
     preferDomainFoldersOverFilenamePrefixes,
     strictTestFilePlacement,

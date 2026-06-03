@@ -1,4 +1,4 @@
-import type { Rect } from '@open-pencil/core/types'
+import type { Rect } from '@inkly/core/types'
 
 import type { HandlePosition } from '#vue/shared/input/types'
 

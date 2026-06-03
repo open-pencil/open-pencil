@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Visual comparison pipeline: Figma vs OpenPencil renderer.
+ * Visual comparison pipeline: Figma vs Inkly renderer.
  *
  * Copy an element in Figma, then run:
  *   bun scripts/visual-compare.ts [--scale 2] [--output /tmp/visual-compare]
@@ -10,7 +10,7 @@
  *
  * Outputs:
  *   figma.png  — exported from real Figma
- *   ours.png   — rendered by OpenPencil headless SkiaRenderer
+ *   ours.png   — rendered by Inkly headless SkiaRenderer
  *   diff.png   — visual diff (red = changed pixels)
  */
 
@@ -19,11 +19,11 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
-import { fontManager } from '@open-pencil/core/text'
+import { SkiaRenderer } from '@inkly/core/canvas'
+import { renderNodesToImage, initCanvasKit } from '@inkly/core/io'
+import { computeAllLayouts } from '@inkly/core/layout'
+import { SceneGraph } from '@inkly/core/scene-graph'
+import { fontManager } from '@inkly/core/text'
 
 import { parseFigmaClipboard, importClipboardNodes } from '#core/clipboard'
 
@@ -69,7 +69,7 @@ async function runWithClipboard() {
   if (!parsed) bail('Clipboard has no Figma data. Copy an element in Figma first.')
   console.log(`   ${parsed.nodes.length} node changes, ${parsed.blobs.length} blobs`)
 
-  console.log('🖼️  Rendering with OpenPencil…')
+  console.log('🖼️  Rendering with Inkly…')
   await renderOurs(html)
 
   console.log('🎨 Pasting into Figma & exporting…')
@@ -103,7 +103,7 @@ async function runWithNodeId(nodeId: string) {
   const parsed = await parseFigmaClipboard(html)
   if (!parsed) bail('Clipboard has no Figma data after copy')
 
-  console.log('🖼️  Rendering with OpenPencil…')
+  console.log('🖼️  Rendering with Inkly…')
   await renderOurs(html)
 
   await diff()
@@ -220,8 +220,8 @@ async function diff() {
   const alphaMetrics = opts['alpha-diff'] ? await diffAlpha(compareOursPath, total) : null
   const metrics = {
     figmaSize,
-    openPencilSize: oursSize,
-    comparedOpenPencilPath: compareOursPath,
+    inklySize: oursSize,
+    comparedInklyPath: compareOursPath,
     resized: Boolean(opts.resize && figmaSize !== oursSize),
     normalized: figmaSize !== oursSize,
     differentPixels: diffPixels,

@@ -1,6 +1,6 @@
 # Matrice de fonctionnalités Figma
 
-Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design avec l'état d'implémentation actuel d'Open Pencil.
+Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design avec l'état d'implémentation actuel d'Inkly.
 
 ::: tip Légende des statuts
 ✅ Supporté — la fonctionnalité est complète · 🟡 Partiel — le comportement de base existe, certaines sous-fonctionnalités manquent · 🔲 Pas encore implémenté
@@ -215,7 +215,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Code Connect | 🔲 | Lier composants de design au code |
 | Extraits de code | 🟡 | Export JSX avec coloration et copie ; pas d'extraits CSS/Swift/Kotlin |
 | Figma for VS Code | 🔲 | Intégration plugin éditeur |
-| Serveur MCP | ✅ | @open-pencil/mcp avec transports stdio + HTTP ; 90+ outils core + 3 gestion de fichiers = 90+ total |
+| Serveur MCP | ✅ | @inkly/mcp avec transports stdio + HTTP ; 90+ outils core + 3 gestion de fichiers = 90+ total |
 | Outils CLI | ✅ | CLI headless : info, tree, find, export, analyze, node, pages, variables, eval ; serveur MCP |
 
 ## Figma Draw

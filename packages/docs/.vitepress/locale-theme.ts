@@ -23,7 +23,7 @@ export const localeThemeConfig = (
     { text: nav.sdk, link: `${prefix}/programmable/sdk/` },
     { text: nav.reference, link: `${prefix}/reference/keyboard-shortcuts` },
     { text: nav.development, link: `${prefix}/development/contributing` },
-    { text: nav.openApp, link: 'https://app.openpencil.dev' },
+    { text: nav.openApp, link: 'https://app.inkly.dev' },
   ],
   sidebar: {
     [`${prefix}/user-guide/`]: userGuideSidebar(prefix, sidebar),

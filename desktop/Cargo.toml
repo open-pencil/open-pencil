@@ -1,18 +1,18 @@
 [package]
-name = "open_pencil"
+name = "inkly"
 version = "0.13.2"
-description = "OpenPencil desktop app"
+description = "Inkly desktop app"
 authors = ["Danila Poyarkov"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "OpenPencil"
+name = "Inkly"
 path = "src/main.rs"
 
 [lib]
-name = "open_pencil_lib"
+name = "inkly_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

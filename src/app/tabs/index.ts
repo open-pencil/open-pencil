@@ -1,13 +1,13 @@
 import { shallowRef, computed, triggerRef } from 'vue'
 
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
-import { fetchIcons } from '@open-pencil/core/icons'
-import { fontManager } from '@open-pencil/core/text/fonts'
+import { BUILTIN_IO_FORMATS, IORegistry } from '@inkly/core/io'
+import { readFigFile } from '@inkly/core/io/formats/fig'
+import { computeAllLayouts } from '@inkly/core/layout'
+import type { SceneGraph, SceneNode } from '@inkly/core/scene-graph'
+import { fetchIcons } from '@inkly/core/icons'
+import { fontManager } from '@inkly/core/text/fonts'
 
-import { setOpenPencilStore } from '@/app/browser-bridge'
+import { setInklyStore } from '@/app/browser-bridge'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
@@ -147,7 +147,7 @@ function activateTab(tab: Tab) {
   activeTabId.value = tab.id
   setActiveEditorStore(tab.store)
   triggerRef(tabsRef)
-  setOpenPencilStore(tab.store)
+  setInklyStore(tab.store)
 }
 
 export function switchTab(tabId: string) {

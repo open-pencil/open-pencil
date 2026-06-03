@@ -1,6 +1,6 @@
 ---
 title: Расширенные API
-description: Низкоуровневые и специализированные API в @open-pencil/vue.
+description: Низкоуровневые и специализированные API в @inkly/vue.
 ---
 
 # Расширенные API

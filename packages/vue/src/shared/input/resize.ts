@@ -1,8 +1,8 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
-import type { Editor } from '@open-pencil/core/editor'
-import { computeLayout } from '@open-pencil/core/layout'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import { computeLayout } from '@inkly/core/layout'
+import type { SceneNode } from '@inkly/core/scene-graph'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'

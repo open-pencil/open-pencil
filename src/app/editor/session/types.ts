@@ -1,4 +1,4 @@
-import { createDefaultEditorState, type EditorState } from '@open-pencil/core/editor'
+import { createDefaultEditorState, type EditorState } from '@inkly/core/editor'
 
 import type { NodeEditState } from '@/app/editor/vector-edit/types'
 

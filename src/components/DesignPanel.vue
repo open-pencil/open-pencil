@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
+import { useI18n, useSelectionState, useEditorCommands } from '@inkly/vue'
 
 import VariablesDialog from './VariablesDialog.vue'
 import BooleanOperationsControl from './properties/BooleanOperationsControl.vue'

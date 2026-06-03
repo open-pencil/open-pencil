@@ -1,4 +1,4 @@
-export const BASE = 'https://openpencil.dev'
+export const BASE = 'https://inkly.dev'
 
 export const LOCALE_PREFIXES = ['de', 'fr', 'es', 'it', 'pl', 'ru'] as const
 
@@ -17,13 +17,13 @@ export const siteHead: [string, Record<string, string>][] = [
   ['link', { rel: 'alternate', type: 'text/plain', title: 'llms.txt', href: '/llms.txt' }],
   ['link', { rel: 'alternate', type: 'text/plain', title: 'llms-full.txt', href: '/llms-full.txt' }],
   ['meta', { property: 'og:type', content: 'website' }],
-  ['meta', { property: 'og:site_name', content: 'OpenPencil' }],
+  ['meta', { property: 'og:site_name', content: 'Inkly' }],
   ['meta', { property: 'og:image', content: `${BASE}/screenshot.png` }],
   ['meta', { property: 'og:image:width', content: '2784' }],
   ['meta', { property: 'og:image:height', content: '1824' }],
-  ['meta', { property: 'og:image:alt', content: 'OpenPencil — AI-Native Design Editor' }],
+  ['meta', { property: 'og:image:alt', content: 'Inkly — AI-Native Design Editor' }],
   ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-  ['meta', { name: 'twitter:site', content: '@openpencildev' }],
+  ['meta', { name: 'twitter:site', content: '@inklydev' }],
   ['meta', { name: 'twitter:image', content: `${BASE}/screenshot.png` }]
 ]
 
@@ -108,7 +108,7 @@ export function applyPageSeo(pageData: PageDataLike): void {
   head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: enSlug }])
 
   if (pageData.title) {
-    const ogTitle = `${pageData.title} — OpenPencil`
+    const ogTitle = `${pageData.title} — Inkly`
     head.push(['meta', { property: 'og:title', content: ogTitle }])
     head.push(['meta', { name: 'twitter:title', content: ogTitle }])
   }

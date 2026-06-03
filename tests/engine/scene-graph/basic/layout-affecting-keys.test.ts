@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@inkly/core'
 
 describe('LAYOUT_AFFECTING_KEYS membership', () => {
   test('contains all direct transform properties', () => {

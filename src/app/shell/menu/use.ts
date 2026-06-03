@@ -1,7 +1,7 @@
 import { tryOnScopeDispose } from '@vueuse/core'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
-import type { EditorCommandId } from '@open-pencil/vue'
+import { useEditorCommands, useI18n } from '@inkly/vue'
+import type { EditorCommandId } from '@inkly/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'

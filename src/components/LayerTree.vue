@@ -3,7 +3,7 @@ import { useAttrs, watch } from 'vue'
 import { templateRef } from '@vueuse/core'
 import { TreeItem, ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal } from 'reka-ui'
 
-import { LayerTreeRoot, LayerTreeItem, useI18n, useInlineRename } from '@open-pencil/vue'
+import { LayerTreeRoot, LayerTreeItem, useI18n, useInlineRename } from '@inkly/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { nodeIcon, COMPONENT_TYPES } from '@/app/editor/icons'
 import CanvasMenu from './CanvasMenu.vue'

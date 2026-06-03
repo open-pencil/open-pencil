@@ -1,5 +1,5 @@
 export type ExportOptions = {
   scale?: number
   quality?: number
-  jsxFormat?: 'openpencil' | 'tailwind'
+  jsxFormat?: 'inkly' | 'tailwind'
 }

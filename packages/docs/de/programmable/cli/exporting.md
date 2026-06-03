@@ -10,10 +10,10 @@ Designs vom Terminal aus exportieren — Rasterbilder, Vektoren oder JSX-Code.
 ## Bildexport
 
 ```sh
-openpencil export design.fig                          # PNG (Standard)
-openpencil export design.fig -f jpg -s 2 -q 90       # JPG in 2×, Qualität 90
-openpencil export design.fig -f webp -s 3             # WEBP in 3×
-openpencil export design.fig -f svg                   # SVG-Vektor
+inkly export design.fig                          # PNG (Standard)
+inkly export design.fig -f jpg -s 2 -q 90       # JPG in 2×, Qualität 90
+inkly export design.fig -f webp -s 3             # WEBP in 3×
+inkly export design.fig -f svg                   # SVG-Vektor
 ```
 
 Optionen:
@@ -30,7 +30,7 @@ Optionen:
 Als JSX mit Tailwind-Utility-Klassen exportieren:
 
 ```sh
-openpencil export design.fig -f jsx --style tailwind
+inkly export design.fig -f jsx --style tailwind
 ```
 
 Ausgabe:
@@ -42,12 +42,12 @@ Ausgabe:
 </div>
 ```
 
-Unterstützt auch `--style openpencil` für das native JSX-Format (siehe [JSX-Renderer](../jsx-renderer)).
+Unterstützt auch `--style inkly` für das native JSX-Format (siehe [JSX-Renderer](../jsx-renderer)).
 
 ## Vorschaubilder
 
 ```sh
-openpencil export design.fig --thumbnail --width 1920 --height 1080
+inkly export design.fig --thumbnail --width 1920 --height 1080
 ```
 
 ## Live-App-Modus
@@ -55,5 +55,5 @@ openpencil export design.fig --thumbnail --width 1920 --height 1080
 Lass die Datei weg, um aus der laufenden App zu exportieren:
 
 ```sh
-openpencil export -f png    # Screenshot der aktuellen Zeichenfläche
+inkly export -f png    # Screenshot der aktuellen Zeichenfläche
 ```

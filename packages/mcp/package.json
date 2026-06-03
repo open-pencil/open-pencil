@@ -1,5 +1,5 @@
 {
-  "name": "@open-pencil/mcp",
+  "name": "@inkly/mcp",
   "version": "0.13.2",
   "license": "MIT",
   "type": "module",
@@ -24,8 +24,8 @@
     }
   },
   "bin": {
-    "openpencil-mcp": "./dist/stdio.mjs",
-    "openpencil-mcp-http": "./dist/index.mjs"
+    "inkly-mcp": "./dist/stdio.mjs",
+    "inkly-mcp-http": "./dist/index.mjs"
   },
   "files": [
     "dist"
@@ -36,7 +36,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "url": "git+https://github.com/cardene777/open-pencil.git",
     "directory": "packages/mcp"
   },
   "publishConfig": {
@@ -46,7 +46,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.9",
     "@modelcontextprotocol/sdk": "^1.25.2",
-    "@open-pencil/core": "workspace:*",
+    "@inkly/core": "workspace:*",
     "hono": "^4.11.4",
     "package-manager-detector": "^1.6.0",
     "zod": "^4.3.6",

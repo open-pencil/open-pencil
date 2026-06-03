@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 
-import type { Tool, EditorToolDef } from '@open-pencil/core/editor'
+import type { Tool, EditorToolDef } from '@inkly/core/editor'
 
 const CATEGORY_COUNT = 3
 

@@ -1,11 +1,11 @@
 ---
 title: Arquitectura del SDK
-description: Estructura de carpetas, límites de API pública y patrones de composición en @open-pencil/vue.
+description: Estructura de carpetas, límites de API pública y patrones de composición en @inkly/vue.
 ---
 
 # Arquitectura del SDK
 
-`@open-pencil/vue` es la capa orientada a Vue sobre `@open-pencil/core`.
+`@inkly/vue` es la capa orientada a Vue sobre `@inkly/core`.
 
 No posee el modelo del editor en sí. Adapta el editor central en:
 
@@ -107,7 +107,7 @@ Prefiere props de slot enfocados o uso directo de composables en lugar de grande
 
 ## Regla práctica
 
-Si una pieza de lógica podría reutilizarse en una app diferente basada en OpenPencil sin llevar consigo los estilos de la app, probablemente pertenece a `@open-pencil/vue`.
+Si una pieza de lógica podría reutilizarse en una app diferente basada en Inkly sin llevar consigo los estilos de la app, probablemente pertenece a `@inkly/vue`.
 
 ## Páginas relacionadas
 

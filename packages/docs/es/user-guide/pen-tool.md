@@ -1,6 +1,6 @@
 ---
 title: Herramienta pluma
-description: Trazados vectoriales con curvas de Bézier en OpenPencil.
+description: Trazados vectoriales con curvas de Bézier en Inkly.
 ---
 # Herramienta pluma
 
@@ -26,7 +26,7 @@ Pulsa <kbd>Escape</kbd> para confirmar el trazado actual como trazado abierto. L
 
 ## Redes vectoriales
 
-Los trazados en OpenPencil usan redes vectoriales — un modelo más flexible que las listas simples de puntos que soporta trazados ramificados y topología compleja. Es el mismo modelo que usa Figma, así que los trazados se mantienen perfectamente al abrir y guardar archivos .fig.
+Los trazados en Inkly usan redes vectoriales — un modelo más flexible que las listas simples de puntos que soporta trazados ramificados y topología compleja. Es el mismo modelo que usa Figma, así que los trazados se mantienen perfectamente al abrir y guardar archivos .fig.
 
 ## Atajos de teclado
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
+import { colorToHexRaw, parseColor } from '@inkly/core/color'
 
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@inkly/core/types'
 import type { OkHCLControls } from '#vue/primitives/ColorPicker/types'
 
 const {

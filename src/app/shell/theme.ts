@@ -1,15 +1,15 @@
 import { useLocalStorage, usePreferredDark } from '@vueuse/core'
 import { computed, watch } from 'vue'
 
-import type { RulerTheme } from '@open-pencil/core/canvas'
-import { parseColor } from '@open-pencil/core/color'
-import { IS_BROWSER } from '@open-pencil/core/constants'
+import type { RulerTheme } from '@inkly/core/canvas'
+import { parseColor } from '@inkly/core/color'
+import { IS_BROWSER } from '@inkly/core/constants'
 
 import { getActiveEditorStoreOrNull } from '@/app/editor/active-store'
 
 export type AppTheme = 'dark' | 'light' | 'auto'
 
-const THEME_STORAGE_KEY = 'open-pencil:theme'
+const THEME_STORAGE_KEY = 'inkly:theme'
 const DEFAULT_THEME: AppTheme = 'dark'
 
 const theme = useLocalStorage<AppTheme>(THEME_STORAGE_KEY, DEFAULT_THEME)

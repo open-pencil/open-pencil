@@ -5,11 +5,11 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
-import { PropertyListRoot, vTestId, useEffectsControls, useI18n } from '@open-pencil/vue'
+import { PropertyListRoot, vTestId, useEffectsControls, useI18n } from '@inkly/vue'
 
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@inkly/core/color'
 
-import type { Effect } from '@open-pencil/core/scene-graph'
+import type { Effect } from '@inkly/core/scene-graph'
 
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()

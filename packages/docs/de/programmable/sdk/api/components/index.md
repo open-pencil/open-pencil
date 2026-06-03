@@ -1,11 +1,11 @@
 ---
 title: Komponenten
-description: Komponentenreferenz für headless Vue-Primitive in @open-pencil/vue.
+description: Komponentenreferenz für headless Vue-Primitive in @inkly/vue.
 ---
 
 # Komponenten
 
-`@open-pencil/vue` stellt headless strukturelle Primitive für Canvas-Verdrahtung, Navigations-UI, Eigenschafts-Panels und fokussierte Eingabesteuerelemente bereit.
+`@inkly/vue` stellt headless strukturelle Primitive für Canvas-Verdrahtung, Navigations-UI, Eigenschafts-Panels und fokussierte Eingabesteuerelemente bereit.
 
 ## Kern-Editor-Primitive
 

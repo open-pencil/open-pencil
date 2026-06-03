@@ -18,7 +18,7 @@ Use it when building:
 ## Usage
 
 ```ts
-import { useSelectionCapabilities } from '@open-pencil/vue'
+import { useSelectionCapabilities } from '@inkly/vue'
 
 const caps = useSelectionCapabilities()
 ```
@@ -27,7 +27,7 @@ const caps = useSelectionCapabilities()
 
 ```vue
 <script setup lang="ts">
-import { useSelectionCapabilities } from '@open-pencil/vue'
+import { useSelectionCapabilities } from '@inkly/vue'
 
 const { canDelete, canDuplicate, canCreateComponent } = useSelectionCapabilities()
 </script>

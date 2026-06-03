@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 
-import type { Tool } from '@open-pencil/vue'
+import type { Tool } from '@inkly/vue'
 
 export interface ToolbarActionItem {
   icon: Component

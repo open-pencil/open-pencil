@@ -31,7 +31,7 @@ body:
     attributes:
       label: Platform
       options:
-        - Web (app.openpencil.dev)
+        - Web (app.inkly.dev)
         - macOS (Tauri)
         - Windows (Tauri)
         - Linux (Tauri)

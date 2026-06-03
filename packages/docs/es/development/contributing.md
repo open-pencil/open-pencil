@@ -4,19 +4,19 @@
 
 ```
 packages/
-  core/              @open-pencil/core — motor (sin deps DOM)
+  core/              @inkly/core — motor (sin deps DOM)
     src/             Grafo de escena, renderer, layout, codec, kiwi, tipos
-  cli/               @open-pencil/cli — CLI headless para operaciones .fig
+  cli/               @inkly/cli — CLI headless para operaciones .fig
     src/commands/    info, tree, find, export, eval, analyze
-  mcp/               @open-pencil/mcp — servidor MCP para herramientas IA
+  mcp/               @inkly/mcp — servidor MCP para herramientas IA
     src/             Transportes stdio + HTTP (Hono), 87 herramientas
 src/
   components/        Vue SFCs (canvas, paneles, barra de herramientas, selector de color)
     properties/      Secciones del panel de propiedades (Apariencia, Relleno, Trazo, etc.)
   composables/       Entrada de canvas, atajos de teclado, hooks de renderizado
   stores/            Estado del editor (reactividad Vue)
-  engine/            Shims de re-exportación desde @open-pencil/core
-  kiwi/              Shims de re-exportación desde @open-pencil/core
+  engine/            Shims de re-exportación desde @inkly/core
+  kiwi/              Shims de re-exportación desde @inkly/core
   types.ts           Tipos compartidos (re-exportados desde core)
   constants.ts       Colores UI, valores por defecto, umbrales
 desktop/             Tauri v2 (Rust + config)
@@ -62,7 +62,7 @@ bun run check
 
 ### Convenciones para agentes IA
 
-Desarrolladores y agentes IA deben leer `AGENTS.md` en la raíz del repo ([ver en GitHub](https://github.com/open-pencil/open-pencil/blob/master/AGENTS.md)). Cubre renderizado, grafo de escena, componentes e instancias, layout, UI, formato de archivo, convenciones Tauri y problemas conocidos.
+Desarrolladores y agentes IA deben leer `AGENTS.md` en la raíz del repo ([ver en GitHub](https://github.com/cardene777/open-pencil/blob/master/AGENTS.md)). Cubre renderizado, grafo de escena, componentes e instancias, layout, UI, formato de archivo, convenciones Tauri y problemas conocidos.
 
 ## Realizar cambios
 

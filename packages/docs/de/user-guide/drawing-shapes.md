@@ -1,6 +1,6 @@
 ---
 title: Formen zeichnen
-description: Rechtecke, Ellipsen, Linien, Frames, Sektionen, Polygone und Sterne in OpenPencil erstellen.
+description: Rechtecke, Ellipsen, Linien, Frames, Sektionen, Polygone und Sterne in Inkly erstellen.
 ---
 
 # Formen zeichnen

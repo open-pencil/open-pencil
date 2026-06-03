@@ -58,7 +58,7 @@ bun run test:unit
 
 ```typescript
 import { describe, expect, it } from 'bun:test'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { SceneGraph } from '@inkly/core/scene-graph'
 
 describe('SceneGraph', () => {
   it('creates and retrieves a node', () => {

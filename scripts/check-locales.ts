@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@inkly/core/types'
 
 const MESSAGES_PATH = 'packages/vue/src/i18n/messages.ts'
 const LOCALES_DIR = 'packages/vue/src/locales'

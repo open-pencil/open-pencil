@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'bun:test'
 
-import { PhaseTimer } from '@open-pencil/core'
+import { PhaseTimer } from '@inkly/core'
 
 describe('PhaseTimer', () => {
   it('is disabled by default', () => {

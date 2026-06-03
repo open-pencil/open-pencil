@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { ParamDef, ParamType } from '@open-pencil/core/tools'
+import type { ParamDef, ParamType } from '@inkly/core/tools'
 
 export function paramToZod(param: ParamDef): z.ZodType {
   const typeMap: Record<ParamType, () => z.ZodType> = {

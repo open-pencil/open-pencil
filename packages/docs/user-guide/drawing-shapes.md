@@ -1,6 +1,6 @@
 ---
 title: Drawing Shapes
-description: Creating rectangles, ellipses, lines, frames, sections, polygons, and stars in OpenPencil.
+description: Creating rectangles, ellipses, lines, frames, sections, polygons, and stars in Inkly.
 ---
 
 # Drawing Shapes

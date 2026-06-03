@@ -17,8 +17,8 @@ test.beforeAll(async ({ browser }) => {
   await canvas.clearCanvas()
 
   await page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     store.state.zoom = 1
     store.state.panX = 0
     store.state.panY = 0
@@ -54,8 +54,8 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
 
   // ensure starting weight is 400 via undo-safe store method
   await page.evaluate(async (id: string) => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
+    const store = window.inkly?.getStore?.()
+    if (!store) throw new Error('Inkly store not initialized')
     store.updateNodeWithUndo(id, { fontWeight: 400 }, 'reset')
     store.state.sceneVersion++
     await new Promise(requestAnimationFrame)

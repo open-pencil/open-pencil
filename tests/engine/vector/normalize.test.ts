@@ -5,7 +5,7 @@ import {
   encodeVectorNetworkBlob,
   normalizeVectorNetwork,
   type VectorNetwork
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 describe('normalizeVectorNetwork', () => {
   test('passes through segments that already have tangents', () => {

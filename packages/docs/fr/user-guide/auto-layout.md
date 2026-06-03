@@ -1,6 +1,6 @@
 ---
 title: Mise en page auto
-description: Layout flex et grille dans OpenPencil — direction, espacement, padding, alignement, dimensionnement et tracks CSS Grid.
+description: Layout flex et grille dans Inkly — direction, espacement, padding, alignement, dimensionnement et tracks CSS Grid.
 ---
 # Mise en page auto
 

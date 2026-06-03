@@ -1,11 +1,11 @@
 ---
 title: Roadmap
-description: OpenPencil product roadmap and Figma compatibility tracking.
+description: Inkly product roadmap and Figma compatibility tracking.
 ---
 
 # Roadmap
 
-OpenPencil is moving toward production-grade Figma compatibility while keeping design documents programmable, local-first, and fast on large files.
+Inkly is moving toward production-grade Figma compatibility while keeping design documents programmable, local-first, and fast on large files.
 
 ## Current focus
 
@@ -19,7 +19,7 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 ### Figma fidelity
 
 - Preserve and round-trip more Figma metadata safely.
-- Add visual regression coverage for full multi-page `.fig` documents. `scripts/export-fixture-visuals.ts` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-OpenPencil oracle diff findings.
+- Add visual regression coverage for full multi-page `.fig` documents. `scripts/export-fixture-visuals.ts` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-Inkly oracle diff findings.
 - Close high-impact renderer gaps: remaining mask edge cases, blend isolation, pattern fills, and broader variable-font fixtures.
 - Improve boolean operation editing/export now that imported Figma `BOOLEAN_OPERATION` nodes remain boolean operations.
 
@@ -32,7 +32,7 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 
 ### Agent workflows
 
-- Polish the official `SKILL.md` guidance for OpenPencil so agents use the full inspect → act → render/measure → compare → iterate loop instead of relying on one-shot prompting.
+- Polish the official `SKILL.md` guidance for Inkly so agents use the full inspect → act → render/measure → compare → iterate loop instead of relying on one-shot prompting.
 - Publish tested AI workflow recipes for common tasks: create from prompt, edit a selected design, compare against a screenshot or Figma reference, fix visual regressions, extract tokens, and batch-migrate files.
 - Make agent workflows measurable by default: every substantial operation should be able to produce a render, structured diff, lint result, or comparison artifact.
 - Keep MCP, CLI, and SDK operations aligned so agent skills can run the same workflow in desktop, browser, CI, or headless file mode.
@@ -58,14 +58,14 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 - Provide a preset-first editor for common generative visuals before exposing raw shader code.
 - Support timeline and interaction inputs such as time, pointer position, scroll, layer bounds, colors, variables, and imported image textures.
 - Render shader layers through CanvasKit/WebGL while keeping deterministic raster export for PNG/JPG/WEBP and thumbnails.
-- Store shader layer configuration in OpenPencil documents and export graceful fallbacks when a target format cannot preserve the live effect.
+- Store shader layer configuration in Inkly documents and export graceful fallbacks when a target format cannot preserve the live effect.
 
 ## Later
 
 ### SDK and embedded editor
 
 - Document the Vue SDK and core subpath exports as a platform for custom editor shells, embedded design surfaces, and automation-specific UIs.
-- Provide examples for embedding OpenPencil in product tools: read-only previews, editable canvases, design review surfaces, and agent-controlled editors.
+- Provide examples for embedding Inkly in product tools: read-only previews, editable canvases, design review surfaces, and agent-controlled editors.
 - Keep the renderer, editor core, and tool registry framework-agnostic enough for headless and embedded use.
 
 ### Product depth
@@ -81,20 +81,20 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 - Read-only automation surfaces that cannot modify documents.
 - Feature work that sacrifices `.fig` import/export fidelity for convenience.
 
-This section tracks OpenPencil's current compatibility with Figma Design features. It is based on Figma's public Help Center feature areas and the current OpenPencil scene graph, Kiwi import/export, CanvasKit renderer, UI panels, CLI, and MCP tools.
+This section tracks Inkly's current compatibility with Figma Design features. It is based on Figma's public Help Center feature areas and the current Inkly scene graph, Kiwi import/export, CanvasKit renderer, UI panels, CLI, and MCP tools.
 
 Legend:
 
 - **✅ Supported** — implemented for common files and expected to work directly.
 - **◐ Partial** — implemented for important cases, but missing parity, UI, or edge-case behavior.
-- **↩ Round-trip only** — imported/preserved/exported for `.fig` fidelity, but not rendered or editable as a first-class OpenPencil feature.
+- **↩ Round-trip only** — imported/preserved/exported for `.fig` fidelity, but not rendered or editable as a first-class Inkly feature.
 - **— Not supported** — not currently modeled or intentionally out of scope.
 
 Support tiers used for prioritization:
 
 1. **Visual fidelity** — fields that change pixels in normal design exports. These get real Figma oracle fixtures, renderer tests, and visual metrics first.
-2. **Round-trip fidelity** — fields that should survive read → write → Figma import but do not need OpenPencil UI/rendering yet. These need raw-preservation and invalidation tests.
-3. **Product/runtime systems** — prototypes, libraries, FigJam, Slides, Dev Mode, CMS/AI, and media timelines. These stay schema-only or raw-preserved until OpenPencil has matching product concepts.
+2. **Round-trip fidelity** — fields that should survive read → write → Figma import but do not need Inkly UI/rendering yet. These need raw-preservation and invalidation tests.
+3. **Product/runtime systems** — prototypes, libraries, FigJam, Slides, Dev Mode, CMS/AI, and media timelines. These stay schema-only or raw-preserved until Inkly has matching product concepts.
 4. **Unsafe/internal metadata** — fields that can corrupt Figma import or overwrite user edits when stale. These are filtered or preserved only with fixture evidence.
 
 ## Official Figma feature areas
@@ -117,7 +117,7 @@ Figma's design documentation groups features into these areas:
 | Pages / canvases                                     |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Multi-page documents and per-page viewport are supported.                                                                                                                                                                                          |
 | Frames                                               |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Includes clipping and auto-layout container behavior.                                                                                                                                                                                              |
 | Groups                                               |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Grouping preserves visual positions.                                                                                                                                                                                                               |
-| Sections                                             |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Section rendering and title pills are OpenPencil-specific approximations.                                                                                                                                                                          |
+| Sections                                             |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Section rendering and title pills are Inkly-specific approximations.                                                                                                                                                                          |
 | Rectangles / rounded rectangles                      |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Per-corner radii and smoothed corners render for fills, strokes, clips, masks, and effects.                                                                                                                                                        |
 | Ellipses / arcs                                      |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | `arcData` renders/exports; no full inspector controls.                                                                                                                                                                                             |
 | Lines                                                |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Stroke caps/joins render but are not fully exposed in UI.                                                                                                                                                                                          |
@@ -132,12 +132,12 @@ Figma's design documentation groups features into these areas:
 | Connectors                                           |      ◐ |      ◐ |       — |                 ◐ |       ◐ | Type exists, but Figma connector semantics are weak.                                                                                                                                                                                               |
 | Shape-with-text / FigJam shapes                      |      ◐ |      ◐ |       — |                 ◐ |       ◐ | Type exists, but not a full FigJam feature implementation.                                                                                                                                                                                         |
 | Slices                                               |      ◐ |      — |       ◐ |                 ◐ |      ✅ | Slice-like export regions exist via tooling, not as true Figma slice nodes.                                                                                                                                                                        |
-| FigJam / Slides / Code / CMS / Buzz node families    |      ↩ |      — |       — |                 ↩ |       — | Current Kiwi schema recognizes many newer Figma node families (`TABLE`, `SLIDE`, `CODE_COMPONENT`, `CMS_RICH_TEXT`, `REPEATER`, `WEBPAGE`, etc.), but OpenPencil only preserves/round-trips them where safe; they are not first-class scene nodes. |
+| FigJam / Slides / Code / CMS / Buzz node families    |      ↩ |      — |       — |                 ↩ |       — | Current Kiwi schema recognizes many newer Figma node families (`TABLE`, `SLIDE`, `CODE_COMPONENT`, `CMS_RICH_TEXT`, `REPEATER`, `WEBPAGE`, etc.), but Inkly only preserves/round-trips them where safe; they are not first-class scene nodes. |
 | Solid fills                                          |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Color variables supported for common fill cases.                                                                                                                                                                                                   |
 | Gradients                                            |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Linear/radial/angular/diamond support; Figma edge cases may differ.                                                                                                                                                                                |
 | Image fills                                          |     ✅ |     ✅ |       ◐ |                ✅ |      ✅ | Fill/fit/crop/tile support exists; imported crop/tile affine transforms are applied, but exact Figma parity is still partial.                                                                                                                      |
 | Pattern / noise / custom fills                       |     ✅ |      ◐ |       — |                ✅ |       — | Schema metadata imports/exports; Figma pattern fills with a referenced source node render as repeated source tiles with scale, spacing, alignment, and basic hex offsets. Noise/custom paints still render with a solid fallback pending real paint payload samples; Figma-authored noise/texture/glass effect payloads are captured separately. |
-| Video/GIF/media fills                                |      ↩ |      — |       — |                 ↩ |       — | Kiwi schema includes media paint/export enums, but OpenPencil has no video/GIF playback or media layer support.                                                                                                                                    |
+| Video/GIF/media fills                                |      ↩ |      — |       — |                 ↩ |       — | Kiwi schema includes media paint/export enums, but Inkly has no video/GIF playback or media layer support.                                                                                                                                    |
 | Layer/fill/effect blend modes                        |     ✅ |      ◐ |       — |                ✅ |      ✅ | Canvas applies node, fill, and common shadow effect blend modes; Figma isolation edge cases remain partial.                                                                                                                                        |
 | Opacity                                              |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Node opacity uses save layers in the renderer.                                                                                                                                                                                                     |
 | Strokes                                              |     ✅ |     ✅ |      ✅ |                ✅ |      ✅ | Weight, alignment, dashes, and side weights are supported.                                                                                                                                                                                         |
@@ -175,15 +175,15 @@ Figma's design documentation groups features into these areas:
 | Prototype overlays / scroll-to                       |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Smart animate / easing / spring / duration           |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Interactive components                               |      — |      — |       — |                 — |       — | Component-level prototype connections are not supported.                                                                                                                                                                                           |
-| Dev Mode inspect / measurements / annotations        |      — |      — |       — |                 — |       ◐ | OpenPencil has CLI/MCP inspection, but not Figma Dev Mode UI.                                                                                                                                                                                      |
+| Dev Mode inspect / measurements / annotations        |      — |      — |       — |                 — |       ◐ | Inkly has CLI/MCP inspection, but not Figma Dev Mode UI.                                                                                                                                                                                      |
 | Code Connect / dev resources / ready-for-dev         |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Comments                                             |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
 | Version history / branches                           |      — |      — |       — |                 — |       — | Not modeled.                                                                                                                                                                                                                                       |
-| Real-time collaboration                              |      — |     ✅ |      ✅ |                 — |       — | OpenPencil has its own P2P collaboration, not Figma-compatible metadata.                                                                                                                                                                           |
+| Real-time collaboration                              |      — |     ✅ |      ✅ |                 — |       — | Inkly has its own P2P collaboration, not Figma-compatible metadata.                                                                                                                                                                           |
 
 ## Raw Kiwi metadata coverage
 
-OpenPencil deliberately preserves many Figma/Kiwi fields even when they are not rendered or editable. These live under `SceneNode.source.fig` and are applied late during `.fig` export. A schema coverage test compares the current `fig.kiwi` `NodeChange` fields against modeled codec fields, raw-preserved fields, and intentionally schema-only metadata buckets so drift stays visible.
+Inkly deliberately preserves many Figma/Kiwi fields even when they are not rendered or editable. These live under `SceneNode.source.fig` and are applied late during `.fig` export. A schema coverage test compares the current `fig.kiwi` `NodeChange` fields against modeled codec fields, raw-preserved fields, and intentionally schema-only metadata buckets so drift stays visible.
 
 | Field group                                                             | Import/export |   Render |  UI | Fidelity impact                                                                                                                                                                                                                                                                                                                                         |
 | ----------------------------------------------------------------------- | ------------: | -------: | --: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -196,7 +196,7 @@ OpenPencil deliberately preserves many Figma/Kiwi fields even when they are not 
 | `source.fig.derivedSymbolData`                                          |            ✅ | Indirect |   — | Critical for instance-derived geometry/layout/text.                                                                                                                                                                                                                                                                                                     |
 | `source.fig.derivedSymbolDataLayoutVersion`                             |            ✅ |        — |   — | Figma bookkeeping.                                                                                                                                                                                                                                                                                                                                      |
 | `source.fig.uniformScaleFactor`                                         |            ✅ | Indirect |   — | Important for scaled instances.                                                                                                                                                                                                                                                                                                                         |
-| Style IDs: fill/stroke/text/effect/grid                                 |             ↩ |        — |   — | Preserves style linkage for Figma, but OpenPencil has no style manager yet.                                                                                                                                                                                                                                                                             |
+| Style IDs: fill/stroke/text/effect/grid                                 |             ↩ |        — |   — | Preserves style linkage for Figma, but Inkly has no style manager yet.                                                                                                                                                                                                                                                                             |
 | Component property refs/defs/specs                                      |            ✅ | Indirect |   ◐ | Full Figma component-property authoring is incomplete.                                                                                                                                                                                                                                                                                                  |
 | State-group metadata                                                    |             ↩ |        — |   — | Preserved only.                                                                                                                                                                                                                                                                                                                                         |
 | Version/sort/publish/library metadata                                   |             ↩ |        — |   ◐ | Assets UI shows a subset; publish/update workflow is missing.                                                                                                                                                                                                                                                                                           |

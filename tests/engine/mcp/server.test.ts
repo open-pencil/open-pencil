@@ -14,7 +14,7 @@ import {
   SceneGraph,
   computeAllLayouts,
   executeRpcCommand
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 import { startServer, paramToZod } from '#mcp/server'
 
@@ -30,7 +30,7 @@ interface MockBrowser {
   close: () => void
 }
 
-const TEST_MCP_ROOT = path.join(tmpdir(), 'open-pencil-mcp-root')
+const TEST_MCP_ROOT = path.join(tmpdir(), 'inkly-mcp-root')
 
 function connectMockBrowser(port: number, graph: SceneGraph): Promise<MockBrowser> {
   return new Promise((resolve, reject) => {
@@ -375,7 +375,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-no-app')
       expect(response.ok).toBe(false)
-      expect(response.error).toContain('OpenPencil app is not connected')
+      expect(response.error).toContain('Inkly app is not connected')
     } finally {
       clientWs.close()
       closeServer()

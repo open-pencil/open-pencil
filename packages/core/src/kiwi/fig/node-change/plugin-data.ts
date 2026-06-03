@@ -3,7 +3,7 @@ import type { PluginDataEntry, PluginRelaunchDataEntry } from '#core/scene-graph
 
 import { guidToString } from './guid'
 
-export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
+export const INKLY_PLUGIN_ID = 'inkly'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
 export const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
 export const NODE_TYPE_PLUGIN_KEY = 'nodeType'
@@ -15,9 +15,9 @@ export function upsertPluginData(
   value: string
 ): void {
   const pluginData = node.pluginData.filter(
-    (entry) => !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
+    (entry) => !(entry.pluginId === INKLY_PLUGIN_ID && entry.key === key)
   )
-  pluginData.push({ pluginId: OPEN_PENCIL_PLUGIN_ID, key, value })
+  pluginData.push({ pluginId: INKLY_PLUGIN_ID, key, value })
   node.pluginData = pluginData
 }
 
@@ -39,7 +39,7 @@ function parseBoundVariablesPluginValue(value: string | null): Record<string, st
 
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
   const bindings = parseBoundVariablesPluginValue(
-    getOpenPencilPluginValue(nc, BOUND_VARIABLES_PLUGIN_KEY)
+    getInklyPluginValue(nc, BOUND_VARIABLES_PLUGIN_KEY)
   )
   nc.fillPaints?.forEach((paint, i) => {
     if (paint.colorVariableBinding) {
@@ -62,9 +62,9 @@ export function extractPluginData(nc: NodeChange): PluginDataEntry[] {
   }))
 }
 
-export function getOpenPencilPluginValue(nc: NodeChange, key: string): string | null {
+export function getInklyPluginValue(nc: NodeChange, key: string): string | null {
   return (
-    nc.pluginData?.find((entry) => entry.pluginID === OPEN_PENCIL_PLUGIN_ID && entry.key === key)
+    nc.pluginData?.find((entry) => entry.pluginID === INKLY_PLUGIN_ID && entry.key === key)
       ?.value ?? null
   )
 }

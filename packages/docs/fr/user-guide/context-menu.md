@@ -1,6 +1,6 @@
 ---
 title: Menu contextuel
-description: Actions du menu contextuel (clic droit) dans OpenPencil.
+description: Actions du menu contextuel (clic droit) dans Inkly.
 ---
 # Menu contextuel
 

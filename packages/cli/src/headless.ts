@@ -1,6 +1,6 @@
-import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit } from '@open-pencil/core/io'
-import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit } from '@inkly/core/io'
+import { computeAllLayouts } from '@inkly/core/layout'
+import type { SceneGraph } from '@inkly/core/scene-graph'
 
 export { initCanvasKit }
 

@@ -7,7 +7,7 @@ import {
   toggleBoldInRange,
   toggleItalicInRange,
   type StyleRun
-} from '@open-pencil/core'
+} from '@inkly/core'
 
 // ---------------------------------------------------------------------------
 // toggleBoldInRange — mutation coverage

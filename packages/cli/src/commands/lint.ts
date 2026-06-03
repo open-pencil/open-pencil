@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 
-import { allRules, createLinter, presets, type LintMessage } from '@open-pencil/core/lint'
+import { allRules, createLinter, presets, type LintMessage } from '@inkly/core/lint'
 
 import { bold, dim, fail, fmtList, ok } from '#cli/format'
 import { loadDocument } from '#cli/headless'

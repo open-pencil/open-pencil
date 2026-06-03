@@ -1,6 +1,6 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
-import { readFigFile } from '@open-pencil/core/io/formats/fig'
-import { computeAllLayouts } from '@open-pencil/core/layout'
+import type { Editor, EditorState } from '@inkly/core/editor'
+import { readFigFile } from '@inkly/core/io/formats/fig'
+import { computeAllLayouts } from '@inkly/core/layout'
 
 import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'

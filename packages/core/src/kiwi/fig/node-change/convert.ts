@@ -17,7 +17,7 @@ import {
   extractBoundVariables,
   extractPluginData,
   extractPluginRelaunchData,
-  getOpenPencilPluginValue,
+  getInklyPluginValue,
   LAYOUT_DIRECTION_PLUGIN_KEY,
   NODE_TYPE_PLUGIN_KEY,
   TEXT_DIRECTION_PLUGIN_KEY
@@ -359,7 +359,7 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
     fontFeatures: convertFontFeatures(nc),
     textTruncation: (nc.textTruncation as string) === 'ENDING' ? 'ENDING' : 'DISABLED',
     textDirection:
-      (getOpenPencilPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
+      (getInklyPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
         | SceneNode['textDirection']
         | null) || 'AUTO',
     figmaDerivedLayout: nc.derivedTextData?.layoutSize
@@ -456,7 +456,7 @@ function convertLayoutProps(
     itemReverseZIndex: (nc.stackReverseZIndex ?? false) as boolean,
     strokesIncludedInLayout: (nc.strokesIncludedInLayout ?? false) as boolean,
     layoutDirection:
-      (getOpenPencilPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
+      (getInklyPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
         | SceneNode['layoutDirection']
         | null) || 'AUTO',
     ...(figmaDerivedLayout ? { figmaDerivedLayout } : {})
@@ -503,7 +503,7 @@ export function nodeChangeToProps(
   let nodeType = mapNodeType(nc.type)
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
-    getOpenPencilPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
+    getInklyPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
   ) {
     nodeType = 'COMPONENT_SET'
   }
@@ -762,7 +762,7 @@ export function sortChildren(
 }
 
 interface PreservedFigmaBlob {
-  __openPencilFigmaBlob: Uint8Array
+  __inklyFigmaBlob: Uint8Array
 }
 
 function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown {
@@ -777,7 +777,7 @@ function preserveFigmaPayloadBlobs(value: unknown, blobs: Uint8Array[]): unknown
         result[key] = child
       } else {
         result[key] = {
-          __openPencilFigmaBlob:
+          __inklyFigmaBlob:
             blob instanceof Uint8Array
               ? blob
               : new Uint8Array(Object.values(blob as Record<string, number>))

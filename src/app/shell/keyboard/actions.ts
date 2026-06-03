@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 
-import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
+import type { useEditorCommands, useViewportKind } from '@inkly/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

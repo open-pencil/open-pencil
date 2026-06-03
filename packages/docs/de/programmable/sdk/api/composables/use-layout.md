@@ -18,7 +18,7 @@ Es gibt Zustand und Aktionen zurück für:
 ## Verwendung
 
 ```ts
-import { useLayout } from '@open-pencil/vue'
+import { useLayout } from '@inkly/vue'
 
 const layout = useLayout()
 ```

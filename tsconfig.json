@@ -24,9 +24,9 @@
       "#mcp/*": ["./packages/mcp/src/*"],
       "#tests/*": ["./tests/*"],
       "tinykeys": ["./node_modules/tinykeys/dist/tinykeys.d.ts"],
-      "@open-pencil/vue": ["./packages/vue/src/index.ts"],
-      "@open-pencil/core": ["./packages/core/src/index.ts"],
-      "@open-pencil/core/*": ["./packages/core/src/*"]
+      "@inkly/vue": ["./packages/vue/src/index.ts"],
+      "@inkly/core": ["./packages/core/src/index.ts"],
+      "@inkly/core/*": ["./packages/core/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue"],

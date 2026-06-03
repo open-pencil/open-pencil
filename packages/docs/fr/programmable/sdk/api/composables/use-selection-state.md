@@ -17,7 +17,7 @@ Utilisez-le quand vous avez besoin d'afficher une UI basée sur :
 ## Utilisation
 
 ```ts
-import { useSelectionState } from '@open-pencil/vue'
+import { useSelectionState } from '@inkly/vue'
 
 const selection = useSelectionState()
 ```
@@ -26,7 +26,7 @@ const selection = useSelectionState()
 
 ```vue
 <script setup lang="ts">
-import { useSelectionState } from '@open-pencil/vue'
+import { useSelectionState } from '@inkly/vue'
 
 const { hasSelection, selectedCount, isInstance } = useSelectionState()
 </script>

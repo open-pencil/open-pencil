@@ -3,16 +3,16 @@ import AppSelect from './ui/AppSelect.vue'
 import Tip from './ui/Tip.vue'
 import ColorPickerPanel from '@/components/ColorPickerPanel/ColorPickerPanel.vue'
 import ScrubInput from './ScrubInput.vue'
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@inkly/core/color'
 import {
   GradientEditorRoot,
   GradientEditorBar,
   GradientEditorStop,
   inputValue,
   useI18n
-} from '@open-pencil/vue'
+} from '@inkly/vue'
 
-import type { Fill } from '@open-pencil/core/scene-graph'
+import type { Fill } from '@inkly/core/scene-graph'
 
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()

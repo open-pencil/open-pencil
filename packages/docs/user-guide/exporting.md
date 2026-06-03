@@ -1,6 +1,6 @@
 ---
 title: Exporting
-description: Export images, SVG, and .fig subsets, and open .fig or .pen documents in OpenPencil.
+description: Export images, SVG, and .fig subsets, and open .fig or .pen documents in Inkly.
 ---
 
 # Exporting
@@ -42,11 +42,11 @@ In addition to file export, you can copy the selection to the clipboard in multi
 - **Copy as text** — copies visible text content from the selection
 - **Copy as SVG** — copies the selection as SVG markup (paste into code editors, Inkscape, etc.)
 - **Copy as PNG** — renders at 2× and copies to the clipboard (ready to paste into Slack, Notion, etc.)
-- **Copy as JSX** — copies the OpenPencil JSX representation (compatible with `renderJsx()`)
+- **Copy as JSX** — copies the Inkly JSX representation (compatible with `renderJsx()`)
 
 ## .fig File Operations
 
-OpenPencil uses the .fig format for full documents — the same binary format as Figma.
+Inkly uses the .fig format for full documents — the same binary format as Figma.
 
 ### Opening Files
 
@@ -70,7 +70,7 @@ Saved files are compressed and include a thumbnail image for preview in file bro
 
 ### Round-trip Compatibility
 
-Files exported from OpenPencil can be opened in Figma, and vice versa. The .fig format preserves all node types, properties, fills, strokes, effects, vector data, and layout settings.
+Files exported from Inkly can be opened in Figma, and vice versa. The .fig format preserves all node types, properties, fills, strokes, effects, vector data, and layout settings.
 
 ## Keyboard Shortcuts
 

@@ -10,7 +10,7 @@ description: Édition collaborative en temps réel via P2P WebRTC — sans serve
 ## Partager une salle
 
 1. Cliquez sur le bouton de partage dans le coin supérieur droit
-2. Copiez le lien généré (`app.openpencil.dev/share/<room-id>`)
+2. Copiez le lien généré (`app.inkly.dev/share/<room-id>`)
 3. Envoyez-le à vos collaborateurs
 
 Toute personne ayant le lien peut rejoindre la salle. La salle reste active tant qu'au moins un participant a la page ouverte.

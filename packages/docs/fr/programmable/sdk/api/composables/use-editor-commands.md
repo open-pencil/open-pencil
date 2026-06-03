@@ -18,7 +18,7 @@ Il est utile pour construire :
 ## Utilisation
 
 ```ts
-import { useEditorCommands } from '@open-pencil/vue'
+import { useEditorCommands } from '@inkly/vue'
 
 const { commands, menuItem, runCommand, moveSelectionToPage, otherPages } = useEditorCommands()
 ```

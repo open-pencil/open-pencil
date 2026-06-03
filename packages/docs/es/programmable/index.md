@@ -1,12 +1,12 @@
 ---
 layout: doc
 title: IA y Automatización
-description: Cada operación en OpenPencil es scriptable — chat con IA, CLI, renderizador JSX, servidor MCP, colaboración en tiempo real.
+description: Cada operación en Inkly es scriptable — chat con IA, CLI, renderizador JSX, servidor MCP, colaboración en tiempo real.
 ---
 
 # IA y Automatización
 
-OpenPencil trata los archivos de diseño como datos. Cada operación disponible en el editor — crear formas, establecer rellenos, gestionar auto-layout, exportar recursos — también está disponible desde la terminal, desde agentes de IA y desde código. Sin plugins que instalar, sin claves de API, sin lista de espera.
+Inkly trata los archivos de diseño como datos. Cada operación disponible en el editor — crear formas, establecer rellenos, gestionar auto-layout, exportar recursos — también está disponible desde la terminal, desde agentes de IA y desde código. Sin plugins que instalar, sin claves de API, sin lista de espera.
 
 La interfaz del editor y las interfaces de automatización usan el mismo motor. Si puedes hacerlo con un clic, puedes hacerlo con un script.
 
@@ -40,7 +40,7 @@ El CLI también se conecta a la aplicación de escritorio en ejecución vía RPC
 
 ## Servidor MCP
 
-Conecta Claude Code, Cursor, Windsurf o cualquier cliente compatible con MCP a OpenPencil. El servidor expone 90 herramientas para leer, crear y modificar diseños — las mismas herramientas que usa el chat con IA integrado. Funciona sobre stdio o HTTP con soporte de sesiones.
+Conecta Claude Code, Cursor, Windsurf o cualquier cliente compatible con MCP a Inkly. El servidor expone 90 herramientas para leer, crear y modificar diseños — las mismas herramientas que usa el chat con IA integrado. Funciona sobre stdio o HTTP con soporte de sesiones.
 
 [Servidor MCP →](./mcp-server)
 
@@ -48,4 +48,4 @@ Conecta Claude Code, Cursor, Windsurf o cualquier cliente compatible con MCP a O
 
 Figma es una plataforma cerrada. Su servidor MCP es de solo lectura. El acceso CDP por navegador fue eliminado en la versión 126. Los archivos de diseño viven en un formato propietario en los servidores de otra empresa. El desarrollo de plugins requiere un runtime personalizado con APIs limitadas.
 
-OpenPencil es la alternativa: código abierto, licencia MIT, cada operación scriptable, datos almacenados localmente. Tus archivos de diseño son tuyos — inspecciónalos, transfórmalos, envíalos a CI, aliméntalos a un LLM. Sin necesidad de permiso.
+Inkly es la alternativa: código abierto, licencia MIT, cada operación scriptable, datos almacenados localmente. Tus archivos de diseño son tuyos — inspecciónalos, transfórmalos, envíalos a CI, aliméntalos a un LLM. Sin necesidad de permiso.

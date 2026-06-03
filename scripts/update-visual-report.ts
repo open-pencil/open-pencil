@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util'
 
 interface Metrics {
   figmaSize: string
-  openPencilSize: string
+  inklySize: string
   differentPixels: number
   differentPercent: number
   fuzz?: string
@@ -18,7 +18,7 @@ interface Comparison {
   nodeId: string
   output: string
   figmaSize?: string
-  openPencilSize?: string
+  inklySize?: string
   differentPixels?: number
   differentPercent?: number
   fuzz?: string
@@ -52,7 +52,7 @@ const comparison = report.comparisons.find((item) => item.name === opts.name)
 if (!comparison) throw new Error(`No comparison named ${opts.name}`)
 
 comparison.figmaSize = metrics.figmaSize
-comparison.openPencilSize = metrics.openPencilSize
+comparison.inklySize = metrics.inklySize
 comparison.differentPixels = metrics.differentPixels
 comparison.differentPercent = metrics.differentPercent
 comparison.fuzz = metrics.fuzz

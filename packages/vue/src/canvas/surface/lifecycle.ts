@@ -2,8 +2,8 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose } from 'vue'
 import type { Ref } from 'vue'
 
-import { SkiaRenderer } from '@open-pencil/core/canvas'
-import type { Editor } from '@open-pencil/core/editor'
+import { SkiaRenderer } from '@inkly/core/canvas'
+import type { Editor } from '@inkly/core/editor'
 
 import { makeGLSurface, sizeCanvas, type CanvasGLContext } from '#vue/canvas/surface/gl-surface'
 import { useCanvasKitLoader } from '#vue/canvas/surface/kit-loader'

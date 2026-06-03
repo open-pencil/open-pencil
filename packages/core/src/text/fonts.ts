@@ -243,7 +243,7 @@ export class FontManager {
     const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
     const { resolve, dirname } = await import(/* @vite-ignore */ 'node:path')
     const { fileURLToPath } = await import(/* @vite-ignore */ 'node:url')
-    const packageJsonUrl = import.meta.resolve('@open-pencil/core/package.json')
+    const packageJsonUrl = import.meta.resolve('@inkly/core/package.json')
     const packageRoot = dirname(fileURLToPath(packageJsonUrl))
     const assetPath = resolve(packageRoot, `assets${url}`)
     const buf = await readFile(assetPath)

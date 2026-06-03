@@ -1,8 +1,8 @@
 import { useEventListener } from '@vueuse/core'
 import { onScopeDispose, ref, type Ref } from 'vue'
 
-import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { Editor } from '@inkly/core/editor'
+import type { SceneNode } from '@inkly/core/scene-graph'
 
 import {
   handleBendHandleMove,
@@ -26,7 +26,7 @@ import { useSpaceHeld } from '#vue/shared/input/space-key'
 import type { DragState } from '#vue/shared/input/types'
 
 /**
- * Wires pointer and mouse interaction to an OpenPencil canvas.
+ * Wires pointer and mouse interaction to an Inkly canvas.
  *
  * This composable coordinates selection, dragging, resizing, rotation,
  * panning, drawing tools, scoped hit testing, and text-edit interaction.

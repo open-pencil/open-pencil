@@ -12,7 +12,7 @@ description: Lee y muta colecciones de variables, variables y valores de variabl
 ## Uso
 
 ```ts
-import { useVariables } from '@open-pencil/vue'
+import { useVariables } from '@inkly/vue'
 
 const variables = useVariables()
 ```

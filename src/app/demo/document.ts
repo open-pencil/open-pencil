@@ -1,4 +1,4 @@
-import { computeAllLayouts } from '@open-pencil/core/layout'
+import { computeAllLayouts } from '@inkly/core/layout'
 
 import { createAppPreviewSection } from '@/app/demo/sections/app-preview'
 import { createComponentsSection } from '@/app/demo/sections/components'

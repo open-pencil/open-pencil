@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { renderSVGNode, svg } from '@open-pencil/core'
+import { renderSVGNode, svg } from '@inkly/core'
 
 // --- SVGNode builder tests ---
 

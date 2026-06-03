@@ -10,7 +10,7 @@ Bearbeite Designs gemeinsam in Echtzeit. Peers verbinden sich direkt — kein Se
 ## Einen Raum teilen
 
 1. Klicke auf den Teilen-Button in der oberen rechten Ecke
-2. Kopiere den generierten Link (`app.openpencil.dev/share/<room-id>`)
+2. Kopiere den generierten Link (`app.inkly.dev/share/<room-id>`)
 3. Sende ihn an deine Mitarbeiter
 
 Jeder mit dem Link kann beitreten. Der Raum bleibt aktiv, solange mindestens ein Teilnehmer die Seite geöffnet hat.

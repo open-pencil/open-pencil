@@ -1,11 +1,11 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import type { EditorState } from '@inkly/core/editor'
 import type {
   VectorNetwork,
   VectorRegion,
   VectorSegment,
   VectorVertex
-} from '@open-pencil/core/scene-graph'
-import type { Rect } from '@open-pencil/core/types'
+} from '@inkly/core/scene-graph'
+import type { Rect } from '@inkly/core/types'
 
 export type NodeEditState = {
   nodeId: string

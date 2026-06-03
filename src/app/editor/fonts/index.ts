@@ -1,12 +1,12 @@
 import { useLocalStorage } from '@vueuse/core'
 
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { SceneGraph } from '@inkly/core/scene-graph'
 import {
   fontManager,
   styleToWeight,
   type FontFamilyOption,
   type LocalFontAccessState
-} from '@open-pencil/core/text'
+} from '@inkly/core/text'
 
 import {
   clearDownloadedFontCache as clearTauriDownloadedFontCache,

@@ -26,12 +26,12 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'openpencil',
+      name: 'inkly',
       testDir: './tests/e2e',
       fullyParallel: false
     },
     {
-      name: 'openpencil-webkit',
+      name: 'inkly-webkit',
       testDir: './tests/e2e',
       testMatch: '**/*.webkit.spec.ts',
       use: {

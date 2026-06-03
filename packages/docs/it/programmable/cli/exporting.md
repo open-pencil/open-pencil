@@ -10,10 +10,10 @@ Esporta i design dal terminale — immagini raster, vettoriali o codice JSX.
 ## Esportazione Immagini
 
 ```sh
-openpencil export design.fig                          # PNG (predefinito)
-openpencil export design.fig -f jpg -s 2 -q 90       # JPG a 2×, qualità 90
-openpencil export design.fig -f webp -s 3             # WEBP a 3×
-openpencil export design.fig -f svg                   # SVG vettoriale
+inkly export design.fig                          # PNG (predefinito)
+inkly export design.fig -f jpg -s 2 -q 90       # JPG a 2×, qualità 90
+inkly export design.fig -f webp -s 3             # WEBP a 3×
+inkly export design.fig -f svg                   # SVG vettoriale
 ```
 
 Opzioni:
@@ -30,7 +30,7 @@ Opzioni:
 Esporta come JSX con classi utility Tailwind:
 
 ```sh
-openpencil export design.fig -f jsx --style tailwind
+inkly export design.fig -f jsx --style tailwind
 ```
 
 Output:
@@ -42,12 +42,12 @@ Output:
 </div>
 ```
 
-Supporta anche `--style openpencil` per il formato JSX nativo (vedi [Renderer JSX](../jsx-renderer)).
+Supporta anche `--style inkly` per il formato JSX nativo (vedi [Renderer JSX](../jsx-renderer)).
 
 ## Miniature
 
 ```sh
-openpencil export design.fig --thumbnail --width 1920 --height 1080
+inkly export design.fig --thumbnail --width 1920 --height 1080
 ```
 
 ## Modalità App in Esecuzione
@@ -55,5 +55,5 @@ openpencil export design.fig --thumbnail --width 1920 --height 1080
 Ometti il file per esportare dall'app in esecuzione:
 
 ```sh
-openpencil export -f png    # screenshot del canvas corrente
+inkly export -f png    # screenshot del canvas corrente
 ```

@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { fontManager } from '@open-pencil/core/text'
+import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@inkly/core'
+import { fontManager } from '@inkly/core/text'
 
 import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 

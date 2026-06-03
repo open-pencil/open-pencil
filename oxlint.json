@@ -44,7 +44,7 @@
         "paths": [
           {
             "name": "@/types",
-            "message": "Import types directly from @open-pencil/core."
+            "message": "Import types directly from @inkly/core."
           },
           {
             "name": "node:module",
@@ -59,7 +59,7 @@
             "group": [
               "@/engine/*"
             ],
-            "message": "Import from @open-pencil/core unless the module adds platform-specific logic.",
+            "message": "Import from @inkly/core unless the module adds platform-specific logic.",
             "allowImportNames": [
               "loadFont",
               "listFamilies",
@@ -72,7 +72,7 @@
               "../../packages/*",
               "../../../packages/*"
             ],
-            "message": "Use the workspace package name (e.g. @open-pencil/core) instead of relative paths to packages/."
+            "message": "Use the workspace package name (e.g. @inkly/core) instead of relative paths to packages/."
           }
         ]
       }
@@ -137,7 +137,7 @@
     ],
     "vue/require-default-export": "error",
     "vue/require-typed-ref": "error",
-    "open-pencil/no-inline-named-types": [
+    "inkly/no-inline-named-types": [
       "error",
       {
         "Vector": "x:number,y:number",
@@ -147,70 +147,70 @@
         "Matrix": "m00:number,m01:number,m02:number,m10:number,m11:number,m12:number"
       }
     ],
-    "open-pencil/no-structuredclone-scene-arrays": "error",
-    "open-pencil/no-vue-style-blocks": "error",
-    "open-pencil/no-native-title-attributes-in-vue": "error",
-    "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
-    "open-pencil/no-raw-test-id-string-props": "error",
-    "open-pencil/no-dynamic-data-test-id-in-vue": "error",
-    "open-pencil/no-test-id-helper-bind-in-vue": "error",
-    "open-pencil/no-invalid-test-id-attributes": "error",
-    "open-pencil/no-raw-test-id-selectors-in-tests": "error",
-    "open-pencil/no-generated-test-id-literals": "error",
-    "open-pencil/no-browser-side-effects-in-vue": "error",
-    "open-pencil/no-document-query-selector-in-vue": "error",
-    "open-pencil/no-direct-selection-tool-state-mutation": "error",
-    "open-pencil/no-math-random": "error",
-    "open-pencil/no-hardcoded-color-constants": "error",
-    "open-pencil/no-hand-rolled-color": "error",
-    "open-pencil/no-raw-console-format": "off",
-    "open-pencil/no-silent-catch": "error",
-    "open-pencil/no-typeof-window-check": "error",
-    "open-pencil/no-vue-self-package-imports": "error",
-    "open-pencil/no-cross-package-source-imports": "error",
-    "open-pencil/no-app-imports-in-packages": "error",
-    "open-pencil/no-core-framework-imports": "error",
-    "open-pencil/no-direct-storage-access": "error",
-    "open-pencil/no-deep-parent-relative-imports": "error",
-    "open-pencil/no-broad-double-cast": "error",
-    "open-pencil/no-unknown-record-double-cast": "error",
-    "open-pencil/no-broad-unknown-type-assertions": "error",
-    "open-pencil/no-local-json-object-aliases": "error",
-    "open-pencil/no-duplicate-type-shapes": "error",
-    "open-pencil/no-ts-suppression-comments": "error",
-    "open-pencil/no-reflect-delete-global-this-outside-tests": "error",
-    "open-pencil/no-core-browser-globals": "error",
-    "open-pencil/no-direct-open-pencil-window-internals": "error",
-    "open-pencil/no-direct-open-pencil-browser-store": "error",
-    "open-pencil/no-function-alias-imports": "error",
-    "open-pencil/max-composition-root-lines": [
+    "inkly/no-structuredclone-scene-arrays": "error",
+    "inkly/no-vue-style-blocks": "error",
+    "inkly/no-native-title-attributes-in-vue": "error",
+    "inkly/no-hardcoded-tip-labels-in-vue": "error",
+    "inkly/no-raw-test-id-string-props": "error",
+    "inkly/no-dynamic-data-test-id-in-vue": "error",
+    "inkly/no-test-id-helper-bind-in-vue": "error",
+    "inkly/no-invalid-test-id-attributes": "error",
+    "inkly/no-raw-test-id-selectors-in-tests": "error",
+    "inkly/no-generated-test-id-literals": "error",
+    "inkly/no-browser-side-effects-in-vue": "error",
+    "inkly/no-document-query-selector-in-vue": "error",
+    "inkly/no-direct-selection-tool-state-mutation": "error",
+    "inkly/no-math-random": "error",
+    "inkly/no-hardcoded-color-constants": "error",
+    "inkly/no-hand-rolled-color": "error",
+    "inkly/no-raw-console-format": "off",
+    "inkly/no-silent-catch": "error",
+    "inkly/no-typeof-window-check": "error",
+    "inkly/no-vue-self-package-imports": "error",
+    "inkly/no-cross-package-source-imports": "error",
+    "inkly/no-app-imports-in-packages": "error",
+    "inkly/no-core-framework-imports": "error",
+    "inkly/no-direct-storage-access": "error",
+    "inkly/no-deep-parent-relative-imports": "error",
+    "inkly/no-broad-double-cast": "error",
+    "inkly/no-unknown-record-double-cast": "error",
+    "inkly/no-broad-unknown-type-assertions": "error",
+    "inkly/no-local-json-object-aliases": "error",
+    "inkly/no-duplicate-type-shapes": "error",
+    "inkly/no-ts-suppression-comments": "error",
+    "inkly/no-reflect-delete-global-this-outside-tests": "error",
+    "inkly/no-core-browser-globals": "error",
+    "inkly/no-direct-inkly-window-internals": "error",
+    "inkly/no-direct-inkly-browser-store": "error",
+    "inkly/no-function-alias-imports": "error",
+    "inkly/max-composition-root-lines": [
       "error",
       {
         "max": 260
       }
     ],
-    "open-pencil/no-core-parent-relative-imports": "error",
-    "open-pencil/no-mcp-parent-relative-imports": "error",
-    "open-pencil/no-vue-parent-relative-imports": "error",
-    "open-pencil/no-cli-parent-relative-imports": "error",
-    "open-pencil/no-mcp-core-barrel-imports": "error",
-    "open-pencil/no-cli-core-barrel-imports": "error",
-    "open-pencil/no-script-core-barrel-imports": "error",
-    "open-pencil/no-core-self-package-imports": "error",
-    "open-pencil/no-inline-prompt-constants": "error",
-    "open-pencil/no-app-vue-core-barrel-imports": "error",
-    "open-pencil/no-direct-graph-emitter-subscriptions": "error",
-    "open-pencil/no-on-unmounted-in-composition-roots": "error",
-    "open-pencil/no-composable-state-wrappers": "error",
-    "open-pencil/prefer-vueuse-intervals": "error",
-    "open-pencil/prefer-vueuse-timeouts": "error",
-    "open-pencil/vue-component-file-pascal-case": "error",
-    "open-pencil/component-namespace-pascal-case": "error",
-    "open-pencil/non-component-source-directories-kebab-case": "error",
-    "open-pencil/no-component-root-sibling-folder": "error",
-    "open-pencil/no-flat-kiwi-modules": "error",
-    "open-pencil/no-top-level-prefixed-test-files": "error",
-    "open-pencil/no-sibling-domain-prefixed-files": "error",
+    "inkly/no-core-parent-relative-imports": "error",
+    "inkly/no-mcp-parent-relative-imports": "error",
+    "inkly/no-vue-parent-relative-imports": "error",
+    "inkly/no-cli-parent-relative-imports": "error",
+    "inkly/no-mcp-core-barrel-imports": "error",
+    "inkly/no-cli-core-barrel-imports": "error",
+    "inkly/no-script-core-barrel-imports": "error",
+    "inkly/no-core-self-package-imports": "error",
+    "inkly/no-inline-prompt-constants": "error",
+    "inkly/no-app-vue-core-barrel-imports": "error",
+    "inkly/no-direct-graph-emitter-subscriptions": "error",
+    "inkly/no-on-unmounted-in-composition-roots": "error",
+    "inkly/no-composable-state-wrappers": "error",
+    "inkly/prefer-vueuse-intervals": "error",
+    "inkly/prefer-vueuse-timeouts": "error",
+    "inkly/vue-component-file-pascal-case": "error",
+    "inkly/component-namespace-pascal-case": "error",
+    "inkly/non-component-source-directories-kebab-case": "error",
+    "inkly/no-component-root-sibling-folder": "error",
+    "inkly/no-flat-kiwi-modules": "error",
+    "inkly/no-top-level-prefixed-test-files": "error",
+    "inkly/no-sibling-domain-prefixed-files": "error",
     "array-callback-return": "error",
     "block-scoped-var": "error",
     "default-case-last": "error",
@@ -413,7 +413,7 @@
         "packages/*/src/**/*.ts"
       ],
       "rules": {
-        "open-pencil/no-useless-pass-through-wrappers": "error"
+        "inkly/no-useless-pass-through-wrappers": "error"
       }
     },
     {
@@ -449,7 +449,7 @@
         "packages/cli/src/commands/**"
       ],
       "rules": {
-        "open-pencil/no-raw-console-format": "error"
+        "inkly/no-raw-console-format": "error"
       }
     },
     {

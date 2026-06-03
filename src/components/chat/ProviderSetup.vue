@@ -5,9 +5,9 @@ import ProviderSelectField from '@/components/chat/ProviderSelect/ProviderSelect
 import AppInput from '@/components/ui/AppInput.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import { useAIChat } from '@/app/ai/chat/use'
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import { ACP_AGENTS } from '@inkly/core/constants'
 import { openExternalLink } from '@/app/shell/ui'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n } from '@inkly/vue'
 
 const { providerID, providerDef, setAPIKey, customBaseURL, customModelID } = useAIChat()
 const { dialogs } = useI18n()
