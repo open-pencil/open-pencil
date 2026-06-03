@@ -3,7 +3,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
-import { WebSocketServer } from 'ws'
+import { WebSocketServer, type WebSocket } from 'ws'
 
 import type { RpcJsonObject } from '#mcp/json'
 
@@ -16,6 +16,8 @@ import { createMcpSessionManager } from './mcp-sessions'
 import { registerTools } from './tool/registration'
 
 export const MCP_VERSION: string = packageJson.version
+
+const HEARTBEAT_INTERVAL_MS = 5_000
 
 let installCommandPromise: Promise<string> | null = null
 
@@ -74,11 +76,15 @@ export function startServer(options: ServerOptions = {}) {
   // --- WebSocket: browser connects here ---
 
   const wss = new WebSocketServer({ port: wsPort, host: '127.0.0.1' })
+  const alive = new WeakMap<WebSocket, boolean>()
 
   wss.on('connection', (ws) => {
+    alive.set(ws, true)
     browserRpc.handleConnection(ws)
 
+    ws.on('pong', () => alive.set(ws, true))
     ws.on('message', (raw) => {
+      alive.set(ws, true)
       const data = typeof raw === 'string' ? raw : Buffer.from(raw as Buffer).toString('utf-8')
       browserRpc.handleMessage(data, ws)
     })
@@ -86,7 +92,36 @@ export function startServer(options: ServerOptions = {}) {
     ws.on('close', () => {
       browserRpc.handleClose(ws)
     })
+
+    ws.on('error', () => {
+      try {
+        ws.terminate()
+      } catch {
+        alive.delete(ws)
+      }
+    })
   })
+
+  const heartbeat = setInterval(() => {
+    for (const ws of wss.clients) {
+      if (alive.get(ws) === false) {
+        try {
+          ws.terminate()
+        } catch {
+          continue
+        }
+        continue
+      }
+      alive.set(ws, false)
+      try {
+        ws.ping()
+      } catch {
+        continue
+      }
+    }
+  }, HEARTBEAT_INTERVAL_MS)
+  heartbeat.unref()
+  wss.on('close', () => clearInterval(heartbeat))
 
   // --- HTTP server ---
 

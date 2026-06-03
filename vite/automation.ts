@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
+import process from 'node:process'
 
 import { automationPlugin } from '../src/app/automation/bridge/vite-plugin'
 
-const devAutomationAuthToken = randomUUID()
+const devAutomationAuthToken = process.env.OPENPENCIL_DEV_TOKEN ?? randomUUID()
 
 export function localAutomationToken(command: string): string | null {
   return command === 'serve' ? devAutomationAuthToken : null

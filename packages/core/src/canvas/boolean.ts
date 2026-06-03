@@ -246,6 +246,15 @@ function operationForNode(r: SkiaRenderer, node: SceneNode): PathOp {
   return r.ck.PathOp[BOOLEAN_PATH_OP[operation]]
 }
 
+function makeImportedFillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | null {
+  if (typeof r.getFillGeometry !== 'function') return null
+  const fillGeometry = r.getFillGeometry(node)
+  if (!fillGeometry) return null
+  const result = new r.ck.Path()
+  for (const path of fillGeometry) result.addPath(path)
+  return result
+}
+
 export function makeBooleanOperationPath(
   r: SkiaRenderer,
   node: SceneNode,
@@ -259,14 +268,21 @@ export function makeBooleanOperationPath(
     if (path) childPaths.push(path)
   }
 
-  if (childPaths.length === 0) return null
+  if (childPaths.length === 0) return makeImportedFillGeometryPath(r, node)
 
-  const first = childPaths[0]
-  for (const path of childPaths.slice(1)) {
-    first.op(path, operationForNode(r, node))
+  const result = childPaths[0]
+  const operation = operationForNode(r, node)
+  for (let index = 1; index < childPaths.length; index++) {
+    const path = childPaths[index]
+    const didApply = result.op(path, operation)
     path.delete()
+    if (!didApply) {
+      result.delete()
+      for (const remaining of childPaths.slice(index + 1)) remaining.delete()
+      return makeImportedFillGeometryPath(r, node)
+    }
   }
-  return first
+  return result
 }
 
 export function renderBooleanOperation(

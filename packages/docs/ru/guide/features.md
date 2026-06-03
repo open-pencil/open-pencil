@@ -61,7 +61,7 @@ Skia (CanvasKit WASM) — тот же движок рендеринга, что 
 - **Tailwind JSX** — HTML с утилитарными классами Tailwind v4, готовый для React или Vue
 - **Копировать как** — текст, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>) или JSX через контекстное меню
 
-CLI: `open-pencil export design.fig -f jsx --style tailwind`
+CLI: `openpencil export design.fig -f jsx --style tailwind`
 
 ## Чат с ИИ
 
@@ -96,19 +96,19 @@ npm install -g @open-pencil/mcp
 Инспекция, экспорт и анализ файлов `.fig` из терминала:
 
 ```sh
-open-pencil tree design.fig          # Дерево узлов
-open-pencil find design.fig --type TEXT  # Поиск
-open-pencil export design.fig -f png     # Рендеринг
-open-pencil analyze colors design.fig    # Аудит цветов
-open-pencil analyze clusters design.fig  # Повторяющиеся паттерны
-open-pencil eval design.fig -c "..."     # Figma Plugin API
+openpencil tree design.fig          # Дерево узлов
+openpencil find design.fig --type TEXT  # Поиск
+openpencil export design.fig -f png     # Рендеринг
+openpencil analyze colors design.fig    # Аудит цветов
+openpencil analyze clusters design.fig  # Повторяющиеся паттерны
+openpencil eval design.fig -c "..."     # Figma Plugin API
 ```
 
 Когда запущено десктоп-приложение, можно не указывать файл и управлять живым редактором через RPC:
 
 ```sh
-open-pencil tree                     # Текущий документ
-open-pencil export -f png            # Скриншот канваса
+openpencil tree                     # Текущий документ
+openpencil export -f png            # Скриншот канваса
 ```
 
 Все команды поддерживают `--json`. Установка: `npm install -g @open-pencil/cli`

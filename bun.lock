@@ -98,7 +98,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.12.2",
+      "version": "0.13.2",
       "bin": {
         "openpencil": "./bin/openpencil.js",
       },
@@ -114,7 +114,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.12.2",
+      "version": "0.13.2",
       "dependencies": {
         "@chenglou/pretext": "^0.0.7",
         "@iconify/utils": "^3.1.0",
@@ -157,10 +157,10 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.12.2",
+      "version": "0.13.2",
       "bin": {
-        "openpencil-mcp": "./bin/openpencil-mcp.js",
-        "openpencil-mcp-http": "./bin/openpencil-mcp-http.js",
+        "openpencil-mcp": "./dist/stdio.mjs",
+        "openpencil-mcp-http": "./dist/index.mjs",
       },
       "dependencies": {
         "@hono/node-server": "^1.19.9",
@@ -178,7 +178,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.12.2",
+      "version": "0.13.2",
       "dependencies": {
         "@atlaskit/pragmatic-drag-and-drop": "^1.7.9",
         "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",

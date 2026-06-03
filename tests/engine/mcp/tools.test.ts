@@ -11,6 +11,8 @@ interface PageTreeResult {
 
 interface PageTreeNode {
   id: string
+  type: string
+  name: string
   children?: PageTreeNode[]
 }
 
@@ -53,6 +55,59 @@ describe('MCP tool execution', () => {
     const result = findTool('get_page_tree').execute(api, {}) as PageTreeResult
     expect(result.page).toBe('Page 1')
     expect(result.children).toBeArray()
+  })
+
+  test('get_page_tree supports depth, root_id, and node_types filters', () => {
+    const { api } = setup()
+    const parent = findTool('create_shape').execute(api, {
+      type: 'FRAME',
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 400,
+      name: 'Parent'
+    }) as { id: string }
+    const text = findTool('create_shape').execute(api, {
+      type: 'TEXT',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20,
+      parent_id: parent.id,
+      name: 'Nested text'
+    }) as { id: string }
+    findTool('create_shape').execute(api, {
+      type: 'RECTANGLE',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50,
+      name: 'Other rect'
+    })
+
+    const depthTree = findTool('get_page_tree').execute(api, { depth: 1 }) as PageTreeResult
+    const depthParent = expectDefined(
+      depthTree.children.find((node) => node.id === parent.id),
+      'depth-limited parent'
+    )
+    expect(depthParent.children).toBeUndefined()
+
+    const subtree = findTool('get_page_tree').execute(api, { root_id: parent.id }) as {
+      root: string
+      tree: PageTreeNode
+    }
+    expect(subtree.root).toBe(parent.id)
+    expect(subtree.tree.children?.[0]?.id).toBe(text.id)
+
+    const filtered = findTool('get_page_tree').execute(api, {
+      node_types: ['TEXT']
+    }) as PageTreeResult
+    expect(filtered.children.some((node) => node.type === 'RECTANGLE')).toBe(false)
+    const filteredParent = expectDefined(
+      filtered.children.find((node) => node.id === parent.id),
+      'filtered parent'
+    )
+    expect(filteredParent.children?.[0]?.type).toBe('TEXT')
   })
 
   test('create_shape creates a frame', () => {

@@ -95,8 +95,8 @@ Kompakte Kurzschreibweisen, inspiriert von Tailwinds Benennung.
 Bestehende Designs zurück in JSX konvertieren:
 
 ```sh
-open-pencil export design.fig -f jsx                   # OpenPencil-Format
-open-pencil export design.fig -f jsx --style tailwind  # Tailwind-Klassen
+openpencil export design.fig -f jsx                   # OpenPencil-Format
+openpencil export design.fig -f jsx --style tailwind  # Tailwind-Klassen
 ```
 
 Der Roundtrip funktioniert: Exportiere ein Design als JSX, bearbeite den Code, rendere es zurück.

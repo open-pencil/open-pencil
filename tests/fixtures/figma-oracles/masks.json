@@ -1,0 +1,35 @@
+{
+  "source": {
+    "tool": "figma-use eval",
+    "fileKey": "jSxlQDCrjsvqEQq17IWEcC",
+    "page": "OpenPencil mask oracle 2026-05-22",
+    "captured": "2026-05-22"
+  },
+  "masks": [
+    { "id": "296500:2240", "name": "Mask ALPHA", "isMask": true, "maskType": "ALPHA" },
+    { "id": "296500:2241", "name": "Mask VECTOR", "isMask": true, "maskType": "VECTOR" },
+    { "id": "296500:2242", "name": "Mask LUMINANCE", "isMask": true, "maskType": "LUMINANCE" }
+  ],
+  "nested": {
+    "page": "OpenPencil nested mask oracle 2026-05-22",
+    "frameId": "296616:2249",
+    "children": [
+      {
+        "id": "296616:2250",
+        "name": "Nested luminance mask",
+        "isMask": true,
+        "maskType": "LUMINANCE"
+      },
+      {
+        "id": "296616:2251",
+        "name": "Nested masked content",
+        "isMask": false,
+        "maskType": "ALPHA"
+      }
+    ]
+  },
+  "maskIsOutline": {
+    "pluginApiReadable": false,
+    "note": "The Kiwi schema has maskIsOutline and OpenPencil preserves it, but Figma Plugin API did not expose a readable maskIsOutline property in the live oracle."
+  }
+}

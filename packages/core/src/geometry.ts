@@ -226,6 +226,10 @@ export interface VisualBoundsNode {
   visible?: boolean
   type?: string
   clipsContent?: boolean
+  fontSize?: number
+  textDecoration?: string
+  textUnderlineOffset?: number | null
+  textDecorationThickness?: number | null
 }
 
 export function unionVisualBounds(
@@ -331,6 +335,13 @@ export function nodeVisualBounds(
   ])
   if (localGeometry) {
     bounds = unionVisualBounds(bounds, transformedLocalBounds(node, localGeometry, abs)) ?? bounds
+  }
+
+  if (node.type === 'TEXT' && node.textDecoration && node.textDecoration !== 'NONE') {
+    const fontSize = node.fontSize ?? 14
+    const underlineOffset = node.textUnderlineOffset ?? fontSize * 0.18
+    const thickness = node.textDecorationThickness ?? Math.max(1, fontSize / 16)
+    bounds.maxY += underlineOffset + thickness + fontSize * 0.35
   }
 
   return bounds

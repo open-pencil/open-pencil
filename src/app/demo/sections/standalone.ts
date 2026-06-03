@@ -65,9 +65,9 @@ export function createStandaloneShapes(store: EditorStore) {
     fills: [solid(DEMO_COLORS.white)]
   })
 
-  const typoFrame = store.createShape('FRAME', 700, 660, 320, 164)
+  const typoFrame = store.createShape('FRAME', 700, 660, 320, 210)
   graph.updateNode(typoFrame, {
-    name: 'Typography & OpenType',
+    name: 'Typography, OpenType & Decorations',
     cornerRadius: 12,
     fills: [solid(DEMO_COLORS.white)],
     strokes: thinStroke(DEMO_COLORS.gray200),
@@ -98,6 +98,24 @@ export function createStandaloneShapes(store: EditorStore) {
         { tag: 'DLIG', enabled: true },
         { tag: 'KERN', enabled: false }
       ]
+    },
+    {
+      text: 'Wavy underline from imported .fig',
+      size: 13,
+      weight: 500,
+      decoration: 'UNDERLINE' as const,
+      decorationStyle: 'WAVY' as const,
+      decorationFills: [solid(DEMO_COLORS.red)],
+      decorationThickness: 1.6
+    },
+    {
+      text: 'Dotted underline + custom thickness',
+      size: 13,
+      weight: 500,
+      decoration: 'UNDERLINE' as const,
+      decorationStyle: 'DOTTED' as const,
+      decorationFills: [solid(DEMO_COLORS.blue)],
+      decorationThickness: 2
     }
   ]
   for (const t of typoItems) {
@@ -108,6 +126,10 @@ export function createStandaloneShapes(store: EditorStore) {
       fontSize: t.size,
       fontWeight: t.weight,
       fontFeatures: t.features ?? [],
+      textDecoration: t.decoration ?? 'NONE',
+      textDecorationStyle: t.decorationStyle ?? 'SOLID',
+      textDecorationFills: t.decorationFills ?? [],
+      textDecorationThickness: t.decorationThickness ?? null,
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
       fills: [solid(DEMO_COLORS.black)]

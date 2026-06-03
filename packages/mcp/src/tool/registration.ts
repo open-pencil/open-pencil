@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import { resolve } from 'node:path'
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -6,7 +7,7 @@ import { z } from 'zod'
 import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RpcJsonObject } from '#mcp/json'
-import { fail, ok } from '#mcp/result'
+import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
 
 import { resolveSafePath, writeToolOutput } from './output'
 import { paramToZod } from './schema'
@@ -45,17 +46,30 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             if (written) return written
           }
           if (r && 'base64' in r && 'mimeType' in r) {
+            const base64 = String(r.base64)
+            const bytes = Buffer.byteLength(base64, 'utf8')
+            if (bytes > MAX_RESULT_BYTES) {
+              return fail(
+                new Error(
+                  resultTooLargeMessage(
+                    `Image from "${def.name}"`,
+                    bytes,
+                    'Export a smaller region or lower the scale/resolution.'
+                  )
+                )
+              )
+            }
             return {
               content: [
                 {
                   type: 'image' as const,
-                  data: r.base64 as string,
+                  data: base64,
                   mimeType: r.mimeType as string
                 }
               ]
             }
           }
-          return ok(r)
+          return ok(r, def.name)
         } catch (e) {
           return fail(e)
         }

@@ -279,6 +279,41 @@ describe('MCP server', () => {
   })
 })
 
+describe('MCP Streamable HTTP transport', () => {
+  test('returns JSON responses for request/response calls', async () => {
+    const { app, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
+    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
+    const actualHttpPort = (httpServer.address() as AddressInfo).port
+
+    try {
+      const response = await fetch(`http://127.0.0.1:${actualHttpPort}/mcp`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/event-stream',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            clientInfo: { name: 'raw-test', version: '0.0.0' }
+          }
+        })
+      })
+
+      expect(response.status).toBe(200)
+      expect(response.headers.get('content-type')).toContain('application/json')
+      expect(response.headers.get('content-type')).not.toContain('text/event-stream')
+    } finally {
+      closeServer()
+      httpServer.close()
+    }
+  })
+})
+
 describe('MCP WebSocket stdio bridge routing', () => {
   test('forwards stdio client requests to the registered desktop app', async () => {
     const { wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })

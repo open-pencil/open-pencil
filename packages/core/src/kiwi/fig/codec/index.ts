@@ -203,6 +203,7 @@ export interface Paint {
   image?: { hash: string | Uint8Array }
   imageScaleMode?: string
   sourceNodeId?: GUID
+  scale?: number
   spacing?: number
   patternSpacing?: Vector
   patternTileType?: string
@@ -329,7 +330,7 @@ export interface NodeChange {
   frameMaskDisabled?: boolean
   resizeToFit?: boolean
   // Vector
-  booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
+  booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE' | 'XOR'
   vectorData?: unknown
   fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
@@ -395,6 +396,14 @@ export interface NodeChange {
   fontVariations?: Array<{ axisTag?: number; axisName?: string; value?: number }>
   fontVariantCommonLigatures?: boolean
   fontVariantContextualLigatures?: boolean
+  fontVariantDiscretionaryLigatures?: boolean
+  fontVariantHistoricalLigatures?: boolean
+  fontVariantOrdinal?: boolean
+  fontVariantSlashedZero?: boolean
+  fontVariantNumericFigure?: string
+  fontVariantNumericSpacing?: string
+  fontVariantNumericFraction?: string
+  fontVariantCaps?: string
   fontVersion?: string
   emojiImageSet?: string
   lineHeight?: { value: number; units: string }

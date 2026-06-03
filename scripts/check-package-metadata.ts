@@ -28,6 +28,22 @@ function checkRuntimePath(packageName: string, field: string, value: string): vo
   }
 }
 
+function checkIncludedRuntimePath(
+  packageName: string,
+  field: string,
+  value: string,
+  files: string[]
+): void {
+  checkRuntimePath(packageName, field, value)
+  const normalized = value.replace(/^\.\//, '')
+  const topLevelDir = normalized.split('/')[0]
+  if (topLevelDir && !files.includes(topLevelDir)) {
+    errors.push(
+      `${packageName}: ${field} points to ${value}, but files does not include ${topLevelDir}`
+    )
+  }
+}
+
 function walkExports(packageName: string, value: unknown, path: string[] = []): void {
   if (typeof value === 'string') {
     const key = path.at(-1)
@@ -51,10 +67,10 @@ for (const packageDir of publicPackages) {
   if (pkg.main) checkRuntimePath(pkg.name, 'main', pkg.main)
 
   if (typeof pkg.bin === 'string') {
-    checkRuntimePath(pkg.name, 'bin', pkg.bin)
+    checkIncludedRuntimePath(pkg.name, 'bin', pkg.bin, pkg.files ?? [])
   } else if (pkg.bin) {
     for (const [name, target] of Object.entries(pkg.bin)) {
-      checkRuntimePath(pkg.name, `bin.${name}`, target)
+      checkIncludedRuntimePath(pkg.name, `bin.${name}`, target, pkg.files ?? [])
     }
   }
 

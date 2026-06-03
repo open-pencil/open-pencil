@@ -373,12 +373,12 @@ describe('Figma Kiwi schema coverage', () => {
     expect(
       Object.fromEntries([...buckets].map(([bucket, items]) => [bucket, items.length]))
     ).toEqual({
-      modeled: 104,
+      modeled: 112,
       schemaTag: 60,
       internalBookkeeping: 17,
       rawPreserved: 52,
       styleLibraryMetadata: 39,
-      componentInstanceMetadata: 42,
+      componentInstanceMetadata: 34,
       textMetadata: 23,
       slideFigjamMetadata: 39,
       visualGeometryMetadata: 38,
@@ -405,6 +405,9 @@ describe('Figma Kiwi schema coverage', () => {
     expect(covered('textDecorationStyle')).toBe(true)
     expect(covered('semanticWeight')).toBe(true)
     expect(covered('semanticItalic')).toBe(true)
+    expect(covered('fontVariantDiscretionaryLigatures')).toBe(true)
+    expect(covered('fontVariantNumericFigure')).toBe(true)
+    expect(covered('fontVariantCaps')).toBe(true)
     expect(covered('toggledOnOTFeatures')).toBe(true)
     expect(covered('toggledOffOTFeatures')).toBe(true)
     expect(covered('textDecorationFillPaints')).toBe(true)

@@ -15,7 +15,7 @@ Open-source design editor. Opens `.fig` and `.pen` design files, includes built-
 **macOS (Homebrew):**
 
 ```sh
-brew install open-pencil/tap/open-pencil
+brew install openpencil
 ```
 
 Or download from the [releases page](https://github.com/open-pencil/open-pencil/releases/latest), or [use the web app](https://app.openpencil.dev) — no install needed.
@@ -45,10 +45,10 @@ npm install -g @open-pencil/cli
 Browse node trees, search by name or type, dig into properties — all without opening the editor:
 
 ```sh
-open-pencil tree design.fig
-open-pencil find design.pen --type TEXT
-open-pencil node design.fig --id 1:23
-open-pencil info design.fig
+openpencil tree design.fig
+openpencil find design.pen --type TEXT
+openpencil node design.fig --id 1:23
+openpencil info design.fig
 ```
 
 ```
@@ -65,11 +65,11 @@ open-pencil info design.fig
 Use XPath selectors to find nodes by type, attributes, and structure:
 
 ```sh
-open-pencil query design.fig "//FRAME"                              # All frames
-open-pencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px
-open-pencil query design.fig "//TEXT[contains(@name, 'Button')]"     # Text with 'Button' in name
-open-pencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
-open-pencil query design.fig "//SECTION//TEXT"                       # Text inside sections
+openpencil query design.fig "//FRAME"                              # All frames
+openpencil query design.fig "//FRAME[@width < 300]"                # Frames under 300px
+openpencil query design.fig "//TEXT[contains(@name, 'Button')]"     # Text with 'Button' in name
+openpencil query design.fig "//*[@cornerRadius > 0]"               # Rounded corners
+openpencil query design.fig "//SECTION//TEXT"                       # Text inside sections
 ```
 
 ### Export
@@ -77,11 +77,11 @@ open-pencil query design.fig "//SECTION//TEXT"                       # Text insi
 Render to PNG, JPG, WEBP, SVG, `.fig`, or JSX — or export selections/pages as `.fig` and convert whole documents between supported formats:
 
 ```sh
-open-pencil export design.fig                           # PNG
-open-pencil export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
-open-pencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
-open-pencil export design.fig -f jsx --style tailwind   # Tailwind JSX
-open-pencil convert design.pen output.fig               # Convert between document formats
+openpencil export design.fig                           # PNG
+openpencil export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
+openpencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
+openpencil export design.fig -f jsx --style tailwind   # Tailwind JSX
+openpencil convert design.pen output.fig               # Convert between document formats
 ```
 
 ```html
@@ -96,10 +96,10 @@ open-pencil convert design.pen output.fig               # Convert between docume
 Catch naming, layout, structure, and accessibility issues from the terminal:
 
 ```sh
-open-pencil lint design.fig
-open-pencil lint design.pen --preset strict
-open-pencil lint design.fig --rule color-contrast
-open-pencil lint design.fig --list-rules
+openpencil lint design.fig
+openpencil lint design.pen --preset strict
+openpencil lint design.fig --rule color-contrast
+openpencil lint design.fig --list-rules
 ```
 
 ### Analyze and extract design tokens
@@ -107,11 +107,11 @@ open-pencil lint design.fig --list-rules
 Audit an entire design system from the terminal — find inconsistencies, extract the real palette, and spot components waiting to be extracted:
 
 ```sh
-open-pencil analyze colors design.fig
-open-pencil analyze typography design.fig
-open-pencil analyze spacing design.fig
-open-pencil analyze clusters design.fig
-open-pencil variables design.fig
+openpencil analyze colors design.fig
+openpencil analyze typography design.fig
+openpencil analyze spacing design.fig
+openpencil analyze clusters design.fig
+openpencil variables design.fig
 ```
 
 ```
@@ -132,8 +132,8 @@ open-pencil variables design.fig
 `eval` gives you the full Figma Plugin API. Modify the file, write it back:
 
 ```sh
-open-pencil eval design.fig -c "figma.currentPage.children.length"
-open-pencil eval design.fig -c "figma.currentPage.selection.forEach(n => n.opacity = 0.5)" -w
+openpencil eval design.fig -c "figma.currentPage.children.length"
+openpencil eval design.fig -c "figma.currentPage.selection.forEach(n => n.opacity = 0.5)" -w
 ```
 
 ### Control the running app
@@ -141,9 +141,9 @@ open-pencil eval design.fig -c "figma.currentPage.selection.forEach(n => n.opaci
 When the desktop app is running, omit the file argument — the CLI connects via RPC and operates on the live canvas. Useful for automation scripts, CI pipelines, or AI agents that need to interact with the editor:
 
 ```sh
-open-pencil tree                               # Inspect the live document
-open-pencil export -f png                      # Screenshot the current canvas
-open-pencil eval -c "figma.currentPage.name"   # Query the editor
+openpencil tree                               # Inspect the live document
+openpencil export -f png                      # Screenshot the current canvas
+openpencil eval -c "figma.currentPage.name"   # Query the editor
 ```
 
 All commands support `--json` for machine-readable output.

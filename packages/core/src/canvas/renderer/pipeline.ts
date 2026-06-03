@@ -1,5 +1,6 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import { drawPageGuides } from '#core/canvas/page-guides'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import type { EditorState } from '#core/editor/types'
 import { computeDescendantVisualBounds } from '#core/geometry'
@@ -226,6 +227,7 @@ export function render(
     r.drawSelection(canvas, graph, selectedIds, overlays)
     p.endPhase('render:selection')
     r.drawFlashes(canvas, graph)
+    drawPageGuides(r, canvas, graph)
     r.drawSnapGuides(canvas, overlays.snapGuides)
     r.drawMarquee(canvas, overlays.marquee)
     r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)

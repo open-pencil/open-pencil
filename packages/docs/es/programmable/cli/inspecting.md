@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Obtén un resumen rápido — cantidad de páginas, nodos totales, fuentes utilizadas, tamaño del archivo:
 
 ```sh
-open-pencil info design.fig
+openpencil info design.fig
 ```
 
 ## Árbol de Nodos
@@ -28,7 +28,7 @@ open-pencil info design.fig
 Imprime la jerarquía completa de nodos:
 
 ```sh
-open-pencil tree design.fig
+openpencil tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ open-pencil tree design.fig
 Buscar por tipo:
 
 ```sh
-open-pencil find design.fig --type TEXT
+openpencil find design.fig --type TEXT
 ```
 
 Buscar por nombre:
 
 ```sh
-open-pencil find design.fig --name "Button"
+openpencil find design.fig --name "Button"
 ```
 
 Ambos flags se pueden combinar para refinar aún más los resultados.
@@ -61,7 +61,7 @@ Ambos flags se pueden combinar para refinar aún más los resultados.
 Inspecciona todas las propiedades de un nodo específico por su ID:
 
 ```sh
-open-pencil node design.fig --id 1:23
+openpencil node design.fig --id 1:23
 ```
 
 ## Páginas
@@ -69,7 +69,7 @@ open-pencil node design.fig --id 1:23
 Lista todas las páginas del documento:
 
 ```sh
-open-pencil pages design.fig
+openpencil pages design.fig
 ```
 
 ## Variables
@@ -77,7 +77,7 @@ open-pencil pages design.fig
 Lista las variables de diseño y sus colecciones:
 
 ```sh
-open-pencil variables design.fig
+openpencil variables design.fig
 ```
 
 ## Modo Aplicación en Vivo
@@ -85,8 +85,8 @@ open-pencil variables design.fig
 Cuando la aplicación de escritorio está en ejecución, omite el argumento de archivo — el CLI se conecta vía RPC y opera sobre el lienzo en vivo:
 
 ```sh
-open-pencil tree              # inspeccionar el documento en vivo
-open-pencil eval -c "..."     # consultar el editor
+openpencil tree              # inspeccionar el documento en vivo
+openpencil eval -c "..."     # consultar el editor
 ```
 
 ## Salida JSON
@@ -94,5 +94,5 @@ open-pencil eval -c "..."     # consultar el editor
 Todos los comandos soportan `--json` para salida legible por máquinas — envía a `jq`, alimenta scripts de CI, o procesa con otras herramientas:
 
 ```sh
-open-pencil tree design.fig --json | jq '.[] | .name'
+openpencil tree design.fig --json | jq '.[] | .name'
 ```

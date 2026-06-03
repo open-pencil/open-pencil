@@ -69,6 +69,20 @@ describe('Figma boolean operation import', () => {
     expect(children.map((child) => child.type)).toEqual(['RECTANGLE', 'ELLIPSE'])
   })
 
+  test('maps Kiwi XOR boolean operations to scene graph exclude', () => {
+    const props = nodeChangeToProps(
+      {
+        type: 'BOOLEAN_OPERATION',
+        name: 'Imported boolean',
+        booleanOperation: 'XOR'
+      } as NodeChange,
+      []
+    )
+
+    expect(props.nodeType).toBe('BOOLEAN_OPERATION')
+    expect(props.booleanOperation).toBe('EXCLUDE')
+  })
+
   test('defaults missing boolean operations to union', () => {
     const props = nodeChangeToProps(
       {

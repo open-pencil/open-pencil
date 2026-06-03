@@ -5,7 +5,7 @@ import type { WebSocket } from 'ws'
 import type { RpcJsonObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
 
-const RPC_TIMEOUT = 30_000
+const RPC_TIMEOUT = 20_000
 
 const APP_NOT_CONNECTED_MESSAGE =
   'OpenPencil app is not connected. STOP and tell the user: "The OpenPencil desktop app is not running, no document is open, or the desktop app is connected to a different MCP server. Please start OpenPencil, open a document, and try again." Do NOT attempt to start the app yourself or retry automatically.'
@@ -38,6 +38,23 @@ function responsePayload(result: unknown): Record<string, unknown> {
 
 function sendJson(ws: WebSocket, body: Record<string, unknown>) {
   if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(body))
+}
+
+function createSettler<T>(resolve: (value: T) => void, reject: (error: Error) => void) {
+  let settled = false
+  return {
+    resolve: (value: T) => {
+      if (settled) return
+      settled = true
+      resolve(value)
+    },
+    reject: (error: Error) => {
+      if (settled) return
+      settled = true
+      reject(error)
+    },
+    isSettled: () => settled
+  }
 }
 
 export function createBrowserRpcBridge({ authToken, onConnectionChange }: BrowserRpcBridgeOptions) {
@@ -79,17 +96,27 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function sendRpc(body: Record<string, unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      if (!browserWs || browserWs.readyState !== browserWs.OPEN || !browserRegistered) {
+      const ws = browserWs
+      if (!ws || ws.readyState !== ws.OPEN || !browserRegistered) {
         reject(new Error(APP_NOT_CONNECTED_MESSAGE))
         return
       }
       const id = randomUUID()
+      const settle = createSettler(resolve, reject)
       const timer = setTimeout(() => {
         pending.delete(id)
-        reject(new Error('RPC timeout (30s)'))
+        settle.reject(new Error(`RPC timeout (${Math.round(RPC_TIMEOUT / 1000)}s)`))
       }, RPC_TIMEOUT)
-      pending.set(id, { resolve, reject, timer })
-      browserWs.send(JSON.stringify({ type: 'request', id, ...body }))
+      pending.set(id, { resolve: settle.resolve, reject: settle.reject, timer })
+      try {
+        ws.send(JSON.stringify({ type: 'request', id, ...body }))
+      } catch (e) {
+        clearTimeout(timer)
+        pending.delete(id)
+        if (!settle.isSettled()) {
+          settle.reject(e instanceof Error ? e : new Error(String(e)))
+        }
+      }
     })
   }
 

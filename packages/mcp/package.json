@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/mcp",
-  "version": "0.12.2",
+  "version": "0.13.2",
   "license": "MIT",
   "type": "module",
   "imports": {
@@ -24,11 +24,10 @@
     }
   },
   "bin": {
-    "openpencil-mcp": "./bin/openpencil-mcp.js",
-    "openpencil-mcp-http": "./bin/openpencil-mcp-http.js"
+    "openpencil-mcp": "./dist/stdio.mjs",
+    "openpencil-mcp-http": "./dist/index.mjs"
   },
   "files": [
-    "bin",
     "dist"
   ],
   "scripts": {

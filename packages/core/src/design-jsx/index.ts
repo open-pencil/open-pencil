@@ -9,10 +9,11 @@ export {
   Vector,
   Group,
   Section,
+  Component,
+  ComponentSet,
+  Instance,
   View,
   Rect,
-  Component,
-  Instance,
   Page,
   INTRINSIC_ELEMENTS
 } from './components'

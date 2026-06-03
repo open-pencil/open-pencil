@@ -112,8 +112,10 @@ function mapBooleanOperation(nc: NodeChange): SceneNode['booleanOperation'] {
   switch (nc.booleanOperation) {
     case 'SUBTRACT':
     case 'INTERSECT':
-    case 'EXCLUDE':
       return nc.booleanOperation
+    case 'EXCLUDE':
+    case 'XOR':
+      return 'EXCLUDE'
     default:
       return 'UNION'
   }
@@ -229,17 +231,25 @@ function convertTransformProps(
     const sx = flipX ? -1 : 1
     rotation = Math.atan2(t.m10 * sx, t.m00 * sx) * (180 / Math.PI)
 
-    const corners = [
-      { x: 0, y: 0 },
-      { x: width, y: 0 },
-      { x: 0, y: height },
-      { x: width, y: height }
-    ].map((point) => ({
-      x: t.m00 * point.x + t.m01 * point.y + t.m02,
-      y: t.m10 * point.x + t.m11 * point.y + t.m12
-    }))
-    x = Math.min(...corners.map((point) => point.x))
-    y = Math.min(...corners.map((point) => point.y))
+    if (rotation !== 0 && !flipX) {
+      const radians = (rotation * Math.PI) / 180
+      const cos = Math.cos(radians)
+      const sin = Math.sin(radians)
+      x = t.m02 - (width / 2) * (1 - cos) - sin * (height / 2)
+      y = t.m12 - (height / 2) * (1 - cos) + sin * (width / 2)
+    } else {
+      const corners = [
+        { x: 0, y: 0 },
+        { x: width, y: 0 },
+        { x: 0, y: height },
+        { x: width, y: height }
+      ].map((point) => ({
+        x: t.m00 * point.x + t.m01 * point.y + t.m02,
+        y: t.m10 * point.x + t.m11 * point.y + t.m12
+      }))
+      x = Math.min(...corners.map((point) => point.x))
+      y = Math.min(...corners.map((point) => point.y))
+    }
   }
 
   return { x, y, width, height, rotation, flipX, flipY: false }
@@ -275,10 +285,7 @@ function importedTextLineHeight(nc: NodeChange): number | null {
   return convertLineHeight(nc.lineHeight, nc.fontSize)
 }
 
-function convertTextProps(
-  nc: NodeChange,
-  blobs: Uint8Array[]
-): Pick<
+type TextProps = Pick<
   SceneNode,
   | 'text'
   | 'fontSize'
@@ -290,6 +297,10 @@ function convertTextProps(
   | 'textAutoResize'
   | 'textCase'
   | 'textDecoration'
+  | 'textDecorationStyle'
+  | 'textDecorationThickness'
+  | 'textDecorationFills'
+  | 'leadingTrim'
   | 'lineHeight'
   | 'letterSpacing'
   | 'maxLines'
@@ -300,7 +311,30 @@ function convertTextProps(
   | 'textDirection'
   | 'figmaDerivedLayout'
   | 'figmaDerivedTextGlyphs'
+>
+
+function convertTextDecorationProps(
+  nc: NodeChange
+): Pick<
+  SceneNode,
+  | 'textDecoration'
+  | 'textDecorationStyle'
+  | 'textDecorationThickness'
+  | 'textDecorationFills'
+  | 'textDecorationSkipInk'
+  | 'textUnderlineOffset'
 > {
+  return {
+    textDecoration: mapTextDecoration(nc.textDecoration as string),
+    textDecorationStyle: (nc.textDecorationStyle ?? 'SOLID') as SceneNode['textDecorationStyle'],
+    textDecorationThickness: nc.textDecorationThickness?.value ?? null,
+    textDecorationFills: convertFills(nc.textDecorationFillPaints),
+    textDecorationSkipInk: nc.textDecorationSkipInk ?? true,
+    textUnderlineOffset: nc.textUnderlineOffset?.value ?? null
+  }
+}
+
+function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   return {
     text: nc.textData?.characters ?? '',
     fontSize: nc.fontSize ?? 14,
@@ -315,7 +349,8 @@ function convertTextProps(
     textAlignVertical: (nc.textAlignVertical ?? 'TOP') as TextAlignVertical,
     textAutoResize: (nc.textAutoResize ?? 'NONE') as TextAutoResize,
     textCase: (nc.textCase ?? 'ORIGINAL') as TextCase,
-    textDecoration: mapTextDecoration(nc.textDecoration as string),
+    ...convertTextDecorationProps(nc),
+    leadingTrim: (nc.leadingTrim ?? 'NONE') as SceneNode['leadingTrim'],
     lineHeight: importedTextLineHeight(nc),
     letterSpacing: convertLetterSpacing(nc.letterSpacing, nc.fontSize),
     maxLines: (nc.maxLines ?? null) as number | null,
@@ -505,8 +540,9 @@ export function nodeChangeToProps(
     maxWidth: (nc.maxWidth ?? null) as number | null,
     minHeight: (nc.minHeight ?? null) as number | null,
     maxHeight: (nc.maxHeight ?? null) as number | null,
-    isMask: (nc.isMask ?? false) as boolean,
+    isMask: nc.mask ?? false,
     maskType: (nc.maskType ?? 'ALPHA') as 'ALPHA' | 'VECTOR' | 'LUMINANCE',
+    maskIsOutline: nc.maskIsOutline ?? false,
     expanded: true,
     autoRename: (nc.autoRename ?? true) as boolean,
     boundVariables: extractBoundVariables(nc),

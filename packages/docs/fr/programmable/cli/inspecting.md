@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Obtenez un aperçu rapide — nombre de pages, nombre total de nœuds, polices utilisées, taille du fichier :
 
 ```sh
-open-pencil info design.fig
+openpencil info design.fig
 ```
 
 ## Arborescence des nœuds
@@ -28,7 +28,7 @@ open-pencil info design.fig
 Affichez la hiérarchie complète des nœuds :
 
 ```sh
-open-pencil tree design.fig
+openpencil tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ open-pencil tree design.fig
 Rechercher par type :
 
 ```sh
-open-pencil find design.fig --type TEXT
+openpencil find design.fig --type TEXT
 ```
 
 Rechercher par nom :
 
 ```sh
-open-pencil find design.fig --name "Button"
+openpencil find design.fig --name "Button"
 ```
 
 Les deux options peuvent être combinées pour affiner les résultats.
@@ -61,7 +61,7 @@ Les deux options peuvent être combinées pour affiner les résultats.
 Inspectez toutes les propriétés d'un nœud spécifique par son identifiant :
 
 ```sh
-open-pencil node design.fig --id 1:23
+openpencil node design.fig --id 1:23
 ```
 
 ## Pages
@@ -69,7 +69,7 @@ open-pencil node design.fig --id 1:23
 Listez toutes les pages du document :
 
 ```sh
-open-pencil pages design.fig
+openpencil pages design.fig
 ```
 
 ## Variables
@@ -77,7 +77,7 @@ open-pencil pages design.fig
 Listez les variables de design et leurs collections :
 
 ```sh
-open-pencil variables design.fig
+openpencil variables design.fig
 ```
 
 ## Mode application en direct
@@ -85,8 +85,8 @@ open-pencil variables design.fig
 Quand l'application de bureau est en cours d'exécution, omettez l'argument fichier — le CLI se connecte via RPC et opère sur le canevas en direct :
 
 ```sh
-open-pencil tree              # inspecter le document en direct
-open-pencil eval -c "..."     # interroger l'éditeur
+openpencil tree              # inspecter le document en direct
+openpencil eval -c "..."     # interroger l'éditeur
 ```
 
 ## Sortie JSON
@@ -94,5 +94,5 @@ open-pencil eval -c "..."     # interroger l'éditeur
 Toutes les commandes supportent `--json` pour une sortie lisible par machine — redirigez vers `jq`, alimentez des scripts CI, ou traitez avec d'autres outils :
 
 ```sh
-open-pencil tree design.fig --json | jq '.[] | .name'
+openpencil tree design.fig --json | jq '.[] | .name'
 ```

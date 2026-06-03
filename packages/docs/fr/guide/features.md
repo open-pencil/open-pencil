@@ -61,7 +61,7 @@ Ouvrez plusieurs documents en onglets. <kbd>⌘</kbd><kbd>T</kbd> nouvel onglet,
 - **Tailwind JSX** — HTML avec classes utilitaires Tailwind v4, prêt pour React ou Vue
 - **Copier en tant que** — texte, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), ou JSX via le menu contextuel
 
-CLI : `open-pencil export design.fig -f jsx --style tailwind`
+CLI : `openpencil export design.fig -f jsx --style tailwind`
 
 ## Chat IA
 
@@ -96,19 +96,19 @@ Voir la [référence des outils MCP](/programmable/mcp-server) pour la liste com
 Inspectez, exportez et analysez les fichiers `.fig` depuis le terminal :
 
 ```sh
-open-pencil tree design.fig          # Arbre de nœuds
-open-pencil find design.fig --type TEXT  # Recherche
-open-pencil export design.fig -f png     # Rendu
-open-pencil analyze colors design.fig    # Audit des couleurs
-open-pencil analyze clusters design.fig  # Motifs répétés
-open-pencil eval design.fig -c "..."     # API Plugin Figma
+openpencil tree design.fig          # Arbre de nœuds
+openpencil find design.fig --type TEXT  # Recherche
+openpencil export design.fig -f png     # Rendu
+openpencil analyze colors design.fig    # Audit des couleurs
+openpencil analyze clusters design.fig  # Motifs répétés
+openpencil eval design.fig -c "..."     # API Plugin Figma
 ```
 
 Lorsque l'application de bureau est lancée, omettez le fichier pour contrôler l'éditeur en direct via RPC :
 
 ```sh
-open-pencil tree                     # Document en direct
-open-pencil export -f png            # Capture du canevas
+openpencil tree                     # Document en direct
+openpencil export -f png            # Capture du canevas
 ```
 
 Toutes les commandes supportent `--json`. Installation : `npm install -g @open-pencil/cli`

@@ -10,10 +10,10 @@ description: Рендер .fig-файлов в PNG, JPG, WEBP, SVG или JSX с
 ## Экспорт изображений
 
 ```sh
-open-pencil export design.fig                          # PNG (по умолчанию)
-open-pencil export design.fig -f jpg -s 2 -q 90       # JPG в 2×, качество 90
-open-pencil export design.fig -f webp -s 3             # WEBP в 3×
-open-pencil export design.fig -f svg                   # SVG-вектор
+openpencil export design.fig                          # PNG (по умолчанию)
+openpencil export design.fig -f jpg -s 2 -q 90       # JPG в 2×, качество 90
+openpencil export design.fig -f webp -s 3             # WEBP в 3×
+openpencil export design.fig -f svg                   # SVG-вектор
 ```
 
 Параметры:
@@ -30,7 +30,7 @@ open-pencil export design.fig -f svg                   # SVG-вектор
 Экспорт в JSX с утилитарными классами Tailwind:
 
 ```sh
-open-pencil export design.fig -f jsx --style tailwind
+openpencil export design.fig -f jsx --style tailwind
 ```
 
 Результат:
@@ -47,7 +47,7 @@ open-pencil export design.fig -f jsx --style tailwind
 ## Миниатюры
 
 ```sh
-open-pencil export design.fig --thumbnail --width 1920 --height 1080
+openpencil export design.fig --thumbnail --width 1920 --height 1080
 ```
 
 ## Режим работы с приложением
@@ -55,5 +55,5 @@ open-pencil export design.fig --thumbnail --width 1920 --height 1080
 Опустите файл для экспорта из запущенного приложения:
 
 ```sh
-open-pencil export -f png    # снимок текущего холста
+openpencil export -f png    # снимок текущего холста
 ```

@@ -95,8 +95,8 @@ Compact shorthand props inspired by Tailwind's naming.
 Convert existing designs back to JSX:
 
 ```sh
-open-pencil export design.fig -f jsx                   # OpenPencil format
-open-pencil export design.fig -f jsx --style tailwind  # Tailwind classes
+openpencil export design.fig -f jsx                   # OpenPencil format
+openpencil export design.fig -f jsx --style tailwind  # Tailwind classes
 ```
 
 The round-trip works: export a design as JSX, modify the code, render it back.

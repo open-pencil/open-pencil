@@ -3,7 +3,13 @@ import type { RenderOptions } from '#core/design-jsx/types'
 import { fetchIcons } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
 import { computeAllLayouts } from '#core/layout'
-import type { SceneGraph, SceneNode, NodeType } from '#core/scene-graph'
+import { randomHex } from '#core/random'
+import type {
+  ComponentPropertyDefinition,
+  SceneGraph,
+  SceneNode,
+  NodeType
+} from '#core/scene-graph'
 
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { isTreeNode } from './tree'
@@ -23,6 +29,8 @@ const TYPE_MAP: Partial<Record<string, NodeType>> = {
   group: 'GROUP',
   section: 'SECTION',
   component: 'COMPONENT',
+  'component-set': 'COMPONENT_SET',
+  componentset: 'COMPONENT_SET',
   div: 'FRAME',
   main: 'FRAME',
   header: 'FRAME',
@@ -100,8 +108,133 @@ async function renderIconNode(
   return createIconFromPaths(graph, icon, iconName, size, parsedColor, parentId, overrides)
 }
 
+function parseVariantValues(name: string): Record<string, string> {
+  const entries = name
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  const values: Record<string, string> = {}
+  for (const entry of entries) {
+    const [key = '', ...rest] = entry.split('=')
+    const property = key.trim()
+    const value = rest.join('=').trim()
+    if (property && value) values[property] = value
+  }
+  return values
+}
+
+function inferComponentSetProperties(graph: SceneGraph, componentSetId: string): void {
+  const componentSet = graph.getNode(componentSetId)
+  if (componentSet?.type !== 'COMPONENT_SET') return
+  if (componentSet.componentPropertyDefinitions.length > 0) return
+
+  const variants = graph.getChildren(componentSetId).filter((node) => node.type === 'COMPONENT')
+  const options = new Map<string, Set<string>>()
+  const valuesById = new Map<string, Record<string, string>>()
+
+  for (const variant of variants) {
+    const values = parseVariantValues(variant.name)
+    valuesById.set(variant.id, values)
+    for (const [property, value] of Object.entries(values)) {
+      let set = options.get(property)
+      if (!set) {
+        set = new Set()
+        options.set(property, set)
+      }
+      set.add(value)
+    }
+  }
+
+  const definitions: ComponentPropertyDefinition[] = [...options.entries()].map(
+    ([name, values]) => {
+      const variantOptions = [...values]
+      return {
+        id: `prop:${randomHex(8)}`,
+        name,
+        type: 'VARIANT',
+        defaultValue: variantOptions[0] ?? '',
+        variantOptions
+      }
+    }
+  )
+  if (definitions.length === 0) return
+
+  for (const [id, values] of valuesById) {
+    graph.updateNode(id, { componentPropertyValues: values })
+  }
+  graph.updateNode(componentSetId, { componentPropertyDefinitions: definitions })
+}
+
+function findComponentByName(graph: SceneGraph, name: string): SceneNode | undefined {
+  for (const node of graph.getAllNodes()) {
+    if (node.type === 'COMPONENT' && node.name === name) return node
+  }
+  return undefined
+}
+
+function findVariantInSet(
+  graph: SceneGraph,
+  componentSet: SceneNode,
+  props: Record<string, unknown>
+) {
+  const requested = Object.fromEntries(
+    Object.entries(props)
+      .filter(([key]) => !['component', 'componentId', 'of', 'name', 'children'].includes(key))
+      .map(([key, value]) => [key, String(value)])
+  )
+  const variants = graph.getChildren(componentSet.id).filter((node) => node.type === 'COMPONENT')
+  return (
+    variants.find((variant) =>
+      Object.entries(requested).every(
+        ([key, value]) => variant.componentPropertyValues[key] === value
+      )
+    ) ?? variants[0]
+  )
+}
+
+function resolveComponent(
+  graph: SceneGraph,
+  props: Record<string, unknown>
+): SceneNode | undefined {
+  const ref = props.component ?? props.componentId ?? props.of
+  if (typeof ref !== 'string') return undefined
+
+  const byId = graph.getNode(ref)
+  if (byId?.type === 'COMPONENT') return byId
+  if (byId?.type === 'COMPONENT_SET') return findVariantInSet(graph, byId, props)
+
+  const byName = findComponentByName(graph, ref)
+  if (byName) return byName
+
+  for (const node of graph.getAllNodes()) {
+    if (node.type === 'COMPONENT_SET' && node.name === ref)
+      return findVariantInSet(graph, node, props)
+  }
+  return undefined
+}
+
+async function renderInstanceNode(
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string
+): Promise<SceneNode> {
+  const parent = graph.getNode(parentId)
+  const parentLayout = parent?.layoutMode ?? 'NONE'
+  const component = resolveComponent(graph, tree.props)
+  if (!component) {
+    const ref = tree.props.component ?? tree.props.componentId ?? tree.props.of
+    const label = typeof ref === 'string' || typeof ref === 'number' ? String(ref) : ''
+    throw new Error(`<Instance> component not found: ${label}`)
+  }
+  const overrides = propsToOverrides(tree.props, false, parentLayout)
+  return (
+    graph.createInstance(component.id, parentId, overrides) ?? graph.createNode('FRAME', parentId)
+  )
+}
+
 async function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): Promise<SceneNode> {
   if (tree.type === 'icon') return renderIconNode(graph, tree, parentId)
+  if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
 
   const nodeType = TYPE_MAP[tree.type]
   if (!nodeType) throw new Error(`Unknown element: <${tree.type}>`)
@@ -133,6 +266,8 @@ async function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): 
       await renderNode(graph, child, node.id)
     }
   }
+
+  if (node.type === 'COMPONENT_SET') inferComponentSetProperties(graph, node.id)
 
   return node
 }

@@ -111,7 +111,10 @@ const SUPPORTED_PROPS = new Set([
   'pointCount',
   'innerRadius',
   'label',
-  'style'
+  'style',
+  'component',
+  'componentId',
+  'of'
 ])
 
 function stripHtmlComments(jsxString: string): string {
@@ -144,7 +147,7 @@ export function buildComponent(jsxString: string): React.ComponentType {
     const Frame = 'frame', Text = 'text', Rectangle = 'rectangle', Ellipse = 'ellipse'
     const Line = 'line', Star = 'star', Polygon = 'polygon', Vector = 'vector'
     const Group = 'group', Section = 'section', View = 'frame', Rect = 'rectangle'
-    const Component = 'component', Instance = 'frame'
+    const Component = 'component', ComponentSet = 'component-set', Instance = 'instance'
     const Icon = 'icon'
   `
   const opts = {

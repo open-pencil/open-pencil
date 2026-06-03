@@ -174,7 +174,11 @@ export function createEditor(options?: EditorOptions) {
     _renderer = renderer
     _renderers.add(renderer)
     _textEditor ??= new TextEditor(ck)
-    setTextMeasurer((node, maxWidth) => renderer.measureTextNode(node, maxWidth))
+    setTextMeasurer(
+      typeof renderer.measureTextNode === 'function'
+        ? (node, maxWidth) => renderer.measureTextNode(node, maxWidth)
+        : null
+    )
   }
 
   function removeCanvasRenderer(renderer: SkiaRenderer) {

@@ -1,8 +1,39 @@
 import { describe, expect, test } from 'bun:test'
 
-import { textFontFeatures, textFontVariations } from '#core/canvas/text'
+import {
+  textDecorationStyleValue,
+  textFontFeatures,
+  textFontVariations,
+  textHeightBehaviorValue
+} from '#core/canvas/text'
 
 describe('canvas text font variations', () => {
+  test('maps imported text decoration styles to CanvasKit', () => {
+    const ck = {
+      DecorationStyle: {
+        Solid: 'solid',
+        Dotted: 'dotted',
+        Wavy: 'wavy'
+      }
+    }
+
+    expect(textDecorationStyleValue(ck, 'SOLID')).toBe('solid')
+    expect(textDecorationStyleValue(ck, 'DOTTED')).toBe('dotted')
+    expect(textDecorationStyleValue(ck, 'WAVY')).toBe('wavy')
+    expect(textDecorationStyleValue(ck, undefined)).toBe('solid')
+  })
+
+  test('maps imported leading trim to CanvasKit text height behavior', () => {
+    const ck = {
+      TextHeightBehavior: {
+        DisableAll: 'disable-all'
+      }
+    }
+
+    expect(textHeightBehaviorValue(ck, 'CAP_HEIGHT')).toBe('disable-all')
+    expect(textHeightBehaviorValue(ck, 'NONE')).toBeUndefined()
+  })
+
   test('passes imported variable font axes to CanvasKit text styles', () => {
     expect(
       textFontVariations([
@@ -24,11 +55,13 @@ describe('canvas text font variations', () => {
     expect(
       textFontFeatures([
         { tag: 'LIGA', enabled: false },
-        { tag: 'CALT', enabled: true }
+        { tag: 'CALT', enabled: true },
+        { tag: 'SS01', enabled: true }
       ])
     ).toEqual([
       { name: 'liga', value: 0 },
-      { name: 'calt', value: 1 }
+      { name: 'calt', value: 1 },
+      { name: 'ss01', value: 1 }
     ])
   })
 

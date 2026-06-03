@@ -20,7 +20,7 @@ brew install open-pencil/tap/open-pencil
 Ottieni una panoramica rapida — conteggio pagine, nodi totali, font utilizzati, dimensione del file:
 
 ```sh
-open-pencil info design.fig
+openpencil info design.fig
 ```
 
 ## Albero dei Nodi
@@ -28,7 +28,7 @@ open-pencil info design.fig
 Stampa l'intera gerarchia dei nodi:
 
 ```sh
-open-pencil tree design.fig
+openpencil tree design.fig
 ```
 
 ```
@@ -45,13 +45,13 @@ open-pencil tree design.fig
 Cerca per tipo:
 
 ```sh
-open-pencil find design.fig --type TEXT
+openpencil find design.fig --type TEXT
 ```
 
 Cerca per nome:
 
 ```sh
-open-pencil find design.fig --name "Button"
+openpencil find design.fig --name "Button"
 ```
 
 Entrambi i flag possono essere combinati per restringere ulteriormente i risultati.
@@ -61,7 +61,7 @@ Entrambi i flag possono essere combinati per restringere ulteriormente i risulta
 Ispeziona tutte le proprietà di un nodo specifico tramite il suo ID:
 
 ```sh
-open-pencil node design.fig --id 1:23
+openpencil node design.fig --id 1:23
 ```
 
 ## Pagine
@@ -69,7 +69,7 @@ open-pencil node design.fig --id 1:23
 Elenca tutte le pagine del documento:
 
 ```sh
-open-pencil pages design.fig
+openpencil pages design.fig
 ```
 
 ## Variabili
@@ -77,7 +77,7 @@ open-pencil pages design.fig
 Elenca le variabili di design e le relative collezioni:
 
 ```sh
-open-pencil variables design.fig
+openpencil variables design.fig
 ```
 
 ## Modalità App in Esecuzione
@@ -85,8 +85,8 @@ open-pencil variables design.fig
 Quando l'app desktop è in esecuzione, ometti l'argomento del file — la CLI si connette tramite RPC e opera sul canvas attivo:
 
 ```sh
-open-pencil tree              # ispeziona il documento attivo
-open-pencil eval -c "..."     # interroga l'editor
+openpencil tree              # ispeziona il documento attivo
+openpencil eval -c "..."     # interroga l'editor
 ```
 
 ## Output JSON
@@ -94,5 +94,5 @@ open-pencil eval -c "..."     # interroga l'editor
 Tutti i comandi supportano `--json` per output leggibile dalle macchine — invia tramite pipe a `jq`, usa negli script CI o elabora con altri strumenti:
 
 ```sh
-open-pencil tree design.fig --json | jq '.[] | .name'
+openpencil tree design.fig --json | jq '.[] | .name'
 ```

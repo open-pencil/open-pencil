@@ -28,7 +28,13 @@ const RAW_NODE_FIELD_KEYS = new Set([
   'textAutoResize',
   'textCase',
   'textDecoration',
+  'textDecorationStyle',
+  'textDecorationThickness',
+  'textDecorationFills',
+  'textDecorationSkipInk',
+  'textUnderlineOffset',
   'lineHeight',
+  'leadingTrim',
   'letterSpacing',
   'maxLines',
   'styleRuns',
@@ -66,6 +72,7 @@ const RAW_NODE_FIELD_KEYS = new Set([
   'strokeGeometry',
   'isMask',
   'maskType',
+  'maskIsOutline',
   'clipsContent'
 ])
 

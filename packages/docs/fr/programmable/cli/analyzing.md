@@ -10,7 +10,7 @@ Les commandes `analyze` permettent d'auditer un système de design entier depuis
 ## Couleurs
 
 ```sh
-open-pencil analyze colors design.fig
+openpencil analyze colors design.fig
 ```
 
 Trouve chaque couleur dans le fichier, compte les utilisations et affiche un histogramme visuel :
@@ -25,7 +25,7 @@ Trouve chaque couleur dans le fichier, compte les utilisations et affiche un his
 ## Typographie
 
 ```sh
-open-pencil analyze typography design.fig
+openpencil analyze typography design.fig
 ```
 
 Liste chaque combinaison de famille de polices, taille et graisse avec le nombre d'utilisations. Utile pour repérer les styles de texte ponctuels qui devraient être consolidés.
@@ -33,7 +33,7 @@ Liste chaque combinaison de famille de polices, taille et graisse avec le nombre
 ## Espacement
 
 ```sh
-open-pencil analyze spacing design.fig
+openpencil analyze spacing design.fig
 ```
 
 Audite les valeurs de gap et de padding à travers les frames avec auto-layout. Aide à identifier les incohérences d'échelle d'espacement — par exemple, un gap de `13px` isolé parmi des valeurs de `8/16/24`.
@@ -41,7 +41,7 @@ Audite les valeurs de gap et de padding à travers les frames avec auto-layout. 
 ## Motifs récurrents
 
 ```sh
-open-pencil analyze clusters design.fig
+openpencil analyze clusters design.fig
 ```
 
 Trouve les motifs de nœuds répétés qui pourraient être extraits en composants :
@@ -59,7 +59,7 @@ Trouve les motifs de nœuds répétés qui pourraient être extraits en composan
 Toutes les commandes d'analyse supportent `--json` pour une sortie lisible par machine :
 
 ```sh
-open-pencil analyze colors design.fig --json
+openpencil analyze colors design.fig --json
 ```
 
 Redirigez vers `jq`, alimentez des vérifications CI, ou utilisez dans des scripts qui contrôlent les budgets de tokens de design.

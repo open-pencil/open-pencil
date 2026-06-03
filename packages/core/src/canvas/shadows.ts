@@ -1,6 +1,8 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
+import { BLACK } from '#core/constants'
 import type { SceneNode } from '#core/scene-graph'
+import type { Color, Vector } from '#core/types'
 
 import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'
@@ -11,10 +13,79 @@ import {
   nodeHasSmoothCorners
 } from './shapes'
 
+const MAX_RAW_NOISE_CELLS = 12_000
+
+interface RawNoiseEffect {
+  type: 'NOISE'
+  visible?: boolean
+  color?: Color
+  secondaryColor?: Color
+  opacity?: number
+  density?: number
+  noiseSize?: Vector
+  noiseType?: 'MONOTONE' | 'DUOTONE' | 'MULTITONE'
+}
+
 function resetEffectLayerPaint(r: SkiaRenderer): void {
   r.effectLayerPaint.setImageFilter(null)
   r.effectLayerPaint.setColorFilter(null)
   r.effectLayerPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+}
+
+function rawNoiseEffects(node: SceneNode): RawNoiseEffect[] {
+  const source = (node as Partial<SceneNode>).source
+  const effects = source?.fig.rawNodeFields.effects
+  if (!Array.isArray(effects)) return []
+  return effects.filter(
+    (effect): effect is RawNoiseEffect =>
+      effect !== null &&
+      typeof effect === 'object' &&
+      'type' in effect &&
+      effect.type === 'NOISE' &&
+      ('visible' in effect ? effect.visible !== false : true)
+  )
+}
+
+function seededNoise(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453
+  return x - Math.floor(x)
+}
+
+function renderNoiseEffect(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  rect: Float32Array,
+  hasRadius: boolean,
+  effect: RawNoiseEffect
+): void {
+  const density = Math.max(0, Math.min(1, effect.density ?? 0.3))
+  const requestedStep = Math.max(2, Math.round((effect.noiseSize?.x ?? 0.5) * 8))
+  const boundedStep = Math.ceil(Math.sqrt((node.width * node.height) / MAX_RAW_NOISE_CELLS))
+  const step = Math.max(requestedStep, boundedStep)
+  const color = effect.color ?? BLACK
+  const opacity = effect.opacity ?? color.a
+  const paint = new r.ck.Paint()
+  try {
+    paint.setAntiAlias(false)
+    canvas.save()
+    r.clipNodeShape(canvas, node, rect, hasRadius)
+    for (let y = 0; y < node.height; y += step) {
+      for (let x = 0; x < node.width; x += step) {
+        const value = seededNoise((x + 1) * 73856093 + (y + 1) * 19349663)
+        if (value > density) continue
+        const alpha = Math.max(0, Math.min(1, opacity * (0.35 + value * 0.65)))
+        paint.setColor(r.ck.Color4f(color.r, color.g, color.b, alpha))
+        canvas.drawRect(
+          r.ck.LTRBRect(x, y, Math.min(node.width, x + 1), Math.min(node.height, y + 1)),
+          paint
+        )
+      }
+    }
+    canvas.restore()
+  } finally {
+    paint.delete()
+  }
 }
 
 function drawChildTransform(canvas: Canvas, child: SceneNode, offset = { x: 0, y: 0 }): void {
@@ -458,6 +529,12 @@ export function renderEffects(
   pass: 'behind' | 'front',
   shadowShapeChild?: SceneNode | null
 ): void {
+  if (pass === 'front') {
+    for (const effect of rawNoiseEffects(node)) {
+      renderNoiseEffect(r, canvas, node, rect, hasRadius, effect)
+    }
+  }
+
   for (const effect of node.effects) {
     if (!effect.visible) continue
 

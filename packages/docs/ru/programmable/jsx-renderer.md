@@ -95,8 +95,8 @@ JSX также поддаётся сравнению. Когда ИИ измен
 Конвертируйте существующий дизайн обратно в JSX:
 
 ```sh
-open-pencil export design.fig -f jsx                   # формат OpenPencil
-open-pencil export design.fig -f jsx --style tailwind  # классы Tailwind
+openpencil export design.fig -f jsx                   # формат OpenPencil
+openpencil export design.fig -f jsx --style tailwind  # классы Tailwind
 ```
 
 Круговой цикл работает: экспортируйте дизайн как JSX, измените код, отрендерьте обратно.

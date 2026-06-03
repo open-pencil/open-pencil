@@ -5,12 +5,12 @@ description: Wykonuj JavaScript z Figma Plugin API — odpytuj węzły, modyfiku
 
 # Skryptowanie
 
-`open-pencil eval` daje Ci pełne Figma Plugin API w terminalu. Odczytuj węzły, modyfikuj właściwości, twórz kształty — a następnie zapisz zmiany z powrotem do pliku.
+`openpencil eval` daje Ci pełne Figma Plugin API w terminalu. Odczytuj węzły, modyfikuj właściwości, twórz kształty — a następnie zapisz zmiany z powrotem do pliku.
 
 ## Podstawowe użycie
 
 ```sh
-open-pencil eval design.fig -c "figma.currentPage.children.length"
+openpencil eval design.fig -c "figma.currentPage.children.length"
 ```
 
 Flaga `-c` przyjmuje JavaScript. Globalny obiekt `figma` działa jak Figma Plugin API.
@@ -18,7 +18,7 @@ Flaga `-c` przyjmuje JavaScript. Globalny obiekt `figma` działa jak Figma Plugi
 ## Odpytywanie węzłów
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
     .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
 "
@@ -27,7 +27,7 @@ open-pencil eval design.fig -c "
 ## Modyfikacja i zapis
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   figma.currentPage.children.forEach(n => n.opacity = 0.5)
 " -w
 ```
@@ -39,7 +39,7 @@ open-pencil eval design.fig -c "
 Dla dłuższych skryptów:
 
 ```sh
-cat transform.js | open-pencil eval design.fig --stdin -w
+cat transform.js | openpencil eval design.fig --stdin -w
 ```
 
 ## Tryb żywej aplikacji
@@ -47,7 +47,7 @@ cat transform.js | open-pencil eval design.fig --stdin -w
 Pomiń plik, aby uruchomić na działającej aplikacji desktopowej:
 
 ```sh
-open-pencil eval -c "figma.currentPage.name"
+openpencil eval -c "figma.currentPage.name"
 ```
 
 ## Dostępne API
@@ -66,5 +66,5 @@ To jest to samo API, którego używają wtyczki Figma, więc istniejąca wiedza 
 ## Wyjście JSON
 
 ```sh
-open-pencil eval design.fig -c "..." --json
+openpencil eval design.fig -c "..." --json
 ```

@@ -1,6 +1,6 @@
 ---
 title: CLI Reference
-description: Complete reference for all open-pencil commands, options, and flags.
+description: Complete reference for all openpencil commands, options, and flags.
 ---
 
 # CLI Reference
@@ -12,7 +12,7 @@ All commands accept a `.fig` file as a positional argument. When omitted, the CL
 Show document info — pages, node counts, fonts, file size.
 
 ```sh
-open-pencil info [file] [--json]
+openpencil info [file] [--json]
 ```
 
 | Option | Description |
@@ -24,7 +24,7 @@ open-pencil info [file] [--json]
 Print the node hierarchy.
 
 ```sh
-open-pencil tree [file] [options]
+openpencil tree [file] [options]
 ```
 
 | Option | Description |
@@ -38,7 +38,7 @@ open-pencil tree [file] [options]
 Search nodes by name or type.
 
 ```sh
-open-pencil find [file] [options]
+openpencil find [file] [options]
 ```
 
 | Option | Description |
@@ -54,7 +54,7 @@ open-pencil find [file] [options]
 Show detailed properties of a node.
 
 ```sh
-open-pencil node [file] --id <id> [--json]
+openpencil node [file] --id <id> [--json]
 ```
 
 | Option | Description |
@@ -67,7 +67,7 @@ open-pencil node [file] --id <id> [--json]
 List all pages in the document.
 
 ```sh
-open-pencil pages [file] [--json]
+openpencil pages [file] [--json]
 ```
 
 | Option | Description |
@@ -79,7 +79,7 @@ open-pencil pages [file] [--json]
 List design variables and collections.
 
 ```sh
-open-pencil variables [file] [options]
+openpencil variables [file] [options]
 ```
 
 | Option | Description |
@@ -93,7 +93,7 @@ open-pencil variables [file] [options]
 Export to PNG, JPG, WEBP, SVG, or JSX.
 
 ```sh
-open-pencil export [file] [options]
+openpencil export [file] [options]
 ```
 
 | Option | Alias | Description |
@@ -114,7 +114,7 @@ open-pencil export [file] [options]
 Execute JavaScript with the Figma Plugin API.
 
 ```sh
-open-pencil eval [file] [options]
+openpencil eval [file] [options]
 ```
 
 | Option | Alias | Description |
@@ -131,7 +131,7 @@ open-pencil eval [file] [options]
 Analyze color palette usage across the document.
 
 ```sh
-open-pencil analyze colors [file] [options]
+openpencil analyze colors [file] [options]
 ```
 
 | Option | Description |
@@ -146,7 +146,7 @@ open-pencil analyze colors [file] [options]
 Analyze font family, size, and weight distribution.
 
 ```sh
-open-pencil analyze typography [file] [options]
+openpencil analyze typography [file] [options]
 ```
 
 | Option | Description |
@@ -160,7 +160,7 @@ open-pencil analyze typography [file] [options]
 Analyze gap and padding values across auto-layout frames.
 
 ```sh
-open-pencil analyze spacing [file] [options]
+openpencil analyze spacing [file] [options]
 ```
 
 | Option | Description |
@@ -173,7 +173,7 @@ open-pencil analyze spacing [file] [options]
 Find repeated node patterns — potential components.
 
 ```sh
-open-pencil analyze clusters [file] [options]
+openpencil analyze clusters [file] [options]
 ```
 
 | Option | Description |

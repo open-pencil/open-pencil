@@ -33,6 +33,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
       StrokeJoin: { Round: 0 },
       Matrix: { translated: mock(() => new Float32Array(9)) },
       BlendMode: { SrcOver: 0, SrcIn: 1, DstOut: 2, Screen: 3, Multiply: 4 },
+      PaintStyle: { Fill: 0, Stroke: 1 },
       ColorType: { RGBA_8888: 0 },
       AlphaType: { Premul: 0, Unpremul: 1 },
       ColorSpace: { SRGB: 0 },
@@ -43,8 +44,10 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
       WHITE: new Float32Array([1, 1, 1, 1]),
       TRANSPARENT: new Float32Array([0, 0, 0, 0]),
       Paint: class {
+        setAntiAlias = mock(() => undefined)
         setColor = mock(() => undefined)
         setShader = mock(() => undefined)
+        setStyle = mock(() => undefined)
         delete = mock(() => undefined)
       },
       ColorFilter: {
@@ -117,6 +120,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     }),
     renderText: mock(() => undefined),
     applyClippedBlur: mock(() => undefined),
+    clipNodeShape: mock(() => undefined),
     applyFill: mock(() => true),
     renderShape: mock(() => undefined),
     renderSection: mock(() => undefined),
@@ -145,6 +149,7 @@ export function createMockCanvas() {
     scale: mock(() => undefined),
     drawOval: mock(() => undefined),
     drawRRect: mock(() => undefined),
+    drawCircle: mock(() => undefined),
     drawRect: mock(() => undefined),
     drawPath: mock(() => undefined),
     saveLayer: mock(() => undefined),

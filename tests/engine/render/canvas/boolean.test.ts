@@ -5,6 +5,7 @@ import { makeBooleanOperationPath } from '#core/canvas/boolean'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeNodeShapePath, makePolygonPath, makeRRect } from '#core/canvas/shapes'
 import { BLACK } from '#core/constants'
+import type { SceneNode } from '#core/scene-graph'
 
 import { createAPI } from '#tests/engine/figma/api/helpers'
 
@@ -162,6 +163,26 @@ describe('boolean operation paths', () => {
     expect(bounds?.[2]).toBeGreaterThan(145)
     expect(bounds?.[3]).toBeGreaterThan(100)
     path?.delete()
+  })
+
+  test('uses imported fill geometry when child paths cannot produce a boolean path', async () => {
+    const r = await createRenderer()
+    const importedPath = new r.ck.Path()
+    importedPath.addRect(r.ck.LTRBRect(5, 6, 25, 36))
+    r.getFillGeometry = () => [importedPath]
+    const node = {
+      id: 'boolean',
+      type: 'BOOLEAN_OPERATION',
+      childIds: [],
+      booleanOperation: 'UNION'
+    } as SceneNode
+    const api = createAPI()
+
+    const path = makeBooleanOperationPath(r, node, api.graph)
+
+    expect(path?.getBounds()).toEqual(new Float32Array([5, 6, 25, 36]))
+    path?.delete()
+    importedPath.delete()
   })
 
   test('supports nested boolean operation children', async () => {

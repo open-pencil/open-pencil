@@ -61,7 +61,7 @@ Otwieraj wiele dokumentów w kartach. <kbd>⌘</kbd><kbd>T</kbd> nowa karta, <kb
 - **Tailwind JSX** — HTML z klasami utility Tailwind v4, gotowy dla React lub Vue
 - **Kopiuj jako** — tekst, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>) lub JSX przez menu kontekstowe
 
-CLI: `open-pencil export design.fig -f jsx --style tailwind`
+CLI: `openpencil export design.fig -f jsx --style tailwind`
 
 ## Chat AI
 
@@ -96,19 +96,19 @@ Zobacz [Referencja narzędzi MCP](/programmable/mcp-server) dla pełnej listy na
 Inspekcja, eksport i analiza plików `.fig` z terminala:
 
 ```sh
-open-pencil tree design.fig          # Drzewo węzłów
-open-pencil find design.fig --type TEXT  # Wyszukiwanie
-open-pencil export design.fig -f png     # Renderowanie
-open-pencil analyze colors design.fig    # Audyt kolorów
-open-pencil analyze clusters design.fig  # Powtarzające się wzorce
-open-pencil eval design.fig -c "..."     # Figma Plugin API
+openpencil tree design.fig          # Drzewo węzłów
+openpencil find design.fig --type TEXT  # Wyszukiwanie
+openpencil export design.fig -f png     # Renderowanie
+openpencil analyze colors design.fig    # Audyt kolorów
+openpencil analyze clusters design.fig  # Powtarzające się wzorce
+openpencil eval design.fig -c "..."     # Figma Plugin API
 ```
 
 Gdy aplikacja desktopowa jest uruchomiona, pomiń plik aby sterować edytorem na żywo przez RPC:
 
 ```sh
-open-pencil tree                     # Aktywny dokument
-open-pencil export -f png            # Zrzut ekranu canvasu
+openpencil tree                     # Aktywny dokument
+openpencil export -f png            # Zrzut ekranu canvasu
 ```
 
 Wszystkie komendy obsługują `--json`. Instalacja: `npm install -g @open-pencil/cli`

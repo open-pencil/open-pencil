@@ -1,6 +1,6 @@
 {
   "name": "open-pencil-app",
-  "version": "0.12.2",
+  "version": "0.13.2",
   "private": true,
   "license": "MIT",
   "workspaces": [

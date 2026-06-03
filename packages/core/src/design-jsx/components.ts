@@ -55,10 +55,23 @@ export function Section(props: BaseProps, ...children: Child[]): TreeNode {
   return withChildren('section', props, children)
 }
 
+export function Component(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('component', props, children)
+}
+
+export function ComponentSet(props: BaseProps, ...children: Child[]): TreeNode {
+  return withChildren('component-set', props, children)
+}
+
+export function Instance(
+  props: BaseProps & { component?: string; componentId?: string; of?: string },
+  ...children: Child[]
+): TreeNode {
+  return withChildren('instance', props, children)
+}
+
 export const View = Frame
 export const Rect = Rectangle
-export const Component = Frame
-export const Instance = Frame
 export const Page = Frame
 
 export const INTRINSIC_ELEMENTS = [
@@ -71,5 +84,8 @@ export const INTRINSIC_ELEMENTS = [
   'polygon',
   'vector',
   'group',
-  'section'
+  'section',
+  'component',
+  'component-set',
+  'instance'
 ] as const

@@ -15,6 +15,7 @@ describe('Figma paint schema field export', () => {
           opacity: 0.75,
           visible: true,
           sourceNodeId: '12:34',
+          scale: 1.5,
           spacing: 6,
           patternSpacing: { x: 8, y: 12 },
           patternTileType: 'VERTICAL_HEXAGONAL',
@@ -46,6 +47,7 @@ describe('Figma paint schema field export', () => {
     expect(fills?.[0]).toMatchObject({
       type: 'PATTERN',
       sourceNodeId: { sessionID: 12, localID: 34 },
+      scale: 1.5,
       spacing: 6,
       patternSpacing: { x: 8, y: 12 },
       patternTileType: 'VERTICAL_HEXAGONAL',

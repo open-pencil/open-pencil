@@ -5,18 +5,18 @@ description: Execute JavaScript with a Figma-compatible Plugin API to query, bat
 
 # Scripting
 
-`open-pencil eval` runs JavaScript against an OpenPencil document with a Figma-compatible `figma` global. Use it for headless batch edits, inspection, fixture setup, and automation without opening the editor UI.
+`openpencil eval` runs JavaScript against an OpenPencil document with a Figma-compatible `figma` global. Use it for headless batch edits, inspection, fixture setup, and automation without opening the editor UI.
 
 ## Basic usage
 
 ```sh
-open-pencil eval design.fig -c "return figma.currentPage.children.length"
+openpencil eval design.fig -c "return figma.currentPage.children.length"
 ```
 
 The `-c` flag accepts JavaScript. If the code does not start with `return`, OpenPencil wraps it in an async function and returns the value from that function when present.
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   const frame = figma.createFrame()
   frame.name = 'Card'
   frame.resize(300, 200)
@@ -29,7 +29,7 @@ open-pencil eval design.fig -c "
 ## Query nodes
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   return figma.currentPage
     .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
     .map((button) => ({
@@ -46,7 +46,7 @@ open-pencil eval design.fig -c "
 Use `--write` / `-w` to write changes back to the input file:
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   figma.currentPage.children.forEach((node) => {
     node.opacity = 0.5
   })
@@ -56,13 +56,13 @@ open-pencil eval design.fig -c "
 Use `--output` / `-o` to write to a new file:
 
 ```sh
-open-pencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
+openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
 ```
 
 ## Read scripts from stdin
 
 ```sh
-cat transform.js | open-pencil eval design.fig --stdin --write
+cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
 ## Live app mode
@@ -70,7 +70,7 @@ cat transform.js | open-pencil eval design.fig --stdin --write
 Omit the file path to run against the currently open document in the desktop app:
 
 ```sh
-open-pencil eval -c "return figma.currentPage.name"
+openpencil eval -c "return figma.currentPage.name"
 ```
 
 The desktop app must be running with a document open.
@@ -80,7 +80,7 @@ The desktop app must be running with a document open.
 By default, non-TTY output is JSON. Use `--json` to force JSON output:
 
 ```sh
-open-pencil eval design.fig -c "return figma.currentPage.children.map((n) => n.name)" --json
+openpencil eval design.fig -c "return figma.currentPage.children.map((n) => n.name)" --json
 ```
 
 Use `--quiet` / `-q` to suppress output when only writing a file.

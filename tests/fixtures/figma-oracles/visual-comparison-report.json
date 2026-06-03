@@ -1,0 +1,78 @@
+{
+  "source": {
+    "tool": "scripts/visual-compare.ts",
+    "captured": "2026-05-22",
+    "outputRoot": "/tmp/open-pencil-oracles"
+  },
+  "comparisons": [
+    {
+      "name": "pattern-visible-source-frame",
+      "nodeId": "296784:2258",
+      "output": "/tmp/open-pencil-oracles/pattern-visible-source-tuned",
+      "figmaSize": "190x110",
+      "openPencilSize": "190x110",
+      "differentPixels": 7180,
+      "differentPercent": 34.35,
+      "rmseNormalized": 0.235698,
+      "previousDifferentPixels": 13026,
+      "previousDifferentPercent": 62.33,
+      "finding": "This is the reliable pattern oracle: source and target are copied together and Figma renders the pattern. OpenPencil resolves the source and now uses a closer Figma-like pattern origin, but exact row spacing/tile origin still differs.",
+      "fuzz": "2%",
+      "fuzzDifferentPixels": 6337,
+      "fuzzDifferentPercent": 30.32,
+      "rmse": "15446.4 (0.235698)"
+    },
+    {
+      "name": "rich-text-decorations",
+      "nodeId": "297274:2265",
+      "output": "/tmp/open-pencil-oracles/rich-text/recreated-decoration-metric-derived",
+      "figmaSize": "493x41",
+      "openPencilSize": "493x42",
+      "normalization": "Padded/cropped without scaling before diff",
+      "differentPixels": 7734,
+      "differentPercent": 38.26,
+      "rmseNormalized": 0.217758,
+      "finding": "Recreated rich text decoration oracle. Derived-glyph decorations now use glyph positions and font metrics instead of inline pixel offsets; colored decoration row bounds are close, but glyph/text rendering differences still dominate the raster diff.",
+      "fuzz": "2%",
+      "fuzzDifferentPixels": 7361,
+      "fuzzDifferentPercent": 36.42,
+      "rmse": "14270.7 (0.217758)"
+    },
+    {
+      "name": "nested-luminance-mask",
+      "nodeId": "296616:2249",
+      "output": "/tmp/open-pencil-oracles/masks/nested-norm",
+      "figmaSize": "240x120",
+      "openPencilSize": "240x120",
+      "differentPixels": 12944,
+      "differentPercent": 44.94,
+      "rmseNormalized": 0.00385526,
+      "finding": "Raw AE is high because antialiasing touches many edge pixels, but RMSE is very low and the output is structurally close. Future mask comparison should use tolerant/perceptual metrics."
+    },
+    {
+      "name": "pattern-target-without-source",
+      "nodeId": "296519:2245",
+      "output": "/tmp/open-pencil-oracles/pattern-scale1",
+      "figmaSize": "160x100",
+      "openPencilSize": "160x100",
+      "differentPixels": 16000,
+      "differentPercent": 100,
+      "finding": "Copying/exporting only a pattern-filled target does not include its source node in clipboard data; OpenPencil must fall back without whole-document context."
+    },
+    {
+      "name": "pattern-frame-with-hidden-source",
+      "nodeId": "296731:2254",
+      "output": "/tmp/open-pencil-oracles/pattern-frame-scale1-after-sourceid",
+      "figmaSize": "180x100",
+      "openPencilSize": "180x100",
+      "differentPixels": 9102,
+      "differentPercent": 50.57,
+      "finding": "Resolving pattern sources by imported Figma source id works in OpenPencil, but this hidden-source frame oracle renders blank in Figma and is not a parity baseline."
+    }
+  ],
+  "nextActions": [
+    "Continue tuning pattern row spacing and tile origin against pattern-visible-source-frame.",
+    "Use perceptual/color-tolerant image diff for mask comparisons instead of raw absolute-error counts.",
+    "Render rich decoration styles/colors for Figma-derived glyph paths or reliably fall back to paragraph text when fonts are available."
+  ]
+}

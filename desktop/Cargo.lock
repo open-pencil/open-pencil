@@ -1545,7 +1545,7 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.12.3"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 
@@ -1862,7 +1862,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
- "hashbrown 0.12.3",
+ "hashbrown 0.13.1",
  "serde",
 ]
 
@@ -2639,7 +2639,7 @@ dependencies = [
 
 [[package]]
 name = "open_pencil"
-version = "0.12.2"
+version = "0.13.1"
 dependencies = [
  "fix-path-env",
  "font-kit",

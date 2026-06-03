@@ -1,0 +1,64 @@
+{
+  "source": {
+    "tool": "figma-use eval",
+    "fileKey": "jSxlQDCrjsvqEQq17IWEcC",
+    "page": "OpenPencil raw metadata oracle 2026-05-27",
+    "captured": "2026-05-27"
+  },
+  "page": {
+    "guides": [
+      { "axis": "X", "offset": 42 },
+      { "axis": "Y", "offset": 84 }
+    ]
+  },
+  "frame": {
+    "id": "297470:2274",
+    "name": "Raw metadata grid export oracle",
+    "width": 240,
+    "height": 160,
+    "layoutGrids": [
+      {
+        "pattern": "COLUMNS",
+        "visible": true,
+        "color": { "r": 1, "g": 0, "b": 0, "a": 0.10000000149011612 },
+        "gutterSize": 16,
+        "alignment": "MIN",
+        "count": 4,
+        "sectionSize": 48,
+        "offset": 16,
+        "boundVariables": {}
+      }
+    ],
+    "exportSettings": [
+      {
+        "format": "PNG",
+        "suffix": "@2x",
+        "contentsOnly": true,
+        "colorProfile": "DOCUMENT",
+        "constraint": { "type": "SCALE", "value": 2 }
+      }
+    ]
+  },
+  "text": {
+    "id": "297470:2275",
+    "name": "Export absolute bounds",
+    "width": 181,
+    "height": 19,
+    "exportSettings": [
+      {
+        "format": "SVG",
+        "suffix": "-svg",
+        "contentsOnly": true,
+        "colorProfile": "DOCUMENT",
+        "useAbsoluteBounds": true,
+        "svgOutlineText": true,
+        "svgIdAttribute": false,
+        "svgSimplifyStroke": true
+      }
+    ]
+  },
+  "notes": [
+    "Figma Plugin API exposes layoutGrids with COLUMNS/ROWS/GRID and alignment names, while Kiwi uses lower-level layout grid pattern/type/axis fields.",
+    "Frame export settings reject useAbsoluteBounds; text export settings accept it."
+  ]
+}

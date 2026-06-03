@@ -95,8 +95,8 @@ Proprietà abbreviate compatte ispirate alla nomenclatura di Tailwind.
 Converti design esistenti in JSX:
 
 ```sh
-open-pencil export design.fig -f jsx                   # formato OpenPencil
-open-pencil export design.fig -f jsx --style tailwind  # classi Tailwind
+openpencil export design.fig -f jsx                   # formato OpenPencil
+openpencil export design.fig -f jsx --style tailwind  # classi Tailwind
 ```
 
 Il ciclo completo funziona: esporta un design come JSX, modifica il codice, renderizzalo di nuovo.

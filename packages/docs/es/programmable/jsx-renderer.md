@@ -95,8 +95,8 @@ Props abreviados compactos inspirados en la nomenclatura de Tailwind.
 Convierte diseños existentes de vuelta a JSX:
 
 ```sh
-open-pencil export design.fig -f jsx                   # formato OpenPencil
-open-pencil export design.fig -f jsx --style tailwind  # clases Tailwind
+openpencil export design.fig -f jsx                   # formato OpenPencil
+openpencil export design.fig -f jsx --style tailwind  # clases Tailwind
 ```
 
 El viaje de ida y vuelta funciona: exporta un diseño como JSX, modifica el código, renderízalo de nuevo.

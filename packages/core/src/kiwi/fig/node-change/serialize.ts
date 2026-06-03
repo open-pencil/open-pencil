@@ -218,6 +218,7 @@ function fillToKiwiPaint(f: SceneNode['fills'][number]): Paint {
   if (f.imageScaleMode) paint.imageScaleMode = f.imageScaleMode
   if (f.imageTransform) paint.transform = f.imageTransform
   if (f.sourceNodeId) paint.sourceNodeId = stringToGuid(f.sourceNodeId)
+  if (f.scale) paint.scale = f.scale
   if (f.spacing) paint.spacing = f.spacing
   if (f.patternSpacing) paint.patternSpacing = f.patternSpacing
   if (f.patternTileType) paint.patternTileType = f.patternTileType
@@ -302,7 +303,7 @@ function serializeTextProps(
   nc.textUserLayoutVersion = 4
   nc.textExplicitLayoutVersion = 1
   nc.textBidiVersion = 1
-  nc.textDecorationSkipInk = true
+  nc.textDecorationSkipInk = node.textDecorationSkipInk
   nc.fontVariantCommonLigatures = true
   nc.fontVariantContextualLigatures = true
   applyFontFeaturesToKiwi(nc, node.fontFeatures)
@@ -312,10 +313,21 @@ function serializeTextProps(
   if (fontDigestMap) {
     nc.derivedTextData = buildDerivedTextData(node, fontDigestMap, blobs, glyphBlobMap ?? new Map())
   }
+  if (node.leadingTrim !== 'NONE') nc.leadingTrim = node.leadingTrim
   if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
   nc.letterSpacing = { value: node.letterSpacing, units: 'PIXELS' }
   if (node.textDecoration !== 'NONE') {
     nc.textDecoration = node.textDecoration === 'UNDERLINE' ? 'UNDERLINE' : 'STRIKETHROUGH'
+  }
+  if (node.textDecorationStyle !== 'SOLID') nc.textDecorationStyle = node.textDecorationStyle
+  if (node.textDecorationThickness != null) {
+    nc.textDecorationThickness = { value: node.textDecorationThickness, units: 'PIXELS' }
+  }
+  if (node.textUnderlineOffset != null) {
+    nc.textUnderlineOffset = { value: node.textUnderlineOffset, units: 'PIXELS' }
+  }
+  if (node.textDecorationFills.length > 0) {
+    nc.textDecorationFillPaints = node.textDecorationFills.map(fillToKiwiPaint)
   }
 }
 
@@ -393,6 +405,11 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
 }
 
 function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+  if (node.isMask) {
+    nc.mask = true
+    nc.maskType = node.maskType
+    if (node.maskIsOutline) nc.maskIsOutline = true
+  }
   if (node.vectorNetwork && node.type === 'VECTOR') {
     const { table, mirroringToId } = buildStyleOverrideTable(node.vectorNetwork)
     const blobIdx = blobs.length

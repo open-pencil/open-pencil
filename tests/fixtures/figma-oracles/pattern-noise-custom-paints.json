@@ -1,0 +1,315 @@
+{
+  "source": {
+    "tool": "figma-use eval",
+    "fileKey": "jSxlQDCrjsvqEQq17IWEcC",
+    "captured": "2026-05-22"
+  },
+  "pattern": {
+    "page": "OpenPencil pattern visible source oracle 2026-05-22",
+    "frame": {
+      "id": "296784:2258",
+      "name": "Pattern visible source frame"
+    },
+    "source": {
+      "id": "296784:2259",
+      "name": "Pattern visible source dot",
+      "visible": true
+    },
+    "target": {
+      "id": "296784:2260",
+      "name": "Pattern fill target with source",
+      "fills": [
+        {
+          "type": "PATTERN",
+          "visible": true,
+          "opacity": 1,
+          "blendMode": "NORMAL",
+          "sourceNodeId": "296784:2259",
+          "tileType": "RECTANGULAR",
+          "scalingFactor": 1,
+          "spacing": {
+            "x": 0.25,
+            "y": 0.4000000059604645
+          },
+          "horizontalAlignment": "CENTER",
+          "verticalAlignment": "CENTER"
+        }
+      ]
+    },
+    "note": "Captured with setFillsAsync; the frame includes a visible source node so clipboard import has the referenced pattern source. Direct node.fills assignment rejects PATTERN."
+  },
+  "effects": {
+    "noise": {
+      "nodeId": "297107:2262",
+      "results": {
+        "MONOTONE": {
+          "ok": true,
+          "effects": [
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.5,
+              "noiseSizeVector": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "noiseType": "MONOTONE",
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "density": 0.4000000059604645
+            }
+          ]
+        },
+        "DUOTONE": {
+          "ok": true,
+          "effects": [
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.5,
+              "noiseSizeVector": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "noiseType": "DUOTONE",
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "secondaryColor": {
+                "r": 1,
+                "g": 1,
+                "b": 1,
+                "a": 1
+              },
+              "density": 0.4000000059604645
+            }
+          ]
+        },
+        "MULTITONE": {
+          "ok": true,
+          "effects": [
+            {
+              "type": "NOISE",
+              "visible": true,
+              "boundVariables": {},
+              "noiseSize": 0.5,
+              "noiseSizeVector": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "noiseType": "MULTITONE",
+              "color": {
+                "r": 0,
+                "g": 0,
+                "b": 0,
+                "a": 1
+              },
+              "opacity": 0.699999988079071,
+              "density": 0.4000000059604645
+            }
+          ]
+        }
+      }
+    },
+    "textureAndGlass": {
+      "nodeId": "297110:2263",
+      "results": {
+        "TEXTURE": {
+          "ok": true,
+          "effects": [
+            {
+              "type": "TEXTURE",
+              "visible": true,
+              "radius": 8,
+              "boundVariables": {},
+              "noiseSize": 0.5,
+              "noiseSizeVector": {
+                "x": 0.5,
+                "y": 0.5
+              },
+              "clipToShape": true
+            }
+          ]
+        },
+        "GLASS": {
+          "ok": true,
+          "effects": [
+            {
+              "type": "GLASS",
+              "visible": true,
+              "radius": 8,
+              "boundVariables": {},
+              "refraction": 0.30000001192092896,
+              "depth": 2,
+              "lightAngle": 45,
+              "lightIntensity": 0.5,
+              "dispersion": 0.20000000298023224
+            }
+          ]
+        }
+      }
+    }
+  },
+  "pluginRuntimeCreation": {
+    "PATTERN_DIRECT_FILLS_ASSIGNMENT": {
+      "ok": false,
+      "message": "Directly assigning PATTERN to node.fills fails validation; Figma requires setFillsAsync after loading/referencing the pattern source node."
+    },
+    "NOISE_ASYNC_FILLS": {
+      "ok": false,
+      "message": "setFillsAsync rejects NOISE; supported async non-standard paint discriminator is PATTERN with required tileType and sourceNodeId."
+    },
+    "CUSTOM_ASYNC_FILLS": {
+      "ok": false,
+      "message": "setFillsAsync rejects CUSTOM; supported async non-standard paint discriminator is PATTERN with required tileType and sourceNodeId."
+    }
+  },
+  "currentFileFillTypes": {
+    "SOLID": 562,
+    "GRADIENT_RADIAL": 2,
+    "IMAGE": 8,
+    "GRADIENT_LINEAR": 3
+  },
+  "localFigFixtureFillTypes": {
+    "tests/fixtures/nuxtui.fig": {
+      "SOLID": 168633,
+      "IMAGE": 13609,
+      "GRADIENT_RADIAL": 1,
+      "GRADIENT_LINEAR": 568
+    },
+    "tests/fixtures/gold-preview.fig": {
+      "SOLID": 2521,
+      "IMAGE": 3,
+      "GRADIENT_LINEAR": 1,
+      "GRADIENT_RADIAL": 2
+    },
+    "tests/fixtures/material3.fig": {
+      "SOLID": 41760,
+      "IMAGE": 328,
+      "GRADIENT_LINEAR": 9
+    }
+  },
+  "status": "A real PATTERN payload is captured through Figma's async paint API with source and target in the same copied subtree. Real NOISE and CUSTOM paint payloads are still unavailable as Paint payloads in the connected Figma file and committed .fig fixtures. Figma Plugin API does expose NOISE, TEXTURE, and GLASS Effect payloads, recorded here for follow-up effect fidelity work.",
+  "patternAlignment": {
+    "page": "OpenPencil pattern alignment oracle 2026-05-27",
+    "frame": {
+      "id": "297316:2267",
+      "name": "Pattern alignment frame"
+    },
+    "source": {
+      "id": "297316:2268",
+      "name": "Pattern alignment source dot",
+      "visible": true
+    },
+    "targets": [
+      {
+        "id": "297316:2269",
+        "name": "Pattern START alignment target",
+        "alignment": "START",
+        "fills": [
+          {
+            "type": "PATTERN",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "sourceNodeId": "297316:2268",
+            "tileType": "RECTANGULAR",
+            "scalingFactor": 1,
+            "spacing": {
+              "x": 0.25,
+              "y": 0.4000000059604645
+            },
+            "horizontalAlignment": "START",
+            "verticalAlignment": "START"
+          }
+        ]
+      },
+      {
+        "id": "297316:2270",
+        "name": "Pattern CENTER alignment target",
+        "alignment": "CENTER",
+        "fills": [
+          {
+            "type": "PATTERN",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "sourceNodeId": "297316:2268",
+            "tileType": "RECTANGULAR",
+            "scalingFactor": 1,
+            "spacing": {
+              "x": 0.25,
+              "y": 0.4000000059604645
+            },
+            "horizontalAlignment": "CENTER",
+            "verticalAlignment": "CENTER"
+          }
+        ]
+      },
+      {
+        "id": "297316:2271",
+        "name": "Pattern END alignment target",
+        "alignment": "END",
+        "fills": [
+          {
+            "type": "PATTERN",
+            "visible": true,
+            "opacity": 1,
+            "blendMode": "NORMAL",
+            "sourceNodeId": "297316:2268",
+            "tileType": "RECTANGULAR",
+            "scalingFactor": 1,
+            "spacing": {
+              "x": 0.25,
+              "y": 0.4000000059604645
+            },
+            "horizontalAlignment": "END",
+            "verticalAlignment": "END"
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "output": "/tmp/open-pencil-oracles/pattern-alignment-frame",
+      "differentPixels": 23179,
+      "differentPercent": 31.84,
+      "fuzz": "2%",
+      "fuzzDifferentPixels": 22209,
+      "fuzzDifferentPercent": 30.51,
+      "rmseNormalized": 0.246422
+    },
+    "note": "Captures START/CENTER/END pattern alignment in one frame with a visible source node. START matches current OpenPencil row origin closely; CENTER and END show remaining Figma origin differences.",
+    "analysis": {
+      "START": {
+        "pairedRowCount": 6,
+        "avgDeltaY": 0,
+        "avgDeltaFirstX": 0,
+        "missingOpenPencilRows": 0,
+        "extraOpenPencilRows": 0
+      },
+      "CENTER": {
+        "pairedRowCount": 6,
+        "avgDeltaY": 3,
+        "avgDeltaFirstX": -0.5,
+        "missingOpenPencilRows": 1,
+        "extraOpenPencilRows": 0
+      },
+      "END": {
+        "pairedRowCount": 6,
+        "avgDeltaY": -6.67,
+        "avgDeltaFirstX": -0.5,
+        "missingOpenPencilRows": 0,
+        "extraOpenPencilRows": 0
+      }
+    }
+  }
+}

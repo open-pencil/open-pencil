@@ -95,8 +95,8 @@ Props raccourcies compactes inspirées des conventions de nommage de Tailwind.
 Convertissez des designs existants en JSX :
 
 ```sh
-open-pencil export design.fig -f jsx                   # Format OpenPencil
-open-pencil export design.fig -f jsx --style tailwind  # Classes Tailwind
+openpencil export design.fig -f jsx                   # Format OpenPencil
+openpencil export design.fig -f jsx --style tailwind  # Classes Tailwind
 ```
 
 L'aller-retour fonctionne : exportez un design en JSX, modifiez le code, rendez-le à nouveau.

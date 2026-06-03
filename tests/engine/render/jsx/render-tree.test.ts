@@ -11,7 +11,10 @@ import {
   Line,
   Star,
   Group,
-  Section
+  Section,
+  Component,
+  ComponentSet,
+  Instance
 } from '@open-pencil/core'
 
 import { expectDefined, getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
@@ -74,6 +77,53 @@ describe('renderTree', () => {
     expect(heading.fontSize).toBe(20)
     expect(heading.fontWeight).toBe(700)
     expect(heading.fills.length).toBe(1)
+  })
+
+  it('renders components and instances', async () => {
+    const g = makeSceneGraph()
+    const component = await renderTree(
+      g,
+      Component({
+        name: 'Badge',
+        w: 64,
+        h: 24,
+        children: [Text({ name: 'Label', color: '#000', children: 'Live' })]
+      })
+    )
+
+    const instance = await renderTree(
+      g,
+      Instance({ component: component.id, name: 'Badge Instance' })
+    )
+    const node = getNodeOrThrow(g, instance.id)
+
+    expect(component.type).toBe('COMPONENT')
+    expect(node.type).toBe('INSTANCE')
+    expect(node.componentId).toBe(component.id)
+    expect(node.childIds.length).toBe(1)
+  })
+
+  it('renders component sets and variant instances', async () => {
+    const g = makeSceneGraph()
+    const set = await renderTree(
+      g,
+      ComponentSet({
+        name: 'Button',
+        children: [
+          Component({ name: 'variant=Primary', w: 120, h: 40, bg: '#2563EB' }),
+          Component({ name: 'variant=Secondary', w: 120, h: 40, bg: '#FFFFFF' })
+        ]
+      })
+    )
+
+    const setNode = getNodeOrThrow(g, set.id)
+    expect(setNode.type).toBe('COMPONENT_SET')
+    expect(setNode.componentPropertyDefinitions[0]?.name).toBe('variant')
+
+    const instance = await renderTree(g, Instance({ of: set.id, variant: 'Secondary' }))
+    const node = getNodeOrThrow(g, instance.id)
+    expect(node.type).toBe('INSTANCE')
+    expect(getNodeOrThrow(g, node.componentId ?? '').name).toBe('variant=Secondary')
   })
 
   it('renders nested structure', async () => {

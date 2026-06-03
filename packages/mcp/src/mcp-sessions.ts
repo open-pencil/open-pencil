@@ -49,7 +49,8 @@ export function createMcpSessionManager({
     registerTools(server)
 
     const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: () => id
+      sessionIdGenerator: () => id,
+      enableJsonResponse: true
     })
     void server.connect(transport)
     sessions.set(id, { transport, server, lastSeen: Date.now() })

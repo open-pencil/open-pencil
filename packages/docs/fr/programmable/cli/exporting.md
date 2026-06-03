@@ -10,10 +10,10 @@ Exportez des designs depuis le terminal — images raster, vecteurs ou code JSX.
 ## Export d'images
 
 ```sh
-open-pencil export design.fig                          # PNG (par défaut)
-open-pencil export design.fig -f jpg -s 2 -q 90       # JPG en 2×, qualité 90
-open-pencil export design.fig -f webp -s 3             # WEBP en 3×
-open-pencil export design.fig -f svg                   # SVG vectoriel
+openpencil export design.fig                          # PNG (par défaut)
+openpencil export design.fig -f jpg -s 2 -q 90       # JPG en 2×, qualité 90
+openpencil export design.fig -f webp -s 3             # WEBP en 3×
+openpencil export design.fig -f svg                   # SVG vectoriel
 ```
 
 Options :
@@ -30,7 +30,7 @@ Options :
 Exportez en JSX avec des classes utilitaires Tailwind :
 
 ```sh
-open-pencil export design.fig -f jsx --style tailwind
+openpencil export design.fig -f jsx --style tailwind
 ```
 
 Résultat :
@@ -47,7 +47,7 @@ Supporte aussi `--style openpencil` pour le format JSX natif (voir [Moteur de re
 ## Miniatures
 
 ```sh
-open-pencil export design.fig --thumbnail --width 1920 --height 1080
+openpencil export design.fig --thumbnail --width 1920 --height 1080
 ```
 
 ## Mode application en direct
@@ -55,5 +55,5 @@ open-pencil export design.fig --thumbnail --width 1920 --height 1080
 Omettez le fichier pour exporter depuis l'application en cours d'exécution :
 
 ```sh
-open-pencil export -f png    # capture du canevas actuel
+openpencil export -f png    # capture du canevas actuel
 ```

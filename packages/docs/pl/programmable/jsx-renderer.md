@@ -95,8 +95,8 @@ Zwięzłe skrócone właściwości inspirowane nazewnictwem Tailwind.
 Konwertuj istniejące projekty z powrotem do JSX:
 
 ```sh
-open-pencil export design.fig -f jsx                   # format OpenPencil
-open-pencil export design.fig -f jsx --style tailwind  # klasy Tailwind
+openpencil export design.fig -f jsx                   # format OpenPencil
+openpencil export design.fig -f jsx --style tailwind  # klasy Tailwind
 ```
 
 Pełen cykl działa: wyeksportuj projekt jako JSX, zmodyfikuj kod, wyrenderuj z powrotem.

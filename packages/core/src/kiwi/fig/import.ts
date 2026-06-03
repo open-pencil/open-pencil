@@ -27,6 +27,9 @@ function applyImportedCanvasMetadata(
   page.source.orderKey = canvasNc.parentIndex?.position ?? null
   if (canvasNc.backgroundColor)
     page.source.fig.rawNodeFields.backgroundColor = structuredClone(canvasNc.backgroundColor)
+  if (canvasNc.backgroundPaints)
+    page.source.fig.rawNodeFields.backgroundPaints = structuredClone(canvasNc.backgroundPaints)
+  if (canvasNc.guides) page.source.fig.rawNodeFields.guides = structuredClone(canvasNc.guides)
   page.source.fig.rawNodeFields.strokeJoin = canvasNc.strokeJoin
   page.source.fig.rawNodeFields.strokeWeight = canvasNc.strokeWeight
   if (canvasNc.pageType) page.source.fig.rawNodeFields.pageType = canvasNc.pageType

@@ -7,7 +7,7 @@ import { renderNode } from '#core/canvas/scene'
 import { renderEffects } from '#core/canvas/shadows'
 import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
-import { createMockCanvas, createMockRenderer } from './helpers'
+import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 
 describe('Renderer handles all effect types (Behavioral)', () => {
   test('handles DROP_SHADOW', () => {
@@ -130,6 +130,108 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       'front'
     )
     expect(canvas.drawPath).toHaveBeenCalled()
+  })
+
+  test('renders raw Figma noise effects as a bounded visual fallback', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node: Partial<SceneNode> = {
+      type: 'RECTANGLE',
+      width: 20,
+      height: 20,
+      fills: [],
+      childIds: [],
+      effects: [],
+      source: {
+        format: 'fig',
+        id: '1:1',
+        orderKey: null,
+        fig: {
+          rawSize: null,
+          rawTransform: null,
+          rawNodeFields: {
+            effects: [
+              {
+                type: 'NOISE',
+                visible: true,
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                density: 1,
+                noiseSize: { x: 0.25, y: 0.25 },
+                noiseType: 'MONOTONE'
+              }
+            ]
+          },
+          layout: null,
+          symbolOverrides: [],
+          componentPropAssignments: [],
+          derivedSymbolData: [],
+          derivedSymbolDataLayoutVersion: null,
+          uniformScaleFactor: null
+        }
+      }
+    }
+
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array([0, 0, 20, 20]),
+      false,
+      'front'
+    )
+
+    expect(r.clipNodeShape).toHaveBeenCalled()
+    expect(canvas.drawRect).toHaveBeenCalled()
+  })
+
+  test('bounds raw noise effect draw calls for large nodes', () => {
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+    const node: Partial<SceneNode> = {
+      type: 'RECTANGLE',
+      width: 1000,
+      height: 1000,
+      fills: [],
+      childIds: [],
+      effects: [],
+      source: {
+        format: 'fig',
+        id: '1:1',
+        orderKey: null,
+        fig: {
+          rawSize: null,
+          rawTransform: null,
+          rawNodeFields: {
+            effects: [
+              {
+                type: 'NOISE',
+                visible: true,
+                color: { r: 0, g: 0, b: 0, a: 1 },
+                density: 1,
+                noiseSize: { x: 0.1, y: 0.1 }
+              }
+            ]
+          },
+          layout: null,
+          symbolOverrides: [],
+          componentPropAssignments: [],
+          derivedSymbolData: [],
+          derivedSymbolDataLayoutVersion: null,
+          uniformScaleFactor: null
+        }
+      }
+    }
+
+    renderEffects(
+      r,
+      canvas as Canvas,
+      node as SceneNode,
+      new Float32Array([0, 0, 1000, 1000]),
+      false,
+      'front'
+    )
+
+    expect(mockCalls(canvas.drawRect).length).toBeLessThanOrEqual(12_000)
   })
 
   test('handles BACKGROUND_BLUR', () => {

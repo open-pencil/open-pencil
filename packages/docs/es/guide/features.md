@@ -61,7 +61,7 @@ Abre múltiples documentos en pestañas. <kbd>⌘</kbd><kbd>T</kbd> nueva pesta�
 - **Tailwind JSX** — HTML con clases de utilidad Tailwind v4, listo para React o Vue
 - **Copiar como** — texto, SVG, PNG (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd>), o JSX vía menú contextual
 
-CLI: `open-pencil export design.fig -f jsx --style tailwind`
+CLI: `openpencil export design.fig -f jsx --style tailwind`
 
 ## Chat IA
 
@@ -96,19 +96,19 @@ Consulta la [referencia de herramientas MCP](/programmable/mcp-server) para la l
 Inspecciona, exporta y analiza archivos `.fig` desde el terminal:
 
 ```sh
-open-pencil tree design.fig          # Árbol de nodos
-open-pencil find design.fig --type TEXT  # Buscar
-open-pencil export design.fig -f png     # Renderizar
-open-pencil analyze colors design.fig    # Auditoría de colores
-open-pencil analyze clusters design.fig  # Patrones repetidos
-open-pencil eval design.fig -c "..."     # Figma Plugin API
+openpencil tree design.fig          # Árbol de nodos
+openpencil find design.fig --type TEXT  # Buscar
+openpencil export design.fig -f png     # Renderizar
+openpencil analyze colors design.fig    # Auditoría de colores
+openpencil analyze clusters design.fig  # Patrones repetidos
+openpencil eval design.fig -c "..."     # Figma Plugin API
 ```
 
 Cuando la app de escritorio está en ejecución, omite el archivo para controlar el editor en vivo vía RPC:
 
 ```sh
-open-pencil tree                     # Documento en vivo
-open-pencil export -f png            # Captura del canvas
+openpencil tree                     # Documento en vivo
+openpencil export -f png            # Captura del canvas
 ```
 
 Todos los comandos soportan `--json`. Instalar: `npm install -g @open-pencil/cli`

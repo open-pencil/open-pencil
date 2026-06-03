@@ -10,7 +10,23 @@ interface TreeEntry {
   children?: TreeEntry[]
 }
 
-function nodeToTreeEntry(node: FigmaNodeProxy): TreeEntry {
+function nodeToTreeEntry(
+  node: FigmaNodeProxy,
+  level: number,
+  maxDepth?: number,
+  typeFilter?: Set<string>
+): TreeEntry | null {
+  const children: TreeEntry[] = []
+  if ((maxDepth === undefined || level < maxDepth) && node.children.length > 0) {
+    for (const child of node.children) {
+      const entry = nodeToTreeEntry(child, level + 1, maxDepth, typeFilter)
+      if (entry) children.push(entry)
+    }
+  }
+
+  const matches = !typeFilter || typeFilter.has(node.type)
+  if (!matches && children.length === 0) return null
+
   const entry: TreeEntry = {
     id: node.id,
     type: node.type,
@@ -18,23 +34,45 @@ function nodeToTreeEntry(node: FigmaNodeProxy): TreeEntry {
     w: node.width,
     h: node.height
   }
-  if (node.children.length > 0) {
-    entry.children = node.children.map(nodeToTreeEntry)
-  }
+  if (children.length > 0) entry.children = children
   return entry
 }
 
 export const getPageTree = defineTool({
   name: 'get_page_tree',
   description:
-    'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size. Use get_node for full properties of a specific node.',
-  params: {},
-  execute: (figma) => {
-    const page = figma.currentPage
-    return {
-      page: page.name,
-      children: page.children.map(nodeToTreeEntry)
+    'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size. Use depth, root_id, or node_types to keep large pages small. Use get_node for full properties of a specific node.',
+  params: {
+    depth: {
+      type: 'number',
+      description: 'Max nesting depth to return (1 = returned root nodes only). Default: unlimited',
+      min: 1
+    },
+    root_id: {
+      type: 'string',
+      description: 'Return only this node subtree instead of the whole current page'
+    },
+    node_types: {
+      type: 'string[]',
+      description: 'Keep only these node types and their ancestors, for example FRAME or TEXT'
     }
+  },
+  execute: (figma, { depth, root_id, node_types }) => {
+    const typeFilter = node_types && node_types.length > 0 ? new Set(node_types) : undefined
+
+    if (root_id !== undefined) {
+      const root = figma.getNodeById(root_id)
+      if (!root) return { error: `Node "${root_id}" not found` }
+      return { root: root.id, tree: nodeToTreeEntry(root, 1, depth, typeFilter) }
+    }
+
+    const page = figma.currentPage
+    const children: TreeEntry[] = []
+    for (const child of page.children) {
+      const entry = nodeToTreeEntry(child, 1, depth, typeFilter)
+      if (entry) children.push(entry)
+    }
+    return { page: page.name, children }
   }
 })
 

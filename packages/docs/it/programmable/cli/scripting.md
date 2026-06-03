@@ -5,12 +5,12 @@ description: Esegui JavaScript con la Figma Plugin API — interroga nodi, modif
 
 # Scripting
 
-`open-pencil eval` ti dà accesso alla Figma Plugin API completa dal terminale. Leggi nodi, modifica proprietà, crea forme — poi scrivi le modifiche nel file.
+`openpencil eval` ti dà accesso alla Figma Plugin API completa dal terminale. Leggi nodi, modifica proprietà, crea forme — poi scrivi le modifiche nel file.
 
 ## Utilizzo Base
 
 ```sh
-open-pencil eval design.fig -c "figma.currentPage.children.length"
+openpencil eval design.fig -c "figma.currentPage.children.length"
 ```
 
 Il flag `-c` accetta JavaScript. La variabile globale `figma` funziona come la Figma Plugin API.
@@ -18,7 +18,7 @@ Il flag `-c` accetta JavaScript. La variabile globale `figma` funziona come la F
 ## Interrogazione dei Nodi
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
     .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
 "
@@ -27,7 +27,7 @@ open-pencil eval design.fig -c "
 ## Modifica e Salvataggio
 
 ```sh
-open-pencil eval design.fig -c "
+openpencil eval design.fig -c "
   figma.currentPage.children.forEach(n => n.opacity = 0.5)
 " -w
 ```
@@ -39,7 +39,7 @@ open-pencil eval design.fig -c "
 Per script più lunghi:
 
 ```sh
-cat transform.js | open-pencil eval design.fig --stdin -w
+cat transform.js | openpencil eval design.fig --stdin -w
 ```
 
 ## Modalità App in Esecuzione
@@ -47,7 +47,7 @@ cat transform.js | open-pencil eval design.fig --stdin -w
 Ometti il file per eseguire sull'app desktop in esecuzione:
 
 ```sh
-open-pencil eval -c "figma.currentPage.name"
+openpencil eval -c "figma.currentPage.name"
 ```
 
 ## API Disponibili
@@ -66,5 +66,5 @@ Questa è la stessa API utilizzata dai plugin Figma, quindi le conoscenze esiste
 ## Output JSON
 
 ```sh
-open-pencil eval design.fig -c "..." --json
+openpencil eval design.fig -c "..." --json
 ```
