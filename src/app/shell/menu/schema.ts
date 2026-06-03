@@ -49,6 +49,7 @@ export const APP_MENU_SCHEMA = [
       },
       { type: 'separator' },
       { id: 'autosave', label: 'Autosave', checkbox: true },
+      { id: 'clear-cache', label: 'Clear Cached Document' },
       { id: 'close', label: 'Close Tab', shortcut: 'MOD+W' }
     ]
   },

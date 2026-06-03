@@ -67,6 +67,18 @@ export function useAppMenu() {
     open: () => void openFileDialog(),
     save: () => void store.saveFigFile(),
     'save-as': () => void store.saveFigFileAs(),
+    'clear-cache': () => {
+      void import('@/app/shell/menu/clear-cache-dialog').then(async (dlg) => {
+        const confirmed = await dlg.requestClearCacheConfirmation()
+        if (!confirmed) return
+        const [cacheMod, tabsMod] = await Promise.all([
+          import('@/app/document/io/pen-cache'),
+          import('@/app/tabs')
+        ])
+        await cacheMod.clearCachedPen()
+        tabsMod.createTab()
+      })
+    },
     'export-selection': () => exportSelection('png'),
     cut: () => document.execCommand('cut'),
     'export-png': () => exportSelection('png'),
