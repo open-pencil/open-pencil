@@ -6,7 +6,7 @@ Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also 
 
 ## Monorepo
 
-Bun workspace with three packages:
+Bun workspace packages:
 
 - `packages/core` — `@open-pencil/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
 - `packages/cli` — `@open-pencil/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
@@ -121,7 +121,7 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 
 ### How to release
 
-1. Update version in `package.json`, `packages/core/package.json`, `packages/cli/package.json`, `packages/mcp/package.json`, `packages/vue/package.json`, `desktop/tauri.conf.json`, and `desktop/Cargo.toml`
+1. Update version in `package.json`, `packages/core/package.json`, `packages/cli/package.json`, `packages/dom-css/package.json`, `packages/mcp/package.json`, `packages/vue/package.json`, `desktop/tauri.conf.json`, and `desktop/Cargo.toml`
 2. Update `CHANGELOG.md` — move "Unreleased" items under new version heading with date
 3. Commit: `Release v0.x.y`
 4. Tag: `git tag v0.x.y && git push --tags`
@@ -129,14 +129,14 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 6. The `build.yml` workflow triggers on `v*` tags and:
    - Builds Tauri binaries for macOS (arm64 + x64), Windows (x64 + arm64), Linux (x64)
    - Creates a draft GitHub Release with all platform binaries
-   - Publishes `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` to npm with provenance
+   - Publishes `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/dom-css`, `@open-pencil/mcp`, and `@open-pencil/vue` to npm with provenance
 7. Go to GitHub Releases → edit the draft → paste changelog section → publish
 
 ### CI workflows
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `build.yml` | `v*` tag push or manual | Build Tauri desktop apps (5 targets), create GitHub Release, publish `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/mcp`, and `@open-pencil/vue` |
+| `build.yml` | `v*` tag push or manual | Build Tauri desktop apps (5 targets), create GitHub Release, publish `@open-pencil/core`, `@open-pencil/cli`, `@open-pencil/dom-css`, `@open-pencil/mcp`, and `@open-pencil/vue` |
 | `homebrew.yml` | Release published | Update `open-pencil/homebrew-tap` cask with new version + SHA256 hashes |
 | `app.yml` | Push to `master` (non-docs) | Build web app, deploy to Cloudflare Pages (`app.openpencil.dev`) |
 | `docs.yml` | Push to `master` (`packages/docs/**`) | Build VitePress docs, deploy to Cloudflare Pages (`openpencil.dev`) |
@@ -151,6 +151,7 @@ bun run format         # oxfmt
 bun run test:dupes     # jscpd — zero clones
 bun run test:tools     # private repo tooling tests
 bun run test:unit      # bun:test
+cd packages/dom-css && bun run check  # standalone DOM/CSS package checks
 bun run test           # Playwright E2E
 ```
 
@@ -170,7 +171,7 @@ Use Conventional Commits for regular development commits: `feat`, `fix`, `refact
 - Keep the first line short, imperative, and scoped when helpful
 - Put rationale and implementation details in the commit body
 - Keep the commit type lowercase (`fix:`, `feat:`, `docs:`), but start each body line/bullet with an uppercase word
-- Prefer scopes that match the project structure: `app`, `tauri`, `core`, `cli`, `mcp`, `vue`, `docs`, or focused domains like `editor`, `scene-graph`, `canvas`, `tools`, `kiwi`, `io`, `text`, `vector`, `color`, `acp`, `ai`, `collab`, `automation`, `i18n`
+- Prefer scopes that match the project structure: `app`, `tauri`, `core`, `cli`, `dom-css`, `mcp`, `vue`, `docs`, or focused domains like `editor`, `scene-graph`, `canvas`, `tools`, `kiwi`, `io`, `text`, `vector`, `color`, `acp`, `ai`, `collab`, `automation`, `i18n`
 - Use the narrowest honest scope, or omit it if the change spans multiple unrelated areas
 
 Example:
@@ -242,8 +243,8 @@ Release commits are the exception: keep using `Release v0.x.y`.
 ## Code conventions
 
 - Do not place code or tests ad hoc. Before adding or moving files, inspect the existing folder structure and nearby patterns, then put changes in the established domain-specific location. If no proper location exists, create one deliberately and update docs/conventions as needed.
-- Architecture boundaries are enforced by Steiger (`bun run check:arch`). App code must use public workspace package exports, workspace packages must not import app `src/` code, package-local aliases (`#core`, `#vue`, `#cli`, `#mcp`) are only for their owning package, core must stay framework-agnostic, app service/domain code (`src/app/**`) must not import app component/view layers, components must not import views, shared UI (`src/components/ui/**`) must not import app services/stores, property-panel internals must stay inside the property panel, canvas/editor overlay code must not import property-panel internals, Vue components must not use `<style>` blocks, code outside core editor internals must not assign `editor.state.selectedIds` or `editor.state.activeTool` directly, committed code must not import scratch/generated/vendor internals, and durable docs belong under `packages/docs/**` unless the root Markdown allowlist is deliberately updated.
-- Test placement is strict and enforced by Steiger: app E2E tests live under `tests/e2e/**` and use `*.spec.ts`; Figma automation tests live under `tests/figma/**` and use `*.spec.ts`; engine/unit tests live under `tests/engine/**` and use `*.test.ts` (with `helpers.ts`, `*.bench.ts`, and `visual-*` support scripts allowed); shared test utilities live under `tests/helpers/**`. Do not commit temporary/profile specs (`*.tmp.*`, `*.profile.*`). Do not put store-only/internal-state assertions in E2E. If a test drives the UI like a user and verifies visible behavior, it can be E2E; if it creates nodes through internals and asserts graph state, it belongs in engine/unit coverage.
+- Architecture boundaries are enforced by Steiger (`bun run check:arch`). App code must use public workspace package exports, workspace packages must not import app `src/` code, package-local aliases (`#core`, `#vue`, `#cli`, `#dom-css`, `#mcp`) are only for their owning package, core must stay framework-agnostic, app service/domain code (`src/app/**`) must not import app component/view layers, components must not import views, shared UI (`src/components/ui/**`) must not import app services/stores, property-panel internals must stay inside the property panel, canvas/editor overlay code must not import property-panel internals, Vue components must not use `<style>` blocks, code outside core editor internals must not assign `editor.state.selectedIds` or `editor.state.activeTool` directly, committed code must not import scratch/generated/vendor internals, and durable docs belong under `packages/docs/**` unless the root Markdown allowlist is deliberately updated.
+- Test placement is strict and enforced by Steiger: app E2E tests live under `tests/e2e/**` and use `*.spec.ts`; Figma automation tests live under `tests/figma/**` and use `*.spec.ts`; engine/unit tests live under `tests/engine/**` and use `*.test.ts` (with `helpers.ts`, `*.bench.ts`, and `visual-*` support scripts allowed); shared test utilities live under `tests/helpers/**`; standalone package tests for `@open-pencil/dom-css` live under `packages/dom-css/tests/**`. Do not commit temporary/profile specs (`*.tmp.*`, `*.profile.*`). Do not put store-only/internal-state assertions in E2E. If a test drives the UI like a user and verifies visible behavior, it can be E2E; if it creates nodes through internals and asserts graph state, it belongs in engine/unit coverage.
 
 ### File and folder naming
 
@@ -272,7 +273,7 @@ tools/<domain>/
 Use `scripts/` only for tiny compatibility entrypoint shims that import `../tools/<domain>/src/...`; do not put implementation logic there. Workflow helpers, release packaging helpers, architecture rules, package checks, visual-oracle utilities, and other maintainable programs belong in `tools/` with focused tests when they contain logic. Steiger enforces tool layout and script shims. `bun run check` includes `bun run test:tools`, and lint/format cover `tools/`.
 
 - `@/` import alias for app cross-directory imports; app feature code lives under `src/app/*`
-- Use package-local aliases inside workspace packages: `#vue/*` in `packages/vue`, `#cli/*` in `packages/cli`, `#mcp/*` in `packages/mcp`, and `#core/*` when core code needs an alias. Prefer relative imports within nearby core modules when that is clearer than an alias.
+- Use package-local aliases inside workspace packages: `#vue/*` in `packages/vue`, `#cli/*` in `packages/cli`, `#dom-css/*` in `packages/dom-css`, `#mcp/*` in `packages/mcp`, and `#core/*` when core code needs an alias. Prefer relative imports within nearby core modules when that is clearer than an alias.
 - No `any` — use proper types, generics, declaration merging
 - No `!` non-null assertions — use guards, `?.`, `??`
 - No `Math.random()` — use `crypto.getRandomValues()` everywhere
@@ -396,7 +397,7 @@ Self-review checklist:
 
 - `bun publish` from package dirs — resolves `workspace:*` → actual versions
 - Public packages publish built `dist/` output, not runtime TypeScript entrypoints
-- Core, Vue, MCP, and CLI build with tsdown before publishing
+- Core, DOM/CSS, Vue, MCP, and CLI build with tsdown before publishing
 - CLI publishes a Node-compatible `bin/openpencil.js` wrapper; do not point package `bin` entries at TypeScript source
 
 ## Reference
