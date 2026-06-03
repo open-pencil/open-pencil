@@ -223,4 +223,71 @@ describe('@open-pencil/dom-css conversion', () => {
     expectStyleRoundTripText(graph, panel)
     expectStyleRoundTripHTML(graph)
   })
+
+  it('maps flex wrapping, align-self, clipping, and absolute positioning', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'div',
+          attrs: { class: 'wrap' },
+          computedStyle: {
+            display: 'flex',
+            'flex-wrap': 'wrap',
+            gap: '12px',
+            'row-gap': '20px',
+            overflow: 'clip',
+            width: '240px',
+            height: '120px'
+          },
+          children: [
+            {
+              type: 'element',
+              tagName: 'div',
+              attrs: { class: 'absolute' },
+              computedStyle: {
+                position: 'absolute',
+                left: '16px',
+                top: '24px',
+                'align-self': 'center',
+                width: '80px',
+                height: '32px'
+              },
+              children: []
+            }
+          ]
+        }
+      ]
+    })
+    const page = graph.getPages()[0]
+    const wrap = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
+    const absolute = expectFrame(graph.getChildren(wrap.id)[0])
+
+    expect(wrap.layoutWrap).toBe('WRAP')
+    expect(wrap.counterAxisSpacing).toBe(20)
+    expect(wrap.clipsContent).toBe(true)
+    expect(absolute.layoutPositioning).toBe('ABSOLUTE')
+    expect(absolute.layoutAlignSelf).toBe('CENTER')
+    expect(absolute.x).toBe(16)
+    expect(absolute.y).toBe(24)
+
+    const roundTrip = sceneGraphToDesignDocument(graph)
+    const root = roundTrip.children[0]
+    expect(root?.type).toBe('element')
+    if (root?.type !== 'element') return
+    const roundTripWrap = root.children[0]
+    expect(roundTripWrap?.type).toBe('element')
+    if (roundTripWrap?.type !== 'element') return
+    expect(roundTripWrap.inlineStyle?.['flex-wrap']).toBe('wrap')
+    expect(roundTripWrap.inlineStyle?.['row-gap']).toBe('20px')
+
+    const roundTripAbsolute = roundTripWrap.children[0]
+    expect(roundTripAbsolute?.type).toBe('element')
+    if (roundTripAbsolute?.type !== 'element') return
+    expect(roundTripAbsolute.inlineStyle?.position).toBe('absolute')
+    expect(roundTripAbsolute.inlineStyle?.left).toBe('16px')
+    expect(roundTripAbsolute.inlineStyle?.top).toBe('24px')
+    expect(roundTripAbsolute.inlineStyle?.['align-self']).toBe('center')
+  })
 })

@@ -31,6 +31,7 @@ async function setStyledContent(page: Page, css: string, body: string) {
 }
 
 const BROWSER_RUNTIME_MODULE = `http://localhost:1420/@fs${process.cwd()}/packages/dom-css/src/runtime/browser.ts`
+const DOM_CSS_BROWSER_MODULE = 'http://localhost:1420/@id/@open-pencil/dom-css/browser'
 
 async function browserRuntimeComputeStyles(
   page: Page,
@@ -54,6 +55,39 @@ async function browserRuntimeComputeStyles(
       modulePath: BROWSER_RUNTIME_MODULE,
       sandboxMode: sandbox
     }
+  )
+}
+
+async function publicBrowserSceneGraph(page: Page, classes: string[], cssText: string) {
+  if (!page.url().startsWith('http://localhost:1420')) {
+    await page.goto('/')
+    await page.setContent('<main></main>')
+  }
+
+  return page.evaluate(
+    async ({ candidates, css, modulePath }) => {
+      const { browserJSXToSceneGraph, jsx } = await import(modulePath)
+      const graph = await browserJSXToSceneGraph(
+        jsx('article', {
+          class: candidates.join(' '),
+          children: jsx('h1', { children: 'OpenPencil' })
+        }),
+        { cssText: css }
+      )
+      const pageNode = graph.getPages()[0]
+      const card = pageNode ? graph.getChildren(pageNode.id)[0] : undefined
+      return card
+        ? {
+            height: card.height,
+            itemSpacing: card.itemSpacing,
+            layoutMode: card.layoutMode,
+            paddingLeft: card.paddingLeft,
+            type: card.type,
+            width: card.width
+          }
+        : null
+    },
+    { candidates: classes, css: cssText, modulePath: DOM_CSS_BROWSER_MODULE }
   )
 }
 
@@ -361,6 +395,18 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
       .locator('article.card')
       .evaluate((element) => getComputedStyle(element).width)
     expect(hostWidth).toBe('20px')
+  })
+
+  test('projects JSX through public browser helpers into scene graph', async ({ page }) => {
+    const css = await compileTailwindCSS(tailwindCardClasses)
+    const card = await publicBrowserSceneGraph(page, [...tailwindCardClasses], css)
+
+    expect(card?.type).toBe('FRAME')
+    expect(card?.width).toBe(320)
+    expect(card?.height).toBe(176)
+    expect(card?.layoutMode).toBe('VERTICAL')
+    expect(card?.itemSpacing).toBe(12)
+    expect(card?.paddingLeft).toBe(24)
   })
 
   test('projects JSX and Tailwind through browser computed styles into scene graph', async ({

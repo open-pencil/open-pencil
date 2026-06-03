@@ -37,6 +37,22 @@ function alignItemsToCSS(value: SceneNode['counterAxisAlign']): string | undefin
   return undefined
 }
 
+function alignSelfToCSS(value: SceneNode['layoutAlignSelf']): string | undefined {
+  if (value === 'MIN') return 'flex-start'
+  if (value === 'CENTER') return 'center'
+  if (value === 'MAX') return 'flex-end'
+  if (value === 'STRETCH') return 'stretch'
+  if (value === 'BASELINE') return 'baseline'
+  return undefined
+}
+
+function addPositioning(style: DesignStyleDeclaration, node: SceneNode): void {
+  if (node.layoutPositioning !== 'ABSOLUTE') return
+  style.position = 'absolute'
+  style.left = `${node.x}px`
+  style.top = `${node.y}px`
+}
+
 function addSizeConstraints(style: DesignStyleDeclaration, node: SceneNode): void {
   if (node.minWidth !== null) style['min-width'] = `${node.minWidth}px`
   if (node.maxWidth !== null) style['max-width'] = `${node.maxWidth}px`
@@ -102,6 +118,7 @@ function addPadding(style: DesignStyleDeclaration, node: SceneNode): void {
 
 function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
+  addPositioning(style, node)
   addSizeConstraints(style, node)
   const fill = fillToCSS(node.fills[0])
   if (fill) style['background-color'] = fill
@@ -111,6 +128,8 @@ function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
   if (node.opacity < 1) style.opacity = String(node.opacity)
   addCornerRadii(style, node)
   if (node.clipsContent) style.overflow = 'hidden'
+  const alignSelf = alignSelfToCSS(node.layoutAlignSelf)
+  if (alignSelf) style['align-self'] = alignSelf
 
   if (node.layoutMode !== 'NONE') {
     style.display = 'flex'
@@ -119,7 +138,9 @@ function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
     const alignItems = alignItemsToCSS(node.counterAxisAlign)
     if (justifyContent) style['justify-content'] = justifyContent
     if (alignItems) style['align-items'] = alignItems
+    if (node.layoutWrap === 'WRAP') style['flex-wrap'] = 'wrap'
     if (node.itemSpacing > 0) style.gap = `${node.itemSpacing}px`
+    if (node.counterAxisSpacing > 0) style['row-gap'] = `${node.counterAxisSpacing}px`
     addPadding(style, node)
   }
 
@@ -128,6 +149,7 @@ function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
 
 function styleFromTextNode(node: SceneNode): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
+  addPositioning(style, node)
   style.color = fillToCSS(node.fills[0]) ?? colorToCSS(BLACK)
   style['font-family'] = node.fontFamily
   style['font-size'] = `${node.fontSize}px`

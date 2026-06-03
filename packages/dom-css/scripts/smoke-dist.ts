@@ -1,8 +1,12 @@
 import type * as DomCSS from '../src/index'
 
 const distPath = '../dist/index.js'
+const browserDistPath = '../dist/browser.js'
 const dist = await import(distPath)
+const browserDist = await import(browserDistPath)
 
+const browserTailwindJSXToDesignDocument: typeof DomCSS.browserTailwindJSXToDesignDocument =
+  dist.browserTailwindJSXToDesignDocument
 const compileTailwindCSS: typeof DomCSS.compileTailwindCSS = dist.compileTailwindCSS
 const createHeadlessCSSRuntime: typeof DomCSS.createHeadlessCSSRuntime =
   dist.createHeadlessCSSRuntime
@@ -50,4 +54,12 @@ const jsxDocument = await jsxToDesignDocument(
 )
 if (jsxDocument.children[0]?.type !== 'element') {
   throw new Error('Expected built JSX helpers to produce DesignDOM elements')
+}
+
+if (typeof browserTailwindJSXToDesignDocument !== 'function') {
+  throw new TypeError('Expected built browser JSX helper to be exported')
+}
+
+if (typeof browserDist.browserTailwindJSXToDesignDocument !== 'function') {
+  throw new TypeError('Expected built browser subpath helper to be exported')
 }

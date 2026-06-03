@@ -10,6 +10,12 @@ export { designDocumentToSceneGraph } from './to-scene-graph'
 export { sceneGraphToDesignDocument } from './from-scene-graph'
 export { compileTailwindCSS } from './tailwind'
 export {
+  browserJSXToDesignDocument,
+  browserJSXToSceneGraph,
+  browserTailwindJSXToDesignDocument,
+  browserTailwindJSXToSceneGraph
+} from './browser'
+export {
   Fragment,
   jsx,
   jsxToDesignDocument,
@@ -38,6 +44,12 @@ export type {
   TailwindJSXToDesignDocumentOptions,
   TailwindJSXToSceneGraphOptions
 } from './jsx/runtime'
+export type {
+  BrowserTailwindToDesignDocumentOptions,
+  BrowserTailwindToSceneGraphOptions,
+  BrowserToDesignDocumentOptions,
+  BrowserToSceneGraphOptions
+} from './browser'
 export type { CompileTailwindCSSOptions } from './tailwind'
 export type { ToSceneGraphOptions } from './to-scene-graph'
 export type {

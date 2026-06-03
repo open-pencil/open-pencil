@@ -1,6 +1,5 @@
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
 
-import { createCSSRuntime } from '../runtime'
 import { compileTailwindCSS, type CompileTailwindCSSOptions } from '../tailwind'
 import { designDocumentToSceneGraph, type ToSceneGraphOptions } from '../to-scene-graph'
 import type {
@@ -43,8 +42,10 @@ export interface TailwindJSXToDesignDocumentOptions
 export interface TailwindJSXToSceneGraphOptions
   extends TailwindJSXToDesignDocumentOptions, ToSceneGraphOptions {}
 
-function runtimeForOptions(runtime: CSSRuntime | undefined) {
-  return runtime ?? createCSSRuntime()
+async function runtimeForOptions(runtime: CSSRuntime | undefined) {
+  if (runtime) return runtime
+  const { createCSSRuntime } = await import('../runtime')
+  return createCSSRuntime()
 }
 
 function cssPropertyName(name: string) {
@@ -150,7 +151,7 @@ export async function jsxToDesignDocument(
   }
 
   if (!options.cssText && !options.runtime && !options.compute) return document
-  const runtime = runtimeForOptions(options.runtime)
+  const runtime = await runtimeForOptions(options.runtime)
   return runtime.computeStyles(document, options.cssText, options.compute)
 }
 

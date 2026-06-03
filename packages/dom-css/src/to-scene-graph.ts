@@ -140,6 +140,25 @@ function counterAxisAlignFromCSS(value: string | undefined): SceneNode['counterA
   return 'MIN'
 }
 
+function layoutAlignSelfFromCSS(value: string | undefined): SceneNode['layoutAlignSelf'] {
+  if (value === 'center') return 'CENTER'
+  if (value === 'end' || value === 'flex-end') return 'MAX'
+  if (value === 'stretch') return 'STRETCH'
+  if (value === 'baseline') return 'BASELINE'
+  if (value === 'start' || value === 'flex-start') return 'MIN'
+  return 'AUTO'
+}
+
+function applyPositioning(node: SceneNode, style: DesignStyleDeclaration): void {
+  const position = pickStyle(style, 'position')
+  if (position === 'absolute' || position === 'fixed') node.layoutPositioning = 'ABSOLUTE'
+
+  const left = firstCSSNumber(style, 'left')
+  const top = firstCSSNumber(style, 'top')
+  if (left !== null) node.x = left
+  if (top !== null) node.y = top
+}
+
 function applyPadding(node: SceneNode, style: DesignStyleDeclaration): void {
   node.paddingTop = firstCSSNumber(style, 'padding-top', 'padding-block', 'padding') ?? 0
   node.paddingRight = firstCSSNumber(style, 'padding-right', 'padding-inline', 'padding') ?? 0
@@ -149,6 +168,7 @@ function applyPadding(node: SceneNode, style: DesignStyleDeclaration): void {
 
 function applyElementStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   setNodeBox(node, style)
+  applyPositioning(node, style)
   applyPadding(node, style)
 
   const fills = fillsFromStyle(style, 'background-color')
@@ -171,19 +191,26 @@ function applyElementStyle(node: SceneNode, style: DesignStyleDeclaration): void
 
   applyCornerRadii(node, style)
 
-  if (pickStyle(style, 'overflow') === 'hidden') node.clipsContent = true
+  const overflow = pickStyle(style, 'overflow')
+  if (overflow === 'hidden' || overflow === 'clip') node.clipsContent = true
+
+  const alignSelf = layoutAlignSelfFromCSS(pickStyle(style, 'align-self'))
+  if (alignSelf !== 'AUTO') node.layoutAlignSelf = alignSelf
 
   const display = pickStyle(style, 'display')
   if (display === 'flex' || display === 'inline-flex') {
     node.layoutMode = pickStyle(style, 'flex-direction') === 'column' ? 'VERTICAL' : 'HORIZONTAL'
     node.primaryAxisAlign = primaryAxisAlignFromCSS(pickStyle(style, 'justify-content'))
     node.counterAxisAlign = counterAxisAlignFromCSS(pickStyle(style, 'align-items'))
+    node.layoutWrap = pickStyle(style, 'flex-wrap') === 'wrap' ? 'WRAP' : 'NO_WRAP'
     node.itemSpacing = firstCSSNumber(style, 'gap', 'column-gap', 'row-gap') ?? 0
+    node.counterAxisSpacing = firstCSSNumber(style, 'row-gap') ?? 0
   }
 }
 
 function applyTextStyle(node: SceneNode, style: DesignStyleDeclaration): void {
   setNodeBox(node, style)
+  applyPositioning(node, style)
 
   const fills = fillsFromStyle(style, 'color')
   if (fills.length > 0) node.fills = fills
@@ -263,7 +290,14 @@ function hasBoxStyle(style: DesignStyleDeclaration): boolean {
     'max-width',
     'min-height',
     'max-height',
-    'overflow'
+    'overflow',
+    'position',
+    'top',
+    'right',
+    'bottom',
+    'left',
+    'flex-wrap',
+    'align-self'
   ].some((property) => pickStyle(style, property) !== undefined)
 }
 
