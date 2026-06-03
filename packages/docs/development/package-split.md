@@ -64,6 +64,40 @@ Minimum exit criteria:
 - Heavy Figma fixture coverage still available at repo level.
 - Public API supports CLI/MCP/app document I/O without private path imports.
 
+## Initial inventory
+
+Likely `@open-pencil/kiwi` candidates:
+
+- `packages/core/src/kiwi/schema-runtime/**`
+- `packages/core/src/kiwi/fig/codec/**`
+- Generated Kiwi schema modules under the Figma codec directory, as long as they stay scene-graph agnostic
+
+Likely `@open-pencil/fig` candidates:
+
+- `packages/core/src/kiwi/fig/file.ts`
+- `packages/core/src/kiwi/fig/container/**`
+- `packages/core/src/kiwi/fig/parse/**`
+- `packages/core/src/kiwi/fig/import.ts`
+- `packages/core/src/kiwi/fig/node-change/**`
+- `packages/core/src/kiwi/fig/instance-overrides/**`
+- `packages/core/src/io/formats/fig/**`
+
+Keep in `@open-pencil/core` unless proven otherwise:
+
+- `SceneGraph` and node type definitions
+- Renderer/editor fallback behavior
+- Layout, text measurement, and canvas-specific code
+- Generic IO registry contracts that other formats use
+
+## Migration checklist
+
+1. Add package-local tests before moving files.
+2. Confirm every moved module imports only allowed public package exports.
+3. Preserve existing `@open-pencil/core/kiwi` re-exports during the first migration step.
+4. Move one boundary at a time: schema runtime first, generated codec second, `.fig` policy last.
+5. Keep fixture/oracle tests in the repo-level suite even after package-local tests exist.
+6. Run package smoke checks from a temporary consumer project before publishing.
+
 ## Migration order
 
 1. Keep `@open-pencil/dom-css` standalone and stabilize its browser/headless runtime split.

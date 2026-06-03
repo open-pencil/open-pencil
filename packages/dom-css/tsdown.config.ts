@@ -9,7 +9,7 @@ export default defineConfig({
   },
   platform: 'neutral',
   format: ['esm'],
-  dts: true,
+  dts: false,
   sourcemap: true,
   hash: false,
   clean: true,

@@ -351,6 +351,74 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
     expect(styles.width).toBe('176px')
   })
 
+  test('resolves flex wrap, self alignment, absolute positioning, and clipping', async ({
+    page
+  }) => {
+    await setStyledContent(
+      page,
+      `
+        .wrap {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px 20px;
+          overflow: clip;
+          position: relative;
+          width: 240px;
+          height: 120px;
+        }
+        .chip {
+          align-self: center;
+          position: absolute;
+          left: 16px;
+          top: 24px;
+          min-width: 48px;
+          max-width: 96px;
+          width: 80px;
+          height: 32px;
+        }
+      `,
+      '<section class="wrap"><div class="chip">Chip</div></section>'
+    )
+
+    const wrap = await computedStyleProperties(page, '.wrap', [
+      'column-gap',
+      'display',
+      'flex-wrap',
+      'height',
+      'overflow',
+      'position',
+      'row-gap',
+      'width'
+    ])
+    expect(wrap.display).toBe('flex')
+    expect(wrap['flex-wrap']).toBe('wrap')
+    expect(wrap['column-gap']).toBe('20px')
+    expect(wrap['row-gap']).toBe('12px')
+    expect(wrap.overflow).toBe('clip')
+    expect(wrap.position).toBe('relative')
+    expect(wrap.width).toBe('240px')
+    expect(wrap.height).toBe('120px')
+
+    const chip = await computedStyleProperties(page, '.chip', [
+      'align-self',
+      'height',
+      'left',
+      'max-width',
+      'min-width',
+      'position',
+      'top',
+      'width'
+    ])
+    expect(chip['align-self']).toBe('center')
+    expect(chip.position).toBe('absolute')
+    expect(chip.left).toBe('16px')
+    expect(chip.top).toBe('24px')
+    expect(chip['min-width']).toBe('48px')
+    expect(chip['max-width']).toBe('96px')
+    expect(chip.width).toBe('80px')
+    expect(chip.height).toBe('32px')
+  })
+
   test('computes styles through the browser runtime sandbox', async ({ page }) => {
     await page.goto('/')
     await setStyledContent(page, '.card { width: 20px; }', '<article class="card">Host</article>')

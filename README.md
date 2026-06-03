@@ -80,6 +80,14 @@ openpencil export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
 openpencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
 openpencil export design.fig -f jsx --style tailwind   # Tailwind JSX
 openpencil convert design.pen output.fig               # Convert between document formats
+openpencil dom page.html --css styles.css -o page.fig  # HTML/CSS → editable .fig
+```
+
+DOM/CSS input flows through `@open-pencil/dom-css`, so HTML, authored CSS, and Tailwind utility CSS can become editable OpenPencil layers:
+
+```sh
+openpencil dom card.html --css card.css -o card.fig
+openpencil dom card.html --tailwind "flex flex-col gap-3 w-80 p-6 rounded-xl bg-white" -o card.fig
 ```
 
 ```html
