@@ -1,3 +1,5 @@
+import { watchDebounced } from '@vueuse/core'
+
 import type { Editor, EditorState } from '@inkly/core/editor'
 import { exportFigFile } from '@inkly/core/io/formats/fig'
 
@@ -7,12 +9,14 @@ import {
   downloadNameFromPath,
   figDownloadName
 } from '@/app/document/io/names'
+import { savePenToCache } from '@/app/document/io/pen-cache'
 import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
 
 type DocumentSourceState = EditorState & {
   documentName: string
   autosaveEnabled: boolean
+  autosaveStatus?: 'idle' | 'saving' | 'saved'
 }
 
 export { createDocumentSourceState }
@@ -77,6 +81,31 @@ export function createDocumentSourceActions({
     saveCurrentDocument: async () => writeFile(await buildFigFile())
   })
 
+  let lastCachedVersion = state.sceneVersion
+  let savedResetTimer: ReturnType<typeof setTimeout> | null = null
+  const stopIndexedDBAutosave = watchDebounced(
+    () => state.sceneVersion,
+    async (version) => {
+      if (version === lastCachedVersion) return
+      state.autosaveStatus = 'saving'
+      try {
+        const bytes = await buildFigFile()
+        const cacheName = getDownloadName() ?? `${state.documentName}.fig`
+        await savePenToCache(cacheName, 'application/octet-stream', bytes)
+        lastCachedVersion = version
+        state.autosaveStatus = 'saved'
+        if (savedResetTimer) clearTimeout(savedResetTimer)
+        savedResetTimer = setTimeout(() => {
+          state.autosaveStatus = 'idle'
+        }, 2000)
+      } catch (e) {
+        console.warn('IndexedDB autosave failed:', e)
+        state.autosaveStatus = 'idle'
+      }
+    },
+    { debounce: 1500 }
+  )
+
   function setDocumentSource(
     fileName: string,
     sourceFormat: string,
@@ -110,6 +139,7 @@ export function createDocumentSourceActions({
   function disposeDocumentIO() {
     stopWatchingFile()
     disposeAutosave()
+    stopIndexedDBAutosave()
   }
 
   return {

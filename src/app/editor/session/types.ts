@@ -14,12 +14,15 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     mobileDrawerSnap: 'closed',
     clipboardHtml: '',
     autosaveEnabled: false,
+    autosaveStatus: 'idle',
     cursorCanvasX: null,
     cursorCanvasY: null,
     nodeEditState: null,
     scrubInputFocused: false
   }
 }
+
+export type AutosaveStatus = 'idle' | 'saving' | 'saved'
 
 export type AppEditorState = EditorState & {
   showUI: boolean
@@ -31,6 +34,7 @@ export type AppEditorState = EditorState & {
   mobileDrawerSnap: 'closed' | 'half' | 'full'
   clipboardHtml: string
   autosaveEnabled: boolean
+  autosaveStatus: AutosaveStatus
   cursorCanvasX: number | null
   cursorCanvasY: number | null
   nodeEditState: NodeEditState | null

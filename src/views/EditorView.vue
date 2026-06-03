@@ -22,6 +22,7 @@ import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
+import AutosaveStatus from '@/components/AutosaveStatus.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
@@ -143,6 +144,7 @@ onUnmounted(() => {
         <div class="relative flex min-w-0 flex-1">
           <EditorCanvas />
           <Toolbar />
+          <AutosaveStatus />
         </div>
       </SplitterPanel>
       <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
