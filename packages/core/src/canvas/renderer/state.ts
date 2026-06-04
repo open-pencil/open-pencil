@@ -4,6 +4,8 @@ export function invalidateScenePicture(r: SkiaRenderer): void {
   r.scenePicture?.delete()
   r.scenePicture = null
   r.scenePictureVersion = -1
+  r.scenePicturePositionPreviewVersion = -1
+  r.scenePicturePageId = null
   r.sceneBacking?.image.delete()
   r.sceneBacking = null
   r.sceneBackingBuild?.surface.delete()

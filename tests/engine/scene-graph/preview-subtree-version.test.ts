@@ -31,15 +31,19 @@ function subtreeVersionOf(graph: SceneGraph, nodeId: string) {
 test('updateNodePreview bumps subtree versions for the node and its ancestors on simple mutation', () => {
   // Given
   const { graph, page, frameA, leaf } = createFixture()
+  const beforeLeaf = subtreeVersionOf(graph, leaf.id) ?? 0
+  const beforeFrame = subtreeVersionOf(graph, frameA.id) ?? 0
+  const beforePage = subtreeVersionOf(graph, page.id) ?? 0
+  const beforeRoot = subtreeVersionOf(graph, graph.rootId) ?? 0
 
   // When
   updateNodePreview(graph, leaf.id, { x: 10 })
 
   // Then
-  expect(subtreeVersionOf(graph, leaf.id)).toBe(1)
-  expect(subtreeVersionOf(graph, frameA.id)).toBe(1)
-  expect(subtreeVersionOf(graph, page.id)).toBe(1)
-  expect(subtreeVersionOf(graph, graph.rootId)).toBe(1)
+  expect(subtreeVersionOf(graph, leaf.id)).toBe(beforeLeaf + 1)
+  expect(subtreeVersionOf(graph, frameA.id)).toBe(beforeFrame + 1)
+  expect(subtreeVersionOf(graph, page.id)).toBe(beforePage + 1)
+  expect(subtreeVersionOf(graph, graph.rootId)).toBe(beforeRoot + 1)
   expect(graph.positionPreviewVersion).toBe(1)
 })
 
@@ -51,15 +55,19 @@ test('updateNodePreview bumps both old and new ancestor chains on reparent previ
     width: 200,
     height: 200
   })
+  const beforeLeaf = subtreeVersionOf(graph, leaf.id) ?? 0
+  const beforeFrameA = subtreeVersionOf(graph, frameA.id) ?? 0
+  const beforeFrameB = subtreeVersionOf(graph, frameB.id) ?? 0
+  const beforePage = subtreeVersionOf(graph, page.id) ?? 0
 
   // When
   updateNodePreview(graph, leaf.id, { parentId: frameB.id })
 
   // Then
-  expect(subtreeVersionOf(graph, leaf.id)).toBe(1)
-  expect(subtreeVersionOf(graph, frameA.id)).toBe(1)
-  expect(subtreeVersionOf(graph, frameB.id)).toBe(1)
-  expect(subtreeVersionOf(graph, page.id)).toBe(1)
+  expect(subtreeVersionOf(graph, leaf.id)).toBe(beforeLeaf + 1)
+  expect(subtreeVersionOf(graph, frameA.id)).toBe(beforeFrameA + 1)
+  expect(subtreeVersionOf(graph, frameB.id)).toBe(beforeFrameB + 1)
+  expect(subtreeVersionOf(graph, page.id)).toBe(beforePage + 1)
 })
 
 test('updateNodePreview does not bump sibling subtree versions for unrelated chains', () => {
@@ -76,20 +84,25 @@ test('updateNodePreview does not bump sibling subtree versions for unrelated cha
     width: 40,
     height: 40
   })
+  const beforeLeaf = subtreeVersionOf(graph, leaf.id) ?? 0
+  const beforeFrameA = subtreeVersionOf(graph, frameA.id) ?? 0
+  const beforeOtherLeaf = subtreeVersionOf(graph, otherLeaf.id)
+  const beforeFrameC = subtreeVersionOf(graph, frameC.id)
 
   // When
   updateNodePreview(graph, leaf.id, { x: 10 })
 
   // Then
-  expect(subtreeVersionOf(graph, leaf.id)).toBe(1)
-  expect(subtreeVersionOf(graph, frameA.id)).toBe(1)
-  expect(subtreeVersionOf(graph, otherLeaf.id)).toBeUndefined()
-  expect(subtreeVersionOf(graph, frameC.id)).toBeUndefined()
+  expect(subtreeVersionOf(graph, leaf.id)).toBe(beforeLeaf + 1)
+  expect(subtreeVersionOf(graph, frameA.id)).toBe(beforeFrameA + 1)
+  expect(subtreeVersionOf(graph, otherLeaf.id)).toBe(beforeOtherLeaf)
+  expect(subtreeVersionOf(graph, frameC.id)).toBe(beforeFrameC)
 })
 
 test('updateNodePreview keeps bumping positionPreviewVersion across repeated preview mutations', () => {
   // Given
   const { graph, leaf } = createFixture()
+  const beforeLeaf = subtreeVersionOf(graph, leaf.id) ?? 0
 
   // When
   updateNodePreview(graph, leaf.id, { x: 10 })
@@ -98,7 +111,7 @@ test('updateNodePreview keeps bumping positionPreviewVersion across repeated pre
 
   // Then
   expect(graph.positionPreviewVersion).toBe(3)
-  expect(subtreeVersionOf(graph, leaf.id)).toBe(3)
+  expect(subtreeVersionOf(graph, leaf.id)).toBe(beforeLeaf + 3)
 })
 
 test('updateNodePreview captures the old parent chain before applying reparent changes', () => {
@@ -109,10 +122,11 @@ test('updateNodePreview captures the old parent chain before applying reparent c
     width: 200,
     height: 200
   })
+  const beforeFrameA = subtreeVersionOf(graph, frameA.id) ?? 0
 
   // When
   updateNodePreview(graph, leaf.id, { parentId: frameB.id })
 
   // Then
-  expect(subtreeVersionOf(graph, frameA.id)).toBe(1)
+  expect(subtreeVersionOf(graph, frameA.id)).toBe(beforeFrameA + 1)
 })

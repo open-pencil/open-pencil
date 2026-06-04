@@ -269,11 +269,12 @@ describe('low-level cache boundary (direct map manipulation)', () => {
     expect(renderer.subtreePictureCache.get('A')?.subtreeVersion).toBe(0)
   })
 
-  test('cachedSubtreePicture still clears the whole cache when sceneVersion changes', () => {
+  test('cachedSubtreePicture keeps sibling cache entries when sceneVersion changes but subtreeVersion stays stable', () => {
     // Given
     const { renderer } = createRenderer()
     const graph = createGraph(0)
     graph.subtreeVersion?.set('A', 0)
+    graph.subtreeVersion?.set('B', 0)
     renderer.subtreePictureCacheSceneVersion = 1
     const cachedA = setCacheEntry(renderer, 'A', {
       sceneVersion: 1,
@@ -287,13 +288,17 @@ describe('low-level cache boundary (direct map manipulation)', () => {
     // When
     const cachedSubtreePicture = getCachedSubtreePicture()
     if (!cachedSubtreePicture) return
-    cachedSubtreePicture(renderer, graph, 'A', 2)
+    const pictureA = cachedSubtreePicture(renderer, graph, 'A', 2)
+    const pictureB = cachedSubtreePicture(renderer, graph, 'B', 2)
 
     // Then
-    expect(cachedA.picture.delete).toHaveBeenCalledTimes(1)
-    expect(cachedB.picture.delete).toHaveBeenCalledTimes(1)
-    expect(renderer.subtreePictureCache.size).toBe(1)
-    expect(renderer.subtreePictureCache.get('A')?.subtreeVersion).toBe(0)
+    expect(pictureA).toBe(cachedA.picture)
+    expect(pictureB).toBe(cachedB.picture)
+    expect(cachedA.picture.delete).not.toHaveBeenCalled()
+    expect(cachedB.picture.delete).not.toHaveBeenCalled()
+    expect(renderer.subtreePictureCache.size).toBe(2)
+    expect(renderer.subtreePictureCache.get('A')?.sceneVersion).toBe(2)
+    expect(renderer.subtreePictureCache.get('B')?.sceneVersion).toBe(2)
   })
 })
 
@@ -304,8 +309,12 @@ describe('integration via updateNodePreview (AC3 full path)', () => {
     const frameB = graph.createNode('FRAME', page.id, { width: 200, height: 200 })
     const { renderer } = prepareIntegrationRenderer(page.id)
     graph.getAbsolutePosition = mock(() => ({ x: 0, y: 0 }))
-    const cachedA = setCacheEntry(renderer, frameA.id, { subtreeVersion: 0 })
-    const cachedB = setCacheEntry(renderer, frameB.id, { subtreeVersion: 0 })
+    const cachedA = setCacheEntry(renderer, frameA.id, {
+      subtreeVersion: graph.subtreeVersion.get(frameA.id) ?? 0
+    })
+    const cachedB = setCacheEntry(renderer, frameB.id, {
+      subtreeVersion: graph.subtreeVersion.get(frameB.id) ?? 0
+    })
 
     // When
     updateNodePreview(graph, leaf.id, { x: 10 })
@@ -327,8 +336,12 @@ describe('integration via updateNodePreview (AC3 full path)', () => {
     const frameB = graph.createNode('FRAME', page.id, { width: 200, height: 200 })
     const { renderer } = prepareIntegrationRenderer(page.id)
     graph.getAbsolutePosition = mock(() => ({ x: 0, y: 0 }))
-    const cachedA = setCacheEntry(renderer, frameA.id, { subtreeVersion: 0 })
-    const cachedB = setCacheEntry(renderer, frameB.id, { subtreeVersion: 0 })
+    const cachedA = setCacheEntry(renderer, frameA.id, {
+      subtreeVersion: graph.subtreeVersion.get(frameA.id) ?? 0
+    })
+    const cachedB = setCacheEntry(renderer, frameB.id, {
+      subtreeVersion: graph.subtreeVersion.get(frameB.id) ?? 0
+    })
 
     // When
     updateNodePreview(graph, leaf.id, { parentId: frameB.id })
@@ -348,7 +361,9 @@ describe('integration via updateNodePreview (AC3 full path)', () => {
     const { frameA, graph, leaf, page } = createIntegrationFixture()
     const { clearSpy, renderer } = prepareIntegrationRenderer(page.id)
     graph.getAbsolutePosition = mock(() => ({ x: 0, y: 0 }))
-    setCacheEntry(renderer, frameA.id, { subtreeVersion: 0 })
+    setCacheEntry(renderer, frameA.id, {
+      subtreeVersion: graph.subtreeVersion.get(frameA.id) ?? 0
+    })
 
     // When
     const cachedSubtreePicture = getCachedSubtreePicture()

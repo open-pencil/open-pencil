@@ -183,12 +183,36 @@ function createSceneBackingSurface(r: SkiaRenderer, width: number, height: numbe
 }
 
 function ensureSubtreePictureCacheScope(r: SkiaRenderer, sceneVersion: number): void {
-  if (r.subtreePictureCachePageId === r.pageId && r.subtreePictureCacheSceneVersion === sceneVersion) {
+  if (r.subtreePictureCachePageId === r.pageId) {
+    r.subtreePictureCacheSceneVersion = sceneVersion
     return
   }
   clearSubtreePictureCache(r)
   r.subtreePictureCachePageId = r.pageId
   r.subtreePictureCacheSceneVersion = sceneVersion
+}
+
+function isValidSubtreePictureEntry(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  childId: string,
+  cached = r.subtreePictureCache.get(childId)
+): cached is NonNullable<typeof cached> {
+  return !!(
+    cached &&
+    cached.pageId === r.pageId &&
+    cached.subtreeVersion === (graph.subtreeVersion.get(childId) ?? 0)
+  )
+}
+
+export function hasCachedSubtreePictureHit(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  childId: string,
+  sceneVersion: number
+): boolean {
+  ensureSubtreePictureCacheScope(r, sceneVersion)
+  return isValidSubtreePictureEntry(r, graph, childId)
 }
 
 export function cachedSubtreePicture(
@@ -199,16 +223,12 @@ export function cachedSubtreePicture(
 ) {
   ensureSubtreePictureCacheScope(r, sceneVersion)
   const cached = r.subtreePictureCache.get(childId)
-  if (
-    cached &&
-    cached.pageId === r.pageId &&
-    cached.sceneVersion === sceneVersion &&
-    cached.subtreeVersion === (graph.subtreeVersion.get(childId) ?? 0)
-  ) {
+  if (isValidSubtreePictureEntry(r, graph, childId, cached)) {
+    cached.sceneVersion = sceneVersion
     return cached.picture
   }
 
-  cached?.picture.delete()
+  r.subtreePictureCache.get(childId)?.picture.delete()
   const bounds = computeDescendantVisualBounds(
     [childId],
     (id) => graph.getNode(id),

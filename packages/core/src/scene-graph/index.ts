@@ -40,6 +40,19 @@ export function generateId(): string {
   return `0:${nextLocalID++}`
 }
 
+function collectAncestorChain(
+  nodes: Map<string, SceneNode>,
+  startId: string | null | undefined,
+  collected: Set<string>
+): void {
+  let cursor = startId ?? undefined
+  while (cursor) {
+    if (collected.has(cursor)) break
+    collected.add(cursor)
+    cursor = nodes.get(cursor)?.parentId ?? undefined
+  }
+}
+
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
@@ -264,6 +277,19 @@ export class SceneGraph {
     return id
   }
 
+  private bumpSubtreeVersions(
+    nodeId: string,
+    oldParentId?: string | null,
+    newParentId?: string | null
+  ): void {
+    const affected = new Set<string>([nodeId])
+    collectAncestorChain(this.nodes, oldParentId, affected)
+    collectAncestorChain(this.nodes, newParentId, affected)
+    for (const affectedId of affected) {
+      this.subtreeVersion.set(affectedId, (this.subtreeVersion.get(affectedId) ?? 0) + 1)
+    }
+  }
+
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
     const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
     node.parentId = parentId
@@ -283,6 +309,7 @@ export class SceneGraph {
       set.add(node.id)
     }
 
+    this.bumpSubtreeVersions(node.id, parentId, parentId)
     this.emitter.emit('node:created', node)
     return node
   }
@@ -420,12 +447,15 @@ export class SceneGraph {
     changes = Object.fromEntries(
       entries.filter(([, value]) => value !== undefined)
     ) as Partial<SceneNode>
+    const oldParentId = node.parentId
+    const newParentId = 'parentId' in changes ? changes.parentId : oldParentId
     if (this.sourceMetadataPreservationDepth === 0) {
       clearEditedSourceMetadata(node, Object.keys(changes))
     }
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
+    this.bumpSubtreeVersions(id, oldParentId, newParentId)
     Object.assign(node, changes)
     const augmentedChanges = this.buildAugmentedChanges(node, changes, {
       textPicture: prevTextPicture,
@@ -471,6 +501,7 @@ export class SceneGraph {
     node.x = absPos.x - newParentAbs.x
     node.y = absPos.y - newParentAbs.y
 
+    this.bumpSubtreeVersions(nodeId, oldParentId, newParentId)
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
   }
 
@@ -500,6 +531,7 @@ export class SceneGraph {
     idx = Math.min(idx, newParent.childIds.length)
     newParent.childIds.splice(idx, 0, nodeId)
 
+    this.bumpSubtreeVersions(nodeId, oldParent?.id ?? null, parentId)
     this.emitter.emit('node:reordered', nodeId, parentId, idx)
   }
 
@@ -515,12 +547,14 @@ export class SceneGraph {
     const node = this.getNode(childId)
     if (node) node.parentId = parentId
     this.clearAbsPosCache()
+    this.bumpSubtreeVersions(childId, oldParent?.id ?? null, parentId)
     this.emitter.emit('node:reordered', childId, parentId, index)
   }
 
   deleteNode(id: string): void {
     const node = this.nodes.get(id)
     if (!node || id === this.rootId) return
+    this.bumpSubtreeVersions(id, node.parentId, node.parentId)
 
     if (node.parentId) {
       const parent = this.nodes.get(node.parentId)
