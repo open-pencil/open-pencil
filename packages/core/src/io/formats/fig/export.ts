@@ -21,6 +21,7 @@ import type { SceneGraph, VariableValue } from '#core/scene-graph'
 import type { GUID } from '#core/types'
 
 import { compressFigDataSync } from './compress'
+import type { EncodeError, EncodeResult } from './export-encode-worker'
 
 const THUMBNAIL_1X1 = Uint8Array.from(
   atob(
@@ -28,6 +29,8 @@ const THUMBNAIL_1X1 = Uint8Array.from(
   ),
   (c) => c.charCodeAt(0)
 )
+const ENCODE_WORKER_MIN_NODECHANGE_COUNT = 50
+const ENCODE_WORKER_MAX_TOTAL_BYTES = 100 * 1024 * 1024
 
 type KiwiNodeChange = NodeChange & Record<string, unknown>
 type FigExportPage = ReturnType<SceneGraph['getPages']>[number]
@@ -289,25 +292,6 @@ export async function exportFigFile(
   renderHeadlessThumbnail = false
 ): Promise<Uint8Array> {
   populateAllLazyFigImportRoots(graph)
-  await initCodec()
-
-  // When the document was imported from a .fig file, preserve the original
-  // kiwi schema for both encoding and embedding. For the current version of
-  // Figma, likely for quite some time, schema has more types/fields than our
-  // subset, and using our schema to encode would produce field IDs that don't
-  // align with the embedded schema. By compiling and using the original
-  // schema, we improve the roundtrip-ability... This requires further work.
-  let compiled: ReturnType<typeof getCompiledSchema>
-  let schemaDeflated: Uint8Array
-  if (graph.figSchemaDeflated) {
-    const schemaBytes = inflateSync(graph.figSchemaDeflated)
-    const figSchema = decodeBinarySchema(new ByteBuffer(schemaBytes))
-    compiled = compileSchema(figSchema) as ReturnType<typeof getCompiledSchema>
-    schemaDeflated = graph.figSchemaDeflated
-  } else {
-    compiled = getCompiledSchema()
-    schemaDeflated = deflateSync(getSchemaBytes())
-  }
 
   const docGuid = { sessionID: 0, localID: 0 }
   const localIdCounter = { value: 2 }
@@ -393,7 +377,10 @@ export async function exportFigFile(
     msg.blobs = blobs.map((bytes) => ({ bytes }))
   }
 
-  const kiwiData = compiled.encodeMessage(msg)
+  const { kiwiData, schemaDeflated } = await encodeMessageWithFallback(
+    msg,
+    graph.figSchemaDeflated ?? undefined
+  )
 
   const currentPageId = pageId ?? pages[0]?.id
   const thumbnailPng = await renderFigThumbnail(
@@ -432,6 +419,98 @@ export async function exportFigFile(
 }
 
 export { compressFigDataSync } from './compress'
+
+function canUseEncodeWorker(): boolean {
+  return typeof Worker !== 'undefined' && IS_BROWSER && !IS_TAURI
+}
+
+function shouldUseEncodeWorker(
+  msg: Record<string, unknown>,
+  _figSchemaDeflated?: Uint8Array
+): boolean {
+  if (!canUseEncodeWorker()) return false
+  const nodeChanges = msg.nodeChanges as unknown[] | undefined
+  const nodeChangeCount = nodeChanges?.length ?? 0
+  if (nodeChangeCount < ENCODE_WORKER_MIN_NODECHANGE_COUNT) return false
+  const blobs = msg.blobs as Array<{ bytes: Uint8Array }> | undefined
+  const totalBlobBytes = (blobs ?? []).reduce((sum, b) => sum + b.bytes.byteLength, 0)
+  if (totalBlobBytes > ENCODE_WORKER_MAX_TOTAL_BYTES) return false
+  return true
+}
+
+async function encodeMessageWithFallback(
+  msg: Record<string, unknown>,
+  figSchemaDeflated?: Uint8Array
+): Promise<{ kiwiData: Uint8Array; schemaDeflated: Uint8Array }> {
+  if (!shouldUseEncodeWorker(msg, figSchemaDeflated)) {
+    return encodeViaMainThread(msg, figSchemaDeflated)
+  }
+  return encodeViaWorker(msg, figSchemaDeflated).catch(() =>
+    encodeViaMainThread(msg, figSchemaDeflated)
+  )
+}
+
+async function encodeViaMainThread(
+  msg: Record<string, unknown>,
+  figSchemaDeflated?: Uint8Array
+): Promise<{ kiwiData: Uint8Array; schemaDeflated: Uint8Array }> {
+  await initCodec()
+
+  // When the document was imported from a .fig file, preserve the original
+  // kiwi schema for both encoding and embedding. For the current version of
+  // Figma, likely for quite some time, schema has more types/fields than our
+  // subset, and using our schema to encode would produce field IDs that don't
+  // align with the embedded schema. By compiling and using the original
+  // schema, we improve the roundtrip-ability... This requires further work.
+  if (figSchemaDeflated) {
+    const schemaBytes = inflateSync(figSchemaDeflated)
+    const figSchema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    const compiled = compileSchema(figSchema) as ReturnType<typeof getCompiledSchema>
+    return {
+      // Preserve exportFigFile's existing raw kiwi encode path for byte-identical output.
+      kiwiData: compiled.encodeMessage(msg),
+      schemaDeflated: figSchemaDeflated
+    }
+  }
+
+  const compiled = getCompiledSchema()
+  return {
+    // Preserve exportFigFile's existing raw kiwi encode path for byte-identical output.
+    kiwiData: compiled.encodeMessage(msg),
+    schemaDeflated: deflateSync(getSchemaBytes())
+  }
+}
+
+function encodeViaWorker(
+  msg: Record<string, unknown>,
+  figSchemaDeflated?: Uint8Array
+): Promise<{ kiwiData: Uint8Array; schemaDeflated: Uint8Array }> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./export-encode-worker.ts', import.meta.url), {
+      type: 'module'
+    })
+
+    worker.onmessage = (event: MessageEvent<EncodeResult | EncodeError>) => {
+      if (event.data.ok) {
+        resolve({
+          kiwiData: event.data.kiwiData,
+          schemaDeflated: event.data.schemaDeflated
+        })
+      } else {
+        reject(new Error(event.data.error))
+      }
+      worker.terminate()
+    }
+    worker.onerror = (event) => {
+      reject(new Error(event.message))
+      worker.terminate()
+    }
+
+    // Do NOT use transferables here. Structured clone keeps msg/blob payloads
+    // intact across both export workers and avoids detached shared buffers.
+    worker.postMessage({ msg, figSchemaDeflated })
+  })
+}
 
 function canUseWorker(): boolean {
   return typeof Worker !== 'undefined' && IS_BROWSER
