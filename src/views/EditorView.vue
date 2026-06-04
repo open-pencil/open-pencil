@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -9,6 +9,7 @@ import { useViewportKind, formatShortcut, useI18n } from '@inkly/vue'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
+import { writeBoardPreview } from '@/app/boards/preview'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
@@ -51,6 +52,29 @@ useMenu()
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
 
+const boardRoomId = computed(() =>
+  typeof route.query.board === 'string' && route.query.board.length > 0 ? route.query.board : null
+)
+const boardName = computed(() =>
+  typeof route.query.name === 'string' && route.query.name.length > 0 ? route.query.name : null
+)
+let previewWriteTimer: ReturnType<typeof setTimeout> | null = null
+
+function flushBoardPreview(boardId: string) {
+  const sceneCanvas = document.querySelector<HTMLCanvasElement>('[data-test-id="scene-canvas-element"]')
+  if (!sceneCanvas || sceneCanvas.width === 0 || sceneCanvas.height === 0) return
+  writeBoardPreview(boardId, sceneCanvas.toDataURL('image/png'))
+}
+
+function scheduleBoardPreview(boardId: string) {
+  if (previewWriteTimer) clearTimeout(previewWriteTimer)
+  previewWriteTimer = setTimeout(() => {
+    requestAnimationFrame(() => {
+      flushBoardPreview(boardId)
+    })
+  }, 50)
+}
+
 useEventListener(
   document,
   'wheel',
@@ -86,6 +110,37 @@ async function bindAssociatedFileOpen() {
   await openPendingAssociatedFiles()
 }
 
+watch(
+  boardName,
+  (name) => {
+    if (!name) return
+    getActiveStore().state.documentName = name
+  },
+  { immediate: true }
+)
+
+watch(
+  boardRoomId,
+  (roomId, previousRoomId) => {
+    if (previousRoomId) {
+      flushBoardPreview(previousRoomId)
+      if (collab.state.value.roomId === previousRoomId) collab.disconnect()
+    }
+    if (!roomId) return
+    if (collab.state.value.connected && collab.state.value.roomId === roomId) return
+    collab.connect(roomId, { seedIfEmpty: true })
+  },
+  { immediate: true }
+)
+
+watch(
+  () => (boardRoomId.value ? getActiveStore().state.sceneVersion : -1),
+  (sceneVersion) => {
+    if (!boardRoomId.value || sceneVersion < 0) return
+    scheduleBoardPreview(boardRoomId.value)
+  }
+)
+
 onMounted(async () => {
   try {
     const mcp = await spawnMCPIfNeeded()
@@ -103,6 +158,11 @@ onMounted(async () => {
   } catch (e) {
     console.error('[Open With]', e)
   }
+})
+
+onBeforeUnmount(() => {
+  if (previewWriteTimer) clearTimeout(previewWriteTimer)
+  if (boardRoomId.value) flushBoardPreview(boardRoomId.value)
 })
 
 onUnmounted(() => {

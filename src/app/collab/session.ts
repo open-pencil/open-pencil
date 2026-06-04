@@ -1,24 +1,24 @@
-import type { Room } from 'trystero'
 import type { Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import type { Awareness } from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
-import { randomIndex } from '@inkly/core/random'
-
-import { connectCollabRoom } from '@/app/collab/room'
+import { colorFromAnonymousId } from '@/app/collab/cursor-color'
 import type { CollabState } from '@/app/collab/types'
+import {
+  connectWebRtcProvider,
+  type WebRtcProviderConnection
+} from '@/app/collab/webrtc-provider'
 import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
-import { PEER_COLORS } from '@/constants'
 
 export type CollabRuntime = {
   ydoc: Y.Doc | null
   awareness: awarenessProtocol.Awareness | null
   ynodes: Y.Map<Y.Map<unknown>> | null
   yimages: Y.Map<Uint8Array> | null
-  room: Room | null
+  provider: WebRtcProviderConnection | null
   persistence: IndexeddbPersistence | null
   connectedStore: EditorStore | null
   suppressGraphSync: boolean
@@ -38,6 +38,7 @@ type ConnectCollabSessionOptions = {
   broadcastAwareness: () => void
   applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
   syncNodeToYjs: (nodeId: string) => void
+  seedIfEmpty: boolean
 }
 
 type CollabConnectionActionsOptions = {
@@ -54,7 +55,7 @@ type CollabConnectionActionsOptions = {
 
 type CollabSessionResources = {
   store: EditorStore
-  room: Room | null
+  provider: WebRtcProviderConnection | null
   awareness: awarenessProtocol.Awareness | null
   persistence: IndexeddbPersistence | null
   ydoc: Y.Doc | null
@@ -69,7 +70,7 @@ export function createCollabRuntime(): CollabRuntime {
     awareness: null,
     ynodes: null,
     yimages: null,
-    room: null,
+    provider: null,
     persistence: null,
     connectedStore: null,
     suppressGraphSync: false,
@@ -79,13 +80,13 @@ export function createCollabRuntime(): CollabRuntime {
   }
 }
 
-export function createInitialCollabState(localName: string): CollabState {
+export function createInitialCollabState(localName: string, anonymousId: string | null): CollabState {
   return {
     connected: false,
     roomId: null,
     peers: [],
     localName,
-    localColor: PEER_COLORS[randomIndex(PEER_COLORS.length)]
+    localColor: colorFromAnonymousId(anonymousId)
   }
 }
 
@@ -100,7 +101,7 @@ export function createCollabConnectionActions({
   syncNodeToYjs,
   resetFollow
 }: CollabConnectionActionsOptions) {
-  function connect(roomId: string) {
+  function connect(roomId: string, options: { seedIfEmpty?: boolean } = {}) {
     connectCollabSession({
       roomId,
       runtime,
@@ -111,7 +112,8 @@ export function createCollabConnectionActions({
       tickFollow,
       broadcastAwareness,
       applyYjsToGraph,
-      syncNodeToYjs
+      syncNodeToYjs,
+      seedIfEmpty: options.seedIfEmpty ?? false
     })
   }
 
@@ -119,7 +121,7 @@ export function createCollabConnectionActions({
     const store = runtime.connectedStore ?? getStore()
     disposeCollabSessionResources({
       store,
-      room: runtime.room,
+      provider: runtime.provider,
       awareness: runtime.awareness,
       persistence: runtime.persistence,
       ydoc: runtime.ydoc,
@@ -157,9 +159,10 @@ export function connectCollabSession({
   tickFollow,
   broadcastAwareness,
   applyYjsToGraph,
-  syncNodeToYjs
+  syncNodeToYjs,
+  seedIfEmpty
 }: ConnectCollabSessionOptions) {
-  if (runtime.room) disconnect()
+  if (runtime.provider) disconnect()
 
   runtime.connectedStore = store
   state.value.roomId = roomId
@@ -185,18 +188,27 @@ export function connectCollabSession({
     applyYjsToGraph
   })
 
-  const roomConnection = connectCollabRoom({
+  const provider = connectWebRtcProvider({
     roomId,
     ydoc: runtime.ydoc,
-    awareness: runtime.awareness,
-    setConnected: () => {
-      state.value.connected = true
-    },
-    updatePeersList
+    awareness: runtime.awareness
   })
-  runtime.room = roomConnection.room
+  runtime.provider = provider
   state.value.connected = true
   broadcastAwareness()
+
+  const persistence = runtime.persistence as IndexeddbPersistence & {
+    whenSynced?: Promise<unknown>
+  }
+  const persistenceReady = persistence.whenSynced ?? Promise.resolve()
+  void Promise.all([provider.ready, persistenceReady]).then(([info]) => {
+    if (!runtime.ydoc || !runtime.ynodes) return
+    if (seedIfEmpty && info.peerCount === 0 && runtime.ynodes.size === 0) {
+      for (const node of store.graph.getAllNodes()) {
+        syncNodeToYjs(node.id)
+      }
+    }
+  })
 
   runtime.stopZoomWatch = watchAwarenessZoom(store, () => runtime.awareness)
 
@@ -215,7 +227,7 @@ export function connectCollabSession({
 export function resetCollabRuntime(runtime: CollabRuntime) {
   runtime.unbindGraphEvents = null
   runtime.stopZoomWatch = null
-  runtime.room = null
+  runtime.provider = null
   runtime.awareness = null
   runtime.persistence = null
   runtime.ydoc = null
@@ -233,7 +245,7 @@ export function resetCollabConnectionState(state: Ref<CollabState>) {
 export function disposeCollabSessionResources(resources: CollabSessionResources) {
   resources.unbindGraphEvents?.()
   resources.stopZoomWatch?.()
-  void resources.room?.leave()
+  resources.provider?.disconnect()
   resources.awareness?.destroy()
   if (resources.persistence) {
     void resources.persistence.destroy()

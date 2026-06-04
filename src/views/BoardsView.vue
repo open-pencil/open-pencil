@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 
+import { readBoardPreview } from '@/app/boards/preview'
 import BoardCard from '@/components/BoardCard.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { createBoard, deleteBoard, listBoards, type Board } from '@/app/api/client'
@@ -13,13 +14,40 @@ useHead({ title: 'Boards' })
 const router = useRouter()
 const boards = ref<Board[]>([])
 const boardName = ref('Untitled board')
+const searchQuery = ref('')
 const loading = ref(false)
 const creating = ref(false)
+const previews = ref<Record<string, string>>({})
+
+const filteredBoards = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) return boards.value
+  return boards.value.filter((board) => board.name.toLowerCase().includes(query))
+})
+
+function syncPreviews(nextBoards: Board[]) {
+  previews.value = Object.fromEntries(
+    nextBoards
+      .map((board) => [board.id, readBoardPreview(board.id)])
+      .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  )
+}
+
+function syncPreviewsSoon(nextBoards: Board[]) {
+  syncPreviews(nextBoards)
+  requestAnimationFrame(() => {
+    syncPreviews(nextBoards)
+  })
+  setTimeout(() => {
+    syncPreviews(nextBoards)
+  }, 250)
+}
 
 async function loadBoards() {
   loading.value = true
   try {
     boards.value = await listBoards()
+    syncPreviewsSoon(boards.value)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to load boards'
     toast.error(message)
@@ -34,6 +62,7 @@ async function createAndOpenBoard() {
   try {
     const board = await createBoard(boardName.value.trim() || 'Untitled board')
     boards.value = [board, ...boards.value.filter((candidate) => candidate.id !== board.id)]
+    syncPreviewsSoon(boards.value)
     boardName.value = 'Untitled board'
     await router.push({
       path: '/',
@@ -69,6 +98,7 @@ async function removeBoard(board: Board) {
   try {
     await deleteBoard(board.id)
     boards.value = boards.value.filter((candidate) => candidate.id !== board.id)
+    syncPreviewsSoon(boards.value)
     toast.info('Board deleted')
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to delete board'
@@ -121,15 +151,26 @@ onMounted(() => {
       </section>
 
       <section class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h2 class="text-sm font-medium text-surface">Recent boards</h2>
-          <button
-            type="button"
-            class="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
-            @click="loadBoards"
-          >
-            Refresh
-          </button>
+        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="space-y-1">
+            <h2 class="text-sm font-medium text-surface">Recent boards</h2>
+            <p class="text-xs text-muted">Search by board name or reopen a recently edited board.</p>
+          </div>
+          <div class="flex w-full max-w-lg items-center gap-2">
+            <AppInput
+              v-model="searchQuery"
+              test-id="board-search-input"
+              type="search"
+              placeholder="Search boards"
+            />
+            <button
+              type="button"
+              class="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
+              @click="loadBoards"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
 
         <div
@@ -149,11 +190,21 @@ onMounted(() => {
           </p>
         </div>
 
+        <div
+          v-else-if="filteredBoards.length === 0"
+          data-test-id="board-search-empty"
+          class="rounded-[24px] border border-dashed border-border bg-panel/60 p-10 text-center"
+        >
+          <p class="text-lg font-medium text-surface">No matching boards</p>
+          <p class="mt-2 text-sm text-muted">Try a different name or clear the search box.</p>
+        </div>
+
         <div v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <BoardCard
-            v-for="board in boards"
+            v-for="board in filteredBoards"
             :key="board.id"
             :board="board"
+            :preview-url="previews[board.id] ?? null"
             @open="openBoard"
             @settings="openSettings"
             @delete="removeBoard"

@@ -1,6 +1,7 @@
 import { tryOnScopeDispose, useLocalStorage } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
+import { getAnonymousId } from '@/app/api/client'
 import { createFollowActions, generateRoomId } from '@/app/collab/awareness'
 import { createLocalAwarenessActions } from '@/app/collab/local-awareness'
 import {
@@ -20,7 +21,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
   const getStore = () =>
     typeof storeOrGetter === 'function' ? (storeOrGetter as () => EditorStore)() : storeOrGetter
   const storedName = useLocalStorage('op-collab-name', '')
-  const state = ref<CollabState>(createInitialCollabState(storedName.value))
+  const state = ref<CollabState>(createInitialCollabState(storedName.value, getAnonymousId()))
   const runtime = createCollabRuntime()
   const remotePeers = computed(() => state.value.peers)
   const getActiveStore = () => runtime.connectedStore ?? getStore()
@@ -60,8 +61,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
 
   function shareCurrentDoc(): string {
     const roomId = generateRoomId()
-    connect(roomId)
-    syncAllNodesToYjs()
+    connect(roomId, { seedIfEmpty: true })
     return roomId
   }
 
@@ -74,6 +74,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     connect,
     disconnect,
     shareCurrentDoc,
+    syncCurrentDoc: syncAllNodesToYjs,
     updateCursor,
     updateSelection,
     setLocalName,

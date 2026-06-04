@@ -6,6 +6,7 @@ import { createInviteRoutes } from './routes/invite.js'
 import { createInvitationStore } from './store.js'
 import { requireJwtSecret } from './token.js'
 import type { BoardStore, InvitationStore } from './types.js'
+import { createSignalingServer } from './ws/signaling.js'
 
 export const API_HOST = '127.0.0.1'
 export const API_PORT = 3001
@@ -72,11 +73,17 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
     store: options.store,
     now: options.now
   })
+  const signaling = createSignalingServer()
 
   const server = Bun.serve({
     hostname: host,
     port,
-    fetch: app.fetch
+    fetch(request, server) {
+      const signalingResponse = signaling.handleRequest(request, server)
+      if (signalingResponse !== null) return signalingResponse
+      return app.fetch(request)
+    },
+    websocket: signaling.websocket
   })
 
   process.stderr.write(`Inkly API server listening on http://${host}:${port}\n`)

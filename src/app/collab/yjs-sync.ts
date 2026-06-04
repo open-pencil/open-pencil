@@ -40,6 +40,22 @@ function setValueOnYMap(
   key: string,
   value: unknown
 ): void {
+  if (value instanceof Uint8Array) {
+    const prev = ynode.get(key)
+    if (prev instanceof Uint8Array && prev.byteLength === value.byteLength) {
+      let same = true
+      for (let i = 0; i < value.byteLength; i++) {
+        if (prev[i] !== value[i]) {
+          same = false
+          break
+        }
+      }
+      if (same) return
+    }
+    ynode.set(key, value.slice())
+    return
+  }
+
   if (typeof value === 'object' && value !== null) {
     const encoded = JSON.stringify(value)
     if (ynode.get(key) === encoded) return
@@ -73,14 +89,18 @@ export function yNodeToProps(ynode: Y.Map<unknown>): Record<string, unknown> {
   const props: Record<string, unknown> = {}
 
   for (const [key, value] of ynode.entries()) {
-    if (YJS_JSON_FIELDS.has(key)) {
+    const shouldParseString =
+      typeof value === 'string' &&
+      (YJS_JSON_FIELDS.has(key) || value.startsWith('{') || value.startsWith('['))
+
+    if (shouldParseString) {
       try {
-        props[key] = typeof value === 'string' ? JSON.parse(value) : value
+        props[key] = JSON.parse(value)
       } catch {
         props[key] = value
       }
     } else {
-      props[key] = value
+      props[key] = value && typeof value === 'object' ? structuredClone(value) : value
     }
   }
 
