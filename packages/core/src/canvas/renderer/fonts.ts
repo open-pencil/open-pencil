@@ -19,6 +19,8 @@ export async function loadFonts(
   onFallbackFontsLoaded?: () => void
 ): Promise<void> {
   if (r.isDestroyed()) return
+  r.onFallbackFontsLoaded = onFallbackFontsLoaded ?? null
+  r.pendingFallbackScripts.clear()
   r.fontProvider?.delete()
   r.fontProvider = r.ck.TypefaceFontProvider.Make()
 
@@ -47,19 +49,6 @@ export async function loadFonts(
 
   r.fontsLoaded = true
   r.invalidateAllPictures()
-
-  void fontManager.ensureCJKFallback().then((families) => {
-    if (!r.isDestroyed() && families.length > 0) {
-      r.invalidateAllPictures()
-      onFallbackFontsLoaded?.()
-    }
-  })
-  void fontManager.ensureArabicFallback().then((families) => {
-    if (!r.isDestroyed() && families.length > 0) {
-      r.invalidateAllPictures()
-      onFallbackFontsLoaded?.()
-    }
-  })
 }
 
 export async function prepareForExport(

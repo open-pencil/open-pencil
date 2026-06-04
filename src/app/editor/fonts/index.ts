@@ -39,6 +39,9 @@ interface TauriFontFamily {
 let tauriFontsCache: TauriFontFamily[] | null = null
 let tauriFontsPromise: Promise<TauriFontFamily[]> | null = null
 
+const CJK_TEXT_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+const ARABIC_TEXT_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
+
 async function getTauriFonts(): Promise<TauriFontFamily[]> {
   if (tauriFontsCache) return tauriFontsCache
   if (!tauriFontsPromise) {
@@ -117,12 +120,45 @@ export async function listFonts(): Promise<TauriFontFamily[]> {
 export async function ensureGraphFonts(graph: SceneGraph, nodeIds: string[]): Promise<boolean> {
   const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
   const missing = fontKeys.filter(([family, style]) => !fontManager.isStyleLoaded(family, style))
-  if (missing.length === 0) return false
+  const needsFallback = graphFallbackNeeds(graph, nodeIds)
+  if (missing.length === 0 && !needsFallback.cjk && !needsFallback.arabic) return false
 
   const results = await Promise.all(missing.map(([family, style]) => loadFont(family, style)))
-  const loaded = results.some((result) => result !== null)
+  const [cjkFallbacks, arabicFallbacks] = await Promise.all([
+    needsFallback.cjk ? fontManager.ensureCJKFallback() : Promise.resolve([]),
+    needsFallback.arabic ? fontManager.ensureArabicFallback() : Promise.resolve([])
+  ])
+  const loaded =
+    results.some((result) => result !== null) ||
+    cjkFallbacks.length > 0 ||
+    arabicFallbacks.length > 0
   if (loaded) clearTextPictures(graph)
   return loaded
+}
+
+function graphFallbackNeeds(
+  graph: SceneGraph,
+  nodeIds: string[]
+): { cjk: boolean; arabic: boolean } {
+  let cjk = false
+  let arabic = false
+
+  const visit = (id: string) => {
+    if (cjk && arabic) return
+    const node = graph.getNode(id)
+    if (!node) return
+    if (node.type === 'TEXT') {
+      if (!cjk && CJK_TEXT_RE.test(node.text)) cjk = true
+      if (!arabic && ARABIC_TEXT_RE.test(node.text)) arabic = true
+    }
+    for (const childId of node.childIds) visit(childId)
+  }
+
+  for (const id of nodeIds) visit(id)
+  return {
+    cjk: cjk && fontManager.getCJKFallbackFamilies().length === 0,
+    arabic: arabic && fontManager.getArabicFallbackFamilies().length === 0
+  }
 }
 
 function clearTextPictures(graph: SceneGraph): void {

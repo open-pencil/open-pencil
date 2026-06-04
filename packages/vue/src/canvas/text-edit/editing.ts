@@ -1,6 +1,7 @@
 import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
+import { ensureMissingFallbackFonts } from '@open-pencil/core/canvas'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
 import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
@@ -94,6 +95,11 @@ export function createTextEditActions(store: Editor) {
     const changes: Partial<SceneNode> = { text }
     if (runs !== undefined) changes.styleRuns = runs
     store.graph.updateNode(nodeId, changes)
+    const node = store.graph.getNode(nodeId)
+    const rendererLike = 'renderer' in store ? store.renderer : null
+    if (node?.type === 'TEXT' && rendererLike) {
+      ensureMissingFallbackFonts(rendererLike, node)
+    }
     store.requestRender()
   }
 
