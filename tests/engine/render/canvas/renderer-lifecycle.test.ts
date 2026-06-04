@@ -34,6 +34,7 @@ function createRenderer() {
     componentLabelFont: deletable<Font>(),
     fontMgr: null,
     fontProvider: null,
+    paragraphFontMgrCache: new Map([['font-mgr', deletable()]]),
     fontsLoaded: true,
     rulerBgPaint: deletable<Paint>(),
     rulerTickPaint: deletable<Paint>(),
@@ -65,10 +66,13 @@ test('destroyRenderer deletes all renderer-owned paints and label fonts', () => 
   const parentOutlinePaint = renderer.parentOutlinePaint
   const sectionTitleFont = renderer.sectionTitleFont
   const componentLabelFont = renderer.componentLabelFont
+  const paragraphFontMgr = renderer.paragraphFontMgrCache.get('font-mgr')
 
   destroyRenderer(renderer)
 
   expect(parentOutlinePaint.delete).toHaveBeenCalled()
   expect(sectionTitleFont?.delete).toHaveBeenCalled()
   expect(componentLabelFont?.delete).toHaveBeenCalled()
+  expect(paragraphFontMgr?.delete).toHaveBeenCalled()
+  expect(renderer.paragraphFontMgrCache.size).toBe(0)
 })

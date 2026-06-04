@@ -10,6 +10,11 @@ function clearRetainedSceneState(r: SkiaRenderer): void {
   r.sceneBackingBuild = null
 }
 
+export function clearParagraphFontMgrCache(r: SkiaRenderer): void {
+  for (const mgr of r.paragraphFontMgrCache.values()) mgr.delete()
+  r.paragraphFontMgrCache.clear()
+}
+
 export function destroyRenderer(r: SkiaRenderer): void {
   if (r.destroyed) return
   r.destroyed = true
@@ -42,6 +47,7 @@ export function destroyRenderer(r: SkiaRenderer): void {
   r.sectionTitleFont?.delete()
   r.componentLabelFont?.delete()
   r.fontMgr?.delete()
+  clearParagraphFontMgrCache(r)
   const fontProvider = r.fontProvider
   fontProvider?.delete()
   r.fontProvider = null

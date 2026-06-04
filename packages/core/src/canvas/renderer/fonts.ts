@@ -1,4 +1,5 @@
 import type { SkiaRenderer } from '#core/canvas/renderer'
+import { clearParagraphFontMgrCache } from '#core/canvas/renderer/lifecycle'
 import {
   COMPONENT_LABEL_FONT_SIZE,
   DEFAULT_FONT_FAMILY,
@@ -19,6 +20,7 @@ export async function loadFonts(
   onFallbackFontsLoaded?: () => void
 ): Promise<void> {
   if (r.isDestroyed()) return
+  clearParagraphFontMgrCache(r)
   r.fontProvider?.delete()
   r.fontProvider = r.ck.TypefaceFontProvider.Make()
 

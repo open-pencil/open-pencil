@@ -76,6 +76,7 @@ export class SkiaRenderer {
   componentLabelFont: Font | null = null
   fontMgr: FontMgr | null = null
   fontProvider: TypefaceFontProvider | null = null
+  paragraphFontMgrCache = new Map<string, FontMgr>()
   fontsLoaded = false
   imageCache = new Map<string, CKImage>()
   vectorPathCache = new Map<string, Path[]>()
