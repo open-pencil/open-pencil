@@ -43,9 +43,16 @@ export default defineConfig({
       testDir: './tests/figma'
     }
   ],
-  webServer: {
-    command: 'bun run dev',
-    port: 1420,
-    reuseExistingServer: true
-  }
+  webServer: [
+    {
+      command: 'bun run dev',
+      port: 1420,
+      reuseExistingServer: true
+    },
+    {
+      command: 'INKLY_API_JWT_SECRET=playwright-secret bun --filter @inkly/api dev',
+      port: 3001,
+      reuseExistingServer: true
+    }
+  ]
 })

@@ -1,9 +1,11 @@
 import { Hono } from 'hono'
 
+import { createBoardStore } from './boardStore.js'
+import { createBoardRoutes } from './routes/boards.js'
 import { createInviteRoutes } from './routes/invite.js'
 import { createInvitationStore } from './store.js'
 import { requireJwtSecret } from './token.js'
-import type { InvitationStore } from './types.js'
+import type { BoardStore, InvitationStore } from './types.js'
 
 export const API_HOST = '127.0.0.1'
 export const API_PORT = 3001
@@ -11,6 +13,7 @@ export const API_PORT = 3001
 export interface CreateApiAppOptions {
   secret: string
   store?: InvitationStore
+  boardStore?: BoardStore
   now?: () => number
 }
 
@@ -21,6 +24,7 @@ export interface StartApiServerOptions extends CreateApiAppOptions {
 
 export function createApiApp(options: CreateApiAppOptions) {
   const store = options.store ?? createInvitationStore()
+  const boardStore = options.boardStore ?? createBoardStore()
   const app = new Hono()
 
   app.onError((error, c) => {
@@ -42,18 +46,28 @@ export function createApiApp(options: CreateApiAppOptions) {
     createInviteRoutes({
       secret: options.secret,
       store,
+      boardStore,
       now: options.now
     })
   )
 
-  return { app, store }
+  app.route(
+    '/api',
+    createBoardRoutes({
+      boardStore,
+      invitationStore: store
+    })
+  )
+
+  return { app, store, boardStore }
 }
 
 export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
   const secret = options.secret ?? requireJwtSecret()
   const port = options.port ?? API_PORT
   const host = options.host ?? API_HOST
-  const { app, store } = createApiApp({
+  const { app, store, boardStore } = createApiApp({
+    boardStore: options.boardStore,
     secret,
     store: options.store,
     now: options.now
@@ -67,7 +81,7 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
 
   process.stderr.write(`Inkly API server listening on http://${host}:${port}\n`)
 
-  return { app, store, server, port, host }
+  return { app, store, boardStore, server, port, host }
 }
 
 if (import.meta.main) {

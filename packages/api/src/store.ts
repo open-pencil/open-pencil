@@ -17,7 +17,8 @@ export function createInvitationStore(): InvitationStore {
         createdAt: Date.now(),
         expiresAt: input.expiresAt,
         revoked: false,
-        jti: crypto.randomUUID()
+        jti: crypto.randomUUID(),
+        token: null
       }
       invitations.set(record.id, record)
       return cloneInvitation(record)
@@ -25,6 +26,18 @@ export function createInvitationStore(): InvitationStore {
     findInvitation(id) {
       const record = invitations.get(id)
       return record ? cloneInvitation(record) : null
+    },
+    listInvitationsByBoardId(boardId) {
+      return [...invitations.values()]
+        .filter((record) => record.boardId === boardId)
+        .map((record) => cloneInvitation(record))
+    },
+    attachInvitationToken(id, token) {
+      const record = invitations.get(id)
+      if (!record) return null
+      record.token = token
+      invitations.set(id, record)
+      return cloneInvitation(record)
     },
     revokeInvitation(id) {
       const record = invitations.get(id)

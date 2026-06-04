@@ -6,6 +6,7 @@ import { TooltipProvider } from 'reka-ui'
 import { provideEditor, useI18n } from '@inkly/vue'
 import AppToast from '@/components/AppToast.vue'
 import ClearCacheDialog from '@/components/ClearCacheDialog.vue'
+import { fadeOutGlobalLoader } from '@/app/editor/canvas/loader-overlay'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import { useAppTheme } from '@/app/shell/theme'
@@ -19,6 +20,7 @@ provideEditor(store)
 useAppTheme()
 
 onMounted(() => {
+  fadeOutGlobalLoader()
   toast.setupGlobalErrorHandler()
   scheduleStartupUpdateCheck(dialogs)
 })

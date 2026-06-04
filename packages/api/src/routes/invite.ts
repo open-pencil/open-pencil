@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 
+import { resolveAnonymousId } from '../anonymousId.js'
 import {
   hashInvitationEmail,
   INVITATION_TTL_MS,
@@ -10,6 +11,7 @@ import {
 import {
   INVITATION_ISSUER,
   INVITATION_ROLES,
+  type BoardStore,
   type InvitationPayload,
   type InvitationStore
 } from '../types.js'
@@ -34,6 +36,7 @@ interface ValidationErrorBody {
 export interface InviteRoutesOptions {
   secret: string
   store: InvitationStore
+  boardStore?: BoardStore
   now?: () => number
 }
 
@@ -51,11 +54,25 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
   const now = options.now ?? Date.now
 
   app.post('/invite', async (c) => {
+    const anonymousId = resolveAnonymousId(c)
     const body = await c.req.json().catch(() => null)
     const parsed = inviteRequestSchema.safeParse(body)
     if (!parsed.success) {
       const issue = parsed.error.issues[0]?.message ?? 'Invalid request body'
       return c.json(validationError(issue), 400)
+    }
+
+    const board = options.boardStore?.findBoard(parsed.data.boardId)
+    if (board && board.creatorAnonymousId !== anonymousId) {
+      return c.json(
+        {
+          error: {
+            code: 'forbidden',
+            message: 'Only the creator can invite collaborators'
+          }
+        },
+        403
+      )
     }
 
     const issuedAt = now()
@@ -80,6 +97,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
     }
 
     const token = await signInvitationToken(payload, options.secret)
+    options.store.attachInvitationToken(invitation.id, token)
 
     return c.json(
       {
@@ -93,6 +111,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
   })
 
   app.post('/invite/verify', async (c) => {
+    const anonymousId = resolveAnonymousId(c)
     const body = await c.req.json().catch(() => null)
     const parsed = verifyRequestSchema.safeParse(body)
     if (!parsed.success) {
@@ -132,6 +151,12 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
         401
       )
     }
+
+    options.boardStore?.addCollaborator(invitation.boardId, {
+      anonymousId,
+      role: invitation.role,
+      invitationId: invitation.id
+    })
 
     return c.json({
       valid: true,
