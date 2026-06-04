@@ -159,6 +159,10 @@ function reparentPinnedNodesToPage(d: DragMove, editor: Editor) {
     const node = editor.graph.getNode(id)
     if (!node || node.parentId === pageId) continue
     editor.graph.reparentNode(id, pageId)
+    const reparented = editor.graph.getNode(id)
+    if (reparented?.source) {
+      reparented.source.orderKey = null
+    }
   }
 }
 
