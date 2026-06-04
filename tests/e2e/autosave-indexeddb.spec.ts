@@ -42,7 +42,7 @@ test('IndexedDB autosave writes after scene changes (no file handle required)', 
   expect(versionAfterDraw).toBeGreaterThan(0)
 
   // IndexedDB autosave debounce (1500ms) + write 時間の buffer 待ち
-  await editor.page.waitForTimeout(2500)
+  await editor.page.waitForTimeout(4500)
 
   // IndexedDB に書き込まれているか確認
   const after = await editor.page.evaluate(async () => {
@@ -85,8 +85,8 @@ test('autosave status indicator transitions saving → saved → idle', async ({
   // 描画
   await canvas.drawRect(150, 150, 60, 60)
 
-  // 1500ms debounce のあと saving 表示
-  await page.waitForTimeout(1700)
+  // 3000ms debounce のあと saving 表示
+  await page.waitForTimeout(3200)
 
   // status indicator が一瞬でも表示される必要 (saving or saved)
   const indicator = page.locator('[data-test-id="autosave-status"]')
@@ -154,7 +154,7 @@ test('reload restores edited document from IndexedDB cache', async ({ browser })
   expect(stateBefore.sceneVersion).toBeGreaterThan(0)
 
   // autosave 完了を待つ
-  await page.waitForTimeout(2500)
+  await page.waitForTimeout(4500)
 
   // IndexedDB に保存されたか確認
   const cached = await page.evaluate(async () => {

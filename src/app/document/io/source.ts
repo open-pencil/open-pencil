@@ -83,27 +83,36 @@ export function createDocumentSourceActions({
 
   let lastCachedVersion = state.sceneVersion
   let savedResetTimer: ReturnType<typeof setTimeout> | null = null
+  const runOnIdle = (cb: () => void): void => {
+    const ric = (globalThis as { requestIdleCallback?: (cb: () => void) => void })
+      .requestIdleCallback
+    if (typeof ric === 'function') ric(cb)
+    else setTimeout(cb, 0)
+  }
   const stopIndexedDBAutosave = watchDebounced(
     () => state.sceneVersion,
-    async (version) => {
+    (version) => {
       if (version === lastCachedVersion) return
-      state.autosaveStatus = 'saving'
-      try {
-        const bytes = await buildFigFile()
-        const cacheName = getDownloadName() ?? `${state.documentName}.fig`
-        await savePenToCache(cacheName, 'application/octet-stream', bytes)
-        lastCachedVersion = version
-        state.autosaveStatus = 'saved'
-        if (savedResetTimer) clearTimeout(savedResetTimer)
-        savedResetTimer = setTimeout(() => {
+      runOnIdle(async () => {
+        if (version === lastCachedVersion) return
+        state.autosaveStatus = 'saving'
+        try {
+          const bytes = await buildFigFile()
+          const cacheName = getDownloadName() ?? `${state.documentName}.fig`
+          await savePenToCache(cacheName, 'application/octet-stream', bytes)
+          lastCachedVersion = version
+          state.autosaveStatus = 'saved'
+          if (savedResetTimer) clearTimeout(savedResetTimer)
+          savedResetTimer = setTimeout(() => {
+            state.autosaveStatus = 'idle'
+          }, 2000)
+        } catch (e) {
+          console.warn('IndexedDB autosave failed:', e)
           state.autosaveStatus = 'idle'
-        }, 2000)
-      } catch (e) {
-        console.warn('IndexedDB autosave failed:', e)
-        state.autosaveStatus = 'idle'
-      }
+        }
+      })
     },
-    { debounce: 1500 }
+    { debounce: 3000 }
   )
 
   function setDocumentSource(
