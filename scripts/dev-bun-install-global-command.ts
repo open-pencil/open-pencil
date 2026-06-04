@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 /**
  * Dynamically builds and installs workspace binaries as Bun globals.
  * * Usage:
@@ -28,17 +29,10 @@ import {
 import { tmpdir } from 'node:os'
 import { join, resolve, delimiter, dirname } from 'node:path'
 
-// ---------------------------------------------------------------------------
-// Runtime Guard
-// ---------------------------------------------------------------------------
 if (typeof Bun === 'undefined') {
   console.error('FATAL: This script requires the Bun runtime. Run with: bun <script>')
   process.exit(1)
 }
-
-// ---------------------------------------------------------------------------
-// Types & State
-// ---------------------------------------------------------------------------
 
 type PackageData = {
   name: string
@@ -50,10 +44,6 @@ type PackageData = {
 }
 
 const EXIT_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function log(msg: string): void {
   console.log(msg)
@@ -337,8 +327,6 @@ function moveIntoStore(srcPath: string, destPath: string): void {
   }
 }
 
-// ------------ Pipeline Helpers (extracted for complexity) ------------
-
 function discoverWorkspacePackages(
   repoRoot: string,
   workspaceGlobs: string[]
@@ -543,8 +531,6 @@ function verifyCommandsPresent(targetCommands: string[]): void {
     log(`  Verified: '${bin}' -> ${resolved}`)
   }
 }
-
-// ------------------------- Main Pipeline -------------------------------
 
 function main(): void {
   const repoRoot = findWorkspaceRoot(import.meta.dir)
