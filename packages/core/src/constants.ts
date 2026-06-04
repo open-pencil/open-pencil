@@ -341,6 +341,7 @@ export const AUTOMATION_WS_PORT = 7601
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [
+  'PingFang TC',
   'PingFang SC',
   'Hiragino Sans',
   'Apple SD Gothic Neo',
@@ -348,9 +349,10 @@ export const CJK_FALLBACK_FAMILIES_MACOS = [
 ]
 
 export const CJK_FALLBACK_FAMILIES_WINDOWS = [
+  'Microsoft JhengHei',
+  'Microsoft JhengHei UI',
   'Microsoft YaHei',
   'Microsoft YaHei UI',
-  'Microsoft JhengHei',
   'Yu Gothic',
   'Malgun Gothic',
   'SimHei',
@@ -358,6 +360,7 @@ export const CJK_FALLBACK_FAMILIES_WINDOWS = [
 ]
 
 export const CJK_FALLBACK_FAMILIES_LINUX = [
+  'Noto Sans CJK TC',
   'Noto Sans CJK SC',
   'Noto Sans CJK JP',
   'Noto Sans CJK KR',
@@ -365,7 +368,7 @@ export const CJK_FALLBACK_FAMILIES_LINUX = [
   'Droid Sans Fallback'
 ]
 
-export const CJK_GOOGLE_FONTS = ['Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR']
+export const CJK_GOOGLE_FONTS = ['Noto Sans TC', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR']
 
 export const DEFAULT_SHAPE_FILL: Fill = {
   type: 'SOLID',
