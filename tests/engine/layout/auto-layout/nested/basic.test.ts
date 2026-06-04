@@ -94,4 +94,63 @@ describe('nested auto layout', () => {
     expect(outerChildren[0].y).toBe(0)
     expect(outerChildren[1].y).toBe(40)
   })
+
+  test('computeAllLayouts preserves fixed children inside instances', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const outer = autoFrame(graph, page, {
+      width: 500,
+      height: 300,
+      paddingTop: 20,
+      paddingBottom: 20
+    })
+    const instance = graph.createNode('INSTANCE', outer.id, {
+      width: 120,
+      height: 120,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED',
+      paddingTop: 20,
+      paddingBottom: 20
+    })
+    graph.updateNode(instance.id, { source: { ...instance.source, format: 'fig' } })
+    const fixedChild = autoFrame(graph, instance.id, {
+      width: 80,
+      height: 80,
+      paddingTop: 1665,
+      paddingBottom: 1665
+    })
+
+    computeAllLayouts(graph, page)
+
+    const childNode = getNodeOrThrow(graph, fixedChild.id)
+    expect(childNode.height).toBe(80)
+    expect(childNode.y).toBe(0)
+  })
+
+  test('computeAllLayouts relayouts user-created instance children', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const component = graph.createNode('COMPONENT', page, {
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED',
+      width: 100,
+      height: 100,
+      counterAxisAlign: 'STRETCH',
+      paddingLeft: 10,
+      paddingRight: 10
+    })
+    rect(graph, component.id, 80, 20, { layoutAlignSelf: 'STRETCH' })
+    const outer = autoFrame(graph, page, { width: 300, height: 150 })
+    const instance = graph.createInstance(component.id, outer.id, { width: 200, height: 100 })
+    if (!instance) throw new Error('Expected instance creation to succeed')
+    const instanceChild = graph.getChildren(instance.id)[0]
+
+    computeAllLayouts(graph, page)
+
+    const childNode = getNodeOrThrow(graph, instanceChild.id)
+    expect(childNode.x).toBe(10)
+    expect(childNode.width).toBe(180)
+  })
 })
