@@ -98,7 +98,7 @@ export function bindCollabGraphEvents({
   }
 
   const unbinds = [
-    store.onEditorEvent('node:updated', (id) => onGraphMutation(id)),
+    store.onEditorEvent('node:updated', (id, changes) => onGraphMutation(id, Object.keys(changes))),
     store.onEditorEvent('node:created', (node) => onGraphMutation(node.id)),
     store.onEditorEvent('node:reparented', (nodeId) => onGraphMutation(nodeId)),
     store.onEditorEvent('node:reordered', (nodeId) => onGraphMutation(nodeId)),

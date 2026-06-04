@@ -350,6 +350,33 @@ export class SceneGraph {
   updateNodePreview(id: string, changes: Partial<SceneNode>): void {
     updateNodePreview(this, id, changes)
   }
+  private buildAugmentedChanges(
+    node: SceneNode,
+    changes: Partial<SceneNode>,
+    prev: {
+      textPicture: SceneNode['textPicture']
+      figmaDerivedTextGlyphs: SceneNode['figmaDerivedTextGlyphs']
+      rawSize: SceneNode['source']['fig']['rawSize']
+      rawTransform: SceneNode['source']['fig']['rawTransform']
+      rawNodeFields: SceneNode['source']['fig']['rawNodeFields']
+    }
+  ): Partial<SceneNode> {
+    const augmented: Partial<SceneNode> = { ...changes }
+    if (node.textPicture !== prev.textPicture) {
+      augmented.textPicture = node.textPicture
+    }
+    if (node.figmaDerivedTextGlyphs !== prev.figmaDerivedTextGlyphs) {
+      augmented.figmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs
+    }
+    if (
+      node.source.fig.rawSize !== prev.rawSize ||
+      node.source.fig.rawTransform !== prev.rawTransform ||
+      node.source.fig.rawNodeFields !== prev.rawNodeFields
+    ) {
+      augmented.source = node.source
+    }
+    return augmented
+  }
   updateNode(id: string, changes: Partial<SceneNode>): void {
     if (this.previewMutationDepth > 0) {
       this.updateNodePreview(id, changes)
@@ -358,6 +385,12 @@ export class SceneGraph {
 
     const node = this.nodes.get(id)
     if (!node) return
+
+    const prevTextPicture = node.textPicture
+    const prevFigmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs
+    const prevRawSize = node.source.fig.rawSize
+    const prevRawTransform = node.source.fig.rawTransform
+    const prevRawNodeFields = node.source.fig.rawNodeFields
 
     // Only clear absPosCache when layout-affecting properties change.
     // Fills, strokes, effects, plugin data changes do NOT affect absolute position.
@@ -394,7 +427,14 @@ export class SceneGraph {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
     Object.assign(node, changes)
-    this.emitter.emit('node:updated', id, changes)
+    const augmentedChanges = this.buildAugmentedChanges(node, changes, {
+      textPicture: prevTextPicture,
+      figmaDerivedTextGlyphs: prevFigmaDerivedTextGlyphs,
+      rawSize: prevRawSize,
+      rawTransform: prevRawTransform,
+      rawNodeFields: prevRawNodeFields
+    })
+    this.emitter.emit('node:updated', id, augmentedChanges)
   }
 
   reparentNode(nodeId: string, newParentId: string): void {
