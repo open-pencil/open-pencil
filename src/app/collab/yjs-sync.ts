@@ -41,10 +41,13 @@ function setValueOnYMap(
   value: unknown
 ): void {
   if (typeof value === 'object' && value !== null) {
-    ynode.set(key, JSON.stringify(value))
-  } else {
-    ynode.set(key, value)
+    const encoded = JSON.stringify(value)
+    if (ynode.get(key) === encoded) return
+    ynode.set(key, encoded)
+    return
   }
+  if (ynode.get(key) === value) return
+  ynode.set(key, value)
 }
 
 export function syncNodePropsToYMap(
