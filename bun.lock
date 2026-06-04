@@ -96,6 +96,20 @@
         "ws": "^8.19.0",
       },
     },
+    "packages/api": {
+      "name": "@inkly/api",
+      "version": "0.13.2",
+      "dependencies": {
+        "hono": "^4.12.5",
+        "jose": "^6.2.2",
+        "zod": "^4.3.6",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.2.9",
+        "@types/node": "^25.3.2",
+        "typescript": "~5.8.3",
+      },
+    },
     "packages/cli": {
       "name": "@inkly/cli",
       "version": "0.13.2",
@@ -661,6 +675,8 @@
     "@iconify/utils": ["@iconify/utils@3.1.0", "", { "dependencies": { "@antfu/install-pkg": "^1.1.0", "@iconify/types": "^2.0.0", "mlly": "^1.8.0" } }, "sha512-Zlzem1ZXhI1iHeeERabLNzBHdOa4VhQbqAcOQaMKuTuyZCpwKbC2R4Dd0Zo3g9EAc+Y4fiarO8HIHRAth7+skw=="],
 
     "@iconify/vue": ["@iconify/vue@5.0.0", "", { "dependencies": { "@iconify/types": "^2.0.0" }, "peerDependencies": { "vue": ">=3" } }, "sha512-C+KuEWIF5nSBrobFJhT//JS87OZ++QDORB6f2q2Wm6fl2mueSTpFBeBsveK0KW9hWiZ4mNiPjsh6Zs4jjdROSg=="],
+
+    "@inkly/api": ["@inkly/api@workspace:packages/api"],
 
     "@inkly/cli": ["@inkly/cli@workspace:packages/cli"],
 

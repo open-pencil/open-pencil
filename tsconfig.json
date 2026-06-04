@@ -22,9 +22,11 @@
       "#core/*": ["./packages/core/src/*"],
       "#cli/*": ["./packages/cli/src/*"],
       "#mcp/*": ["./packages/mcp/src/*"],
+      "#api/*": ["./packages/api/src/*"],
       "#tests/*": ["./tests/*"],
       "tinykeys": ["./node_modules/tinykeys/dist/tinykeys.d.ts"],
       "@inkly/vue": ["./packages/vue/src/index.ts"],
+      "@inkly/api": ["./packages/api/src/index.ts"],
       "@inkly/core": ["./packages/core/src/index.ts"],
       "@inkly/core/*": ["./packages/core/src/*"]
     }

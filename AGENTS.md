@@ -6,13 +6,13 @@ Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also 
 
 ## Monorepo
 
-Bun workspace with three packages:
+Bun workspace with multiple packages:
 
 - `packages/core` — `@inkly/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
 - `packages/cli` — `@inkly/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
 - `packages/docs` — `@inkly/docs`: VitePress documentation site. Run with `cd packages/docs && bun run dev`.
 - `packages/mcp` — `@inkly/mcp`: MCP server for AI coding tools. Stdio + HTTP (Hono). Reuses `createServer()` factory with all core tools.
-
+- `packages/api` — `@inkly/api`: Hono-based backend package for server-side HTTP APIs. Invitation token issuance/verification lives here.
 - `packages/vue` — `@inkly/vue`: headless Vue 3 SDK (Reka UI-style) for building custom Inkly-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
 
 The root app (`src/`) is the Tauri/Vite desktop editor. App-specific editor, document, AI, collaboration, shell, tabs, demo, and automation code lives under `src/app/*`. The app consumes `@inkly/core` through targeted core subpath exports and `@inkly/vue` through the public Vue SDK entrypoint.

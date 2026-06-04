@@ -4,7 +4,13 @@ import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const rootDir = fileURLToPath(new URL('..', import.meta.url))
-const packageDirs = ['packages/core', 'packages/vue', 'packages/mcp', 'packages/cli']
+const packageDirs = [
+  'packages/core',
+  'packages/vue',
+  'packages/mcp',
+  'packages/cli',
+  'packages/api'
+]
 
 function run(command: string[], cwd = rootDir): string {
   const proc = Bun.spawnSync(command, { cwd, stdout: 'pipe', stderr: 'pipe' })
@@ -59,6 +65,7 @@ try {
   nodeEval("await import('@inkly/core/scene-graph')", tempDir)
   nodeEval("await import('@inkly/vue')", tempDir)
   nodeEval("await import('@inkly/mcp')", tempDir)
+  nodeEval("await import('@inkly/api')", tempDir)
 
   run(['node', 'node_modules/.bin/inkly', '--help'], tempDir)
   run(['node', 'node_modules/.bin/inkly-mcp', '--help'], tempDir)

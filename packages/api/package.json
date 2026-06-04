@@ -1,0 +1,51 @@
+{
+  "name": "@inkly/api",
+  "version": "0.13.2",
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#api/*": "./src/*"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js",
+      "import": "./dist/server.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "bun run src/server.ts",
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "test": "bun test ../../tests/api",
+    "prepublishOnly": "bun run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cardene777/open-pencil.git",
+    "directory": "packages/api"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "hono": "^4.12.5",
+    "jose": "^6.2.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.9",
+    "@types/node": "^25.3.2",
+    "typescript": "~5.8.3"
+  }
+}
