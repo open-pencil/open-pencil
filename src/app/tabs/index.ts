@@ -227,8 +227,7 @@ export async function openFileInNewTab(
     // Trigger CJK fallback EARLY (before any awaits that may block on CanvasKit)
     const cjkPromise = fontManager.ensureCJKFallback().catch(() => [])
 
-    const firstPageId = imported.getPages()[0]?.id
-    if (firstPageId) computeAllLayouts(imported, firstPageId)
+    // 2 重 computeAllLayouts を回避。store.replaceGraph 後の fontPromise 完了で 1 回だけ実行する。
     store.replaceGraph(imported)
     store.undo.clear()
     store.setDocumentSource(file.name, sourceFormat, handle, path)
