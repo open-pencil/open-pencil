@@ -88,9 +88,9 @@ async function pickFirstNode(page: Page) {
 const editor = useEditorSetup()
 
 test.describe('perf-trace large-doc', () => {
-  for (const nodeCount of [100, 500, 1000]) {
+  for (const nodeCount of [100, 500, 1000, 2000]) {
     test(`drag を ${nodeCount} node ドキュメントで計測`, async () => {
-      test.setTimeout(180_000)
+      test.setTimeout(300_000)
 
       await editor.page.evaluate(() => {
         window.__pencilPerf?.enable()
