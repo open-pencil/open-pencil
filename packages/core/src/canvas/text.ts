@@ -20,6 +20,10 @@ interface TextRenderer {
   ck: CanvasKit
   fontProvider: TypefaceFontProvider | null
   fontsLoaded: boolean
+  isDestroyed?(): boolean
+  invalidateAllPictures?(): void
+  onFallbackFontsLoaded?: (() => void) | null
+  pendingFallbackScripts?: Set<'cjk' | 'arabic'>
 }
 
 export interface ClipboardShapedGlyph {
@@ -49,6 +53,32 @@ function hasRequiredFallbackFonts(text: string): boolean {
   if (CJK_RE.test(text) && fontManager.getCJKFallbackFamilies().length === 0) return false
   if (ARABIC_RE.test(text) && fontManager.getArabicFallbackFamilies().length === 0) return false
   return true
+}
+
+export function ensureMissingFallbackFonts(r: TextRenderer, node: SceneNode): void {
+  const needsCJK = CJK_RE.test(node.text) && fontManager.getCJKFallbackFamilies().length === 0
+  const needsArabic =
+    ARABIC_RE.test(node.text) && fontManager.getArabicFallbackFamilies().length === 0
+
+  if (needsCJK) void ensureFallbackScript(r, 'cjk')
+  if (needsArabic) void ensureFallbackScript(r, 'arabic')
+}
+
+async function ensureFallbackScript(r: TextRenderer, script: 'cjk' | 'arabic'): Promise<void> {
+  if (r.pendingFallbackScripts?.has(script)) return
+  r.pendingFallbackScripts?.add(script)
+  try {
+    const families =
+      script === 'cjk'
+        ? await fontManager.ensureCJKFallback()
+        : await fontManager.ensureArabicFallback()
+    if (families.length > 0 && !r.isDestroyed?.()) {
+      r.invalidateAllPictures?.()
+      r.onFallbackFontsLoaded?.()
+    }
+  } finally {
+    r.pendingFallbackScripts?.delete(script)
+  }
 }
 
 export function isNodeFontLoaded(_r: TextRenderer, node: SceneNode): boolean {

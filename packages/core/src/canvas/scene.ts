@@ -19,6 +19,7 @@ import {
   getStrokeCapEntity,
   getStrokeJoinEntity
 } from './strokes'
+import { ensureMissingFallbackFonts } from './text'
 import { drawFigmaDerivedText } from './text-derived'
 import { textNodeToOutlinePath } from './text-outlines'
 
@@ -662,6 +663,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   }
 
   if (!r.isNodeFontLoaded(node)) {
+    ensureMissingFallbackFonts(r, node)
     canvas.restore()
     return
   }
