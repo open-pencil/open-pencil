@@ -16,7 +16,6 @@ import IconSquaresIntersect from '~icons/lucide/squares-intersect'
 import { editorCommandMetadata, formatShortcut, useEditorCommands, useI18n } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/Tip.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu'
 
 const { getCommand, runCommand } = useEditorCommands()
@@ -36,17 +35,16 @@ const itemCls = menuItem({ justify: 'between' })
 
 <template>
   <DropdownMenuRoot>
-    <Tip :label="commands.booleanOperations">
-      <DropdownMenuTrigger as-child>
-        <button
-          data-test-id="boolean-operations-trigger"
-          class="flex h-7 items-center gap-1 rounded-md px-1.5 text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-active data-[state=open]:text-surface"
-        >
-          <IconCombine class="size-4" />
-          <IconChevronDown class="size-3" />
-        </button>
-      </DropdownMenuTrigger>
-    </Tip>
+    <DropdownMenuTrigger as-child>
+      <button
+        data-test-id="boolean-operations-trigger"
+        :title="commands.booleanOperations"
+        class="flex h-7 items-center gap-1 rounded-md px-1.5 text-muted hover:bg-hover hover:text-surface data-[state=open]:bg-active data-[state=open]:text-surface"
+      >
+        <IconCombine class="size-4" />
+        <IconChevronDown class="size-3" />
+      </button>
+    </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent align="end" side="bottom" :side-offset="4" :class="menuCls.content">
         <DropdownMenuItem
