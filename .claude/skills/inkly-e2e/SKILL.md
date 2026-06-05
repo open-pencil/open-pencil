@@ -39,7 +39,7 @@ allowed-tools: Bash, Read, Glob, Grep, Write, Edit
 
 ## 2. spec 種別と template
 
-4 種類の template を用意。 `templates/` 配下を参照。
+5 種類の template を用意。 `templates/` 配下を参照。
 
 | 種別 | template | 用途 |
 |---|---|---|
@@ -47,9 +47,11 @@ allowed-tools: Bash, Read, Glob, Grep, Write, Edit
 | perf-trace | `templates/perf-trace.template.ts` | PerfTracer 経由の計測 spec (frame / render / autosave 等) |
 | crash-investigation | `templates/crash-investigation.template.ts` | 段階的 phase 観測 + memory snapshot + crash 検出 |
 | visual-regression | (`tests/e2e/visual/*.visual.spec.ts` 参照) | 主要 view の見た目崩れ自動検出 (toHaveScreenshot 経由)、 詳細は `references/visual-regression.md` |
+| a11y-scan | (`tests/e2e/a11y/*.a11y.spec.ts` 参照) | `@axe-core/playwright` で WCAG 2.1 AA の critical / serious 違反を検出、 詳細は `references/a11y-spec.md` |
 
 template を spec ファイルに copy し、 `seedNodes` / drag step / assertion 部分だけ書き換える。
 visual-regression は専用 helper (`tests/helpers/visual.ts` の `waitForVisualReady` / `expectPageScreenshot`) と seed helper (`tests/helpers/api-seed.ts`) を使うので、 既存 spec を参考に作る (`tests/e2e/visual/dashboard.visual.spec.ts` 等)。
+a11y-scan は `tests/helpers/a11y.ts` の `runA11yScan` / `expectNoCriticalViolations` を使い、 `seed -> goto -> runA11yScan` の単純構造を保つ。 editor は canvas を scan 対象から除外する。
 
 ## 3. 再現性チェックリスト
 
@@ -142,6 +144,7 @@ spec が intermittent fail する時に確認する 5 項目。
 ## 9. 関連ファイル
 
 - `tests/e2e/fixtures.ts` — fixture 本体 (`useEditorSetup` / `useEditorSetupWithClear`)
+- `tests/helpers/a11y.ts` — axe helper (`runA11yScan` / `expectNoCriticalViolations`)
 - `tests/helpers/canvas.ts` — `CanvasHelper` 実装
 - `tests/helpers/test-utils.ts` — 汎用 helper
 - `playwright.config.ts` — Playwright 設定 (viewport / DPR / SwiftShader)
@@ -154,3 +157,4 @@ spec が intermittent fail する時に確認する 5 項目。
 - `references/swiftshader-quirks.md` — SwiftShader 由来の挙動差 (実機 GPU との閾値乖離、 crash 閾値の SwiftShader assume 規約)
 - `references/canvaskit-resource-lifecycle.md` — Picture / Surface / Image の delete タイミング規約 (memory leak / GPU pressure 防止)
 - `references/visual-regression.md` — visual regression spec (tests/e2e/visual/) の inkly 固有 patterns、 baseline 更新手順、 SwiftShader / font 影響と対策、 seed helper 活用
+- `references/a11y-spec.md` — a11y spec (tests/e2e/a11y/) の axe-core 統合 patterns、 impact 取り扱い、 false positive 対策、 disableRules の document 化規約

@@ -102,6 +102,7 @@
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.14.1",
+    "@axe-core/playwright": "^4.11.3",
     "@feature-sliced/steiger-plugin": "^0.5.8",
     "@figma/plugin-typings": "^1.126.0",
     "@hono/node-server": "^1.19.11",
