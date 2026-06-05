@@ -148,8 +148,8 @@ function graphFallbackNeeds(
     const node = graph.getNode(id)
     if (!node) return
     if (node.type === 'TEXT') {
-      if (!cjk && CJK_TEXT_RE.test(node.text)) cjk = true
-      if (!arabic && ARABIC_TEXT_RE.test(node.text)) arabic = true
+      cjk ||= CJK_TEXT_RE.test(node.text)
+      arabic ||= ARABIC_TEXT_RE.test(node.text)
     }
     for (const childId of node.childIds) visit(childId)
   }
