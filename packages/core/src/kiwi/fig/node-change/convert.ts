@@ -496,17 +496,25 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   }
 }
 
-export function nodeChangeToProps(
-  nc: NodeChange,
-  blobs: Uint8Array[]
-): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
-  let nodeType = mapNodeType(nc.type)
+function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
+  const nodeType = mapNodeType(nc.type)
+  if (nodeType === 'FRAME' && nc.resizeToFit === true) {
+    return 'GROUP'
+  }
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
     getOpenPencilPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
   ) {
-    nodeType = 'COMPONENT_SET'
+    return 'COMPONENT_SET'
   }
+  return nodeType
+}
+
+export function nodeChangeToProps(
+  nc: NodeChange,
+  blobs: Uint8Array[]
+): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
+  const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
 
