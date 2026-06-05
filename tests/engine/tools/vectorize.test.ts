@@ -5,8 +5,32 @@ import { preprocessForVectorize, svgToVectorPaths } from '@open-pencil/core/tool
 import { initCanvasKit } from '#cli/headless'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { testPath } from '#tests/helpers/paths'
 
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
+
+const VECTORIZE_FIXTURES = testPath('fixtures/vectorize')
+
+async function loadFixturePng(name: string): Promise<Uint8Array> {
+  const buf = await Bun.file(`${VECTORIZE_FIXTURES}/${name}`).arrayBuffer()
+  return new Uint8Array(buf)
+}
+
+function countTransparentPixels(image: NonNullable<ReturnType<typeof ck.MakeImageFromEncoded>>): number {
+  const pixels = image.readPixels(0, 0, {
+    alphaType: ck.AlphaType.Unpremul,
+    colorType: ck.ColorType.RGBA_8888,
+    colorSpace: ck.ColorSpace.SRGB,
+    width: image.width(),
+    height: image.height()
+  })
+  if (!pixels) return 0
+  let transparent = 0
+  for (let i = 3; i < pixels.length; i += 4) {
+    if (pixels[i] === 0) transparent++
+  }
+  return transparent
+}
 
 function createPng(width: number, height: number, alpha = 255): Uint8Array {
   const pixels = ck.Malloc(Uint8Array, width * height * 4)
@@ -65,20 +89,68 @@ describe('preprocessForVectorize', () => {
     const result = preprocessForVectorize(bytes, () => ck)
     const processed = expectDefined(result, 'preprocess result')
     const decoded = expectDefined(ck.MakeImageFromEncoded(processed.pngBytes), 'decoded png')
-    const pixels = decoded.readPixels(0, 0, {
-      alphaType: ck.AlphaType.Unpremul,
-      colorType: ck.ColorType.RGBA_8888,
-      colorSpace: ck.ColorSpace.SRGB,
-      width: decoded.width(),
-      height: decoded.height()
-    })
+    expect(countTransparentPixels(decoded)).toBeGreaterThan(0)
     decoded.delete()
-    expect(pixels).not.toBeNull()
-    let transparent = 0
-    for (let i = 3; i < pixels.length; i += 4) {
-      if (pixels[i] === 0) transparent++
-    }
-    expect(transparent).toBeGreaterThan(0)
+  })
+})
+
+describe('preprocessForVectorize fixtures', () => {
+  test('python_logo.png upscales short side below 256px', async () => {
+    const bytes = await loadFixturePng('python_logo.png')
+    const source = expectDefined(ck.MakeImageFromEncoded(bytes), 'source png')
+    expect(source.width()).toBe(580)
+    expect(source.height()).toBe(164)
+    source.delete()
+
+    const result = preprocessForVectorize(bytes, () => ck)
+    const processed = expectDefined(result, 'preprocess result')
+    expect(processed.originalWidth).toBe(580)
+    expect(processed.originalHeight).toBe(164)
+    expect(Math.min(processed.width, processed.height)).toBeGreaterThanOrEqual(256)
+    expect(processed.width).toBeGreaterThan(580)
+    expect(processed.height).toBe(256)
+  })
+
+  test('euro_shield.png keeps dimensions and alpha', async () => {
+    const bytes = await loadFixturePng('euro_shield.png')
+    const result = preprocessForVectorize(bytes, () => ck)
+    const processed = expectDefined(result, 'preprocess result')
+    expect(processed.width).toBe(577)
+    expect(processed.height).toBe(721)
+
+    const decoded = expectDefined(ck.MakeImageFromEncoded(processed.pngBytes), 'decoded png')
+    expect(countTransparentPixels(decoded)).toBeGreaterThan(0)
+    decoded.delete()
+  })
+
+  test('pilot_avatar.png keeps dimensions without upscale', async () => {
+    const bytes = await loadFixturePng('pilot_avatar.png')
+    const result = preprocessForVectorize(bytes, () => ck)
+    const processed = expectDefined(result, 'preprocess result')
+    expect(processed.width).toBe(412)
+    expect(processed.height).toBe(364)
+    expect(Math.min(processed.width, processed.height)).toBeGreaterThanOrEqual(256)
+
+    const decoded = expectDefined(ck.MakeImageFromEncoded(processed.pngBytes), 'decoded png')
+    expect(countTransparentPixels(decoded)).toBeGreaterThan(0)
+    decoded.delete()
+  })
+
+  test('sander_test_01.png preprocesses opaque illustration', async () => {
+    const bytes = await loadFixturePng('sander_test_01.png')
+    const source = expectDefined(ck.MakeImageFromEncoded(bytes), 'source png')
+    expect(source.width()).toBe(417)
+    expect(source.height()).toBe(391)
+    const sourceTransparent = countTransparentPixels(source)
+    source.delete()
+
+    const result = preprocessForVectorize(bytes, () => ck)
+    const processed = expectDefined(result, 'preprocess result')
+    expect(processed.width).toBe(417)
+    expect(processed.height).toBe(391)
+    expect(processed.pngBytes.length).toBeGreaterThan(0)
+    expect(processed.pngBytes.length).toBeLessThanOrEqual(5 * 1024 * 1024)
+    expect(sourceTransparent).toBe(0)
   })
 })
 
