@@ -7,6 +7,7 @@
 | E2E visual regression | Playwright | `bun run test`       | `tests/e2e/`    |
 | Figma CDP reference   | Playwright | `bun run test:figma` | `tests/figma/`  |
 | Unit tests            | bun:test   | `bun run test:unit`  | `tests/engine/` |
+| Coverage              | Bun + Playwright | `bun run coverage:report` | `.context/coverage/` |
 
 ## E2E Visual Regression
 
@@ -53,6 +54,21 @@ Tests cover:
 - Scene graph CRUD operations, parent-child relationships, z-ordering, hit testing
 - **Fig-import pipeline** — node type mapping, transforms, fills/strokes/effects, gradients, images, arcs, nested hierarchies (`tests/engine/io/fig/import/legacy/*.test.ts`)
 - **Layout computation** — Yoga auto-layout: direction, gap, padding, justify, align, child sizing (fixed/fill/hug), cross-axis sizing, wrap, nested layouts (`tests/engine/layout/`)
+
+## Coverage Reporting
+
+Coverage artifacts are written to `.context/coverage/` and are git-ignored.
+
+```sh
+bun run coverage:unit
+bun run coverage:e2e:demo
+bun run coverage:report
+```
+
+- `coverage:unit` writes `.context/coverage/unit/lcov.info` with Bun's native reporter
+- `coverage:e2e:demo` is opt-in and only measures `tests/e2e/interaction/dashboard.interaction.spec.ts`
+- `coverage:report` merges unit and demo E2E LCOV files, prints summary percentages, and lists the highest-priority uncovered files
+- Bun 1.3.14 does not emit branch records in LCOV, so the merged report shows branches as `n/a` for now
 
 ### Writing Unit Tests
 

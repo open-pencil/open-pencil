@@ -34,6 +34,7 @@ test-results/
 .worktrees/
 .env
 .context/api-data/
+.context/coverage/
 packages/api/.context/api-data/
 packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/

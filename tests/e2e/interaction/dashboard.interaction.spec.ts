@@ -2,14 +2,19 @@ import { expect, test } from '@playwright/test'
 
 import { cleanState, seedBoards } from '#tests/helpers/api-seed'
 import { mockGoogleLogin } from '#tests/helpers/e2e-auth'
+import { useE2ECoverage } from '#tests/helpers/e2e-coverage'
 import { clickAndWaitForResponse, expectModal } from '#tests/helpers/interaction'
 
 test.describe('dashboard interaction', () => {
+  useE2ECoverage(test, 'dashboard-interaction')
+
   test.beforeEach(async ({ page }) => {
     await cleanState(page)
   })
 
-  test('login banner is visible for anonymous users and links to Google login', async ({ page }) => {
+  test('login banner is visible for anonymous users and links to Google login', async ({
+    page
+  }) => {
     await page.goto('/boards')
     const banner = page.getByTestId('login-banner')
     await expect(banner).toBeVisible()

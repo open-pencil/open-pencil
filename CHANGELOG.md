@@ -7,6 +7,7 @@
 - Persist board, invitation, and collaborator API records in SQLite with drizzle migrations, and send invitation emails through Resend with a dry-run fallback when no API key is configured.
 - Add a notification center for signed-in users with unread badges, dashboard popovers, and inbox views for board invites, team invites, and mentions.
 - Deliver notification center updates over authenticated WebSockets with polling fallback, and add realtime @mention notifications from editor text input.
+- Add unit coverage LCOV output, threshold configuration, a demo Playwright coverage flow, and a merged coverage summary script under `.context/coverage/`.
 
 ### Changed
 

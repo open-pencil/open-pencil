@@ -249,7 +249,26 @@ bun run tauri dev  # Desktop app (requires Rust)
 | `bun run check` | Lint + typecheck |
 | `bun run test` | E2E visual regression |
 | `bun run test:unit` | Unit tests |
+| `bun run coverage:unit` | Unit coverage (`.context/coverage/unit/lcov.info`) |
+| `bun run coverage:e2e:demo` | Demo E2E coverage for `dashboard.interaction.spec.ts` (`.context/coverage/e2e/`) |
+| `bun run coverage:report` | Run unit + demo E2E coverage and print a merged summary |
 | `bun run format` | Code formatting |
+
+### Coverage
+
+Coverage artifacts are written under `.context/coverage/` and are intentionally git-ignored.
+
+```sh
+bun run coverage:unit
+bun run coverage:e2e:demo
+bun run coverage:report
+```
+
+- Unit coverage uses Bun's native LCOV reporter and writes `.context/coverage/unit/lcov.info`
+- Bun threshold enforcement is configured in `bunfig.toml` with an initial baseline of 60% lines / 60% functions / 60% statements
+- Bun 1.3.14 does not emit branch data in LCOV, so branch coverage is reported as `n/a` in the merged summary until Bun exposes branch records
+- Demo E2E coverage is opt-in and intentionally scoped to `tests/e2e/interaction/dashboard.interaction.spec.ts`; it also copies Playwright trace zips into `.context/coverage/e2e/traces/`
+- Prioritize uncovered files with the largest uncovered line counts in the merged report before tightening thresholds
 
 ### Project structure
 
