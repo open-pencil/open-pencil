@@ -6,6 +6,10 @@
 
 - Convert selected raster images to editable vectors via **Convert to Vector** in the canvas context menu (Recraft or fal API key in AI provider settings).
 
+### Fixes
+
+- Image vectorization now maps Recraft SVG `viewBox` coordinates correctly (avoids oversized paths) and tightens the result frame to actual path bounds instead of the full bitmap rectangle.
+
 ### Changed
 
 - Add JSX authoring support for components, component sets, and instances.

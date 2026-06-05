@@ -1,21 +1,44 @@
 import { parseColor } from '#core/color'
+import { computeBounds } from '#core/geometry'
 import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
-import { parseSvgSize } from '#core/tools/create/svg'
+import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
+import type { Rect } from '#core/types'
+import { computeAccurateBounds } from '#core/vector'
 
-function scaleVectorNetwork(network: VectorNetwork, sx: number, sy: number): VectorNetwork {
+function mapNetworkToBounds(
+  network: VectorNetwork,
+  space: Rect,
+  target: { width: number; height: number }
+): VectorNetwork {
+  const sx = target.width / space.width
+  const sy = target.height / space.height
   return {
     vertices: network.vertices.map((vertex) => ({
       ...vertex,
-      x: vertex.x * sx,
-      y: vertex.y * sy
+      x: (vertex.x - space.x) * sx,
+      y: (vertex.y - space.y) * sy
     })),
     segments: network.segments,
     regions: network.regions
   }
+}
+
+function parseSvgCoordinateSpace(svg: string): Rect {
+  const viewBox = parseSvgViewBox(svg)
+  if (viewBox && viewBox.width > 0 && viewBox.height > 0) return viewBox
+  const size = parseSvgSize(svg)
+  return { x: 0, y: 0, width: size.width, height: size.height }
+}
+
+function unionPathBounds(paths: VectorizedPath[]): Rect {
+  const rects = paths
+    .map((path) => computeAccurateBounds(path.vectorNetwork))
+    .filter((bounds) => bounds.width > 0 && bounds.height > 0)
+  return computeBounds(rects)
 }
 
 function resolveFill(path: IconPathInfo, defaultColor: string): Fill[] {
@@ -43,6 +66,8 @@ export interface VectorizedPath {
 
 export interface SvgVectorizeResult {
   paths: VectorizedPath[]
+  /** Tight bounds of path geometry in the target coordinate space. */
+  contentBounds: Rect
 }
 
 export function svgToVectorPaths(
@@ -53,17 +78,15 @@ export function svgToVectorPaths(
   const paths = extractPaths(svgText)
   if (paths.length === 0) return null
 
-  const { width: svgWidth, height: svgHeight } = parseSvgSize(svgText)
-  if (svgWidth <= 0 || svgHeight <= 0) return null
+  const space = parseSvgCoordinateSpace(svgText)
+  if (space.width <= 0 || space.height <= 0) return null
 
-  const sx = bounds.width / svgWidth
-  const sy = bounds.height / svgHeight
   const defaultColor = options?.defaultColor ?? '#000000'
 
   const vectorized: VectorizedPath[] = []
   for (const path of paths) {
     const fillRule: WindingRule = path.fillRule
-    const network = scaleVectorNetwork(parseSVGPath(path.d, fillRule), sx, sy)
+    const network = mapNetworkToBounds(parseSVGPath(path.d, fillRule), space, bounds)
     vectorized.push({
       vectorNetwork: network,
       fills: resolveFill(path, defaultColor),
@@ -71,5 +94,5 @@ export function svgToVectorPaths(
     })
   }
 
-  return { paths: vectorized }
+  return { paths: vectorized, contentBounds: unionPathBounds(vectorized) }
 }

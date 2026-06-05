@@ -169,6 +169,30 @@ describe('svgToVectorPaths', () => {
     expect(maxX).toBeCloseTo(200, 0)
   })
 
+  test('uses viewBox user units when width/height attributes differ', () => {
+    const svg = `<svg width="577" height="721" viewBox="0 0 100 125" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0 H100 V125 H0 Z" fill="#003399"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 577, height: 721 })
+    const path = expectDefined(result?.paths[0], 'vector path')
+    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    expect(maxX).toBeCloseTo(577, 0)
+    expect(maxY).toBeCloseTo(721, 0)
+  })
+
+  test('reports tight content bounds inside target bounds', () => {
+    const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M25 25 H75 V75 H25 Z" fill="#ffcc00"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 200, height: 200 })
+    const bounds = expectDefined(result?.contentBounds, 'content bounds')
+    expect(bounds.x).toBeCloseTo(50, 0)
+    expect(bounds.y).toBeCloseTo(50, 0)
+    expect(bounds.width).toBeCloseTo(100, 0)
+    expect(bounds.height).toBeCloseTo(100, 0)
+  })
+
   test('falls back to solid fill for gradient references', () => {
     const svg = `<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
       <defs>

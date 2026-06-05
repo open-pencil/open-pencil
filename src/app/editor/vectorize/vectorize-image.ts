@@ -11,6 +11,7 @@ import {
 } from '@/app/ai/chat/storage'
 import { openProviderSettingsPane } from '@/app/ai/chat/use'
 import type { EditorStore } from '@/app/editor/active-store'
+import { createVectorFrameChildren, resolveVectorFramePlacement } from '@/app/editor/vectorize/placement'
 import { falVectorize, recraftVectorize } from '@/app/editor/vectorize/providers'
 import { toast } from '@/app/shell/ui'
 
@@ -90,6 +91,8 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
       throw new Error('Vectorizer returned no editable paths')
     }
 
+    const placement = resolveVectorFramePlacement(node, vectorized.contentBounds)
+
     const parentId = node.parentId
     if (!parentId) throw new Error('Image node has no parent')
 
@@ -102,26 +105,15 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
 
     const frame = store.graph.createNode('FRAME', parentId, {
       name: node.name,
-      x: node.x,
-      y: node.y,
-      width: node.width,
-      height: node.height,
+      x: placement.x,
+      y: placement.y,
+      width: placement.width,
+      height: placement.height,
       fills: []
     })
     const frameId = frame.id
 
-    for (const [index, path] of vectorized.paths.entries()) {
-      store.graph.createNode('VECTOR', frame.id, {
-        name: `path ${index + 1}`,
-        x: 0,
-        y: 0,
-        width: node.width,
-        height: node.height,
-        vectorNetwork: path.vectorNetwork,
-        fills: path.fills,
-        strokes: path.strokes
-      })
-    }
+    createVectorFrameChildren(store.graph, frameId, vectorized, placement)
 
     const frameSubtree = snapshotSubtree(store.graph, frameId)
     store.graph.deleteNode(node.id)
