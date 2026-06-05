@@ -1,5 +1,6 @@
-import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '#core/scene-graph'
+import type { GeometryPath, SceneGraph, SceneNode } from '#core/scene-graph'
 import { copyGeometryPaths } from '#core/scene-graph/copy'
+import { scaleVectorNetwork } from '#core/vector/scale'
 
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
@@ -74,23 +75,6 @@ function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): Geome
     }
     return { windingRule: g.windingRule, commandsBlob: scaled }
   })
-}
-
-function scaleVectorNetwork(
-  network: VectorNetwork | null,
-  sx: number,
-  sy: number
-): VectorNetwork | null {
-  if (!network) return null
-  return {
-    vertices: network.vertices.map((vertex) => ({ ...vertex, x: vertex.x * sx, y: vertex.y * sy })),
-    segments: network.segments.map((segment) => ({
-      ...segment,
-      tangentStart: { x: segment.tangentStart.x * sx, y: segment.tangentStart.y * sy },
-      tangentEnd: { x: segment.tangentEnd.x * sx, y: segment.tangentEnd.y * sy }
-    })),
-    regions: structuredClone(network.regions)
-  }
 }
 
 function scaledStrokes(

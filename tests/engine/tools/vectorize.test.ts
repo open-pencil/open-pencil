@@ -198,6 +198,18 @@ describe('svgToVectorPaths', () => {
     expect(maxY).toBeCloseTo(721, 0)
   })
 
+  test('scales cubic tangents when mapping viewBox to target bounds', () => {
+    const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 50 C40 0, 60 100, 100 50" fill="#336699"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 200, height: 200 })
+    const segment = expectDefined(result?.paths[0]?.vectorNetwork.segments[0], 'cubic segment')
+    expect(segment.tangentStart.x).toBeCloseTo(80, 0)
+    expect(segment.tangentStart.y).toBeCloseTo(-100, 0)
+    expect(segment.tangentEnd.x).toBeCloseTo(-80, 0)
+    expect(segment.tangentEnd.y).toBeCloseTo(100, 0)
+  })
+
   test('reports tight content bounds inside target bounds', () => {
     const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <path d="M25 25 H75 V75 H25 Z" fill="#ffcc00"/>

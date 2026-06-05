@@ -1,3 +1,8 @@
+/**
+ * Maps vendor SVG into scene-graph vector networks.
+ * Recraft returns paths in viewBox user units with width/height set to the input pixel size —
+ * always scale using viewBox (see src/app/editor/vectorize/RECRAFT-API.md).
+ */
 import { parseColor } from '#core/color'
 import { computeBounds } from '#core/geometry'
 import { createPathStroke } from '#core/icons/path-style'
@@ -8,7 +13,7 @@ import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
 import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
 import { applySvgTransformToPath } from '#core/tools/vectorize/svg-transform'
 import type { Rect } from '#core/types'
-import { computeAccurateBounds } from '#core/vector'
+import { computeAccurateBounds, scaleVectorNetwork } from '#core/vector'
 
 function mapNetworkToBounds(
   network: VectorNetwork,
@@ -17,15 +22,16 @@ function mapNetworkToBounds(
 ): VectorNetwork {
   const sx = target.width / space.width
   const sy = target.height / space.height
-  return {
+  const translated: VectorNetwork = {
     vertices: network.vertices.map((vertex) => ({
       ...vertex,
-      x: (vertex.x - space.x) * sx,
-      y: (vertex.y - space.y) * sy
+      x: vertex.x - space.x,
+      y: vertex.y - space.y
     })),
     segments: network.segments,
     regions: network.regions
   }
+  return scaleVectorNetwork(translated, sx, sy)
 }
 
 function parseSvgCoordinateSpace(svg: string): Rect {
