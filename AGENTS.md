@@ -99,6 +99,9 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 - `bun run test:dupes` — jscpd copy-paste detection across all TS sources
 - `bun run format` — oxfmt with import sorting
 - `bun test ./tests/engine` — unit tests
+- `bun run coverage:unit` — Bun unit coverage with LCOV output at `.context/coverage/unit/lcov.info`
+- `bun run coverage:e2e:demo` — opt-in Playwright JS coverage demo for `tests/e2e/interaction/dashboard.interaction.spec.ts`
+- `bun run coverage:report` — run unit + demo E2E coverage and print merged summary with uncovered files
 - `bun run test` — Playwright visual regression
 - `bun run tauri dev` — desktop app with hot reload
 - `bun inkly info <file>` — document stats
@@ -148,6 +151,7 @@ bun run format         # oxfmt
 bun run test:dupes     # jscpd — zero clones
 bun run test:unit      # bun:test
 bun run test           # Playwright E2E
+bun run coverage:unit  # Bun LCOV output + threshold check
 ```
 
 ## Documentation

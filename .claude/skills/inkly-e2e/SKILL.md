@@ -158,3 +158,19 @@ spec が intermittent fail する時に確認する 5 項目。
 - `references/canvaskit-resource-lifecycle.md` — Picture / Surface / Image の delete タイミング規約 (memory leak / GPU pressure 防止)
 - `references/visual-regression.md` — visual regression spec (tests/e2e/visual/) の inkly 固有 patterns、 baseline 更新手順、 SwiftShader / font 影響と対策、 seed helper 活用
 - `references/a11y-spec.md` — a11y spec (tests/e2e/a11y/) の axe-core 統合 patterns、 impact 取り扱い、 false positive 対策、 disableRules の document 化規約
+- `references/coverage.md` — unit / e2e coverage 計測コマンド、 LCOV 出力先、 threshold baseline、 未カバー file の優先順位
+
+## 11. coverage 計測
+
+e2e spec 変更時に「どこが未テストか」を可視化したい場合は coverage workflow を使う。
+
+- unit: `bun run coverage:unit`
+- demo e2e: `bun run coverage:e2e:demo`
+- merged summary: `bun run coverage:report`
+
+規約:
+
+- coverage artifact は `.context/coverage/` 配下に固定
+- E2E coverage は default off。 重いので opt-in script だけで回す
+- まず `coverage:report` の上位 uncovered file を見て、 中核ロジックから埋める
+- branch coverage は Bun 側 LCOV 制約で現状 `n/a` になるため、 report の注記も確認する
