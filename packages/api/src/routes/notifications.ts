@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 
 import { getAuthSession, type InklyAuth } from '../auth/index.js'
+import { DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS } from '../notificationStore.js'
 import type { BoardStore, NotificationStore, TeamStore, TeamUserRecord } from '../types.js'
 
 export interface NotificationRoutesOptions {
@@ -9,6 +10,7 @@ export interface NotificationRoutesOptions {
   boardStore: BoardStore
   notificationStore: NotificationStore
   teamStore: TeamStore
+  env?: NodeJS.ProcessEnv
 }
 
 const createMentionSchema = z.object({
@@ -17,6 +19,12 @@ const createMentionSchema = z.object({
   sourceUserId: z.string().trim().min(1),
   text: z.string().trim().min(1).max(4_000)
 })
+
+const sweepNotificationsSchema = z.object({
+  olderThanMs: z.number().int().positive().optional()
+})
+
+const LOCALHOST_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
 
 function errorResponse(status: number, code: string, message: string) {
   return Response.json(
@@ -39,6 +47,11 @@ function dedupeUsers(users: TeamUserRecord[]) {
   })
 }
 
+function isLocalhostRequest(requestUrl: string) {
+  const url = new URL(requestUrl)
+  return LOCALHOST_HOSTNAMES.has(url.hostname)
+}
+
 function resolveMentionableUsers(options: NotificationRoutesOptions, boardId: string) {
   const board = options.boardStore.findBoard(boardId)
   if (!board) return null
@@ -57,6 +70,37 @@ function resolveMentionableUsers(options: NotificationRoutesOptions, boardId: st
 
 export function createNotificationRoutes(options: NotificationRoutesOptions): Hono {
   const app = new Hono()
+
+  app.post('/notifications/sweep', async (c) => {
+    if (!isLocalhostRequest(c.req.url)) {
+      return errorResponse(403, 'forbidden', 'Sweep is only available from localhost')
+    }
+
+    const configuredToken = options.env?.INKLY_API_SWEEP_TOKEN?.trim() ?? ''
+    if (!configuredToken) {
+      return errorResponse(503, 'sweep_unavailable', 'Sweep token is not configured')
+    }
+
+    const providedToken = c.req.header('X-Sweep-Token')?.trim() ?? ''
+    if (providedToken !== configuredToken) {
+      return errorResponse(403, 'forbidden', 'Invalid sweep token')
+    }
+
+    const body = await c.req.json().catch(() => ({}))
+    const parsed = sweepNotificationsSchema.safeParse(body)
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0]?.message ?? 'Invalid request body'
+      return errorResponse(400, 'invalid_request_body', issue)
+    }
+
+    const olderThanMs = parsed.data.olderThanMs ?? DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS
+    const deletedCount = options.notificationStore.sweepOldNotifications(olderThanMs)
+    console.log(
+      `[inkly-api] Notification sweep deleted ${deletedCount} records older than ${olderThanMs}ms`
+    )
+
+    return c.json({ deletedCount })
+  })
 
   app.get('/notifications', async (c) => {
     const session = await getAuthSession(options.auth, c.req.raw)

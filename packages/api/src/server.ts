@@ -5,7 +5,10 @@ import { createBoardStore } from './boardStore.js'
 import { resolveApiDatabaseOptions, type ApiDatabase } from './db/client.js'
 import { createMigratedApiDatabase } from './db/migrate.js'
 import { createResendEmailSender, type InvitationEmailSender } from './email/resend.js'
-import { createNotificationStore } from './notificationStore.js'
+import {
+  createNotificationStore,
+  DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS
+} from './notificationStore.js'
 import { createAuthRoutes } from './routes/auth.js'
 import { createBoardRoutes } from './routes/boards.js'
 import { createInviteRoutes } from './routes/invite.js'
@@ -29,6 +32,7 @@ import { createSignalingServer, type SignalingPeerData } from './ws/signaling.js
 
 export const API_HOST = '127.0.0.1'
 export const API_PORT = 3001
+const AUTO_SWEEP_INTERVAL_MS = 24 * 3600 * 1000
 
 export interface CreateApiAppOptions {
   secret: string
@@ -50,8 +54,9 @@ export interface StartApiServerOptions extends CreateApiAppOptions {
 }
 
 export function createApiApp(options: CreateApiAppOptions) {
+  const env = options.env ?? process.env
   const database =
-    options.database ?? createMigratedApiDatabase(resolveApiDatabaseOptions(options.env))
+    options.database ?? createMigratedApiDatabase(resolveApiDatabaseOptions(env))
   const store = options.store ?? createInvitationStore({ database, now: options.now })
   const boardStore = options.boardStore ?? createBoardStore({ database, now: options.now })
   const teamStore = options.teamStore ?? createTeamStore({ database, now: options.now })
@@ -65,14 +70,14 @@ export function createApiApp(options: CreateApiAppOptions) {
   const emailSender =
     options.emailSender ??
     createResendEmailSender({
-      apiKey: options.env?.INKLY_API_RESEND_KEY,
+      apiKey: env.INKLY_API_RESEND_KEY,
       logger: console.log
     })
   const auth =
     options.auth ??
     createInklyAuth({
       database,
-      env: options.env,
+      env,
       fallbackSecret: options.secret,
       logger: console
     })
@@ -131,7 +136,8 @@ export function createApiApp(options: CreateApiAppOptions) {
       auth,
       boardStore,
       notificationStore,
-      teamStore
+      teamStore,
+      env
     })
   )
 
@@ -141,7 +147,8 @@ export function createApiApp(options: CreateApiAppOptions) {
 }
 
 export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
-  const secret = options.secret ?? resolveJwtSecret(options.env)
+  const env = options.env ?? process.env
+  const secret = options.secret ?? resolveJwtSecret(env)
   const port = options.port ?? API_PORT
   const host = options.host ?? API_HOST
   let onNotificationCreated: ((notification: NotificationRecord) => void) | undefined
@@ -153,7 +160,7 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
       database: options.database,
       auth: options.auth,
       emailSender: options.emailSender,
-      env: options.env,
+      env,
       secret,
       store: options.store,
       now: options.now,
@@ -165,6 +172,18 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
   const notifications = createNotificationWebSocketServer(auth)
   onNotificationCreated = (notification) => {
     notifications.pushNotification(notification)
+  }
+
+  if (env.INKLY_API_AUTO_SWEEP === '1') {
+    const timer = setInterval(() => {
+      const deletedCount = notificationStore.sweepOldNotifications(
+        DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS
+      )
+      console.log(
+        `[inkly-api] Notification auto-sweep deleted ${deletedCount} records older than ${DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS}ms`
+      )
+    }, AUTO_SWEEP_INTERVAL_MS)
+    timer.unref?.()
   }
 
   const server = Bun.serve({

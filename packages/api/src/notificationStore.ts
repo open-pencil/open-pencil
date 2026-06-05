@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, lt } from 'drizzle-orm'
 
 import type { ApiDatabase } from './db/client.js'
 import { createMigratedApiDatabase } from './db/migrate.js'
@@ -16,6 +16,8 @@ export interface CreateNotificationStoreOptions {
   now?: () => number
   onNotificationCreated?: (notification: NotificationRecord) => void
 }
+
+export const DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS = 30 * 24 * 3600 * 1000
 
 function createInMemoryDatabase() {
   return createMigratedApiDatabase({ mode: 'memory' })
@@ -137,6 +139,13 @@ export function createNotificationStore(
       if (!record || record.userId !== userId) return null
       database.db.delete(notifications).where(eq(notifications.id, id)).run()
       return record
+    },
+    sweepOldNotifications(olderThanMs = DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS) {
+      const threshold = now() - olderThanMs
+      return database.db
+        .delete(notifications)
+        .where(lt(notifications.createdAt, threshold))
+        .run().changes
     }
   }
 }

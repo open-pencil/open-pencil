@@ -202,6 +202,7 @@ export interface NotificationStore {
   markNotificationRead(id: string, userId: string): NotificationRecord | null
   markAllNotificationsRead(userId: string): number
   deleteNotification(id: string, userId: string): NotificationRecord | null
+  sweepOldNotifications(olderThanMs?: number): number
 }
 
 export interface TeamStore {
