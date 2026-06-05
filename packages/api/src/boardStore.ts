@@ -8,7 +8,8 @@ import type {
   BoardCollaboratorRecord,
   BoardRecord,
   BoardStore,
-  CreateBoardInput
+  CreateBoardInput,
+  UpdateBoardInput
 } from './types.js'
 
 export interface CreateBoardStoreOptions {
@@ -20,9 +21,7 @@ function cloneBoard(record: BoardRecord): BoardRecord {
   return structuredClone(record)
 }
 
-function mapCollaborator(
-  row: typeof collaborators.$inferSelect
-): BoardCollaboratorRecord {
+function mapCollaborator(row: typeof collaborators.$inferSelect): BoardCollaboratorRecord {
   return {
     anonymousId: row.anonymousId,
     role: row.role,
@@ -44,6 +43,8 @@ function createRecordMapper(database: ApiDatabase) {
       id: row.id,
       name: row.name,
       creatorAnonymousId: row.creatorAnonymousId,
+      creatorUserId: row.creatorUserId,
+      teamId: row.teamId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       collaborators: collaboratorRows.map(mapCollaborator)
@@ -55,6 +56,59 @@ function createInMemoryDatabase() {
   return createMigratedApiDatabase({ mode: 'memory' })
 }
 
+function mapBoardRows(
+  database: ApiDatabase,
+  rows: Array<Pick<typeof boards.$inferSelect, 'id' | 'name' | 'creatorAnonymousId' | 'creatorUserId' | 'teamId' | 'createdAt' | 'updatedAt'>>
+) {
+  if (rows.length === 0) return []
+
+  const collaboratorRows = database.db
+    .select()
+    .from(collaborators)
+    .where(
+      inArray(
+        collaborators.boardId,
+        rows.map((row) => row.id)
+      )
+    )
+    .orderBy(asc(collaborators.addedAt))
+    .all()
+
+  const collaboratorsByBoardId = new Map<string, BoardCollaboratorRecord[]>()
+  for (const collaborator of collaboratorRows) {
+    const records = collaboratorsByBoardId.get(collaborator.boardId) ?? []
+    records.push(mapCollaborator(collaborator))
+    collaboratorsByBoardId.set(collaborator.boardId, records)
+  }
+
+  return rows.map((row) =>
+    cloneBoard({
+      id: row.id,
+      name: row.name,
+      creatorAnonymousId: row.creatorAnonymousId,
+      creatorUserId: row.creatorUserId,
+      teamId: row.teamId,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      collaborators: collaboratorsByBoardId.get(row.id) ?? []
+    })
+  )
+}
+
+function validateCreateBoardInput(input: CreateBoardInput) {
+  const creatorAnonymousId = input.creatorAnonymousId?.trim() ?? ''
+  const creatorUserId = input.creatorUserId?.trim() ?? ''
+
+  if (!creatorAnonymousId && !creatorUserId) {
+    throw new Error('Board creator is required')
+  }
+
+  return {
+    creatorAnonymousId,
+    creatorUserId: creatorUserId || null
+  }
+}
+
 export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardStore {
   const database = options.database ?? createInMemoryDatabase()
   const now = options.now ?? Date.now
@@ -64,6 +118,8 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
     createBoard(input: CreateBoardInput) {
       const createdAt = now()
       const id = crypto.randomUUID()
+      const { creatorAnonymousId, creatorUserId } = validateCreateBoardInput(input)
+      const teamId = input.teamId?.trim() || null
 
       database.db.transaction((tx) => {
         tx
@@ -71,22 +127,26 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
           .values({
             id,
             name: input.name,
-            creatorAnonymousId: input.creatorAnonymousId,
+            creatorAnonymousId,
+            creatorUserId,
+            teamId,
             createdAt,
             updatedAt: createdAt
           })
           .run()
 
-        tx
-          .insert(collaborators)
-          .values({
-            boardId: id,
-            anonymousId: input.creatorAnonymousId,
-            role: 'owner',
-            addedAt: createdAt,
-            invitationId: null
-          })
-          .run()
+        if (creatorAnonymousId) {
+          tx
+            .insert(collaborators)
+            .values({
+              boardId: id,
+              anonymousId: creatorAnonymousId,
+              role: 'owner',
+              addedAt: createdAt,
+              invitationId: null
+            })
+            .run()
+        }
       })
 
       const record = this.findBoard(id)
@@ -103,6 +163,8 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
           id: boards.id,
           name: boards.name,
           creatorAnonymousId: boards.creatorAnonymousId,
+          creatorUserId: boards.creatorUserId,
+          teamId: boards.teamId,
           createdAt: boards.createdAt,
           updatedAt: boards.updatedAt
         })
@@ -117,37 +179,43 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         .orderBy(desc(boards.updatedAt))
         .all()
 
-      if (boardRows.length === 0) return []
-
-      const collaboratorRows = database.db
-        .select()
-        .from(collaborators)
-        .where(
-          inArray(
-            collaborators.boardId,
-            boardRows.map((row) => row.id)
-          )
-        )
-        .orderBy(asc(collaborators.addedAt))
+      return mapBoardRows(database, boardRows)
+    },
+    listBoardsForUser(userId: string) {
+      const boardRows = database.db
+        .select({
+          id: boards.id,
+          name: boards.name,
+          creatorAnonymousId: boards.creatorAnonymousId,
+          creatorUserId: boards.creatorUserId,
+          teamId: boards.teamId,
+          createdAt: boards.createdAt,
+          updatedAt: boards.updatedAt
+        })
+        .from(boards)
+        .where(eq(boards.creatorUserId, userId))
+        .orderBy(desc(boards.updatedAt))
         .all()
 
-      const collaboratorsByBoardId = new Map<string, BoardCollaboratorRecord[]>()
-      for (const collaborator of collaboratorRows) {
-        const records = collaboratorsByBoardId.get(collaborator.boardId) ?? []
-        records.push(mapCollaborator(collaborator))
-        collaboratorsByBoardId.set(collaborator.boardId, records)
-      }
-
-      return boardRows.map((row) =>
-        cloneBoard({
-          id: row.id,
-          name: row.name,
-          creatorAnonymousId: row.creatorAnonymousId,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-          collaborators: collaboratorsByBoardId.get(row.id) ?? []
+      return mapBoardRows(database, boardRows)
+    },
+    listBoardsForTeam(teamId: string) {
+      const boardRows = database.db
+        .select({
+          id: boards.id,
+          name: boards.name,
+          creatorAnonymousId: boards.creatorAnonymousId,
+          creatorUserId: boards.creatorUserId,
+          teamId: boards.teamId,
+          createdAt: boards.createdAt,
+          updatedAt: boards.updatedAt
         })
-      )
+        .from(boards)
+        .where(eq(boards.teamId, teamId))
+        .orderBy(desc(boards.updatedAt))
+        .all()
+
+      return mapBoardRows(database, boardRows)
     },
     deleteBoard(id: string) {
       const record = this.findBoard(id)
@@ -188,6 +256,45 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
 
       const record = this.findBoard(boardId)
       return record ? cloneBoard(record) : null
+    },
+    updateBoard(id: string, input: UpdateBoardInput) {
+      const record = this.findBoard(id)
+      if (!record) return null
+
+      const nextName = input.name?.trim()
+      const nextTeamId = input.teamId === undefined ? record.teamId : (input.teamId?.trim() || null)
+      const changes: typeof boards.$inferInsert = {
+        id: record.id,
+        name: nextName && nextName.length > 0 ? nextName : record.name,
+        creatorAnonymousId: record.creatorAnonymousId,
+        creatorUserId: record.creatorUserId,
+        teamId: nextTeamId,
+        createdAt: record.createdAt,
+        updatedAt: now()
+      }
+
+      database.db
+        .update(boards)
+        .set({
+          name: changes.name,
+          teamId: changes.teamId,
+          updatedAt: changes.updatedAt
+        })
+        .where(eq(boards.id, id))
+        .run()
+
+      const updated = this.findBoard(id)
+      return updated ? cloneBoard(updated) : null
+    },
+    clearTeamForBoards(teamId: string) {
+      return database.db
+        .update(boards)
+        .set({
+          teamId: null,
+          updatedAt: now()
+        })
+        .where(eq(boards.teamId, teamId))
+        .run().changes
     }
   }
 }

@@ -1,9 +1,10 @@
 import { BOARD_API_ENDPOINTS } from '@/app/api/boards'
 
 export type InvitationRole = 'editor' | 'viewer'
+export type TeamMemberRole = 'owner' | 'editor' | 'viewer'
 
 const ANONYMOUS_ID_STORAGE_KEY = 'inkly.anonymous-id'
-const ANONYMOUS_ID_HEADER = 'X-Inkly-Anonymous-Id'
+export const ANONYMOUS_ID_HEADER = 'X-Inkly-Anonymous-Id'
 
 export interface BoardCollaborator {
   anonymousId: string
@@ -16,9 +17,17 @@ export interface Board {
   id: string
   name: string
   creatorAnonymousId: string
+  creatorUserId: string | null
+  teamId: string | null
   createdAt: number
   updatedAt: number
   collaborators: BoardCollaborator[]
+  team: BoardTeamSummary | null
+}
+
+export interface BoardTeamSummary {
+  id: string
+  name: string
 }
 
 export interface Invitation {
@@ -33,7 +42,7 @@ export interface Invitation {
   token: string | null
 }
 
-interface ApiErrorBody {
+export interface ApiErrorBody {
   error?: {
     code?: string
     message?: string
@@ -91,7 +100,7 @@ function buildHeaders(init: RequestInit): Headers {
   return headers
 }
 
-async function requestJson<T>(input: string, init: RequestInit = {}) {
+export async function requestJson<T>(input: string, init: RequestInit = {}) {
   const response = await fetch(input, {
     ...init,
     headers: buildHeaders(init)
@@ -102,7 +111,7 @@ async function requestJson<T>(input: string, init: RequestInit = {}) {
   return { response, data }
 }
 
-async function apiRequest<T>(input: string, init: RequestInit = {}): Promise<T> {
+export async function apiRequest<T>(input: string, init: RequestInit = {}): Promise<T> {
   const { response, data } = await requestJson<T>(input, init)
 
   if (!response.ok) {
@@ -141,12 +150,18 @@ export function clearAnonymousId() {
 }
 
 export function createBoardEditorLocation(board: Board) {
+  const query: Record<string, string> = {
+    board: board.id,
+    name: board.name
+  }
+
+  if (board.team?.name) {
+    query.teamName = board.team.name
+  }
+
   return {
     path: '/',
-    query: {
-      board: board.id,
-      name: board.name
-    }
+    query
   }
 }
 
@@ -155,10 +170,18 @@ export async function listBoards() {
   return response.boards
 }
 
-export function createBoard(name: string) {
+export function createBoard(input: { name: string; teamId?: string | null } | string) {
+  const payload = typeof input === 'string' ? { name: input } : input
   return apiRequest<Board>(BOARD_API_ENDPOINTS.boards, {
     method: 'POST',
-    body: JSON.stringify({ name })
+    body: JSON.stringify(payload)
+  })
+}
+
+export function updateBoard(boardId: string, input: { teamId?: string | null }) {
+  return apiRequest<Board>(BOARD_API_ENDPOINTS.board(boardId), {
+    method: 'PATCH',
+    body: JSON.stringify(input)
   })
 }
 

@@ -1,12 +1,13 @@
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-import type { BoardCollaboratorRecord, InvitationRole } from '../types.js'
+import type { BoardCollaboratorRecord, InvitationRole, TeamMemberRole } from '../types.js'
 
 export const boards = sqliteTable('boards', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   creatorAnonymousId: text('creator_anonymous_id').notNull(),
   creatorUserId: text('creator_user_id').references(() => users.id, { onDelete: 'set null' }),
+  teamId: text('team_id').references(() => teams.id, { onDelete: 'set null' }),
   createdAt: integer('created_at', { mode: 'number' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'number' }).notNull()
 })
@@ -45,6 +46,25 @@ export const collaborators = sqliteTable(
   ]
 )
 
+export const teamMembers = sqliteTable(
+  'team_members',
+  {
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role').$type<TeamMemberRole>().notNull(),
+    addedAt: integer('added_at', { mode: 'number' }).notNull()
+  },
+  (table) => [
+    primaryKey({ columns: [table.teamId, table.userId] }),
+    index('team_members_user_id_idx').on(table.userId),
+    index('team_members_role_idx').on(table.role)
+  ]
+)
+
 export const users = sqliteTable(
   'users',
   {
@@ -57,6 +77,20 @@ export const users = sqliteTable(
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull()
   },
   (table) => [uniqueIndex('users_email_unique').on(table.email)]
+)
+
+export const teams = sqliteTable(
+  'teams',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    ownerUserId: text('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at', { mode: 'number' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'number' }).notNull()
+  },
+  (table) => [index('teams_owner_user_id_idx').on(table.ownerUserId)]
 )
 
 export const sessions = sqliteTable(

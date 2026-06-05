@@ -2,6 +2,8 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 
 import { resolveAnonymousId } from '../anonymousId.js'
+import { isBoardOwner, resolveRequestActor } from '../auth/actor.js'
+import type { InklyAuth } from '../auth/index.js'
 import type { InvitationEmailSender } from '../email/resend.js'
 import {
   hashInvitationEmail,
@@ -35,6 +37,7 @@ interface ValidationErrorBody {
 }
 
 export interface InviteRoutesOptions {
+  auth: InklyAuth
   secret: string
   store: InvitationStore
   boardStore?: BoardStore
@@ -56,7 +59,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
   const now = options.now ?? Date.now
 
   app.post('/invite', async (c) => {
-    const anonymousId = resolveAnonymousId(c)
+    const actor = await resolveRequestActor(options.auth, c.req.raw, () => resolveAnonymousId(c))
     const body = await c.req.json().catch(() => null)
     const parsed = inviteRequestSchema.safeParse(body)
     if (!parsed.success) {
@@ -65,7 +68,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
     }
 
     const board = options.boardStore?.findBoard(parsed.data.boardId)
-    if (board && board.creatorAnonymousId !== anonymousId) {
+    if (board && !isBoardOwner(board, actor)) {
       return c.json(
         {
           error: {
@@ -107,7 +110,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
       await options.emailSender.sendInvitation({
         boardName: board?.name ?? 'Untitled board',
         invitationUrl,
-        inviterAnonymousId: anonymousId,
+        inviterAnonymousId: actor.anonymousId ?? actor.userId ?? 'unknown-user',
         role: invitation.role,
         to: parsed.data.email
       })
@@ -146,7 +149,6 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
 
     const invitation = options.store.findInvitation(verification.payload.sub)
     if (!invitation || invitation.revoked || invitation.jti !== verification.payload.jti) {
-      // Missing in-memory records are treated as revoked because Phase A storage is process-local.
       return c.json(
         {
           valid: false,

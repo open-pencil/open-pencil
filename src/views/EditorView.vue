@@ -58,6 +58,11 @@ const boardRoomId = computed(() =>
 const boardName = computed(() =>
   typeof route.query.name === 'string' && route.query.name.length > 0 ? route.query.name : null
 )
+const boardTeamName = computed(() =>
+  typeof route.query.teamName === 'string' && route.query.teamName.length > 0
+    ? route.query.teamName
+    : null
+)
 let previewWriteTimer: ReturnType<typeof setTimeout> | null = null
 
 function flushBoardPreview(boardId: string) {
@@ -176,6 +181,24 @@ onUnmounted(() => {
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
     <SafariBanner />
     <TabBar />
+    <div
+      v-if="showChrome && boardRoomId"
+      class="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-canvas/95 px-4 py-2"
+    >
+      <div class="flex min-w-0 items-center gap-2">
+        <span data-test-id="editor-document-name" class="truncate text-sm font-medium text-surface">
+          {{ store.state.documentName }}
+        </span>
+        <span
+          v-if="boardTeamName"
+          data-test-id="editor-team-badge"
+          class="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-amber-100"
+        >
+          {{ boardTeamName }}
+        </span>
+      </div>
+      <span v-if="boardRoomId" class="text-[11px] text-muted">Board {{ boardRoomId }}</span>
+    </div>
 
     <!-- Desktop layout -->
     <SplitterGroup

@@ -9,14 +9,23 @@ import { initials, toast } from '@/app/shell/ui'
 import BoardCard from '@/components/BoardCard.vue'
 import LoginBanner from '@/components/LoginBanner.vue'
 import AppInput from '@/components/ui/AppInput.vue'
-import { createBoard, deleteBoard, listBoards, type Board } from '@/app/api/client'
+import {
+  createBoard,
+  createBoardEditorLocation,
+  deleteBoard,
+  listBoards,
+  type Board
+} from '@/app/api/client'
+import { listTeams, type TeamSummary } from '@/app/api/teams'
 
 useHead({ title: 'Boards' })
 
 const router = useRouter()
 const auth = useAuthStore()
 const boards = ref<Board[]>([])
+const ownedTeams = ref<TeamSummary[]>([])
 const boardName = ref('Untitled board')
+const selectedTeamId = ref('personal')
 const searchQuery = ref('')
 const loading = ref(false)
 const creating = ref(false)
@@ -26,6 +35,7 @@ const authDisplayName = computed(() => auth.user?.name?.trim() || auth.user?.ema
 const authInitials = computed(() => initials(authDisplayName.value))
 const showLoginBanner = computed(() => auth.initialized && !auth.isAuthenticated)
 const showAccountLink = computed(() => auth.isAuthenticated)
+const hasOwnedTeams = computed(() => ownedTeams.value.length > 0)
 
 const filteredBoards = computed(() => {
   const query = searchQuery.value.trim().toLowerCase()
@@ -51,7 +61,7 @@ function syncPreviewsSoon(nextBoards: Board[]) {
   }, 250)
 }
 
-async function loadBoards() {
+async function loadBoardsView() {
   loading.value = true
   try {
     boards.value = await listBoards()
@@ -65,20 +75,34 @@ async function loadBoards() {
   }
 }
 
+async function loadOwnedTeams() {
+  if (!auth.isAuthenticated) {
+    ownedTeams.value = []
+    selectedTeamId.value = 'personal'
+    return
+  }
+
+  try {
+    const teams = await listTeams()
+    ownedTeams.value = teams.filter((team) => team.role === 'owner')
+  } catch (error) {
+    console.warn('[teams]', error)
+    ownedTeams.value = []
+  }
+}
+
 async function createAndOpenBoard() {
   creating.value = true
   try {
-    const board = await createBoard(boardName.value.trim() || 'Untitled board')
+    const board = await createBoard({
+      name: boardName.value.trim() || 'Untitled board',
+      teamId: selectedTeamId.value === 'personal' ? null : selectedTeamId.value
+    })
     boards.value = [board, ...boards.value.filter((candidate) => candidate.id !== board.id)]
     syncPreviewsSoon(boards.value)
     boardName.value = 'Untitled board'
-    await router.push({
-      path: '/',
-      query: {
-        board: board.id,
-        name: board.name
-      }
-    })
+    selectedTeamId.value = 'personal'
+    await router.push(createBoardEditorLocation(board))
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create board'
     toast.error(message)
@@ -88,13 +112,7 @@ async function createAndOpenBoard() {
 }
 
 function openBoard(board: Board) {
-  void router.push({
-    path: '/',
-    query: {
-      board: board.id,
-      name: board.name
-    }
-  })
+  void router.push(createBoardEditorLocation(board))
 }
 
 function openSettings(board: Board) {
@@ -123,9 +141,9 @@ async function startGoogleLogin() {
   }
 }
 
-onMounted(() => {
-  void auth.init()
-  void loadBoards()
+onMounted(async () => {
+  await auth.init()
+  await Promise.all([loadBoardsView(), loadOwnedTeams()])
 })
 </script>
 
@@ -138,8 +156,18 @@ onMounted(() => {
       <section
         class="flex flex-col gap-6 rounded-[28px] border border-white/8 bg-panel/80 p-6 shadow-2xl backdrop-blur-xl"
       >
-        <div v-if="showAccountLink" class="flex justify-end">
+        <div class="flex items-center justify-end gap-3">
           <RouterLink
+            to="/teams"
+            data-test-id="boards-teams-link"
+            class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-canvas/55 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
+          >
+            <icon-lucide-users class="size-4" />
+            <span>Teams</span>
+          </RouterLink>
+
+          <RouterLink
+            v-if="showAccountLink"
             to="/account"
             data-test-id="boards-account-link"
             class="inline-flex items-center gap-3 rounded-full border border-white/10 bg-canvas/55 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
@@ -167,27 +195,41 @@ onMounted(() => {
             <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-accent">Dashboard</p>
             <h1 class="text-3xl font-semibold text-surface">Your boards</h1>
             <p class="max-w-2xl text-sm text-muted">
-              Create a board, open it in the editor, and manage invitation links without leaving
-              Inkly.
+              Create a personal board or attach it to a team workspace without leaving Inkly.
             </p>
           </div>
 
-          <div class="flex w-full max-w-md flex-col gap-2 md:items-end">
+          <div class="flex w-full max-w-xl flex-col gap-2 md:items-end">
             <AppInput
               v-model="boardName"
               test-id="board-create-input"
               type="text"
               placeholder="Board name"
             />
-            <button
-              type="button"
-              data-test-id="board-create-button"
-              class="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
-              :disabled="creating"
-              @click="createAndOpenBoard"
-            >
-              {{ creating ? 'Creating…' : 'New board' }}
-            </button>
+            <div class="flex w-full gap-2">
+              <select
+                v-model="selectedTeamId"
+                data-test-id="board-team-select"
+                class="min-w-0 flex-1 rounded border border-border bg-input px-2 py-2 text-sm text-surface outline-none focus:border-accent"
+              >
+                <option value="personal">Personal board</option>
+                <option v-for="team in ownedTeams" :key="team.id" :value="team.id">
+                  {{ team.name }}
+                </option>
+              </select>
+              <button
+                type="button"
+                data-test-id="board-create-button"
+                class="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+                :disabled="creating"
+                @click="createAndOpenBoard"
+              >
+                {{ creating ? 'Creating…' : 'New board' }}
+              </button>
+            </div>
+            <p v-if="hasOwnedTeams" class="text-[11px] text-muted">
+              Team boards can be created only in teams you own.
+            </p>
           </div>
         </div>
 
@@ -217,7 +259,7 @@ onMounted(() => {
             <button
               type="button"
               class="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
-              @click="loadBoards"
+              @click="loadBoardsView"
             >
               Refresh
             </button>
@@ -237,7 +279,7 @@ onMounted(() => {
         >
           <p class="text-lg font-medium text-surface">No boards yet</p>
           <p class="mt-2 text-sm text-muted">
-            Create your first board to start the invite and settings flows.
+            Create your first board to start the invite and team sharing flows.
           </p>
         </div>
 

@@ -5,7 +5,12 @@ import { useClipboard } from '@vueuse/core'
 import { useHead } from '@unhead/vue'
 
 import ShareModal from '@/components/ShareModal.vue'
-import { listInvitations, revokeInvitation, type BoardInvitationsResponse } from '@/app/api/client'
+import {
+  createBoardEditorLocation,
+  listInvitations,
+  revokeInvitation,
+  type BoardInvitationsResponse
+} from '@/app/api/client'
 import { toast } from '@/app/shell/ui'
 
 const route = useRoute()
@@ -61,13 +66,7 @@ function copyInvitationUrl(token: string | null) {
 
 function openBoard() {
   if (!payload.value) return
-  void router.push({
-    path: '/',
-    query: {
-      board: payload.value.board.id,
-      name: payload.value.board.name
-    }
-  })
+  void router.push(createBoardEditorLocation(payload.value.board))
 }
 
 onMounted(() => {
