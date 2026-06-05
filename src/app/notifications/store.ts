@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import {
   deleteNotification,
@@ -9,6 +9,7 @@ import {
   type NotificationRecord
 } from '@/app/api/notifications'
 import { useAuthStore } from '@/app/auth/store'
+import { createNotificationsWebSocketClient } from '@/app/notifications/ws-client'
 
 const POLL_INTERVAL_MS = 30_000
 
@@ -27,9 +28,30 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const initialized = ref(false)
   const loading = ref(false)
   const refreshing = ref(false)
+  const connected = ref(false)
   let activeConsumers = 0
   let intervalHandle: ReturnType<typeof setInterval> | null = null
   let refreshPromise: Promise<void> | null = null
+  const wsClient = createNotificationsWebSocketClient({
+    onConnectedChange(nextConnected) {
+      connected.value = nextConnected
+      if (nextConnected) {
+        stopPolling()
+        return
+      }
+
+      if (activeConsumers > 0 && auth.isAuthenticated) {
+        startPolling()
+      }
+    },
+    onNotification(notification) {
+      items.value = sortNotifications([
+        notification,
+        ...items.value.filter((candidate) => candidate.id !== notification.id)
+      ])
+      initialized.value = true
+    }
+  })
 
   const unreadCount = computed(() => items.value.filter((notification) => notification.readAt === null).length)
   const latest = computed(() => items.value.slice(0, 5))
@@ -41,7 +63,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function startPolling() {
-    if (intervalHandle || activeConsumers === 0) return
+    if (intervalHandle || activeConsumers === 0 || connected.value) return
     intervalHandle = setInterval(() => {
       void refresh()
     }, POLL_INTERVAL_MS)
@@ -63,6 +85,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
       if (!auth.isAuthenticated) {
         clearState()
+        wsClient.disconnect()
         stopPolling()
         return
       }
@@ -89,6 +112,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     activeConsumers += 1
     await refresh()
     if (auth.isAuthenticated) {
+      wsClient.connect()
       startPolling()
     }
   }
@@ -97,6 +121,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     activeConsumers = Math.max(0, activeConsumers - 1)
     if (activeConsumers === 0) {
       stopPolling()
+      wsClient.disconnect()
     }
   }
 
@@ -120,11 +145,31 @@ export const useNotificationsStore = defineStore('notifications', () => {
     items.value = items.value.filter((notification) => notification.id !== notificationId)
   }
 
+  watch(
+    () => auth.user?.id ?? null,
+    async (userId, previousUserId) => {
+      if (userId === previousUserId) return
+
+      if (!userId) {
+        clearState()
+        stopPolling()
+        wsClient.disconnect()
+        return
+      }
+
+      if (activeConsumers === 0) return
+      await refresh()
+      wsClient.reconnect()
+      startPolling()
+    }
+  )
+
   return {
     items,
     initialized,
     loading,
     refreshing,
+    connected,
     unreadCount,
     latest,
     mount,

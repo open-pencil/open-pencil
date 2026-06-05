@@ -5,7 +5,8 @@ const NOTIFICATION_API_ENDPOINTS = {
   notifications: '/api/notifications',
   notification: (notificationId: string) => `/api/notifications/${notificationId}`,
   read: (notificationId: string) => `/api/notifications/${notificationId}/read`,
-  readAll: '/api/notifications/read-all'
+  readAll: '/api/notifications/read-all',
+  mention: '/api/notifications/mention'
 } as const
 
 export type NotificationType = 'invitation' | 'team_invite' | 'mention'
@@ -56,6 +57,13 @@ export type NotificationRecord =
   | NotificationRecordBase<'team_invite', TeamInviteNotificationPayload>
   | NotificationRecordBase<'mention', MentionNotificationPayload>
 
+export interface CreateMentionNotificationInput {
+  boardId: string
+  mentionedUserId: string
+  sourceUserId: string
+  text: string
+}
+
 export function listNotifications() {
   return apiRequest<{ notifications: NotificationRecord[] }>(NOTIFICATION_API_ENDPOINTS.notifications).then(
     (response) => response.notifications
@@ -81,4 +89,11 @@ export function deleteNotification(notificationId: string) {
       method: 'DELETE'
     }
   )
+}
+
+export function createMentionNotification(input: CreateMentionNotificationInput) {
+  return apiRequest<{ notification: NotificationRecord }>(NOTIFICATION_API_ENDPOINTS.mention, {
+    method: 'POST',
+    body: JSON.stringify(input)
+  }).then((response) => response.notification)
 }

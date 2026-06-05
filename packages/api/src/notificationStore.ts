@@ -14,6 +14,7 @@ import type {
 export interface CreateNotificationStoreOptions {
   database?: ApiDatabase
   now?: () => number
+  onNotificationCreated?: (notification: NotificationRecord) => void
 }
 
 function createInMemoryDatabase() {
@@ -62,6 +63,7 @@ export function createNotificationStore(
 ): NotificationStore {
   const database = options.database ?? createInMemoryDatabase()
   const now = options.now ?? Date.now
+  const onNotificationCreated = options.onNotificationCreated
 
   return {
     createNotification(input: CreateNotificationInput) {
@@ -86,7 +88,9 @@ export function createNotificationStore(
         })
         .run()
 
-      return cloneNotification(record)
+      const clonedRecord = cloneNotification(record)
+      onNotificationCreated?.(clonedRecord)
+      return clonedRecord
     },
     findNotification(id: string) {
       const row = database.db.select().from(notifications).where(eq(notifications.id, id)).get()

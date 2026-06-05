@@ -14,8 +14,18 @@ import { createTeamRoutes } from './routes/teams.js'
 import { createInvitationStore } from './store.js'
 import { createTeamStore } from './teamStore.js'
 import { resolveJwtSecret } from './token.js'
-import type { BoardStore, InvitationStore, NotificationStore, TeamStore } from './types.js'
-import { createSignalingServer } from './ws/signaling.js'
+import type {
+  BoardStore,
+  InvitationStore,
+  NotificationRecord,
+  NotificationStore,
+  TeamStore
+} from './types.js'
+import {
+  createNotificationWebSocketServer,
+  type NotificationSocketData
+} from './ws/notifications.js'
+import { createSignalingServer, type SignalingPeerData } from './ws/signaling.js'
 
 export const API_HOST = '127.0.0.1'
 export const API_PORT = 3001
@@ -31,6 +41,7 @@ export interface CreateApiAppOptions {
   emailSender?: InvitationEmailSender
   env?: NodeJS.ProcessEnv
   now?: () => number
+  onNotificationCreated?: (notification: NotificationRecord) => void
 }
 
 export interface StartApiServerOptions extends CreateApiAppOptions {
@@ -45,7 +56,12 @@ export function createApiApp(options: CreateApiAppOptions) {
   const boardStore = options.boardStore ?? createBoardStore({ database, now: options.now })
   const teamStore = options.teamStore ?? createTeamStore({ database, now: options.now })
   const notificationStore =
-    options.notificationStore ?? createNotificationStore({ database, now: options.now })
+    options.notificationStore ??
+    createNotificationStore({
+      database,
+      now: options.now,
+      onNotificationCreated: options.onNotificationCreated
+    })
   const emailSender =
     options.emailSender ??
     createResendEmailSender({
@@ -113,7 +129,9 @@ export function createApiApp(options: CreateApiAppOptions) {
     '/api',
     createNotificationRoutes({
       auth,
-      notificationStore
+      boardStore,
+      notificationStore,
+      teamStore
     })
   )
 
@@ -126,6 +144,7 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
   const secret = options.secret ?? resolveJwtSecret(options.env)
   const port = options.port ?? API_PORT
   const host = options.host ?? API_HOST
+  let onNotificationCreated: ((notification: NotificationRecord) => void) | undefined
   const { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth } =
     createApiApp({
       boardStore: options.boardStore,
@@ -137,19 +156,50 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
       env: options.env,
       secret,
       store: options.store,
-      now: options.now
+      now: options.now,
+      onNotificationCreated: (notification) => {
+        onNotificationCreated?.(notification)
+      }
     })
   const signaling = createSignalingServer()
+  const notifications = createNotificationWebSocketServer(auth)
+  onNotificationCreated = (notification) => {
+    notifications.pushNotification(notification)
+  }
 
   const server = Bun.serve({
     hostname: host,
     port,
-    fetch(request, server) {
+    async fetch(request, server) {
       const signalingResponse = signaling.handleRequest(request, server)
       if (signalingResponse !== null) return signalingResponse
+      const notificationsResponse = await notifications.handleRequest(request, server)
+      if (notificationsResponse !== null) return notificationsResponse
       return app.fetch(request)
     },
-    websocket: signaling.websocket
+    websocket: {
+      open(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>) {
+        if ('roomId' in socket.data) {
+          signaling.websocket.open?.(socket as ServerWebSocket<SignalingPeerData>)
+          return
+        }
+
+        notifications.open(socket as ServerWebSocket<NotificationSocketData>)
+      },
+      message(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>, message) {
+        if ('roomId' in socket.data) {
+          signaling.websocket.message?.(socket as ServerWebSocket<SignalingPeerData>, message)
+        }
+      },
+      close(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>, code, reason) {
+        if ('roomId' in socket.data) {
+          signaling.websocket.close?.(socket as ServerWebSocket<SignalingPeerData>, code, reason)
+          return
+        }
+
+        notifications.close(socket as ServerWebSocket<NotificationSocketData>)
+      }
+    }
   })
 
   process.stderr.write(`Inkly API server listening on http://${host}:${port}\n`)
