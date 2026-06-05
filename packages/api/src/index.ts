@@ -1,4 +1,5 @@
 export * from './anonymousId.js'
+export * from './auth/index.js'
 export * from './boardStore.js'
 export * from './db/client.js'
 export * from './db/migrate.js'

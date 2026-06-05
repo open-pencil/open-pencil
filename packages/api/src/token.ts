@@ -49,6 +49,22 @@ export function requireJwtSecret(env: NodeJS.ProcessEnv = process.env): string {
   return secret
 }
 
+export function resolveJwtSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const secret = env.INKLY_API_JWT_SECRET?.trim()
+  if (secret) {
+    return secret
+  }
+
+  if (env.NODE_ENV === 'production') {
+    throw new Error('INKLY_API_JWT_SECRET is required')
+  }
+
+  process.stderr.write(
+    '[inkly-api] INKLY_API_JWT_SECRET is not set; using an insecure local development secret.\n'
+  )
+  return 'inkly-local-development-secret-for-auth'
+}
+
 export function normalizeInvitationEmail(email: string): string {
   return email.trim().toLowerCase()
 }

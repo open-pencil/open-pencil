@@ -1,13 +1,15 @@
 import { Hono } from 'hono'
 
+import { createInklyAuth, type InklyAuth } from './auth/index.js'
 import { createBoardStore } from './boardStore.js'
 import { resolveApiDatabaseOptions, type ApiDatabase } from './db/client.js'
 import { createMigratedApiDatabase } from './db/migrate.js'
 import { createResendEmailSender, type InvitationEmailSender } from './email/resend.js'
+import { createAuthRoutes } from './routes/auth.js'
 import { createBoardRoutes } from './routes/boards.js'
 import { createInviteRoutes } from './routes/invite.js'
 import { createInvitationStore } from './store.js'
-import { requireJwtSecret } from './token.js'
+import { resolveJwtSecret } from './token.js'
 import type { BoardStore, InvitationStore } from './types.js'
 import { createSignalingServer } from './ws/signaling.js'
 
@@ -19,6 +21,7 @@ export interface CreateApiAppOptions {
   store?: InvitationStore
   boardStore?: BoardStore
   database?: ApiDatabase
+  auth?: InklyAuth
   emailSender?: InvitationEmailSender
   env?: NodeJS.ProcessEnv
   now?: () => number
@@ -31,18 +34,22 @@ export interface StartApiServerOptions extends CreateApiAppOptions {
 
 export function createApiApp(options: CreateApiAppOptions) {
   const database =
-    options.database ??
-    (options.store && options.boardStore
-      ? null
-      : createMigratedApiDatabase(resolveApiDatabaseOptions(options.env)))
-  const store = options.store ?? createInvitationStore({ database: database ?? undefined, now: options.now })
-  const boardStore =
-    options.boardStore ?? createBoardStore({ database: database ?? undefined, now: options.now })
+    options.database ?? createMigratedApiDatabase(resolveApiDatabaseOptions(options.env))
+  const store = options.store ?? createInvitationStore({ database, now: options.now })
+  const boardStore = options.boardStore ?? createBoardStore({ database, now: options.now })
   const emailSender =
     options.emailSender ??
     createResendEmailSender({
       apiKey: options.env?.INKLY_API_RESEND_KEY,
       logger: console.log
+    })
+  const auth =
+    options.auth ??
+    createInklyAuth({
+      database,
+      env: options.env,
+      fallbackSecret: options.secret,
+      logger: console
     })
   const app = new Hono()
 
@@ -79,16 +86,19 @@ export function createApiApp(options: CreateApiAppOptions) {
     })
   )
 
-  return { app, store, boardStore, database, emailSender }
+  app.route('/api/auth', createAuthRoutes({ auth }))
+
+  return { app, store, boardStore, database, emailSender, auth }
 }
 
 export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
-  const secret = options.secret ?? requireJwtSecret()
+  const secret = options.secret ?? resolveJwtSecret(options.env)
   const port = options.port ?? API_PORT
   const host = options.host ?? API_HOST
-  const { app, store, boardStore, database, emailSender } = createApiApp({
+  const { app, store, boardStore, database, emailSender, auth } = createApiApp({
     boardStore: options.boardStore,
     database: options.database,
+    auth: options.auth,
     emailSender: options.emailSender,
     env: options.env,
     secret,
@@ -110,7 +120,7 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
 
   process.stderr.write(`Inkly API server listening on http://${host}:${port}\n`)
 
-  return { app, store, boardStore, database, emailSender, server, port, host }
+  return { app, store, boardStore, database, emailSender, auth, server, port, host }
 }
 
 if (import.meta.main) {

@@ -31,7 +31,9 @@ export interface ApiDatabase {
   close(): void
 }
 
-export function resolveApiDatabaseOptions(env: ApiDatabaseEnv = process.env): Required<ApiDatabaseOptions> {
+export function resolveApiDatabaseOptions(
+  env: ApiDatabaseEnv | NodeJS.ProcessEnv = process.env
+): Required<ApiDatabaseOptions> {
   return {
     mode: env.INKLY_API_DB_MODE === 'memory' ? 'memory' : 'file',
     path: env.INKLY_API_DB_PATH?.trim() || DEFAULT_INKLY_API_DB_PATH
