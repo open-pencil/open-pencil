@@ -6,6 +6,7 @@ import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
 import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
+import { applySvgTransformToPath } from '#core/tools/vectorize/svg-transform'
 import type { Rect } from '#core/types'
 import { computeAccurateBounds } from '#core/vector'
 
@@ -86,7 +87,8 @@ export function svgToVectorPaths(
   const vectorized: VectorizedPath[] = []
   for (const path of paths) {
     const fillRule: WindingRule = path.fillRule
-    const network = mapNetworkToBounds(parseSVGPath(path.d, fillRule), space, bounds)
+    const pathData = applySvgTransformToPath(path.d, path.transform)
+    const network = mapNetworkToBounds(parseSVGPath(pathData, fillRule), space, bounds)
     vectorized.push({
       vectorNetwork: network,
       fills: resolveFill(path, defaultColor),

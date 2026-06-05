@@ -157,6 +157,23 @@ describe('preprocessForVectorize fixtures', () => {
 })
 
 describe('svgToVectorPaths', () => {
+  test('maps Recraft euro_shield SVG into target bounds', async () => {
+    const svg = await Bun.file(`${VECTORIZE_FIXTURES}/euro_shield.recraft.svg`).text()
+    const result = svgToVectorPaths(svg, { width: 577, height: 721 })
+    expect(result?.paths.length).toBe(14)
+
+    let maxX = 0
+    let maxY = 0
+    for (const path of result?.paths ?? []) {
+      for (const vertex of path.vectorNetwork.vertices) {
+        maxX = Math.max(maxX, vertex.x)
+        maxY = Math.max(maxY, vertex.y)
+      }
+    }
+    expect(maxX).toBeLessThanOrEqual(577.5)
+    expect(maxY).toBeLessThanOrEqual(721.5)
+    expect(maxX).toBeGreaterThan(400)
+  })
   test('maps viewBox paths onto target bounds', () => {
     const svg = `<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 0 H100 V50 H0 Z" fill="#336699"/>

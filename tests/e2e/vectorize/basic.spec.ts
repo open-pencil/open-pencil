@@ -1,11 +1,16 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 
 const editor = useEditorSetupWithClear('/?test')
 
-const MOCK_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <path d="M10 10 H90 V90 H10 Z" fill="#112233"/>
-</svg>`
+/** Real Recraft output shape: viewBox user units differ from width/height attrs. */
+const MOCK_SVG = readFileSync(
+  join(process.cwd(), 'tests/fixtures/vectorize/euro_shield.recraft.svg'),
+  'utf8'
+)
 
 test.beforeAll(async () => {
   await editor.page.route('**/external.api.recraft.ai/**', async (route) => {
@@ -107,6 +112,28 @@ test('vectorize replaces image with vectors and undo restores it', async () => {
     return store?.graph.getNode(id)?.type ?? null
   }, nodeId)
   expect(nodeType).not.toBe('RECTANGLE')
+
+  const pathExtents = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store || store.state.selectedIds.size !== 1) return null
+    const frameId = [...store.state.selectedIds][0]
+    const frame = store.graph.getNode(frameId)
+    if (!frame || frame.type !== 'FRAME') return null
+    let maxX = 0
+    let maxY = 0
+    for (const childId of frame.childIds) {
+      const child = store.graph.getNode(childId)
+      if (!child?.vectorNetwork) continue
+      for (const vertex of child.vectorNetwork.vertices) {
+        maxX = Math.max(maxX, vertex.x)
+        maxY = Math.max(maxY, vertex.y)
+      }
+    }
+    return { frameWidth: frame.width, frameHeight: frame.height, maxX, maxY }
+  })
+  expect(pathExtents).not.toBeNull()
+  expect(pathExtents?.maxX ?? 0).toBeLessThanOrEqual((pathExtents?.frameWidth ?? 0) + 1)
+  expect(pathExtents?.maxY ?? 0).toBeLessThanOrEqual((pathExtents?.frameHeight ?? 0) + 1)
 
   await editor.canvas.undo()
   await editor.canvas.waitForRender()
