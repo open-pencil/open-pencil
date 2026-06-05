@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Convert selected raster images to editable vectors via **Convert to Vector** in the canvas context menu (Recraft or fal API key in AI provider settings).
+
 ### Changed
 
 - Add JSX authoring support for components, component sets, and instances.

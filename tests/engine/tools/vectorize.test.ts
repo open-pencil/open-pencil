@@ -16,7 +16,9 @@ async function loadFixturePng(name: string): Promise<Uint8Array> {
   return new Uint8Array(buf)
 }
 
-function countTransparentPixels(image: NonNullable<ReturnType<typeof ck.MakeImageFromEncoded>>): number {
+function countTransparentPixels(
+  image: NonNullable<ReturnType<typeof ck.MakeImageFromEncoded>>
+): number {
   const pixels = image.readPixels(0, 0, {
     alphaType: ck.AlphaType.Unpremul,
     colorType: ck.ColorType.RGBA_8888,

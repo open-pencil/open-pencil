@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
@@ -26,6 +26,16 @@ import { exposeChatTransportOverride } from '@/app/browser-bridge'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 
 const activeTab = ref<'design' | 'code' | 'ai'>('design')
+/** Bumped to open the chat provider settings popover (see ProviderSettings.vue). */
+export const providerSettingsOpenTick = ref(0)
+
+/** Switches to AI tab and opens the existing provider settings popover. */
+export function openProviderSettingsPane() {
+  activeTab.value = 'ai'
+  void nextTick(() => {
+    providerSettingsOpenTick.value += 1
+  })
+}
 
 const chatSession = createChatSessionManager({
   isConfigured,

@@ -1,7 +1,7 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 
-const editor = useEditorSetupWithClear('/?test&no-chrome')
+const editor = useEditorSetupWithClear('/?test')
 
 const MOCK_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <path d="M10 10 H90 V90 H10 Z" fill="#112233"/>
@@ -137,5 +137,26 @@ test('missing key shows error and leaves canvas unchanged', async () => {
     return store?.graph.getNode(id)?.type ?? null
   }, nodeId)
   expect(nodeType).toBe('RECTANGLE')
+  await editor.page.getByTestId('toast-action').click()
+  await expect(editor.page.getByTestId('provider-settings-recraft-key')).toBeVisible()
+  await editor.page.getByTestId('provider-settings-vectorize-provider').click()
+  await expect(editor.page.getByRole('option', { name: 'fal' })).toBeVisible()
+  editor.canvas.assertNoErrors()
+})
+
+test('Recraft API key persists when typed in vectorize settings', async () => {
+  await editor.page.evaluate("localStorage.removeItem('open-pencil:recraft-api-key')")
+  await editor.page.reload()
+  await editor.canvas.waitForInit()
+
+  await editor.page.getByTestId('properties-tab-ai').click()
+  await editor.page.getByTestId('provider-settings-trigger').click()
+  const keyInput = editor.page.getByTestId('provider-settings-recraft-key')
+  await keyInput.fill('sk-test-recraft-persist')
+  await editor.page.getByTestId('provider-settings-done').click()
+  await expect(editor.page.getByTestId('toast-item').getByText('Recraft key saved')).toBeVisible()
+
+  const stored = await editor.page.evaluate("localStorage.getItem('open-pencil:recraft-api-key')")
+  expect(stored).toBe('sk-test-recraft-persist')
   editor.canvas.assertNoErrors()
 })

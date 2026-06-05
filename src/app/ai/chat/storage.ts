@@ -50,6 +50,25 @@ export const unsplashAccessKey = useLocalStorage(`${STORAGE_PREFIX}unsplash-acce
 
 export type VectorizeProviderId = 'recraft' | 'fal'
 
+export const VECTORIZE_PROVIDER_LABELS: Record<VectorizeProviderId, string> = {
+  recraft: 'Recraft',
+  fal: 'fal'
+}
+
+export function vectorizeProviderLabel(id: VectorizeProviderId): string {
+  return VECTORIZE_PROVIDER_LABELS[id]
+}
+
+/** Reads the active vectorize key from reactive storage and localStorage. */
+export function readStoredVectorizeKey(provider: VectorizeProviderId): string {
+  const fromRef = provider === 'fal' ? falApiKey.value : recraftApiKey.value
+  if (typeof localStorage === 'undefined') return fromRef.trim()
+  const storageKey =
+    provider === 'fal' ? `${STORAGE_PREFIX}fal-api-key` : `${STORAGE_PREFIX}recraft-api-key`
+  const fromStorage = localStorage.getItem(storageKey) ?? ''
+  return (fromRef || fromStorage).trim()
+}
+
 export const vectorizeProvider = useLocalStorage<VectorizeProviderId>(
   `${STORAGE_PREFIX}vectorize-provider`,
   'recraft'

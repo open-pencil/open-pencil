@@ -18,7 +18,7 @@ const { dialogs } = useI18n()
     input-test-id="provider-settings-api-key"
     :placeholder="ctx.hasExistingKey ? dialogs.keySavedReplace : ctx.providerDef.keyPlaceholder"
     :key-url="ctx.providerDef.keyURL"
-    :key-url-label="dialogs.getAPIKeyGeneric"
+    :key-url-label="dialogs.getAPIKey({ provider: ctx.providerDef.name })"
     @clear="ctx.clearKey"
     @change="ctx.save"
   />

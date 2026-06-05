@@ -13,7 +13,14 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 async function fetchSvgFromUrl(url: string): Promise<string> {
-  const response = await fetch(url)
+  let response: Response
+  try {
+    response = await fetch(url, { mode: 'cors' })
+  } catch {
+    throw new Error(
+      'Vectorized SVG could not be downloaded (blocked by browser). Try again or use the desktop app.'
+    )
+  }
   if (!response.ok) {
     throw new Error(`Failed to download vectorized SVG (${response.status})`)
   }
@@ -32,6 +39,11 @@ function extractSvgUrl(payload: unknown): string | null {
 
   const fromImage = 'image' in payload ? readUrlField(payload.image) : null
   if (fromImage) return fromImage
+
+  if ('data' in payload && Array.isArray(payload.data) && payload.data.length > 0) {
+    const fromData = readUrlField(payload.data[0])
+    if (fromData) return fromData
+  }
 
   if ('images' in payload && Array.isArray(payload.images) && payload.images.length > 0) {
     const fromImages = readUrlField(payload.images[0])
@@ -59,6 +71,9 @@ export async function recraftVectorize(pngBytes: Uint8Array, apiKey: string): Pr
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '')
+    if (response.status === 401 || response.status === 403) {
+      throw new Error('Recraft API key was rejected — check the key under Image vectorization')
+    }
     throw new Error(
       detail
         ? `Recraft vectorize failed (${response.status}): ${detail}`

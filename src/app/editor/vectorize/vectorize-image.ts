@@ -1,13 +1,15 @@
 import { restoreSubtree, snapshotSubtree } from '@open-pencil/core/editor/clipboard/subtree-history'
 import type { Fill, SceneNode } from '@open-pencil/core/scene-graph'
 import { preprocessForVectorize, svgToVectorPaths } from '@open-pencil/core/tools'
+import { dialogMessages } from '@open-pencil/vue'
 
 import {
-  falApiKey,
-  recraftApiKey,
+  readStoredVectorizeKey,
   vectorizeProvider,
+  vectorizeProviderLabel,
   type VectorizeProviderId
 } from '@/app/ai/chat/storage'
+import { openProviderSettingsPane } from '@/app/ai/chat/use'
 import type { EditorStore } from '@/app/editor/active-store'
 import { falVectorize, recraftVectorize } from '@/app/editor/vectorize/providers'
 import { toast } from '@/app/shell/ui'
@@ -19,8 +21,16 @@ function getImageFill(node: SceneNode): Fill | null {
   return fill ?? null
 }
 
-function activeVectorizeKey(provider: VectorizeProviderId): string {
-  return provider === 'fal' ? falApiKey.value.trim() : recraftApiKey.value.trim()
+const VECTORIZE_ERROR_MAX_LEN = 240
+
+function formatVectorizeError(error: unknown, provider: VectorizeProviderId): string {
+  const label = vectorizeProviderLabel(provider)
+  if (error instanceof TypeError) {
+    return `${label} vectorize could not reach the service (network or CORS). Check your connection and API key.`
+  }
+  const raw = error instanceof Error ? error.message : 'Vectorization failed'
+  if (raw.length <= VECTORIZE_ERROR_MAX_LEN) return raw
+  return `${raw.slice(0, VECTORIZE_ERROR_MAX_LEN)}…`
 }
 
 export function canVectorizeImageNode(store: EditorStore): boolean {
@@ -42,9 +52,13 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
   if (imageFill?.type !== 'IMAGE' || !imageFill.imageHash) return
 
   const provider = vectorizeProvider.value
-  const apiKey = activeVectorizeKey(provider)
+  const apiKey = readStoredVectorizeKey(provider)
   if (!apiKey) {
-    toast.error('Add a vectorization API key in provider settings')
+    const dialogs = dialogMessages.get()
+    toast.error(dialogs.vectorizeMissingKeyPrefix, {
+      label: dialogs.vectorizeMissingKeyLink,
+      onClick: openProviderSettingsPane
+    })
     return
   }
 
@@ -140,8 +154,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
     store.requestRender()
     toast.info('Image converted to vectors')
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Vectorization failed'
-    toast.error(message)
+    toast.error(formatVectorizeError(error, provider))
   } finally {
     vectorizeInFlight = false
   }

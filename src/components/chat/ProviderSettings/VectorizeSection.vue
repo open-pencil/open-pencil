@@ -15,9 +15,13 @@ const providerOptions = [
   { value: 'fal' as const, label: 'fal' }
 ]
 
-const activeKey = computed(() =>
-  ctx.vectorizeProvider === 'fal' ? ctx.falKeyInput : ctx.recraftKeyInput
-)
+const activeKey = computed({
+  get: () => (ctx.vectorizeProvider === 'fal' ? ctx.falKeyInput : ctx.recraftKeyInput),
+  set: (value: string) => {
+    if (ctx.vectorizeProvider === 'fal') ctx.falKeyInput = value
+    else ctx.recraftKeyInput = value
+  }
+})
 
 const activeSaved = computed(() =>
   ctx.vectorizeProvider === 'fal' ? !!ctx.falApiKey : !!ctx.recraftApiKey
@@ -67,6 +71,11 @@ const activeInputTestId = computed(() =>
       v-model="ctx.vectorizeProvider"
       test-id="provider-settings-vectorize-provider"
       :options="providerOptions"
+      :ui="{
+        trigger:
+          'w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface',
+        item: 'rounded px-2 py-1.5 text-[11px]'
+      }"
       @update:model-value="ctx.save"
     />
     <ProviderSettingsKeyField
@@ -81,7 +90,7 @@ const activeInputTestId = computed(() =>
       :key-url="activeKeyUrl"
       :key-url-label="activeKeyUrlLabel"
       @clear="activeClear"
-      @change="ctx.save"
+      @change="ctx.saveVectorizeKeys"
     />
   </div>
 </template>

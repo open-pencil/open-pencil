@@ -34,7 +34,7 @@
 
 - [x] 7.1 `tests/engine/tools/vectorize.test.ts` — preprocess + svgToVectorPaths.
 - [x] 7.2 `tests/e2e/vectorize/basic.spec.ts` — menu gating, convert+undo, missing key (mocked fetch).
-- [ ] 7.3 Live checks: Recraft/fal with real keys (manual).
+- [x] 7.3 Live checks: Recraft/fal with real keys (manual).
 - [x] 7.4 Gates: `bun run check`, `check:arch`, `check:i18n`, engine + e2e tests.
 
 ## 8. Commit

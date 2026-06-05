@@ -1,7 +1,12 @@
+import { watchDebounced } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs, ref, watch } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
+import { dialogMessages } from '@open-pencil/vue'
+
+import { vectorizeProviderLabel, type VectorizeProviderId } from '@/app/ai/chat/storage'
 import { useAIChat } from '@/app/ai/chat/use'
+import { toast } from '@/app/shell/ui'
 
 function createProviderSettingsContext() {
   const {
@@ -41,6 +46,42 @@ function createProviderSettingsContext() {
     customModelInput.value = customModelID.value
   })
 
+  watch(recraftApiKey, (value) => {
+    hasExistingRecraftKey.value = !!value
+  })
+
+  watch(falApiKey, (value) => {
+    hasExistingFalKey.value = !!value
+  })
+
+  function notifyVectorizeKeySaved(provider: VectorizeProviderId) {
+    const dialogs = dialogMessages.get()
+    toast.info(dialogs.vectorizeKeySaved({ provider: vectorizeProviderLabel(provider) }))
+  }
+
+  function persistRecraftKey(notify: boolean): boolean {
+    const trimmed = recraftKeyInput.value.trim()
+    if (!trimmed) return false
+    const changed = trimmed !== recraftApiKey.value
+    recraftApiKey.value = trimmed
+    hasExistingRecraftKey.value = true
+    if (notify && changed) notifyVectorizeKeySaved('recraft')
+    return changed
+  }
+
+  function persistFalKey(notify: boolean): boolean {
+    const trimmed = falKeyInput.value.trim()
+    if (!trimmed) return false
+    const changed = trimmed !== falApiKey.value
+    falApiKey.value = trimmed
+    hasExistingFalKey.value = true
+    if (notify && changed) notifyVectorizeKeySaved('fal')
+    return changed
+  }
+
+  watchDebounced(recraftKeyInput, () => persistRecraftKey(true), { debounce: 800 })
+  watchDebounced(falKeyInput, () => persistFalKey(true), { debounce: 800 })
+
   function save() {
     if (keyInput.value.trim()) {
       setAPIKey(keyInput.value.trim())
@@ -57,16 +98,8 @@ function createProviderSettingsContext() {
       hasExistingUnsplashKey.value = true
       unsplashKeyInput.value = ''
     }
-    if (recraftKeyInput.value.trim()) {
-      recraftApiKey.value = recraftKeyInput.value.trim()
-      hasExistingRecraftKey.value = true
-      recraftKeyInput.value = ''
-    }
-    if (falKeyInput.value.trim()) {
-      falApiKey.value = falKeyInput.value.trim()
-      hasExistingFalKey.value = true
-      falKeyInput.value = ''
-    }
+    if (persistRecraftKey(true)) recraftKeyInput.value = ''
+    if (persistFalKey(true)) falKeyInput.value = ''
     if (providerDef.value.supportsCustomBaseURL) {
       customBaseURL.value = baseURLInput.value.trim()
     }
@@ -142,7 +175,11 @@ function createProviderSettingsContext() {
     clearUnsplashKey,
     clearRecraftKey,
     clearFalKey,
-    setCustomAPIType
+    setCustomAPIType,
+    saveVectorizeKeys: () => {
+      persistRecraftKey(true)
+      persistFalKey(true)
+    }
   }
 }
 

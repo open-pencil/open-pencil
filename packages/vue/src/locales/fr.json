@@ -343,7 +343,9 @@
     "getRecraftAPIKey": "Get Recraft API key →",
     "getFalAPIKey": "Get fal API key →",
     "vectorizeKeyOptional": "Required for Convert to Vector",
-    "vectorizeMissingKey": "Add a vectorization API key in provider settings"
+    "vectorizeMissingKeyPrefix": "Enter an API key for the image-to-vector model. ",
+    "vectorizeMissingKeyLink": "Click here",
+    "vectorizeKeySaved": "{provider} key saved"
   },
   "variableTypes": {
     "color": "Couleur",
