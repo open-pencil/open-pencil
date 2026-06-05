@@ -140,24 +140,23 @@ function graphFallbackNeeds(
   graph: SceneGraph,
   nodeIds: string[]
 ): { cjk: boolean; arabic: boolean } {
-  let cjk = false
-  let arabic = false
+  const texts: string[] = []
 
   const visit = (id: string) => {
-    if (cjk && arabic) return
     const node = graph.getNode(id)
     if (!node) return
     if (node.type === 'TEXT') {
-      cjk ||= CJK_TEXT_RE.test(node.text)
-      arabic ||= ARABIC_TEXT_RE.test(node.text)
+      texts.push(node.text)
     }
     for (const childId of node.childIds) visit(childId)
   }
 
   for (const id of nodeIds) visit(id)
+  const hasCJK = texts.some((text) => CJK_TEXT_RE.test(text))
+  const hasArabic = texts.some((text) => ARABIC_TEXT_RE.test(text))
   return {
-    cjk: cjk && fontManager.getCJKFallbackFamilies().length === 0,
-    arabic: arabic && fontManager.getArabicFallbackFamilies().length === 0
+    cjk: hasCJK && fontManager.getCJKFallbackFamilies().length === 0,
+    arabic: hasArabic && fontManager.getArabicFallbackFamilies().length === 0
   }
 }
 
