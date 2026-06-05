@@ -21,7 +21,7 @@ function parseSvgDimension(svg: string, attr: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
-function parseSvgSize(svg: string): { width: number; height: number } {
+export function parseSvgSize(svg: string): { width: number; height: number } {
   const viewBox = parseSvgViewBox(svg)
   const w = parseSvgDimension(svg, 'width')
   const h = parseSvgDimension(svg, 'height')

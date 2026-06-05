@@ -48,6 +48,15 @@ export const maxOutputTokens = useLocalStorage(`${STORAGE_PREFIX}ai-max-output-t
 export const pexelsApiKey = useLocalStorage(`${STORAGE_PREFIX}pexels-api-key`, '')
 export const unsplashAccessKey = useLocalStorage(`${STORAGE_PREFIX}unsplash-access-key`, '')
 
+export type VectorizeProviderId = 'recraft' | 'fal'
+
+export const vectorizeProvider = useLocalStorage<VectorizeProviderId>(
+  `${STORAGE_PREFIX}vectorize-provider`,
+  'recraft'
+)
+export const recraftApiKey = useLocalStorage(`${STORAGE_PREFIX}recraft-api-key`, '')
+export const falApiKey = useLocalStorage(`${STORAGE_PREFIX}fal-api-key`, '')
+
 export const providerDef = computed(
   () => AI_PROVIDERS.find((p) => p.id === providerID.value) ?? AI_PROVIDERS[0]
 )

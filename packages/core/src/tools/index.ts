@@ -8,3 +8,11 @@ export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from '.
 export { calcClusterConfidence, wrapEvalCode } from './analyze'
 export { setPexelsApiKey, setUnsplashAccessKey } from './stock-photo'
 export { importSvg } from './create'
+export {
+  preprocessForVectorize,
+  svgToVectorPaths,
+  type GetCanvasKit,
+  type PreprocessForVectorizeResult,
+  type SvgVectorizeResult,
+  type VectorizedPath
+} from './vectorize'

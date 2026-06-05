@@ -167,7 +167,7 @@ function contextCommandIcon(id: EditorCommandId | undefined): Component | undefi
       </ContextMenuSub>
       <ContextMenuItem
         v-else
-        v-test-id="contextCommandTestId(item.id)"
+        v-test-id="item.testId ?? contextCommandTestId(item.id)"
         :class="canvasMenuItemClass(item.label, cls)"
         :disabled="item.disabled"
         @select="item.action?.()"

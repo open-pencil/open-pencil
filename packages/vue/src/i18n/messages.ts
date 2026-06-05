@@ -73,6 +73,7 @@ export const menuMessages = i18n('menu', {
   copyAsJSX: 'Copy as JSX',
   copyNodeId: 'Copy node ID',
   copyXPath: 'Copy XPath',
+  convertToVector: 'Convert to Vector',
   booleanOperations: 'Boolean operations'
 })
 
@@ -367,6 +368,13 @@ export const dialogMessages = i18n('dialogs', {
   pexelsAlternativeOptional: 'Optional — alternative to Pexels',
   getPexelsAPIKey: 'Get free Pexels API key →',
   getUnsplashAccessKey: 'Get free Unsplash access key →',
+  vectorizeProvider: 'Image vectorization',
+  recraftAPIKey: 'Recraft API Key',
+  falAPIKey: 'fal API Key',
+  getRecraftAPIKey: 'Get Recraft API key →',
+  getFalAPIKey: 'Get fal API key →',
+  vectorizeKeyOptional: 'Required for Convert to Vector',
+  vectorizeMissingKey: 'Add a vectorization API key in provider settings',
   completions: 'Completions',
   responses: 'Responses',
   yourName: 'Your name',

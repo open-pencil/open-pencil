@@ -14,18 +14,25 @@ function createProviderSettingsContext() {
     customAPIType,
     maxOutputTokens,
     pexelsApiKey,
-    unsplashAccessKey
+    unsplashAccessKey,
+    vectorizeProvider,
+    recraftApiKey,
+    falApiKey
   } = useAIChat()
 
   const isACP = computed(() => providerID.value.startsWith('acp:'))
   const keyInput = ref('')
   const pexelsKeyInput = ref('')
   const unsplashKeyInput = ref('')
+  const recraftKeyInput = ref('')
+  const falKeyInput = ref('')
   const baseURLInput = ref(customBaseURL.value)
   const customModelInput = ref(customModelID.value)
   const hasExistingKey = ref(!!apiKey.value)
   const hasExistingPexelsKey = ref(!!pexelsApiKey.value)
   const hasExistingUnsplashKey = ref(!!unsplashAccessKey.value)
+  const hasExistingRecraftKey = ref(!!recraftApiKey.value)
+  const hasExistingFalKey = ref(!!falApiKey.value)
 
   watch(providerID, () => {
     keyInput.value = ''
@@ -49,6 +56,16 @@ function createProviderSettingsContext() {
       unsplashAccessKey.value = unsplashKeyInput.value.trim()
       hasExistingUnsplashKey.value = true
       unsplashKeyInput.value = ''
+    }
+    if (recraftKeyInput.value.trim()) {
+      recraftApiKey.value = recraftKeyInput.value.trim()
+      hasExistingRecraftKey.value = true
+      recraftKeyInput.value = ''
+    }
+    if (falKeyInput.value.trim()) {
+      falApiKey.value = falKeyInput.value.trim()
+      hasExistingFalKey.value = true
+      falKeyInput.value = ''
     }
     if (providerDef.value.supportsCustomBaseURL) {
       customBaseURL.value = baseURLInput.value.trim()
@@ -76,6 +93,18 @@ function createProviderSettingsContext() {
     hasExistingUnsplashKey.value = false
   }
 
+  function clearRecraftKey() {
+    recraftApiKey.value = ''
+    recraftKeyInput.value = ''
+    hasExistingRecraftKey.value = false
+  }
+
+  function clearFalKey() {
+    falApiKey.value = ''
+    falKeyInput.value = ''
+    hasExistingFalKey.value = false
+  }
+
   function setCustomAPIType(value: string) {
     customAPIType.value = value as 'completions' | 'responses'
     save()
@@ -91,19 +120,28 @@ function createProviderSettingsContext() {
     maxOutputTokens,
     pexelsApiKey,
     unsplashAccessKey,
+    vectorizeProvider,
+    recraftApiKey,
+    falApiKey,
     isACP,
     keyInput,
     pexelsKeyInput,
     unsplashKeyInput,
+    recraftKeyInput,
+    falKeyInput,
     baseURLInput,
     customModelInput,
     hasExistingKey,
     hasExistingPexelsKey,
     hasExistingUnsplashKey,
+    hasExistingRecraftKey,
+    hasExistingFalKey,
     save,
     clearKey,
     clearPexelsKey,
     clearUnsplashKey,
+    clearRecraftKey,
+    clearFalKey,
     setCustomAPIType
   }
 }

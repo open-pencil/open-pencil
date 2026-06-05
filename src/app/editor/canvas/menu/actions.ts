@@ -5,6 +5,7 @@ import { nodeToXPath } from '@open-pencil/core/xpath'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
+import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize/vectorize-image'
 import { toast } from '@/app/shell/ui'
 
 function toArrayBuffer(data: Uint8Array): ArrayBuffer {
@@ -66,6 +67,16 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     toast.info('Copied as PNG')
   }
 
+  function canVectorizeImage() {
+    return canVectorizeImageNode(store)
+  }
+
+  async function vectorizeImage() {
+    if (!canVectorizeImage()) return
+    const nodeId = [...selectedIds.value][0]
+    await vectorizeImageNode(store, nodeId)
+  }
+
   return {
     ids,
     execCommand,
@@ -73,6 +84,8 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     clipboardWrite,
     copyNodeId,
     copyXPath,
-    copyAsPNG
+    copyAsPNG,
+    canVectorizeImage,
+    vectorizeImage
   }
 }
