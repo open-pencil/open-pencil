@@ -1,13 +1,19 @@
 import { computed } from 'vue'
-import type { Ref } from 'vue'
+import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import type { ExportFormatId, ExportSetting, PluginDataEntry } from '@open-pencil/core/scene-graph'
 
-import type { ExportFormatId, ExportPanelTarget, ExportSetting } from '#vue/document/export/use'
+import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 export const EXPORT_SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
-export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'pdf', 'fig']
+export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'pdf']
+
+export type ExportPanelTarget = 'selection' | 'page'
+
+const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
+const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
 
 // Custom export scales are accepted beyond the presets, but bounded: a huge
 // multiplier would allocate an enormous canvas and crash the renderer.
@@ -28,15 +34,13 @@ export function formatSupportsScale(format: ExportFormatId) {
   return io.getFormat(format)?.exportOptions?.scale ?? false
 }
 
-export function createExportTargetState(
-  editor: Editor,
-  selectedIds: Ref<string[]>,
-  selectionSettings: Ref<ExportSetting[]>,
-  pageSettings: Ref<ExportSetting[]>
-) {
+export function createExportTargetState(editor: Editor, selectedIds: ComputedRef<string[]>) {
   const hasSelection = computed(() => selectedIds.value.length > 0)
   const activeTarget = computed<ExportPanelTarget>(() =>
     hasSelection.value ? 'selection' : 'page'
+  )
+  const targetIds = useSceneComputed(() =>
+    selectedIds.value.length > 0 ? selectedIds.value : [editor.state.currentPageId]
   )
 
   const selectedNodeName = computed(() => {
@@ -59,49 +63,132 @@ export function createExportTargetState(
       ? (selectedNodeName.value ?? 'Export')
       : currentPageName.value
   )
-  const activeSettings = computed(() =>
-    activeTarget.value === 'selection' ? selectionSettings.value : pageSettings.value
-  )
+  const activeSettings = useSceneComputed(() => {
+    const firstId = targetIds.value[0]
+    return firstId ? [...(editor.graph.getNode(firstId)?.exportSettings ?? [])] : []
+  })
+  const mixed = useSceneComputed(() => {
+    const [firstId, ...otherIds] = targetIds.value
+    if (!firstId || otherIds.length === 0) return false
+    const first = editor.graph.getNode(firstId)?.exportSettings ?? []
+    return otherIds.some((id) => {
+      const settings = editor.graph.getNode(id)?.exportSettings ?? []
+      return !exportSettingsEqual(first, settings)
+    })
+  })
 
   return {
     hasSelection,
     activeTarget,
+    targetIds,
     selectedNodeName,
     currentPageName,
     activeName,
-    activeSettings
+    activeSettings,
+    mixed
   }
 }
 
-export function createExportSettingActions(
-  selectionSettings: Ref<ExportSetting[]>,
-  pageSettings: Ref<ExportSetting[]>
+function exportSettingsEqual(a: ExportSetting[], b: ExportSetting[]) {
+  if (a.length !== b.length) return false
+  return a.every((setting, index) => {
+    const other = b[index]
+    return setting.scale === other.scale && setting.format === other.format
+  })
+}
+
+function nextExportSetting(settings: ExportSetting[]): ExportSetting {
+  const last = settings.at(-1)
+  if (!last) return createDefaultExportSetting()
+  const nextPreset = EXPORT_SCALES.find((scale) => scale > last.scale)
+  return {
+    scale: clampExportScale(nextPreset ?? last.scale * 2),
+    format: last.format
+  }
+}
+
+function syncExportSettingsPluginData(
+  pluginData: PluginDataEntry[],
+  settings: ExportSetting[]
+): PluginDataEntry[] {
+  const withoutExportSettings = pluginData.filter(
+    (entry) =>
+      !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === EXPORT_SETTINGS_PLUGIN_KEY)
+  )
+  if (settings.length === 0) return withoutExportSettings
+  return [
+    ...withoutExportSettings,
+    {
+      pluginId: OPEN_PENCIL_PLUGIN_ID,
+      key: EXPORT_SETTINGS_PLUGIN_KEY,
+      value: JSON.stringify(settings)
+    }
+  ]
+}
+
+function updateEveryTarget(
+  editor: Editor,
+  targetIds: ComputedRef<string[]>,
+  label: string,
+  update: (settings: ExportSetting[]) => ExportSetting[]
 ) {
-  function addSetting(settings: Ref<ExportSetting[]>) {
-    const last = settings.value[settings.value.length - 1]
-    const nextScale = EXPORT_SCALES.find((s) => s > last.scale) ?? 2
-    settings.value.push({ scale: nextScale, format: last.format })
+  editor.undo.runBatch(label, () => {
+    for (const id of targetIds.value) {
+      const node = editor.graph.getNode(id)
+      if (!node) continue
+      const exportSettings = update(node.exportSettings)
+      editor.updateNodeWithUndo(
+        id,
+        {
+          exportSettings,
+          pluginData: syncExportSettingsPluginData(node.pluginData, exportSettings)
+        },
+        label
+      )
+    }
+  })
+}
+
+export function createExportSettingActions(editor: Editor, targetIds: ComputedRef<string[]>) {
+  function addSetting() {
+    updateEveryTarget(editor, targetIds, 'Add export setting', (settings) => [
+      ...settings,
+      nextExportSetting(settings)
+    ])
   }
 
-  function updateScale(settings: Ref<ExportSetting[]>, index: number, scale: number) {
-    settings.value[index] = { ...settings.value[index], scale: clampExportScale(scale) }
+  function removeSetting(index: number) {
+    updateEveryTarget(editor, targetIds, 'Remove export setting', (settings) =>
+      settings.filter((_, i) => i !== index)
+    )
   }
 
-  function updateFormat(settings: Ref<ExportSetting[]>, index: number, format: ExportFormatId) {
-    settings.value[index] = { ...settings.value[index], format }
+  function updateScale(index: number, scale: number) {
+    updateEveryTarget(editor, targetIds, 'Update export scale', (settings) =>
+      settings.map((setting, i) =>
+        i === index ? { ...setting, scale: clampExportScale(scale) } : setting
+      )
+    )
+  }
+
+  function updateFormat(index: number, format: ExportFormatId) {
+    updateEveryTarget(editor, targetIds, 'Update export format', (settings) =>
+      settings.map((setting, i) => (i === index ? { ...setting, format } : setting))
+    )
   }
 
   return {
-    addSelectionSetting: () => addSetting(selectionSettings),
-    addPageSetting: () => addSetting(pageSettings),
-    removeSelectionSetting: (index: number) => selectionSettings.value.splice(index, 1),
-    removePageSetting: (index: number) => pageSettings.value.splice(index, 1),
-    updateSelectionScale: (index: number, scale: number) =>
-      updateScale(selectionSettings, index, scale),
-    updatePageScale: (index: number, scale: number) => updateScale(pageSettings, index, scale),
-    updateSelectionFormat: (index: number, format: ExportFormatId) =>
-      updateFormat(selectionSettings, index, format),
-    updatePageFormat: (index: number, format: ExportFormatId) =>
-      updateFormat(pageSettings, index, format)
+    addSetting,
+    removeSetting,
+    updateScale,
+    updateFormat,
+    addSelectionSetting: addSetting,
+    addPageSetting: addSetting,
+    removeSelectionSetting: removeSetting,
+    removePageSetting: removeSetting,
+    updateSelectionScale: updateScale,
+    updatePageScale: updateScale,
+    updateSelectionFormat: updateFormat,
+    updatePageFormat: updateFormat
   }
 }

@@ -1,12 +1,9 @@
-import { ref } from 'vue'
-
 import {
   EXPORT_FORMATS,
   EXPORT_SCALES,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
   clampExportScale,
-  createDefaultExportSetting,
   createExportSettingActions,
   createExportTargetState,
   formatSupportsScale
@@ -14,23 +11,16 @@ import {
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
-export type ExportFormatId = 'png' | 'jpg' | 'webp' | 'svg' | 'pdf' | 'fig'
-export type ExportPanelTarget = 'selection' | 'page'
-
-export interface ExportSetting {
-  scale: number
-  format: ExportFormatId
-}
+export type { ExportFormatId, ExportSetting } from '@open-pencil/core/scene-graph'
+export type { ExportPanelTarget } from '#vue/document/export/helpers'
 
 export function useExport() {
   const editor = useEditor()
 
-  const selectionSettings = ref<ExportSetting[]>([createDefaultExportSetting()])
-  const pageSettings = ref<ExportSetting[]>([createDefaultExportSetting()])
   const selectedIds = useSceneComputed(() => [...editor.state.selectedIds])
 
-  const targetState = createExportTargetState(editor, selectedIds, selectionSettings, pageSettings)
-  const settingActions = createExportSettingActions(selectionSettings, pageSettings)
+  const targetState = createExportTargetState(editor, selectedIds)
+  const settingActions = createExportSettingActions(editor, targetState.targetIds)
 
   return {
     editor,
@@ -41,8 +31,6 @@ export function useExport() {
     clampExportScale,
     formats: EXPORT_FORMATS,
     formatSupportsScale,
-    selectionSettings,
-    pageSettings,
     ...targetState,
     ...settingActions
   }

@@ -18,14 +18,12 @@ const {
   activeTarget,
   activeName,
   activeSettings,
-  addSelectionSetting,
-  addPageSetting,
-  removeSelectionSetting,
-  removePageSetting,
-  updateSelectionScale,
-  updatePageScale,
-  updateSelectionFormat,
-  updatePageFormat,
+  targetIds,
+  mixed,
+  addSetting,
+  removeSetting,
+  updateScale,
+  updateFormat,
   formatSupportsScale,
   scales,
   clampExportScale
@@ -36,7 +34,7 @@ const FORMAT_OPTIONS: { value: ExportFormatId; label: string }[] = [
   { value: 'jpg', label: 'JPG' },
   { value: 'webp', label: 'WEBP' },
   { value: 'svg', label: 'SVG' },
-  { value: 'fig', label: '.fig' }
+  { value: 'pdf', label: 'PDF' }
 ]
 
 const previewUrl = ref<string | null>(null)
@@ -45,40 +43,19 @@ const exporting = ref(false)
 
 const PREVIEW_WIDTH = 480
 
-function addSetting() {
-  if (activeTarget.value === 'selection') addSelectionSetting()
-  else addPageSetting()
-}
-
-function removeSetting(index: number) {
-  if (activeTarget.value === 'selection') removeSelectionSetting(index)
-  else removePageSetting(index)
-}
-
-function updateScale(index: number, scale: number) {
-  if (activeTarget.value === 'selection') updateSelectionScale(index, scale)
-  else updatePageScale(index, scale)
-}
-
-function updateFormat(index: number, format: ExportFormatId) {
-  if (activeTarget.value === 'selection') updateSelectionFormat(index, format)
-  else updatePageFormat(index, format)
-}
-
 async function doExport() {
   exporting.value = true
   try {
-    if (activeTarget.value === 'selection') {
-      for (const s of activeSettings.value) await editorStore.exportSelection(s.scale, s.format)
-      return
-    }
-
-    for (const s of activeSettings.value) {
-      await editorStore.exportTarget(
-        { scope: 'page', pageId: editorStore.state.currentPageId },
-        s.format,
-        { scale: s.scale }
-      )
+    for (const id of targetIds.value) {
+      const node = editorStore.graph.getNode(id)
+      if (!node) continue
+      const target =
+        activeTarget.value === 'page'
+          ? ({ scope: 'page', pageId: id } as const)
+          : ({ scope: 'node', nodeId: id } as const)
+      for (const setting of node.exportSettings) {
+        await editorStore.exportTarget(target, setting.format, { scale: setting.scale })
+      }
     }
   } finally {
     exporting.value = false
@@ -144,10 +121,13 @@ onScopeDispose(() => {
         </button>
       </Tip>
     </div>
+    <p v-if="mixed && activeSettings.length > 0" class="text-[11px] text-muted">
+      {{ panels.mixed }}
+    </p>
 
     <div
       v-for="(setting, i) in activeSettings"
-      :key="`${activeTarget}:${i}`"
+      :key="`${targetIds.join(',')}:${i}`"
       data-test-id="export-item"
       :data-test-index="i"
       class="flex items-center gap-1.5 py-0.5"
