@@ -100,9 +100,9 @@ function exportSettingsEqual(a: ExportSetting[], b: ExportSetting[]) {
 function nextExportSetting(settings: ExportSetting[]): ExportSetting {
   const last = settings.at(-1)
   if (!last) return createDefaultExportSetting()
-  const nextPreset = EXPORT_SCALES.find((scale) => scale > last.scale)
+  // Each added row doubles the previous scale (1x → 2x → 4x …).
   return {
-    scale: clampExportScale(nextPreset ?? last.scale * 2),
+    scale: clampExportScale(last.scale * 2),
     format: last.format
   }
 }

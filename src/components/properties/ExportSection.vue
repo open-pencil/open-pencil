@@ -46,6 +46,7 @@ const PREVIEW_WIDTH = 480
 async function doExport() {
   exporting.value = true
   try {
+    const requests = []
     for (const id of targetIds.value) {
       const node = editorStore.graph.getNode(id)
       if (!node) continue
@@ -54,9 +55,11 @@ async function doExport() {
           ? ({ scope: 'page', pageId: id } as const)
           : ({ scope: 'node', nodeId: id } as const)
       for (const setting of node.exportSettings) {
-        await editorStore.exportTarget(target, setting.format, { scale: setting.scale })
+        requests.push({ target, formatId: setting.format, options: { scale: setting.scale } })
       }
     }
+    // A single file downloads directly; multiple files bundle into one zip.
+    await editorStore.exportTargets(requests)
   } finally {
     exporting.value = false
   }

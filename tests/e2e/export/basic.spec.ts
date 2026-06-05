@@ -140,6 +140,81 @@ test('SVG format hides scale selector', async () => {
   canvas.assertNoErrors()
 })
 
+test('format selector works with multiple export rows', async () => {
+  await createRectangles(1, [
+    [
+      { scale: 1, format: 'png' },
+      { scale: 1, format: 'svg' }
+    ]
+  ])
+
+  const firstRowFormat = exportItems().nth(0).getByTestId('app-select-trigger').last()
+  await firstRowFormat.click()
+  await page.locator('[role="option"]').filter({ hasText: 'JPG' }).click()
+  await canvas.waitForRender()
+
+  const secondRowFormat = exportItems().nth(1).getByTestId('app-select-trigger').last()
+  await secondRowFormat.click()
+  await page.locator('[role="option"]').filter({ hasText: 'PDF' }).click()
+  await canvas.waitForRender()
+
+  expect(await selectedExportSettings()).toEqual([
+    [
+      { scale: 1, format: 'jpg' },
+      { scale: 1, format: 'pdf' }
+    ]
+  ])
+  canvas.assertNoErrors()
+})
+
+// The app prefers the File System Access save dialog when available, which never
+// resolves in a headless browser. Unset it so the export falls back to the
+// anchor-download path, which Playwright can capture as a `download` event.
+async function forceBlobDownload() {
+  await page.evaluate(() => {
+    window.showSaveFilePicker = undefined
+  })
+}
+
+// `createRectangles` makes fill-less rectangles, which have no visual bounds and
+// export to nothing. Use createShape so the rectangle has a real fill and is
+// actually exportable, then attach the export settings under test.
+async function createExportableRect(settings: { scale: number; format: string }[]) {
+  await page.evaluate((nodeSettings) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    for (const node of store.graph.getChildren(store.state.currentPageId)) {
+      store.graph.deleteNode(node.id)
+    }
+    const id = store.createShape('RECTANGLE', 100, 100, 100, 100)
+    store.graph.updateNode(id, { name: 'Export rect 1', exportSettings: nodeSettings })
+    store.select([id])
+    store.requestRender()
+  }, settings)
+  await canvas.waitForRender()
+}
+
+test('multiple export formats download as a single zip', async () => {
+  await createExportableRect([
+    { scale: 1, format: 'png' },
+    { scale: 1, format: 'svg' }
+  ])
+  await forceBlobDownload()
+
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1.zip')
+  canvas.assertNoErrors()
+})
+
+test('a single export format downloads the file directly', async () => {
+  await createExportableRect([{ scale: 1, format: 'png' }])
+  await forceBlobDownload()
+
+  const [download] = await Promise.all([page.waitForEvent('download'), exportButton().click()])
+  expect(download.suggestedFilename()).toBe('Export rect 1@1x.png')
+  canvas.assertNoErrors()
+})
+
 test('preview toggle shows image with blob src', async () => {
   const formatTrigger = exportItems().first().getByTestId('app-select-trigger').last()
   await formatTrigger.click()

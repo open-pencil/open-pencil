@@ -618,6 +618,42 @@ export class SkiaRenderer {
     }
   }
 
+  /**
+   * Browser fallback for raster formats CanvasKit cannot encode itself
+   * (this build returns null from `encodeToBytes` for JPEG/WEBP). Routes the
+   * RGBA pixels through an HTMLCanvasElement so `toDataURL` does the encoding.
+   * Returns null outside the browser or if encoding fails.
+   */
+  encodeRasterFallback(
+    pixels: Uint8Array,
+    width: number,
+    height: number,
+    format: 'JPG' | 'WEBP',
+    quality: number
+  ): Uint8Array | null {
+    if (!IS_BROWSER) return null
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+      const imageData = ctx.createImageData(width, height)
+      imageData.data.set(pixels)
+      ctx.putImageData(imageData, 0, 0)
+      const mime = format === 'JPG' ? 'image/jpeg' : 'image/webp'
+      const base64 = canvas.toDataURL(mime, quality / 100).split(',')[1]
+      if (!base64) return null
+      const binary = atob(base64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      return bytes
+    } catch (err) {
+      console.warn('Raster encode fallback failed:', err)
+      return null
+    }
+  }
+
   destroyed: boolean = false
 
   destroy(): void {

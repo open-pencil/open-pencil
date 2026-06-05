@@ -19,7 +19,12 @@ interface ExportScaleInputProps extends TestIdProps {
   label?: string
 }
 
-const { presets, clamp, label, testId = 'export-scale-input' } = defineProps<ExportScaleInputProps>()
+const {
+  presets,
+  clamp,
+  label,
+  testId = 'export-scale-input'
+} = defineProps<ExportScaleInputProps>()
 
 const modelValue = defineModel<number>({ required: true })
 
