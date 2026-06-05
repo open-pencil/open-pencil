@@ -6,6 +6,7 @@ export default defineConfig({
   workers: 1,
   expect: {
     toHaveScreenshot: {
+      pathTemplate: '{testDir}/visual/__snapshots__/{arg}{ext}',
       maxDiffPixelRatio: 0.01,
       threshold: 0.3
     },

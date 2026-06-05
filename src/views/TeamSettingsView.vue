@@ -2,6 +2,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  AlertDialogRoot,
+  AlertDialogTitle
+} from 'reka-ui'
 
 import {
   deleteTeam,
@@ -13,6 +23,7 @@ import {
 } from '@/app/api/teams'
 import AppInput from '@/components/ui/AppInput.vue'
 import { toast } from '@/app/shell/ui'
+import { useDialogUI } from '@/components/ui/dialog'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +33,17 @@ const saving = ref(false)
 const deleting = ref(false)
 const errorMessage = ref('')
 const teamName = ref('')
+const roleDialogOpen = ref(false)
+const deleteDialogOpen = ref(false)
+const pendingRoleChange = ref<{
+  userId: string
+  name: string
+  email: string
+  role: Exclude<TeamDetailResponse['members'][number]['role'], 'owner'>
+} | null>(null)
+const dialogCls = useDialogUI({
+  content: 'w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl'
+})
 
 const teamId = computed(() => (typeof route.params.id === 'string' ? route.params.id : ''))
 const isOwner = computed(() => payload.value?.team.role === 'owner')
@@ -76,11 +98,26 @@ async function changeRole(userId: string, role: 'editor' | 'viewer') {
   }
 }
 
-function onRoleChange(userId: string, event: Event) {
+function onRoleChange(member: TeamDetailResponse['members'][number], event: Event) {
   const nextRole = (event.target as HTMLSelectElement).value
   if (nextRole === 'editor' || nextRole === 'viewer') {
-    void changeRole(userId, nextRole)
+    pendingRoleChange.value = {
+      userId: member.userId,
+      name: member.user.name,
+      email: member.user.email,
+      role: nextRole
+    }
+    ;(event.target as HTMLSelectElement).value = member.role === 'owner' ? 'owner' : member.role
+    roleDialogOpen.value = true
   }
+}
+
+async function confirmRoleChange() {
+  const pending = pendingRoleChange.value
+  roleDialogOpen.value = false
+  pendingRoleChange.value = null
+  if (!pending) return
+  await changeRole(pending.userId, pending.role)
 }
 
 async function removeMember(userId: string) {
@@ -99,7 +136,6 @@ async function removeMember(userId: string) {
 
 async function destroyTeam() {
   if (!teamId.value) return
-  if (!window.confirm('Delete this team and move its boards back to personal ownership?')) return
   deleting.value = true
 
   try {
@@ -112,6 +148,15 @@ async function destroyTeam() {
   } finally {
     deleting.value = false
   }
+}
+
+function requestDeleteTeam() {
+  deleteDialogOpen.value = true
+}
+
+async function confirmDeleteTeam() {
+  deleteDialogOpen.value = false
+  await destroyTeam()
 }
 
 onMounted(() => {
@@ -198,7 +243,7 @@ onMounted(() => {
                   :value="member.role === 'owner' ? 'owner' : member.role"
                   class="rounded border border-border bg-input px-2 py-1.5 text-xs text-surface outline-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
                   :disabled="!isOwner || member.role === 'owner'"
-                  @change="onRoleChange(member.userId, $event)"
+                  @change="onRoleChange(member, $event)"
                 >
                   <option value="owner">Owner</option>
                   <option value="editor">Editor</option>
@@ -229,7 +274,7 @@ onMounted(() => {
               data-test-id="team-settings-delete"
               class="cursor-pointer rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-500/90 disabled:cursor-not-allowed disabled:opacity-50"
               :disabled="!isOwner || deleting"
-              @click="destroyTeam"
+              @click="requestDeleteTeam"
             >
               {{ deleting ? 'Deleting…' : 'Delete team' }}
             </button>
@@ -237,5 +282,79 @@ onMounted(() => {
         </section>
       </template>
     </div>
+
+    <AlertDialogRoot :open="roleDialogOpen">
+      <AlertDialogPortal>
+        <AlertDialogOverlay :class="dialogCls.overlay" @click="roleDialogOpen = false" />
+        <AlertDialogContent
+          data-test-id="team-settings-role-dialog"
+          :class="dialogCls.content"
+          @escape-key-down="roleDialogOpen = false"
+        >
+          <AlertDialogTitle :class="dialogCls.title">Change member role</AlertDialogTitle>
+          <AlertDialogDescription :class="dialogCls.description">
+            {{ pendingRoleChange?.name ?? 'This member' }} will become
+            {{ pendingRoleChange?.role ?? 'editor' }} on this team.
+          </AlertDialogDescription>
+
+          <div class="mt-4 rounded-xl border border-border bg-canvas/70 p-3">
+            <p class="text-sm font-medium text-surface">{{ pendingRoleChange?.name }}</p>
+            <p class="text-xs text-muted">{{ pendingRoleChange?.email }}</p>
+          </div>
+
+          <div class="mt-5 flex justify-end gap-2">
+            <AlertDialogCancel
+              class="rounded-md border border-border bg-canvas px-3 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
+              @click="roleDialogOpen = false"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-test-id="team-settings-role-confirm"
+              class="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent/90"
+              @click="confirmRoleChange"
+            >
+              Apply role
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
+
+    <AlertDialogRoot :open="deleteDialogOpen">
+      <AlertDialogPortal>
+        <AlertDialogOverlay :class="dialogCls.overlay" @click="deleteDialogOpen = false" />
+        <AlertDialogContent
+          data-test-id="team-settings-delete-dialog"
+          :class="dialogCls.content"
+          @escape-key-down="deleteDialogOpen = false"
+        >
+          <AlertDialogTitle :class="dialogCls.title">Delete team</AlertDialogTitle>
+          <AlertDialogDescription :class="dialogCls.description">
+            Delete this team and move its boards back to personal ownership. This cannot be undone.
+          </AlertDialogDescription>
+
+          <div class="mt-4 rounded-xl border border-red-500/20 bg-red-500/8 p-3 text-xs text-red-100">
+            {{ payload?.team.name ?? 'This team' }} and its memberships will be removed.
+          </div>
+
+          <div class="mt-5 flex justify-end gap-2">
+            <AlertDialogCancel
+              class="rounded-md border border-border bg-canvas px-3 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
+              @click="deleteDialogOpen = false"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-test-id="team-settings-delete-confirm"
+              class="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-500/90"
+              @click="confirmDeleteTeam"
+            >
+              Delete team
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
   </main>
 </template>

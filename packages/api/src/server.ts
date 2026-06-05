@@ -13,6 +13,7 @@ import { createAuthRoutes } from './routes/auth.js'
 import { createBoardRoutes } from './routes/boards.js'
 import { createInviteRoutes } from './routes/invite.js'
 import { createNotificationRoutes } from './routes/notifications.js'
+import { createTestingRoutes } from './routes/testing.js'
 import { createTeamRoutes } from './routes/teams.js'
 import { createInvitationStore } from './store.js'
 import { createTeamStore } from './teamStore.js'
@@ -138,6 +139,18 @@ export function createApiApp(options: CreateApiAppOptions) {
       notificationStore,
       teamStore,
       env
+    })
+  )
+
+  app.route(
+    '/api/test',
+    createTestingRoutes({
+      enabled: typeof auth.createTestSession === 'function',
+      database,
+      boardStore,
+      invitationStore: store,
+      teamStore,
+      notificationStore
     })
   )
 

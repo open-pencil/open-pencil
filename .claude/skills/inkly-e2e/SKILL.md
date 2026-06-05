@@ -39,15 +39,17 @@ allowed-tools: Bash, Read, Glob, Grep, Write, Edit
 
 ## 2. spec 種別と template
 
-3 種類の template を用意。 `templates/` 配下を参照。
+4 種類の template を用意。 `templates/` 配下を参照。
 
 | 種別 | template | 用途 |
 |---|---|---|
 | ui-flow | `templates/ui-flow.template.ts` | 通常 UI 操作 (tool 切替 / drag / 保存 / undo 等) |
 | perf-trace | `templates/perf-trace.template.ts` | PerfTracer 経由の計測 spec (frame / render / autosave 等) |
 | crash-investigation | `templates/crash-investigation.template.ts` | 段階的 phase 観測 + memory snapshot + crash 検出 |
+| visual-regression | (`tests/e2e/visual/*.visual.spec.ts` 参照) | 主要 view の見た目崩れ自動検出 (toHaveScreenshot 経由)、 詳細は `references/visual-regression.md` |
 
 template を spec ファイルに copy し、 `seedNodes` / drag step / assertion 部分だけ書き換える。
+visual-regression は専用 helper (`tests/helpers/visual.ts` の `waitForVisualReady` / `expectPageScreenshot`) と seed helper (`tests/helpers/api-seed.ts`) を使うので、 既存 spec を参考に作る (`tests/e2e/visual/dashboard.visual.spec.ts` 等)。
 
 ## 3. 再現性チェックリスト
 
@@ -151,3 +153,4 @@ spec が intermittent fail する時に確認する 5 項目。
 - `references/perf-trace-format.md` — PerfTracer summary JSON の schema 定義、 stats 配列の field 解説
 - `references/swiftshader-quirks.md` — SwiftShader 由来の挙動差 (実機 GPU との閾値乖離、 crash 閾値の SwiftShader assume 規約)
 - `references/canvaskit-resource-lifecycle.md` — Picture / Surface / Image の delete タイミング規約 (memory leak / GPU pressure 防止)
+- `references/visual-regression.md` — visual regression spec (tests/e2e/visual/) の inkly 固有 patterns、 baseline 更新手順、 SwiftShader / font 影響と対策、 seed helper 活用

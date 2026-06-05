@@ -3,6 +3,16 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useClipboard } from '@vueuse/core'
 import { useHead } from '@unhead/vue'
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  AlertDialogRoot,
+  AlertDialogTitle
+} from 'reka-ui'
 
 import ShareModal from '@/components/ShareModal.vue'
 import {
@@ -12,6 +22,7 @@ import {
   type BoardInvitationsResponse
 } from '@/app/api/client'
 import { toast } from '@/app/shell/ui'
+import { useDialogUI } from '@/components/ui/dialog'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +33,11 @@ const payload = ref<BoardInvitationsResponse | null>(null)
 const loading = ref(false)
 const shareOpen = ref(false)
 const errorMessage = ref('')
+const revokeOpen = ref(false)
+const revokeTarget = ref<BoardInvitationsResponse['invitations'][number] | null>(null)
+const cls = useDialogUI({
+  content: 'w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl'
+})
 
 useHead({
   title: computed(() => (payload.value ? `${payload.value.board.name} Settings` : 'Board Settings'))
@@ -52,6 +68,19 @@ async function revoke(invitationId: string) {
     const message = error instanceof Error ? error.message : 'Failed to revoke invitation'
     toast.error(message)
   }
+}
+
+function requestRevoke(invitation: BoardInvitationsResponse['invitations'][number]) {
+  revokeTarget.value = invitation
+  revokeOpen.value = true
+}
+
+async function confirmRevoke() {
+  const invitation = revokeTarget.value
+  revokeOpen.value = false
+  revokeTarget.value = null
+  if (!invitation) return
+  await revoke(invitation.id)
 }
 
 function invitationUrl(token: string | null) {
@@ -176,7 +205,7 @@ onMounted(() => {
                     data-test-id="board-revoke-invitation"
                     class="cursor-pointer rounded-md px-2 py-1 text-[11px] text-red-300 transition-colors hover:bg-red-500/10 hover:text-red-200"
                     :disabled="invitation.revoked"
-                    @click="revoke(invitation.id)"
+                    @click="requestRevoke(invitation)"
                   >
                     Revoke
                   </button>
@@ -221,5 +250,42 @@ onMounted(() => {
       :board-id="payload?.board.id ?? boardId"
       :board-name="payload?.board.name ?? 'Board'"
     />
+
+    <AlertDialogRoot :open="revokeOpen">
+      <AlertDialogPortal>
+        <AlertDialogOverlay :class="cls.overlay" @click="revokeOpen = false" />
+        <AlertDialogContent
+          data-test-id="board-revoke-dialog"
+          :class="cls.content"
+          @escape-key-down="revokeOpen = false"
+        >
+          <AlertDialogTitle :class="cls.title">Revoke invitation</AlertDialogTitle>
+          <AlertDialogDescription :class="cls.description">
+            This invite link will stop working immediately. Existing collaborators keep their
+            current access.
+          </AlertDialogDescription>
+
+          <div class="mt-4 rounded-xl border border-border bg-canvas/70 p-3 text-xs text-muted">
+            {{ revokeTarget?.token ? invitationUrl(revokeTarget.token) : 'Link unavailable' }}
+          </div>
+
+          <div class="mt-5 flex justify-end gap-2">
+            <AlertDialogCancel
+              class="rounded-md border border-border bg-canvas px-3 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
+              @click="revokeOpen = false"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-test-id="board-revoke-confirm"
+              class="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-500/90"
+              @click="confirmRevoke"
+            >
+              Revoke link
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
   </main>
 </template>
