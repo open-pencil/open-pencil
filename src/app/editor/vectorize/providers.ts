@@ -1,3 +1,9 @@
+/**
+ * Recraft raster→SVG vectorize (see RECRAFT-API.md in this folder).
+ *
+ * POST external.api.recraft.ai/v1/images/vectorize — multipart `file`, returns `{ image: { url } }`.
+ * fal uses the same engine: fal-ai/recraft/vectorize with JSON `{ image_url }`.
+ */
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.length)
   copy.set(bytes)

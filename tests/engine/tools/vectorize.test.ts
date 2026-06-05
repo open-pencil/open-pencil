@@ -1,6 +1,10 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { preprocessForVectorize, svgToVectorPaths } from '@open-pencil/core/tools'
+import {
+  preprocessForVectorize,
+  renderVectorizeComparison,
+  svgToVectorPaths
+} from '@open-pencil/core/tools'
 
 import { initCanvasKit } from '#cli/headless'
 
@@ -157,10 +161,14 @@ describe('preprocessForVectorize fixtures', () => {
 })
 
 describe('svgToVectorPaths', () => {
-  test('maps Recraft euro_shield SVG into target bounds', async () => {
-    const svg = await Bun.file(`${VECTORIZE_FIXTURES}/euro_shield.recraft.svg`).text()
-    const result = svgToVectorPaths(svg, { width: 577, height: 721 })
-    expect(result?.paths.length).toBe(14)
+  test('maps multi-path vendor SVG with viewBox larger than width/height attrs', () => {
+    const svg = `<svg viewBox="0 0 1000 800" width="200" height="160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0 H1000 V800 H0 Z" fill="#336699"/>
+      <path d="M100 100 H400 V400 H100 Z" fill="#ffcc00"/>
+      <path d="M600 200 H900 V500 H600 Z" fill="#ffcc00"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 200, height: 160 })
+    expect(result?.paths.length).toBe(3)
 
     let maxX = 0
     let maxY = 0
@@ -170,10 +178,10 @@ describe('svgToVectorPaths', () => {
         maxY = Math.max(maxY, vertex.y)
       }
     }
-    expect(maxX).toBeLessThanOrEqual(577.5)
-    expect(maxY).toBeLessThanOrEqual(721.5)
-    expect(maxX).toBeGreaterThan(400)
+    expect(maxX).toBeCloseTo(200, 0)
+    expect(maxY).toBeCloseTo(160, 0)
   })
+
   test('maps viewBox paths onto target bounds', () => {
     const svg = `<svg viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 0 H100 V50 H0 Z" fill="#336699"/>
@@ -187,27 +195,59 @@ describe('svgToVectorPaths', () => {
   })
 
   test('uses viewBox user units when width/height attributes differ', () => {
-    const svg = `<svg width="577" height="721" viewBox="0 0 100 125" xmlns="http://www.w3.org/2000/svg">
+    const svg = `<svg width="240" height="300" viewBox="0 0 100 125" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 0 H100 V125 H0 Z" fill="#003399"/>
     </svg>`
-    const result = svgToVectorPaths(svg, { width: 577, height: 721 })
+    const result = svgToVectorPaths(svg, { width: 240, height: 300 })
     const path = expectDefined(result?.paths[0], 'vector path')
     const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
     const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
-    expect(maxX).toBeCloseTo(577, 0)
-    expect(maxY).toBeCloseTo(721, 0)
+    expect(maxX).toBeCloseTo(240, 0)
+    expect(maxY).toBeCloseTo(300, 0)
   })
 
-  test('scales cubic tangents when mapping viewBox to target bounds', () => {
-    const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0 50 C40 0, 60 100, 100 50" fill="#336699"/>
+  test('maps viewBox with non-zero origin into target bounds', () => {
+    const svg = `<svg viewBox="50 50 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path d="M50 50 H150 V150 H50 Z" fill="#336699"/>
     </svg>`
     const result = svgToVectorPaths(svg, { width: 200, height: 200 })
+    const path = expectDefined(result?.paths[0], 'vector path')
+    const minX = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const minY = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    expect(minX).toBeCloseTo(0, 0)
+    expect(minY).toBeCloseTo(0, 0)
+    expect(maxX).toBeCloseTo(200, 0)
+    expect(maxY).toBeCloseTo(200, 0)
+  })
+
+  test('scales cubic control points under non-uniform viewBox mapping', () => {
+    const svg = `<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 100 C40 0, 60 200, 100 100" fill="#336699"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 300, height: 100 })
     const segment = expectDefined(result?.paths[0]?.vectorNetwork.segments[0], 'cubic segment')
-    expect(segment.tangentStart.x).toBeCloseTo(80, 0)
-    expect(segment.tangentStart.y).toBeCloseTo(-100, 0)
-    expect(segment.tangentEnd.x).toBeCloseTo(-80, 0)
-    expect(segment.tangentEnd.y).toBeCloseTo(100, 0)
+    expect(segment.tangentStart.x).toBeCloseTo(120, 0)
+    expect(segment.tangentStart.y).toBeCloseTo(-50, 0)
+    expect(segment.tangentEnd.x).toBeCloseTo(-120, 0)
+    expect(segment.tangentEnd.y).toBeCloseTo(50, 0)
+  })
+
+  test('applies path transform before viewBox mapping', () => {
+    const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path transform="translate(10, 20)" d="M0 0 H50 V50 H0 Z" fill="#336699"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 200, height: 200 })
+    const path = expectDefined(result?.paths[0], 'vector path')
+    const minX = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const minY = Math.min(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    expect(minX).toBeCloseTo(20, 0)
+    expect(minY).toBeCloseTo(40, 0)
+    expect(maxX).toBeCloseTo(120, 0)
+    expect(maxY).toBeCloseTo(140, 0)
   })
 
   test('reports tight content bounds inside target bounds', () => {
@@ -220,6 +260,19 @@ describe('svgToVectorPaths', () => {
     expect(bounds.y).toBeCloseTo(50, 0)
     expect(bounds.width).toBeCloseTo(100, 0)
     expect(bounds.height).toBeCloseTo(100, 0)
+  })
+
+  test('import render matches raw SVG geometry for vendor-style viewBox SVG', () => {
+    const svg = `<svg viewBox="0 0 1000 800" width="200" height="160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0 C400 0, 600 800, 1000 800 L1000 0 Z" fill="#0f66e4"/>
+      <path d="M100 100 C250 120, 350 500, 500 600 L100 600 Z" fill="#024fac"/>
+      <path d="M700 200 H850 V350 H700 Z" fill="#fed20f"/>
+    </svg>`
+    const result = renderVectorizeComparison(ck, svg, { width: 200, height: 160 })
+    const comparison = expectDefined(result, 'vectorize comparison')
+    expect(comparison.metrics.pathCount).toBe(3)
+    expect(comparison.metrics.identical).toBe(true)
+    expect(comparison.metrics.differentPixels).toBe(0)
   })
 
   test('falls back to solid fill for gradient references', () => {

@@ -1,1 +1,3 @@
-export type ViewportSize = { width: number; height: number }
+import type { Size } from '@open-pencil/core/types'
+
+export type ViewportSize = Size

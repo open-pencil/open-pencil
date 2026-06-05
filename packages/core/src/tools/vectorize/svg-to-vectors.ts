@@ -1,8 +1,12 @@
 /**
  * Maps vendor SVG into scene-graph vector networks.
- * Recraft returns paths in viewBox user units with width/height set to the input pixel size —
- * always scale using viewBox (see src/app/editor/vectorize/RECRAFT-API.md).
+ *
+ * Raster vectorizers often return paths in viewBox user units while width/height
+ * reflect the input pixel size. Scale path data from the SVG coordinate space
+ * (viewBox, else width/height) into the target node bounds before parsing.
  */
+import svgpath from 'svgpath'
+
 import { parseColor } from '#core/color'
 import { computeBounds } from '#core/geometry'
 import { createPathStroke } from '#core/icons/path-style'
@@ -13,25 +17,17 @@ import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
 import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
 import { applySvgTransformToPath } from '#core/tools/vectorize/svg-transform'
 import type { Rect } from '#core/types'
-import { computeAccurateBounds, scaleVectorNetwork } from '#core/vector'
+import { computeAccurateBounds } from '#core/vector'
 
-function mapNetworkToBounds(
-  network: VectorNetwork,
+/** Map path data from SVG user space (viewBox) into target pixel bounds. */
+function mapPathDataToBounds(
+  d: string,
   space: Rect,
   target: { width: number; height: number }
-): VectorNetwork {
+): string {
   const sx = target.width / space.width
   const sy = target.height / space.height
-  const translated: VectorNetwork = {
-    vertices: network.vertices.map((vertex) => ({
-      ...vertex,
-      x: vertex.x - space.x,
-      y: vertex.y - space.y
-    })),
-    segments: network.segments,
-    regions: network.regions
-  }
-  return scaleVectorNetwork(translated, sx, sy)
+  return svgpath(d).translate(-space.x, -space.y).scale(sx, sy).toString()
 }
 
 function parseSvgCoordinateSpace(svg: string): Rect {
@@ -94,7 +90,8 @@ export function svgToVectorPaths(
   for (const path of paths) {
     const fillRule: WindingRule = path.fillRule
     const pathData = applySvgTransformToPath(path.d, path.transform)
-    const network = mapNetworkToBounds(parseSVGPath(pathData, fillRule), space, bounds)
+    const scaledD = mapPathDataToBounds(pathData, space, bounds)
+    const network = parseSVGPath(scaledD, fillRule)
     vectorized.push({
       vectorNetwork: network,
       fills: resolveFill(path, defaultColor),
