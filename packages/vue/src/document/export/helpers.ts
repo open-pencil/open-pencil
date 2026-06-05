@@ -9,6 +9,15 @@ import type { ExportFormatId, ExportPanelTarget, ExportSetting } from '#vue/docu
 export const EXPORT_SCALES = [0.5, 0.75, 1, 1.5, 2, 3, 4] as const
 export const EXPORT_FORMATS: ExportFormatId[] = ['png', 'jpg', 'webp', 'svg', 'pdf', 'fig']
 
+// Custom export scales are accepted beyond the presets, but bounded: a huge
+// multiplier would allocate an enormous canvas and crash the renderer.
+export const MIN_EXPORT_SCALE = 0.01
+export const MAX_EXPORT_SCALE = 1024
+
+export function clampExportScale(scale: number) {
+  return Math.min(MAX_EXPORT_SCALE, Math.max(MIN_EXPORT_SCALE, scale))
+}
+
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
 export function createDefaultExportSetting(): ExportSetting {
@@ -75,7 +84,7 @@ export function createExportSettingActions(
   }
 
   function updateScale(settings: Ref<ExportSetting[]>, index: number, scale: number) {
-    settings.value[index] = { ...settings.value[index], scale }
+    settings.value[index] = { ...settings.value[index], scale: clampExportScale(scale) }
   }
 
   function updateFormat(settings: Ref<ExportSetting[]>, index: number, format: ExportFormatId) {

@@ -2,6 +2,7 @@
 import { ref, computed, watch, onScopeDispose } from 'vue'
 
 import AppSelect from '@/components/ui/AppSelect.vue'
+import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
@@ -25,10 +26,11 @@ const {
   updatePageScale,
   updateSelectionFormat,
   updatePageFormat,
-  formatSupportsScale
+  formatSupportsScale,
+  scales,
+  clampExportScale
 } = useExport()
 
-const SCALE_OPTIONS = [0.5, 0.75, 1, 1.5, 2, 3, 4].map((s) => ({ value: s, label: `${s}x` }))
 const FORMAT_OPTIONS: { value: ExportFormatId; label: string }[] = [
   { value: 'png', label: 'PNG' },
   { value: 'jpg', label: 'JPG' },
@@ -150,12 +152,13 @@ onScopeDispose(() => {
       :data-test-index="i"
       class="flex items-center gap-1.5 py-0.5"
     >
-      <AppSelect
+      <ExportScaleInput
         v-if="formatSupportsScale(setting.format)"
         :model-value="setting.scale"
-        :options="SCALE_OPTIONS"
+        :presets="scales"
+        :clamp="clampExportScale"
         :label="panels.exportScale"
-        @update:model-value="updateScale(i, Number($event))"
+        @update:model-value="updateScale(i, $event)"
       />
       <AppSelect
         :model-value="setting.format"
