@@ -113,27 +113,28 @@ test('vectorize replaces image with vectors and undo restores it', async () => {
   }, nodeId)
   expect(nodeType).not.toBe('RECTANGLE')
 
-  const pathExtents = await editor.page.evaluate(() => {
+  const childBounds = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store || store.state.selectedIds.size !== 1) return null
     const frameId = [...store.state.selectedIds][0]
     const frame = store.graph.getNode(frameId)
     if (!frame || frame.type !== 'FRAME') return null
-    let maxX = 0
-    let maxY = 0
-    for (const childId of frame.childIds) {
-      const child = store.graph.getNode(childId)
-      if (!child?.vectorNetwork) continue
-      for (const vertex of child.vectorNetwork.vertices) {
-        maxX = Math.max(maxX, vertex.x)
-        maxY = Math.max(maxY, vertex.y)
-      }
-    }
-    return { frameWidth: frame.width, frameHeight: frame.height, maxX, maxY }
+    const children = frame.childIds.map((id) => {
+      const child = store.graph.getNode(id)
+      return child
+        ? { width: child.width, height: child.height, type: child.type }
+        : null
+    })
+    return { frameWidth: frame.width, frameHeight: frame.height, children }
   })
-  expect(pathExtents).not.toBeNull()
-  expect(pathExtents?.maxX ?? 0).toBeLessThanOrEqual((pathExtents?.frameWidth ?? 0) + 1)
-  expect(pathExtents?.maxY ?? 0).toBeLessThanOrEqual((pathExtents?.frameHeight ?? 0) + 1)
+  expect(childBounds).not.toBeNull()
+  const vectors = (childBounds?.children ?? []).filter((child) => child?.type === 'VECTOR')
+  expect(vectors.length).toBeGreaterThan(1)
+  const smallest = vectors.reduce(
+    (min, child) => Math.min(min, child?.width ?? min),
+    childBounds?.frameWidth ?? Infinity
+  )
+  expect(smallest).toBeLessThan((childBounds?.frameWidth ?? 0) * 0.5)
 
   await editor.canvas.undo()
   await editor.canvas.waitForRender()

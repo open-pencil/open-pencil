@@ -9,6 +9,7 @@
 ### Fixes
 
 - Image vectorization now maps Recraft SVG `viewBox` coordinates correctly (avoids oversized paths) and tightens the result frame to actual path bounds instead of the full bitmap rectangle.
+- Each vectorized path is sized to its own geometry so selecting one star (or other shape) no longer shows the full image bounding box.
 
 ### Changed
 

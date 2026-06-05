@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/core/scene-graph'
 import type { SvgVectorizeResult } from '@open-pencil/core/tools'
 import type { Rect } from '@open-pencil/core/types'
+import { computeAccurateBounds } from '@open-pencil/core/vector'
 
 export interface VectorFramePlacement {
   x: number
@@ -56,6 +57,28 @@ function offsetVectorNetwork(
   }
 }
 
+/** Fit vector geometry to node-local coordinates and a tight width/height (pen-tool pattern). */
+function normalizeVectorToNodeBounds(network: VectorNetwork): {
+  network: VectorNetwork
+  bounds: Rect
+} | null {
+  const bounds = computeAccurateBounds(network)
+  if (bounds.width <= 0 || bounds.height <= 0) return null
+
+  return {
+    bounds,
+    network: {
+      vertices: network.vertices.map((vertex) => ({
+        ...vertex,
+        x: vertex.x - bounds.x,
+        y: vertex.y - bounds.y
+      })),
+      segments: network.segments,
+      regions: network.regions
+    }
+  }
+}
+
 export function createVectorFrameChildren(
   graph: SceneGraph,
   frameId: string,
@@ -63,17 +86,21 @@ export function createVectorFrameChildren(
   placement: VectorFramePlacement
 ): void {
   for (const [index, path] of vectorized.paths.entries()) {
+    const inFrame = offsetVectorNetwork(
+      path.vectorNetwork,
+      placement.offsetX,
+      placement.offsetY
+    )
+    const normalized = normalizeVectorToNodeBounds(inFrame)
+    if (!normalized) continue
+
     graph.createNode('VECTOR', frameId, {
       name: `path ${index + 1}`,
-      x: 0,
-      y: 0,
-      width: placement.width,
-      height: placement.height,
-      vectorNetwork: offsetVectorNetwork(
-        path.vectorNetwork,
-        placement.offsetX,
-        placement.offsetY
-      ),
+      x: normalized.bounds.x,
+      y: normalized.bounds.y,
+      width: normalized.bounds.width,
+      height: normalized.bounds.height,
+      vectorNetwork: normalized.network,
       fills: path.fills,
       strokes: path.strokes
     })
