@@ -58,7 +58,7 @@ async function browserRuntimeComputeStyles(
   )
 }
 
-async function publicBrowserHTMLSceneGraph(page: Page, html: string, cssText: string) {
+async function publicBrowserHTMLSceneGraph(page: Page, html: string, cssText = '') {
   if (!page.url().startsWith('http://localhost:1420')) {
     await page.goto('/')
     await page.setContent('<main></main>')
@@ -515,6 +515,28 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
     expect(card?.layoutMode).toBe('VERTICAL')
     expect(card?.itemSpacing).toBe(12)
     expect(card?.paddingLeft).toBe(24)
+  })
+
+  test('projects embedded HTML styles through public browser helpers', async ({ page }) => {
+    const card = await publicBrowserHTMLSceneGraph(
+      page,
+      `<!doctype html>
+      <html>
+        <head>
+          <style>
+            .card { display: flex; flex-direction: column; gap: 14px; width: 300px; height: 160px; padding: 22px; }
+          </style>
+        </head>
+        <body><article class="card"><h1>Embedded CSS</h1></article></body>
+      </html>`
+    )
+
+    expect(card?.type).toBe('FRAME')
+    expect(card?.width).toBe(300)
+    expect(card?.height).toBe(160)
+    expect(card?.layoutMode).toBe('VERTICAL')
+    expect(card?.itemSpacing).toBe(14)
+    expect(card?.paddingLeft).toBe(22)
   })
 
   test('projects JSX through public browser helpers into scene graph', async ({ page }) => {

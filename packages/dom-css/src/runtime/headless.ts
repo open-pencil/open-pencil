@@ -17,12 +17,15 @@ function isTextNode(
   return node.nodeName === '#text'
 }
 
+const NON_RENDERED_TAGS = new Set(['head', 'link', 'meta', 'script', 'style', 'template', 'title'])
+
 function childToDesignNode(node: DefaultTreeAdapterTypes.ChildNode): DesignNode | null {
   if (isTextNode(node)) {
     return node.value.trim().length > 0 ? { type: 'text', text: node.value } : null
   }
 
   if (!('tagName' in node)) return null
+  if (NON_RENDERED_TAGS.has(node.tagName.toLowerCase())) return null
 
   const attrs = attrsToRecord(node.attrs)
   const element: DesignElement = {

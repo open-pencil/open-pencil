@@ -167,6 +167,34 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(card.effects[0]?.type).toBe('DROP_SHADOW')
   })
 
+  it('applies embedded HTML style blocks without creating style layers', async () => {
+    const graph = await htmlToSceneGraph(
+      `<!doctype html>
+      <html>
+        <head>
+          <style>
+            .card { display: flex; flex-direction: column; gap: 10px; width: 280px; height: 140px; padding: 20px; }
+          </style>
+        </head>
+        <body><article class="card"><h1>Embedded CSS</h1></article></body>
+      </html>`,
+      { runtime: createHeadlessCSSRuntime() }
+    )
+    const page = graph.getPages()[0]
+    expect(page).toBeDefined()
+    if (!page) return
+    const card = graph.getChildren(page.id)[0]
+
+    expect(card?.type).toBe('FRAME')
+    if (card?.type !== 'FRAME') return
+    expect(card.name).toBe('card')
+    expect(card.width).toBe(280)
+    expect(card.height).toBe(140)
+    expect(card.itemSpacing).toBe(10)
+    expect(card.paddingLeft).toBe(20)
+    expect(graph.getChildren(page.id)).toHaveLength(1)
+  })
+
   it('keeps box-like inline controls as editable frames', async () => {
     const graph = await htmlToSceneGraph(fixtureHTML, {
       cssText: fixtureCSS,

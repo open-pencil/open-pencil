@@ -101,6 +101,44 @@ test('dom CLI writes DesignDOM JSON output', async () => {
   expect(document.children[0].computedStyle.width).toBe('240px')
 })
 
+test('dom CLI reads embedded HTML styles without a sidecar CSS file', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-dom-cli-embedded-'))
+  const htmlPath = join(dir, 'embedded.html')
+  const output = join(dir, 'embedded.json')
+
+  await Bun.write(
+    htmlPath,
+    `<!doctype html>
+    <html>
+      <head>
+        <style>
+          .card { display: flex; flex-direction: column; gap: 10px; width: 280px; height: 140px; padding: 20px; }
+        </style>
+      </head>
+      <body><article class="card"><h1>Embedded CSS</h1></article></body>
+    </html>`
+  )
+
+  const { stdout, stderr, exitCode } = await run([
+    'dom',
+    htmlPath,
+    '--format',
+    'json',
+    '--output',
+    output,
+    '--json'
+  ])
+
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+  expect(JSON.parse(stdout)).toMatchObject({ format: 'json', output, rootElements: 1 })
+
+  const document = JSON.parse(await Bun.file(output).text())
+  expect(document.children[0].tagName).toBe('article')
+  expect(document.children[0].computedStyle.width).toBe('280px')
+  expect(document.children[0].computedStyle.gap).toBe('10px')
+})
+
 test('dom CLI writes serialized HTML output', async () => {
   const { htmlPath, cssPath, dir } = await createFixture()
   const output = join(dir, 'card.out.html')

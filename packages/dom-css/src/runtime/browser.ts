@@ -92,6 +92,8 @@ function styleToRecord(style: CSSStyleDeclaration): Record<string, string> | und
   return Object.keys(entries).length > 0 ? entries : undefined
 }
 
+const NON_RENDERED_TAGS = new Set(['head', 'link', 'meta', 'script', 'style', 'template', 'title'])
+
 function domNodeToDesignNode(node: Node): DesignNode | null {
   if (node.nodeType === 3) {
     const text = node.textContent ?? ''
@@ -101,6 +103,7 @@ function domNodeToDesignNode(node: Node): DesignNode | null {
   if (node.nodeType !== 1) return null
 
   const element = node as Element
+  if (NON_RENDERED_TAGS.has(element.tagName.toLowerCase())) return null
   const children = Array.from(element.childNodes)
     .map(domNodeToDesignNode)
     .filter((child): child is DesignNode => child !== null)

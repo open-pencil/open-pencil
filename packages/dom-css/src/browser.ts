@@ -4,6 +4,7 @@ import { jsxToDesignDocument, type JSXChild } from './jsx/runtime'
 
 export { Fragment, jsx, jsxs } from './jsx/runtime'
 export type { JSXChild, JSXElementProps, JSXStyleInput, JSXTag } from './jsx/runtime'
+import { mergeCSSText } from './css-text'
 import { createBrowserCSSRuntime, type BrowserCSSRuntimeOptions } from './runtime/browser'
 import { compileTailwindCSS, type CompileTailwindCSSOptions } from './tailwind'
 import { designDocumentToSceneGraph, type ToSceneGraphOptions } from './to-scene-graph'
@@ -38,13 +39,33 @@ function createRuntime(options: BrowserCSSRuntimeOptions) {
   return createBrowserCSSRuntime({ sandbox: 'iframe', ...options })
 }
 
+function resolveBrowserDocument(documentOverride: Document | undefined): Document {
+  if (documentOverride) return documentOverride
+  if (typeof document === 'undefined') {
+    throw new TypeError('Browser DOM/CSS helpers require a DOM document')
+  }
+  return document
+}
+
+function extractEmbeddedCSSText(html: string, browserDocument: Document): string | undefined {
+  const Parser = browserDocument.defaultView?.DOMParser
+  if (!Parser) throw new TypeError('Browser DOM/CSS helpers require DOMParser')
+  const parsed = new Parser().parseFromString(html, 'text/html')
+  const styles = Array.from(parsed.querySelectorAll('style'))
+    .map((style) => (style.textContent ? style.textContent.trim() : ''))
+    .filter((css): css is string => !!css)
+  return styles.length > 0 ? styles.join('\n') : undefined
+}
+
 export async function browserHTMLToDesignDocument(
   html: string,
   options: BrowserHTMLToDesignDocumentOptions = {}
 ): Promise<DesignDocument> {
-  const runtime = createRuntime(options)
+  const browserDocument = resolveBrowserDocument(options.document)
+  const runtime = createRuntime({ ...options, document: browserDocument })
   const document = runtime.parseHTML(html)
-  return runtime.computeStyles(document, options.cssText, options.compute)
+  const cssText = mergeCSSText(extractEmbeddedCSSText(html, browserDocument), options.cssText)
+  return runtime.computeStyles(document, cssText, options.compute)
 }
 
 export async function browserHTMLToSceneGraph(
