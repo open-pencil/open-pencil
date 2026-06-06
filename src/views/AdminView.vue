@@ -37,7 +37,7 @@ import { useI18n } from '@inkly/vue'
 import { triggerCsvDownload, type CsvCell } from '@/app/shell/csv-export'
 import { formatTemplate } from '@/app/shell/i18n-format'
 
-const { admin } = useI18n()
+const { admin, locale } = useI18n()
 
 useHead({ title: () => admin.value.title })
 
@@ -280,7 +280,7 @@ function exportMembersCsv() {
   const count = triggerCsvDownload({
     header,
     rows,
-    filename: `inkly-members-${Date.now()}.csv`
+    filename: `inkly-members-${locale.value}-${Date.now()}.csv`
   })
   notifyExportSuccess(count, m.exportToastSingular, m.exportToastPlural)
 }
@@ -307,7 +307,7 @@ function exportActivityCsv() {
   const count = triggerCsvDownload({
     header,
     rows,
-    filename: `inkly-activity-${Date.now()}.csv`
+    filename: `inkly-activity-${locale.value}-${Date.now()}.csv`
   })
   notifyExportSuccess(count, a.exportToastSingular, a.exportToastPlural)
 }
@@ -334,7 +334,7 @@ function exportBoardsCsv() {
   const count = triggerCsvDownload({
     header,
     rows,
-    filename: `inkly-boards-${Date.now()}.csv`
+    filename: `inkly-boards-${locale.value}-${Date.now()}.csv`
   })
   notifyExportSuccess(count, b.exportToastSingular, b.exportToastPlural)
 }

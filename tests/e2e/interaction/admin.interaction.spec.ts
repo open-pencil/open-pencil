@@ -240,6 +240,6 @@ test.describe('admin view interaction', () => {
     await page.getByTestId('admin-boards-export').click()
     const download = await downloadPromise
 
-    expect(download.suggestedFilename()).toMatch(/^inkly-boards-\d+\.csv$/)
+    expect(download.suggestedFilename()).toMatch(/^inkly-boards-[a-z]{2}(?:-[A-Z]{2})?-\d+\.csv$/)
   })
 })
