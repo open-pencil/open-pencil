@@ -1,0 +1,7 @@
+{
+  "httpPort": 7600,
+  "authToken": null,
+  "corsOrigin": null,
+  "mcpRoot": null,
+  "enableEval": false
+}

@@ -59,6 +59,7 @@ function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): Geome
   if (sx === 1 && sy === 1) return copyGeometryPaths(geom)
   return geom.map((g) => {
     const scaled = g.commandsBlob.slice()
+    if (!(scaled.buffer instanceof ArrayBuffer)) return g
     const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
     let offset = 0
     while (offset < scaled.length) {

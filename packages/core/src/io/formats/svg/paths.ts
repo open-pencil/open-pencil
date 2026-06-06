@@ -15,6 +15,7 @@ export function round(n: number, decimals = 2): number {
 
 export function geometryBlobToSVGPath(blob: Uint8Array): string {
   if (blob.length === 0) return ''
+  if (!(blob.buffer instanceof ArrayBuffer)) return ''
   const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   let o = 0
   const parts: string[] = []

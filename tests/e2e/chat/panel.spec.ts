@@ -242,6 +242,37 @@ test('OpenRouter accepts a custom model ID from provider settings', async () => 
   await expect(page.getByTestId('chat-model-selector')).toBeVisible()
 })
 
+test('MCP server settings persist from provider settings', async () => {
+  const defaultUrl = 'http://127.0.0.1:7600/mcp'
+  const customUrl = 'http://localhost:9000/mcp'
+  const customToken = 'test-token-123'
+
+  await chatTab().click()
+  await expect(apiKeyInput()).toBeVisible()
+  await apiKeyInput().fill(USE_REAL_LLM ? OPENROUTER_KEY : 'sk-or-test-key-12345')
+  await page.locator('button:has-text("Connect")').click()
+  await expect(page.getByTestId('chat-input')).toBeVisible()
+
+  await page.getByTestId('provider-settings-trigger').click()
+  const serverUrlInput = page.getByTestId('provider-settings-mcp-server-url')
+  const serverTokenInput = page.getByTestId('provider-settings-mcp-server-token')
+
+  await expect(serverUrlInput).toBeVisible()
+  await serverUrlInput.fill(customUrl)
+  await serverTokenInput.fill(customToken)
+  await page.getByTestId('provider-settings-done').click()
+
+  await page.getByTestId('provider-settings-trigger').click()
+  await expect(page.getByTestId('provider-settings-mcp-server-url')).toHaveValue(customUrl)
+  await expect(page.getByTestId('provider-settings-mcp-server-token')).toHaveValue(customToken)
+  await page.getByTestId('provider-settings-done').click()
+
+  await page.getByTestId('provider-settings-trigger').click()
+  await page.getByTestId('provider-settings-mcp-server-url').fill(defaultUrl)
+  await page.getByTestId('provider-settings-mcp-server-token').fill('')
+  await page.getByTestId('provider-settings-done').click()
+})
+
 test('transport errors show an actionable toast', async () => {
   await chatInput().fill('Trigger missing agent error')
   await chatInput().press('Enter')

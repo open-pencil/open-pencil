@@ -48,6 +48,7 @@ export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
   const header = new TextDecoder().decode(data.slice(0, 8))
   if (header !== 'fig-kiwi') return null
 
+  if (!(data.buffer instanceof ArrayBuffer)) return null
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   const version = view.getUint32(8, true)
   let offset = 12

@@ -6,6 +6,7 @@ export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
   const header = new TextDecoder().decode(binary.slice(0, 8))
   if (header !== 'fig-kiwi') return null
 
+  if (!(binary.buffer instanceof ArrayBuffer)) return null
   const view = new DataView(binary.buffer, binary.byteOffset, binary.byteLength)
   let offset = 12
 

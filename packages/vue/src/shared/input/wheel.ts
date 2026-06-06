@@ -82,6 +82,9 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
       wheelAccum.zoomCenterY = e.clientY - rect.top
       wheelAccum.zoomScale *= 2 ** wheelZoomDelta(e)
       wheelAccum.hasZoom = true
+    } else if (e.shiftKey) {
+      wheelAccum.deltaX -= dy
+      wheelAccum.deltaY -= dx
     } else {
       wheelAccum.deltaX -= dx
       wheelAccum.deltaY -= dy

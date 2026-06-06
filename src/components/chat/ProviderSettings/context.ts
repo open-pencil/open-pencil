@@ -13,6 +13,8 @@ function createProviderSettingsContext() {
     customModelID,
     customAPIType,
     maxOutputTokens,
+    mcpServerAuthToken,
+    mcpServerURL,
     pexelsApiKey,
     unsplashAccessKey
   } = useAIChat()
@@ -23,6 +25,8 @@ function createProviderSettingsContext() {
   const unsplashKeyInput = ref('')
   const baseURLInput = ref(customBaseURL.value)
   const customModelInput = ref(customModelID.value)
+  const mcpServerURLInput = ref(mcpServerURL.value)
+  const mcpServerAuthTokenInput = ref(mcpServerAuthToken.value)
   const hasExistingKey = ref(!!apiKey.value)
   const hasExistingPexelsKey = ref(!!pexelsApiKey.value)
   const hasExistingUnsplashKey = ref(!!unsplashAccessKey.value)
@@ -32,6 +36,8 @@ function createProviderSettingsContext() {
     hasExistingKey.value = !!apiKey.value
     baseURLInput.value = customBaseURL.value
     customModelInput.value = customModelID.value
+    mcpServerURLInput.value = mcpServerURL.value
+    mcpServerAuthTokenInput.value = mcpServerAuthToken.value
   })
 
   function save() {
@@ -56,6 +62,8 @@ function createProviderSettingsContext() {
     if (providerDef.value.supportsCustomModel) {
       customModelID.value = customModelInput.value.trim()
     }
+    mcpServerURL.value = mcpServerURLInput.value.trim()
+    mcpServerAuthToken.value = mcpServerAuthTokenInput.value.trim()
   }
 
   function clearKey() {
@@ -97,6 +105,8 @@ function createProviderSettingsContext() {
     unsplashKeyInput,
     baseURLInput,
     customModelInput,
+    mcpServerURLInput,
+    mcpServerAuthTokenInput,
     hasExistingKey,
     hasExistingPexelsKey,
     hasExistingUnsplashKey,

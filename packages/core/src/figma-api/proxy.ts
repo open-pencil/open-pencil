@@ -380,8 +380,11 @@ export class FigmaNodeProxy {
   createInstance(): FigmaNodeProxy {
     const n = this._raw()
     if (n.type !== 'COMPONENT') throw new Error('createInstance() can only be called on components')
-    const pageId = this[INTERNAL_API].currentPageId
-    const inst = this[INTERNAL_GRAPH].createInstance(n.id, pageId)
+    const parentId = n.parentId ?? this[INTERNAL_API].currentPageId
+    const inst = this[INTERNAL_GRAPH].createInstance(n.id, parentId, {
+      x: n.x + n.width + 40,
+      y: n.y
+    })
     if (!inst) throw new Error('Failed to create instance')
     return this[INTERNAL_API].wrapNode(inst.id)
   }
