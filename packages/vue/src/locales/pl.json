@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "Nazwa tablicy",
     "personalBoardOption": "Tablica osobista",
+    "teamSelectAriaLabel": "Obszar roboczy tablicy",
     "newBoardButton": "Nowa tablica",
     "newBoardCreating": "Tworzenie…",
     "teamScopeHint": "Tablice zespołowe można tworzyć tylko w zespołach, których jesteś właścicielem.",

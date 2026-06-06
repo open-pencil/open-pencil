@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "看板名称",
     "personalBoardOption": "个人看板",
+    "teamSelectAriaLabel": "看板工作区",
     "newBoardButton": "新建看板",
     "newBoardCreating": "创建中…",
     "teamScopeHint": "团队看板仅可在你拥有的团队中创建。",

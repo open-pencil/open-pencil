@@ -402,6 +402,7 @@ export const boardsMessages = i18n('boards', {
   defaultBoardName: 'Untitled board',
   boardNamePlaceholder: 'Board name',
   personalBoardOption: 'Personal board',
+  teamSelectAriaLabel: 'Board workspace',
   newBoardButton: 'New board',
   newBoardCreating: 'Creating…',
   teamScopeHint: 'Team boards can be created only in teams you own.',

@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "Board-Name",
     "personalBoardOption": "Persönliches Board",
+    "teamSelectAriaLabel": "Board-Workspace",
     "newBoardButton": "Neues Board",
     "newBoardCreating": "Wird erstellt…",
     "teamScopeHint": "Team-Boards können nur in Teams erstellt werden, deren Inhaber Sie sind.",

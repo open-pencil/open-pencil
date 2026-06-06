@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "Nome bacheca",
     "personalBoardOption": "Bacheca personale",
+    "teamSelectAriaLabel": "Workspace della bacheca",
     "newBoardButton": "Nuova bacheca",
     "newBoardCreating": "Creazione…",
     "teamScopeHint": "Le bacheche del team possono essere create solo nei team di cui sei proprietario.",

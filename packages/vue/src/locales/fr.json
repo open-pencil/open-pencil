@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "Nom du tableau",
     "personalBoardOption": "Tableau personnel",
+    "teamSelectAriaLabel": "Espace de travail du tableau",
     "newBoardButton": "Nouveau tableau",
     "newBoardCreating": "Création…",
     "teamScopeHint": "Les tableaux d'équipe ne peuvent être créés que dans des équipes dont vous êtes propriétaire.",

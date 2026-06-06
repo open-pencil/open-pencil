@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "ボード名",
     "personalBoardOption": "個人ボード",
+    "teamSelectAriaLabel": "ボードワークスペース",
     "newBoardButton": "新規ボード",
     "newBoardCreating": "作成中…",
     "teamScopeHint": "チームボードはあなたがオーナーのチームでのみ作成できます。",

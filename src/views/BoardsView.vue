@@ -278,6 +278,7 @@ onMounted(async () => {
                 v-model="selectedTeamId"
                 data-test-id="board-team-select"
                 class="min-w-0 flex-1 rounded border border-border bg-input px-2 py-2 text-sm text-surface outline-none focus:border-accent"
+                :aria-label="boardsT.teamSelectAriaLabel"
               >
                 <option value="personal">{{ boardsT.personalBoardOption }}</option>
                 <option v-for="team in ownedTeams" :key="team.id" :value="team.id">

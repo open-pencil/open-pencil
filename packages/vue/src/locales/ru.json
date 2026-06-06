@@ -353,6 +353,7 @@
     "defaultBoardName": "Untitled board",
     "boardNamePlaceholder": "Название доски",
     "personalBoardOption": "Личная доска",
+    "teamSelectAriaLabel": "Рабочее пространство доски",
     "newBoardButton": "Новая доска",
     "newBoardCreating": "Создание…",
     "teamScopeHint": "Командные доски можно создавать только в командах, где вы владелец.",
