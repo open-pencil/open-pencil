@@ -11,12 +11,21 @@ reviews:
     enabled: true
     drafts: false
   pre_merge_checks:
+    title:
+      mode: "error"
+      requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Fail titles that are non-English, vague, placeholder-like, or do not identify the actual change."
     description:
       mode: "error"
     custom_checks:
-      - name: "PR Hygiene"
+      - name: "PR Hygiene: English"
         mode: "error"
-        instructions: "Fail if the PR title or description is not written in English, does not follow the repository PR template, contains leftover template comments or placeholders such as 'Fixes #', TODO, TBD, has no meaningful summary, has no concrete list of changes, or does not document validation. Pass only when the PR clearly explains what changed, why it changed, and how it was validated."
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR title or body is not primarily English, except for code identifiers, file paths, logs, error messages, and short quoted examples."
+      - name: "PR Hygiene: Template"
+        mode: "error"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments."
+      - name: "PR Hygiene: Substance"
+        mode: "error"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR body does not explain what changed, why it changed, and how it was validated."
 
 chat:
   auto_reply: true

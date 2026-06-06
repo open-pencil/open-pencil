@@ -4,6 +4,7 @@ const owner = process.env.GITHUB_REPOSITORY_OWNER
 const repo = process.env.GITHUB_REPOSITORY?.split('/')[1]
 const eventPath = process.env.GITHUB_EVENT_PATH
 const token = process.env.GITHUB_TOKEN
+const githubAPIURL = process.env.GITHUB_API_URL ?? 'https://api.github.com'
 
 if (!owner || !repo || !eventPath || !token) {
   throw new Error('Missing required GitHub Actions environment')
@@ -59,12 +60,35 @@ if (!issueNumber || !shouldInspect) {
   process.exit(0)
 }
 
-const hygieneFailed = text
-  .split('\n')
-  .some((line) => /\bPR Hygiene\b/i.test(line) && /(?:❌|\berror\b|\bfailed\b|\bfail\b)/i.test(line))
+function tableCells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim())
+}
+
+function normalizedCheckName(value: string): string {
+  return value.replace(/[^a-z0-9]+/gi, ' ').trim().toLowerCase()
+}
+
+function isPRHygieneFailure(line: string): boolean {
+  const cells = tableCells(line)
+  const checkName = cells[0] ?? ''
+  const status = cells[1] ?? ''
+  const fullLine = line.toLowerCase()
+
+  if (fullLine.includes('[ignored]')) return false
+  if (!normalizedCheckName(checkName).startsWith('pr hygiene')) return false
+
+  return /❌/u.test(status) || /\berror\b/i.test(status)
+}
+
+const hygieneFailed = text.split('\n').some(isPRHygieneFailure)
 
 if (hygieneFailed) {
-  console.log('Detected failed PR Hygiene check from CodeRabbit signal.')
+  console.log('Detected failed PR Hygiene check from CodeRabbit pre-merge table.')
 }
 
 if (!hygieneFailed) {
@@ -73,7 +97,7 @@ if (!hygieneFailed) {
 }
 
 async function github<T>(path: string, options: RequestInit = {}): Promise<T | null> {
-  const response = await fetch(`https://api.github.com${path}`, {
+  const response = await fetch(`${githubAPIURL}${path}`, {
     ...options,
     headers: {
       Accept: 'application/vnd.github+json',
