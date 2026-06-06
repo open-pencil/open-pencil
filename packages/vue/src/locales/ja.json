@@ -477,7 +477,8 @@
       "colUpdated": "更新日",
       "colActions": "アクション",
       "delete": "削除",
-      "workspacePersonal": "個人"
+      "workspacePersonal": "個人",
+      "csvHeaderId": "ID"
     },
     "teamsTab": {
       "heading": "チーム一覧",

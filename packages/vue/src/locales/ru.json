@@ -477,7 +477,8 @@
       "colUpdated": "Обновлено",
       "colActions": "Действия",
       "delete": "Удалить",
-      "workspacePersonal": "Личное"
+      "workspacePersonal": "Личное",
+      "csvHeaderId": "Id"
     },
     "teamsTab": {
       "heading": "Все команды",

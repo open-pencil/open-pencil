@@ -477,7 +477,8 @@
       "colUpdated": "Mis à jour",
       "colActions": "Actions",
       "delete": "Supprimer",
-      "workspacePersonal": "Personnel"
+      "workspacePersonal": "Personnel",
+      "csvHeaderId": "Id"
     },
     "teamsTab": {
       "heading": "Toutes les équipes",

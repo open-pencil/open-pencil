@@ -477,7 +477,8 @@
       "colUpdated": "Zaktualizowano",
       "colActions": "Akcje",
       "delete": "Usuń",
-      "workspacePersonal": "Osobiste"
+      "workspacePersonal": "Osobiste",
+      "csvHeaderId": "Id"
     },
     "teamsTab": {
       "heading": "Wszystkie zespoły",

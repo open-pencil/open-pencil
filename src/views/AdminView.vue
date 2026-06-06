@@ -315,7 +315,7 @@ function exportActivityCsv() {
 function exportBoardsCsv() {
   const b = admin.value.boardsTab
   const header: CsvCell[] = [
-    'Id',
+    b.csvHeaderId,
     b.colName,
     b.colWorkspace,
     b.colCollaborators,

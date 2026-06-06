@@ -527,7 +527,8 @@ export const adminMessages = i18n('admin', {
     colUpdated: 'Updated',
     colActions: 'Actions',
     delete: 'Delete',
-    workspacePersonal: 'Personal'
+    workspacePersonal: 'Personal',
+    csvHeaderId: 'Id'
   },
   teamsTab: {
     heading: 'All teams',

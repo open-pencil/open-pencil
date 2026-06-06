@@ -477,7 +477,8 @@
       "colUpdated": "更新时间",
       "colActions": "操作",
       "delete": "删除",
-      "workspacePersonal": "个人"
+      "workspacePersonal": "个人",
+      "csvHeaderId": "Id"
     },
     "teamsTab": {
       "heading": "所有团队",
