@@ -533,6 +533,14 @@
     "invitationBody": "以 {role} 身份收到画板邀请。",
     "teamInviteBody": "以 {role} 身份访问工作区。"
   },
+  "notificationBell": {
+    "triggerAriaLabel": "打开通知",
+    "popoverHeading": "通知",
+    "popoverSubtitle": "最新 5 项",
+    "viewAll": "查看全部",
+    "loading": "正在加载通知…",
+    "empty": "暂无通知。"
+  },
   "teams": {
     "headTitle": "团队",
     "eyebrow": "工作区",

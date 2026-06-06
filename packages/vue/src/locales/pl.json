@@ -533,6 +533,14 @@
     "invitationBody": "Zaproszenie do tablicy jako {role}.",
     "teamInviteBody": "Dostęp do obszaru roboczego jako {role}."
   },
+  "notificationBell": {
+    "triggerAriaLabel": "Otwórz powiadomienia",
+    "popoverHeading": "Powiadomienia",
+    "popoverSubtitle": "Ostatnie 5 elementów",
+    "viewAll": "Pokaż wszystko",
+    "loading": "Ładowanie powiadomień…",
+    "empty": "Brak powiadomień."
+  },
   "teams": {
     "headTitle": "Zespoły",
     "eyebrow": "Obszar roboczy",

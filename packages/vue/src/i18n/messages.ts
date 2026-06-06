@@ -592,6 +592,15 @@ export const notificationsFormatMessages = i18n('notificationsFormat', {
   teamInviteBody: params('Workspace access as {role}.')
 })
 
+export const notificationBellMessages = i18n('notificationBell', {
+  triggerAriaLabel: 'Open notifications',
+  popoverHeading: 'Notifications',
+  popoverSubtitle: 'Latest 5 items',
+  viewAll: 'View all',
+  loading: 'Loading notifications…',
+  empty: 'No notifications yet.'
+})
+
 export const teamsMessages = i18n('teams', {
   headTitle: 'Teams',
   eyebrow: 'Workspace',

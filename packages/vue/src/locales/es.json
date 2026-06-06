@@ -533,6 +533,14 @@
     "invitationBody": "Invitación al tablero como {role}.",
     "teamInviteBody": "Acceso al espacio de trabajo como {role}."
   },
+  "notificationBell": {
+    "triggerAriaLabel": "Abrir notificaciones",
+    "popoverHeading": "Notificaciones",
+    "popoverSubtitle": "Últimos 5 elementos",
+    "viewAll": "Ver todo",
+    "loading": "Cargando notificaciones…",
+    "empty": "Aún no hay notificaciones."
+  },
   "teams": {
     "headTitle": "Equipos",
     "eyebrow": "Espacio de trabajo",

@@ -533,6 +533,14 @@
     "invitationBody": "Приглашение на доску в роли {role}.",
     "teamInviteBody": "Доступ к рабочему пространству в роли {role}."
   },
+  "notificationBell": {
+    "triggerAriaLabel": "Открыть уведомления",
+    "popoverHeading": "Уведомления",
+    "popoverSubtitle": "Последние 5 элементов",
+    "viewAll": "Показать все",
+    "loading": "Загрузка уведомлений…",
+    "empty": "Пока нет уведомлений."
+  },
   "teams": {
     "headTitle": "Команды",
     "eyebrow": "Рабочее пространство",

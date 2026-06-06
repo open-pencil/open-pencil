@@ -533,6 +533,14 @@
     "invitationBody": "Invitation au tableau en tant que {role}.",
     "teamInviteBody": "Accès à l'espace de travail en tant que {role}."
   },
+  "notificationBell": {
+    "triggerAriaLabel": "Ouvrir les notifications",
+    "popoverHeading": "Notifications",
+    "popoverSubtitle": "5 derniers éléments",
+    "viewAll": "Tout afficher",
+    "loading": "Chargement des notifications…",
+    "empty": "Aucune notification pour le moment."
+  },
   "teams": {
     "headTitle": "Équipes",
     "eyebrow": "Espace de travail",

@@ -533,6 +533,14 @@
     "invitationBody": "Board-Einladung als {role}.",
     "teamInviteBody": "Workspace-Zugriff als {role}."
   },
+  "notificationBell": {
+    "triggerAriaLabel": "Benachrichtigungen öffnen",
+    "popoverHeading": "Benachrichtigungen",
+    "popoverSubtitle": "Neueste 5 Einträge",
+    "viewAll": "Alle anzeigen",
+    "loading": "Benachrichtigungen werden geladen…",
+    "empty": "Noch keine Benachrichtigungen."
+  },
   "teams": {
     "headTitle": "Teams",
     "eyebrow": "Workspace",

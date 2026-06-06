@@ -16,7 +16,11 @@ import {
 import { toast } from '@/app/shell/ui'
 import { usePopoverUI } from '@/components/ui/popover'
 
-const { notificationsFormat: notificationsFormatT } = useI18n()
+const {
+  notifications: notificationsT,
+  notificationsFormat: notificationsFormatT,
+  notificationBell: notificationBellT
+} = useI18n()
 
 const router = useRouter()
 const notifications = useNotificationsStore()
@@ -37,7 +41,7 @@ async function openNotification(notificationId: string) {
     open.value = false
     await router.push(getNotificationTarget(notification))
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to open notification'
+    const message = error instanceof Error ? error.message : notificationsT.value.toastOpenFail
     toast.error(message)
   }
 }
@@ -63,8 +67,9 @@ onUnmounted(() => {
         type="button"
         data-test-id="notification-bell-trigger"
         class="relative inline-flex size-11 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-canvas/55 text-surface transition-colors hover:bg-hover"
+        :aria-label="notificationBellT.triggerAriaLabel"
       >
-        <icon-lucide-bell class="size-4" />
+        <icon-lucide-bell class="size-4" :aria-hidden="true" />
         <span
           v-if="notifications.unreadCount > 0"
           data-test-id="notification-bell-badge"
@@ -85,8 +90,8 @@ onUnmounted(() => {
       >
         <div class="flex items-center justify-between px-2 pb-2 pt-1">
           <div>
-            <p class="text-xs font-semibold text-surface">Notifications</p>
-            <p class="text-[11px] text-muted">Latest 5 items</p>
+            <p class="text-xs font-semibold text-surface">{{ notificationBellT.popoverHeading }}</p>
+            <p class="text-[11px] text-muted">{{ notificationBellT.popoverSubtitle }}</p>
           </div>
           <button
             type="button"
@@ -94,7 +99,7 @@ onUnmounted(() => {
             class="cursor-pointer rounded-md px-2 py-1 text-[11px] text-accent transition-colors hover:bg-hover"
             @click="openAllNotifications"
           >
-            View all
+            {{ notificationBellT.viewAll }}
           </button>
         </div>
 
@@ -102,7 +107,7 @@ onUnmounted(() => {
           v-if="notifications.loading && notifications.items.length === 0"
           class="rounded-xl px-3 py-4 text-sm text-muted"
         >
-          Loading notifications…
+          {{ notificationBellT.loading }}
         </div>
 
         <div
@@ -110,7 +115,7 @@ onUnmounted(() => {
           data-test-id="notification-bell-empty"
           class="rounded-xl border border-dashed border-border px-3 py-6 text-center text-sm text-muted"
         >
-          No notifications yet.
+          {{ notificationBellT.empty }}
         </div>
 
         <ul v-else class="space-y-2">

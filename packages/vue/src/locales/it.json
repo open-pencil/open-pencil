@@ -533,6 +533,14 @@
     "invitationBody": "Invito alla board come {role}.",
     "teamInviteBody": "Accesso al workspace come {role}."
   },
+  "notificationBell": {
+    "triggerAriaLabel": "Apri le notifiche",
+    "popoverHeading": "Notifiche",
+    "popoverSubtitle": "Ultimi 5 elementi",
+    "viewAll": "Mostra tutto",
+    "loading": "Caricamento notifiche…",
+    "empty": "Ancora nessuna notifica."
+  },
   "teams": {
     "headTitle": "Team",
     "eyebrow": "Workspace",

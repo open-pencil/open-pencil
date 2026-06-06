@@ -533,6 +533,14 @@
     "invitationBody": "{role} としてボード招待されました。",
     "teamInviteBody": "{role} としてワークスペースにアクセスできます。"
   },
+  "notificationBell": {
+    "triggerAriaLabel": "通知を開く",
+    "popoverHeading": "通知",
+    "popoverSubtitle": "最新 5 件",
+    "viewAll": "すべて表示",
+    "loading": "通知を読み込み中…",
+    "empty": "通知はまだありません。"
+  },
   "teams": {
     "headTitle": "チーム",
     "eyebrow": "ワークスペース",
