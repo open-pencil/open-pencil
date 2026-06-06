@@ -172,6 +172,7 @@
     "@chenglou/pretext": "^0.0.7",
     "@iconify/utils": "^3.1.0",
     "@tauri-apps/api": "^2",
+    "@xmldom/xmldom": "^0.9.10",
     "acorn": "^8.16.0",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",

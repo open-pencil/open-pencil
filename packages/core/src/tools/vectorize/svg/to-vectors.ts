@@ -15,8 +15,8 @@ import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
 import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
-import { parseSvgGradients, resolveGradientFill } from '#core/tools/vectorize/svg/gradients'
-import { applySvgTransformToPath } from '#core/tools/vectorize/svg/transform'
+import { parseSVGGradients, resolveGradientFill } from '#core/tools/vectorize/svg/gradients'
+import { applySVGTransformToPath } from '#core/tools/vectorize/svg/transform'
 import type { Rect } from '#core/types'
 import { computeAccurateBounds } from '#core/vector'
 
@@ -31,7 +31,7 @@ function mapPathDataToBounds(
   return svgpath(d).translate(-space.x, -space.y).scale(sx, sy).toString()
 }
 
-function parseSvgCoordinateSpace(svg: string): Rect {
+function parseSVGCoordinateSpace(svg: string): Rect {
   const viewBox = parseSvgViewBox(svg)
   if (viewBox && viewBox.width > 0 && viewBox.height > 0) return viewBox
   const size = parseSvgSize(svg)
@@ -68,7 +68,7 @@ export interface VectorizedPath {
   strokes: Stroke[]
 }
 
-export interface SvgVectorizeResult {
+export interface SVGVectorizeResult {
   paths: VectorizedPath[]
   /** Tight bounds of path geometry in the target coordinate space. */
   contentBounds: Rect
@@ -78,20 +78,20 @@ export function svgToVectorPaths(
   svgText: string,
   bounds: { width: number; height: number },
   options?: { defaultColor?: string }
-): SvgVectorizeResult | null {
+): SVGVectorizeResult | null {
   const paths = extractPaths(svgText)
   if (paths.length === 0) return null
 
-  const space = parseSvgCoordinateSpace(svgText)
+  const space = parseSVGCoordinateSpace(svgText)
   if (space.width <= 0 || space.height <= 0) return null
 
   const defaultColor = options?.defaultColor ?? '#000000'
-  const gradients = parseSvgGradients(svgText)
+  const gradients = parseSVGGradients(svgText)
 
   const vectorized: VectorizedPath[] = []
   for (const path of paths) {
     const fillRule: WindingRule = path.fillRule
-    const pathData = applySvgTransformToPath(path.d, path.transform)
+    const pathData = applySVGTransformToPath(path.d, path.transform)
     const scaledD = mapPathDataToBounds(pathData, space, bounds)
     const network = parseSVGPath(scaledD, fillRule)
     const gradientFill =

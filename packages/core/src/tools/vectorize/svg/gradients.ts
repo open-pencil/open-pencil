@@ -9,6 +9,7 @@
  * normalize into each node's bounding box (objectBoundingBox) space, matching the
  * gradientTransform convention used by the SVG exporter (see io/formats/svg/defs).
  */
+import { DOMParser } from '@xmldom/xmldom'
 import svgpath from 'svgpath'
 
 import { parseColor } from '#core/color'
@@ -36,9 +37,12 @@ interface ParsedGradient {
   r: number
 }
 
-function attr(tag: string, name: string): string | null {
-  const m = tag.match(new RegExp(`${name}\\s*=\\s*["']([^"']*)["']`))
-  return m ? m[1] : null
+/** Minimal structural view of the parsed XML nodes we read (DOM-compatible). */
+interface SvgQueryable {
+  getElementsByTagName(name: string): ArrayLike<SvgElementLike>
+}
+interface SvgElementLike extends SvgQueryable {
+  getAttribute(name: string): string | null
 }
 
 /** Coordinate value: bare number (userSpaceOnUse) or percent/fraction (objectBoundingBox). */
@@ -50,19 +54,15 @@ function coord(value: string | null, fallback: number): number {
   return Number.isFinite(n) ? n : fallback
 }
 
-function parseStops(body: string): RawStop[] {
+function readStops(gradient: SvgElementLike): RawStop[] {
   const stops: RawStop[] = []
-  const stopRe = /<stop\b[^>]*\/?>/g
-  let match: RegExpExecArray | null
-  while ((match = stopRe.exec(body)) !== null) {
-    const tag = match[0]
-    const offset = coord(attr(tag, 'offset'), stops.length === 0 ? 0 : 1)
-    const colorStr =
-      attr(tag, 'stop-color') ?? styleProp(attr(tag, 'style'), 'stop-color') ?? '#000000'
-    const opacityStr = attr(tag, 'stop-opacity') ?? styleProp(attr(tag, 'style'), 'stop-opacity')
-    const color = parseColor(colorStr)
-    if (opacityStr != null) {
-      const a = Number.parseFloat(opacityStr)
+  const stopEls = Array.from(gradient.getElementsByTagName('stop'))
+  for (const [i, stop] of stopEls.entries()) {
+    const offset = coord(stop.getAttribute('offset'), i === 0 ? 0 : 1)
+    const color = parseColor(stop.getAttribute('stop-color') ?? '#000000')
+    const opacity = stop.getAttribute('stop-opacity')
+    if (opacity != null) {
+      const a = Number.parseFloat(opacity)
       if (Number.isFinite(a)) color.a = a
     }
     stops.push({ offset: Math.min(1, Math.max(0, offset)), color })
@@ -70,39 +70,45 @@ function parseStops(body: string): RawStop[] {
   return stops.sort((a, b) => a.offset - b.offset)
 }
 
-function styleProp(style: string | null, prop: string): string | null {
-  if (!style) return null
-  const m = style.match(new RegExp(`${prop}\\s*:\\s*([^;]+)`))
-  return m ? m[1].trim() : null
-}
-
-/** Parse every gradient def in the SVG into a lookup by id. */
-export function parseSvgGradients(svg: string): Map<string, ParsedGradient> {
+/**
+ * Parse every gradient def in the SVG into a lookup by id, via an XML/DOM parse
+ * (no hand-rolled markup parsing). Returns an empty map on parse failure so a
+ * malformed SVG simply falls back to solid fills.
+ */
+export function parseSVGGradients(svg: string): Map<string, ParsedGradient> {
   const map = new Map<string, ParsedGradient>()
-  const re = /<(linear|radial)Gradient\b([^>]*)>([\s\S]*?)<\/\1Gradient>/g
-  let match: RegExpExecArray | null
-  while ((match = re.exec(svg)) !== null) {
-    const kind = match[1] as 'linear' | 'radial'
-    const head = `<x ${match[2]}>`
-    const id = attr(head, 'id')
-    if (!id) continue
-    // SVG default gradientUnits is objectBoundingBox; vectorizers (Recraft/fal)
-    // set userSpaceOnUse explicitly.
-    const units =
-      attr(head, 'gradientUnits') === 'userSpaceOnUse' ? 'userSpaceOnUse' : 'objectBoundingBox'
-    map.set(id, {
-      kind,
-      units,
-      transform: attr(head, 'gradientTransform'),
-      stops: parseStops(match[3]),
-      x1: coord(attr(head, 'x1'), 0),
-      y1: coord(attr(head, 'y1'), 0),
-      x2: coord(attr(head, 'x2'), units === 'objectBoundingBox' ? 1 : 0),
-      y2: coord(attr(head, 'y2'), 0),
-      cx: coord(attr(head, 'cx'), 0.5),
-      cy: coord(attr(head, 'cy'), 0.5),
-      r: coord(attr(head, 'r'), 0.5)
-    })
+  let doc: SvgQueryable
+  try {
+    doc = new DOMParser().parseFromString(svg, 'image/svg+xml')
+  } catch {
+    return map
+  }
+
+  for (const kind of ['linear', 'radial'] as const) {
+    const els = Array.from(doc.getElementsByTagName(`${kind}Gradient`))
+    for (const el of els) {
+      const id = el.getAttribute('id')
+      if (!id) continue
+      // SVG default gradientUnits is objectBoundingBox; vectorizers (Recraft/fal)
+      // set userSpaceOnUse explicitly.
+      const units =
+        el.getAttribute('gradientUnits') === 'userSpaceOnUse'
+          ? 'userSpaceOnUse'
+          : 'objectBoundingBox'
+      map.set(id, {
+        kind,
+        units,
+        transform: el.getAttribute('gradientTransform'),
+        stops: readStops(el),
+        x1: coord(el.getAttribute('x1'), 0),
+        y1: coord(el.getAttribute('y1'), 0),
+        x2: coord(el.getAttribute('x2'), units === 'objectBoundingBox' ? 1 : 0),
+        y2: coord(el.getAttribute('y2'), 0),
+        cx: coord(el.getAttribute('cx'), 0.5),
+        cy: coord(el.getAttribute('cy'), 0.5),
+        r: coord(el.getAttribute('r'), 0.5)
+      })
+    }
   }
   return map
 }

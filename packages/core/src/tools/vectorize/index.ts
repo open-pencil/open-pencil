@@ -1,6 +1,6 @@
 export {
   compareVectorizeRenders,
-  renderRawSvgVectorPaths,
+  renderRawSVGVectorPaths,
   renderVectorizeComparison,
   buildImportedVectorFrame,
   renderImportedVectorFrame,
@@ -17,4 +17,4 @@ export {
   resolveVectorFramePlacement,
   type VectorFramePlacement
 } from './placement'
-export { svgToVectorPaths, type SvgVectorizeResult, type VectorizedPath } from './svg/to-vectors'
+export { svgToVectorPaths, type SVGVectorizeResult, type VectorizedPath } from './svg/to-vectors'

@@ -250,6 +250,20 @@ describe('svgToVectorPaths', () => {
     expect(maxY).toBeCloseTo(140, 0)
   })
 
+  test('applies non-translate transforms (scale) via svgpath', () => {
+    // scale(2) was silently ignored by the old translate/matrix-only parser.
+    const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <path transform="scale(2)" d="M0 0 H25 V25 H0 Z" fill="#336699"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 100, height: 100 })
+    const path = expectDefined(result?.paths[0], 'vector path')
+    // 25→50 in user space after scale(2), then viewBox 100→bounds 100 (1:1).
+    const maxX = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.x))
+    const maxY = Math.max(...path.vectorNetwork.vertices.map((vertex) => vertex.y))
+    expect(maxX).toBeCloseTo(50, 0)
+    expect(maxY).toBeCloseTo(50, 0)
+  })
+
   test('reports tight content bounds inside target bounds', () => {
     const svg = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <path d="M25 25 H75 V75 H25 Z" fill="#ffcc00"/>

@@ -41,7 +41,7 @@ function clampDimensions(width: number, height: number): { width: number; height
   return { width: w, height: h }
 }
 
-function encodePng(
+function encodePNG(
   ck: CanvasKit,
   image: ReturnType<CanvasKit['MakeImageFromEncoded']>
 ): Uint8Array | null {
@@ -86,7 +86,7 @@ function resizeImage(
   )
   surface.flush()
   const snapshot = surface.makeImageSnapshot()
-  const encoded = encodePng(ck, snapshot)
+  const encoded = encodePNG(ck, snapshot)
   snapshot.delete()
   surface.delete()
   ck.Free(pixels)
@@ -113,7 +113,7 @@ export function preprocessForVectorize(
   const target = clampDimensions(originalWidth, originalHeight)
   let pngBytes: Uint8Array | null
   if (target.width === originalWidth && target.height === originalHeight) {
-    pngBytes = encodePng(ck, source)
+    pngBytes = encodePNG(ck, source)
   } else {
     pngBytes = resizeImage(ck, source, target.width, target.height)
   }

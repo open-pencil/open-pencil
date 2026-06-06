@@ -15,7 +15,7 @@ import {
   createVectorFrameChildren,
   resolveVectorFramePlacement
 } from '@/app/editor/vectorize/placement'
-import { falVectorize, recraftVectorize } from '@/app/editor/vectorize/providers'
+import { getVectorizeProvider } from '@/app/editor/vectorize/providers'
 import { toast } from '@/app/shell/ui'
 
 let vectorizeInFlight = false
@@ -81,10 +81,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
       throw new Error('Could not prepare image for vectorization')
     }
 
-    const svgText =
-      provider === 'fal'
-        ? await falVectorize(preprocessed.pngBytes, apiKey)
-        : await recraftVectorize(preprocessed.pngBytes, apiKey)
+    const svgText = await getVectorizeProvider(provider).vectorize(preprocessed.pngBytes, apiKey)
 
     const vectorized = svgToVectorPaths(svgText, {
       width: node.width,

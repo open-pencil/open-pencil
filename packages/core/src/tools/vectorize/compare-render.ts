@@ -7,7 +7,7 @@ import type { Color, Rect, Size } from '#core/types'
 import { vectorNetworkToPath } from '#core/vector'
 
 import { createVectorFrameChildren, resolveVectorFramePlacement } from './placement'
-import { svgToVectorPaths, type SvgVectorizeResult } from './svg/to-vectors'
+import { svgToVectorPaths, type SVGVectorizeResult } from './svg/to-vectors'
 
 export type VectorizeCompareTargets = Size
 
@@ -26,7 +26,7 @@ function parseBackground(value: string | undefined): Color {
   return BLACK
 }
 
-function renderTargetsToPng(
+function renderTargetsToPNG(
   ck: CanvasKit,
   targets: VectorizeCompareTargets,
   background: Color,
@@ -54,13 +54,13 @@ function renderTargetsToPng(
 }
 
 /** Flat composition of scaled SVG paths — reference for vendor geometry in target bounds. */
-export function renderRawSvgVectorPaths(
+export function renderRawSVGVectorPaths(
   ck: CanvasKit,
-  vectorized: SvgVectorizeResult,
+  vectorized: SVGVectorizeResult,
   targets: VectorizeCompareTargets,
   background: Color
 ): Uint8Array | null {
-  return renderTargetsToPng(ck, targets, background, (renderer, canvas) => {
+  return renderTargetsToPNG(ck, targets, background, (renderer, canvas) => {
     for (const path of vectorized.paths) {
       const skPaths = vectorNetworkToPath(ck, path.vectorNetwork)
       for (const fill of path.fills) {
@@ -91,7 +91,7 @@ export function renderRawSvgVectorPaths(
 export function buildImportedVectorFrame(
   graph: SceneGraphType,
   parentId: string,
-  vectorized: SvgVectorizeResult,
+  vectorized: SVGVectorizeResult,
   targets: VectorizeCompareTargets
 ): string {
   const placement = resolveVectorFramePlacement(
@@ -120,7 +120,7 @@ export function renderImportedVectorFrame(
   targets: VectorizeCompareTargets,
   background: Color
 ): Uint8Array | null {
-  return renderTargetsToPng(ck, targets, background, (renderer, canvas) => {
+  return renderTargetsToPNG(ck, targets, background, (renderer, canvas) => {
     renderer.renderNode(canvas, graph, frameId, {})
   })
 }
@@ -182,7 +182,7 @@ export function renderVectorizeComparison(
   targets: VectorizeCompareTargets,
   options?: { background?: string }
 ): {
-  vectorized: SvgVectorizeResult
+  vectorized: SVGVectorizeResult
   rawPng: Uint8Array
   importedPng: Uint8Array
   metrics: VectorizeCompareMetrics
@@ -191,7 +191,7 @@ export function renderVectorizeComparison(
   if (!vectorized || vectorized.paths.length === 0) return null
 
   const background = parseBackground(options?.background)
-  const rawPng = renderRawSvgVectorPaths(ck, vectorized, targets, background)
+  const rawPng = renderRawSVGVectorPaths(ck, vectorized, targets, background)
   if (!rawPng) return null
 
   const graph = new SceneGraph()
