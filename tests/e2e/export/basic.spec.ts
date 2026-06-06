@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 
+import { expectInViewport } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 let page: Page
@@ -50,9 +51,15 @@ test('remove export row decreases row count', async () => {
 
 test('format selector changes to JPG', async () => {
   const formatTrigger = exportItems().first().getByTestId('app-select-trigger').last()
+  await formatTrigger.hover()
+  await expect(page.locator('[role=tooltip]').filter({ hasText: 'Export format' })).toBeVisible()
   await formatTrigger.click()
+  await expect(page.locator('[role=tooltip]').filter({ hasText: 'Export format' })).toHaveCount(0)
 
-  await page.locator('[role="option"]').filter({ hasText: 'JPG' }).click()
+  const jpgOption = page.locator('[role="option"]').filter({ hasText: 'JPG' })
+  await expect(jpgOption).toBeVisible()
+  await expectInViewport(page, jpgOption)
+  await jpgOption.click()
   await canvas.waitForRender()
 
   await expect(formatTrigger).toHaveText('JPG')
