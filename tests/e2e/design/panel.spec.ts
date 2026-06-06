@@ -1,4 +1,4 @@
-import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { expect, expectInViewport, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
 
 const editor = useEditorSetup()
@@ -305,8 +305,19 @@ test('multi-select shows mixed header and boolean operations', async () => {
   await expect(multiHeader).toContainText('Mixed')
   await expect(multiHeader).toContainText('layers')
 
-  await editor.page.getByTestId('boolean-operations-trigger').click()
-  await expect(editor.page.getByTestId('boolean-operation-booleanUnion')).toBeVisible()
+  const booleanOperations = editor.page.getByTestId('boolean-operations-trigger')
+  await booleanOperations.hover()
+  await expect(
+    editor.page.locator('[role=tooltip]').filter({ hasText: 'Boolean operations' })
+  ).toBeVisible()
+
+  await booleanOperations.click()
+  await expect(
+    editor.page.locator('[role=tooltip]').filter({ hasText: 'Boolean operations' })
+  ).toHaveCount(0)
+  const booleanUnion = editor.page.getByTestId('boolean-operation-booleanUnion')
+  await expect(booleanUnion).toBeVisible()
+  await expectInViewport(editor.page, booleanUnion)
   await expect(editor.page.getByTestId('boolean-operation-booleanSubtract')).toBeVisible()
   await expect(editor.page.getByTestId('boolean-operation-booleanIntersect')).toBeVisible()
   await expect(editor.page.getByTestId('boolean-operation-booleanExclude')).toBeVisible()
