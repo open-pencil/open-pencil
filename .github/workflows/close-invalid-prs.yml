@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # This job only reacts to trusted CodeRabbit review signals and then labels/closes PRs.
+  # This job only reacts to CodeRabbit PR Hygiene pre-merge failures and never runs contributor code.
   close-invalid:
     name: Close PRs failed by PR Hygiene
     runs-on: ubuntu-latest
