@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls, useOkHCL, useI18n } from '@open-pencil/vue'
+import { PropertyListRoot, useFillControls, useOkHCL, useI18n, inputValue } from '@open-pencil/vue'
+import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
 
 import FillPicker from '@/components/FillPicker.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -30,6 +31,19 @@ function updateFill(
     fillCtx.unbindVariable(activeNode.id, index)
   }
   update(index, fill)
+}
+
+function updateFillHex(
+  activeNode: SceneNode | null | undefined,
+  index: number,
+  fill: Fill,
+  hex: string,
+  update: (index: number, fill: Fill) => void
+) {
+  if (fill.type !== 'SOLID') return
+  const parsed = parseColor(hex.startsWith('#') ? hex : `#${hex}`)
+  if (!parsed) return
+  updateFill(activeNode, index, { ...fill, color: { ...parsed, a: fill.color.a } }, update)
 }
 </script>
 
@@ -80,7 +94,18 @@ function updateFill(
           @update="updateFill(activeNode, i, $event, actions.update)"
         />
 
+        <input
+          v-if="
+            fill.type === 'SOLID' && !(activeNode && fillCtx.getBoundVariable(activeNode.id, i))
+          "
+          data-test-id="fill-hex-input"
+          class="min-w-0 flex-1 border-none bg-transparent font-mono text-xs text-surface outline-none"
+          :value="colorToHexRaw(fill.color)"
+          maxlength="6"
+          @change="updateFillHex(activeNode, i, fill, inputValue($event), actions.update)"
+        />
         <span
+          v-else
           class="min-w-0 flex-1 truncate font-mono text-xs"
           :class="
             activeNode && fillCtx.getBoundVariable(activeNode.id, i)
