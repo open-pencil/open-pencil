@@ -638,6 +638,14 @@ export const loginBannerMessages = i18n('loginBanner', {
   loginPending: 'Starting…'
 })
 
+export const safariBannerMessages = i18n('safariBanner', {
+  messagePrefix:
+    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place. ",
+  useChrome: 'Use Chrome',
+  messageSuffix: ' or Edge for full support.',
+  dismiss: 'Dismiss'
+})
+
 export const shareModalMessages = i18n('shareModal', {
   dialogTitle: 'Share',
   dialogDescription: params('Issue an invitation link to share {boardName}.'),

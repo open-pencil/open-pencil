@@ -574,6 +574,12 @@
     "loginButton": "Accedi con Google",
     "loginPending": "Avvio…"
   },
+  "safariBanner": {
+    "messagePrefix": "Il tuo browser non supporta l'API file locale. I file verranno scaricati invece di essere salvati sul posto. ",
+    "useChrome": "Usa Chrome",
+    "messageSuffix": " o Edge per il supporto completo.",
+    "dismiss": "Chiudi"
+  },
   "shareModal": {
     "dialogTitle": "Condividi",
     "dialogDescription": "Crea un link di invito per condividere {boardName}.",

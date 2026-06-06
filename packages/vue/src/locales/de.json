@@ -574,6 +574,12 @@
     "loginButton": "Mit Google anmelden",
     "loginPending": "Wird gestartet…"
   },
+  "safariBanner": {
+    "messagePrefix": "Dein Browser unterstützt die lokale Datei-API nicht. Dateien werden heruntergeladen statt direkt gespeichert. ",
+    "useChrome": "Chrome verwenden",
+    "messageSuffix": " oder Edge für vollen Support.",
+    "dismiss": "Schließen"
+  },
   "shareModal": {
     "dialogTitle": "Teilen",
     "dialogDescription": "Erstelle einen Einladungslink, um {boardName} zu teilen.",

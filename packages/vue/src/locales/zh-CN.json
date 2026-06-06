@@ -574,6 +574,12 @@
     "loginButton": "使用 Google 登录",
     "loginPending": "正在启动…"
   },
+  "safariBanner": {
+    "messagePrefix": "你的浏览器不支持本地文件 API。 文件将被下载而非就地保存。 ",
+    "useChrome": "使用 Chrome",
+    "messageSuffix": " 或 Edge 以获得完整支持。",
+    "dismiss": "关闭"
+  },
   "shareModal": {
     "dialogTitle": "共享",
     "dialogDescription": "生成邀请链接以共享 {boardName}。",

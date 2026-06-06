@@ -574,6 +574,12 @@
     "loginButton": "Se connecter avec Google",
     "loginPending": "Démarrage…"
   },
+  "safariBanner": {
+    "messagePrefix": "Votre navigateur ne prend pas en charge l'API de fichiers locale. Les fichiers seront téléchargés au lieu d'être enregistrés sur place. ",
+    "useChrome": "Utilisez Chrome",
+    "messageSuffix": " ou Edge pour une compatibilité complète.",
+    "dismiss": "Ignorer"
+  },
   "shareModal": {
     "dialogTitle": "Partager",
     "dialogDescription": "Générez un lien d'invitation pour partager {boardName}.",

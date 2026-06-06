@@ -574,6 +574,12 @@
     "loginButton": "Zaloguj się przez Google",
     "loginPending": "Uruchamianie…"
   },
+  "safariBanner": {
+    "messagePrefix": "Twoja przeglądarka nie obsługuje lokalnego API plików. Pliki będą pobierane zamiast zapisywane w miejscu. ",
+    "useChrome": "Użyj Chrome",
+    "messageSuffix": " lub Edge dla pełnego wsparcia.",
+    "dismiss": "Zamknij"
+  },
   "shareModal": {
     "dialogTitle": "Udostępnij",
     "dialogDescription": "Wygeneruj link z zaproszeniem, aby udostępnić {boardName}.",

@@ -574,6 +574,12 @@
     "loginButton": "Iniciar sesión con Google",
     "loginPending": "Iniciando…"
   },
+  "safariBanner": {
+    "messagePrefix": "Tu navegador no admite la API de archivos local. Los archivos se descargarán en lugar de guardarse en su lugar. ",
+    "useChrome": "Usa Chrome",
+    "messageSuffix": " o Edge para compatibilidad completa.",
+    "dismiss": "Descartar"
+  },
   "shareModal": {
     "dialogTitle": "Compartir",
     "dialogDescription": "Genera un enlace de invitación para compartir {boardName}.",

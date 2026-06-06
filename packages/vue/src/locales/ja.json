@@ -574,6 +574,12 @@
     "loginButton": "Google でログイン",
     "loginPending": "開始中…"
   },
+  "safariBanner": {
+    "messagePrefix": "お使いのブラウザはローカル file API に対応していません。 ファイルは保存ではなくダウンロードされます。 ",
+    "useChrome": "Chrome を使う",
+    "messageSuffix": " か Edge をご利用ください。",
+    "dismiss": "閉じる"
+  },
   "shareModal": {
     "dialogTitle": "共有",
     "dialogDescription": "{boardName} に参加するための招待リンクを発行します。",

@@ -574,6 +574,12 @@
     "loginButton": "Войти через Google",
     "loginPending": "Запуск…"
   },
+  "safariBanner": {
+    "messagePrefix": "Ваш браузер не поддерживает локальный файловый API. Файлы будут загружаться, а не сохраняться на месте. ",
+    "useChrome": "Используйте Chrome",
+    "messageSuffix": " или Edge для полной поддержки.",
+    "dismiss": "Закрыть"
+  },
   "shareModal": {
     "dialogTitle": "Поделиться",
     "dialogDescription": "Создайте ссылку-приглашение, чтобы поделиться доской «{boardName}».",
