@@ -15,6 +15,8 @@ OpenPencil currently keeps file-format internals in `@open-pencil/core` while `@
 - `@open-pencil/dom-css` owns DesignDOM, CSS runtimes, HTML/JSX/Tailwind projection, and SceneGraph ⇄ DesignDOM conversion.
 - App, CLI, MCP, and Vue SDK consume packages through public workspace exports only.
 
+See [`kiwi-package-plan.md`](./kiwi-package-plan.md) for the detailed `@open-pencil/kiwi` inventory, dependency blockers, and package-local test plan.
+
 ## Candidate packages
 
 ### `@open-pencil/kiwi`
