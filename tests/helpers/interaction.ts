@@ -35,17 +35,52 @@ export async function expectClipboard(page: Page, expected: string) {
   expect(value).toBe(expected)
 }
 
+export interface ClickAndWaitForResponseOptions {
+  /** HTTP method filter. Pass an array for multiple methods. Default: any. */
+  method?: string | string[]
+  /** Require response.ok() to be true. Default: true. */
+  ok?: boolean
+  /** waitForResponse timeout in ms. */
+  timeout?: number
+}
+
+/**
+ * Click a target after the response listener is already armed.
+ *
+ * The listener is registered via `page.waitForResponse(...)` before the click
+ * fires. This avoids the race where a `Promise.all([waitForResponse, click])`
+ * shape lets the click trigger a fetch that resolves before the matcher is
+ * actually subscribed (observed when click navigates the page, e.g. board
+ * create flow in dashboard.interaction).
+ *
+ * The matcher also defaults to `method=any` + `ok=true`, and accepts an
+ * explicit `method` filter so callers can scope to e.g. `POST` only.
+ */
 export async function clickAndWaitForResponse<T>(
   page: Page,
   locator: Locator,
-  urlPattern: RegExp | string
+  urlPattern: RegExp | string,
+  options: ClickAndWaitForResponseOptions = {}
 ) {
+  const { method, ok = true, timeout } = options
   const matches = toResponseMatcher(urlPattern)
-  const [response] = await Promise.all([
-    page.waitForResponse((candidate) => matches(candidate.url()) && candidate.ok()),
-    locator.click()
-  ])
+  const methods = Array.isArray(method)
+    ? method.map((m) => m.toUpperCase())
+    : typeof method === 'string'
+      ? [method.toUpperCase()]
+      : null
 
+  const responsePromise = page.waitForResponse(
+    (candidate) => {
+      if (!matches(candidate.url())) return false
+      if (ok && !candidate.ok()) return false
+      if (methods && !methods.includes(candidate.request().method().toUpperCase())) return false
+      return true
+    },
+    timeout === undefined ? undefined : { timeout }
+  )
+  await locator.click()
+  const response = await responsePromise
   return (await response.json()) as T
 }
 

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { cleanState, seedBoards } from '#tests/helpers/api-seed'
 import { mockGoogleLogin } from '#tests/helpers/e2e-auth'
 import { useE2ECoverage } from '#tests/helpers/e2e-coverage'
-import { expectModal } from '#tests/helpers/interaction'
+import { clickAndWaitForResponse, expectModal } from '#tests/helpers/interaction'
 
 test.describe('dashboard interaction', () => {
   useE2ECoverage(test, 'dashboard-interaction')
@@ -29,15 +29,12 @@ test.describe('dashboard interaction', () => {
     await expect(page.getByTestId('board-card')).toHaveCount(0)
     await page.getByTestId('board-create-input').fill('Interaction test board')
 
-    const responsePromise = page.waitForResponse(
-      (response) =>
-        response.url().includes('/api/boards') &&
-        response.request().method() === 'POST' &&
-        response.ok()
+    const payload = await clickAndWaitForResponse<{ id: string; name: string }>(
+      page,
+      page.getByTestId('board-create-button'),
+      /\/api\/boards/,
+      { method: 'POST' }
     )
-    await page.getByTestId('board-create-button').click()
-    const response = await responsePromise
-    const payload = (await response.json()) as { id: string; name: string }
     expect(payload.name).toBe('Interaction test board')
   })
 
