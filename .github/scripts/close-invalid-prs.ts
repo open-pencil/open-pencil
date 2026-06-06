@@ -63,6 +63,10 @@ const hygieneFailed = text
   .split('\n')
   .some((line) => /\bPR Hygiene\b/i.test(line) && /(?:❌|\berror\b|\bfailed\b|\bfail\b)/i.test(line))
 
+if (hygieneFailed) {
+  console.log('Detected failed PR Hygiene check from CodeRabbit signal.')
+}
+
 if (!hygieneFailed) {
   console.log('CodeRabbit signal did not reference a failed PR Hygiene check.')
   process.exit(0)

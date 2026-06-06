@@ -4,7 +4,7 @@ on:
   pull_request_review:
     types: [submitted]
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 concurrency:
   group: close-invalid-prs-${{ github.event.pull_request.number || github.event.issue.number }}
