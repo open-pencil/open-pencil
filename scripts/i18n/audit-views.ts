@@ -118,10 +118,15 @@ function main() {
   lines.push('')
   lines.push('## Next i18n migration priorities')
   lines.push('')
-  const topThree = reports.slice(0, 3)
-  for (const report of topThree) {
-    const rel = report.file.replace(/^src\/views\//, '')
-    lines.push(`- ${rel} — ${report.count} candidates`)
+  const remaining = reports.filter((report) => report.count > 0)
+  if (remaining.length === 0) {
+    lines.push('All views are fully i18n-ready — no remaining candidates.')
+  } else {
+    const topThree = remaining.slice(0, 3)
+    for (const report of topThree) {
+      const rel = report.file.replace(/^src\/views\//, '')
+      lines.push(`- ${rel} — ${report.count} candidates`)
+    }
   }
 
   const text = `${lines.join('\n')}\n`

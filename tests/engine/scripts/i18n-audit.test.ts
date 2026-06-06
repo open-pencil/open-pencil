@@ -124,4 +124,15 @@ describe('i18n audit-views', () => {
     expect(output).toContain('Toggle pin')
     expect(output).toContain('Hover hint')
   })
+
+  test('shows a completion notice in the priorities section when all views are clean', () => {
+    const { output } = runAuditOnSample(`
+<template>
+  <p>{{ alreadyI18n }}</p>
+</template>
+`)
+    expect(output).toContain('## Next i18n migration priorities')
+    expect(output).toContain('All views are fully i18n-ready')
+    expect(output).not.toContain('— 0 candidates')
+  })
 })
