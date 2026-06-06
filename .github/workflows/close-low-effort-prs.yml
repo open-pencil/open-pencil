@@ -1,4 +1,4 @@
-name: Close invalid PRs
+name: Close low-effort PRs
 
 on:
   pull_request_review:
@@ -7,13 +7,13 @@ on:
     types: [created, edited]
 
 concurrency:
-  group: close-invalid-prs-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: close-low-effort-prs-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
   # This job only reacts to CodeRabbit PR Hygiene pre-merge failures and never runs contributor code.
-  close-invalid:
-    name: Close PRs failed by PR Hygiene
+  close-low-effort:
+    name: Close low-effort PRs
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,12 +31,12 @@ jobs:
         with:
           node-version: 24
 
-      - name: Close PR when CodeRabbit fails PR Hygiene
+      - name: Close low-effort PR when CodeRabbit fails PR Hygiene
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if [ ! -f .github/scripts/close-invalid-prs.ts ]; then
-            echo "Trusted close-invalid helper is not present on the default branch yet."
+          if [ ! -f .github/scripts/close-low-effort-prs.ts ]; then
+            echo "Trusted close-low-effort helper is not present on the default branch yet."
             exit 0
           fi
-          node --experimental-strip-types .github/scripts/close-invalid-prs.ts
+          node --experimental-strip-types .github/scripts/close-low-effort-prs.ts

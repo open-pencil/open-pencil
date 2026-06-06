@@ -41,7 +41,7 @@ Pull requests must be reviewable without guessing the author's intent.
 
 Do not submit placeholder PRs. Remove template comments before opening a PR. Do not leave dangling issue references such as `Fixes #`, `TODO`, `TBD`, empty headings, unfilled sections, or similar unfinished text.
 
-PRs from external contributors that ignore the template, omit validation, are not written in English, or otherwise do not follow these guidelines may be labeled `invalid` and closed automatically.
+CodeRabbit enforces these PR rules through PR Hygiene checks. Low-effort PRs from external contributors that ignore the template, omit validation, are not written in English, or otherwise do not follow these guidelines may be labeled `invalid` and closed automatically. If you are unsure how to fix something, please open a detailed issue instead of submitting a placeholder PR. If you are sure your PR was closed by mistake, please file an issue with the PR link and context.
 
 ## Quality checks
 

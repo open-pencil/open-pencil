@@ -156,7 +156,7 @@ await github<unknown>(`/repos/${owner}/${repo}/issues/${issueNumber}/labels`, {
 await github<unknown>(`/repos/${owner}/${repo}/issues/${issueNumber}/comments`, {
   method: 'POST',
   body: JSON.stringify({
-    body: 'Closing this as invalid because CodeRabbit failed the PR Hygiene check. See `CONTRIBUTING.md` and the PR template before opening a new PR.'
+    body: 'Closing this as a low-effort PR because CodeRabbit failed the PR Hygiene check. See `CONTRIBUTING.md` and the PR template before opening a new PR. If you are sure this was closed by mistake, please file an issue with a link to this PR and the relevant context.'
   })
 })
 
