@@ -31,20 +31,33 @@ export function createTextActions(ctx: EditorContext) {
       activeSession = null
       return
     }
-    const paragraph = te.state?.paragraph ?? null
-    const result = te.stop()
-    if (!result) {
+    const textState = te.state
+    if (!textState) {
+      te.stop()
       ctx.state.editingTextId = null
       activeSession = null
       ctx.requestRender()
       return
     }
+    const result = { nodeId: textState.nodeId, text: textState.text }
     const before = activeSession?.before ?? { text: '', styleRuns: [], size: {} }
     const node = ctx.graph.getNode(result.nodeId)
     const after = snapshotTextNode(node, result.text)
     after.text = result.text
-    const sizeChanges = before.text !== after.text ? resizeTextNodeForEdit(node, paragraph) : {}
+    const sizeChanges =
+      before.text !== after.text ? resizeTextNodeForEdit(node, textState.paragraph) : {}
     if (Object.keys(sizeChanges).length > 0) after.size = sizeChanges
+    const changed = textSnapshotChanged(before, after)
+
+    te.stop()
+
+    if (!changed) {
+      ctx.state.editingTextId = null
+      activeSession = null
+      ctx.requestRender()
+      return
+    }
+
     ctx.graph.updateNode(result.nodeId, {
       text: after.text,
       styleRuns: after.styleRuns,
@@ -53,25 +66,23 @@ export function createTextActions(ctx: EditorContext) {
     ctx.state.editingTextId = null
     activeSession = null
 
-    if (textSnapshotChanged(before, after)) {
-      ctx.undo.push({
-        label: 'Edit text',
-        forward: () => {
-          ctx.graph.updateNode(result.nodeId, {
-            text: after.text,
-            styleRuns: after.styleRuns,
-            ...after.size
-          })
-        },
-        inverse: () => {
-          ctx.graph.updateNode(result.nodeId, {
-            text: before.text,
-            styleRuns: before.styleRuns,
-            ...before.size
-          })
-        }
-      })
-    }
+    ctx.undo.push({
+      label: 'Edit text',
+      forward: () => {
+        ctx.graph.updateNode(result.nodeId, {
+          text: after.text,
+          styleRuns: after.styleRuns,
+          ...after.size
+        })
+      },
+      inverse: () => {
+        ctx.graph.updateNode(result.nodeId, {
+          text: before.text,
+          styleRuns: before.styleRuns,
+          ...before.size
+        })
+      }
+    })
   }
 
   return { startTextEditing, commitTextEdit }

@@ -528,6 +528,7 @@ export class FontManager {
     options: FindLocalFontOptions = {}
   ): Promise<ArrayBuffer | null> {
     if (!IS_BROWSER || !window.queryLocalFonts) return null
+    if (this.localFontAccessState !== 'granted') return null
     try {
       const fonts = await window.queryLocalFonts()
       const match = chooseLocalFontMatch(fonts, family, style)

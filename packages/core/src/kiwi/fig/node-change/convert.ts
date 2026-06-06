@@ -496,17 +496,34 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   }
 }
 
-export function nodeChangeToProps(
-  nc: NodeChange,
-  blobs: Uint8Array[]
-): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
-  let nodeType = mapNodeType(nc.type)
+function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
+  const nodeType = mapNodeType(nc.type)
   if (
     (nodeType === 'FRAME' && isComponentSet(nc)) ||
     getOpenPencilPluginValue(nc, NODE_TYPE_PLUGIN_KEY) === 'COMPONENT_SET'
   ) {
-    nodeType = 'COMPONENT_SET'
+    return 'COMPONENT_SET'
   }
+  // Figma stores plain groups as FRAME node-changes flagged with resizeToFit.
+  // Auto-layout "hug" frames instead use stackPrimarySizing/stackCounterSizing and
+  // always carry a stackMode, so guard on the absence of auto-layout — a real group
+  // never has one. This keeps component-sets and auto-layout frames from being
+  // misclassified as groups.
+  if (
+    nodeType === 'FRAME' &&
+    nc.resizeToFit === true &&
+    (nc.stackMode === undefined || nc.stackMode === 'NONE')
+  ) {
+    return 'GROUP'
+  }
+  return nodeType
+}
+
+export function nodeChangeToProps(
+  nc: NodeChange,
+  blobs: Uint8Array[]
+): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
+  const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
 

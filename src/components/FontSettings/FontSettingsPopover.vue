@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
 import { isTauri } from '@/app/tauri/env'
 import { useFontSettings } from '@/components/FontSettings/use'
@@ -29,6 +29,7 @@ const primaryButton = useButtonUI({
   ui: { base: 'w-full px-2 py-1.5 text-[10px] font-medium disabled:opacity-50' }
 })
 const showDownloadedFonts = isTauri()
+const popoverOpen = ref(false)
 
 const {
   accessState,
@@ -47,14 +48,19 @@ const {
   setGoogleFontsEnabled
 } = useFontSettings()
 
+function setPopoverOpen(value: boolean) {
+  popoverOpen.value = value
+  if (value) void refreshSummary()
+}
+
 onMounted(() => {
   void refreshSummary()
 })
 </script>
 
 <template>
-  <PopoverRoot @update:open="$event && refreshSummary()">
-    <Tip :label="dialogs.fontSettings">
+  <PopoverRoot v-model:open="popoverOpen" @update:open="setPopoverOpen">
+    <Tip :label="dialogs.fontSettings" :disabled="popoverOpen">
       <PopoverTrigger data-test-id="font-settings-trigger" :class="trigger.base">
         <icon-lucide-settings class="size-3.5" />
       </PopoverTrigger>
@@ -62,6 +68,7 @@ onMounted(() => {
 
     <PopoverPortal>
       <PopoverContent
+        data-test-id="font-settings-panel"
         side="left"
         :side-offset="8"
         align="start"
