@@ -275,7 +275,7 @@ describe('svgToVectorPaths', () => {
     expect(comparison.metrics.differentPixels).toBe(0)
   })
 
-  test('falls back to solid fill for gradient references', () => {
+  test('resolves objectBoundingBox linearGradient reference to a GRADIENT_LINEAR fill', () => {
     const svg = `<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="g"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient>
@@ -283,7 +283,43 @@ describe('svgToVectorPaths', () => {
       <path d="M0 0 H10 V10 H0 Z" fill="url(#g)"/>
     </svg>`
     const result = svgToVectorPaths(svg, { width: 10, height: 10 })
-    const path = expectDefined(result?.paths[0], 'gradient path')
-    expect(path.fills.length + path.strokes.length).toBeGreaterThanOrEqual(0)
+    const fill = expectDefined(result?.paths[0]?.fills[0], 'gradient fill')
+    expect(fill.type).toBe('GRADIENT_LINEAR')
+    expect(fill.gradientStops?.length).toBe(2)
+    expect(fill.gradientStops?.[0]?.color.r).toBeCloseTo(0, 2)
+    expect(fill.gradientStops?.[1]?.color.r).toBeCloseTo(1, 2)
+    expect(fill.gradientTransform).toBeDefined()
+  })
+
+  test('resolves Recraft-style userSpaceOnUse gradient with two stops', () => {
+    // Mirrors Recraft vectorize output: userSpaceOnUse coords across the node box.
+    const svg = `<svg viewBox="0 0 100 100" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="Gradient1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="0">
+          <stop offset="0" stop-color="#3572b0"/>
+          <stop offset="1" stop-color="#ffd43b"/>
+        </linearGradient>
+      </defs>
+      <path d="M0 0 H100 V100 H0 Z" fill="url(#Gradient1)"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 100, height: 100 })
+    const fill = expectDefined(result?.paths[0]?.fills[0], 'gradient fill')
+    expect(fill.type).toBe('GRADIENT_LINEAR')
+    expect(fill.gradientStops?.[0]?.color.b).toBeCloseTo(176 / 255, 2)
+    expect(fill.gradientStops?.[1]?.color.r).toBeCloseTo(1, 2)
+    // horizontal axis across the node box: start x≈0, end x≈1
+    const t = expectDefined(fill.gradientTransform, 'gradient transform')
+    expect(t.m02).toBeCloseTo(0, 1)
+    expect(t.m00 + t.m02).toBeCloseTo(1, 1)
+  })
+
+  test('still resolves a solid color fill alongside gradients', () => {
+    const svg = `<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0 0 H10 V10 H0 Z" fill="#e1e1e1"/>
+    </svg>`
+    const result = svgToVectorPaths(svg, { width: 10, height: 10 })
+    const fill = expectDefined(result?.paths[0]?.fills[0], 'solid fill')
+    expect(fill.type).toBe('SOLID')
+    expect(fill.color.r).toBeCloseTo(225 / 255, 2)
   })
 })

@@ -86,8 +86,10 @@ export function parseSvgGradients(svg: string): Map<string, ParsedGradient> {
     const head = `<x ${match[2]}>`
     const id = attr(head, 'id')
     if (!id) continue
+    // SVG default gradientUnits is objectBoundingBox; vectorizers (Recraft/fal)
+    // set userSpaceOnUse explicitly.
     const units =
-      attr(head, 'gradientUnits') === 'objectBoundingBox' ? 'objectBoundingBox' : 'userSpaceOnUse'
+      attr(head, 'gradientUnits') === 'userSpaceOnUse' ? 'userSpaceOnUse' : 'objectBoundingBox'
     map.set(id, {
       kind,
       units,
