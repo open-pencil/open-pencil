@@ -21,12 +21,12 @@ Content-Type: multipart/form-data
 
 Optional form fields (documented on endpoints page):
 
-| Field | Values | Purpose |
-|-------|--------|---------|
-| `response_format` | `url` (default), `b64_json` | How the SVG is returned |
-| `svg_compression` | `on` / `off` (default off) | Smaller SVG payload |
-| `limit_num_shapes` | `on` / `off` (default off) | Cap shape count |
-| `max_num_shapes` | integer | Max paths when limiting |
+| Field              | Values                      | Purpose                 |
+| ------------------ | --------------------------- | ----------------------- |
+| `response_format`  | `url` (default), `b64_json` | How the SVG is returned |
+| `svg_compression`  | `on` / `off` (default off)  | Smaller SVG payload     |
+| `limit_num_shapes` | `on` / `off` (default off)  | Cap shape count         |
+| `max_num_shapes`   | integer                     | Max paths when limiting |
 
 **Input limits** (API enforces; our `preprocessForVectorize` mirrors these):
 

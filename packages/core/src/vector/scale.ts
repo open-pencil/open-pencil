@@ -1,11 +1,7 @@
 import type { VectorNetwork } from '#core/scene-graph'
 
 /** Scale vertex positions and relative bezier handles by sx/sy. */
-export function scaleVectorNetwork(
-  network: VectorNetwork,
-  sx: number,
-  sy: number
-): VectorNetwork {
+export function scaleVectorNetwork(network: VectorNetwork, sx: number, sy: number): VectorNetwork {
   return {
     vertices: network.vertices.map((vertex) => ({
       ...vertex,

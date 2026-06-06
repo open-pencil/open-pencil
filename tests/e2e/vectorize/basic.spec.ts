@@ -121,9 +121,7 @@ test('vectorize replaces image with vectors and undo restores it', async () => {
     if (!frame || frame.type !== 'FRAME') return null
     const children = frame.childIds.map((id) => {
       const child = store.graph.getNode(id)
-      return child
-        ? { width: child.width, height: child.height, type: child.type }
-        : null
+      return child ? { width: child.width, height: child.height, type: child.type } : null
     })
     return { frameWidth: frame.width, frameHeight: frame.height, children }
   })

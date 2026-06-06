@@ -11,7 +11,10 @@ import {
 } from '@/app/ai/chat/storage'
 import { openProviderSettingsPane } from '@/app/ai/chat/use'
 import type { EditorStore } from '@/app/editor/active-store'
-import { createVectorFrameChildren, resolveVectorFramePlacement } from '@/app/editor/vectorize/placement'
+import {
+  createVectorFrameChildren,
+  resolveVectorFramePlacement
+} from '@/app/editor/vectorize/placement'
 import { falVectorize, recraftVectorize } from '@/app/editor/vectorize/providers'
 import { toast } from '@/app/shell/ui'
 
