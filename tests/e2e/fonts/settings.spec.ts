@@ -18,7 +18,11 @@ test('font settings popover exposes web font access without desktop-only cache a
   })
 
   await expect(page.getByTestId('typography-section')).toBeVisible()
-  await page.getByTestId('font-settings-trigger').click()
+  const fontSettings = page.getByTestId('font-settings-trigger')
+  await fontSettings.hover()
+  await expect(page.locator('[role=tooltip]').filter({ hasText: 'Font settings' })).toBeVisible()
+  await fontSettings.click()
+  await expect(page.locator('[role=tooltip]').filter({ hasText: 'Font settings' })).toHaveCount(0)
 
   await expect(page.getByText('Allow browser access to local fonts')).toBeVisible()
   await expect(page.getByTestId('font-settings-request-access')).toBeVisible()

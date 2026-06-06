@@ -10,6 +10,7 @@ export function createUndoBridge(undoActions: UndoActions, selection: SelectionA
     commitMoveWithReparent: undoActions.commitMoveWithReparent,
     commitDuplicateMove: undoActions.commitDuplicateMove,
     commitResize: undoActions.commitResize,
+    commitGroupResize: undoActions.commitGroupResize,
     commitRotation: undoActions.commitRotation,
     commitNodeUpdate: undoActions.commitNodeUpdate,
     undoAction: () => undoActions.undoAction(selection.validateEnteredContainer),
