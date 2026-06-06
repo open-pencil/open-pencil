@@ -19,6 +19,14 @@ bun run tauri dev    # Tauri desktop app with hot reload
 APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArtifacts": false }}'
 ```
 
+## Pull requests
+
+Pull requests must be written in English and must follow the PR template. The title and body should clearly explain what changed, why it changed, and how it was validated.
+
+Do not submit placeholder PRs. Remove template comments before opening a PR. Do not leave dangling issue references such as `Fixes #`, `TODO`, `TBD`, or similar unfinished text.
+
+PRs from external contributors that ignore the template, omit validation, are not written in English, or otherwise do not follow these guidelines may be labeled `invalid` and closed automatically.
+
 ## Quality checks
 
 Run all of these before submitting a PR:

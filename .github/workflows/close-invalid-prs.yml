@@ -1,0 +1,33 @@
+name: Close invalid PRs
+
+on:
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  close-invalid:
+    name: Close PRs failed by PR Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted workflow scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Close PR when CodeRabbit fails PR Hygiene
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node .github/scripts/close-invalid-prs.ts
