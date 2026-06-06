@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 
 import { useAuthStore } from '@/app/auth/store'
+import { readPinnedBoardIds, togglePinnedBoard } from '@/app/boards/pinned'
 import { readBoardPreview } from '@/app/boards/preview'
 import { useNotificationsStore } from '@/app/notifications/store'
 import {
@@ -33,6 +34,7 @@ const teams = ref<TeamSummary[]>([])
 const loading = ref(false)
 const creating = ref(false)
 const previews = ref<Record<string, string>>({})
+const pinnedIds = ref<Set<string>>(new Set())
 
 const authDisplayName = computed(() => auth.user?.name?.trim() || auth.user?.email || 'Inkly User')
 const authInitials = computed(() => initials(authDisplayName.value))
@@ -42,6 +44,10 @@ const showAccountLink = computed(() => auth.isAuthenticated)
 const recentBoards = computed(() => {
   const sorted = [...boards.value].sort((a, b) => b.updatedAt - a.updatedAt)
   return sorted.slice(0, 6)
+})
+
+const pinnedBoards = computed(() => {
+  return boards.value.filter((board) => pinnedIds.value.has(board.id))
 })
 
 const personalBoardCount = computed(() => boards.value.filter((board) => board.teamId === null).length)
@@ -109,6 +115,22 @@ function openBoard(board: Board) {
   router.push(createBoardEditorLocation(board))
 }
 
+function handleTogglePin(boardId: string, event: Event) {
+  event.stopPropagation()
+  const nowPinned = togglePinnedBoard(boardId)
+  const next = new Set(pinnedIds.value)
+  if (nowPinned) {
+    next.add(boardId)
+  } else {
+    next.delete(boardId)
+  }
+  pinnedIds.value = next
+}
+
+function isPinned(boardId: string) {
+  return pinnedIds.value.has(boardId)
+}
+
 function openNotification(notificationId: string) {
   const notification = notifications.items.find((candidate) => candidate.id === notificationId)
   if (!notification) return
@@ -130,6 +152,7 @@ function formatRelativeUpdate(timestamp: number) {
 onMounted(async () => {
   await auth.init()
   await notifications.mount()
+  pinnedIds.value = new Set(readPinnedBoardIds())
   await loadDashboardView()
 })
 </script>
@@ -286,6 +309,63 @@ onMounted(async () => {
       </section>
 
       <section
+        v-if="pinnedBoards.length > 0"
+        data-test-id="dashboard-pinned-boards"
+        class="flex flex-col gap-4 rounded-[28px] border border-white/8 bg-panel/80 p-6 shadow-2xl backdrop-blur-xl"
+      >
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-surface">Pinned boards</h2>
+            <p class="text-sm text-muted">{{ pinnedBoards.length }} pinned</p>
+          </div>
+        </div>
+
+        <ul
+          data-test-id="dashboard-pinned-list"
+          class="grid grid-cols-1 gap-3 md:grid-cols-3"
+        >
+          <li
+            v-for="board in pinnedBoards"
+            :key="board.id"
+            :data-test-id="`dashboard-pinned-board-${board.id}`"
+            class="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/8 bg-canvas/55 transition-colors hover:bg-hover"
+            @click="openBoard(board)"
+          >
+            <button
+              type="button"
+              :data-test-id="`dashboard-pin-toggle-${board.id}`"
+              aria-label="Toggle pin"
+              class="absolute right-2 top-2 z-10 rounded-full bg-canvas/80 p-1 text-accent transition-colors hover:bg-canvas"
+              @click="(event) => handleTogglePin(board.id, event)"
+            >
+              <icon-lucide-pin class="size-3.5" />
+            </button>
+            <div class="aspect-video w-full overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_60%)]">
+              <img
+                v-if="previews[board.id]"
+                :src="previews[board.id]"
+                :alt="`${board.name} preview`"
+                class="size-full object-cover"
+              />
+              <div
+                v-else
+                class="flex size-full items-center justify-center text-muted"
+              >
+                <icon-lucide-image class="size-8" />
+              </div>
+            </div>
+            <div class="flex flex-col gap-1 p-3">
+              <p class="line-clamp-1 text-sm font-medium text-surface">{{ board.name }}</p>
+              <p class="flex items-center gap-1 text-[11px] text-muted">
+                <icon-lucide-clock class="size-3" />
+                {{ formatRelativeUpdate(board.updatedAt) }}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
+
+      <section
         data-test-id="dashboard-recent-boards"
         class="flex flex-col gap-4 rounded-[28px] border border-white/8 bg-panel/80 p-6 shadow-2xl backdrop-blur-xl"
       >
@@ -326,9 +406,23 @@ onMounted(async () => {
             v-for="board in recentBoards"
             :key="board.id"
             :data-test-id="`dashboard-recent-board-${board.id}`"
-            class="group cursor-pointer overflow-hidden rounded-2xl border border-white/8 bg-canvas/55 transition-colors hover:bg-hover"
+            class="group relative cursor-pointer overflow-hidden rounded-2xl border border-white/8 bg-canvas/55 transition-colors hover:bg-hover"
             @click="openBoard(board)"
           >
+            <button
+              type="button"
+              :data-test-id="`dashboard-recent-pin-${board.id}`"
+              :aria-label="isPinned(board.id) ? 'Unpin board' : 'Pin board'"
+              :class="[
+                'absolute right-2 top-2 z-10 rounded-full p-1 transition-colors',
+                isPinned(board.id)
+                  ? 'bg-canvas/80 text-accent hover:bg-canvas'
+                  : 'bg-canvas/40 text-muted opacity-0 hover:bg-canvas/70 hover:text-surface group-hover:opacity-100'
+              ]"
+              @click="(event) => handleTogglePin(board.id, event)"
+            >
+              <icon-lucide-pin class="size-3.5" />
+            </button>
             <div class="aspect-video w-full overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_60%)]">
               <img
                 v-if="previews[board.id]"

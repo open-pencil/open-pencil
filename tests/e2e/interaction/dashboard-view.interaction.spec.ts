@@ -62,4 +62,34 @@ test.describe('dashboard view interaction', () => {
     await page.getByTestId('dashboard-link-teams').click()
     await expect(page).toHaveURL(/\/teams/)
   })
+
+  test('pinning a recent board surfaces it in the pinned section', async ({ page }) => {
+    await mockGoogleLogin(page, { email: 'dash-pin@inkly.test', name: 'Dashboard Pin' })
+    await seedBoards(page, 3)
+    await page.goto('/dashboard')
+
+    await expect(page.getByTestId('dashboard-recent-list')).toBeVisible()
+
+    const firstCard = page.locator('[data-test-id^="dashboard-recent-board-"]').first()
+    const boardId = await firstCard.getAttribute('data-test-id')
+    if (!boardId) throw new Error('expected first recent board to have data-test-id')
+    const id = boardId.replace('dashboard-recent-board-', '')
+
+    await page.getByTestId(`dashboard-recent-pin-${id}`).click()
+    await expect(page.getByTestId('dashboard-pinned-boards')).toBeVisible()
+    await expect(page.getByTestId(`dashboard-pinned-board-${id}`)).toBeVisible()
+
+    // Toggling again removes it
+    await page.getByTestId(`dashboard-pin-toggle-${id}`).click()
+    await expect(page.getByTestId('dashboard-pinned-boards')).toHaveCount(0)
+  })
+
+  test('pinned section is hidden when no pins exist', async ({ page }) => {
+    await mockGoogleLogin(page, { email: 'dash-no-pin@inkly.test', name: 'Dashboard No Pin' })
+    await seedBoards(page, 2)
+    await page.goto('/dashboard')
+
+    await expect(page.getByTestId('dashboard-recent-list')).toBeVisible()
+    await expect(page.getByTestId('dashboard-pinned-boards')).toHaveCount(0)
+  })
 })
