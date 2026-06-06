@@ -260,16 +260,21 @@ onMounted(async () => {
             <p class="text-sm text-muted">{{ filteredBoards.length }} / {{ totalBoards }} shown</p>
           </div>
           <div class="flex gap-2">
+            <label class="sr-only" for="admin-boards-search-input">Search boards</label>
             <input
+              id="admin-boards-search-input"
               v-model="searchQuery"
               type="text"
               data-test-id="admin-boards-search"
               placeholder="Search by name or id"
               class="rounded-lg border border-border bg-input px-3 py-2 text-sm text-surface outline-none focus:border-accent w-64"
             />
+            <label class="sr-only" for="admin-boards-filter-select">Filter boards by workspace</label>
             <select
+              id="admin-boards-filter-select"
               v-model="teamFilter"
               data-test-id="admin-boards-filter"
+              aria-label="Filter boards by workspace"
               class="rounded-lg border border-border bg-input px-2 py-2 text-sm text-surface outline-none focus:border-accent"
             >
               <option value="all">All</option>
