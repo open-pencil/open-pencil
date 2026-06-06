@@ -505,6 +505,27 @@
     "toastLoadFail": "Échec du chargement des paramètres du tableau",
     "toastRevokeFail": "Échec de la révocation de l'invitation"
   },
+  "notifications": {
+    "headTitle": "Notifications",
+    "eyebrow": "Boîte de réception",
+    "heading": "Notifications",
+    "subtitle": "Suivez les invitations de tableau, les accès aux espaces de travail et les mentions au même endroit.",
+    "backToBoards": "Tableaux",
+    "markAllRead": "Tout marquer comme lu",
+    "loading": "Chargement des notifications…",
+    "loginRequiredHeading": "Connexion requise",
+    "loginRequiredHint": "Les notifications ne sont disponibles que pour les utilisateurs connectés.",
+    "emptyHeading": "Aucune notification pour le moment",
+    "emptyHint": "Les invitations et mentions apparaîtront ici dès leur réception.",
+    "openLabel": "Ouvrir",
+    "markReadLabel": "Marquer comme lu",
+    "deleteLabel": "Supprimer",
+    "toastLoginFail": "Impossible de démarrer la connexion Google",
+    "toastMarkReadFail": "Impossible de marquer la notification comme lue",
+    "toastMarkAllReadFail": "Impossible de marquer les notifications comme lues",
+    "toastDeleteFail": "Impossible de supprimer la notification",
+    "toastOpenFail": "Impossible d'ouvrir la notification"
+  },
   "admin": {
     "title": "Administration",
     "badge": "Interne",

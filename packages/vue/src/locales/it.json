@@ -505,6 +505,27 @@
     "toastLoadFail": "Caricamento delle impostazioni board non riuscito",
     "toastRevokeFail": "Revoca dell'invito non riuscita"
   },
+  "notifications": {
+    "headTitle": "Notifiche",
+    "eyebrow": "Posta in arrivo",
+    "heading": "Notifiche",
+    "subtitle": "Tieni traccia degli inviti alle board, degli accessi ai workspace e delle menzioni in un unico posto.",
+    "backToBoards": "Board",
+    "markAllRead": "Segna tutte come lette",
+    "loading": "Caricamento notifiche…",
+    "loginRequiredHeading": "Accesso richiesto",
+    "loginRequiredHint": "Le notifiche sono disponibili solo per gli utenti che hanno effettuato l'accesso.",
+    "emptyHeading": "Ancora nessuna notifica",
+    "emptyHint": "Inviti e menzioni appariranno qui non appena arrivano.",
+    "openLabel": "Apri",
+    "markReadLabel": "Segna come letta",
+    "deleteLabel": "Elimina",
+    "toastLoginFail": "Impossibile avviare l'accesso con Google",
+    "toastMarkReadFail": "Impossibile contrassegnare la notifica come letta",
+    "toastMarkAllReadFail": "Impossibile contrassegnare le notifiche come lette",
+    "toastDeleteFail": "Impossibile eliminare la notifica",
+    "toastOpenFail": "Impossibile aprire la notifica"
+  },
   "admin": {
     "title": "Amministrazione",
     "badge": "Interno",

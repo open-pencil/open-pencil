@@ -505,6 +505,27 @@
     "toastLoadFail": "No se pudo cargar los ajustes del tablero",
     "toastRevokeFail": "No se pudo revocar la invitación"
   },
+  "notifications": {
+    "headTitle": "Notificaciones",
+    "eyebrow": "Bandeja de entrada",
+    "heading": "Notificaciones",
+    "subtitle": "Sigue las invitaciones de tablero, los accesos a espacios de trabajo y las menciones en un solo lugar.",
+    "backToBoards": "Tableros",
+    "markAllRead": "Marcar todas como leídas",
+    "loading": "Cargando notificaciones…",
+    "loginRequiredHeading": "Inicio de sesión necesario",
+    "loginRequiredHint": "Las notificaciones solo están disponibles para usuarios que han iniciado sesión.",
+    "emptyHeading": "Aún no hay notificaciones",
+    "emptyHint": "Las invitaciones y menciones aparecerán aquí cuando lleguen.",
+    "openLabel": "Abrir",
+    "markReadLabel": "Marcar como leída",
+    "deleteLabel": "Eliminar",
+    "toastLoginFail": "No se pudo iniciar el inicio de sesión con Google",
+    "toastMarkReadFail": "No se pudo marcar la notificación como leída",
+    "toastMarkAllReadFail": "No se pudo marcar las notificaciones como leídas",
+    "toastDeleteFail": "No se pudo eliminar la notificación",
+    "toastOpenFail": "No se pudo abrir la notificación"
+  },
   "admin": {
     "title": "Administración",
     "badge": "Interno",

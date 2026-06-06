@@ -505,6 +505,27 @@
     "toastLoadFail": "Board-Einstellungen konnten nicht geladen werden",
     "toastRevokeFail": "Einladung konnte nicht widerrufen werden"
   },
+  "notifications": {
+    "headTitle": "Benachrichtigungen",
+    "eyebrow": "Posteingang",
+    "heading": "Benachrichtigungen",
+    "subtitle": "Verfolge Board-Einladungen, Workspace-Zugriff und Erwähnungen an einem Ort.",
+    "backToBoards": "Boards",
+    "markAllRead": "Alle als gelesen markieren",
+    "loading": "Benachrichtigungen werden geladen…",
+    "loginRequiredHeading": "Anmeldung erforderlich",
+    "loginRequiredHint": "Benachrichtigungen sind nur für angemeldete Nutzer verfügbar.",
+    "emptyHeading": "Noch keine Benachrichtigungen",
+    "emptyHint": "Einladungen und Erwähnungen erscheinen hier, sobald sie eintreffen.",
+    "openLabel": "Öffnen",
+    "markReadLabel": "Als gelesen markieren",
+    "deleteLabel": "Löschen",
+    "toastLoginFail": "Google-Anmeldung konnte nicht gestartet werden",
+    "toastMarkReadFail": "Benachrichtigung konnte nicht als gelesen markiert werden",
+    "toastMarkAllReadFail": "Benachrichtigungen konnten nicht als gelesen markiert werden",
+    "toastDeleteFail": "Benachrichtigung konnte nicht gelöscht werden",
+    "toastOpenFail": "Benachrichtigung konnte nicht geöffnet werden"
+  },
   "admin": {
     "title": "Verwaltung",
     "badge": "Intern",

@@ -505,6 +505,27 @@
     "toastLoadFail": "ボード設定の読み込みに失敗しました",
     "toastRevokeFail": "招待の失効に失敗しました"
   },
+  "notifications": {
+    "headTitle": "通知",
+    "eyebrow": "受信箱",
+    "heading": "通知",
+    "subtitle": "ボード招待・ワークスペース参加・メンションを一箇所で確認できます。",
+    "backToBoards": "ボード一覧",
+    "markAllRead": "すべて既読",
+    "loading": "通知を読み込み中…",
+    "loginRequiredHeading": "ログインが必要です",
+    "loginRequiredHint": "通知はサインイン済ユーザーのみ利用できます。",
+    "emptyHeading": "通知はまだありません",
+    "emptyHint": "招待やメンションが届くとここに表示されます。",
+    "openLabel": "開く",
+    "markReadLabel": "既読にする",
+    "deleteLabel": "削除",
+    "toastLoginFail": "Google ログインの開始に失敗しました",
+    "toastMarkReadFail": "通知の既読化に失敗しました",
+    "toastMarkAllReadFail": "通知の一括既読化に失敗しました",
+    "toastDeleteFail": "通知の削除に失敗しました",
+    "toastOpenFail": "通知を開けませんでした"
+  },
   "admin": {
     "title": "管理",
     "badge": "社内",

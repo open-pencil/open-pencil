@@ -562,6 +562,28 @@ export const boardSettingsMessages = i18n('boardSettings', {
   toastRevokeFail: 'Failed to revoke invitation'
 })
 
+export const notificationsMessages = i18n('notifications', {
+  headTitle: 'Notifications',
+  eyebrow: 'Inbox',
+  heading: 'Notifications',
+  subtitle: 'Track board invitations, workspace access, and mentions in one place.',
+  backToBoards: 'Boards',
+  markAllRead: 'Mark all read',
+  loading: 'Loading notifications…',
+  loginRequiredHeading: 'Login required',
+  loginRequiredHint: 'Notifications are available only for signed-in users.',
+  emptyHeading: 'No notifications yet',
+  emptyHint: 'Invitations and mentions will show up here once they arrive.',
+  openLabel: 'Open',
+  markReadLabel: 'Mark read',
+  deleteLabel: 'Delete',
+  toastLoginFail: 'Failed to start Google login',
+  toastMarkReadFail: 'Failed to mark notification as read',
+  toastMarkAllReadFail: 'Failed to mark notifications as read',
+  toastDeleteFail: 'Failed to delete notification',
+  toastOpenFail: 'Failed to open notification'
+})
+
 export const adminMessages = i18n('admin', {
   title: 'Admin',
   badge: 'Internal',

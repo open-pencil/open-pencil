@@ -505,6 +505,27 @@
     "toastLoadFail": "Nie udało się załadować ustawień tablicy",
     "toastRevokeFail": "Nie udało się cofnąć zaproszenia"
   },
+  "notifications": {
+    "headTitle": "Powiadomienia",
+    "eyebrow": "Skrzynka odbiorcza",
+    "heading": "Powiadomienia",
+    "subtitle": "Śledź zaproszenia do tablic, dostęp do obszarów roboczych i wzmianki w jednym miejscu.",
+    "backToBoards": "Tablice",
+    "markAllRead": "Oznacz wszystkie jako przeczytane",
+    "loading": "Ładowanie powiadomień…",
+    "loginRequiredHeading": "Wymagane logowanie",
+    "loginRequiredHint": "Powiadomienia są dostępne tylko dla zalogowanych użytkowników.",
+    "emptyHeading": "Brak powiadomień",
+    "emptyHint": "Zaproszenia i wzmianki pojawią się tutaj, gdy nadejdą.",
+    "openLabel": "Otwórz",
+    "markReadLabel": "Oznacz jako przeczytane",
+    "deleteLabel": "Usuń",
+    "toastLoginFail": "Nie udało się rozpocząć logowania przez Google",
+    "toastMarkReadFail": "Nie udało się oznaczyć powiadomienia jako przeczytane",
+    "toastMarkAllReadFail": "Nie udało się oznaczyć powiadomień jako przeczytane",
+    "toastDeleteFail": "Nie udało się usunąć powiadomienia",
+    "toastOpenFail": "Nie udało się otworzyć powiadomienia"
+  },
   "admin": {
     "title": "Administracja",
     "badge": "Wewnętrzny",

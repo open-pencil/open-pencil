@@ -505,6 +505,27 @@
     "toastLoadFail": "加载画板设置失败",
     "toastRevokeFail": "撤销邀请失败"
   },
+  "notifications": {
+    "headTitle": "通知",
+    "eyebrow": "收件箱",
+    "heading": "通知",
+    "subtitle": "在一个地方跟踪画板邀请、 工作区访问和提及。",
+    "backToBoards": "画板列表",
+    "markAllRead": "全部标为已读",
+    "loading": "正在加载通知…",
+    "loginRequiredHeading": "需要登录",
+    "loginRequiredHint": "通知仅对已登录用户可用。",
+    "emptyHeading": "暂无通知",
+    "emptyHint": "邀请和提及到达后将显示在此处。",
+    "openLabel": "打开",
+    "markReadLabel": "标为已读",
+    "deleteLabel": "删除",
+    "toastLoginFail": "无法启动 Google 登录",
+    "toastMarkReadFail": "无法将通知标为已读",
+    "toastMarkAllReadFail": "无法将通知批量标为已读",
+    "toastDeleteFail": "删除通知失败",
+    "toastOpenFail": "无法打开通知"
+  },
   "admin": {
     "title": "管理",
     "badge": "内部",

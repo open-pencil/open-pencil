@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 
+import { useI18n } from '@inkly/vue'
+
 import { useAuthStore } from '@/app/auth/store'
 import {
   formatNotificationTime,
@@ -16,7 +18,9 @@ import { toast } from '@/app/shell/ui'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import LoginBanner from '@/components/LoginBanner.vue'
 
-useHead({ title: 'Notifications' })
+const { notifications: notificationsT } = useI18n()
+
+useHead({ title: () => notificationsT.value.headTitle })
 
 const auth = useAuthStore()
 const notifications = useNotificationsStore()
@@ -28,7 +32,7 @@ async function startGoogleLogin() {
   try {
     await auth.signInWithGoogle(window.location.toString())
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to start Google login'
+    const message = error instanceof Error ? error.message : notificationsT.value.toastLoginFail
     toast.error(message)
   }
 }
@@ -37,7 +41,7 @@ async function markRead(notificationId: string) {
   try {
     await notifications.markRead(notificationId)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to mark notification as read'
+    const message = error instanceof Error ? error.message : notificationsT.value.toastMarkReadFail
     toast.error(message)
   }
 }
@@ -46,7 +50,8 @@ async function markAllRead() {
   try {
     await notifications.markAllRead()
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to mark notifications as read'
+    const message =
+      error instanceof Error ? error.message : notificationsT.value.toastMarkAllReadFail
     toast.error(message)
   }
 }
@@ -55,7 +60,7 @@ async function removeNotification(notificationId: string) {
   try {
     await notifications.remove(notificationId)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to delete notification'
+    const message = error instanceof Error ? error.message : notificationsT.value.toastDeleteFail
     toast.error(message)
   }
 }
@@ -71,7 +76,7 @@ async function openNotification(notificationId: string) {
 
     await router.push(getNotificationTarget(notification))
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to open notification'
+    const message = error instanceof Error ? error.message : notificationsT.value.toastOpenFail
     toast.error(message)
   }
 }
@@ -95,10 +100,10 @@ onUnmounted(() => {
       <section class="rounded-[28px] border border-white/8 bg-panel/85 p-6 shadow-2xl backdrop-blur-xl">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div class="space-y-2">
-            <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-accent">Inbox</p>
-            <h1 class="text-3xl font-semibold text-surface">Notifications</h1>
+            <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-accent">{{ notificationsT.eyebrow }}</p>
+            <h1 class="text-3xl font-semibold text-surface">{{ notificationsT.heading }}</h1>
             <p class="max-w-2xl text-sm text-muted">
-              Track board invitations, workspace access, and mentions in one place.
+              {{ notificationsT.subtitle }}
             </p>
           </div>
 
@@ -109,7 +114,7 @@ onUnmounted(() => {
               class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
             >
               <icon-lucide-arrow-left class="size-4" />
-              <span>Boards</span>
+              <span>{{ notificationsT.backToBoards }}</span>
             </RouterLink>
             <button
               v-if="auth.isAuthenticated && notifications.unreadCount > 0"
@@ -118,7 +123,7 @@ onUnmounted(() => {
               class="cursor-pointer rounded-xl bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent/90"
               @click="markAllRead"
             >
-              Mark all read
+              {{ notificationsT.markAllRead }}
             </button>
           </div>
         </div>
@@ -135,16 +140,16 @@ onUnmounted(() => {
         v-if="notifications.loading && notifications.items.length === 0"
         class="rounded-2xl border border-border bg-panel/70 p-6 text-sm text-muted"
       >
-        Loading notifications…
+        {{ notificationsT.loading }}
       </section>
 
       <section
         v-else-if="auth.initialized && !auth.isAuthenticated"
         class="rounded-[24px] border border-dashed border-border bg-panel/60 p-10 text-center"
       >
-        <p class="text-lg font-medium text-surface">Login required</p>
+        <p class="text-lg font-medium text-surface">{{ notificationsT.loginRequiredHeading }}</p>
         <p class="mt-2 text-sm text-muted">
-          Notifications are available only for signed-in users.
+          {{ notificationsT.loginRequiredHint }}
         </p>
       </section>
 
@@ -153,9 +158,9 @@ onUnmounted(() => {
         data-test-id="notifications-empty"
         class="rounded-[24px] border border-dashed border-border bg-panel/60 p-10 text-center"
       >
-        <p class="text-lg font-medium text-surface">No notifications yet</p>
+        <p class="text-lg font-medium text-surface">{{ notificationsT.emptyHeading }}</p>
         <p class="mt-2 text-sm text-muted">
-          Invitations and mentions will show up here once they arrive.
+          {{ notificationsT.emptyHint }}
         </p>
       </section>
 
@@ -205,7 +210,7 @@ onUnmounted(() => {
                 @click="openNotification(notification.id)"
               >
                 <icon-lucide-arrow-up-right class="size-3.5" />
-                <span>Open</span>
+                <span>{{ notificationsT.openLabel }}</span>
               </button>
               <button
                 v-if="isNotificationUnread(notification)"
@@ -214,7 +219,7 @@ onUnmounted(() => {
                 class="cursor-pointer rounded-md border border-border bg-panel px-3 py-1.5 text-xs text-surface transition-colors hover:bg-hover"
                 @click="markRead(notification.id)"
               >
-                Mark read
+                {{ notificationsT.markReadLabel }}
               </button>
               <button
                 type="button"
@@ -222,7 +227,7 @@ onUnmounted(() => {
                 class="cursor-pointer rounded-md border border-red-500/25 bg-red-500/10 px-3 py-1.5 text-xs text-red-100 transition-colors hover:bg-red-500/16"
                 @click="removeNotification(notification.id)"
               >
-                Delete
+                {{ notificationsT.deleteLabel }}
               </button>
             </div>
           </div>
