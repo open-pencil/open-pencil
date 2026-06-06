@@ -16,6 +16,7 @@ import {
   accountMessages,
   boardSettingsMessages,
   notificationsMessages,
+  teamsMessages,
   adminMessages
 } from '#vue/i18n/messages'
 
@@ -51,6 +52,7 @@ export function useI18n() {
     account: useStore(accountMessages),
     boardSettings: useStore(boardSettingsMessages),
     notifications: useStore(notificationsMessages),
+    teams: useStore(teamsMessages),
     admin: useStore(adminMessages),
     locale: useStore(locale) as Ref<Locale>,
     availableLocales: AVAILABLE_LOCALES,

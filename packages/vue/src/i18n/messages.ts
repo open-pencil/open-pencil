@@ -584,6 +584,28 @@ export const notificationsMessages = i18n('notifications', {
   toastOpenFail: 'Failed to open notification'
 })
 
+export const teamsMessages = i18n('teams', {
+  headTitle: 'Teams',
+  eyebrow: 'Workspace',
+  heading: 'Teams',
+  subtitle: 'Share boards through a team workspace and manage roles in one place.',
+  newTeamButton: 'New team',
+  loading: 'Loading teams…',
+  emptyHeading: 'No teams yet',
+  emptyHint: 'Create a workspace to share boards with editors and viewers.',
+  createDialogTitle: 'Create team',
+  createDialogDescription: 'Team owners can attach boards and manage member roles.',
+  nameLabel: 'Name',
+  namePlaceholder: 'Design Ops',
+  createDialogCancel: 'Cancel',
+  createDialogSubmit: 'Create team',
+  createDialogSubmitPending: 'Creating…',
+  toastLoginRequired: 'Login required',
+  toastLoadFail: 'Failed to load teams',
+  toastCreateFail: 'Failed to create team',
+  toastLoginFail: 'Failed to start Google login'
+})
+
 export const adminMessages = i18n('admin', {
   title: 'Admin',
   badge: 'Internal',

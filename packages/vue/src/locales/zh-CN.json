@@ -526,6 +526,27 @@
     "toastDeleteFail": "删除通知失败",
     "toastOpenFail": "无法打开通知"
   },
+  "teams": {
+    "headTitle": "团队",
+    "eyebrow": "工作区",
+    "heading": "团队",
+    "subtitle": "通过团队工作区共享画板, 并在一个地方管理角色。",
+    "newTeamButton": "新建团队",
+    "loading": "正在加载团队…",
+    "emptyHeading": "暂无团队",
+    "emptyHint": "创建工作区, 与编辑者和查看者共享画板。",
+    "createDialogTitle": "创建团队",
+    "createDialogDescription": "团队所有者可以关联画板并管理成员角色。",
+    "nameLabel": "名称",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "取消",
+    "createDialogSubmit": "创建团队",
+    "createDialogSubmitPending": "正在创建…",
+    "toastLoginRequired": "需要登录",
+    "toastLoadFail": "加载团队失败",
+    "toastCreateFail": "创建团队失败",
+    "toastLoginFail": "无法启动 Google 登录"
+  },
   "admin": {
     "title": "管理",
     "badge": "内部",

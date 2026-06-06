@@ -526,6 +526,27 @@
     "toastDeleteFail": "Nie udało się usunąć powiadomienia",
     "toastOpenFail": "Nie udało się otworzyć powiadomienia"
   },
+  "teams": {
+    "headTitle": "Zespoły",
+    "eyebrow": "Obszar roboczy",
+    "heading": "Zespoły",
+    "subtitle": "Udostępniaj tablice za pośrednictwem obszaru roboczego zespołu i zarządzaj rolami w jednym miejscu.",
+    "newTeamButton": "Nowy zespół",
+    "loading": "Ładowanie zespołów…",
+    "emptyHeading": "Brak zespołów",
+    "emptyHint": "Utwórz obszar roboczy, aby udostępniać tablice edytorom i widzom.",
+    "createDialogTitle": "Utwórz zespół",
+    "createDialogDescription": "Właściciele zespołu mogą dołączać tablice i zarządzać rolami członków.",
+    "nameLabel": "Nazwa",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "Anuluj",
+    "createDialogSubmit": "Utwórz zespół",
+    "createDialogSubmitPending": "Tworzenie…",
+    "toastLoginRequired": "Wymagane logowanie",
+    "toastLoadFail": "Nie udało się załadować zespołów",
+    "toastCreateFail": "Nie udało się utworzyć zespołu",
+    "toastLoginFail": "Nie udało się rozpocząć logowania przez Google"
+  },
   "admin": {
     "title": "Administracja",
     "badge": "Wewnętrzny",

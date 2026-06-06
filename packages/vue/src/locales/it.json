@@ -526,6 +526,27 @@
     "toastDeleteFail": "Impossibile eliminare la notifica",
     "toastOpenFail": "Impossibile aprire la notifica"
   },
+  "teams": {
+    "headTitle": "Team",
+    "eyebrow": "Workspace",
+    "heading": "Team",
+    "subtitle": "Condividi le board tramite un workspace di team e gestisci i ruoli in un unico posto.",
+    "newTeamButton": "Nuovo team",
+    "loading": "Caricamento team…",
+    "emptyHeading": "Ancora nessun team",
+    "emptyHint": "Crea un workspace per condividere le board con editor e visualizzatori.",
+    "createDialogTitle": "Crea team",
+    "createDialogDescription": "I proprietari del team possono allegare board e gestire i ruoli dei membri.",
+    "nameLabel": "Nome",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "Annulla",
+    "createDialogSubmit": "Crea team",
+    "createDialogSubmitPending": "Creazione…",
+    "toastLoginRequired": "Accesso richiesto",
+    "toastLoadFail": "Impossibile caricare i team",
+    "toastCreateFail": "Impossibile creare il team",
+    "toastLoginFail": "Impossibile avviare l'accesso con Google"
+  },
   "admin": {
     "title": "Amministrazione",
     "badge": "Interno",

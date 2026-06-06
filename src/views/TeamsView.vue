@@ -11,6 +11,8 @@ import {
   DialogTitle
 } from 'reka-ui'
 
+import { useI18n } from '@inkly/vue'
+
 import { useAuthStore } from '@/app/auth/store'
 import { createTeam, listTeams, type TeamSummary } from '@/app/api/teams'
 import TeamCard from '@/components/TeamCard.vue'
@@ -20,7 +22,9 @@ import AppInput from '@/components/ui/AppInput.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 import { toast } from '@/app/shell/ui'
 
-useHead({ title: 'Teams' })
+const { teams: teamsT } = useI18n()
+
+useHead({ title: () => teamsT.value.headTitle })
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -52,7 +56,7 @@ async function loadTeamsView() {
   try {
     teams.value = auth.isAuthenticated ? await listTeams() : []
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load teams'
+    const message = error instanceof Error ? error.message : teamsT.value.toastLoadFail
     toast.error(message)
   } finally {
     loading.value = false
@@ -61,7 +65,7 @@ async function loadTeamsView() {
 
 function openCreateDialog() {
   if (!auth.isAuthenticated) {
-    toast.info('Login required')
+    toast.info(teamsT.value.toastLoginRequired)
     return
   }
 
@@ -70,7 +74,7 @@ function openCreateDialog() {
 
 async function submitCreate() {
   if (!auth.isAuthenticated) {
-    toast.info('Login required')
+    toast.info(teamsT.value.toastLoginRequired)
     return
   }
   if (!canSubmitCreate.value) return
@@ -84,7 +88,7 @@ async function submitCreate() {
     createOpen.value = false
     await router.push(`/team/${team.id}`)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to create team'
+    const message = error instanceof Error ? error.message : teamsT.value.toastCreateFail
     errorMessage.value = message
     toast.error(message)
   } finally {
@@ -96,7 +100,7 @@ async function startGoogleLogin() {
   try {
     await auth.signInWithGoogle(window.location.toString())
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to start Google login'
+    const message = error instanceof Error ? error.message : teamsT.value.toastLoginFail
     toast.error(message)
   }
 }
@@ -124,10 +128,10 @@ onMounted(async () => {
       <section class="rounded-[28px] border border-white/8 bg-panel/85 p-6 shadow-2xl backdrop-blur-xl">
         <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div class="space-y-2">
-            <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-accent">Workspace</p>
-            <h1 class="text-3xl font-semibold text-surface">Teams</h1>
+            <p class="text-[11px] font-medium uppercase tracking-[0.24em] text-accent">{{ teamsT.eyebrow }}</p>
+            <h1 class="text-3xl font-semibold text-surface">{{ teamsT.heading }}</h1>
             <p class="max-w-2xl text-sm text-muted">
-              Share boards through a team workspace and manage roles in one place.
+              {{ teamsT.subtitle }}
             </p>
           </div>
 
@@ -139,7 +143,7 @@ onMounted(async () => {
               class="cursor-pointer rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent/90"
               @click="openCreateDialog"
             >
-              New team
+              {{ teamsT.newTeamButton }}
             </button>
           </div>
         </div>
@@ -153,16 +157,16 @@ onMounted(async () => {
       </section>
 
       <section v-if="loading" class="rounded-2xl border border-border bg-panel/70 p-6 text-sm text-muted">
-        Loading teams…
+        {{ teamsT.loading }}
       </section>
 
       <section
         v-else-if="teams.length === 0"
         class="rounded-[24px] border border-dashed border-border bg-panel/60 p-10 text-center"
       >
-        <p class="text-lg font-medium text-surface">No teams yet</p>
+        <p class="text-lg font-medium text-surface">{{ teamsT.emptyHeading }}</p>
         <p class="mt-2 text-sm text-muted">
-          Create a workspace to share boards with editors and viewers.
+          {{ teamsT.emptyHint }}
         </p>
       </section>
 
@@ -181,15 +185,15 @@ onMounted(async () => {
       <DialogPortal>
         <DialogOverlay :class="cls.overlay" />
         <DialogContent data-test-id="team-create-dialog" :class="cls.content">
-          <DialogTitle :class="cls.title">Create team</DialogTitle>
+          <DialogTitle :class="cls.title">{{ teamsT.createDialogTitle }}</DialogTitle>
           <DialogDescription :class="cls.description">
-            Team owners can attach boards and manage member roles.
+            {{ teamsT.createDialogDescription }}
           </DialogDescription>
 
           <div class="mt-4 space-y-4">
             <label class="block space-y-1.5">
-              <span class="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">Name</span>
-              <AppInput v-model="teamName" test-id="team-create-input" type="text" placeholder="Design Ops" />
+              <span class="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">{{ teamsT.nameLabel }}</span>
+              <AppInput v-model="teamName" test-id="team-create-input" type="text" :placeholder="teamsT.namePlaceholder" />
             </label>
 
             <div
@@ -205,7 +209,7 @@ onMounted(async () => {
                 class="cursor-pointer rounded-md border border-border bg-canvas px-3 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
                 @click="createOpen = false"
               >
-                Cancel
+                {{ teamsT.createDialogCancel }}
               </button>
               <button
                 type="button"
@@ -214,7 +218,7 @@ onMounted(async () => {
                 :disabled="!canSubmitCreate"
                 @click="submitCreate"
               >
-                {{ creating ? 'Creating…' : 'Create team' }}
+                {{ creating ? teamsT.createDialogSubmitPending : teamsT.createDialogSubmit }}
               </button>
             </div>
           </div>

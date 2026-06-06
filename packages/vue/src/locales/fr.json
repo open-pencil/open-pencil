@@ -526,6 +526,27 @@
     "toastDeleteFail": "Impossible de supprimer la notification",
     "toastOpenFail": "Impossible d'ouvrir la notification"
   },
+  "teams": {
+    "headTitle": "Équipes",
+    "eyebrow": "Espace de travail",
+    "heading": "Équipes",
+    "subtitle": "Partagez des tableaux via un espace de travail d'équipe et gérez les rôles au même endroit.",
+    "newTeamButton": "Nouvelle équipe",
+    "loading": "Chargement des équipes…",
+    "emptyHeading": "Aucune équipe pour le moment",
+    "emptyHint": "Créez un espace de travail pour partager des tableaux avec des éditeurs et des lecteurs.",
+    "createDialogTitle": "Créer une équipe",
+    "createDialogDescription": "Les propriétaires d'équipe peuvent attacher des tableaux et gérer les rôles des membres.",
+    "nameLabel": "Nom",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "Annuler",
+    "createDialogSubmit": "Créer l'équipe",
+    "createDialogSubmitPending": "Création…",
+    "toastLoginRequired": "Connexion requise",
+    "toastLoadFail": "Échec du chargement des équipes",
+    "toastCreateFail": "Échec de la création de l'équipe",
+    "toastLoginFail": "Impossible de démarrer la connexion Google"
+  },
   "admin": {
     "title": "Administration",
     "badge": "Interne",

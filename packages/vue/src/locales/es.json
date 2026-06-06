@@ -526,6 +526,27 @@
     "toastDeleteFail": "No se pudo eliminar la notificación",
     "toastOpenFail": "No se pudo abrir la notificación"
   },
+  "teams": {
+    "headTitle": "Equipos",
+    "eyebrow": "Espacio de trabajo",
+    "heading": "Equipos",
+    "subtitle": "Comparte tableros mediante un espacio de trabajo de equipo y gestiona los roles en un solo lugar.",
+    "newTeamButton": "Nuevo equipo",
+    "loading": "Cargando equipos…",
+    "emptyHeading": "Aún no hay equipos",
+    "emptyHint": "Crea un espacio de trabajo para compartir tableros con editores y espectadores.",
+    "createDialogTitle": "Crear equipo",
+    "createDialogDescription": "Los propietarios del equipo pueden adjuntar tableros y gestionar los roles de los miembros.",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "Cancelar",
+    "createDialogSubmit": "Crear equipo",
+    "createDialogSubmitPending": "Creando…",
+    "toastLoginRequired": "Inicio de sesión requerido",
+    "toastLoadFail": "No se pudo cargar los equipos",
+    "toastCreateFail": "No se pudo crear el equipo",
+    "toastLoginFail": "No se pudo iniciar el inicio de sesión con Google"
+  },
   "admin": {
     "title": "Administración",
     "badge": "Interno",

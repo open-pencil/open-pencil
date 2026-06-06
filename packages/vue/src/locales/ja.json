@@ -526,6 +526,27 @@
     "toastDeleteFail": "通知の削除に失敗しました",
     "toastOpenFail": "通知を開けませんでした"
   },
+  "teams": {
+    "headTitle": "チーム",
+    "eyebrow": "ワークスペース",
+    "heading": "チーム",
+    "subtitle": "チームワークスペースでボードを共有し、 ロールを一箇所で管理できます。",
+    "newTeamButton": "新規チーム",
+    "loading": "チーム読み込み中…",
+    "emptyHeading": "チームがまだありません",
+    "emptyHint": "ワークスペースを作成して編集者・閲覧者とボードを共有しましょう。",
+    "createDialogTitle": "チームを作成",
+    "createDialogDescription": "チームオーナーはボードを紐付けたり、 メンバーロールを管理できます。",
+    "nameLabel": "名前",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "キャンセル",
+    "createDialogSubmit": "チームを作成",
+    "createDialogSubmitPending": "作成中…",
+    "toastLoginRequired": "ログインが必要です",
+    "toastLoadFail": "チームの読み込みに失敗しました",
+    "toastCreateFail": "チームの作成に失敗しました",
+    "toastLoginFail": "Google ログインの開始に失敗しました"
+  },
   "admin": {
     "title": "管理",
     "badge": "社内",

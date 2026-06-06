@@ -526,6 +526,27 @@
     "toastDeleteFail": "Benachrichtigung konnte nicht gelöscht werden",
     "toastOpenFail": "Benachrichtigung konnte nicht geöffnet werden"
   },
+  "teams": {
+    "headTitle": "Teams",
+    "eyebrow": "Workspace",
+    "heading": "Teams",
+    "subtitle": "Teile Boards über einen Team-Workspace und verwalte Rollen an einem Ort.",
+    "newTeamButton": "Neues Team",
+    "loading": "Teams werden geladen…",
+    "emptyHeading": "Noch keine Teams",
+    "emptyHint": "Erstelle einen Workspace, um Boards mit Bearbeitenden und Betrachtenden zu teilen.",
+    "createDialogTitle": "Team erstellen",
+    "createDialogDescription": "Team-Owner können Boards anhängen und Mitgliederrollen verwalten.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "Abbrechen",
+    "createDialogSubmit": "Team erstellen",
+    "createDialogSubmitPending": "Wird erstellt…",
+    "toastLoginRequired": "Anmeldung erforderlich",
+    "toastLoadFail": "Teams konnten nicht geladen werden",
+    "toastCreateFail": "Team konnte nicht erstellt werden",
+    "toastLoginFail": "Google-Anmeldung konnte nicht gestartet werden"
+  },
   "admin": {
     "title": "Verwaltung",
     "badge": "Intern",

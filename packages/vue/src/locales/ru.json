@@ -526,6 +526,27 @@
     "toastDeleteFail": "Не удалось удалить уведомление",
     "toastOpenFail": "Не удалось открыть уведомление"
   },
+  "teams": {
+    "headTitle": "Команды",
+    "eyebrow": "Рабочее пространство",
+    "heading": "Команды",
+    "subtitle": "Делитесь досками через рабочее пространство команды и управляйте ролями в одном месте.",
+    "newTeamButton": "Новая команда",
+    "loading": "Загрузка команд…",
+    "emptyHeading": "Пока нет команд",
+    "emptyHint": "Создайте рабочее пространство, чтобы делиться досками с редакторами и наблюдателями.",
+    "createDialogTitle": "Создать команду",
+    "createDialogDescription": "Владельцы команды могут прикреплять доски и управлять ролями участников.",
+    "nameLabel": "Название",
+    "namePlaceholder": "Design Ops",
+    "createDialogCancel": "Отмена",
+    "createDialogSubmit": "Создать команду",
+    "createDialogSubmitPending": "Создание…",
+    "toastLoginRequired": "Требуется вход",
+    "toastLoadFail": "Не удалось загрузить команды",
+    "toastCreateFail": "Не удалось создать команду",
+    "toastLoginFail": "Не удалось запустить вход через Google"
+  },
   "admin": {
     "title": "Администрирование",
     "badge": "Внутренний",
