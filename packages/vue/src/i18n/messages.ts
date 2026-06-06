@@ -647,6 +647,52 @@ export const teamDetailMessages = i18n('teamDetail', {
   toastRemoveFail: 'Failed to remove member'
 })
 
+export const teamSettingsMessages = i18n('teamSettings', {
+  headTitleDefault: 'Team Settings',
+  headTitleWithName: params('{name} Settings'),
+  backToTeam: 'Back to team',
+  headingFallback: 'Team settings',
+  subtitle: 'Rename the team, manage roles, or delete the workspace.',
+  loading: 'Loading settings…',
+  ownerOnlyNotice: 'Only the team owner can change settings.',
+  teamNameLabel: 'Team name',
+  teamNameFallback: 'Team',
+  saveChanges: 'Save changes',
+  saving: 'Saving…',
+  memberRolesHeading: 'Member roles',
+  roleOwner: 'Owner',
+  roleEditor: 'Editor',
+  roleViewer: 'Viewer',
+  memberRemoveAction: 'Remove',
+  removeConfirmPrompt: 'Remove this member from the team?',
+  dangerZoneHeading: 'Danger zone',
+  dangerZoneHint:
+    'Deleting the team removes memberships and returns team boards to personal ownership.',
+  deleteTeamButton: 'Delete team',
+  deleteTeamPending: 'Deleting…',
+  roleDialogTitle: 'Change member role',
+  roleDialogBody: params('{name} will become {role} on this team.'),
+  roleDialogMemberFallback: 'This member',
+  roleDialogCancel: 'Cancel',
+  roleDialogConfirm: 'Apply role',
+  deleteDialogTitle: 'Delete team',
+  deleteDialogDescription:
+    'Delete this team and move its boards back to personal ownership. This cannot be undone.',
+  deleteDialogSummary: params('{name} and its memberships will be removed.'),
+  deleteDialogTeamFallback: 'This team',
+  deleteDialogCancel: 'Cancel',
+  deleteDialogConfirm: 'Delete team',
+  toastLoadFail: 'Failed to load team settings',
+  toastTeamUpdated: 'Team updated',
+  toastUpdateFail: 'Failed to update team',
+  toastRoleUpdated: 'Member role updated',
+  toastRoleUpdateFail: 'Failed to update member role',
+  toastMemberRemoved: 'Member removed',
+  toastRemoveFail: 'Failed to remove member',
+  toastTeamDeleted: 'Team deleted',
+  toastDeleteFail: 'Failed to delete team'
+})
+
 export const adminMessages = i18n('admin', {
   title: 'Admin',
   badge: 'Internal',

@@ -13,6 +13,8 @@ import {
   AlertDialogTitle
 } from 'reka-ui'
 
+import { useI18n } from '@inkly/vue'
+
 import {
   deleteTeam,
   getTeam,
@@ -25,6 +27,8 @@ import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { toast } from '@/app/shell/ui'
 import { useDialogUI } from '@/components/ui/dialog'
+
+const { teamSettings: teamSettingsT } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -49,8 +53,30 @@ const dialogCls = useDialogUI({
 const teamId = computed(() => (typeof route.params.id === 'string' ? route.params.id : ''))
 const isOwner = computed(() => payload.value?.team.role === 'owner')
 
+function roleLabel(role: 'owner' | 'editor' | 'viewer') {
+  if (role === 'owner') return teamSettingsT.value.roleOwner
+  if (role === 'editor') return teamSettingsT.value.roleEditor
+  return teamSettingsT.value.roleViewer
+}
+
+const roleDialogBodyText = computed(() => {
+  const pending = pendingRoleChange.value
+  const name = pending?.name ?? teamSettingsT.value.roleDialogMemberFallback
+  const role = roleLabel(pending?.role ?? 'editor')
+  return teamSettingsT.value.roleDialogBody({ name, role })
+})
+
+const deleteDialogSummaryText = computed(() => {
+  const name = payload.value?.team.name ?? teamSettingsT.value.deleteDialogTeamFallback
+  return teamSettingsT.value.deleteDialogSummary({ name })
+})
+
 useHead({
-  title: computed(() => (payload.value ? `${payload.value.team.name} Settings` : 'Team Settings'))
+  title: computed(() =>
+    payload.value
+      ? teamSettingsT.value.headTitleWithName({ name: payload.value.team.name })
+      : teamSettingsT.value.headTitleDefault
+  )
 })
 
 async function loadSettings() {
@@ -62,7 +88,7 @@ async function loadSettings() {
     payload.value = await getTeam(teamId.value)
     teamName.value = payload.value.team.name
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load team settings'
+    const message = error instanceof Error ? error.message : teamSettingsT.value.toastLoadFail
     errorMessage.value = message
     toast.error(message)
   } finally {
@@ -75,11 +101,13 @@ async function saveTeamName() {
   saving.value = true
 
   try {
-    await updateTeam(teamId.value, { name: teamName.value.trim() || 'Team' })
+    await updateTeam(teamId.value, {
+      name: teamName.value.trim() || teamSettingsT.value.teamNameFallback
+    })
     await loadSettings()
-    toast.info('Team updated')
+    toast.info(teamSettingsT.value.toastTeamUpdated)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to update team'
+    const message = error instanceof Error ? error.message : teamSettingsT.value.toastUpdateFail
     toast.error(message)
   } finally {
     saving.value = false
@@ -92,9 +120,9 @@ async function changeRole(userId: string, role: 'editor' | 'viewer') {
   try {
     await updateTeamMemberRole(teamId.value, userId, role)
     await loadSettings()
-    toast.info('Member role updated')
+    toast.info(teamSettingsT.value.toastRoleUpdated)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to update member role'
+    const message = error instanceof Error ? error.message : teamSettingsT.value.toastRoleUpdateFail
     toast.error(message)
   }
 }
@@ -123,14 +151,14 @@ async function confirmRoleChange() {
 
 async function removeMember(userId: string) {
   if (!teamId.value) return
-  if (!window.confirm('Remove this member from the team?')) return
+  if (!window.confirm(teamSettingsT.value.removeConfirmPrompt)) return
 
   try {
     await removeTeamMember(teamId.value, userId)
     await loadSettings()
-    toast.info('Member removed')
+    toast.info(teamSettingsT.value.toastMemberRemoved)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to remove member'
+    const message = error instanceof Error ? error.message : teamSettingsT.value.toastRemoveFail
     toast.error(message)
   }
 }
@@ -141,10 +169,10 @@ async function destroyTeam() {
 
   try {
     await deleteTeam(teamId.value)
-    toast.info('Team deleted')
+    toast.info(teamSettingsT.value.toastTeamDeleted)
     await router.push('/teams')
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to delete team'
+    const message = error instanceof Error ? error.message : teamSettingsT.value.toastDeleteFail
     toast.error(message)
   } finally {
     deleting.value = false
@@ -179,19 +207,19 @@ onMounted(() => {
               class="cursor-pointer rounded-md px-2 py-1 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
               @click="router.push(`/team/${teamId}`)"
             >
-              Back to team
+              {{ teamSettingsT.backToTeam }}
             </button>
             <h1 class="text-3xl font-semibold text-surface">
-              {{ payload?.team.name ?? 'Team settings' }}
+              {{ payload?.team.name ?? teamSettingsT.headingFallback }}
             </h1>
-            <p class="text-sm text-muted">Rename the team, manage roles, or delete the workspace.</p>
+            <p class="text-sm text-muted">{{ teamSettingsT.subtitle }}</p>
           </div>
           <LocaleSwitcher test-id="team-settings-locale-switcher" />
         </div>
       </section>
 
       <section v-if="loading" class="rounded-2xl border border-border bg-panel/70 p-6 text-sm text-muted">
-        Loading settings…
+        {{ teamSettingsT.loading }}
       </section>
 
       <section
@@ -205,11 +233,11 @@ onMounted(() => {
         <section class="rounded-[24px] border border-border bg-panel/75 p-5">
           <div class="space-y-4">
             <div v-if="!isOwner" class="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-100">
-              Only the team owner can change settings.
+              {{ teamSettingsT.ownerOnlyNotice }}
             </div>
 
             <label class="block space-y-1.5">
-              <span class="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">Team name</span>
+              <span class="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">{{ teamSettingsT.teamNameLabel }}</span>
               <AppInput v-model="teamName" test-id="team-settings-name-input" type="text" :disabled="!isOwner || saving" />
             </label>
 
@@ -221,14 +249,14 @@ onMounted(() => {
                 :disabled="!isOwner || saving"
                 @click="saveTeamName"
               >
-                {{ saving ? 'Saving…' : 'Save changes' }}
+                {{ saving ? teamSettingsT.saving : teamSettingsT.saveChanges }}
               </button>
             </div>
           </div>
         </section>
 
         <section class="rounded-[24px] border border-border bg-panel/75 p-5">
-          <h2 class="text-lg font-semibold text-surface">Member roles</h2>
+          <h2 class="text-lg font-semibold text-surface">{{ teamSettingsT.memberRolesHeading }}</h2>
           <ul class="mt-4 space-y-3">
             <li
               v-for="member in payload.members"
@@ -248,9 +276,9 @@ onMounted(() => {
                   :disabled="!isOwner || member.role === 'owner'"
                   @change="onRoleChange(member, $event)"
                 >
-                  <option value="owner">Owner</option>
-                  <option value="editor">Editor</option>
-                  <option value="viewer">Viewer</option>
+                  <option value="owner">{{ teamSettingsT.roleOwner }}</option>
+                  <option value="editor">{{ teamSettingsT.roleEditor }}</option>
+                  <option value="viewer">{{ teamSettingsT.roleViewer }}</option>
                 </select>
                 <button
                   type="button"
@@ -259,7 +287,7 @@ onMounted(() => {
                   :disabled="!isOwner || member.role === 'owner'"
                   @click="removeMember(member.userId)"
                 >
-                  Remove
+                  {{ teamSettingsT.memberRemoveAction }}
                 </button>
               </div>
             </li>
@@ -267,9 +295,9 @@ onMounted(() => {
         </section>
 
         <section class="rounded-[24px] border border-red-500/20 bg-red-500/5 p-5">
-          <h2 class="text-lg font-semibold text-surface">Danger zone</h2>
+          <h2 class="text-lg font-semibold text-surface">{{ teamSettingsT.dangerZoneHeading }}</h2>
           <p class="mt-2 text-sm text-muted">
-            Deleting the team removes memberships and returns team boards to personal ownership.
+            {{ teamSettingsT.dangerZoneHint }}
           </p>
           <div class="mt-4 flex justify-end">
             <button
@@ -279,7 +307,7 @@ onMounted(() => {
               :disabled="!isOwner || deleting"
               @click="requestDeleteTeam"
             >
-              {{ deleting ? 'Deleting…' : 'Delete team' }}
+              {{ deleting ? teamSettingsT.deleteTeamPending : teamSettingsT.deleteTeamButton }}
             </button>
           </div>
         </section>
@@ -294,10 +322,9 @@ onMounted(() => {
           :class="dialogCls.content"
           @escape-key-down="roleDialogOpen = false"
         >
-          <AlertDialogTitle :class="dialogCls.title">Change member role</AlertDialogTitle>
+          <AlertDialogTitle :class="dialogCls.title">{{ teamSettingsT.roleDialogTitle }}</AlertDialogTitle>
           <AlertDialogDescription :class="dialogCls.description">
-            {{ pendingRoleChange?.name ?? 'This member' }} will become
-            {{ pendingRoleChange?.role ?? 'editor' }} on this team.
+            {{ roleDialogBodyText }}
           </AlertDialogDescription>
 
           <div class="mt-4 rounded-xl border border-border bg-canvas/70 p-3">
@@ -310,14 +337,14 @@ onMounted(() => {
               class="rounded-md border border-border bg-canvas px-3 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
               @click="roleDialogOpen = false"
             >
-              Cancel
+              {{ teamSettingsT.roleDialogCancel }}
             </AlertDialogCancel>
             <AlertDialogAction
               data-test-id="team-settings-role-confirm"
               class="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent/90"
               @click="confirmRoleChange"
             >
-              Apply role
+              {{ teamSettingsT.roleDialogConfirm }}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
@@ -332,13 +359,13 @@ onMounted(() => {
           :class="dialogCls.content"
           @escape-key-down="deleteDialogOpen = false"
         >
-          <AlertDialogTitle :class="dialogCls.title">Delete team</AlertDialogTitle>
+          <AlertDialogTitle :class="dialogCls.title">{{ teamSettingsT.deleteDialogTitle }}</AlertDialogTitle>
           <AlertDialogDescription :class="dialogCls.description">
-            Delete this team and move its boards back to personal ownership. This cannot be undone.
+            {{ teamSettingsT.deleteDialogDescription }}
           </AlertDialogDescription>
 
           <div class="mt-4 rounded-xl border border-red-500/20 bg-red-500/8 p-3 text-xs text-red-100">
-            {{ payload?.team.name ?? 'This team' }} and its memberships will be removed.
+            {{ deleteDialogSummaryText }}
           </div>
 
           <div class="mt-5 flex justify-end gap-2">
@@ -346,14 +373,14 @@ onMounted(() => {
               class="rounded-md border border-border bg-canvas px-3 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
               @click="deleteDialogOpen = false"
             >
-              Cancel
+              {{ teamSettingsT.deleteDialogCancel }}
             </AlertDialogCancel>
             <AlertDialogAction
               data-test-id="team-settings-delete-confirm"
               class="rounded-md bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-500/90"
               @click="confirmDeleteTeam"
             >
-              Delete team
+              {{ teamSettingsT.deleteDialogConfirm }}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
