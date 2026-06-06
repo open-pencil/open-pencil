@@ -509,7 +509,7 @@ export const accountMessages = i18n('account', {
   signInHeading: 'Continue with Google',
   signInDescription:
     'If Google OAuth is not configured in this environment, the button will report that it is unavailable and anonymous mode will keep working.',
-  signInButton: 'Google でログイン',
+  signInButton: 'Sign in with Google',
   signInPending: 'Starting…',
   defaultDisplayName: 'Inkly User',
   avatarAlt: params('{name} avatar'),
@@ -634,7 +634,7 @@ export const loginBannerMessages = i18n('loginBanner', {
   description:
     'Anonymous mode stays available. If you log in, Inkly migrates your current anonymous boards to your account automatically.',
   migrating: 'Migrating your anonymous boards…',
-  loginButton: 'Google でログイン',
+  loginButton: 'Sign in with Google',
   loginPending: 'Starting…'
 })
 
