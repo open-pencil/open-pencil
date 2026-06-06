@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "Attiva imbottitura individuale",
     "alignmentGridCell": "Imposta allineamento",
     "addTrack": "Aggiungi traccia",
-    "removeTrack": "Rimuovi traccia"
+    "removeTrack": "Rimuovi traccia",
+    "widthSizingMenu": "Opzioni di dimensionamento larghezza",
+    "heightSizingMenu": "Opzioni di dimensionamento altezza",
+    "colorPickerSwatch": "Apri selettore colore"
   },
   "pages": {
     "newPage": "Nuova pagina",

@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "切换独立内边距",
     "alignmentGridCell": "设置对齐方式",
     "addTrack": "添加轨道",
-    "removeTrack": "删除轨道"
+    "removeTrack": "删除轨道",
+    "widthSizingMenu": "宽度尺寸选项",
+    "heightSizingMenu": "高度尺寸选项",
+    "colorPickerSwatch": "打开颜色选择器"
   },
   "pages": {
     "newPage": "新建页面",

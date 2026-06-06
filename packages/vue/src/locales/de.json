@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "Individuellen Innenabstand umschalten",
     "alignmentGridCell": "Ausrichtung festlegen",
     "addTrack": "Spur hinzufügen",
-    "removeTrack": "Spur entfernen"
+    "removeTrack": "Spur entfernen",
+    "widthSizingMenu": "Breitengrößenoptionen",
+    "heightSizingMenu": "Höhengrößenoptionen",
+    "colorPickerSwatch": "Farbauswahl öffnen"
   },
   "pages": {
     "newPage": "Neue Seite",

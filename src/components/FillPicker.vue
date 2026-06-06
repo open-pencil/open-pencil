@@ -50,6 +50,7 @@ const { panels } = useI18n()
         data-test-id="fill-picker-swatch"
         class="size-5 shrink-0 cursor-pointer rounded border border-border p-0"
         :style="{ ...style, background: swatchBackground ?? style.background }"
+        :aria-label="panels.fill"
       />
     </template>
     <template #default="{ fill: currentFill, category, toSolid, toGradient, toImage }">
@@ -58,6 +59,7 @@ const { panels } = useI18n()
           <button
             :class="tabClass(category === 'SOLID')"
             data-test-id="fill-picker-tab-solid"
+            :aria-label="panels.solid"
             @click="toSolid"
           >
             <icon-lucide-square class="size-3.5" />
@@ -67,6 +69,7 @@ const { panels } = useI18n()
           <button
             :class="tabClass(category === 'GRADIENT')"
             data-test-id="fill-picker-tab-gradient"
+            :aria-label="panels.linearGradient"
             @click="toGradient"
           >
             <icon-lucide-blend class="size-3.5" />
@@ -76,6 +79,7 @@ const { panels } = useI18n()
           <button
             :class="tabClass(category === 'IMAGE')"
             data-test-id="fill-picker-tab-image"
+            :aria-label="panels.image"
             @click="toImage"
           >
             <icon-lucide-image class="size-3.5" />

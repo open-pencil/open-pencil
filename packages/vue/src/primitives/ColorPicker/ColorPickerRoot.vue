@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { colorToCSS } from '@inkly/core/color'
 
+import { useI18n } from '#vue/i18n/useI18n'
+
 import type { Color } from '@inkly/core/types'
 
 export interface ColorPickerUi {
@@ -18,6 +20,7 @@ const { color, ui } = defineProps<{
 const emit = defineEmits<{ update: [color: Color] }>()
 
 const swatchBg = computed(() => colorToCSS(color))
+const { panels } = useI18n()
 </script>
 
 <template>
@@ -28,6 +31,7 @@ const swatchBg = computed(() => colorToCSS(color))
           data-test-id="color-picker-swatch"
           :class="ui?.swatch"
           :style="{ background: swatchBg }"
+          :aria-label="panels.colorPickerSwatch"
         />
       </slot>
     </PopoverTrigger>

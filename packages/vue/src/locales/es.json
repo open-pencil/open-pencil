@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "Alternar relleno individual",
     "alignmentGridCell": "Definir alineación",
     "addTrack": "Añadir pista",
-    "removeTrack": "Eliminar pista"
+    "removeTrack": "Eliminar pista",
+    "widthSizingMenu": "Opciones de tamaño de ancho",
+    "heightSizingMenu": "Opciones de tamaño de alto",
+    "colorPickerSwatch": "Abrir selector de color"
   },
   "pages": {
     "newPage": "Nueva página",

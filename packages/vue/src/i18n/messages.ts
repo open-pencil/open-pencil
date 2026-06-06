@@ -301,7 +301,10 @@ export const panelMessages = i18n('panels', {
   toggleIndividualPadding: 'Toggle individual padding',
   alignmentGridCell: 'Set alignment',
   addTrack: 'Add track',
-  removeTrack: 'Remove track'
+  removeTrack: 'Remove track',
+  widthSizingMenu: 'Width sizing options',
+  heightSizingMenu: 'Height sizing options',
+  colorPickerSwatch: 'Open color picker'
 })
 
 export const variableTypeMessages = i18n('variableTypes', {

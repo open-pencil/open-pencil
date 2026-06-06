@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "Przełącz indywidualny margines wewnętrzny",
     "alignmentGridCell": "Ustaw wyrównanie",
     "addTrack": "Dodaj tor",
-    "removeTrack": "Usuń tor"
+    "removeTrack": "Usuń tor",
+    "widthSizingMenu": "Opcje rozmiaru szerokości",
+    "heightSizingMenu": "Opcje rozmiaru wysokości",
+    "colorPickerSwatch": "Otwórz selektor koloru"
   },
   "pages": {
     "newPage": "Nowa strona",

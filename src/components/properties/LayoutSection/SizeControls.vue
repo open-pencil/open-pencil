@@ -209,6 +209,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
                 data-test-id="layout-width-sizing-menu"
                 :reference="anchorRef(widthFieldRef)"
                 class="flex shrink-0 cursor-pointer items-center justify-center self-stretch border-none bg-transparent px-1.5 text-[11px] text-muted outline-none"
+                :aria-label="panels.widthSizingMenu"
                 @pointerdown.stop
               >
                 <icon-lucide-chevron-down class="size-3" />
@@ -293,6 +294,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
                 data-test-id="layout-height-sizing-menu"
                 :reference="anchorRef(heightFieldRef)"
                 class="flex shrink-0 cursor-pointer items-center justify-center self-stretch border-none bg-transparent px-1.5 text-[11px] text-muted outline-none"
+                :aria-label="panels.heightSizingMenu"
                 @pointerdown.stop
               >
                 <icon-lucide-chevron-down class="size-3" />

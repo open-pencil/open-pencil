@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "Basculer le rembourrage individuel",
     "alignmentGridCell": "Définir l'alignement",
     "addTrack": "Ajouter une piste",
-    "removeTrack": "Supprimer la piste"
+    "removeTrack": "Supprimer la piste",
+    "widthSizingMenu": "Options de dimensionnement de largeur",
+    "heightSizingMenu": "Options de dimensionnement de hauteur",
+    "colorPickerSwatch": "Ouvrir le sélecteur de couleur"
   },
   "pages": {
     "newPage": "Nouvelle page",

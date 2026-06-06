@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "個別パディングを切替",
     "alignmentGridCell": "整列を設定",
     "addTrack": "トラックを追加",
-    "removeTrack": "トラックを削除"
+    "removeTrack": "トラックを削除",
+    "widthSizingMenu": "幅サイズオプション",
+    "heightSizingMenu": "高さサイズオプション",
+    "colorPickerSwatch": "カラーピッカーを開く"
   },
   "pages": {
     "newPage": "新規ページ",

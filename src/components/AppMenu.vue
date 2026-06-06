@@ -81,6 +81,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
         <button
           data-test-id="app-toggle-ui"
           class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
+          :aria-label="t.toggleUI"
           @click="store.state.showUI = !store.state.showUI"
         >
           <icon-lucide-sidebar class="size-3.5" />

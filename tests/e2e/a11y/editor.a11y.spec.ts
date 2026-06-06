@@ -19,8 +19,6 @@ const editorExcludedSelectors = [
 const editorDisabledRules = [
   // TODO(cardene): `aria-required-children` in the properties tablist is tracked for a follow-up a11y fix PR.
   'aria-required-children',
-  // TODO(cardene): `button-name` on icon-only editor chrome controls is tracked for a follow-up a11y fix PR.
-  'button-name',
   // TODO(cardene): `color-contrast` in editor chrome is tracked for a follow-up a11y fix PR.
   'color-contrast',
   // TODO(cardene): `label` on editor property inputs is tracked for a follow-up a11y fix PR.

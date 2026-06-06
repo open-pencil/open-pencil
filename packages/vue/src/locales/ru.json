@@ -258,7 +258,10 @@
     "toggleIndividualPadding": "Переключить индивидуальные отступы",
     "alignmentGridCell": "Задать выравнивание",
     "addTrack": "Добавить дорожку",
-    "removeTrack": "Удалить дорожку"
+    "removeTrack": "Удалить дорожку",
+    "widthSizingMenu": "Параметры размера ширины",
+    "heightSizingMenu": "Параметры размера высоты",
+    "colorPickerSwatch": "Открыть выбор цвета"
   },
   "pages": {
     "newPage": "Новая страница",
