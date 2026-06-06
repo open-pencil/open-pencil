@@ -7,7 +7,7 @@ import type { Color, Rect, Size } from '#core/types'
 import { vectorNetworkToPath } from '#core/vector'
 
 import { createVectorFrameChildren, resolveVectorFramePlacement } from './placement'
-import { svgToVectorPaths, type SvgVectorizeResult } from './svg-to-vectors'
+import { svgToVectorPaths, type SvgVectorizeResult } from './svg/to-vectors'
 
 export type VectorizeCompareTargets = Size
 

@@ -17,4 +17,4 @@ export {
   resolveVectorFramePlacement,
   type VectorFramePlacement
 } from './placement'
-export { svgToVectorPaths, type SvgVectorizeResult, type VectorizedPath } from './svg-to-vectors'
+export { svgToVectorPaths, type SvgVectorizeResult, type VectorizedPath } from './svg/to-vectors'

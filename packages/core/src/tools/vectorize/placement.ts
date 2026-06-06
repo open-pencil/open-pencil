@@ -2,7 +2,7 @@ import type { SceneGraph, SceneNode, VectorNetwork } from '#core/scene-graph'
 import type { Rect } from '#core/types'
 import { computeAccurateBounds } from '#core/vector'
 
-import type { SvgVectorizeResult } from './svg-to-vectors'
+import type { SvgVectorizeResult } from './svg/to-vectors'
 
 export interface VectorFramePlacement {
   x: number
