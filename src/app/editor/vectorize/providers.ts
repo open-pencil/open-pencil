@@ -3,7 +3,12 @@
  *
  * POST external.api.recraft.ai/v1/images/vectorize — multipart `file`, returns `{ image: { url } }`.
  * fal uses the same engine: fal-ai/recraft/vectorize with JSON `{ image_url }`.
+ *
+ * Requests go through vectorizeFetch so the desktop app bypasses CORS (the
+ * providers only whitelist the web dev origin) — see ./http.ts.
  */
+import { vectorizeFetch } from '@/app/editor/vectorize/http'
+
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.length)
   copy.set(bytes)
@@ -21,7 +26,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 async function fetchSvgFromUrl(url: string): Promise<string> {
   let response: Response
   try {
-    response = await fetch(url, { mode: 'cors' })
+    response = await vectorizeFetch(url, { mode: 'cors' })
   } catch {
     throw new Error(
       'Vectorized SVG could not be downloaded (blocked by browser). Try again or use the desktop app.'
@@ -69,7 +74,7 @@ export async function recraftVectorize(pngBytes: Uint8Array, apiKey: string): Pr
   const blob = new Blob([toArrayBuffer(pngBytes)], { type: 'image/png' })
   form.append('file', blob, 'image.png')
 
-  const response = await fetch('https://external.api.recraft.ai/v1/images/vectorize', {
+  const response = await vectorizeFetch('https://external.api.recraft.ai/v1/images/vectorize', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form
@@ -95,7 +100,7 @@ export async function recraftVectorize(pngBytes: Uint8Array, apiKey: string): Pr
 
 export async function falVectorize(pngBytes: Uint8Array, apiKey: string): Promise<string> {
   const dataUri = `data:image/png;base64,${bytesToBase64(pngBytes)}`
-  const response = await fetch('https://fal.run/fal-ai/recraft/vectorize', {
+  const response = await vectorizeFetch('https://fal.run/fal-ai/recraft/vectorize', {
     method: 'POST',
     headers: {
       Authorization: `Key ${apiKey}`,
