@@ -108,15 +108,22 @@ function assignVariableGuids(
   graph: SceneGraph,
   localIdCounter: { value: number },
   varIdToGuid: Map<string, GUID>,
-  modeIdToGuid: Map<string, GUID>
+  modeIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>
 ): void {
   for (const [colId, col] of graph.variableCollections) {
-    varIdToGuid.set(colId, { sessionID: 0, localID: localIdCounter.value++ })
+    const colGuid = { sessionID: 0, localID: localIdCounter.value++ }
+    varIdToGuid.set(colId, colGuid)
+    assignedGuidValues.add(`${colGuid.sessionID}:${colGuid.localID}`)
     for (const mode of col.modes) {
-      modeIdToGuid.set(mode.modeId, { sessionID: 0, localID: localIdCounter.value++ })
+      const modeGuid = { sessionID: 0, localID: localIdCounter.value++ }
+      modeIdToGuid.set(mode.modeId, modeGuid)
+      assignedGuidValues.add(`${modeGuid.sessionID}:${modeGuid.localID}`)
     }
     for (const varId of col.variableIds) {
-      varIdToGuid.set(varId, { sessionID: 0, localID: localIdCounter.value++ })
+      const varGuid = { sessionID: 0, localID: localIdCounter.value++ }
+      varIdToGuid.set(varId, varGuid)
+      assignedGuidValues.add(`${varGuid.sessionID}:${varGuid.localID}`)
     }
   }
 }
@@ -230,7 +237,8 @@ function buildCanvasEntries(
   pages: FigExportPage[],
   docGuid: GUID,
   localIdCounter: { value: number },
-  nodeIdToGuid: Map<string, GUID>
+  nodeIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>
 ): { canvasEntries: CanvasExportEntry[]; internalCanvasGuid: GUID | null } {
   const canvasEntries: CanvasExportEntry[] = []
   let internalCanvasGuid: GUID | null = null
@@ -245,6 +253,7 @@ function buildCanvasEntries(
       localIdCounter.value = Math.max(localIdCounter.value, canvasGuid.localID + 1)
     }
     nodeIdToGuid.set(page.id, canvasGuid)
+    assignedGuidValues.add(`${canvasGuid.sessionID}:${canvasGuid.localID}`)
     if (page.internalOnly) internalCanvasGuid = canvasGuid
 
     const canvasNc = makeCanvasNodeChange(
@@ -265,6 +274,7 @@ function buildCanvasEntries(
 
   if (graph.variableCollections.size > 0 && internalCanvasGuid === null) {
     internalCanvasGuid = { sessionID: 0, localID: localIdCounter.value++ }
+    assignedGuidValues.add(`${internalCanvasGuid.sessionID}:${internalCanvasGuid.localID}`)
     canvasEntries.push({
       page: { id: '', name: 'Internal Only Canvas', internalOnly: true } as FigExportPage,
       canvasGuid: internalCanvasGuid,
@@ -320,36 +330,44 @@ export async function exportFigFile(
   const blobs: Uint8Array[] = []
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
+  const assignedGuidValues = new Set<string>()
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
   const fontDigestMap = await buildFontDigestMap(graph)
   const glyphBlobMap = new Map<string, number>()
   const blobIndexByHex = new Map<string, number>()
 
+  // Scan ALL imported source.ids BEFORE any new GUID assignment to find
+  // max sessionID:0 and sessionID:1 localID values. This guarantees the
+  // counter is past every imported GUID before any canvas, variable, or
+  // node claims a new counter-based GUID — preventing collisions.
+  let maxLocalId0 = localIdCounter.value - 1
+  let maxLocalId1 = localIdCounter.value - 1
+  for (const node of graph.nodes.values()) {
+    if (node.source.id) {
+      const g = stringToGuid(node.source.id)
+      if (g.sessionID === 0 && g.localID > maxLocalId0) {
+        maxLocalId0 = g.localID
+      }
+      if (g.sessionID === 1 && g.localID > maxLocalId1) {
+        maxLocalId1 = g.localID
+      }
+    }
+  }
+  localIdCounter.value = Math.max(localIdCounter.value, maxLocalId0 + 1, maxLocalId1 + 1)
+
   const { canvasEntries, internalCanvasGuid } = buildCanvasEntries(
     graph,
     pages,
     docGuid,
     localIdCounter,
-    nodeIdToGuid
+    nodeIdToGuid,
+    assignedGuidValues
   )
-
-  // Scan ALL imported source.ids to find max sessionID:0 localID,
-  // preventing collisions between variable GUIDs and any imported node GUID.
-  let maxLocalId0 = localIdCounter.value - 1
-  for (const node of graph.nodes.values()) {
-    if (node.source.id) {
-      const guid = stringToGuid(node.source.id)
-      if (guid.sessionID === 0 && guid.localID > maxLocalId0) {
-        maxLocalId0 = guid.localID
-      }
-    }
-  }
-  localIdCounter.value = Math.max(localIdCounter.value, maxLocalId0 + 1)
 
   // Assign variable GUIDs AFTER canvas entries so that source.id-derived
   // canvas GUIDs don't collide with generated variable GUIDs.
-  assignVariableGuids(graph, localIdCounter, varIdToGuid, modeIdToGuid)
+  assignVariableGuids(graph, localIdCounter, varIdToGuid, modeIdToGuid, assignedGuidValues)
 
   for (const entry of canvasEntries) nodeChanges.push(entry.canvasNc)
 
@@ -372,7 +390,8 @@ export async function exportFigFile(
           fontDigestMap,
           varIdToGuid,
           glyphBlobMap,
-          blobIndexByHex
+          blobIndexByHex,
+          assignedGuidValues
         )
       )
     }
