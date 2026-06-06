@@ -28,6 +28,7 @@ import {
   type TeamDetailResponse
 } from '@/app/api/teams'
 import { toast } from '@/app/shell/ui'
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 
@@ -156,6 +157,7 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center gap-2">
+            <LocaleSwitcher test-id="team-detail-locale-switcher" />
             <button
               type="button"
               data-test-id="team-detail-invite-button"

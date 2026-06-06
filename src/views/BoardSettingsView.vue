@@ -14,6 +14,7 @@ import {
   AlertDialogTitle
 } from 'reka-ui'
 
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import ShareModal from '@/components/ShareModal.vue'
 import {
   createBoardEditorLocation,
@@ -132,6 +133,7 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center gap-2">
+            <LocaleSwitcher test-id="board-settings-locale-switcher" />
             <button
               type="button"
               class="cursor-pointer rounded-xl border border-border bg-canvas px-3 py-2 text-xs text-surface transition-colors hover:bg-hover"

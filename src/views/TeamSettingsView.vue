@@ -21,6 +21,7 @@ import {
   updateTeamMemberRole,
   type TeamDetailResponse
 } from '@/app/api/teams'
+import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { toast } from '@/app/shell/ui'
 import { useDialogUI } from '@/components/ui/dialog'
@@ -185,6 +186,7 @@ onMounted(() => {
             </h1>
             <p class="text-sm text-muted">Rename the team, manage roles, or delete the workspace.</p>
           </div>
+          <LocaleSwitcher test-id="team-settings-locale-switcher" />
         </div>
       </section>
 
