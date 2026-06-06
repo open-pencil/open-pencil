@@ -130,6 +130,61 @@ test.describe('admin view interaction', () => {
     await expect(page.getByTestId('admin-boards-export')).toBeDisabled()
   })
 
+  test('select all visible boards via header checkbox', async ({ page }) => {
+    await mockGoogleLogin(page, { email: 'admin-bulk-select@inkly.test', name: 'Admin Bulk Select' })
+    await seedBoards(page, 3)
+
+    await page.goto('/admin')
+    await page.getByTestId('admin-tab-boards').click()
+
+    const rows = page.locator('[data-test-id^="admin-board-row-"]')
+    await expect(rows).toHaveCount(3)
+
+    await page.getByTestId('admin-boards-select-all').check()
+    await expect(page.getByTestId('admin-boards-bulk-delete')).toBeVisible()
+    await expect(page.getByTestId('admin-boards-bulk-delete')).toContainText('Delete 3')
+
+    await page.getByTestId('admin-boards-clear-selection').click()
+    await expect(page.getByTestId('admin-boards-bulk-delete')).toHaveCount(0)
+  })
+
+  test('row checkbox toggles a single selection and shows bulk action', async ({ page }) => {
+    await mockGoogleLogin(page, { email: 'admin-bulk-row@inkly.test', name: 'Admin Bulk Row' })
+    await seedBoards(page, 2)
+
+    await page.goto('/admin')
+    await page.getByTestId('admin-tab-boards').click()
+
+    const firstRow = page.locator('[data-test-id^="admin-board-row-"]').first()
+    const boardId = await firstRow.getAttribute('data-test-id')
+    const id = boardId?.replace('admin-board-row-', '') ?? ''
+
+    await page.getByTestId(`admin-board-select-${id}`).check()
+    await expect(page.getByTestId('admin-boards-bulk-delete')).toContainText('Delete 1')
+
+    await page.getByTestId(`admin-board-select-${id}`).uncheck()
+    await expect(page.getByTestId('admin-boards-bulk-delete')).toHaveCount(0)
+  })
+
+  test('bulk delete removes all selected boards after confirmation', async ({ page }) => {
+    await mockGoogleLogin(page, { email: 'admin-bulk-delete@inkly.test', name: 'Admin Bulk Delete' })
+    await seedBoards(page, 2)
+
+    await page.goto('/admin')
+    await page.getByTestId('admin-tab-boards').click()
+
+    const rows = page.locator('[data-test-id^="admin-board-row-"]')
+    await expect(rows).toHaveCount(2)
+
+    await page.getByTestId('admin-boards-select-all').check()
+
+    page.once('dialog', (dialog) => dialog.accept())
+    await page.getByTestId('admin-boards-bulk-delete').click()
+
+    await expect(rows).toHaveCount(0)
+    await expect(page.getByTestId('admin-boards-empty')).toBeVisible()
+  })
+
   test('members tab shows empty state when user has no teams', async ({ page }) => {
     await mockGoogleLogin(page, { email: 'admin-members-empty@inkly.test', name: 'Admin Members Empty' })
     await page.goto('/admin')

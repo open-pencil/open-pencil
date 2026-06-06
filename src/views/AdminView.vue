@@ -43,6 +43,8 @@ const teamFilter = ref<'all' | 'personal' | 'team'>('all')
 const boardSort = ref<BoardSortKey>('updated')
 const boardSortDirection = ref<'asc' | 'desc'>('desc')
 const deletingBoardId = ref<string | null>(null)
+const selectedBoardIds = ref<Set<string>>(new Set())
+const bulkDeleting = ref(false)
 const memberSearch = ref('')
 const memberRoleFilter = ref<'all' | 'owner' | 'editor' | 'viewer'>('all')
 const members = ref<MemberWithTeam[]>([])
@@ -241,12 +243,80 @@ async function handleDeleteBoard(board: Board) {
   try {
     await deleteBoard(board.id)
     boards.value = boards.value.filter((b) => b.id !== board.id)
+    selectedBoardIds.value.delete(board.id)
+    selectedBoardIds.value = new Set(selectedBoardIds.value)
     toast.success('Board deleted')
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to delete board'
     toast.error(message)
   } finally {
     deletingBoardId.value = null
+  }
+}
+
+function toggleBoardSelection(boardId: string) {
+  const next = new Set(selectedBoardIds.value)
+  if (next.has(boardId)) {
+    next.delete(boardId)
+  } else {
+    next.add(boardId)
+  }
+  selectedBoardIds.value = next
+}
+
+const allFilteredSelected = computed(() => {
+  if (filteredBoards.value.length === 0) return false
+  return filteredBoards.value.every((board) => selectedBoardIds.value.has(board.id))
+})
+
+function toggleSelectAllFiltered() {
+  const next = new Set(selectedBoardIds.value)
+  if (allFilteredSelected.value) {
+    for (const board of filteredBoards.value) next.delete(board.id)
+  } else {
+    for (const board of filteredBoards.value) next.add(board.id)
+  }
+  selectedBoardIds.value = next
+}
+
+function clearBoardSelection() {
+  selectedBoardIds.value = new Set()
+}
+
+async function handleBulkDelete() {
+  if (bulkDeleting.value) return
+  if (selectedBoardIds.value.size === 0) return
+  const count = selectedBoardIds.value.size
+  const confirmed = window.confirm(
+    `Delete ${count} selected board${count === 1 ? '' : 's'}? This cannot be undone.`
+  )
+  if (!confirmed) return
+
+  bulkDeleting.value = true
+  const targets = [...selectedBoardIds.value]
+  const results = await Promise.allSettled(targets.map((id) => deleteBoard(id)))
+
+  const succeeded = new Set<string>()
+  let failed = 0
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].status === 'fulfilled') {
+      succeeded.add(targets[i])
+    } else {
+      failed++
+    }
+  }
+
+  boards.value = boards.value.filter((b) => !succeeded.has(b.id))
+  const remaining = new Set(selectedBoardIds.value)
+  for (const id of succeeded) remaining.delete(id)
+  selectedBoardIds.value = remaining
+  bulkDeleting.value = false
+
+  if (succeeded.size > 0) {
+    toast.success(`Deleted ${succeeded.size} board${succeeded.size === 1 ? '' : 's'}`)
+  }
+  if (failed > 0) {
+    toast.error(`Failed to delete ${failed} board${failed === 1 ? '' : 's'}`)
   }
 }
 
@@ -448,6 +518,29 @@ onMounted(async () => {
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button
+              v-if="selectedBoardIds.size > 0"
+              type="button"
+              data-test-id="admin-boards-bulk-delete"
+              :disabled="bulkDeleting"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200 transition-colors hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              @click="handleBulkDelete"
+            >
+              <icon-lucide-trash class="size-4" />
+              <span>
+                <span v-if="bulkDeleting">Deleting…</span>
+                <span v-else>Delete {{ selectedBoardIds.size }}</span>
+              </span>
+            </button>
+            <button
+              v-if="selectedBoardIds.size > 0"
+              type="button"
+              data-test-id="admin-boards-clear-selection"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-canvas/60 px-3 py-2 text-sm text-muted transition-colors hover:bg-hover hover:text-surface"
+              @click="clearBoardSelection"
+            >
+              Clear
+            </button>
+            <button
               type="button"
               data-test-id="admin-boards-export"
               :disabled="filteredBoards.length === 0"
@@ -503,6 +596,18 @@ onMounted(async () => {
           <table class="w-full min-w-[640px] text-left text-sm">
             <thead class="bg-canvas/40 text-[11px] uppercase tracking-[0.2em] text-muted">
               <tr>
+                <th scope="col" class="w-10 px-3 py-2">
+                  <label class="sr-only" for="admin-boards-select-all">Select all visible boards</label>
+                  <input
+                    id="admin-boards-select-all"
+                    type="checkbox"
+                    data-test-id="admin-boards-select-all"
+                    :checked="allFilteredSelected"
+                    aria-label="Select all visible boards"
+                    class="size-4 cursor-pointer accent-[#ef6262]"
+                    @change="toggleSelectAllFiltered"
+                  />
+                </th>
                 <th scope="col" class="px-3 py-2">
                   <button
                     type="button"
@@ -556,8 +661,21 @@ onMounted(async () => {
                 v-for="board in filteredBoards"
                 :key="board.id"
                 :data-test-id="`admin-board-row-${board.id}`"
-                class="border-t border-white/5 hover:bg-hover/60"
+                :class="[
+                  'border-t border-white/5 transition-colors',
+                  selectedBoardIds.has(board.id) ? 'bg-[#ef6262]/5' : 'hover:bg-hover/60'
+                ]"
               >
+                <td class="w-10 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    :data-test-id="`admin-board-select-${board.id}`"
+                    :checked="selectedBoardIds.has(board.id)"
+                    :aria-label="`Select ${board.name}`"
+                    class="size-4 cursor-pointer accent-[#ef6262]"
+                    @change="toggleBoardSelection(board.id)"
+                  />
+                </td>
                 <td class="px-3 py-2 text-surface">
                   <button
                     type="button"
