@@ -38,7 +38,7 @@ import { useI18n } from '@inkly/vue'
 import { triggerCsvDownload, type CsvCell } from '@/app/shell/csv-export'
 import { formatTemplate } from '@/app/shell/i18n-format'
 
-const { admin, locale } = useI18n()
+const { admin, locale, notificationsFormat: notificationsFormatT } = useI18n()
 
 useHead({ title: () => admin.value.title })
 
@@ -156,8 +156,8 @@ const activityItems = computed(() => {
     if (activityTypeFilter.value !== 'all' && record.type !== activityTypeFilter.value) return false
     if (Number.isFinite(rangeMs) && record.createdAt < threshold) return false
     if (!query) return true
-    const title = getNotificationTitle(record).toLowerCase()
-    const body = getNotificationBody(record).toLowerCase()
+    const title = getNotificationTitle(record, notificationsFormatT.value).toLowerCase()
+    const body = getNotificationBody(record, notificationsFormatT.value).toLowerCase()
     return title.includes(query) || body.includes(query)
   })
 })
@@ -299,8 +299,8 @@ function exportActivityCsv() {
   const rows: CsvCell[][] = activityItems.value.map((record) => [
     record.id,
     record.type,
-    getNotificationTitle(record) || a.csvUnknown,
-    getNotificationBody(record) || a.csvUnknown,
+    getNotificationTitle(record, notificationsFormatT.value) || a.csvUnknown,
+    getNotificationBody(record, notificationsFormatT.value) || a.csvUnknown,
     new Date(record.createdAt).toISOString(),
     record.readAt === null ? a.csvUnknown : new Date(record.readAt).toISOString()
   ])
@@ -1061,12 +1061,12 @@ onMounted(async () => {
             />
             <div class="flex flex-1 flex-col gap-1">
               <div class="flex items-center justify-between gap-2">
-                <p class="text-sm font-medium text-surface">{{ getNotificationTitle(record) }}</p>
+                <p class="text-sm font-medium text-surface">{{ getNotificationTitle(record, notificationsFormatT) }}</p>
                 <span class="rounded-full border border-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] text-muted">
                   {{ record.type }}
                 </span>
               </div>
-              <p class="text-xs text-muted">{{ getNotificationBody(record) }}</p>
+              <p class="text-xs text-muted">{{ getNotificationBody(record, notificationsFormatT) }}</p>
               <p class="text-[11px] text-muted">{{ formatNotificationTime(record) }}</p>
             </div>
           </li>

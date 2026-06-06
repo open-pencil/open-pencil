@@ -526,6 +526,13 @@
     "toastDeleteFail": "Не удалось удалить уведомление",
     "toastOpenFail": "Не удалось открыть уведомление"
   },
+  "notificationsFormat": {
+    "invitationTitle": "{inviter} пригласил(а) вас в {board}",
+    "teamInviteTitle": "{inviter} добавил(а) вас в {team}",
+    "mentionTitle": "{mentioner} упомянул(а) вас в {board}",
+    "invitationBody": "Приглашение на доску в роли {role}.",
+    "teamInviteBody": "Доступ к рабочему пространству в роли {role}."
+  },
   "teams": {
     "headTitle": "Команды",
     "eyebrow": "Рабочее пространство",

@@ -526,6 +526,13 @@
     "toastDeleteFail": "通知の削除に失敗しました",
     "toastOpenFail": "通知を開けませんでした"
   },
+  "notificationsFormat": {
+    "invitationTitle": "{inviter} があなたを {board} に招待しました",
+    "teamInviteTitle": "{inviter} があなたを {team} に追加しました",
+    "mentionTitle": "{mentioner} があなたを {board} でメンションしました",
+    "invitationBody": "{role} としてボード招待されました。",
+    "teamInviteBody": "{role} としてワークスペースにアクセスできます。"
+  },
   "teams": {
     "headTitle": "チーム",
     "eyebrow": "ワークスペース",

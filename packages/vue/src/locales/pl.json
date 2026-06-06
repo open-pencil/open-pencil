@@ -526,6 +526,13 @@
     "toastDeleteFail": "Nie udało się usunąć powiadomienia",
     "toastOpenFail": "Nie udało się otworzyć powiadomienia"
   },
+  "notificationsFormat": {
+    "invitationTitle": "{inviter} zaprosił(a) Cię do {board}",
+    "teamInviteTitle": "{inviter} dodał(a) Cię do {team}",
+    "mentionTitle": "{mentioner} wspomniał(a) o Tobie w {board}",
+    "invitationBody": "Zaproszenie do tablicy jako {role}.",
+    "teamInviteBody": "Dostęp do obszaru roboczego jako {role}."
+  },
   "teams": {
     "headTitle": "Zespoły",
     "eyebrow": "Obszar roboczy",

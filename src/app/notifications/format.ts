@@ -1,26 +1,49 @@
 import type { NotificationRecord } from '@/app/api/notifications'
 
+export interface NotificationsFormatT {
+  invitationTitle: (params: { inviter: string; board: string }) => string
+  teamInviteTitle: (params: { inviter: string; team: string }) => string
+  mentionTitle: (params: { mentioner: string; board: string }) => string
+  invitationBody: (params: { role: string }) => string
+  teamInviteBody: (params: { role: string }) => string
+}
+
 export function isNotificationUnread(notification: NotificationRecord) {
   return notification.readAt === null
 }
 
-export function getNotificationTitle(notification: NotificationRecord) {
+export function getNotificationTitle(
+  notification: NotificationRecord,
+  t: NotificationsFormatT
+) {
   switch (notification.type) {
     case 'invitation':
-      return `${notification.payload.inviterDisplayName} invited you to ${notification.payload.boardName}`
+      return t.invitationTitle({
+        inviter: notification.payload.inviterDisplayName,
+        board: notification.payload.boardName
+      })
     case 'team_invite':
-      return `${notification.payload.inviterDisplayName} added you to ${notification.payload.teamName}`
+      return t.teamInviteTitle({
+        inviter: notification.payload.inviterDisplayName,
+        team: notification.payload.teamName
+      })
     case 'mention':
-      return `${notification.payload.mentionedByDisplayName} mentioned you in ${notification.payload.boardName}`
+      return t.mentionTitle({
+        mentioner: notification.payload.mentionedByDisplayName,
+        board: notification.payload.boardName
+      })
   }
 }
 
-export function getNotificationBody(notification: NotificationRecord) {
+export function getNotificationBody(
+  notification: NotificationRecord,
+  t: NotificationsFormatT
+) {
   switch (notification.type) {
     case 'invitation':
-      return `Board invitation as ${notification.payload.role}.`
+      return t.invitationBody({ role: notification.payload.role })
     case 'team_invite':
-      return `Workspace access as ${notification.payload.role}.`
+      return t.teamInviteBody({ role: notification.payload.role })
     case 'mention':
       return notification.payload.message
   }

@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
+import { useI18n } from '@inkly/vue'
+
 import { useNotificationsStore } from '@/app/notifications/store'
 import {
   formatNotificationTime,
@@ -13,6 +15,8 @@ import {
 } from '@/app/notifications/format'
 import { toast } from '@/app/shell/ui'
 import { usePopoverUI } from '@/components/ui/popover'
+
+const { notificationsFormat: notificationsFormatT } = useI18n()
 
 const router = useRouter()
 const notifications = useNotificationsStore()
@@ -128,10 +132,10 @@ onUnmounted(() => {
               />
               <span class="min-w-0 flex-1">
                 <span class="block text-sm font-medium text-surface">
-                  {{ getNotificationTitle(notification) }}
+                  {{ getNotificationTitle(notification, notificationsFormatT) }}
                 </span>
                 <span class="mt-1 block text-xs text-muted">
-                  {{ getNotificationBody(notification) }}
+                  {{ getNotificationBody(notification, notificationsFormatT) }}
                 </span>
                 <span class="mt-2 block text-[11px] text-muted/80">
                   {{ formatNotificationTime(notification) }}

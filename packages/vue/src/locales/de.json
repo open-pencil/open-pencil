@@ -526,6 +526,13 @@
     "toastDeleteFail": "Benachrichtigung konnte nicht gelöscht werden",
     "toastOpenFail": "Benachrichtigung konnte nicht geöffnet werden"
   },
+  "notificationsFormat": {
+    "invitationTitle": "{inviter} hat dich zu {board} eingeladen",
+    "teamInviteTitle": "{inviter} hat dich zu {team} hinzugefügt",
+    "mentionTitle": "{mentioner} hat dich in {board} erwähnt",
+    "invitationBody": "Board-Einladung als {role}.",
+    "teamInviteBody": "Workspace-Zugriff als {role}."
+  },
   "teams": {
     "headTitle": "Teams",
     "eyebrow": "Workspace",

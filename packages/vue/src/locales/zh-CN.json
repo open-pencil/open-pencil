@@ -526,6 +526,13 @@
     "toastDeleteFail": "删除通知失败",
     "toastOpenFail": "无法打开通知"
   },
+  "notificationsFormat": {
+    "invitationTitle": "{inviter} 邀请你加入 {board}",
+    "teamInviteTitle": "{inviter} 将你添加到 {team}",
+    "mentionTitle": "{mentioner} 在 {board} 中提到了你",
+    "invitationBody": "以 {role} 身份收到画板邀请。",
+    "teamInviteBody": "以 {role} 身份访问工作区。"
+  },
   "teams": {
     "headTitle": "团队",
     "eyebrow": "工作区",

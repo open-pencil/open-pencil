@@ -584,6 +584,14 @@ export const notificationsMessages = i18n('notifications', {
   toastOpenFail: 'Failed to open notification'
 })
 
+export const notificationsFormatMessages = i18n('notificationsFormat', {
+  invitationTitle: params('{inviter} invited you to {board}'),
+  teamInviteTitle: params('{inviter} added you to {team}'),
+  mentionTitle: params('{mentioner} mentioned you in {board}'),
+  invitationBody: params('Board invitation as {role}.'),
+  teamInviteBody: params('Workspace access as {role}.')
+})
+
 export const teamsMessages = i18n('teams', {
   headTitle: 'Teams',
   eyebrow: 'Workspace',

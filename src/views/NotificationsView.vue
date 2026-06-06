@@ -18,7 +18,7 @@ import { toast } from '@/app/shell/ui'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import LoginBanner from '@/components/LoginBanner.vue'
 
-const { notifications: notificationsT } = useI18n()
+const { notifications: notificationsT, notificationsFormat: notificationsFormatT } = useI18n()
 
 useHead({ title: () => notificationsT.value.headTitle })
 
@@ -190,10 +190,10 @@ onUnmounted(() => {
 
               <div class="space-y-1">
                 <p class="text-lg font-semibold text-surface">
-                  {{ getNotificationTitle(notification) }}
+                  {{ getNotificationTitle(notification, notificationsFormatT) }}
                 </p>
                 <p class="text-sm text-muted">
-                  {{ getNotificationBody(notification) }}
+                  {{ getNotificationBody(notification, notificationsFormatT) }}
                 </p>
               </div>
 

@@ -39,7 +39,7 @@ import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import LoginBanner from '@/components/LoginBanner.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
 
-const { dashboard } = useI18n()
+const { dashboard, notificationsFormat: notificationsFormatT } = useI18n()
 
 useHead({ title: () => dashboard.value.title })
 
@@ -828,8 +828,8 @@ onMounted(async () => {
               aria-hidden="true"
             />
             <div class="flex flex-1 flex-col gap-1">
-              <p class="text-sm font-medium text-surface">{{ getNotificationTitle(notification) }}</p>
-              <p class="text-xs text-muted">{{ getNotificationBody(notification) }}</p>
+              <p class="text-sm font-medium text-surface">{{ getNotificationTitle(notification, notificationsFormatT) }}</p>
+              <p class="text-xs text-muted">{{ getNotificationBody(notification, notificationsFormatT) }}</p>
               <p class="text-[11px] text-muted">{{ formatNotificationTime(notification) }}</p>
             </div>
           </li>

@@ -526,6 +526,13 @@
     "toastDeleteFail": "Impossibile eliminare la notifica",
     "toastOpenFail": "Impossibile aprire la notifica"
   },
+  "notificationsFormat": {
+    "invitationTitle": "{inviter} ti ha invitato a {board}",
+    "teamInviteTitle": "{inviter} ti ha aggiunto a {team}",
+    "mentionTitle": "{mentioner} ti ha menzionato in {board}",
+    "invitationBody": "Invito alla board come {role}.",
+    "teamInviteBody": "Accesso al workspace come {role}."
+  },
   "teams": {
     "headTitle": "Team",
     "eyebrow": "Workspace",
