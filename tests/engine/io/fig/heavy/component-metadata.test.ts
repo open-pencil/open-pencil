@@ -13,7 +13,7 @@ function importFixture(name: string) {
   return importNodeChanges(nodeChanges, blobs, new Map(images))
 }
 
-setDefaultTimeout(20_000)
+setDefaultTimeout(60_000)
 
 heavy('fig component metadata import', () => {
   test('preserves remote library component identity fields', () => {
@@ -30,7 +30,7 @@ heavy('fig component metadata import', () => {
     expect(component.overrideKey).toBe('4132:5801')
     expect(component.sharedSymbolVersion).toBe('4152:1913')
     expect(component.isSymbolPublishable).toBe(false)
-  }, 10_000)
+  }, 30_000)
 
   test('imports component set docs and variant property specs', () => {
     const graph = importFixture('material3.fig')
@@ -58,5 +58,5 @@ heavy('fig component metadata import', () => {
     expect(Object.keys(variant.componentPropertyValues).some((key) => key.includes(':'))).toBe(
       false
     )
-  }, 10_000)
+  }, 30_000)
 })

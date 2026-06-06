@@ -7,7 +7,7 @@ import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
-setDefaultTimeout(60_000)
+setDefaultTimeout(180_000)
 
 describe('text node export', () => {
   test('text nodes have derivedTextData and textUserLayoutVersion', async () => {

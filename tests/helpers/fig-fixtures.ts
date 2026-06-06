@@ -25,7 +25,8 @@ export const VALID_NODE_TYPES = new Set<string>([
   'COMPONENT_SET',
   'INSTANCE',
   'CONNECTOR',
-  'SHAPE_WITH_TEXT'
+  'SHAPE_WITH_TEXT',
+  'BOOLEAN_OPERATION'
 ])
 
 export function readFixtureBytes(name: string): Uint8Array {

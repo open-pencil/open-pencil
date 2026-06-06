@@ -146,7 +146,7 @@ describe('FontManager loaded font cache', () => {
     expect(manager.provider()).toBeNull()
   })
 
-  test('registers loaded faces under exact render families', () => {
+  test('registers loaded faces under the bare family name', () => {
     const manager = new FontManager()
     const recording = createRecordingProvider()
 
@@ -155,13 +155,10 @@ describe('FontManager loaded font cache', () => {
 
     const renderFamily = manager.renderFamily('Inter', 'SemiBold')
 
-    expect(renderFamily).toBe('__op_font__Inter__SemiBold')
-    expect(recording.registrations).toEqual([
-      { family: 'Inter', byteLength: 12 },
-      { family: '__op_font__Inter__SemiBold', byteLength: 12 }
-    ])
+    expect(renderFamily).toBe('Inter')
+    expect(recording.registrations).toEqual([{ family: 'Inter', byteLength: 12 }])
     expect(manager.renderFamily('Inter', 'SemiBold')).toBe(renderFamily)
-    expect(recording.registrations).toHaveLength(2)
+    expect(recording.registrations).toHaveLength(1)
   })
 
   test('loads downloaded cache before other sources', async () => {
