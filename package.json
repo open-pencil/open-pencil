@@ -27,7 +27,7 @@
     "figma:debug": "open -a Figma --args --remote-debugging-port=9222",
     "test:unit": "bun test ./tests/engine",
     "test:coverage": "bun run coverage:unit",
-    "coverage:unit": "bun test --coverage --coverage-reporter=lcov --coverage-dir=.context/coverage/unit ./tests/engine",
+    "coverage:unit": "bun test --coverage --coverage-reporter=lcov --coverage-dir=.context/coverage/unit ./tests/engine && bun scripts/coverage/filter-lcov.ts .context/coverage/unit/lcov.info",
     "coverage:e2e:demo": "bun scripts/measure-e2e-coverage.ts",
     "coverage:report": "bun run coverage:unit && bun run coverage:e2e:demo && bun scripts/report-coverage.ts",
     "test:type-shapes": "bun scripts/type-shapes.ts",
