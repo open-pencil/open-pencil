@@ -291,3 +291,5 @@ Thanks to [@sld0Ant](https://github.com/sld0Ant) (Anton Soldatov) for creating a
 ## License
 
 MIT
+
+<!-- slop test branch: intentionally invalid PR body, remove after test -->
