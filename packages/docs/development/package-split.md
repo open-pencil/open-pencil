@@ -16,7 +16,7 @@ OpenPencil is splitting stable compatibility layers into independently publishab
 - `@open-pencil/kiwi` owns pure Kiwi schema/runtime code plus low-level Figma Kiwi codec, container, and parse helpers.
 - App, CLI, MCP, and Vue SDK consume packages through public workspace exports only.
 
-See [`kiwi-package-plan.md`](./kiwi-package-plan.md) for the detailed `@open-pencil/kiwi` inventory, package-local test plan, and remaining split boundaries. See [`dom-css-parser-audit.md`](./dom-css-parser-audit.md) for the DOM/CSS rule against expanding hand-rolled CSS parsing.
+See [`kiwi-package-plan.md`](./kiwi-package-plan.md) for the detailed `@open-pencil/kiwi` inventory, package-local test plan, and remaining split boundaries. See [`fig-package-plan.md`](./fig-package-plan.md) for the staged `@open-pencil/fig` split. See [`dom-css-parser-audit.md`](./dom-css-parser-audit.md) for the DOM/CSS rule against expanding hand-rolled CSS parsing.
 
 ## Candidate packages
 
