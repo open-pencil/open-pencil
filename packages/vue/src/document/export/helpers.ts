@@ -3,6 +3,7 @@ import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { MAX_EXPORT_SCALE, MIN_EXPORT_SCALE, clampExportScale } from '@open-pencil/core/scene-graph'
 import type { ExportFormatId, ExportSetting, PluginDataEntry } from '@open-pencil/core/scene-graph'
 
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
@@ -15,14 +16,9 @@ export type ExportPanelTarget = 'selection' | 'page'
 const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
 
-// Custom export scales are accepted beyond the presets, but bounded: a huge
-// multiplier would allocate an enormous canvas and crash the renderer.
-export const MIN_EXPORT_SCALE = 0.01
-export const MAX_EXPORT_SCALE = 1024
-
-export function clampExportScale(scale: number) {
-  return Math.min(MAX_EXPORT_SCALE, Math.max(MIN_EXPORT_SCALE, scale))
-}
+// Re-exported from core so the UI and the .fig file-format boundary share one
+// definition of the export-scale bounds (see scene-graph/export-scale).
+export { MIN_EXPORT_SCALE, MAX_EXPORT_SCALE, clampExportScale }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 

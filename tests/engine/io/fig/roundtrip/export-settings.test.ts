@@ -9,6 +9,7 @@ import {
   type NodeChange
 } from '@open-pencil/core'
 import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
+import { MAX_EXPORT_SCALE } from '@open-pencil/core/scene-graph'
 
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
@@ -113,5 +114,40 @@ describe('fig roundtrip export settings', () => {
         (entry) => entry.pluginID === 'open-pencil' && entry.key === 'exportSettings'
       ) ?? false
     ).toBe(false)
+  })
+
+  test('does not resurrect native export settings after the user clears all rows', async () => {
+    // Imported node carries NATIVE export settings (no plugin override).
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      frame({
+        exportSettings: [{ imageType: 'PNG', constraint: { type: 'CONTENT_SCALE', value: 2 } }]
+      })
+    ])
+    const node = [...graph.getAllNodes()].find((n) => n.name === 'Export settings frame')
+    if (!node) throw new Error('imported frame not found')
+    expect(node.exportSettings).toEqual([{ scale: 2, format: 'png' }])
+
+    // User removes every export row; the raw native settings must be dropped so they
+    // don't come back via the import fallback on reopen.
+    graph.updateNode(node.id, { exportSettings: [] })
+    expect(node.source.fig.rawNodeFields?.exportSettings).toBeUndefined()
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const reNode = [...reimported.getAllNodes()].find((n) => n.name === 'Export settings frame')
+    expect(reNode?.exportSettings).toEqual([])
+  })
+
+  test('clamps an out-of-range native export scale at the import boundary', () => {
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      frame({
+        exportSettings: [{ imageType: 'PNG', constraint: { type: 'CONTENT_SCALE', value: 999999 } }]
+      })
+    ])
+    const node = [...graph.getAllNodes()].find((n) => n.name === 'Export settings frame')
+    expect(node?.exportSettings).toEqual([{ scale: MAX_EXPORT_SCALE, format: 'png' }])
   })
 })

@@ -47,6 +47,9 @@ async function doExport() {
   exporting.value = true
   try {
     const requests = []
+    // Export exactly the rows shown in the panel (activeSettings) for every target,
+    // so a multi-selection exports what the user sees rather than each node's own
+    // (possibly hidden / divergent) settings.
     for (const id of targetIds.value) {
       const node = editorStore.graph.getNode(id)
       if (!node) continue
@@ -54,7 +57,7 @@ async function doExport() {
         activeTarget.value === 'page'
           ? ({ scope: 'page', pageId: id } as const)
           : ({ scope: 'node', nodeId: id } as const)
-      for (const setting of node.exportSettings) {
+      for (const setting of activeSettings.value) {
         requests.push({ target, formatId: setting.format, options: { scale: setting.scale } })
       }
     }
@@ -124,7 +127,7 @@ onScopeDispose(() => {
         </button>
       </Tip>
     </div>
-    <p v-if="mixed && activeSettings.length > 0" class="text-[11px] text-muted">
+    <p v-if="mixed" class="text-[11px] text-muted">
       {{ panels.mixed }}
     </p>
 
