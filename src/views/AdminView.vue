@@ -2,6 +2,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
+import {
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle
+} from 'reka-ui'
+
+import { useDialogUI } from '@/components/ui/dialog'
 
 import { useAuthStore } from '@/app/auth/store'
 import { useNotificationsStore } from '@/app/notifications/store'
@@ -16,6 +26,7 @@ import {
   createBoardEditorLocation,
   deleteBoard,
   listBoards,
+  updateBoard,
   type Board
 } from '@/app/api/client'
 import { getTeam, listTeams, type TeamMember, type TeamSummary } from '@/app/api/teams'
@@ -51,6 +62,12 @@ const boardSortDirection = ref<'asc' | 'desc'>('desc')
 const deletingBoardId = ref<string | null>(null)
 const selectedBoardIds = ref<Set<string>>(new Set())
 const bulkDeleting = ref(false)
+const bulkMoving = ref(false)
+const moveDialogOpen = ref(false)
+const moveTargetTeamId = ref<string>('personal')
+const moveDialogCls = useDialogUI({
+  content: 'w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl'
+})
 const memberSearch = ref('')
 const memberRoleFilter = ref<'all' | 'owner' | 'editor' | 'viewer'>('all')
 const members = ref<MemberWithTeam[]>([])
@@ -290,6 +307,74 @@ function toggleSelectAllFiltered() {
 
 function clearBoardSelection() {
   selectedBoardIds.value = new Set()
+}
+
+function openBulkMoveDialog() {
+  if (selectedBoardIds.value.size === 0) return
+  moveTargetTeamId.value = 'personal'
+  moveDialogOpen.value = true
+}
+
+function closeBulkMoveDialog() {
+  if (bulkMoving.value) return
+  moveDialogOpen.value = false
+}
+
+async function handleBulkMove() {
+  if (bulkMoving.value) return
+  if (selectedBoardIds.value.size === 0) return
+
+  bulkMoving.value = true
+  const targets = [...selectedBoardIds.value]
+  const teamId = moveTargetTeamId.value === 'personal' ? null : moveTargetTeamId.value
+
+  const results = await Promise.allSettled(
+    targets.map((id) => updateBoard(id, { teamId }))
+  )
+
+  const succeeded = new Set<string>()
+  let failed = 0
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]
+    if (result.status === 'fulfilled') {
+      succeeded.add(targets[i])
+    } else {
+      failed++
+    }
+  }
+
+  if (succeeded.size > 0) {
+    const updatedTeam = teams.value.find((team) => team.id === teamId) ?? null
+    boards.value = boards.value.map((board) => {
+      if (!succeeded.has(board.id)) return board
+      return {
+        ...board,
+        teamId,
+        team: updatedTeam ? { id: updatedTeam.id, name: updatedTeam.name } : null
+      }
+    })
+  }
+
+  const remaining = new Set(selectedBoardIds.value)
+  for (const id of succeeded) remaining.delete(id)
+  selectedBoardIds.value = remaining
+  bulkMoving.value = false
+  moveDialogOpen.value = false
+
+  if (succeeded.size > 0) {
+    toast.success(
+      succeeded.size === 1
+        ? formatTemplate(admin.value.boardsTab.bulkMoveSuccessSingular, { count: succeeded.size })
+        : formatTemplate(admin.value.boardsTab.bulkMoveSuccessPlural, { count: succeeded.size })
+    )
+  }
+  if (failed > 0) {
+    toast.error(
+      failed === 1
+        ? formatTemplate(admin.value.boardsTab.bulkMoveFailSingular, { count: failed })
+        : formatTemplate(admin.value.boardsTab.bulkMoveFailPlural, { count: failed })
+    )
+  }
 }
 
 async function handleBulkDelete() {
@@ -536,6 +621,20 @@ onMounted(async () => {
             <p class="text-sm text-muted">{{ formatTemplate(admin.boardsTab.shownCount, { shown: filteredBoards.length, total: totalBoards }) }}</p>
           </div>
           <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-if="selectedBoardIds.size > 0"
+              type="button"
+              data-test-id="admin-boards-bulk-move"
+              :disabled="bulkMoving"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm text-accent transition-colors hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50"
+              @click="openBulkMoveDialog"
+            >
+              <icon-lucide-arrow-right-left class="size-4" />
+              <span>
+                <span v-if="bulkMoving">{{ admin.boardsTab.bulkMoving }}</span>
+                <span v-else>{{ formatTemplate(admin.boardsTab.bulkMove, { count: selectedBoardIds.size }) }}</span>
+              </span>
+            </button>
             <button
               v-if="selectedBoardIds.size > 0"
               type="button"
@@ -957,5 +1056,58 @@ onMounted(async () => {
         </div>
       </section>
     </div>
+
+    <DialogRoot :open="moveDialogOpen" @update:open="(open) => !open && closeBulkMoveDialog()">
+      <DialogPortal>
+        <DialogOverlay :class="moveDialogCls.overlay" @click="closeBulkMoveDialog" />
+        <DialogContent
+          data-test-id="admin-bulk-move-dialog"
+          :class="moveDialogCls.content"
+        >
+          <DialogTitle :class="moveDialogCls.title">
+            {{ admin.boardsTab.bulkMoveDialogTitle }}
+          </DialogTitle>
+          <DialogDescription :class="moveDialogCls.description">
+            {{ formatTemplate(admin.boardsTab.bulkMove, { count: selectedBoardIds.size }) }}
+          </DialogDescription>
+          <div class="mt-4 flex flex-col gap-2">
+            <label class="sr-only" for="admin-bulk-move-target">{{ admin.boardsTab.bulkMoveTargetAria }}</label>
+            <select
+              id="admin-bulk-move-target"
+              v-model="moveTargetTeamId"
+              data-test-id="admin-bulk-move-target"
+              :aria-label="admin.boardsTab.bulkMoveTargetAria"
+              class="rounded-lg border border-border bg-input px-3 py-2 text-sm text-surface outline-none focus:border-accent"
+            >
+              <option value="personal">{{ admin.boardsTab.bulkMoveDialogPersonal }}</option>
+              <option v-for="team in ownedTeams" :key="team.id" :value="team.id">
+                {{ team.name }}
+              </option>
+            </select>
+          </div>
+          <div class="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              data-test-id="admin-bulk-move-cancel"
+              :disabled="bulkMoving"
+              class="cursor-pointer rounded-lg border border-white/10 bg-canvas/60 px-3 py-2 text-sm text-muted transition-colors hover:bg-hover hover:text-surface disabled:opacity-50"
+              @click="closeBulkMoveDialog"
+            >
+              {{ admin.boardsTab.bulkMoveDialogCancel }}
+            </button>
+            <button
+              type="button"
+              data-test-id="admin-bulk-move-confirm"
+              :disabled="bulkMoving"
+              class="cursor-pointer rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+              @click="handleBulkMove"
+            >
+              <span v-if="bulkMoving">{{ admin.boardsTab.bulkMoving }}</span>
+              <span v-else>{{ admin.boardsTab.bulkMoveDialogConfirm }}</span>
+            </button>
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
   </main>
 </template>

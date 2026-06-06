@@ -166,6 +166,24 @@ test.describe('admin view interaction', () => {
     await expect(page.getByTestId('admin-boards-bulk-delete')).toHaveCount(0)
   })
 
+  test('bulk move dialog opens with target select and personal option', async ({ page }) => {
+    await mockGoogleLogin(page, { email: 'admin-move-open@inkly.test', name: 'Admin Move Open' })
+    await seedBoards(page, 2)
+
+    await page.goto('/admin')
+    await page.getByTestId('admin-tab-boards').click()
+    await page.getByTestId('admin-boards-select-all').check()
+
+    await expect(page.getByTestId('admin-boards-bulk-move')).toBeVisible()
+    await page.getByTestId('admin-boards-bulk-move').click()
+    await expect(page.getByTestId('admin-bulk-move-dialog')).toBeVisible()
+    await expect(page.getByTestId('admin-bulk-move-target')).toBeVisible()
+    await expect(page.getByTestId('admin-bulk-move-target').locator('option').first()).toHaveAttribute('value', 'personal')
+
+    await page.getByTestId('admin-bulk-move-cancel').click()
+    await expect(page.getByTestId('admin-bulk-move-dialog')).toHaveCount(0)
+  })
+
   test('bulk delete removes all selected boards after confirmation', async ({ page }) => {
     await mockGoogleLogin(page, { email: 'admin-bulk-delete@inkly.test', name: 'Admin Bulk Delete' })
     await seedBoards(page, 2)
