@@ -57,6 +57,7 @@ function onToggleCorners() {
           data-test-id="appearance-visibility"
           class="flex cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 text-muted hover:bg-hover hover:text-surface"
           :class="{ 'text-accent': visibilityState === 'hidden' }"
+          :aria-label="panels.toggleVisibility"
           @click="toggleVisibility"
         >
           <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
@@ -135,6 +136,7 @@ function onToggleCorners() {
               useIconButtonUI({ size: 'md', ui: { base: 'size-[26px] shrink-0' } }).base,
               { '!border-accent !text-accent': showIndependentCorners }
             ]"
+            :aria-label="panels.independentCornerRadii"
             @click="onToggleCorners"
           >
             <svg

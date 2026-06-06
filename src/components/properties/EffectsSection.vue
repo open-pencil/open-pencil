@@ -29,6 +29,7 @@ const sectionCls = useSectionUI()
           <button
             data-test-id="effects-section-add"
             :class="useIconButtonUI().base"
+            :aria-label="panels.addEffect"
             @click="actions.add(effectsCtx.createDefaultEffect())"
           >
             +
@@ -56,11 +57,21 @@ const sectionCls = useSectionUI()
               v-if="effectsCtx.isShadow(effect.type)"
               class="size-5 shrink-0 cursor-pointer rounded border border-border"
               :style="{ background: colorToCSS(effect.color) }"
+              :aria-label="
+                effectsCtx.expandedIndex.value === i
+                  ? panels.collapseEffectSettings
+                  : panels.expandEffectSettings
+              "
               @click="effectsCtx.toggleExpand(i)"
             />
             <button
               v-else
               class="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded border border-border bg-input"
+              :aria-label="
+                effectsCtx.expandedIndex.value === i
+                  ? panels.collapseEffectSettings
+                  : panels.expandEffectSettings
+              "
               @click="effectsCtx.toggleExpand(i)"
             >
               <icon-lucide-blend class="size-3 text-muted" />
@@ -80,6 +91,7 @@ const sectionCls = useSectionUI()
               v-test-id="`effect-visibility-${i}`"
               :data-visible="effect.visible ? 'true' : 'false'"
               class="cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
+              :aria-label="panels.toggleVisibility"
               @click="actions.toggleVisibility(i)"
             >
               <icon-lucide-eye
@@ -93,6 +105,7 @@ const sectionCls = useSectionUI()
           <Tip :label="panels.removeEffect">
             <button
               :class="useIconButtonUI().base"
+              :aria-label="panels.removeEffect"
               @click="effectsCtx.handleRemove(actions.remove, i)"
             >
               −

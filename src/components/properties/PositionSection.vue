@@ -37,6 +37,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-left"
+              :aria-label="panels.alignLeft"
               @click="handleAlign(actions.align, 'horizontal', 'min')"
             >
               <icon-lucide-align-start-vertical class="size-3.5" />
@@ -46,6 +47,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-center-h"
+              :aria-label="panels.alignCenterHorizontally"
               @click="handleAlign(actions.align, 'horizontal', 'center')"
             >
               <icon-lucide-align-center-vertical class="size-3.5" />
@@ -55,6 +57,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-right"
+              :aria-label="panels.alignRight"
               @click="handleAlign(actions.align, 'horizontal', 'max')"
             >
               <icon-lucide-align-end-vertical class="size-3.5" />
@@ -66,6 +69,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-top"
+              :aria-label="panels.alignTop"
               @click="handleAlign(actions.align, 'vertical', 'min')"
             >
               <icon-lucide-align-start-horizontal class="size-3.5" />
@@ -75,6 +79,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-center-v"
+              :aria-label="panels.alignCenterVertically"
               @click="handleAlign(actions.align, 'vertical', 'center')"
             >
               <icon-lucide-align-center-horizontal class="size-3.5" />
@@ -84,6 +89,7 @@ function handleAlign(
             <button
               :class="useIconButtonUI({ size: 'md' }).base"
               data-test-id="position-align-bottom"
+              :aria-label="panels.alignBottom"
               @click="handleAlign(actions.align, 'vertical', 'max')"
             >
               <icon-lucide-align-end-horizontal class="size-3.5" />
@@ -152,6 +158,7 @@ function handleAlign(
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
             data-test-id="position-flip-horizontal"
+            :aria-label="panels.flipHorizontal"
             @click="actions.flip('horizontal')"
           >
             <icon-lucide-flip-horizontal-2 class="size-3.5" />
@@ -161,6 +168,7 @@ function handleAlign(
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
             data-test-id="position-flip-vertical"
+            :aria-label="panels.flipVertical"
             @click="actions.flip('vertical')"
           >
             <icon-lucide-flip-vertical-2 class="size-3.5" />
@@ -170,6 +178,7 @@ function handleAlign(
           <button
             :class="useIconButtonUI({ size: 'md', ui: { base: 'shrink-0' } }).base"
             data-test-id="position-rotate-90"
+            :aria-label="panels.rotate90"
             @click="actions.rotate(90)"
           >
             <icon-lucide-rotate-cw-square class="size-3.5" />

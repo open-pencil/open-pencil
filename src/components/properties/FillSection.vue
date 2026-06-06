@@ -46,6 +46,7 @@ function updateFill(
           <button
             data-test-id="fill-section-add"
             :class="useIconButtonUI().base"
+            :aria-label="panels.addFill"
             @click="actions.add({ ...fillCtx.defaultFill })"
           >
             +

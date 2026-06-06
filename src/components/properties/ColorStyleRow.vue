@@ -108,6 +108,7 @@ const { panels, dialogs } = useI18n()
         v-test-id="visibilityTestId"
         :data-visible="item.visible ? 'true' : 'false'"
         class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
+        :aria-label="panels.toggleVisibility"
         @click="emit('toggleVisibility')"
       >
         <icon-lucide-eye v-if="item.visible" data-test-id="visibility-icon-on" class="size-3.5" />
@@ -116,7 +117,11 @@ const { panels, dialogs } = useI18n()
     </Tip>
 
     <Tip :label="removeLabel">
-      <button :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="emit('remove')">
+      <button
+        :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base"
+        :aria-label="removeLabel"
+        @click="emit('remove')"
+      >
         −
       </button>
     </Tip>

@@ -131,6 +131,7 @@ const fontLoader = { load: loadFont }
               data-test-id="typography-bold-button"
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 font-bold text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
               :data-state="ctx.activeFormatting.value.includes('bold') ? 'on' : 'off'"
+              :aria-label="menu.bold"
               @click="ctx.actions.toggleBold"
             >
               <icon-lucide-bold class="size-3.5" />
@@ -140,6 +141,7 @@ const fontLoader = { load: loadFont }
             <button
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
               :data-state="ctx.activeFormatting.value.includes('italic') ? 'on' : 'off'"
+              :aria-label="menu.italic"
               @click="ctx.actions.toggleItalic"
             >
               <icon-lucide-italic class="size-3.5" />
@@ -149,6 +151,7 @@ const fontLoader = { load: loadFont }
             <button
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
               :data-state="ctx.activeFormatting.value.includes('underline') ? 'on' : 'off'"
+              :aria-label="menu.underline"
               @click="ctx.actions.toggleDecoration('UNDERLINE')"
             >
               <icon-lucide-underline class="size-3.5" />
@@ -158,6 +161,7 @@ const fontLoader = { load: loadFont }
             <button
               class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
               :data-state="ctx.activeFormatting.value.includes('strikethrough') ? 'on' : 'off'"
+              :aria-label="menu.strikethrough"
               @click="ctx.actions.toggleDecoration('STRIKETHROUGH')"
             >
               <icon-lucide-strikethrough class="size-3.5" />

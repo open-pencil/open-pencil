@@ -136,6 +136,7 @@ onScopeDispose(() => {
         <button
           data-test-id="export-section-add"
           :class="useIconButtonUI().base"
+          :aria-label="panels.addExport"
           @click="addSetting"
         >
           +
@@ -166,6 +167,7 @@ onScopeDispose(() => {
       <Tip :label="panels.removeExport">
         <button
           :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base"
+          :aria-label="panels.removeExport"
           @click="removeSetting(i)"
         >
           −
@@ -187,6 +189,7 @@ onScopeDispose(() => {
       <button
         data-test-id="export-preview-toggle"
         class="mt-1 flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent px-0 py-1 text-[11px] text-muted hover:text-surface"
+        :aria-label="panels.toggleExportPreview"
         @click="showPreview = !showPreview"
       >
         <icon-lucide-chevron-down v-if="showPreview" class="size-3" />
