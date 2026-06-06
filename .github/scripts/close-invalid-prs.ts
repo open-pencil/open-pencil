@@ -77,9 +77,7 @@ function isPRHygieneFailure(line: string): boolean {
   const cells = tableCells(line)
   const checkName = cells[0] ?? ''
   const status = cells[1] ?? ''
-  const fullLine = line.toLowerCase()
-
-  if (fullLine.includes('[ignored]')) return false
+  if (checkName.toLowerCase().includes('[ignored]')) return false
   if (!normalizedCheckName(checkName).startsWith('pr hygiene')) return false
 
   return /❌/u.test(status) || /\berror\b/i.test(status)
