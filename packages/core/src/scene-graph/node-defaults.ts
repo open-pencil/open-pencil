@@ -141,6 +141,7 @@ export function createDefaultNode(
     symbolLinks: [],
     variantPropSpecs: [],
     boundVariables: {},
+    exportSettings: [],
     pluginData: [],
     pluginRelaunchData: [],
     internalOnly: false,

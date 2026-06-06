@@ -15,6 +15,7 @@ export { convertEffects, convertFills, convertStrokes, setVariableColorResolver 
 export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
 import {
   extractBoundVariables,
+  extractExportSettings,
   extractPluginData,
   extractPluginRelaunchData,
   getOpenPencilPluginValue,
@@ -563,6 +564,7 @@ export function nodeChangeToProps(
     expanded: true,
     autoRename: (nc.autoRename ?? true) as boolean,
     boundVariables: extractBoundVariables(nc),
+    exportSettings: extractExportSettings(nc),
     pluginData: extractPluginData(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
