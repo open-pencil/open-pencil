@@ -3,12 +3,18 @@ import { computed, toValue } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { providerSettingsHighlight } from '@/app/ai/chat/use'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ProviderSettingsKeyField from '@/components/chat/ProviderSettings/ProviderSettingsKeyField.vue'
 import { useProviderSettingsContext } from '@/components/chat/ProviderSettings/context'
 
 const ctx = useProviderSettingsContext()
 const { dialogs } = useI18n()
+
+// Ring this section when the pane is deep-linked here (e.g. from the missing/rejected
+// key toast). Purely reactive off the module-level signal — works regardless of when
+// the section mounts relative to when the signal is set; the signal auto-clears.
+const highlighted = computed(() => providerSettingsHighlight.value === 'vectorize')
 
 const providerOptions = [
   { value: 'recraft' as const, label: 'Recraft' },
@@ -65,7 +71,10 @@ const activeInputTestId = computed(() =>
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 border-t border-border pt-2">
+  <div
+    class="flex flex-col gap-2 rounded-lg border-t border-border pt-2 transition-all duration-500"
+    :class="highlighted ? '-mx-2 -mb-2 bg-[#ef4444]/10 px-2 pb-2 shadow-[0_0_0_2px_#ef4444]' : ''"
+  >
     <h4 class="text-[11px] font-semibold text-surface">{{ dialogText.vectorizeProvider }}</h4>
     <AppSelect
       v-model="ctx.vectorizeProvider"

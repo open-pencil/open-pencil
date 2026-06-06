@@ -46,16 +46,18 @@ function push(message: string, variant: ToastVariant, action?: ToastAction) {
     existing.count += 1
     existing.id = ++nextId
     if (action) existing.action = action
-    return
+    return existing.id
   }
-  toasts.value.push({ id: ++nextId, message, variant, count: 1, action })
+  const id = ++nextId
+  toasts.value.push({ id, message, variant, count: 1, action })
   if (toasts.value.length > TOAST_STACK_LIMIT) {
     toasts.value.splice(0, toasts.value.length - TOAST_STACK_LIMIT)
   }
+  return id
 }
 
-function info(message: string) {
-  push(message, 'default')
+function info(message: string): number {
+  return push(message, 'default')
 }
 
 function warning(message: string, action?: ToastAction) {

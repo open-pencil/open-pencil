@@ -14,6 +14,14 @@ export interface VectorizeProvider {
   vectorize(pngBytes: Uint8Array, apiKey: string): Promise<string>
 }
 
+/** Thrown when a provider rejects the API key (401/403) so the UI can link to settings. */
+export class VectorizeAuthError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'VectorizeAuthError'
+  }
+}
+
 function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const copy = new Uint8Array(bytes.length)
   copy.set(bytes)
@@ -91,7 +99,7 @@ const recraft: VectorizeProvider = {
     if (!response.ok) {
       const detail = await response.text().catch(() => '')
       if (response.status === 401 || response.status === 403) {
-        throw new Error('Recraft API key was rejected — check the key under Image vectorization')
+        throw new VectorizeAuthError('Recraft API key was rejected')
       }
       throw new Error(
         detail
@@ -123,6 +131,9 @@ const fal: VectorizeProvider = {
 
     if (!response.ok) {
       const detail = await response.text().catch(() => '')
+      if (response.status === 401 || response.status === 403) {
+        throw new VectorizeAuthError('fal API key was rejected')
+      }
       throw new Error(
         detail
           ? `fal vectorize failed (${response.status}): ${detail}`

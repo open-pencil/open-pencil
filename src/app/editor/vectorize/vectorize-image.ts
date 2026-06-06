@@ -15,7 +15,7 @@ import {
   createVectorFrameChildren,
   resolveVectorFramePlacement
 } from '@/app/editor/vectorize/placement'
-import { getVectorizeProvider } from '@/app/editor/vectorize/providers'
+import { getVectorizeProvider, VectorizeAuthError } from '@/app/editor/vectorize/providers'
 import { toast } from '@/app/shell/ui'
 
 let vectorizeInFlight = false
@@ -61,7 +61,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
     const dialogs = dialogMessages.get()
     toast.error(dialogs.vectorizeMissingKeyPrefix, {
       label: dialogs.vectorizeMissingKeyLink,
-      onClick: openProviderSettingsPane
+      onClick: () => openProviderSettingsPane('vectorize')
     })
     return
   }
@@ -73,7 +73,7 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
   }
 
   vectorizeInFlight = true
-  toast.info('Vectorizing image…')
+  const progressToastId = toast.info('Vectorizing image…')
 
   try {
     const preprocessed = preprocessForVectorize(bytes, () => store.renderer?.ck ?? null)
@@ -146,8 +146,21 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
     store.requestRender()
     toast.info('Image converted to vectors')
   } catch (error) {
-    toast.error(formatVectorizeError(error, provider))
+    // A rejected key is fixable in settings, so link there like the missing-key toast.
+    if (error instanceof VectorizeAuthError) {
+      const dialogs = dialogMessages.get()
+      // Trailing separator so the message doesn't run into the link label (the toast
+      // concatenates the two, matching the missing-key prefix which ends in a space).
+      toast.error(`${error.message}. `, {
+        label: dialogs.vectorizeMissingKeyLink,
+        onClick: () => openProviderSettingsPane('vectorize')
+      })
+    } else {
+      toast.error(formatVectorizeError(error, provider))
+    }
   } finally {
+    // Dismiss the "Vectorizing…" progress toast so it doesn't linger after a failure.
+    toast.remove(progressToastId)
     vectorizeInFlight = false
   }
 }
