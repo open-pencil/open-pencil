@@ -108,14 +108,18 @@ try {
   await github<unknown>(`/repos/${owner}/${repo}/labels/${encodeURIComponent(label)}`)
 } catch (error) {
   if (!(error instanceof GitHubAPIError) || error.status !== 404) throw error
-  await github<unknown>(`/repos/${owner}/${repo}/labels`, {
-    method: 'POST',
-    body: JSON.stringify({
-      name: label,
-      color: 'd73a4a',
-      description: 'Does not meet contribution requirements'
+  try {
+    await github<unknown>(`/repos/${owner}/${repo}/labels`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: label,
+        color: 'd73a4a',
+        description: 'Does not meet contribution requirements'
+      })
     })
-  })
+  } catch (createError) {
+    if (!(createError instanceof GitHubAPIError) || createError.status !== 422) throw createError
+  }
 }
 
 await github<unknown>(`/repos/${owner}/${repo}/issues/${issueNumber}/labels`, {
