@@ -1,7 +1,4 @@
-export interface GUID {
-  sessionID: number
-  localID: number
-}
+import type { GUID } from './types'
 
 export interface VariableBinding {
   variableID: GUID

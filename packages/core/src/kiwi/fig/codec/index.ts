@@ -17,9 +17,8 @@ import {
   encodeNodeChangeWithVariables as encodeNodeChangeVariableBindings,
   parseVariableId
 } from '@open-pencil/kiwi/fig'
+import type { Color, GUID, Matrix, Vector } from '@open-pencil/kiwi/fig'
 import { compileSchema, encodeBinarySchema } from '@open-pencil/kiwi/schema-runtime'
-
-import { parseColor } from '#core/color'
 
 interface CompiledSchema {
   encodeMessage(message: unknown): Uint8Array
@@ -173,11 +172,7 @@ export function peekMessageType(data: Uint8Array): number | null {
 
 // Type definitions
 
-export type { GUID, Color } from '#core/types'
-
-import type { Color, GUID, Matrix, Vector } from '#core/types'
-
-export type { Matrix, Vector }
+export type { Color, GUID, Matrix, Vector } from '@open-pencil/kiwi/fig'
 
 export interface ParentIndex {
   guid: GUID
@@ -490,8 +485,8 @@ export function createNodeChange(opts: {
   y: number
   width: number
   height: number
-  fill?: Color | string
-  stroke?: Color | string
+  fill?: Color
+  stroke?: Color
   strokeWeight?: number
   cornerRadius?: number
   opacity?: number
@@ -519,11 +514,10 @@ export function createNodeChange(opts: {
   }
 
   if (opts.fill) {
-    const color = typeof opts.fill === 'string' ? parseColor(opts.fill) : opts.fill
     change.fillPaints = [
       {
         type: 'SOLID',
-        color,
+        color: opts.fill,
         opacity: 1.0,
         visible: true,
         blendMode: 'NORMAL'
@@ -532,11 +526,10 @@ export function createNodeChange(opts: {
   }
 
   if (opts.stroke) {
-    const color = typeof opts.stroke === 'string' ? parseColor(opts.stroke) : opts.stroke
     change.strokePaints = [
       {
         type: 'SOLID',
-        color,
+        color: opts.stroke,
         opacity: 1.0,
         visible: true,
         blendMode: 'NORMAL'
