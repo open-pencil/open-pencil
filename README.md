@@ -291,3 +291,5 @@ Thanks to [@sld0Ant](https://github.com/sld0Ant) (Anton Soldatov) for creating a
 ## License
 
 MIT
+
+<!-- intentionally invalid slop PR test marker -->
