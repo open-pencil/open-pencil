@@ -40,7 +40,7 @@ const modelValue = defineModel<T>({ required: true })
 
 const select = useSelectUI({
   trigger: ui?.trigger ?? 'min-w-0 flex-1 rounded px-1.5 py-1 text-xs',
-  content: ui?.content ?? 'max-h-[min(14rem,var(--reka-select-content-available-height))]',
+  content: ui?.content ?? 'max-h-56',
   item: ui?.item ?? 'rounded py-1.5 pr-2 pl-6 text-xs'
 })
 const viewport = ui?.viewport ?? 'p-0.5'
@@ -49,10 +49,12 @@ const indicator = ui?.indicator ?? 'absolute left-1.5 inline-flex items-center j
 
 <template>
   <SelectRoot v-model="modelValue">
-    <SelectTrigger v-test-id="testId" :class="select.trigger" :title="label">
-      <SelectValue :placeholder="placeholder" />
-      <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
-    </SelectTrigger>
+    <Tip :label="label" :disabled="!label">
+      <SelectTrigger v-test-id="testId" :class="select.trigger">
+        <SelectValue :placeholder="placeholder" />
+        <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
+      </SelectTrigger>
+    </Tip>
     <SelectPortal>
       <SelectContent position="popper" :side-offset="2" :class="select.content">
         <SelectViewport :class="viewport">
