@@ -15,6 +15,7 @@ import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
 import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
+import { parseSvgGradients, resolveGradientFill } from '#core/tools/vectorize/svg-gradients'
 import { applySvgTransformToPath } from '#core/tools/vectorize/svg-transform'
 import type { Rect } from '#core/types'
 import { computeAccurateBounds } from '#core/vector'
@@ -85,6 +86,7 @@ export function svgToVectorPaths(
   if (space.width <= 0 || space.height <= 0) return null
 
   const defaultColor = options?.defaultColor ?? '#000000'
+  const gradients = parseSvgGradients(svgText)
 
   const vectorized: VectorizedPath[] = []
   for (const path of paths) {
@@ -92,9 +94,20 @@ export function svgToVectorPaths(
     const pathData = applySvgTransformToPath(path.d, path.transform)
     const scaledD = mapPathDataToBounds(pathData, space, bounds)
     const network = parseSVGPath(scaledD, fillRule)
+    const gradientFill =
+      gradients.size > 0
+        ? resolveGradientFill(
+            path.fill,
+            gradients,
+            path.transform,
+            space,
+            bounds,
+            computeAccurateBounds(network)
+          )
+        : null
     vectorized.push({
       vectorNetwork: network,
-      fills: resolveFill(path, defaultColor),
+      fills: gradientFill ? [gradientFill] : resolveFill(path, defaultColor),
       strokes: resolveStrokes(path, defaultColor)
     })
   }
