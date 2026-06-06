@@ -25,6 +25,8 @@ pencil-editor/
 | [pen-format-compat.md](./pen-format-compat.md) | pencil.dev `.pen` ファイル互換性の仕様 |
 | [font-management.md](./font-management.md) | フォント管理 (バンドル戦略・日本語対応) |
 | [i18n.md](./i18n.md) | 国際化対応 (UI ローカライズ) |
+| [i18n-audit.md](./i18n-audit.md) | view 層の英語残骸 audit (自動生成、 0 candidates 維持) |
+| [a11y-backlog.md](./a11y-backlog.md) | a11y violation の残対象 backlog と進め方 SSOT |
 
 ## 起動方法
 
