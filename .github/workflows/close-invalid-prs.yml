@@ -6,28 +6,37 @@ on:
   issue_comment:
     types: [created]
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
+concurrency:
+  group: close-invalid-prs-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
 
 jobs:
+  # This job only reacts to trusted CodeRabbit review signals and then labels/closes PRs.
   close-invalid:
     name: Close PRs failed by PR Hygiene
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     steps:
       - name: Check out trusted workflow scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: 24
 
       - name: Close PR when CodeRabbit fails PR Hygiene
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node .github/scripts/close-invalid-prs.ts
+        run: |
+          if [ ! -f .github/scripts/close-invalid-prs.ts ]; then
+            echo "Trusted close-invalid helper is not present on the default branch yet."
+            exit 0
+          fi
+          node --experimental-strip-types .github/scripts/close-invalid-prs.ts

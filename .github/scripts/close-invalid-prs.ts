@@ -22,6 +22,15 @@ interface PullRequestResponse {
   author_association: string
 }
 
+class GitHubAPIError extends Error {
+  readonly status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 const event = JSON.parse(await readFile(eventPath, 'utf8')) as GitHubEvent
 const sender = event.sender?.login ?? ''
 const coderabbitAuthors = new Set(['coderabbitai[bot]', 'coderabbitai'])
@@ -50,13 +59,16 @@ if (!issueNumber || !shouldInspect) {
   process.exit(0)
 }
 
-const hygieneFailed = /PR Hygiene/i.test(text) && /(fail|failed|error|❌|request changes|changes requested)/i.test(text)
+const hygieneFailed = text
+  .split('\n')
+  .some((line) => /\bPR Hygiene\b/i.test(line) && /(?:❌|\berror\b|\bfailed\b|\bfail\b)/i.test(line))
+
 if (!hygieneFailed) {
   console.log('CodeRabbit signal did not reference a failed PR Hygiene check.')
   process.exit(0)
 }
 
-async function github<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function github<T>(path: string, options: RequestInit = {}): Promise<T | null> {
   const response = await fetch(`https://api.github.com${path}`, {
     ...options,
     headers: {
@@ -69,14 +81,16 @@ async function github<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const body = await response.text()
-    throw new Error(`${options.method ?? 'GET'} ${path} failed: ${response.status} ${body}`)
+    throw new GitHubAPIError(`${options.method ?? 'GET'} ${path} failed: ${response.status} ${body}`, response.status)
   }
 
-  if (response.status === 204) return null as T
+  if (response.status === 204) return null
   return response.json() as Promise<T>
 }
 
 const pr = await github<PullRequestResponse>(`/repos/${owner}/${repo}/pulls/${issueNumber}`)
+if (!pr) throw new Error(`PR #${issueNumber} returned no data`)
+
 const trustedAssociations = new Set(['OWNER', 'MEMBER', 'COLLABORATOR'])
 
 if (trustedAssociations.has(pr.author_association)) {
@@ -93,8 +107,7 @@ const label = 'invalid'
 try {
   await github<unknown>(`/repos/${owner}/${repo}/labels/${encodeURIComponent(label)}`)
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error)
-  if (!message.includes('404')) throw error
+  if (!(error instanceof GitHubAPIError) || error.status !== 404) throw error
   await github<unknown>(`/repos/${owner}/${repo}/labels`, {
     method: 'POST',
     body: JSON.stringify({
