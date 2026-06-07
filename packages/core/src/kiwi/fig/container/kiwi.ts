@@ -21,6 +21,7 @@ export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
 
 export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promise<Uint8Array> {
   if (
+    compressed.length >= 4 &&
     compressed[0] === 0x28 &&
     compressed[1] === 0xb5 &&
     compressed[2] === 0x2f &&
