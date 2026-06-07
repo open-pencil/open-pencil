@@ -264,16 +264,9 @@ export class SceneGraph {
     return id
   }
 
-  createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
+  private registerNode(node: SceneNode, parentId: string): SceneNode {
     node.parentId = parentId
     this.nodes.set(node.id, node)
-
-    const parent = this.nodes.get(parentId)
-    if (parent) {
-      parent.childIds.push(node.id)
-    }
-
     if (node.type === 'INSTANCE' && node.componentId) {
       let set = this.instanceIndex.get(node.componentId)
       if (!set) {
@@ -282,9 +275,31 @@ export class SceneGraph {
       }
       set.add(node.id)
     }
-
     this.emitter.emit('node:created', node)
     return node
+  }
+
+  createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
+    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
+    this.nodes.get(parentId)?.childIds.push(node.id)
+    return this.registerNode(node, parentId)
+  }
+
+  // Reconstruct a node under a known id (collaboration sync). No fresh id (avoids
+  // the duplicate-childIds corruption of the old create-then-swap hack); links to
+  // its parent idempotently because a live-created remote node never re-syncs the
+  // parent's childIds, and the includes() guard prevents a duplicate when it does.
+  createNodeWithId(
+    id: string,
+    type: NodeType,
+    parentId: string,
+    overrides: Partial<SceneNode> = {}
+  ): SceneNode {
+    const node = createDefaultNode(() => id, type, overrides)
+    node.id = id
+    const parent = this.nodes.get(parentId)
+    if (parent && !parent.childIds.includes(id)) parent.childIds.push(id)
+    return this.registerNode(node, parentId)
   }
 
   static TEXT_PICTURE_KEYS: ReadonlySet<string> = TEXT_PICTURE_KEYS

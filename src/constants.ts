@@ -76,16 +76,6 @@ export const PEER_COLORS: Color[] = [
   { r: 0.91, g: 0.12, b: 0.39, a: 1 }
 ]
 
-export const YJS_JSON_FIELDS = new Set([
-  'childIds',
-  'fills',
-  'strokes',
-  'effects',
-  'vectorNetwork',
-  'boundVariables',
-  'styleRuns'
-])
-
 export {
   DEFAULT_SHAPE_FILL,
   DEFAULT_FRAME_FILL,

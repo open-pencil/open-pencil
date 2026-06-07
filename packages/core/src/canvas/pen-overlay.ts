@@ -4,6 +4,8 @@ import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS, PEN_CLOSE_RADIUS_BOOST } from '#c
 import type { SceneGraph } from '#core/scene-graph'
 import type { Vector } from '#core/types'
 
+import { getWorldMatrix } from './coordinate'
+import Matrix from './matrix'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
 type ToScreenFn = (x: number, y: number) => Vector
@@ -217,12 +219,28 @@ export function drawRemoteCursors(
       for (const nodeId of cursor.selection) {
         const node = graph.getNode(nodeId)
         if (!node) continue
-        const abs = graph.getAbsolutePosition(nodeId)
-        const sx = abs.x * r.zoom + r.panX
-        const sy = abs.y * r.zoom + r.panY
-        const sw = node.width * r.zoom
-        const sh = node.height * r.zoom
-        canvas.drawRect(r.ck.XYWHRect(sx, sy, sw, sh), r.auxStroke)
+        // Map the node's four corners through its world matrix (the same transform
+        // the shape is rendered with) so a remote peer's selection box tracks the
+        // node exactly, including rotation, flips, and any parent transforms.
+        const m = getWorldMatrix(node, graph)
+        const c = Matrix.mapPoints(m, [
+          0,
+          0,
+          node.width,
+          0,
+          node.width,
+          node.height,
+          0,
+          node.height
+        ])
+        const box = new r.ck.Path()
+        box.moveTo(c[0] * r.zoom + r.panX, c[1] * r.zoom + r.panY)
+        for (let i = 2; i < c.length; i += 2) {
+          box.lineTo(c[i] * r.zoom + r.panX, c[i + 1] * r.zoom + r.panY)
+        }
+        box.close()
+        canvas.drawPath(box, r.auxStroke)
+        box.delete()
       }
     }
 

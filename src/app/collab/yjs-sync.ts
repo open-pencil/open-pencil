@@ -3,7 +3,6 @@ import * as Y from 'yjs'
 import type { SceneNode } from '@open-pencil/core/scene-graph'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { YJS_JSON_FIELDS } from '@/constants'
 
 type YNodes = Y.Map<Y.Map<unknown>>
 type YImages = Y.Map<Uint8Array>
@@ -34,31 +33,48 @@ type YjsGraphSyncOptions = {
   setSuppressYjsEvents: (value: boolean) => void
 }
 
+// Tagged form used to round-trip binary node fields (e.g. geometry `commandsBlob`)
+// through JSON, which has no native typed-array representation.
+interface U8Tagged {
+  __u8: number[]
+}
+
+function isU8Tagged(val: unknown): val is U8Tagged {
+  return typeof val === 'object' && val !== null && Array.isArray((val as U8Tagged).__u8)
+}
+
+// Every node field is stored as a JSON string so the decoder can reconstruct it
+// without a per-field whitelist. The previous codec stringified objects on write
+// but only re-parsed a hand-maintained set of keys on read, so any object-valued
+// field outside that set (fillGeometry, strokeGeometry, arcData, …) arrived as a
+// raw string and crashed downstream consumers. Encoding/decoding symmetrically —
+// and preserving Uint8Array via the tag — fixes that class of bug for all fields.
+function encodeFieldValue(value: unknown): string {
+  return JSON.stringify(value, (_key, val) =>
+    val instanceof Uint8Array ? ({ __u8: Array.from(val) } satisfies U8Tagged) : val
+  )
+}
+
+function decodeFieldValue(encoded: unknown): unknown {
+  if (typeof encoded !== 'string') return encoded
+  try {
+    return JSON.parse(encoded, (_key, val) => (isU8Tagged(val) ? new Uint8Array(val.__u8) : val))
+  } catch {
+    return encoded
+  }
+}
+
 export function syncNodePropsToYMap(node: SceneNode, ynode: Y.Map<unknown>) {
   for (const [key, value] of Object.entries(node)) {
-    if (typeof value === 'object' && value !== null) {
-      ynode.set(key, JSON.stringify(value))
-    } else {
-      ynode.set(key, value)
-    }
+    ynode.set(key, encodeFieldValue(value))
   }
 }
 
 export function yNodeToProps(ynode: Y.Map<unknown>): Record<string, unknown> {
   const props: Record<string, unknown> = {}
-
   for (const [key, value] of ynode.entries()) {
-    if (YJS_JSON_FIELDS.has(key)) {
-      try {
-        props[key] = typeof value === 'string' ? JSON.parse(value) : value
-      } catch {
-        props[key] = value
-      }
-    } else {
-      props[key] = value
-    }
+    props[key] = decodeFieldValue(value)
   }
-
   return props
 }
 
@@ -240,14 +256,13 @@ export function createYjsGraphSync({
       return
     }
 
-    const parentId = props.parentId as string
-    if (parentId && store.graph.getNode(parentId)) {
-      const type = props.type as SceneNode['type']
-      const node = store.graph.createNode(type, parentId, props as Partial<SceneNode>)
-      store.graph.nodes.delete(node.id)
-      node.id = nodeId
-      store.graph.nodes.set(nodeId, node)
-    }
+    const type = props.type as SceneNode['type'] | undefined
+    if (!type) return
+    // Create under the node's own id regardless of whether the parent exists yet:
+    // parentage is carried by the synced parentId + the parent's synced childIds,
+    // so order doesn't matter and nothing pollutes the parent's child list.
+    const parentId = typeof props.parentId === 'string' ? props.parentId : ''
+    store.graph.createNodeWithId(nodeId, type, parentId, props as Partial<SceneNode>)
   }
 
   return { syncNodeToYjs, syncAllNodesToYjs, applyYjsToGraph }
