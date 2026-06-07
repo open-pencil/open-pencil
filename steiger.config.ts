@@ -11,6 +11,7 @@ export default defineConfig([
   openPencilArchitecturePlugin,
   {
     ignores: [
+      '.claude/**',
       'node_modules/**',
       'dist/**',
       'desktop/**',
