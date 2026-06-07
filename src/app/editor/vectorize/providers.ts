@@ -6,6 +6,19 @@
  *   - fal:     POST fal.run/fal-ai/recraft/vectorize (JSON `image_url`)
  */
 import { VECTORIZE_PROVIDER_LABELS, type VectorizeProviderId } from '@/app/ai/chat/storage'
+import { IS_TAURI } from '@/constants'
+
+// In the desktop (Tauri) app the webview enforces CORS for cross-origin requests,
+// which blocks the provider APIs that work fine from the browser. Route those calls
+// through Tauri's HTTP plugin (a Rust-side request, not subject to CORS) on desktop,
+// and fall back to the standard browser fetch on the web.
+async function httpFetch(input: string, init?: RequestInit): Promise<Response> {
+  if (IS_TAURI) {
+    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http')
+    return tauriFetch(input, init)
+  }
+  return fetch(input, init)
+}
 
 export interface VectorizeProvider {
   id: VectorizeProviderId
@@ -39,7 +52,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 async function fetchSVGFromURL(url: string): Promise<string> {
   let response: Response
   try {
-    response = await fetch(url, { mode: 'cors' })
+    response = await httpFetch(url, { mode: 'cors' })
   } catch {
     throw new Error(
       'Vectorized SVG could not be downloaded (blocked by browser). Try again or use the desktop app.'
@@ -90,7 +103,7 @@ const recraft: VectorizeProvider = {
     const blob = new Blob([toArrayBuffer(pngBytes)], { type: 'image/png' })
     form.append('file', blob, 'image.png')
 
-    const response = await fetch('https://external.api.recraft.ai/v1/images/vectorize', {
+    const response = await httpFetch('https://external.api.recraft.ai/v1/images/vectorize', {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form
@@ -120,7 +133,7 @@ const fal: VectorizeProvider = {
   label: VECTORIZE_PROVIDER_LABELS.fal,
   async vectorize(pngBytes, apiKey) {
     const dataUri = `data:image/png;base64,${bytesToBase64(pngBytes)}`
-    const response = await fetch('https://fal.run/fal-ai/recraft/vectorize', {
+    const response = await httpFetch('https://fal.run/fal-ai/recraft/vectorize', {
       method: 'POST',
       headers: {
         Authorization: `Key ${apiKey}`,
