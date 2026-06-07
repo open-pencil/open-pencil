@@ -3,7 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js'
 
-export type MCPTransport = { handleRequest: (request: Request) => Promise<Response> }
+export type MCPTransport = {
+  handleRequest: (request: Request) => Promise<Response>
+  close: () => Promise<void>
+}
 
 type MCPSession = {
   transport: MCPTransport
@@ -18,6 +21,25 @@ type McpSessionManagerOptions = {
 
 const MAX_MCP_SESSIONS = 10
 const MCP_SESSION_TTL_MS = 15 * 60_000
+
+function describeError(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
+}
+
+async function closeSession(session: MCPSession): Promise<void> {
+  try {
+    await session.transport.close()
+  } catch (e) {
+    // Best-effort: the transport may already be closed or in a bad state
+    process.stderr.write(`  MCP session: transport close warning (${describeError(e)})\n`)
+  }
+  try {
+    await session.server.close()
+  } catch (e) {
+    // Best-effort
+    process.stderr.write(`  MCP session: server close warning (${describeError(e)})\n`)
+  }
+}
 
 export function createMcpSessionManager({
   serverVersion,
@@ -40,6 +62,7 @@ export function createMcpSessionManager({
     for (const [id, session] of sessions) {
       if (now - session.lastSeen > MCP_SESSION_TTL_MS) {
         sessions.delete(id)
+        void closeSession(session)
       }
     }
   }
@@ -75,11 +98,17 @@ export function createMcpSessionManager({
   }
 
   function deleteSession(sessionId: string | undefined) {
-    if (sessionId) sessions.delete(sessionId)
+    if (!sessionId) return
+    const session = sessions.get(sessionId)
+    if (!session) return
+    sessions.delete(sessionId)
+    void closeSession(session)
   }
 
-  function clear() {
+  async function clear() {
+    const all = [...sessions.values()]
     sessions.clear()
+    await Promise.all(all.map(closeSession))
   }
 
   return { clear, deleteSession, notifyToolsChanged, resolveTransport, touch }

@@ -4,7 +4,7 @@
  * Connects to the bridge via WebSocket, receives RPC requests,
  * executes them against the live EditorStore, and sends results back.
  */
-import { AUTOMATION_WS_PORT } from '@open-pencil/core/constants'
+import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
@@ -28,7 +28,8 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
 
   function connect() {
     try {
-      ws = new WebSocket(`ws://127.0.0.1:${AUTOMATION_WS_PORT}`)
+      // WebSocket upgrade now happens on the same HTTP port (unified server)
+      ws = new WebSocket(`ws://127.0.0.1:${AUTOMATION_HTTP_PORT}`)
     } catch (e) {
       console.error(
         '[Automation] WebSocket constructor failed:',

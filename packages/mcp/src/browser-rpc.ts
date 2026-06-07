@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 
 import type { WebSocket } from 'ws'
 
+import { isAuthorized } from '#mcp/auth'
 import type { RpcJsonObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
 
@@ -61,11 +62,10 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   const pending = new Map<string, PendingRequest>()
   const clients = new Set<WebSocket>()
   let browserWs: WebSocket | null = null
-  let browserToken: string | null = null
   let browserRegistered = false
 
   function currentRpcToken(): string | null {
-    return authToken ?? browserToken
+    return authToken
   }
 
   function isConnected(): boolean {
@@ -82,7 +82,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function sendRegisterToken(ws: WebSocket) {
     const token = currentRpcToken()
-    if (token) sendJson(ws, { type: 'register', token })
+    sendJson(ws, { type: 'register', token })
   }
 
   function broadcastRegisterToken() {
@@ -135,14 +135,13 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     }
   }
 
-  function registerBrowser(ws: WebSocket, token: string) {
-    if (authToken && token !== authToken) {
+  function registerBrowser(ws: WebSocket, token: string | null) {
+    if (!isAuthorized(token, authToken)) {
       ws.close()
       return
     }
     const previousBrowserWs = browserWs
     browserWs = ws
-    browserToken = token
     browserRegistered = true
     if (previousBrowserWs && previousBrowserWs !== ws && previousBrowserWs.readyState === ws.OPEN) {
       previousBrowserWs.close()
@@ -171,8 +170,8 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       return
     }
 
-    if (msg.type === 'register' && msg.token) {
-      registerBrowser(ws, msg.token)
+    if (msg.type === 'register' && msg.token !== undefined) {
+      registerBrowser(ws, msg.token as string | null)
       return
     }
     if (msg.type === 'request') {
@@ -186,7 +185,6 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     clients.delete(ws)
     if (browserWs !== ws) return
     browserWs = null
-    browserToken = null
     browserRegistered = false
     rejectAllPending('Browser disconnected')
     onConnectionChange()

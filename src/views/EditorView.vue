@@ -17,6 +17,7 @@ import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
+import { toast } from '@/app/shell/ui'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -94,7 +95,13 @@ onMounted(async () => {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
-    console.warn('[MCP]', e)
+    // Surface the failure to the user — without a visible signal, ACP
+    // agents and automation silently fail and the user can't tell why.
+    const message = e instanceof Error ? e.message : String(e)
+    console.warn('[MCP]', message)
+    if (isTauri()) {
+      toast.error(`MCP server failed to start: ${message}`)
+    }
   }
 
   try {

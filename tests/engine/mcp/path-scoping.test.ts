@@ -1,48 +1,96 @@
 import { describe, test, expect } from 'bun:test'
-import { resolve, sep } from 'node:path'
+import { mkdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
 
-// Test the resolveSafePath logic directly (extracted for testability)
-function resolveSafePath(filePath: string, root: string): string {
-  const resolved = resolve(filePath)
-  const normalizedSep = root.endsWith('/') || root.endsWith('\\') ? '' : sep
-  if (!resolved.startsWith(root + normalizedSep) && resolved !== root) {
-    throw new Error(`Path is outside the allowed root: ${root}`)
-  }
-  return resolved
-}
+import { resolveSafePath } from '#mcp/tool/output'
 
 describe('MCP path scoping', () => {
   const root = resolve('/tmp/mcp-test-root')
 
-  test('allows path inside root', () => {
-    expect(resolveSafePath(`${root}/design.fig`, root)).toBe(`${root}/design.fig`)
+  test('allows path inside root', async () => {
+    expect(await resolveSafePath(`${root}/design.fig`, root)).toBe(`${root}/design.fig`)
   })
 
-  test('allows nested path inside root', () => {
-    expect(resolveSafePath(`${root}/sub/dir/file.fig`, root)).toBe(`${root}/sub/dir/file.fig`)
+  test('allows nested path inside root', async () => {
+    expect(await resolveSafePath(`${root}/sub/dir/file.fig`, root)).toBe(`${root}/sub/dir/file.fig`)
   })
 
-  test('allows root itself', () => {
-    expect(resolveSafePath(root, root)).toBe(root)
+  test('allows root itself', async () => {
+    expect(await resolveSafePath(root, root)).toBe(root)
   })
 
-  test('rejects path outside root', () => {
+  test('rejects path outside root', async () => {
     expect(() => resolveSafePath('/etc/passwd', root)).toThrow('outside the allowed root')
   })
 
-  test('rejects path traversal', () => {
+  test('rejects path traversal', async () => {
     expect(() => resolveSafePath(`${root}/../../../etc/passwd`, root)).toThrow(
       'outside the allowed root'
     )
   })
 
-  test('rejects sibling directory', () => {
+  test('rejects sibling directory', async () => {
     expect(() => resolveSafePath(`${root}/../other-root/file.fig`, root)).toThrow(
       'outside the allowed root'
     )
   })
 
-  test('rejects root prefix trick (root-evil)', () => {
+  test('rejects root prefix trick (root-evil)', async () => {
     expect(() => resolveSafePath(`${root}-evil/file.fig`, root)).toThrow('outside the allowed root')
+  })
+
+  test('rejects symlink pointing outside root', async () => {
+    const testDir = resolve('/tmp/mcp-symlink-test')
+    const linkPath = `${testDir}/escape.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      await symlink('/etc/passwd', linkPath)
+      await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('outside the allowed root')
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test('allows symlink pointing inside root', async () => {
+    const testDir = resolve('/tmp/mcp-symlink-safe-test')
+    const targetDir = `${testDir}/targets`
+    const targetFile = `${targetDir}/real.fig`
+    const linkPath = `${testDir}/link.fig`
+    try {
+      await mkdir(targetDir, { recursive: true })
+      await writeFile(targetFile, 'test')
+      await symlink(targetFile, linkPath)
+      // Returns the resolved (not realpath) path — symlink target is
+      // checked via realpath for security, but the returned path is
+      // the user-provided normalized path for usability.
+      await expect(resolveSafePath(linkPath, testDir)).resolves.toBe(resolve(linkPath))
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test('rejects dangling symlink pointing outside root', async () => {
+    const testDir = resolve('/tmp/mcp-symlink-dangling-test')
+    const linkPath = `${testDir}/dangling.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      // Dangling symlink: target doesn't exist, points outside root
+      await symlink('/etc/nonexistent-secret', linkPath)
+      await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('outside the allowed root')
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test('allows nonexistent file inside root', async () => {
+    const testDir = resolve('/tmp/mcp-nonexistent-test')
+    const filePath = `${testDir}/new.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      // File doesn't exist yet (common for save_file / export operations)
+      await expect(resolveSafePath(filePath, testDir)).resolves.toBe(resolve(filePath))
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
   })
 })

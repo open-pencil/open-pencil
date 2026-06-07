@@ -2,23 +2,29 @@ import { spawn } from 'node:child_process'
 
 import type { Plugin } from 'vite'
 
+import { getSocketPath } from '@open-pencil/mcp/transport'
+
 // TODO: production — bundle MCP server as Tauri sidecar or spawn via shell plugin
 export function automationPlugin(authToken: string | null, corsOrigin: string): Plugin {
   let child: ReturnType<typeof spawn> | null = null
 
   return {
     name: 'open-pencil-automation',
-    configureServer() {
+    async configureServer() {
       if (child) return
+
+      const socketPath = await getSocketPath()
 
       child = spawn('bun', ['run', 'packages/mcp/src/index.ts'], {
         stdio: ['ignore', 'inherit', 'pipe'],
         env: {
           ...process.env,
           PORT: '7600',
-          WS_PORT: '7601',
+          OPENPENCIL_MCP_TCP: '1',
+          OPENPENCIL_MCP_SOCKET: socketPath,
           ...(authToken ? { OPENPENCIL_MCP_AUTH_TOKEN: authToken } : {}),
-          OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin
+          OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin,
+          OPENPENCIL_MCP_ROOT: process.cwd()
         }
       })
 
