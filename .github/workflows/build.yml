@@ -145,75 +145,7 @@ jobs:
 
       - name: Prepare publish directories
         run: |
-          node - <<'NODE'
-          const fs = require('fs')
-          const path = require('path')
-
-          const root = process.cwd()
-          const outRoot = path.join(root, '.publish')
-          const coreVersion = require('./packages/core/package.json').version
-
-          fs.rmSync(outRoot, { recursive: true, force: true })
-          fs.mkdirSync(outRoot, { recursive: true })
-
-          const copyRecursive = (from, to) => {
-            const stat = fs.statSync(from)
-            if (stat.isDirectory()) {
-              fs.mkdirSync(to, { recursive: true })
-              for (const entry of fs.readdirSync(from)) {
-                copyRecursive(path.join(from, entry), path.join(to, entry))
-              }
-              return
-            }
-            fs.mkdirSync(path.dirname(to), { recursive: true })
-            fs.copyFileSync(from, to)
-          }
-
-          const packages = [
-            { dir: 'packages/core', include: ['dist', 'src', 'assets'], extraFiles: [] },
-            { dir: 'packages/cli', include: ['bin', 'dist'], extraFiles: [] },
-            { dir: 'packages/mcp', include: ['dist'], extraFiles: [] },
-            { dir: 'packages/vue', include: ['dist'], extraFiles: ['README.md'] }
-          ]
-
-          for (const pkg of packages) {
-            const srcDir = path.join(root, pkg.dir)
-            const destDir = path.join(outRoot, path.basename(pkg.dir))
-            fs.mkdirSync(destDir, { recursive: true })
-
-            for (const rel of pkg.include) {
-              const from = path.join(srcDir, rel)
-              if (fs.existsSync(from)) copyRecursive(from, path.join(destDir, rel))
-            }
-
-            for (const rel of pkg.extraFiles) {
-              const from = path.join(srcDir, rel)
-              if (fs.existsSync(from)) copyRecursive(from, path.join(destDir, rel))
-            }
-
-            const pkgJsonPath = path.join(srcDir, 'package.json')
-            const json = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'))
-            for (const field of ['dependencies', 'devDependencies', 'peerDependencies']) {
-              if (!json[field]) continue
-              for (const [name, version] of Object.entries(json[field])) {
-                if (typeof version === 'string' && version.startsWith('workspace:')) {
-                  json[field][name] = '^' + coreVersion
-                }
-              }
-            }
-            delete json.scripts
-            delete json.devDependencies
-            if (json.publishConfig) {
-              for (const [key, value] of Object.entries(json.publishConfig)) {
-                if (key === 'access' || key === 'provenance' || key === 'registry') continue
-                json[key] = value
-              }
-              delete json.publishConfig
-            }
-            fs.writeFileSync(path.join(destDir, 'package.json'), JSON.stringify(json, null, 2) + '\n')
-            console.log(`Prepared ${destDir}`)
-          }
-          NODE
+          bun tools/release-packages/src/prepare-publish-dirs.ts
           find .publish -maxdepth 3 -type f | sort
 
       - name: Pack packages for publish
@@ -239,20 +171,7 @@ jobs:
           tar -tf .npm-packages/open-pencil-cli-*.tgz | sed -n '1,40p' || true
           tar -tf .npm-packages/open-pencil-mcp-*.tgz | sed -n '1,40p' || true
           tar -tf .npm-packages/open-pencil-vue-*.tgz | sed -n '1,60p' || true
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs'
-          import { execFileSync } from 'node:child_process'
-          for (const tarball of fs.readdirSync('.npm-packages').filter((name) => name.endsWith('.tgz'))) {
-            const entries = new Set(execFileSync('tar', ['-tf', `.npm-packages/${tarball}`], { encoding: 'utf8' }).trim().split('\n'))
-            const packageJson = JSON.parse(execFileSync('tar', ['-xOf', `.npm-packages/${tarball}`, 'package/package.json'], { encoding: 'utf8' }))
-            const bin = packageJson.bin
-            const targets = typeof bin === 'string' ? { [packageJson.name]: bin } : bin || {}
-            for (const [name, target] of Object.entries(targets)) {
-              const entry = `package/${String(target).replace(/^\.\//, '')}`
-              if (!entries.has(entry)) throw new Error(`${tarball}: bin ${name} target missing from tarball: ${entry}`)
-            }
-          }
-          NODE
+          bun tools/release-packages/src/validate-tarballs.ts
 
       - name: Publish packages to npm
         run: |

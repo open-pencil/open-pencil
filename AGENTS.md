@@ -35,6 +35,7 @@ The root app (`src/`) is the Tauri/Vite desktop editor. App-specific editor, doc
 | `@open-pencil/core/editor` | createEditor, Editor, EditorState | — |
 | `@open-pencil/core/tools` | ToolDef, ALL_TOOLS, AI adapter | diff |
 | `@open-pencil/core/kiwi` | .fig parse/serialize, codec, protocol | fflate, fzstd |
+| `@open-pencil/core/clipboard` | Figma/OpenPencil clipboard parsing and import helpers | — |
 | `@open-pencil/core/rpc` | RPC commands for CLI | — |
 | `@open-pencil/core/lint` | design linter rules and presets | — |
 | `@open-pencil/core/profiler` | render profiling | — |
@@ -96,7 +97,8 @@ The app editor session (`src/app/editor/session/create.ts`) is a thin Vue wrappe
 - `bun run check` — type-aware lint + typecheck via oxlint + tsgo + architecture checks (run before committing)
 - `bun run check:arch` — Steiger architecture lint for project-specific import boundaries
 - `bun run check:vue` — vue-tsc type-check for .vue files (has pre-existing errors, fix progressively)
-- `bun run test:dupes` — jscpd copy-paste detection across all TS sources
+- `bun run test:dupes` — jscpd copy-paste detection across product TS sources
+- `bun run test:tools` — tests for private repo tooling under `tools/*`
 - `bun run format` — oxfmt with import sorting
 - `bun test ./tests/engine` — unit tests
 - `bun run test` — Playwright visual regression
@@ -146,6 +148,7 @@ Run all quality gates (see [Code quality](#code-quality) for the self-review che
 bun run check          # oxlint + tsgo type-aware lint & typecheck
 bun run format         # oxfmt
 bun run test:dupes     # jscpd — zero clones
+bun run test:tools     # private repo tooling tests
 bun run test:unit      # bun:test
 bun run test           # Playwright E2E
 ```
@@ -253,6 +256,20 @@ OpenPencil follows a Reka UI-inspired component namespace structure:
 - Multi-file root components live inside their component namespace folder, not beside it.
 - Use subfolders for multi-file domains instead of sibling files with repeated prefixes. Prefer `selection/container.ts`, `selection/hit-test.ts` over `selection-container.ts`, `selection-hit-test.ts`. When adding a second file for a domain (e.g. `eval-wrap.ts` next to `eval.ts`), create the folder immediately (`eval/index.ts` + `eval/wrap.ts`) instead of prefixing. Oxlint catches sibling prefix files when a sibling folder exists; Steiger catches 3+ sibling files with the same prefix. The convention applies even before either rule triggers.
 
+### Repo tools and scripts
+
+Private repository tooling lives under `tools/<domain>/`, not as ad-hoc root scripts. Use kebab-case domain folders and split by capability inside `src/`:
+
+```text
+tools/<domain>/
+  package.json
+  src/index.ts
+  src/<capability>.ts
+  tests/<capability>.test.ts
+```
+
+Use `scripts/` only for tiny compatibility entrypoint shims that import `../tools/<domain>/src/...`; do not put implementation logic there. Workflow helpers, release packaging helpers, architecture rules, package checks, visual-oracle utilities, and other maintainable programs belong in `tools/` with focused tests when they contain logic. Steiger enforces tool layout and script shims. `bun run check` includes `bun run test:tools`, and lint/format cover `tools/`.
+
 - `@/` import alias for app cross-directory imports; app feature code lives under `src/app/*`
 - Use package-local aliases inside workspace packages: `#vue/*` in `packages/vue`, `#cli/*` in `packages/cli`, `#mcp/*` in `packages/mcp`, and `#core/*` when core code needs an alias. Prefer relative imports within nearby core modules when that is clearer than an alias.
 - No `any` — use proper types, generics, declaration merging
@@ -280,6 +297,7 @@ Before submitting a PR, run the full quality gate and do a self-review:
 bun run check          # oxlint + tsgo type-aware lint & typecheck — zero errors required
 bun run format         # oxfmt with import sorting
 bun run test:dupes     # jscpd — zero clones required
+bun run test:tools     # private repo tooling tests
 bun run test:unit      # bun:test
 bun run test           # Playwright E2E
 ```

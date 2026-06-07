@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const rootDir = fileURLToPath(new URL('..', import.meta.url))
+const rootDir = fileURLToPath(new URL('../../..', import.meta.url))
 const packageDirs = ['packages/core', 'packages/vue', 'packages/mcp', 'packages/cli']
 
 function run(command: string[], cwd = rootDir): string {
