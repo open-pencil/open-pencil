@@ -194,13 +194,15 @@ For other MCP clients:
 }
 ```
 
-**HTTP** (scripts, CI):
+**HTTP** (scripts, CI, browser):
 
 ```sh
-openpencil-mcp-http   # http://localhost:3100/mcp
+openpencil-mcp-http   # http://localhost:7600/mcp
 ```
 
-**File access:** Set `OPENPENCIL_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. Defaults to the current working directory.
+The MCP server uses a Unix domain socket as the primary transport on macOS/Linux, with optional TCP fallback. The stdio bridge (`openpencil-mcp`) connects via the socket; `openpencil-mcp-http` starts the TCP listener. Set `OPENPENCIL_MCP_TCP=1` to force TCP on Unix.
+
+**File access:** Set `OPENPENCIL_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. Defaults to the current working directory. Symlinks are resolved to prevent path traversal attacks.
 
 ### AI agent skill
 

@@ -2,9 +2,29 @@
 
 ## Unreleased
 
+### Added
+
+- MCP server uses Unix domain socket as the primary transport on macOS/Linux, with optional TCP fallback for browser connections
+- Discovery file (`mcp.json`) for stdio bridge and CLI auto-connection, stored with `0o600` permissions alongside the socket
+- `OPENPENCIL_MCP_SOCKET` and `OPENPENCIL_MCP_TCP` environment variables for transport configuration
+- Add JSX authoring support for components, component sets, and instances.
+
+### Security
+
+- Auth token comparison uses `crypto.timingSafeEqual` to prevent timing attacks
+- Auth token auto-generated on startup (32-hex random); no longer exposed via `/health` endpoint
+- Restrictive file permissions on socket (`0o600`) and discovery file (`0o600`)
+- Path traversal protection hardened against symlink attacks via `fs.realpath` in `resolveSafePath`
+
 ### Changed
 
-- Add JSX authoring support for components, component sets, and instances.
+- Stdio bridge connects via HTTP-over-socket instead of WebSocket
+- WebSocket upgrades happen on the same HTTP port (no separate WS_PORT)
+
+### Breaking
+
+- `startServer()` is now async, returns `Promise<ServerHandle { app, server, socketPath, httpPort, close }>` instead of `{ app, wss, httpPort, close }`
+- `WS_PORT` and `AUTOMATION_WS_PORT` removed; WebSocket uses the unified HTTP port
 
 ### Fixes
 
