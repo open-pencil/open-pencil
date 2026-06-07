@@ -1,0 +1,5 @@
+{
+  "name": "@open-pencil/bun-install",
+  "private": true,
+  "type": "module"
+}
