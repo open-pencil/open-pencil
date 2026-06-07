@@ -26,6 +26,12 @@ async function httpFetch(input: string, init?: RequestInit): Promise<Response> {
       return await tauriFetch(input, opts)
     }
     return await fetch(input, opts)
+  } catch (error) {
+    // Surface the timeout distinctly so it isn't masked as a CORS/network failure.
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new VectorizeTimeoutError()
+    }
+    throw error
   } finally {
     clearTimeout(timeout)
   }
@@ -43,6 +49,14 @@ export class VectorizeAuthError extends Error {
   constructor(message: string) {
     super(message)
     this.name = 'VectorizeAuthError'
+  }
+}
+
+/** Thrown when a provider request exceeds VECTORIZE_FETCH_TIMEOUT_MS. */
+export class VectorizeTimeoutError extends Error {
+  constructor() {
+    super('Vectorization request timed out')
+    this.name = 'VectorizeTimeoutError'
   }
 }
 
@@ -64,7 +78,8 @@ async function fetchSVGFromURL(url: string): Promise<string> {
   let response: Response
   try {
     response = await httpFetch(url, { mode: 'cors' })
-  } catch {
+  } catch (error) {
+    if (error instanceof VectorizeTimeoutError) throw error
     throw new Error(
       'Vectorized SVG could not be downloaded (blocked by browser). Try again or use the desktop app.'
     )
