@@ -15,17 +15,17 @@ reviews:
       mode: "error"
       requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Fail titles that are non-English, vague, placeholder-like, or do not identify the actual change."
     description:
-      mode: "error"
+      mode: "warning"
     custom_checks:
       - name: "PR Hygiene: English"
         mode: "error"
         instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR title or body is not primarily English, except for code identifiers, file paths, logs, error messages, and short quoted examples."
       - name: "PR Hygiene: Template"
-        mode: "error"
-        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments."
+        mode: "warning"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Warn when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments. Do not treat missing exact headings as a failure when the author otherwise explains the change."
       - name: "PR Hygiene: Substance"
-        mode: "error"
-        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR body does not explain what changed, why it changed, and how it was validated."
+        mode: "warning"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Warn when the PR body does not explain what changed, why it changed, or how it was validated. Do not call a focused PR low-effort solely because it needs template cleanup."
 
 chat:
   auto_reply: true

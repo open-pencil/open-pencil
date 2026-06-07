@@ -21,6 +21,8 @@ interface GitHubEvent {
 interface PullRequestResponse {
   state: string
   author_association: string
+  title: string
+  user: { login: string }
 }
 
 class GitHubAPIError extends Error {
@@ -73,23 +75,20 @@ function normalizedCheckName(value: string): string {
   return value.replace(/[^a-z0-9]+/gi, ' ').trim().toLowerCase()
 }
 
-function isPRHygieneFailure(line: string): boolean {
+function prHygieneFailureName(line: string): string | null {
   const cells = tableCells(line)
   const checkName = cells[0] ?? ''
   const status = cells[1] ?? ''
-  if (checkName.toLowerCase().includes('[ignored]')) return false
-  if (!normalizedCheckName(checkName).startsWith('pr hygiene')) return false
+  if (checkName.toLowerCase().includes('[ignored]')) return null
+  if (!normalizedCheckName(checkName).startsWith('pr hygiene')) return null
+  if (!/❌/u.test(status) && !/\berror\b/i.test(status)) return null
 
-  return /❌/u.test(status) || /\berror\b/i.test(status)
+  return checkName
 }
 
-const hygieneFailed = text.split('\n').some(isPRHygieneFailure)
+const hygieneFailures = text.split('\n').map(prHygieneFailureName).filter((name): name is string => Boolean(name))
 
-if (hygieneFailed) {
-  console.log('Detected failed PR Hygiene check from CodeRabbit pre-merge table.')
-}
-
-if (!hygieneFailed) {
+if (hygieneFailures.length === 0) {
   console.log('CodeRabbit signal did not reference a failed PR Hygiene check.')
   process.exit(0)
 }
@@ -107,7 +106,10 @@ async function github<T>(path: string, options: RequestInit = {}): Promise<T | n
 
   if (!response.ok) {
     const body = await response.text()
-    throw new GitHubAPIError(`${options.method ?? 'GET'} ${path} failed: ${response.status} ${body}`, response.status)
+    throw new GitHubAPIError(
+      `${options.method ?? 'GET'} ${path} failed: ${response.status} ${body}`,
+      response.status
+    )
   }
 
   if (response.status === 204) return null
@@ -117,50 +119,11 @@ async function github<T>(path: string, options: RequestInit = {}): Promise<T | n
 const pr = await github<PullRequestResponse>(`/repos/${owner}/${repo}/pulls/${issueNumber}`)
 if (!pr) throw new Error(`PR #${issueNumber} returned no data`)
 
-const trustedAssociations = new Set(['OWNER', 'MEMBER', 'COLLABORATOR'])
-
-if (trustedAssociations.has(pr.author_association)) {
-  console.log(`Not closing trusted author association: ${pr.author_association}`)
-  process.exit(0)
-}
-
-if (pr.state !== 'open') {
-  console.log(`PR is already ${pr.state}.`)
-  process.exit(0)
-}
-
-const label = 'invalid'
-try {
-  await github<unknown>(`/repos/${owner}/${repo}/labels/${encodeURIComponent(label)}`)
-} catch (error) {
-  if (!(error instanceof GitHubAPIError) || error.status !== 404) throw error
-  try {
-    await github<unknown>(`/repos/${owner}/${repo}/labels`, {
-      method: 'POST',
-      body: JSON.stringify({
-        name: label,
-        color: 'd73a4a',
-        description: 'Does not meet contribution requirements'
-      })
-    })
-  } catch (createError) {
-    if (!(createError instanceof GitHubAPIError) || createError.status !== 422) throw createError
-  }
-}
-
-await github<unknown>(`/repos/${owner}/${repo}/issues/${issueNumber}/labels`, {
-  method: 'POST',
-  body: JSON.stringify({ labels: [label] })
-})
-
-await github<unknown>(`/repos/${owner}/${repo}/issues/${issueNumber}/comments`, {
-  method: 'POST',
-  body: JSON.stringify({
-    body: 'Closing this as a low-effort PR because CodeRabbit failed the PR Hygiene check. See `CONTRIBUTING.md` and the PR template before opening a new PR. If you are sure this was closed by mistake, please file an issue with a link to this PR and the relevant context.'
-  })
-})
-
-await github<unknown>(`/repos/${owner}/${repo}/pulls/${issueNumber}`, {
-  method: 'PATCH',
-  body: JSON.stringify({ state: 'closed' })
-})
+console.log(
+  [
+    `Detected CodeRabbit PR Hygiene failure on #${issueNumber}: ${hygieneFailures.join(', ')}`,
+    `Author: ${pr.user.login} (${pr.author_association})`,
+    `Title: ${pr.title}`,
+    'No automatic close/label/comment was applied. Treat this as maintainer review signal only.'
+  ].join('\n')
+)
