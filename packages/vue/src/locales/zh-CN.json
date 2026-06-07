@@ -44,7 +44,7 @@
     "booleanOperations": "布尔运算",
     "strikethrough": "删除线",
     "closeTab": "关闭标签页",
-    "convertToVector": "Convert to Vector"
+    "convertToVector": "转换为矢量"
   },
   "commands": {
     "undo": "撤销",
@@ -337,15 +337,15 @@
     "youSuffix": "你",
     "followingPeerStop": "正在跟随 {name}（点击停止）",
     "clickToFollowPeer": "点击跟随 {name}",
-    "vectorizeProvider": "Image vectorization",
+    "vectorizeProvider": "图像矢量化",
     "recraftAPIKey": "Recraft API Key",
     "falAPIKey": "fal API Key",
     "getRecraftAPIKey": "Get Recraft API key →",
     "getFalAPIKey": "Get fal API key →",
-    "vectorizeKeyOptional": "Required for Convert to Vector",
-    "vectorizeMissingKeyPrefix": "Enter an API key for the image-to-vector model. ",
-    "vectorizeMissingKeyLink": "Click here",
-    "vectorizeKeySaved": "{provider} key saved"
+    "vectorizeKeyOptional": "“转换为矢量”需要此项",
+    "vectorizeMissingKeyPrefix": "输入图像转矢量模型的 API 密钥。",
+    "vectorizeMissingKeyLink": "点击此处",
+    "vectorizeKeySaved": "已保存 {provider} 密钥"
   },
   "variableTypes": {
     "color": "颜色",

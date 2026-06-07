@@ -12,7 +12,7 @@ References:
 
 ### Recraft direct
 
-```
+```http
 POST https://external.api.recraft.ai/v1/images/vectorize
 Authorization: Bearer <token>
 Content-Type: multipart/form-data

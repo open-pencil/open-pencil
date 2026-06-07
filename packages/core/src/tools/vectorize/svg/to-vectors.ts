@@ -13,7 +13,7 @@ import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
-import type { Fill, Stroke, VectorNetwork } from '#core/scene-graph'
+import type { Fill, Stroke, VectorNetwork, WindingRule } from '#core/scene-graph'
 import { parseSvgSize, parseSvgViewBox } from '#core/tools/create/svg'
 import { parseSVGGradients, resolveGradientFill } from '#core/tools/vectorize/svg/gradients'
 import { applySVGTransformToPath } from '#core/tools/vectorize/svg/transform'
@@ -56,10 +56,10 @@ function resolveFill(path: IconPathInfo, defaultColor: string): Fill[] {
   return []
 }
 
-function resolveStrokes(path: IconPathInfo, defaultColor: string): Stroke[] {
+function resolveStrokes(path: IconPathInfo, defaultColor: string, strokeScale = 1): Stroke[] {
   if (!path.stroke || path.stroke === 'none') return []
   const color = path.stroke === 'currentColor' ? parseColor(defaultColor) : parseColor(path.stroke)
-  return [createPathStroke(color, path.strokeWidth, path.strokeCap, path.strokeJoin)]
+  return [createPathStroke(color, path.strokeWidth * strokeScale, path.strokeCap, path.strokeJoin)]
 }
 
 export interface VectorizedPath {
@@ -87,6 +87,9 @@ export function svgToVectorPaths(
 
   const defaultColor = options?.defaultColor ?? '#000000'
   const gradients = parseSVGGradients(svgText)
+  // Path coordinates are scaled from SVG space into the target bounds; scale stroke
+  // width by the same (uniform) factor so thickness matches the transformed geometry.
+  const strokeScale = Math.min(bounds.width / space.width, bounds.height / space.height)
 
   const vectorized: VectorizedPath[] = []
   for (const path of paths) {
@@ -108,7 +111,7 @@ export function svgToVectorPaths(
     vectorized.push({
       vectorNetwork: network,
       fills: gradientFill ? [gradientFill] : resolveFill(path, defaultColor),
-      strokes: resolveStrokes(path, defaultColor)
+      strokes: resolveStrokes(path, defaultColor, strokeScale)
     })
   }
 

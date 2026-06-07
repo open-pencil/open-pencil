@@ -127,12 +127,14 @@ function mapUserPoint(
   x: number,
   y: number,
   elementTransform: string | null,
+  gradientTransform: string | null,
   space: Rect,
   bounds: { width: number; height: number }
 ): Vector {
   const sx = bounds.width / space.width
   const sy = bounds.height / space.height
   let sp = svgpath(`M${x} ${y}`)
+  if (gradientTransform) sp = sp.transform(gradientTransform)
   if (elementTransform) sp = sp.transform(elementTransform)
   sp = sp.translate(-space.x, -space.y).scale(sx, sy)
   const out = sp.toString()
@@ -168,7 +170,7 @@ export function resolveGradientFill(
     const mapped =
       grad.units === 'objectBoundingBox'
         ? { x: nodeBounds.x + px * nodeBounds.width, y: nodeBounds.y + py * nodeBounds.height }
-        : mapUserPoint(px, py, elementTransform, space, bounds)
+        : mapUserPoint(px, py, elementTransform, grad.transform, space, bounds)
     return {
       x: (mapped.x - nodeBounds.x) / nodeBounds.width,
       y: (mapped.y - nodeBounds.y) / nodeBounds.height

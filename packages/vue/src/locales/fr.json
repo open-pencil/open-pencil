@@ -44,7 +44,7 @@
     "booleanOperations": "Boolean operations",
     "strikethrough": "Barré",
     "closeTab": "Fermer l’onglet",
-    "convertToVector": "Convert to Vector"
+    "convertToVector": "Convertir en vecteur"
   },
   "commands": {
     "undo": "Annuler",
@@ -337,15 +337,15 @@
     "youSuffix": "vous",
     "followingPeerStop": "Suit {name} (cliquer pour arrêter)",
     "clickToFollowPeer": "Cliquer pour suivre {name}",
-    "vectorizeProvider": "Image vectorization",
+    "vectorizeProvider": "Vectorisation d'image",
     "recraftAPIKey": "Recraft API Key",
     "falAPIKey": "fal API Key",
     "getRecraftAPIKey": "Get Recraft API key →",
     "getFalAPIKey": "Get fal API key →",
-    "vectorizeKeyOptional": "Required for Convert to Vector",
-    "vectorizeMissingKeyPrefix": "Enter an API key for the image-to-vector model. ",
-    "vectorizeMissingKeyLink": "Click here",
-    "vectorizeKeySaved": "{provider} key saved"
+    "vectorizeKeyOptional": "Requis pour Convertir en vecteur",
+    "vectorizeMissingKeyPrefix": "Saisissez une clé API pour le modèle image vers vecteur. ",
+    "vectorizeMissingKeyLink": "Cliquez ici",
+    "vectorizeKeySaved": "Clé {provider} enregistrée"
   },
   "variableTypes": {
     "color": "Couleur",

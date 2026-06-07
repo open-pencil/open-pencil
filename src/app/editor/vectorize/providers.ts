@@ -8,16 +8,27 @@
 import { VECTORIZE_PROVIDER_LABELS, type VectorizeProviderId } from '@/app/ai/chat/storage'
 import { IS_TAURI } from '@/constants'
 
+// Bound every provider request so a hung connection can't leave a vectorization
+// run stuck indefinitely (and blocking the next attempt).
+const VECTORIZE_FETCH_TIMEOUT_MS = 30000
+
 // In the desktop (Tauri) app the webview enforces CORS for cross-origin requests,
 // which blocks the provider APIs that work fine from the browser. Route those calls
 // through Tauri's HTTP plugin (a Rust-side request, not subject to CORS) on desktop,
 // and fall back to the standard browser fetch on the web.
 async function httpFetch(input: string, init?: RequestInit): Promise<Response> {
-  if (IS_TAURI) {
-    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http')
-    return tauriFetch(input, init)
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), VECTORIZE_FETCH_TIMEOUT_MS)
+  try {
+    const opts: RequestInit = { ...init, signal: controller.signal }
+    if (IS_TAURI) {
+      const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http')
+      return await tauriFetch(input, opts)
+    }
+    return await fetch(input, opts)
+  } finally {
+    clearTimeout(timeout)
   }
-  return fetch(input, init)
 }
 
 export interface VectorizeProvider {

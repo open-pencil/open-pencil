@@ -1,5 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
+import type { Size } from '#core/types'
+
 const MIN_DIMENSION = 256
 const MAX_DIMENSION = 4096
 const MAX_MEGAPIXELS = 16_000_000
@@ -15,7 +17,7 @@ export interface PreprocessForVectorizeResult {
   height: number
 }
 
-function clampDimensions(width: number, height: number): { width: number; height: number } {
+function clampDimensions(width: number, height: number): Size {
   let w = width
   let h = height
   const minDim = Math.min(w, h)

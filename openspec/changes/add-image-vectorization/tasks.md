@@ -12,7 +12,7 @@
 ## 3. Vectorize core (platform-agnostic)
 
 - [x] 3.1 New `packages/core/src/tools/vectorize/preprocess.ts`: `preprocessForVectorize(bytes, getCk)` — decode via `MakeImageFromEncoded`; if `min(w,h) < 256` upscale (preserve alpha) and re-encode PNG via `encodeToBytes`/`ckImageFormat` (ref `io/formats/raster/render.ts`); enforce max 4096px/16MP/5MB. Return PNG bytes + original dims.
-- [x] 3.2 New `packages/core/src/tools/vectorize/svg-to-vectors.ts`: `svgToVectorPaths(svgText, bounds)` reusing `extractPaths` (`packages/core/src/icons/svg.ts`), `parseSVGPath` (`io/formats/svg/parse-path.ts`); map the SVG viewBox onto `bounds` so output is 1:1; gradient/`<defs>` fills fall back to solid (documented).
+- [x] 3.2 New `packages/core/src/tools/vectorize/svg/to-vectors.ts`: `svgToVectorPaths(svgText, bounds)` reusing `extractPaths` (`packages/core/src/icons/svg.ts`), `parseSVGPath` (`io/formats/svg/parse-path.ts`); map the SVG viewBox onto `bounds` so output is 1:1; gradient/`<defs>` fills fall back to solid (documented).
 - [x] 3.3 Keep core free of any vendor `fetch`/app import; the network call is injected from the app layer (verify with `bun run check:arch` — Steiger).
 
 ## 4. App glue: convert action

@@ -44,7 +44,7 @@
     "booleanOperations": "Boolean operations",
     "strikethrough": "Зачёркивание",
     "closeTab": "Закрыть вкладку",
-    "convertToVector": "Convert to Vector"
+    "convertToVector": "Преобразовать в вектор"
   },
   "commands": {
     "undo": "Отменить",
@@ -337,15 +337,15 @@
     "youSuffix": "вы",
     "followingPeerStop": "Следите за {name} (нажмите, чтобы остановить)",
     "clickToFollowPeer": "Нажмите, чтобы следить за {name}",
-    "vectorizeProvider": "Image vectorization",
+    "vectorizeProvider": "Векторизация изображения",
     "recraftAPIKey": "Recraft API Key",
     "falAPIKey": "fal API Key",
     "getRecraftAPIKey": "Get Recraft API key →",
     "getFalAPIKey": "Get fal API key →",
-    "vectorizeKeyOptional": "Required for Convert to Vector",
-    "vectorizeMissingKeyPrefix": "Enter an API key for the image-to-vector model. ",
-    "vectorizeMissingKeyLink": "Click here",
-    "vectorizeKeySaved": "{provider} key saved"
+    "vectorizeKeyOptional": "Требуется для «Преобразовать в вектор»",
+    "vectorizeMissingKeyPrefix": "Введите API-ключ для модели «изображение в вектор». ",
+    "vectorizeMissingKeyLink": "Нажмите здесь",
+    "vectorizeKeySaved": "Ключ {provider} сохранён"
   },
   "variableTypes": {
     "color": "Цвет",
