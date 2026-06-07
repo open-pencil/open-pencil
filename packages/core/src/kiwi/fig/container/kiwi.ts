@@ -20,6 +20,15 @@ export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
 }
 
 export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promise<Uint8Array> {
+  if (
+    compressed[0] === 0x28 &&
+    compressed[1] === 0xb5 &&
+    compressed[2] === 0x2f &&
+    compressed[3] === 0xfd
+  ) {
+    const { decompress } = await import('fzstd')
+    return decompress(compressed)
+  }
   try {
     return inflateSync(compressed)
   } catch {
