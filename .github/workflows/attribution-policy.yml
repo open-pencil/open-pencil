@@ -25,6 +25,6 @@ jobs:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun
-      - run: node --experimental-strip-types tools/attribution-policy/src/check.ts
+      - run: bun ./tools/attribution-policy/src/check.ts
         env:
           GITHUB_TOKEN: ${{ github.token }}

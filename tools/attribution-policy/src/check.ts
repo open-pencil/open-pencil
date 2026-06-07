@@ -134,7 +134,7 @@ async function inputFromGitHubEvent(eventPath: string): Promise<PullRequestPolic
   if (!pullRequest || !repo || !number)
     throw new Error('This check only supports pull request events')
 
-  const commits = await githubJSON<GitHubCommit[]>(apiURL(`/repos/${repo}/pulls/${number}/commits`))
+  const commits = await githubArrayPages<GitHubCommit>(`/repos/${repo}/pulls/${number}/commits`)
   const files = await githubArrayPages<GitHubFile>(`/repos/${repo}/pulls/${number}/files`)
 
   return {
