@@ -19,6 +19,30 @@ bun run tauri dev    # Tauri desktop app with hot reload
 APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArtifacts": false }}'
 ```
 
+## Pull requests
+
+Pull requests must be reviewable without guessing the author's intent.
+
+### PR title
+
+- Write the title in English.
+- Be specific about the actual change; avoid vague titles such as `fix`, `update`, `some fixes`, `changes`, or `WIP`.
+- Use Conventional Commits when it fits the change, for example `fix: handle empty exports` or `docs: clarify CLI setup`.
+
+### PR body
+
+- Follow the PR template when one is provided.
+- Explain what changed and why it changed.
+- Include a concrete list or paragraph of meaningful changes.
+- Document validation, such as `bun run check`, targeted tests, docs-only review, or an explicit reason validation was not run.
+- Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
+
+### Invalid PRs
+
+Do not submit placeholder PRs. Remove template comments before opening a PR. Do not leave dangling issue references such as `Fixes #`, `TODO`, `TBD`, empty headings, unfilled sections, or similar unfinished text.
+
+CodeRabbit enforces these PR rules through PR Hygiene checks. Low-effort PRs from external contributors that ignore the template, omit validation, are not written in English, or otherwise do not follow these guidelines may be labeled `invalid` and closed automatically. If you are unsure how to fix something, please open a detailed issue instead of submitting a placeholder PR. If you are sure your PR was closed by mistake, please file an issue with the PR link and context.
+
 ## Quality checks
 
 Run all of these before submitting a PR:

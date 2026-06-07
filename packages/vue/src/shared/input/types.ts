@@ -37,6 +37,14 @@ export interface DragPan {
   startPanY: number
 }
 
+export interface OrigChildState {
+  x: number
+  y: number
+  width: number
+  height: number
+  vectorNetwork: VectorNetwork | null
+}
+
 export interface DragResize {
   type: 'resize'
   handle: HandlePosition
@@ -45,6 +53,7 @@ export interface DragResize {
   origRect: Rect
   nodeId: string
   origVectorNetwork: VectorNetwork | null
+  origChildren: Map<string, OrigChildState> | null
 }
 
 export interface DragMarquee {

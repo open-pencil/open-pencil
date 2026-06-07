@@ -1,0 +1,42 @@
+name: Close low-effort PRs
+
+on:
+  pull_request_review:
+    types: [submitted]
+  issue_comment:
+    types: [created, edited]
+
+concurrency:
+  group: close-low-effort-prs-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  # This job only reacts to CodeRabbit PR Hygiene pre-merge failures and never runs contributor code.
+  close-low-effort:
+    name: Close low-effort PRs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Check out trusted workflow scripts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Close low-effort PR when CodeRabbit fails PR Hygiene
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f .github/scripts/close-low-effort-prs.ts ]; then
+            echo "Trusted close-low-effort helper is not present on the default branch yet."
+            exit 0
+          fi
+          node --experimental-strip-types .github/scripts/close-low-effort-prs.ts

@@ -1,30 +1,22 @@
 name: Bug report
-description: Something isn't working correctly
+description: Report something that is broken or behaves differently than expected
+title: "bug: "
 labels: [bug]
 body:
-  - type: textarea
-    id: description
+  - type: markdown
     attributes:
-      label: Description
-      description: What happened? What did you expect instead?
+      value: |
+        Thanks for taking the time to report a bug. Screenshots, recordings, or files are often enough if exact steps are hard to describe.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen instead.
+      placeholder: |
+        When I import this .fig file, text layers are offset by about 20px. I expected them to keep their Figma position.
     validations:
       required: true
-
-  - type: textarea
-    id: steps
-    attributes:
-      label: Steps to reproduce
-      description: Minimal steps to trigger the bug.
-      placeholder: |
-        1. Open a .fig file with …
-        2. Click on …
-        3. See error
-
-  - type: textarea
-    id: file
-    attributes:
-      label: File
-      description: If the bug involves a specific .fig file, attach it or link to the original Figma file.
 
   - type: dropdown
     id: platform
@@ -35,8 +27,47 @@ body:
         - macOS (Tauri)
         - Windows (Tauri)
         - Linux (Tauri)
+        - CLI
+        - MCP server
+        - Not sure
     validations:
       required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Optional, but very helpful when you know the exact steps.
+      placeholder: |
+        1. Open OpenPencil on …
+        2. Import …
+        3. Select …
+        4. See …
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      description: Optional triage hint.
+      multiple: true
+      options:
+        - App UI
+        - Canvas rendering
+        - .fig import/export
+        - SVG/PDF/raster export
+        - CLI
+        - MCP / automation
+        - Tauri desktop
+        - Collaboration
+        - Documentation
+        - Not sure
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or build
+      description: App version, commit SHA, package version, or “latest web app”.
+      placeholder: v0.13.2, latest web app, commit abc123
 
   - type: input
     id: browser
@@ -45,7 +76,23 @@ body:
       placeholder: Chrome 131, Safari 18, Firefox 133
 
   - type: textarea
-    id: screenshots
+    id: files
     attributes:
-      label: Screenshots
-      description: If applicable, add screenshots or screen recordings.
+      label: Files, screenshots, or links
+      description: Attach relevant .fig/.pen/SVG files, screenshots, screen recordings, or link to a Figma file if possible.
+      placeholder: Drag files here or paste links.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or logs
+      description: Paste any relevant logs. This field is formatted as shell output.
+      render: shell
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: false

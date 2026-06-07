@@ -61,6 +61,23 @@ function paragraphWithHeight(height: number) {
   }
 }
 
+function deletableParagraphWithHeight(height: number) {
+  let deleted = false
+  return {
+    getHeight: () => {
+      if (deleted) throw new Error('paragraph was deleted')
+      return height
+    },
+    getLongestLine: () => {
+      if (deleted) throw new Error('paragraph was deleted')
+      return 0
+    },
+    delete: () => {
+      deleted = true
+    }
+  }
+}
+
 describe('text edit undo', () => {
   test('commitTextEdit pushes undo entry when text changed', () => {
     const { graph, undo, textEditor, textNode, actions } = setup()
@@ -104,6 +121,19 @@ describe('text edit undo', () => {
     expect(getNodeOrThrow(graph, textNode.id).height).toBe(42)
   })
 
+  test('commitTextEdit measures auto-size before deleting the edit paragraph', () => {
+    const { graph, textEditor, textNode, actions } = setup()
+    graph.updateNode(textNode.id, { textAutoResize: 'HEIGHT', height: 18 })
+
+    actions.startTextEditing(textNode.id)
+    const state = expectDefined(textEditor.state, 'text editor state')
+    state.paragraph = deletableParagraphWithHeight(42) as NonNullable<typeof state.paragraph>
+    textEditor.insert(' World', getNodeOrThrow(graph, textNode.id))
+
+    expect(() => actions.commitTextEdit()).not.toThrow()
+    expect(getNodeOrThrow(graph, textNode.id).height).toBe(42)
+  })
+
   test('commitTextEdit does not push undo when text unchanged', () => {
     const { undo, actions, textNode } = setup()
 
@@ -111,6 +141,17 @@ describe('text edit undo', () => {
     actions.commitTextEdit()
 
     expect(undo.canUndo).toBe(false)
+  })
+
+  test('commitTextEdit preserves Figma derived glyphs when text unchanged', () => {
+    const { graph, actions, textNode } = setup()
+    const glyphs = [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 14 }]
+    graph.updateNode(textNode.id, { figmaDerivedTextGlyphs: glyphs })
+
+    actions.startTextEditing(textNode.id)
+    actions.commitTextEdit()
+
+    expect(getNodeOrThrow(graph, textNode.id).figmaDerivedTextGlyphs).toBe(glyphs)
   })
 
   test('undo restores original text even when graph was synced mid-edit', () => {

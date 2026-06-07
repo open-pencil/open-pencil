@@ -1,3 +1,5 @@
+import { zipSync, type Zippable } from 'fflate'
+
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 import type {
   ExportRequest,
@@ -14,6 +16,53 @@ import { isTauri } from '@/app/tauri/env'
 type ExportData = string | ArrayBuffer | Uint8Array
 
 type DownloadBlob = (data: Uint8Array, filename: string, mime: string) => void
+
+export interface ExportedFile {
+  bytes: Uint8Array
+  fileName: string
+  format: string
+  ext: string
+  mime: string
+}
+
+// Layer/page names flow into zip entry keys; flatten them to a single safe
+// segment so separators, parent refs (`..`), or control chars can't escape the
+// archive or corrupt it.
+function sanitizeZipEntryName(name: string): string {
+  const withoutControl = Array.from(name)
+    .filter((ch) => {
+      const code = ch.charCodeAt(0)
+      return code >= 0x20 && code !== 0x7f
+    })
+    .join('')
+  const flat = withoutControl
+    .replace(/[/\\]+/g, '_') // path separators
+    .replace(/\.{2,}/g, '_') // parent-dir refs / repeated dots
+    .replace(/^[.\s]+/, '') // leading dots / whitespace
+    .trim()
+  return flat.length > 0 ? flat : 'export'
+}
+
+// Bundle several exported files into a single zip, disambiguating any
+// duplicate file names (e.g. two layers both producing "Frame@1x.png").
+export function bundleExportFiles(files: ExportedFile[]): Uint8Array {
+  const entries: Zippable = {}
+  const used = new Set<string>()
+  for (const file of files) {
+    let name = sanitizeZipEntryName(file.fileName)
+    if (used.has(name)) {
+      const dot = name.lastIndexOf('.')
+      const stem = dot === -1 ? name : name.slice(0, dot)
+      const tail = dot === -1 ? '' : name.slice(dot)
+      let i = 2
+      while (used.has(`${stem} (${i})${tail}`)) i++
+      name = `${stem} (${i})${tail}`
+    }
+    used.add(name)
+    entries[name] = file.bytes
+  }
+  return zipSync(entries)
+}
 
 export function getExportBaseName(graph: SceneGraph, target: ExportRequest['target']): string {
   if (target.scope === 'node') return graph.getNode(target.nodeId)?.name ?? 'Export'

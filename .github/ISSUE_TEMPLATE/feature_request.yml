@@ -1,23 +1,69 @@
 name: Feature request
 description: Suggest an improvement or new capability
+title: "feat: "
 labels: [enhancement]
 body:
-  - type: textarea
-    id: description
+  - type: markdown
     attributes:
-      label: Description
-      description: What would you like to see? How would it work?
+      value: |
+        Thanks for suggesting an improvement. It is okay if you do not know the implementation details — describe the workflow or problem as clearly as you can.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do, and what blocks you today?
+      placeholder: |
+        I want to …
+        Today I have to …
     validations:
       required: true
 
   - type: textarea
-    id: use-case
+    id: proposal
     attributes:
-      label: Use case
-      description: What problem does this solve? How do you work around it today?
+      label: Proposed solution
+      description: What behavior would you like OpenPencil to support?
+      placeholder: |
+        Add support for …
+        It should work by …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      description: Optional triage hint.
+      multiple: true
+      options:
+        - App UI
+        - Canvas rendering
+        - .fig import/export
+        - SVG/PDF/raster export
+        - CLI
+        - MCP / automation
+        - Tauri desktop
+        - Collaboration
+        - Documentation
+        - Not sure
 
   - type: textarea
-    id: figma-reference
+    id: alternatives
     attributes:
-      label: Figma reference
-      description: If this exists in Figma, describe how it works there. Screenshots welcome.
+      label: Alternatives or workarounds
+      description: Optional. How do you work around this today? Are there simpler alternatives?
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References, examples, or mockups
+      description: Optional. Add Figma/design-tool references, screenshots, sketches, files, or links that make the request concrete.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: false

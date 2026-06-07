@@ -1,0 +1,45 @@
+name: Question or support
+description: Ask how to use OpenPencil or clarify expected behavior
+title: "question: "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for usage questions, setup problems, or cases where you are not sure whether something is a bug or feature request.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What are you trying to do? What did you try already?
+      placeholder: |
+        I am trying to …
+        I expected …
+        I tried …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Optional triage hint.
+      multiple: true
+      options:
+        - App UI
+        - Canvas rendering
+        - .fig import/export
+        - SVG/PDF/raster export
+        - CLI
+        - MCP / automation
+        - Tauri desktop
+        - Collaboration
+        - Documentation
+        - Not sure
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Optional. Add screenshots, logs, links, or files that help explain the question.

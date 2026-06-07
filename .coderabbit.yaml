@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  pre_merge_checks:
+    title:
+      mode: "error"
+      requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Fail titles that are non-English, vague, placeholder-like, or do not identify the actual change."
+    description:
+      mode: "error"
+    custom_checks:
+      - name: "PR Hygiene: English"
+        mode: "error"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR title or body is not primarily English, except for code identifiers, file paths, logs, error messages, and short quoted examples."
+      - name: "PR Hygiene: Template"
+        mode: "error"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments."
+      - name: "PR Hygiene: Substance"
+        mode: "error"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR body does not explain what changed, why it changed, and how it was validated."
+
+chat:
+  auto_reply: true

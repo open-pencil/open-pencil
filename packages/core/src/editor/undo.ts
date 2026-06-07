@@ -1,5 +1,6 @@
 import { pick } from 'es-toolkit/object'
 
+import { cloneVectorNetwork } from '#core/scene-graph'
 import type { SceneNode } from '#core/scene-graph'
 import type { UndoEntry } from '#core/scene-graph/undo'
 import type { Rect, Vector } from '#core/types'
@@ -12,6 +13,18 @@ import {
   type PageSnapshot
 } from './history/snapshot'
 import type { EditorContext } from './types'
+
+type ResizeSnapshot = Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'vectorNetwork'>
+
+function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
+  return {
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null
+  }
+}
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
@@ -94,6 +107,34 @@ export function createUndoActions(ctx: EditorContext) {
     })
   }
 
+  function commitGroupResize(
+    nodeId: string,
+    origRect: Rect,
+    origChildren: Map<string, ResizeSnapshot>
+  ) {
+    const node = ctx.graph.getNode(nodeId)
+    if (!node) return
+    const finalRect = { x: node.x, y: node.y, width: node.width, height: node.height }
+    const finalChildren = new Map<string, ResizeSnapshot>()
+    for (const [childId] of origChildren) {
+      const child = ctx.graph.getNode(childId)
+      if (child) finalChildren.set(childId, createResizeSnapshot(child))
+    }
+    ctx.undo.push({
+      label: 'Resize',
+      forward: () => {
+        ctx.graph.updateNode(nodeId, finalRect)
+        for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        ctx.runLayoutForNode(nodeId)
+      },
+      inverse: () => {
+        ctx.graph.updateNode(nodeId, origRect)
+        for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        ctx.runLayoutForNode(nodeId)
+      }
+    })
+  }
+
   function commitRotation(nodeId: string, origRotation: number) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
@@ -155,6 +196,7 @@ export function createUndoActions(ctx: EditorContext) {
     commitMoveWithReparent,
     commitDuplicateMove,
     commitResize,
+    commitGroupResize,
     commitRotation,
     commitNodeUpdate,
     undoAction,

@@ -33,7 +33,12 @@ export default defineConfig({
     {
       name: 'openpencil-webkit',
       testDir: './tests/e2e',
-      testMatch: '**/*.webkit.spec.ts',
+      testMatch: [
+        '**/*.webkit.spec.ts',
+        '**/design/panel.spec.ts',
+        '**/export/basic.spec.ts',
+        '**/fonts/settings.spec.ts'
+      ],
       use: {
         browserName: 'webkit'
       }
