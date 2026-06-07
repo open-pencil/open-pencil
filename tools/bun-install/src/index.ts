@@ -62,7 +62,9 @@ function main(): void {
   const cleanup = setupCleanup(tmpDir)
 
   try {
-    ensureBunBinInPath()
+    // Make Bun's global bin dir authoritative (first in PATH) and keep a
+    // reference so we can verify binaries land there.
+    const bunBinDir = ensureBunBinInPath()
 
     const projectId = deriveProjectId(repoRoot, rootPkg.name)
     const archiveStoreDir = resolveArchiveStoreDir(projectId)
@@ -70,9 +72,9 @@ function main(): void {
 
     buildAndPackPackages(topoOrder, allPackagesMap, archiveStoreDir, tmpDir)
     uninstallOldGlobals(topoOrder)
-    verifyCommandsAbsent(targetCommands)
+    verifyCommandsAbsent(targetCommands, bunBinDir)
     installPackages(topoOrder, allPackagesMap)
-    verifyCommandsPresent(targetCommands)
+    verifyCommandsPresent(targetCommands, bunBinDir)
 
     log('\n=== Success! Requested commands have been globally installed. ===')
   } finally {

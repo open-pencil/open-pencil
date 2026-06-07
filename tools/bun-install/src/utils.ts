@@ -1,4 +1,4 @@
-import { delimiter, join } from 'node:path'
+import { delimiter, join, resolve } from 'node:path'
 
 import type { PackageData, SpawnOpts } from './types.ts'
 
@@ -85,24 +85,33 @@ export function getBunGlobalBinDir(): string {
 }
 
 /**
- * Ensures Bun's global bin directory is present in the process PATH.
+ * Ensures Bun's global bin directory is authoritative in the process PATH by
+ * placing it first (removing any existing occurrence). Returns the resolved
+ * Bun bin directory so callers can verify binary locations against it.
  */
-export function ensureBunBinInPath(): void {
+export function ensureBunBinInPath(): string {
   const bunBin = getBunGlobalBinDir()
-  const pathVar = process.env.PATH ?? ''
-
-  if (!pathVar.split(delimiter).includes(bunBin)) {
-    process.env.PATH = `${bunBin}${delimiter}${pathVar}`
-  }
+  const normalizedBunBin = resolve(bunBin)
+  const rest = (process.env.PATH ?? '')
+    .split(delimiter)
+    .filter((entry) => entry.length > 0 && resolve(entry) !== normalizedBunBin)
+  process.env.PATH = [bunBin, ...rest].join(delimiter)
+  return bunBin
 }
 
 /**
  * Extracts binary names from a package.json `bin` field.
+ * Handles malformed scoped names (e.g. `@scope` without `/name`) gracefully.
  */
 export function extractBinaries(pkgName: string, binField: unknown): string[] {
   if (!binField) return []
   if (typeof binField === 'string') {
-    return [pkgName.startsWith('@') ? pkgName.split('/')[1] : pkgName]
+    if (pkgName.startsWith('@')) {
+      const parts = pkgName.split('/')
+      // Defend against malformed scoped names like "@scope" (no second segment)
+      return parts.length > 1 && parts[1] ? [parts[1]] : [pkgName.replace(/^@/, '')]
+    }
+    return [pkgName]
   }
   if (typeof binField === 'object' && binField !== null) {
     return Object.keys(binField)

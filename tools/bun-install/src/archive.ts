@@ -116,7 +116,7 @@ export function moveIntoStore(srcPath: string, destPath: string): void {
       renameSync(srcPath, destPath)
       return
     } catch {
-      console.warn('Atom rename failed on Windows, falling back to copy + remove')
+      console.warn('Atomic rename failed on Windows, falling back to copy + remove')
     }
     cpSync(srcPath, destPath, { force: true })
     try {

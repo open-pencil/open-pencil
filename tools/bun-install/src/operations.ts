@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import { mkdirSync, readdirSync, rmSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, readSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 
 import { moveIntoStore } from './archive.ts'
 import type { PackageData } from './types.ts'
 import { EXIT_SIGNALS } from './types.ts'
-import { die, getBunGlobalBinDir, log, run, runBestEffort, which } from './utils.ts'
+import { die, log, run, runBestEffort, which } from './utils.ts'
 
 /**
  * Registers process signal handlers to clean up the temporary directory on exit.
@@ -37,8 +37,39 @@ export function setupCleanup(tmpDir: string): () => void {
 }
 
 /**
+ * Prompts the user for a yes/no confirmation on stdout/stdin.
+ * Returns `true` only when the user types "y" or "yes" (case-insensitive).
+ * Returns `false` for non-TTY stdin, empty input, or any read failure,
+ * and logs the refusal reason so the caller can abort or continue.
+ */
+function confirmAction(msg: string): boolean {
+  if (!process.stdin.isTTY) {
+    log(`  ${msg}`)
+    log('  (stdin is not a TTY — cannot prompt. Run interactively to confirm.)')
+    return false
+  }
+
+  process.stdout.write(`  ${msg} [y/N] `)
+  const buf = Buffer.alloc(256)
+  let bytesRead: number
+  try {
+    bytesRead = readSync(0, buf, 0, 256)
+  } catch {
+    return false
+  }
+  if (bytesRead <= 0) return false
+  const answer = buf.toString('utf-8', 0, bytesRead).trim().toLowerCase()
+  return answer === 'y' || answer === 'yes'
+}
+
+/**
  * Iterates the topologically-sorted packages, conditionally runs `bun run build`,
  * packs each one, and moves the resulting tarball into the persistent archive store.
+ *
+ * Before packing, workspace-local dependencies are temporarily pinned to the
+ * absolute tarball paths of already-packed workspace siblings so that the
+ * resulting archive contains `file:` references. This ensures `bun add -g`
+ * resolves those dependencies from the local snapshots rather than the registry.
  */
 export function buildAndPackPackages(
   topoOrder: string[],
@@ -58,25 +89,63 @@ export function buildAndPackPackages(
       run('bun', ['run', 'build'], { cwd: pkg.dir })
     }
 
-    log(`Packing ${pkgName}...`)
-    const isolatedPkgTmp = join(tmpDir, randomUUID())
-    mkdirSync(isolatedPkgTmp, { recursive: true })
+    // Pin workspace-local dependencies to their already-packed tarball paths
+    // so that the packed archive's package.json points to local snapshots.
+    const pkgJsonPath = join(pkg.dir, 'package.json')
+    let originalPkgJson: string | null = null
 
-    run('bun', ['pm', 'pack', '--destination', isolatedPkgTmp], {
-      cwd: pkg.dir
-    })
+    try {
+      const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'))
+      let modified = false
 
-    const archives = readdirSync(isolatedPkgTmp).filter((f) => f.endsWith('.tgz'))
-    if (archives.length !== 1) {
-      die(`Expected exactly 1 archive in ${isolatedPkgTmp}, found ${archives.length}`)
+      for (const depType of ['dependencies', 'peerDependencies'] as const) {
+        const deps = pkgJson[depType]
+        if (!deps) continue
+        for (const depName of Object.keys(deps)) {
+          const depPkg = packagesMap.get(depName)
+          if (depPkg?.archivePath) {
+            deps[depName] = `file:${depPkg.archivePath}`
+            modified = true
+          }
+        }
+      }
+
+      if (modified) {
+        originalPkgJson = readFileSync(pkgJsonPath, 'utf-8')
+        writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + '\n')
+        log(`  Pinned workspace dependencies to local tarballs`)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.warn(`  Warning: could not pin dependencies for ${pkgName}: ${msg}`)
     }
 
-    const archiveFilename = archives[0]
-    const sourceArchive = join(isolatedPkgTmp, archiveFilename)
-    const persistentArchive = join(archiveStoreDir, archiveFilename)
+    try {
+      log(`Packing ${pkgName}...`)
+      const isolatedPkgTmp = join(tmpDir, randomUUID())
+      mkdirSync(isolatedPkgTmp, { recursive: true })
 
-    moveIntoStore(sourceArchive, persistentArchive)
-    pkg.archivePath = persistentArchive
+      run('bun', ['pm', 'pack', '--destination', isolatedPkgTmp], {
+        cwd: pkg.dir
+      })
+
+      const archives = readdirSync(isolatedPkgTmp).filter((f) => f.endsWith('.tgz'))
+      if (archives.length !== 1) {
+        die(`Expected exactly 1 archive in ${isolatedPkgTmp}, found ${archives.length}`)
+      }
+
+      const archiveFilename = archives[0]
+      const sourceArchive = join(isolatedPkgTmp, archiveFilename)
+      const persistentArchive = join(archiveStoreDir, archiveFilename)
+
+      moveIntoStore(sourceArchive, persistentArchive)
+      pkg.archivePath = persistentArchive
+    } finally {
+      // Restore the original package.json if we modified it
+      if (originalPkgJson !== null) {
+        writeFileSync(pkgJsonPath, originalPkgJson)
+      }
+    }
   }
 }
 
@@ -93,45 +162,48 @@ export function uninstallOldGlobals(topoOrder: string[]): void {
 }
 
 /**
- * Verifies that none of the target commands are currently reachable in PATH.
- * If a stale binary remains inside Bun's global bin directory after `bun remove -g`,
- * it is force-removed and logged. Any binary found outside the Bun global bin
- * directory is treated as an unexpected collision and aborts the script.
+ * Verifies that none of the target commands are currently reachable via the
+ * Bun global bin directory. If a stale binary is found inside Bun's bin dir,
+ * the user is prompted for confirmation before removal. Binaries found outside
+ * Bun's bin dir are treated as unexpected collisions and abort the script.
  */
-export function verifyCommandsAbsent(targetCommands: string[]): void {
+export function verifyCommandsAbsent(targetCommands: string[], bunBinDir: string): void {
   log('\nVerifying absence of target commands in PATH...')
-  const bunBinDir = getBunGlobalBinDir()
+  const normalizedBunBinDir = resolve(bunBinDir)
 
   for (const bin of targetCommands) {
     let resolved = which(bin)
     if (resolved === null) continue
 
     const normalizedResolved = resolve(resolved)
-    const normalizedBunBinDir = resolve(bunBinDir)
     const isInBunBinDir =
       normalizedResolved.startsWith(normalizedBunBinDir + sep) ||
       normalizedResolved === normalizedBunBinDir
 
     if (isInBunBinDir) {
-      log(
-        `  WARNING: '${bin}' is still present at ${resolved} after uninstall. Removing stale entry...`
+      const shouldRemove = confirmAction(
+        `Binary '${bin}' is still present at ${resolved} after uninstall.\n  Remove it?`
       )
-      try {
-        rmSync(resolved, { force: true })
-      } catch (err: unknown) {
-        die(
-          `Failed to remove stale binary '${bin}' at ${resolved}: ${err instanceof Error ? err.message : String(err)}`
-        )
-      }
-      // Re-verify after manual removal — if something else resolves the
-      // same name (e.g. a system package further down in PATH), we treat
-      // that as a legitimate collision.
-      resolved = which(bin)
-      if (resolved !== null) {
-        die(`Binary '${bin}' is still present at: ${resolved} after attempted removal`)
+      if (shouldRemove) {
+        try {
+          rmSync(resolved, { force: true })
+        } catch (err: unknown) {
+          die(
+            `Failed to remove stale binary '${bin}' at ${resolved}: ${err instanceof Error ? err.message : String(err)}`
+          )
+        }
+        // Re-verify after removal — if something else resolves the
+        // same name (e.g. a system package further down in PATH), we treat
+        // that as a legitimate collision.
+        resolved = which(bin)
+        if (resolved !== null) {
+          die(`Binary '${bin}' is still present at: ${resolved} after attempted removal`)
+        }
+      } else {
+        die(`Aborting: binary '${bin}' remains at ${resolved}. Remove it manually and re-run.`)
       }
     } else {
-      die(`Binary '${bin}' is still present at: ${resolved} (outside Bun global bin dir)`)
+      die(`Binary '${bin}' is present at: ${resolved} (outside Bun global bin dir). Aborting.`)
     }
   }
 }
@@ -152,15 +224,27 @@ export function installPackages(topoOrder: string[], packagesMap: Map<string, Pa
 }
 
 /**
- * Verifies that each target command is now reachable in PATH after installation.
- * Throws (via {@link die}) if any command is missing.
+ * Verifies that each target command is now reachable in PATH after installation
+ * AND that the resolved binary actually lives inside Bun's global bin directory.
+ * This prevents false positives when an unrelated executable shadows the
+ * Bun-installed one.
  */
-export function verifyCommandsPresent(targetCommands: string[]): void {
+export function verifyCommandsPresent(targetCommands: string[], bunBinDir: string): void {
   log('\nVerifying presence of target commands in PATH...')
+  const normalizedBunBinDir = resolve(bunBinDir)
   for (const bin of targetCommands) {
     const resolved = which(bin)
     if (resolved === null) {
       die(`Binary '${bin}' was not found in PATH after installation!`)
+    }
+    const normalizedResolved = resolve(resolved)
+    const isInBunBinDir =
+      normalizedResolved.startsWith(normalizedBunBinDir + sep) ||
+      normalizedResolved === normalizedBunBinDir
+    if (!isInBunBinDir) {
+      die(
+        `Binary '${bin}' resolved to ${resolved}, which is outside Bun's global bin dir (${bunBinDir}). The Bun-installed version may be shadowed by another provider.`
+      )
     }
     log(`  Verified: '${bin}' -> ${resolved}`)
   }

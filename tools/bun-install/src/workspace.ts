@@ -41,7 +41,10 @@ export function resolveWorkspaceGlobs(rootPkg: Record<string, unknown>): string[
   if (workspaces?.packages) {
     return workspaces.packages
   }
-  return ['.']
+  console.warn(
+    'Warning: workspaces field is neither an array nor an object with a packages key. No workspace packages will be discovered.'
+  )
+  return []
 }
 
 /**
