@@ -4,6 +4,9 @@ import { startApiServer } from '../../packages/api/src/server.js'
 import { TEST_USER_HEADER, createHeaderAuth, createSession, seedUsers } from '../helpers/api-auth.js'
 import { TEST_API_SECRET, createTestApiDatabase } from '../helpers/api.js'
 
+const TEST_NOTIFICATIONS_WS_PORT = 18_102
+const SKIP_NON_TTY_WEBSOCKET_TESTS = !process.stdout.isTTY
+
 type NotificationPushMessage = {
   type: 'notification.created'
   notification: {
@@ -82,16 +85,18 @@ function connect(url: string, userId: string): Promise<TestSocket> {
 }
 
 describe('notification websocket', () => {
-  test('pushes created notifications to every open socket for the same user', async () => {
+  test.skipIf(SKIP_NON_TTY_WEBSOCKET_TESTS).serial(
+    'pushes created notifications to every open socket for the same user',
+    async () => {
     const sender = createSession('user-sender', 'Sender User', 'sender@example.com')
     const recipient = createSession('user-recipient', 'Recipient User', 'recipient@example.com')
-    const database = createTestApiDatabase()
-    seedUsers(database, [sender, recipient])
+    const database = await createTestApiDatabase()
+    await seedUsers(database, [sender, recipient])
 
-    const { notificationStore, server } = startApiServer({
+    const { notificationStore, server } = await startApiServer({
       secret: TEST_API_SECRET,
       host: '127.0.0.1',
-      port: 0,
+      port: TEST_NOTIFICATIONS_WS_PORT,
       auth: createHeaderAuth([sender, recipient]),
       database
     })
@@ -102,7 +107,7 @@ describe('notification websocket', () => {
     const first = await connect(url, recipient.user.id)
     const second = await connect(url, recipient.user.id)
 
-    const notification = notificationStore.createNotification({
+    const notification = await notificationStore.createNotification({
       userId: recipient.user.id,
       type: 'mention',
       payload: {
@@ -122,5 +127,6 @@ describe('notification websocket', () => {
       type: 'notification.created',
       notification
     })
-  })
+    }
+  )
 })

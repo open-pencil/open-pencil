@@ -4,7 +4,7 @@ import { TEST_API_SECRET, createTestApiApp } from '../helpers/api.js'
 
 describe('invite routes', () => {
   test('creates and verifies an invitation', async () => {
-    const { app, database, store } = createTestApiApp({ secret: TEST_API_SECRET })
+    const { app, database, store } = await createTestApiApp({ secret: TEST_API_SECRET })
 
     const inviteResponse = await app.request('/api/invite', {
       method: 'POST',
@@ -28,7 +28,7 @@ describe('invite routes', () => {
     expect(inviteBody.invitationId).toBeString()
     expect(inviteBody.token).toBeString()
     expect(inviteBody.url).toBe(`/invite/${inviteBody.token}`)
-    expect(store.findInvitation(inviteBody.invitationId)?.boardId).toBe('board-123')
+    expect((await store.findInvitation(inviteBody.invitationId))?.boardId).toBe('board-123')
 
     const verifyResponse = await app.request('/api/invite/verify', {
       method: 'POST',
@@ -52,7 +52,7 @@ describe('invite routes', () => {
   })
 
   test('rejects revoked invitations', async () => {
-    const { app, database, store } = createTestApiApp({ secret: TEST_API_SECRET })
+    const { app, database, store } = await createTestApiApp({ secret: TEST_API_SECRET })
 
     const inviteResponse = await app.request('/api/invite', {
       method: 'POST',
@@ -68,7 +68,7 @@ describe('invite routes', () => {
       token: string
     }
 
-    store.revokeInvitation(inviteBody.invitationId)
+    await store.revokeInvitation(inviteBody.invitationId)
 
     const verifyResponse = await app.request('/api/invite/verify', {
       method: 'POST',

@@ -51,6 +51,43 @@ export interface CreateInklyAuthOptions {
   logger?: Pick<Console, 'warn'>
 }
 
+interface BetterAuthTestContext {
+  test: {
+    createUser(input: { email: string; name: string; image: string | null }): unknown
+    saveUser(input: unknown): Promise<{ id: string }>
+    login(input: { userId: string }): Promise<{
+      session: {
+        id: string
+        token: string
+        userId: string
+        expiresAt: Date
+        createdAt: Date
+        updatedAt: Date
+      }
+      user: {
+        id: string
+        name: string
+        email: string
+        emailVerified: boolean
+        image: string | null
+        createdAt: Date
+        updatedAt: Date
+      }
+      cookies: Array<{
+        name: string
+        value: string
+        domain: string
+        path: string
+        httpOnly?: boolean
+        secure?: boolean
+        sameSite?: 'Lax' | 'Strict' | 'None'
+        expires?: number
+        maxAge?: number
+      }>
+    }>
+  }
+}
+
 function setSessionPathname(url: URL, basePath: string) {
   url.pathname = `${basePath.replace(/\/+$/, '')}/get-session`
 }
@@ -175,9 +212,11 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
       const email = input.email?.trim() || 'mock-user@inkly.test'
       const name = input.name?.trim() || 'Mock Inkly User'
       const image = input.image ?? null
-      const context = await auth.$context
+      const context = (await auth.$context) as typeof auth.$context extends Promise<infer T>
+        ? T & BetterAuthTestContext
+        : BetterAuthTestContext
 
-      const existingUser = options.database.db
+      const existingUser = await options.database.db
         .select()
         .from(users)
         .where(eq(users.email, email))
@@ -212,7 +251,7 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
           createdAt: login.user.createdAt.toISOString(),
           updatedAt: login.user.updatedAt.toISOString()
         },
-        setCookieHeaders: login.cookies.map((cookie) =>
+        setCookieHeaders: login.cookies.map((cookie: (typeof login.cookies)[number]) =>
           serializeTestCookie(cookie, login.session.expiresAt.getTime())
         )
       }

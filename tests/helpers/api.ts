@@ -6,15 +6,15 @@ import { createApiApp, type CreateApiAppOptions } from '../../packages/api/src/s
 
 export const TEST_API_SECRET = 'test-secret'
 
-export function createTestApiDatabase(): ApiDatabase {
-  return createMigratedApiDatabase({ mode: 'memory' })
+export async function createTestApiDatabase(): Promise<ApiDatabase> {
+  return await createMigratedApiDatabase({ mode: 'memory' })
 }
 
-export function createTestApiApp(options: Partial<CreateApiAppOptions> = {}) {
-  const database = options.database ?? createTestApiDatabase()
+export async function createTestApiApp(options: Partial<CreateApiAppOptions> = {}) {
+  const database = options.database ?? (await createTestApiDatabase())
   const email = createMockEmailSender()
   const auth = options.auth as InklyAuth | undefined
-  const appBundle = createApiApp({
+  const appBundle = await createApiApp({
     secret: options.secret ?? TEST_API_SECRET,
     database,
     auth,

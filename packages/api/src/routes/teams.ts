@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { z } from 'zod'
 
 import { getAuthSession, type InklyAuth } from '../auth/index.js'
-import type { BoardStore, NotificationStore, TeamStore } from '../types.js'
+import type { BoardStore, NotificationStore, TeamMembershipRecord, TeamStore } from '../types.js'
 
 const createTeamSchema = z.object({
   name: z.string().trim().min(1).max(120)
@@ -51,16 +51,16 @@ async function requireSession(options: TeamRoutesOptions, request: Request) {
   return getAuthSession(options.auth, request)
 }
 
-function mapTeamForList(
+async function mapTeamForList(
   teamStore: TeamStore,
   boardStore: BoardStore,
-  membership: ReturnType<TeamStore['listTeamsForUser']>[number]
+  membership: TeamMembershipRecord
 ) {
   return {
     ...membership.team,
     role: membership.role,
-    memberCount: teamStore.listMembers(membership.team.id).length,
-    boardCount: boardStore.listBoardsForTeam(membership.team.id).length
+    memberCount: (await teamStore.listMembers(membership.team.id)).length,
+    boardCount: (await boardStore.listBoardsForTeam(membership.team.id)).length
   }
 }
 
@@ -71,9 +71,10 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const teams = options.teamStore
-      .listTeamsForUser(session.user.id)
-      .map((membership) => mapTeamForList(options.teamStore, options.boardStore, membership))
+    const memberships = await options.teamStore.listTeamsForUser(session.user.id)
+    const teams = await Promise.all(
+      memberships.map((membership) => mapTeamForList(options.teamStore, options.boardStore, membership))
+    )
 
     return c.json({ teams })
   })
@@ -89,7 +90,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
       return errorResponse(400, 'invalid_request_body', issue)
     }
 
-    const team = options.teamStore.createTeam({
+    const team = await options.teamStore.createTeam({
       name: parsed.data.name,
       ownerUserId: session.user.id
     })
@@ -109,14 +110,14 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
 
-    const membership = options.teamStore.findMembership(team.id, session.user.id)
+    const membership = await options.teamStore.findMembership(team.id, session.user.id)
     if (!membership) return errorResponse(403, 'forbidden', 'Only team members can view this team')
 
-    const members = options.teamStore.listMembers(team.id)
-    const boards = options.boardStore.listBoardsForTeam(team.id).map((board) => ({
+    const members = await options.teamStore.listMembers(team.id)
+    const boards = (await options.boardStore.listBoardsForTeam(team.id)).map((board) => ({
       ...board,
       team: { id: team.id, name: team.name }
     }))
@@ -137,7 +138,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
     if (team.ownerUserId !== session.user.id) {
       return errorResponse(403, 'forbidden', 'Only the owner can update this team')
@@ -150,14 +151,14 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
       return errorResponse(400, 'invalid_request_body', issue)
     }
 
-    const updated = options.teamStore.updateTeam(team.id, { name: parsed.data.name })
+    const updated = await options.teamStore.updateTeam(team.id, { name: parsed.data.name })
     if (!updated) return errorResponse(404, 'team_not_found', 'Team not found')
 
     return c.json({
       ...updated,
       role: 'owner',
-      memberCount: options.teamStore.listMembers(updated.id).length,
-      boardCount: options.boardStore.listBoardsForTeam(updated.id).length
+      memberCount: (await options.teamStore.listMembers(updated.id)).length,
+      boardCount: (await options.boardStore.listBoardsForTeam(updated.id)).length
     })
   })
 
@@ -165,7 +166,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
     if (team.ownerUserId !== session.user.id) {
       return errorResponse(403, 'forbidden', 'Only the owner can invite members')
@@ -179,20 +180,20 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     }
 
     const targetUser =
-      (parsed.data.userId ? options.teamStore.findUserById(parsed.data.userId) : null) ??
-      (parsed.data.email ? options.teamStore.findUserByEmail(parsed.data.email) : null)
+      (parsed.data.userId ? await options.teamStore.findUserById(parsed.data.userId) : null) ??
+      (parsed.data.email ? await options.teamStore.findUserByEmail(parsed.data.email) : null)
     if (!targetUser) return errorResponse(404, 'user_not_found', 'User not found')
     if (targetUser.id === team.ownerUserId) {
       return errorResponse(400, 'invalid_member', 'Owner membership cannot be modified')
     }
 
-    const currentMembers = options.teamStore.listMembers(team.id)
+    const currentMembers = await options.teamStore.listMembers(team.id)
     const existingMembership = currentMembers.find((member) => member.userId === targetUser.id) ?? null
     if (!existingMembership && currentMembers.length >= 100) {
       return errorResponse(400, 'team_member_limit_reached', 'Team member limit reached')
     }
 
-    const member = options.teamStore.addMember({
+    const member = await options.teamStore.addMember({
       teamId: team.id,
       userId: targetUser.id,
       role: parsed.data.role
@@ -200,7 +201,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     if (!member) return errorResponse(404, 'user_not_found', 'User not found')
 
     if (!existingMembership && options.notificationStore) {
-      options.notificationStore.createNotification({
+      await options.notificationStore.createNotification({
         userId: targetUser.id,
         type: 'team_invite',
         payload: {
@@ -221,7 +222,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
     if (team.ownerUserId !== session.user.id) {
       return errorResponse(403, 'forbidden', 'Only the owner can update member roles')
@@ -239,7 +240,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
       return errorResponse(400, 'invalid_request_body', issue)
     }
 
-    const member = options.teamStore.updateMemberRole(team.id, userId, parsed.data.role)
+    const member = await options.teamStore.updateMemberRole(team.id, userId, parsed.data.role)
     if (!member) return errorResponse(404, 'team_member_not_found', 'Team member not found')
     return c.json({ member })
   })
@@ -248,7 +249,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
     if (team.ownerUserId !== session.user.id) {
       return errorResponse(403, 'forbidden', 'Only the owner can remove members')
@@ -259,7 +260,7 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
       return errorResponse(400, 'invalid_member', 'Owner cannot be removed')
     }
 
-    const member = options.teamStore.removeMember(team.id, userId)
+    const member = await options.teamStore.removeMember(team.id, userId)
     if (!member) return errorResponse(404, 'team_member_not_found', 'Team member not found')
     return c.json({ member })
   })
@@ -268,13 +269,13 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
     if (team.ownerUserId === session.user.id) {
       return errorResponse(400, 'invalid_member', 'Owner cannot leave the team')
     }
 
-    const member = options.teamStore.removeMember(team.id, session.user.id)
+    const member = await options.teamStore.removeMember(team.id, session.user.id)
     if (!member) return errorResponse(404, 'team_member_not_found', 'Team member not found')
     return c.json({ left: true })
   })
@@ -283,14 +284,14 @@ export function createTeamRoutes(options: TeamRoutesOptions): Hono {
     const session = await requireSession(options, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const team = options.teamStore.findTeam(c.req.param('id'))
+    const team = await options.teamStore.findTeam(c.req.param('id'))
     if (!team) return errorResponse(404, 'team_not_found', 'Team not found')
     if (team.ownerUserId !== session.user.id) {
       return errorResponse(403, 'forbidden', 'Only the owner can delete this team')
     }
 
-    const rehomedBoardCount = options.boardStore.clearTeamForBoards(team.id)
-    options.teamStore.deleteTeam(team.id)
+    const rehomedBoardCount = await options.boardStore.clearTeamForBoards(team.id)
+    await options.teamStore.deleteTeam(team.id)
     return c.json({ deleted: true, rehomedBoardCount })
   })
 

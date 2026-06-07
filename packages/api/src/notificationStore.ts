@@ -19,8 +19,8 @@ export interface CreateNotificationStoreOptions {
 
 export const DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS = 30 * 24 * 3600 * 1000
 
-function createInMemoryDatabase() {
-  return createMigratedApiDatabase({ mode: 'memory' })
+async function createInMemoryDatabase() {
+  return await createMigratedApiDatabase({ mode: 'memory' })
 }
 
 function cloneNotification(record: NotificationRecord): NotificationRecord {
@@ -60,15 +60,15 @@ function sortNotifications(records: NotificationRecord[]) {
   })
 }
 
-export function createNotificationStore(
+export async function createNotificationStore(
   options: CreateNotificationStoreOptions = {}
-): NotificationStore {
-  const database = options.database ?? createInMemoryDatabase()
+): Promise<NotificationStore> {
+  const database = options.database ?? (await createInMemoryDatabase())
   const now = options.now ?? Date.now
   const onNotificationCreated = options.onNotificationCreated
 
-  return {
-    createNotification(input: CreateNotificationInput) {
+  const store: NotificationStore = {
+    async createNotification(input: CreateNotificationInput) {
       const record: NotificationRecord = {
         id: crypto.randomUUID(),
         userId: input.userId,
@@ -78,7 +78,7 @@ export function createNotificationStore(
         createdAt: now()
       }
 
-      database.db
+      await database.db
         .insert(notifications)
         .values({
           id: record.id,
@@ -94,18 +94,18 @@ export function createNotificationStore(
       onNotificationCreated?.(clonedRecord)
       return clonedRecord
     },
-    findNotification(id: string) {
-      const row = database.db.select().from(notifications).where(eq(notifications.id, id)).get()
+    async findNotification(id: string) {
+      const row = await database.db.select().from(notifications).where(eq(notifications.id, id)).get()
       return row ? cloneNotification(mapNotification(row)) : null
     },
-    findUserByEmail(email: string) {
+    async findUserByEmail(email: string) {
       const normalizedEmail = email.trim().toLowerCase()
       if (!normalizedEmail) return null
-      const row = database.db.select().from(users).where(eq(users.email, normalizedEmail)).get()
+      const row = await database.db.select().from(users).where(eq(users.email, normalizedEmail)).get()
       return row ? structuredClone(mapUser(row)) : null
     },
-    listNotificationsForUser(userId: string) {
-      const rows = database.db
+    async listNotificationsForUser(userId: string) {
+      const rows = await database.db
         .select()
         .from(notifications)
         .where(eq(notifications.userId, userId))
@@ -114,38 +114,44 @@ export function createNotificationStore(
 
       return sortNotifications(rows.map((row) => cloneNotification(mapNotification(row))))
     },
-    markNotificationRead(id: string, userId: string) {
-      const record = this.findNotification(id)
+    async markNotificationRead(id: string, userId: string) {
+      const record = await store.findNotification(id)
       if (!record || record.userId !== userId) return null
       if (record.readAt !== null) return record
 
-      database.db
+      await database.db
         .update(notifications)
         .set({ readAt: now() })
         .where(eq(notifications.id, id))
         .run()
 
-      return this.findNotification(id)
+      return await store.findNotification(id)
     },
-    markAllNotificationsRead(userId: string) {
-      return database.db
+    async markAllNotificationsRead(userId: string) {
+      const result = await database.db
         .update(notifications)
         .set({ readAt: now() })
         .where(eq(notifications.userId, userId))
-        .run().changes
+        .run()
+
+      return result.rowsAffected
     },
-    deleteNotification(id: string, userId: string) {
-      const record = this.findNotification(id)
+    async deleteNotification(id: string, userId: string) {
+      const record = await store.findNotification(id)
       if (!record || record.userId !== userId) return null
-      database.db.delete(notifications).where(eq(notifications.id, id)).run()
+      await database.db.delete(notifications).where(eq(notifications.id, id)).run()
       return record
     },
-    sweepOldNotifications(olderThanMs = DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS) {
+    async sweepOldNotifications(olderThanMs = DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS) {
       const threshold = now() - olderThanMs
-      return database.db
+      const result = await database.db
         .delete(notifications)
         .where(lt(notifications.createdAt, threshold))
-        .run().changes
+        .run()
+
+      return result.rowsAffected
     }
   }
+
+  return store
 }

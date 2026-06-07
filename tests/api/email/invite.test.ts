@@ -13,7 +13,7 @@ afterEach(() => {
 
 describe('invitation email', () => {
   test('sends the invitation email through the injected sender', async () => {
-    const { app, database, email } = createTestApiApp()
+    const { app, database, email } = await createTestApiApp()
     databases.push(database)
     const sendSpy = spyOn(email.sender, 'sendInvitation')
 

@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 import { getAuthSession, type InklyAuth } from '../auth/index.js'
 import { DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS } from '../notificationStore.js'
-import type { BoardStore, NotificationStore, TeamStore, TeamUserRecord } from '../types.js'
+import type { BoardRecord, BoardStore, NotificationStore, TeamStore, TeamUserRecord } from '../types.js'
 
 export interface NotificationRoutesOptions {
   auth: InklyAuth
@@ -52,14 +52,14 @@ function isLocalhostRequest(requestUrl: string) {
   return LOCALHOST_HOSTNAMES.has(url.hostname)
 }
 
-function resolveMentionableUsers(options: NotificationRoutesOptions, boardId: string) {
-  const board = options.boardStore.findBoard(boardId)
+async function resolveMentionableUsers(options: NotificationRoutesOptions, boardId: string) {
+  const board = await options.boardStore.findBoard(boardId)
   if (!board) return null
 
   const owner =
-    board.creatorUserId ? options.teamStore.findUserById(board.creatorUserId) ?? null : null
+    board.creatorUserId ? (await options.teamStore.findUserById(board.creatorUserId)) ?? null : null
   const teamMembers = board.teamId
-    ? options.teamStore.listMembers(board.teamId).map((member) => member.user)
+    ? (await options.teamStore.listMembers(board.teamId)).map((member) => member.user)
     : []
 
   return {
@@ -94,7 +94,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     }
 
     const olderThanMs = parsed.data.olderThanMs ?? DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS
-    const deletedCount = options.notificationStore.sweepOldNotifications(olderThanMs)
+    const deletedCount = await options.notificationStore.sweepOldNotifications(olderThanMs)
     console.log(
       `[inkly-api] Notification sweep deleted ${deletedCount} records older than ${olderThanMs}ms`
     )
@@ -107,7 +107,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
     return c.json({
-      notifications: options.notificationStore.listNotificationsForUser(session.user.id)
+      notifications: await options.notificationStore.listNotificationsForUser(session.user.id)
     })
   })
 
@@ -115,7 +115,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     const session = await getAuthSession(options.auth, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const notification = options.notificationStore.markNotificationRead(
+    const notification = await options.notificationStore.markNotificationRead(
       c.req.param('id'),
       session.user.id
     )
@@ -131,7 +131,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
     return c.json({
-      updatedCount: options.notificationStore.markAllNotificationsRead(session.user.id)
+      updatedCount: await options.notificationStore.markAllNotificationsRead(session.user.id)
     })
   })
 
@@ -139,7 +139,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     const session = await getAuthSession(options.auth, c.req.raw)
     if (!session) return errorResponse(401, 'unauthorized', 'Login required')
 
-    const notification = options.notificationStore.deleteNotification(
+    const notification = await options.notificationStore.deleteNotification(
       c.req.param('id'),
       session.user.id
     )
@@ -169,7 +169,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
       return errorResponse(400, 'invalid_mentioned_user', 'Users cannot mention themselves')
     }
 
-    const mentionContext = resolveMentionableUsers(options, parsed.data.boardId)
+    const mentionContext = await resolveMentionableUsers(options, parsed.data.boardId)
     if (!mentionContext) {
       return errorResponse(404, 'board_not_found', 'Board not found')
     }
@@ -194,7 +194,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     }
 
     const teamName = mentionContext.board.teamId
-      ? options.teamStore.findTeam(mentionContext.board.teamId)?.name ?? null
+      ? (await options.teamStore.findTeam(mentionContext.board.teamId))?.name ?? null
       : null
     const url = new URLSearchParams({
       board: mentionContext.board.id,
@@ -202,7 +202,7 @@ export function createNotificationRoutes(options: NotificationRoutesOptions): Ho
     })
     if (teamName) url.set('teamName', teamName)
 
-    const notification = options.notificationStore.createNotification({
+    const notification = await options.notificationStore.createNotification({
       userId: mentionedUser.id,
       type: 'mention',
       payload: {

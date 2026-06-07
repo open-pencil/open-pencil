@@ -12,23 +12,23 @@ afterEach(() => {
 })
 
 describe('db-backed board store', () => {
-  test('persists board CRUD and collaborators in memory sqlite', () => {
-    const database = createTestApiDatabase()
+  test('persists board CRUD and collaborators in memory sqlite', async () => {
+    const database = await createTestApiDatabase()
     databases.push(database)
-    const store = createBoardStore({
+    const store = await createBoardStore({
       database,
       now: () => 1_234_567_890
     })
 
-    const board = store.createBoard({
+    const board = await store.createBoard({
       name: 'Persistent board',
       creatorAnonymousId: 'anon-owner'
     })
 
-    expect(store.findBoard(board.id)).toEqual(board)
-    expect(store.listBoardsForAnonymous('anon-owner')).toEqual([board])
+    expect(await store.findBoard(board.id)).toEqual(board)
+    expect(await store.listBoardsForAnonymous('anon-owner')).toEqual([board])
 
-    const updated = store.addCollaborator(board.id, {
+    const updated = await store.addCollaborator(board.id, {
       anonymousId: 'anon-guest',
       role: 'editor',
       invitationId: 'invite-123'
@@ -51,12 +51,12 @@ describe('db-backed board store', () => {
         ])
       })
     )
-    expect(store.listBoardsForAnonymous('anon-guest')).toEqual([expect.objectContaining({ id: board.id })])
+    expect(await store.listBoardsForAnonymous('anon-guest')).toEqual([expect.objectContaining({ id: board.id })])
 
-    const deleted = store.deleteBoard(board.id)
+    const deleted = await store.deleteBoard(board.id)
 
     expect(deleted).toEqual(expect.objectContaining({ id: board.id }))
-    expect(store.findBoard(board.id)).toBeNull()
-    expect(store.listBoardsForAnonymous('anon-owner')).toEqual([])
+    expect(await store.findBoard(board.id)).toBeNull()
+    expect(await store.listBoardsForAnonymous('anon-owner')).toEqual([])
   })
 })

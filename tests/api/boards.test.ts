@@ -4,7 +4,7 @@ import { TEST_API_SECRET, createTestApiApp } from '../helpers/api.js'
 
 describe('board routes', () => {
   test('creates, lists, and deletes boards by anonymous owner', async () => {
-    const { app, database } = createTestApiApp({ secret: TEST_API_SECRET })
+    const { app, database } = await createTestApiApp({ secret: TEST_API_SECRET })
     const createResponse = await app.request('/api/boards', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -48,7 +48,7 @@ describe('board routes', () => {
   })
 
   test('rejects delete and invitation listing for non-owners', async () => {
-    const { app, database } = createTestApiApp({ secret: TEST_API_SECRET })
+    const { app, database } = await createTestApiApp({ secret: TEST_API_SECRET })
     const ownerId = 'anon-owner'
     const createResponse = await app.request('/api/boards', {
       method: 'POST',
@@ -74,7 +74,7 @@ describe('board routes', () => {
   })
 
   test('lists invitations and accepted collaborators for the board owner', async () => {
-    const { app, database } = createTestApiApp({ secret: TEST_API_SECRET })
+    const { app, database } = await createTestApiApp({ secret: TEST_API_SECRET })
     const ownerId = 'anon-owner'
     const createBoardResponse = await app.request('/api/boards', {
       method: 'POST',

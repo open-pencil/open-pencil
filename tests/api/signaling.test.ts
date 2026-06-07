@@ -3,6 +3,8 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { startApiServer } from '../../packages/api/src/server.js'
 
 const SECRET = 'test-secret'
+const TEST_SIGNALING_PORT = 18_101
+const SKIP_NON_TTY_WEBSOCKET_TESTS = !process.stdout.isTTY
 
 type SignalingMessage = {
   type: string
@@ -71,11 +73,13 @@ function connect(url: string): Promise<TestSocket> {
 }
 
 describe('signaling websocket', () => {
-  test('forwards offer, answer, and ice candidate messages within the same room', async () => {
-    const { server, database } = startApiServer({
+  test.skipIf(SKIP_NON_TTY_WEBSOCKET_TESTS).serial(
+    'forwards offer, answer, and ice candidate messages within the same room',
+    async () => {
+    const { server, database } = await startApiServer({
       secret: SECRET,
       host: '127.0.0.1',
-      port: 0,
+      port: TEST_SIGNALING_PORT,
       env: {
         ...process.env,
         INKLY_API_DB_MODE: 'memory'
@@ -156,5 +160,6 @@ describe('signaling websocket', () => {
         sdpMLineIndex: 0
       }
     })
-  })
+    }
+  )
 })

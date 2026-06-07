@@ -15,6 +15,7 @@ import {
   users
 } from '../db/schema.js'
 import type {
+  BoardRecord,
   BoardStore,
   InvitationStore,
   NotificationStore,
@@ -175,18 +176,18 @@ function ensureTestingRequest(options: TestingRoutesOptions, requestUrl: string)
   return null
 }
 
-function resetDatabase(database: ApiDatabase) {
+async function resetDatabase(database: ApiDatabase) {
   timestampSequence = 0
-  database.db.transaction((tx) => {
-    tx.delete(notifications).run()
-    tx.delete(sessions).run()
-    tx.delete(accounts).run()
-    tx.delete(teamMembers).run()
-    tx.delete(collaborators).run()
-    tx.delete(invitations).run()
-    tx.delete(boards).run()
-    tx.delete(teams).run()
-    tx.delete(users).run()
+  await database.db.transaction(async (tx) => {
+    await tx.delete(notifications).run()
+    await tx.delete(sessions).run()
+    await tx.delete(accounts).run()
+    await tx.delete(teamMembers).run()
+    await tx.delete(collaborators).run()
+    await tx.delete(invitations).run()
+    await tx.delete(boards).run()
+    await tx.delete(teams).run()
+    await tx.delete(users).run()
   })
 }
 
@@ -196,8 +197,8 @@ function nextTimestamp() {
   return timestamp
 }
 
-function applyBoardTimestamp(database: ApiDatabase, boardId: string, timestamp: number) {
-  database.db
+async function applyBoardTimestamp(database: ApiDatabase, boardId: string, timestamp: number) {
+  await database.db
     .update(boards)
     .set({
       createdAt: timestamp,
@@ -206,15 +207,15 @@ function applyBoardTimestamp(database: ApiDatabase, boardId: string, timestamp: 
     .where(eq(boards.id, boardId))
     .run()
 
-  database.db
+  await database.db
     .update(collaborators)
     .set({ addedAt: timestamp })
     .where(eq(collaborators.boardId, boardId))
     .run()
 }
 
-function applyTeamTimestamp(database: ApiDatabase, teamId: string, timestamp: number) {
-  database.db
+async function applyTeamTimestamp(database: ApiDatabase, teamId: string, timestamp: number) {
+  await database.db
     .update(teams)
     .set({
       createdAt: timestamp,
@@ -224,26 +225,26 @@ function applyTeamTimestamp(database: ApiDatabase, teamId: string, timestamp: nu
     .run()
 }
 
-function applyTeamMemberTimestamp(
+async function applyTeamMemberTimestamp(
   database: ApiDatabase,
   teamId: string,
   userId: string,
   timestamp: number
 ) {
-  database.db
+  await database.db
     .update(teamMembers)
     .set({ addedAt: timestamp })
     .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
     .run()
 }
 
-function applyNotificationTimestamp(
+async function applyNotificationTimestamp(
   database: ApiDatabase,
   notificationId: string,
   createdAt: number,
   readAt: number | null
 ) {
-  database.db
+  await database.db
     .update(notifications)
     .set({
       createdAt,
@@ -253,17 +254,20 @@ function applyNotificationTimestamp(
     .run()
 }
 
-function upsertUser(database: ApiDatabase, input: z.infer<typeof seedUserSchema>): TeamUserRecord {
+async function upsertUser(
+  database: ApiDatabase,
+  input: z.infer<typeof seedUserSchema>
+): Promise<TeamUserRecord> {
   const email = input.email.trim().toLowerCase()
   const existing =
     (input.id
-      ? database.db.select().from(users).where(eq(users.id, input.id)).get()
+      ? await database.db.select().from(users).where(eq(users.id, input.id)).get()
       : null) ??
-    database.db.select().from(users).where(eq(users.email, email)).get()
+    (await database.db.select().from(users).where(eq(users.email, email)).get())
   const now = Date.now()
 
   if (existing) {
-    database.db
+    await database.db
       .update(users)
       .set({
         name: input.name,
@@ -284,7 +288,7 @@ function upsertUser(database: ApiDatabase, input: z.infer<typeof seedUserSchema>
   }
 
   const userId = input.id ?? crypto.randomUUID()
-  database.db
+  await database.db
     .insert(users)
     .values({
       id: userId,
@@ -305,78 +309,78 @@ function upsertUser(database: ApiDatabase, input: z.infer<typeof seedUserSchema>
   }
 }
 
-function seedBoards(options: TestingRoutesOptions, input: z.infer<typeof seedBoardsSchema>) {
+async function seedBoards(options: TestingRoutesOptions, input: z.infer<typeof seedBoardsSchema>) {
   const names = Array.from({ length: input.count }, (_, index) =>
     input.names?.[index] || `Visual Board ${index + 1}`
   )
 
-  return names.slice(0, input.count).map((name) => {
-    const record =
-      input.owner.kind === 'anonymous'
-        ? options.boardStore.createBoard({
-            name,
-            creatorAnonymousId: input.owner.anonymousId,
-            creatorUserId: null,
-            teamId: input.teamId ?? null
-          })
-        : (() => {
-            const owner = upsertUser(options.database, input.owner.user)
-            return options.boardStore.createBoard({
-              name,
-              creatorAnonymousId: '',
-              creatorUserId: owner.id,
-              teamId: input.teamId ?? null
-            })
-          })()
-    applyBoardTimestamp(options.database, record.id, nextTimestamp())
-    return options.boardStore.findBoard(record.id) ?? record
-  })
+  return await Promise.all(names.slice(0, input.count).map(async (name) => {
+    let record: BoardRecord
+    if (input.owner.kind === 'anonymous') {
+      record = await options.boardStore.createBoard({
+        name,
+        creatorAnonymousId: input.owner.anonymousId,
+        creatorUserId: null,
+        teamId: input.teamId ?? null
+      })
+    } else {
+      const owner = await upsertUser(options.database, input.owner.user)
+      record = await options.boardStore.createBoard({
+        name,
+        creatorAnonymousId: '',
+        creatorUserId: owner.id,
+        teamId: input.teamId ?? null
+      })
+    }
+    await applyBoardTimestamp(options.database, record.id, nextTimestamp())
+    return (await options.boardStore.findBoard(record.id)) ?? record
+  }))
 }
 
-function seedTeam(options: TestingRoutesOptions, input: z.infer<typeof seedTeamSchema>) {
-  const owner = upsertUser(options.database, input.owner)
-  const team = options.teamStore.createTeam({
+async function seedTeam(options: TestingRoutesOptions, input: z.infer<typeof seedTeamSchema>) {
+  const owner = await upsertUser(options.database, input.owner)
+  const team = await options.teamStore.createTeam({
     name: input.name,
     ownerUserId: owner.id
   })
   const createdAt = nextTimestamp()
   let lastUpdatedAt = createdAt
-  applyTeamTimestamp(options.database, team.id, createdAt)
-  applyTeamMemberTimestamp(options.database, team.id, owner.id, createdAt)
+  await applyTeamTimestamp(options.database, team.id, createdAt)
+  await applyTeamMemberTimestamp(options.database, team.id, owner.id, createdAt)
 
   for (const member of input.members) {
-    const savedUser = upsertUser(options.database, member)
+    const savedUser = await upsertUser(options.database, member)
     if (savedUser.id === owner.id) continue
-    options.teamStore.addMember({
+    await options.teamStore.addMember({
       teamId: team.id,
       userId: savedUser.id,
       role: member.role
     })
     const memberTimestamp = nextTimestamp()
-    applyTeamMemberTimestamp(options.database, team.id, savedUser.id, memberTimestamp)
+    await applyTeamMemberTimestamp(options.database, team.id, savedUser.id, memberTimestamp)
     lastUpdatedAt = memberTimestamp
   }
 
   for (const boardName of input.boards) {
-    const board = options.boardStore.createBoard({
+    const board = await options.boardStore.createBoard({
       name: boardName,
       creatorAnonymousId: '',
       creatorUserId: owner.id,
       teamId: team.id
     })
     const boardTimestamp = nextTimestamp()
-    applyBoardTimestamp(options.database, board.id, boardTimestamp)
+    await applyBoardTimestamp(options.database, board.id, boardTimestamp)
     lastUpdatedAt = boardTimestamp
   }
 
-  options.database.db
+  await options.database.db
     .update(teams)
     .set({ updatedAt: lastUpdatedAt })
     .where(eq(teams.id, team.id))
     .run()
 
-  const members = options.teamStore.listMembers(team.id)
-  const boards = options.boardStore.listBoardsForTeam(team.id)
+  const members = await options.teamStore.listMembers(team.id)
+  const boards = await options.boardStore.listBoardsForTeam(team.id)
 
   return {
     team,
@@ -385,42 +389,48 @@ function seedTeam(options: TestingRoutesOptions, input: z.infer<typeof seedTeamS
   }
 }
 
-function setNotificationReadState(
+async function setNotificationReadState(
   database: ApiDatabase,
   notificationId: string,
   read: boolean
 ) {
   const createdAt = nextTimestamp()
-  applyNotificationTimestamp(database, notificationId, createdAt, read ? createdAt + 1 : null)
+  await applyNotificationTimestamp(database, notificationId, createdAt, read ? createdAt + 1 : null)
 }
 
-function seedNotifications(options: TestingRoutesOptions, input: z.infer<typeof seedNotificationsSchema>) {
-  const user = upsertUser(options.database, input.user)
+async function seedNotifications(
+  options: TestingRoutesOptions,
+  input: z.infer<typeof seedNotificationsSchema>
+) {
+  const user = await upsertUser(options.database, input.user)
 
   for (const item of input.items) {
-    const record = options.notificationStore.createNotification({
+    const record = await options.notificationStore.createNotification({
       userId: user.id,
       type: item.type,
       payload: item.payload
     })
-    setNotificationReadState(options.database, record.id, item.read)
+    await setNotificationReadState(options.database, record.id, item.read)
   }
 
-  return options.notificationStore.listNotificationsForUser(user.id)
+  return await options.notificationStore.listNotificationsForUser(user.id)
 }
 
-function seedInvitations(options: TestingRoutesOptions, input: z.infer<typeof seedInvitationsSchema>) {
-  const created = input.items.map((item, index) => {
+async function seedInvitations(
+  options: TestingRoutesOptions,
+  input: z.infer<typeof seedInvitationsSchema>
+) {
+  const created = await Promise.all(input.items.map(async (item, index) => {
     const createdAt = nextTimestamp()
     const expiresAt = createdAt + (item.expiresInMs ?? INVITATION_TTL_MS)
-    const invitation = options.invitationStore.createInvitation({
+    const invitation = await options.invitationStore.createInvitation({
       boardId: input.boardId,
       sentToEmailHash: item.email,
       role: item.role,
       expiresAt
     })
     const token = `test-invitation-${index + 1}-${invitation.id}`
-    options.database.db
+    await options.database.db
       .update(invitations)
       .set({
         createdAt,
@@ -430,8 +440,8 @@ function seedInvitations(options: TestingRoutesOptions, input: z.infer<typeof se
       .where(eq(invitations.id, invitation.id))
       .run()
 
-    return options.invitationStore.findInvitation(invitation.id) ?? invitation
-  })
+    return (await options.invitationStore.findInvitation(invitation.id)) ?? invitation
+  }))
 
   return created
 }
@@ -439,11 +449,11 @@ function seedInvitations(options: TestingRoutesOptions, input: z.infer<typeof se
 export function createTestingRoutes(options: TestingRoutesOptions): Hono {
   const app = new Hono()
 
-  app.post('/reset', (c) => {
+  app.post('/reset', async (c) => {
     const failure = ensureTestingRequest(options, c.req.url)
     if (failure) return failure
 
-    resetDatabase(options.database)
+    await resetDatabase(options.database)
     return c.json({ reset: true })
   })
 
@@ -458,7 +468,7 @@ export function createTestingRoutes(options: TestingRoutesOptions): Hono {
       return c.json({ error: { code: 'invalid_request_body', message: issue } }, 400)
     }
 
-    return c.json({ boards: seedBoards(options, parsed.data) }, 201)
+    return c.json({ boards: await seedBoards(options, parsed.data) }, 201)
   })
 
   app.post('/seed/team', async (c) => {
@@ -472,7 +482,7 @@ export function createTestingRoutes(options: TestingRoutesOptions): Hono {
       return c.json({ error: { code: 'invalid_request_body', message: issue } }, 400)
     }
 
-    return c.json(seedTeam(options, parsed.data), 201)
+    return c.json(await seedTeam(options, parsed.data), 201)
   })
 
   app.post('/seed/notifications', async (c) => {
@@ -486,7 +496,7 @@ export function createTestingRoutes(options: TestingRoutesOptions): Hono {
       return c.json({ error: { code: 'invalid_request_body', message: issue } }, 400)
     }
 
-    return c.json({ notifications: seedNotifications(options, parsed.data) }, 201)
+    return c.json({ notifications: await seedNotifications(options, parsed.data) }, 201)
   })
 
   app.post('/seed/invitations', async (c) => {
@@ -500,7 +510,7 @@ export function createTestingRoutes(options: TestingRoutesOptions): Hono {
       return c.json({ error: { code: 'invalid_request_body', message: issue } }, 400)
     }
 
-    return c.json({ invitations: seedInvitations(options, parsed.data) }, 201)
+    return c.json({ invitations: await seedInvitations(options, parsed.data) }, 201)
   })
 
   return app

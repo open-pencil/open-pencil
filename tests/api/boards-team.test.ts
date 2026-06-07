@@ -8,11 +8,11 @@ describe('board team ownership routes', () => {
     const owner = createSession('user-owner', 'Owner User', 'owner@example.com')
     const editor = createSession('user-editor', 'Editor User', 'editor@example.com')
     const outsider = createSession('user-outsider', 'Outsider User', 'outsider@example.com')
-    const { app, database } = createTestApiApp({
+    const { app, database } = await createTestApiApp({
       auth: createHeaderAuth([owner, editor, outsider]),
       secret: TEST_API_SECRET
     })
-    seedUsers(database, [owner, editor, outsider])
+    await seedUsers(database, [owner, editor, outsider])
 
     const createTeamResponse = await app.request('/api/teams', {
       method: 'POST',

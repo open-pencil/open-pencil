@@ -89,7 +89,7 @@ export function createAuthRoutes(options: AuthRoutesOptions): Hono {
       )
     }
 
-    const result = migrateAnonymousOwnership({
+    const result = await migrateAnonymousOwnership({
       database: options.database,
       anonymousId,
       userId: session.user.id,

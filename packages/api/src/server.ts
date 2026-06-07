@@ -1,3 +1,5 @@
+import type { ServerWebSocket } from 'bun'
+
 import { Hono } from 'hono'
 
 import { createInklyAuth, type InklyAuth } from './auth/index.js'
@@ -34,6 +36,8 @@ import { createSignalingServer, type SignalingPeerData } from './ws/signaling.js
 export const API_HOST = '127.0.0.1'
 export const API_PORT = 3001
 const AUTO_SWEEP_INTERVAL_MS = 24 * 3600 * 1000
+const EPHEMERAL_PORT_START = 12_000 + (process.pid % 1_000) * 10
+let nextEphemeralPort = EPHEMERAL_PORT_START
 
 export interface CreateApiAppOptions {
   secret: string
@@ -54,20 +58,29 @@ export interface StartApiServerOptions extends CreateApiAppOptions {
   host?: string
 }
 
-export function createApiApp(options: CreateApiAppOptions) {
+function pickEphemeralPort() {
+  const port = nextEphemeralPort
+  nextEphemeralPort += 1
+  if (nextEphemeralPort > 21_999) {
+    nextEphemeralPort = EPHEMERAL_PORT_START
+  }
+  return port
+}
+
+export async function createApiApp(options: CreateApiAppOptions) {
   const env = options.env ?? process.env
   const database =
-    options.database ?? createMigratedApiDatabase(resolveApiDatabaseOptions(env))
-  const store = options.store ?? createInvitationStore({ database, now: options.now })
-  const boardStore = options.boardStore ?? createBoardStore({ database, now: options.now })
-  const teamStore = options.teamStore ?? createTeamStore({ database, now: options.now })
+    options.database ?? (await createMigratedApiDatabase(resolveApiDatabaseOptions(env)))
+  const store = options.store ?? (await createInvitationStore({ database, now: options.now }))
+  const boardStore = options.boardStore ?? (await createBoardStore({ database, now: options.now }))
+  const teamStore = options.teamStore ?? (await createTeamStore({ database, now: options.now }))
   const notificationStore =
     options.notificationStore ??
-    createNotificationStore({
+    (await createNotificationStore({
       database,
       now: options.now,
       onNotificationCreated: options.onNotificationCreated
-    })
+    }))
   const emailSender =
     options.emailSender ??
     createResendEmailSender({
@@ -159,14 +172,14 @@ export function createApiApp(options: CreateApiAppOptions) {
   return { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth }
 }
 
-export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
+export async function startApiServer(options: Partial<StartApiServerOptions> = {}) {
   const env = options.env ?? process.env
   const secret = options.secret ?? resolveJwtSecret(env)
-  const port = options.port ?? API_PORT
   const host = options.host ?? API_HOST
+  const requestedPort = options.port ?? API_PORT
   let onNotificationCreated: ((notification: NotificationRecord) => void) | undefined
   const { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth } =
-    createApiApp({
+    await createApiApp({
       boardStore: options.boardStore,
       teamStore: options.teamStore,
       notificationStore: options.notificationStore,
@@ -189,50 +202,78 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
 
   if (env.INKLY_API_AUTO_SWEEP === '1') {
     const timer = setInterval(() => {
-      const deletedCount = notificationStore.sweepOldNotifications(
-        DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS
-      )
-      console.log(
-        `[inkly-api] Notification auto-sweep deleted ${deletedCount} records older than ${DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS}ms`
-      )
+      void notificationStore
+        .sweepOldNotifications(DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS)
+        .then((deletedCount) => {
+          console.log(
+            `[inkly-api] Notification auto-sweep deleted ${deletedCount} records older than ${DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS}ms`
+          )
+        })
     }, AUTO_SWEEP_INTERVAL_MS)
     timer.unref?.()
   }
 
-  const server = Bun.serve({
-    hostname: host,
-    port,
-    async fetch(request, server) {
-      const signalingResponse = signaling.handleRequest(request, server)
-      if (signalingResponse !== null) return signalingResponse
-      const notificationsResponse = await notifications.handleRequest(request, server)
-      if (notificationsResponse !== null) return notificationsResponse
-      return app.fetch(request)
-    },
-    websocket: {
-      open(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>) {
-        if ('roomId' in socket.data) {
-          signaling.websocket.open?.(socket as ServerWebSocket<SignalingPeerData>)
-          return
-        }
-
-        notifications.open(socket as ServerWebSocket<NotificationSocketData>)
+  const createServer = (port: number) =>
+    Bun.serve<SignalingPeerData | NotificationSocketData>({
+      hostname: host,
+      port,
+      async fetch(request, server) {
+        const signalingResponse = signaling.handleRequest(request, server)
+        if (signalingResponse !== null) return signalingResponse
+        const notificationsResponse = await notifications.handleRequest(request, server)
+        if (notificationsResponse !== null) return notificationsResponse
+        return app.fetch(request)
       },
-      message(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>, message) {
-        if ('roomId' in socket.data) {
-          signaling.websocket.message?.(socket as ServerWebSocket<SignalingPeerData>, message)
-        }
-      },
-      close(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>, code, reason) {
-        if ('roomId' in socket.data) {
-          signaling.websocket.close?.(socket as ServerWebSocket<SignalingPeerData>, code, reason)
-          return
-        }
+      websocket: {
+        open(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>) {
+          if ('roomId' in socket.data) {
+            signaling.websocket.open?.(socket as ServerWebSocket<SignalingPeerData>)
+            return
+          }
 
-        notifications.close(socket as ServerWebSocket<NotificationSocketData>)
+          notifications.open(socket as ServerWebSocket<NotificationSocketData>)
+        },
+        message(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>, message) {
+          if ('roomId' in socket.data) {
+            signaling.websocket.message?.(socket as ServerWebSocket<SignalingPeerData>, message)
+          }
+        },
+        close(socket: ServerWebSocket<SignalingPeerData | NotificationSocketData>, code, reason) {
+          if ('roomId' in socket.data) {
+            signaling.websocket.close?.(socket as ServerWebSocket<SignalingPeerData>, code, reason)
+            return
+          }
+
+          notifications.close(socket as ServerWebSocket<NotificationSocketData>)
+        }
       }
+    })
+
+  let port = requestedPort
+  let server: ReturnType<typeof createServer> | null = null
+  let lastError: unknown = null
+
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const candidatePort = requestedPort === 0 ? pickEphemeralPort() : requestedPort
+
+    try {
+      server = createServer(candidatePort)
+      port = candidatePort
+      break
+    } catch (error) {
+      lastError = error
+      if (requestedPort !== 0) throw error
+      const code =
+        typeof error === 'object' && error !== null && 'code' in error ? error.code : undefined
+      if (code !== 'EADDRINUSE') throw error
     }
-  })
+  }
+
+  if (!server) {
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Failed to bind an ephemeral API port')
+  }
 
   process.stderr.write(`Inkly API server listening on http://${host}:${port}\n`)
 
@@ -252,11 +293,13 @@ export function startApiServer(options: Partial<StartApiServerOptions> = {}) {
 }
 
 if (import.meta.main) {
-  try {
-    startApiServer()
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    process.stderr.write(`[inkly-api] ${message}\n`)
-    process.exit(1)
-  }
+  void (async () => {
+    try {
+      await startApiServer()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      process.stderr.write(`[inkly-api] ${message}\n`)
+      process.exit(1)
+    }
+  })()
 }

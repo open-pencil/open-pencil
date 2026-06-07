@@ -240,25 +240,13 @@ See the [roadmap](https://inkly.dev/development/roadmap) for product direction a
 bun install
 
 # 推奨 — API server (3001) + Vite (1420) を 1 コマンドで起動
-cp .env.development.example .env.development   # 初回のみ
+cp .env.local.example .env.local   # 初回のみ
 bun run dev:full
 ```
 
 `bun run dev:full` は `scripts/dev.sh` 経由で API server と Vite の両方を並行起動し、`Ctrl+C` で一括停止する。
-Editor は `http://localhost:1420/` または `http://localhost:1420/editor` の両方で起動する (後者は Landing PR マージ後に新トップページから案内するエイリアス)。
-`.env.development` のテスト値は本番では使わない (ダミー dev 値)。
-ローカルで一時的に値を上書きしたい場合は `.env.development.local` を作って override する (Vite は local 系を最優先で解決し、 `dev:full` の API 起動も local 系を後段で読み込む)。
-
-`/api/test/*` 系の破壊的 helper (DB 全削除など) はテンプレでは無効化済み。
-Playwright e2e や Google ログイン (テストモード) を試したい時だけ `.env.development.local` で `INKLY_API_AUTH_ENABLE_TEST_UTILS=1` と `VITE_INKLY_AUTH_TEST_MODE=1` を立てる。
-ただし、 **test utils を有効化したまま Vite を LAN や公開ネットワークに露出させないこと**:
-
-- `bun run dev --host` / `bun run dev:full -- --host` 等で 0.0.0.0 bind しない
-- `TAURI_DEV_HOST` 経由で外部端末から繋がない
-- ngrok / Cloudflare Tunnel / reverse proxy 等で外部公開しない
-- 共有 dev server を再利用しない
-
-Vite が外部から繋がる状態だと、 同 dev server の `/api` proxy 経由で `/api/test/reset` (users / boards / teams / sessions 等を全削除) や `/api/auth/test/login` (任意ユーザーとして認証) に **ローカルホスト判定をすり抜けて到達可能**。 API 側でトークン guard が追加されるまでは、 localhost のみで開く運用にする。
+Editor は `http://localhost:1420/` または `http://localhost:1420/editor` の両方で起動する。
+`.env.local` のテスト値は本番では使わない (ダミー dev 値)。
 
 #### 個別に起動したい場合
 
@@ -269,6 +257,43 @@ bun run tauri dev  # Desktop app (Rust 必要)
 ```
 
 API を立てずに Vite だけで動かすと `/dashboard` `/boards` 等の auth 必須画面で「Failed to load session」エラーになる。Editor (`/` または `/editor`) は API なしでも閲覧できる。
+
+### DB
+
+ローカル開発は SQLite ファイル (`.context/api-data/inkly.db`) で完結する。
+テストは `INKLY_API_DB_MODE=memory` で in-memory にリセット可能。
+本番は `.env.local` に `TURSO_DATABASE_URL=libsql://...` (+ optional `TURSO_AUTH_TOKEN`) を設定すると Turso (libSQL remote) に自動切替する。
+
+Turso のセットアップ:
+
+```sh
+# Turso CLI install (macOS)
+brew install tursodatabase/tap/turso
+
+# プロジェクト DB 作成
+turso db create pencil-editor-prod
+turso db show pencil-editor-prod --url        # → TURSO_DATABASE_URL
+turso db tokens create pencil-editor-prod     # → TURSO_AUTH_TOKEN
+
+# migration (SQL は packages/api/src/db/migrations/)
+bun run packages/api/src/db/migrate.ts
+```
+
+### Google ログイン
+
+ローカルで本物の Google OAuth を試したい場合のみ設定する (試さないなら未設定で OK、 Google ログインボタンは "Google login is not configured" を返す)。
+
+1. [GCP Console](https://console.cloud.google.com) でプロジェクト作成
+2. 「APIs & Services」→「Credentials」→「Create OAuth 2.0 Client ID」(type: Web application)
+3. 承認済みリダイレクト URI に `http://localhost:3001/api/auth/callback/google` を追加
+4. 取得した Client ID / Client Secret を `.env.local` に書く:
+
+```sh
+INKLY_API_GOOGLE_CLIENT_ID=...
+INKLY_API_GOOGLE_CLIENT_SECRET=...
+```
+
+5. `bun run dev:full` を再起動 → Dashboard で「Google でログイン」が動く
 
 ### Quality gates
 

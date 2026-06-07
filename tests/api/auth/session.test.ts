@@ -5,7 +5,7 @@ import { createTestApiApp, TEST_API_SECRET } from '../../helpers/api.js'
 
 describe('auth session route', () => {
   test('returns 401 when no session is active', async () => {
-    const { app, database } = createTestApiApp({
+    const { app, database } = await createTestApiApp({
       secret: TEST_API_SECRET
     })
 
@@ -61,7 +61,7 @@ describe('auth session route', () => {
       }
     }
 
-    const { app, database } = createTestApiApp({
+    const { app, database } = await createTestApiApp({
       auth,
       secret: TEST_API_SECRET
     })

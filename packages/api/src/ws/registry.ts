@@ -1,3 +1,5 @@
+import type { ServerWebSocket } from 'bun'
+
 type NotificationSocket = ServerWebSocket<{ userId: string }>
 
 export interface NotificationConnectionRegistry {

@@ -4,6 +4,9 @@ import { startApiServer } from '../../packages/api/src/server.js'
 import { TEST_USER_HEADER, createHeaderAuth, createSession, seedUsers } from '../helpers/api-auth.js'
 import { TEST_API_SECRET, createTestApiDatabase } from '../helpers/api.js'
 
+const TEST_NOTIFICATIONS_MENTION_PORT = 18_103
+const SKIP_NON_TTY_WEBSOCKET_TESTS = !process.stdout.isTTY
+
 type NotificationPushMessage = {
   type: 'notification.created'
   notification: {
@@ -88,16 +91,18 @@ function connect(url: string, userId: string): Promise<TestSocket> {
 }
 
 describe('mention notification route', () => {
-  test('creates a mention notification and pushes it over websocket', async () => {
+  test.skipIf(SKIP_NON_TTY_WEBSOCKET_TESTS).serial(
+    'creates a mention notification and pushes it over websocket',
+    async () => {
     const owner = createSession('user-owner', 'Owner User', 'owner@example.com')
     const teammate = createSession('user-teammate', 'Teammate User', 'teammate@example.com')
-    const database = createTestApiDatabase()
-    seedUsers(database, [owner, teammate])
+    const database = await createTestApiDatabase()
+    await seedUsers(database, [owner, teammate])
 
-    const { app, server } = startApiServer({
+    const { app, server } = await startApiServer({
       secret: TEST_API_SECRET,
       host: '127.0.0.1',
-      port: 0,
+      port: TEST_NOTIFICATIONS_MENTION_PORT,
       auth: createHeaderAuth([owner, teammate]),
       database
     })
@@ -182,5 +187,6 @@ describe('mention notification route', () => {
       type: 'notification.created',
       notification: mentionBody.notification
     })
-  })
+    }
+  )
 })

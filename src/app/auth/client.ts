@@ -7,7 +7,6 @@ import {
 } from '@/app/api/client'
 
 const AUTH_API_BASE = '/api/auth'
-const AUTH_TEST_MODE = import.meta.env.VITE_INKLY_AUTH_TEST_MODE === '1'
 
 export interface AuthSession {
   session: {
@@ -63,17 +62,6 @@ export async function getSession() {
 }
 
 export async function loginWithGoogle(callbackURL = currentCallbackURL()) {
-  if (AUTH_TEST_MODE) {
-    if (typeof window !== 'undefined') {
-      const redirectUrl = new URL(`${AUTH_API_BASE}/test/login`, window.location.origin)
-      redirectUrl.searchParams.set('callbackURL', callbackURL)
-      redirectUrl.searchParams.set('email', 'playwright-user@inkly.test')
-      redirectUrl.searchParams.set('name', 'Playwright User')
-      window.location.assign(redirectUrl.toString())
-    }
-    return
-  }
-
   const { response, data } = await requestJson<SocialSignInResponse>(
     `${AUTH_API_BASE}/sign-in/social`,
     {

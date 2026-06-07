@@ -43,11 +43,11 @@ export interface CreateInvitationInput {
 }
 
 export interface InvitationStore {
-  createInvitation(input: CreateInvitationInput): InvitationRecord
-  findInvitation(id: string): InvitationRecord | null
-  listInvitationsByBoardId(boardId: string): InvitationRecord[]
-  attachInvitationToken(id: string, token: string): InvitationRecord | null
-  revokeInvitation(id: string): InvitationRecord | null
+  createInvitation(input: CreateInvitationInput): Promise<InvitationRecord>
+  findInvitation(id: string): Promise<InvitationRecord | null>
+  listInvitationsByBoardId(boardId: string): Promise<InvitationRecord[]>
+  attachInvitationToken(id: string, token: string): Promise<InvitationRecord | null>
+  revokeInvitation(id: string): Promise<InvitationRecord | null>
 }
 
 export type InvitationVerifyFailureReason =
@@ -93,15 +93,15 @@ export interface UpdateBoardInput {
 }
 
 export interface BoardStore {
-  createBoard(input: CreateBoardInput): BoardRecord
-  findBoard(id: string): BoardRecord | null
-  listBoardsForAnonymous(anonymousId: string): BoardRecord[]
-  listBoardsForUser(userId: string): BoardRecord[]
-  listBoardsForTeam(teamId: string): BoardRecord[]
-  deleteBoard(id: string): BoardRecord | null
-  addCollaborator(boardId: string, input: AddBoardCollaboratorInput): BoardRecord | null
-  updateBoard(id: string, input: UpdateBoardInput): BoardRecord | null
-  clearTeamForBoards(teamId: string): number
+  createBoard(input: CreateBoardInput): Promise<BoardRecord>
+  findBoard(id: string): Promise<BoardRecord | null>
+  listBoardsForAnonymous(anonymousId: string): Promise<BoardRecord[]>
+  listBoardsForUser(userId: string): Promise<BoardRecord[]>
+  listBoardsForTeam(teamId: string): Promise<BoardRecord[]>
+  deleteBoard(id: string): Promise<BoardRecord | null>
+  addCollaborator(boardId: string, input: AddBoardCollaboratorInput): Promise<BoardRecord | null>
+  updateBoard(id: string, input: UpdateBoardInput): Promise<BoardRecord | null>
+  clearTeamForBoards(teamId: string): Promise<number>
 }
 
 export interface TeamRecord {
@@ -195,31 +195,31 @@ export interface CreateNotificationInput {
 }
 
 export interface NotificationStore {
-  createNotification(input: CreateNotificationInput): NotificationRecord
-  findNotification(id: string): NotificationRecord | null
-  findUserByEmail(email: string): TeamUserRecord | null
-  listNotificationsForUser(userId: string): NotificationRecord[]
-  markNotificationRead(id: string, userId: string): NotificationRecord | null
-  markAllNotificationsRead(userId: string): number
-  deleteNotification(id: string, userId: string): NotificationRecord | null
-  sweepOldNotifications(olderThanMs?: number): number
+  createNotification(input: CreateNotificationInput): Promise<NotificationRecord>
+  findNotification(id: string): Promise<NotificationRecord | null>
+  findUserByEmail(email: string): Promise<TeamUserRecord | null>
+  listNotificationsForUser(userId: string): Promise<NotificationRecord[]>
+  markNotificationRead(id: string, userId: string): Promise<NotificationRecord | null>
+  markAllNotificationsRead(userId: string): Promise<number>
+  deleteNotification(id: string, userId: string): Promise<NotificationRecord | null>
+  sweepOldNotifications(olderThanMs?: number): Promise<number>
 }
 
 export interface TeamStore {
-  createTeam(input: CreateTeamInput): TeamRecord
-  findTeam(id: string): TeamRecord | null
-  listTeamsForUser(userId: string): TeamMembershipRecord[]
-  listMembers(teamId: string): TeamMemberRecord[]
-  findMembership(teamId: string, userId: string): TeamMemberRecord | null
-  findUserById(userId: string): TeamUserRecord | null
-  findUserByEmail(email: string): TeamUserRecord | null
-  addMember(input: AddTeamMemberInput): TeamMemberRecord | null
+  createTeam(input: CreateTeamInput): Promise<TeamRecord>
+  findTeam(id: string): Promise<TeamRecord | null>
+  listTeamsForUser(userId: string): Promise<TeamMembershipRecord[]>
+  listMembers(teamId: string): Promise<TeamMemberRecord[]>
+  findMembership(teamId: string, userId: string): Promise<TeamMemberRecord | null>
+  findUserById(userId: string): Promise<TeamUserRecord | null>
+  findUserByEmail(email: string): Promise<TeamUserRecord | null>
+  addMember(input: AddTeamMemberInput): Promise<TeamMemberRecord | null>
   updateMemberRole(
     teamId: string,
     userId: string,
     role: Exclude<TeamMemberRole, 'owner'>
-  ): TeamMemberRecord | null
-  removeMember(teamId: string, userId: string): TeamMemberRecord | null
-  updateTeam(id: string, input: UpdateTeamInput): TeamRecord | null
-  deleteTeam(id: string): TeamRecord | null
+  ): Promise<TeamMemberRecord | null>
+  removeMember(teamId: string, userId: string): Promise<TeamMemberRecord | null>
+  updateTeam(id: string, input: UpdateTeamInput): Promise<TeamRecord | null>
+  deleteTeam(id: string): Promise<TeamRecord | null>
 }

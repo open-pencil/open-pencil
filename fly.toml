@@ -1,0 +1,46 @@
+# Pencil Editor — Fly.io deploy config
+#
+# 初回:
+#   fly auth login
+#   fly launch --no-deploy --copy-config --name pencil-editor
+#   fly secrets set \
+#     INKLY_API_AUTH_SECRET=$(openssl rand -hex 32) \
+#     INKLY_API_JWT_SECRET=$(openssl rand -hex 32) \
+#     TURSO_DATABASE_URL=libsql://your-db.turso.io \
+#     TURSO_AUTH_TOKEN=eyJ...
+#   fly deploy
+#
+# 以降:
+#   fly deploy
+
+app = "pencil-editor"
+primary_region = "nrt"  # 東京 (近い region に変える: hkg / sin / iad / fra など)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3001"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = "stop"     # アクセスなければ停止 (cold start あり、 無料枠節約)
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  # health check は SPA root path で 200 を期待
+  # (Hono API が path 解決できない場合の deploy 失敗を防ぐため寛容な設定)
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    method = "get"
+    path = "/"
+    timeout = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"   # 256 MB RAM、 無料枠範囲
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1

@@ -1,3 +1,5 @@
+import type { Server, ServerWebSocket } from 'bun'
+
 const SIGNALING_PATH = '/api/ws/signaling'
 
 export type SignalingPeerData = {
@@ -49,7 +51,7 @@ type SignalingServerMessage =
 type SignalingSocket = ServerWebSocket<SignalingPeerData>
 
 export interface SignalingServer {
-  handleRequest: (request: Request, server: Bun.Server) => Response | undefined | null
+  handleRequest: (request: Request, server: Server<SignalingPeerData>) => Response | undefined | null
   websocket: Bun.WebSocketHandler<SignalingPeerData>
 }
 
@@ -120,7 +122,7 @@ export function createSignalingServer(
       }
 
       const peerId = crypto.randomUUID()
-      const upgraded = server.upgrade<SignalingPeerData>(request, {
+      const upgraded = server.upgrade(request, {
         data: { roomId, peerId }
       })
 

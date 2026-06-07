@@ -56,12 +56,12 @@ export function createHeaderAuth(sessions: InklyAuthSession[]): InklyAuth {
   }
 }
 
-export function seedUsers(
-  database: ReturnType<typeof createTestApiApp>['database'],
+export async function seedUsers(
+  database: Awaited<ReturnType<typeof createTestApiApp>>['database'],
   sessions: InklyAuthSession[]
 ) {
   for (const session of sessions) {
-    database.db
+    await database.db
       .insert(users)
       .values({
         id: session.user.id,

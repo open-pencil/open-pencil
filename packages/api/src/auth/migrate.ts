@@ -15,9 +15,9 @@ export interface MigrateAnonymousOwnershipResult {
   removedOwnerCollaboratorCount: number
 }
 
-export function migrateAnonymousOwnership(
+export async function migrateAnonymousOwnership(
   options: MigrateAnonymousOwnershipOptions
-): MigrateAnonymousOwnershipResult {
+): Promise<MigrateAnonymousOwnershipResult> {
   const anonymousId = options.anonymousId.trim()
   const userId = options.userId.trim()
   const now = options.now ?? Date.now
@@ -29,12 +29,12 @@ export function migrateAnonymousOwnership(
     }
   }
 
-  return options.database.db.transaction((tx) => {
-    const ownedBoardIds = tx
+  return await options.database.db.transaction(async (tx) => {
+    const ownedBoardIds = (await tx
       .select({ id: boards.id })
       .from(boards)
       .where(eq(boards.creatorAnonymousId, anonymousId))
-      .all()
+      .all())
       .map((row) => row.id)
 
     if (ownedBoardIds.length === 0) {
@@ -44,7 +44,7 @@ export function migrateAnonymousOwnership(
       }
     }
 
-    const migratedBoardCount = tx
+    const migratedBoardResult = await tx
       .update(boards)
       .set({
         creatorAnonymousId: '',
@@ -52,9 +52,9 @@ export function migrateAnonymousOwnership(
         updatedAt: now()
       })
       .where(eq(boards.creatorAnonymousId, anonymousId))
-      .run().changes
+      .run()
 
-    const removedOwnerCollaboratorCount = tx
+    const removedOwnerCollaboratorResult = await tx
       .delete(collaborators)
       .where(
         and(
@@ -63,11 +63,11 @@ export function migrateAnonymousOwnership(
           eq(collaborators.role, 'owner')
         )
       )
-      .run().changes
+      .run()
 
     return {
-      migratedBoardCount,
-      removedOwnerCollaboratorCount
+      migratedBoardCount: migratedBoardResult.rowsAffected,
+      removedOwnerCollaboratorCount: removedOwnerCollaboratorResult.rowsAffected
     }
   })
 }

@@ -71,7 +71,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
       return c.json(validationError(issue), 400)
     }
 
-    const board = options.boardStore?.findBoard(parsed.data.boardId)
+    const board = options.boardStore ? await options.boardStore.findBoard(parsed.data.boardId) : null
     if (board && !isBoardOwner(board, actor)) {
       return c.json(
         {
@@ -87,7 +87,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
     const issuedAt = now()
     const expiresAt = issuedAt + INVITATION_TTL_MS
     const sentToEmailHash = await hashInvitationEmail(parsed.data.email)
-    const invitation = options.store.createInvitation({
+    const invitation = await options.store.createInvitation({
       boardId: parsed.data.boardId,
       sentToEmailHash,
       role: parsed.data.role,
@@ -106,13 +106,15 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
     }
 
     const token = await signInvitationToken(payload, options.secret)
-    options.store.attachInvitationToken(invitation.id, token)
+    await options.store.attachInvitationToken(invitation.id, token)
     const relativeUrl = `/invite/${token}`
     const invitationUrl = new URL(relativeUrl, c.req.url).toString()
-    const recipientUser = options.notificationStore?.findUserByEmail(parsed.data.email) ?? null
+    const recipientUser = options.notificationStore
+      ? await options.notificationStore.findUserByEmail(parsed.data.email)
+      : null
 
     if (recipientUser && options.notificationStore) {
-      options.notificationStore.createNotification({
+      await options.notificationStore.createNotification({
         userId: recipientUser.id,
         type: 'invitation',
         payload: {
@@ -171,7 +173,7 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
       )
     }
 
-    const invitation = options.store.findInvitation(verification.payload.sub)
+    const invitation = await options.store.findInvitation(verification.payload.sub)
     if (!invitation || invitation.revoked || invitation.jti !== verification.payload.jti) {
       return c.json(
         {
@@ -192,11 +194,13 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
       )
     }
 
-    options.boardStore?.addCollaborator(invitation.boardId, {
-      anonymousId,
-      role: invitation.role,
-      invitationId: invitation.id
-    })
+    if (options.boardStore) {
+      await options.boardStore.addCollaborator(invitation.boardId, {
+        anonymousId,
+        role: invitation.role,
+        invitationId: invitation.id
+      })
+    }
 
     return c.json({
       valid: true,

@@ -8,14 +8,14 @@ import { createSession, seedUsers } from '../helpers/api-auth.js'
 const ONE_DAY_MS = 24 * 3600 * 1000
 
 function insertNotification(
-  database: ReturnType<typeof createTestApiApp>['database'],
+  database: Awaited<ReturnType<typeof createTestApiApp>>['database'],
   input: {
     id: string
     userId: string
     createdAt: number
   }
 ) {
-  database.db
+  return database.db
     .insert(notifications)
     .values({
       id: input.id,
@@ -35,30 +35,28 @@ function insertNotification(
 }
 
 describe('notification sweep', () => {
-  test('removes notifications older than 30 days and keeps newer ones', () => {
+  test('removes notifications older than 30 days and keeps newer ones', async () => {
     const now = new Date('2026-06-05T00:00:00.000Z').getTime()
     const user = createSession('user-1', 'Owner User', 'owner@example.com')
-    const { database, notificationStore } = createTestApiApp({
+    const { database, notificationStore } = await createTestApiApp({
       secret: TEST_API_SECRET,
       now: () => now
     })
-    seedUsers(database, [user])
+    await seedUsers(database, [user])
 
-    insertNotification(database, {
+    await insertNotification(database, {
       id: 'notification-old',
       userId: user.user.id,
       createdAt: now - 31 * ONE_DAY_MS
     })
-    insertNotification(database, {
+    await insertNotification(database, {
       id: 'notification-recent',
       userId: user.user.id,
       createdAt: now - 29 * ONE_DAY_MS
     })
 
-    expect(
-      notificationStore.sweepOldNotifications(DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS)
-    ).toBe(1)
-    expect(notificationStore.listNotificationsForUser(user.user.id)).toEqual([
+    expect(await notificationStore.sweepOldNotifications(DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS)).toBe(1)
+    expect(await notificationStore.listNotificationsForUser(user.user.id)).toEqual([
       expect.objectContaining({ id: 'notification-recent' })
     ])
 
@@ -68,21 +66,21 @@ describe('notification sweep', () => {
   test('sweep endpoint deletes old notifications and returns the deleted count', async () => {
     const now = new Date('2026-06-05T00:00:00.000Z').getTime()
     const user = createSession('user-1', 'Owner User', 'owner@example.com')
-    const { app, database, notificationStore } = createTestApiApp({
+    const { app, database, notificationStore } = await createTestApiApp({
       secret: TEST_API_SECRET,
       now: () => now,
       env: {
         INKLY_API_SWEEP_TOKEN: 'dev-token'
       } as NodeJS.ProcessEnv
     })
-    seedUsers(database, [user])
+    await seedUsers(database, [user])
 
-    insertNotification(database, {
+    await insertNotification(database, {
       id: 'notification-old',
       userId: user.user.id,
       createdAt: now - 31 * ONE_DAY_MS
     })
-    insertNotification(database, {
+    await insertNotification(database, {
       id: 'notification-recent',
       userId: user.user.id,
       createdAt: now - 29 * ONE_DAY_MS
@@ -97,7 +95,7 @@ describe('notification sweep', () => {
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ deletedCount: 1 })
-    expect(notificationStore.listNotificationsForUser(user.user.id)).toEqual([
+    expect(await notificationStore.listNotificationsForUser(user.user.id)).toEqual([
       expect.objectContaining({ id: 'notification-recent' })
     ])
 
@@ -105,7 +103,7 @@ describe('notification sweep', () => {
   })
 
   test('sweep endpoint rejects non-localhost requests', async () => {
-    const { app, database } = createTestApiApp({
+    const { app, database } = await createTestApiApp({
       secret: TEST_API_SECRET,
       env: {
         INKLY_API_SWEEP_TOKEN: 'dev-token'
@@ -131,7 +129,7 @@ describe('notification sweep', () => {
   })
 
   test('sweep endpoint returns 503 when the sweep token is not configured', async () => {
-    const { app, database } = createTestApiApp({
+    const { app, database } = await createTestApiApp({
       secret: TEST_API_SECRET
     })
 

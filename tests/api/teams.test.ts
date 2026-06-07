@@ -9,11 +9,11 @@ describe('team routes', () => {
     const editor = createSession('user-editor', 'Editor User', 'editor@example.com')
     const viewer = createSession('user-viewer', 'Viewer User', 'viewer@example.com')
     const outsider = createSession('user-outsider', 'Outsider User', 'outsider@example.com')
-    const { app, boardStore, database } = createTestApiApp({
+    const { app, boardStore, database } = await createTestApiApp({
       auth: createHeaderAuth([owner, editor, viewer, outsider]),
       secret: TEST_API_SECRET
     })
-    seedUsers(database, [owner, editor, viewer, outsider])
+    await seedUsers(database, [owner, editor, viewer, outsider])
 
     const createTeamResponse = await app.request('/api/teams', {
       method: 'POST',
@@ -212,7 +212,7 @@ describe('team routes', () => {
       rehomedBoardCount: 1
     })
 
-    expect(boardStore.findBoard(personalBoard.id)).toEqual(
+    expect(await boardStore.findBoard(personalBoard.id)).toEqual(
       expect.objectContaining({
         id: personalBoard.id,
         creatorUserId: owner.user.id,

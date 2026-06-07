@@ -1,3 +1,5 @@
+import type { Server, ServerWebSocket } from 'bun'
+
 import { getAuthSession, type InklyAuth } from '../auth/index.js'
 import type { NotificationRecord } from '../types.js'
 import {
@@ -19,7 +21,10 @@ type NotificationPushMessage = {
 }
 
 export interface NotificationWebSocketServer {
-  handleRequest: (request: Request, server: Bun.Server) => Promise<Response | undefined | null>
+  handleRequest: (
+    request: Request,
+    server: Server<NotificationSocketData>
+  ) => Promise<Response | undefined | null>
   open: (socket: NotificationSocket) => void
   close: (socket: NotificationSocket) => void
   pushNotification: (notification: NotificationRecord) => void
@@ -66,7 +71,7 @@ export function createNotificationWebSocketServer(
         )
       }
 
-      const upgraded = server.upgrade<NotificationSocketData>(request, {
+      const upgraded = server.upgrade(request, {
         data: { userId: session.user.id }
       })
       if (upgraded) return undefined

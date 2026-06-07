@@ -31,8 +31,8 @@ function mapCollaborator(row: typeof collaborators.$inferSelect): BoardCollabora
 }
 
 function createRecordMapper(database: ApiDatabase) {
-  return function mapBoard(row: typeof boards.$inferSelect): BoardRecord {
-    const collaboratorRows = database.db
+  return async function mapBoard(row: typeof boards.$inferSelect): Promise<BoardRecord> {
+    const collaboratorRows = await database.db
       .select()
       .from(collaborators)
       .where(eq(collaborators.boardId, row.id))
@@ -52,17 +52,17 @@ function createRecordMapper(database: ApiDatabase) {
   }
 }
 
-function createInMemoryDatabase() {
-  return createMigratedApiDatabase({ mode: 'memory' })
+async function createInMemoryDatabase() {
+  return await createMigratedApiDatabase({ mode: 'memory' })
 }
 
-function mapBoardRows(
+async function mapBoardRows(
   database: ApiDatabase,
   rows: Array<Pick<typeof boards.$inferSelect, 'id' | 'name' | 'creatorAnonymousId' | 'creatorUserId' | 'teamId' | 'createdAt' | 'updatedAt'>>
-) {
+): Promise<BoardRecord[]> {
   if (rows.length === 0) return []
 
-  const collaboratorRows = database.db
+  const collaboratorRows = await database.db
     .select()
     .from(collaborators)
     .where(
@@ -109,20 +109,22 @@ function validateCreateBoardInput(input: CreateBoardInput) {
   }
 }
 
-export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardStore {
-  const database = options.database ?? createInMemoryDatabase()
+export async function createBoardStore(
+  options: CreateBoardStoreOptions = {}
+): Promise<BoardStore> {
+  const database = options.database ?? (await createInMemoryDatabase())
   const now = options.now ?? Date.now
   const mapBoard = createRecordMapper(database)
 
-  return {
-    createBoard(input: CreateBoardInput) {
+  const store: BoardStore = {
+    async createBoard(input: CreateBoardInput) {
       const createdAt = now()
       const id = crypto.randomUUID()
       const { creatorAnonymousId, creatorUserId } = validateCreateBoardInput(input)
       const teamId = input.teamId?.trim() || null
 
-      database.db.transaction((tx) => {
-        tx
+      await database.db.transaction(async (tx) => {
+        await tx
           .insert(boards)
           .values({
             id,
@@ -136,7 +138,7 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
           .run()
 
         if (creatorAnonymousId) {
-          tx
+          await tx
             .insert(collaborators)
             .values({
               boardId: id,
@@ -149,16 +151,16 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         }
       })
 
-      const record = this.findBoard(id)
+      const record = await store.findBoard(id)
       if (!record) throw new Error(`Failed to create board ${id}`)
       return record
     },
-    findBoard(id: string) {
-      const row = database.db.select().from(boards).where(eq(boards.id, id)).get()
-      return row ? cloneBoard(mapBoard(row)) : null
+    async findBoard(id: string) {
+      const row = await database.db.select().from(boards).where(eq(boards.id, id)).get()
+      return row ? cloneBoard(await mapBoard(row)) : null
     },
-    listBoardsForAnonymous(anonymousId: string) {
-      const boardRows = database.db
+    async listBoardsForAnonymous(anonymousId: string) {
+      const boardRows = await database.db
         .selectDistinct({
           id: boards.id,
           name: boards.name,
@@ -179,10 +181,10 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         .orderBy(desc(boards.updatedAt))
         .all()
 
-      return mapBoardRows(database, boardRows)
+      return await mapBoardRows(database, boardRows)
     },
-    listBoardsForUser(userId: string) {
-      const boardRows = database.db
+    async listBoardsForUser(userId: string) {
+      const boardRows = await database.db
         .select({
           id: boards.id,
           name: boards.name,
@@ -197,10 +199,10 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         .orderBy(desc(boards.updatedAt))
         .all()
 
-      return mapBoardRows(database, boardRows)
+      return await mapBoardRows(database, boardRows)
     },
-    listBoardsForTeam(teamId: string) {
-      const boardRows = database.db
+    async listBoardsForTeam(teamId: string) {
+      const boardRows = await database.db
         .select({
           id: boards.id,
           name: boards.name,
@@ -215,21 +217,21 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         .orderBy(desc(boards.updatedAt))
         .all()
 
-      return mapBoardRows(database, boardRows)
+      return await mapBoardRows(database, boardRows)
     },
-    deleteBoard(id: string) {
-      const record = this.findBoard(id)
+    async deleteBoard(id: string) {
+      const record = await store.findBoard(id)
       if (!record) return null
-      database.db.delete(boards).where(eq(boards.id, id)).run()
+      await database.db.delete(boards).where(eq(boards.id, id)).run()
       return cloneBoard(record)
     },
-    addCollaborator(boardId: string, input: AddBoardCollaboratorInput) {
-      const board = this.findBoard(boardId)
+    async addCollaborator(boardId: string, input: AddBoardCollaboratorInput) {
+      const board = await store.findBoard(boardId)
       if (!board) return null
       const updatedAt = now()
 
-      database.db.transaction((tx) => {
-        tx
+      await database.db.transaction(async (tx) => {
+        await tx
           .insert(collaborators)
           .values({
             boardId,
@@ -247,18 +249,18 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
           })
           .run()
 
-        tx
+        await tx
           .update(boards)
           .set({ updatedAt })
           .where(eq(boards.id, boardId))
           .run()
       })
 
-      const record = this.findBoard(boardId)
+      const record = await store.findBoard(boardId)
       return record ? cloneBoard(record) : null
     },
-    updateBoard(id: string, input: UpdateBoardInput) {
-      const record = this.findBoard(id)
+    async updateBoard(id: string, input: UpdateBoardInput) {
+      const record = await store.findBoard(id)
       if (!record) return null
 
       const nextName = input.name?.trim()
@@ -273,7 +275,7 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         updatedAt: now()
       }
 
-      database.db
+      await database.db
         .update(boards)
         .set({
           name: changes.name,
@@ -283,18 +285,22 @@ export function createBoardStore(options: CreateBoardStoreOptions = {}): BoardSt
         .where(eq(boards.id, id))
         .run()
 
-      const updated = this.findBoard(id)
+      const updated = await store.findBoard(id)
       return updated ? cloneBoard(updated) : null
     },
-    clearTeamForBoards(teamId: string) {
-      return database.db
+    async clearTeamForBoards(teamId: string) {
+      const result = await database.db
         .update(boards)
         .set({
           teamId: null,
           updatedAt: now()
         })
         .where(eq(boards.teamId, teamId))
-        .run().changes
+        .run()
+
+      return result.rowsAffected
     }
   }
+
+  return store
 }

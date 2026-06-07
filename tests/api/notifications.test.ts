@@ -10,11 +10,11 @@ describe('notification routes', () => {
     const teammate = createSession('user-teammate', 'Teammate User', 'teammate@example.com')
     const outsider = createSession('user-outsider', 'Outsider User', 'outsider@example.com')
 
-    const { app, boardStore, database, notificationStore } = createTestApiApp({
+    const { app, boardStore, database, notificationStore } = await createTestApiApp({
       auth: createHeaderAuth([owner, invitee, teammate, outsider]),
       secret: TEST_API_SECRET
     })
-    seedUsers(database, [owner, invitee, teammate, outsider])
+    await seedUsers(database, [owner, invitee, teammate, outsider])
 
     const createBoardResponse = await app.request('/api/boards', {
       method: 'POST',
@@ -65,7 +65,7 @@ describe('notification routes', () => {
     })
     expect(teamInviteResponse.status).toBe(201)
 
-    notificationStore.createNotification({
+    await notificationStore.createNotification({
       userId: invitee.user.id,
       type: 'mention',
       payload: {
@@ -196,7 +196,7 @@ describe('notification routes', () => {
       notifications: [expect.objectContaining({ id: mentionNotification?.id, readAt: expect.any(Number) })]
     })
 
-    expect(boardStore.findBoard(board.id)).toEqual(expect.objectContaining({ id: board.id }))
+    expect(await boardStore.findBoard(board.id)).toEqual(expect.objectContaining({ id: board.id }))
 
     database.close()
   })

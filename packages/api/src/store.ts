@@ -28,16 +28,18 @@ function mapInvitation(row: typeof invitations.$inferSelect): InvitationRecord {
   }
 }
 
-function createInMemoryDatabase() {
-  return createMigratedApiDatabase({ mode: 'memory' })
+async function createInMemoryDatabase() {
+  return await createMigratedApiDatabase({ mode: 'memory' })
 }
 
-export function createInvitationStore(options: CreateInvitationStoreOptions = {}): InvitationStore {
-  const database = options.database ?? createInMemoryDatabase()
+export async function createInvitationStore(
+  options: CreateInvitationStoreOptions = {}
+): Promise<InvitationStore> {
+  const database = options.database ?? (await createInMemoryDatabase())
   const now = options.now ?? Date.now
 
-  return {
-    createInvitation(input: CreateInvitationInput) {
+  const store: InvitationStore = {
+    async createInvitation(input: CreateInvitationInput) {
       const record: InvitationRecord = {
         id: crypto.randomUUID(),
         boardId: input.boardId,
@@ -50,39 +52,42 @@ export function createInvitationStore(options: CreateInvitationStoreOptions = {}
         token: null
       }
 
-      database.db.insert(invitations).values(record).run()
+      await database.db.insert(invitations).values(record).run()
       return cloneInvitation(record)
     },
-    findInvitation(id: string) {
-      const row = database.db.select().from(invitations).where(eq(invitations.id, id)).get()
+    async findInvitation(id: string) {
+      const row = await database.db.select().from(invitations).where(eq(invitations.id, id)).get()
       return row ? cloneInvitation(mapInvitation(row)) : null
     },
-    listInvitationsByBoardId(boardId: string) {
-      return database.db
+    async listInvitationsByBoardId(boardId: string) {
+      const rows = await database.db
         .select()
         .from(invitations)
         .where(eq(invitations.boardId, boardId))
         .orderBy(asc(invitations.createdAt))
         .all()
-        .map((row) => cloneInvitation(mapInvitation(row)))
+
+      return rows.map((row) => cloneInvitation(mapInvitation(row)))
     },
-    attachInvitationToken(id: string, token: string) {
-      database.db
+    async attachInvitationToken(id: string, token: string) {
+      await database.db
         .update(invitations)
         .set({ token })
         .where(eq(invitations.id, id))
         .run()
 
-      return this.findInvitation(id)
+      return await store.findInvitation(id)
     },
-    revokeInvitation(id: string) {
-      database.db
+    async revokeInvitation(id: string) {
+      await database.db
         .update(invitations)
         .set({ revoked: true })
         .where(eq(invitations.id, id))
         .run()
 
-      return this.findInvitation(id)
+      return await store.findInvitation(id)
     }
   }
+
+  return store
 }

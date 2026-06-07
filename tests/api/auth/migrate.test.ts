@@ -37,11 +37,11 @@ function createAuth(session = createSession()): InklyAuth {
   }
 }
 
-function seedUser(
-  database: ReturnType<typeof createTestApiApp>['database'],
+async function seedUser(
+  database: Awaited<ReturnType<typeof createTestApiApp>>['database'],
   session: InklyAuthSession
 ) {
-  database.db
+  await database.db
     .insert(users)
     .values({
       id: session.user.id,
@@ -58,17 +58,17 @@ function seedUser(
 describe('auth anonymous migration route', () => {
   test('rebinds anonymous board ownership to the current user and preserves invitation access', async () => {
     const session = createSession()
-    const { app, boardStore, store, database } = createTestApiApp({
+    const { app, boardStore, store, database } = await createTestApiApp({
       auth: createAuth(session),
       secret: TEST_API_SECRET
     })
-    seedUser(database, session)
+    await seedUser(database, session)
 
-    const board = boardStore.createBoard({
+    const board = await boardStore.createBoard({
       name: 'Anonymous board',
       creatorAnonymousId: 'anon-owner'
     })
-    const invitation = store.createInvitation({
+    const invitation = await store.createInvitation({
       boardId: board.id,
       sentToEmailHash: 'hash-123',
       role: 'editor',
@@ -92,7 +92,7 @@ describe('auth anonymous migration route', () => {
       removedOwnerCollaboratorCount: 1
     })
 
-    const migratedBoard = boardStore.findBoard(board.id)
+    const migratedBoard = await boardStore.findBoard(board.id)
     expect(migratedBoard).toEqual(
       expect.objectContaining({
         id: board.id,
@@ -101,8 +101,8 @@ describe('auth anonymous migration route', () => {
       })
     )
     expect(migratedBoard?.collaborators).toEqual([])
-    expect(boardStore.listBoardsForAnonymous('anon-owner')).toEqual([])
-    expect(boardStore.listBoardsForUser('user-123')).toEqual([
+    expect(await boardStore.listBoardsForAnonymous('anon-owner')).toEqual([])
+    expect(await boardStore.listBoardsForUser('user-123')).toEqual([
       expect.objectContaining({ id: board.id, creatorUserId: 'user-123' })
     ])
 
@@ -121,13 +121,13 @@ describe('auth anonymous migration route', () => {
 
   test('is idempotent when the same anonymous id is migrated twice', async () => {
     const session = createSession('user-456')
-    const { app, boardStore, database } = createTestApiApp({
+    const { app, boardStore, database } = await createTestApiApp({
       auth: createAuth(session),
       secret: TEST_API_SECRET
     })
-    seedUser(database, session)
+    await seedUser(database, session)
 
-    const board = boardStore.createBoard({
+    const board = await boardStore.createBoard({
       name: 'Repeatable board',
       creatorAnonymousId: 'anon-repeat'
     })
@@ -158,7 +158,7 @@ describe('auth anonymous migration route', () => {
       removedOwnerCollaboratorCount: 0
     })
 
-    expect(boardStore.findBoard(board.id)).toEqual(
+    expect(await boardStore.findBoard(board.id)).toEqual(
       expect.objectContaining({
         id: board.id,
         creatorAnonymousId: '',

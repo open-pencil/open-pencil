@@ -18,8 +18,8 @@ export interface CreateTeamStoreOptions {
   now?: () => number
 }
 
-function createInMemoryDatabase() {
-  return createMigratedApiDatabase({ mode: 'memory' })
+async function createInMemoryDatabase() {
+  return await createMigratedApiDatabase({ mode: 'memory' })
 }
 
 function cloneTeam(record: TeamRecord): TeamRecord {
@@ -53,18 +53,20 @@ function mapUser(row: typeof users.$inferSelect): TeamUserRecord {
   }
 }
 
-export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore {
-  const database = options.database ?? createInMemoryDatabase()
+export async function createTeamStore(
+  options: CreateTeamStoreOptions = {}
+): Promise<TeamStore> {
+  const database = options.database ?? (await createInMemoryDatabase())
   const now = options.now ?? Date.now
 
-  return {
-    createTeam(input) {
+  const store: TeamStore = {
+    async createTeam(input) {
       const id = crypto.randomUUID()
       const createdAt = now()
       const name = input.name.trim()
 
-      database.db.transaction((tx) => {
-        tx
+      await database.db.transaction(async (tx) => {
+        await tx
           .insert(teams)
           .values({
             id,
@@ -75,7 +77,7 @@ export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore
           })
           .run()
 
-        tx
+        await tx
           .insert(teamMembers)
           .values({
             teamId: id,
@@ -86,16 +88,16 @@ export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore
           .run()
       })
 
-      const team = this.findTeam(id)
+      const team = await store.findTeam(id)
       if (!team) throw new Error(`Failed to create team ${id}`)
       return team
     },
-    findTeam(id) {
-      const row = database.db.select().from(teams).where(eq(teams.id, id)).get()
+    async findTeam(id) {
+      const row = await database.db.select().from(teams).where(eq(teams.id, id)).get()
       return row ? cloneTeam(mapTeam(row)) : null
     },
-    listTeamsForUser(userId) {
-      const rows = database.db
+    async listTeamsForUser(userId) {
+      const rows = await database.db
         .select({
           id: teams.id,
           name: teams.name,
@@ -123,8 +125,8 @@ export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore
         })
       )
     },
-    listMembers(teamId) {
-      const rows = database.db
+    async listMembers(teamId) {
+      const rows = await database.db
         .select({
           teamId: teamMembers.teamId,
           userId: teamMembers.userId,
@@ -156,31 +158,31 @@ export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore
         })
       )
     },
-    findMembership(teamId, userId) {
-      return this.listMembers(teamId).find((member) => member.userId === userId) ?? null
+    async findMembership(teamId, userId) {
+      return (await store.listMembers(teamId)).find((member) => member.userId === userId) ?? null
     },
-    findUserById(userId) {
-      const row = database.db.select().from(users).where(eq(users.id, userId)).get()
+    async findUserById(userId) {
+      const row = await database.db.select().from(users).where(eq(users.id, userId)).get()
       return row ? structuredClone(mapUser(row)) : null
     },
-    findUserByEmail(email) {
+    async findUserByEmail(email) {
       const normalizedEmail = email.trim().toLowerCase()
       if (!normalizedEmail) return null
-      const row = database.db
+      const row = await database.db
         .select()
         .from(users)
         .where(eq(users.email, normalizedEmail))
         .get()
       return row ? structuredClone(mapUser(row)) : null
     },
-    addMember(input: AddTeamMemberInput) {
-      const team = this.findTeam(input.teamId)
-      const user = this.findUserById(input.userId)
+    async addMember(input: AddTeamMemberInput) {
+      const team = await store.findTeam(input.teamId)
+      const user = await store.findUserById(input.userId)
       if (!team || !user) return null
 
       const addedAt = now()
-      database.db.transaction((tx) => {
-        tx
+      await database.db.transaction(async (tx) => {
+        await tx
           .insert(teamMembers)
           .values({
             teamId: input.teamId,
@@ -194,56 +196,56 @@ export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore
           })
           .run()
 
-        tx
+        await tx
           .update(teams)
           .set({ updatedAt: addedAt })
           .where(eq(teams.id, input.teamId))
           .run()
       })
 
-      return this.findMembership(input.teamId, input.userId)
+      return await store.findMembership(input.teamId, input.userId)
     },
-    updateMemberRole(teamId, userId, role) {
-      const membership = this.findMembership(teamId, userId)
+    async updateMemberRole(teamId, userId, role) {
+      const membership = await store.findMembership(teamId, userId)
       if (!membership) return null
 
-      database.db.transaction((tx) => {
-        tx
+      await database.db.transaction(async (tx) => {
+        await tx
           .update(teamMembers)
           .set({ role })
           .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
           .run()
 
-        tx
+        await tx
           .update(teams)
           .set({ updatedAt: now() })
           .where(eq(teams.id, teamId))
           .run()
       })
 
-      const updated = this.findMembership(teamId, userId)
+      const updated = await store.findMembership(teamId, userId)
       return updated ? cloneMember(updated) : null
     },
-    removeMember(teamId, userId) {
-      const membership = this.findMembership(teamId, userId)
+    async removeMember(teamId, userId) {
+      const membership = await store.findMembership(teamId, userId)
       if (!membership) return null
 
-      database.db.transaction((tx) => {
-        tx
+      await database.db.transaction(async (tx) => {
+        await tx
           .delete(teamMembers)
           .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
           .run()
-        tx.update(teams).set({ updatedAt: now() }).where(eq(teams.id, teamId)).run()
+        await tx.update(teams).set({ updatedAt: now() }).where(eq(teams.id, teamId)).run()
       })
 
       return cloneMember(membership)
     },
-    updateTeam(id, input: UpdateTeamInput) {
-      const team = this.findTeam(id)
+    async updateTeam(id, input: UpdateTeamInput) {
+      const team = await store.findTeam(id)
       if (!team) return null
       const name = input.name.trim()
 
-      database.db
+      await database.db
         .update(teams)
         .set({
           name,
@@ -252,14 +254,16 @@ export function createTeamStore(options: CreateTeamStoreOptions = {}): TeamStore
         .where(eq(teams.id, id))
         .run()
 
-      const updated = this.findTeam(id)
+      const updated = await store.findTeam(id)
       return updated ? cloneTeam(updated) : null
     },
-    deleteTeam(id) {
-      const team = this.findTeam(id)
+    async deleteTeam(id) {
+      const team = await store.findTeam(id)
       if (!team) return null
-      database.db.delete(teams).where(eq(teams.id, id)).run()
+      await database.db.delete(teams).where(eq(teams.id, id)).run()
       return cloneTeam(team)
     }
   }
+
+  return store
 }

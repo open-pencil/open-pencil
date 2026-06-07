@@ -4,10 +4,10 @@ import { createInvitationStore } from '../../packages/api/src/store.js'
 import { createTestApiDatabase } from '../helpers/api.js'
 
 describe('invitation store', () => {
-  test('creates, finds, and revokes invitations', () => {
-    const database = createTestApiDatabase()
-    const store = createInvitationStore({ database })
-    const invitation = store.createInvitation({
+  test('creates, finds, and revokes invitations', async () => {
+    const database = await createTestApiDatabase()
+    const store = await createInvitationStore({ database })
+    const invitation = await store.createInvitation({
       boardId: 'board-123',
       sentToEmailHash: 'a'.repeat(64),
       role: 'editor',
@@ -20,14 +20,14 @@ describe('invitation store', () => {
     expect(invitation.jti).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
     )
-    expect(store.findInvitation(invitation.id)).toEqual(invitation)
+    expect(await store.findInvitation(invitation.id)).toEqual(invitation)
 
-    const revoked = store.revokeInvitation(invitation.id)
+    const revoked = await store.revokeInvitation(invitation.id)
 
     expect(revoked?.revoked).toBe(true)
-    expect(store.findInvitation(invitation.id)?.revoked).toBe(true)
-    expect(store.revokeInvitation('missing-id')).toBeNull()
-    expect(store.findInvitation('missing-id')).toBeNull()
+    expect((await store.findInvitation(invitation.id))?.revoked).toBe(true)
+    expect(await store.revokeInvitation('missing-id')).toBeNull()
+    expect(await store.findInvitation('missing-id')).toBeNull()
     database.close()
   })
 })

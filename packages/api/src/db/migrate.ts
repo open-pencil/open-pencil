@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { migrate } from 'drizzle-orm/bun-sqlite/migrator'
+import { migrate } from 'drizzle-orm/libsql/migrator'
 
 import {
   createApiDatabase,
@@ -25,15 +25,15 @@ export function resolveApiMigrationsFolder() {
   throw new Error('Unable to locate API migration folder')
 }
 
-export function runApiMigrations(database: ApiDatabase) {
-  migrate(database.db, {
+export async function runApiMigrations(database: ApiDatabase): Promise<void> {
+  await migrate(database.db, {
     migrationsFolder: resolveApiMigrationsFolder()
   })
 }
 
-export function createMigratedApiDatabase(options: ApiDatabaseOptions = {}) {
+export async function createMigratedApiDatabase(options: ApiDatabaseOptions = {}): Promise<ApiDatabase> {
   const database = createApiDatabase(options)
-  runApiMigrations(database)
+  await runApiMigrations(database)
   return database
 }
 
@@ -41,7 +41,7 @@ if (import.meta.main) {
   const database = createApiDatabase(resolveApiDatabaseOptions())
 
   try {
-    runApiMigrations(database)
+    await runApiMigrations(database)
     console.log(`[inkly-api] migrations applied to ${database.path}`)
   } finally {
     database.close()
