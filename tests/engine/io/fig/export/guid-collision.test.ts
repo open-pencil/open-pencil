@@ -63,6 +63,7 @@ describe('export: GUID collision prevention', () => {
     // Clone the node — cloneTree should clear source.id
     const clone = graph.cloneTree(rect.id, page.id)
     expect(clone).not.toBeNull()
+    if (!clone) throw new Error('Expected clone to exist')
     expect(clone.source.id).toBeNull()
 
     const figBytes = await exportFigFile(graph)
