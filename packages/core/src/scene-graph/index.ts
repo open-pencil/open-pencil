@@ -296,7 +296,6 @@ export class SceneGraph {
     overrides: Partial<SceneNode> = {}
   ): SceneNode {
     const node = createDefaultNode(() => id, type, overrides)
-    node.id = id
     const parent = this.nodes.get(parentId)
     if (parent && !parent.childIds.includes(id)) parent.childIds.push(id)
     return this.registerNode(node, parentId)
