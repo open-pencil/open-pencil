@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto'
-import { mkdirSync, readdirSync, readFileSync, readSync, rmSync, writeFileSync, cpSync } from 'node:fs'
+import {
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  readSync,
+  rmSync,
+  writeFileSync,
+  cpSync
+} from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 
 import { moveIntoStore } from './archive.ts'
