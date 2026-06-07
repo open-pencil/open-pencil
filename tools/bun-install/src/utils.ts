@@ -95,8 +95,8 @@ export function ensureBunBinInPath(): string {
   const rest = (process.env.PATH ?? '')
     .split(delimiter)
     .filter((entry) => entry.length > 0 && resolve(entry) !== normalizedBunBin)
-  process.env.PATH = [bunBin, ...rest].join(delimiter)
-  return bunBin
+  process.env.PATH = [normalizedBunBin, ...rest].join(delimiter)
+  return normalizedBunBin
 }
 
 /**

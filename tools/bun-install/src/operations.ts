@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { mkdirSync, readdirSync, readFileSync, readSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readdirSync, readFileSync, readSync, rmSync, writeFileSync, cpSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 
 import { moveIntoStore } from './archive.ts'
@@ -89,63 +89,55 @@ export function buildAndPackPackages(
       run('bun', ['run', 'build'], { cwd: pkg.dir })
     }
 
+    // Create a throwaway copy of the package directory for packing so that
+    // dependency pinning never mutates the real workspace. This avoids signal-
+    // safety issues (SIGINT can skip finally blocks that restore mutated files).
+    const packDir = join(tmpDir, randomUUID())
+    cpSync(pkg.dir, packDir, { recursive: true, filter: (src) => !src.includes('node_modules') })
+
     // Pin workspace-local dependencies to their already-packed tarball paths
-    // so that the packed archive's package.json points to local snapshots.
-    const pkgJsonPath = join(pkg.dir, 'package.json')
-    let originalPkgJson: string | null = null
+    // in the throwaway copy so that the packed archive's package.json points
+    // to local snapshots instead of the registry.
+    const pkgJsonPath = join(packDir, 'package.json')
+    const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'))
+    let pinned = false
 
-    try {
-      const pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'))
-      let modified = false
-
-      for (const depType of ['dependencies', 'peerDependencies'] as const) {
-        const deps = pkgJson[depType]
-        if (!deps) continue
-        for (const depName of Object.keys(deps)) {
-          const depPkg = packagesMap.get(depName)
-          if (depPkg?.archivePath) {
-            deps[depName] = `file:${depPkg.archivePath}`
-            modified = true
-          }
+    for (const depType of ['dependencies', 'peerDependencies'] as const) {
+      const deps = pkgJson[depType]
+      if (!deps) continue
+      for (const depName of Object.keys(deps)) {
+        const depPkg = packagesMap.get(depName)
+        if (depPkg?.archivePath) {
+          deps[depName] = `file:${depPkg.archivePath}`
+          pinned = true
         }
       }
-
-      if (modified) {
-        originalPkgJson = readFileSync(pkgJsonPath, 'utf-8')
-        writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + '\n')
-        log(`  Pinned workspace dependencies to local tarballs`)
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.warn(`  Warning: could not pin dependencies for ${pkgName}: ${msg}`)
     }
 
-    try {
-      log(`Packing ${pkgName}...`)
-      const isolatedPkgTmp = join(tmpDir, randomUUID())
-      mkdirSync(isolatedPkgTmp, { recursive: true })
-
-      run('bun', ['pm', 'pack', '--destination', isolatedPkgTmp], {
-        cwd: pkg.dir
-      })
-
-      const archives = readdirSync(isolatedPkgTmp).filter((f) => f.endsWith('.tgz'))
-      if (archives.length !== 1) {
-        die(`Expected exactly 1 archive in ${isolatedPkgTmp}, found ${archives.length}`)
-      }
-
-      const archiveFilename = archives[0]
-      const sourceArchive = join(isolatedPkgTmp, archiveFilename)
-      const persistentArchive = join(archiveStoreDir, archiveFilename)
-
-      moveIntoStore(sourceArchive, persistentArchive)
-      pkg.archivePath = persistentArchive
-    } finally {
-      // Restore the original package.json if we modified it
-      if (originalPkgJson !== null) {
-        writeFileSync(pkgJsonPath, originalPkgJson)
-      }
+    if (pinned) {
+      writeFileSync(pkgJsonPath, JSON.stringify(pkgJson, null, 2) + '\n')
+      log(`  Pinned workspace dependencies to local tarballs`)
     }
+
+    log(`Packing ${pkgName}...`)
+    const isolatedPkgTmp = join(tmpDir, randomUUID())
+    mkdirSync(isolatedPkgTmp, { recursive: true })
+
+    run('bun', ['pm', 'pack', '--destination', isolatedPkgTmp], {
+      cwd: packDir
+    })
+
+    const archives = readdirSync(isolatedPkgTmp).filter((f) => f.endsWith('.tgz'))
+    if (archives.length !== 1) {
+      die(`Expected exactly 1 archive in ${isolatedPkgTmp}, found ${archives.length}`)
+    }
+
+    const archiveFilename = archives[0]
+    const sourceArchive = join(isolatedPkgTmp, archiveFilename)
+    const persistentArchive = join(archiveStoreDir, archiveFilename)
+
+    moveIntoStore(sourceArchive, persistentArchive)
+    pkg.archivePath = persistentArchive
   }
 }
 
