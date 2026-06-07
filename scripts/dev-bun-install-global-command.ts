@@ -2,8 +2,9 @@
 
 /**
  * Dynamically builds and installs workspace binaries as Bun globals.
- * * Usage:
- * bun hack/dev-bun-install-global-command.ts [command1] [command2] ...
+ *
+ * Usage:
+ *   bun scripts/dev-bun-install-global-command.ts [command1] [command2] ...
  * (If no commands are provided, installs ALL discovered commands)
  *
  * Features:
@@ -27,7 +28,7 @@ import {
   renameSync
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve, delimiter, dirname } from 'node:path'
+import { join, resolve, delimiter, dirname, sep } from 'node:path'
 
 if (typeof Bun === 'undefined') {
   console.error('FATAL: This script requires the Bun runtime. Run with: bun <script>')
@@ -45,10 +46,12 @@ type PackageData = {
 
 const EXIT_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const
 
+/** Logs an informational message to stdout. */
 function log(msg: string): void {
   console.log(msg)
 }
 
+/** Prints a fatal error to stderr and exits the process with code 1. */
 function die(msg: string): never {
   console.error(`\nFATAL: ${msg}`)
   process.exit(1)
@@ -56,6 +59,10 @@ function die(msg: string): never {
 
 type SpawnOpts = { cwd?: string }
 
+/**
+ * Spawns a command synchronously, inheriting stdio from the parent.
+ * Returns the exit code (defaults to 1 if missing).
+ */
 function runRaw(cmd: string, args: string[], opts?: SpawnOpts): number {
   const proc = Bun.spawnSync([cmd, ...args], {
     cwd: opts?.cwd,
@@ -65,6 +72,10 @@ function runRaw(cmd: string, args: string[], opts?: SpawnOpts): number {
   return proc.exitCode ?? 1
 }
 
+/**
+ * Spawns a command synchronously, inheriting stdio.
+ * Throws (via {@link die}) if the command exits non-zero.
+ */
 function run(cmd: string, args: string[], opts?: SpawnOpts): void {
   const code = runRaw(cmd, args, opts)
   if (code !== 0) {
@@ -72,6 +83,10 @@ function run(cmd: string, args: string[], opts?: SpawnOpts): void {
   }
 }
 
+/**
+ * Spawns a command synchronously, inheriting stdio.
+ * Logs a warning and continues if the command exits non-zero.
+ */
 function runBestEffort(cmd: string, args: string[], opts?: SpawnOpts): void {
   const code = runRaw(cmd, args, opts)
   if (code !== 0) {
@@ -79,15 +94,47 @@ function runBestEffort(cmd: string, args: string[], opts?: SpawnOpts): void {
   }
 }
 
+/** Resolves the absolute path of an executable using Bun's `which`. */
 function which(bin: string): string | null {
   return Bun.which(bin) ?? null
 }
 
-function ensureBunBinInPath(): void {
-  const home = process.env.HOME ?? process.env.USERPROFILE
-  if (!home) die('Neither HOME nor USERPROFILE is set — cannot locate ~/.bun/bin')
+/**
+ * Returns the absolute path of Bun's configured global bin directory,
+ * preferring `bun pm bin -g` when available, then $BUN_INSTALL, then
+ * the default `~/.bun/bin`.
+ */
+function getBunGlobalBinDir(): string {
+  try {
+    const proc = Bun.spawnSync(['bun', 'pm', 'bin', '-g'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      env: process.env as Record<string, string>
+    })
+    if (proc.exitCode === 0) {
+      const dir = new TextDecoder().decode(proc.stdout).trim()
+      if (dir) return dir
+    }
+  } catch {
+    console.warn('Unable to query bun pm bin -g, falling back to env-based inference')
+  }
 
-  const bunBin = join(home, '.bun', 'bin')
+  const bunInstall = process.env.BUN_INSTALL
+  if (bunInstall) {
+    return join(bunInstall, 'bin')
+  }
+
+  const home = process.env.HOME ?? process.env.USERPROFILE
+  if (!home) {
+    die('Cannot determine Bun global bin directory. Set HOME, USERPROFILE, or BUN_INSTALL.')
+  }
+  return join(home, '.bun', 'bin')
+}
+
+/**
+ * Ensures Bun's global bin directory is present in the process PATH.
+ */
+function ensureBunBinInPath(): void {
+  const bunBin = getBunGlobalBinDir()
   const pathVar = process.env.PATH ?? ''
 
   if (!pathVar.split(delimiter).includes(bunBin)) {
@@ -327,6 +374,10 @@ function moveIntoStore(srcPath: string, destPath: string): void {
   }
 }
 
+/**
+ * Scans the workspace glob patterns and returns a map of every local package
+ * with metadata needed for the rest of the pipeline.
+ */
 function discoverWorkspacePackages(
   repoRoot: string,
   workspaceGlobs: string[]
@@ -347,9 +398,11 @@ function discoverWorkspacePackages(
         const pkgData = JSON.parse(readFileSync(absPath, 'utf-8'))
         if (!pkgData.name) continue
 
+        // Only runtime deps (dependencies + peerDependencies) are needed for the
+        // install graph.  devDependencies are used during build but are not
+        // required at runtime by the globally-installed commands.
         const allDeps = [
           ...Object.keys(pkgData.dependencies ?? {}),
-          ...Object.keys(pkgData.devDependencies ?? {}),
           ...Object.keys(pkgData.peerDependencies ?? {})
         ]
 
@@ -369,6 +422,10 @@ function discoverWorkspacePackages(
   return allPackagesMap
 }
 
+/**
+ * Builds a map from binary/command name to the workspace package that provides it.
+ * Warns when a command name is defined by multiple packages.
+ */
 function buildCommandToPackageMap(allPackagesMap: Map<string, PackageData>): Map<string, string> {
   const commandToPackage = new Map<string, string>()
   for (const [pkgName, pkg] of allPackagesMap.entries()) {
@@ -382,6 +439,10 @@ function buildCommandToPackageMap(allPackagesMap: Map<string, PackageData>): Map
   return commandToPackage
 }
 
+/**
+ * Resolves workspace glob patterns from the root package.json,
+ * supporting both array and object-with-packages shapes.
+ */
 function resolveWorkspaceGlobs(rootPkg: Record<string, unknown>): string[] {
   if (Array.isArray(rootPkg.workspaces)) {
     return rootPkg.workspaces
@@ -393,6 +454,11 @@ function resolveWorkspaceGlobs(rootPkg: Record<string, unknown>): string[] {
   return ['.']
 }
 
+/**
+ * Starting from the requested commands, performs a BFS over the local runtime
+ * dependency graph to find the minimal set of packages required, then returns
+ * them in topologically-sorted build order.
+ */
 function computeTopologicalOrder(
   targetCommands: string[],
   allPackagesMap: Map<string, PackageData>,
@@ -426,6 +492,10 @@ function computeTopologicalOrder(
   return topologicalSort(prunedPackagesMap)
 }
 
+/**
+ * Registers process signal handlers to clean up the temporary directory on exit.
+ * Returns a callable cleanup function for explicit invocation.
+ */
 function setupCleanup(tmpDir: string): () => void {
   let cleanedUp = false
   function cleanup(): void {
@@ -451,6 +521,10 @@ function setupCleanup(tmpDir: string): () => void {
   return cleanup
 }
 
+/**
+ * Iterates the topologically-sorted packages, conditionally runs `bun run build`,
+ * packs each one, and moves the resulting tarball into the persistent archive store.
+ */
 function buildAndPackPackages(
   topoOrder: string[],
   packagesMap: Map<string, PackageData>,
@@ -491,6 +565,10 @@ function buildAndPackPackages(
   }
 }
 
+/**
+ * Uninstalls existing global installations in reverse topological order.
+ * Uses best-effort removal so missing packages do not abort the script.
+ */
 function uninstallOldGlobals(topoOrder: string[]): void {
   log('\nRemoving existing global installations (reverse topological order)...')
   const removeOrder = [...topoOrder].reverse()
@@ -499,16 +577,53 @@ function uninstallOldGlobals(topoOrder: string[]): void {
   }
 }
 
+/**
+ * Verifies that none of the target commands are currently reachable in PATH.
+ * If a stale binary remains inside Bun's global bin directory after `bun remove -g`,
+ * it is force-removed and logged. Any binary found outside the Bun global bin
+ * directory is treated as an unexpected collision and aborts the script.
+ */
 function verifyCommandsAbsent(targetCommands: string[]): void {
   log('\nVerifying absence of target commands in PATH...')
+  const bunBinDir = getBunGlobalBinDir()
+
   for (const bin of targetCommands) {
-    const resolved = which(bin)
-    if (resolved !== null) {
-      die(`Binary '${bin}' is still present at: ${resolved}`)
+    let resolved = which(bin)
+    if (resolved === null) continue
+
+    const normalizedResolved = resolve(resolved)
+    const normalizedBunBinDir = resolve(bunBinDir)
+    const isInBunBinDir =
+      normalizedResolved.startsWith(normalizedBunBinDir + sep) ||
+      normalizedResolved === normalizedBunBinDir
+
+    if (isInBunBinDir) {
+      log(
+        `  WARNING: '${bin}' is still present at ${resolved} after uninstall. Removing stale entry...`
+      )
+      try {
+        rmSync(resolved, { force: true })
+      } catch (err: unknown) {
+        die(
+          `Failed to remove stale binary '${bin}' at ${resolved}: ${err instanceof Error ? err.message : String(err)}`
+        )
+      }
+      // Re-verify after manual removal — if something else resolves the
+      // same name (e.g. a system package further down in PATH), we treat
+      // that as a legitimate collision.
+      resolved = which(bin)
+      if (resolved !== null) {
+        die(`Binary '${bin}' is still present at: ${resolved} after attempted removal`)
+      }
+    } else {
+      die(`Binary '${bin}' is still present at: ${resolved} (outside Bun global bin dir)`)
     }
   }
 }
 
+/**
+ * Installs each required package globally from its cached archive using `bun add -g`.
+ */
 function installPackages(topoOrder: string[], packagesMap: Map<string, PackageData>): void {
   log('\nInstalling packages globally...')
   for (const pkgName of topoOrder) {
@@ -521,6 +636,10 @@ function installPackages(topoOrder: string[], packagesMap: Map<string, PackageDa
   }
 }
 
+/**
+ * Verifies that each target command is now reachable in PATH after installation.
+ * Throws (via {@link die}) if any command is missing.
+ */
 function verifyCommandsPresent(targetCommands: string[]): void {
   log('\nVerifying presence of target commands in PATH...')
   for (const bin of targetCommands) {
@@ -532,6 +651,11 @@ function verifyCommandsPresent(targetCommands: string[]): void {
   }
 }
 
+/**
+ * Entry point: discovers the workspace, prunes the graph to the requested
+ * commands, builds and packs the required packages, then installs them
+ * globally and verifies the resulting binaries.
+ */
 function main(): void {
   const repoRoot = findWorkspaceRoot(import.meta.dir)
   const rootPkgPath = join(repoRoot, 'package.json')
