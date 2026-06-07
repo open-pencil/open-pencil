@@ -25,7 +25,7 @@ bun run check
 Package publishing changes should also run:
 
 ```sh
-bun scripts/smoke-packages.ts
+bun run test:packages
 ```
 
 ## Code conventions

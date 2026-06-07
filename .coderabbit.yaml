@@ -13,19 +13,19 @@ reviews:
   pre_merge_checks:
     title:
       mode: "error"
-      requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Fail titles that are non-English, vague, placeholder-like, or do not identify the actual change."
+      requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Request a clearer title when it is non-English, vague, placeholder-like, or does not identify the actual change."
     description:
       mode: "warning"
     custom_checks:
-      - name: "PR Hygiene: English"
+      - name: "PR Readability: English"
         mode: "error"
-        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Fail when the PR title or body is not primarily English, except for code identifiers, file paths, logs, error messages, and short quoted examples."
-      - name: "PR Hygiene: Template"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Request English for the PR title and body when they are not primarily English, except for code identifiers, file paths, logs, error messages, and short quoted examples."
+      - name: "PR Description: Template"
         mode: "warning"
-        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Warn when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments. Do not treat missing exact headings as a failure when the author otherwise explains the change."
-      - name: "PR Hygiene: Substance"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Suggest cleanup when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments. Do not treat missing exact headings as a problem when the author otherwise explains the change."
+      - name: "PR Description: Context"
         mode: "warning"
-        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Warn when the PR body does not explain what changed, why it changed, or how it was validated. Do not call a focused PR low-effort solely because it needs template cleanup."
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Suggest adding context when the PR body does not explain what changed, why it changed, or how it was validated. Do not call a focused PR low-effort solely because it needs template cleanup."
 
 chat:
   auto_reply: true

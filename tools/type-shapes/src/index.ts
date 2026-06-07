@@ -7,7 +7,8 @@ const roots = [
   'packages/cli/src',
   'packages/mcp/src',
   'tests',
-  'scripts'
+  'scripts',
+  'tools'
 ]
 
 type ShapeLocation = { file: string; line: number; name: string }

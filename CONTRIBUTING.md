@@ -37,11 +37,11 @@ Pull requests must be reviewable without guessing the author's intent.
 - Document validation, such as `bun run check`, targeted tests, docs-only review, or an explicit reason validation was not run.
 - Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
 
-### Low-effort PRs
+### Reviewability
 
 Do not submit placeholder PRs. Remove template comments before opening a PR. Do not leave dangling issue references such as `Fixes #`, `TODO`, `TBD`, empty headings, unfilled sections, or similar unfinished text.
 
-CodeRabbit may flag PR Hygiene issues for maintainers to review. Missing template sections or validation details are normal review feedback; they are not, by themselves, a personal judgment on the contributor. Maintainers may close PRs manually when they are clearly low-effort, automated, not written in English, unrelated to the project, or impossible to review without substantial guesswork. If you are unsure how to fix something, please open a detailed issue instead of submitting a placeholder PR.
+CodeRabbit may flag PR description or readability issues for maintainers to review. Missing template sections or validation details are normal review feedback; they are not, by themselves, a personal judgment on the contributor. Maintainers may close PRs manually when they are clearly automated, not written in English, unrelated to the project, or impossible to review without substantial guesswork. If you are unsure how to fix something, please open a detailed issue instead of submitting a placeholder PR.
 
 ## Quality checks
 
