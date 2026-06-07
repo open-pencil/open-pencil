@@ -101,7 +101,10 @@ export function buildAndPackPackages(
     // dependency pinning never mutates the real workspace. This avoids signal-
     // safety issues (SIGINT can skip finally blocks that restore mutated files).
     const packDir = join(tmpDir, randomUUID())
-    cpSync(pkg.dir, packDir, { recursive: true, filter: (src) => !src.includes('node_modules') })
+    cpSync(pkg.dir, packDir, {
+      recursive: true,
+      filter: (src) => !src.split(/[/\\]/).some((seg) => seg === 'node_modules')
+    })
 
     // Pin workspace-local dependencies to their already-packed tarball paths
     // in the throwaway copy so that the packed archive's package.json points
