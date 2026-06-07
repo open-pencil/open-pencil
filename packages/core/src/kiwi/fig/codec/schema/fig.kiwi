@@ -287,6 +287,7 @@ enum BooleanOperation {
   INTERSECT = 1;
   SUBTRACT = 2;
   XOR = 3;
+  EXCLUDE = 4;
 }
 
 enum TextAlignHorizontal {
