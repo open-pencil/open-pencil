@@ -113,6 +113,11 @@
       "default": "./dist/kiwi/index.js",
       "import": "./dist/kiwi/index.js"
     },
+    "./clipboard": {
+      "types": "./dist/clipboard.d.ts",
+      "default": "./dist/clipboard.js",
+      "import": "./dist/clipboard.js"
+    },
     "./constants": {
       "types": "./dist/constants.d.ts",
       "default": "./dist/constants.js",

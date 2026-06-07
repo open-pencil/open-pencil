@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  pre_merge_checks:
+    title:
+      mode: "error"
+      requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Request a clearer title when it is non-English, vague, placeholder-like, or does not identify the actual change."
+    description:
+      mode: "warning"
+    custom_checks:
+      - name: "PR Readability: English"
+        mode: "error"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Request English for the PR title and body when they are not primarily English, except for code identifiers, file paths, logs, error messages, and short quoted examples."
+      - name: "PR Description: Template"
+        mode: "warning"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Suggest cleanup when the PR body contains unfilled template placeholders, dangling issue references, TODO/TBD text, empty headings, or template comments. Do not treat missing exact headings as a problem when the author otherwise explains the change."
+      - name: "PR Description: Context"
+        mode: "warning"
+        instructions: "Use CONTRIBUTING.md → Pull requests as the source of truth. Suggest adding context when the PR body does not explain what changed, why it changed, or how it was validated. Do not call a focused PR low-effort solely because it needs template cleanup."
+
+chat:
+  auto_reply: true
