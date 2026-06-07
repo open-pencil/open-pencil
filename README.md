@@ -238,9 +238,37 @@ See the [roadmap](https://inkly.dev/development/roadmap) for product direction a
 
 ```sh
 bun install
-bun run dev        # Dev server at localhost:1420
-bun run tauri dev  # Desktop app (requires Rust)
+
+# 推奨 — API server (3001) + Vite (1420) を 1 コマンドで起動
+cp .env.development.example .env.development   # 初回のみ
+bun run dev:full
 ```
+
+`bun run dev:full` は `scripts/dev.sh` 経由で API server と Vite の両方を並行起動し、`Ctrl+C` で一括停止する。
+Editor は `http://localhost:1420/` または `http://localhost:1420/editor` の両方で起動する (後者は Landing PR マージ後に新トップページから案内するエイリアス)。
+`.env.development` のテスト値は本番では使わない (ダミー dev 値)。
+ローカルで一時的に値を上書きしたい場合は `.env.development.local` を作って override する (Vite は local 系を最優先で解決し、 `dev:full` の API 起動も local 系を後段で読み込む)。
+
+`/api/test/*` 系の破壊的 helper (DB 全削除など) はテンプレでは無効化済み。
+Playwright e2e や Google ログイン (テストモード) を試したい時だけ `.env.development.local` で `INKLY_API_AUTH_ENABLE_TEST_UTILS=1` と `VITE_INKLY_AUTH_TEST_MODE=1` を立てる。
+ただし、 **test utils を有効化したまま Vite を LAN や公開ネットワークに露出させないこと**:
+
+- `bun run dev --host` / `bun run dev:full -- --host` 等で 0.0.0.0 bind しない
+- `TAURI_DEV_HOST` 経由で外部端末から繋がない
+- ngrok / Cloudflare Tunnel / reverse proxy 等で外部公開しない
+- 共有 dev server を再利用しない
+
+Vite が外部から繋がる状態だと、 同 dev server の `/api` proxy 経由で `/api/test/reset` (users / boards / teams / sessions 等を全削除) や `/api/auth/test/login` (任意ユーザーとして認証) に **ローカルホスト判定をすり抜けて到達可能**。 API 側でトークン guard が追加されるまでは、 localhost のみで開く運用にする。
+
+#### 個別に起動したい場合
+
+```sh
+bun run dev        # Vite のみ (localhost:1420)
+bun run dev:api    # API server のみ (localhost:3001)
+bun run tauri dev  # Desktop app (Rust 必要)
+```
+
+API を立てずに Vite だけで動かすと `/dashboard` `/boards` 等の auth 必須画面で「Failed to load session」エラーになる。Editor (`/` または `/editor`) は API なしでも閲覧できる。
 
 ### Quality gates
 

@@ -32,7 +32,17 @@ public/canvaskit-webgpu/
 test-results/
 # Git worktrees for parallel agent work
 .worktrees/
-.env
+# すべての .env* を ignore してから *.example / *.template / .envrc だけ復帰させる
+# (.env.staging / .env.test / .env.preview / packages/api/.env.* 等の派生 mode に対しても
+# live secret 流出を防ぐため、 必ず明示 example 経路に限定する)
+# .envrc (direnv policy) と .env*.template (説明用テンプレ) は秘密を含まない想定で track 許可
+.env*
+!.env*.example
+!**/.env*.example
+!.env*.template
+!**/.env*.template
+!.envrc
+!**/.envrc
 **/.context/
 packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/
