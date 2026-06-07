@@ -60,8 +60,8 @@ describe('transport/paths', () => {
         expect(info?.isDirectory()).toBe(true)
       } finally {
         process.env.OPENPENCIL_MCP_SOCKET = originalSocket
-        const { unlink } = await import('node:fs/promises')
-        await unlink(testDir).catch(() => null)
+        const { rm } = await import('node:fs/promises')
+        await rm(testDir, { recursive: true, force: true }).catch(() => null)
       }
     })
   })

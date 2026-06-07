@@ -20,23 +20,25 @@ describe('MCP path scoping', () => {
   })
 
   test('rejects path outside root', async () => {
-    expect(() => resolveSafePath('/etc/passwd', root)).toThrow('outside the allowed root')
+    await expect(resolveSafePath('/etc/passwd', root)).rejects.toThrow('outside the allowed root')
   })
 
   test('rejects path traversal', async () => {
-    expect(() => resolveSafePath(`${root}/../../../etc/passwd`, root)).toThrow(
+    await expect(resolveSafePath(`${root}/../../../etc/passwd`, root)).rejects.toThrow(
       'outside the allowed root'
     )
   })
 
   test('rejects sibling directory', async () => {
-    expect(() => resolveSafePath(`${root}/../other-root/file.fig`, root)).toThrow(
+    await expect(resolveSafePath(`${root}/../other-root/file.fig`, root)).rejects.toThrow(
       'outside the allowed root'
     )
   })
 
   test('rejects root prefix trick (root-evil)', async () => {
-    expect(() => resolveSafePath(`${root}-evil/file.fig`, root)).toThrow('outside the allowed root')
+    await expect(resolveSafePath(`${root}-evil/file.fig`, root)).rejects.toThrow(
+      'outside the allowed root'
+    )
   })
 
   test('rejects symlink pointing outside root', async () => {

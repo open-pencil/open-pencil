@@ -167,9 +167,8 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
     runtimeAutomationAuthToken = discovered ?? authToken
     return {
       disconnect: () => {
-        // Await the kill so the child process has actually exited before
-        // the editor view is destroyed — otherwise the MCP server can outlive
-        // its parent and the user sees ghost processes.
+        // Send SIGTERM to the child process. Fire-and-forget to avoid blocking
+        // if the child is hung. Errors are logged for debugging.
         void child.kill().catch((e) => {
           console.error('[MCP] Failed to kill server:', e)
         })
