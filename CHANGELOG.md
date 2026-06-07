@@ -2,12 +2,9 @@
 
 ## Unreleased
 
-### Changed
-
-- Add JSX authoring support for components, component sets, and instances.
-
 ### Fixes
 
+- Desktop "Share This File" now copies a public `https://app.openpencil.dev/share/{roomId}` link (instead of an internal `tauri://localhost` URL that only the sharer's own desktop app can open). Recipients can now join from any browser; collaboration remains P2P (Trystero + WebRTC + Yjs).
 - Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
 - Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
 - Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.

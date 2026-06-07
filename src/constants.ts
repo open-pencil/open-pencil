@@ -1,3 +1,5 @@
+import { IS_BROWSER, IS_TAURI } from '@open-pencil/core/constants'
+
 import ACP_DESIGN_CONTEXT from '@/app/ai/acp/design-context.md'
 
 export {
@@ -64,6 +66,23 @@ import type { Color } from '@open-pencil/core/types'
 export const TRYSTERO_APP_ID = 'openpencil'
 export const ROOM_ID_LENGTH = 8
 export const ROOM_ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+/**
+ * Canonical public origin for the web app.
+ * Used to generate shareable collaboration links from the desktop (Tauri) build,
+ * where window.location.origin is the internal tauri:// scheme (unusable by others).
+ */
+export const WEB_APP_ORIGIN = 'https://app.openpencil.dev'
+
+/**
+ * Returns a shareable collaboration URL for the given roomId.
+ * On desktop (Tauri), always returns the public web app URL so recipients can join
+ * from a browser. On web, uses the current origin (supports production + preview deploys).
+ */
+export function getShareUrl(roomId: string): string {
+  const base = IS_TAURI || !IS_BROWSER ? WEB_APP_ORIGIN : window.location.origin
+  return `${base}/share/${roomId}`
+}
 
 export const PEER_COLORS: Color[] = [
   { r: 0.96, g: 0.26, b: 0.21, a: 1 },
