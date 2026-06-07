@@ -14,7 +14,8 @@
       {
         "title": "OpenPencil",
         "width": 1280,
-        "height": 800
+        "height": 800,
+        "dragDropEnabled": false
       }
     ],
     "security": {
