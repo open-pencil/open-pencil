@@ -1,3 +1,5 @@
+# Add image vectorization
+
 ## Why
 
 OpenPencil can place raster images but can't turn them into editable vectors — a dropped-in logo or icon stays a locked bitmap. A remote raster→SVG vectorizer (Recraft) produces faithful, editable SVG paths at ~$0.01/image. Crucially, both Recraft-direct (`external.api.recraft.ai`) and fal (`fal-ai/recraft/vectorize`) expose **browser-callable** APIs (CORS verified live), so the conversion can run entirely client-side in the web PWA *and* desktop with the user's own key — the same direct-fetch pattern as the existing OpenAI/Anthropic chat providers. No proxy or backend is required.

@@ -1,3 +1,5 @@
+# Image vectorization — spec delta
+
 ## ADDED Requirements
 
 ### Requirement: Convert to Vector is offered only for a single image node

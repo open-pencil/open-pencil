@@ -1,3 +1,5 @@
+# Image vectorization — tasks
+
 ## 1. Provider selection & key storage
 
 - [x] 1.1 In `src/app/ai/chat/storage.ts` add `vectorizeProvider = useLocalStorage<'recraft'|'fal'>('open-pencil:vectorize-provider', 'recraft')`, `recraftApiKey = useLocalStorage('open-pencil:recraft-api-key', '')`, and `falApiKey = useLocalStorage('open-pencil:fal-api-key', '')` next to `pexelsApiKey`/`unsplashAccessKey`. Do NOT touch `AI_PROVIDERS`/`model.ts`.

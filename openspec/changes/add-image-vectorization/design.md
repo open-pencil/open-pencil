@@ -1,3 +1,5 @@
+# Image vectorization — design
+
 ## Context
 
 OpenPencil places raster images as a `RECTANGLE`/`FRAME` node with an `IMAGE` fill (`{type:'IMAGE', imageHash}`); the bytes live in `SceneGraph.images: Map<hash, Uint8Array>` (`packages/core/src/scene-graph`). The editor already imports SVG into editable vectors: `extractPaths` (`packages/core/src/icons/svg.ts`) → `parseSVGPath` (`io/formats/svg/parse-path.ts`) → `createVectorFromPath` (`tools/create/svg.ts`) builds a FRAME of `VECTOR` children from a viewBox. Undoable multi-mutation edits run through `store.undo.runBatch(label, fn)` (`scene-graph/undo.ts`); `placeImageNode` (`editor/clipboard/images.ts`) is the reference for image-byte access and the forward/inverse pattern.

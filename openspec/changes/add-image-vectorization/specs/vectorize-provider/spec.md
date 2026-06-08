@@ -1,3 +1,5 @@
+# Vectorize provider — spec delta
+
 ## ADDED Requirements
 
 ### Requirement: Vectorization provider is selectable, defaulting to Recraft
