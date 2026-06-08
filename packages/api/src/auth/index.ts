@@ -183,7 +183,14 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
       ? {
           google: {
             clientId: config.google.clientId,
-            clientSecret: config.google.clientSecret
+            clientSecret: config.google.clientSecret,
+            // Google OAuth の profile レスポンスから picture URL を image にマッピング
+            mapProfileToUser: (profile) => ({
+              name: profile.name,
+              email: profile.email,
+              image: profile.picture ?? null,
+              emailVerified: profile.email_verified ?? false
+            })
           }
         }
       : undefined
