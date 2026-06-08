@@ -5,28 +5,28 @@ const year = computed(() => new Date().getFullYear())
 
 const features = [
   {
-    title: 'Native .fig support',
-    body: 'Open and edit Figma files directly — no import, no conversion.'
+    title: '.fig ファイルをネイティブ対応',
+    body: 'Figma ファイルを直接開いて編集できます。インポートや変換は不要。'
   },
   {
-    title: 'Real-time collaboration',
-    body: 'Peer-to-peer via WebRTC. No server, no account required.'
+    title: 'リアルタイム共同編集',
+    body: 'WebRTC による P2P 接続。サーバー不要、 アカウント登録も不要で始められます。'
   },
   {
-    title: 'AI-powered design',
-    body: 'Connect any LLM (OpenRouter / Anthropic / OpenAI / Google AI). 90+ tools.'
+    title: 'AI 駆動のデザイン',
+    body: '任意の LLM (OpenRouter / Anthropic / OpenAI / Google AI) を接続可能。 90 種類以上のツールを搭載。'
   },
   {
-    title: 'Programmable',
-    body: 'Headless CLI, MCP server, Figma Plugin API via `eval`, Vue SDK.'
+    title: 'プログラマブル',
+    body: 'ヘッドレス CLI、 MCP サーバー、 Figma Plugin API、 Vue SDK を提供。'
   },
   {
-    title: 'Lightweight desktop',
-    body: '~7 MB Tauri v2 app for macOS, Windows, Linux. Also runs as PWA.'
+    title: '軽量デスクトップアプリ',
+    body: '約 7 MB の Tauri v2 アプリ (macOS / Windows / Linux)。 PWA としても動作。'
   },
   {
-    title: 'Open source',
-    body: 'MIT licensed. Self-host or use the hosted version at app.inkly.dev.'
+    title: 'オープンソース',
+    body: 'MIT ライセンス。 セルフホスト、 または app.inkly.dev のホスト版を利用できます。'
   }
 ]
 </script>
@@ -37,27 +37,27 @@ const features = [
       <div class="landing__brand">Pencil Editor</div>
       <nav class="landing__nav">
         <a href="https://github.com/cardene777/open-pencil" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://inkly.dev" target="_blank" rel="noopener">Docs</a>
+        <a href="https://inkly.dev" target="_blank" rel="noopener">ドキュメント</a>
       </nav>
     </header>
 
     <section class="hero">
       <h1 class="hero__title">
-        Open-source design editor<br />
-        <span class="hero__accent">with native .fig support</span>
+        オープンソースのデザインエディタ<br />
+        <span class="hero__accent">.fig ファイルにネイティブ対応</span>
       </h1>
       <p class="hero__lead">
-        Edit Figma files directly. Collaborate in real-time. Build with AI.
-        All open source, all yours.
+        Figma ファイルを直接編集。 リアルタイムで共同作業。 AI でデザインを生成。<br />
+        すべてオープンソース、 すべてあなたのものに。
       </p>
       <div class="hero__cta">
-        <router-link to="/editor" class="btn btn--primary">Launch Editor</router-link>
-        <router-link to="/dashboard" class="btn btn--ghost">Open Dashboard</router-link>
+        <router-link to="/editor" class="btn btn--primary">エディタを開く</router-link>
+        <router-link to="/dashboard" class="btn btn--ghost">ダッシュボードを開く</router-link>
       </div>
     </section>
 
     <section class="features">
-      <h2 class="features__title">Features</h2>
+      <h2 class="features__title">機能</h2>
       <div class="features__grid">
         <article v-for="feature in features" :key="feature.title" class="feature">
           <h3 class="feature__title">{{ feature.title }}</h3>
