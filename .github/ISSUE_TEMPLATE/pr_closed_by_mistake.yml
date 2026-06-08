@@ -1,0 +1,42 @@
+name: PR closed by mistake
+description: Ask us to re-check a low-effort PR closure
+title: "PR closure review: "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when you believe CodeRabbit or maintainers closed your PR by mistake. If you are not sure how to fix something, open a regular bug report or feature request instead.
+
+  - type: input
+    id: pr-link
+    attributes:
+      label: Closed PR
+      description: Link to the PR that was closed.
+      placeholder: https://github.com/open-pencil/open-pencil/pull/123
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why was this closed by mistake?
+      description: Explain what the PR does, why it is not low-effort, and which PR Hygiene finding you believe was wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add links, screenshots, validation details, or any missing context that helps us reassess the PR.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I read CONTRIBUTING.md and understand the PR title/body/validation expectations.
+          required: true
+        - label: I included the closed PR link and enough context for maintainers to review the closure.
+          required: true

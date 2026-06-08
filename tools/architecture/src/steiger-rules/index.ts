@@ -1,186 +1,19 @@
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-type TreeEntry = {
-  type: 'file' | 'folder'
-  path: string
-  children?: TreeEntry[]
-}
-
-type Diagnostic = {
-  message: string
-  location: { path: string; line?: number; column?: number }
-}
-
-type RuleResult = { diagnostics: Diagnostic[] }
-type Rule = { name: string; check: (root: TreeEntry) => RuleResult }
-
-type FileRuleCheck = (sourceRel: string) => string | null
-
-type TextRuleCheck = (
-  sourceRel: string,
-  content: string
-) => Array<{ message: string; line?: number; column?: number }>
-
-const FILE_PREFIX_GROUP_ALLOWLIST = new Set([
-  'packages/core/src/lint/rules::no',
-  'tests/engine::visual'
-])
-
-type ImportRef = {
-  specifier: string
-  line: number
-  column: number
-}
-
-const TEXT_EXTENSIONS = new Set(['.ts', '.tsx', '.vue', '.js', '.jsx', '.mjs', '.mts'])
-const ROOT_MARKDOWN_ALLOWLIST = new Set([
-  'AGENTS.md',
-  'CHANGELOG.md',
-  'CONTRIBUTING.md',
-  'README.md',
-  'SECURITY.md'
-])
-const PACKAGE_ALIASES: Record<string, string> = {
-  '#core/': 'packages/core/src/',
-  '#vue/': 'packages/vue/src/',
-  '#cli/': 'packages/cli/src/',
-  '#mcp/': 'packages/mcp/src/'
-}
-
-const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
-  '#core/': 'packages/core/src/',
-  '#vue/': 'packages/vue/src/',
-  '#cli/': 'packages/cli/src/',
-  '#mcp/': 'packages/mcp/src/'
-}
-
-function normalizePath(filePath: string) {
-  return filePath.split(path.sep).join('/')
-}
-
-function relativePath(rootPath: string, filePath: string) {
-  return normalizePath(path.relative(rootPath, filePath))
-}
-
-function collectFiles(entry: TreeEntry, files: string[] = []) {
-  if (entry.type === 'file') {
-    if (TEXT_EXTENSIONS.has(path.extname(entry.path))) files.push(entry.path)
-    return files
-  }
-  for (const child of entry.children ?? []) collectFiles(child, files)
-  return files
-}
-
-function collectFolders(entry: TreeEntry, folders: TreeEntry[] = []) {
-  if (entry.type !== 'folder') return folders
-  folders.push(entry)
-  for (const child of entry.children ?? []) collectFolders(child, folders)
-  return folders
-}
-
-function importsIn(content: string): ImportRef[] {
-  const imports: ImportRef[] = []
-  const patterns = [
-    /^\s*(?:import|export)\s+(?:type\s+)?(?:[^'";]*?\s+from\s*)?['"]([^'"]+)['"]/gm,
-    /^\s*import\(\s*['"]([^'"]+)['"]\s*\)/gm
-  ]
-
-  for (const pattern of patterns) {
-    for (const match of content.matchAll(pattern)) {
-      const before = content.slice(0, match.index)
-      const lines = before.split('\n')
-      imports.push({
-        specifier: match[1],
-        line: lines.length,
-        column: lines.at(-1)?.length ?? 0
-      })
-    }
-  }
-  return imports
-}
-
-function resolveImport(sourceRel: string, specifier: string): string | null {
-  if (specifier.startsWith('@/')) return `src/${specifier.slice(2)}`
-
-  for (const [alias, target] of Object.entries(PACKAGE_ALIASES)) {
-    if (specifier.startsWith(alias)) return `${target}${specifier.slice(alias.length)}`
-  }
-
-  if (specifier.startsWith('.')) {
-    return normalizePath(path.join(path.dirname(sourceRel), specifier))
-  }
-
-  return null
-}
-
-function createTextRule(name: string, checkText: TextRuleCheck): Rule {
-  return {
-    name,
-    check(root) {
-      const diagnostics: Diagnostic[] = []
-      for (const file of collectFiles(root)) {
-        const sourceRel = relativePath(root.path, file)
-        const content = readFileSync(file, 'utf8')
-        for (const result of checkText(sourceRel, content)) {
-          diagnostics.push({
-            message: result.message,
-            location: { path: file, line: result.line, column: result.column }
-          })
-        }
-      }
-      return { diagnostics }
-    }
-  }
-}
-
-function createFileRule(name: string, checkFile: FileRuleCheck): Rule {
-  return {
-    name,
-    check(root) {
-      const diagnostics: Diagnostic[] = []
-      for (const file of collectFiles(root)) {
-        const sourceRel = relativePath(root.path, file)
-        const message = checkFile(sourceRel)
-        if (!message) continue
-        diagnostics.push({ message, location: { path: file } })
-      }
-      return { diagnostics }
-    }
-  }
-}
-
-function createImportRule(
-  name: string,
-  checkImport: (sourceRel: string, specifier: string, resolved: string | null) => string | null
-): Rule {
-  return {
-    name,
-    check(root) {
-      const diagnostics: Diagnostic[] = []
-      for (const file of collectFiles(root)) {
-        const sourceRel = relativePath(root.path, file)
-        const content = readFileSync(file, 'utf8')
-        for (const imported of importsIn(content)) {
-          const resolved = resolveImport(sourceRel, imported.specifier)
-          const message = checkImport(sourceRel, imported.specifier, resolved)
-          if (!message) continue
-          diagnostics.push({
-            message,
-            location: { path: file, line: imported.line, column: imported.column }
-          })
-        }
-      }
-      return { diagnostics }
-    }
-  }
-}
-
-function filePrefix(filePath: string): string | null {
-  const name = path.basename(filePath).replace(/\.(test|spec|bench)?\.?[cm]?[tj]sx?$|\.vue$/, '')
-  const match = /^([a-z][a-z0-9]+)-[a-z0-9-]+$/.exec(name)
-  return match?.[1] ?? null
-}
+import {
+  collectFolders,
+  createFileRule,
+  createImportRule,
+  createTextRule,
+  filePrefix,
+  FILE_PREFIX_GROUP_ALLOWLIST,
+  PACKAGE_ALIASES,
+  PACKAGE_ALIAS_OWNERS,
+  relativePath,
+  ROOT_MARKDOWN_ALLOWLIST,
+  TEXT_EXTENSIONS,
+  type Rule
+} from './support.ts'
 
 const preferDomainFoldersOverFilenamePrefixes: Rule = {
   name: 'open-pencil/prefer-domain-folders-over-filename-prefixes',
@@ -209,6 +42,34 @@ const preferDomainFoldersOverFilenamePrefixes: Rule = {
     return { diagnostics }
   }
 }
+
+const scriptsAreEntrypointShims = createTextRule(
+  'open-pencil/scripts-are-entrypoint-shims',
+  (sourceRel, content) => {
+    if (!sourceRel.startsWith('scripts/')) return []
+    if (/^#!\/usr\/bin\/env bun\s+import ['"]\.\.\/tools\/[^'"]+['"]\s*;?$/u.test(content.trim()))
+      return []
+    return [
+      {
+        message: 'Root scripts must be tiny shims. Move implementation logic into tools/<domain>/.'
+      }
+    ]
+  }
+)
+
+const TOOL_LAYOUT_MESSAGE =
+  'Tool files must live under tools/<domain>/src/** or tools/<domain>/tests/*.test.ts.'
+
+const strictToolsLayout = createFileRule('open-pencil/strict-tools-layout', (sourceRel) => {
+  if (!sourceRel.startsWith('tools/') || !TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
+  if (sourceRel === 'tools/test.ts') return null
+  const [, domain, segment] = sourceRel.split('/')
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(domain))
+    return 'Tool package folders must use kebab-case domain names.'
+  if (segment === 'src') return null
+  if (segment === 'tests' && sourceRel.endsWith('.test.ts')) return null
+  return TOOL_LAYOUT_MESSAGE
+})
 
 const strictTestFilePlacement = createFileRule(
   'open-pencil/strict-test-file-placement',
@@ -549,6 +410,8 @@ export const openPencilArchitecturePlugin = {
   meta: { name: 'open-pencil-architecture', version: '0.0.0' },
   ruleDefinitions: [
     preferDomainFoldersOverFilenamePrefixes,
+    scriptsAreEntrypointShims,
+    strictToolsLayout,
     strictTestFilePlacement,
     noMisplacedEngineTestDomainPaths,
     noKitchenSinkEngineBasicTests,

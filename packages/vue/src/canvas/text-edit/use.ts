@@ -19,7 +19,14 @@ import { focusTextAreaOnCanvasPointerDown, useTextEditingSession } from './texta
 export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Editor) {
   const textareaRef = shallowRef<HTMLTextAreaElement | null>(null)
   const { resetBlink, stopBlink } = createCaretBlink(store)
-  const { getEditingNode, insertText, deleteText } = createTextEditActions(store)
+  const {
+    getEditingNode,
+    insertText,
+    replaceComposedText,
+    restoreComposition,
+    finishComposition,
+    deleteText
+  } = createTextEditActions(store)
   const { toggleBold, toggleItalic, toggleUnderline } = createTextFormattingActions(store)
 
   const { handleCopy, handleCut, handlePaste } = createTextClipboardActions({
@@ -28,8 +35,22 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
     deleteText,
     resetBlink
   })
-  const { isComposing, onCompositionStart, onCompositionEnd, onInput, resetComposition } =
-    createTextCompositionHandlers({ textareaRef, getEditingNode, insertText, resetBlink })
+  const {
+    isComposing,
+    onCompositionStart,
+    onCompositionUpdate,
+    onCompositionEnd,
+    onInput,
+    resetComposition
+  } = createTextCompositionHandlers({
+    textareaRef,
+    getEditingNode,
+    insertText,
+    replaceComposedText,
+    restoreComposition,
+    finishComposition,
+    resetBlink
+  })
 
   const onKeyDown = createTextKeyDownHandler({
     store,
@@ -49,6 +70,7 @@ export function useTextEdit(canvasRef: Ref<HTMLCanvasElement | null>, store: Edi
 
   useEventListener(textareaRef, 'input', onInput)
   useEventListener(textareaRef, 'compositionstart', onCompositionStart)
+  useEventListener(textareaRef, 'compositionupdate', onCompositionUpdate)
   useEventListener(textareaRef, 'compositionend', onCompositionEnd)
   useEventListener(textareaRef, 'keydown', onKeyDown)
   useEventListener(canvasRef, 'mousedown', () =>

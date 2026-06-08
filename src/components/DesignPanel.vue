@@ -54,6 +54,7 @@ const { panels } = useI18n()
     <FillSection />
     <StrokeSection />
     <EffectsSection />
+    <ExportSection />
   </div>
 
   <!-- Single selection -->

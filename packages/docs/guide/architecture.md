@@ -2,7 +2,7 @@
 
 ## System Overview
 
-`mermaid
+```mermaid
 graph TB
     subgraph Tauri["Tauri v2 Shell"]
         subgraph Editor["Editor (Web)"]
@@ -22,7 +22,7 @@ graph TB
         MCP["MCP Server (90 tools, stdio+HTTP)"]
         Collab["P2P Collab (Trystero + Yjs)"]
     end
-`
+```
 
 ## Editor Layout
 

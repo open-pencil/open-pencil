@@ -49,6 +49,10 @@ function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: Yog
   })
 }
 
+function preservesImportedInstanceInternals(child: SceneNode): boolean {
+  return child.type === 'INSTANCE' && child.source.format === 'fig'
+}
+
 function recomputeGridChild(
   graph: SceneGraph,
   child: SceneNode,
@@ -89,6 +93,8 @@ export function applyYogaLayout(
     yogaIndex++
 
     updateChildFromYoga(graph, child, yogaChild)
+
+    if (preservesImportedInstanceInternals(child)) continue
 
     if (child.layoutMode !== 'NONE') {
       if (child.layoutMode === 'GRID' && child.visible && child.layoutPositioning !== 'ABSOLUTE') {

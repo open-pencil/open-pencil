@@ -6,6 +6,7 @@ import type { Color, GUID, Matrix, Vector } from '#core/types'
 
 import { stringToGuid } from './guid'
 import {
+  applyExportSettingsPluginData,
   mergePluginData,
   NODE_TYPE_PLUGIN_KEY,
   serializePluginRelaunchData,
@@ -665,6 +666,9 @@ export function sceneNodeToKiwiWithContext(
     size: exportNodeSize(node),
     transform: exportNodeTransform(context, node)
   }
+  if (node.type === 'GROUP') {
+    nc.resizeToFit = true
+  }
   // Only set strokeWeight/strokeAlign when the node has strokes in the scene
   // model. For imported nodes without strokes but with raw strokeWeight data
   // (e.g. text nodes, instance children with scaled strokes), the raw value
@@ -688,6 +692,7 @@ export function sceneNodeToKiwiWithContext(
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   applyRawFigmaNodeFields(context, node, nc)
 
+  applyExportSettingsPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {
