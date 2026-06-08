@@ -102,20 +102,12 @@ describe('MCP server /rpc auth skip', () => {
     }
 
     try {
-      // /rpc should return 503 when no browser connected (not 401)
-      const noAppResp = await fetch(`http://127.0.0.1:${httpPort}/rpc`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ command: 'tool', args: { name: 'get_current_page' } })
-      })
-      expect(noAppResp.status).toBe(503)
-
       // /health should show authRequired: false
       const healthResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
       const health = (await healthResp.json()) as HealthResponse
       expect(health.authRequired).toBe(false)
 
-      // Now connect a browser
+      // Connect a browser
       const graph = new SceneGraph()
       const browser = await connectMockBrowser(httpPort, graph)
 

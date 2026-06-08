@@ -7,6 +7,7 @@ import type { RpcJsonObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
 
 const RPC_TIMEOUT = 20_000
+const APP_WAIT_TIMEOUT = 10_000
 
 const APP_NOT_CONNECTED_MESSAGE =
   'OpenPencil app is not connected. STOP and tell the user: "The OpenPencil desktop app is not running, no document is open, or the desktop app is connected to a different MCP server. Please start OpenPencil, open a document, and try again." Do NOT attempt to start the app yourself or retry automatically.'
@@ -61,6 +62,7 @@ function createSettler<T>(resolve: (value: T) => void, reject: (error: Error) =>
 export function createBrowserRpcBridge({ authToken, onConnectionChange }: BrowserRpcBridgeOptions) {
   const pending = new Map<string, PendingRequest>()
   const clients = new Set<WebSocket>()
+  const connectionWaiters = new Set<PendingRequest>()
   let browserWs: WebSocket | null = null
   let browserRegistered = false
 
@@ -70,6 +72,43 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function isConnected(): boolean {
     return Boolean(browserWs && browserRegistered)
+  }
+
+  function notifyConnectionWaiters() {
+    for (const waiter of connectionWaiters) {
+      clearTimeout(waiter.timer)
+      connectionWaiters.delete(waiter)
+      waiter.resolve(undefined)
+    }
+  }
+
+  function rejectConnectionWaiters(reason: string) {
+    for (const waiter of connectionWaiters) {
+      clearTimeout(waiter.timer)
+      connectionWaiters.delete(waiter)
+      waiter.reject(new Error(reason))
+    }
+  }
+
+  function waitForConnection(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        connectionWaiters.delete(waiter)
+        reject(new Error(APP_NOT_CONNECTED_MESSAGE))
+      }, APP_WAIT_TIMEOUT)
+      const waiter: PendingRequest = {
+        resolve: () => {
+          clearTimeout(timer)
+          resolve()
+        },
+        reject: (error: Error) => {
+          clearTimeout(timer)
+          reject(error)
+        },
+        timer
+      }
+      connectionWaiters.add(waiter)
+    })
   }
 
   function rejectAllPending(reason: string) {
@@ -96,26 +135,34 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function sendRpc(body: Record<string, unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      const ws = browserWs
-      if (!ws || ws.readyState !== ws.OPEN || !browserRegistered) {
-        reject(new Error(APP_NOT_CONNECTED_MESSAGE))
-        return
-      }
-      const id = randomUUID()
-      const settle = createSettler(resolve, reject)
-      const timer = setTimeout(() => {
-        pending.delete(id)
-        settle.reject(new Error(`RPC timeout (${Math.round(RPC_TIMEOUT / 1000)}s)`))
-      }, RPC_TIMEOUT)
-      pending.set(id, { resolve: settle.resolve, reject: settle.reject, timer })
-      try {
-        ws.send(JSON.stringify({ type: 'request', id, ...body }))
-      } catch (e) {
-        clearTimeout(timer)
-        pending.delete(id)
-        if (!settle.isSettled()) {
-          settle.reject(e instanceof Error ? e : new Error(String(e)))
+      const doSend = () => {
+        const ws = browserWs
+        if (!ws || ws.readyState !== ws.OPEN || !browserRegistered) {
+          reject(new Error(APP_NOT_CONNECTED_MESSAGE))
+          return
         }
+        const id = randomUUID()
+        const settle = createSettler(resolve, reject)
+        const timer = setTimeout(() => {
+          pending.delete(id)
+          settle.reject(new Error(`RPC timeout (${Math.round(RPC_TIMEOUT / 1000)}s)`))
+        }, RPC_TIMEOUT)
+        pending.set(id, { resolve: settle.resolve, reject: settle.reject, timer })
+        try {
+          ws.send(JSON.stringify({ type: 'request', id, ...body }))
+        } catch (e) {
+          clearTimeout(timer)
+          pending.delete(id)
+          if (!settle.isSettled()) {
+            settle.reject(e instanceof Error ? e : new Error(String(e)))
+          }
+        }
+      }
+
+      if (browserWs && browserWs.readyState === browserWs.OPEN && browserRegistered) {
+        doSend()
+      } else {
+        void waitForConnection().then(doSend).catch(reject)
       }
     })
   }
@@ -147,6 +194,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       previousBrowserWs.close()
       rejectAllPending('Browser reconnected')
     }
+    notifyConnectionWaiters()
     onConnectionChange()
     broadcastRegisterToken()
   }
@@ -187,11 +235,13 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     browserWs = null
     browserRegistered = false
     rejectAllPending('Browser disconnected')
+    rejectConnectionWaiters('Browser disconnected')
     onConnectionChange()
   }
 
   function close() {
     rejectAllPending('Server shutting down')
+    rejectConnectionWaiters('Server shutting down')
     clients.clear()
   }
 

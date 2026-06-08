@@ -115,9 +115,6 @@ function createHonoApp(options: {
   )
 
   app.use('/rpc', async (c, next) => {
-    if (!browserRpc.isConnected()) {
-      return c.json({ error: 'OpenPencil app is not connected. Is a document open?' }, 503)
-    }
     // When authToken is null (operator explicitly disabled auth), skip token check —
     // the Unix socket or localhost TCP already restricts access to local processes.
     if (authToken !== null) {

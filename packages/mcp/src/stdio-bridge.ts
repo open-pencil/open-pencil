@@ -184,8 +184,13 @@ export function createStdioRpcBridge({
     }
 
     if (reachable) {
-      // Server is up but no app connected — retry without spamming callbacks
-      scheduleReconnect()
+      // Server is up — we can send RPC requests and let the server
+      // wait for the desktop app to connect.
+      ready = true
+      if (!wasConnected) {
+        wasConnected = true
+        onReady?.()
+      }
       return
     }
 
@@ -228,8 +233,8 @@ export function createStdioRpcBridge({
           }
           clearTimeout(timer)
           if (status === 503) {
-            ready = false
-            scheduleReconnect()
+            // Server reported app not connected — the server waits for the
+            // app internally, so this should be rare. Just surface the error.
             reject(new Error(DISCONNECTED_MESSAGE))
             return
           }

@@ -24,11 +24,11 @@ let sharedPort: number | null = null
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-function readWsJson<T>(ws: WebSocket): Promise<T> {
+function readWsJson<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
       () => reject(new Error('Timed out waiting for WebSocket message')),
-      1000
+      timeoutMs
     )
     ws.once('message', (raw) => {
       clearTimeout(timer)
@@ -59,7 +59,7 @@ async function readNextResponse<T>(ws: WebSocket, timeoutMs = 5000): Promise<T> 
   for (let i = 0; ; i++) {
     const remaining = timeoutMs - (Date.now() - start)
     if (remaining <= 0) throw new Error(`Timed out after reading ${i} register messages`)
-    const msg = await readWsJson<T & { type: string }>(ws)
+    const msg = await readWsJson<T & { type: string }>(ws, remaining)
     if (msg.type !== 'register') return msg
   }
 }
@@ -104,9 +104,9 @@ describe('MCP server unified transport', () => {
       expect(health.authRequired).toBe(true)
     })
 
-    it('rejects /rpc without auth when no app is connected', async () => {
+    it('rejects /rpc without auth', async () => {
       const result = await tcpRequest('POST', '/rpc', { command: 'tool' })
-      expect(result.status).toBe(503)
+      expect(result.status).toBe(401)
     })
 
     it('rejects /mcp without auth', async () => {
@@ -274,7 +274,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     }
   })
 
-  test('returns a disconnected response instead of timing out when no app is registered', async () => {
+  test('returns a disconnected response after waiting when no app is registered', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
     const handle = await startServer({
       httpPort: 0,
@@ -311,7 +311,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
         id: string
         ok?: boolean
         error?: string
-      }>(clientWs)
+      }>(clientWs, 15_000)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-no-app')
@@ -321,7 +321,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs.close()
       await handle.close()
     }
-  })
+  }, 20_000)
 
   test('notifies already-connected stdio clients when the desktop app registers later', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
@@ -356,6 +356,70 @@ describe('MCP WebSocket stdio bridge routing', () => {
       await handle.close()
     }
   })
+
+  test('pending request succeeds when browser connects during the wait', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const authToken = 'bridge-test-token'
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken,
+      enableEval: false,
+      mcpRoot: null
+    })
+
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      return
+    }
+
+    // Connect a WebSocket client (NOT a browser — no register message yet)
+    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
+
+    try {
+      // Read the initial register prompt
+      const initReg = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      expect(initReg.type).toBe('register')
+
+      // Send a request BEFORE the browser connects
+      const requestPromise = (async () => {
+        clientWs.send(
+          JSON.stringify({
+            type: 'request',
+            id: 'wait-test-1',
+            command: 'tool',
+            args: { name: 'get_current_page', args: {} }
+          })
+        )
+        return readNextResponse<{
+          type: string
+          id: string
+          ok?: boolean
+          result?: { name: string }
+        }>(clientWs, 15_000)
+      })()
+
+      // Wait briefly, then connect the browser
+      await new Promise<void>((r) => {
+        setTimeout(r, 500)
+      })
+      const graph = new SceneGraph()
+      const browser = await connectMockBrowser(httpPort, graph, authToken)
+
+      const response = await requestPromise
+      expect(response.type).toBe('response')
+      expect(response.id).toBe('wait-test-1')
+      expect(response.ok).toBe(true)
+      expect(response.result?.name).toBe('Page 1')
+
+      browser.close()
+    } finally {
+      clientWs.close()
+      await handle.close()
+    }
+  }, 20_000)
 
   test('routes new requests to the latest registered desktop app after reconnect', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })

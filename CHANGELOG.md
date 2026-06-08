@@ -28,6 +28,7 @@
 
 ### Fixes
 
+- Fix MCP tool calls failing immediately on first connect when the desktop app has not registered yet — `sendRpc` now waits up to 10 seconds for the app to connect before returning an error
 - Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
 - Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
 - Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
