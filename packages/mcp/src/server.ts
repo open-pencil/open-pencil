@@ -126,6 +126,10 @@ function createHonoApp(options: {
     return next()
   })
 
+  // Historical note: before the isConnected() guard was removed, a disconnected
+  // app returned 503 here. Now errors from sendToBrowser surface as 502. This
+  // is a semantic shift from 503 → 502; callers that distinguished 503 may
+  // need to handle 502 equivalently.
   app.post('/rpc', async (c) => {
     let body = await c.req.json().catch(() => null)
     if (!body || typeof body !== 'object') {

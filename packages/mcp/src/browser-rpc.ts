@@ -31,7 +31,7 @@ function stripEnvelope(msg: BrowserMessage): Record<string, unknown> {
   return body
 }
 
-function responsePayload(result: unknown): Record<string, unknown> {
+function responsePayload(result: unknown): RpcJsonObject {
   if (result && typeof result === 'object' && !Array.isArray(result)) {
     return result as RpcJsonObject
   }
@@ -77,26 +77,29 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   function notifyConnectionWaiters() {
     for (const waiter of connectionWaiters) {
       clearTimeout(waiter.timer)
-      connectionWaiters.delete(waiter)
       waiter.resolve(undefined)
     }
+    connectionWaiters.clear()
   }
 
   function rejectConnectionWaiters(reason: string) {
     for (const waiter of connectionWaiters) {
       clearTimeout(waiter.timer)
-      connectionWaiters.delete(waiter)
       waiter.reject(new Error(reason))
     }
+    connectionWaiters.clear()
   }
 
   function waitForConnection(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
+      let waiter: PendingRequest | null = null
+
       const timer = setTimeout(() => {
-        connectionWaiters.delete(waiter)
+        if (waiter) connectionWaiters.delete(waiter)
         reject(new Error(APP_NOT_CONNECTED_MESSAGE))
       }, APP_WAIT_TIMEOUT)
-      const waiter: PendingRequest = {
+
+      waiter = {
         resolve: () => {
           clearTimeout(timer)
           resolve()
@@ -112,11 +115,11 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   }
 
   function rejectAllPending(reason: string) {
-    for (const [id, req] of pending) {
+    for (const [, req] of pending) {
       clearTimeout(req.timer)
       req.reject(new Error(reason))
-      pending.delete(id)
     }
+    pending.clear()
   }
 
   function sendRegisterToken(ws: WebSocket) {
@@ -126,11 +129,6 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function broadcastRegisterToken() {
     for (const client of clients) sendRegisterToken(client)
-  }
-
-  function handleConnection(ws: WebSocket) {
-    clients.add(ws)
-    sendRegisterToken(ws)
   }
 
   function sendRpc(body: Record<string, unknown>): Promise<unknown> {
@@ -191,22 +189,29 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     browserWs = ws
     browserRegistered = true
     if (previousBrowserWs && previousBrowserWs !== ws && previousBrowserWs.readyState === ws.OPEN) {
-      previousBrowserWs.close()
+      // Reject in-flight requests to the old browser. Without this, pending
+      // requests sit in the pending map until RPC_TIMEOUT (20s), because
+      // handleClose for the old socket returns early (browserWs is already
+      // set to the new socket, so browserWs !== previousBrowserWs).
       rejectAllPending('Browser reconnected')
+      previousBrowserWs.close()
     }
     notifyConnectionWaiters()
     onConnectionChange()
     broadcastRegisterToken()
   }
 
-  function handleBrowserResponse(msg: BrowserMessage, ws: WebSocket) {
-    if (!browserRegistered || browserWs !== ws || !msg.id) return
+  function handleBrowserResponse(msg: BrowserMessage) {
+    if (!browserRegistered || !msg.id) return
     const req = pending.get(msg.id)
     if (!req) return
     pending.delete(msg.id)
     clearTimeout(req.timer)
-    if (msg.ok === false) req.reject(new Error(msg.error ?? 'RPC failed'))
-    else req.resolve(stripEnvelope(msg))
+    if (msg.ok === false) {
+      req.reject(new Error(msg.error ?? 'RPC failed'))
+    } else {
+      req.resolve(stripEnvelope(msg))
+    }
   }
 
   function handleMessage(data: string, ws: WebSocket) {
@@ -226,7 +231,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       void handleClientRequest(ws, msg)
       return
     }
-    if (msg.type === 'response') handleBrowserResponse(msg, ws)
+    if (msg.type === 'response') handleBrowserResponse(msg)
   }
 
   function handleClose(ws: WebSocket) {
@@ -235,8 +240,17 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     browserWs = null
     browserRegistered = false
     rejectAllPending('Browser disconnected')
-    rejectConnectionWaiters('Browser disconnected')
+    // Intentionally NOT rejecting connectionWaiters here. If a request
+    // entered waitForConnection() before the close event (e.g. during a
+    // CLOSING→CLOSED transition), the waiter should keep waiting the full
+    // APP_WAIT_TIMEOUT for a reconnect. registerBrowser will resolve it
+    // via notifyConnectionWaiters if the browser reconnects in time.
     onConnectionChange()
+  }
+
+  function handleConnection(ws: WebSocket) {
+    clients.add(ws)
+    sendRegisterToken(ws)
   }
 
   function close() {
@@ -247,11 +261,10 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   return {
     close,
-    currentRpcToken,
-    handleClose,
+    isConnected,
+    sendRpc,
     handleConnection,
     handleMessage,
-    isConnected,
-    sendRpc
+    handleClose
   }
 }
