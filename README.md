@@ -295,6 +295,20 @@ INKLY_API_GOOGLE_CLIENT_SECRET=...
 
 5. `bun run dev:full` を再起動 → Dashboard で「Google でログイン」が動く
 
+### 招待メール (Resend)
+
+招待メールを実際に送信したい場合のみ設定する (未設定なら no-op、 開発で困らない)。
+
+1. [Resend](https://resend.com) でアカウント作成
+2. API key を発行
+3. `.env.local` に追記:
+
+```sh
+INKLY_API_RESEND_KEY=re_...
+```
+
+4. `bun run dev:full` を再起動 → 招待 flow でメール送信される
+
 ### Quality gates
 
 | Command | Description |
