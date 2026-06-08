@@ -28,7 +28,9 @@ async function httpFetch(input: string, init?: RequestInit): Promise<Response> {
     return await fetch(input, opts)
   } catch (error) {
     // Surface the timeout distinctly so it isn't masked as a CORS/network failure.
-    if (error instanceof Error && error.name === 'AbortError') {
+    // Keying off our own AbortController covers both browser fetch (throws
+    // AbortError) and Tauri plugin-http (throws a generic "Request cancelled").
+    if (controller.signal.aborted) {
       throw new VectorizeTimeoutError()
     }
     throw error
