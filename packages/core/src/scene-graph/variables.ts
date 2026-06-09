@@ -23,10 +23,14 @@ export function removeVariable(graph: SceneGraph, id: string): void {
     collection.variableIds = collection.variableIds.filter((vid) => vid !== id)
   }
   for (const node of graph.nodes.values()) {
+    const hadBinding = Object.values(node.boundVariables).includes(id)
+    if (!hadBinding) continue
     node.boundVariables = omitBy(node.boundVariables, (varId) => varId === id) as Record<
       string,
       string
     >
+    graph.emitter.emit('node:updated', node.id, { boundVariables: { ...node.boundVariables } })
+    markBoundVariablesOverrideOnInstance(graph, node.id)
   }
 }
 
@@ -285,7 +289,7 @@ export function bindVariable(
     // Validate index is within current array bounds
     const arrayKey = colorFieldMatch[1] as 'fills' | 'strokes'
     const index = Number.parseInt(colorFieldMatch[2], 10)
-    const currentLength = node[arrayKey].length
+    const currentLength = (node[arrayKey] as unknown[] | undefined)?.length ?? 0
     if (index >= currentLength) {
       throw new Error(`Index ${index} out of range for ${arrayKey} (length ${currentLength})`)
     }
@@ -318,8 +322,9 @@ export function bindVariable(
     throw new Error(`Unknown binding field "${field}"`)
   }
 
-  node.boundVariables[field] = variableId
+  node.boundVariables = { ...node.boundVariables, [field]: variableId }
   graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
+  markBoundVariablesOverrideOnInstance(graph, nodeId)
 }
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
@@ -328,4 +333,30 @@ export function unbindVariable(graph: SceneGraph, nodeId: string, field: string)
   if (!(field in node.boundVariables)) return
   node.boundVariables = omit(node.boundVariables, [field])
   graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
+  markBoundVariablesOverrideOnInstance(graph, nodeId)
+}
+
+function markBoundVariablesOverrideOnInstance(graph: SceneGraph, nodeId: string): void {
+  const node = graph.nodes.get(nodeId)
+  if (!node) return
+
+  // If the node IS an INSTANCE itself, set the bare-key override (syncInstances
+  // checks `key in instance.overrides` for INSTANCE-self properties)
+  if (node.type === 'INSTANCE') {
+    node.overrides['boundVariables'] = true
+    return
+  }
+
+  // Otherwise walk up to find an INSTANCE parent and set the child-key override
+  // (syncChildren checks `${instChild.id}:${key}` format)
+  let current = node
+  while (current.parentId) {
+    const parent = graph.nodes.get(current.parentId)
+    if (!parent) break
+    if (parent.type === 'INSTANCE') {
+      parent.overrides[`${nodeId}:boundVariables`] = true
+      break
+    }
+    current = parent
+  }
 }

@@ -112,4 +112,43 @@ describe('variable-bindings undo resilience', () => {
     expect(editor.graph.getNode(node.id).boundVariables['fills/0/color']).toBeUndefined()
     expect(editor.graph.getNode(node.id).boundVariables['fills/1/color']).toBe('v1')
   })
+
+  test('bindVariable redo gracefully degrades when variable was deleted', () => {
+    const editor = createEditor()
+    setupColorVar(editor, 'v1')
+    const page = pageId(editor)
+    const node = editor.graph.createNode('RECTANGLE', page, {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
+
+    editor.bindVariable(node.id, 'fills/0/color', 'v1')
+    editor.undo.undo()
+
+    editor.graph.removeVariable('v1')
+
+    editor.undo.redo()
+
+    expect(editor.graph.getNode(node.id).boundVariables['fills/0/color']).toBeUndefined()
+  })
+
+  test('unbindVariable redo gracefully degrades when variable was deleted', () => {
+    const editor = createEditor()
+    setupColorVar(editor, 'v1')
+    const page = pageId(editor)
+    const node = editor.graph.createNode('RECTANGLE', page, {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
+
+    editor.bindVariable(node.id, 'fills/0/color', 'v1')
+    editor.unbindVariable(node.id, 'fills/0/color')
+    editor.undo.undo()
+
+    editor.graph.removeVariable('v1')
+
+    editor.undo.redo()
+
+    expect(editor.graph.getNode(node.id).boundVariables['fills/0/color']).toBeUndefined()
+  })
 })

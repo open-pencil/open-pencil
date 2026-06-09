@@ -555,7 +555,16 @@ describe('cloneNodeProps handles undefined arrays defensively', () => {
     const node = graph.createNode('RECTANGLE', page, { name: 'Rect' })
     const raw = graph.getNode(node.id)
     // Simulate a node from .fig parsing where array fields could be undefined
-    const patch: Partial<Pick<SceneNode, 'componentPropertyDefinitions' | 'symbolLinks' | 'exportSettings' | 'pluginData' | 'pluginRelaunchData'>> = {
+    const patch: Partial<
+      Pick<
+        SceneNode,
+        | 'componentPropertyDefinitions'
+        | 'symbolLinks'
+        | 'exportSettings'
+        | 'pluginData'
+        | 'pluginRelaunchData'
+      >
+    > = {
       componentPropertyDefinitions: undefined,
       symbolLinks: undefined,
       exportSettings: undefined,

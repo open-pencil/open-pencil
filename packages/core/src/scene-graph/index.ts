@@ -390,8 +390,8 @@ export class SceneGraph {
     }
     Object.assign(node, changes)
     // Clean up stale variable bindings when fills/strokes arrays are replaced
-    if (changes.fills) this.cleanupStaleBindings(node, 'fills')
-    if (changes.strokes) this.cleanupStaleBindings(node, 'strokes')
+    if (changes.fills) this.cleanupStaleBindings(node, 'fills', changes)
+    if (changes.strokes) this.cleanupStaleBindings(node, 'strokes', changes)
     this.emitter.emit('node:updated', id, changes)
   }
 
@@ -586,14 +586,20 @@ export class SceneGraph {
     return result
   }
 
-  private cleanupStaleBindings(node: SceneNode, field: 'fills' | 'strokes'): void {
+  private cleanupStaleBindings(
+    node: SceneNode,
+    field: 'fills' | 'strokes',
+    changes: Partial<SceneNode>
+  ): void {
     const length = field === 'fills' ? node.fills.length : node.strokes.length
-    const staleKeys = Object.keys(node.boundVariables).filter((key) => {
-      if (key === field) return true
-      if (!key.startsWith(`${field}/`)) return false
-      const idx = Number.parseInt(key.split('/')[1] ?? '', 10)
-      return idx >= length
-    })
-    if (staleKeys.length > 0) node.boundVariables = omit(node.boundVariables, staleKeys)
+    const staleKeys = Object.keys(node.boundVariables).filter(
+      (key) =>
+        key === field ||
+        (key.startsWith(`${field}/`) && Number.parseInt(key.split('/')[1] ?? '', 10) >= length)
+    )
+    if (staleKeys.length > 0) {
+      node.boundVariables = omit(node.boundVariables, staleKeys)
+      changes.boundVariables = { ...node.boundVariables }
+    }
   }
 }
