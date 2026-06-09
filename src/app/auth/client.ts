@@ -51,14 +51,24 @@ function getErrorMessage(data: ApiErrorBody | null, fallback: string) {
 }
 
 export async function getSession() {
-  const { response, data } = await requestJson<AuthSession>(`${AUTH_API_BASE}/session`)
+  try {
+    const { response, data } = await requestJson<AuthSession>(`${AUTH_API_BASE}/session`)
 
-  if (response.status === 401) return null
-  if (!response.ok) {
-    throw new Error(getErrorMessage(data as ApiErrorBody | null, 'Failed to load session'))
+    // 401 (未ログイン) と server エラー (5xx 等) は同じく null 返却し、 上位で「未認証」扱いにする。
+    // 5xx を throw すると refreshSession 経由で unhandled rejection → toast 誤表示になるため抑制する。
+    if (!response.ok) {
+      if (response.status !== 401) {
+        console.warn('[auth.getSession]', response.status, getErrorMessage(data as ApiErrorBody | null, 'session load failed'))
+      }
+      return null
+    }
+
+    return data as AuthSession
+  } catch (error) {
+    // network error (fetch reject) も同様に null 扱い、 toast 誤表示を抑制
+    console.warn('[auth.getSession]', error)
+    return null
   }
-
-  return data as AuthSession
 }
 
 export async function loginWithGoogle(callbackURL = currentCallbackURL()) {

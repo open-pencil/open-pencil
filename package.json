@@ -71,7 +71,6 @@
     "@vueuse/core": "^14.2.1",
     "ai": "^6.0.174",
     "better-auth": "^1.6.14",
-    "better-sqlite3": "^12.10.0",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",
     "dedent": "^1.7.1",

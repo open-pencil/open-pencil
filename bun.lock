@@ -32,7 +32,6 @@
         "@vueuse/core": "^14.2.1",
         "ai": "^6.0.174",
         "better-auth": "^1.6.14",
-        "better-sqlite3": "^12.10.0",
         "canvaskit-wasm": "^0.40.0",
         "culori": "^4.0.2",
         "dedent": "^1.7.1",
@@ -109,7 +108,6 @@
       "version": "0.13.2",
       "dependencies": {
         "@libsql/client": "^0.17.3",
-        "better-sqlite3": "^12.10.0",
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.5",
         "jose": "^6.2.2",

@@ -1,6 +1,7 @@
 import type { ServerWebSocket } from 'bun'
 
 import { Hono } from 'hono'
+import { serveStatic } from 'hono/bun'
 
 import { createInklyAuth, type InklyAuth } from './auth/index.js'
 import { createBoardStore } from './boardStore.js'
@@ -169,14 +170,21 @@ export async function createApiApp(options: CreateApiAppOptions) {
 
   app.route('/api/auth', createAuthRoutes({ auth, database, now: options.now }))
 
+  if (env.INKLY_API_SERVE_STATIC !== '0') {
+    const spaRoot = env.INKLY_API_STATIC_ROOT ?? './dist'
+    app.use('/assets/*', serveStatic({ root: spaRoot }))
+    app.use('/*', serveStatic({ root: spaRoot }))
+    app.get('*', serveStatic({ path: `${spaRoot}/index.html` }))
+  }
+
   return { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth }
 }
 
 export async function startApiServer(options: Partial<StartApiServerOptions> = {}) {
   const env = options.env ?? process.env
   const secret = options.secret ?? resolveJwtSecret(env)
-  const host = options.host ?? API_HOST
-  const requestedPort = options.port ?? API_PORT
+  const host = options.host ?? env.INKLY_API_HOST ?? API_HOST
+  const requestedPort = options.port ?? Number(env.PORT ?? env.INKLY_API_PORT ?? API_PORT)
   let onNotificationCreated: ((notification: NotificationRecord) => void) | undefined
   const { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth } =
     await createApiApp({

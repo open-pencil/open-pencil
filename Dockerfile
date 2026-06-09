@@ -21,7 +21,11 @@ WORKDIR /app
 COPY . .
 
 # 依存 install (monorepo root から、 workspace 全部にまたがる)
-RUN bun install --frozen-lockfile
+# --ignore-scripts は better-sqlite3 (better-auth の optional peer から hoisted) の
+# node-gyp postinstall を skip するために必要。 Alpine container には python が無く
+# native build できない、 そして実コードは better-sqlite3 を import しないので skip
+# 安全 (DB アクセスは @libsql/client 経由のみ)。
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # build (packages の dist + Vite SPA)
 RUN bun run build:packages

@@ -27,6 +27,7 @@ import AutosaveStatus from '@/components/AutosaveStatus.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
+import SaveAndLeaveModal from '@/components/SaveAndLeaveModal.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
@@ -180,6 +181,19 @@ onUnmounted(() => {
   automationCleanup.value?.()
   fileAssociationCleanup.value?.()
 })
+
+const saveModalOpen = ref(false)
+
+function handleBackToDashboard(event: MouseEvent) {
+  // 既にダッシュボードに保存済 (boardRoomId 有り) の場合は通常遷移
+  if (boardRoomId.value) return
+  // 何も編集していない場合も通常遷移
+  const scene = getActiveStore().state.sceneVersion ?? 0
+  if (scene <= 0) return
+  // 未保存の編集ありなのでモーダル起動
+  event.preventDefault()
+  saveModalOpen.value = true
+}
 </script>
 
 <template>
@@ -187,7 +201,7 @@ onUnmounted(() => {
     <SafariBanner />
     <TabBar />
     <div
-      v-if="showChrome && boardRoomId"
+      v-if="showChrome"
       class="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-canvas/95 px-4 py-2"
     >
       <div class="flex min-w-0 items-center gap-2">
@@ -196,6 +210,7 @@ onUnmounted(() => {
           data-test-id="editor-back-to-dashboard"
           class="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted hover:bg-surface hover:text-surface"
           title="ダッシュボードへ戻る"
+          @click="handleBackToDashboard"
         >
           <span aria-hidden="true">←</span>
           <span>ダッシュボード</span>
@@ -214,6 +229,7 @@ onUnmounted(() => {
       </div>
       <span v-if="boardRoomId" class="text-[11px] text-muted">Board {{ boardRoomId }}</span>
     </div>
+    <SaveAndLeaveModal v-model:open="saveModalOpen" :document-name="store.state.documentName" />
 
     <!-- Desktop layout -->
     <SplitterGroup

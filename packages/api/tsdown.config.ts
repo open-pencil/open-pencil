@@ -15,7 +15,6 @@ export default defineConfig({
       /^better-auth\//,
       '@better-auth/drizzle-adapter',
       /^@better-auth\//,
-      'better-sqlite3',
       'drizzle-orm',
       /^drizzle-orm\//,
       'hono',
