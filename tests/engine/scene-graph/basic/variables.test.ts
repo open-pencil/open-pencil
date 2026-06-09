@@ -198,7 +198,10 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
 
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     expect(node.boundVariables['fills/0/color']).toBe('v1')
@@ -226,7 +229,10 @@ describe('Variables', () => {
       hiddenFromPublishing: false
     })
 
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     expect(node.boundVariables['fills/0/color']).toBe('v1')
 

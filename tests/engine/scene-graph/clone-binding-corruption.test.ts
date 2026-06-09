@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph, type SceneNode } from '@open-pencil/core'
 import { collectSubtrees } from '@open-pencil/core/editor/clipboard/subtree-history'
 
 function pageId(graph: SceneGraph): string {
@@ -34,7 +34,10 @@ describe('cloneTree deep-copies boundVariables, overrides, and styleRuns', () =>
   test('clone.boundVariables is not the same reference as original', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1', 'v2')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Original' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Original',
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     const original = graph.getNode(node.id)
 
@@ -44,14 +47,16 @@ describe('cloneTree deep-copies boundVariables, overrides, and styleRuns', () =>
         throw new Error('clone failed')
       })()
     expect(clone).not.toBeNull()
-    // The clone's boundVariables must be an independent object, not the same reference
     expect(clone.boundVariables).not.toBe(original.boundVariables)
   })
 
   test('binding on clone does not corrupt original node', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1', 'v2')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Original' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Original',
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     const original = graph.getNode(node.id)
 
@@ -60,7 +65,6 @@ describe('cloneTree deep-copies boundVariables, overrides, and styleRuns', () =>
       (() => {
         throw new Error('clone failed')
       })()
-    // Now bind a different variable on the clone
     graph.bindVariable(clone.id, 'fills/0/color', 'v2')
 
     // Original must still have v1
@@ -146,13 +150,12 @@ describe('instance child bindings are independent from component', () => {
     const child = graph.createNode('RECTANGLE', component.id, {
       name: 'Bg',
       width: 100,
-      height: 40
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
     })
 
-    // Bind variable on component child
     graph.bindVariable(child.id, 'fills/0/color', 'v1')
 
-    // Create instance
     const instance =
       graph.createInstance(component.id, page) ??
       (() => {
@@ -179,7 +182,8 @@ describe('instance child bindings are independent from component', () => {
     const child = graph.createNode('RECTANGLE', component.id, {
       name: 'Bg',
       width: 100,
-      height: 40
+      height: 40,
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
     })
 
     graph.bindVariable(child.id, 'fills/0/color', 'v1')
@@ -332,7 +336,10 @@ describe('collectSubtrees deep-copies nodes', () => {
   test('collectSubtrees does not share boundVariables reference', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     const original = graph.getNode(node.id)
 
@@ -348,10 +355,12 @@ describe('undo of binding on clone restores original state', () => {
   test('bind on clone, then undo restores original binding state', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1', 'v2')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Original' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Original',
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     const clone = graph.cloneTree(node.id, pageId(graph))
-    // Bind a different variable on the clone
     graph.bindVariable(clone.id, 'fills/0/color', 'v2')
     expect(graph.getNode(clone.id).boundVariables['fills/0/color']).toBe('v2')
     // Original should be unaffected
@@ -365,9 +374,11 @@ describe('variable deletion and re-clone safety', () => {
   test('deleting a variable removes bindings and re-cloning works safely', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1', 'v2')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Original' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Original',
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
-    // Clone before deletion
     const clone1 = graph.cloneTree(node.id, pageId(graph))
     expect(graph.getNode(clone1.id).boundVariables['fills/0/color']).toBe('v1')
     // Delete the variable — this cleans up bindings on all nodes
@@ -534,5 +545,25 @@ describe('cloneNodeProps deep-copies overrides values', () => {
     if (origOverrideVal) {
       expect(origOverrideVal[0].color.r).toBe(0) // still blue, not mutated
     }
+  })
+})
+
+describe('cloneNodeProps handles undefined arrays defensively', () => {
+  test('cloneNodeProps does not crash when array fields are undefined', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const node = graph.createNode('RECTANGLE', page, { name: 'Rect' })
+    const raw = graph.getNode(node.id)
+    // Simulate a node from .fig parsing where array fields could be undefined
+    const patch: Partial<Pick<SceneNode, 'componentPropertyDefinitions' | 'symbolLinks' | 'exportSettings' | 'pluginData' | 'pluginRelaunchData'>> = {
+      componentPropertyDefinitions: undefined,
+      symbolLinks: undefined,
+      exportSettings: undefined,
+      pluginData: undefined,
+      pluginRelaunchData: undefined
+    }
+    Object.assign(raw, patch)
+    // cloneTree must not throw TypeError on .map() of undefined
+    expect(() => graph.cloneTree(node.id, page)).not.toThrow()
   })
 })

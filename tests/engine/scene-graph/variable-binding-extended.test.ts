@@ -193,14 +193,12 @@ describe('bindVariable validation continued', () => {
     return graph
   }
 
-  test('bindVariable allows unknown field patterns (no validation for custom fields)', () => {
+  test('bindVariable rejects unknown field names', () => {
     const graph = setupGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
-    // Custom plugin field — should be allowed through
     expect(() => {
       graph.bindVariable(node.id, 'customPluginField', 'v-float')
-    }).not.toThrow()
-    expect(graph.getNode(node.id).boundVariables['customPluginField']).toBe('v-float')
+    }).toThrow(/Unknown binding field/)
   })
 })
 
@@ -230,7 +228,10 @@ describe('unbindVariable', () => {
 
   test('unbindVariable removes the binding from node', () => {
     const graph = setupGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBe('v1')
     graph.unbindVariable(node.id, 'fills/0/color')
@@ -239,7 +240,10 @@ describe('unbindVariable', () => {
 
   test('unbindVariable emits node:updated event', () => {
     const graph = setupGraph()
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     const events: Array<{ nodeId: string; changes: Record<string, unknown> }> = []
     graph.onNodeEvents({
@@ -257,6 +261,17 @@ describe('unbindVariable', () => {
     // Should not throw when unbinding a field that was never bound
     expect(() => graph.unbindVariable(node.id, 'opacity')).not.toThrow()
   })
+
+  test('unbindVariable does not emit event for non-existent binding', () => {
+    const graph = setupGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const events: Array<{ nodeId: string; changes: Record<string, unknown> }> = []
+    graph.onNodeEvents({
+      updated: (nodeId, changes) => events.push({ nodeId, changes })
+    })
+    graph.unbindVariable(node.id, 'opacity')
+    expect(events).toHaveLength(0)
+  })
 })
 
 // ─── nodeProxyToJSON includes boundVariables ─────────────────────────────
@@ -265,7 +280,10 @@ describe('nodeProxyToJSON boundVariables', () => {
   test('nodeProxyToJSON includes boundVariables with resolved info', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, visible: true, opacity: 1 }]
+    })
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
     const api = new FigmaAPI(graph)
     const json = nodeProxyToJSON(graph, api, node.id)
@@ -323,7 +341,7 @@ describe('bindVariable out-of-range index validation', () => {
     }).toThrow(/out of range/)
   })
 
-  test('bindVariable allows next-index binding (index == currentLength)', () => {
+  test('bindVariable rejects next-index binding (index == currentLength)', () => {
     const graph = setupGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), {
       name: 'Rect',
@@ -332,11 +350,22 @@ describe('bindVariable out-of-range index validation', () => {
         { type: 'SOLID', color: { r: 0.2, g: 0.2, b: 0.2, a: 1 }, visible: true, opacity: 1 }
       ]
     })
-    // Node has 2 fills. Index 2 is the next index (allowed).
+    // Node has 2 fills (indices 0, 1). Index 2 is out of range (index >= length).
     expect(() => {
       graph.bindVariable(node.id, 'fills/2/color', 'v1')
-    }).not.toThrow()
-    expect(graph.getNode(node.id).boundVariables['fills/2/color']).toBe('v1')
+    }).toThrow(/out of range/)
+  })
+
+  test('bindVariable rejects binding to empty fills array (index 0, length 0)', () => {
+    const graph = setupGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: []
+    })
+    // No fills exist. Index 0 is out of range (0 >= 0).
+    expect(() => {
+      graph.bindVariable(node.id, 'fills/0/color', 'v1')
+    }).toThrow(/out of range/)
   })
 
   test('bindVariable rejects out-of-range stroke index', () => {
@@ -349,6 +378,14 @@ describe('bindVariable out-of-range index validation', () => {
     expect(() => {
       graph.bindVariable(node.id, 'strokes/3/color', 'v1')
     }).toThrow(/out of range/)
+  })
+
+  test('bindVariable rejects unknown field names', () => {
+    const graph = setupGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    expect(() => {
+      graph.bindVariable(node.id, 'someRandomField', 'v1')
+    }).toThrow(/Unknown binding field/)
   })
 })
 
@@ -376,48 +413,17 @@ describe('cleanupStaleBindings handles any indexed sub-path', () => {
     expect(n.boundVariables['fills/1/somethingElse']).toBeUndefined()
   })
 
-  test('next-index binding survives updateNode that sets same-length fills', () => {
+  test('fills/0/color binding is cleaned up when fills shrink to empty', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1')
     const node = graph.createNode('RECTANGLE', pageId(graph), {
       name: 'Rect',
-      fills: [
-        { type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 },
-        { type: 'SOLID', color: { r: 0.2, g: 0.2, b: 0.2, a: 1 }, visible: true, opacity: 1 }
-      ]
+      fills: [{ type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }]
     })
-    // Bind at next-index (index == length)
-    graph.bindVariable(node.id, 'fills/2/color', 'v1')
-
-    // updateNode with same-length fills — next-index binding must survive
-    graph.updateNode(node.id, {
-      fills: [
-        { type: 'SOLID', color: { r: 0.3, g: 0.3, b: 0.3, a: 1 }, visible: true, opacity: 1 },
-        { type: 'SOLID', color: { r: 0.4, g: 0.4, b: 0.4, a: 1 }, visible: true, opacity: 1 }
-      ]
-    })
-    expect(graph.getNode(node.id).boundVariables['fills/2/color']).toBe('v1')
-  })
-
-  test('next-index binding is cleaned up when fills shrink past it', () => {
-    const graph = new SceneGraph()
-    setupColorVars(graph, 'v1')
-    const node = graph.createNode('RECTANGLE', pageId(graph), {
-      name: 'Rect',
-      fills: [
-        { type: 'SOLID', color: { r: 0.1, g: 0.1, b: 0.1, a: 1 }, visible: true, opacity: 1 }
-      ]
-    })
-    // Bind at next-index (index 1, length is 1)
-    graph.bindVariable(node.id, 'fills/1/color', 'v1')
-
-    // Bind at in-range index too, to verify it survives the shrink
     graph.bindVariable(node.id, 'fills/0/color', 'v1')
 
-    // Shrink fills to empty — next-index binding at index 1 must be removed (1 > 0)
-    // but in-range binding at index 0 survives (0 > 0 is false)
+    // Shrink fills to empty — fills/0/color must be removed (0 >= 0 is true)
     graph.updateNode(node.id, { fills: [] })
-    expect(graph.getNode(node.id).boundVariables['fills/1/color']).toBeUndefined()
-    expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBe('v1')
+    expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBeUndefined()
   })
 })

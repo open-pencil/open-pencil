@@ -592,7 +592,7 @@ export class SceneGraph {
       if (key === field) return true
       if (!key.startsWith(`${field}/`)) return false
       const idx = Number.parseInt(key.split('/')[1] ?? '', 10)
-      return idx > length
+      return idx >= length
     })
     if (staleKeys.length > 0) node.boundVariables = omit(node.boundVariables, staleKeys)
   }

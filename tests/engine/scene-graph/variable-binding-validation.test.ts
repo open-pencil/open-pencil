@@ -34,7 +34,10 @@ describe('bindVariable emits node:updated event', () => {
   test('bindVariable emits node:updated event', () => {
     const graph = new SceneGraph()
     setupColorVars(graph, 'v1')
-    const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'Rect',
+      fills: [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5, a: 1 }, visible: true, opacity: 1 }]
+    })
 
     const events: Array<{ nodeId: string; changes: Record<string, unknown> }> = []
     graph.onNodeEvents({
@@ -199,14 +202,13 @@ describe('bindVariable validation', () => {
     expect(graph.getNode(node.id).boundVariables['opacity']).toBeUndefined()
   })
 
-  test('bindVariable allows pre-binding to fills that do not yet exist', () => {
+  test('bindVariable rejects binding to fills that do not yet exist', () => {
     const graph = setupGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
-    // Rect has 0 fills, but we can still set a binding for a fill that will be added later
+    // Rect has 0 fills — binding to fills/0/color must be rejected (index >= length)
     expect(() => {
       graph.bindVariable(node.id, 'fills/0/color', 'v-color')
-    }).not.toThrow()
-    expect(graph.getNode(node.id).boundVariables['fills/0/color']).toBe('v-color')
+    }).toThrow(/out of range/)
   })
 
   test('bindVariable auto-removes top-level fills binding when indexed binding is set', () => {

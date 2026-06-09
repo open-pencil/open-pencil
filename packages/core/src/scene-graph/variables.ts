@@ -282,11 +282,11 @@ export function bindVariable(
     if (variable.type !== 'COLOR') {
       throw new Error(`Cannot bind ${variable.type} variable to color field "${field}"`)
     }
-    // Validate index is within a reasonable range (not beyond current length + 1)
+    // Validate index is within current array bounds
     const arrayKey = colorFieldMatch[1] as 'fills' | 'strokes'
     const index = Number.parseInt(colorFieldMatch[2], 10)
     const currentLength = node[arrayKey].length
-    if (index > currentLength) {
+    if (index >= currentLength) {
       throw new Error(`Index ${index} out of range for ${arrayKey} (length ${currentLength})`)
     }
     // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
@@ -308,14 +308,24 @@ export function bindVariable(
     throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
   }
 
+  const isKnownField =
+    SCALAR_BINDING_FIELDS.has(field) ||
+    STRING_BINDING_FIELDS.has(field) ||
+    BOOLEAN_BINDING_FIELDS.has(field) ||
+    colorFieldMatch
+
+  if (!isKnownField) {
+    throw new Error(`Unknown binding field "${field}"`)
+  }
+
   node.boundVariables[field] = variableId
   graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
 }
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
   const node = graph.nodes.get(nodeId)
-  if (node) {
-    node.boundVariables = omit(node.boundVariables, [field])
-    graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
-  }
+  if (!node) return
+  if (!(field in node.boundVariables)) return
+  node.boundVariables = omit(node.boundVariables, [field])
+  graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
 }

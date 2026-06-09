@@ -8,7 +8,17 @@
  * no shared references between source and copy.
  */
 
-import type { Effect, Fill, GeometryPath, GradientStop, SceneNode, Stroke, StyleRun } from './'
+import type {
+  ComponentPropertyDefinition,
+  Effect,
+  FigmaDerivedTextGlyph,
+  Fill,
+  GeometryPath,
+  GradientStop,
+  SceneNode,
+  Stroke,
+  StyleRun
+} from './'
 
 // --- Individual copy functions ---
 
@@ -86,6 +96,25 @@ function copyGradientStop(gs: GradientStop): GradientStop {
   return { color: { ...gs.color }, position: gs.position }
 }
 
+function copySpread<T extends object>(arr: T[] | undefined): T[] {
+  return arr?.map((item) => ({ ...item })) ?? []
+}
+
+function copyPropertyDefs(
+  defs: ComponentPropertyDefinition[] | undefined
+): ComponentPropertyDefinition[] {
+  return (
+    defs?.map((d) => ({
+      ...d,
+      variantOptions: d.variantOptions ? [...d.variantOptions] : undefined
+    })) ?? []
+  )
+}
+
+function copyGlyphs(glyphs: FigmaDerivedTextGlyph[] | null): FigmaDerivedTextGlyph[] | null {
+  return glyphs ? glyphs.map((g) => ({ ...g, commandsBlob: new Uint8Array(g.commandsBlob) })) : null
+}
+
 // --- Deep-copy clone props ---
 
 /**
@@ -99,43 +128,33 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
   return {
     ...rest,
     ...(componentId !== null ? { componentId } : {}),
-    // Explicit deep-copies of fields with mutable sub-objects
     boundVariables: { ...src.boundVariables },
     overrides: structuredClone(src.overrides),
     fills: copyFills(src.fills),
     strokes: copyStrokes(src.strokes),
     effects: copyEffects(src.effects),
     styleRuns: src.styleRuns.length > 0 ? copyStyleRuns(src.styleRuns) : [],
-    source: { ...src.source, fig: structuredClone(src.source.fig) },
-    // Deep-copy remaining mutable arrays that ...rest would share by reference
+    source: structuredClone(src.source),
     dashPattern: [...src.dashPattern],
     fontVariations: src.fontVariations.map((v) => ({ ...v })),
     fontFeatures: src.fontFeatures.map((v) => ({ ...v })),
     textDecorationFills: copyFills(src.textDecorationFills),
     fillGeometry: copyGeometryPaths(src.fillGeometry),
     strokeGeometry: copyGeometryPaths(src.strokeGeometry),
-    gridTemplateColumns: src.gridTemplateColumns.map((c) => ({ ...c })),
-    gridTemplateRows: src.gridTemplateRows.map((r) => ({ ...r })),
-    componentPropertyDefinitions: src.componentPropertyDefinitions.map((d) => ({
-      ...d,
-      variantOptions: d.variantOptions ? [...d.variantOptions] : undefined
-    })),
-    symbolLinks: src.symbolLinks.map((l) => ({ ...l })),
-    variantPropSpecs: src.variantPropSpecs.map((s) => ({ ...s })),
-    pluginData: src.pluginData.map((e) => ({ ...e })),
-    pluginRelaunchData: src.pluginRelaunchData.map((e) => ({ ...e })),
-    exportSettings: src.exportSettings.map((e) => ({ ...e })),
+    gridTemplateColumns: copySpread(src.gridTemplateColumns),
+    gridTemplateRows: copySpread(src.gridTemplateRows),
+    componentPropertyDefinitions: copyPropertyDefs(src.componentPropertyDefinitions),
+    symbolLinks: copySpread(src.symbolLinks),
+    variantPropSpecs: copySpread(src.variantPropSpecs),
+    pluginData: copySpread(src.pluginData),
+    pluginRelaunchData: copySpread(src.pluginRelaunchData),
+    exportSettings: copySpread(src.exportSettings),
     componentPropertyValues: { ...src.componentPropertyValues },
     figmaDerivedLayout: src.figmaDerivedLayout ? { ...src.figmaDerivedLayout } : null,
     arcData: src.arcData ? structuredClone(src.arcData) : null,
     vectorNetwork: src.vectorNetwork ? structuredClone(src.vectorNetwork) : null,
     textPicture: src.textPicture ? new Uint8Array(src.textPicture) : null,
-    figmaDerivedTextGlyphs: src.figmaDerivedTextGlyphs
-      ? src.figmaDerivedTextGlyphs.map((g) => ({
-          ...g,
-          commandsBlob: new Uint8Array(g.commandsBlob)
-        }))
-      : null,
+    figmaDerivedTextGlyphs: copyGlyphs(src.figmaDerivedTextGlyphs),
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null
   }
 }
