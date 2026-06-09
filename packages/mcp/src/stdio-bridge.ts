@@ -150,6 +150,15 @@ export function createStdioRpcBridge({
       })
 
       req.on('error', reject)
+      // Socket-level idle timeout to prevent indefinite hangs on
+      // unresponsive connections. Set 5s shorter than the outer RPC_TIMEOUT
+      // so this fires deterministically first, producing a clear "server
+      // unreachable" signal rather than racing with the outer timer.
+      // If the outer sendRpc timer already rejected, the error handler
+      // is a no-op (settled guard in attempt()).
+      req.setTimeout(RPC_TIMEOUT - 5_000, () => {
+        req.destroy(new Error('Socket timeout'))
+      })
       if (bodyJson) req.write(bodyJson)
       req.end()
     })

@@ -201,8 +201,8 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     broadcastRegisterToken()
   }
 
-  function handleBrowserResponse(msg: BrowserMessage) {
-    if (!browserRegistered || !msg.id) return
+  function handleBrowserResponse(msg: BrowserMessage, ws: WebSocket) {
+    if (!browserRegistered || browserWs !== ws || !msg.id) return
     const req = pending.get(msg.id)
     if (!req) return
     pending.delete(msg.id)
@@ -231,7 +231,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       void handleClientRequest(ws, msg)
       return
     }
-    if (msg.type === 'response') handleBrowserResponse(msg)
+    if (msg.type === 'response') handleBrowserResponse(msg, ws)
   }
 
   function handleClose(ws: WebSocket) {

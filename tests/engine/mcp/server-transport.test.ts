@@ -26,22 +26,29 @@ let sharedPort: number | null = null
 
 function readWsJson<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error('Timed out waiting for WebSocket message')),
-      timeoutMs
-    )
-    ws.once('message', (raw) => {
+    const cleanup = () => {
       clearTimeout(timer)
+      ws.off('message', onMessage)
+      ws.off('error', onError)
+    }
+    const onMessage = (raw: WebSocket.RawData) => {
+      cleanup()
       try {
         resolve(JSON.parse(raw.toString()) as T)
       } catch (error) {
         reject(error)
       }
-    })
-    ws.once('error', (error) => {
-      clearTimeout(timer)
+    }
+    const onError = (error: Error) => {
+      cleanup()
       reject(error)
-    })
+    }
+    const timer = setTimeout(() => {
+      cleanup()
+      reject(new Error('Timed out waiting for WebSocket message'))
+    }, timeoutMs)
+    ws.on('message', onMessage)
+    ws.on('error', onError)
   })
 }
 

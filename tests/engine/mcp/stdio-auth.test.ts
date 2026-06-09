@@ -51,7 +51,7 @@ function createMockMcpServer(
   const { authToken = null, firstRpcFailsWith401 = false } = options
   let rpcCount = 0
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const server = createServer((req, res) => {
       // Health check — always succeeds
       if (req.url === '/health' && req.method === 'GET') {
@@ -88,7 +88,11 @@ function createMockMcpServer(
       res.end(JSON.stringify({ error: 'not found' }))
     })
 
-    server.listen(socketPath, () => resolve(server))
+    server.once('error', reject)
+    server.listen(socketPath, () => {
+      server.off('error', reject)
+      resolve(server)
+    })
   })
 }
 
