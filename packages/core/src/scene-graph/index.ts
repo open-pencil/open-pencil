@@ -2,8 +2,10 @@ export * from './snap'
 export * from './export-scale'
 export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
 
+import { omit } from 'es-toolkit/object'
 import { createNanoEvents } from 'nanoevents'
 
+import { cloneNodeProps } from './copy'
 import * as HitTest from './hit-test'
 import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
@@ -27,6 +29,7 @@ import type {
   SceneGraphEventHandlers,
   SceneGraphEvents,
   SceneNode,
+  SourceMetadata,
   Variable,
   VariableCollection,
   VariableType,
@@ -80,15 +83,12 @@ export class SceneGraph {
       (n) => n.type === 'CANVAS' && (includeInternal || !n.internalOnly)
     )
   }
-
   getAllNodes(): Iterable<SceneNode> {
     return this.nodes.values()
   }
-
   getNode(id: string): SceneNode | undefined {
     return this.nodes.get(id)
   }
-
   onNodeEvents(handlers: SceneGraphEventHandlers): () => void {
     const unbinds = [
       handlers.created ? this.emitter.on('node:created', handlers.created) : null,
@@ -121,21 +121,16 @@ export class SceneGraph {
     }
     return count
   }
-
   // --- Variables ---
-
   addVariable(variable: Variable): void {
     Variables.addVariable(this, variable)
   }
-
   removeVariable(id: string): void {
     Variables.removeVariable(this, id)
   }
-
   addCollection(collection: VariableCollection): void {
     Variables.addCollection(this, collection)
   }
-
   createVariable(
     name: string,
     type: VariableType,
@@ -394,6 +389,9 @@ export class SceneGraph {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
     Object.assign(node, changes)
+    // Clean up stale variable bindings when fills/strokes arrays are replaced
+    if (changes.fills) this.cleanupStaleBindings(node, 'fills')
+    if (changes.strokes) this.cleanupStaleBindings(node, 'strokes')
     this.emitter.emit('node:updated', id, changes)
   }
 
@@ -525,8 +523,14 @@ export class SceneGraph {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
-    const { id: _srcId, parentId: _srcParent, childIds: _srcChildren, ...rest } = src
-    const clone = this.createNode(src.type, parentId, { ...rest, ...overrides })
+    const props = cloneNodeProps(src, null)
+    // Null out Figma source identifiers for the clone
+    props.source = {
+      ...(props.source as SourceMetadata),
+      id: null,
+      orderKey: null
+    }
+    const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
 
     for (const childId of src.childIds) {
       this.cloneTree(childId, clone.id)
@@ -580,5 +584,16 @@ export class SceneGraph {
       if (child.childIds.length > 0) result.push(...this.flattenTree(childId, depth + 1))
     }
     return result
+  }
+
+  private cleanupStaleBindings(node: SceneNode, field: 'fills' | 'strokes'): void {
+    const length = field === 'fills' ? node.fills.length : node.strokes.length
+    const staleKeys = Object.keys(node.boundVariables).filter((key) => {
+      if (key === field) return true
+      if (!key.startsWith(`${field}/`)) return false
+      const idx = Number.parseInt(key.split('/')[1] ?? '', 10)
+      return idx > length
+    })
+    if (staleKeys.length > 0) node.boundVariables = omit(node.boundVariables, staleKeys)
   }
 }

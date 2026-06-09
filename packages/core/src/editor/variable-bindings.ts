@@ -13,9 +13,13 @@ export function createVariableBindingActions(ctx: EditorContext) {
         ctx.requestRender()
       },
       inverse: () => {
-        if (prevVarId) ctx.graph.bindVariable(nodeId, path, prevVarId)
-        else ctx.graph.unbindVariable(nodeId, path)
-        ctx.requestRender()
+        try {
+          if (prevVarId) ctx.graph.bindVariable(nodeId, path, prevVarId)
+          else ctx.graph.unbindVariable(nodeId, path)
+          ctx.requestRender()
+        } catch (e) {
+          console.warn('Undo bindVariable failed:', e instanceof Error ? e.message : String(e))
+        }
       }
     })
     ctx.requestRender()
@@ -34,8 +38,12 @@ export function createVariableBindingActions(ctx: EditorContext) {
         ctx.requestRender()
       },
       inverse: () => {
-        ctx.graph.bindVariable(nodeId, path, prevVarId)
-        ctx.requestRender()
+        try {
+          ctx.graph.bindVariable(nodeId, path, prevVarId)
+          ctx.requestRender()
+        } catch (e) {
+          console.warn('Undo unbindVariable failed:', e instanceof Error ? e.message : String(e))
+        }
       }
     })
     ctx.requestRender()

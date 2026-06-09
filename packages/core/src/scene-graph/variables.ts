@@ -223,6 +223,44 @@ export function getVariablesByType(graph: SceneGraph, type: VariableType): Varia
   return [...graph.variables.values()].filter((v) => v.type === type)
 }
 
+const SCALAR_BINDING_FIELDS: ReadonlySet<string> = new Set([
+  'opacity',
+  'width',
+  'height',
+  'cornerRadius',
+  'fontSize',
+  'letterSpacing',
+  'lineHeight',
+  'itemSpacing',
+  'strokeWeight',
+  'paddingLeft',
+  'paddingRight',
+  'paddingTop',
+  'paddingBottom',
+  'counterAxisSpacing',
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomLeftRadius',
+  'bottomRightRadius',
+  'rotation',
+  'x',
+  'y',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
+  'borderTopWeight',
+  'borderBottomWeight',
+  'borderLeftWeight',
+  'borderRightWeight',
+  'gridRowGap',
+  'gridColumnGap'
+])
+
+const STRING_BINDING_FIELDS: ReadonlySet<string> = new Set(['fontFamily'])
+
+const BOOLEAN_BINDING_FIELDS: ReadonlySet<string> = new Set(['visible'])
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -230,10 +268,54 @@ export function bindVariable(
   variableId: string
 ): void {
   const node = graph.nodes.get(nodeId)
-  if (node) node.boundVariables[field] = variableId
+  if (!node) return
+
+  // Validate variable exists
+  const variable = graph.variables.get(variableId)
+  if (!variable) {
+    throw new Error(`Variable "${variableId}" not found`)
+  }
+
+  // Color fields require COLOR variable type
+  const colorFieldMatch = field.match(/^(fills|strokes)\/(\d+)\/color$/)
+  if (colorFieldMatch) {
+    if (variable.type !== 'COLOR') {
+      throw new Error(`Cannot bind ${variable.type} variable to color field "${field}"`)
+    }
+    // Validate index is within a reasonable range (not beyond current length + 1)
+    const arrayKey = colorFieldMatch[1] as 'fills' | 'strokes'
+    const index = Number.parseInt(colorFieldMatch[2], 10)
+    const currentLength = node[arrayKey].length
+    if (index > currentLength) {
+      throw new Error(`Index ${index} out of range for ${arrayKey} (length ${currentLength})`)
+    }
+    // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
+    const topLevelKey = colorFieldMatch[1]
+    if (topLevelKey in node.boundVariables) {
+      node.boundVariables = omit(node.boundVariables, [topLevelKey])
+    }
+  }
+
+  if (SCALAR_BINDING_FIELDS.has(field) && variable.type !== 'FLOAT') {
+    throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
+  }
+
+  if (STRING_BINDING_FIELDS.has(field) && variable.type !== 'STRING') {
+    throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
+  }
+
+  if (BOOLEAN_BINDING_FIELDS.has(field) && variable.type !== 'BOOLEAN') {
+    throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
+  }
+
+  node.boundVariables[field] = variableId
+  graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
 }
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
   const node = graph.nodes.get(nodeId)
-  if (node) node.boundVariables = omit(node.boundVariables, [field])
+  if (node) {
+    node.boundVariables = omit(node.boundVariables, [field])
+    graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
+  }
 }

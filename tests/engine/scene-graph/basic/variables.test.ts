@@ -181,6 +181,23 @@ describe('Variables', () => {
 
   test('bind and unbind variable to node', () => {
     const graph = new SceneGraph()
+    graph.addCollection({
+      id: 'col1',
+      name: 'Colors',
+      modes: [{ modeId: 'm1', name: 'Light' }],
+      defaultModeId: 'm1',
+      variableIds: []
+    })
+    graph.addVariable({
+      id: 'v1',
+      name: 'Primary',
+      type: 'COLOR',
+      collectionId: 'col1',
+      valuesByMode: { m1: { r: 1, g: 0, b: 0, a: 1 } },
+      description: '',
+      hiddenFromPublishing: false
+    })
+
     const node = graph.createNode('RECTANGLE', pageId(graph), { name: 'Rect' })
 
     graph.bindVariable(node.id, 'fills/0/color', 'v1')

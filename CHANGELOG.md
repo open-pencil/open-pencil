@@ -5,9 +5,14 @@
 ### Changed
 
 - Add JSX authoring support for components, component sets, and instances.
+- Add type-validated `bindVariable`/`unbindVariable` with event emission and indexed binding format (`fills/N/color` instead of `fills[N]`).
+- Add `unbind_variable` MCP tool for removing variable bindings.
 
 ### Fixes
 
+- Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.
+- Fix instance overrides shallow-copied on clone — override values containing objects are now deep-copied.
+- Fix stale variable bindings not cleaned up when fills/strokes arrays shrink — any indexed sub-path is now handled, not just `/color`.
 - Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
 - Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
 - Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
