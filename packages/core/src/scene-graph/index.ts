@@ -592,11 +592,12 @@ export class SceneGraph {
     changes: Partial<SceneNode>
   ): void {
     const length = field === 'fills' ? node.fills.length : node.strokes.length
-    const staleKeys = Object.keys(node.boundVariables).filter(
-      (key) =>
-        key === field ||
-        (key.startsWith(`${field}/`) && Number.parseInt(key.split('/')[1] ?? '', 10) >= length)
-    )
+    const staleKeys = Object.keys(node.boundVariables).filter((key) => {
+      if (key === field) return true
+      if (!key.startsWith(`${field}/`)) return false
+      const index = Number.parseInt(key.split('/')[1] ?? '', 10)
+      return Number.isNaN(index) || index < 0 || index >= length
+    })
     if (staleKeys.length > 0) {
       node.boundVariables = omit(node.boundVariables, staleKeys)
       changes.boundVariables = { ...node.boundVariables }
