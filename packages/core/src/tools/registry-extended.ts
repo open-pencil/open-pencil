@@ -75,7 +75,8 @@ import {
   getVariable,
   listCollections,
   listVariables,
-  setVariable
+  setVariable,
+  unbindVariable
 } from './variables'
 import {
   booleanExclude,
@@ -160,6 +161,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setVariable,
   deleteVariable,
   bindVariable,
+  unbindVariable,
   getCollection,
   createCollection,
   deleteCollection,

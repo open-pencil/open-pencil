@@ -10,9 +10,12 @@ export default defineRule({
   },
   match: ['TEXT'],
   check(node, context) {
-    const textFill = node.fills.find((f) => f.type === 'SOLID' && f.visible && f.color)
-    const textColor = textFill?.color
-    if (!textColor) return
+    const textFillIndex = node.fills.findIndex((f) => f.type === 'SOLID' && f.visible && f.color)
+    const textColor = node.fills[textFillIndex]?.color
+    if (textColor == null) return
+    // When the fill color is overridden by a variable binding, the effective
+    // color depends on the active mode — static contrast checks are unreliable.
+    if (node.boundVariables[`fills/${textFillIndex}/color`]) return
     let parent = context.getParent(node)
     while (parent) {
       const bg = parent.fills.find((f) => f.type === 'SOLID' && f.visible && f.color)?.color

@@ -54,25 +54,47 @@ import type { GUID } from '#core/types'
 export { guidToString, stringToGuid } from './guid'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
+  // Corner radius
   cornerRadius: 'CORNER_RADIUS',
   topLeftRadius: 'RECTANGLE_TOP_LEFT_CORNER_RADIUS',
   topRightRadius: 'RECTANGLE_TOP_RIGHT_CORNER_RADIUS',
   bottomLeftRadius: 'RECTANGLE_BOTTOM_LEFT_CORNER_RADIUS',
   bottomRightRadius: 'RECTANGLE_BOTTOM_RIGHT_CORNER_RADIUS',
+  // Stroke
   strokeWeight: 'STROKE_WEIGHT',
+  borderTopWeight: 'BORDER_TOP_WEIGHT',
+  borderBottomWeight: 'BORDER_BOTTOM_WEIGHT',
+  borderLeftWeight: 'BORDER_LEFT_WEIGHT',
+  borderRightWeight: 'BORDER_RIGHT_WEIGHT',
+  // Auto-layout spacing & padding
   itemSpacing: 'STACK_SPACING',
   paddingLeft: 'STACK_PADDING_LEFT',
   paddingTop: 'STACK_PADDING_TOP',
   paddingRight: 'STACK_PADDING_RIGHT',
   paddingBottom: 'STACK_PADDING_BOTTOM',
   counterAxisSpacing: 'STACK_COUNTER_SPACING',
+  // Grid gaps
+  gridRowGap: 'GRID_ROW_GAP',
+  gridColumnGap: 'GRID_COLUMN_GAP',
+  // Visibility & opacity
   visible: 'VISIBLE',
   opacity: 'OPACITY',
+  // Dimensions
   width: 'WIDTH',
   height: 'HEIGHT',
+  minWidth: 'MIN_WIDTH',
+  maxWidth: 'MAX_WIDTH',
+  minHeight: 'MIN_HEIGHT',
+  maxHeight: 'MAX_HEIGHT',
+  // Position & rotation
+  x: 'X_POSITION',
+  y: 'Y_POSITION',
+  rotation: 'ROTATION',
+  // Text
   fontSize: 'FONT_SIZE',
   letterSpacing: 'LETTER_SPACING',
-  lineHeight: 'LINE_HEIGHT'
+  lineHeight: 'LINE_HEIGHT',
+  fontFamily: 'FONT_FAMILY'
 }
 
 export const VARIABLE_BINDING_FIELDS_INVERSE: Record<string, string> = Object.fromEntries(

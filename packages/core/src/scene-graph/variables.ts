@@ -23,10 +23,14 @@ export function removeVariable(graph: SceneGraph, id: string): void {
     collection.variableIds = collection.variableIds.filter((vid) => vid !== id)
   }
   for (const node of graph.nodes.values()) {
+    const hadBinding = Object.values(node.boundVariables).includes(id)
+    if (!hadBinding) continue
     node.boundVariables = omitBy(node.boundVariables, (varId) => varId === id) as Record<
       string,
       string
     >
+    graph.emitter.emit('node:updated', node.id, { boundVariables: { ...node.boundVariables } })
+    markBoundVariablesOverrideOnInstance(graph, node.id)
   }
 }
 
@@ -223,6 +227,44 @@ export function getVariablesByType(graph: SceneGraph, type: VariableType): Varia
   return [...graph.variables.values()].filter((v) => v.type === type)
 }
 
+const SCALAR_BINDING_FIELDS: ReadonlySet<string> = new Set([
+  'opacity',
+  'width',
+  'height',
+  'cornerRadius',
+  'fontSize',
+  'letterSpacing',
+  'lineHeight',
+  'itemSpacing',
+  'strokeWeight',
+  'paddingLeft',
+  'paddingRight',
+  'paddingTop',
+  'paddingBottom',
+  'counterAxisSpacing',
+  'topLeftRadius',
+  'topRightRadius',
+  'bottomLeftRadius',
+  'bottomRightRadius',
+  'rotation',
+  'x',
+  'y',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
+  'borderTopWeight',
+  'borderBottomWeight',
+  'borderLeftWeight',
+  'borderRightWeight',
+  'gridRowGap',
+  'gridColumnGap'
+])
+
+const STRING_BINDING_FIELDS: ReadonlySet<string> = new Set(['fontFamily'])
+
+const BOOLEAN_BINDING_FIELDS: ReadonlySet<string> = new Set(['visible'])
+
 export function bindVariable(
   graph: SceneGraph,
   nodeId: string,
@@ -230,10 +272,91 @@ export function bindVariable(
   variableId: string
 ): void {
   const node = graph.nodes.get(nodeId)
-  if (node) node.boundVariables[field] = variableId
+  if (!node) return
+
+  // Validate variable exists
+  const variable = graph.variables.get(variableId)
+  if (!variable) {
+    throw new Error(`Variable "${variableId}" not found`)
+  }
+
+  // Color fields require COLOR variable type
+  const colorFieldMatch = field.match(/^(fills|strokes)\/(\d+)\/color$/)
+  if (colorFieldMatch) {
+    if (variable.type !== 'COLOR') {
+      throw new Error(`Cannot bind ${variable.type} variable to color field "${field}"`)
+    }
+    // Validate index is within current array bounds
+    const arrayKey = colorFieldMatch[1] as 'fills' | 'strokes'
+    const index = Number.parseInt(colorFieldMatch[2], 10)
+    const currentLength = (node[arrayKey] as unknown[] | undefined)?.length ?? 0
+    if (index >= currentLength) {
+      throw new Error(`Index ${index} out of range for ${arrayKey} (length ${currentLength})`)
+    }
+    // Auto-remove top-level dead binding (e.g. 'fills') when setting indexed binding
+    const topLevelKey = colorFieldMatch[1]
+    if (topLevelKey in node.boundVariables) {
+      node.boundVariables = omit(node.boundVariables, [topLevelKey])
+    }
+  }
+
+  if (SCALAR_BINDING_FIELDS.has(field) && variable.type !== 'FLOAT') {
+    throw new Error(`Cannot bind ${variable.type} variable to scalar field "${field}"`)
+  }
+
+  if (STRING_BINDING_FIELDS.has(field) && variable.type !== 'STRING') {
+    throw new Error(`Cannot bind ${variable.type} variable to string field "${field}"`)
+  }
+
+  if (BOOLEAN_BINDING_FIELDS.has(field) && variable.type !== 'BOOLEAN') {
+    throw new Error(`Cannot bind ${variable.type} variable to boolean field "${field}"`)
+  }
+
+  const isKnownField =
+    SCALAR_BINDING_FIELDS.has(field) ||
+    STRING_BINDING_FIELDS.has(field) ||
+    BOOLEAN_BINDING_FIELDS.has(field) ||
+    colorFieldMatch
+
+  if (!isKnownField) {
+    throw new Error(`Unknown binding field "${field}"`)
+  }
+
+  node.boundVariables = { ...node.boundVariables, [field]: variableId }
+  graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
+  markBoundVariablesOverrideOnInstance(graph, nodeId)
 }
 
 export function unbindVariable(graph: SceneGraph, nodeId: string, field: string): void {
   const node = graph.nodes.get(nodeId)
-  if (node) node.boundVariables = omit(node.boundVariables, [field])
+  if (!node) return
+  if (!(field in node.boundVariables)) return
+  node.boundVariables = omit(node.boundVariables, [field])
+  graph.emitter.emit('node:updated', nodeId, { boundVariables: { ...node.boundVariables } })
+  markBoundVariablesOverrideOnInstance(graph, nodeId)
+}
+
+function markBoundVariablesOverrideOnInstance(graph: SceneGraph, nodeId: string): void {
+  const node = graph.nodes.get(nodeId)
+  if (!node) return
+
+  // If the node IS an INSTANCE itself, set the bare-key override (syncInstances
+  // checks `key in instance.overrides` for INSTANCE-self properties)
+  if (node.type === 'INSTANCE') {
+    node.overrides['boundVariables'] = true
+    return
+  }
+
+  // Otherwise walk up to find an INSTANCE parent and set the child-key override
+  // (syncChildren checks `${instChild.id}:${key}` format)
+  let current = node
+  while (current.parentId) {
+    const parent = graph.nodes.get(current.parentId)
+    if (!parent) break
+    if (parent.type === 'INSTANCE') {
+      parent.overrides[`${nodeId}:boundVariables`] = true
+      break
+    }
+    current = parent
+  }
 }

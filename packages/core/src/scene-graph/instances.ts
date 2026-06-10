@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from './'
-import { copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
+import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
 
 const INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
   'width',
@@ -37,7 +37,8 @@ const INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
   'borderTopWeight',
   'borderRightWeight',
   'borderBottomWeight',
-  'borderLeftWeight'
+  'borderLeftWeight',
+  'boundVariables'
 ]
 
 function setSceneProp<K extends keyof SceneNode>(
@@ -61,6 +62,12 @@ function copyProp(
     setSceneProp(target, key, copyEffects(source.effects))
   } else if (key === 'styleRuns') {
     setSceneProp(target, key, copyStyleRuns(source.styleRuns))
+  } else if (key === 'boundVariables') {
+    // Shallow copy the binding map — values are variable IDs (strings), not objects
+    setSceneProp(target, key, { ...source.boundVariables })
+  } else if (key === 'gridPosition') {
+    // Shallow copy the grid position object — all fields are primitives
+    setSceneProp(target, key, source.gridPosition ? { ...source.gridPosition } : null)
   } else {
     const value = source[key]
     setSceneProp(target, key, Array.isArray(value) ? structuredClone(value) : value)
@@ -79,11 +86,7 @@ function cloneChildrenWithMapping(
     const src = graph.nodes.get(childId)
     if (!src) continue
 
-    const { id: _, parentId: _p, childIds: _c, ...rest } = src
-    const clone = graph.createNode(src.type, destParentId, {
-      ...rest,
-      componentId: childId
-    })
+    const clone = graph.createNode(src.type, destParentId, cloneNodeProps(src, childId))
 
     if (src.childIds.length > 0) {
       cloneChildrenWithMapping(graph, childId, clone.id)
@@ -111,11 +114,7 @@ function syncChildren(
     if (!instChildMap.has(compChildId)) {
       const src = graph.nodes.get(compChildId)
       if (!src) continue
-      const { id: _, parentId: _p, childIds: _c, ...rest } = src
-      const clone = graph.createNode(src.type, instParentId, {
-        ...rest,
-        componentId: compChildId
-      })
+      const clone = graph.createNode(src.type, instParentId, cloneNodeProps(src, compChildId))
       if (src.childIds.length > 0) {
         cloneChildrenWithMapping(graph, compChildId, clone.id)
       }

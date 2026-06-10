@@ -48,18 +48,20 @@ export const analyzeColors = defineTool({
       if (!raw) return false
 
       const boundVars = raw.boundVariables
-      for (const fill of raw.fills) {
+      for (let i = 0; i < raw.fills.length; i++) {
+        const fill = raw.fills[i]
         if (fill.type === 'SOLID' && fill.visible) {
-          trackColor(colorMap, fill.color, boundVars['fills'] ? String(boundVars['fills']) : null)
+          const varId = boundVars[`fills/${i}/color`]
+          const variable = varId ? figma.graph.variables.get(varId) : undefined
+          trackColor(colorMap, fill.color, variable?.name ?? null)
         }
       }
-      for (const stroke of raw.strokes) {
+      for (let i = 0; i < raw.strokes.length; i++) {
+        const stroke = raw.strokes[i]
         if (stroke.visible) {
-          trackColor(
-            colorMap,
-            stroke.color,
-            boundVars['strokes'] ? String(boundVars['strokes']) : null
-          )
+          const varId = boundVars[`strokes/${i}/color`]
+          const variable = varId ? figma.graph.variables.get(varId) : undefined
+          trackColor(colorMap, stroke.color, variable?.name ?? null)
         }
       }
       return false
