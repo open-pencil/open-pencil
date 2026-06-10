@@ -9,6 +9,7 @@
  */
 
 import type {
+  ArcData,
   ComponentPropertyDefinition,
   Effect,
   FigmaDerivedTextGlyph,
@@ -16,8 +17,10 @@ import type {
   GeometryPath,
   GradientStop,
   SceneNode,
+  SourceMetadata,
   Stroke,
-  StyleRun
+  StyleRun,
+  VectorNetwork
 } from './'
 
 // --- Individual copy functions ---
@@ -115,6 +118,50 @@ function copyGlyphs(glyphs: FigmaDerivedTextGlyph[] | null): FigmaDerivedTextGly
   return glyphs ? glyphs.map((g) => ({ ...g, commandsBlob: new Uint8Array(g.commandsBlob) })) : null
 }
 
+// --- Complex structure copy functions ---
+// These replace structuredClone for known types, avoiding its ~24× overhead.
+
+/** Shallow-copy an unknown[] where object items are spread-copied. */
+function copyUnknownArray(arr: unknown[]): unknown[] {
+  return arr.map((item) => (typeof item === 'object' && item !== null ? { ...item } : item))
+}
+
+function copySource(src: SourceMetadata): SourceMetadata {
+  return {
+    format: src.format,
+    id: src.id,
+    orderKey: src.orderKey,
+    fig: {
+      rawSize: src.fig.rawSize ? { ...src.fig.rawSize } : null,
+      rawTransform: src.fig.rawTransform ? { ...src.fig.rawTransform } : null,
+      rawNodeFields: { ...src.fig.rawNodeFields },
+      layout: src.fig.layout ? { ...src.fig.layout } : null,
+      symbolOverrides: copyUnknownArray(src.fig.symbolOverrides),
+      componentPropAssignments: copyUnknownArray(src.fig.componentPropAssignments),
+      derivedSymbolData: copyUnknownArray(src.fig.derivedSymbolData),
+      derivedSymbolDataLayoutVersion: src.fig.derivedSymbolDataLayoutVersion,
+      uniformScaleFactor: src.fig.uniformScaleFactor
+    }
+  }
+}
+
+function copyArcData(a: ArcData): ArcData {
+  return { startingAngle: a.startingAngle, endingAngle: a.endingAngle, innerRadius: a.innerRadius }
+}
+
+function copyVectorNetwork(vn: VectorNetwork): VectorNetwork {
+  return {
+    vertices: vn.vertices.map((vt) => ({ ...vt })),
+    segments: vn.segments.map((seg) => ({
+      start: seg.start,
+      end: seg.end,
+      tangentStart: { ...seg.tangentStart },
+      tangentEnd: { ...seg.tangentEnd }
+    })),
+    regions: vn.regions.map((r) => ({ windingRule: r.windingRule, loops: r.loops.map((l) => [...l]) }))
+  }
+}
+
 // --- Deep-copy clone props ---
 
 /**
@@ -129,18 +176,18 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     ...rest,
     ...(componentId !== null ? { componentId } : {}),
     boundVariables: { ...src.boundVariables },
-    overrides: structuredClone(src.overrides),
-    fills: copyFills(src.fills),
-    strokes: copyStrokes(src.strokes),
-    effects: copyEffects(src.effects),
+    overrides: Object.keys(src.overrides).length > 0 ? structuredClone(src.overrides) : {},
+    fills: src.fills.length > 0 ? copyFills(src.fills) : [],
+    strokes: src.strokes.length > 0 ? copyStrokes(src.strokes) : [],
+    effects: src.effects.length > 0 ? copyEffects(src.effects) : [],
     styleRuns: src.styleRuns.length > 0 ? copyStyleRuns(src.styleRuns) : [],
-    source: structuredClone(src.source),
-    dashPattern: [...src.dashPattern],
-    fontVariations: src.fontVariations.map((v) => ({ ...v })),
-    fontFeatures: src.fontFeatures.map((v) => ({ ...v })),
-    textDecorationFills: copyFills(src.textDecorationFills),
-    fillGeometry: copyGeometryPaths(src.fillGeometry),
-    strokeGeometry: copyGeometryPaths(src.strokeGeometry),
+    source: copySource(src.source),
+    dashPattern: src.dashPattern.length > 0 ? [...src.dashPattern] : [],
+    fontVariations: src.fontVariations.length > 0 ? src.fontVariations.map((v) => ({ ...v })) : [],
+    fontFeatures: src.fontFeatures.length > 0 ? src.fontFeatures.map((v) => ({ ...v })) : [],
+    textDecorationFills: src.textDecorationFills.length > 0 ? copyFills(src.textDecorationFills) : [],
+    fillGeometry: src.fillGeometry.length > 0 ? copyGeometryPaths(src.fillGeometry) : [],
+    strokeGeometry: src.strokeGeometry.length > 0 ? copyGeometryPaths(src.strokeGeometry) : [],
     gridTemplateColumns: copySpread(src.gridTemplateColumns),
     gridTemplateRows: copySpread(src.gridTemplateRows),
     componentPropertyDefinitions: copyPropertyDefs(src.componentPropertyDefinitions),
@@ -151,8 +198,8 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     exportSettings: copySpread(src.exportSettings),
     componentPropertyValues: { ...src.componentPropertyValues },
     figmaDerivedLayout: src.figmaDerivedLayout ? { ...src.figmaDerivedLayout } : null,
-    arcData: src.arcData ? structuredClone(src.arcData) : null,
-    vectorNetwork: src.vectorNetwork ? structuredClone(src.vectorNetwork) : null,
+    arcData: src.arcData ? copyArcData(src.arcData) : null,
+    vectorNetwork: src.vectorNetwork ? copyVectorNetwork(src.vectorNetwork) : null,
     textPicture: src.textPicture ? new Uint8Array(src.textPicture) : null,
     figmaDerivedTextGlyphs: copyGlyphs(src.figmaDerivedTextGlyphs),
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null

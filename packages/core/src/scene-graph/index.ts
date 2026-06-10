@@ -524,12 +524,8 @@ export class SceneGraph {
     if (!src) return null
 
     const props = cloneNodeProps(src, null)
-    // Null out Figma source identifiers for the clone
-    props.source = {
-      ...(props.source as SourceMetadata),
-      id: null,
-      orderKey: null
-    }
+    // Null out Figma source identifiers so the clone is treated as local
+    props.source = { ...(props.source as SourceMetadata), id: null, orderKey: null }
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
 
     for (const childId of src.childIds) {
@@ -586,20 +582,16 @@ export class SceneGraph {
     return result
   }
 
-  private cleanupStaleBindings(
-    node: SceneNode,
-    field: 'fills' | 'strokes',
-    changes: Partial<SceneNode>
-  ): void {
-    const length = field === 'fills' ? node.fills.length : node.strokes.length
-    const staleKeys = Object.keys(node.boundVariables).filter((key) => {
-      if (key === field) return true
-      if (!key.startsWith(`${field}/`)) return false
-      const index = Number.parseInt(key.split('/')[1] ?? '', 10)
-      return Number.isNaN(index) || index < 0 || index >= length
+  private cleanupStaleBindings(node: SceneNode, field: 'fills' | 'strokes', changes: Partial<SceneNode>): void {
+    const len = field === 'fills' ? node.fills.length : node.strokes.length
+    const stale = Object.keys(node.boundVariables).filter((k) => {
+      if (k === field) return true
+      if (!k.startsWith(`${field}/`)) return false
+      const i = Number.parseInt(k.split('/')[1] ?? '', 10)
+      return Number.isNaN(i) || i < 0 || i >= len
     })
-    if (staleKeys.length > 0) {
-      node.boundVariables = omit(node.boundVariables, staleKeys)
+    if (stale.length > 0) {
+      node.boundVariables = omit(node.boundVariables, stale)
       changes.boundVariables = { ...node.boundVariables }
     }
   }
