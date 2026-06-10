@@ -164,7 +164,10 @@ function copyVectorNetwork(vn: VectorNetwork): VectorNetwork {
       tangentStart: { ...seg.tangentStart },
       tangentEnd: { ...seg.tangentEnd }
     })),
-    regions: vn.regions.map((r) => ({ windingRule: r.windingRule, loops: r.loops.map((l) => [...l]) }))
+    regions: vn.regions.map((r) => ({
+      windingRule: r.windingRule,
+      loops: r.loops.map((l) => [...l])
+    }))
   }
 }
 

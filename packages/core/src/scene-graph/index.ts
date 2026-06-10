@@ -38,6 +38,24 @@ import type {
 
 export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
 
+function removeStaleBindings(
+  node: SceneNode,
+  field: 'fills' | 'strokes',
+  changes: Partial<SceneNode>
+): void {
+  const len = node[field].length
+  const stale = Object.keys(node.boundVariables).filter((k) => {
+    if (k === field) return true
+    if (!k.startsWith(`${field}/`)) return false
+    const i = Number.parseInt(k.split('/')[1] ?? '', 10)
+    return Number.isNaN(i) || i < 0 || i >= len
+  })
+  if (stale.length > 0) {
+    node.boundVariables = omit(node.boundVariables, stale)
+    changes.boundVariables = { ...node.boundVariables }
+  }
+}
+
 let nextLocalID = 1
 
 export function generateId(): string {
@@ -73,7 +91,6 @@ export class SceneGraph {
 
     this.addPage('Page 1')
   }
-
   addPage(name: string): SceneNode {
     return this.createNode('CANVAS', this.rootId, { name, width: 0, height: 0 })
   }
@@ -389,9 +406,8 @@ export class SceneGraph {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
     Object.assign(node, changes)
-    // Clean up stale variable bindings when fills/strokes arrays are replaced
-    if (changes.fills) this.cleanupStaleBindings(node, 'fills', changes)
-    if (changes.strokes) this.cleanupStaleBindings(node, 'strokes', changes)
+    if (changes.fills) removeStaleBindings(node, 'fills', changes)
+    if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     this.emitter.emit('node:updated', id, changes)
   }
 
@@ -571,7 +587,6 @@ export class SceneGraph {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)
     if (!parent) return []
-
     const result: Array<{ node: SceneNode; depth: number }> = []
     for (const childId of parent.childIds) {
       const child = this.nodes.get(childId)
@@ -580,19 +595,5 @@ export class SceneGraph {
       if (child.childIds.length > 0) result.push(...this.flattenTree(childId, depth + 1))
     }
     return result
-  }
-
-  private cleanupStaleBindings(node: SceneNode, field: 'fills' | 'strokes', changes: Partial<SceneNode>): void {
-    const len = field === 'fills' ? node.fills.length : node.strokes.length
-    const stale = Object.keys(node.boundVariables).filter((k) => {
-      if (k === field) return true
-      if (!k.startsWith(`${field}/`)) return false
-      const i = Number.parseInt(k.split('/')[1] ?? '', 10)
-      return Number.isNaN(i) || i < 0 || i >= len
-    })
-    if (stale.length > 0) {
-      node.boundVariables = omit(node.boundVariables, stale)
-      changes.boundVariables = { ...node.boundVariables }
-    }
   }
 }
