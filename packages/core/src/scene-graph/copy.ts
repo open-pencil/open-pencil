@@ -17,11 +17,10 @@ import type {
   GeometryPath,
   GradientStop,
   SceneNode,
-  SourceMetadata,
   Stroke,
-  StyleRun,
-  VectorNetwork
+  StyleRun
 } from './'
+import { cloneVectorNetwork } from './vector-network'
 
 // --- Individual copy functions ---
 
@@ -127,48 +126,8 @@ function copyGlyphs(glyphs: FigmaDerivedTextGlyph[] | null): FigmaDerivedTextGly
 // --- Complex structure copy functions ---
 // These replace structuredClone for known types, avoiding its ~24× overhead.
 
-/** Shallow-copy an unknown[] where object items are spread-copied. */
-function copyUnknownArray(arr: unknown[]): unknown[] {
-  return arr.map((item) => (typeof item === 'object' && item !== null ? { ...item } : item))
-}
-
-function copySource(src: SourceMetadata): SourceMetadata {
-  return {
-    format: src.format,
-    id: src.id,
-    orderKey: src.orderKey,
-    fig: {
-      rawSize: src.fig.rawSize ? { ...src.fig.rawSize } : null,
-      rawTransform: src.fig.rawTransform ? { ...src.fig.rawTransform } : null,
-      rawNodeFields: { ...src.fig.rawNodeFields },
-      layout: src.fig.layout ? { ...src.fig.layout } : null,
-      symbolOverrides: copyUnknownArray(src.fig.symbolOverrides),
-      componentPropAssignments: copyUnknownArray(src.fig.componentPropAssignments),
-      derivedSymbolData: copyUnknownArray(src.fig.derivedSymbolData),
-      derivedSymbolDataLayoutVersion: src.fig.derivedSymbolDataLayoutVersion,
-      uniformScaleFactor: src.fig.uniformScaleFactor
-    }
-  }
-}
-
 function copyArcData(a: ArcData): ArcData {
   return { startingAngle: a.startingAngle, endingAngle: a.endingAngle, innerRadius: a.innerRadius }
-}
-
-function copyVectorNetwork(vn: VectorNetwork): VectorNetwork {
-  return {
-    vertices: vn.vertices.map((vt) => ({ ...vt })),
-    segments: vn.segments.map((seg) => ({
-      start: seg.start,
-      end: seg.end,
-      tangentStart: { ...seg.tangentStart },
-      tangentEnd: { ...seg.tangentEnd }
-    })),
-    regions: vn.regions.map((r) => ({
-      windingRule: r.windingRule,
-      loops: r.loops.map((l) => [...l])
-    }))
-  }
 }
 
 // --- Deep-copy clone props ---
@@ -177,7 +136,8 @@ function copyVectorNetwork(vn: VectorNetwork): VectorNetwork {
  * Build the init props for a deep-copy clone of `src`.
  * Shares logic between SceneGraph.cloneTree and instance child cloning.
  * Explicitly deep-copies all mutable object/array fields that `...rest`
- * would otherwise share by reference.
+ * would otherwise share by reference. When adding a mutable SceneNode field,
+ * add its copy behavior here or document why sharing is intentional.
  */
 export function cloneNodeProps(src: SceneNode, componentId: string | null): Partial<SceneNode> {
   const { id: _, parentId: _p, childIds: _c, ...rest } = src
@@ -190,7 +150,9 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     strokes: copyOpt(src.strokes, copyStrokes),
     effects: copyOpt(src.effects, copyEffects),
     styleRuns: copyOpt(src.styleRuns, copyStyleRuns),
-    source: copySource(src.source),
+    // Source metadata preserves opaque raw Figma payloads; use structuredClone instead of
+    // hand-copying partial known shapes and accidentally sharing nested raw Figma data.
+    source: structuredClone(src.source),
     dashPattern: copyOpt(src.dashPattern, (a) => [...a]),
     fontVariations: copyOpt(src.fontVariations, (a) => a.map((v) => ({ ...v }))),
     fontFeatures: copyOpt(src.fontFeatures, (a) => a.map((v) => ({ ...v }))),
@@ -208,7 +170,7 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     componentPropertyValues: { ...src.componentPropertyValues },
     figmaDerivedLayout: src.figmaDerivedLayout ? { ...src.figmaDerivedLayout } : null,
     arcData: src.arcData ? copyArcData(src.arcData) : null,
-    vectorNetwork: src.vectorNetwork ? copyVectorNetwork(src.vectorNetwork) : null,
+    vectorNetwork: src.vectorNetwork ? cloneVectorNetwork(src.vectorNetwork) : null,
     textPicture: src.textPicture ? new Uint8Array(src.textPicture) : null,
     figmaDerivedTextGlyphs: copyGlyphs(src.figmaDerivedTextGlyphs),
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null
