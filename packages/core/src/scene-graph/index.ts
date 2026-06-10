@@ -55,7 +55,6 @@ function removeStaleBindings(
     changes.boundVariables = { ...node.boundVariables }
   }
 }
-
 let nextLocalID = 1
 
 export function generateId(): string {
@@ -540,7 +539,9 @@ export class SceneGraph {
     if (!src) return null
 
     const props = cloneNodeProps(src, null)
-    // Null out Figma source identifiers so the clone is treated as local
+    // Null out Figma source identifiers so the clone is treated as local.
+    // `as SourceMetadata` required: cloneNodeProps returns Partial<SceneNode>,
+    // so props.source is SourceMetadata | undefined, but we know it's always set.
     props.source = { ...(props.source as SourceMetadata), id: null, orderKey: null }
     const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
 
