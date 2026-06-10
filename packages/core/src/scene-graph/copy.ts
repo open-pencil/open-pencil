@@ -95,6 +95,12 @@ export function copyGeometryPaths(paths: GeometryPath[]): GeometryPath[] {
 
 // --- Internal helpers ---
 
+/** Copy an optional array: non-empty → mapped, empty → [], undefined → undefined. */
+function copyOpt<T, U>(arr: T[] | undefined, fn: (arr: T[]) => U[]): U[] | undefined {
+  if (arr === undefined) return undefined
+  return arr.length > 0 ? fn(arr) : []
+}
+
 function copyGradientStop(gs: GradientStop): GradientStop {
   return { color: { ...gs.color }, position: gs.position }
 }
@@ -177,17 +183,17 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     ...(componentId !== null ? { componentId } : {}),
     boundVariables: { ...src.boundVariables },
     overrides: Object.keys(src.overrides).length > 0 ? structuredClone(src.overrides) : {},
-    fills: src.fills.length > 0 ? copyFills(src.fills) : [],
-    strokes: src.strokes.length > 0 ? copyStrokes(src.strokes) : [],
-    effects: src.effects.length > 0 ? copyEffects(src.effects) : [],
-    styleRuns: src.styleRuns.length > 0 ? copyStyleRuns(src.styleRuns) : [],
+    fills: copyOpt(src.fills, copyFills),
+    strokes: copyOpt(src.strokes, copyStrokes),
+    effects: copyOpt(src.effects, copyEffects),
+    styleRuns: copyOpt(src.styleRuns, copyStyleRuns),
     source: copySource(src.source),
-    dashPattern: src.dashPattern.length > 0 ? [...src.dashPattern] : [],
-    fontVariations: src.fontVariations.length > 0 ? src.fontVariations.map((v) => ({ ...v })) : [],
-    fontFeatures: src.fontFeatures.length > 0 ? src.fontFeatures.map((v) => ({ ...v })) : [],
-    textDecorationFills: src.textDecorationFills.length > 0 ? copyFills(src.textDecorationFills) : [],
-    fillGeometry: src.fillGeometry.length > 0 ? copyGeometryPaths(src.fillGeometry) : [],
-    strokeGeometry: src.strokeGeometry.length > 0 ? copyGeometryPaths(src.strokeGeometry) : [],
+    dashPattern: copyOpt(src.dashPattern, (a) => [...a]),
+    fontVariations: copyOpt(src.fontVariations, (a) => a.map((v) => ({ ...v }))),
+    fontFeatures: copyOpt(src.fontFeatures, (a) => a.map((v) => ({ ...v }))),
+    textDecorationFills: copyOpt(src.textDecorationFills, copyFills),
+    fillGeometry: copyOpt(src.fillGeometry, copyGeometryPaths),
+    strokeGeometry: copyOpt(src.strokeGeometry, copyGeometryPaths),
     gridTemplateColumns: copySpread(src.gridTemplateColumns),
     gridTemplateRows: copySpread(src.gridTemplateRows),
     componentPropertyDefinitions: copyPropertyDefs(src.componentPropertyDefinitions),
