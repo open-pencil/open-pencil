@@ -47,7 +47,8 @@ const SPECS: FixtureSpec[] = [
     fileSize: 550091,
     nodeCount: 38323,
     nodeTypes: {
-      FRAME: 4525,
+      FRAME: 4006,
+      GROUP: 519,
       ROUNDED_RECTANGLE: 3752,
       VECTOR: 14221,
       ELLIPSE: 24,
@@ -63,8 +64,8 @@ const SPECS: FixtureSpec[] = [
     thumbnailHeight: 239,
     imageCount: 3,
     figKiwiVersion: 101,
-    g1ExportSize: 594758,
-    g2ExportSize: 594758
+    g1ExportSize: 594770,
+    g2ExportSize: 594770
   }
 ]
 

@@ -1,0 +1,10 @@
+{
+  "name": "@open-pencil/release-packages",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare-publish-dirs": "bun src/prepare-publish-dirs.ts",
+    "validate-tarballs": "bun src/validate-tarballs.ts",
+    "test": "bun test tests"
+  }
+}

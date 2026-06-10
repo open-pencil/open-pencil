@@ -260,6 +260,13 @@ export interface PluginDataEntry {
   value: string
 }
 
+export type ExportFormatId = 'png' | 'jpg' | 'webp' | 'svg' | 'pdf'
+
+export interface ExportSetting {
+  scale: number
+  format: ExportFormatId
+}
+
 export interface PluginRelaunchDataEntry {
   pluginId: string
   command: string
@@ -455,6 +462,7 @@ export interface SceneNode {
   variantPropSpecs: VariantPropSpec[]
 
   boundVariables: Record<string, string>
+  exportSettings: ExportSetting[]
 
   pluginData: PluginDataEntry[]
   pluginRelaunchData: PluginRelaunchDataEntry[]
