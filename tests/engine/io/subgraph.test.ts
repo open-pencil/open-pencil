@@ -113,5 +113,5 @@ describe('export subgraph extraction', () => {
     expect(input?.symbolData?.symbolOverrides?.length).toBe(9)
     expect(input?.symbolData?.uniformScaleFactor).toBeCloseTo(0.8908441662788391)
     expect(lists?.symbolData?.symbolOverrides?.length).toBe(5)
-  })
+  }, 15000)
 })

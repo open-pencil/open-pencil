@@ -1,10 +1,27 @@
 import { colorToHex } from '#core/color'
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
-export function describeVisual(node: SceneNode): string {
+function boundFillSuffix(node: SceneNode, fillIndex: number, graph?: SceneGraph): string {
+  const varId = node.boundVariables[`fills/${fillIndex}/color`]
+  if (!varId) return ''
+  if (graph) {
+    const variable = graph.variables.get(varId)
+    if (variable) return ` (bound: ${variable.name})`
+  }
+  return ' (bound: variable)'
+}
+
+function findSolidFillIndex(node: SceneNode): number {
+  return node.fills.findIndex((candidate) => candidate.type === 'SOLID' && candidate.visible)
+}
+
+export function describeVisual(node: SceneNode, graph?: SceneGraph): string {
   const parts: string[] = []
-  const fill = node.fills.find((candidate) => candidate.type === 'SOLID' && candidate.visible)
-  if (fill) parts.push(`${colorToHex(fill.color)} fill`)
+  const fillIndex = findSolidFillIndex(node)
+  if (fillIndex !== -1) {
+    const fill = node.fills[fillIndex]
+    parts.push(`${colorToHex(fill.color)}${boundFillSuffix(node, fillIndex, graph)} fill`)
+  }
   if (node.strokes.length > 0 && node.strokes[0]?.visible) parts.push('bordered')
   if (node.cornerRadius > 0) parts.push('rounded')
   if (node.clipsContent) parts.push('clipped')
@@ -58,23 +75,29 @@ export function describeLayout(node: SceneNode): string | null {
   return parts.join(', ')
 }
 
-export function summarizeContainer(node: SceneNode): string {
+export function summarizeContainer(node: SceneNode, graph?: SceneGraph): string {
   const parts = [`${node.width}×${node.height}`]
-  const fill = node.fills.find((candidate) => candidate.type === 'SOLID' && candidate.visible)
-  if (fill) parts.push(colorToHex(fill.color))
+  const fillIndex = findSolidFillIndex(node)
+  if (fillIndex !== -1) {
+    const fill = node.fills[fillIndex]
+    parts.push(`${colorToHex(fill.color)}${boundFillSuffix(node, fillIndex, graph)}`)
+  }
   if (node.cornerRadius > 0) parts.push('rounded')
   const layout = describeLayout(node)
   if (layout) parts.push(layout)
   return parts.join(', ')
 }
 
-export function summarizeText(node: SceneNode): string {
+export function summarizeText(node: SceneNode, graph?: SceneGraph): string {
   const text = node.text.slice(0, 60)
   let summary = `"${text}" ${node.fontSize}px ${node.fontFamily}`
   if (node.fontWeight >= 700) summary += ' bold'
   else if (node.fontWeight >= 500) summary += ' medium'
-  const textColor = node.fills.find((fill) => fill.type === 'SOLID' && fill.visible)
-  if (textColor) summary += `, ${colorToHex(textColor.color)}`
+  const textColorIndex = findSolidFillIndex(node)
+  if (textColorIndex !== -1) {
+    const textColor = node.fills[textColorIndex]
+    summary += `, ${colorToHex(textColor.color)}${boundFillSuffix(node, textColorIndex, graph)}`
+  }
   if (node.textAutoResize === 'HEIGHT') summary += ', wraps'
   else if (node.textAutoResize === 'NONE') summary += ', fixed-size'
   if (node.maxLines !== null && node.maxLines > 0) summary += `, max ${node.maxLines} lines`
