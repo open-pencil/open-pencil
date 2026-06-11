@@ -10,7 +10,7 @@ import {
   writeFileSync,
   cpSync
 } from 'node:fs'
-import { join, resolve, sep } from 'node:path'
+import { dirname, join, resolve, sep } from 'node:path'
 
 import { moveIntoStore } from './archive.ts'
 import type { PackageData } from './types.ts'
