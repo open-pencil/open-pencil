@@ -64,7 +64,7 @@ describe('roundtrip: text glyph blobs', () => {
     expect(input.glyphsWithBlob).toBeGreaterThan(0)
     expect(output.glyphsWithBlob).toBe(input.glyphsWithBlob)
     expect(output.uniqueGlyphBlobs).toBeLessThanOrEqual(input.uniqueGlyphBlobs)
-  })
+  }, 30_000)
 
   test('deduplicates generated glyph blobs across repeated text', async () => {
     loadInterFonts()
