@@ -187,13 +187,19 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
  * Returns the user's home directory. Used as the default OPENPENCIL_MCP_ROOT
  * so file-scoped tools operate on paths inside ~, which is writable and
  * matches user expectations. Falls back to process.cwd() if the Tauri
- * path plugin is unavailable (e.g. in a browser dev shell).
+ * path plugin is unavailable (e.g. in a browser dev shell). When
+ * process is not available (non-Node runtime), returns '/' as a safe
+ * fallback — this function is only invoked under !import.meta.env.DEV
+ * && isTauri(), so the Tauri path plugin should always succeed.
  */
 async function resolveTauriHomeDir(): Promise<string> {
   try {
     const { homeDir } = await import('@tauri-apps/api/path')
     return await homeDir()
   } catch {
-    return process.cwd()
+    if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
+      return process.cwd()
+    }
+    return '/'
   }
 }

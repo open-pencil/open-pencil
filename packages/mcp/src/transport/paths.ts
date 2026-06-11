@@ -90,9 +90,11 @@ export async function getDiscoveryPath(): Promise<string> {
 
 /**
  * Returns true if the current platform supports Unix domain sockets.
+ * Unix domain sockets are available on macOS, Linux, and other POSIX
+ * platforms but not on native Windows. WSL is detected as Linux.
  */
 export function platformHasUnixSockets(): boolean {
-  return true
+  return process.platform !== 'win32'
 }
 
 /**

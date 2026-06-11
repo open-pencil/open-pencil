@@ -58,7 +58,7 @@ export interface ServerOptions {
   httpPort?: number
   /** Path to the Unix domain socket. Auto-resolved if omitted. */
   socketPath?: string | null
-  /** Whether to also listen on TCP (in addition to the socket). */
+  /** Whether to also listen on TCP (in addition to the socket). API default is `false`; the CLI passes `true` by default (derived from PORT, default 7600). */
   withTcp?: boolean
   enableEval?: boolean
   mcpRoot?: string | null
@@ -257,8 +257,11 @@ async function startSocketListener(
 
   const ss = server
   await new Promise<void>((resolve, reject) => {
-    ss.listen(resolvedPath, () => resolve())
     ss.on('error', reject)
+    ss.listen(resolvedPath, () => {
+      ss.off('error', reject)
+      resolve()
+    })
   })
 
   // NOTE: There is a brief TOCTOU window between listen() and chmod() below

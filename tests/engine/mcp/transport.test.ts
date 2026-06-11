@@ -104,8 +104,8 @@ describe('transport/paths', () => {
   })
 
   describe('platformHasUnixSockets', () => {
-    it('returns true', () => {
-      expect(platformHasUnixSockets()).toBe(true)
+    it('returns true on POSIX platforms, false on Windows', () => {
+      expect(platformHasUnixSockets()).toBe(process.platform !== 'win32')
     })
   })
 

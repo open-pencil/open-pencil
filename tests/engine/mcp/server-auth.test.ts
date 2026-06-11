@@ -201,7 +201,11 @@ describe('MCP auth boundary', () => {
     try {
       const r = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
         method: 'POST',
-        headers: { Authorization: 'Bearer wrong-token' }
+        headers: {
+          Authorization: 'Bearer wrong-token',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'mcp.ping', params: {} })
       })
       expect(r.status).toBe(401)
     } finally {
@@ -226,7 +230,11 @@ describe('MCP auth boundary', () => {
     }
 
     try {
-      const r = await fetch(`http://127.0.0.1:${httpPort}/mcp`, { method: 'POST' })
+      const r = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'mcp.ping', params: {} })
+      })
       expect(r.status).toBe(401)
     } finally {
       await handle.close()

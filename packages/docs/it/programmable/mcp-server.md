@@ -133,6 +133,7 @@ Aggiungi alla tua configurazione MCP (es. `.cursor/mcp.json`):
 Esegui dal sorgente senza installare:
 
 ::: code-group
+
 ```json [Bun]
 {
   "mcpServers": {

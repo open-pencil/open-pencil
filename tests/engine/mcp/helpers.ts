@@ -27,6 +27,15 @@ export interface MockBrowser {
   close: () => void
 }
 
+/** Generate a random hex string of the given byte length using crypto.getRandomValues(). */
+function randomHex(bytes: number): string {
+  const buf = new Uint8Array(bytes)
+  globalThis.crypto.getRandomValues(buf)
+  return Array.from(buf)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
 export function connectMockBrowser(
   port: number,
   graph: SceneGraph,
@@ -35,7 +44,7 @@ export function connectMockBrowser(
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(`ws://127.0.0.1:${port}`)
     const requests: MockBrowserRequest[] = []
-    const token = authToken ?? 'test-token-' + Date.now()
+    const token = authToken ?? 'test-token-' + randomHex(8)
 
     ws.on('open', () => {
       ws.send(JSON.stringify({ type: 'register', token }))
@@ -59,7 +68,9 @@ export function connectMockBrowser(
             const def = ALL_TOOLS.find((t) => t.name === args.name)
             if (!def) throw new Error(`Unknown tool: ${args.name}`)
             const api = new FigmaAPI(graph)
-            api.currentPage = api.wrapNode(graph.getPages()[0].id)
+            const pages = graph.getPages()
+            if (pages.length === 0) throw new Error('No pages in graph')
+            api.currentPage = api.wrapNode(pages[0].id)
             result = await def.execute(api, args.args ?? {})
             if (def.mutates) computeAllLayouts(graph)
           } else if (

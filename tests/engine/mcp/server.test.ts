@@ -219,14 +219,16 @@ describe('MCP server with mcpRoot', () => {
     )
     await client.connect(transport)
 
-    const { tools } = await client.listTools()
-    const names = tools.map((t) => t.name)
-    expect(names).toContain('open_file')
-    expect(names).toContain('new_document')
-
-    await client.close()
-    browser.close()
-    await handle.close()
+    try {
+      const { tools } = await client.listTools()
+      const names = tools.map((t) => t.name)
+      expect(names).toContain('open_file')
+      expect(names).toContain('new_document')
+    } finally {
+      await client.close()
+      browser.close()
+      await handle.close()
+    }
   })
 
   test('save_file accepts an explicit path inside mcpRoot', async () => {
@@ -256,19 +258,21 @@ describe('MCP server with mcpRoot', () => {
     )
     await client.connect(transport)
 
-    const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
-    const result = await client.callTool({
-      name: 'save_file',
-      arguments: { path: savePath }
-    })
+    try {
+      const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
+      const result = await client.callTool({
+        name: 'save_file',
+        arguments: { path: savePath }
+      })
 
-    expect(result.isError).not.toBe(true)
-    const request = browser.requests.find((item) => item.command === 'save_file')
-    expect(request?.args).toEqual({ path: savePath })
-
-    await client.close()
-    browser.close()
-    await handle.close()
+      expect(result.isError).not.toBe(true)
+      const request = browser.requests.find((item) => item.command === 'save_file')
+      expect(request?.args).toEqual({ path: savePath })
+    } finally {
+      await client.close()
+      browser.close()
+      await handle.close()
+    }
   })
 
   test('save_file rejects paths outside mcpRoot', async () => {
@@ -298,17 +302,19 @@ describe('MCP server with mcpRoot', () => {
     )
     await client.connect(transport)
 
-    const result = await client.callTool({
-      name: 'save_file',
-      arguments: { path: join(join(TEST_MCP_ROOT, '..'), 'outside.fig') }
-    })
+    try {
+      const result = await client.callTool({
+        name: 'save_file',
+        arguments: { path: join(join(TEST_MCP_ROOT, '..'), 'outside.fig') }
+      })
 
-    expect(result.isError).toBe(true)
-    expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
-
-    await client.close()
-    browser.close()
-    await handle.close()
+      expect(result.isError).toBe(true)
+      expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
+    } finally {
+      await client.close()
+      browser.close()
+      await handle.close()
+    }
   })
 
   test('does not register open_file when mcpRoot is null', async () => {
@@ -338,14 +344,16 @@ describe('MCP server with mcpRoot', () => {
     )
     await client.connect(transport)
 
-    const { tools } = await client.listTools()
-    const names = tools.map((t) => t.name)
-    expect(names).not.toContain('open_file')
-    expect(names).not.toContain('new_document')
-
-    await client.close()
-    browser.close()
-    await handle.close()
+    try {
+      const { tools } = await client.listTools()
+      const names = tools.map((t) => t.name)
+      expect(names).not.toContain('open_file')
+      expect(names).not.toContain('new_document')
+    } finally {
+      await client.close()
+      browser.close()
+      await handle.close()
+    }
   })
 })
 
@@ -377,7 +385,7 @@ describe('MCP server lifecycle', () => {
     if (!isUnix) return
     await mkdir(SOCKET_DIR, { recursive: true })
     const socketPath = testSocketPath()
-    if (!socketPath) return
+    expect(socketPath).toBeTruthy()
 
     const handle = await startServer({
       httpPort: 0,

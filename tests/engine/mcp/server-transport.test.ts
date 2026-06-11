@@ -133,7 +133,8 @@ describe('MCP server unified transport', () => {
     describe('Unix domain socket endpoint', () => {
       it('responds to /health via socket', async () => {
         const socketPath = handle.socketPath
-        if (!socketPath) return
+        expect(socketPath).toBeTruthy()
+        if (!socketPath) throw new Error('socketPath is null')
         const result = await socketRequest(socketPath, 'GET', '/health')
         expect(result.status).toBe(200)
         const health = result.data as HealthResponse
@@ -142,7 +143,8 @@ describe('MCP server unified transport', () => {
 
       it('socket file has restrictive permissions', async () => {
         const socketPath = handle.socketPath
-        if (!socketPath) return
+        expect(socketPath).toBeTruthy()
+        if (!socketPath) throw new Error('socketPath is null')
         const info = await stat(socketPath)
         const mode = info.mode & 0o777
         expect(mode).toBe(0o600)
