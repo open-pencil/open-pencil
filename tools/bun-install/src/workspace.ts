@@ -86,9 +86,9 @@ export function discoverWorkspacePackages(
         ]
 
         if (allPackagesMap.has(pkgData.name)) {
-          const existing = allPackagesMap.get(pkgData.name)!
+          const existing = allPackagesMap.get(pkgData.name)
           die(
-            `Duplicate package name '${pkgData.name}' found in both ${existing.dir} and ${pkgDir}. Ensure workspace globs do not overlap.`
+            `Duplicate package name '${pkgData.name}' found in both ${existing?.dir} and ${pkgDir}. Ensure workspace globs do not overlap.`
           )
         }
         allPackagesMap.set(pkgData.name, {

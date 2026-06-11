@@ -174,7 +174,6 @@ export function uninstallOldGlobals(topoOrder: string[]): void {
  */
 export function verifyCommandsAbsent(targetCommands: string[], bunBinDir: string): void {
   log('\nVerifying absence of target commands in PATH...')
-  const normalizedBunBinDir = resolve(bunBinDir)
   const isWindows = process.platform === 'win32'
   const comparePath = isWindows
     ? (p: string) => resolve(p).toLowerCase()
@@ -266,7 +265,6 @@ export function installPackages(topoOrder: string[], packagesMap: Map<string, Pa
  */
 export function verifyCommandsPresent(targetCommands: string[], bunBinDir: string): void {
   log('\nVerifying presence of target commands in PATH...')
-  const normalizedBunBinDir = resolve(bunBinDir)
   const isWindows = process.platform === 'win32'
   const comparePath = isWindows
     ? (p: string) => resolve(p).toLowerCase()
