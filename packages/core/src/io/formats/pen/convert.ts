@@ -154,7 +154,14 @@ function varName(ref: string): string {
 export function bindIfVar(node: SceneNode, field: string, val: unknown, ctx: VarContext): void {
   if (!isVarRef(val)) return
   const entry = ctx.byName.get(varName(val))
-  if (entry) node.boundVariables[field] = entry.id
+  if (!entry) return
+  // Directly sets boundVariables during .pen deserialization — bypasses graph.bindVariable()
+  // to avoid spurious node:updated events during bulk loading and to normalize bracket
+  // notation (fills[N] → fills/N/color) that the .pen format uses.
+  const normalizedField = /^(fills|strokes)\[\d+]$/.test(field)
+    ? field.replace(/\[(\d+)]/, '/$1/color')
+    : field
+  node.boundVariables[normalizedField] = entry.id
 }
 
 export function buildVarContext(
