@@ -331,6 +331,9 @@ export async function exportFigFile(
   const pages = graph.getPages(true)
   const nodeIdToGuid = new Map<string, GUID>()
   const assignedGuidValues = new Set<string>()
+  // Reserve the document GUID to prevent imported nodes with source.id "0:0"
+  // from reusing the document's own GUID slot.
+  assignedGuidValues.add(`${docGuid.sessionID}:${docGuid.localID}`)
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
   const fontDigestMap = await buildFontDigestMap(graph)

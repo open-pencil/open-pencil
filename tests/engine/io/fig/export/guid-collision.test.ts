@@ -97,4 +97,40 @@ describe('export: GUID collision prevention', () => {
     const rects = allNodes.filter((n) => n.type === 'RECTANGLE')
     expect(rects.length).toBe(3)
   })
+
+  test('nodes with session-0 source.id do not collide with document GUID', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+
+    // The document GUID is always {sessionID:0, localID:0}.
+    // Imported nodes with source.id in the 0:* namespace must not reuse
+    // that slot — the export must reserve the document GUID first.
+    const rect1 = graph.createNode('RECTANGLE', page.id, {
+      name: 'S0 Node A',
+      width: 100,
+      height: 50
+    })
+    graph.updateNode(rect1.id, {
+      source: { ...rect1.source, id: '0:94', format: 'fig' }
+    })
+
+    const rect2 = graph.createNode('RECTANGLE', page.id, {
+      name: 'S0 Node B',
+      width: 100,
+      height: 50
+    })
+    graph.updateNode(rect2.id, {
+      source: { ...rect2.source, id: '0:94', format: 'fig' }
+    })
+
+    const figBytes = await exportFigFile(graph)
+    const reimported = await parseFigFile(figBytes.buffer as ArrayBuffer)
+
+    const allNodes = [...reimported.getAllNodes()]
+    const rects = allNodes.filter(
+      (n) => n.type === 'RECTANGLE' && (n.name === 'S0 Node A' || n.name === 'S0 Node B')
+    )
+    // Both nodes must survive — the document GUID (0:0) must not swallow them
+    expect(rects.length).toBe(2)
+  })
 })
