@@ -15,22 +15,20 @@ function buildCorruptFigKiwi(): Uint8Array {
   for (let i = 0; i < dataCorrupt.length; i++) dataCorrupt[i] = (i * 37) & 0xff
 
   const header = new TextEncoder().encode('fig-kiwi')
-  const version = new Uint32Array([101])
-  const schemaLen = new Uint32Array([schemaDeflated.length])
-  const dataLen = new Uint32Array([dataCorrupt.length])
 
   const total = 8 + 4 + 4 + schemaDeflated.length + 4 + dataCorrupt.length
   const out = new Uint8Array(total)
+  const view = new DataView(out.buffer, out.byteOffset, out.byteLength)
   let offset = 0
   out.set(header, offset)
   offset += 8
-  out.set(new Uint8Array(version.buffer), offset)
+  view.setUint32(offset, 101, true)
   offset += 4
-  out.set(new Uint8Array(schemaLen.buffer), offset)
+  view.setUint32(offset, schemaDeflated.length, true)
   offset += 4
   out.set(schemaDeflated, offset)
   offset += schemaDeflated.length
-  out.set(new Uint8Array(dataLen.buffer), offset)
+  view.setUint32(offset, dataCorrupt.length, true)
   offset += 4
   out.set(dataCorrupt, offset)
 
@@ -50,19 +48,18 @@ describe('parseFigKiwiContainer: decompression failures', () => {
 
   test('returns null for fewer than 2 chunks', () => {
     const header = new TextEncoder().encode('fig-kiwi')
-    const version = new Uint32Array([101])
     const schemaDeflated = new Uint8Array([0x78, 0x01])
-    const schemaLen = new Uint32Array([schemaDeflated.length])
     // No data chunk — only one chunk total
 
     const total = 8 + 4 + 4 + schemaDeflated.length
     const out = new Uint8Array(total)
+    const view = new DataView(out.buffer, out.byteOffset, out.byteLength)
     let offset = 0
     out.set(header, offset)
     offset += 8
-    out.set(new Uint8Array(version.buffer), offset)
+    view.setUint32(offset, 101, true)
     offset += 4
-    out.set(new Uint8Array(schemaLen.buffer), offset)
+    view.setUint32(offset, schemaDeflated.length, true)
     offset += 4
     out.set(schemaDeflated, offset)
 

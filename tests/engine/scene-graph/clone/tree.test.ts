@@ -3,7 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/core'
 
 describe('SceneGraph.cloneTree', () => {
-  test('clone clears source.id from the original', () => {
+  test('clone clears source.id from the clone', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const rect = graph.createNode('RECTANGLE', page.id, {
