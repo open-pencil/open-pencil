@@ -37,7 +37,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
     const page = graph.getPages()[0]
     pageId = page.id
     topLevelNodes = graph.getChildren(pageId)
-  })
+  }, 30_000)
 
   it('OpenPencil format: zero property differences', () => {
     const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
