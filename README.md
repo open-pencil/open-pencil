@@ -10,6 +10,8 @@
 
 ![Inkly demo — .fig をドロップ、 編集、 Slack で共有](packages/docs/public/promo.gif)
 
+<sub>高画質 mp4 (51 秒 / 12 MB) → [packages/docs/public/pencil-editor-promo.mp4](packages/docs/public/pencil-editor-promo.mp4)</sub>
+
 </div>
 
 ---
