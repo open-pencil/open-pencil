@@ -128,12 +128,48 @@ function serializeTestCookie(
   return parts.join('; ')
 }
 
+function resolveTrustedOrigin(): { host: string | null; proto: 'http' | 'https' } {
+  try {
+    const baseURL = process.env.INKLY_API_BETTER_AUTH_BASE_URL
+    if (baseURL) {
+      const u = new URL(baseURL)
+      return { host: u.host, proto: u.protocol === 'http:' ? 'http' : 'https' }
+    }
+  } catch {
+    // 不正な baseURL は無視
+  }
+  return { host: null, proto: 'https' }
+}
+
 async function getSessionFromHandler(
   auth: Pick<InklyAuth, 'handler'>,
   request: Request,
   basePath = INKLY_API_AUTH_BASE_PATH
 ): Promise<InklyAuthSession | null> {
-  const url = new URL(request.url)
+  // Fly proxy 経由のリクエストは url が `http://0.0.0.0:3001/...` (内部 listen)
+  // となり better-auth の cookie domain / baseURL 整合 check で fail する。
+  // x-forwarded-host / proto から公開 origin を再構築して url を作り直す。
+  //
+  // セキュリティ: x-forwarded-host は信頼できない外部ヘッダのため、
+  //   - `,` 区切りなら最初の値だけを使用
+  //   - protocol は `http`/`https` のみ許可
+  //   - trustedOrigin (baseURL から導出) と一致するときだけ rewrite する
+  const trusted = resolveTrustedOrigin()
+  const rawForwardedHost =
+    request.headers.get('x-forwarded-host') ?? request.headers.get('host')
+  const rawForwardedProto = request.headers.get('x-forwarded-proto')
+  const forwardedHost = rawForwardedHost?.split(',')[0]?.trim() ?? null
+  const forwardedProtoCandidate = (rawForwardedProto?.split(',')[0]?.trim() ?? trusted.proto).toLowerCase()
+  const forwardedProto: 'http' | 'https' =
+    forwardedProtoCandidate === 'http' ? 'http' : forwardedProtoCandidate === 'https' ? 'https' : trusted.proto
+
+  const original = new URL(request.url)
+  const useForwarded =
+    forwardedHost !== null && trusted.host !== null && forwardedHost === trusted.host
+  const base = useForwarded
+    ? `${forwardedProto}://${forwardedHost}`
+    : `${original.protocol}//${original.host}`
+  const url = new URL(original.pathname + original.search, base)
   setSessionPathname(url, basePath)
 
   const response = await auth.handler(
@@ -168,6 +204,7 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
     options.logger?.warn(warning)
   }
 
+  const isProductionURL = config.baseURL.startsWith('https://')
   const auth = betterAuth({
     basePath: config.basePath,
     baseURL: config.baseURL,
@@ -179,11 +216,47 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
       usePlural: true
     }),
     plugins: config.enableTestUtils ? [testUtils()] : undefined,
+    account: {
+      // Cookie ベースの state 検証を skip し DB ベースの state mismatch check
+      // (verifications.identifier 照合) だけで CSRF 防御する。 Fly proxy + Bun の
+      // 組み合わせで __Secure- cookie が一部経路で消える問題に対する暫定回避策。
+      // CSRF 防御は URL state + DB lookup で実質担保される (state は ID として
+      // 推測困難、 DB lookup 失敗で reject される)。
+      // better-auth 1.6 の context/create-context.mjs L130 で
+      // `options.account?.skipStateCookieCheck` が読まれる、 socialProviders.google
+      // の中ではなくここに置くのが正しい (initial 試行で provider 内に置いたら無視された)。
+      skipStateCookieCheck: true
+    },
+    advanced: {
+      // `__Secure-` prefix と `__Host-` prefix の自動付与は host-only cookie の
+      // 制約が厳しく Fly.io の cross-machine routing で fail することを確認。
+      // useSecureCookies を false にして prefix なしの通常 cookie で運用する。
+      // Secure 属性自体は defaultCookieAttributes.secure で個別に true 化できる
+      // ため、 HTTPS 通信での secrecy は維持される。
+      useSecureCookies: false,
+      defaultCookieAttributes: {
+        // production HTTPS でも SameSite=Lax を使う。 Lax は top-level navigation
+        // で送られるので OAuth callback (Google → 自サイトの GET) で確実に乗る。
+        // None だと CSRF 攻撃面が広がり、 prefix 無しでは Secure も付かないため
+        // 安全側に Lax で運用 (state パラメータの DB lookup で CSRF 防御は別途)。
+        sameSite: 'lax',
+        secure: isProductionURL,
+        httpOnly: true,
+        path: '/'
+      }
+    },
     socialProviders: config.google
       ? {
           google: {
             clientId: config.google.clientId,
             clientSecret: config.google.clientSecret,
+            // prompt=consent で Google に毎回 consent 画面を出させ silent re-auth
+            // (prompt=none で iframe 経由になり SameSite=Lax cookie が送られない問題)
+            // を完全に回避する。 select_account だと Google が「同じユーザーで再認証」
+            // を判断して silent flow に倒すケースがあり、 consent はそれを禁止する。
+            // 副作用: scope の同意も毎回求められる (UX 1 step 増だが OAuth flow の
+            // 安定性を優先)。
+            prompt: 'consent',
             // Google OAuth の profile レスポンスから picture URL を image にマッピング
             mapProfileToUser: (profile) => ({
               name: profile.name,

@@ -7,7 +7,6 @@ import { createInklyAuth, type InklyAuth } from './auth/index.js'
 import { createBoardStore } from './boardStore.js'
 import { resolveApiDatabaseOptions, type ApiDatabase } from './db/client.js'
 import { createMigratedApiDatabase } from './db/migrate.js'
-import { createResendEmailSender, type InvitationEmailSender } from './email/resend.js'
 import {
   createNotificationStore,
   DEFAULT_NOTIFICATION_SWEEP_OLDER_THAN_MS
@@ -48,7 +47,6 @@ export interface CreateApiAppOptions {
   notificationStore?: NotificationStore
   database?: ApiDatabase
   auth?: InklyAuth
-  emailSender?: InvitationEmailSender
   env?: NodeJS.ProcessEnv
   now?: () => number
   onNotificationCreated?: (notification: NotificationRecord) => void
@@ -82,12 +80,6 @@ export async function createApiApp(options: CreateApiAppOptions) {
       now: options.now,
       onNotificationCreated: options.onNotificationCreated
     }))
-  const emailSender =
-    options.emailSender ??
-    createResendEmailSender({
-      apiKey: env.INKLY_API_RESEND_KEY,
-      logger: console.log
-    })
   const auth =
     options.auth ??
     createInklyAuth({
@@ -120,7 +112,6 @@ export async function createApiApp(options: CreateApiAppOptions) {
       store,
       boardStore,
       notificationStore,
-      emailSender,
       now: options.now
     })
   )
@@ -177,7 +168,7 @@ export async function createApiApp(options: CreateApiAppOptions) {
     app.get('*', serveStatic({ path: `${spaRoot}/index.html` }))
   }
 
-  return { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth }
+  return { app, store, boardStore, teamStore, notificationStore, database, auth }
 }
 
 export async function startApiServer(options: Partial<StartApiServerOptions> = {}) {
@@ -186,14 +177,13 @@ export async function startApiServer(options: Partial<StartApiServerOptions> = {
   const host = options.host ?? env.INKLY_API_HOST ?? API_HOST
   const requestedPort = options.port ?? Number(env.PORT ?? env.INKLY_API_PORT ?? API_PORT)
   let onNotificationCreated: ((notification: NotificationRecord) => void) | undefined
-  const { app, store, boardStore, teamStore, notificationStore, database, emailSender, auth } =
+  const { app, store, boardStore, teamStore, notificationStore, database, auth } =
     await createApiApp({
       boardStore: options.boardStore,
       teamStore: options.teamStore,
       notificationStore: options.notificationStore,
       database: options.database,
       auth: options.auth,
-      emailSender: options.emailSender,
       env,
       secret,
       store: options.store,
@@ -292,7 +282,6 @@ export async function startApiServer(options: Partial<StartApiServerOptions> = {
     teamStore,
     notificationStore,
     database,
-    emailSender,
     auth,
     server,
     port,

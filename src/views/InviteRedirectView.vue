@@ -3,16 +3,18 @@ import { onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 
+import { useAuthStore } from '@/app/auth/store'
 import { verifyInvitation } from '@/app/api/client'
 
 useHead({ title: 'Invitation' })
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 const loading = ref(true)
 const invalidReason = ref('')
 
-onMounted(() => {
+onMounted(async () => {
   const token = typeof route.params.token === 'string' ? route.params.token : ''
   if (!token) {
     invalidReason.value = '招待が無効です'
@@ -20,26 +22,34 @@ onMounted(() => {
     return
   }
 
-  void verifyInvitation(token)
-    .then((result) => {
-      if (!result.valid || !result.invitation) {
-        invalidReason.value = '招待が無効です'
-        return
-      }
+  try {
+    const result = await verifyInvitation(token)
+    if (!result.valid || !result.invitation) {
+      invalidReason.value = '招待が無効です'
+      loading.value = false
+      return
+    }
+
+    const boardPath = `/board/${result.invitation.boardId}`
+
+    // 招待リンクは認証必須。 未ログインなら LP に returnTo で送り、 ログイン後に
+    // board へ遷移させる (router の beforeEach guard が /board/:id を保護対象として扱う)。
+    if (!auth.initialized) {
+      await auth.init()
+    }
+    if (!auth.isAuthenticated) {
       void router.replace({
         path: '/',
-        query: {
-          board: result.invitation.boardId,
-          invite: token
-        }
+        query: { returnTo: boardPath, invite: token }
       })
-    })
-    .catch(() => {
-      invalidReason.value = '招待が無効です'
-    })
-    .finally(() => {
-      loading.value = false
-    })
+      return
+    }
+
+    void router.replace(boardPath)
+  } catch {
+    invalidReason.value = '招待が無効です'
+    loading.value = false
+  }
 })
 </script>
 

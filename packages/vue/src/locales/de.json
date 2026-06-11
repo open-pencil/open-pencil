@@ -664,7 +664,10 @@
     "copied": "Kopiert",
     "toastInvitationCreated": "Einladungslink erstellt",
     "toastCreateFail": "Einladung konnte nicht erstellt werden",
-    "toastLinkCopied": "Link in die Zwischenablage kopiert"
+    "toastLinkCopied": "Link in die Zwischenablage kopiert",
+    "share": "Teilen",
+    "expiresIn7Days": "Link läuft in 7 Tagen ab.",
+    "shareTitle": "Einladung zu {boardName}"
   },
   "teams": {
     "headTitle": "Teams",

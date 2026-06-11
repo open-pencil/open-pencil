@@ -662,9 +662,12 @@
     "invitationUrlLabel": "招待 URL",
     "copy": "コピー",
     "copied": "コピー済",
+    "share": "共有",
+    "expiresIn7Days": "リンクの有効期限は 7 日間です。",
     "toastInvitationCreated": "招待リンクを発行しました",
     "toastCreateFail": "招待の発行に失敗しました",
-    "toastLinkCopied": "リンクをクリップボードにコピーしました"
+    "toastLinkCopied": "リンクをクリップボードにコピーしました",
+    "shareTitle": "{boardName} への招待"
   },
   "teams": {
     "headTitle": "チーム",

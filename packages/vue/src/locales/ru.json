@@ -664,7 +664,10 @@
     "copied": "Скопировано",
     "toastInvitationCreated": "Ссылка-приглашение создана",
     "toastCreateFail": "Не удалось создать приглашение",
-    "toastLinkCopied": "Ссылка скопирована в буфер обмена"
+    "toastLinkCopied": "Ссылка скопирована в буфер обмена",
+    "share": "Поделиться",
+    "expiresIn7Days": "Срок действия ссылки — 7 дней.",
+    "shareTitle": "Приглашение в {boardName}"
   },
   "teams": {
     "headTitle": "Команды",

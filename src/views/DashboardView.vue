@@ -359,6 +359,15 @@ onMounted(async () => {
           <LocaleSwitcher test-id="dashboard-locale-switcher" />
           <NotificationBell v-if="showAccountLink" />
 
+          <RouterLink
+            to="/"
+            data-test-id="dashboard-home-link"
+            class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-canvas/55 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
+          >
+            <icon-lucide-home class="size-4" />
+            <span>トップ</span>
+          </RouterLink>
+
           <button
             type="button"
             data-test-id="dashboard-customize-toggle"

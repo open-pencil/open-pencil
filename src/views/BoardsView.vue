@@ -221,7 +221,7 @@ onMounted(async () => {
             class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-canvas/55 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
           >
             <icon-lucide-home class="size-4" />
-            <span>Home</span>
+            <span>トップ</span>
           </RouterLink>
 
           <RouterLink

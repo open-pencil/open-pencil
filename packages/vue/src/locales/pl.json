@@ -664,7 +664,10 @@
     "copied": "Skopiowano",
     "toastInvitationCreated": "Link z zaproszeniem utworzony",
     "toastCreateFail": "Nie udało się utworzyć zaproszenia",
-    "toastLinkCopied": "Link skopiowany do schowka"
+    "toastLinkCopied": "Link skopiowany do schowka",
+    "share": "Udostępnij",
+    "expiresIn7Days": "Link wygasa za 7 dni.",
+    "shareTitle": "Zaproszenie do {boardName}"
   },
   "teams": {
     "headTitle": "Zespoły",

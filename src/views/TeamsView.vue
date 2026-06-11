@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import {
   DialogContent,
@@ -137,6 +137,14 @@ onMounted(async () => {
 
           <div class="flex items-center gap-3">
             <LocaleSwitcher test-id="teams-locale-switcher" />
+            <RouterLink
+              to="/"
+              data-test-id="teams-home-link"
+              class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
+            >
+              <icon-lucide-home class="size-4" />
+              <span>トップ</span>
+            </RouterLink>
             <button
               type="button"
               data-test-id="team-create-button"

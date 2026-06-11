@@ -171,7 +171,64 @@ export function createAuthRoutes(options: AuthRoutesOptions): Hono {
     })
   })
 
-  app.all('/*', (c) => options.auth.handler(c.req.raw))
+  // 信頼する origin (環境変数 INKLY_API_BETTER_AUTH_BASE_URL から導出)。
+  // x-forwarded-host による host 注入を防ぐため、 baseURL の host と一致するときだけ rewrite する。
+  let trustedHost: string | null = null
+  let trustedProto: 'http' | 'https' = 'https'
+  try {
+    const baseURL = process.env.INKLY_API_BETTER_AUTH_BASE_URL
+    if (baseURL) {
+      const u = new URL(baseURL)
+      trustedHost = u.host
+      trustedProto = u.protocol === 'http:' ? 'http' : 'https'
+    }
+  } catch {
+    // 不正な baseURL は無視 (URL 再構築を行わない)
+  }
+
+  app.all('/*', (c) => {
+    // Fly proxy 経由のリクエストは c.req.raw の URL が `http://0.0.0.0:3001/...`
+    // (内部 listen address) になっており、 better-auth が baseURL (production の
+    // `https://pencil-editor.fly.dev`) との origin 不一致で state cookie 検証や
+    // OAuth callback の URL 解決に失敗する。 x-forwarded-proto / host から
+    // 公開 origin を再構築して request を作り直す。
+    //
+    // セキュリティ: x-forwarded-host は信頼できない外部ヘッダのため、
+    //   - `,` 区切りなら最初の値だけを使用
+    //   - protocol は `http`/`https` のみ許可
+    //   - baseURL から導出した trustedHost と一致するときだけ rewrite する
+    //   (一致しない場合は raw request をそのまま pass、 baseURL 未設定なら raw)
+    const rawForwardedHost = c.req.header('x-forwarded-host') ?? c.req.header('host')
+    const rawForwardedProto = c.req.header('x-forwarded-proto')
+
+    if (!rawForwardedHost || !trustedHost) {
+      return options.auth.handler(c.req.raw)
+    }
+
+    // `,` 区切りなら先頭値だけ取る (proxy chain で複数 host が並ぶケース)
+    const forwardedHost = rawForwardedHost.split(',')[0]?.trim() ?? ''
+    const forwardedProto = (rawForwardedProto?.split(',')[0]?.trim() ?? trustedProto).toLowerCase()
+
+    if (forwardedProto !== 'http' && forwardedProto !== 'https') {
+      return options.auth.handler(c.req.raw)
+    }
+
+    // trustedHost と完全一致するときだけ rewrite。 それ以外は host 注入の疑いがあるので raw を pass
+    if (forwardedHost !== trustedHost) {
+      return options.auth.handler(c.req.raw)
+    }
+
+    const original = new URL(c.req.url)
+    const rewritten = new URL(original.pathname + original.search, `${forwardedProto}://${forwardedHost}`)
+    const rewrittenRequest = new Request(rewritten, {
+      method: c.req.raw.method,
+      headers: c.req.raw.headers,
+      body: ['GET', 'HEAD'].includes(c.req.raw.method) ? undefined : c.req.raw.body,
+      // @ts-expect-error duplex required for streaming bodies in Node 20+
+      duplex: 'half'
+    })
+    return options.auth.handler(rewrittenRequest)
+  })
 
   return app
 }

@@ -110,6 +110,14 @@ onUnmounted(() => {
           <div class="flex items-center gap-2">
             <LocaleSwitcher test-id="notifications-locale-switcher" />
             <RouterLink
+              to="/"
+              data-test-id="notifications-home-link"
+              class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
+            >
+              <icon-lucide-home class="size-4" />
+              <span>トップ</span>
+            </RouterLink>
+            <RouterLink
               to="/boards"
               class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
             >

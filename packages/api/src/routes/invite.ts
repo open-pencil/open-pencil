@@ -1,11 +1,9 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 
-import { resolveAnonymousId } from '../anonymousId.js'
+import { getInviterAnonymousLabel, resolveAnonymousId } from '../anonymousId.js'
 import { isBoardOwner, resolveRequestActor } from '../auth/actor.js'
 import { getAuthSession, type InklyAuth } from '../auth/index.js'
-import type { InvitationEmailSender } from '../email/resend.js'
-import { getInviterAnonymousLabel } from '../email/template.js'
 import {
   hashInvitationEmail,
   INVITATION_TTL_MS,
@@ -44,7 +42,6 @@ export interface InviteRoutesOptions {
   store: InvitationStore
   boardStore?: BoardStore
   notificationStore?: NotificationStore
-  emailSender?: InvitationEmailSender
   now?: () => number
 }
 
@@ -129,16 +126,6 @@ export function createInviteRoutes(options: InviteRoutesOptions): Hono {
           inviteeEmail: recipientUser.email,
           url: relativeUrl
         }
-      })
-    }
-
-    if (options.emailSender) {
-      await options.emailSender.sendInvitation({
-        boardName: board?.name ?? 'Untitled board',
-        invitationUrl,
-        inviterAnonymousId: actor.anonymousId ?? actor.userId ?? 'unknown-user',
-        role: invitation.role,
-        to: parsed.data.email
       })
     }
 

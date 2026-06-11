@@ -7,7 +7,7 @@ Fly.io にデプロイする手順。 ユーザーが順に実行する想定で
 
 - macOS / Linux (Windows は WSL 推奨)
 - `bun` / `git` 導入済
-- 招待メール送信機能を有効化したい場合は Step 3 (Resend) を実行、 不要なら Skip 可
+- 招待はメール送信ではなく、 SPA 上で表示される招待 URL の手動共有 (コピー / Web Share API) で行う
 
 ## 1. Fly CLI のセットアップ
 
@@ -43,32 +43,7 @@ turso db tokens create pencil-editor
 - **TURSO_DATABASE_URL** (`libsql://pencil-editor-<your-org>.turso.io` 形式)
 - **TURSO_AUTH_TOKEN** (`eyJ...` で始まる JWT)
 
-## 3. Resend (招待メール送信) を設定 (任意)
-
-招待メール送信を有効化したい場合のみ。 未設定でも招待 URL は API レスポンスで取れるが、 受信者に自動でメールが届かない。
-
-### 3-1. Resend アカウント作成
-
-1. https://resend.com にアクセス
-2. 「Sign up」 (GitHub / Google OAuth or メール)
-3. ダッシュボードへ
-
-### 3-2. API key 取得
-
-1. 左メニュー `API Keys` をクリック
-2. `Create API Key` クリック
-3. 名前: `pencil-editor-prod` (任意)、 Permission: `Full access`
-4. 表示された **`re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`** をメモ (1 度しか表示されない、 慎重に)
-
-メモする値:
-- **INKLY_API_RESEND_KEY** (`re_` で始まる)
-
-### 3-3. 送信元アドレス
-
-無料枠は **`onboarding@resend.dev`** がデフォルトで使える (テスト用)。
-独自ドメインを使いたい場合は別途 DNS 設定が必要 (本ガイドでは省略、 production 移行時に検討)。
-
-## 4. Google OAuth 設定 (任意)
+## 3. Google OAuth 設定 (任意)
 
 Google ログインを使いたい場合のみ。 未設定でも email/password ログインは動く。
 
@@ -82,7 +57,7 @@ Google ログインを使いたい場合のみ。 未設定でも email/password
 - **INKLY_API_GOOGLE_CLIENT_ID** (`123...apps.googleusercontent.com`)
 - **INKLY_API_GOOGLE_CLIENT_SECRET** (`GOCSPX-...`)
 
-## 5. Auth Secret を生成
+## 4. Auth Secret を生成
 
 ```bash
 # better-auth 用の secret (32 byte hex)
@@ -94,7 +69,7 @@ echo "INKLY_API_JWT_SECRET=$(openssl rand -hex 32)"
 - **INKLY_API_AUTH_SECRET**
 - **INKLY_API_JWT_SECRET**
 
-## 6. Fly app 作成
+## 5. Fly app 作成
 
 ```bash
 cd /Users/cardene/Desktop/projects/pencil-editor
@@ -109,19 +84,18 @@ fly launch --no-deploy --copy-config --name pencil-editor
 - Would you like to set up Upstash Redis? → **No**
 - Would you like to deploy now? → **No** (secrets 設定後に手動 deploy する)
 
-## 7. Fly secrets を設定
+## 6. Fly secrets を設定
 
 メモした値をすべて secrets として設定 (1 コマンドで一気に):
 
 ```bash
 fly secrets set \
-  INKLY_API_AUTH_SECRET="<Step 5 の値>" \
-  INKLY_API_JWT_SECRET="<Step 5 の値>" \
+  INKLY_API_AUTH_SECRET="<Step 4 の値>" \
+  INKLY_API_JWT_SECRET="<Step 4 の値>" \
   TURSO_DATABASE_URL="<Step 2 の URL>" \
   TURSO_AUTH_TOKEN="<Step 2 の token>" \
-  INKLY_API_RESEND_KEY="<Step 3 の key、 Resend 未設定なら省略可>" \
-  INKLY_API_GOOGLE_CLIENT_ID="<Step 4 の ID、 Google 未設定なら省略可>" \
-  INKLY_API_GOOGLE_CLIENT_SECRET="<Step 4 の secret、 同上>"
+  INKLY_API_GOOGLE_CLIENT_ID="<Step 3 の ID、 Google 未設定なら省略可>" \
+  INKLY_API_GOOGLE_CLIENT_SECRET="<Step 3 の secret、 同上>"
 ```
 
 設定された secrets 一覧確認:
@@ -130,7 +104,7 @@ fly secrets set \
 fly secrets list
 ```
 
-## 8. デプロイ実行
+## 7. デプロイ実行
 
 ```bash
 fly deploy
@@ -143,7 +117,7 @@ fly deploy
 Visit your newly deployed app at https://pencil-editor.fly.dev/
 ```
 
-## 9. 動作確認
+## 8. 動作確認
 
 ```bash
 # ブラウザで開く
@@ -156,10 +130,10 @@ fly logs
 fly status
 ```
 
-ログイン / board 作成 / 招待メール送信を実際に試す。
-Resend 設定済なら招待先メールアドレスに `Inkly` から招待メールが届く。
+ログイン / board 作成 / 招待 URL 生成を実際に試す。
+共有モーダルで招待 URL が表示される、 コピー / 共有ボタンで手動共有する。
 
-## 10. 以降の運用
+## 9. 以降の運用
 
 ### コード変更後の再デプロイ
 
@@ -220,14 +194,6 @@ fly logs | grep -i migrate
 
 DB 接続情報が間違っているケースが多い (`TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN`)。
 
-### 招待メールが届かない
-
-1. Resend ダッシュボード → `Emails` で送信履歴確認 (Bounce / Spam 判定の有無)
-2. 受信者の迷惑メールフォルダ確認 (`onboarding@resend.dev` はスパム判定されることがある)
-3. サーバーログで `[inkly-api]` 行確認 (Dry-run mode になってないか)
-
-production 移行時は独自ドメイン認証推奨 (DNS で SPF / DKIM 設定)。
-
 ### ローカル動作確認したい
 
 ```bash
@@ -247,13 +213,12 @@ docker run -p 3001:3001 \
 
 1. ✅ Fly CLI install + login
 2. ✅ Turso DB 作成 → URL + token メモ
-3. (任意) Resend 登録 → key メモ
-4. (任意) Google OAuth 設定 → ID + secret メモ
-5. ✅ Auth secret 生成 → 2 個メモ
-6. ✅ `fly launch --no-deploy`
-7. ✅ `fly secrets set ...` でメモした値を全部設定
-8. ✅ `fly deploy`
-9. ✅ `fly open` で動作確認
+3. (任意) Google OAuth 設定 → ID + secret メモ
+4. ✅ Auth secret 生成 → 2 個メモ
+5. ✅ `fly launch --no-deploy`
+6. ✅ `fly secrets set ...` でメモした値を全部設定
+7. ✅ `fly deploy`
+8. ✅ `fly open` で動作確認
 
-招待メール無しで動かしたいなら Step 3 を skip。 Google ログイン無しなら Step 4 を skip。
-最小構成は Step 1, 2, 5, 6, 7 (Turso + Auth secret のみ) + Step 8。
+Google ログイン無しなら Step 3 を skip。
+最小構成は Step 1, 2, 4, 5, 6 (Turso + Auth secret のみ) + Step 7, 8。

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import {
   AlertDialogAction,
@@ -88,7 +88,17 @@ async function confirmSignOut() {
             {{ accountT.subtitle }}
           </p>
         </div>
-        <LocaleSwitcher test-id="account-locale-switcher" />
+        <div class="flex items-center gap-2">
+          <RouterLink
+            to="/"
+            data-test-id="account-home-link"
+            class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
+          >
+            <icon-lucide-home class="size-4" />
+            <span>トップ</span>
+          </RouterLink>
+          <LocaleSwitcher test-id="account-locale-switcher" />
+        </div>
       </section>
 
       <section

@@ -92,6 +92,26 @@ function copyInvitationUrl() {
   void copy(invitationUrl.value)
   toast.info(shareModalT.value.toastLinkCopied)
 }
+
+const canShare = computed(
+  () => typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+)
+
+async function shareInvitationUrl() {
+  if (!invitationUrl.value || !canShare.value) return
+  try {
+    await navigator.share({
+      title: shareModalT.value.shareTitle({ boardName: resolvedBoardName.value }),
+      text: shareModalT.value.shareTitle({ boardName: resolvedBoardName.value }),
+      url: invitationUrl.value
+    })
+  } catch (error) {
+    // ユーザーキャンセル時の AbortError は無視、 他はトーストに出す
+    if (error instanceof Error && error.name !== 'AbortError') {
+      toast.error(error.message)
+    }
+  }
+}
 </script>
 
 <template>
@@ -167,22 +187,34 @@ function copyInvitationUrl() {
 
           <div
             v-if="invitationUrl"
-            class="space-y-2 rounded-xl border border-border bg-canvas/80 p-3"
+            class="space-y-3 rounded-xl border border-border bg-canvas/80 p-3"
           >
             <div class="flex items-center justify-between gap-3">
               <span class="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">{{ shareModalT.invitationUrlLabel }}</span>
-              <button
-                type="button"
-                data-test-id="share-copy-link"
-                class="cursor-pointer rounded-md px-2 py-1 text-[11px] text-accent transition-colors hover:bg-hover"
-                @click="copyInvitationUrl"
-              >
-                {{ copied ? shareModalT.copied : shareModalT.copy }}
-              </button>
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  data-test-id="share-copy-link"
+                  class="cursor-pointer rounded-md px-2 py-1 text-[11px] text-accent transition-colors hover:bg-hover"
+                  @click="copyInvitationUrl"
+                >
+                  {{ copied ? shareModalT.copied : shareModalT.copy }}
+                </button>
+                <button
+                  v-if="canShare"
+                  type="button"
+                  data-test-id="share-os-share"
+                  class="cursor-pointer rounded-md px-2 py-1 text-[11px] text-accent transition-colors hover:bg-hover"
+                  @click="shareInvitationUrl"
+                >
+                  {{ shareModalT.share }}
+                </button>
+              </div>
             </div>
             <p data-test-id="share-link-output" class="break-all text-xs text-surface">
               {{ invitationUrl }}
             </p>
+            <p class="text-[10px] text-muted">{{ shareModalT.expiresIn7Days }}</p>
           </div>
         </div>
       </DialogContent>

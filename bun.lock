@@ -111,7 +111,6 @@
         "drizzle-orm": "^0.45.2",
         "hono": "^4.12.5",
         "jose": "^6.2.2",
-        "resend": "^6.12.4",
         "zod": "^4.3.6",
       },
       "devDependencies": {

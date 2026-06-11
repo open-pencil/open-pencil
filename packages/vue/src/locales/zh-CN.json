@@ -664,7 +664,10 @@
     "copied": "已复制",
     "toastInvitationCreated": "已创建邀请链接",
     "toastCreateFail": "创建邀请失败",
-    "toastLinkCopied": "已将链接复制到剪贴板"
+    "toastLinkCopied": "已将链接复制到剪贴板",
+    "share": "分享",
+    "expiresIn7Days": "链接有效期为 7 天。",
+    "shareTitle": "邀请加入 {boardName}"
   },
   "teams": {
     "headTitle": "团队",

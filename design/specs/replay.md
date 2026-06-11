@@ -58,7 +58,7 @@
 
 ### サイトマップ
 
-```
+```text
 Marketing
 ├── Landing
 ├── Pricing
@@ -246,7 +246,7 @@ States
 
 本仕様書を元にデザインを生成するには:
 
-```
+```bash
 /pencil-design design/specs/replay.md
 ```
 

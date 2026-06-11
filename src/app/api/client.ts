@@ -103,6 +103,12 @@ function buildHeaders(init: RequestInit): Headers {
 export async function requestJson<T>(input: string, init: RequestInit = {}) {
   const response = await fetch(input, {
     ...init,
+    // credentials: 'include' は better-auth の OAuth state cookie を確実に
+    // 送受信するため必須。 default 'same-origin' でも同一 origin の Set-Cookie は
+    // 保存されるはずだが、 一部ブラウザ + Secure cookie + SameSite=Lax の組合せで
+    // fetch が credentials default だと cookie を一切扱わない挙動を確認。
+    // 'include' で OAuth flow / session 維持 / CSRF 検証すべてが安定動作する。
+    credentials: init.credentials ?? 'include',
     headers: buildHeaders(init)
   })
 

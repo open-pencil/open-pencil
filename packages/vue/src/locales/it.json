@@ -664,7 +664,10 @@
     "copied": "Copiato",
     "toastInvitationCreated": "Link di invito creato",
     "toastCreateFail": "Impossibile creare l'invito",
-    "toastLinkCopied": "Link copiato negli appunti"
+    "toastLinkCopied": "Link copiato negli appunti",
+    "share": "Share",
+    "expiresIn7Days": "Link expires in 7 days.",
+    "shareTitle": "Invitation to {boardName}"
   },
   "teams": {
     "headTitle": "Team",

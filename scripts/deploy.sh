@@ -70,7 +70,7 @@ fi
 echo "✅ 必須変数すべて設定済"
 echo ""
 echo "任意変数の状況:"
-for var in INKLY_API_RESEND_KEY INKLY_API_GOOGLE_CLIENT_ID INKLY_API_GOOGLE_CLIENT_SECRET; do
+for var in INKLY_API_GOOGLE_CLIENT_ID INKLY_API_GOOGLE_CLIENT_SECRET; do
   if [ -n "${!var:-}" ]; then
     echo "  ✅ $var (設定済)"
   else

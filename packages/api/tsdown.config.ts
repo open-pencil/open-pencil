@@ -22,7 +22,6 @@ export default defineConfig({
       'jose',
       /^jose\//,
       /^node:/,
-      'resend',
       'zod'
     ],
     onlyBundle: false
