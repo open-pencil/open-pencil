@@ -149,7 +149,8 @@ export function computeTopologicalOrder(
   const bfsQueue = Array.from(entryPackages)
 
   while (bfsQueue.length > 0) {
-    const current = bfsQueue.shift() as string
+    const current = bfsQueue.shift()
+    if (current == null) break
     if (!requiredPackages.has(current)) {
       requiredPackages.add(current)
       const pkgData = allPackagesMap.get(current)

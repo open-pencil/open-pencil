@@ -152,7 +152,8 @@ export function topologicalSort(packages: Map<string, PackageData>): string[] {
 
   const result: string[] = []
   while (queue.length > 0) {
-    const current = queue.shift() as string
+    const current = queue.shift()
+    if (current == null) break
     result.push(current)
 
     const neighbors = adjList.get(current)
