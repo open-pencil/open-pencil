@@ -9,13 +9,21 @@ export function createVariableBindingActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Bind variable',
       forward: () => {
-        ctx.graph.bindVariable(nodeId, path, variableId)
-        ctx.requestRender()
+        try {
+          ctx.graph.bindVariable(nodeId, path, variableId)
+          ctx.requestRender()
+        } catch (e) {
+          console.warn('Redo bindVariable failed:', e instanceof Error ? e.message : String(e))
+        }
       },
       inverse: () => {
-        if (prevVarId) ctx.graph.bindVariable(nodeId, path, prevVarId)
-        else ctx.graph.unbindVariable(nodeId, path)
-        ctx.requestRender()
+        try {
+          if (prevVarId) ctx.graph.bindVariable(nodeId, path, prevVarId)
+          else ctx.graph.unbindVariable(nodeId, path)
+          ctx.requestRender()
+        } catch (e) {
+          console.warn('Undo bindVariable failed:', e instanceof Error ? e.message : String(e))
+        }
       }
     })
     ctx.requestRender()
@@ -30,12 +38,20 @@ export function createVariableBindingActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Unbind variable',
       forward: () => {
-        ctx.graph.unbindVariable(nodeId, path)
-        ctx.requestRender()
+        try {
+          ctx.graph.unbindVariable(nodeId, path)
+          ctx.requestRender()
+        } catch (e) {
+          console.warn('Redo unbindVariable failed:', e instanceof Error ? e.message : String(e))
+        }
       },
       inverse: () => {
-        ctx.graph.bindVariable(nodeId, path, prevVarId)
-        ctx.requestRender()
+        try {
+          ctx.graph.bindVariable(nodeId, path, prevVarId)
+          ctx.requestRender()
+        } catch (e) {
+          console.warn('Undo unbindVariable failed:', e instanceof Error ? e.message : String(e))
+        }
       }
     })
     ctx.requestRender()

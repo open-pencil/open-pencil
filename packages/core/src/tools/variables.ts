@@ -1,4 +1,5 @@
 export { bindVariable } from './variables/bindings'
+export { unbindVariable } from './variables/unbind'
 export {
   createCollection,
   deleteCollection,
