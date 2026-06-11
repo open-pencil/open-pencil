@@ -244,9 +244,16 @@ function buildCanvasEntries(
   let internalCanvasGuid: GUID | null = null
   for (let p = 0; p < pages.length; p++) {
     const page = pages[p]
-    const canvasGuid = page.source.id
-      ? stringToGuid(page.source.id)
-      : { sessionID: 0, localID: localIdCounter.value++ }
+    const canvasGuid = (() => {
+      if (!page.source.id) return { sessionID: 0, localID: localIdCounter.value++ }
+
+      const importedGuid = stringToGuid(page.source.id)
+      const key = `${importedGuid.sessionID}:${importedGuid.localID}`
+
+      if (!assignedGuidValues.has(key)) return importedGuid
+
+      return { sessionID: 0, localID: localIdCounter.value++ }
+    })()
     // Advance counter past any source.id-derived GUID to prevent collisions
     // with subsequently generated variable/collection GUIDs.
     if (page.source.id && canvasGuid.sessionID === 0) {
