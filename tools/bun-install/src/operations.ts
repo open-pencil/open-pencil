@@ -175,15 +175,18 @@ export function uninstallOldGlobals(topoOrder: string[]): void {
 export function verifyCommandsAbsent(targetCommands: string[], bunBinDir: string): void {
   log('\nVerifying absence of target commands in PATH...')
   const normalizedBunBinDir = resolve(bunBinDir)
+  const isWindows = process.platform === 'win32'
+  const comparePath = isWindows
+    ? (p: string) => resolve(p).toLowerCase()
+    : (p: string) => resolve(p)
+  const binDirKey = comparePath(bunBinDir)
 
   for (const bin of targetCommands) {
     let resolved = which(bin)
     if (resolved === null) continue
 
-    const normalizedResolved = resolve(resolved)
-    const isInBunBinDir =
-      normalizedResolved.startsWith(normalizedBunBinDir + sep) ||
-      normalizedResolved === normalizedBunBinDir
+    const resolvedKey = comparePath(resolved)
+    const isInBunBinDir = resolvedKey.startsWith(binDirKey + sep) || resolvedKey === binDirKey
 
     if (isInBunBinDir) {
       // Verify ownership: only remove if the binary appears to be a Bun-generated
@@ -203,7 +206,8 @@ export function verifyCommandsAbsent(targetCommands: string[], bunBinDir: string
           ownedByBunGlobal = content.includes('install/global') || content.includes('@bun')
         }
       } catch {
-        ownedByBunGlobal = true // If we can't inspect, proceed cautiously
+        // Inspection failed — do NOT assume ownership. Require manual removal.
+        ownedByBunGlobal = false
       }
 
       if (!ownedByBunGlobal) {
@@ -263,15 +267,18 @@ export function installPackages(topoOrder: string[], packagesMap: Map<string, Pa
 export function verifyCommandsPresent(targetCommands: string[], bunBinDir: string): void {
   log('\nVerifying presence of target commands in PATH...')
   const normalizedBunBinDir = resolve(bunBinDir)
+  const isWindows = process.platform === 'win32'
+  const comparePath = isWindows
+    ? (p: string) => resolve(p).toLowerCase()
+    : (p: string) => resolve(p)
+  const binDirKey = comparePath(bunBinDir)
   for (const bin of targetCommands) {
     const resolved = which(bin)
     if (resolved === null) {
       die(`Binary '${bin}' was not found in PATH after installation!`)
     }
-    const normalizedResolved = resolve(resolved)
-    const isInBunBinDir =
-      normalizedResolved.startsWith(normalizedBunBinDir + sep) ||
-      normalizedResolved === normalizedBunBinDir
+    const resolvedKey = comparePath(resolved)
+    const isInBunBinDir = resolvedKey.startsWith(binDirKey + sep) || resolvedKey === binDirKey
     if (!isInBunBinDir) {
       die(
         `Binary '${bin}' resolved to ${resolved}, which is outside Bun's global bin dir (${bunBinDir}). The Bun-installed version may be shadowed by another provider.`
