@@ -32,7 +32,7 @@ heavy('fig component metadata import', () => {
     expect(component.isSymbolPublishable).toBe(false)
   }, 10_000)
 
-  test('imports component set docs and variant property specs', async () => {
+  test('imports component set docs and variant property specs', () => {
     const graph = importFixture('material3.fig')
     const buttonSet = expectDefined(
       graph.getAllNodes().find((node) => node.type === 'COMPONENT_SET' && node.name === 'Button'),
