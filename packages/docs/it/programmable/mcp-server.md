@@ -26,7 +26,9 @@ Il server MCP si avvia automaticamente all'apertura dell'app desktop (i build Ta
   (Claude Code,       (openpencil-mcp-http)   (desktop / browser)
    Cursor, etc.)
                       ┌──────────────┐
-  stdio ◄───────────► │  /rpc  (WS)  │ ◄──── WebSocket ────► Scheda browser
+  stdio ◄───────────► │  /rpc (HTTP) │ ◄──── JSON-RPC ─────► Stdio bridge
+                      │              │
+                      │  /    (WS)   │ ◄──── WebSocket ────► Scheda browser
   (openpencil-mcp)    │              │
                       │  /mcp  (SSE) │ ◄──── HTTP/SSE ─────► Strumenti esterni
                       │              │

@@ -21,7 +21,7 @@
 
 - Stdio bridge connects via HTTP-over-socket instead of WebSocket
 - WebSocket upgrades happen on the same HTTP port (no separate WS_PORT)
-- Add type-validated `bindVariable`/`unbindVariable` with event emission and indexed binding format (`fills/N/color` instead of `fills[N]`).
+- Enhanced type-validated `bindVariable`/`unbindVariable` to emit events and use indexed binding format (`fills/N/color` instead of `fills[N]`)
 
 ### Breaking
 

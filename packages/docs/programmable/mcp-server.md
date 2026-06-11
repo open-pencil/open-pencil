@@ -26,7 +26,9 @@ The MCP server starts automatically when you launch the desktop app (Tauri produ
   (Claude Code,       (openpencil-mcp-http)   (desktop / browser)
    Cursor, etc.)
                       ┌──────────────┐
-  stdio ◄───────────► │  /rpc  (WS)  │ ◄──── WebSocket ────► Browser tab
+  stdio ◄───────────► │  /rpc (HTTP) │ ◄──── JSON-RPC ─────► Stdio bridge
+                      │              │
+                      │  /    (WS)   │ ◄──── WebSocket ────► Browser tab
   (openpencil-mcp)    │              │
                       │  /mcp  (SSE) │ ◄──── HTTP/SSE ─────► External tools
                       │              │
