@@ -18,7 +18,7 @@ import { toast } from '@/app/shell/ui'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import LoginBanner from '@/components/LoginBanner.vue'
 
-const { notifications: notificationsT, notificationsFormat: notificationsFormatT } = useI18n()
+const { notifications: notificationsT, notificationsFormat: notificationsFormatT, common: commonT } = useI18n()
 
 useHead({ title: () => notificationsT.value.headTitle })
 
@@ -115,7 +115,7 @@ onUnmounted(() => {
               class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
             >
               <icon-lucide-home class="size-4" />
-              <span>トップ</span>
+              <span>{{ commonT.home }}</span>
             </RouterLink>
             <RouterLink
               to="/boards"

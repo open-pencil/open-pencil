@@ -773,6 +773,9 @@
     "toastTeamDeleted": "チームを削除しました",
     "toastDeleteFail": "チームの削除に失敗しました"
   },
+  "common": {
+    "home": "トップ"
+  },
   "admin": {
     "title": "管理",
     "badge": "社内",

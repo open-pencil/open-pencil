@@ -773,6 +773,9 @@
     "toastTeamDeleted": "Equipo eliminado",
     "toastDeleteFail": "No se pudo eliminar el equipo"
   },
+  "common": {
+    "home": "Inicio"
+  },
   "admin": {
     "title": "Administración",
     "badge": "Interno",

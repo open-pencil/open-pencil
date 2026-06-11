@@ -22,7 +22,7 @@ import AppInput from '@/components/ui/AppInput.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 import { toast } from '@/app/shell/ui'
 
-const { teams: teamsT } = useI18n()
+const { teams: teamsT, common: commonT } = useI18n()
 
 useHead({ title: () => teamsT.value.headTitle })
 
@@ -143,7 +143,7 @@ onMounted(async () => {
               class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
             >
               <icon-lucide-home class="size-4" />
-              <span>トップ</span>
+              <span>{{ commonT.home }}</span>
             </RouterLink>
             <button
               type="button"

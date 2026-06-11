@@ -39,7 +39,7 @@ import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import LoginBanner from '@/components/LoginBanner.vue'
 import NotificationBell from '@/components/NotificationBell.vue'
 
-const { dashboard, notificationsFormat: notificationsFormatT } = useI18n()
+const { dashboard, notificationsFormat: notificationsFormatT, common: commonT } = useI18n()
 
 useHead({ title: () => dashboard.value.title })
 
@@ -365,7 +365,7 @@ onMounted(async () => {
             class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-canvas/55 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
           >
             <icon-lucide-home class="size-4" />
-            <span>トップ</span>
+            <span>{{ commonT.home }}</span>
           </RouterLink>
 
           <button

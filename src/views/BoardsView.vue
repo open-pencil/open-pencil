@@ -34,7 +34,7 @@ import {
 import { listTeams, type TeamSummary } from '@/app/api/teams'
 import { useDialogUI } from '@/components/ui/dialog'
 
-const { boards: boardsT } = useI18n()
+const { boards: boardsT, common: commonT } = useI18n()
 
 useHead({ title: () => boardsT.value.heading })
 
@@ -221,7 +221,7 @@ onMounted(async () => {
             class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-canvas/55 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
           >
             <icon-lucide-home class="size-4" />
-            <span>トップ</span>
+            <span>{{ commonT.home }}</span>
           </RouterLink>
 
           <RouterLink

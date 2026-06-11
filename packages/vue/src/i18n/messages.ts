@@ -849,6 +849,10 @@ export const teamSettingsMessages = i18n('teamSettings', {
   toastDeleteFail: 'Failed to delete team'
 })
 
+export const commonMessages = i18n('common', {
+  home: 'Home'
+})
+
 export const adminMessages = i18n('admin', {
   title: 'Admin',
   badge: 'Internal',

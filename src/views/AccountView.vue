@@ -20,7 +20,7 @@ import { toast, initials } from '@/app/shell/ui'
 import LocaleSwitcher from '@/components/LocaleSwitcher.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 
-const { account: accountT } = useI18n()
+const { account: accountT, common: commonT } = useI18n()
 
 useHead({ title: () => accountT.value.headTitle })
 
@@ -95,7 +95,7 @@ async function confirmSignOut() {
             class="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/60 px-3 py-2 text-sm text-surface transition-colors hover:bg-hover"
           >
             <icon-lucide-home class="size-4" />
-            <span>トップ</span>
+            <span>{{ commonT.home }}</span>
           </RouterLink>
           <LocaleSwitcher test-id="account-locale-switcher" />
         </div>

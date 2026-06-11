@@ -29,6 +29,7 @@ import {
   teamsMessages,
   teamDetailMessages,
   teamSettingsMessages,
+  commonMessages,
   adminMessages
 } from '#vue/i18n/messages'
 
@@ -77,6 +78,7 @@ export function useI18n() {
     teams: useStore(teamsMessages),
     teamDetail: useStore(teamDetailMessages),
     teamSettings: useStore(teamSettingsMessages),
+    common: useStore(commonMessages),
     admin: useStore(adminMessages),
     locale: useStore(locale) as Ref<Locale>,
     availableLocales: AVAILABLE_LOCALES,

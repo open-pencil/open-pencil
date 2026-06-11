@@ -773,6 +773,9 @@
     "toastTeamDeleted": "已删除团队",
     "toastDeleteFail": "删除团队失败"
   },
+  "common": {
+    "home": "首页"
+  },
   "admin": {
     "title": "管理",
     "badge": "内部",
