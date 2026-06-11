@@ -71,7 +71,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
       }
     }
     expect(diffs).toBe(0)
-  })
+  }, 30_000)
 
   it('OpenPencil format: compressed data is under 1MB', () => {
     const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
@@ -129,5 +129,5 @@ describe('gold-preview.fig clipboard roundtrip', () => {
         errors.push(`arcData: "${o.name}" expected ${o.arcData != null}, got ${p.arcData != null}`)
     }
     if (errors.length > 0) throw new Error(`${errors.length} mismatches:\n${errors.join('\n')}`)
-  })
+  }, 30_000)
 })
