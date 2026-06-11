@@ -119,10 +119,18 @@ export function buildAndPackPackages(
       const deps = pkgJson[depType]
       if (!deps) continue
       for (const depName of Object.keys(deps)) {
-        const depPkg = packagesMap.get(depName)
-        if (depPkg?.archivePath) {
-          deps[depName] = `file:${depPkg.archivePath}`
-          pinned = true
+        const depSpec = deps[depName]
+        if (typeof depSpec === 'string' && depSpec.startsWith('workspace:')) {
+          const depPkg = packagesMap.get(depName)
+          if (depPkg?.archivePath) {
+            deps[depName] = `file:${depPkg.archivePath}`
+            pinned = true
+          } else {
+            die(
+              `Package '${pkgName}' has workspace: dependency '${depName}' (${depSpec}) but no archive is available. ` +
+                `Ensure '${depName}' is included in the install graph or remove the workspace reference.`
+            )
+          }
         }
       }
     }
@@ -169,10 +177,16 @@ export function uninstallOldGlobals(topoOrder: string[]): void {
 /**
  * Verifies that none of the target commands are currently reachable via the
  * Bun global bin directory. If a stale binary is found inside Bun's bin dir,
- * the user is prompted for confirmation before removal. Binaries found outside
- * Bun's bin dir are treated as unexpected collisions and abort the script.
+ * the user is prompted for confirmation before removal — but ONLY after
+ * verifying the wrapper specifically belongs to one of the removed packages.
+ * Binaries found outside Bun's bin dir are treated as unexpected collisions
+ * and abort the script.
  */
-export function verifyCommandsAbsent(targetCommands: string[], bunBinDir: string): void {
+export function verifyCommandsAbsent(
+  targetCommands: string[],
+  bunBinDir: string,
+  removedPackageNames: string[] = []
+): void {
   log('\nVerifying absence of target commands in PATH...')
   const isWindows = process.platform === 'win32'
   const comparePath = isWindows
@@ -188,30 +202,40 @@ export function verifyCommandsAbsent(targetCommands: string[], bunBinDir: string
     const isInBunBinDir = resolvedKey.startsWith(binDirKey + sep) || resolvedKey === binDirKey
 
     if (isInBunBinDir) {
-      // Verify ownership: only remove if the binary appears to be a Bun-generated
-      // wrapper (symlink into Bun's global install, or a small JS shim referencing
-      // the Bun global install path). This prevents accidentally deleting a
-      // wrapper belonging to another globally installed Bun package.
-      let ownedByBunGlobal = false
+      // Verify specific ownership: only remove if the wrapper can be proven
+      // to belong to one of the packages we just removed. This prevents
+      // accidentally deleting a wrapper belonging to another globally
+      // installed Bun package that exposes the same command name.
+      let ownedByRemovedPackage = false
       try {
         const stat = lstatSync(resolved)
         if (stat.isSymbolicLink()) {
-          const target = readlinkSync(resolved)
-          ownedByBunGlobal = target.includes('install/global') || target.includes('node_modules')
+          const target = resolve(dirname(resolved), readlinkSync(resolved))
+          // Symlink must point into a Bun global install of one of our packages
+          ownedByRemovedPackage = removedPackageNames.some(
+            (name) =>
+              target.includes(`install/global/${name}`) || target.includes(`node_modules/${name}`)
+          )
         } else {
           // Regular file — Bun wrappers are typically small JS shims.
-          // Check if the content references the Bun global install path.
+          // Check if the content references one of the removed packages.
           const content = readFileSync(resolved, 'utf-8')
-          ownedByBunGlobal = content.includes('install/global') || content.includes('@bun')
+          ownedByRemovedPackage = removedPackageNames.some(
+            (name) =>
+              content.includes(`install/global/${name}`) ||
+              content.includes(`node_modules/${name}`) ||
+              content.includes(`@bun/${name}`)
+          )
         }
       } catch {
         // Inspection failed — do NOT assume ownership. Require manual removal.
-        ownedByBunGlobal = false
+        ownedByRemovedPackage = false
       }
 
-      if (!ownedByBunGlobal) {
+      if (!ownedByRemovedPackage) {
         die(
-          `Binary '${bin}' at ${resolved} appears to belong to another package. Remove it manually and re-run.`
+          `Binary '${bin}' at ${resolved} appears to belong to another package ` +
+            `(not one of: ${removedPackageNames.join(', ')}). Remove it manually and re-run.`
         )
       }
 

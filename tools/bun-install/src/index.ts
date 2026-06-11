@@ -72,9 +72,18 @@ function main(): void {
 
     buildAndPackPackages(topoOrder, allPackagesMap, archiveStoreDir, tmpDir)
     uninstallOldGlobals(topoOrder)
-    verifyCommandsAbsent(targetCommands, bunBinDir)
+
+    // Verify absence/presence of ALL binary names from the pruned graph,
+    // not just the user-requested commands. Auxiliary binaries from
+    // dependencies must also be checked to prevent collisions.
+    const allBins = topoOrder.flatMap((pkgName) => {
+      const pkg = allPackagesMap.get(pkgName)
+      return pkg ? pkg.bins : []
+    })
+
+    verifyCommandsAbsent(allBins, bunBinDir, topoOrder)
     installPackages(topoOrder, allPackagesMap)
-    verifyCommandsPresent(targetCommands, bunBinDir)
+    verifyCommandsPresent(allBins, bunBinDir)
 
     log('\n=== Success! Requested commands have been globally installed. ===')
   } finally {
