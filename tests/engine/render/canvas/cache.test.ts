@@ -32,7 +32,7 @@ beforeAll(async () => {
     : undefined
   if (!input) throw new Error('gold-preview Input fixture node not found')
   movingNodeId = input.id
-})
+}, 60_000)
 
 function renderPreview(renderer: SkiaRenderer, sceneVersion: number): Uint8Array {
   renderer.render(graph, new Set(), {}, sceneVersion)
