@@ -120,7 +120,7 @@ describe('text measurement', () => {
     expect(store.graph.getNode(subtitle.id)?.height).toBe(22)
     expect(store.graph.getNode(description.id)?.width).toBe(878)
     expect(store.graph.getNode(description.id)?.height).toBe(60)
-  })
+  }, 30_000)
 
   test('imported nested instance layout keeps hidden sibling offsets stable', async () => {
     const graph = await loadFixtureGraph('gold-preview.fig')

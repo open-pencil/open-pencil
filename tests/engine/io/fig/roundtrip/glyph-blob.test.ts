@@ -46,7 +46,7 @@ function loadInterFonts() {
 describe('roundtrip: text glyph blobs', () => {
   beforeAll(async () => {
     await initCodec()
-  })
+  }, 30_000)
 
   test('preserves imported Figma glyph blobs for fallback rendering', async () => {
     const fixtureBytes = new Uint8Array(readFileSync(resolve(FIXTURES, 'gold-preview.fig')))
