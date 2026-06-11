@@ -853,6 +853,19 @@ export const commonMessages = i18n('common', {
   home: 'Home'
 })
 
+export const saveAndLeaveModalMessages = i18n('saveAndLeaveModal', {
+  title: 'Add this board to your dashboard?',
+  descriptionLine1: 'This board has not been saved to your dashboard yet.',
+  descriptionLine2: params('Add "{name}" to the dashboard before leaving?'),
+  untitledName: 'Untitled board',
+  toastAdded: params('Added "{name}" to your dashboard'),
+  errorFallback: 'Failed to add to dashboard',
+  buttonSaving: 'Saving…',
+  buttonSave: 'Add to dashboard and leave',
+  buttonDiscard: 'Discard and leave',
+  buttonCancel: 'Cancel'
+})
+
 export const adminMessages = i18n('admin', {
   title: 'Admin',
   badge: 'Internal',

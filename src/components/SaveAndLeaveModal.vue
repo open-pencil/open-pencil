@@ -10,6 +10,7 @@ import {
   DialogTitle
 } from 'reka-ui'
 
+import { useI18n } from '@inkly/vue'
 import { createBoard } from '@/app/api/client'
 import { toast } from '@/app/shell/ui'
 import { useDialogUI } from '@/components/ui/dialog'
@@ -22,23 +23,25 @@ const { documentName = '' } = defineProps<{
 
 const router = useRouter()
 const saving = ref(false)
+const { saveAndLeaveModal: t } = useI18n()
 const cls = useDialogUI({
   content: 'w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-5 shadow-2xl'
 })
 
-const resolvedName = computed(() => documentName.trim() || '無題のボード')
+const resolvedName = computed(() => documentName.trim() || t.value.untitledName)
+const descriptionLine2 = computed(() => t.value.descriptionLine2({ name: resolvedName.value }))
 
 async function saveAndLeave() {
   if (saving.value) return
   saving.value = true
   try {
     const board = await createBoard({ name: resolvedName.value })
-    toast.info(`「${board.name}」をダッシュボードに追加しました`)
+    toast.info(t.value.toastAdded({ name: board.name }))
     open.value = false
     await router.replace({ path: '/dashboard' })
   } catch (error) {
     console.error('[SaveAndLeave]', error)
-    const message = error instanceof Error ? error.message : 'ダッシュボードへの追加に失敗しました'
+    const message = error instanceof Error ? error.message : t.value.errorFallback
     toast.error(message)
   } finally {
     saving.value = false
@@ -61,11 +64,11 @@ function cancel() {
       <DialogOverlay :class="cls.overlay" />
       <DialogContent :class="cls.content" data-test-id="save-and-leave-modal">
         <DialogTitle :class="cls.title" class="text-base">
-          このボードをダッシュボードに追加しますか？
+          {{ t.title }}
         </DialogTitle>
         <DialogDescription :class="cls.description" class="mt-2 leading-relaxed">
-          現在のボードはまだダッシュボードに保存されていません。<br />
-          「{{ resolvedName }}」 をダッシュボードに追加してから戻りますか？
+          {{ t.descriptionLine1 }}<br />
+          {{ descriptionLine2 }}
         </DialogDescription>
 
         <div class="mt-5 flex flex-col gap-2">
@@ -76,7 +79,7 @@ function cancel() {
             data-test-id="save-and-leave-confirm"
             @click="saveAndLeave"
           >
-            {{ saving ? '保存中…' : 'ダッシュボードに追加して戻る' }}
+            {{ saving ? t.buttonSaving : t.buttonSave }}
           </button>
           <button
             type="button"
@@ -85,7 +88,7 @@ function cancel() {
             data-test-id="save-and-leave-discard"
             @click="discardAndLeave"
           >
-            破棄して戻る
+            {{ t.buttonDiscard }}
           </button>
           <button
             type="button"
@@ -94,7 +97,7 @@ function cancel() {
             data-test-id="save-and-leave-cancel"
             @click="cancel"
           >
-            キャンセル
+            {{ t.buttonCancel }}
           </button>
         </div>
       </DialogContent>

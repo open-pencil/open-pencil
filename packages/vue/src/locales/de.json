@@ -776,6 +776,18 @@
   "common": {
     "home": "Startseite"
   },
+  "saveAndLeaveModal": {
+    "title": "Dieses Board zum Dashboard hinzufügen?",
+    "descriptionLine1": "Dieses Board wurde noch nicht im Dashboard gespeichert.",
+    "descriptionLine2": "„{name}“ zum Dashboard hinzufügen, bevor Sie zurückkehren?",
+    "untitledName": "Unbenanntes Board",
+    "toastAdded": "„{name}“ wurde zum Dashboard hinzugefügt",
+    "errorFallback": "Hinzufügen zum Dashboard fehlgeschlagen",
+    "buttonSaving": "Wird gespeichert…",
+    "buttonSave": "Zum Dashboard hinzufügen und zurückkehren",
+    "buttonDiscard": "Verwerfen und zurückkehren",
+    "buttonCancel": "Abbrechen"
+  },
   "admin": {
     "title": "Verwaltung",
     "badge": "Intern",

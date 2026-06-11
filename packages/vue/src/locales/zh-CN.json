@@ -776,6 +776,18 @@
   "common": {
     "home": "首页"
   },
+  "saveAndLeaveModal": {
+    "title": "将此画板添加到仪表板？",
+    "descriptionLine1": "此画板尚未保存到仪表板。",
+    "descriptionLine2": "在离开前将「{name}」添加到仪表板？",
+    "untitledName": "未命名画板",
+    "toastAdded": "已将「{name}」添加到仪表板",
+    "errorFallback": "添加到仪表板失败",
+    "buttonSaving": "保存中…",
+    "buttonSave": "添加到仪表板并返回",
+    "buttonDiscard": "放弃并返回",
+    "buttonCancel": "取消"
+  },
   "admin": {
     "title": "管理",
     "badge": "内部",

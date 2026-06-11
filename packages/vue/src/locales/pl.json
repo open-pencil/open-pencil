@@ -776,6 +776,18 @@
   "common": {
     "home": "Strona główna"
   },
+  "saveAndLeaveModal": {
+    "title": "Dodać tę tablicę do pulpitu?",
+    "descriptionLine1": "Ta tablica nie została jeszcze zapisana na pulpicie.",
+    "descriptionLine2": "Dodać „{name}” do pulpitu przed wyjściem?",
+    "untitledName": "Tablica bez tytułu",
+    "toastAdded": "Dodano „{name}” do pulpitu",
+    "errorFallback": "Nie udało się dodać do pulpitu",
+    "buttonSaving": "Zapisywanie…",
+    "buttonSave": "Dodaj do pulpitu i wyjdź",
+    "buttonDiscard": "Odrzuć i wyjdź",
+    "buttonCancel": "Anuluj"
+  },
   "admin": {
     "title": "Administracja",
     "badge": "Wewnętrzny",

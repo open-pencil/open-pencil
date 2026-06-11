@@ -776,6 +776,18 @@
   "common": {
     "home": "Home"
   },
+  "saveAndLeaveModal": {
+    "title": "Aggiungere questa board alla dashboard?",
+    "descriptionLine1": "Questa board non è ancora stata salvata nella dashboard.",
+    "descriptionLine2": "Aggiungere «{name}» alla dashboard prima di uscire?",
+    "untitledName": "Board senza titolo",
+    "toastAdded": "«{name}» è stata aggiunta alla dashboard",
+    "errorFallback": "Aggiunta alla dashboard non riuscita",
+    "buttonSaving": "Salvataggio…",
+    "buttonSave": "Aggiungi alla dashboard e esci",
+    "buttonDiscard": "Annulla e esci",
+    "buttonCancel": "Annulla"
+  },
   "admin": {
     "title": "Amministrazione",
     "badge": "Interno",

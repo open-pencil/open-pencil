@@ -776,6 +776,18 @@
   "common": {
     "home": "Accueil"
   },
+  "saveAndLeaveModal": {
+    "title": "Ajouter ce tableau au tableau de bord ?",
+    "descriptionLine1": "Ce tableau n'a pas encore été enregistré dans le tableau de bord.",
+    "descriptionLine2": "Ajouter « {name} » au tableau de bord avant de quitter ?",
+    "untitledName": "Tableau sans titre",
+    "toastAdded": "« {name} » a été ajouté au tableau de bord",
+    "errorFallback": "Échec de l'ajout au tableau de bord",
+    "buttonSaving": "Enregistrement…",
+    "buttonSave": "Ajouter au tableau de bord et quitter",
+    "buttonDiscard": "Abandonner et quitter",
+    "buttonCancel": "Annuler"
+  },
   "admin": {
     "title": "Administration",
     "badge": "Interne",

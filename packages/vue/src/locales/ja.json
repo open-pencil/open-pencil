@@ -776,6 +776,18 @@
   "common": {
     "home": "トップ"
   },
+  "saveAndLeaveModal": {
+    "title": "このボードをダッシュボードに追加しますか？",
+    "descriptionLine1": "現在のボードはまだダッシュボードに保存されていません。",
+    "descriptionLine2": "「{name}」 をダッシュボードに追加してから戻りますか？",
+    "untitledName": "無題のボード",
+    "toastAdded": "「{name}」をダッシュボードに追加しました",
+    "errorFallback": "ダッシュボードへの追加に失敗しました",
+    "buttonSaving": "保存中…",
+    "buttonSave": "ダッシュボードに追加して戻る",
+    "buttonDiscard": "破棄して戻る",
+    "buttonCancel": "キャンセル"
+  },
   "admin": {
     "title": "管理",
     "badge": "社内",

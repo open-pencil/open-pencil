@@ -776,6 +776,18 @@
   "common": {
     "home": "Inicio"
   },
+  "saveAndLeaveModal": {
+    "title": "¿Añadir este tablero al panel?",
+    "descriptionLine1": "Este tablero aún no se ha guardado en el panel.",
+    "descriptionLine2": "¿Añadir «{name}» al panel antes de salir?",
+    "untitledName": "Tablero sin título",
+    "toastAdded": "Se ha añadido «{name}» al panel",
+    "errorFallback": "No se pudo añadir al panel",
+    "buttonSaving": "Guardando…",
+    "buttonSave": "Añadir al panel y salir",
+    "buttonDiscard": "Descartar y salir",
+    "buttonCancel": "Cancelar"
+  },
   "admin": {
     "title": "Administración",
     "badge": "Interno",
