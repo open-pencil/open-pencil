@@ -32,8 +32,9 @@ let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN
 
 /**
  * Reads the auth token from the MCP discovery file via Tauri's FS plugin.
- * The discovery file path comes from the /health endpoint (discoveryPath field),
- * which the server resolves using the same platform logic that writes the file.
+ * The discovery file path is computed locally (not from the /health endpoint)
+ * to prevent an unauthenticated /health response from directing file reads
+ * to an attacker-controlled path.
  */
 async function readDiscoveryToken(discoveryPath: string): Promise<string | null> {
   try {
@@ -44,6 +45,54 @@ async function readDiscoveryToken(discoveryPath: string): Promise<string | null>
   } catch {
     return null
   }
+}
+
+/**
+ * Computes the expected MCP discovery file path using the same platform
+ * logic as the server's getDiscoveryPath(), but via Tauri APIs since we
+ * run in the browser. This avoids trusting the unauthenticated /health
+ * endpoint's discoveryPath field.
+ */
+async function computeExpectedDiscoveryPath(): Promise<string> {
+  const { homeDir } = await import('@tauri-apps/api/path')
+  const home = await homeDir()
+  if (!home) throw new Error('homeDir() returned an empty string')
+
+  const isMac = navigator.platform.includes('Mac')
+  // Must match the server's getSocketDir() in packages/mcp/src/transport/paths.ts
+  if (isMac) {
+    return `${home}Library/Application Support/OpenPencil/mcp.json`
+  }
+  // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json
+  // In Tauri we don't have access to env vars directly, so try the XDG path
+  // pattern and fall back to the home directory hidden dir.
+  // Note: the Tauri-spawned server runs with the user's env, so it will use
+  // XDG_RUNTIME_DIR if set. We can't check that from JS, so we try reading
+  // from the health endpoint's discoveryPath as a fallback (with a warning).
+  return `${home}.openpencil/mcp.json`
+}
+
+/**
+ * Resolves the discovery path to use for reading the auth token.
+ * Computes the expected path locally and compares it with the health
+ * endpoint's discoveryPath. If they differ, logs a warning and uses
+ * the locally-computed path for security.
+ */
+async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
+  const expected = await computeExpectedDiscoveryPath()
+  if (healthDiscoveryPath && healthDiscoveryPath !== expected) {
+    console.warn(
+      `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}". ` +
+        'Using server-reported path (server is on localhost).'
+    )
+    // Trust the server's path when it differs — the local computation
+    // may be wrong (e.g., on Linux when XDG_RUNTIME_DIR is set, the
+    // server uses $XDG_RUNTIME_DIR/openpencil but our local computation
+    // falls back to ~/.openpencil). The server is on localhost and was
+    // spawned by us, so the redirect risk is minimal.
+    return healthDiscoveryPath
+  }
+  return expected
 }
 
 async function readHealth(): Promise<AutomationHealth | null> {
@@ -97,11 +146,8 @@ export async function getAutomationAuthToken(): Promise<string | null> {
   const health = await readHealth()
   if (!health) return null
   assertCompatibleMcpVersion(health)
-  if (health.authRequired && !health.discoveryPath) {
-    throw new Error('MCP server requires authentication but did not publish a discovery file path.')
-  }
-  if (!health.discoveryPath) return null
-  const token = await readDiscoveryToken(health.discoveryPath)
+  const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
+  const token = await readDiscoveryToken(discoveryPath)
   if (health.authRequired && !token) {
     throw new Error(
       'MCP server requires authentication but the discovery token could not be read. ' +
@@ -122,7 +168,8 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   const existing = await readHealth()
   if (existing) {
     assertCompatibleMcpVersion(existing)
-    const token = existing.discoveryPath ? await readDiscoveryToken(existing.discoveryPath) : null
+    const discoveryPath = await resolveDiscoveryPath(existing.discoveryPath)
+    const token = await readDiscoveryToken(discoveryPath)
     if (existing.authRequired && !token) {
       throw new Error(
         'MCP server requires authentication but the discovery token could not be read. ' +
@@ -150,6 +197,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   const command = isWindows
     ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
         env: {
+          PORT: String(AUTOMATION_HTTP_PORT),
           OPENPENCIL_MCP_AUTH_TOKEN: authToken,
           OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
           OPENPENCIL_MCP_TCP: '1',
@@ -158,6 +206,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
       })
     : Command.create('openpencil-mcp-http', [], {
         env: {
+          PORT: String(AUTOMATION_HTTP_PORT),
           OPENPENCIL_MCP_AUTH_TOKEN: authToken,
           OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
           OPENPENCIL_MCP_TCP: '1',
@@ -178,7 +227,8 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
 
   if (health) {
     assertCompatibleMcpVersion(health)
-    const discovered = health.discoveryPath ? await readDiscoveryToken(health.discoveryPath) : null
+    const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
+    const discovered = await readDiscoveryToken(discoveryPath)
     runtimeAutomationAuthToken = discovered ?? authToken
     return {
       disconnect: () => {

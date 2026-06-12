@@ -50,8 +50,9 @@ Il server scrive un **file di discovery** all'avvio. Il bridge stdio legge quest
 |-------------|----------|
 | macOS | `~/Library/Application Support/OpenPencil/mcp.json` |
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
+| Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Sovrascrivi con `OPENPENCIL_MCP_SOCKET` — la sua directory padre diventa la directory di discovery.
+Sovrascrivi con `OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) — il file di discovery (`mcp.json`) viene posizionato nella stessa directory del socket.
 
 ### Contenuto del file di discovery
 
@@ -184,7 +185,7 @@ Un token di autenticazione viene **generato automaticamente all'avvio** (32-hex 
 | Interno (Tauri/browser) | Legge il file di discovery via `/health` → `discoveryPath` |
 | Client HTTP personalizzato | Imposta `OPENPENCIL_MCP_AUTH_TOKEN` su server e client, o leggi il file di discovery |
 
-Per **disabilitare** l'autenticazione (es. sviluppo locale dietro firewall), avvia il server con `authToken: null` esplicitamente:
+Per **disabilitare** l'autenticazione (es. sviluppo locale dietro firewall), imposta `OPENPENCIL_MCP_AUTH_TOKEN=""` prima di avviare il server:
 
 ```sh
 OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
@@ -194,8 +195,8 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Variabile | Default | Descrizione |
 |-----------|---------|-------------|
-| `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP (solo socket). |
-| `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket |
+| `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP (su Windows disabilita l'unico trasporto disponibile). |
+| `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux) |
 | `OPENPENCIL_MCP_TCP` | Auto | `1` per forzare TCP abilitato |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generato | Token auth del server. Se non impostato, viene generato automaticamente; se impostato a stringa vuota (`""`), l'autenticazione viene disabilitata. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope per `open_file`, `save_file` e export con scrittura |
@@ -248,9 +249,10 @@ npm install -g @open-pencil/mcp@latest
 Il bridge legge il file di discovery per localizzare il server. Se manca o è stale (PID non più attivo):
 
 1. Controlla che il file di discovery esista nel percorso della tua piattaforma
-2. Se TCP è abilitato (`PORT` non è `0`), verifica che il server sia in esecuzione: `curl http://127.0.0.1:${PORT:-7600}/health`
-3. Se usi `OPENPENCIL_MCP_SOCKET` personalizzato, assicurati che il bridge usi la stessa variabile
-4. Su Windows (trasporto solo TCP), verifica che `httpPort` del server sia raggiungibile
+2. Se usi `OPENPENCIL_MCP_SOCKET` personalizzato (solo macOS/Linux), controlla anche il file di discovery adiacente al percorso del socket personalizzato (la directory contenente il file socket)
+3. Se TCP è abilitato (`PORT` non è `0`), verifica che il server sia in esecuzione: `curl http://127.0.0.1:${PORT:-7600}/health`
+4. Se usi `OPENPENCIL_MCP_SOCKET` personalizzato, assicurati che il bridge usi la stessa variabile
+5. Su Windows (trasporto solo TCP), verifica che `httpPort` del server sia raggiungibile
 
 ## Flusso di lavoro
 

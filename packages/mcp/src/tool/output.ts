@@ -63,6 +63,17 @@ export async function resolveSafePath(filePath: string, root: string): Promise<s
     realRoot = remainder ? join(realAncestor, remainder.slice(osSep.length)) : realAncestor
   }
 
+  // Re-check the broad-root guard after resolving symlinks. A root like
+  // "/home" could be a symlink to "/", which would pass the earlier
+  // normalizedRoot check but resolve to the filesystem root here.
+  const parsedRealRoot = parse(realRoot).root
+  if (realRoot === '/' || realRoot === osSep || realRoot === parsedRealRoot) {
+    throw new Error(
+      `Root path is too broad: "${root}" (resolved to "${realRoot}"). ` +
+        'Specify a narrower OPENPENCIL_MCP_ROOT directory.'
+    )
+  }
+
   const realSep = realRoot.endsWith('/') || realRoot.endsWith('\\') ? '' : osSep
 
   // Resolve the file path to its real canonical form for security validation.

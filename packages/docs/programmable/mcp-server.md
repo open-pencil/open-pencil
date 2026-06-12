@@ -50,8 +50,9 @@ The server writes a **discovery file** on startup. The stdio bridge reads this f
 |----------|------|
 | macOS | `~/Library/Application Support/OpenPencil/mcp.json` |
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
+| Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Override with `OPENPENCIL_MCP_SOCKET` — its dirname becomes the discovery directory.
+Override with `OPENPENCIL_MCP_SOCKET` — the discovery file (`mcp.json`) is placed alongside the socket (same directory as the override path).
 
 ### What's in the discovery file
 
@@ -74,6 +75,7 @@ The discovery file is written with `0o600` permissions (owner read/write only). 
 | Platform | Primary | Fallback |
 |----------|---------|----------|
 | macOS / Linux | Unix domain socket | TCP on `127.0.0.1:7600` |
+| Windows | TCP on `127.0.0.1:7600` | — |
 
 The stdio bridge prefers the socket. If the server was started with TCP only (no socket), the bridge falls back to `httpPort` from the discovery file.
 
@@ -183,7 +185,7 @@ An auth token is **auto-generated on startup** (32-hex random from `crypto.rando
 | App-internal (Tauri/browser) | Reads discovery file via `/health` → `discoveryPath` |
 | Custom HTTP client | Set `OPENPENCIL_MCP_AUTH_TOKEN` on both server and client, or read the discovery file |
 
-To **disable** auth entirely (e.g. local development behind a firewall), start the server with `authToken: null` explicitly:
+To **disable** auth entirely (e.g. local development behind a firewall), set `OPENPENCIL_MCP_AUTH_TOKEN=""` before starting the server:
 
 ```sh
 OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
@@ -249,7 +251,7 @@ The bridge reads the discovery file to locate the server. If the discovery file 
 1. Check the discovery file exists at the platform path above. If `OPENPENCIL_MCP_SOCKET` is overridden, also check for the discovery file adjacent to the custom socket path (the directory containing the socket file)
 2. If TCP is enabled (`PORT` is not `0`), verify the server is running: `curl http://127.0.0.1:${PORT:-7600}/health`
 3. If running with a custom `OPENPENCIL_MCP_SOCKET`, make sure the bridge uses the same env var
-4. On Windows (TCP-only transport), verify the server's `httpPort` is reachable
+4. On Windows (TCP-only transport, no Unix socket support), verify the server's `httpPort` is reachable. Setting `PORT=0` on Windows disables the only available transport
 
 ## Workflow
 

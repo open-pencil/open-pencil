@@ -20,6 +20,7 @@ const SOCKET_FILENAME = 'mcp.sock'
 const DISCOVERY_FILENAME = 'mcp.json'
 
 const isMacOS = platform() === 'darwin'
+const isWindows = platform() === 'win32'
 
 /**
  * Returns the platform-appropriate directory for MCP runtime files.
@@ -37,6 +38,13 @@ export async function getSocketDir(): Promise<string> {
     dir = dirname(socketOverride)
   } else if (isMacOS) {
     dir = join(homedir(), 'Library', 'Application Support', DIR_NAME_MACOS)
+  } else if (isWindows) {
+    const localAppData = process.env.LOCALAPPDATA?.trim()
+    if (localAppData) {
+      dir = join(localAppData, DIR_NAME_MACOS)
+    } else {
+      dir = join(homedir(), 'AppData', 'Local', DIR_NAME_MACOS)
+    }
   } else {
     // Linux / other Unix
     const xdgRuntime = process.env.XDG_RUNTIME_DIR?.trim()
@@ -62,7 +70,12 @@ export async function getSocketDir(): Promise<string> {
  */
 export async function getSocketPath(): Promise<string> {
   const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
-  if (socketOverride) return socketOverride
+  if (socketOverride) {
+    // Ensure the override directory exists — getSocketDir() only creates
+    // the default platform directory, so custom paths would fail to bind.
+    await getSocketDir()
+    return socketOverride
+  }
 
   const dir = await getSocketDir()
   return join(dir, SOCKET_FILENAME)
@@ -81,6 +94,9 @@ export async function getDiscoveryPath(): Promise<string> {
   const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
 
   if (socketOverride) {
+    // Ensure the override directory exists — getSocketDir() only creates
+    // the default platform directory, so custom paths would fail to write.
+    await getSocketDir()
     return join(dirname(socketOverride), DISCOVERY_FILENAME)
   }
 

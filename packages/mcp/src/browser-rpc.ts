@@ -63,6 +63,10 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   const pending = new Map<string, PendingRequest>()
   const clients = new Set<WebSocket>()
   const connectionWaiters = new Set<PendingRequest>()
+  // Track which WebSocket clients have authenticated via a valid
+  // register message. Unauthenticated clients can only send register;
+  // all other message types (request, response) are rejected.
+  const authenticatedClients = new Set<WebSocket>()
   let browserWs: WebSocket | null = null
   let browserRegistered = false
 
@@ -189,6 +193,8 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       ws.close()
       return
     }
+    // Mark this client as authenticated — it can now send requests.
+    authenticatedClients.add(ws)
     const previousBrowserWs = browserWs
     browserWs = ws
     browserRegistered = true
@@ -229,12 +235,38 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       return
     }
 
+    if (msg.type === 'auth') {
+      // Authenticate a stdio bridge client without registering it as the
+      // browser app. This lets the client send request/response messages
+      // without becoming the RPC target. The token is validated the same
+      // way as registerBrowser — when auth is disabled (authToken === null),
+      // any token is accepted.
+      if (msg.token === null || typeof msg.token === 'string') {
+        if (!isAuthorized(msg.token, authToken)) {
+          ws.close()
+          return
+        }
+        authenticatedClients.add(ws)
+      } else if (msg.token !== undefined) {
+        ws.close()
+      }
+      return
+    }
+
     if (msg.type === 'register') {
       if (msg.token === null || typeof msg.token === 'string') {
         registerBrowser(ws, msg.token)
       } else if (msg.token !== undefined) {
         ws.close()
       }
+      return
+    }
+    // All non-register messages require authentication. Without this
+    // check, an unauthenticated WebSocket client (that hasn't sent a
+    // valid register message) could bypass the HTTP auth on /rpc by
+    // sending request messages over the WebSocket directly.
+    if (!authenticatedClients.has(ws)) {
+      ws.close()
       return
     }
     if (msg.type === 'request') {
@@ -246,6 +278,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function handleClose(ws: WebSocket) {
     clients.delete(ws)
+    authenticatedClients.delete(ws)
     if (browserWs !== ws) return
     browserWs = null
     browserRegistered = false
@@ -260,13 +293,13 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function handleConnection(ws: WebSocket) {
     clients.add(ws)
-    // WebSocket connections are already gated by transport security (Unix
-    // socket with 0o600 permissions or TCP localhost + auth), so all
-    // connected WebSocket clients are considered authenticated for sending
-    // requests. Browser registration (registerBrowser) still requires a
-    // valid token — this only gates request forwarding.
-    // The register prompt does NOT include the auth token — the browser
-    // app sends the token proactively (from the discovery file or Vite env).
+    // Transport security restricts WHO can connect: Unix socket with
+    // 0o600 permissions (same-user only) or TCP localhost (any local
+    // process). The authenticatedClients set gates WHAT connected clients
+    // can do: only those that sent a valid register message may forward
+    // requests. The register prompt does NOT include the auth token —
+    // the browser app sends the token proactively (from the discovery
+    // file or Vite env).
     sendRegisterPrompt(ws)
   }
 

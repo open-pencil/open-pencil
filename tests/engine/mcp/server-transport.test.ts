@@ -52,10 +52,18 @@ function readWsJson<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
   })
 }
 
-function openWs(url: string): Promise<WebSocket> {
+function openWs(url: string, authToken?: string | null): Promise<WebSocket> {
   const ws = new WebSocket(url)
   return new Promise((resolve, reject) => {
-    ws.once('open', () => resolve(ws))
+    ws.once('open', () => {
+      if (authToken) {
+        // Authenticate as a stdio bridge client (not the browser app).
+        // The "auth" message type validates the token and adds the client
+        // to authenticatedClients without replacing the registered browser.
+        ws.send(JSON.stringify({ type: 'auth', token: authToken }))
+      }
+      resolve(ws)
+    })
     ws.once('error', reject)
   })
 }
@@ -249,7 +257,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
 
     const graph = new SceneGraph()
     const browser = await connectMockBrowser(httpPort, graph, authToken)
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
+    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
     try {
       const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
@@ -302,7 +310,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       throw new Error('withTcp: true did not produce an HTTP port')
     }
 
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
+    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
 
     try {
       // Consume the initial register message sent on connection
@@ -352,7 +360,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       throw new Error('withTcp: true did not produce an HTTP port')
     }
 
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
+    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
     const graph = new SceneGraph()
     let browser: MockBrowser | null = null
 
@@ -394,7 +402,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     }
 
     // Connect a WebSocket client (NOT a browser — no register message yet)
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
+    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
     try {
       // Read the initial register prompt
@@ -495,7 +503,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     // Wait for the second browser to register
     await waitForHealth((s) => s === 'ok')
 
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
+    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
     try {
       // Read the initial register message (token is null for security —

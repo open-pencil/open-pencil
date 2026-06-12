@@ -87,7 +87,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         ? z.object({
             path: z
               .string()
-              .describe('Optional path for the .fig file inside the configured MCP root')
+              .describe('Path for the .fig file, absolute or relative to the MCP root')
               .optional()
           })
         : z.object({})
@@ -112,7 +112,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Path to the design file inside the configured MCP root')
+          path: z.string().describe('Path to the design file, absolute or relative to the MCP root')
         })
       },
       async (args: { path: string }) => {
@@ -135,7 +135,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         inputSchema: z.object({
           path: z
             .string()
-            .describe('Optional path for the new file inside the configured MCP root')
+            .describe('Path for the new file, absolute or relative to the MCP root')
             .optional()
         })
       },

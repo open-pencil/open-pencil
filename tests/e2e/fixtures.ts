@@ -16,7 +16,7 @@ export function useEditorSetup(url = '/') {
   })
 
   test.afterAll(async () => {
-    await page.close()
+    await page?.close()
   })
 
   return {

@@ -129,7 +129,9 @@ async function createBridgeAndWaitForReady(
   })
 }
 
-describe('Fix 4 - Auth token auto-discovery and transparent retry', () => {
+const isUnix = process.platform !== 'win32'
+
+describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retry', () => {
   let httpServer: Server | null = null
   const origSocketEnv = process.env.OPENPENCIL_MCP_SOCKET
 

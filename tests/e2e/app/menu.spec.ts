@@ -21,7 +21,7 @@ test('File menu opens and shows items', async () => {
   const items = await menu.locator('[role="menuitem"]').allTextContents()
   expect(items.some((t) => t.includes('Open'))).toBe(true)
   expect(items.some((t) => t.includes('Save'))).toBe(true)
-  expect(items.some((t) => t.includes('Save As'))).toBe(true)
+  expect(items.some((t) => t.includes('Save as') || t.includes('Save As'))).toBe(true)
 
   await editor.page.keyboard.press('Escape')
 })

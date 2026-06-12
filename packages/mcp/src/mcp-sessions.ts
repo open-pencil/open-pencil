@@ -67,7 +67,7 @@ export function createMcpSessionManager({
     }
   }
 
-  function createSession(id: string): MCPTransport {
+  async function createSession(id: string): Promise<MCPTransport> {
     const server = new McpServer({ name: 'open-pencil', version: serverVersion })
     registerTools(server)
 
@@ -75,18 +75,25 @@ export function createMcpSessionManager({
       sessionIdGenerator: () => id,
       enableJsonResponse: true
     })
-    void server.connect(transport)
+    // Await the MCP handshake before storing/returning the transport so
+    // that handleRequest cannot race the SDK's initialization on a fresh
+    // session. Without this, the /mcp route calls resolveTransport() and
+    // immediately awaits handleRequest(), which can fail if connect() has
+    // not completed yet.
+    await server.connect(transport)
     sessions.set(id, { transport, server, lastSeen: Date.now() })
     return transport
   }
 
-  function resolveTransport(sessionId: string | undefined): MCPTransport | { error: 'too_many' } {
+  function resolveTransport(
+    sessionId: string | undefined
+  ): Promise<MCPTransport | { error: 'too_many' }> {
     cleanupExpired()
     const existing = sessionId ? sessions.get(sessionId) : undefined
     if (!existing && sessions.size >= MAX_MCP_SESSIONS) {
-      return { error: 'too_many' }
+      return Promise.resolve({ error: 'too_many' })
     }
-    return existing?.transport ?? createSession(sessionId ?? randomUUID())
+    return existing ? Promise.resolve(existing.transport) : createSession(sessionId ?? randomUUID())
   }
 
   function touch(sessionId: string | undefined, transport: MCPTransport) {

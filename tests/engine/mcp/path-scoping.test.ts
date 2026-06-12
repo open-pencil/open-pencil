@@ -126,4 +126,18 @@ describe('MCP path scoping', () => {
       )
     }
   )
+
+  test.skipIf(!isUnix)('rejects symlinked root that resolves to /', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-root-test')
+    const rootLink = `${testDir}/root-link`
+    try {
+      await mkdir(testDir, { recursive: true })
+      await symlink('/', rootLink)
+      await expect(resolveSafePath(`${rootLink}/file.fig`, rootLink)).rejects.toThrow(
+        'Root path is too broad'
+      )
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
 })

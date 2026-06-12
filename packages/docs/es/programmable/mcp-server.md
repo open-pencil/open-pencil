@@ -50,8 +50,9 @@ El servidor escribe un **archivo de descubrimiento** al iniciarse. El puente std
 |------------|------|
 | macOS | `~/Library/Application Support/OpenPencil/mcp.json` |
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
+| Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Sobreescribe con `OPENPENCIL_MCP_SOCKET` — su directorio padre se usa como directorio de descubrimiento.
+Sobreescribe con `OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) — el archivo de descubrimiento (`mcp.json`) se coloca junto al socket (en la misma dirección).
 
 ### Contenido del archivo de descubrimiento
 
@@ -184,7 +185,7 @@ Un token de autenticación se **genera automáticamente al iniciar** (32-hex ale
 | Interno (Tauri/browser) | Lee el archivo de descubrimiento vía `/health` → `discoveryPath` |
 | Cliente HTTP personalizado | Configura `OPENPENCIL_MCP_AUTH_TOKEN` en servidor y cliente, o lee el archivo de descubrimiento |
 
-Para **desactivar** la autenticación (ej. desarrollo local detrás de un firewall), inicia el servidor con `authToken: null` explícitamente:
+Para **desactivar** la autenticación (ej. desarrollo local detrás de un firewall), configura `OPENPENCIL_MCP_AUTH_TOKEN=""` antes de iniciar el servidor:
 
 ```sh
 OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
@@ -194,8 +195,8 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Variable | Default | Descripción |
 |----------|---------|-------------|
-| `PORT` | `7600` | Puerto TCP. `0` para desactivar TCP (solo socket). |
-| `OPENPENCIL_MCP_SOCKET` | Por plataforma | Sobreescribir ruta de socket |
+| `PORT` | `7600` | Puerto TCP. `0` para desactivar TCP (en Windows desactiva el único transporte disponible). |
+| `OPENPENCIL_MCP_SOCKET` | Por plataforma | Sobreescribir ruta de socket (solo macOS/Linux) |
 | `OPENPENCIL_MCP_TCP` | Auto | `1` para forzar TCP habilitado |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generado | Token de autenticación del servidor. Si no se establece, se genera automáticamente; si se establece como cadena vacía (`""`), la autenticación se deshabilita. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directorio alcance para `open_file`, `save_file` y export con escritura |
@@ -248,9 +249,10 @@ npm install -g @open-pencil/mcp@latest
 El puente lee el archivo de descubrimiento para localizar el servidor. Si falta o está stale (PID ya no vivo):
 
 1. Comprueba que el archivo de descubrimiento existe en la ruta de tu plataforma
-2. Si TCP está habilitado (`PORT` no es `0`), verifica que el servidor esté ejecutándose: `curl http://127.0.0.1:${PORT:-7600}/health`
-3. Si usas `OPENPENCIL_MCP_SOCKET` personalizado, asegúrate de que el puente use la misma variable
-4. En Windows (transporte solo TCP), verifica que `httpPort` del servidor sea accesible
+2. Si usas `OPENPENCIL_MCP_SOCKET` personalizado (solo macOS/Linux), comprueba también el archivo de descubrimiento junto a la ruta del socket personalizado (el directorio que contiene el archivo de socket)
+3. Si TCP está habilitado (`PORT` no es `0`), verifica que el servidor esté ejecutándose: `curl http://127.0.0.1:${PORT:-7600}/health`
+4. Si usas `OPENPENCIL_MCP_SOCKET` personalizado, asegúrate de que el puente use la misma variable
+5. En Windows (transporte solo TCP), verifica que `httpPort` del servidor sea accesible
 
 ## Flujo de trabajo
 

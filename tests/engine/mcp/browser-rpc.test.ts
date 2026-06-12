@@ -394,21 +394,20 @@ describe('BrowserRpcBridge reconnection', () => {
       bridge.handleMessage(data, attackerPair.serverWs)
     })
 
-    // Capture the real request UUID by intercepting messages on browser
-    let capturedId = ''
-    browserPair.clientWs.on('message', (raw: Buffer) => {
-      const msg = JSON.parse(raw.toString())
-      if (msg.type === 'request') {
-        capturedId = msg.id
-      }
-    })
-
     // Send an RPC — it goes to the real browser.
     const rpcPromise = bridge.sendRpc(RPC_BODY)
 
-    // Wait for the request to arrive so we can capture the UUID
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 50)
+    // Wait for the request to arrive by listening for the 'request' message
+    // on the browser client. This replaces a blind setTimeout with a
+    // one-shot barrier that resolves when the actual message is received.
+    const capturedId = await new Promise<string>((resolve) => {
+      browserPair.clientWs.on('message', function handler(raw: Buffer) {
+        const msg = JSON.parse(raw.toString())
+        if (msg.type === 'request') {
+          browserPair.clientWs.off('message', handler)
+          resolve(msg.id)
+        }
+      })
     })
     expect(capturedId).toBeTruthy()
     const requestId = capturedId

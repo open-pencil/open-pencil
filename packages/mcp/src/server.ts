@@ -21,7 +21,12 @@ import { preprocessRpc } from './jsx-preprocess'
 import { createMcpSessionManager } from './mcp-sessions'
 import { registerTools } from './tool/registration'
 import { removeDiscoveryFile, removeStaleSocket, writeDiscoveryFile } from './transport/discovery'
-import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from './transport/paths'
+import {
+  getDiscoveryPath,
+  getSocketDir,
+  getSocketPath,
+  platformHasUnixSockets
+} from './transport/paths'
 
 export const MCP_VERSION: string = packageJson.version
 
@@ -160,7 +165,7 @@ function createHonoApp(options: {
     if (c.req.method === 'DELETE' && !sessionId) {
       return c.json({ error: 'Missing MCP session id' }, 400)
     }
-    const transport = mcpSessions.resolveTransport(sessionId)
+    const transport = await mcpSessions.resolveTransport(sessionId)
     if ('error' in transport) {
       return c.json(
         { error: 'Too many active MCP sessions' },
@@ -257,7 +262,24 @@ async function startSocketListener(
   if (!platformHasUnixSockets() && !socketPathOverride) return null
 
   const resolvedPath = socketPathOverride ?? (await getSocketPath())
+  // Ensure the socket directory exists (especially when OPENPENCIL_MCP_SOCKET
+  // overrides the default — getSocketDir() handles creating the directory).
+  await getSocketDir()
   await removeStaleSocket(resolvedPath)
+
+  // Belt-and-suspenders: unlink the socket path right before listen().
+  // removeStaleSocket tests for liveness, but a race between a closing
+  // server's cleanup and our listen() can leave a stale file that passes
+  // the liveness check (the old server hasn't fully stopped yet).  An
+  // unlink here is safe — if the file doesn't exist, unlink() throws
+  // ENOENT which we swallow.
+  try {
+    await unlink(resolvedPath)
+  } catch (e) {
+    if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code !== 'ENOENT') {
+      process.stderr.write(`  Socket: pre-listen unlink warning (${e.message})\n`)
+    }
+  }
 
   const server = createAppServer(app)
   wireUpgrade(server, wss)
@@ -440,6 +462,18 @@ function buildServerContext(options: ServerOptions) {
     options.authToken === undefined ? randomBytes(16).toString('hex') : options.authToken
   const corsOrigin = options.corsOrigin ?? null
   const withTcp = options.withTcp ?? false
+
+  // Warn if auth is disabled while TCP is active — any local process can
+  // interact with the server without authentication. Socket-only transport
+  // (PORT=0) is safer because 0o600 permissions restrict access to the
+  // same OS user.
+  if (authToken === null && withTcp) {
+    process.stderr.write(
+      `WARNING: MCP server is running without authentication on TCP port ${httpPort}. ` +
+        'Any local process can interact with the server. ' +
+        'Set OPENPENCIL_MCP_AUTH_TOKEN to enable auth, or use PORT=0 for socket-only transport.\n'
+    )
+  }
 
   const mcpSessions = createMcpSessionManager({
     serverVersion: MCP_VERSION,
