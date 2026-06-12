@@ -93,11 +93,16 @@ describe('MCP stdio transport', () => {
     let lastStatus = 'unknown'
     let ready = false
     while (Date.now() - start < maxWait) {
-      const resp = await fetch(`http://127.0.0.1:${handle.httpPort}/health`)
-      lastStatus = ((await resp.json()) as { status: string }).status
-      if (lastStatus === 'ok') {
-        ready = true
-        break
+      try {
+        const resp = await fetch(`http://127.0.0.1:${handle.httpPort}/health`)
+        lastStatus = ((await resp.json()) as { status: string }).status
+        if (lastStatus === 'ok') {
+          ready = true
+          break
+        }
+      } catch {
+        // Transient fetch/json failure — retry after delay
+        void 0
       }
       await new Promise<void>((r) => {
         setTimeout(r, 200)
@@ -116,9 +121,9 @@ describe('MCP stdio transport', () => {
   }, 10000)
 
   afterEach(async () => {
-    await client.close()
-    browser.close()
-    await handle.close()
+    if (client) await client.close().catch(() => undefined)
+    if (browser) browser.close()
+    if (handle) await handle.close().catch(() => undefined)
     if (isUnix) await rm(SOCKET_DIR, { recursive: true, force: true })
   })
 

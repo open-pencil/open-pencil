@@ -340,7 +340,21 @@ async function cleanupSocket(socketPath: string | null): Promise<void> {
   }
 }
 
-async function cleanupDiscovery(): Promise<void> {
+async function cleanupDiscovery(ownAuthToken: string | null): Promise<void> {
+  // Only remove the discovery file if it was written by this server instance.
+  // Without this guard, closing one of two concurrent servers can delete the
+  // other's discovery file, breaking auto-discovery for the surviving server.
+  const discoveryPath = await getDiscoveryPath()
+  try {
+    const raw = await Bun.file(discoveryPath).text()
+    const info = JSON.parse(raw) as { authToken: string | null }
+    // If the file's auth token doesn't match ours, another server owns it.
+    if (info.authToken !== ownAuthToken) return
+  } catch {
+    // File doesn't exist or can't be parsed — fall through to removeDiscoveryFile
+    // which handles ENOENT gracefully.
+    void 0
+  }
   await removeDiscoveryFile().catch((e) => {
     process.stderr.write(`  Discovery: cleanup warning (${e instanceof Error ? e.message : e})\n`)
   })
@@ -429,7 +443,8 @@ function buildHandle(
   mcpSessions: ReturnType<typeof createMcpSessionManager>,
   state: ListenerState,
   resolvedSocketPath: string | null,
-  actualHttpPort: number
+  actualHttpPort: number,
+  authToken: string | null
 ): ServerHandle {
   // Promise-based lock ensures idempotency even under concurrent calls:
   // the first call creates the teardown promise; subsequent calls return
@@ -448,7 +463,7 @@ function buildHandle(
       })
 
       await teardownListeners(state)
-      await cleanupDiscovery()
+      await cleanupDiscovery(authToken)
     })()
     return closePromise
   }
@@ -492,6 +507,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
     ctx.mcpSessions,
     state,
     resolvedSocketPath,
-    actualHttpPort
+    actualHttpPort,
+    ctx.authToken
   )
 }

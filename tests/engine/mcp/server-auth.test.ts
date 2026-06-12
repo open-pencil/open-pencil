@@ -379,4 +379,42 @@ describe('Discovery PID liveness', () => {
     const discoveryPath = await getDiscoveryPath()
     expect(await Bun.file(discoveryPath).exists()).toBe(false)
   })
+
+  test('readDiscoveryFile returns null for a discovery file with a dead PID', async () => {
+    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+    const { readDiscoveryFile } = await import('#mcp/transport/discovery')
+    const discoveryPath = await getDiscoveryPath()
+
+    // Write a discovery file with a PID that is guaranteed not to be alive.
+    // PID 1 (init/launchd) is alive on most systems, so use a very high PID
+    // that is extremely unlikely to be in use.
+    const deadPid = 4_000_000
+    const discoveryDir = discoveryPath.slice(0, discoveryPath.lastIndexOf('/'))
+    await mkdir(discoveryDir, { recursive: true })
+    await Bun.write(
+      discoveryPath,
+      JSON.stringify({
+        pid: deadPid,
+        socketPath: '/tmp/nonexistent-mcp.sock',
+        httpPort: 9999,
+        authRequired: true,
+        authToken: 'dead-pid-test-token',
+        version: '0.1.0-test',
+        startedAt: new Date().toISOString()
+      })
+    )
+
+    try {
+      const result = await readDiscoveryFile()
+      expect(result).toBeNull()
+    } finally {
+      // Clean up the seeded discovery file
+      try {
+        const { unlink } = await import('node:fs/promises')
+        await unlink(discoveryPath)
+      } catch {
+        void 0 // best-effort cleanup
+      }
+    }
+  })
 })

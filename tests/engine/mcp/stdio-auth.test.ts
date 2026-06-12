@@ -129,7 +129,9 @@ describe('Fix 4 - Auth token auto-discovery and transparent retry', () => {
 
   afterEach(async () => {
     if (httpServer) {
-      httpServer.close()
+      await new Promise<void>((resolve) => {
+        httpServer?.close(() => resolve())
+      })
       httpServer = null
     }
     if (origSocketEnv === undefined) {
@@ -149,9 +151,6 @@ describe('Fix 4 - Auth token auto-discovery and transparent retry', () => {
       void 0 // best-effort cleanup
     }
     await rm(TEST_DIR, { recursive: true, force: true })
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 100)
-    })
   })
 
   test('auto-discovers auth token from discovery file', async () => {

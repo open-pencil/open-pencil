@@ -256,6 +256,11 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function handleConnection(ws: WebSocket) {
     clients.add(ws)
+    // WebSocket connections are already gated by transport security (Unix
+    // socket with 0o600 permissions or TCP localhost + auth), so all
+    // connected WebSocket clients are considered authenticated for sending
+    // requests. Browser registration (registerBrowser) still requires a
+    // valid token — this only gates request forwarding.
     sendRegisterToken(ws)
   }
 

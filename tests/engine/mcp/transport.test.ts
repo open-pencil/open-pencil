@@ -24,7 +24,11 @@ describe('transport/paths', () => {
         const dir = await getSocketDir()
         expect(dir).toBe('/tmp/test-openpencil-socket')
       } finally {
-        process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
       }
     })
 
@@ -44,7 +48,11 @@ describe('transport/paths', () => {
           }
         }
       } finally {
-        if (originalSocket) process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
       }
     })
 
@@ -59,7 +67,11 @@ describe('transport/paths', () => {
         expect(info).not.toBeNull()
         expect(info?.isDirectory()).toBe(true)
       } finally {
-        process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
         const { rm } = await import('node:fs/promises')
         await rm(testDir, { recursive: true, force: true }).catch(() => null)
       }
@@ -74,7 +86,11 @@ describe('transport/paths', () => {
         const path = await getSocketPath()
         expect(path).toMatch(/mcp\.sock$/)
       } finally {
-        if (originalSocket) process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
       }
     })
 
@@ -85,7 +101,11 @@ describe('transport/paths', () => {
         const path = await getSocketPath()
         expect(path).toBe('/custom/path/mcp.sock')
       } finally {
-        process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
       }
     })
   })
@@ -98,7 +118,11 @@ describe('transport/paths', () => {
         const path = await getDiscoveryPath()
         expect(path).toMatch(/mcp\.json$/)
       } finally {
-        if (originalSocket) process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
       }
     })
   })

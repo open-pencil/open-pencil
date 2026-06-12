@@ -502,4 +502,47 @@ describe('MCP server concurrent startServer', () => {
       await b.close()
     }
   }, 15000)
+
+  test("closing one server does not delete another server's discovery file", async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+
+    const a = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: 'token-a',
+      enableEval: false,
+      mcpRoot: null
+    })
+    const b = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: 'token-b',
+      enableEval: false,
+      mcpRoot: null
+    })
+
+    try {
+      // Close server a — its discovery cleanup should NOT remove the file
+      // because server b still owns it (different auth token).
+      await a.close()
+
+      // Server b should still be healthy and reachable.
+      const bHealth = (await (await fetch(`http://127.0.0.1:${b.httpPort}/health`)).json()) as {
+        status: string
+      }
+      expect(bHealth.status).toBe('no_app')
+
+      // Discovery file should still exist (owned by server b now).
+      const discoveryPath = await getDiscoveryPath()
+      const file = Bun.file(discoveryPath)
+      expect(await file.exists()).toBe(true)
+      const info = (await file.json()) as { authToken: string }
+      expect(info.authToken).toBe('token-b')
+    } finally {
+      await b.close()
+    }
+  }, 15000)
 })

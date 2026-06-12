@@ -1,5 +1,5 @@
 import { lstat, mkdir, realpath, writeFile } from 'node:fs/promises'
-import { dirname, basename, join, resolve, sep as osSep } from 'node:path'
+import { dirname, basename, isAbsolute, join, parse, resolve, sep as osSep } from 'node:path'
 
 import { ok } from '#mcp/result'
 import type { MCPResult } from '#mcp/result'
@@ -39,14 +39,18 @@ export async function resolveSafePath(filePath: string, root: string): Promise<s
   // equally broad. Without this guard, resolveSafePath("/", "/") succeeds
   // because every Unix path starts with "/".
   const normalizedRoot = resolve(root)
-  if (normalizedRoot === '/' || normalizedRoot === osSep) {
+  const parsedRoot = parse(normalizedRoot).root
+  if (normalizedRoot === '/' || normalizedRoot === osSep || normalizedRoot === parsedRoot) {
     throw new Error(
       `Root path is too broad: "${root}" (resolved to "${normalizedRoot}"). ` +
         'Specify a narrower OPENPENCIL_MCP_ROOT directory.'
     )
   }
 
-  const resolved = resolve(filePath)
+  // Resolve relative paths from the validated server root, not from CWD.
+  // This ensures that a relative export path like "output/image.png" is
+  // anchored to OPENPENCIL_MCP_ROOT instead of the server's working directory.
+  const resolved = isAbsolute(filePath) ? resolve(filePath) : resolve(normalizedRoot, filePath)
 
   // Resolve root to its real (symlink-aware) canonical form.
   let realRoot: string
