@@ -153,6 +153,13 @@ function createHonoApp(options: {
       }
     }
     const sessionId = c.req.header('mcp-session-id') ?? undefined
+    // Reject anonymous DELETE requests before they allocate a session.
+    // Without this guard, a DELETE without a session ID would call
+    // resolveTransport(undefined), which creates a fresh session just
+    // to no-op on deleteSession(undefined) — burning a session slot.
+    if (c.req.method === 'DELETE' && !sessionId) {
+      return c.json({ error: 'Missing MCP session id' }, 400)
+    }
     const transport = mcpSessions.resolveTransport(sessionId)
     if ('error' in transport) {
       return c.json(
@@ -340,16 +347,31 @@ async function cleanupSocket(socketPath: string | null): Promise<void> {
   }
 }
 
-async function cleanupDiscovery(ownAuthToken: string | null): Promise<void> {
+async function cleanupDiscovery(
+  ownAuthToken: string | null,
+  ownSocketPath: string | null,
+  ownHttpPort: number
+): Promise<void> {
   // Only remove the discovery file if it was written by this server instance.
   // Without this guard, closing one of two concurrent servers can delete the
   // other's discovery file, breaking auto-discovery for the surviving server.
+  // We verify all three identifying fields (authToken, socketPath, httpPort)
+  // to handle the case where authToken is null (auth disabled) and two
+  // servers share the same null token.
   const discoveryPath = await getDiscoveryPath()
   try {
     const raw = await readFile(discoveryPath, 'utf-8')
-    const info = JSON.parse(raw) as { authToken: string | null }
-    // If the file's auth token doesn't match ours, another server owns it.
+    const info = JSON.parse(raw) as {
+      authToken: string | null
+      socketPath?: string
+      httpPort?: number
+    }
+    // If any identifying field doesn't match, another server owns the file.
+    // Compare unconditionally (not truthy-gated) so that null/0 values
+    // are treated as required equality checks, not wildcards.
     if (info.authToken !== ownAuthToken) return
+    if (info.socketPath !== (ownSocketPath ?? '')) return
+    if (info.httpPort !== ownHttpPort) return
   } catch {
     // File doesn't exist or can't be parsed — fall through to removeDiscoveryFile
     // which handles ENOENT gracefully.
@@ -463,7 +485,7 @@ function buildHandle(
       })
 
       await teardownListeners(state)
-      await cleanupDiscovery(authToken)
+      await cleanupDiscovery(authToken, resolvedSocketPath, actualHttpPort)
     })()
     return closePromise
   }

@@ -45,6 +45,16 @@ export function createStdioRpcBridge({
   let wasConnected = false
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
 
+  // Track whether the socket path was explicitly provided by the caller
+  // via the socketPath option. When true, discovery updates must not
+  // overwrite it — the caller knows the socket path and it shouldn't
+  // change. When false, the socket path comes from auto-discovery
+  // (readDiscoveryFile or getSocketPath) and should be refreshed on
+  // reconnect.
+  // Note: OPENPENCIL_MCP_SOCKET is handled through getSocketPath() and
+  // readDiscoveryFile(), not through this flag — it's an env var that
+  // affects path resolution, not a direct parameter.
+  const hasExplicitSocketPath = socketPathOverride !== undefined && socketPathOverride !== null
   // Track whether authToken was explicitly provided by the caller.
   // When false, the token is auto-discovered from the discovery file and
   // can be refreshed transparently on 401 without surfacing the error.
@@ -90,8 +100,8 @@ export function createStdioRpcBridge({
     // If no socket is available (TCP-only server), use TCP via httpPort.
     // Caller-provided socket paths (OPENPENCIL_MCP_SOCKET or the socketPath
     // option) take precedence and are never overwritten by discovery.
-    if (resolvedSocketPath) {
-      // Caller already provided a socket path — keep it
+    if (hasExplicitSocketPath && resolvedSocketPath) {
+      // Caller explicitly provided a socket path — keep it, never overwrite
     } else if (info?.socketPath) {
       resolvedSocketPath = info.socketPath
     } else if (info?.httpPort) {
@@ -315,6 +325,10 @@ export function createStdioRpcBridge({
                 resolvedAuthToken = null
               }
               transportMode = null
+              // Clear auto-discovered transport params so resolveTransport()
+              // picks up fresh values from the discovery file on reconnect.
+              if (!hasExplicitSocketPath) resolvedSocketPath = null
+              resolvedHttpPort = null
               ready = false
               settled = true
               scheduleReconnect()
@@ -337,6 +351,10 @@ export function createStdioRpcBridge({
             if (settled) return
             clearTimeout(timer)
             transportMode = null
+            // Clear auto-discovered transport params so resolveTransport()
+            // picks up fresh values from the discovery file on reconnect.
+            if (!hasExplicitSocketPath) resolvedSocketPath = null
+            resolvedHttpPort = null
             ready = false
             settled = true
             scheduleReconnect()

@@ -55,10 +55,14 @@ describe('MCP path scoping', () => {
     const outsideTarget = resolve(tmpdir(), 'mcp-symlink-outside-target')
     try {
       await mkdir(testDir, { recursive: true })
+      // Create the target so the symlink is NOT dangling — this exercises
+      // the realpath → outside-root branch rather than the dangling path.
+      await mkdir(outsideTarget, { recursive: true })
       await symlink(outsideTarget, linkPath)
       await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('outside the allowed root')
     } finally {
       await rm(testDir, { recursive: true, force: true })
+      await rm(outsideTarget, { recursive: true, force: true })
     }
   })
 

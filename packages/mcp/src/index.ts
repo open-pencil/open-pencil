@@ -21,7 +21,13 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0)
 }
 
-const port = Number.parseInt(process.env.PORT ?? '7600', 10)
+const rawPort = Number.parseInt(process.env.PORT ?? '7600', 10)
+// Validate PORT: must be an integer in 0–65535. 0 means "disable TCP".
+if (Number.isNaN(rawPort) || rawPort < 0 || rawPort > 65535 || !Number.isInteger(rawPort)) {
+  process.stderr.write(`Error: PORT must be an integer in 0–65535, got "${process.env.PORT}"\n`)
+  process.exit(1)
+}
+const port = rawPort
 const enableTcp = process.env.OPENPENCIL_MCP_TCP?.trim() === '1'
 // PORT=0 explicitly disables TCP, even if OPENPENCIL_MCP_TCP=1 is set.
 // This gives operators a guaranteed kill switch for the TCP listener.

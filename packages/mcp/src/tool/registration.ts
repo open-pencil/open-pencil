@@ -85,7 +85,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
       inputSchema: resolvedRoot
         ? z.object({
-            path: z.string().describe('Optional absolute path for the .fig file').optional()
+            path: z
+              .string()
+              .describe('Optional path for the .fig file inside the configured MCP root')
+              .optional()
           })
         : z.object({})
     },
@@ -109,7 +112,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Absolute path to the design file')
+          path: z.string().describe('Path to the design file inside the configured MCP root')
         })
       },
       async (args: { path: string }) => {
@@ -130,7 +133,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Optional absolute path for the new file').optional()
+          path: z
+            .string()
+            .describe('Optional path for the new file inside the configured MCP root')
+            .optional()
         })
       },
       async (args: { path?: string }) => {

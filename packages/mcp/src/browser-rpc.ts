@@ -66,10 +66,6 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   let browserWs: WebSocket | null = null
   let browserRegistered = false
 
-  function currentRpcToken(): string | null {
-    return authToken
-  }
-
   function isConnected(): boolean {
     return Boolean(browserWs && browserRegistered)
   }

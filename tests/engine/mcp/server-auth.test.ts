@@ -258,9 +258,9 @@ describe('MCP auth boundary', () => {
     }
 
     try {
-      const healthResp = (await (await fetch(`http://127.0.0.1:${httpPort}/health`)).json()) as {
-        authRequired: boolean
-      }
+      const healthResp = (await (
+        await fetch(`http://127.0.0.1:${httpPort}/health`)
+      ).json()) as HealthResponse
       expect(healthResp.authRequired).toBe(false)
 
       const mcpResp = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
