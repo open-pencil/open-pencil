@@ -30,7 +30,7 @@ const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000
 
 let timestampSequence = 0
 
-const seedUserSchema = z.object({
+export const seedUserSchema = z.object({
   id: z.string().trim().min(1).optional(),
   email: z.string().trim().email(),
   name: z.string().trim().min(1).max(120),
@@ -254,58 +254,59 @@ async function applyNotificationTimestamp(
     .run()
 }
 
-async function upsertUser(
+export async function upsertUser(
   database: ApiDatabase,
   input: z.infer<typeof seedUserSchema>
 ): Promise<TeamUserRecord> {
   const email = input.email.trim().toLowerCase()
-  const existing =
-    (input.id
-      ? await database.db.select().from(users).where(eq(users.id, input.id)).get()
-      : null) ??
-    (await database.db.select().from(users).where(eq(users.email, email)).get())
   const now = Date.now()
+  const image = input.image ?? null
 
-  if (existing) {
-    await database.db
-      .update(users)
-      .set({
-        name: input.name,
-        email,
-        image: input.image ?? null,
-        emailVerified: true,
-        updatedAt: new Date(now)
-      })
-      .where(eq(users.id, existing.id))
-      .run()
+  // SELECT → INSERT の 2 段だと並列 seedBoards (例 admin test の Promise.all)
+  // で同 email が同時に existing=null と判定されて N 個 insert を試みて
+  // UNIQUE (users.email) 違反 → 500 になる。 onConflictDoUpdate で atomic に
+  // upsert することで race 経路を消す。
+  const candidateId = input.id ?? crypto.randomUUID()
 
-    return {
-      id: existing.id,
-      name: input.name,
-      email,
-      image: input.image ?? null
-    }
-  }
-
-  const userId = input.id ?? crypto.randomUUID()
   await database.db
     .insert(users)
     .values({
-      id: userId,
+      id: candidateId,
       name: input.name,
       email,
-      image: input.image ?? null,
+      image,
       emailVerified: true,
       createdAt: new Date(now),
       updatedAt: new Date(now)
     })
+    .onConflictDoUpdate({
+      target: users.email,
+      set: {
+        name: input.name,
+        image,
+        emailVerified: true,
+        updatedAt: new Date(now)
+      }
+    })
     .run()
 
+  // 既存 row があれば conflict 経路で id は変わらない、 新規なら candidateId が採用される。
+  // 必ず email でひいて real id を返す (caller が collaborator 等の FK に使うため)。
+  const persisted = await database.db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .get()
+
+  if (!persisted) {
+    throw new Error(`upsertUser: failed to persist user for email=${email}`)
+  }
+
   return {
-    id: userId,
+    id: persisted.id,
     name: input.name,
     email,
-    image: input.image ?? null
+    image
   }
 }
 
@@ -314,7 +315,17 @@ async function seedBoards(options: TestingRoutesOptions, input: z.infer<typeof s
     input.names?.[index] || `Visual Board ${index + 1}`
   )
 
-  return await Promise.all(names.slice(0, input.count).map(async (name) => {
+  // 並列 (Promise.all) で createBoard を実行すると libsql の単一 connection で
+  // transaction が衝突して SQLITE_BUSY を起こす。 admin / dashboard 系 e2e の
+  // seedBoards count=3 が 500 で fail していた根本原因。
+  // user 経路では upsertUser を 1 度だけ先行実行して、 board 作成自体は順番に回す。
+  const owner =
+    input.owner.kind === 'user'
+      ? await upsertUser(options.database, input.owner.user)
+      : null
+
+  const results: BoardRecord[] = []
+  for (const name of names.slice(0, input.count)) {
     let record: BoardRecord
     if (input.owner.kind === 'anonymous') {
       record = await options.boardStore.createBoard({
@@ -324,17 +335,18 @@ async function seedBoards(options: TestingRoutesOptions, input: z.infer<typeof s
         teamId: input.teamId ?? null
       })
     } else {
-      const owner = await upsertUser(options.database, input.owner.user)
+      // owner は loop 外で 1 度だけ upsert 済み (kind === 'user' なら non-null)。
       record = await options.boardStore.createBoard({
         name,
         creatorAnonymousId: '',
-        creatorUserId: owner.id,
+        creatorUserId: owner!.id,
         teamId: input.teamId ?? null
       })
     }
     await applyBoardTimestamp(options.database, record.id, nextTimestamp())
-    return (await options.boardStore.findBoard(record.id)) ?? record
-  }))
+    results.push((await options.boardStore.findBoard(record.id)) ?? record)
+  }
+  return results
 }
 
 async function seedTeam(options: TestingRoutesOptions, input: z.infer<typeof seedTeamSchema>) {
