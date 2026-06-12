@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { chmod, unlink } from 'node:fs/promises'
+import { chmod, readFile, unlink } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { Server as HttpServer } from 'node:http'
 
@@ -346,7 +346,7 @@ async function cleanupDiscovery(ownAuthToken: string | null): Promise<void> {
   // other's discovery file, breaking auto-discovery for the surviving server.
   const discoveryPath = await getDiscoveryPath()
   try {
-    const raw = await Bun.file(discoveryPath).text()
+    const raw = await readFile(discoveryPath, 'utf-8')
     const info = JSON.parse(raw) as { authToken: string | null }
     // If the file's auth token doesn't match ours, another server owns it.
     if (info.authToken !== ownAuthToken) return

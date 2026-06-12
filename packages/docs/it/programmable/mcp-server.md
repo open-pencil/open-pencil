@@ -247,9 +247,10 @@ npm install -g @open-pencil/mcp@latest
 
 Il bridge legge il file di discovery per localizzare il server. Se manca o è stale (PID non più attivo):
 
-1. Verifica che il server sia in esecuzione: `curl http://127.0.0.1:7600/health`
-2. Controlla che il file di discovery esista nel percorso della tua piattaforma
+1. Controlla che il file di discovery esista nel percorso della tua piattaforma
+2. Se TCP è abilitato (`PORT` non è `0`), verifica che il server sia in esecuzione: `curl http://127.0.0.1:${PORT:-7600}/health`
 3. Se usi `OPENPENCIL_MCP_SOCKET` personalizzato, assicurati che il bridge usi la stessa variabile
+4. Su Windows (trasporto solo TCP), verifica che `httpPort` del server sia raggiungibile
 
 ## Flusso di lavoro
 

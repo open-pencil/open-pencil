@@ -86,6 +86,11 @@ describe('MCP stdio transport', () => {
       mcpRoot: null
     })
 
+    if (!handle.httpPort) {
+      await handle.close().catch(() => undefined)
+      throw new Error('TCP listener not started — httpPort is undefined')
+    }
+
     browser = await connectMockBrowser(handle.httpPort, graph, AUTH_TOKEN)
 
     const maxWait = 5000

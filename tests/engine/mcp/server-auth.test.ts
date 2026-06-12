@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
@@ -389,7 +389,7 @@ describe('Discovery PID liveness', () => {
     // PID 1 (init/launchd) is alive on most systems, so use a very high PID
     // that is extremely unlikely to be in use.
     const deadPid = 4_000_000
-    const discoveryDir = discoveryPath.slice(0, discoveryPath.lastIndexOf('/'))
+    const discoveryDir = dirname(discoveryPath)
     await mkdir(discoveryDir, { recursive: true })
     await Bun.write(
       discoveryPath,

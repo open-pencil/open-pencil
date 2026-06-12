@@ -261,6 +261,9 @@ describe('MCP server with mcpRoot', () => {
     await client.connect(transport)
 
     try {
+      // Ensure the unicode subdirectory exists so path validation resolves
+      // the parent directory via realpath before the file is created.
+      await mkdir(join(TEST_MCP_ROOT, 'unicode'), { recursive: true })
       const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
       const result = await client.callTool({
         name: 'save_file',

@@ -25,7 +25,7 @@ async function resolveRealAncestor(
     } catch {
       const parent = dirname(current)
       if (parent === current) return { realAncestor: current, remainder }
-      remainder = '/' + basename(current) + remainder
+      remainder = osSep + basename(current) + remainder
       current = parent
     }
     iterations++

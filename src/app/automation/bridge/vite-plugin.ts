@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process'
 import type { Plugin } from 'vite'
 
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { getSocketPath } from '@open-pencil/mcp/transport'
+import { getSocketPath, platformHasUnixSockets } from '@open-pencil/mcp/transport'
 
 // TODO: production — bundle MCP server as Tauri sidecar or spawn via shell plugin
 export function automationPlugin(authToken: string | null, corsOrigin: string): Plugin {
@@ -14,7 +14,11 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
     async configureServer() {
       if (child) return
 
-      const socketPath = await getSocketPath()
+      // Only resolve and forward the socket path on platforms that support
+      // Unix domain sockets. On Windows the MCP server falls back to TCP,
+      // and forwarding OPENPENCIL_MCP_SOCKET would cause it to attempt a
+      // socket listen that cannot succeed.
+      const socketPath = platformHasUnixSockets() ? await getSocketPath() : null
 
       child = spawn('bun', ['run', 'packages/mcp/src/index.ts'], {
         stdio: ['ignore', 'inherit', 'pipe'],
@@ -22,7 +26,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
           ...process.env,
           PORT: String(AUTOMATION_HTTP_PORT),
           OPENPENCIL_MCP_TCP: '1',
-          OPENPENCIL_MCP_SOCKET: socketPath,
+          ...(socketPath ? { OPENPENCIL_MCP_SOCKET: socketPath } : {}),
           ...(authToken ? { OPENPENCIL_MCP_AUTH_TOKEN: authToken } : {}),
           OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin,
           OPENPENCIL_MCP_ROOT: process.cwd()
@@ -33,7 +37,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         const text = data.toString()
         if (text.includes('EADDRINUSE')) {
           console.error(
-            `\x1b[31m[MCP] MCP bind failed (port ${AUTOMATION_HTTP_PORT} or socket ${socketPath}). Is another OpenPencil instance running?\x1b[0m`
+            `\x1b[31m[MCP] MCP bind failed (port ${AUTOMATION_HTTP_PORT}${socketPath ? ` or socket ${socketPath}` : ''}). Is another OpenPencil instance running?\x1b[0m`
           )
           child?.kill()
           child = null

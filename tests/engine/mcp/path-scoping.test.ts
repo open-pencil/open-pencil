@@ -103,4 +103,25 @@ describe('MCP path scoping', () => {
       await rm(testDir, { recursive: true, force: true })
     }
   })
+
+  test('rejects trivially broad root "/"', async () => {
+    await expect(resolveSafePath('/some/path', '/')).rejects.toThrow('Root path is too broad')
+  })
+
+  test.skipIf(process.platform === 'win32')(
+    'rejects drive root as broad root on Windows',
+    async () => {
+      // On Windows, path.parse('C:\\').root === 'C:\\', which resolveSafePath
+      // should reject. This test is skipped on non-Windows since there's no
+      // drive-root concept.
+      const { parse, resolve: winResolve } = await import('node:path')
+      const driveRoot = parse(winResolve('C:\\')).root
+      // Only run if the platform actually produces a drive root (not '/')
+      if (driveRoot !== '/') {
+        await expect(resolveSafePath('C:\\some\\path', driveRoot)).rejects.toThrow(
+          'Root path is too broad'
+        )
+      }
+    }
+  )
 })
