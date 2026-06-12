@@ -194,19 +194,23 @@ describe('BrowserRpcBridge reconnection', () => {
     // does NOT reject connectionWaiters, so the promise will reject on timeout.
     void rpcPromise.catch(() => undefined)
 
-    // Race the waiter against a short timeout — if handleClose wrongly
-    // rejects waiters, rpcPromise would settle quickly.
-    const raceOutcome = await Promise.race([
-      rpcPromise.then(
-        (v) => ({ settled: true, value: v }) as const,
-        (e) => ({ settled: true, error: (e as Error).message }) as const
-      ),
-      new Promise<{ settled: false }>((resolve) => {
-        setTimeout(() => resolve({ settled: false }), 500)
-      })
-    ])
+    try {
+      // Race the waiter against a short timeout — if handleClose wrongly
+      // rejects waiters, rpcPromise would settle quickly.
+      const raceOutcome = await Promise.race([
+        rpcPromise.then(
+          (v) => ({ settled: true, value: v }) as const,
+          (e) => ({ settled: true, error: (e as Error).message }) as const
+        ),
+        new Promise<{ settled: false }>((resolve) => {
+          setTimeout(() => resolve({ settled: false }), 500)
+        })
+      ])
 
-    expect(raceOutcome.settled).toBe(false)
+      expect(raceOutcome.settled).toBe(false)
+    } finally {
+      bridge.close()
+    }
   })
 
   test('connection waiters resolved when browser reconnects after close', async () => {

@@ -38,7 +38,7 @@ El servidor MCP se inicia automáticamente al abrir la app de escritorio (los bu
                     socket o TCP (127.0.0.1)
 ```
 
-El puente stdio (`openpencil-mcp`) se conecta al servidor HTTP vía socket Unix. No habla MCP directamente con la app — envía las llamadas MCP por HTTP al servidor, que las retransmite a la app vía WebSocket.
+El puente stdio (`openpencil-mcp`) se conecta al servidor HTTP vía socket Unix (en macOS/Linux) o TCP (en Windows, donde no hay soporte para sockets Unix). No habla MCP directamente con la app — envía las llamadas MCP por HTTP al servidor, que las retransmite a la app vía WebSocket.
 
 ## Cómo se conecta
 
@@ -75,7 +75,7 @@ El archivo se escribe con permisos `0o600` (solo lectura/escritura del propietar
 |------------|----------|----------|
 | macOS / Linux | Socket Unix | TCP en `127.0.0.1:7600` |
 
-En Unix, el puente stdio prefiere el socket. Si el servidor se inició solo con TCP, el puente usa `httpPort` del archivo de descubrimiento.
+En macOS/Linux, el puente stdio prefiere el socket Unix. Si el servidor se inició solo con TCP, el puente usa `httpPort` del archivo de descubrimiento. En Windows, el puente usa TCP exclusivamente ya que Windows no soporta sockets Unix.
 
 ## Instalar
 
@@ -172,7 +172,7 @@ O desde el código fuente: `bun packages/mcp/src/index.ts` / `npx tsx packages/m
 |----------|--------|------|-------------|
 | `/health` | GET | No | Estado del servidor, versión, comando de instalación, ruta de descubrimiento |
 | `/rpc` | POST | Bearer token | Puente JSON-RPC a la app en ejecución |
-| `/mcp` | POST (SSE) | Bearer token | MCP Streamable HTTP. Sesiones vía header `mcp-session-id` |
+| `/mcp` | POST (SSE), DELETE | Bearer token | MCP Streamable HTTP. Sesiones vía header `mcp-session-id`. DELETE cierra una sesión |
 
 ### Autenticación
 

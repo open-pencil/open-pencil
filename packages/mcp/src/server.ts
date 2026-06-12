@@ -294,12 +294,13 @@ async function startTcpListener(
 
   const ts = server
   const actualPort = await new Promise<number>((resolve, reject) => {
+    ts.on('error', reject)
     ts.listen(httpPort, host, () => {
+      ts.off('error', reject)
       const addr = ts.address()
       const port = typeof addr === 'object' && addr ? addr.port : httpPort
       resolve(port)
     })
-    ts.on('error', reject)
   })
 
   return { server, port: actualPort }

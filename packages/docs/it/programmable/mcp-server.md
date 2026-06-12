@@ -38,7 +38,7 @@ Il server MCP si avvia automaticamente all'apertura dell'app desktop (i build Ta
                     socket o TCP (127.0.0.1)
 ```
 
-Il bridge stdio (`openpencil-mcp`) si connette al server HTTP via socket Unix. Non parla MCP direttamente con l'app — invia le chiamate MCP tramite HTTP al server, che le inoltra all'app via WebSocket.
+Il bridge stdio (`openpencil-mcp`) si connette al server HTTP via socket Unix (su macOS/Linux) o TCP (su Windows, dove i socket Unix non sono supportati). Non parla MCP direttamente con l'app — invia le chiamate MCP tramite HTTP al server, che le inoltra all'app via WebSocket.
 
 ## Come si collega
 
@@ -75,7 +75,7 @@ Il file viene scritto con permessi `0o600` (solo lettura/scrittura del proprieta
 |-------------|----------|----------|
 | macOS / Linux | Socket Unix | TCP su `127.0.0.1:7600` |
 
-Su Unix, il bridge stdio preferisce il socket. Se il server è stato avviato solo con TCP, il bridge usa `httpPort` dal file di discovery.
+Su macOS/Linux, il bridge stdio preferisce il socket Unix. Se il server è stato avviato solo con TCP, il bridge usa `httpPort` dal file di discovery. Su Windows, il bridge usa esclusivamente TCP poiché Windows non supporta i socket Unix.
 
 ## Installare
 
@@ -172,7 +172,7 @@ O dal sorgente: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 |----------|--------|------|-------------|
 | `/health` | GET | No | Stato server, versione, comando installazione, percorso discovery |
 | `/rpc` | POST | Bearer token | Bridge JSON-RPC all'app in esecuzione |
-| `/mcp` | POST (SSE) | Bearer token | MCP Streamable HTTP. Sessioni via header `mcp-session-id` |
+| `/mcp` | POST (SSE), DELETE | Bearer token | MCP Streamable HTTP. Sessioni via header `mcp-session-id`. DELETE chiude una sessione |
 
 ### Autenticazione
 

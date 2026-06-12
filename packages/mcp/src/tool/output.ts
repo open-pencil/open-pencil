@@ -34,6 +34,18 @@ async function resolveRealAncestor(
 }
 
 export async function resolveSafePath(filePath: string, root: string): Promise<string> {
+  // Reject trivially broad roots that would pass all containment checks.
+  // On Unix, "/" matches every absolute path; on Windows, "\" or "C:\" are
+  // equally broad. Without this guard, resolveSafePath("/", "/") succeeds
+  // because every Unix path starts with "/".
+  const normalizedRoot = resolve(root)
+  if (normalizedRoot === '/' || normalizedRoot === osSep) {
+    throw new Error(
+      `Root path is too broad: "${root}" (resolved to "${normalizedRoot}"). ` +
+        'Specify a narrower OPENPENCIL_MCP_ROOT directory.'
+    )
+  }
+
   const resolved = resolve(filePath)
 
   // Resolve root to its real (symlink-aware) canonical form.

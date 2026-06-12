@@ -171,7 +171,7 @@ Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 |----------|--------|------|-------------|
 | `/health` | GET | No | Server status, version, install command, discovery path |
 | `/rpc` | POST | Bearer token | JSON-RPC bridge to the running app |
-| `/mcp` | POST (SSE) | Bearer token | MCP Streamable HTTP. Sessions via `mcp-session-id` header |
+| `/mcp` | POST (SSE), DELETE | Bearer token | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
 
 ### Authentication
 
@@ -246,9 +246,10 @@ npm install -g @open-pencil/mcp@latest
 
 The bridge reads the discovery file to locate the server. If the discovery file is missing or stale (PID no longer alive):
 
-1. Make sure the server is actually running: `curl http://127.0.0.1:7600/health`
-2. Check the discovery file exists at the platform path above
+1. Check the discovery file exists at the platform path above
+2. Make sure the server is actually running: `curl http://127.0.0.1:7600/health`
 3. If running with a custom `OPENPENCIL_MCP_SOCKET`, make sure the bridge uses the same env var
+4. On Windows, the bridge uses TCP only — verify the server's `httpPort` is reachable
 
 ## Workflow
 

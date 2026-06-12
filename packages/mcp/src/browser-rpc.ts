@@ -20,7 +20,7 @@ type BrowserRpcBridgeOptions = {
 type BrowserMessage = {
   type: string
   id?: string
-  token?: string
+  token?: unknown
   result?: unknown
   error?: string
   ok?: boolean
@@ -225,8 +225,12 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       return
     }
 
-    if (msg.type === 'register' && msg.token !== undefined) {
-      registerBrowser(ws, msg.token as string | null)
+    if (msg.type === 'register') {
+      if (msg.token === null || typeof msg.token === 'string') {
+        registerBrowser(ws, msg.token)
+      } else if (msg.token !== undefined) {
+        ws.close()
+      }
       return
     }
     if (msg.type === 'request') {

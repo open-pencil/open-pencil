@@ -92,7 +92,7 @@ Collaboration peer-to-peer en temps réel via Trystero (WebRTC) + Yjs CRDT. Sans
 
 ### Pont RPC CLI-vers-application
 
-Lorsque l'application de bureau est lancée, les commandes CLI s'y connectent via le serveur MCP au lieu de nécessiter un fichier .fig. Le serveur MCP écoute sur un socket de domaine Unix avec TCP optionnel sur `127.0.0.1:7600` (HTTP + WebSocket). Les commandes s'exécutent sur l'état en direct de l'éditeur, permettant aux scripts d'automatisation et aux agents IA d'interagir avec l'application en cours d'exécution.
+Lorsque l'application de bureau est lancée, les commandes CLI s'y connectent via le serveur MCP au lieu de nécessiter un fichier .fig. Sur macOS et Linux, le serveur MCP écoute sur un socket de domaine Unix avec TCP optionnel sur `127.0.0.1:7600` (HTTP + WebSocket). Sur Windows, le serveur se lie uniquement en TCP sur `127.0.0.1:7600`. Les commandes s'exécutent sur l'état en direct de l'éditeur, permettant aux scripts d'automatisation et aux agents IA d'interagir avec l'application en cours d'exécution.
 
 ## Prochaines étapes
 

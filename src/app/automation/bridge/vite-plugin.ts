@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 
 import type { Plugin } from 'vite'
 
+import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { getSocketPath } from '@open-pencil/mcp/transport'
 
 // TODO: production — bundle MCP server as Tauri sidecar or spawn via shell plugin
@@ -19,7 +20,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         stdio: ['ignore', 'inherit', 'pipe'],
         env: {
           ...process.env,
-          PORT: '7600',
+          PORT: String(AUTOMATION_HTTP_PORT),
           OPENPENCIL_MCP_TCP: '1',
           OPENPENCIL_MCP_SOCKET: socketPath,
           ...(authToken ? { OPENPENCIL_MCP_AUTH_TOKEN: authToken } : {}),
@@ -32,7 +33,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         const text = data.toString()
         if (text.includes('EADDRINUSE')) {
           console.error(
-            `\x1b[31m[MCP] MCP bind failed (port 7600 or socket ${socketPath}). Is another OpenPencil instance running?\x1b[0m`
+            `\x1b[31m[MCP] MCP bind failed (port ${AUTOMATION_HTTP_PORT} or socket ${socketPath}). Is another OpenPencil instance running?\x1b[0m`
           )
           child?.kill()
           child = null
