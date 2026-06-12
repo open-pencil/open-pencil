@@ -21,7 +21,7 @@ test.describe('account accessibility', () => {
 
   test('signed-in state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'account-a11y-user@inkly.test',
+      email: 'account-a11y-user@jfet.co.jp',
       name: 'Account A11y User'
     })
 

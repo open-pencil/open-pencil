@@ -9,7 +9,7 @@ test.describe('board settings interaction', () => {
   })
 
   test('settings view renders with share entry point', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Owner' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Owner' })
     const seeded = await seedBoards(page, 1)
     const board = seeded[0]
 
@@ -19,7 +19,7 @@ test.describe('board settings interaction', () => {
   })
 
   test('invitation empty state shows no list items', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'empty@inkly.test', name: 'Empty Owner' })
+    await mockGoogleLogin(page, { email: 'empty@jfet.co.jp', name: 'Empty Owner' })
     const seeded = await seedBoards(page, 1)
     const board = seeded[0]
 

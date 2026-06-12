@@ -8,7 +8,7 @@ test('signed-in users receive invitation and team invite notifications', async (
 }) => {
   const boardName = `Notify Board ${Date.now()}`
   const teamName = `Notify Team ${Date.now()}`
-  const inviteeEmail = `notify-${Date.now()}@inkly.test`
+  const inviteeEmail = `notify-${Date.now()}@jfet.co.jp`
 
   const inviteeContext = await browser.newContext()
   const inviteePage = await inviteeContext.newPage()
@@ -18,7 +18,7 @@ test('signed-in users receive invitation and team invite notifications', async (
   })
 
   await mockGoogleLogin(page, {
-    email: 'notification-owner@inkly.test',
+    email: 'notification-owner@jfet.co.jp',
     name: 'Notification Owner'
   })
 

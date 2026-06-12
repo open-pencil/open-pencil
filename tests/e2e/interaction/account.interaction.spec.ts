@@ -18,17 +18,17 @@ test.describe('account interaction', () => {
   })
 
   test('logged in user sees profile and logout button', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'profile@inkly.test', name: 'Profile User' })
+    await mockGoogleLogin(page, { email: 'profile@jfet.co.jp', name: 'Profile User' })
     await page.goto('/account')
 
     await expect(page.getByTestId('account-profile')).toBeVisible()
     await expect(page.getByTestId('account-name')).toContainText('Profile User')
-    await expect(page.getByTestId('account-email')).toContainText('profile@inkly.test')
+    await expect(page.getByTestId('account-email')).toContainText('profile@jfet.co.jp')
     await expect(page.getByTestId('account-logout-button')).toBeVisible()
   })
 
   test('logout dialog cancel keeps the session', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'logout@inkly.test', name: 'Logout User' })
+    await mockGoogleLogin(page, { email: 'logout@jfet.co.jp', name: 'Logout User' })
     await page.goto('/account')
 
     await page.getByTestId('account-logout-button').click()

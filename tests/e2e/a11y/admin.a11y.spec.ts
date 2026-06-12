@@ -17,7 +17,7 @@ test.describe('admin view accessibility', () => {
 
   test('overview tab has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-a11y-overview@inkly.test',
+      email: 'admin-a11y-overview@jfet.co.jp',
       name: 'Admin A11y Overview'
     })
     await page.goto('/admin')
@@ -32,7 +32,7 @@ test.describe('admin view accessibility', () => {
 
   test('boards tab has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-a11y-boards@inkly.test',
+      email: 'admin-a11y-boards@jfet.co.jp',
       name: 'Admin A11y Boards'
     })
     await seedBoards(page, 3)
@@ -50,7 +50,7 @@ test.describe('admin view accessibility', () => {
 
   test('teams tab empty state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-a11y-teams@inkly.test',
+      email: 'admin-a11y-teams@jfet.co.jp',
       name: 'Admin A11y Teams'
     })
 
@@ -67,7 +67,7 @@ test.describe('admin view accessibility', () => {
 
   test('members tab empty state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-a11y-members@inkly.test',
+      email: 'admin-a11y-members@jfet.co.jp',
       name: 'Admin A11y Members'
     })
 
@@ -84,7 +84,7 @@ test.describe('admin view accessibility', () => {
 
   test('activity tab empty state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-a11y-activity@inkly.test',
+      email: 'admin-a11y-activity@jfet.co.jp',
       name: 'Admin A11y Activity'
     })
 

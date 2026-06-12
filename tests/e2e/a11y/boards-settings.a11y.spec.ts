@@ -31,8 +31,8 @@ test.describe('board settings accessibility', () => {
     const [board] = await seedBoards(page, 1)
 
     await seedInvitations(page, board.id, [
-      'board-a11y-first@inkly.test',
-      'board-a11y-second@inkly.test'
+      'board-a11y-first@jfet.co.jp',
+      'board-a11y-second@jfet.co.jp'
     ])
     await page.goto(`/board/${board.id}/settings`)
     await expect(page.getByTestId('board-revoke-invitation')).toHaveCount(2)
@@ -47,7 +47,7 @@ test.describe('board settings accessibility', () => {
   test('revoke dialog has no critical accessibility violations', async ({ page }) => {
     const [board] = await seedBoards(page, 1)
 
-    await seedInvitations(page, board.id, ['board-a11y-revoke@inkly.test'])
+    await seedInvitations(page, board.id, ['board-a11y-revoke@jfet.co.jp'])
     await page.goto(`/board/${board.id}/settings`)
     await page.getByTestId('board-revoke-invitation').first().click()
     await expect(page.getByTestId('board-revoke-dialog')).toBeVisible()

@@ -10,7 +10,7 @@ test.describe('team settings interaction', () => {
   })
 
   test('settings view renders save + delete entry points', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Settings Owner' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Settings Owner' })
     const { team } = await seedTeam(page, { name: 'Settings Team' })
 
     await page.goto(`/team/${team.id}/settings`)
@@ -20,7 +20,7 @@ test.describe('team settings interaction', () => {
   })
 
   test('delete dialog opens via delete button', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Delete Owner' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Delete Owner' })
     const { team } = await seedTeam(page, { name: 'Delete Team' })
 
     await page.goto(`/team/${team.id}/settings`)
@@ -30,10 +30,10 @@ test.describe('team settings interaction', () => {
   })
 
   test('member role controls are rendered for each member', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Role Owner' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Role Owner' })
     const { team } = await seedTeam(page, {
       name: 'Role Team',
-      members: [{ email: 'member@inkly.test', name: 'Member' }]
+      members: [{ email: 'member@jfet.co.jp', name: 'Member' }]
     })
 
     await page.goto(`/team/${team.id}/settings`)

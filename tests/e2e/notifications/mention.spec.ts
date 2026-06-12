@@ -9,7 +9,7 @@ test('mentioning a teammate pushes a notification badge update over websocket', 
 }) => {
   const teamName = `Mention Team ${Date.now()}`
   const boardName = `Mention Board ${Date.now()}`
-  const teammateEmail = `mention-${Date.now()}@inkly.test`
+  const teammateEmail = `mention-${Date.now()}@jfet.co.jp`
 
   const teammateContext = await browser.newContext()
   const teammatePage = await teammateContext.newPage()
@@ -19,7 +19,7 @@ test('mentioning a teammate pushes a notification badge update over websocket', 
   })
 
   await mockGoogleLogin(page, {
-    email: 'mention-owner@inkly.test',
+    email: 'mention-owner@jfet.co.jp',
     name: 'Mention Owner'
   })
 

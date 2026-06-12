@@ -11,7 +11,7 @@ test.describe('admin view visual regression', () => {
 
   test('overview tab', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-visual-overview@inkly.test',
+      email: 'admin-visual-overview@jfet.co.jp',
       name: 'Admin Visual Overview'
     })
     await page.goto('/admin')
@@ -21,7 +21,7 @@ test.describe('admin view visual regression', () => {
 
   test('boards tab with seeded data', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-visual-boards@inkly.test',
+      email: 'admin-visual-boards@jfet.co.jp',
       name: 'Admin Visual Boards'
     })
     await seedBoards(page, 3)
@@ -34,7 +34,7 @@ test.describe('admin view visual regression', () => {
 
   test('teams tab empty state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-visual-teams@inkly.test',
+      email: 'admin-visual-teams@jfet.co.jp',
       name: 'Admin Visual Teams'
     })
 
@@ -46,7 +46,7 @@ test.describe('admin view visual regression', () => {
 
   test('members tab empty state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-visual-members@inkly.test',
+      email: 'admin-visual-members@jfet.co.jp',
       name: 'Admin Visual Members'
     })
 
@@ -58,7 +58,7 @@ test.describe('admin view visual regression', () => {
 
   test('activity tab empty state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'admin-visual-activity@inkly.test',
+      email: 'admin-visual-activity@jfet.co.jp',
       name: 'Admin Visual Activity'
     })
 

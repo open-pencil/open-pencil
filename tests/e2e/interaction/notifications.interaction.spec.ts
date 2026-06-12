@@ -14,7 +14,7 @@ function invitationItem(read: boolean, boardName = 'Board A') {
       boardName,
       role: 'editor' as const,
       inviterDisplayName: 'Owner User',
-      inviteeEmail: 'reader@inkly.test',
+      inviteeEmail: 'reader@jfet.co.jp',
       url: `/invite/${id}`
     }
   }
@@ -30,7 +30,7 @@ function teamInviteItem(read: boolean, teamName = 'Team X') {
       teamName,
       role: 'editor' as const,
       inviterDisplayName: 'Team Owner',
-      inviteeEmail: 'reader@inkly.test',
+      inviteeEmail: 'reader@jfet.co.jp',
       url: `/team/${id}`
     }
   }
@@ -57,7 +57,7 @@ test.describe('notifications interaction', () => {
   })
 
   test('empty state shows the empty placeholder and zero badge', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'empty@inkly.test', name: 'Empty User' })
+    await mockGoogleLogin(page, { email: 'empty@jfet.co.jp', name: 'Empty User' })
     await page.goto('/notifications')
 
     await expect(page.getByTestId('notifications-view')).toBeVisible()
@@ -66,7 +66,7 @@ test.describe('notifications interaction', () => {
   })
 
   test('unread notifications populate the list', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'populated@inkly.test', name: 'Populated User' })
+    await mockGoogleLogin(page, { email: 'populated@jfet.co.jp', name: 'Populated User' })
     await seedNotifications(page, {
       items: [invitationItem(false), teamInviteItem(false), mentionItem(true)]
     })
@@ -76,7 +76,7 @@ test.describe('notifications interaction', () => {
   })
 
   test('mark-read flips one item to read state', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'reader@inkly.test', name: 'Reader' })
+    await mockGoogleLogin(page, { email: 'reader@jfet.co.jp', name: 'Reader' })
     await seedNotifications(page, {
       items: [invitationItem(false, 'Mark Me'), mentionItem(false, 'Other')]
     })
@@ -90,7 +90,7 @@ test.describe('notifications interaction', () => {
   })
 
   test('mark-all-read removes mark-read buttons across items', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'allreader@inkly.test', name: 'All Reader' })
+    await mockGoogleLogin(page, { email: 'allreader@jfet.co.jp', name: 'All Reader' })
     await seedNotifications(page, {
       items: [invitationItem(false, 'A'), teamInviteItem(false, 'B')]
     })
@@ -103,7 +103,7 @@ test.describe('notifications interaction', () => {
   })
 
   test('delete removes the notification from the list', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'deleter@inkly.test', name: 'Deleter' })
+    await mockGoogleLogin(page, { email: 'deleter@jfet.co.jp', name: 'Deleter' })
     await seedNotifications(page, {
       items: [invitationItem(false, 'Delete Me'), mentionItem(false, 'Keep Me')]
     })

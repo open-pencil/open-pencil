@@ -15,7 +15,7 @@ test.describe('notifications visual regression', () => {
 
   test('empty state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'notifications-empty@inkly.test',
+      email: 'notifications-empty@jfet.co.jp',
       name: 'Notifications Empty'
     })
 
@@ -26,7 +26,7 @@ test.describe('notifications visual regression', () => {
 
   test('mixed read and unread state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'notifications-mixed@inkly.test',
+      email: 'notifications-mixed@jfet.co.jp',
       name: 'Notifications Mixed'
     })
     await seedNotifications(page, {
@@ -39,7 +39,7 @@ test.describe('notifications visual regression', () => {
             boardName: 'Launch Board',
             role: 'editor',
             inviterDisplayName: 'Design Lead',
-            inviteeEmail: 'notifications-mixed@inkly.test',
+            inviteeEmail: 'notifications-mixed@jfet.co.jp',
             url: '/invite/invitation-1'
           }
         },
@@ -51,7 +51,7 @@ test.describe('notifications visual regression', () => {
             teamName: 'Research Ops',
             role: 'viewer',
             inviterDisplayName: 'Ops Owner',
-            inviteeEmail: 'notifications-mixed@inkly.test',
+            inviteeEmail: 'notifications-mixed@jfet.co.jp',
             url: '/team/team-1'
           }
         },
@@ -75,7 +75,7 @@ test.describe('notifications visual regression', () => {
 
   test('bell popover state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'notifications-popover@inkly.test',
+      email: 'notifications-popover@jfet.co.jp',
       name: 'Notifications Popover'
     })
     await seedBoards(page, 1)
@@ -89,7 +89,7 @@ test.describe('notifications visual regression', () => {
             boardName: 'Popover Board',
             role: 'editor',
             inviterDisplayName: 'Owner',
-            inviteeEmail: 'notifications-popover@inkly.test',
+            inviteeEmail: 'notifications-popover@jfet.co.jp',
             url: '/invite/popover-invitation'
           }
         },
@@ -111,7 +111,7 @@ test.describe('notifications visual regression', () => {
             teamName: 'Popover Team',
             role: 'viewer',
             inviterDisplayName: 'Team Owner',
-            inviteeEmail: 'notifications-popover@inkly.test',
+            inviteeEmail: 'notifications-popover@jfet.co.jp',
             url: '/team/popover-team'
           }
         }

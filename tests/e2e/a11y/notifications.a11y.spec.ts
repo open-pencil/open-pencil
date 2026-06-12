@@ -17,7 +17,7 @@ test.describe('notifications accessibility', () => {
 
   test('empty state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'notifications-a11y-empty@inkly.test',
+      email: 'notifications-a11y-empty@jfet.co.jp',
       name: 'Notifications A11y Empty'
     })
 
@@ -33,7 +33,7 @@ test.describe('notifications accessibility', () => {
 
   test('populated state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'notifications-a11y-populated@inkly.test',
+      email: 'notifications-a11y-populated@jfet.co.jp',
       name: 'Notifications A11y Populated'
     })
     await seedNotifications(page, {
@@ -46,7 +46,7 @@ test.describe('notifications accessibility', () => {
             boardName: 'Launch Board',
             role: 'editor',
             inviterDisplayName: 'Design Lead',
-            inviteeEmail: 'notifications-a11y-populated@inkly.test',
+            inviteeEmail: 'notifications-a11y-populated@jfet.co.jp',
             url: '/invite/a11y-invitation-1'
           }
         },
@@ -58,7 +58,7 @@ test.describe('notifications accessibility', () => {
             teamName: 'Research Ops',
             role: 'viewer',
             inviterDisplayName: 'Ops Owner',
-            inviteeEmail: 'notifications-a11y-populated@inkly.test',
+            inviteeEmail: 'notifications-a11y-populated@jfet.co.jp',
             url: '/team/a11y-team-1'
           }
         },
@@ -87,7 +87,7 @@ test.describe('notifications accessibility', () => {
 
   test('bell popover has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'notifications-a11y-popover@inkly.test',
+      email: 'notifications-a11y-popover@jfet.co.jp',
       name: 'Notifications A11y Popover'
     })
     await seedBoards(page, 1)
@@ -101,7 +101,7 @@ test.describe('notifications accessibility', () => {
             boardName: 'Popover Board',
             role: 'editor',
             inviterDisplayName: 'Owner',
-            inviteeEmail: 'notifications-a11y-popover@inkly.test',
+            inviteeEmail: 'notifications-a11y-popover@jfet.co.jp',
             url: '/invite/popover-invitation'
           }
         },

@@ -10,7 +10,7 @@ test.describe('teams interaction', () => {
   })
 
   test('empty state displays the create entry point', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'empty@inkly.test', name: 'Empty Teams' })
+    await mockGoogleLogin(page, { email: 'empty@jfet.co.jp', name: 'Empty Teams' })
     await page.goto('/teams')
 
     await expect(page.getByTestId('teams-view')).toBeVisible()
@@ -19,7 +19,7 @@ test.describe('teams interaction', () => {
   })
 
   test('populated state renders all owned teams', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'populated@inkly.test', name: 'Populated Teams' })
+    await mockGoogleLogin(page, { email: 'populated@jfet.co.jp', name: 'Populated Teams' })
     await seedTeam(page, { name: 'Design Systems' })
     await seedTeam(page, { name: 'Growth Experiments' })
 
@@ -28,7 +28,7 @@ test.describe('teams interaction', () => {
   })
 
   test('create modal opens and closes via submit', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'creator@inkly.test', name: 'Team Creator' })
+    await mockGoogleLogin(page, { email: 'creator@jfet.co.jp', name: 'Team Creator' })
     await page.goto('/teams')
 
     await page.getByTestId('team-create-button').click()

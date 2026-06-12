@@ -8,7 +8,7 @@ test('owner creates a team board and members can see it on the dashboard', async
 }) => {
   const teamName = `Workspace ${Date.now()}`
   const boardName = `Team Board ${Date.now()}`
-  const memberEmail = `member-${Date.now()}@inkly.test`
+  const memberEmail = `member-${Date.now()}@jfet.co.jp`
 
   const memberContext = await browser.newContext()
   const memberPage = await memberContext.newPage()
@@ -18,7 +18,7 @@ test('owner creates a team board and members can see it on the dashboard', async
   })
 
   await mockGoogleLogin(page, {
-    email: 'owner-team@inkly.test',
+    email: 'owner-team@jfet.co.jp',
     name: 'Team Owner'
   })
 

@@ -17,7 +17,7 @@ test.describe('account visual regression', () => {
 
   test('logged in state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'account-user@inkly.test',
+      email: 'account-user@jfet.co.jp',
       name: 'Account User'
     })
 

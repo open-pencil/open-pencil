@@ -28,7 +28,7 @@ test.describe('dashboard view accessibility', () => {
 
   test('populated state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'dashboard-view-a11y-populated@inkly.test',
+      email: 'dashboard-view-a11y-populated@jfet.co.jp',
       name: 'Dashboard View A11y Populated'
     })
     await seedBoards(page, 3)

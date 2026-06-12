@@ -17,7 +17,7 @@ test.describe('teams accessibility', () => {
 
   test('empty state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'teams-a11y-empty@inkly.test',
+      email: 'teams-a11y-empty@jfet.co.jp',
       name: 'Teams A11y Empty'
     })
 
@@ -33,7 +33,7 @@ test.describe('teams accessibility', () => {
 
   test('populated state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'teams-a11y-populated@inkly.test',
+      email: 'teams-a11y-populated@jfet.co.jp',
       name: 'Teams A11y Populated'
     })
     await seedTeam(page, { name: 'Design Systems', boards: ['System Board'] })
@@ -51,7 +51,7 @@ test.describe('teams accessibility', () => {
 
   test('create modal has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'teams-a11y-modal@inkly.test',
+      email: 'teams-a11y-modal@jfet.co.jp',
       name: 'Teams A11y Modal'
     })
 

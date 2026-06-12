@@ -35,7 +35,7 @@ test.describe('board settings visual regression', () => {
   test('invitation populated state', async ({ page }) => {
     const [board] = await seedBoards(page, 1)
 
-    await seedInvitations(page, board.id, ['first-invitee@inkly.test', 'second-invitee@inkly.test'])
+    await seedInvitations(page, board.id, ['first-invitee@jfet.co.jp', 'second-invitee@jfet.co.jp'])
     await page.goto(`/board/${board.id}/settings`)
     await expect(page.getByTestId('board-revoke-invitation')).toHaveCount(2)
     await expectPageScreenshot(page, 'board-settings-populated.png')
@@ -44,7 +44,7 @@ test.describe('board settings visual regression', () => {
   test('revoke confirmation state', async ({ page }) => {
     const [board] = await seedBoards(page, 1)
 
-    await seedInvitations(page, board.id, ['revoke-first@inkly.test', 'revoke-second@inkly.test'])
+    await seedInvitations(page, board.id, ['revoke-first@jfet.co.jp', 'revoke-second@jfet.co.jp'])
     await page.goto(`/board/${board.id}/settings`)
     await page.getByTestId('board-revoke-invitation').first().click()
     await expect(page.getByTestId('board-revoke-dialog')).toBeVisible()

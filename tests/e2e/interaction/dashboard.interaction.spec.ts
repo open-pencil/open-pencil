@@ -23,7 +23,7 @@ test.describe('dashboard interaction', () => {
 
   test('logged in users can create a board via the create form', async ({ page }) => {
     test.setTimeout(45_000)
-    await mockGoogleLogin(page, { email: 'creator@inkly.test', name: 'Board Creator' })
+    await mockGoogleLogin(page, { email: 'creator@jfet.co.jp', name: 'Board Creator' })
     await page.goto('/boards')
 
     await expect(page.getByTestId('board-card')).toHaveCount(0)
@@ -39,7 +39,7 @@ test.describe('dashboard interaction', () => {
   })
 
   test('search input filters board cards in place', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'searcher@inkly.test', name: 'Searcher' })
+    await mockGoogleLogin(page, { email: 'searcher@jfet.co.jp', name: 'Searcher' })
     await seedBoards(page, 3)
 
     await page.goto('/boards')
@@ -57,7 +57,7 @@ test.describe('dashboard interaction', () => {
   })
 
   test('pinning a board moves it to the top of the list', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'pinner@inkly.test', name: 'Pinner' })
+    await mockGoogleLogin(page, { email: 'pinner@jfet.co.jp', name: 'Pinner' })
     await seedBoards(page, 3)
     await page.goto('/boards')
 
@@ -78,7 +78,7 @@ test.describe('dashboard interaction', () => {
   })
 
   test('delete confirmation cancels and confirms correctly', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'deleter@inkly.test', name: 'Deleter' })
+    await mockGoogleLogin(page, { email: 'deleter@jfet.co.jp', name: 'Deleter' })
     await seedBoards(page, 2)
     await page.goto('/boards')
 

@@ -11,14 +11,14 @@ test.describe('team settings visual regression', () => {
 
   test('standard state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-settings-standard@inkly.test',
+      email: 'team-settings-standard@jfet.co.jp',
       name: 'Team Settings Standard'
     })
     const team = await seedTeam(page, {
       name: 'Visual Settings',
       members: [
-        { email: 'settings-editor@inkly.test', name: 'Settings Editor', role: 'editor' },
-        { email: 'settings-viewer@inkly.test', name: 'Settings Viewer', role: 'viewer' }
+        { email: 'settings-editor@jfet.co.jp', name: 'Settings Editor', role: 'editor' },
+        { email: 'settings-viewer@jfet.co.jp', name: 'Settings Viewer', role: 'viewer' }
       ],
       boards: ['Settings Board']
     })
@@ -30,14 +30,14 @@ test.describe('team settings visual regression', () => {
 
   test('role change modal state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-settings-role@inkly.test',
+      email: 'team-settings-role@jfet.co.jp',
       name: 'Team Settings Role'
     })
     const team = await seedTeam(page, {
       name: 'Role Control',
       members: [
-        { email: 'role-target@inkly.test', name: 'Role Target', role: 'editor' },
-        { email: 'role-viewer@inkly.test', name: 'Role Viewer', role: 'viewer' }
+        { email: 'role-target@jfet.co.jp', name: 'Role Target', role: 'editor' },
+        { email: 'role-viewer@jfet.co.jp', name: 'Role Viewer', role: 'viewer' }
       ],
       boards: ['Role Board']
     })
@@ -45,7 +45,7 @@ test.describe('team settings visual regression', () => {
     await page.goto(`/team/${team.team.id}/settings`)
     await page
       .locator('li')
-      .filter({ hasText: 'role-target@inkly.test' })
+      .filter({ hasText: 'role-target@jfet.co.jp' })
       .locator('select')
       .selectOption('viewer')
     await expect(page.getByTestId('team-settings-role-dialog')).toBeVisible()
@@ -54,12 +54,12 @@ test.describe('team settings visual regression', () => {
 
   test('delete confirmation state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-settings-delete@inkly.test',
+      email: 'team-settings-delete@jfet.co.jp',
       name: 'Team Settings Delete'
     })
     const team = await seedTeam(page, {
       name: 'Danger Zone',
-      members: [{ email: 'danger-member@inkly.test', name: 'Danger Member', role: 'editor' }],
+      members: [{ email: 'danger-member@jfet.co.jp', name: 'Danger Member', role: 'editor' }],
       boards: ['Danger Board']
     })
 

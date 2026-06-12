@@ -31,14 +31,14 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('recent boards section shows empty state when no boards exist', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-empty@inkly.test', name: 'Dashboard Empty' })
+    await mockGoogleLogin(page, { email: 'dash-empty@jfet.co.jp', name: 'Dashboard Empty' })
     await page.goto('/dashboard')
 
     await expect(page.getByTestId('dashboard-recent-empty')).toBeVisible()
   })
 
   test('recent boards list renders up to 6 sorted by updatedAt', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-list@inkly.test', name: 'Dashboard List' })
+    await mockGoogleLogin(page, { email: 'dash-list@jfet.co.jp', name: 'Dashboard List' })
     await seedBoards(page, 3)
     await page.goto('/dashboard')
 
@@ -48,7 +48,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('Boards quick action navigates to /boards', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-nav@inkly.test', name: 'Dashboard Nav' })
+    await mockGoogleLogin(page, { email: 'dash-nav@jfet.co.jp', name: 'Dashboard Nav' })
     await page.goto('/dashboard')
 
     await page.getByTestId('dashboard-link-boards').click()
@@ -56,7 +56,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('Teams quick action navigates to /teams', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-teams@inkly.test', name: 'Dashboard Teams' })
+    await mockGoogleLogin(page, { email: 'dash-teams@jfet.co.jp', name: 'Dashboard Teams' })
     await page.goto('/dashboard')
 
     await page.getByTestId('dashboard-link-teams').click()
@@ -64,7 +64,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('pinning a recent board surfaces it in the pinned section', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-pin@inkly.test', name: 'Dashboard Pin' })
+    await mockGoogleLogin(page, { email: 'dash-pin@jfet.co.jp', name: 'Dashboard Pin' })
     await seedBoards(page, 3)
     await page.goto('/dashboard')
 
@@ -85,7 +85,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('customize panel toggles a section and persists across reload', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-customize@inkly.test', name: 'Dash Customize' })
+    await mockGoogleLogin(page, { email: 'dash-customize@jfet.co.jp', name: 'Dash Customize' })
     await page.goto('/dashboard')
 
     await expect(page.getByTestId('dashboard-section-metrics')).toBeVisible()
@@ -104,7 +104,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('locale switcher changes the dashboard heading and persists across reload', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-locale@inkly.test', name: 'Dash Locale' })
+    await mockGoogleLogin(page, { email: 'dash-locale@jfet.co.jp', name: 'Dash Locale' })
     await page.goto('/dashboard')
 
     const heading = page.locator('h1').first()
@@ -121,7 +121,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('customize panel exposes accessible drag handles and aria-live announce', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-a11y@inkly.test', name: 'Dash A11y' })
+    await mockGoogleLogin(page, { email: 'dash-a11y@jfet.co.jp', name: 'Dash A11y' })
     await page.goto('/dashboard')
 
     await page.getByTestId('dashboard-customize-toggle').click()
@@ -141,7 +141,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('keyboard Space + ArrowDown reorders a section and Escape cancels', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-kbd@inkly.test', name: 'Dash Kbd' })
+    await mockGoogleLogin(page, { email: 'dash-kbd@jfet.co.jp', name: 'Dash Kbd' })
     await page.goto('/dashboard')
 
     await page.getByTestId('dashboard-customize-toggle').click()
@@ -173,7 +173,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('drag and drop reorders sections in the customize panel', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-dnd@inkly.test', name: 'Dash DnD' })
+    await mockGoogleLogin(page, { email: 'dash-dnd@jfet.co.jp', name: 'Dash DnD' })
     await page.goto('/dashboard')
 
     await page.getByTestId('dashboard-customize-toggle').click()
@@ -196,7 +196,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('customize panel reset restores the default layout', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-reset@inkly.test', name: 'Dash Reset' })
+    await mockGoogleLogin(page, { email: 'dash-reset@jfet.co.jp', name: 'Dash Reset' })
     await page.goto('/dashboard')
 
     await page.getByTestId('dashboard-customize-toggle').click()
@@ -208,7 +208,7 @@ test.describe('dashboard view interaction', () => {
   })
 
   test('pinned section is hidden when no pins exist', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'dash-no-pin@inkly.test', name: 'Dashboard No Pin' })
+    await mockGoogleLogin(page, { email: 'dash-no-pin@jfet.co.jp', name: 'Dashboard No Pin' })
     await seedBoards(page, 2)
     await page.goto('/dashboard')
 

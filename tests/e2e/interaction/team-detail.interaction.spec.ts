@@ -10,7 +10,7 @@ test.describe('team detail interaction', () => {
   })
 
   test('owner-only team renders single member with invite + settings entry', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Owner Solo' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Owner Solo' })
     const { team } = await seedTeam(page, { name: 'Solo Team' })
 
     await page.goto(`/team/${team.id}`)
@@ -21,12 +21,12 @@ test.describe('team detail interaction', () => {
   })
 
   test('multi member team renders all members', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Multi Owner' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Multi Owner' })
     const { team } = await seedTeam(page, {
       name: 'Multi Team',
       members: [
-        { email: 'a@inkly.test', name: 'Alice' },
-        { email: 'b@inkly.test', name: 'Bob' }
+        { email: 'a@jfet.co.jp', name: 'Alice' },
+        { email: 'b@jfet.co.jp', name: 'Bob' }
       ]
     })
 
@@ -35,7 +35,7 @@ test.describe('team detail interaction', () => {
   })
 
   test('invite modal opens via button click', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'owner@inkly.test', name: 'Invite Owner' })
+    await mockGoogleLogin(page, { email: 'owner@jfet.co.jp', name: 'Invite Owner' })
     const { team } = await seedTeam(page, { name: 'Invite Team' })
 
     await page.goto(`/team/${team.id}`)

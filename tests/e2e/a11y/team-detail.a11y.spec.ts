@@ -17,7 +17,7 @@ test.describe('team detail accessibility', () => {
 
   test('owner-only state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-detail-a11y-owner@inkly.test',
+      email: 'team-detail-a11y-owner@jfet.co.jp',
       name: 'Team Detail A11y Owner'
     })
     const team = await seedTeam(page, {
@@ -37,20 +37,20 @@ test.describe('team detail accessibility', () => {
 
   test('multi-member state has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-detail-a11y-members@inkly.test',
+      email: 'team-detail-a11y-members@jfet.co.jp',
       name: 'Team Detail A11y Members'
     })
     const team = await seedTeam(page, {
       name: 'Research Ops',
       members: [
-        { email: 'member-one@inkly.test', name: 'Member One', role: 'editor' },
-        { email: 'member-two@inkly.test', name: 'Member Two', role: 'viewer' }
+        { email: 'member-one@jfet.co.jp', name: 'Member One', role: 'editor' },
+        { email: 'member-two@jfet.co.jp', name: 'Member Two', role: 'viewer' }
       ],
       boards: ['Sprint Planning']
     })
 
     await page.goto(`/team/${team.team.id}`)
-    await expect(page.getByText('member-one@inkly.test')).toBeVisible()
+    await expect(page.getByText('member-one@jfet.co.jp')).toBeVisible()
     await waitForVisualReady(page)
 
     const results = await runA11yScan(page, {
@@ -61,7 +61,7 @@ test.describe('team detail accessibility', () => {
 
   test('invite modal has no critical accessibility violations', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-detail-a11y-invite@inkly.test',
+      email: 'team-detail-a11y-invite@jfet.co.jp',
       name: 'Team Detail A11y Invite'
     })
     const team = await seedTeam(page, {

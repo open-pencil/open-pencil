@@ -11,7 +11,7 @@ test.describe('team detail visual regression', () => {
 
   test('owner-only member state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-detail-owner@inkly.test',
+      email: 'team-detail-owner@jfet.co.jp',
       name: 'Team Detail Owner'
     })
     const team = await seedTeam(page, {
@@ -26,26 +26,26 @@ test.describe('team detail visual regression', () => {
 
   test('three-member state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-detail-members@inkly.test',
+      email: 'team-detail-members@jfet.co.jp',
       name: 'Team Detail Members'
     })
     const team = await seedTeam(page, {
       name: 'Research Ops',
       members: [
-        { email: 'member-one@inkly.test', name: 'Member One', role: 'editor' },
-        { email: 'member-two@inkly.test', name: 'Member Two', role: 'viewer' }
+        { email: 'member-one@jfet.co.jp', name: 'Member One', role: 'editor' },
+        { email: 'member-two@jfet.co.jp', name: 'Member Two', role: 'viewer' }
       ],
       boards: ['Sprint Planning']
     })
 
     await page.goto(`/team/${team.team.id}`)
-    await expect(page.getByText('member-one@inkly.test')).toBeVisible()
+    await expect(page.getByText('member-one@jfet.co.jp')).toBeVisible()
     await expectPageScreenshot(page, 'team-detail-three-members.png')
   })
 
   test('invite modal state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'team-detail-invite@inkly.test',
+      email: 'team-detail-invite@jfet.co.jp',
       name: 'Team Detail Invite'
     })
     const team = await seedTeam(page, {

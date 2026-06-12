@@ -50,7 +50,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('search filters the boards table by name', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-search@inkly.test', name: 'Admin Search' })
+    await mockGoogleLogin(page, { email: 'admin-search@jfet.co.jp', name: 'Admin Search' })
     await seedBoards(page, 3)
 
     await page.goto('/admin')
@@ -67,7 +67,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('personal/team filter narrows the boards table', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-filter@inkly.test', name: 'Admin Filter' })
+    await mockGoogleLogin(page, { email: 'admin-filter@jfet.co.jp', name: 'Admin Filter' })
     await seedBoards(page, 2)
 
     await page.goto('/admin')
@@ -85,7 +85,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('teams tab shows empty state when no teams exist', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-teams@inkly.test', name: 'Admin Teams' })
+    await mockGoogleLogin(page, { email: 'admin-teams@jfet.co.jp', name: 'Admin Teams' })
 
     await page.goto('/admin')
     await page.getByTestId('admin-tab-teams').click()
@@ -94,7 +94,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('dashboard link navigates back to /dashboard', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-nav@inkly.test', name: 'Admin Nav' })
+    await mockGoogleLogin(page, { email: 'admin-nav@jfet.co.jp', name: 'Admin Nav' })
     await page.goto('/admin')
 
     await page.getByTestId('admin-dashboard-link').click()
@@ -102,7 +102,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('sorting boards by name toggles ascending/descending', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-sort@inkly.test', name: 'Admin Sort' })
+    await mockGoogleLogin(page, { email: 'admin-sort@jfet.co.jp', name: 'Admin Sort' })
     await seedBoards(page, 3)
 
     await page.goto('/admin')
@@ -117,14 +117,14 @@ test.describe('admin view interaction', () => {
   })
 
   test('activity tab shows empty state when no notifications exist', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-activity-empty@inkly.test', name: 'Admin Activity Empty' })
+    await mockGoogleLogin(page, { email: 'admin-activity-empty@jfet.co.jp', name: 'Admin Activity Empty' })
     await page.goto('/admin')
     await page.getByTestId('admin-tab-activity').click()
     await expect(page.getByTestId('admin-activity-empty')).toBeVisible()
   })
 
   test('activity tab renders filter controls and disables export when empty', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-activity-filter@inkly.test', name: 'Admin Activity Filter' })
+    await mockGoogleLogin(page, { email: 'admin-activity-filter@jfet.co.jp', name: 'Admin Activity Filter' })
     await page.goto('/admin')
     await page.getByTestId('admin-tab-activity').click()
 
@@ -135,14 +135,14 @@ test.describe('admin view interaction', () => {
   })
 
   test('export CSV button is disabled when no boards exist', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-export-empty@inkly.test', name: 'Admin Export Empty' })
+    await mockGoogleLogin(page, { email: 'admin-export-empty@jfet.co.jp', name: 'Admin Export Empty' })
     await page.goto('/admin')
     await page.getByTestId('admin-tab-boards').click()
     await expect(page.getByTestId('admin-boards-export')).toBeDisabled()
   })
 
   test('select all visible boards via header checkbox', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-bulk-select@inkly.test', name: 'Admin Bulk Select' })
+    await mockGoogleLogin(page, { email: 'admin-bulk-select@jfet.co.jp', name: 'Admin Bulk Select' })
     await seedBoards(page, 3)
 
     await page.goto('/admin')
@@ -160,7 +160,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('row checkbox toggles a single selection and shows bulk action', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-bulk-row@inkly.test', name: 'Admin Bulk Row' })
+    await mockGoogleLogin(page, { email: 'admin-bulk-row@jfet.co.jp', name: 'Admin Bulk Row' })
     await seedBoards(page, 2)
 
     await page.goto('/admin')
@@ -178,7 +178,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('bulk move dialog opens with target select and personal option', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-move-open@inkly.test', name: 'Admin Move Open' })
+    await mockGoogleLogin(page, { email: 'admin-move-open@jfet.co.jp', name: 'Admin Move Open' })
     await seedBoards(page, 2)
 
     await page.goto('/admin')
@@ -196,7 +196,7 @@ test.describe('admin view interaction', () => {
   })
 
   test('bulk delete removes all selected boards after confirmation', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-bulk-delete@inkly.test', name: 'Admin Bulk Delete' })
+    await mockGoogleLogin(page, { email: 'admin-bulk-delete@jfet.co.jp', name: 'Admin Bulk Delete' })
     await seedBoards(page, 2)
 
     await page.goto('/admin')
@@ -215,21 +215,21 @@ test.describe('admin view interaction', () => {
   })
 
   test('members tab export CSV is disabled when empty', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-members-export-empty@inkly.test', name: 'Admin Members Export Empty' })
+    await mockGoogleLogin(page, { email: 'admin-members-export-empty@jfet.co.jp', name: 'Admin Members Export Empty' })
     await page.goto('/admin')
     await page.getByTestId('admin-tab-members').click()
     await expect(page.getByTestId('admin-members-export')).toBeDisabled()
   })
 
   test('members tab shows empty state when user has no teams', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-members-empty@inkly.test', name: 'Admin Members Empty' })
+    await mockGoogleLogin(page, { email: 'admin-members-empty@jfet.co.jp', name: 'Admin Members Empty' })
     await page.goto('/admin')
     await page.getByTestId('admin-tab-members').click()
     await expect(page.getByTestId('admin-members-empty')).toBeVisible()
   })
 
   test('export CSV downloads a CSV file with all visible board rows', async ({ page }) => {
-    await mockGoogleLogin(page, { email: 'admin-export@inkly.test', name: 'Admin Export' })
+    await mockGoogleLogin(page, { email: 'admin-export@jfet.co.jp', name: 'Admin Export' })
     await seedBoards(page, 2)
 
     await page.goto('/admin')

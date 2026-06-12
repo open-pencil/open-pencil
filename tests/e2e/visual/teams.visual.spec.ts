@@ -11,7 +11,7 @@ test.describe('teams visual regression', () => {
 
   test('empty state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'teams-empty@inkly.test',
+      email: 'teams-empty@jfet.co.jp',
       name: 'Teams Empty'
     })
 
@@ -22,7 +22,7 @@ test.describe('teams visual regression', () => {
 
   test('populated state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'teams-populated@inkly.test',
+      email: 'teams-populated@jfet.co.jp',
       name: 'Teams Populated'
     })
     await seedTeam(page, { name: 'Design Systems', boards: ['System Board'] })
@@ -35,7 +35,7 @@ test.describe('teams visual regression', () => {
 
   test('create modal state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'teams-modal@inkly.test',
+      email: 'teams-modal@jfet.co.jp',
       name: 'Teams Modal'
     })
 

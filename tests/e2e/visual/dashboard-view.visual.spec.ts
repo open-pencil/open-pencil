@@ -17,7 +17,7 @@ test.describe('dashboard view visual regression', () => {
 
   test('empty state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'dashboard-view-empty@inkly.test',
+      email: 'dashboard-view-empty@jfet.co.jp',
       name: 'Dashboard View Empty'
     })
 
@@ -28,7 +28,7 @@ test.describe('dashboard view visual regression', () => {
 
   test('populated state', async ({ page }) => {
     await mockGoogleLogin(page, {
-      email: 'dashboard-view-populated@inkly.test',
+      email: 'dashboard-view-populated@jfet.co.jp',
       name: 'Dashboard View Populated'
     })
     await seedBoards(page, 3)
