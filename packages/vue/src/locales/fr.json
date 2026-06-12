@@ -776,6 +776,41 @@
   "common": {
     "home": "Accueil"
   },
+  "inviteAuth": {
+    "headTitle": "Accepter l'invitation",
+    "eyebrow": "Invitation",
+    "headlineVerifying": "Vérification de l'invitation…",
+    "headlineInvalid": "L'invitation est invalide",
+    "headlineExpired": "L'invitation a expiré",
+    "headlineAuthed": "Ouverture du tableau…",
+    "headlineSignUp": "Créer votre compte",
+    "headlineSignIn": "Se connecter pour accepter",
+    "verifyingHint": "Vous serez redirigé automatiquement vers l'éditeur.",
+    "invalidHint": "Le token peut avoir expiré ou été révoqué. Demandez un nouveau lien.",
+    "backToTop": "Retour à l'accueil",
+    "modeSignUp": "Nouveau ici",
+    "modeSignIn": "J'ai déjà un compte",
+    "nameLabel": "Nom affiché",
+    "namePlaceholder": "Alice",
+    "emailLabel": "E-mail invité",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "Au moins 8 caractères",
+    "submitSignUp": "Créer le compte et ouvrir le tableau",
+    "submitSignIn": "Se connecter et ouvrir le tableau",
+    "submitSubmitting": "Acceptation de l'invitation…",
+    "errorPasswordTooShort": "Le mot de passe doit comporter au moins 8 caractères.",
+    "errorNameRequired": "Veuillez saisir votre nom affiché.",
+    "errorUnknown": "Impossible d'accepter l'invitation. Veuillez réessayer.",
+    "errorMap": {
+      "email_mismatch": "L'e-mail ne correspond pas à l'invitation. Utilisez la même adresse.",
+      "sign_up_failed": "Impossible de créer le compte. L'e-mail est peut-être déjà utilisé.",
+      "sign_in_failed": "Impossible de se connecter. Vérifiez votre mot de passe.",
+      "expired": "L'invitation a expiré.",
+      "revoked": "L'invitation a été révoquée.",
+      "auth_misconfigured": "La connexion par e-mail/mot de passe n'est pas disponible."
+    }
+  },
   "saveAndLeaveModal": {
     "title": "Ajouter ce tableau au tableau de bord ?",
     "descriptionLine1": "Ce tableau n'a pas encore été enregistré dans le tableau de bord.",

@@ -30,6 +30,7 @@ import {
   teamDetailMessages,
   teamSettingsMessages,
   commonMessages,
+  inviteAuthMessages,
   saveAndLeaveModalMessages,
   adminMessages
 } from '#vue/i18n/messages'
@@ -80,6 +81,7 @@ export function useI18n() {
     teamDetail: useStore(teamDetailMessages),
     teamSettings: useStore(teamSettingsMessages),
     common: useStore(commonMessages),
+    inviteAuth: useStore(inviteAuthMessages),
     saveAndLeaveModal: useStore(saveAndLeaveModalMessages),
     admin: useStore(adminMessages),
     locale: useStore(locale) as Ref<Locale>,

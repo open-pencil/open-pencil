@@ -853,6 +853,42 @@ export const commonMessages = i18n('common', {
   home: 'Home'
 })
 
+export const inviteAuthMessages = i18n('inviteAuth', {
+  headTitle: 'Accept invitation',
+  eyebrow: 'Invite',
+  headlineVerifying: 'Verifying invitation…',
+  headlineInvalid: 'Invitation is invalid',
+  headlineExpired: 'Invitation has expired',
+  headlineAuthed: 'Opening the board…',
+  headlineSignUp: 'Create your account',
+  headlineSignIn: 'Sign in to accept',
+  verifyingHint: 'You will be redirected to the editor automatically.',
+  invalidHint: 'The token may be expired or revoked. Ask the inviter for a fresh link.',
+  backToTop: 'Back to top',
+  modeSignUp: 'New here',
+  modeSignIn: 'Already have an account',
+  nameLabel: 'Display name',
+  namePlaceholder: 'Alice',
+  emailLabel: 'Invited email',
+  emailPlaceholder: 'invited@example.com',
+  passwordLabel: 'Password',
+  passwordPlaceholder: 'At least 8 characters',
+  submitSignUp: 'Create account & open board',
+  submitSignIn: 'Sign in & open board',
+  submitSubmitting: 'Accepting invitation…',
+  errorPasswordTooShort: 'Password must be at least 8 characters.',
+  errorNameRequired: 'Please enter your display name.',
+  errorUnknown: 'Could not accept invitation. Please try again.',
+  errorMap: {
+    email_mismatch: 'The email does not match the invitation. Use the same address as the invitee.',
+    sign_up_failed: 'Could not create the account. The email may already be in use.',
+    sign_in_failed: 'Could not sign in. Check your password.',
+    expired: 'Invitation has expired.',
+    revoked: 'Invitation has been revoked.',
+    auth_misconfigured: 'Email/password sign-in is not available on this server.'
+  }
+})
+
 export const saveAndLeaveModalMessages = i18n('saveAndLeaveModal', {
   title: 'Add this board to your dashboard?',
   descriptionLine1: 'This board has not been saved to your dashboard yet.',

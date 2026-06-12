@@ -776,6 +776,41 @@
   "common": {
     "home": "Home"
   },
+  "inviteAuth": {
+    "headTitle": "Accetta invito",
+    "eyebrow": "Invito",
+    "headlineVerifying": "Verifica dell'invito…",
+    "headlineInvalid": "L'invito non è valido",
+    "headlineExpired": "L'invito è scaduto",
+    "headlineAuthed": "Apertura della board…",
+    "headlineSignUp": "Crea il tuo account",
+    "headlineSignIn": "Accedi per accettare",
+    "verifyingHint": "Verrai reindirizzato automaticamente all'editor.",
+    "invalidHint": "Il token potrebbe essere scaduto o revocato. Chiedi un nuovo link.",
+    "backToTop": "Torna alla home",
+    "modeSignUp": "Nuovo qui",
+    "modeSignIn": "Ho già un account",
+    "nameLabel": "Nome visualizzato",
+    "namePlaceholder": "Alice",
+    "emailLabel": "E-mail invitata",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Almeno 8 caratteri",
+    "submitSignUp": "Crea account e apri board",
+    "submitSignIn": "Accedi e apri board",
+    "submitSubmitting": "Accettazione invito…",
+    "errorPasswordTooShort": "La password deve avere almeno 8 caratteri.",
+    "errorNameRequired": "Inserisci il tuo nome visualizzato.",
+    "errorUnknown": "Impossibile accettare l'invito. Riprova.",
+    "errorMap": {
+      "email_mismatch": "L'e-mail non corrisponde all'invito. Usa lo stesso indirizzo.",
+      "sign_up_failed": "Impossibile creare l'account. L'e-mail potrebbe essere già in uso.",
+      "sign_in_failed": "Impossibile accedere. Controlla la password.",
+      "expired": "L'invito è scaduto.",
+      "revoked": "L'invito è stato revocato.",
+      "auth_misconfigured": "Il login con e-mail/password non è disponibile."
+    }
+  },
   "saveAndLeaveModal": {
     "title": "Aggiungere questa board alla dashboard?",
     "descriptionLine1": "Questa board non è ancora stata salvata nella dashboard.",

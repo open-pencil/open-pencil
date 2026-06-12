@@ -776,6 +776,41 @@
   "common": {
     "home": "トップ"
   },
+  "inviteAuth": {
+    "headTitle": "招待を受け取る",
+    "eyebrow": "Invite",
+    "headlineVerifying": "招待を確認中…",
+    "headlineInvalid": "招待が無効です",
+    "headlineExpired": "招待の期限が切れています",
+    "headlineAuthed": "ボードを開いています…",
+    "headlineSignUp": "アカウントを作成",
+    "headlineSignIn": "サインインして受け取る",
+    "verifyingHint": "自動でエディターに移動します。",
+    "invalidHint": "リンクの期限切れまたは取り消し済みです。 招待した人から新しいリンクを発行してもらってください。",
+    "backToTop": "トップに戻る",
+    "modeSignUp": "はじめての方",
+    "modeSignIn": "既にアカウントがある方",
+    "nameLabel": "表示名",
+    "namePlaceholder": "山田 太郎",
+    "emailLabel": "招待されたメールアドレス",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "パスワード",
+    "passwordPlaceholder": "8 文字以上",
+    "submitSignUp": "アカウント作成してボードを開く",
+    "submitSignIn": "サインインしてボードを開く",
+    "submitSubmitting": "招待を受け取り中…",
+    "errorPasswordTooShort": "パスワードは 8 文字以上にしてください。",
+    "errorNameRequired": "表示名を入力してください。",
+    "errorUnknown": "招待の受け取りに失敗しました。 もう一度お試しください。",
+    "errorMap": {
+      "email_mismatch": "メールアドレスが招待先と一致しません。 招待された同じアドレスを入力してください。",
+      "sign_up_failed": "アカウント作成に失敗しました。 既に登録済みのメールアドレスかもしれません。",
+      "sign_in_failed": "サインインに失敗しました。 パスワードを確認してください。",
+      "expired": "招待の期限が切れています。",
+      "revoked": "招待は取り消されています。",
+      "auth_misconfigured": "このサーバーではメール / パスワード認証が利用できません。"
+    }
+  },
   "saveAndLeaveModal": {
     "title": "このボードをダッシュボードに追加しますか？",
     "descriptionLine1": "現在のボードはまだダッシュボードに保存されていません。",

@@ -776,6 +776,41 @@
   "common": {
     "home": "Inicio"
   },
+  "inviteAuth": {
+    "headTitle": "Aceptar invitación",
+    "eyebrow": "Invitación",
+    "headlineVerifying": "Verificando invitación…",
+    "headlineInvalid": "La invitación no es válida",
+    "headlineExpired": "La invitación ha expirado",
+    "headlineAuthed": "Abriendo el tablero…",
+    "headlineSignUp": "Crear tu cuenta",
+    "headlineSignIn": "Inicia sesión para aceptar",
+    "verifyingHint": "Serás redirigido al editor automáticamente.",
+    "invalidHint": "El token puede haber expirado o sido revocado. Pide al invitador un enlace nuevo.",
+    "backToTop": "Volver al inicio",
+    "modeSignUp": "Nuevo aquí",
+    "modeSignIn": "Ya tengo cuenta",
+    "nameLabel": "Nombre para mostrar",
+    "namePlaceholder": "Alicia",
+    "emailLabel": "Correo invitado",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "Contraseña",
+    "passwordPlaceholder": "Al menos 8 caracteres",
+    "submitSignUp": "Crear cuenta y abrir tablero",
+    "submitSignIn": "Iniciar sesión y abrir tablero",
+    "submitSubmitting": "Aceptando invitación…",
+    "errorPasswordTooShort": "La contraseña debe tener al menos 8 caracteres.",
+    "errorNameRequired": "Ingresa tu nombre para mostrar.",
+    "errorUnknown": "No se pudo aceptar la invitación. Intenta nuevamente.",
+    "errorMap": {
+      "email_mismatch": "El correo no coincide con la invitación. Usa la misma dirección.",
+      "sign_up_failed": "No se pudo crear la cuenta. El correo puede estar en uso.",
+      "sign_in_failed": "No se pudo iniciar sesión. Verifica tu contraseña.",
+      "expired": "La invitación ha expirado.",
+      "revoked": "La invitación ha sido revocada.",
+      "auth_misconfigured": "El inicio de sesión por correo / contraseña no está disponible."
+    }
+  },
   "saveAndLeaveModal": {
     "title": "¿Añadir este tablero al panel?",
     "descriptionLine1": "Este tablero aún no se ha guardado en el panel.",

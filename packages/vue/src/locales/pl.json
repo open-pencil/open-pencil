@@ -776,6 +776,41 @@
   "common": {
     "home": "Strona główna"
   },
+  "inviteAuth": {
+    "headTitle": "Zaakceptuj zaproszenie",
+    "eyebrow": "Zaproszenie",
+    "headlineVerifying": "Weryfikacja zaproszenia…",
+    "headlineInvalid": "Zaproszenie jest nieprawidłowe",
+    "headlineExpired": "Zaproszenie wygasło",
+    "headlineAuthed": "Otwieranie tablicy…",
+    "headlineSignUp": "Utwórz konto",
+    "headlineSignIn": "Zaloguj się, aby zaakceptować",
+    "verifyingHint": "Zostaniesz automatycznie przekierowany do edytora.",
+    "invalidHint": "Token mógł wygasnąć lub zostać unieważniony. Poproś o nowy link.",
+    "backToTop": "Powrót do strony głównej",
+    "modeSignUp": "Nowy użytkownik",
+    "modeSignIn": "Mam już konto",
+    "nameLabel": "Wyświetlana nazwa",
+    "namePlaceholder": "Alicja",
+    "emailLabel": "Zaproszony e-mail",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "Hasło",
+    "passwordPlaceholder": "Co najmniej 8 znaków",
+    "submitSignUp": "Utwórz konto i otwórz tablicę",
+    "submitSignIn": "Zaloguj się i otwórz tablicę",
+    "submitSubmitting": "Akceptowanie zaproszenia…",
+    "errorPasswordTooShort": "Hasło musi mieć co najmniej 8 znaków.",
+    "errorNameRequired": "Wprowadź wyświetlaną nazwę.",
+    "errorUnknown": "Nie można zaakceptować zaproszenia. Spróbuj ponownie.",
+    "errorMap": {
+      "email_mismatch": "E-mail nie zgadza się z zaproszeniem. Użyj tego samego adresu.",
+      "sign_up_failed": "Nie udało się utworzyć konta. E-mail może być już w użyciu.",
+      "sign_in_failed": "Nie udało się zalogować. Sprawdź hasło.",
+      "expired": "Zaproszenie wygasło.",
+      "revoked": "Zaproszenie zostało unieważnione.",
+      "auth_misconfigured": "Logowanie e-mailem / hasłem nie jest dostępne."
+    }
+  },
   "saveAndLeaveModal": {
     "title": "Dodać tę tablicę do pulpitu?",
     "descriptionLine1": "Ta tablica nie została jeszcze zapisana na pulpicie.",

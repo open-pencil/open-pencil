@@ -776,6 +776,41 @@
   "common": {
     "home": "首页"
   },
+  "inviteAuth": {
+    "headTitle": "接受邀请",
+    "eyebrow": "邀请",
+    "headlineVerifying": "正在验证邀请…",
+    "headlineInvalid": "邀请无效",
+    "headlineExpired": "邀请已过期",
+    "headlineAuthed": "正在打开画板…",
+    "headlineSignUp": "创建您的账户",
+    "headlineSignIn": "登录以接受",
+    "verifyingHint": "您将自动重定向到编辑器。",
+    "invalidHint": "令牌可能已过期或被撤销。请向邀请者索取新链接。",
+    "backToTop": "返回首页",
+    "modeSignUp": "首次使用",
+    "modeSignIn": "已有账户",
+    "nameLabel": "显示名称",
+    "namePlaceholder": "爱丽丝",
+    "emailLabel": "被邀请的邮箱",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "密码",
+    "passwordPlaceholder": "至少 8 个字符",
+    "submitSignUp": "创建账户并打开画板",
+    "submitSignIn": "登录并打开画板",
+    "submitSubmitting": "正在接受邀请…",
+    "errorPasswordTooShort": "密码必须至少 8 个字符。",
+    "errorNameRequired": "请输入显示名称。",
+    "errorUnknown": "无法接受邀请。请重试。",
+    "errorMap": {
+      "email_mismatch": "邮箱与邀请不匹配。请使用相同的邮箱。",
+      "sign_up_failed": "无法创建账户。该邮箱可能已被使用。",
+      "sign_in_failed": "无法登录。请检查密码。",
+      "expired": "邀请已过期。",
+      "revoked": "邀请已被撤销。",
+      "auth_misconfigured": "此服务器不支持邮箱 / 密码登录。"
+    }
+  },
   "saveAndLeaveModal": {
     "title": "将此画板添加到仪表板？",
     "descriptionLine1": "此画板尚未保存到仪表板。",

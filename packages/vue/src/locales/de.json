@@ -776,6 +776,41 @@
   "common": {
     "home": "Startseite"
   },
+  "inviteAuth": {
+    "headTitle": "Einladung annehmen",
+    "eyebrow": "Einladung",
+    "headlineVerifying": "Einladung wird überprüft…",
+    "headlineInvalid": "Einladung ist ungültig",
+    "headlineExpired": "Einladung ist abgelaufen",
+    "headlineAuthed": "Board wird geöffnet…",
+    "headlineSignUp": "Konto erstellen",
+    "headlineSignIn": "Anmelden, um anzunehmen",
+    "verifyingHint": "Sie werden automatisch zum Editor weitergeleitet.",
+    "invalidHint": "Der Token ist möglicherweise abgelaufen oder widerrufen. Bitten Sie um einen neuen Link.",
+    "backToTop": "Zur Startseite",
+    "modeSignUp": "Neu hier",
+    "modeSignIn": "Konto vorhanden",
+    "nameLabel": "Anzeigename",
+    "namePlaceholder": "Max Mustermann",
+    "emailLabel": "Eingeladene E-Mail",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "Passwort",
+    "passwordPlaceholder": "Mindestens 8 Zeichen",
+    "submitSignUp": "Konto erstellen & Board öffnen",
+    "submitSignIn": "Anmelden & Board öffnen",
+    "submitSubmitting": "Einladung wird angenommen…",
+    "errorPasswordTooShort": "Passwort muss mindestens 8 Zeichen lang sein.",
+    "errorNameRequired": "Bitte Anzeigenamen eingeben.",
+    "errorUnknown": "Einladung konnte nicht angenommen werden. Bitte erneut versuchen.",
+    "errorMap": {
+      "email_mismatch": "Die E-Mail entspricht nicht der Einladung. Verwenden Sie dieselbe Adresse wie der Eingeladene.",
+      "sign_up_failed": "Konto konnte nicht erstellt werden. Die E-Mail ist möglicherweise bereits in Verwendung.",
+      "sign_in_failed": "Anmeldung fehlgeschlagen. Überprüfen Sie Ihr Passwort.",
+      "expired": "Einladung ist abgelaufen.",
+      "revoked": "Einladung wurde widerrufen.",
+      "auth_misconfigured": "E-Mail/Passwort-Anmeldung ist auf diesem Server nicht verfügbar."
+    }
+  },
   "saveAndLeaveModal": {
     "title": "Dieses Board zum Dashboard hinzufügen?",
     "descriptionLine1": "Dieses Board wurde noch nicht im Dashboard gespeichert.",

@@ -776,6 +776,41 @@
   "common": {
     "home": "Главная"
   },
+  "inviteAuth": {
+    "headTitle": "Принять приглашение",
+    "eyebrow": "Приглашение",
+    "headlineVerifying": "Проверка приглашения…",
+    "headlineInvalid": "Приглашение недействительно",
+    "headlineExpired": "Срок действия приглашения истёк",
+    "headlineAuthed": "Открытие доски…",
+    "headlineSignUp": "Создать аккаунт",
+    "headlineSignIn": "Войти, чтобы принять",
+    "verifyingHint": "Вы будете автоматически перенаправлены в редактор.",
+    "invalidHint": "Срок действия токена истёк или он был отозван. Попросите новую ссылку.",
+    "backToTop": "На главную",
+    "modeSignUp": "Я здесь впервые",
+    "modeSignIn": "У меня есть аккаунт",
+    "nameLabel": "Отображаемое имя",
+    "namePlaceholder": "Алиса",
+    "emailLabel": "Email приглашённого",
+    "emailPlaceholder": "invited@example.com",
+    "passwordLabel": "Пароль",
+    "passwordPlaceholder": "Не менее 8 символов",
+    "submitSignUp": "Создать аккаунт и открыть доску",
+    "submitSignIn": "Войти и открыть доску",
+    "submitSubmitting": "Принятие приглашения…",
+    "errorPasswordTooShort": "Пароль должен содержать не менее 8 символов.",
+    "errorNameRequired": "Введите отображаемое имя.",
+    "errorUnknown": "Не удалось принять приглашение. Попробуйте ещё раз.",
+    "errorMap": {
+      "email_mismatch": "Email не совпадает с приглашением. Используйте тот же адрес.",
+      "sign_up_failed": "Не удалось создать аккаунт. Email уже может использоваться.",
+      "sign_in_failed": "Не удалось войти. Проверьте пароль.",
+      "expired": "Срок действия приглашения истёк.",
+      "revoked": "Приглашение было отозвано.",
+      "auth_misconfigured": "Вход по email / паролю недоступен."
+    }
+  },
   "saveAndLeaveModal": {
     "title": "Добавить эту доску на панель управления?",
     "descriptionLine1": "Эта доска ещё не сохранена на панели управления.",

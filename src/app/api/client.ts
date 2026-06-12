@@ -78,6 +78,24 @@ export interface BoardInvitationsResponse {
   invitations: Invitation[]
 }
 
+export interface RedeemInvitationInput {
+  token: string
+  email: string
+  password: string
+  name?: string
+  mode?: 'signUp' | 'signIn'
+}
+
+export interface RedeemInvitationResponse {
+  ok: true
+  user: { id: string; email: string; name: string }
+  invitation: { id: string; boardId: string; role: InvitationRole }
+}
+
+export interface RedeemInvitationErrorResponse {
+  error: { code: string; message: string }
+}
+
 function readAnonymousId(): string | null {
   if (typeof window === 'undefined') return null
   return window.localStorage.getItem(ANONYMOUS_ID_STORAGE_KEY)
@@ -140,6 +158,25 @@ export function verifyInvitation(token: string) {
     method: 'POST',
     body: JSON.stringify({ token })
   }).then(({ data }) => (data ?? { valid: false, reason: 'malformed' }) as VerifyInvitationResponse)
+}
+
+export async function redeemInvitation(
+  input: RedeemInvitationInput
+): Promise<RedeemInvitationResponse | RedeemInvitationErrorResponse> {
+  const { data, status } = await requestJson<RedeemInvitationResponse | RedeemInvitationErrorResponse>(
+    BOARD_API_ENDPOINTS.redeemInvite,
+    {
+      method: 'POST',
+      body: JSON.stringify(input)
+    }
+  )
+  if (data) return data
+  return {
+    error: {
+      code: 'unexpected_response',
+      message: `Unexpected response (HTTP ${status})`
+    }
+  }
 }
 
 export function getAnonymousId() {

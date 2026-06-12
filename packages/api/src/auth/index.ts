@@ -38,10 +38,30 @@ export interface InklyAuthTestSession extends InklyAuthSession {
   setCookieHeaders: string[]
 }
 
+export interface InklyAuthSignUpInput {
+  email: string
+  password: string
+  name: string
+}
+
+export interface InklyAuthSignInInput {
+  email: string
+  password: string
+}
+
+export interface InklyAuthCredentialResult {
+  userId: string
+  email: string
+  name: string
+  setCookieHeader: string | null
+}
+
 export interface InklyAuth {
   handler(request: Request): Promise<Response>
   getSession?(request: Request): Promise<InklyAuthSession | null>
   createTestSession?(input: InklyAuthTestSessionInput): Promise<InklyAuthTestSession>
+  signUpWithEmail?(input: InklyAuthSignUpInput): Promise<InklyAuthCredentialResult>
+  signInWithEmail?(input: InklyAuthSignInInput): Promise<InklyAuthCredentialResult>
 }
 
 export interface CreateInklyAuthOptions {
@@ -280,6 +300,38 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
       : undefined
   })
 
+  async function callBetterAuthCredentials(
+    endpoint: '/sign-up/email' | '/sign-in/email',
+    body: Record<string, string>
+  ): Promise<InklyAuthCredentialResult> {
+    const url = new URL(config.baseURL.replace(/\/$/, '') + config.basePath + endpoint)
+    const request = new Request(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+    const response = await auth.handler(request)
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      throw new Error(`better-auth ${endpoint} failed: ${response.status} ${text}`)
+    }
+    const data = (await response.json().catch(() => ({}))) as {
+      user?: { id?: string; email?: string; name?: string }
+    }
+    const userId = data.user?.id
+    const email = data.user?.email
+    const name = data.user?.name
+    if (!userId || !email || !name) {
+      throw new Error(`better-auth ${endpoint} returned malformed response`)
+    }
+    return {
+      userId,
+      email,
+      name,
+      setCookieHeader: response.headers.get('set-cookie')
+    }
+  }
+
   const inklyAuth: InklyAuth = {
     handler(request) {
       return auth.handler(request)
@@ -292,6 +344,19 @@ export function createInklyAuth(options: CreateInklyAuthOptions): InklyAuth {
         request,
         config.basePath
       )
+    },
+    async signUpWithEmail(input) {
+      return callBetterAuthCredentials('/sign-up/email', {
+        email: input.email,
+        password: input.password,
+        name: input.name
+      })
+    },
+    async signInWithEmail(input) {
+      return callBetterAuthCredentials('/sign-in/email', {
+        email: input.email,
+        password: input.password
+      })
     }
   }
 
