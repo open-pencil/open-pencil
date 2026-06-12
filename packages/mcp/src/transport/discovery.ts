@@ -79,8 +79,13 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
   // Validate structurally required fields
   if (
     typeof info.pid !== 'number' ||
+    !Number.isInteger(info.pid) ||
+    info.pid <= 0 ||
     typeof info.version !== 'string' ||
     typeof info.httpPort !== 'number' ||
+    !Number.isInteger(info.httpPort) ||
+    info.httpPort < 0 ||
+    info.httpPort > 65535 ||
     typeof info.authRequired !== 'boolean' ||
     typeof info.startedAt !== 'string' ||
     typeof info.socketPath !== 'string' ||

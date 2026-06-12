@@ -475,6 +475,13 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   const resolvedSocketPath = socketResult?.resolvedPath ?? null
   const actualHttpPort = state.tcpResult?.port ?? 0
 
+  if (!resolvedSocketPath && !actualHttpPort) {
+    throw new Error(
+      'MCP server has no active listeners (both socket and TCP are unavailable). ' +
+        'Ensure Unix domain sockets are supported on this platform or enable TCP with withTcp: true.'
+    )
+  }
+
   await tryWriteDiscovery(resolvedSocketPath, actualHttpPort, ctx.authToken, state)
 
   return buildHandle(

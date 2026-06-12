@@ -263,8 +263,24 @@ describe('MCP auth boundary', () => {
       }
       expect(healthResp.authRequired).toBe(false)
 
-      const mcpResp = await fetch(`http://127.0.0.1:${httpPort}/mcp`, { method: 'POST' })
-      expect(mcpResp.status).not.toBe(401)
+      const mcpResp = await fetch(`http://127.0.0.1:${httpPort}/mcp`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json, text/event-stream',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            clientInfo: { name: 'auth-disabled-test', version: '0.0.0' }
+          }
+        })
+      })
+      expect(mcpResp.status).toBe(200)
     } finally {
       await handle.close()
     }

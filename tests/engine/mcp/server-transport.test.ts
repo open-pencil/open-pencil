@@ -355,10 +355,16 @@ describe('MCP WebSocket stdio bridge routing', () => {
     let browser: MockBrowser | null = null
 
     try {
+      // Read the initial register prompt sent on connection (before browser)
+      const initialRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      expect(initialRegister.type).toBe('register')
+      expect(initialRegister.token).toBe(authToken)
+
       browser = await connectMockBrowser(httpPort, graph, authToken)
-      const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
-      expect(register.type).toBe('register')
-      expect(register.token).toBe(authToken)
+      // Read the broadcast register notification sent when browser connects
+      const broadcastRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      expect(broadcastRegister.type).toBe('register')
+      expect(broadcastRegister.token).toBe(authToken)
     } finally {
       clientWs.close()
       browser?.close()

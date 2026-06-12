@@ -55,7 +55,16 @@ describe('Tauri MCP spawning', () => {
         onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
         return 77
       }
-      if (cmd === 'plugin:fs|read_text_file') return new TextEncoder().encode(DISCOVERY_JSON)
+      if (cmd === 'plugin:fs|read_text_file') {
+        // Only return discovery data when reading the expected discovery path
+        const pathArg = (args as { path?: string })?.path
+        if (pathArg === DISCOVERY_PATH) return new TextEncoder().encode(DISCOVERY_JSON)
+        return null
+      }
+      // Handle homeDir() IPC call from resolveTauriHomeDir
+      if (cmd === 'plugin:path|resolve_directory') {
+        return '/mock/home'
+      }
       return null
     })
 
@@ -66,7 +75,13 @@ describe('Tauri MCP spawning', () => {
 
     expect(handle?.authToken).toBe('discovery-token')
     expect(calls.some((c) => c.cmd === 'plugin:shell|spawn')).toBe(true)
-    expect(calls.some((c) => c.cmd === 'plugin:fs|read_text_file')).toBe(true)
+    expect(
+      calls.some(
+        (c) =>
+          c.cmd === 'plugin:fs|read_text_file' &&
+          (c.args as { path?: string })?.path === DISCOVERY_PATH
+      )
+    ).toBe(true)
     expect(calls.at(-1)).toEqual({ cmd: 'plugin:shell|kill', args: { cmd: 'killChild', pid: 77 } })
   })
 })

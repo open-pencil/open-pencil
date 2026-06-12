@@ -99,6 +99,12 @@ export async function getAutomationAuthToken(): Promise<string | null> {
   assertCompatibleMcpVersion(health)
   if (!health.discoveryPath) return null
   const token = await readDiscoveryToken(health.discoveryPath)
+  if (health.authRequired && !token) {
+    throw new Error(
+      'MCP server requires authentication but the discovery token could not be read. ' +
+        'Ensure the discovery file is accessible and contains an auth token.'
+    )
+  }
   runtimeAutomationAuthToken = token
   return runtimeAutomationAuthToken
 }
@@ -114,6 +120,12 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   if (existing) {
     assertCompatibleMcpVersion(existing)
     const token = existing.discoveryPath ? await readDiscoveryToken(existing.discoveryPath) : null
+    if (existing.authRequired && !token) {
+      throw new Error(
+        'MCP server requires authentication but the discovery token could not be read. ' +
+          'Ensure the discovery file is accessible and contains an auth token.'
+      )
+    }
     runtimeAutomationAuthToken = token
     return {
       disconnect: noop,
@@ -186,20 +198,25 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
 /**
  * Returns the user's home directory. Used as the default OPENPENCIL_MCP_ROOT
  * so file-scoped tools operate on paths inside ~, which is writable and
- * matches user expectations. Falls back to process.cwd() if the Tauri
- * path plugin is unavailable (e.g. in a browser dev shell). When
- * process is not available (non-Node runtime), returns '/' as a safe
- * fallback — this function is only invoked under !import.meta.env.DEV
- * && isTauri(), so the Tauri path plugin should always succeed.
+ * matches user expectations. Throws if the Tauri path plugin is unavailable
+ * — this function is only invoked under !import.meta.env.DEV && isTauri(),
+ * so the Tauri path plugin should always succeed. A silent fallback to '/'
+ * would defeat path scoping in resolveSafePath, and process.cwd() is
+ * unpredictable and may also be too broad.
  */
 async function resolveTauriHomeDir(): Promise<string> {
   try {
     const { homeDir } = await import('@tauri-apps/api/path')
-    return await homeDir()
-  } catch {
-    if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
-      return process.cwd()
+    const dir = await homeDir()
+    if (!dir) {
+      throw new Error('homeDir() returned an empty string')
     }
-    return '/'
+    return dir
+  } catch (e) {
+    throw new Error(
+      'Failed to resolve home directory for MCP root. ' +
+        'The MCP server requires a home directory to scope file operations. ' +
+        (e instanceof Error ? e.message : String(e))
+    )
   }
 }

@@ -194,6 +194,7 @@ describe('MCP server', () => {
 describe('MCP server with mcpRoot', () => {
   test('registers open_file and new_document tools when mcpRoot is set', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    await mkdir(TEST_MCP_ROOT, { recursive: true })
     const handle = await startServer({
       httpPort: 0,
       withTcp: true,
@@ -233,6 +234,7 @@ describe('MCP server with mcpRoot', () => {
 
   test('save_file accepts an explicit path inside mcpRoot', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    await mkdir(TEST_MCP_ROOT, { recursive: true })
     const handle = await startServer({
       httpPort: 0,
       withTcp: true,
@@ -277,6 +279,7 @@ describe('MCP server with mcpRoot', () => {
 
   test('save_file rejects paths outside mcpRoot', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    await mkdir(TEST_MCP_ROOT, { recursive: true })
     const handle = await startServer({
       httpPort: 0,
       withTcp: true,

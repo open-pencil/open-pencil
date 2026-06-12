@@ -188,13 +188,15 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     const previousBrowserWs = browserWs
     browserWs = ws
     browserRegistered = true
-    if (previousBrowserWs && previousBrowserWs !== ws && previousBrowserWs.readyState === ws.OPEN) {
+    if (previousBrowserWs && previousBrowserWs !== ws) {
       // Reject in-flight requests to the old browser. Without this, pending
       // requests sit in the pending map until RPC_TIMEOUT (20s), because
       // handleClose for the old socket returns early (browserWs is already
       // set to the new socket, so browserWs !== previousBrowserWs).
       rejectAllPending('Browser reconnected')
-      previousBrowserWs.close()
+      if (previousBrowserWs.readyState === ws.OPEN) {
+        previousBrowserWs.close()
+      }
     }
     notifyConnectionWaiters()
     onConnectionChange()
