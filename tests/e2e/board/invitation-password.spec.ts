@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { mockGoogleLogin } from '#tests/helpers/e2e-auth'
 
 test('redeem invitation with email + password opens the board', async ({ browser, page }) => {
-  const inviterEmail = `inviter-${Date.now()}@inkly.test`
+  const inviterEmail = `inviter-${Date.now()}@jfet.co.jp`
   const inviteeEmail = `invitee-${Date.now()}@inkly.test`
   const inviteePassword = 'invitee-password-123'
   const boardName = `Invite Password ${Date.now()}`
@@ -39,8 +39,10 @@ test('redeem invitation with email + password opens the board', async ({ browser
   await inviteePage.waitForURL(/\/board\//, { timeout: 15_000 })
   await expect(inviteePage.getByTestId('editor-root')).toBeVisible()
 
-  // 戻ってきても boards 一覧に board が出る (collaborator 経由)
-  await inviteePage.goto('/boards')
+  // 戻ってきても guest dashboard に招待 board が出る (collaborator 経由)。
+  // guest user (@inkly.test) は /boards に行けず /dashboard で GuestDashboardView を見る。
+  await inviteePage.goto('/dashboard')
+  await expect(inviteePage.getByTestId('guest-dashboard-view')).toBeVisible()
   await expect(inviteePage.getByText(boardName)).toBeVisible()
 
   await inviteeContext.close()

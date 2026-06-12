@@ -1,9 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { mockGoogleLogin } from '#tests/helpers/e2e-auth'
 
 test('dashboard shows a cached preview thumbnail after editing a board', async ({ page }) => {
   const boardName = `Preview ${Date.now()}`
+  const userEmail = `preview-${Date.now()}@jfet.co.jp`
+
+  // auth guard (PR #141) を通すため mockGoogleLogin で session cookie を焼く。
+  await mockGoogleLogin(page, { email: userEmail, name: 'Preview User' })
 
   await page.goto('/boards')
   await page.getByTestId('board-create-input').fill(boardName)
