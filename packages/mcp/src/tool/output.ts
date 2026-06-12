@@ -58,7 +58,9 @@ export async function resolveSafePath(filePath: string, root: string): Promise<s
     realRoot = await realpath(root)
   } catch {
     const { realAncestor, remainder } = await resolveRealAncestor(root)
-    realRoot = realAncestor + remainder
+    // Use join instead of concatenation to avoid double-slash issues
+    // (e.g. when realAncestor is "/" and remainder starts with "/name").
+    realRoot = remainder ? join(realAncestor, remainder.slice(osSep.length)) : realAncestor
   }
 
   const realSep = realRoot.endsWith('/') || realRoot.endsWith('\\') ? '' : osSep

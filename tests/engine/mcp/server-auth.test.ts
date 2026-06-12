@@ -45,7 +45,7 @@ describe('MCP server auto-generated auth token', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     try {
@@ -98,7 +98,7 @@ describe('MCP server /rpc auth skip', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     try {
@@ -195,7 +195,7 @@ describe('MCP auth boundary', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     try {
@@ -226,7 +226,7 @@ describe('MCP auth boundary', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     try {
@@ -254,7 +254,7 @@ describe('MCP auth boundary', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     try {
@@ -305,7 +305,7 @@ describe('MCP session limits', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const sessions: Client[] = []

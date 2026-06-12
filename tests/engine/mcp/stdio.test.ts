@@ -21,15 +21,23 @@ const SOCKET_PATH = isUnix ? join(SOCKET_DIR, 'mcp.sock') : null
 async function createStdioClient(socketPath: string, authToken: string | null) {
   const { Client } = await import('@modelcontextprotocol/sdk/client/index.js')
   const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js')
+  const env: Record<string, string> = {
+    ...(process.env as Record<string, string>),
+    PATH: process.env.PATH ?? ''
+  }
+  // Only set OPENPENCIL_MCP_SOCKET when a socket path exists.
+  // An empty string on Windows would break the stdio bridge's transport
+  // discovery (it would try to connect to an empty socket path).
+  if (socketPath) {
+    env.OPENPENCIL_MCP_SOCKET = socketPath
+  }
+  if (authToken) {
+    env.OPENPENCIL_MCP_AUTH_TOKEN = authToken
+  }
   const transport = new StdioClientTransport({
     command: 'bun',
     args: ['packages/mcp/src/stdio.ts'],
-    env: {
-      ...process.env,
-      OPENPENCIL_MCP_SOCKET: socketPath,
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
-      PATH: process.env.PATH ?? ''
-    } as Record<string, string>,
+    env,
     stderr: 'pipe'
   })
 
@@ -38,14 +46,34 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
   // The bridge must connect to the server before tool calls can work.
   // Wait for "Connected to OpenPencil" on stderr — this confirms the
   // bridge's checkHealth() succeeded and ready=true.
-  const bridgeConnected = new Promise<void>((resolve) => {
+  // Also reject on timeout or stream end so the test fails fast if the
+  // bridge never connects.
+  const BRIDGE_TIMEOUT = 10_000
+  const bridgeConnected = new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error('Bridge did not connect within timeout'))
+    }, BRIDGE_TIMEOUT)
+
     const stderr = transport.stderr
     if (stderr && 'on' in stderr) {
-      ;(stderr as NodeJS.ReadableStream).on('data', (chunk: Buffer) => {
+      const stream = stderr as NodeJS.ReadableStream
+      stream.on('data', (chunk: Buffer) => {
         if (chunk.toString().includes('Connected to OpenPencil')) {
+          clearTimeout(timer)
           resolve()
         }
       })
+      stream.on('end', () => {
+        clearTimeout(timer)
+        reject(new Error('Bridge stderr stream ended before connection'))
+      })
+      stream.on('error', (err: Error) => {
+        clearTimeout(timer)
+        reject(new Error(`Bridge stderr error: ${err.message}`))
+      })
+    } else {
+      clearTimeout(timer)
+      reject(new Error('No stderr stream available'))
     }
   })
 

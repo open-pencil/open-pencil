@@ -192,7 +192,7 @@ describe('MCP Streamable HTTP transport', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     try {
@@ -244,7 +244,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const graph = new SceneGraph()
@@ -254,7 +254,9 @@ describe('MCP WebSocket stdio bridge routing', () => {
     try {
       const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(register.type).toBe('register')
-      expect(register.token).toBe(authToken)
+      // Token is null in the prompt — the browser sends its known token
+      // proactively, not from this prompt.
+      expect(register.token).toBeNull()
 
       clientWs.send(
         JSON.stringify({
@@ -297,7 +299,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
@@ -347,7 +349,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
@@ -358,13 +360,14 @@ describe('MCP WebSocket stdio bridge routing', () => {
       // Read the initial register prompt sent on connection (before browser)
       const initialRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(initialRegister.type).toBe('register')
-      expect(initialRegister.token).toBe(authToken)
+      // Token is null — the browser app sends its token proactively
+      expect(initialRegister.token).toBeNull()
 
       browser = await connectMockBrowser(httpPort, graph, authToken)
       // Read the broadcast register notification sent when browser connects
       const broadcastRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(broadcastRegister.type).toBe('register')
-      expect(broadcastRegister.token).toBe(authToken)
+      expect(broadcastRegister.token).toBeNull()
     } finally {
       clientWs.close()
       browser?.close()
@@ -387,7 +390,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     // Connect a WebSocket client (NOT a browser — no register message yet)
@@ -451,7 +454,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const waitForHealth = async (
@@ -495,10 +498,11 @@ describe('MCP WebSocket stdio bridge routing', () => {
     const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`)
 
     try {
-      // Read the initial register message
+      // Read the initial register message (token is null for security —
+      // the browser app sends the token proactively, not from this prompt)
       const initReg = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(initReg.type).toBe('register')
-      expect(initReg.token).toBe(authToken)
+      expect(initReg.token).toBeNull()
 
       clientWs.send(
         JSON.stringify({

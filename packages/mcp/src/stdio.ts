@@ -48,9 +48,18 @@ const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
 registerTools(mcpServer, { enableEval, mcpRoot, sendRpc: bridge.sendRpc })
 
 const transport = new StdioServerTransport()
-void mcpServer.connect(transport)
+mcpServer.connect(transport).catch((err) => {
+  process.stderr.write(`Fatal: MCP connect failed — ${err instanceof Error ? err.message : err}\n`)
+  process.exit(1)
+})
 
 process.on('uncaughtException', (err) => {
   process.stderr.write(`Fatal: ${err instanceof Error ? err.message : err}\n`)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason: unknown) => {
+  const message = reason instanceof Error ? reason.message : String(reason)
+  process.stderr.write(`Fatal: unhandled rejection — ${message}\n`)
   process.exit(1)
 })

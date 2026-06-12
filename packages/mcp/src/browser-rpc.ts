@@ -122,13 +122,21 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     pending.clear()
   }
 
-  function sendRegisterToken(ws: WebSocket) {
-    const token = currentRpcToken()
-    sendJson(ws, { type: 'register', token })
+  function sendRegisterPrompt(ws: WebSocket) {
+    // Send a prompt inviting the client to register as the browser.
+    // IMPORTANT: Do NOT include the auth token here. On TCP, any local
+    // process can connect via WebSocket — sending the secret token would
+    // leak credentials to unauthenticated clients. The legitimate browser
+    // app already knows the token (from the discovery file or Vite env)
+    // and sends it proactively in its ws.onopen handler. The token field
+    // is set to null to signal that auth is required without revealing
+    // the secret. When auth is disabled (authToken === null), null is
+    // still correct — it means "no token needed."
+    sendJson(ws, { type: 'register', token: null })
   }
 
-  function broadcastRegisterToken() {
-    for (const client of clients) sendRegisterToken(client)
+  function broadcastRegisterPrompt() {
+    for (const client of clients) sendRegisterPrompt(client)
   }
 
   function sendRpc(body: Record<string, unknown>): Promise<unknown> {
@@ -200,7 +208,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     }
     notifyConnectionWaiters()
     onConnectionChange()
-    broadcastRegisterToken()
+    broadcastRegisterPrompt()
   }
 
   function handleBrowserResponse(msg: BrowserMessage, ws: WebSocket) {
@@ -261,7 +269,9 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     // connected WebSocket clients are considered authenticated for sending
     // requests. Browser registration (registerBrowser) still requires a
     // valid token — this only gates request forwarding.
-    sendRegisterToken(ws)
+    // The register prompt does NOT include the auth token — the browser
+    // app sends the token proactively (from the discovery file or Vite env).
+    sendRegisterPrompt(ws)
   }
 
   function close() {

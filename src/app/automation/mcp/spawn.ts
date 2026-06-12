@@ -97,6 +97,9 @@ export async function getAutomationAuthToken(): Promise<string | null> {
   const health = await readHealth()
   if (!health) return null
   assertCompatibleMcpVersion(health)
+  if (health.authRequired && !health.discoveryPath) {
+    throw new Error('MCP server requires authentication but did not publish a discovery file path.')
+  }
   if (!health.discoveryPath) return null
   const token = await readDiscoveryToken(health.discoveryPath)
   if (health.authRequired && !token) {

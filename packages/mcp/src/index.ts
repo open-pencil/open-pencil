@@ -23,7 +23,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 const port = Number.parseInt(process.env.PORT ?? '7600', 10)
 const enableTcp = process.env.OPENPENCIL_MCP_TCP?.trim() === '1'
-const withTcp = enableTcp || port > 0
+// PORT=0 explicitly disables TCP, even if OPENPENCIL_MCP_TCP=1 is set.
+// This gives operators a guaranteed kill switch for the TCP listener.
+const withTcp = port !== 0 && (enableTcp || port > 0)
 
 const handle = await startServer({
   httpPort: withTcp ? port : 0,

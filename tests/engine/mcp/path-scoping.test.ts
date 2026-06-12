@@ -11,11 +11,13 @@ describe('MCP path scoping', () => {
   const root = resolve(tmpdir(), 'mcp-test-root')
 
   test('allows path inside root', async () => {
-    expect(await resolveSafePath(`${root}/design.fig`, root)).toBe(`${root}/design.fig`)
+    expect(await resolveSafePath(`${root}/design.fig`, root)).toBe(resolve(`${root}/design.fig`))
   })
 
   test('allows nested path inside root', async () => {
-    expect(await resolveSafePath(`${root}/sub/dir/file.fig`, root)).toBe(`${root}/sub/dir/file.fig`)
+    expect(await resolveSafePath(`${root}/sub/dir/file.fig`, root)).toBe(
+      resolve(`${root}/sub/dir/file.fig`)
+    )
   })
 
   test('allows root itself', async () => {
@@ -108,20 +110,16 @@ describe('MCP path scoping', () => {
     await expect(resolveSafePath('/some/path', '/')).rejects.toThrow('Root path is too broad')
   })
 
-  test.skipIf(process.platform === 'win32')(
+  test.skipIf(process.platform !== 'win32')(
     'rejects drive root as broad root on Windows',
     async () => {
       // On Windows, path.parse('C:\\').root === 'C:\\', which resolveSafePath
-      // should reject. This test is skipped on non-Windows since there's no
-      // drive-root concept.
+      // should reject. This test runs only on Windows where drive roots exist.
       const { parse, resolve: winResolve } = await import('node:path')
       const driveRoot = parse(winResolve('C:\\')).root
-      // Only run if the platform actually produces a drive root (not '/')
-      if (driveRoot !== '/') {
-        await expect(resolveSafePath('C:\\some\\path', driveRoot)).rejects.toThrow(
-          'Root path is too broad'
-        )
-      }
+      await expect(resolveSafePath('C:\\some\\path', driveRoot)).rejects.toThrow(
+        'Root path is too broad'
+      )
     }
   )
 })

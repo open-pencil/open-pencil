@@ -207,7 +207,7 @@ describe('MCP server with mcpRoot', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const graph = new SceneGraph()
@@ -247,7 +247,7 @@ describe('MCP server with mcpRoot', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const graph = new SceneGraph()
@@ -295,7 +295,7 @@ describe('MCP server with mcpRoot', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const graph = new SceneGraph()
@@ -337,7 +337,7 @@ describe('MCP server with mcpRoot', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const graph = new SceneGraph()
@@ -435,7 +435,7 @@ describe('MCP server lifecycle', () => {
     const httpPort = handle.httpPort
     if (!httpPort) {
       await handle.close()
-      return
+      throw new Error('withTcp: true did not produce an HTTP port')
     }
 
     const healthyResp = await fetch(`http://127.0.0.1:${httpPort}/health`)

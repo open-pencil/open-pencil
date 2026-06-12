@@ -109,15 +109,21 @@ async function createBridgeAndWaitForReady(
   const TIMEOUT_MS = 5_000
 
   return new Promise((resolve, reject) => {
+    let bridge: ReturnType<typeof createStdioRpcBridge> | null = null
+
     const timer = setTimeout(() => {
+      // The bridge doesn't expose a close() method, but the afterEach
+      // handler closes the mock server and cleans up the discovery file,
+      // which causes the bridge's reconnect attempts to fail and the
+      // internal reconnectTimer to stop firing.
       reject(new Error('Bridge never became ready'))
     }, TIMEOUT_MS)
 
-    const bridge = createStdioRpcBridge({
+    bridge = createStdioRpcBridge({
       ...rest,
       onReady: () => {
         clearTimeout(timer)
-        resolve(bridge)
+        resolve(bridge as ReturnType<typeof createStdioRpcBridge>)
       }
     })
   })

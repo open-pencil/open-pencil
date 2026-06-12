@@ -94,21 +94,31 @@ async function registerBrowser(
   })
   serverWs.on('close', () => bridge.handleClose(serverWs))
 
-  // Bridge sends register token to the client
+  // Bridge sends register prompt to the client (token is null for security)
   bridge.handleConnection(serverWs)
 
-  // Client receives the register token and echoes it back
+  // Client receives the register prompt
   const raw: Buffer = await new Promise<Buffer>((resolve) => {
     clientWs.once('message', resolve)
   })
   const msg = JSON.parse(raw.toString())
   expect(msg.type).toBe('register')
-  clientWs.send(JSON.stringify({ type: 'register', token: msg.token }))
 
-  // Yield so the bridge processes the echo before the test continues
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, 50)
-  })
+  // The browser app sends the register message with the known token.
+  // It gets the token from the discovery file or Vite env, not from the prompt.
+  clientWs.send(JSON.stringify({ type: 'register', token: AUTH_TOKEN }))
+
+  // Wait for the bridge to process the register message by observing
+  // the onConnectionChange callback (isConnected becomes true).
+  // Use a one-shot polling approach to avoid the no-multiple-resolved
+  // lint rule that flags setInterval-based resolve patterns.
+  for (let i = 0; i < 200; i++) {
+    if (bridge.isConnected()) break
+    await new Promise<void>((r) => {
+      setTimeout(r, 5)
+    })
+  }
+  expect(bridge.isConnected()).toBe(true)
 }
 
 describe('BrowserRpcBridge reconnection', () => {
@@ -265,16 +275,16 @@ describe('BrowserRpcBridge reconnection', () => {
       }
     })
 
-    // Bridge sends register token through serverWsB to clientWsB
+    // Bridge sends register prompt through serverWsB to clientWsB
     bridge.handleConnection(serverWsB)
 
-    // Client receives register token and echoes it back
+    // Client receives the register prompt and sends the known token
     const regRaw: Buffer = await new Promise<Buffer>((resolve) => {
       clientWsB.once('message', resolve)
     })
     const reg = JSON.parse(regRaw.toString())
     expect(reg.type).toBe('register')
-    clientWsB.send(JSON.stringify({ type: 'register', token: reg.token }))
+    clientWsB.send(JSON.stringify({ type: 'register', token: AUTH_TOKEN }))
 
     // The echo triggers registerBrowser() which resolves the waiter,
     // re-sends the pending RPC, and resolves rpcPromise.

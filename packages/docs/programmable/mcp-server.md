@@ -38,7 +38,7 @@ The MCP server starts automatically when you launch the desktop app (Tauri produ
                     socket or TCP (127.0.0.1)
 ```
 
-The stdio bridge (`openpencil-mcp`) connects to the HTTP server over a Unix domain socket. It does **not** speak MCP directly to the app — it tunnels MCP tool calls through HTTP to the server, which relays them to the running app via WebSocket.
+The stdio bridge (`openpencil-mcp`) connects to the HTTP server over a Unix domain socket (on macOS/Linux) or via the HTTP port from the discovery file (`httpPort`, on Windows or socket-disabled setups). It does **not** speak MCP directly to the app — it tunnels MCP tool calls through HTTP to the server, which relays them to the running app via WebSocket.
 
 ## How It Connects
 
