@@ -326,21 +326,15 @@ export async function exportFigFile(
   const glyphBlobMap = new Map<string, number>()
   const blobIndexByHex = new Map<string, number>()
 
-  const { canvasEntries, internalCanvasGuid } = buildCanvasEntries(
-    graph,
-    pages,
-    docGuid,
-    localIdCounter,
-    nodeIdToGuid
-  )
-
-  // Scan ALL imported source.ids to find the max localID across EVERY session.
-  // localIdCounter is shared by both the sessionID:0 GUIDs minted here (canvases,
-  // variables) and the sessionID:1 GUIDs minted for new nodes in
-  // getOrCreateNodeGuid. So the high-water mark must consider every session, not
-  // just sessionID:0 — otherwise new sessionID:1 node GUIDs are minted at low
-  // localIDs that collide with existing sessionID:1 content, and the importer's
-  // by-GUID resolution (last write wins) silently destroys those existing nodes.
+  // Scan ALL imported source.ids to find the max localID across EVERY session,
+  // and lift localIdCounter past it BEFORE minting any new GUID below.
+  // localIdCounter is shared by the sessionID:0 GUIDs minted for canvases and
+  // variables and the sessionID:1 GUIDs minted for new nodes in
+  // getOrCreateNodeGuid. The high-water mark must therefore consider every
+  // session — otherwise freshly minted GUIDs (a new canvas, the internal
+  // canvas, a variable, or a new node) reuse a low localID that collides with
+  // existing content, and the importer's by-GUID resolution (last write wins)
+  // silently destroys those existing nodes on save.
   let maxLocalId = localIdCounter.value - 1
   for (const node of graph.nodes.values()) {
     if (node.source.id) {
@@ -351,6 +345,14 @@ export async function exportFigFile(
     }
   }
   localIdCounter.value = Math.max(localIdCounter.value, maxLocalId + 1)
+
+  const { canvasEntries, internalCanvasGuid } = buildCanvasEntries(
+    graph,
+    pages,
+    docGuid,
+    localIdCounter,
+    nodeIdToGuid
+  )
 
   // Assign variable GUIDs AFTER canvas entries so that source.id-derived
   // canvas GUIDs don't collide with generated variable GUIDs.
