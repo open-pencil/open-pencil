@@ -35,10 +35,9 @@ if (rawPort < 0 || rawPort > 65535) {
   process.exit(1)
 }
 const port = rawPort
-const enableTcp = process.env.OPENPENCIL_MCP_TCP?.trim() === '1'
-// PORT=0 explicitly disables TCP, even if OPENPENCIL_MCP_TCP=1 is set.
-// This gives operators a guaranteed kill switch for the TCP listener.
-const withTcp = port !== 0 && (enableTcp || port > 0)
+// OPENPENCIL_MCP_TCP is accepted for backward compat but has no effect —
+// the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
+const withTcp = port > 0
 
 const handle = await startServer({
   httpPort: withTcp ? port : 0,

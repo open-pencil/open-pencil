@@ -27,11 +27,22 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 const enableEval = process.env.OPENPENCIL_MCP_EVAL === '1'
 const mcpRoot = process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd()
 const socketPath = process.env.OPENPENCIL_MCP_SOCKET?.trim() || null
-// Auth token: unset → auto-discover, empty string → disable auth, otherwise → use value
-const authToken =
-  process.env.OPENPENCIL_MCP_AUTH_TOKEN === ''
-    ? null
-    : process.env.OPENPENCIL_MCP_AUTH_TOKEN?.trim() || undefined
+// Auth token: undefined → auto-discover from discovery file, empty string →
+// disable auth, whitespace-only → reject (same fail-fast as index.ts to catch
+// misconfiguration), otherwise → use the trimmed value.
+const rawAuthToken = process.env.OPENPENCIL_MCP_AUTH_TOKEN
+if (rawAuthToken !== undefined && rawAuthToken !== '' && rawAuthToken.trim() === '') {
+  process.stderr.write(
+    'Error: OPENPENCIL_MCP_AUTH_TOKEN is whitespace-only. Set a real token, or use an empty string to disable auth.\n'
+  )
+  process.exit(1)
+}
+function resolveAuthToken(raw: string | undefined): string | null | undefined {
+  if (raw === undefined) return undefined
+  if (raw === '') return null
+  return raw.trim()
+}
+const authToken = resolveAuthToken(rawAuthToken)
 
 const bridge = createStdioRpcBridge({
   socketPath,
