@@ -5,8 +5,8 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
     `openpencil-mcp-http\n\n` +
       `Start the OpenPencil MCP server.\n\n` +
-      `The server listens on a Unix domain socket by default.\n` +
-      `Optional TCP is available for browser clients.\n\n` +
+      `On macOS/Linux, the server listens on a Unix domain socket by default\n` +
+      `with optional TCP for browser clients. On Windows, only TCP is available.\n\n` +
       `Options:\n` +
       `  --help, -h    Show this help message\n\n` +
       `Environment variables:\n` +
