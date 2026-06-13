@@ -104,7 +104,7 @@ export function createMcpSessionManager({
   ): Promise<MCPTransport | { error: 'too_many' }> {
     cleanupExpired()
     const existing = sessionId ? sessions.get(sessionId) : undefined
-    if (!existing && sessions.size >= MAX_MCP_SESSIONS) {
+    if (!existing && sessions.size + creating.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
     }
     return existing ? Promise.resolve(existing.transport) : createSession(sessionId ?? randomUUID())

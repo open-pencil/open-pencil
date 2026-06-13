@@ -50,9 +50,8 @@ El servidor escribe un **archivo de descubrimiento** al iniciarse. El puente std
 |------------|------|
 | macOS | `~/Library/Application Support/OpenPencil/mcp.json` |
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
-| Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Sobreescribe con `OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) — el archivo de descubrimiento (`mcp.json`) se coloca junto al socket (en la misma dirección).
+Sobreescribe con `OPENPENCIL_MCP_SOCKET` — el archivo de descubrimiento (`mcp.json`) se coloca junto al socket (en la misma dirección).
 
 ### Contenido del archivo de descubrimiento
 

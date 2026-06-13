@@ -298,19 +298,8 @@ describe('BrowserRpcBridge reconnection', () => {
       onConnectionChange: () => undefined
     })
 
-    // No browser registered — sendRpc will wait for connection.
-    let rpcRejection: Error | null = null
-    bridge.sendRpc(RPC_BODY).catch((e: Error) => {
-      rpcRejection = e
-    })
-
-    // APP_WAIT_TIMEOUT is 10_000 ms. Wait a bit longer.
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 10_200)
-    })
-
-    expect(rpcRejection).not.toBeNull()
-    expect(rpcRejection?.message).toContain('OpenPencil app is not connected')
+    // No browser registered — sendRpc rejects with APP_NOT_CONNECTED.
+    await expect(bridge.sendRpc(RPC_BODY)).rejects.toThrow('OpenPencil app is not connected')
   }, 12_000)
 
   test('response from non-browser WebSocket is ignored (ws guard)', async () => {
