@@ -174,11 +174,11 @@ O dal sorgente: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 |----------|--------|------|-------------|
 | `/health` | GET | No | Stato server, versione, comando installazione, percorso discovery |
 | `/rpc` | POST | Bearer token | Bridge JSON-RPC all'app in esecuzione |
-| `/mcp` | POST, DELETE | Bearer token | MCP Streamable HTTP. Sessioni via header `mcp-session-id`. DELETE chiude una sessione |
+| `/mcp` | POST, DELETE | Bearer token o `x-mcp-token` | MCP Streamable HTTP. Sessioni via header `mcp-session-id`. DELETE chiude una sessione |
 
 ### Autenticazione
 
-Un token di autenticazione viene **generato automaticamente all'avvio** (32-hex casuale da `crypto.randomBytes`). I client devono inviarlo come `Authorization: Bearer <token>` per gli endpoint `/rpc` e `/mcp`. Il confronto usa tempo costante (`crypto.timingSafeEqual`) per prevenire attacchi timing.
+Un token di autenticazione viene **generato automaticamente all'avvio** (32-hex casuale da `crypto.randomBytes`). I client devono inviarlo come `Authorization: Bearer <token>` per `/rpc`, o come `Authorization: Bearer <token>` o header `x-mcp-token` per `/mcp`. Il confronto usa tempo costante (`crypto.timingSafeEqual`) per prevenire attacchi timing.
 
 | Scenario | Da dove viene il token |
 |----------|----------------------|

@@ -105,7 +105,7 @@ describe('MCP server unified transport', () => {
   })
 
   afterAll(async () => {
-    await handle.close()
+    if (handle) await handle.close()
     if (isUnix) await rm(SOCKET_DIR, { recursive: true, force: true })
   })
 
