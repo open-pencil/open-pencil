@@ -79,8 +79,8 @@ export async function getSocketDir(): Promise<string> {
 export async function getSocketPath(): Promise<string> {
   const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
   if (socketOverride) {
-    // Ensure the override directory exists — getSocketDir() only creates
-    // the default platform directory, so custom paths would fail to bind.
+    // Ensure the override directory exists. getSocketDir() creates the
+    // directory for the custom socket path (dirname of the override).
     await getSocketDir()
     return socketOverride
   }

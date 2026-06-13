@@ -11,7 +11,7 @@ Bun workspace with three packages:
 - `packages/core` — `@open-pencil/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
 - `packages/cli` — `@open-pencil/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
 - `packages/docs` — `@open-pencil/docs`: VitePress documentation site. Run with `cd packages/docs && bun run dev`.
-- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Unix domain socket + TCP HTTP (Hono). Stdio bridge via HTTP-over-socket.
+- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Discovery-driven transport (Unix socket preferred on macOS/Linux, TCP HTTP fallback). Stdio bridge via HTTP-over-socket or TCP.
 
 - `packages/vue` — `@open-pencil/vue`: headless Vue 3 SDK (Reka UI-style) for building custom OpenPencil-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
 

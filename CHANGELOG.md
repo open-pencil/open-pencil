@@ -6,7 +6,7 @@
 
 - MCP server uses Unix domain socket as the primary transport on macOS/Linux, with optional TCP fallback for browser connections
 - Discovery file (`mcp.json`) for stdio bridge and CLI auto-connection, stored with `0o600` permissions in the socket directory (platform default, or custom via `OPENPENCIL_MCP_SOCKET`)
-- `OPENPENCIL_MCP_SOCKET` and `OPENPENCIL_MCP_TCP` environment variables for transport configuration
+- `OPENPENCIL_MCP_SOCKET` environment variable for socket path override; TCP is controlled by `PORT` (>0 = on, 0 = off)
 - Add JSX authoring support for components, component sets, and instances.
 - Add `unbind_variable` MCP tool for removing variable bindings.
 
