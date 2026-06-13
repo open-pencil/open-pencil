@@ -30,7 +30,7 @@ The MCP server starts automatically when you launch the desktop app (Tauri produ
                       │              │
                       │  /    (WS)   │ ◄──── WebSocket ────► Browser tab
   (openpencil-mcp)    │              │
-                      │  /mcp  (SSE) │ ◄──── HTTP/SSE ─────► External tools
+                      │  /mcp (HTTP) │ ◄──── HTTP/SSE ─────► External tools
                       │              │
                       │  /health     │
                       └──────┬───────┘
@@ -173,7 +173,7 @@ Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 |----------|--------|------|-------------|
 | `/health` | GET | No | Server status, version, install command, discovery path |
 | `/rpc` | POST | Bearer token | JSON-RPC bridge to the running app |
-| `/mcp` | POST (SSE), DELETE | Bearer token | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
+| `/mcp` | POST, DELETE | Bearer token | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
 
 ### Authentication
 

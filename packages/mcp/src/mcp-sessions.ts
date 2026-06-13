@@ -94,6 +94,7 @@ export function createMcpSessionManager({
       // oxlint-disable-next-line no-unnecessary-condition
       if (closed) {
         // Manager was closed while we were connecting — clean up immediately.
+        await transport.close().catch(() => undefined)
         await server.close().catch(() => undefined)
         throw new Error('Session manager closed during session creation')
       }
@@ -115,10 +116,16 @@ export function createMcpSessionManager({
     if (closed) return Promise.resolve({ error: 'closed' })
     cleanupExpired()
     const existing = sessionId ? sessions.get(sessionId) : undefined
-    if (!existing && sessions.size + creating.size >= MAX_MCP_SESSIONS) {
+    if (existing) return Promise.resolve(existing.transport)
+    // Reuse an in-flight creation for the same sessionId before enforcing the cap.
+    if (sessionId) {
+      const inFlight = creating.get(sessionId)
+      if (inFlight) return inFlight
+    }
+    if (sessions.size + creating.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
     }
-    return existing ? Promise.resolve(existing.transport) : createSession(sessionId ?? randomUUID())
+    return createSession(sessionId ?? randomUUID())
   }
 
   function touch(sessionId: string | undefined, transport: MCPTransport) {

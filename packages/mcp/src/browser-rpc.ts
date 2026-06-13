@@ -69,6 +69,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   const authenticatedClients = new Set<WebSocket>()
   let browserWs: WebSocket | null = null
   let browserRegistered = false
+  let bridgeClosed = false
 
   function isConnected(): boolean {
     return Boolean(browserWs && browserRegistered)
@@ -140,6 +141,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   }
 
   function sendRpc(body: Record<string, unknown>): Promise<unknown> {
+    if (bridgeClosed) return Promise.reject(new Error('Server shutting down'))
     return new Promise((resolve, reject) => {
       const doSend = () => {
         const ws = browserWs
@@ -304,8 +306,11 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   }
 
   function close() {
+    bridgeClosed = true
     rejectAllPending('Server shutting down')
     rejectConnectionWaiters('Server shutting down')
+    browserWs = null
+    browserRegistered = false
     clients.clear()
   }
 

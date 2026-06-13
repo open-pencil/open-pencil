@@ -1,7 +1,8 @@
 import { randomBytes } from 'node:crypto'
-import { chmod, readFile, unlink } from 'node:fs/promises'
+import { chmod, mkdir, readFile, unlink } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { Server as HttpServer } from 'node:http'
+import { dirname } from 'node:path'
 
 import { getRequestListener } from '@hono/node-server'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -271,8 +272,13 @@ async function startSocketListener(
   if (!platformHasUnixSockets()) return null
 
   const resolvedPath = socketPathOverride ?? (await getSocketPath())
-  // Ensure the socket directory exists (especially when OPENPENCIL_MCP_SOCKET
-  // overrides the default — getSocketDir() handles creating the directory).
+  // Ensure the socket directory exists. getSocketDir() handles the
+  // OPENPENCIL_MCP_SOCKET env var and platform defaults, but a caller-provided
+  // socketPath override via the API may point to a directory that doesn't
+  // exist yet.
+  if (socketPathOverride) {
+    await mkdir(dirname(resolvedPath), { recursive: true })
+  }
   await getSocketDir()
   await removeStaleSocket(resolvedPath)
 

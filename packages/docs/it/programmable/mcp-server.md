@@ -30,7 +30,7 @@ Il server MCP si avvia automaticamente all'apertura dell'app desktop (i build Ta
                       │              │
                       │  /    (WS)   │ ◄──── WebSocket ────► Scheda browser
   (openpencil-mcp)    │              │
-                      │  /mcp  (SSE) │ ◄──── HTTP/SSE ─────► Strumenti esterni
+                      │  /mcp (HTTP) │ ◄──── HTTP/SSE ─────► Strumenti esterni
                       │              │
                       │  /health     │
                       └──────┬───────┘
@@ -173,7 +173,7 @@ O dal sorgente: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 |----------|--------|------|-------------|
 | `/health` | GET | No | Stato server, versione, comando installazione, percorso discovery |
 | `/rpc` | POST | Bearer token | Bridge JSON-RPC all'app in esecuzione |
-| `/mcp` | POST (SSE), DELETE | Bearer token | MCP Streamable HTTP. Sessioni via header `mcp-session-id`. DELETE chiude una sessione |
+| `/mcp` | POST, DELETE | Bearer token | MCP Streamable HTTP. Sessioni via header `mcp-session-id`. DELETE chiude una sessione |
 
 ### Autenticazione
 
