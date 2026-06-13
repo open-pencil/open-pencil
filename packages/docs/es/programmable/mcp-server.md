@@ -30,7 +30,7 @@ El servidor MCP se inicia automáticamente al abrir la app de escritorio (los bu
   (openpencil-mcp)    │                  │
                       │  / (WS)          │ ◄──── WebSocket ────► Pestaña del navegador
                       │                  │
-                      │  /mcp (SSE)      │ ◄──── HTTP/SSE ─────► Herramientas externas
+                      │  /mcp (HTTP)     │ ◄── Streamable HTTP ──► Herramientas externas
                       │                  │
                       │  /health         │
                       └──────┬───────────┘

@@ -30,7 +30,7 @@ The MCP server starts automatically when you launch the desktop app (Tauri produ
                       │              │
                       │  /    (WS)   │ ◄──── WebSocket ────► Browser tab
   (openpencil-mcp)    │              │
-                      │  /mcp (HTTP) │ ◄──── HTTP/SSE ─────► External tools
+                      │  /mcp (HTTP) │ ◄── Streamable HTTP ──► External tools
                       │              │
                       │  /health     │
                       └──────┬───────┘
