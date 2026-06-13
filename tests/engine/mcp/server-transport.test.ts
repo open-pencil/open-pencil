@@ -133,7 +133,7 @@ describe('MCP server unified transport', () => {
       const result = await tcpRequest(
         'POST',
         '/mcp',
-        JSON.stringify({
+        {
           jsonrpc: '2.0',
           id: 1,
           method: 'initialize',
@@ -142,14 +142,13 @@ describe('MCP server unified transport', () => {
             capabilities: {},
             clientInfo: { name: 'smoke-test', version: '0.0.0' }
           }
-        }),
+        },
         {
-          'content-type': 'application/json',
           accept: 'application/json, text/event-stream',
           Authorization: 'Bearer test-token-123'
         }
       )
-      expect(result.status).not.toBe(401)
+      expect(result.status).toBe(200)
     })
   })
 

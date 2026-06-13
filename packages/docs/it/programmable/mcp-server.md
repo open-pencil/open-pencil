@@ -30,7 +30,7 @@ Il server MCP si avvia automaticamente all'apertura dell'app desktop (i build Ta
                       │              │
                       │  /    (WS)   │ ◄──── WebSocket ────► Scheda browser
   (openpencil-mcp)    │              │
-                      │  /mcp (HTTP) │ ◄──── HTTP/SSE ─────► Strumenti esterni
+                      │  /mcp (HTTP) │ ◄──── Streamable HTTP ─────► Strumenti esterni
                       │              │
                       │  /health     │
                       └──────┬───────┘

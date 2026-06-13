@@ -183,17 +183,23 @@ export function createStdioRpcBridge({
   /**
    * Checks if the server is healthy and the browser is connected.
    */
-  async function checkHealth(): Promise<{ reachable: boolean; appConnected: boolean }> {
+  async function checkHealth(): Promise<{
+    reachable: boolean
+    appConnected: boolean
+    authFailed: boolean
+  }> {
     try {
       const { status, data } = await httpRequest('GET', '/health')
-      if (status !== 200) return { reachable: false, appConnected: false }
+      if (status === 401) return { reachable: true, appConnected: false, authFailed: true }
+      if (status !== 200) return { reachable: false, appConnected: false, authFailed: false }
       const health = data as { status?: string }
       return {
         reachable: health.status === 'ok' || health.status === 'no_app',
-        appConnected: health.status === 'ok'
+        appConnected: health.status === 'ok',
+        authFailed: false
       }
     } catch {
-      return { reachable: false, appConnected: false }
+      return { reachable: false, appConnected: false, authFailed: false }
     }
   }
 
@@ -210,7 +216,15 @@ export function createStdioRpcBridge({
       return
     }
 
-    const { reachable, appConnected } = await checkHealth()
+    const { reachable, appConnected, authFailed } = await checkHealth()
+    if (authFailed) {
+      // Auth token is wrong — surface as an auth error rather than a generic
+      // disconnect so the caller can prompt for a new token or re-read discovery.
+      ready = false
+      connectPromise = null
+      scheduleReconnect()
+      return
+    }
     if (appConnected) {
       ready = true
       connectPromise = null

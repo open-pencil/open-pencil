@@ -360,14 +360,11 @@ async function closeServer(srv: HttpServer | null): Promise<void> {
 }
 
 async function cleanupSocket(socketPath: string | null): Promise<void> {
-  if (!socketPath || !platformHasUnixSockets()) return
-  try {
-    await unlink(socketPath)
-  } catch (e) {
-    if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code !== 'ENOENT') {
-      process.stderr.write(`  Socket: cleanup warning (${e.message})\n`)
-    }
-  }
+  // Do not unlink the socket file during shutdown. A replacement server can
+  // bind the same path during our teardown window, and an unconditional unlink
+  // would delete their live socket. Stale sockets are cleaned up safely by
+  // removeStaleSocket() on the next startup (it checks liveness before removal).
+  void socketPath
 }
 
 async function cleanupDiscovery(

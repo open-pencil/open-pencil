@@ -386,9 +386,10 @@ describe('Discovery PID liveness', () => {
     const discoveryPath = await getDiscoveryPath()
 
     // Write a discovery file with a PID that is guaranteed not to be alive.
-    // PID 1 (init/launchd) is alive on most systems, so use a very high PID
-    // that is extremely unlikely to be in use.
-    const deadPid = 4_000_000
+    // Use the theoretical maximum PID (2^22 = 4_194_304) which exceeds the
+    // default pid_max on all major platforms (Linux: 32768–4194304, macOS:
+    // 99999, Windows: ~4M). This guarantees the PID cannot be in use.
+    const deadPid = 4_194_304
     const discoveryDir = dirname(discoveryPath)
     await mkdir(discoveryDir, { recursive: true })
     await Bun.write(
