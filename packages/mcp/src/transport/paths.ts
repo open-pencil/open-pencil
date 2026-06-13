@@ -9,9 +9,14 @@ import { dirname, join } from 'node:path'
  * Socket directory layout:
  *   macOS:   ~/Library/Application Support/OpenPencil/
  *   Linux:   $XDG_RUNTIME_DIR/openpencil/  (fallback: ~/.openpencil/)
+ *   Windows: %LOCALAPPDATA%\OpenPencil\  (fallback: ~\AppData\Local\OpenPencil\)
+ *
+ * On Windows, Unix domain sockets are unavailable — the server uses TCP only.
+ * The discovery file is still written to the directory above so the stdio
+ * bridge and CLI can auto-connect.
  *
  * Discovery file: <socketDir>/mcp.json
- * Socket file:     <socketDir>/mcp.sock
+ * Socket file:     <socketDir>/mcp.sock  (Unix only)
  */
 
 const DIR_NAME_UNIX = 'openpencil'
@@ -55,6 +60,9 @@ export async function getSocketDir(): Promise<string> {
     }
   }
 
+  // The 0o700 mode restricts permissions on Unix. On Windows, mkdir ignores
+  // the mode and uses default ACLs — directory access is controlled by the
+  // filesystem, not the permission bits.
   await mkdir(dir, { recursive: true, mode: 0o700 })
 
   return dir

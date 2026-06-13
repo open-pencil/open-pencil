@@ -130,9 +130,25 @@ describe('MCP server unified transport', () => {
     })
 
     it('accepts /mcp with auth token', async () => {
-      const result = await tcpRequest('POST', '/mcp', undefined, {
-        Authorization: 'Bearer test-token-123'
-      })
+      const result = await tcpRequest(
+        'POST',
+        '/mcp',
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-06-18',
+            capabilities: {},
+            clientInfo: { name: 'smoke-test', version: '0.0.0' }
+          }
+        }),
+        {
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+          Authorization: 'Bearer test-token-123'
+        }
+      )
       expect(result.status).not.toBe(401)
     })
   })
