@@ -6,7 +6,7 @@ import { join } from 'node:path'
 
 import WebSocket from 'ws'
 
-import { SceneGraph } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/core/scene-graph'
 import { getDiscoveryPath } from '@open-pencil/mcp/transport'
 
 import { startServer, type ServerHandle } from '#mcp/server'

@@ -74,6 +74,7 @@ El archivo se escribe con permisos `0o600` (solo lectura/escritura del propietar
 | Plataforma | Primario | Fallback |
 |------------|----------|----------|
 | macOS / Linux | Socket Unix | TCP en `127.0.0.1:7600` |
+| Windows | TCP en `127.0.0.1:7600` | — |
 
 En macOS/Linux, el puente stdio prefiere el socket Unix. Si el servidor se inició solo con TCP, el puente usa `httpPort` del archivo de descubrimiento. En Windows, el puente usa TCP exclusivamente ya que Windows no soporta sockets Unix.
 
@@ -198,7 +199,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 | `OPENPENCIL_MCP_SOCKET` | Por plataforma | Sobreescribir ruta de socket (solo macOS/Linux) |
 | `OPENPENCIL_MCP_TCP` | Obsoleto | Sin efecto — TCP se controla con `PORT` (>0 = activado, 0 = desactivado) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generado | Token de autenticación del servidor. Si no se establece, se genera automáticamente; si se establece como cadena vacía (`""`), la autenticación se deshabilita. |
-| `OPENPENCIL_MCP_ROOT` | `cwd()` | Directorio alcance para `open_file`, `new_document`, `save_file` y export con escritura |
+| `OPENPENCIL_MCP_ROOT` | `cwd()` | Directorio alcance para `open_file`, `new_document` y export con escritura. `save_file` siempre está disponible; la ruta se valida contra este directorio cuando se establece |
 | `OPENPENCIL_MCP_EVAL` | Desactivado | `1` para habilitar `eval` (solo stdio, nunca HTTP) |
 | `OPENPENCIL_MCP_CORS_ORIGIN` | Desactivado | Origen CORS permitido para acceso desde navegador |
 
