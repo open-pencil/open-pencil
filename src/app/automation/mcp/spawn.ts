@@ -61,7 +61,7 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
   const isMac = navigator.platform.includes('Mac')
   // Must match the server's getSocketDir() in packages/mcp/src/transport/paths.ts
   if (isMac) {
-    return `${home}Library/Application Support/OpenPencil/mcp.json`
+    return `${home}/Library/Application Support/OpenPencil/mcp.json`
   }
   // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json
   // In Tauri we don't have access to env vars directly, so try the XDG path
@@ -69,7 +69,7 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
   // Note: the Tauri-spawned server runs with the user's env, so it will use
   // XDG_RUNTIME_DIR if set. We can't check that from JS, so we try reading
   // from the health endpoint's discoveryPath as a fallback (with a warning).
-  return `${home}.openpencil/mcp.json`
+  return `${home}/.openpencil/mcp.json`
 }
 
 /**
