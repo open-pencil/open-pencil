@@ -199,7 +199,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 | `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux) |
 | `OPENPENCIL_MCP_TCP` | Auto | `1` per forzare TCP abilitato |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generato | Token auth del server. Se non impostato, viene generato automaticamente; se impostato a stringa vuota (`""`), l'autenticazione viene disabilitata. |
-| `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope per `open_file`, `save_file` e export con scrittura |
+| `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope per `open_file`, `new_document`, `save_file` e export con scrittura |
 | `OPENPENCIL_MCP_EVAL` | Disabilitato | `1` per abilitare `eval` (solo stdio, mai HTTP) |
 | `OPENPENCIL_MCP_CORS_ORIGIN` | Disabilitato | Origine CORS consentita per accesso browser |
 
