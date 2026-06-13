@@ -21,9 +21,16 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0)
 }
 
-const rawPort = Number.parseInt(process.env.PORT ?? '7600', 10)
+const rawPortText = (process.env.PORT ?? '7600').trim()
+// Reject non-digit strings (including hex like "0x50" and partially-numeric like
+// "7600abc") — Number.parseInt would silently parse these, masking misconfig.
+if (!/^\d+$/.test(rawPortText)) {
+  process.stderr.write(`Error: PORT must be an integer in 0–65535, got "${process.env.PORT}"\n`)
+  process.exit(1)
+}
+const rawPort = Number.parseInt(rawPortText, 10)
 // Validate PORT: must be an integer in 0–65535. 0 means "disable TCP".
-if (Number.isNaN(rawPort) || rawPort < 0 || rawPort > 65535 || !Number.isInteger(rawPort)) {
+if (rawPort < 0 || rawPort > 65535) {
   process.stderr.write(`Error: PORT must be an integer in 0–65535, got "${process.env.PORT}"\n`)
   process.exit(1)
 }

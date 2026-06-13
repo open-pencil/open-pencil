@@ -74,9 +74,18 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
 
 /**
  * Resolves the discovery path to use for reading the auth token.
- * Computes the expected path locally and compares it with the health
- * endpoint's discoveryPath. If they differ, logs a warning and uses
- * the locally-computed path for security.
+ *
+ * Prefers the locally-computed path from `computeExpectedDiscoveryPath()` for
+ * security. When the server-reported `healthDiscoveryPath` (from the
+ * unauthenticated `/health` endpoint) differs, logs a warning and falls back
+ * to the server-reported path as a compatibility measure.
+ *
+ * Security tradeoff: the `/health` endpoint is unauthenticated, so a
+ * compromised server could redirect us to a malicious path. This is mitigated
+ * by the fact that the server is on localhost and was spawned by us. The
+ * fallback exists because local computation can be wrong (e.g., XDG_RUNTIME_DIR
+ * mismatches on Linux where the server uses `$XDG_RUNTIME_DIR/openpencil` but
+ * the local computation falls back to `~/.openpencil`).
  */
 async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
   const expected = await computeExpectedDiscoveryPath()
@@ -85,11 +94,6 @@ async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<strin
       `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}". ` +
         'Using server-reported path (server is on localhost).'
     )
-    // Trust the server's path when it differs — the local computation
-    // may be wrong (e.g., on Linux when XDG_RUNTIME_DIR is set, the
-    // server uses $XDG_RUNTIME_DIR/openpencil but our local computation
-    // falls back to ~/.openpencil). The server is on localhost and was
-    // spawned by us, so the redirect risk is minimal.
     return healthDiscoveryPath
   }
   return expected
