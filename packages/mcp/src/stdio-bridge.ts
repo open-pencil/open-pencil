@@ -320,6 +320,7 @@ export function createStdioRpcBridge({
                     resolvedAuthToken = null
                     void readDiscoveryFile()
                       .then((info) => {
+                        if (settled) return
                         if (info?.authToken) {
                           resolvedAuthToken = info.authToken
                           // Keep existing transport mode (socket path / port
@@ -342,6 +343,7 @@ export function createStdioRpcBridge({
                         }
                       })
                       .catch(() => {
+                        if (settled) return
                         clearTimeout(timer)
                         // Discovery read failed — stale transport state must be
                         // discarded so the bridge re-resolves on reconnect.
