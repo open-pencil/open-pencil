@@ -196,7 +196,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `7600` | TCP port. Set `0` to disable TCP (socket-only). |
+| `PORT` | `7600` | TCP port. Set `0` to disable TCP (socket-only on macOS/Linux; disables all transport on Windows). |
 | `OPENPENCIL_MCP_SOCKET` | Platform default | Override socket path |
 | `OPENPENCIL_MCP_TCP` | Deprecated | No effect — TCP is controlled by `PORT` (>0 = on, 0 = off) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generated | Server auth token. If unset, one is generated at startup. If set to an empty string (`""`), auth is disabled. |
