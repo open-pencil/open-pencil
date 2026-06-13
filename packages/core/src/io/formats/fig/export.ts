@@ -334,18 +334,23 @@ export async function exportFigFile(
     nodeIdToGuid
   )
 
-  // Scan ALL imported source.ids to find max sessionID:0 localID,
-  // preventing collisions between variable GUIDs and any imported node GUID.
-  let maxLocalId0 = localIdCounter.value - 1
+  // Scan ALL imported source.ids to find the max localID across EVERY session.
+  // localIdCounter is shared by both the sessionID:0 GUIDs minted here (canvases,
+  // variables) and the sessionID:1 GUIDs minted for new nodes in
+  // getOrCreateNodeGuid. So the high-water mark must consider every session, not
+  // just sessionID:0 — otherwise new sessionID:1 node GUIDs are minted at low
+  // localIDs that collide with existing sessionID:1 content, and the importer's
+  // by-GUID resolution (last write wins) silently destroys those existing nodes.
+  let maxLocalId = localIdCounter.value - 1
   for (const node of graph.nodes.values()) {
     if (node.source.id) {
       const guid = stringToGuid(node.source.id)
-      if (guid.sessionID === 0 && guid.localID > maxLocalId0) {
-        maxLocalId0 = guid.localID
+      if (guid.localID > maxLocalId) {
+        maxLocalId = guid.localID
       }
     }
   }
-  localIdCounter.value = Math.max(localIdCounter.value, maxLocalId0 + 1)
+  localIdCounter.value = Math.max(localIdCounter.value, maxLocalId + 1)
 
   // Assign variable GUIDs AFTER canvas entries so that source.id-derived
   // canvas GUIDs don't collide with generated variable GUIDs.
