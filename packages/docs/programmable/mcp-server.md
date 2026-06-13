@@ -135,6 +135,7 @@ Add to your MCP config (e.g. `.cursor/mcp.json`):
 Run from source without installing:
 
 ::: code-group
+
 ```json [Bun]
 {
   "mcpServers": {
