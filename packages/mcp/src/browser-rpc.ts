@@ -229,6 +229,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   }
 
   function handleMessage(data: string, ws: WebSocket) {
+    if (bridgeClosed) return
     let msg: BrowserMessage
     try {
       msg = JSON.parse(data) as BrowserMessage
@@ -294,6 +295,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   }
 
   function handleConnection(ws: WebSocket) {
+    if (bridgeClosed) return
     clients.add(ws)
     // Transport security restricts WHO can connect: Unix socket with
     // 0o600 permissions (same-user only) or TCP localhost (any local
