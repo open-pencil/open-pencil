@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { chmod, mkdir, readFile, unlink } from 'node:fs/promises'
+import { chmod, mkdir, readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { Server as HttpServer } from 'node:http'
 import { dirname } from 'node:path'
@@ -272,14 +272,15 @@ async function startSocketListener(
   if (!platformHasUnixSockets()) return null
 
   const resolvedPath = socketPathOverride ?? (await getSocketPath())
-  // Ensure the socket directory exists. getSocketDir() handles the
-  // OPENPENCIL_MCP_SOCKET env var and platform defaults, but a caller-provided
-  // socketPath override via the API may point to a directory that doesn't
-  // exist yet.
   if (socketPathOverride) {
+    // Create the parent directory for the caller-provided socket path.
+    // Skip getSocketDir() — it would create the platform-default directory
+    // (or the OPENPENCIL_MCP_SOCKET env dir) which is unrelated to this path.
     await mkdir(dirname(resolvedPath), { recursive: true })
+  } else {
+    // Ensure the default platform socket directory exists.
+    await getSocketDir()
   }
-  await getSocketDir()
   await removeStaleSocket(resolvedPath)
 
   const server = createAppServer(app)

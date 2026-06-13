@@ -174,7 +174,7 @@ Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 |----------|--------|------|-------------|
 | `/health` | GET | No | Server status, version, install command, discovery path |
 | `/rpc` | POST | Bearer token | JSON-RPC bridge to the running app |
-| `/mcp` | POST, DELETE | Bearer token | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
+| `/mcp` | POST, DELETE | Bearer token or `x-mcp-token` header | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
 
 ### Authentication
 
