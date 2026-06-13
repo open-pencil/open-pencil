@@ -55,11 +55,11 @@ export function createStdioRpcBridge({
   // Note: OPENPENCIL_MCP_SOCKET is handled through getSocketPath() and
   // readDiscoveryFile(), not through this flag — it's an env var that
   // affects path resolution, not a direct parameter.
-  // Treat both the explicit socketPath parameter and the OPENPENCIL_MCP_SOCKET
-  // env var as explicit overrides — the discovery file should not overwrite either.
-  const hasExplicitSocketPath =
-    (socketPathOverride !== undefined && socketPathOverride !== null) ||
-    Boolean(process.env.OPENPENCIL_MCP_SOCKET?.trim())
+  // Only the socketPathOverride parameter is treated as explicit. The
+  // OPENPENCIL_MCP_SOCKET env var is an auto-discovery hint — the bridge uses
+  // it as a starting point but allows re-discovery from the discovery file
+  // when the transport resets.
+  const hasExplicitSocketPath = socketPathOverride !== undefined && socketPathOverride !== null
   // Track whether authToken was explicitly provided by the caller.
   // When false, the token is auto-discovered from the discovery file and
   // can be refreshed transparently on 401 without surfacing the error.
