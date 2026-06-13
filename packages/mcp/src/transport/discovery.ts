@@ -71,7 +71,9 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
 
   let info: DiscoveryInfo
   try {
-    info = JSON.parse(raw) as DiscoveryInfo
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    info = parsed as DiscoveryInfo
   } catch {
     return null
   }
