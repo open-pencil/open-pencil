@@ -177,7 +177,7 @@ O desde el código fuente: `bun packages/mcp/src/index.ts` / `npx tsx packages/m
 
 ### Autenticación
 
-Un token de autenticación se **genera automáticamente al iniciar** (32-hex aleatorio de `crypto.randomBytes`). Los clientes deben enviarlo como `Authorization: Bearer <token>` para los endpoints `/rpc` y `/mcp`. La comparación usa tiempo constante (`crypto.timingSafeEqual`) para prevenir ataques de timing.
+Un token de autenticación se **genera automáticamente al iniciar** (32-hex aleatorio de `crypto.randomBytes`). Los clientes deben enviarlo como `Authorization: Bearer <token>` para `/rpc`, o como `Authorization: Bearer <token>` o cabecera `x-mcp-token` para `/mcp`. La comparación usa tiempo constante (`crypto.timingSafeEqual`) para prevenir ataques de timing.
 
 | Escenario | De dónde viene el token |
 |-----------|------------------------|

@@ -189,7 +189,7 @@ describe('MCP server unified transport', () => {
       }
       expect(info.pid).toBe(process.pid)
       expect(info.httpPort).toBe(handle.httpPort)
-      expect(info.socketPath).toBe(handle.socketPath)
+      expect(info.socketPath).toBe(handle.socketPath ?? null)
       expect(info.version).toBeTruthy()
       expect(info.authToken).toBe('test-token-123')
     })
