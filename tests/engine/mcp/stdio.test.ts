@@ -57,8 +57,12 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
     const stderr = transport.stderr
     if (stderr && 'on' in stderr) {
       const stream = stderr as NodeJS.ReadableStream
+      let stderrBuffer = ''
       stream.on('data', (chunk: Buffer) => {
-        if (chunk.toString().includes('Connected to OpenPencil')) {
+        // Buffer stderr so the readiness marker is not missed if it
+        // straddles a chunk boundary.
+        stderrBuffer += chunk.toString()
+        if (stderrBuffer.includes('Connected to OpenPencil')) {
           clearTimeout(timer)
           resolve()
         }
