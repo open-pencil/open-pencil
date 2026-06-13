@@ -75,6 +75,7 @@ Il file viene scritto con permessi `0o600` (solo lettura/scrittura del proprieta
 | Piattaforma | Primario | Fallback |
 |-------------|----------|----------|
 | macOS / Linux | Socket Unix | TCP su `127.0.0.1:7600` |
+| Windows | TCP su `127.0.0.1:7600` | — |
 
 Su macOS/Linux, il bridge stdio preferisce il socket Unix. Se il server è stato avviato solo con TCP, il bridge usa `httpPort` dal file di discovery. Su Windows, il bridge usa esclusivamente TCP poiché Windows non supporta i socket Unix.
 
