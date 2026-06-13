@@ -226,7 +226,7 @@ Un'altra istanza di OpenPencil (o un altro processo) sta usando la porta 7600. S
 
 - Chiudi l'altra istanza
 - Imposta `PORT=7601` (o qualsiasi porta libera) prima di avviare
-- Imposta `PORT=0` per disabilitare TCP e usare solo socket
+- Su macOS/Linux: imposta `PORT=0` per disabilitare TCP e usare solo socket Unix
 
 ### Errori "stale socket" su macOS/Linux
 

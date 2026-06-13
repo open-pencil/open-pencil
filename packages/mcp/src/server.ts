@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { chmod, mkdir, readFile } from 'node:fs/promises'
+import { chmod, mkdir, readFile, unlink } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { Server as HttpServer } from 'node:http'
 import { dirname } from 'node:path'
@@ -359,11 +359,14 @@ async function closeServer(srv: HttpServer | null): Promise<void> {
 }
 
 async function cleanupSocket(socketPath: string | null): Promise<void> {
-  // Do not unlink the socket file during shutdown. A replacement server can
-  // bind the same path during our teardown window, and an unconditional unlink
-  // would delete their live socket. Stale sockets are cleaned up safely by
-  // removeStaleSocket() on the next startup (it checks liveness before removal).
-  void socketPath
+  if (!socketPath || !platformHasUnixSockets()) return
+  try {
+    await unlink(socketPath)
+  } catch (e) {
+    if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code !== 'ENOENT') {
+      process.stderr.write(`  Socket: cleanup warning (${e.message})\n`)
+    }
+  }
 }
 
 async function cleanupDiscovery(
@@ -511,6 +514,9 @@ function buildHandle(
       browserRpc.close()
       await mcpSessions.clear()
 
+      // Close the WebSocket server. ws.WebSocketServer.close() prevents new
+      // connections but waits for existing ones to close naturally. The HTTP
+      // server close (via teardownListeners) will drop any lingering sockets.
       await new Promise<void>((resolve) => {
         wss.close(() => resolve())
       })
