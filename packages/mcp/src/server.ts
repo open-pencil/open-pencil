@@ -302,12 +302,10 @@ async function startSocketListener(
   // limitation; calling process.umask(0o077) would close the window but has
   // global side effects.
 
-  if (platformHasUnixSockets()) {
-    try {
-      await chmod(resolvedPath, 0o600)
-    } catch (e) {
-      if (e instanceof Error) process.stderr.write(`  Socket: chmod warning (${e.message})\n`)
-    }
+  try {
+    await chmod(resolvedPath, 0o600)
+  } catch (e) {
+    if (e instanceof Error) process.stderr.write(`  Socket: chmod warning (${e.message})\n`)
   }
 
   return { server, resolvedPath }

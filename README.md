@@ -200,7 +200,7 @@ For other MCP clients:
 openpencil-mcp-http   # http://localhost:7600/mcp
 ```
 
-The MCP server uses discovery-driven transport: a Unix domain socket is preferred on macOS/Linux when available, with TCP/HTTP as a fallback for platforms that lack socket support (e.g. Windows). The stdio bridge (`openpencil-mcp`) tries the socket first and falls back to TCP/HTTP; `openpencil-mcp-http` starts the TCP listener. Set `OPENPENCIL_MCP_TCP=1` to force TCP on Unix.
+The MCP server uses discovery-driven transport: a Unix domain socket is preferred on macOS/Linux when available, with TCP/HTTP as a fallback for platforms that lack socket support (e.g. Windows). The stdio bridge (`openpencil-mcp`) tries the socket first and falls back to TCP/HTTP; `openpencil-mcp-http` starts the TCP listener. TCP is controlled by `PORT` (>0 = on, 0 = off).
 
 **File access:** Set `OPENPENCIL_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. When using the server/library API (`startServer()` / embedded usage), these tools are only available when this variable is set. The CLI entrypoints (`openpencil-mcp`, `openpencil-mcp-http`) default `mcpRoot` to `process.cwd()` so file-scoped tools work without the env var. Symlinks are resolved to prevent path traversal attacks.
 
