@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { startServer } from './server'
+import { startServer } from '#mcp/server'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(

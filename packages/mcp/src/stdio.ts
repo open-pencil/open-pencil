@@ -2,8 +2,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
-import { MCP_VERSION, registerTools } from './server'
-import { createStdioRpcBridge } from './stdio-bridge'
+import { MCP_VERSION, registerTools } from '#mcp/server'
+import { createStdioRpcBridge } from '#mcp/stdio-bridge'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(

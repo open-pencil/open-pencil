@@ -11,22 +11,26 @@ import { resolveCommand } from 'package-manager-detector/commands'
 import { detect, getUserAgent } from 'package-manager-detector/detect'
 import { WebSocketServer, type WebSocket } from 'ws'
 
+import { bearerToken, isAuthorized, mcpRequestToken } from '#mcp/auth'
+import { createBrowserRpcBridge } from '#mcp/browser-rpc'
+import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/http-options'
 import type { RpcJsonObject } from '#mcp/json'
-
-import packageJson from '../package.json' with { type: 'json' }
-import { bearerToken, isAuthorized, mcpRequestToken } from './auth'
-import { createBrowserRpcBridge } from './browser-rpc'
-import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from './http-options'
-import { preprocessRpc } from './jsx-preprocess'
-import { createMcpSessionManager } from './mcp-sessions'
-import { registerTools } from './tool/registration'
-import { removeDiscoveryFile, removeStaleSocket, writeDiscoveryFile } from './transport/discovery'
+import { preprocessRpc } from '#mcp/jsx-preprocess'
+import { createMcpSessionManager } from '#mcp/mcp-sessions'
+import { registerTools } from '#mcp/tool/registration'
+import {
+  removeDiscoveryFile,
+  removeStaleSocket,
+  writeDiscoveryFile
+} from '#mcp/transport/discovery'
 import {
   getDiscoveryPath,
   getSocketDir,
   getSocketPath,
   platformHasUnixSockets
-} from './transport/paths'
+} from '#mcp/transport/paths'
+
+import packageJson from '../package.json' with { type: 'json' }
 
 export const MCP_VERSION: string = packageJson.version
 
@@ -53,10 +57,10 @@ function mcpInstallCommand(): Promise<string> {
   return installCommandPromise
 }
 
-export { fail, ok, type MCPContent, type MCPResult } from './result'
+export { fail, ok, type MCPContent, type MCPResult } from '#mcp/result'
 
-export { registerTools, type RegisterToolsOptions, type RpcSender } from './tool/registration'
-export { paramToZod } from './tool/schema'
+export { registerTools, type RegisterToolsOptions, type RpcSender } from '#mcp/tool/registration'
+export { paramToZod } from '#mcp/tool/schema'
 
 export interface ServerOptions {
   /** TCP port for the HTTP + WebSocket server. 0 to disable TCP. Defaults to 7600. */
@@ -266,20 +270,6 @@ async function startSocketListener(
   // overrides the default — getSocketDir() handles creating the directory).
   await getSocketDir()
   await removeStaleSocket(resolvedPath)
-
-  // Belt-and-suspenders: unlink the socket path right before listen().
-  // removeStaleSocket tests for liveness, but a race between a closing
-  // server's cleanup and our listen() can leave a stale file that passes
-  // the liveness check (the old server hasn't fully stopped yet).  An
-  // unlink here is safe — if the file doesn't exist, unlink() throws
-  // ENOENT which we swallow.
-  try {
-    await unlink(resolvedPath)
-  } catch (e) {
-    if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code !== 'ENOENT') {
-      process.stderr.write(`  Socket: pre-listen unlink warning (${e.message})\n`)
-    }
-  }
 
   const server = createAppServer(app)
   wireUpgrade(server, wss)

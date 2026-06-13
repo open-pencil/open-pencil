@@ -8,9 +8,8 @@ import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RpcJsonObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
-
-import { resolveSafePath, writeToolOutput } from './output'
-import { paramToZod } from './schema'
+import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
+import { paramToZod } from '#mcp/tool/schema'
 
 export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 

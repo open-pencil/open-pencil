@@ -1,8 +1,8 @@
 import { request } from 'node:http'
 import type { ClientRequest, RequestOptions } from 'node:http'
 
-import { readDiscoveryFile } from './transport/discovery'
-import { getSocketPath, platformHasUnixSockets } from './transport/paths'
+import { readDiscoveryFile } from '#mcp/transport/discovery'
+import { getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
 type StdioRpcBridgeOptions = {
   /** Override socket path (if known). Auto-discovered if omitted. */
@@ -314,6 +314,14 @@ export function createStdioRpcBridge({
                           attempt(false)
                         } else {
                           clearTimeout(timer)
+                          // The discovery file exists but has no token; treat
+                          // this like a reconnection event and clear any
+                          // auto-discovered transport state so the next connect()
+                          // starts from a clean slate.
+                          transportMode = null
+                          if (!hasExplicitSocketPath) resolvedSocketPath = null
+                          resolvedHttpPort = null
+                          ready = false
                           settled = true
                           scheduleReconnect()
                           reject(new Error('Unauthorized'))
@@ -321,6 +329,12 @@ export function createStdioRpcBridge({
                       })
                       .catch(() => {
                         clearTimeout(timer)
+                        // Discovery read failed — stale transport state must be
+                        // discarded so the bridge re-resolves on reconnect.
+                        transportMode = null
+                        if (!hasExplicitSocketPath) resolvedSocketPath = null
+                        resolvedHttpPort = null
+                        ready = false
                         settled = true
                         scheduleReconnect()
                         reject(new Error(DISCONNECTED_MESSAGE))

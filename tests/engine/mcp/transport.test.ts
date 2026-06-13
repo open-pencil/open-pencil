@@ -41,7 +41,14 @@ describe('transport/paths', () => {
         const dir = await getSocketDir()
         if (process.platform === 'darwin') {
           expect(dir).toContain('Library/Application Support/OpenPencil')
-        } else if (process.platform === 'linux') {
+        } else if (process.platform === 'win32') {
+          const localAppData = process.env.LOCALAPPDATA
+          if (localAppData) {
+            expect(dir.toLowerCase()).toContain(localAppData.toLowerCase())
+          }
+          expect(dir.toLowerCase()).toContain('openpencil')
+        } else {
+          // Linux / other Unix
           const xdg = process.env.XDG_RUNTIME_DIR
           if (xdg) {
             expect(dir).toContain(xdg)

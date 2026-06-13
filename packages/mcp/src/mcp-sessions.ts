@@ -67,22 +67,36 @@ export function createMcpSessionManager({
     }
   }
 
-  async function createSession(id: string): Promise<MCPTransport> {
-    const server = new McpServer({ name: 'open-pencil', version: serverVersion })
-    registerTools(server)
+  const creating = new Map<string, Promise<MCPTransport>>()
 
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: () => id,
-      enableJsonResponse: true
-    })
-    // Await the MCP handshake before storing/returning the transport so
-    // that handleRequest cannot race the SDK's initialization on a fresh
-    // session. Without this, the /mcp route calls resolveTransport() and
-    // immediately awaits handleRequest(), which can fail if connect() has
-    // not completed yet.
-    await server.connect(transport)
-    sessions.set(id, { transport, server, lastSeen: Date.now() })
-    return transport
+  async function createSession(id: string): Promise<MCPTransport> {
+    const inFlight = creating.get(id)
+    if (inFlight) return inFlight
+
+    const promise = (async () => {
+      const server = new McpServer({ name: 'open-pencil', version: serverVersion })
+      registerTools(server)
+
+      const transport = new WebStandardStreamableHTTPServerTransport({
+        sessionIdGenerator: () => id,
+        enableJsonResponse: true
+      })
+      // Await the MCP handshake before storing/returning the transport so
+      // handleRequest cannot race the SDK's initialization on a fresh
+      // session. Without this, the /mcp route calls resolveTransport() and
+      // immediately awaits handleRequest(), which can fail if connect() has
+      // not completed yet.
+      await server.connect(transport)
+      sessions.set(id, { transport, server, lastSeen: Date.now() })
+      return transport
+    })()
+
+    creating.set(id, promise)
+    try {
+      return await promise
+    } finally {
+      creating.delete(id)
+    }
   }
 
   function resolveTransport(

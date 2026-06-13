@@ -155,7 +155,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
         }, RPC_TIMEOUT)
         pending.set(id, { resolve: settle.resolve, reject: settle.reject, timer })
         try {
-          ws.send(JSON.stringify({ type: 'request', id, ...body }))
+          ws.send(JSON.stringify({ ...body, type: 'request', id }))
         } catch (e) {
           clearTimeout(timer)
           pending.delete(id)
@@ -177,7 +177,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     if (!msg.id) return
     try {
       const result = await sendRpc(stripEnvelope(msg))
-      sendJson(ws, { type: 'response', id: msg.id, ok: true, ...responsePayload(result) })
+      sendJson(ws, { ...responsePayload(result), type: 'response', id: msg.id, ok: true })
     } catch (e) {
       sendJson(ws, {
         type: 'response',
