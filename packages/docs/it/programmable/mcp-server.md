@@ -197,7 +197,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 |-----------|---------|-------------|
 | `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP (su Windows disabilita l'unico trasporto disponibile). |
 | `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux) |
-| `OPENPENCIL_MCP_TCP` | Auto | `1` per forzare TCP abilitato |
+| `OPENPENCIL_MCP_TCP` | Deprecato | Nessun effetto — TCP è controllato da `PORT` (>0 = attivo, 0 = disattivato) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generato | Token auth del server. Se non impostato, viene generato automaticamente; se impostato a stringa vuota (`""`), l'autenticazione viene disabilitata. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope per `open_file`, `new_document`, `save_file` e export con scrittura |
 | `OPENPENCIL_MCP_EVAL` | Disabilitato | `1` per abilitare `eval` (solo stdio, mai HTTP) |
