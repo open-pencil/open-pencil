@@ -116,8 +116,9 @@ export function platformHasUnixSockets(): boolean {
 /**
  * Returns the platform name for display purposes.
  */
-export function platformName(): 'macos' | 'linux' | 'other' {
+export function platformName(): 'macos' | 'linux' | 'windows' | 'other' {
   if (isMacOS) return 'macos'
+  if (isWindows) return 'windows'
   if (platform() === 'linux') return 'linux'
   return 'other'
 }

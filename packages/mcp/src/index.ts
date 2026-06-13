@@ -39,11 +39,23 @@ const handle = await startServer({
   socketPath: process.env.OPENPENCIL_MCP_SOCKET?.trim() || null,
   enableEval: process.env.OPENPENCIL_MCP_EVAL === '1',
   mcpRoot: process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd(),
-  // Auth token: unset → auto-generate, empty string → disable auth, otherwise → use value
-  authToken:
-    process.env.OPENPENCIL_MCP_AUTH_TOKEN === ''
-      ? null
-      : process.env.OPENPENCIL_MCP_AUTH_TOKEN?.trim() || undefined,
+  // Auth token: undefined → auto-generate, empty string → disable auth,
+  // non-empty → use trimmed value. Whitespace-only is rejected to prevent a
+  // silent fallback to an auto-generated token when the operator intended to
+  // set an explicit one.
+  authToken: (() => {
+    const raw = process.env.OPENPENCIL_MCP_AUTH_TOKEN
+    if (raw === undefined) return undefined
+    if (raw === '') return null
+    const trimmed = raw.trim()
+    if (!trimmed) {
+      process.stderr.write(
+        'Error: OPENPENCIL_MCP_AUTH_TOKEN is whitespace-only. Set a real token, or use an empty string to disable auth.\n'
+      )
+      process.exit(1)
+    }
+    return trimmed
+  })(),
   corsOrigin: process.env.OPENPENCIL_MCP_CORS_ORIGIN?.trim() || null
 })
 

@@ -148,7 +148,7 @@ describe('transport/paths', () => {
   describe('platformName', () => {
     it('returns a valid platform name', () => {
       const name = platformName()
-      expect(['macos', 'linux', 'other']).toContain(name)
+      expect(['macos', 'linux', 'windows', 'other']).toContain(name)
     })
   })
 })
