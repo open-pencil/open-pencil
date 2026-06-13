@@ -125,7 +125,12 @@ export function createMcpSessionManager({
     if (sessions.size + creating.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
     }
-    return createSession(sessionId ?? randomUUID())
+    return createSession(sessionId ?? randomUUID()).catch((e) => {
+      // If the manager was closed during session creation, return the structured
+      // error instead of letting the throw escape as a route-level 500.
+      if (closed) return { error: 'closed' as const }
+      throw e
+    })
   }
 
   function touch(sessionId: string | undefined, transport: MCPTransport) {
