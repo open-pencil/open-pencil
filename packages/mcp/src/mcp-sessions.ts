@@ -120,7 +120,14 @@ export function createMcpSessionManager({
     // Reuse an in-flight creation for the same sessionId before enforcing the cap.
     if (sessionId) {
       const inFlight = creating.get(sessionId)
-      if (inFlight) return inFlight
+      if (inFlight) {
+        // Wrap with the same catch as createSession so clear() during
+        // in-flight creation returns { error: 'closed' } instead of throwing.
+        return inFlight.catch((e) => {
+          if (closed) return { error: 'closed' as const }
+          throw e
+        })
+      }
     }
     if (sessions.size + creating.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
