@@ -459,22 +459,24 @@ describe('MCP server concurrent startServer', () => {
     // Use unique socket paths so the two servers don't fight over the
     // socket file. The test still covers discovery atomicity by writing
     // to the same shared discovery path.
-    const a = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: testSocketPath(),
-      authToken: 'token-a',
-      enableEval: false,
-      mcpRoot: null
-    })
-    const b = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: testSocketPath(),
-      authToken: 'token-b',
-      enableEval: false,
-      mcpRoot: null
-    })
+    const [a, b] = await Promise.all([
+      startServer({
+        httpPort: 0,
+        withTcp: true,
+        socketPath: testSocketPath(),
+        authToken: 'token-a',
+        enableEval: false,
+        mcpRoot: null
+      }),
+      startServer({
+        httpPort: 0,
+        withTcp: true,
+        socketPath: testSocketPath(),
+        authToken: 'token-b',
+        enableEval: false,
+        mcpRoot: null
+      })
+    ])
 
     try {
       // Both servers are listening on their own ephemeral ports.

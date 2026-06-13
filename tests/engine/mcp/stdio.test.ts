@@ -148,6 +148,10 @@ describe('MCP stdio transport', () => {
     }
 
     const socketPath = handle.socketPath ?? ''
+    if (isUnix && !socketPath) {
+      await handle.close().catch(() => undefined)
+      throw new Error('Unix socket listener not started — socketPath is undefined')
+    }
     const ctx = await createStdioClient(socketPath, AUTH_TOKEN)
     client = ctx.client
     transport = ctx.transport

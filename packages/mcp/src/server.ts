@@ -171,6 +171,9 @@ function createHonoApp(options: {
     }
     const transport = await mcpSessions.resolveTransport(sessionId)
     if ('error' in transport) {
+      if (transport.error === 'closed') {
+        return c.json({ error: 'MCP server is shutting down' }, 503)
+      }
       return c.json(
         { error: 'Too many active MCP sessions' },
         { status: 503, headers: { 'Retry-After': '5' } }
@@ -263,7 +266,9 @@ async function startSocketListener(
   wss: WebSocketServer,
   socketPathOverride: string | null
 ): Promise<{ server: HttpServer; resolvedPath: string } | null> {
-  if (!platformHasUnixSockets() && !socketPathOverride) return null
+  // Unix domain sockets are not available on Windows — always use TCP there,
+  // even when a socketPath override is provided.
+  if (!platformHasUnixSockets()) return null
 
   const resolvedPath = socketPathOverride ?? (await getSocketPath())
   // Ensure the socket directory exists (especially when OPENPENCIL_MCP_SOCKET
