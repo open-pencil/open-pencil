@@ -118,7 +118,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
       // APP_WAIT_TIMEOUT even though the browser is connected.
       connectionWaiters.add(waiter)
       if (browserWs && browserWs.readyState === browserWs.OPEN && browserRegistered) {
-        waiter.resolve()
+        waiter.resolve(undefined)
         connectionWaiters.delete(waiter)
       }
     })
