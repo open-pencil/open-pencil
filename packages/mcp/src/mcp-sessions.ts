@@ -88,7 +88,13 @@ export function createMcpSessionManager({
       // session. Without this, the /mcp route calls resolveTransport() and
       // immediately awaits handleRequest(), which can fail if connect() has
       // not completed yet.
-      await server.connect(transport)
+      try {
+        await server.connect(transport)
+      } catch (e) {
+        await transport.close().catch(() => undefined)
+        await server.close().catch(() => undefined)
+        throw e
+      }
       // `closed` is mutated by clear() which can run concurrently — TypeScript's
       // control-flow analysis can't track this cross-closure mutation.
       // oxlint-disable-next-line no-unnecessary-condition

@@ -135,7 +135,7 @@ export async function resolveSafePath(filePath: string, root: string): Promise<s
       // nearest existing ancestor and re-append the non-existing path.
       const { realAncestor, remainder } = await resolveRealAncestor(parentDir)
       await assertNoDanglingSymlinks(realAncestor, remainder)
-      realPath = join(realAncestor, remainder.slice(1), baseName) // remainder starts with /
+      realPath = join(realAncestor, remainder.slice(osSep.length), baseName)
     }
   }
 
