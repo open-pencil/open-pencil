@@ -47,6 +47,16 @@ async function readDiscoveryToken(discoveryPath: string): Promise<string | null>
   }
 }
 
+/** Check whether the discovery file exists on disk. */
+async function discoveryFileExists(discoveryPath: string): Promise<boolean> {
+  try {
+    const { exists } = await import('@tauri-apps/plugin-fs')
+    return await exists(discoveryPath)
+  } catch {
+    return false
+  }
+}
+
 /**
  * Computes the expected MCP discovery file path using the same platform
  * logic as the server's getDiscoveryPath(), but via Tauri APIs since we
@@ -162,6 +172,20 @@ export async function getAutomationAuthToken(): Promise<string | null> {
       'MCP server requires authentication but the discovery token could not be read. ' +
         'Ensure the discovery file is accessible and contains an auth token.'
     )
+  }
+  // When token is null and auth is not required, verify the discovery file
+  // actually exists. A missing file means the server hasn't finished starting
+  // (discovery file is written after listeners are up). Without this check,
+  // we'd return null (meaning "auth disabled") when the server isn't ready
+  // yet, causing ACP sessions to proceed without auth.
+  if (!token && !health.authRequired) {
+    const fileExists = await discoveryFileExists(discoveryPath)
+    if (!fileExists) {
+      throw new Error(
+        `MCP server not yet ready — discovery file not found at ${discoveryPath}. ` +
+          'Wait for the server to finish starting and try again.'
+      )
+    }
   }
   runtimeAutomationAuthToken = token
   return runtimeAutomationAuthToken
