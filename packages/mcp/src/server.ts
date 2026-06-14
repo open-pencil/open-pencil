@@ -353,6 +353,9 @@ async function writeDiscovery(
 
 async function closeServer(srv: HttpServer | null): Promise<void> {
   if (!srv) return
+  // Close all idle keep-alive connections first to prevent server.close()
+  // from hanging indefinitely on persistent HTTP connections.
+  srv.closeIdleConnections()
   await new Promise<void>((resolve) => {
     srv.close(() => resolve())
   })
@@ -514,11 +517,33 @@ function buildHandle(
       browserRpc.close()
       await mcpSessions.clear()
 
-      // Close the WebSocket server. ws.WebSocketServer.close() prevents new
-      // connections but waits for existing ones to close naturally. The HTTP
-      // server close (via teardownListeners) will drop any lingering sockets.
+      // Close the WebSocket server. wss.close() prevents new connections
+      // but waits for existing ones to close naturally. If a client is
+      // unresponsive, this can hang shutdown. Terminate lingering clients
+      // after a short grace period to ensure shutdown completes promptly.
       await new Promise<void>((resolve) => {
-        wss.close(() => resolve())
+        let settled = false
+        const done = () => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
+        const graceTimer = setTimeout(() => {
+          // Snapshot clients before iterating — terminate() triggers handleClose
+          // which modifies wss.clients mid-iteration via clients.delete(ws).
+          const snapshot = [...wss.clients]
+          for (const ws of snapshot) {
+            try {
+              ws.terminate()
+            } catch (e) {
+              console.warn('[MCP] Failed to terminate WebSocket client:', e)
+            }
+          }
+        }, 2_000)
+        wss.close(() => {
+          clearTimeout(graceTimer)
+          done()
+        })
       })
 
       await teardownListeners(state)
