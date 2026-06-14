@@ -544,20 +544,31 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   // any client connecting during startup is handled immediately.
   wireConnectionHandling(ctx.wss, ctx.browserRpc)
 
-  const socketResult = await startSocketListener(ctx.app, ctx.wss, options.socketPath ?? null)
-  const state: ListenerState = { socketResult, tcpResult: null }
-  state.tcpResult = ctx.withTcp ? await tryStartTcp(ctx.app, ctx.wss, ctx.httpPort, state) : null
-  const resolvedSocketPath = socketResult?.resolvedPath ?? null
-  const actualHttpPort = state.tcpResult?.port ?? 0
+  const state: ListenerState = { socketResult: null, tcpResult: null }
+  try {
+    state.socketResult = await startSocketListener(ctx.app, ctx.wss, options.socketPath ?? null)
+    state.tcpResult = ctx.withTcp ? await tryStartTcp(ctx.app, ctx.wss, ctx.httpPort, state) : null
+    const resolvedSocketPath = state.socketResult?.resolvedPath ?? null
+    const actualHttpPort = state.tcpResult?.port ?? 0
 
-  if (!resolvedSocketPath && !actualHttpPort) {
-    throw new Error(
-      'MCP server has no active listeners (both socket and TCP are unavailable). ' +
-        'Ensure Unix domain sockets are supported on this platform or enable TCP with withTcp: true.'
-    )
+    if (!resolvedSocketPath && !actualHttpPort) {
+      throw new Error(
+        'MCP server has no active listeners (both socket and TCP are unavailable). ' +
+          'Ensure Unix domain sockets are supported on this platform or enable TCP with withTcp: true.'
+      )
+    }
+
+    await tryWriteDiscovery(resolvedSocketPath, actualHttpPort, ctx.authToken, state)
+  } catch (err) {
+    // Tear down any listeners that started before the failure, then close
+    // the WebSocket server so no resources leak when startServer rejects.
+    await teardownListeners(state).catch(() => undefined)
+    ctx.wss.close()
+    throw err
   }
 
-  await tryWriteDiscovery(resolvedSocketPath, actualHttpPort, ctx.authToken, state)
+  const resolvedSocketPath = state.socketResult?.resolvedPath ?? null
+  const actualHttpPort = state.tcpResult?.port ?? 0
 
   return buildHandle(
     ctx.app,
