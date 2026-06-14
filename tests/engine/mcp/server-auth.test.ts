@@ -397,12 +397,15 @@ describe('Discovery PID liveness', () => {
       void 0 // File doesn't exist — nothing to save
     }
 
-    // Write a discovery file with a PID that is guaranteed not to be alive.
-    // Use PID 1 on macOS (launchd is always alive) won't work; instead use
-    // the theoretical maximum PID (2^22 = 4_194_304) which exceeds the
-    // default pid_max on all major platforms (Linux: 32768–4194304, macOS:
-    // 99999, Windows: ~4M). This guarantees the PID cannot be in use.
-    const deadPid = 4_194_304
+    // Spawn a child process, kill it, and use its PID — guaranteed dead.
+    // This avoids relying on a hardcoded magic number (like 4_194_304) that
+    // could theoretically be alive on systems with a high pid_max.
+    const child = Bun.spawn(['sleep', '9999'], { detached: true })
+    const deadPid = child.pid
+    child.kill()
+    await new Promise<void>((resolve) => {
+      child.exited.then(() => resolve())
+    })
     const discoveryDir = dirname(discoveryPath)
     await mkdir(discoveryDir, { recursive: true })
     await Bun.write(
