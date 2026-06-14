@@ -75,17 +75,23 @@ function parseResult(result: { content: { type: string; text?: string }[] }): un
 describe('MCP server', () => {
   let client: Client
   let graph: SceneGraph
-  let cleanup: () => Promise<void>
+  let cleanup: (() => Promise<void>) | null = null
 
   beforeEach(async () => {
-    const ctx = await createTestClient()
-    client = ctx.client
-    graph = ctx.graph
-    cleanup = ctx.close
+    try {
+      const ctx = await createTestClient()
+      client = ctx.client
+      graph = ctx.graph
+      cleanup = ctx.close
+    } catch (e) {
+      if (cleanup) await cleanup().catch(() => undefined)
+      throw e
+    }
   })
 
   afterEach(async () => {
-    await cleanup()
+    if (cleanup) await cleanup()
+    cleanup = null
   })
 
   test('lists all registered tools', async () => {
