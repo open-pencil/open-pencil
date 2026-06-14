@@ -11,7 +11,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  --help, -h    Show this help message\n\n` +
       `Environment variables:\n` +
       `  PORT                         TCP port (default: 7600, set to 0 to disable TCP)\n` +
-      `  OPENPENCIL_MCP_SOCKET        Override socket path (resolved through discovery when unset)\n` +
+      `  OPENPENCIL_MCP_SOCKET        Override socket path (default: platform-specific path)\n` +
       `  OPENPENCIL_MCP_TCP           Deprecated — TCP is controlled by PORT (>0 = on, 0 = off)\n` +
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for MCP and RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: current working directory)\n` +

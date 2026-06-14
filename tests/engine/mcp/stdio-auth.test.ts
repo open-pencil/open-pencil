@@ -259,6 +259,8 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
       reconnectDelayMs: 500
     })
 
-    await expect(badBridge.sendRpc({ command: 'test' })).rejects.toThrow()
+    await expect(badBridge.sendRpc({ command: 'test' })).rejects.toThrow(
+      'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'
+    )
   }, 10_000)
 })

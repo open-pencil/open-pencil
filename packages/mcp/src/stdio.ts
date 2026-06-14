@@ -18,7 +18,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `Environment variables:\n` +
       `  OPENPENCIL_MCP_SOCKET        Override socket path (auto-discovered from discovery file when unset)\n` +
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for RPC auth\n` +
-      `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools\n` +
+      `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: current working directory)\n` +
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n`
   )
   process.exit(0)
