@@ -86,17 +86,21 @@ describe('MCP path scoping', () => {
     }
   })
 
-  test.skipIf(!isUnix)('rejects dangling symlink pointing inside root', async () => {
+  test.skipIf(!isUnix)('allows dangling symlink pointing inside root', async () => {
     const testDir = resolve(tmpdir(), 'mcp-symlink-dangling-inside-test')
     const linkPath = `${testDir}/dangling.fig`
     const insideTarget = `${testDir}/nonexistent-target.fig`
     try {
       await mkdir(testDir, { recursive: true })
       // Dangling symlink: target doesn't exist, but points inside root.
-      // This should still be rejected because the target could be created
-      // outside root by another process before the write happens.
+      // This is a legitimate use case — the target will be created by the
+      // write operation. The target path is validated to be inside root.
       await symlink(insideTarget, linkPath)
-      await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('outside the allowed root')
+      const result = await resolveSafePath(linkPath, testDir)
+      expect(result.resolved).toBe(resolve(linkPath))
+      // realPath should resolve to the target's canonical parent + filename
+      const canonicalParent = await realpath(testDir)
+      expect(result.realPath).toBe(`${canonicalParent}/nonexistent-target.fig`)
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
@@ -211,4 +215,78 @@ describe('MCP path scoping', () => {
       await rm(testDir, { recursive: true, force: true })
     }
   })
+
+  test.skipIf(!isUnix)('rejects circular symlinks', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-circular-test')
+    const linkA = `${testDir}/a.fig`
+    const linkB = `${testDir}/b.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      // Circular symlink chain: a -> b -> a
+      await symlink(linkB, linkA)
+      await symlink(linkA, linkB)
+      await expect(resolveSafePath(linkA, testDir)).rejects.toThrow('depth limit exceeded')
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test.skipIf(!isUnix)('allows absolute symlink target inside root', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-abs-inside-test')
+    const targetDir = `${testDir}/targets`
+    const targetFile = `${targetDir}/real.fig`
+    const linkPath = `${testDir}/link.fig`
+    try {
+      await mkdir(targetDir, { recursive: true })
+      await writeFile(targetFile, 'test')
+      // Absolute symlink target pointing inside root
+      await symlink(targetFile, linkPath)
+      const result = await resolveSafePath(linkPath, testDir)
+      expect(result.resolved).toBe(resolve(linkPath))
+      const canonicalTarget = await realpath(targetFile)
+      expect(result.realPath).toBe(canonicalTarget)
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test.skipIf(!isUnix)('rejects absolute symlink target outside root', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-abs-outside-test')
+    const outsideDir = resolve(tmpdir(), 'mcp-symlink-abs-outside-target')
+    const outsideFile = `${outsideDir}/secret.fig`
+    const linkPath = `${testDir}/link.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      await mkdir(outsideDir, { recursive: true })
+      await writeFile(outsideFile, 'secret')
+      // Absolute symlink target pointing outside root
+      await symlink(outsideFile, linkPath)
+      await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('outside the allowed root')
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+      await rm(outsideDir, { recursive: true, force: true })
+    }
+  })
+
+  test.skipIf(!isUnix)(
+    'allows relative symlink with traversal that stays inside root',
+    async () => {
+      const testDir = resolve(tmpdir(), 'mcp-symlink-rel-traversal-test')
+      const subDir = `${testDir}/sub`
+      const targetFile = `${testDir}/target.fig`
+      const linkPath = `${subDir}/link.fig`
+      try {
+        await mkdir(subDir, { recursive: true })
+        await writeFile(targetFile, 'test')
+        // Relative symlink: sub/link.fig -> ../target.fig (resolves inside root)
+        await symlink('../target.fig', linkPath)
+        const result = await resolveSafePath(linkPath, testDir)
+        expect(result.resolved).toBe(resolve(linkPath))
+        const canonicalTarget = await realpath(targetFile)
+        expect(result.realPath).toBe(canonicalTarget)
+      } finally {
+        await rm(testDir, { recursive: true, force: true })
+      }
+    }
+  )
 })
