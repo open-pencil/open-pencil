@@ -685,6 +685,8 @@ export function sceneNodeToKiwiWithContext(
   if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
+    // Figma wire format uses XOR for boolean exclusion; SceneNode API uses EXCLUDE.
+    // On import, convert.ts maps both XOR and EXCLUDE to SceneNode EXCLUDE.
     nc.booleanOperation =
       node.booleanOperation === 'EXCLUDE' ? 'XOR' : (node.booleanOperation ?? 'UNION')
   if (strokePaints.length > 0) nc.strokePaints = strokePaints

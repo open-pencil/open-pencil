@@ -52,7 +52,7 @@ The server writes a **discovery file** on startup. The stdio bridge reads this f
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
 | Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Override with `OPENPENCIL_MCP_SOCKET` — the discovery file (`mcp.json`) is placed alongside the socket (same directory as the override path).
+`OPENPENCIL_MCP_SOCKET` overrides only the socket path — the discovery file always stays at the platform path above.
 
 ### What's in the discovery file
 
@@ -249,10 +249,9 @@ npm install -g @open-pencil/mcp@latest
 
 The bridge reads the discovery file to locate the server. If the discovery file is missing or stale (PID no longer alive):
 
-1. Check the discovery file exists at the platform path above. If `OPENPENCIL_MCP_SOCKET` is overridden, also check for the discovery file adjacent to the custom socket path (the directory containing the socket file)
+1. Check the discovery file exists at the platform path above
 2. If TCP is enabled (`PORT` is not `0`), verify the server is running: `curl http://127.0.0.1:${PORT:-7600}/health`
-3. If running with a custom `OPENPENCIL_MCP_SOCKET`, make sure the bridge uses the same env var
-4. On Windows (TCP-only transport, no Unix socket support), verify the server's `httpPort` is reachable. Setting `PORT=0` on Windows disables the only available transport
+3. On Windows (TCP-only transport, no Unix socket support), verify the server's `httpPort` is reachable. Setting `PORT=0` on Windows disables the only available transport
 
 ## Workflow
 

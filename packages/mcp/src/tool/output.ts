@@ -33,6 +33,31 @@ async function resolveRealAncestor(
   return { realAncestor: current, remainder }
 }
 
+/**
+ * Walks the non-existent path segments (remainder) from the real ancestor and
+ * rejects any that are dangling symlinks. A symlink whose target doesn't exist
+ * could point outside the allowed root — when the file is eventually written,
+ * the OS follows the symlink chain and the write lands outside root.
+ */
+async function assertNoDanglingSymlinks(realAncestor: string, remainder: string): Promise<void> {
+  if (!remainder) return
+  const segments = remainder.split(osSep).filter(Boolean)
+  let current = realAncestor
+  for (const seg of segments) {
+    current = join(current, seg)
+    try {
+      const stat = await lstat(current)
+      if (stat.isSymbolicLink()) {
+        throw new Error(`Path is outside the allowed root: dangling symlink at ${current}`)
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message.includes('outside the allowed root')) throw e
+      // lstat failed — the component doesn't exist at all, which is expected
+      // since we're creating a new file. No symlink to worry about.
+    }
+  }
+}
+
 export async function resolveSafePath(filePath: string, root: string): Promise<string> {
   // Reject trivially broad roots that would pass all containment checks.
   // On Unix, "/" matches every absolute path; on Windows, "\" or "C:\" are
@@ -109,6 +134,7 @@ export async function resolveSafePath(filePath: string, root: string): Promise<s
       // Parent directory also doesn't exist — walk up to find the
       // nearest existing ancestor and re-append the non-existing path.
       const { realAncestor, remainder } = await resolveRealAncestor(parentDir)
+      await assertNoDanglingSymlinks(realAncestor, remainder)
       realPath = join(realAncestor, remainder.slice(1), baseName) // remainder starts with /
     }
   }

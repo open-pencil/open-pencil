@@ -6,22 +6,24 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { createStdioRpcBridge } from '#mcp/stdio-bridge'
+import { getDiscoveryPath } from '#mcp/transport/paths'
 
 const TEST_DIR = join(tmpdir(), `openpencil-test-stdio-auth-${process.pid}`)
 const TEST_SOCKET = join(TEST_DIR, 'mcp-test.sock')
 const AUTH_TOKEN = 'test-auto-token'
 
 /**
- * Writes a mock discovery file at the location the bridge expects
- * (determined by OPENPENCIL_MCP_SOCKET env var).
+ * Writes a mock discovery file at the platform discovery path so the
+ * bridge's readDiscoveryFile() finds it.
  */
 async function writeMockDiscovery(
   socketPath: string,
   authToken: string | null,
   httpPort: number = 0
 ): Promise<void> {
+  const discoveryPath = await getDiscoveryPath()
   await writeFile(
-    join(TEST_DIR, 'mcp.json'),
+    discoveryPath,
     JSON.stringify({
       pid: process.pid,
       socketPath,
@@ -153,7 +155,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
       void 0 // best-effort cleanup
     }
     try {
-      const discoveryPath = join(TEST_DIR, 'mcp.json')
+      const discoveryPath = await getDiscoveryPath()
       if (existsSync(discoveryPath)) await unlink(discoveryPath)
     } catch {
       void 0 // best-effort cleanup

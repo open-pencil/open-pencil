@@ -54,22 +54,27 @@ async function readDiscoveryToken(discoveryPath: string): Promise<string | null>
  * endpoint's discoveryPath field.
  */
 async function computeExpectedDiscoveryPath(): Promise<string> {
-  const { homeDir } = await import('@tauri-apps/api/path')
+  const { homeDir, join } = await import('@tauri-apps/api/path')
   const home = await homeDir()
   if (!home) throw new Error('homeDir() returned an empty string')
 
   const isMac = navigator.platform.includes('Mac')
-  // Must match the server's getSocketDir() in packages/mcp/src/transport/paths.ts
+  const isWindows = navigator.platform.includes('Win')
+  // Must match the server's getPlatformDir() in packages/mcp/src/transport/paths.ts.
+  // On Windows, LOCALAPPDATA usually equals <home>\AppData\Local, so this fallback
+  // matches the server's path in the common case. When it doesn't (custom
+  // LOCALAPPDATA), resolveDiscoveryPath() falls back to the /health endpoint.
   if (isMac) {
-    return `${home}/Library/Application Support/OpenPencil/mcp.json`
+    return join(home, 'Library', 'Application Support', 'OpenPencil', 'mcp.json')
   }
-  // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json
-  // In Tauri we don't have access to env vars directly, so try the XDG path
-  // pattern and fall back to the home directory hidden dir.
-  // Note: the Tauri-spawned server runs with the user's env, so it will use
-  // XDG_RUNTIME_DIR if set. We can't check that from JS, so we try reading
-  // from the health endpoint's discoveryPath as a fallback (with a warning).
-  return `${home}/.openpencil/mcp.json`
+  if (isWindows) {
+    return join(home, 'AppData', 'Local', 'OpenPencil', 'mcp.json')
+  }
+  // Linux: $XDG_RUNTIME_DIR/openpencil/mcp.json or ~/.openpencil/mcp.json.
+  // In Tauri we don't have direct env access, so we use the home-directory
+  // fallback. The server may use XDG_RUNTIME_DIR if set — when the paths
+  // differ, resolveDiscoveryPath() falls back to the /health endpoint.
+  return join(home, '.openpencil', 'mcp.json')
 }
 
 /**

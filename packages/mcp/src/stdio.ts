@@ -26,7 +26,6 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 const enableEval = process.env.OPENPENCIL_MCP_EVAL === '1'
 const mcpRoot = process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd()
-const socketPath = process.env.OPENPENCIL_MCP_SOCKET?.trim() || null
 // Auth token: undefined → auto-discover from discovery file, empty string →
 // disable auth, whitespace-only → reject (same fail-fast as index.ts to catch
 // misconfiguration), otherwise → use the trimmed value.
@@ -44,8 +43,12 @@ function resolveAuthToken(raw: string | undefined): string | null | undefined {
 }
 const authToken = resolveAuthToken(rawAuthToken)
 
+// OPENPENCIL_MCP_SOCKET is intentionally NOT forwarded as an explicit socketPath.
+// The bridge reads the socket path from the discovery file (whose `socketPath`
+// field records the override) via auto-discovery. Treating the env var as an
+// explicit pin would prevent the bridge from following discovery updates after
+// a server restart.
 const bridge = createStdioRpcBridge({
-  socketPath,
   authToken,
   onReady: () => {
     process.stderr.write('Connected to OpenPencil MCP server\n')

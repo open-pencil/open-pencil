@@ -100,8 +100,8 @@ export function createStdioRpcBridge({
 
     // Unix: prefer socket path from discovery file, fall back to default.
     // If no socket is available (TCP-only server), use TCP via httpPort.
-    // Caller-provided socket paths (OPENPENCIL_MCP_SOCKET or the socketPath
-    // option) take precedence and are never overwritten by discovery.
+    // The socketPath option (when provided directly by the caller) takes
+    // precedence and is never overwritten by discovery.
     if (hasExplicitSocketPath && resolvedSocketPath) {
       // Caller explicitly provided a socket path — keep it, never overwrite
     } else if (info?.socketPath) {

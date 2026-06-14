@@ -137,6 +137,26 @@ describe('transport/paths', () => {
         }
       }
     })
+
+    it('ignores OPENPENCIL_MCP_SOCKET override (stays on platform path)', async () => {
+      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
+      const overrideDir = join(tmpdir(), 'openpencil-test-discovery-override')
+      process.env.OPENPENCIL_MCP_SOCKET = join(overrideDir, 'mcp.sock')
+      try {
+        const path = await getDiscoveryPath()
+        // The discovery file must NOT be co-located with the override socket —
+        // it always stays on the well-known platform path so clients can find
+        // it without knowing the socket override.
+        expect(path).not.toBe(join(overrideDir, 'mcp.json'))
+        expect(path).toMatch(/mcp\.json$/)
+      } finally {
+        if (originalSocket == null) {
+          delete process.env.OPENPENCIL_MCP_SOCKET
+        } else {
+          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        }
+      }
+    })
   })
 
   describe('platformHasUnixSockets', () => {

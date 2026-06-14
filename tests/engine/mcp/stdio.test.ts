@@ -84,7 +84,13 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
   // Start the MCP session and wait for the bridge to be ready in parallel.
   // client.connect() handles the JSON-RPC initialize/handshake;
   // bridgeConnected confirms the bridge can actually reach the server.
-  await Promise.all([client.connect(transport), bridgeConnected])
+  try {
+    await Promise.all([client.connect(transport), bridgeConnected])
+  } catch (err) {
+    await client.close().catch(() => undefined)
+    await transport.close().catch(() => undefined)
+    throw err
+  }
 
   return { client, transport }
 }
@@ -109,56 +115,63 @@ describe('MCP stdio transport', () => {
 
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
 
-    handle = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: SOCKET_PATH,
-      authToken: AUTH_TOKEN,
-      enableEval: false,
-      mcpRoot: null
-    })
-
-    if (!handle.httpPort) {
-      await handle.close().catch(() => undefined)
-      throw new Error('TCP listener not started — httpPort is undefined')
-    }
-
-    browser = await connectMockBrowser(handle.httpPort, graph, AUTH_TOKEN)
-
-    const maxWait = 5000
-    const start = Date.now()
-    let lastStatus = 'unknown'
-    let ready = false
-    while (Date.now() - start < maxWait) {
-      try {
-        const resp = await fetch(`http://127.0.0.1:${handle.httpPort}/health`)
-        lastStatus = ((await resp.json()) as { status: string }).status
-        if (lastStatus === 'ok') {
-          ready = true
-          break
-        }
-      } catch {
-        // Transient fetch/json failure — retry after delay
-        void 0
-      }
-      await new Promise<void>((r) => {
-        setTimeout(r, 200)
+    // Bun does not run afterEach() when beforeEach() throws, so we must clean
+    // up any partially-initialized resources ourselves before rethrowing.
+    try {
+      handle = await startServer({
+        httpPort: 0,
+        withTcp: true,
+        socketPath: SOCKET_PATH,
+        authToken: AUTH_TOKEN,
+        enableEval: false,
+        mcpRoot: null
       })
-    }
-    if (!ready) {
-      throw new Error(
-        `Server did not reach health.status === 'ok' within ${maxWait}ms (last status: ${lastStatus})`
-      )
-    }
 
-    const socketPath = handle.socketPath ?? ''
-    if (isUnix && !socketPath) {
-      await handle.close().catch(() => undefined)
-      throw new Error('Unix socket listener not started — socketPath is undefined')
+      if (!handle.httpPort) {
+        throw new Error('TCP listener not started — httpPort is undefined')
+      }
+
+      browser = await connectMockBrowser(handle.httpPort, graph, AUTH_TOKEN)
+
+      const maxWait = 5000
+      const start = Date.now()
+      let lastStatus = 'unknown'
+      let ready = false
+      while (Date.now() - start < maxWait) {
+        try {
+          const resp = await fetch(`http://127.0.0.1:${handle.httpPort}/health`)
+          lastStatus = ((await resp.json()) as { status: string }).status
+          if (lastStatus === 'ok') {
+            ready = true
+            break
+          }
+        } catch {
+          // Transient fetch/json failure — retry after delay
+          void 0
+        }
+        await new Promise<void>((r) => {
+          setTimeout(r, 200)
+        })
+      }
+      if (!ready) {
+        throw new Error(
+          `Server did not reach health.status === 'ok' within ${maxWait}ms (last status: ${lastStatus})`
+        )
+      }
+
+      const socketPath = handle.socketPath ?? ''
+      if (isUnix && !socketPath) {
+        throw new Error('Unix socket listener not started — socketPath is undefined')
+      }
+      const ctx = await createStdioClient(socketPath, AUTH_TOKEN)
+      client = ctx.client
+      transport = ctx.transport
+    } catch (err) {
+      if (client) await client.close().catch(() => undefined)
+      if (browser) browser.close()
+      if (handle) await handle.close().catch(() => undefined)
+      throw err
     }
-    const ctx = await createStdioClient(socketPath, AUTH_TOKEN)
-    client = ctx.client
-    transport = ctx.transport
   }, 10000)
 
   afterEach(async () => {

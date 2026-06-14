@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { createStdioRpcBridge } from '#mcp/stdio-bridge'
+import { getDiscoveryPath } from '#mcp/transport/paths'
 
 const isUnix = process.platform !== 'win32'
 const TEST_DIR = join(tmpdir(), `openpencil-test-bridge-reconnect-${process.pid}`)
@@ -14,18 +15,17 @@ const SOCKET_PATH_2 = join(TEST_DIR, 'mcp-test-v2.sock')
 const AUTH_TOKEN = 'test-reconnect-token'
 
 /**
- * Writes a mock discovery file at the test directory (mcp.json).
- * The location is determined by OPENPENCIL_MCP_SOCKET env var — the
- * discovery file lives alongside the socket.
+ * Writes a mock discovery file at the platform discovery path so the
+ * bridge's readDiscoveryFile() finds it.
  */
 async function writeMockDiscovery(
   socketPath: string,
   authToken: string | null,
   httpPort: number = 0
 ): Promise<void> {
-  await mkdir(TEST_DIR, { recursive: true })
+  const discoveryPath = await getDiscoveryPath()
   await writeFile(
-    join(TEST_DIR, 'mcp.json'),
+    discoveryPath,
     JSON.stringify({
       pid: process.pid,
       socketPath,
@@ -138,6 +138,12 @@ describe('stdio-bridge transport reconnection', () => {
       delete process.env.OPENPENCIL_MCP_SOCKET
     } else {
       process.env.OPENPENCIL_MCP_SOCKET = origSocketEnv
+    }
+    try {
+      const discoveryPath = await getDiscoveryPath()
+      if (existsSync(discoveryPath)) await unlink(discoveryPath)
+    } catch {
+      void 0 // best-effort cleanup
     }
     await rm(TEST_DIR, { recursive: true, force: true })
   })

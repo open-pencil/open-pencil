@@ -6,17 +6,17 @@ import { dirname, join } from 'node:path'
  * Platform-specific paths for the MCP server's Unix domain socket
  * and the discovery JSON file.
  *
- * Socket directory layout:
+ * Socket directory layout (overridable via OPENPENCIL_MCP_SOCKET):
  *   macOS:   ~/Library/Application Support/OpenPencil/
  *   Linux:   $XDG_RUNTIME_DIR/openpencil/  (fallback: ~/.openpencil/)
  *   Windows: %LOCALAPPDATA%\OpenPencil\  (fallback: ~\AppData\Local\OpenPencil\)
  *
  * On Windows, Unix domain sockets are unavailable — the server uses TCP only.
- * The discovery file is still written to the directory above so the stdio
- * bridge and CLI can auto-connect.
  *
- * Discovery file: <socketDir>/mcp.json
- * Socket file:     <socketDir>/mcp.sock  (Unix only)
+ * Discovery file: always at the platform-default path above (NOT moved by
+ * OPENPENCIL_MCP_SOCKET). The socket override is recorded in the discovery
+ * file's `socketPath` field so clients read it from the well-known location.
+ * Socket file:     <socketDir>/mcp.sock  (Unix only, or the override path)
  */
 
 const DIR_NAME_UNIX = 'openpencil'
@@ -28,20 +28,19 @@ const isMacOS = platform() === 'darwin'
 const isWindows = platform() === 'win32'
 
 /**
- * Returns the platform-appropriate directory for MCP runtime files.
+ * Returns the platform-specific default directory for MCP runtime files,
+ * ignoring OPENPENCIL_MCP_SOCKET. The discovery file always lives here so
+ * clients can find it at a well-known location regardless of socket overrides.
  * Creates the directory (with restrictive permissions) if it does not exist.
  *
- * The OPENPENCIL_MCP_SOCKET env var, when set, overrides the directory:
- * its dirname is used as the socket directory.
+ * The 0o700 mode restricts permissions on Unix. On Windows, mkdir ignores
+ * the mode and uses default ACLs — directory access is controlled by the
+ * filesystem, not the permission bits.
  */
-export async function getSocketDir(): Promise<string> {
-  const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
-
+async function getPlatformDir(): Promise<string> {
   let dir: string
 
-  if (socketOverride) {
-    dir = dirname(socketOverride)
-  } else if (isMacOS) {
+  if (isMacOS) {
     dir = join(homedir(), 'Library', 'Application Support', DIR_NAME_MACOS)
   } else if (isWindows) {
     const localAppData = process.env.LOCALAPPDATA?.trim()
@@ -60,12 +59,27 @@ export async function getSocketDir(): Promise<string> {
     }
   }
 
-  // The 0o700 mode restricts permissions on Unix. On Windows, mkdir ignores
-  // the mode and uses default ACLs — directory access is controlled by the
-  // filesystem, not the permission bits.
   await mkdir(dir, { recursive: true, mode: 0o700 })
-
   return dir
+}
+
+/**
+ * Returns the directory for MCP runtime files (socket file and discovery file).
+ *
+ * When OPENPENCIL_MCP_SOCKET is set, its dirname is used as the socket
+ * directory. When unset, the platform default from getPlatformDir() is used.
+ * Creates the directory (with restrictive permissions) if it does not exist.
+ */
+export async function getSocketDir(): Promise<string> {
+  const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
+
+  if (socketOverride) {
+    const dir = dirname(socketOverride)
+    await mkdir(dir, { recursive: true, mode: 0o700 })
+    return dir
+  }
+
+  return getPlatformDir()
 }
 
 /**
@@ -92,23 +106,14 @@ export async function getSocketPath(): Promise<string> {
 /**
  * Returns the full path to the MCP discovery JSON file.
  *
- * The discovery file contains runtime metadata (PID, socket path, HTTP port,
- * version) so that clients can auto-discover the running server.
- *
- * When OPENPENCIL_MCP_SOCKET is set, the discovery file is placed
- * alongside the socket (same directory).
+ * The discovery file always lives at the platform-default location so clients
+ * can find it without knowing whether OPENPENCIL_MCP_SOCKET is set. It contains
+ * the actual socket path (which may be overridden) in its `socketPath` field,
+ * so clients read the discovery file to learn where to connect — not the other
+ * way around.
  */
 export async function getDiscoveryPath(): Promise<string> {
-  const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()
-
-  if (socketOverride) {
-    // Ensure the override directory exists — getSocketDir() only creates
-    // the default platform directory, so custom paths would fail to write.
-    await getSocketDir()
-    return join(dirname(socketOverride), DISCOVERY_FILENAME)
-  }
-
-  const dir = await getSocketDir()
+  const dir = await getPlatformDir()
   return join(dir, DISCOVERY_FILENAME)
 }
 

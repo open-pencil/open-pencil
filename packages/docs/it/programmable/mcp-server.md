@@ -52,7 +52,7 @@ Il server scrive un **file di discovery** all'avvio. Il bridge stdio legge quest
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
 | Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Sovrascrivi con `OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) — il file di discovery (`mcp.json`) viene posizionato nella stessa directory del socket.
+`OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) sovrascrive solo il percorso del socket — il file di discovery rimane sempre nel percorso della piattaforma sopra indicato.
 
 ### Contenuto del file di discovery
 
@@ -250,10 +250,8 @@ npm install -g @open-pencil/mcp@latest
 Il bridge legge il file di discovery per localizzare il server. Se manca o è stale (PID non più attivo):
 
 1. Controlla che il file di discovery esista nel percorso della tua piattaforma
-2. Se usi `OPENPENCIL_MCP_SOCKET` personalizzato (solo macOS/Linux), controlla anche il file di discovery adiacente al percorso del socket personalizzato (la directory contenente il file socket)
-3. Se TCP è abilitato (`PORT` non è `0`), verifica che il server sia in esecuzione: `curl http://127.0.0.1:${PORT:-7600}/health`
-4. Se usi `OPENPENCIL_MCP_SOCKET` personalizzato, assicurati che il bridge usi la stessa variabile
-5. Su Windows (trasporto solo TCP), verifica che `httpPort` del server sia raggiungibile
+2. Se TCP è abilitato (`PORT` non è `0`), verifica che il server sia in esecuzione: `curl http://127.0.0.1:${PORT:-7600}/health`
+3. Su Windows (trasporto solo TCP), verifica che `httpPort` del server sia raggiungibile
 
 ## Flusso di lavoro
 

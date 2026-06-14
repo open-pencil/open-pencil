@@ -12,7 +12,7 @@ import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
-import { isTauri } from '@/app/tauri/env'
+import { IS_TAURI } from '@/constants'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -78,7 +78,7 @@ async function openPendingAssociatedFiles() {
 }
 
 async function bindAssociatedFileOpen() {
-  if (!isTauri()) return
+  if (!IS_TAURI) return
   const { listen } = await import('@tauri-apps/api/event')
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void openPendingAssociatedFiles().catch((e) => console.error('[Open With]', e))
@@ -90,8 +90,7 @@ onMounted(async () => {
   try {
     const mcp = await spawnMCPIfNeeded()
     mcpCleanup.value = mcp?.disconnect ?? null
-    const tauri = isTauri()
-    if (import.meta.env.DEV || tauri) {
+    if (import.meta.env.DEV || IS_TAURI) {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
@@ -99,7 +98,7 @@ onMounted(async () => {
     // agents and automation silently fail and the user can't tell why.
     const message = e instanceof Error ? e.message : String(e)
     console.warn('[MCP]', message)
-    if (isTauri()) {
+    if (IS_TAURI) {
       toast.error(`MCP server failed to start: ${message}`)
     }
   }

@@ -50,8 +50,9 @@ El servidor escribe un **archivo de descubrimiento** al iniciarse. El puente std
 |------------|------|
 | macOS | `~/Library/Application Support/OpenPencil/mcp.json` |
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
+| Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-Sobreescribe con `OPENPENCIL_MCP_SOCKET` — el archivo de descubrimiento (`mcp.json`) se coloca junto al socket (en la misma dirección).
+`OPENPENCIL_MCP_SOCKET` sobrescribe solo la ruta del socket — el archivo de descubrimiento siempre permanece en la ruta de la plataforma indicada arriba.
 
 ### Contenido del archivo de descubrimiento
 
@@ -249,10 +250,8 @@ npm install -g @open-pencil/mcp@latest
 El puente lee el archivo de descubrimiento para localizar el servidor. Si falta o está stale (PID ya no vivo):
 
 1. Comprueba que el archivo de descubrimiento existe en la ruta de tu plataforma
-2. Si usas `OPENPENCIL_MCP_SOCKET` personalizado (solo macOS/Linux), comprueba también el archivo de descubrimiento junto a la ruta del socket personalizado (el directorio que contiene el archivo de socket)
-3. Si TCP está habilitado (`PORT` no es `0`), verifica que el servidor esté ejecutándose: `curl http://127.0.0.1:${PORT:-7600}/health`
-4. Si usas `OPENPENCIL_MCP_SOCKET` personalizado, asegúrate de que el puente use la misma variable
-5. En Windows (transporte solo TCP), verifica que `httpPort` del servidor sea accesible
+2. Si TCP está habilitado (`PORT` no es `0`), verifica que el servidor esté ejecutándose: `curl http://127.0.0.1:${PORT:-7600}/health`
+3. En Windows (transporte solo TCP), verifica que `httpPort` del servidor sea accesible
 
 ## Flujo de trabajo
 
