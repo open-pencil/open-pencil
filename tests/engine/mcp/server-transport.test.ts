@@ -570,12 +570,13 @@ describe('MCP WebSocket stdio bridge routing', () => {
 
 function nodeHttpRequest(
   opts: RequestOptions,
-  bodyJson?: string
+  bodyJson?: string,
+  timeoutMs = 5_000
 ): Promise<{ status: number; data: unknown }> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
-      reject(new Error('nodeHttpRequest timed out after 5s'))
-    }, 5_000)
+      req.destroy(new Error(`nodeHttpRequest timed out after ${timeoutMs / 1000}s`))
+    }, timeoutMs)
     const req = httpRequest(opts, (res) => {
       const chunks: Buffer[] = []
       res.on('data', (chunk: Buffer) => chunks.push(chunk))
@@ -598,6 +599,13 @@ function nodeHttpRequest(
     req.on('error', (err) => {
       clearTimeout(timeout)
       reject(err)
+    })
+    // Connection-level timeout: destroys the socket if the server stalls
+    // during connection or mid-request. The response-level timeout above
+    // handles slow responses; this handles hung connections (e.g., socket
+    // exists but no one is listening).
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`nodeHttpRequest connection timed out after ${timeoutMs / 1000}s`))
     })
     if (bodyJson) req.write(bodyJson)
     req.end()
