@@ -153,25 +153,15 @@ describe('BrowserRpcBridge reconnection', () => {
     // Send an RPC — goes to old browser (no response, sits in pending map).
     // Attach .catch() immediately to prevent unhandled rejection when
     // rejectAllPending fires during registerBrowser below.
-    let rpcRejection: Error | null = null
     const rpcPromise = bridge.sendRpc(RPC_BODY)
-    rpcPromise.catch((e: Error) => {
-      rpcRejection = e
-    })
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 50)
-    })
 
     // A new browser reconnects on a different WS connection.
     // This triggers rejectAllPending() inside registerBrowser.
     const start = Date.now()
     await registerBrowser(pairB.serverWs, pairB.clientWs, bridge)
 
-    // Give the catch handler a tick to capture the rejection
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 10)
-    })
-    expect(rpcRejection?.message).toBe('Browser reconnected')
+    // Assert the rejection directly instead of sleeping for handler propagation.
+    await expect(rpcPromise).rejects.toThrow('Browser reconnected')
     const elapsed = Date.now() - start
     expect(elapsed).toBeLessThan(5_000)
   })
