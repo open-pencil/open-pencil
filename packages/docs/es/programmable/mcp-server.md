@@ -227,7 +227,7 @@ Otra instancia de OpenPencil (u otro proceso) está usando el puerto 7600. Soluc
 
 - Cierra la otra instancia
 - Configura `PORT=7601` (o cualquier puerto libre) antes de iniciar
-- Configura `PORT=0` para desactivar TCP y usar solo socket
+- Configura `PORT=0` para desactivar TCP y usar solo socket (solo macOS/Linux; en Windows desactiva todo transporte)
 
 ### Errores de "stale socket" en macOS/Linux
 
