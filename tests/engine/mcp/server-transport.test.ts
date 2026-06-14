@@ -401,9 +401,12 @@ describe('MCP WebSocket stdio bridge routing', () => {
       // Token is null — the browser app sends its token proactively
       expect(initialRegister.token).toBeNull()
 
+      // Set up the broadcast listener BEFORE registering the browser,
+      // otherwise the message can be lost (ws doesn't buffer messages).
+      const broadcastPromise = readWsJson<{ type: string; token?: string | null }>(clientWs, 3_000)
       browser = await connectMockBrowser(httpPort, graph, authToken)
       // Read the broadcast register notification sent when browser connects
-      const broadcastRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      const broadcastRegister = await broadcastPromise
       expect(broadcastRegister.type).toBe('register')
       expect(broadcastRegister.token).toBeNull()
     } finally {

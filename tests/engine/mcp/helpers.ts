@@ -100,7 +100,12 @@ export function connectMockBrowser(
 
       if (!settled) {
         settled = true
-        resolve({ ws, graph, requests, close: () => ws.close() })
+        // Wait for the server to confirm browser registration before resolving.
+        // Without this, follow-up test traffic can start before the server marks
+        // the browser as connected, causing race conditions.
+        void waitForBrowserRegistration(port).then(() => {
+          resolve({ ws, graph, requests, close: () => ws.close() })
+        }, reject)
       }
     })
 
