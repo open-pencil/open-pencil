@@ -97,7 +97,7 @@ onMounted(async () => {
     // Surface the failure to the user — without a visible signal, ACP
     // agents and automation silently fail and the user can't tell why.
     const message = e instanceof Error ? e.message : String(e)
-    console.warn('[MCP]', message)
+    console.warn('[MCP]', message, e)
     if (IS_TAURI) {
       toast.error(`MCP server failed to start: ${message}`)
     }

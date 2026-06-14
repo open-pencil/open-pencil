@@ -10,7 +10,12 @@ import { SceneGraph } from '@open-pencil/core/scene-graph'
 
 import { startServer } from '#mcp/server'
 
-import { connectMockBrowser } from './helpers'
+import {
+  connectMockBrowser,
+  waitForBrowserRegistration,
+  type HealthResponse,
+  type MockBrowser
+} from './helpers'
 
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)
@@ -40,24 +45,43 @@ async function createTestClient() {
   })
 
   const httpPort = handle.httpPort
-  if (!httpPort) throw new Error('TCP listener not started')
+  if (!httpPort) {
+    await handle.close()
+    throw new Error('TCP listener not started')
+  }
 
   const graph = new SceneGraph()
-  const browser = await connectMockBrowser(httpPort, graph, authToken)
+  let browser: MockBrowser | undefined
+  let client: Client | undefined
 
-  const client = new Client({ name: 'test-client', version: '0.0.0' })
-  const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${httpPort}/mcp`), {
-    requestInit: { headers: { Authorization: `Bearer ${authToken}` } }
-  })
-  await client.connect(transport)
+  try {
+    browser = await connectMockBrowser(httpPort, graph, authToken)
+    await waitForBrowserRegistration(httpPort)
 
+    client = new Client({ name: 'test-client', version: '0.0.0' })
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${httpPort}/mcp`),
+      {
+        requestInit: { headers: { Authorization: `Bearer ${authToken}` } }
+      }
+    )
+    await client.connect(transport)
+  } catch (e) {
+    await client?.close().catch(() => undefined)
+    browser?.close()
+    await handle.close()
+    throw e
+  }
+
+  const safeClient = client
+  const safeBrowser = browser
   return {
-    client,
+    client: safeClient,
     graph,
     handle,
     close: async () => {
-      await client.close()
-      browser.close()
+      await safeClient?.close()
+      safeBrowser?.close()
       await handle.close()
     }
   }
@@ -198,77 +222,58 @@ describe('MCP server', () => {
 // ---------------------------------------------------------------------------
 
 describe('MCP server with mcpRoot', () => {
-  test('registers open_file and new_document tools when mcpRoot is set', async () => {
+  async function withMcpRootServer(
+    mcpRoot: string | null,
+    fn: (client: Client, browser: MockBrowser, graph: SceneGraph) => Promise<void>
+  ) {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    await mkdir(TEST_MCP_ROOT, { recursive: true })
+    if (mcpRoot) await mkdir(mcpRoot, { recursive: true })
     const handle = await startServer({
       httpPort: 0,
       withTcp: true,
       socketPath: testSocketPath(),
       authToken: TEST_AUTH_TOKEN,
       enableEval: false,
-      mcpRoot: TEST_MCP_ROOT
+      mcpRoot
     })
 
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(httpPort, graph, TEST_AUTH_TOKEN)
-
-    const client = new Client({ name: 'test-root', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${httpPort}/mcp`),
-      { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
-    )
-    await client.connect(transport)
+    let browser: MockBrowser | null = null
+    let client: Client | null = null
 
     try {
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      const graph = new SceneGraph()
+      browser = await connectMockBrowser(httpPort, graph, TEST_AUTH_TOKEN)
+      await waitForBrowserRegistration(httpPort)
+
+      client = new Client({ name: 'test-root', version: '0.0.0' })
+      const transport = new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${httpPort}/mcp`),
+        { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
+      )
+      await client.connect(transport)
+
+      await fn(client, browser, graph)
+    } finally {
+      await client?.close().catch(() => undefined)
+      browser?.close()
+      await handle.close()
+    }
+  }
+
+  test('registers open_file and new_document tools when mcpRoot is set', async () => {
+    await withMcpRootServer(TEST_MCP_ROOT, async (client) => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
       expect(names).toContain('open_file')
       expect(names).toContain('new_document')
-    } finally {
-      await client.close()
-      browser.close()
-      await handle.close()
-    }
+    })
   })
 
   test('save_file accepts an explicit path inside mcpRoot', async () => {
-    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    await mkdir(TEST_MCP_ROOT, { recursive: true })
-    const handle = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: testSocketPath(),
-      authToken: TEST_AUTH_TOKEN,
-      enableEval: false,
-      mcpRoot: TEST_MCP_ROOT
-    })
-
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(httpPort, graph, TEST_AUTH_TOKEN)
-
-    const client = new Client({ name: 'test-root-save', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${httpPort}/mcp`),
-      { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
-    )
-    await client.connect(transport)
-
-    try {
-      // Ensure the unicode subdirectory exists so path validation resolves
-      // the parent directory via realpath before the file is created.
+    await withMcpRootServer(TEST_MCP_ROOT, async (client, browser) => {
       await mkdir(join(TEST_MCP_ROOT, 'unicode'), { recursive: true })
       const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
       const result = await client.callTool({
@@ -279,42 +284,11 @@ describe('MCP server with mcpRoot', () => {
       expect(result.isError).not.toBe(true)
       const request = browser.requests.find((item) => item.command === 'save_file')
       expect(request?.args).toEqual({ path: savePath })
-    } finally {
-      await client.close()
-      browser.close()
-      await handle.close()
-    }
+    })
   })
 
   test('save_file rejects paths outside mcpRoot', async () => {
-    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    await mkdir(TEST_MCP_ROOT, { recursive: true })
-    const handle = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: testSocketPath(),
-      authToken: TEST_AUTH_TOKEN,
-      enableEval: false,
-      mcpRoot: TEST_MCP_ROOT
-    })
-
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(httpPort, graph, TEST_AUTH_TOKEN)
-
-    const client = new Client({ name: 'test-root-save-outside', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${httpPort}/mcp`),
-      { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
-    )
-    await client.connect(transport)
-
-    try {
+    await withMcpRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const result = await client.callTool({
         name: 'save_file',
         arguments: { path: join(join(TEST_MCP_ROOT, '..'), 'outside.fig') }
@@ -322,50 +296,16 @@ describe('MCP server with mcpRoot', () => {
 
       expect(result.isError).toBe(true)
       expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
-    } finally {
-      await client.close()
-      browser.close()
-      await handle.close()
-    }
+    })
   })
 
   test('does not register open_file when mcpRoot is null', async () => {
-    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    const handle = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: testSocketPath(),
-      authToken: TEST_AUTH_TOKEN,
-      enableEval: false,
-      mcpRoot: null
-    })
-
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(httpPort, graph, TEST_AUTH_TOKEN)
-
-    const client = new Client({ name: 'test-no-root', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${httpPort}/mcp`),
-      { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
-    )
-    await client.connect(transport)
-
-    try {
+    await withMcpRootServer(null, async (client) => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
       expect(names).not.toContain('open_file')
       expect(names).not.toContain('new_document')
-    } finally {
-      await client.close()
-      browser.close()
-      await handle.close()
-    }
+    })
   })
 })
 
@@ -491,12 +431,12 @@ describe('MCP server concurrent startServer', () => {
       expect(a.httpPort).not.toBe(b.httpPort)
 
       // Each responds on /health with the expected auth state.
-      const aHealth = (await (await fetch(`http://127.0.0.1:${a.httpPort}/health`)).json()) as {
-        status: string
-      }
-      const bHealth = (await (await fetch(`http://127.0.0.1:${b.httpPort}/health`)).json()) as {
-        status: string
-      }
+      const aHealth = (await (
+        await fetch(`http://127.0.0.1:${a.httpPort}/health`)
+      ).json()) as HealthResponse
+      const bHealth = (await (
+        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
+      ).json()) as HealthResponse
       expect(aHealth.status).toBe('no_app')
       expect(bHealth.status).toBe('no_app')
 
@@ -541,9 +481,9 @@ describe('MCP server concurrent startServer', () => {
       await a.close()
 
       // Server b should still be healthy and reachable.
-      const bHealth = (await (await fetch(`http://127.0.0.1:${b.httpPort}/health`)).json()) as {
-        status: string
-      }
+      const bHealth = (await (
+        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
+      ).json()) as HealthResponse
       expect(bHealth.status).toBe('no_app')
 
       // Discovery file should still exist (owned by server b now).

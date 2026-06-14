@@ -46,6 +46,8 @@ export function connectMockBrowser(
     const requests: MockBrowserRequest[] = []
     const token = authToken ?? 'test-token-' + randomHex(8)
 
+    let settled = false
+
     ws.on('open', () => {
       ws.send(JSON.stringify({ type: 'register', token }))
 
@@ -96,9 +98,38 @@ export function connectMockBrowser(
         }
       })
 
-      resolve({ ws, graph, requests, close: () => ws.close() })
+      if (!settled) {
+        settled = true
+        resolve({ ws, graph, requests, close: () => ws.close() })
+      }
     })
 
-    ws.on('error', reject)
+    ws.on('error', (err) => {
+      if (!settled) {
+        settled = true
+        reject(err)
+      }
+    })
   })
+}
+
+export async function waitForBrowserRegistration(port: number, timeoutMs = 5000): Promise<void> {
+  const start = Date.now()
+  let lastStatus = 'unknown'
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const resp = await fetch(`http://127.0.0.1:${port}/health`)
+      const health = (await resp.json()) as HealthResponse
+      lastStatus = health.status
+      if (health.status === 'ok') return
+    } catch {
+      void 0
+    }
+    await new Promise<void>((r) => {
+      setTimeout(r, 100)
+    })
+  }
+  throw new Error(
+    `Browser registration not confirmed within ${timeoutMs}ms (last status: ${lastStatus})`
+  )
 }

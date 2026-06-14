@@ -16,7 +16,11 @@ import { dirname, join } from 'node:path'
  * Discovery file: always at the platform-default path above (NOT moved by
  * OPENPENCIL_MCP_SOCKET). The socket override is recorded in the discovery
  * file's `socketPath` field so clients read it from the well-known location.
- * Socket file:     <socketDir>/mcp.sock  (Unix only, or the override path)
+ * Socket file:     <socketDir>/mcp.sock  (or the override path)
+ *
+ * IMPORTANT: getSocketDir() returns the directory that contains the socket
+ * file. It does NOT always contain the discovery file — when
+ * OPENPENCIL_MCP_SOCKET is set, the discovery file stays at getPlatformDir().
  */
 
 const DIR_NAME_UNIX = 'openpencil'
@@ -64,11 +68,14 @@ async function getPlatformDir(): Promise<string> {
 }
 
 /**
- * Returns the directory for MCP runtime files (socket file and discovery file).
+ * Returns the directory for the MCP socket file.
  *
  * When OPENPENCIL_MCP_SOCKET is set, its dirname is used as the socket
  * directory. When unset, the platform default from getPlatformDir() is used.
  * Creates the directory (with restrictive permissions) if it does not exist.
+ *
+ * NOTE: The discovery file always lives at getPlatformDir(), regardless of
+ * OPENPENCIL_MCP_SOCKET. This function should NOT be used to locate it.
  */
 export async function getSocketDir(): Promise<string> {
   const socketOverride = process.env.OPENPENCIL_MCP_SOCKET?.trim()

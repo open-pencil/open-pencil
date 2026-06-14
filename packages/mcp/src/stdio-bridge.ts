@@ -47,12 +47,13 @@ export function createStdioRpcBridge({
   let connectPromise: Promise<void> | null = null
   let closed = false
 
-  // Only the socketPathOverride parameter is treated as an explicit,
-  // authoritative pin — the discovery file cannot overwrite it during
-  // reconnect. The OPENPENCIL_MCP_SOCKET env var is an auto-discovery hint
-  // resolved through getSocketPath() and readDiscoveryFile(); it is NOT
-  // treated as explicit, so the bridge can pick up a changed path from the
-  // discovery file after a server restart.
+  // Socket path resolution has two tiers:
+  //   Explicit: socketPathOverride parameter — authoritative pin, never
+  //             overwritten by discovery during reconnect.
+  //   Hint:     OPENPENCIL_MCP_SOCKET env var — resolved through
+  //             getSocketPath() and readDiscoveryFile(); NOT treated as
+  //             explicit, so the bridge can pick up a changed path from the
+  //             discovery file after a server restart.
   const hasExplicitSocketPath = socketPathOverride !== undefined && socketPathOverride !== null
   // Track whether authToken was explicitly provided by the caller.
   // When false, the token is auto-discovered from the discovery file and

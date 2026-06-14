@@ -16,7 +16,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `Options:\n` +
       `  --help, -h    Show this help message\n\n` +
       `Environment variables:\n` +
-      `  OPENPENCIL_MCP_SOCKET        Socket path hint (auto-discovered from discovery file if unset)\n` +
+      `  OPENPENCIL_MCP_SOCKET        Override socket path (auto-discovered from discovery file when unset)\n` +
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools\n` +
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n`

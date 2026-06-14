@@ -11,7 +11,7 @@ Bun workspace with three packages:
 - `packages/core` — `@open-pencil/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
 - `packages/cli` — `@open-pencil/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
 - `packages/docs` — `@open-pencil/docs`: VitePress documentation site. Run with `cd packages/docs && bun run dev`.
-- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Discovery-driven transport (Unix socket preferred on macOS/Linux, TCP HTTP fallback). Stdio bridge via HTTP-over-socket or TCP.
+- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Transport auto-discovered via `mcp.json` file (Unix socket preferred on macOS/Linux, TCP HTTP fallback on all platforms including Windows). Stdio bridge reads discovery file to find server socket/port.
 
 - `packages/vue` — `@open-pencil/vue`: headless Vue 3 SDK (Reka UI-style) for building custom OpenPencil-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
 
@@ -225,7 +225,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - ACP design context prompt (`ACP_DESIGN_CONTEXT`) is authored in `src/app/ai/acp/design-context.md` and re-exported from `src/constants.ts`
 - Agent definitions (`ACP_AGENTS`) in `packages/core/src/constants.ts`
 - MCP server: Vite plugin in dev, `openpencil-mcp` via shell plugin in production Tauri (requires `npm i -g @open-pencil/mcp`; follow-up: bundle as Tauri sidecar)
-- Architecture: browser ↔ WebSocket (same HTTP port) ↔ MCP server (Unix socket primary, TCP fallback) ↔ HTTP-over-socket ↔ agent subprocess
+- Architecture: browser ↔ WebSocket (same HTTP port) ↔ MCP server ↔ stdio ↔ agent subprocess. The MCP server itself listens on Unix socket (primary on macOS/Linux) or TCP (fallback/Windows); the browser connects to its HTTP+WS port, while the stdio bridge (`openpencil-mcp`) connects via socket or TCP
 - Shell permissions scoped per-command in `desktop/capabilities/default.json` (`args: true` — agents need dynamic SDK flags)
 - ACP providers visible only in Tauri desktop when MCP server is reachable
 - Permission requests shown in AlertDialog — user must approve/reject each request (60s auto-reject timeout)

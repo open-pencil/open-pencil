@@ -325,33 +325,40 @@ describe('BrowserRpcBridge reconnection', () => {
       bridge.handleMessage(data, clientPair.serverWs)
     })
 
-    // Set up the real browser's response handler BEFORE sending the RPC,
-    // so the handler is ready when the request arrives.
-    browserPair.clientWs.on('message', (raw: Buffer) => {
-      const msg = JSON.parse(raw.toString())
-      if (msg.type === 'request') {
-        browserPair.clientWs.send(
-          JSON.stringify({ type: 'response', id: msg.id, ok: true, real: true })
-        )
-      }
-    })
-
     // Send an RPC — it goes to the real browser.
     const rpcPromise = bridge.sendRpc(RPC_BODY)
 
-    // Wait briefly for the request to arrive at the browser, then
-    // have the non-browser client try to inject a fake response.
-    // The ws guard (browserWs !== ws) fires here because the message
-    // arrives from a non-browser WebSocket — it returns before
-    // pending.get(msg.id) is reached. The UUID also doesn't match,
-    // but the ws guard is the first check to reject it. The
-    // matching-UUID case is tested separately below.
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 50)
+    // Capture the request ID from the browser side, then delay the
+    // legitimate response until AFTER the fake injection. This ensures
+    // the ws guard is exercised even if the real response would arrive
+    // first otherwise.
+    const capturedId = await new Promise<string>((resolve) => {
+      browserPair.clientWs.on('message', function handler(raw: Buffer) {
+        const msg = JSON.parse(raw.toString())
+        if (msg.type === 'request') {
+          browserPair.clientWs.off('message', handler)
+          resolve(msg.id)
+        }
+      })
     })
+
+    // Have the non-browser client inject a fake response with a random UUID.
+    // The ws guard (browserWs !== ws) fires because the message arrives from
+    // a non-browser WebSocket — it returns before pending.get(msg.id) is
+    // reached. The matching-UUID case is tested in the next test.
     const fakeId = randomUUID()
     clientPair.clientWs.send(
       JSON.stringify({ type: 'response', id: fakeId, ok: true, result: 'fake' })
+    )
+
+    // Give the fake message time to be processed
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 50)
+    })
+
+    // Now send the legitimate browser response
+    browserPair.clientWs.send(
+      JSON.stringify({ type: 'response', id: capturedId, ok: true, real: true })
     )
 
     // The RPC should resolve with the real browser's response, not the

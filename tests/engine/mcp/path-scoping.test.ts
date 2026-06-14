@@ -14,6 +14,16 @@ describe('MCP path scoping', () => {
     expect(await resolveSafePath(`${root}/design.fig`, root)).toBe(resolve(`${root}/design.fig`))
   })
 
+  test('resolves relative path inside root', async () => {
+    expect(await resolveSafePath('design.fig', root)).toBe(resolve(`${root}/design.fig`))
+  })
+
+  test('resolves nested relative path inside root', async () => {
+    expect(await resolveSafePath('sub/dir/file.fig', root)).toBe(
+      resolve(`${root}/sub/dir/file.fig`)
+    )
+  })
+
   test('allows nested path inside root', async () => {
     expect(await resolveSafePath(`${root}/sub/dir/file.fig`, root)).toBe(
       resolve(`${root}/sub/dir/file.fig`)
@@ -49,7 +59,7 @@ describe('MCP path scoping', () => {
     )
   })
 
-  test.skipIf(!isUnix)('rejects symlink pointing outside root', async () => {
+  test.skipIf(!isUnix)('rejects dangling symlink pointing outside root', async () => {
     const testDir = resolve(tmpdir(), 'mcp-symlink-test')
     const linkPath = `${testDir}/escape.fig`
     const outsideTarget = resolve(tmpdir(), 'mcp-symlink-outside-target')
@@ -63,6 +73,22 @@ describe('MCP path scoping', () => {
     } finally {
       await rm(testDir, { recursive: true, force: true })
       await rm(outsideTarget, { recursive: true, force: true })
+    }
+  })
+
+  test.skipIf(!isUnix)('rejects dangling symlink pointing inside root', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-dangling-inside-test')
+    const linkPath = `${testDir}/dangling.fig`
+    const insideTarget = `${testDir}/nonexistent-target.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      // Dangling symlink: target doesn't exist, but points inside root.
+      // This should still be rejected because the target could be created
+      // outside root by another process before the write happens.
+      await symlink(insideTarget, linkPath)
+      await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('outside the allowed root')
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
     }
   })
 

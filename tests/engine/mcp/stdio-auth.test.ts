@@ -235,4 +235,30 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
     const result = await bridge.sendRpc({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
   }, 10_000)
+
+  test('/rpc rejects unauthenticated requests when authToken is set', async () => {
+    await mkdir(TEST_DIR, { recursive: true })
+    await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
+    process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
+    httpServer = await createMockMcpServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
+
+    // Bridge with no explicit token — it auto-discovers from the discovery
+    // file and should succeed because the discovery file has the correct token.
+    // This verifies the /rpc 401 → retry → 200 flow indirectly.
+    const bridge = await createBridgeAndWaitForReady({
+      socketPath: TEST_SOCKET
+    })
+
+    const result = await bridge.sendRpc({ command: 'test' })
+    expect(result).toEqual({ result: 'ok-1' })
+
+    // Explicitly verify that a wrong-token bridge gets 401
+    const badBridge = await createBridgeAndWaitForReady({
+      socketPath: TEST_SOCKET,
+      authToken: 'invalid-token',
+      reconnectDelayMs: 500
+    })
+
+    await expect(badBridge.sendRpc({ command: 'test' })).rejects.toThrow()
+  }, 10_000)
 })
