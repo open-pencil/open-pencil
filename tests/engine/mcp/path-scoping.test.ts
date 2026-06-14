@@ -153,6 +153,35 @@ describe('MCP path scoping', () => {
     }
   )
 
+  test('rejects path exceeding resolution depth limit', async () => {
+    // resolveRealAncestor has a 64-iteration depth cap. When the entire
+    // ancestor chain doesn't exist (e.g., a deep non-existent root path),
+    // the function must fail closed rather than returning a partially-resolved
+    // path that could bypass containment checks.
+    const deepRoot = resolve(tmpdir(), Array(70).fill('sub').join('/'))
+    await expect(resolveSafePath(`${deepRoot}/file.fig`, deepRoot)).rejects.toThrow(
+      'depth limit exceeded'
+    )
+  })
+
+  test('rejects deep file path exceeding resolution depth limit with existing root', async () => {
+    // When the root exists but the file path has >64 non-existent ancestor
+    // segments, resolveRealAncestor is called for the parent directory and
+    // must fail closed. This exercises the second call site (line 142 in
+    // output.ts: resolveRealAncestor(parentDir)).
+    const testDir = resolve(tmpdir(), 'mcp-deep-path-test')
+    try {
+      await mkdir(testDir, { recursive: true })
+      // 70 non-existent subdirectories under an existing root
+      const deepFile = Array(70).fill('sub').join('/') + '/file.fig'
+      await expect(resolveSafePath(deepFile, testDir)).rejects.toThrow(
+        'depth limit exceeded'
+      )
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
   test.skipIf(!isUnix)('rejects symlinked root that resolves to /', async () => {
     const testDir = resolve(tmpdir(), 'mcp-symlink-root-test')
     const rootLink = `${testDir}/root-link`

@@ -30,7 +30,13 @@ async function resolveRealAncestor(
     }
     iterations++
   } while (iterations < 64) // depth limit to prevent infinite loops
-  return { realAncestor: current, remainder }
+  // Fail closed: if we exceeded the depth limit, the path may contain
+  // unresolved symlink components (e.g., circular symlinks). Returning a
+  // partially-resolved path would allow it to pass containment checks
+  // even though the fully-resolved path could be outside root.
+  throw new Error(
+    `Path resolution depth limit exceeded (possible circular symlinks): ${p}`
+  )
 }
 
 /**
