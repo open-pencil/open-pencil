@@ -46,6 +46,7 @@ export function createStdioRpcBridge({
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
   let connectPromise: Promise<void> | null = null
   let closed = false
+  let authFailure = false
 
   // Socket path resolution has two tiers:
   //   Explicit: socketPathOverride parameter — authoritative pin, never
@@ -226,11 +227,13 @@ export function createStdioRpcBridge({
     if (authFailed) {
       // Auth token is wrong — surface as an auth error rather than a generic
       // disconnect so the caller can prompt for a new token or re-read discovery.
+      authFailure = true
       ready = false
       connectPromise = null
       scheduleReconnect()
       return
     }
+    authFailure = false
     if (appConnected) {
       ready = true
       connectPromise = null
@@ -287,6 +290,7 @@ export function createStdioRpcBridge({
     // completes and we're still not ready.
     const awaitReady = async (): Promise<void> => {
       if (!ready && connectPromise) await connectPromise
+      if (authFailure) throw new Error('Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN')
       if (!ready) throw new Error(DISCONNECTED_MESSAGE)
     }
 

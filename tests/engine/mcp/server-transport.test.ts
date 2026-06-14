@@ -7,7 +7,6 @@ import { join } from 'node:path'
 import WebSocket from 'ws'
 
 import { SceneGraph } from '@open-pencil/core/scene-graph'
-import { getDiscoveryPath } from '@open-pencil/mcp/transport'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 
@@ -187,7 +186,12 @@ describe('MCP server unified transport', () => {
 
   describe('Discovery', () => {
     it('writes a discovery file matching the running server', async () => {
-      const discoveryPath = await getDiscoveryPath()
+      // Derive the discovery path from the running server's /health endpoint
+      // rather than calling getDiscoveryPath() independently, ensuring we
+      // validate the actual server instance's discovery file.
+      const healthResp = await fetch(`http://127.0.0.1:${sharedPort}/health`)
+      const health = (await healthResp.json()) as { discoveryPath: string }
+      const discoveryPath = health.discoveryPath
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
       const info = (await file.json()) as {
@@ -569,10 +573,14 @@ function nodeHttpRequest(
   bodyJson?: string
 ): Promise<{ status: number; data: unknown }> {
   return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('nodeHttpRequest timed out after 5s'))
+    }, 5_000)
     const req = httpRequest(opts, (res) => {
       const chunks: Buffer[] = []
       res.on('data', (chunk: Buffer) => chunks.push(chunk))
       res.on('end', () => {
+        clearTimeout(timeout)
         const raw = Buffer.concat(chunks).toString('utf-8')
         let data: unknown
         try {
@@ -582,9 +590,15 @@ function nodeHttpRequest(
         }
         resolve({ status: res.statusCode ?? 200, data })
       })
-      res.on('error', reject)
+      res.on('error', (err) => {
+        clearTimeout(timeout)
+        reject(err)
+      })
     })
-    req.on('error', reject)
+    req.on('error', (err) => {
+      clearTimeout(timeout)
+      reject(err)
+    })
     if (bodyJson) req.write(bodyJson)
     req.end()
   })
