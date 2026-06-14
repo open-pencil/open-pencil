@@ -98,10 +98,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           args.path !== undefined && resolvedRoot
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
-        const result = await sendRpc({ command: 'save_file', args: { path: safePath } })
+        const result = await sendRpc({ command: 'save_file', args: { path: safePath?.realPath } })
         const res = result as { ok?: boolean; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
-        return ok({ saved: true, ...(safePath ? { path: safePath } : {}) })
+        return ok({ saved: true, ...(safePath ? { path: safePath.resolved } : {}) })
       } catch (e) {
         return fail(e)
       }
@@ -123,7 +123,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: { path: string }) => {
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
-          const result = await sendRpc({ command: 'open_file', args: { path: safe } })
+          const result = await sendRpc({ command: 'open_file', args: { path: safe.resolved } })
           const res = result as { ok?: boolean; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           return ok({ opened: true })
@@ -149,7 +149,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         try {
           const safePath =
             args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
-          const result = await sendRpc({ command: 'new_document', args: { path: safePath } })
+          const result = await sendRpc({
+            command: 'new_document',
+            args: { path: safePath?.realPath }
+          })
           const res = result as { ok?: boolean; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           return ok({ created: true })

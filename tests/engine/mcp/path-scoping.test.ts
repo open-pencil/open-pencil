@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test'
-import { mkdir, rm, symlink, writeFile } from 'node:fs/promises'
+import { mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
@@ -11,27 +11,37 @@ describe('MCP path scoping', () => {
   const root = resolve(tmpdir(), 'mcp-test-root')
 
   test('allows path inside root', async () => {
-    expect(await resolveSafePath(`${root}/design.fig`, root)).toBe(resolve(`${root}/design.fig`))
+    try {
+      await mkdir(root, { recursive: true })
+      const result = await resolveSafePath(`${root}/design.fig`, root)
+      expect(result.resolved).toBe(resolve(`${root}/design.fig`))
+      // realPath is the canonical form (realpath-resolved), which may differ
+      // from resolve() on macOS where /var -> /private/var
+      const canonicalRoot = await realpath(root)
+      expect(result.realPath).toBe(`${canonicalRoot}/design.fig`)
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   test('resolves relative path inside root', async () => {
-    expect(await resolveSafePath('design.fig', root)).toBe(resolve(`${root}/design.fig`))
+    const result = await resolveSafePath('design.fig', root)
+    expect(result.resolved).toBe(resolve(`${root}/design.fig`))
   })
 
   test('resolves nested relative path inside root', async () => {
-    expect(await resolveSafePath('sub/dir/file.fig', root)).toBe(
-      resolve(`${root}/sub/dir/file.fig`)
-    )
+    const result = await resolveSafePath('sub/dir/file.fig', root)
+    expect(result.resolved).toBe(resolve(`${root}/sub/dir/file.fig`))
   })
 
   test('allows nested path inside root', async () => {
-    expect(await resolveSafePath(`${root}/sub/dir/file.fig`, root)).toBe(
-      resolve(`${root}/sub/dir/file.fig`)
-    )
+    const result = await resolveSafePath(`${root}/sub/dir/file.fig`, root)
+    expect(result.resolved).toBe(resolve(`${root}/sub/dir/file.fig`))
   })
 
   test('allows root itself', async () => {
-    expect(await resolveSafePath(root, root)).toBe(root)
+    const result = await resolveSafePath(root, root)
+    expect(result.resolved).toBe(root)
   })
 
   test('rejects path outside root', async () => {
@@ -101,10 +111,13 @@ describe('MCP path scoping', () => {
       await mkdir(targetDir, { recursive: true })
       await writeFile(targetFile, 'test')
       await symlink(targetFile, linkPath)
-      // Returns the resolved (not realpath) path — symlink target is
-      // checked via realpath for security, but the returned path is
-      // the user-provided normalized path for usability.
-      await expect(resolveSafePath(linkPath, testDir)).resolves.toBe(resolve(linkPath))
+      // Returns both resolved (for display) and realPath (canonical, for writes).
+      // The resolved path is the user-provided normalized path for usability.
+      const result = await resolveSafePath(linkPath, testDir)
+      expect(result.resolved).toBe(resolve(linkPath))
+      // realPath must be the canonical target (not the symlink itself)
+      const canonicalTarget = await realpath(targetFile)
+      expect(result.realPath).toBe(canonicalTarget)
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
@@ -130,7 +143,11 @@ describe('MCP path scoping', () => {
     try {
       await mkdir(testDir, { recursive: true })
       // File doesn't exist yet (common for save_file / export operations)
-      await expect(resolveSafePath(filePath, testDir)).resolves.toBe(resolve(filePath))
+      const result = await resolveSafePath(filePath, testDir)
+      expect(result.resolved).toBe(resolve(filePath))
+      // realPath uses the canonical parent directory + filename
+      const canonicalParent = await realpath(testDir)
+      expect(result.realPath).toBe(`${canonicalParent}/new.fig`)
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
@@ -158,7 +175,8 @@ describe('MCP path scoping', () => {
     // ancestor chain doesn't exist (e.g., a deep non-existent root path),
     // the function must fail closed rather than returning a partially-resolved
     // path that could bypass containment checks.
-    const deepRoot = resolve(tmpdir(), Array(70).fill('sub').join('/'))
+    const deepSegments = Array.from({ length: 70 }, () => 'sub').join('/')
+    const deepRoot = resolve(tmpdir(), deepSegments)
     await expect(resolveSafePath(`${deepRoot}/file.fig`, deepRoot)).rejects.toThrow(
       'depth limit exceeded'
     )
@@ -173,10 +191,8 @@ describe('MCP path scoping', () => {
     try {
       await mkdir(testDir, { recursive: true })
       // 70 non-existent subdirectories under an existing root
-      const deepFile = Array(70).fill('sub').join('/') + '/file.fig'
-      await expect(resolveSafePath(deepFile, testDir)).rejects.toThrow(
-        'depth limit exceeded'
-      )
+      const deepFile = Array.from({ length: 70 }, () => 'sub').join('/') + '/file.fig'
+      await expect(resolveSafePath(deepFile, testDir)).rejects.toThrow('depth limit exceeded')
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }

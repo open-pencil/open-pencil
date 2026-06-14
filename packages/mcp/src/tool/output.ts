@@ -34,9 +34,7 @@ async function resolveRealAncestor(
   // unresolved symlink components (e.g., circular symlinks). Returning a
   // partially-resolved path would allow it to pass containment checks
   // even though the fully-resolved path could be outside root.
-  throw new Error(
-    `Path resolution depth limit exceeded (possible circular symlinks): ${p}`
-  )
+  throw new Error(`Path resolution depth limit exceeded (possible circular symlinks): ${p}`)
 }
 
 /**
@@ -64,7 +62,14 @@ async function assertNoDanglingSymlinks(realAncestor: string, remainder: string)
   }
 }
 
-export async function resolveSafePath(filePath: string, root: string): Promise<string> {
+export interface SafePathResult {
+  /** The user-provided normalized path (for display/error messages). */
+  resolved: string
+  /** The canonical realpath-validated path (for filesystem operations). */
+  realPath: string
+}
+
+export async function resolveSafePath(filePath: string, root: string): Promise<SafePathResult> {
   // Reject trivially broad roots that would pass all containment checks.
   // On Unix, "/" matches every absolute path; on Windows, "\" or "C:\" are
   // equally broad. Without this guard, resolveSafePath("/", "/") succeeds
@@ -148,7 +153,7 @@ export async function resolveSafePath(filePath: string, root: string): Promise<s
   if (!realPath.startsWith(realRoot + realSep) && realPath !== realRoot) {
     throw new Error(`Path is outside the allowed root: ${root}`)
   }
-  return resolved
+  return { resolved, realPath }
 }
 
 export async function writeToolOutput(
@@ -157,18 +162,22 @@ export async function writeToolOutput(
   filePath: string,
   root: string
 ): Promise<MCPResult | null> {
-  const resolved = await resolveSafePath(filePath, root)
-  await mkdir(dirname(resolved), { recursive: true })
+  const { resolved, realPath } = await resolveSafePath(filePath, root)
+  // Use the canonical realPath for filesystem operations to prevent TOCTOU:
+  // an attacker could swap a directory component with a symlink between
+  // resolveSafePath's validation and the writeFile call. Writing to the
+  // realpath-validated path ensures the write lands inside root.
+  await mkdir(dirname(realPath), { recursive: true })
   if (toolName === 'export_svg' && typeof result.svg === 'string') {
-    await writeFile(resolved, result.svg, 'utf8')
+    await writeFile(realPath, result.svg, 'utf8')
     return ok({ written: resolved, byteLength: Buffer.byteLength(result.svg, 'utf8') })
   }
   if (toolName === 'export_image' && typeof result.base64 === 'string') {
-    await writeFile(resolved, Buffer.from(result.base64, 'base64'))
+    await writeFile(realPath, Buffer.from(result.base64, 'base64'))
     return ok({ written: resolved, byteLength: result.byteLength ?? null })
   }
   if (toolName === 'get_jsx' && typeof result.jsx === 'string') {
-    await writeFile(resolved, result.jsx, 'utf8')
+    await writeFile(realPath, result.jsx, 'utf8')
     return ok({ written: resolved, byteLength: Buffer.byteLength(result.jsx, 'utf8') })
   }
   return null

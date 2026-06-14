@@ -283,7 +283,12 @@ describe('MCP server with mcpRoot', () => {
 
       expect(result.isError).not.toBe(true)
       const request = browser.requests.find((item) => item.command === 'save_file')
-      expect(request?.args).toEqual({ path: savePath })
+      // The server sends the canonical (realpath-resolved) path to the browser
+      // to prevent TOCTOU races. On macOS, /var -> /private/var.
+      const { realpath } = await import('node:fs/promises')
+      const { dirname, basename } = await import('node:path')
+      const canonicalPath = join(await realpath(dirname(savePath)), basename(savePath))
+      expect(request?.args).toEqual({ path: canonicalPath })
     })
   })
 
