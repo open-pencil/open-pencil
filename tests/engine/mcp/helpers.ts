@@ -50,11 +50,11 @@ export function connectMockBrowser(
       ws.send(JSON.stringify({ type: 'register', token }))
 
       ws.on('message', async (raw) => {
-        const msg = JSON.parse(raw.toString()) as {
-          type: string
-          id: string
-          command: string
-          args?: unknown
+        let msg: { type: string; id: string; command: string; args?: unknown }
+        try {
+          msg = JSON.parse(raw.toString())
+        } catch {
+          return // Ignore malformed payloads
         }
         if (msg.type !== 'request') return
 

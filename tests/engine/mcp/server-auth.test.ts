@@ -9,6 +9,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { SceneGraph } from '@open-pencil/core/scene-graph'
 
 import { startServer, paramToZod } from '#mcp/server'
+import type { DiscoveryInfo } from '#mcp/transport/discovery'
 
 import { connectMockBrowser, type HealthResponse } from './helpers'
 
@@ -367,7 +368,7 @@ describe('Discovery PID liveness', () => {
     })
     try {
       const discoveryPath = await getDiscoveryPath()
-      const raw = (await Bun.file(discoveryPath).json()) as { pid: number }
+      const raw = (await Bun.file(discoveryPath).json()) as Pick<DiscoveryInfo, 'pid'>
       expect(raw.pid).toBe(process.pid)
     } finally {
       await handle.close()

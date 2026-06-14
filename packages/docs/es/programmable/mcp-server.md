@@ -251,7 +251,7 @@ El puente lee el archivo de descubrimiento para localizar el servidor. Si falta 
 
 1. Comprueba que el archivo de descubrimiento existe en la ruta de tu plataforma
 2. Si TCP está habilitado (`PORT` no es `0`), verifica que el servidor esté ejecutándose: `curl http://127.0.0.1:${PORT:-7600}/health`
-3. En Windows (transporte solo TCP), verifica que `httpPort` del servidor sea accesible
+3. En Windows (transporte solo TCP, sin socket Unix), verifica que `httpPort` del servidor sea accesible. `PORT=0` en Windows deshabilita el único transporte disponible
 
 ## Flujo de trabajo
 
