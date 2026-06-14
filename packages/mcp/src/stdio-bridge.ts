@@ -45,6 +45,7 @@ export function createStdioRpcBridge({
   let wasConnected = false
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
   let connectPromise: Promise<void> | null = null
+  let closed = false
 
   // Track whether the socket path was explicitly provided by the caller
   // via the socketPath option. When true, discovery updates must not
@@ -208,6 +209,7 @@ export function createStdioRpcBridge({
    * Attempts to connect to the server. Retries with a fixed delay.
    */
   async function connect(): Promise<void> {
+    if (closed) return
     try {
       await resolveTransport()
       if (!resolvedAuthToken) await resolveAuthToken()
@@ -217,7 +219,13 @@ export function createStdioRpcBridge({
       return
     }
 
+    // close() may have been called while we were resolving transport.
+    // oxlint-disable-next-line no-unnecessary-condition
+    if (closed) return
+
     const { reachable, appConnected, authFailed } = await checkHealth()
+    // oxlint-disable-next-line no-unnecessary-condition
+    if (closed) return
     if (authFailed) {
       // Auth token is wrong — surface as an auth error rather than a generic
       // disconnect so the caller can prompt for a new token or re-read discovery.
@@ -255,6 +263,7 @@ export function createStdioRpcBridge({
   }
 
   function scheduleReconnect() {
+    if (closed) return
     clearTimeout(reconnectTimer)
     reconnectTimer = setTimeout(() => {
       connectPromise = connect()
@@ -408,8 +417,20 @@ export function createStdioRpcBridge({
     )
   }
 
+  /**
+   * Stops the reconnect timer and marks the bridge as not ready.
+   * Call this to cleanly shut down the bridge and prevent timer leaks.
+   */
+  function close(): void {
+    closed = true
+    clearTimeout(reconnectTimer)
+    reconnectTimer = undefined
+    ready = false
+    connectPromise = null
+  }
+
   // Start connection
   connectPromise = connect()
 
-  return { sendRpc }
+  return { sendRpc, close }
 }

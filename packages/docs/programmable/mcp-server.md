@@ -213,7 +213,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 - Socket file permissions `0o600` on Unix — restricts access to your user
 - Discovery file permissions `0o600` — same restriction
 
-**Known limitation:** On Unix, there is a brief window between `listen()` and `chmod(0o600)` where the socket has default permissions. The auth token mitigates this — even if another process connects during the window, it still needs the token. No mitigation exists for `authToken: null` on shared machines.
+**Known limitation:** On Unix, there is a brief window between `listen()` and `chmod(0o600)` where the socket has default permissions. The auth token mitigates this — even if another process connects during the window, it still needs the token. No mitigation exists when auth is disabled (`OPENPENCIL_MCP_AUTH_TOKEN=""`) on shared machines.
 
 ## Troubleshooting
 
