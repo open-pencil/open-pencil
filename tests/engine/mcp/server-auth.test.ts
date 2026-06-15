@@ -400,7 +400,12 @@ describe('Discovery PID liveness', () => {
     // Spawn a child process, kill it, and use its PID — guaranteed dead.
     // This avoids relying on a hardcoded magic number (like 4_194_304) that
     // could theoretically be alive on systems with a high pid_max.
-    const child = Bun.spawn(['sleep', '9999'], { detached: true })
+    // Uses an inline Bun script instead of the `sleep` binary so the
+    // fixture is self-contained and portable (no external dependency).
+    const child = Bun.spawn({
+      cmd: [process.execPath, '-e', 'setTimeout(()=>{},999999)'],
+      detached: true
+    })
     const deadPid = child.pid
     child.kill()
     await new Promise<void>((resolve) => {
