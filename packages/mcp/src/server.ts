@@ -622,7 +622,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
     await teardownListeners(state).catch(() => undefined)
     ctx.wss.close()
     ctx.browserRpc.close()
-    void ctx.mcpSessions.clear()
+    ctx.mcpSessions.clear().catch(() => undefined)
     throw err
   }
 
