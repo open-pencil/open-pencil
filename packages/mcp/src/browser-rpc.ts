@@ -200,6 +200,7 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
   }
 
   function registerBrowser(ws: WebSocket, token: string | null) {
+    if (bridgeClosed) return
     if (!isAuthorized(token, authToken)) {
       ws.close()
       return
