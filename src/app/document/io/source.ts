@@ -121,11 +121,7 @@ export function createDocumentSourceActions({
     updateSourceIdentity(downloadName, undefined, path)
   }
 
-  function updateSourceIdentity(
-    fileName: string,
-    handle?: FileSystemFileHandle,
-    path?: string
-  ) {
+  function updateSourceIdentity(fileName: string, handle?: FileSystemFileHandle, path?: string) {
     setSourceHandle(handle ?? null)
     setSourcePath(path ?? null)
     setSourceFileName(fileName)

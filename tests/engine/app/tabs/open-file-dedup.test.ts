@@ -57,12 +57,7 @@ describe('findExistingTab', () => {
     const tab = makeTab()
     tab.store.setDocumentSource('file.fig', 'pen', undefined, '/Users/joeyc/file.fig')
 
-    const found = await findExistingTab(
-      [tab],
-      undefined,
-      '/Users//joeyc\\\\file.fig',
-      'file.fig'
-    )
+    const found = await findExistingTab([tab], undefined, '/Users//joeyc\\\\file.fig', 'file.fig')
     expect(found?.id).toBe(tab.id)
 
     const notFound = await findExistingTab([tab], undefined, '/other/file.fig', 'file.fig')
