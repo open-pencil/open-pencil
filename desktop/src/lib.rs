@@ -81,9 +81,18 @@ fn path_identity_key(path: &Path) -> String {
     let lossy = path.to_string_lossy();
     #[cfg(target_os = "windows")]
     {
-        // Forward slashes and backslashes refer to the same file on Windows,
-        // so normalize to one separator before case-folding.
-        lossy.replace('\\', '/').to_lowercase()
+        // Canonicalized Windows paths may carry the extended-length (`\\?\`) or
+        // extended-length UNC (`\\?\UNC\`) verbatim prefix. Strip it before
+        // slash normalization so the identity key matches ordinary paths sent
+        // by the frontend.
+        let mut normalized = lossy.into_owned();
+        if let Some(rest) = normalized.strip_prefix(r"\\?\UNC\") {
+            normalized = format!(r"\\{}", rest);
+        } else if let Some(rest) = normalized.strip_prefix(r"\\?\") {
+            normalized = rest.to_string();
+        }
+
+        normalized.replace('\\', "/").to_lowercase()
     }
     #[cfg(target_os = "macos")]
     {
@@ -118,7 +127,10 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
     if let Ok(mut pending) = app.state::<PendingOpen>().0.lock() {
         for file in files {
             let file_key = path_identity_key(Path::new(&file.path));
-            if pending.iter().all(|p| path_identity_key(Path::new(&p.path)) != file_key) {
+            if pending
+                .iter()
+                .all(|p| path_identity_key(Path::new(&p.path)) != file_key)
+            {
                 pending.push(file);
             }
         }
@@ -206,10 +218,34 @@ mod tests {
         // paths here is harmless on other platforms.
         #[cfg(target_os = "windows")]
         {
-            assert_eq!(path_identity_key(Path::new(r"C:\foo\bar.txt")), "c:/foo/bar.txt");
+            assert_eq!(
+                path_identity_key(Path::new(r"C:\foo\bar.txt")),
+                "c:/foo/bar.txt"
+            );
             assert_eq!(
                 path_identity_key(Path::new(r"C:/foo\\bar.txt")),
                 "c:/foo/bar.txt"
+            );
+        }
+    }
+
+    #[test]
+    fn windows_strips_verbatim_prefix_before_normalizing() {
+        // These assertions target Windows behaviour, but constructing the same
+        // paths here is harmless on other platforms.
+        #[cfg(target_os = "windows")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\C:\foo\bar.txt")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\UNC\server\share\file.fig")),
+                "//server/share/file.fig"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\UNC\Server\Share\dir")),
+                "//server/share/dir"
             );
         }
     }
