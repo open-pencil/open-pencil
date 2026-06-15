@@ -41,11 +41,75 @@ function makeHandle(
   return { name, isSameEntry } as FileSystemFileHandle
 }
 
+function overridePlatform(platform: string): () => void {
+  const original = process.platform
+  Object.defineProperty(process, 'platform', { value: platform, configurable: true })
+  return () => {
+    Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  }
+}
+
 describe('normalizeFilePath', () => {
-  test('collapses separators and removes trailing slash', () => {
-    expect(normalizeFilePath('C:\\\\Users\\\\joeyc\\\\file.fig')).toBe('C:/Users/joeyc/file.fig')
-    expect(normalizeFilePath('/Users/joeyc//file.fig/')).toBe('/Users/joeyc/file.fig')
-    expect(normalizeFilePath('/Users/joeyc/file.fig')).toBe('/Users/joeyc/file.fig')
+  test('collapses forward slashes and removes trailing slash on Linux', () => {
+    const restore = overridePlatform('linux')
+    try {
+      expect(normalizeFilePath('/Users/joeyc//file.fig/')).toBe('/Users/joeyc/file.fig')
+      expect(normalizeFilePath('/Users/joeyc/file.fig')).toBe('/Users/joeyc/file.fig')
+    } finally {
+      restore()
+    }
+  })
+
+  test('preserves backslashes on POSIX platforms', () => {
+    const restore = overridePlatform('linux')
+    try {
+      expect(normalizeFilePath('/Users/joeyc/my\\file.fig')).toBe('/Users/joeyc/my\\file.fig')
+    } finally {
+      restore()
+    }
+  })
+
+  test('converts backslashes to slashes on Windows', () => {
+    const restore = overridePlatform('win32')
+    try {
+      expect(normalizeFilePath('C:\\Users\\joeyc\\file.fig')).toBe('c:/users/joeyc/file.fig')
+    } finally {
+      restore()
+    }
+  })
+
+  test('preserves UNC prefix on Windows', () => {
+    const restore = overridePlatform('win32')
+    try {
+      expect(normalizeFilePath('\\\\server\\share\\file.fig')).toBe('//server/share/file.fig')
+      expect(normalizeFilePath('\\\\server\\share\\dir\\')).toBe('//server/share/dir')
+    } finally {
+      restore()
+    }
+  })
+
+  test('folds case on macOS and Windows', () => {
+    let restore = overridePlatform('darwin')
+    try {
+      expect(normalizeFilePath('/Users/JoeyC/File.fig')).toBe('/users/joeyc/file.fig')
+    } finally {
+      restore()
+    }
+    restore = overridePlatform('win32')
+    try {
+      expect(normalizeFilePath('/Users/JoeyC/File.fig')).toBe('/users/joeyc/file.fig')
+    } finally {
+      restore()
+    }
+  })
+
+  test('keeps case on Linux', () => {
+    const restore = overridePlatform('linux')
+    try {
+      expect(normalizeFilePath('/Users/JoeyC/File.fig')).toBe('/Users/JoeyC/File.fig')
+    } finally {
+      restore()
+    }
   })
 })
 
@@ -53,15 +117,33 @@ describe('findExistingTab', () => {
   beforeEach(setupGlobals)
   afterEach(teardownGlobals)
 
-  test('matches by normalized path', async () => {
-    const tab = makeTab()
-    tab.store.setDocumentSource('file.fig', 'pen', undefined, '/Users/joeyc/file.fig')
+  test('matches by normalized path on POSIX', async () => {
+    const restore = overridePlatform('linux')
+    try {
+      const tab = makeTab()
+      tab.store.setDocumentSource('file.fig', 'pen', undefined, '/Users/joeyc/file.fig')
 
-    const found = await findExistingTab([tab], undefined, '/Users//joeyc\\\\file.fig', 'file.fig')
-    expect(found?.id).toBe(tab.id)
+      const found = await findExistingTab([tab], undefined, '/Users//joeyc/file.fig')
+      expect(found?.id).toBe(tab.id)
 
-    const notFound = await findExistingTab([tab], undefined, '/other/file.fig', 'file.fig')
-    expect(notFound).toBeNull()
+      const notFound = await findExistingTab([tab], undefined, '/other/file.fig')
+      expect(notFound).toBeNull()
+    } finally {
+      restore()
+    }
+  })
+
+  test('matches by normalized Windows path', async () => {
+    const restore = overridePlatform('win32')
+    try {
+      const tab = makeTab()
+      tab.store.setDocumentSource('file.fig', 'pen', undefined, 'C:/Users/joeyc/file.fig')
+
+      const found = await findExistingTab([tab], undefined, 'C:\\\\Users\\\\joeyc\\\\file.fig')
+      expect(found?.id).toBe(tab.id)
+    } finally {
+      restore()
+    }
   })
 
   test('matches by FileSystemFileHandle.isSameEntry', async () => {
@@ -71,10 +153,10 @@ describe('findExistingTab', () => {
     const tab = makeTab()
     tab.store.setDocumentSource('file.fig', 'pen', known)
 
-    const found = await findExistingTab([tab], known, undefined, 'file.fig')
+    const found = await findExistingTab([tab], known)
     expect(found?.id).toBe(tab.id)
 
-    const notFound = await findExistingTab([tab], other, undefined, 'other.fig')
+    const notFound = await findExistingTab([tab], other)
     expect(notFound).toBeNull()
   })
 
@@ -85,30 +167,27 @@ describe('findExistingTab', () => {
     const tab = makeTab()
     tab.store.setDocumentSource('file.fig', 'pen', bad)
 
-    const found = await findExistingTab([tab], bad, undefined, 'file.fig')
+    const found = await findExistingTab([tab], bad)
     expect(found).toBeNull()
   })
 
-  test('falls back to source file name', async () => {
+  test('does not deduplicate by file name alone', async () => {
     const tab = makeTab()
     tab.store.setDocumentSource('design.fig', 'pen')
 
-    const found = await findExistingTab([tab], undefined, undefined, 'design.fig')
-    expect(found?.id).toBe(tab.id)
-
-    const notFound = await findExistingTab([tab], undefined, undefined, 'other.fig')
-    expect(notFound).toBeNull()
+    const found = await findExistingTab([tab], undefined, undefined)
+    expect(found).toBeNull()
   })
 
-  test('prefers path identity over handle identity', async () => {
+  test('prefers path identity and does not fall back to handle identity', async () => {
     const handle = makeHandle('file.fig', async () => false)
     const tab = makeTab()
     tab.store.setDocumentSource('file.fig', 'pen', handle, '/a/file.fig')
 
-    const byPath = await findExistingTab([tab], undefined, '/a/file.fig', 'file.fig')
+    const byPath = await findExistingTab([tab], undefined, '/a/file.fig')
     expect(byPath?.id).toBe(tab.id)
 
-    const byHandle = await findExistingTab([tab], handle, undefined, 'file.fig')
+    const byHandle = await findExistingTab([tab], handle)
     expect(byHandle).toBeNull()
   })
 })
@@ -120,7 +199,6 @@ describe('createFileOpenLock', () => {
   test('serializes duplicate opens so the second switches to the first-created tab', async () => {
     const tabs: Tab[] = []
     const lock = createFileOpenLock(() => tabs)
-    const file = new File([], 'design.fig')
 
     const operation = vi.fn(async (existingTab: Tab | null) => {
       if (existingTab) return 'switch'
@@ -133,8 +211,8 @@ describe('createFileOpenLock', () => {
     })
 
     const [first, second] = await Promise.all([
-      lock.run(undefined, '/a/design.fig', file, operation),
-      lock.run(undefined, '/a/design.fig', file, operation)
+      lock.run(undefined, '/a/design.fig', operation),
+      lock.run(undefined, '/a/design.fig', operation)
     ])
 
     expect(first).toBe('opened')
@@ -146,7 +224,6 @@ describe('createFileOpenLock', () => {
   test('lets a second open retry when the first attempt fails', async () => {
     const tabs: Tab[] = []
     const lock = createFileOpenLock(() => tabs)
-    const file = new File([], 'design.fig')
 
     let attempts = 0
     const operation = vi.fn(async () => {
@@ -155,10 +232,10 @@ describe('createFileOpenLock', () => {
       throw new Error(`attempt ${attempts} failed`)
     })
 
-    await expect(lock.run(undefined, '/a/design.fig', file, operation)).rejects.toThrow(
+    await expect(lock.run(undefined, '/a/design.fig', operation)).rejects.toThrow(
       'attempt 1 failed'
     )
-    await expect(lock.run(undefined, '/a/design.fig', file, operation)).rejects.toThrow(
+    await expect(lock.run(undefined, '/a/design.fig', operation)).rejects.toThrow(
       'attempt 2 failed'
     )
 
@@ -166,7 +243,7 @@ describe('createFileOpenLock', () => {
     expect(operation).toHaveBeenCalledTimes(2)
   })
 
-  test('allows concurrent opens for different keys', async () => {
+  test('serializes concurrent opens for different keys', async () => {
     const tabs: Tab[] = []
     const lock = createFileOpenLock(() => tabs)
 
@@ -186,17 +263,14 @@ describe('createFileOpenLock', () => {
     }
 
     const [first, second] = await Promise.all([
-      lock.run(undefined, '/a/one.fig', new File([], 'one.fig'), (existing) =>
-        operation(existing, 'one')
-      ),
-      lock.run(undefined, '/a/two.fig', new File([], 'two.fig'), (existing) =>
-        operation(existing, 'two')
-      )
+      lock.run(undefined, '/a/one.fig', (existing) => operation(existing, 'one')),
+      lock.run(undefined, '/a/two.fig', (existing) => operation(existing, 'two'))
     ])
 
     expect(first).toBe('opened')
     expect(second).toBe('opened')
     expect(tabs).toHaveLength(2)
-    expect(maxInflight).toBe(2)
+    // Global serialization means only one open is in flight at a time.
+    expect(maxInflight).toBe(1)
   })
 })

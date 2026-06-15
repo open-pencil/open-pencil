@@ -20,6 +20,10 @@ const io = new IORegistry(BUILTIN_IO_FORMATS)
 
 const fileOpenLock = createFileOpenLock(() => tabsRef.value)
 
+function hasSourceIdentity(store: EditorStore): boolean {
+  return !!(store.getSourcePath() || store.getSourceHandle() || store.getSourceFileName())
+}
+
 let nextTabId = 1
 
 function generateTabId(): string {
@@ -99,16 +103,21 @@ export async function openFileInNewTab(
   handle?: FileSystemFileHandle,
   path?: string
 ): Promise<void> {
-  await fileOpenLock.run(handle, path, file, async (existingTab) => {
+  await fileOpenLock.run(handle, path, async (existingTab) => {
     if (existingTab) {
       switchTab(existingTab.id)
       return
     }
 
+    // Capture the current tab only after acquiring the global open lock so
+    // that the file loads into the tab the user is currently looking at.
     const current = activeTab.value
     const isUntouched =
-      current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-    const store = isUntouched ? current.store : createTab().store
+      current?.store.state.documentName === 'Untitled' &&
+      !current.store.undo.canUndo &&
+      !hasSourceIdentity(current.store)
+    const currentTab = isUntouched ? current : createTab()
+    const store = currentTab.store
     const documentName = file.name.replace(/\.[^.]+$/i, '')
 
     store.state.documentName = documentName
@@ -136,6 +145,12 @@ export async function openFileInNewTab(
       await store.fitCurrentPageToViewport()
     } finally {
       store.state.loading = false
+    }
+
+    // When reusing an untouched existing tab we must explicitly activate it,
+    // because the active tab may have changed while we were loading.
+    if (isUntouched) {
+      activateTab(currentTab)
     }
   })
 }

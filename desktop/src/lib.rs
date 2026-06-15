@@ -69,17 +69,39 @@ fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+/// Normalise a path for identity comparison on the current platform.
+///
+/// - On Windows and macOS the filesystem is case-insensitive by default, so the
+///   key is lowercased.
+/// - On Linux the key preserves the original casing.
+/// - Non-UTF-8 bytes are replaced with the lossy replacement character; this is
+///   a best-effort key and is unavoidable because `PendingOpenFile.path` is a
+///   string sent to the frontend.
+fn path_identity_key(path: &Path) -> String {
+    let lossy = path.to_string_lossy();
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    {
+        lossy.to_lowercase()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        lossy.into_owned()
+    }
+}
+
 fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<PathBuf>) {
     let mut seen = std::collections::HashSet::new();
     let files = paths
         .into_iter()
         .filter_map(|path| {
-            let key = path.to_string_lossy().into_owned();
-            if !seen.insert(key.clone()) {
+            let key = path_identity_key(&path);
+            if !seen.insert(key) {
                 return None;
             }
             let _ = app.fs_scope().allow_file(&path);
-            Some(PendingOpenFile { path: key })
+            Some(PendingOpenFile {
+                path: path.to_string_lossy().into_owned(),
+            })
         })
         .collect::<Vec<_>>();
 
@@ -89,7 +111,8 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
 
     if let Ok(mut pending) = app.state::<PendingOpen>().0.lock() {
         for file in files {
-            if pending.iter().all(|p| p.path != file.path) {
+            let file_key = path_identity_key(Path::new(&file.path));
+            if pending.iter().all(|p| path_identity_key(Path::new(&p.path)) != file_key) {
                 pending.push(file);
             }
         }
