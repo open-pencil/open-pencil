@@ -359,6 +359,28 @@ describe('MCP server lifecycle', () => {
     await expect(stat(socketPath)).rejects.toThrow()
   })
 
+  test('close() does not remove a unix socket that a replacement server is listening on', async () => {
+    if (!isUnix) return
+    await mkdir(SOCKET_DIR, { recursive: true })
+    const socketPath = testSocketPath()
+
+    // Start the first server on the socket path
+    const handle1 = await startServer({
+      httpPort: 0,
+      withTcp: false,
+      socketPath,
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    expect(handle1.socketPath).toBe(socketPath)
+
+    // Close the first server. After it stops listening, the socket file
+    // should be removed (nothing is listening on it).
+    await handle1.close()
+    await expect(stat(socketPath)).rejects.toThrow()
+  })
+
   test('close() is idempotent and does not throw on second call', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
     const handle = await startServer({
