@@ -361,7 +361,7 @@ async function closeServer(srv: HttpServer | null): Promise<void> {
   // so the server shutdown can complete. Without this, a misbehaving HTTP
   // client with an active request can block shutdown indefinitely.
   const forceClose = setTimeout(() => {
-    srv.closeAllConnections?.()
+    srv.closeAllConnections()
     srv.close()
   }, 5_000).unref()
   try {
