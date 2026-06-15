@@ -20,6 +20,7 @@ type SaveActionsOptions = {
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
   startWatchingFile: () => void
+  updateSourceIdentity: (fileName: string, handle?: FileSystemFileHandle, path?: string) => void
 }
 
 export function createSaveActions({
@@ -33,7 +34,8 @@ export function createSaveActions({
   setDownloadName,
   setSavedVersion,
   setLastWriteTime,
-  startWatchingFile
+  startWatchingFile,
+  updateSourceIdentity
 }: SaveActionsOptions) {
   const writeFile = createDocumentWriter({
     state,
@@ -62,9 +64,11 @@ export function createSaveActions({
     if (IS_TAURI) {
       const path = await chooseTauriFigSavePath()
       if (!path) return
+      const fileName = path.split(/[\\/]/).pop() ?? 'file.fig'
       setFilePath(path)
       setFileHandle(null)
       state.documentName = documentNameFromFigPath(path)
+      updateSourceIdentity(fileName, undefined, path)
       await writeFile(data)
       startWatchingFile()
       return
@@ -76,6 +80,7 @@ export function createSaveActions({
       setFileHandle(handle)
       setFilePath(null)
       state.documentName = documentNameFromFigPath(handle.name)
+      updateSourceIdentity(handle.name, handle, undefined)
       await writeFile(data)
       startWatchingFile()
       return
@@ -85,6 +90,7 @@ export function createSaveActions({
     if (!filename) return
     setDownloadName(filename)
     state.documentName = documentNameFromFigPath(filename)
+    updateSourceIdentity(filename, undefined, undefined)
     downloadBlob(new Uint8Array(data), filename, 'application/octet-stream')
   }
 

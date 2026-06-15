@@ -9,6 +9,7 @@ import { setOpenPencilStore } from '@/app/browser-bridge'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
+import { createFileOpenLock } from '@/app/tabs/identity'
 
 export interface Tab {
   id: string
@@ -16,6 +17,8 @@ export interface Tab {
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
+
+const fileOpenLock = createFileOpenLock(() => tabsRef.value)
 
 let nextTabId = 1
 
@@ -96,38 +99,45 @@ export async function openFileInNewTab(
   handle?: FileSystemFileHandle,
   path?: string
 ): Promise<void> {
-  const current = activeTab.value
-  const isUntouched =
-    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-  const store = isUntouched ? current.store : createTab().store
-  const documentName = file.name.replace(/\.[^.]+$/i, '')
+  await fileOpenLock.run(handle, path, file, async (existingTab) => {
+    if (existingTab) {
+      switchTab(existingTab.id)
+      return
+    }
 
-  store.state.documentName = documentName
-  store.state.loading = true
-  await yieldToUI()
+    const current = activeTab.value
+    const isUntouched =
+      current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
+    const store = isUntouched ? current.store : createTab().store
+    const documentName = file.name.replace(/\.[^.]+$/i, '')
 
-  try {
-    const isFig = file.name.toLowerCase().endsWith('.fig')
-    const { graph: imported, sourceFormat } = isFig
-      ? { graph: await readFigFile(file, { populate: 'first-page' }), sourceFormat: 'fig' }
-      : await io.readDocument({
-          name: file.name,
-          mimeType: file.type || undefined,
-          data: new Uint8Array(await file.arrayBuffer())
-        })
+    store.state.documentName = documentName
+    store.state.loading = true
+    await yieldToUI()
 
-    const firstPageId = imported.getPages()[0]?.id
-    if (firstPageId) computeAllLayouts(imported, firstPageId)
-    store.replaceGraph(imported)
-    store.undo.clear()
-    store.setDocumentSource(file.name, sourceFormat, handle, path)
-    store.clearSelection()
-    const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
-    await store.switchPage(pageId)
-    await store.fitCurrentPageToViewport()
-  } finally {
-    store.state.loading = false
-  }
+    try {
+      const isFig = file.name.toLowerCase().endsWith('.fig')
+      const { graph: imported, sourceFormat } = isFig
+        ? { graph: await readFigFile(file, { populate: 'first-page' }), sourceFormat: 'fig' }
+        : await io.readDocument({
+            name: file.name,
+            mimeType: file.type || undefined,
+            data: new Uint8Array(await file.arrayBuffer())
+          })
+
+      const firstPageId = imported.getPages()[0]?.id
+      if (firstPageId) computeAllLayouts(imported, firstPageId)
+      store.replaceGraph(imported)
+      store.undo.clear()
+      store.setDocumentSource(file.name, sourceFormat, handle, path)
+      store.clearSelection()
+      const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+      await store.switchPage(pageId)
+      await store.fitCurrentPageToViewport()
+    } finally {
+      store.state.loading = false
+    }
+  })
 }
 
 export function tabCount(): number {

@@ -70,13 +70,16 @@ fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
 }
 
 fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<PathBuf>) {
+    let mut seen = std::collections::HashSet::new();
     let files = paths
         .into_iter()
         .filter_map(|path| {
+            let key = path.to_string_lossy().into_owned();
+            if !seen.insert(key.clone()) {
+                return None;
+            }
             let _ = app.fs_scope().allow_file(&path);
-            Some(PendingOpenFile {
-                path: path.to_string_lossy().into_owned(),
-            })
+            Some(PendingOpenFile { path: key })
         })
         .collect::<Vec<_>>();
 
@@ -85,7 +88,11 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
     }
 
     if let Ok(mut pending) = app.state::<PendingOpen>().0.lock() {
-        pending.extend(files);
+        for file in files {
+            if pending.iter().all(|p| p.path != file.path) {
+                pending.push(file);
+            }
+        }
     }
 
     let _ = app.emit("open-associated-files", ());
