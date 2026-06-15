@@ -110,13 +110,16 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
         .into_iter()
         .filter_map(|path| {
             let key = path_identity_key(&path);
-            if !seen.insert(key) {
+            if !seen.insert(key.clone()) {
                 return None;
             }
             let _ = app.fs_scope().allow_file(&path);
-            Some(PendingOpenFile {
-                path: path.to_string_lossy().into_owned(),
-            })
+            Some((
+                PendingOpenFile {
+                    path: path.to_string_lossy().into_owned(),
+                },
+                key,
+            ))
         })
         .collect::<Vec<_>>();
 
@@ -125,8 +128,7 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
     }
 
     if let Ok(mut pending) = app.state::<PendingOpen>().0.lock() {
-        for file in files {
-            let file_key = path_identity_key(Path::new(&file.path));
+        for (file, file_key) in files {
             if pending
                 .iter()
                 .all(|p| path_identity_key(Path::new(&p.path)) != file_key)
