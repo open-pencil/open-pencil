@@ -1,9 +1,15 @@
 import type { ViewportSize } from '@/app/document/io/types'
 
-export function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
+export function yieldToUI(timeoutMs = 100): Promise<void> {
+  const animation = new Promise<void>((resolve) => {
     requestAnimationFrame(() => resolve())
   })
+  const fallback = new Promise<void>((resolve) => {
+    setTimeout(() => resolve(), timeoutMs)
+  })
+  // Race so the UI continues even if requestAnimationFrame is throttled or
+  // suspended while the window is hidden.
+  return Promise.race([animation, fallback])
 }
 
 type ViewportEditor = {

@@ -79,7 +79,13 @@ fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
 ///   string sent to the frontend.
 fn path_identity_key(path: &Path) -> String {
     let lossy = path.to_string_lossy();
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    {
+        // Forward slashes and backslashes refer to the same file on Windows,
+        // so normalize to one separator before case-folding.
+        lossy.replace('\\', '/').to_lowercase()
+    }
+    #[cfg(target_os = "macos")]
     {
         lossy.to_lowercase()
     }
@@ -186,4 +192,43 @@ pub fn run() {
             }
             _ => {}
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::path_identity_key;
+
+    #[test]
+    fn windows_normalizes_slashes_before_case_folding() {
+        // These assertions target Windows behaviour, but constructing the same
+        // paths here is harmless on other platforms.
+        #[cfg(target_os = "windows")]
+        {
+            assert_eq!(path_identity_key(Path::new(r"C:\foo\bar.txt")), "c:/foo/bar.txt");
+            assert_eq!(
+                path_identity_key(Path::new(r"C:/foo\\bar.txt")),
+                "c:/foo/bar.txt"
+            );
+        }
+    }
+
+    #[test]
+    fn case_folding_respects_platform_case_sensitivity() {
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey/File.txt")),
+                "/users/joey/file.txt"
+            );
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey/File.txt")),
+                "/Users/Joey/File.txt"
+            );
+        }
+    }
 }

@@ -29,6 +29,9 @@ function isCaseInsensitiveFilesystem(): boolean {
  * - On Windows-like platforms, backslash is a separator and a leading `\\`
  *   (UNC) prefix is preserved after slash conversion so `//server/share` is
  *   not collapsed to `/server/share`.
+ * - Windows extended-length path prefixes (`\\\\?\\` and `\\\\?\\UNC\\`) are
+ *   stripped before slash normalization so canonicalized paths from the OS
+ *   match ordinary and File System Access API paths.
  * - On POSIX platforms, backslash is a legal filename character and is left
  *   untouched.
  * - Trailing slashes are removed on all platforms.
@@ -39,10 +42,28 @@ export function normalizeFilePath(path: string): string {
   let normalized: string
 
   if (isWindowsLike()) {
-    const hasUnc = path.startsWith('\\\\')
-    const body = hasUnc ? path.slice(2) : path
-    normalized = body.replace(/\\/g, '/').replace(/\/+/g, '/')
-    normalized = (hasUnc ? `//${normalized}` : normalized).replace(/\/$/, '')
+    let body = path
+    let prefixMode: 'none' | 'unc' = 'none'
+
+    if (body.startsWith('\\\\?\\UNC\\')) {
+      body = body.slice(8)
+      prefixMode = 'unc'
+    } else if (body.startsWith('\\\\?\\')) {
+      body = body.slice(4)
+    }
+
+    const hasPlainUnc = body.startsWith('\\\\')
+    if (hasPlainUnc) {
+      body = body.slice(2)
+      prefixMode = 'unc'
+    }
+
+    normalized = body.split('\\').join('/').replace(/\/+/g, '/')
+    normalized = normalized.replace(/\/$/, '')
+
+    if (prefixMode === 'unc') {
+      normalized = `//${normalized}`
+    }
   } else {
     normalized = path.replace(/\/+/g, '/').replace(/\/$/, '')
   }

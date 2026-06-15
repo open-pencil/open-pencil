@@ -6,6 +6,7 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/core/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
+import { yieldToUI } from '@/app/document/io/browser'
 import { setActiveEditorStore } from '@/app/editor/active-store'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
@@ -92,21 +93,20 @@ export function closeTab(tabId: string) {
   closingTab.store.dispose()
 }
 
-function yieldToUI(): Promise<void> {
-  return new Promise((resolve) => {
-    requestAnimationFrame(() => resolve())
-  })
-}
-
 export async function openFileInNewTab(
   file: File,
   handle?: FileSystemFileHandle,
   path?: string
 ): Promise<void> {
-  await fileOpenLock.run(handle, path, async (existingTab) => {
+  // The global lock intentionally protects only identity/tab-reuse decisions,
+  // not the actual disk/network I/O. This keeps duplicate tabs impossible
+  // while still allowing multiple different files to load concurrently.
+  type OpenContext = { tab: Tab; isUntouched: boolean }
+
+  const context = await fileOpenLock.run<OpenContext | null>(handle, path, async (existingTab) => {
     if (existingTab) {
       switchTab(existingTab.id)
-      return
+      return null
     }
 
     // Capture the current tab only after acquiring the global open lock so
@@ -115,44 +115,57 @@ export async function openFileInNewTab(
     const isUntouched =
       current?.store.state.documentName === 'Untitled' &&
       !current.store.undo.canUndo &&
+      // A tab with a redo stack is not "untouched" — overwriting it would
+      // destroy recoverable user work.
+      !current.store.undo.canRedo &&
       !hasSourceIdentity(current.store)
-    const currentTab = isUntouched ? current : createTab()
-    const store = currentTab.store
-    const documentName = file.name.replace(/\.[^.]+$/i, '')
 
-    store.state.documentName = documentName
-    store.state.loading = true
-    await yieldToUI()
+    const tab = isUntouched ? current : createTab()
 
-    try {
-      const isFig = file.name.toLowerCase().endsWith('.fig')
-      const { graph: imported, sourceFormat } = isFig
-        ? { graph: await readFigFile(file, { populate: 'first-page' }), sourceFormat: 'fig' }
-        : await io.readDocument({
-            name: file.name,
-            mimeType: file.type || undefined,
-            data: new Uint8Array(await file.arrayBuffer())
-          })
-
-      const firstPageId = imported.getPages()[0]?.id
-      if (firstPageId) computeAllLayouts(imported, firstPageId)
-      store.replaceGraph(imported)
-      store.undo.clear()
-      store.setDocumentSource(file.name, sourceFormat, handle, path)
-      store.clearSelection()
-      const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
-      await store.switchPage(pageId)
-      await store.fitCurrentPageToViewport()
-    } finally {
-      store.state.loading = false
-    }
-
-    // When reusing an untouched existing tab we must explicitly activate it,
-    // because the active tab may have changed while we were loading.
-    if (isUntouched) {
-      activateTab(currentTab)
-    }
+    // Claim the source identity immediately so concurrent opens of the same
+    // file observe a matching tab. Heavy I/O then happens after the lock.
+    tab.store.updateSourceIdentity(file.name, handle, path)
+    return { tab, isUntouched }
   })
+
+  if (!context) return
+
+  const { tab, isUntouched } = context
+  const store = tab.store
+  const documentName = file.name.replace(/\.[^.]+$/i, '')
+
+  store.state.documentName = documentName
+  store.state.loading = true
+  await yieldToUI()
+
+  try {
+    const isFig = file.name.toLowerCase().endsWith('.fig')
+    const { graph: imported, sourceFormat } = isFig
+      ? { graph: await readFigFile(file, { populate: 'first-page' }), sourceFormat: 'fig' }
+      : await io.readDocument({
+          name: file.name,
+          mimeType: file.type || undefined,
+          data: new Uint8Array(await file.arrayBuffer())
+        })
+
+    const firstPageId = imported.getPages()[0]?.id
+    if (firstPageId) computeAllLayouts(imported, firstPageId)
+    store.replaceGraph(imported)
+    store.undo.clear()
+    store.setDocumentSource(file.name, sourceFormat, handle, path)
+    store.clearSelection()
+    const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+    await store.switchPage(pageId)
+    await store.fitCurrentPageToViewport()
+  } finally {
+    store.state.loading = false
+  }
+
+  // When reusing an untouched existing tab we must explicitly activate it,
+  // because the active tab may have changed while we were loading.
+  if (isUntouched) {
+    activateTab(tab)
+  }
 }
 
 export function tabCount(): number {

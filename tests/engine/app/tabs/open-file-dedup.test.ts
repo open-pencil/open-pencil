@@ -111,6 +111,30 @@ describe('normalizeFilePath', () => {
       restore()
     }
   })
+
+  test('strips Windows extended-length prefix on local paths', () => {
+    const restore = overridePlatform('win32')
+    try {
+      expect(normalizeFilePath('\\\\?\\C:\\Users\\joeyc\\file.fig')).toBe('c:/users/joeyc/file.fig')
+      expect(normalizeFilePath('\\\\?\\C:\\Users\\JOEYC\\file.fig\\')).toBe(
+        'c:/users/joeyc/file.fig'
+      )
+    } finally {
+      restore()
+    }
+  })
+
+  test('strips Windows extended-length prefix on UNC paths', () => {
+    const restore = overridePlatform('win32')
+    try {
+      expect(normalizeFilePath('\\\\?\\UNC\\server\\share\\file.fig')).toBe(
+        '//server/share/file.fig'
+      )
+      expect(normalizeFilePath('\\\\?\\UNC\\Server\\Share\\dir\\')).toBe('//server/share/dir')
+    } finally {
+      restore()
+    }
+  })
 })
 
 describe('findExistingTab', () => {
