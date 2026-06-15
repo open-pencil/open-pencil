@@ -289,4 +289,37 @@ describe('MCP path scoping', () => {
       }
     }
   )
+
+  test.skipIf(!isUnix)('rejects self-referencing symlink', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-self-test')
+    const linkPath = `${testDir}/self.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      // Self-referencing symlink: link.fig -> link.fig
+      await symlink(linkPath, linkPath)
+      await expect(resolveSafePath(linkPath, testDir)).rejects.toThrow('depth limit exceeded')
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
+
+  test.skipIf(!isUnix)('allows symlink chain inside root (non-dangling)', async () => {
+    const testDir = resolve(tmpdir(), 'mcp-symlink-chain-test')
+    const targetFile = `${testDir}/real.fig`
+    const link1 = `${testDir}/link1.fig`
+    const link2 = `${testDir}/link2.fig`
+    try {
+      await mkdir(testDir, { recursive: true })
+      await writeFile(targetFile, 'test')
+      // Chain: link2 -> link1 -> real.fig
+      await symlink(targetFile, link1)
+      await symlink(link1, link2)
+      const result = await resolveSafePath(link2, testDir)
+      expect(result.resolved).toBe(resolve(link2))
+      const canonicalTarget = await realpath(targetFile)
+      expect(result.realPath).toBe(canonicalTarget)
+    } finally {
+      await rm(testDir, { recursive: true, force: true })
+    }
+  })
 })
