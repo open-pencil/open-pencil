@@ -618,9 +618,11 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
     await tryWriteDiscovery(resolvedSocketPath, actualHttpPort, ctx.authToken, state)
   } catch (err) {
     // Tear down any listeners that started before the failure, then close
-    // the WebSocket server so no resources leak when startServer rejects.
+    // all resources so nothing leaks when startServer rejects.
     await teardownListeners(state).catch(() => undefined)
     ctx.wss.close()
+    ctx.browserRpc.close()
+    ctx.mcpSessions.clear()
     throw err
   }
 
