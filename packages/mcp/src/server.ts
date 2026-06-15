@@ -357,9 +357,20 @@ async function closeServer(srv: HttpServer | null): Promise<void> {
   // Close all idle keep-alive connections first to prevent server.close()
   // from hanging indefinitely on persistent HTTP connections.
   srv.closeIdleConnections()
-  await new Promise<void>((resolve) => {
-    srv.close(() => resolve())
-  })
+  // If any stubborn connections remain after 5 seconds, force-close them
+  // so the server shutdown can complete. Without this, a misbehaving HTTP
+  // client with an active request can block shutdown indefinitely.
+  const forceClose = setTimeout(() => {
+    srv.closeAllConnections?.()
+    srv.close()
+  }, 5_000).unref()
+  try {
+    await new Promise<void>((resolve) => {
+      srv.close(() => resolve())
+    })
+  } finally {
+    clearTimeout(forceClose)
+  }
 }
 
 async function cleanupSocket(socketPath: string | null): Promise<void> {
@@ -571,7 +582,7 @@ function buildHandle(
               console.warn('[MCP] Failed to terminate WebSocket client:', e)
             }
           }
-        }, 2_000)
+        }, 2_000).unref()
         wss.close(() => {
           clearTimeout(graceTimer)
           done()

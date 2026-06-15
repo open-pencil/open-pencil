@@ -359,7 +359,7 @@ describe('MCP server lifecycle', () => {
     await expect(stat(socketPath)).rejects.toThrow()
   })
 
-  test('close() does not remove a unix socket that a replacement server is listening on', async () => {
+  test('close() removes socket file when no replacement server is listening', async () => {
     if (!isUnix) return
     await mkdir(SOCKET_DIR, { recursive: true })
     const socketPath = testSocketPath()

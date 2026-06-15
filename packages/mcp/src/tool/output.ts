@@ -39,11 +39,11 @@ async function resolveRealAncestor(
 
 /**
  * Walks the non-existent path segments (remainder) from the real ancestor and
- * rejects any that are dangling symlinks. A symlink whose target doesn't exist
+ * rejects any that are symlinks. A symlink in a non-existent path segment
  * could point outside the allowed root — when the file is eventually written,
  * the OS follows the symlink chain and the write lands outside root.
  */
-async function assertNoDanglingSymlinks(realAncestor: string, remainder: string): Promise<void> {
+async function assertNoSymlinksInRemainder(realAncestor: string, remainder: string): Promise<void> {
   if (!remainder) return
   const segments = remainder.split(osSep).filter(Boolean)
   let current = realAncestor
@@ -86,7 +86,7 @@ async function resolveRealPath(p: string): Promise<string> {
       return join(realParent, baseName)
     } catch {
       const { realAncestor, remainder } = await resolveRealAncestor(parentDir)
-      await assertNoDanglingSymlinks(realAncestor, remainder)
+      await assertNoSymlinksInRemainder(realAncestor, remainder)
       return join(realAncestor, remainder.slice(osSep.length), baseName)
     }
   }
@@ -128,9 +128,12 @@ async function resolveDanglingSymlink(
     return targetResult.realPath
   } catch (e) {
     if (e instanceof Error) {
-      // Re-throw security and depth-limit errors — these must not be swallowed
+      // Re-throw security, root-scope, and depth-limit errors — these must
+      // not be swallowed. They indicate genuine validation failures, not
+      // the expected "path doesn't exist" case.
       if (
         e.message.includes('outside the allowed root') ||
+        e.message.includes('Root path is too broad') ||
         e.message.includes('depth limit exceeded')
       )
         throw e
