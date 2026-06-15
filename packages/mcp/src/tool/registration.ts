@@ -123,7 +123,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: { path: string }) => {
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
-          const result = await sendRpc({ command: 'open_file', args: { path: safe.resolved } })
+          const result = await sendRpc({ command: 'open_file', args: { path: safe.realPath } })
           const res = result as { ok?: boolean; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           return ok({ opened: true })
