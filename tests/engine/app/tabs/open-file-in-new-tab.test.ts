@@ -72,27 +72,45 @@ describe('openFileInNewTab', () => {
   })
 
   test('concurrent opens of different files can overlap I/O', async () => {
-    const delays: number[] = []
+    // Verify concurrency through explicit synchronization — no timing
+    // thresholds, no Date.now(), no flakiness. The mock blocks each
+    // readFigFile call on a shared `proceed` promise and signals a
+    // `bothStarted` barrier when the second call enters. If the lock
+    // incorrectly serialized I/O (not just identity resolution), the
+    // second mock would never start before `proceed` resolves and
+    // `bothStarted` would never fire.
+    let startedCount = 0
+    let resolveBothStarted!: () => void
+    const bothStarted = new Promise<void>((resolve) => {
+      resolveBothStarted = resolve
+    })
+    let resolveProceed!: () => void
+    const proceed = new Promise<void>((resolve) => {
+      resolveProceed = resolve
+    })
+
     ;(readFigFile as ReturnType<typeof vi.fn>).mockImplementation(async () => {
-      const start = Date.now()
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 30)
-      })
-      delays.push(Date.now() - start)
+      startedCount++
+      if (startedCount === 2) resolveBothStarted()
+      await proceed
       return new SceneGraph()
     })
 
-    const [first, second] = await Promise.all([
+    const done = Promise.all([
       openFileInNewTab(new File([], 'a.fig'), undefined, '/a.fig'),
       openFileInNewTab(new File([], 'b.fig'), undefined, '/b.fig')
     ])
 
+    // Wait until both I/O operations are in-flight concurrently.
+    await bothStarted
+    expect(startedCount).toBe(2)
+
+    // Release the mocks so the operations can complete.
+    resolveProceed()
+    const [first, second] = await done
+
     expect(first).toBeUndefined()
     expect(second).toBeUndefined()
-    expect(delays).toHaveLength(2)
-    // If the load work happened sequentially under the lock, both delays
-    // would be at least 60 ms. After the fix each should resolve in ~30 ms.
-    expect(Math.min(...delays)).toBeLessThan(45)
   })
 
   describe('when the file read fails', () => {
