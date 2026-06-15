@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { chmod, mkdir, readFile, unlink } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { Server as HttpServer } from 'node:http'
+import { connect } from 'node:net'
 import { dirname } from 'node:path'
 
 import { getRequestListener } from '@hono/node-server'
@@ -363,6 +364,37 @@ async function closeServer(srv: HttpServer | null): Promise<void> {
 
 async function cleanupSocket(socketPath: string | null): Promise<void> {
   if (!socketPath || !platformHasUnixSockets()) return
+  // Only remove the socket if no other server is listening on it.
+  // A replacement server that won the restart race may have already
+  // bound the same path — unlinking it would kill the replacement.
+  try {
+    const alive = await new Promise<boolean>((resolve) => {
+      let settled = false
+      const finish = (value: boolean) => {
+        if (settled) return
+        settled = true
+        client.destroy()
+        resolve(value)
+      }
+      const client = connect(socketPath)
+        .on('connect', () => finish(true))
+        .on('error', (err: NodeJS.ErrnoException) => {
+          // Only ECONNREFUSED and ENOENT mean "nobody is listening".
+          // All other errors (EACCES, ECONNRESET, etc.) are treated as
+          // "alive" to avoid unlinking a live replacement server's socket.
+          // This mirrors the conservative error handling in testSocketConnection
+          // (packages/mcp/src/transport/discovery.ts).
+          const isDead = err.code === 'ECONNREFUSED' || err.code === 'ENOENT'
+          finish(!isDead)
+        })
+      // Fail fast — we only need to know if something is listening.
+      client.setTimeout(500, () => finish(false))
+    })
+    if (alive) return // Another server owns this socket — leave it alone.
+  } catch {
+    // Connection test itself failed (unlikely) — fall through to unlink.
+    void 0
+  }
   try {
     await unlink(socketPath)
   } catch (e) {
