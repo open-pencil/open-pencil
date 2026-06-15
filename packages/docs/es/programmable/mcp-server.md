@@ -176,6 +176,8 @@ O desde el código fuente: `bun packages/mcp/src/index.ts` / `npx tsx packages/m
 | `/rpc` | POST | Bearer token | Puente JSON-RPC a la app en ejecución |
 | `/mcp` | POST, DELETE | Bearer token o `x-mcp-token` | MCP Streamable HTTP. Sesiones vía header `mcp-session-id`. DELETE cierra una sesión |
 
+Nota: El endpoint `/mcp` usa solo el transporte Streamable HTTP. El transporte SSE anterior no es compatible.
+
 ### Autenticación
 
 Un token de autenticación se **genera automáticamente al iniciar** (32-hex aleatorio de `crypto.randomBytes`). Los clientes deben enviarlo como `Authorization: Bearer <token>` para `/rpc`, o como `Authorization: Bearer <token>` o cabecera `x-mcp-token` para `/mcp`. La comparación usa tiempo constante (`crypto.timingSafeEqual`) para prevenir ataques de timing.
@@ -196,7 +198,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Variable | Default | Descripción |
 |----------|---------|-------------|
-| `PORT` | `7600` | Puerto TCP. `0` para desactivar TCP (en Windows desactiva el único transporte disponible). |
+| `PORT` | `7600` | Puerto TCP. `0` para desactivar TCP. ⚠️ En Windows, `PORT=0` desactiva el único transporte disponible, haciendo que el servidor sea inalcanzable. |
 | `OPENPENCIL_MCP_SOCKET` | Por plataforma | Sobreescribir ruta de socket (solo macOS/Linux) |
 | `OPENPENCIL_MCP_TCP` | Obsoleto | Sin efecto — TCP se controla con `PORT` (>0 = activado, 0 = desactivado) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generado | Token de autenticación del servidor. Si no se establece, se genera automáticamente; si se establece como cadena vacía (`""`), la autenticación se deshabilita. |
@@ -281,6 +283,8 @@ Funciona con Claude Code, Cursor, Windsurf, Codex y cualquier agente que soporte
 | `open_file` | Abrir un archivo `.fig` para edición |
 | `save_file` | Guardar el documento actual a un archivo `.fig` |
 | `new_document` | Crear un documento vacío nuevo |
+
+Nota: `open_file` y `new_document` requieren que `OPENPENCIL_MCP_ROOT` esté configurado. `save_file` siempre está disponible; su ruta se valida contra `OPENPENCIL_MCP_ROOT` solo cuando la raíz está configurada.
 
 ### Lectura
 

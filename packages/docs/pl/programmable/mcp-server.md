@@ -176,6 +176,8 @@ Lub ze źródeł: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/in
 | `/rpc` | POST | Bearer token | Most JSON-RPC do uruchomionej aplikacji |
 | `/mcp` | POST, DELETE | Bearer token lub nagłówek `x-mcp-token` | MCP Streamable HTTP. Sesje poprzez nagłówek `mcp-session-id`. DELETE zamyka sesję |
 
+Uwaga: Endpoint `/mcp` używa wyłącznie transportu Streamable HTTP. Starszy transport SSE nie jest obsługiwany.
+
 ### Uwierzytelnianie
 
 Token uwierzytelniający jest **automatycznie generowany przy uruchomieniu** (32-heksadowy losowy z `crypto.randomBytes`). Klienci muszą go wysłać jako `Authorization: Bearer <token>` dla endpointów `/rpc` i `/mcp`. Porównanie tokenów używa porównania stałoczasowego (`crypto.timingSafeEqual`) w celu zapobiegania atakom czasowym.
@@ -196,7 +198,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Zmienna | Domyślna | Opis |
 |---------|----------|------|
-| `PORT` | `7600` | Port TCP. Ustaw `0`, aby wyłączyć TCP (tylko gniazdo na macOS/Linux; wyłącza cały transport na Windows). |
+| `PORT` | `7600` | Port TCP. Ustaw `0`, aby wyłączyć TCP (tylko gniazdo na macOS/Linux). ⚠️ W systemie Windows `PORT=0` wyłącza jedyny dostępny transport, przez co serwer staje się nieosiągalny. |
 | `OPENPENCIL_MCP_SOCKET` | Domyślna dla platformy | Nadpisuje ścieżkę gniazda (tylko macOS/Linux — Windows nie obsługuje gniazd Unix) |
 | `OPENPENCIL_MCP_TCP` | Przestarzała | Brak efektu — TCP jest kontrolowane przez `PORT` (>0 = włączone, 0 = wyłączone) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Automatycznie generowany | Token uwierzytelniający serwera. Jeśli nieustawiony, jest generowany przy uruchomieniu. Jeśli ustawiony na pusty ciąg (`""`), uwierzytelnianie jest wyłączone. |
@@ -281,6 +283,8 @@ Działa z Claude Code, Cursor, Windsurf, Codex i każdym agentem obsługującym 
 | `open_file` | Otwórz plik `.fig` do edycji |
 | `save_file` | Zapisz bieżący dokument do pliku `.fig` |
 | `new_document` | Utwórz nowy pusty dokument |
+
+Uwaga: `open_file` i `new_document` wymagają ustawienia `OPENPENCIL_MCP_ROOT`. `save_file` jest zawsze dostępne; jego ścieżka jest walidowana względem `OPENPENCIL_MCP_ROOT` tylko gdy katalog główny jest skonfigurowany.
 
 ### Odczyt
 

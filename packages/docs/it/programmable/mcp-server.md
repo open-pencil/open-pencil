@@ -176,6 +176,8 @@ O dal sorgente: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 | `/rpc` | POST | Bearer token | Bridge JSON-RPC all'app in esecuzione |
 | `/mcp` | POST, DELETE | Bearer token o `x-mcp-token` | MCP Streamable HTTP. Sessioni via header `mcp-session-id`. DELETE chiude una sessione |
 
+Nota: L'endpoint `/mcp` utilizza solo il trasporto Streamable HTTP. Il vecchio trasporto SSE non è supportato.
+
 ### Autenticazione
 
 Un token di autenticazione viene **generato automaticamente all'avvio** (32-hex casuale da `crypto.randomBytes`). I client devono inviarlo come `Authorization: Bearer <token>` per `/rpc`, o come `Authorization: Bearer <token>` o header `x-mcp-token` per `/mcp`. Il confronto usa tempo costante (`crypto.timingSafeEqual`) per prevenire attacchi timing.
@@ -196,7 +198,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Variabile | Default | Descrizione |
 |-----------|---------|-------------|
-| `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP (su Windows disabilita l'unico trasporto disponibile). |
+| `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP. ⚠️ Su Windows, `PORT=0` disabilita l'unico trasporto disponibile, rendendo il server irraggiungibile. |
 | `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux) |
 | `OPENPENCIL_MCP_TCP` | Deprecato | Nessun effetto — TCP è controllato da `PORT` (>0 = attivo, 0 = disattivato) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generato | Token auth del server. Se non impostato, viene generato automaticamente; se impostato a stringa vuota (`""`), l'autenticazione viene disabilitata. |
@@ -281,6 +283,8 @@ Funziona con Claude Code, Cursor, Windsurf, Codex e qualsiasi agente che support
 | `open_file` | Apri un file `.fig` per modifica |
 | `save_file` | Salva il documento corrente su un file `.fig` |
 | `new_document` | Crea un nuovo documento vuoto |
+
+Nota: `open_file` e `new_document` richiedono che `OPENPENCIL_MCP_ROOT` sia impostato. `save_file` è sempre disponibile; il suo percorso viene validato contro `OPENPENCIL_MCP_ROOT` solo quando la radice è configurata.
 
 ### Lettura
 

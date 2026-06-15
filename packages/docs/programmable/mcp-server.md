@@ -176,6 +176,8 @@ Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 | `/rpc` | POST | Bearer token | JSON-RPC bridge to the running app |
 | `/mcp` | POST, DELETE | Bearer token or `x-mcp-token` header | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
 
+Note: The `/mcp` endpoint uses the Streamable HTTP transport only. The older SSE transport is not supported.
+
 ### Authentication
 
 An auth token is **auto-generated on startup** (32-hex random from `crypto.randomBytes`). Clients must send it as `Authorization: Bearer <token>` for `/rpc` and `/mcp` endpoints. Token comparison uses constant-time comparison (`crypto.timingSafeEqual`) to prevent timing attacks.
@@ -196,7 +198,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `7600` | TCP port. Set `0` to disable TCP (socket-only on macOS/Linux; disables all transport on Windows). |
+| `PORT` | `7600` | TCP port. Set `0` to disable TCP (socket-only on macOS/Linux; disables all transport on Windows). ⚠️ **On Windows, `PORT=0` disables the only available transport, making the server unreachable.** |
 | `OPENPENCIL_MCP_SOCKET` | Platform default | Override socket path (macOS/Linux only — Windows has no Unix socket support) |
 | `OPENPENCIL_MCP_TCP` | Deprecated | No effect — TCP is controlled by `PORT` (>0 = on, 0 = off) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generated | Server auth token. If unset, one is generated at startup. If set to an empty string (`""`), auth is disabled. |
@@ -281,6 +283,8 @@ Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [sk
 | `open_file` | Open a `.fig` file for editing |
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
+
+Note: `open_file` and `new_document` require `OPENPENCIL_MCP_ROOT` to be set. `save_file` is always available — its path is validated against `OPENPENCIL_MCP_ROOT` only when the root is configured.
 
 ### Read
 
