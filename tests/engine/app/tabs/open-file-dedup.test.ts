@@ -203,16 +203,33 @@ describe('findExistingTab', () => {
     expect(found).toBeNull()
   })
 
-  test('prefers path identity and does not fall back to handle identity', async () => {
+  test('prefers path identity over a mismatched handle when both are available', async () => {
     const handle = makeHandle('file.fig', async () => false)
     const tab = makeTab()
     tab.store.setDocumentSource('file.fig', 'pen', handle, '/a/file.fig')
 
-    const byPath = await findExistingTab([tab], undefined, '/a/file.fig')
-    expect(byPath?.id).toBe(tab.id)
+    const byBoth = await findExistingTab([tab], handle, '/a/file.fig')
+    expect(byBoth?.id).toBe(tab.id)
+  })
 
-    const byHandle = await findExistingTab([tab], handle)
-    expect(byHandle).toBeNull()
+  test('falls back to handle identity when the path does not match', async () => {
+    const handle = makeHandle('file.fig', async () => true)
+    const tab = makeTab()
+    tab.store.setDocumentSource('file.fig', 'pen', handle)
+
+    const found = await findExistingTab([tab], handle, '/a/different/file.fig')
+    expect(found?.id).toBe(tab.id)
+  })
+
+  test('returns null when path misses and handle check throws', async () => {
+    const handle = makeHandle('file.fig', async () => {
+      throw new Error('permission denied')
+    })
+    const tab = makeTab()
+    tab.store.setDocumentSource('file.fig', 'pen', handle)
+
+    const found = await findExistingTab([tab], handle, '/a/different/file.fig')
+    expect(found).toBeNull()
   })
 })
 

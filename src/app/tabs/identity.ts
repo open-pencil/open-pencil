@@ -84,9 +84,11 @@ export function normalizeFilePath(path: string): string {
  * files are the same, so we deliberately return null and let the caller open
  * a new tab. File names alone are not identities.
  *
- * When a path is provided we only compare paths: the browser sandbox cannot
- * prove that a path and a handle refer to the same inode, so failing to
- * deduplicate (creating a duplicate tab) is safer than guessing.
+ * Path identity is checked first because it is synchronous and unambiguous.
+ * If no tab matches the path (or no path was provided) we fall back to
+ * FileSystemFileHandle.isSameEntry. This handles the common case where the
+ * frontend receives both a path and a handle but an existing tab was opened
+ * via the File System Access API and only stores a handle.
  */
 export async function findExistingTab(
   tabs: readonly Tab[],
@@ -101,7 +103,8 @@ export async function findExistingTab(
         return tab
       }
     }
-    return null
+    // Path lookup found nothing. Fall through to the handle check below so an
+    // existing handle-only tab is not ignored when the request supplied both.
   }
 
   if (handle) {
