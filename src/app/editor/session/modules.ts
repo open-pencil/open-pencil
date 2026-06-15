@@ -76,6 +76,7 @@ export function createEditorStoreModules(
     setDocumentSource: documentIO.setDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
     updateSourceIdentity: documentIO.updateSourceIdentity,
+    clearSourceIdentity: documentIO.clearSourceIdentity,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
     dispose: documentIO.disposeDocumentIO,
 

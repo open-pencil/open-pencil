@@ -101,7 +101,7 @@ export async function openFileInNewTab(
   // The global lock intentionally protects only identity/tab-reuse decisions,
   // not the actual disk/network I/O. This keeps duplicate tabs impossible
   // while still allowing multiple different files to load concurrently.
-  type OpenContext = { tab: Tab; isUntouched: boolean }
+  type OpenContext = { tab: Tab; isUntouched: boolean; previousDocumentName: string | undefined }
 
   const context = await fileOpenLock.run<OpenContext | null>(handle, path, async (existingTab) => {
     if (existingTab) {
@@ -112,6 +112,7 @@ export async function openFileInNewTab(
     // Capture the current tab only after acquiring the global open lock so
     // that the file loads into the tab the user is currently looking at.
     const current = activeTab.value
+    const previousDocumentName = current?.store.state.documentName
     const isUntouched =
       current?.store.state.documentName === 'Untitled' &&
       !current.store.undo.canUndo &&
@@ -125,12 +126,12 @@ export async function openFileInNewTab(
     // Claim the source identity immediately so concurrent opens of the same
     // file observe a matching tab. Heavy I/O then happens after the lock.
     tab.store.updateSourceIdentity(file.name, handle, path)
-    return { tab, isUntouched }
+    return { tab, isUntouched, previousDocumentName }
   })
 
   if (!context) return
 
-  const { tab, isUntouched } = context
+  const { tab, isUntouched, previousDocumentName } = context
   const store = tab.store
   const documentName = file.name.replace(/\.[^.]+$/i, '')
 
@@ -157,9 +158,21 @@ export async function openFileInNewTab(
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
     await store.fitCurrentPageToViewport()
-  } finally {
+  } catch (error) {
+    // A failed read must not permanently taint the tab with a source identity
+    // that would block future attempts to open the same file.
+    store.clearSourceIdentity()
+    if (isUntouched && previousDocumentName !== undefined) {
+      store.state.documentName = previousDocumentName
+    }
     store.state.loading = false
+    if (!isUntouched) {
+      closeTab(tab.id)
+    }
+    throw error
   }
+
+  store.state.loading = false
 
   // When reusing an untouched existing tab we must explicitly activate it,
   // because the active tab may have changed while we were loading.

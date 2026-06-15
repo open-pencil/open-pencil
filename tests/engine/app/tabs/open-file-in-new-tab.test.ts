@@ -94,4 +94,58 @@ describe('openFileInNewTab', () => {
     // would be at least 60 ms. After the fix each should resolve in ~30 ms.
     expect(Math.min(...delays)).toBeLessThan(45)
   })
+
+  describe('when the file read fails', () => {
+    test('clears source identity and resets the name of a reused untouched tab', async () => {
+      const store = getActiveStore()
+      expect(store.state.documentName).toBe('Untitled')
+
+      ;(readFigFile as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('read failed'))
+
+      await expect(
+        openFileInNewTab(new File([], 'file.fig'), undefined, '/failure/reused.fig')
+      ).rejects.toThrow('read failed')
+
+      expect(getActiveStore()).toBe(store)
+      expect(store.getSourcePath()).toBeNull()
+      expect(store.getSourceFileName()).toBeNull()
+      expect(store.state.documentName).toBe('Untitled')
+    })
+
+    test('closes a freshly-created tab and leaves the original active tab unchanged', async () => {
+      const originalStore = getActiveStore()
+      originalStore.setDocumentSource('existing.fig', 'pen', undefined, '/existing.fig')
+
+      expect(getActiveStore().getSourcePath()).toBe('/existing.fig')
+
+      ;(readFigFile as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('read failed'))
+
+      await expect(
+        openFileInNewTab(new File([], 'file.fig'), undefined, '/failure/fresh.fig')
+      ).rejects.toThrow('read failed')
+
+      expect(getActiveStore()).toBe(originalStore)
+      expect(originalStore.getSourcePath()).toBe('/existing.fig')
+    })
+
+    test('allows retrying the same file after a failed read', async () => {
+      const store = getActiveStore()
+
+      ;(readFigFile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('read failed'))
+
+      await expect(
+        openFileInNewTab(new File([], 'file.fig'), undefined, '/failure/retry.fig')
+      ).rejects.toThrow('read failed')
+
+      expect(store.getSourcePath()).toBeNull()
+      expect(store.state.documentName).toBe('Untitled')
+
+      ;(readFigFile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(new SceneGraph())
+
+      await openFileInNewTab(new File([], 'file.fig'), undefined, '/failure/retry.fig')
+
+      expect(store.getSourcePath()).toBe('/failure/retry.fig')
+      expect(store.state.documentName).toBe('file')
+    })
+  })
 })

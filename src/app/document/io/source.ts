@@ -127,6 +127,12 @@ export function createDocumentSourceActions({
     setSourceFileName(fileName)
   }
 
+  function clearSourceIdentity() {
+    setSourceHandle(null)
+    setSourcePath(null)
+    setSourceFileName(null)
+  }
+
   function startWatchingCurrentFile() {
     void startWatchingFile()
   }
@@ -140,6 +146,7 @@ export function createDocumentSourceActions({
     setDocumentSource,
     setPlannedFilePath,
     updateSourceIdentity,
+    clearSourceIdentity,
     startWatchingCurrentFile,
     disposeDocumentIO,
     saveFigFile,

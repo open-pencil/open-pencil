@@ -63,6 +63,7 @@ export function createDocumentIOActions(
     setDocumentSource: sourceActions.setDocumentSource,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
     updateSourceIdentity: sourceActions.updateSourceIdentity,
+    clearSourceIdentity: sourceActions.clearSourceIdentity,
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
     disposeDocumentIO: sourceActions.disposeDocumentIO,
     openFigFile,
