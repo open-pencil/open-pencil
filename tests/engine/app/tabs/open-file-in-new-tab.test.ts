@@ -1,16 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/core/scene-graph'
-
-vi.mock('@open-pencil/core/io/formats/fig', () => ({
-  readFigFile: vi.fn()
-}))
-
-vi.mock('@open-pencil/core/layout', () => ({
-  computeAllLayouts: vi.fn()
-}))
-
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
+import * as figMod from '@open-pencil/core/io/formats/fig'
+import * as layoutMod from '@open-pencil/core/layout'
+import { SceneGraph } from '@open-pencil/core/scene-graph'
 
 import { createTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
 
@@ -47,11 +40,14 @@ describe('openFileInNewTab', () => {
   beforeEach(() => {
     setupGlobals()
     vi.clearAllMocks()
+    vi.spyOn(layoutMod, 'computeAllLayouts').mockReturnValue(undefined)
+    vi.spyOn(figMod, 'readFigFile').mockResolvedValue(new SceneGraph())
     createTab()
   })
 
   afterEach(() => {
     teardownGlobals()
+    vi.restoreAllMocks()
   })
 
   test('does not reuse a tab that has a non-empty redo stack', async () => {

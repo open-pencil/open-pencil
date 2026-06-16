@@ -1,6 +1,19 @@
 import type { ViewportSize } from '@/app/document/io/types'
 
+type AnimationFrameGlobals = Partial<
+  Pick<typeof globalThis, 'requestAnimationFrame' | 'cancelAnimationFrame'>
+>
+
 export function yieldToUI(timeoutMs = 100): Promise<void> {
+  const g = globalThis as AnimationFrameGlobals
+  const requestAnimationFrame =
+    g.requestAnimationFrame ??
+    ((cb: (time: number) => void) => {
+      cb(0)
+      return 0
+    })
+  const cancelAnimationFrame = g.cancelAnimationFrame ?? (() => void 0)
+
   let timeoutId: ReturnType<typeof setTimeout>
   let animationFrameId: number
   const animation = new Promise<void>((resolve) => {
