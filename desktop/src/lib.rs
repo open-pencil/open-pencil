@@ -69,11 +69,38 @@ fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+/// Collapse runs of consecutive forward slashes into a single slash.
+fn collapse_duplicate_slashes(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut prev_slash = false;
+    for ch in s.chars() {
+        if ch == '/' {
+            if prev_slash {
+                continue;
+            }
+            prev_slash = true;
+        } else {
+            prev_slash = false;
+        }
+        out.push(ch);
+    }
+    out
+}
+
+fn strip_trailing_slash(s: &str) -> &str {
+    s.strip_suffix('/').unwrap_or(s)
+}
+
 /// Normalise a path for identity comparison on the current platform.
 ///
 /// - On Windows and macOS the filesystem is case-insensitive by default, so the
 ///   key is lowercased.
 /// - On Linux the key preserves the original casing.
+/// - Duplicate forward slashes are collapsed and a single trailing forward
+///   slash is removed on all platforms.
+/// - Backslashes are converted to forward slashes only on Windows.
+/// - Windows verbatim prefixes (`\\?\` and `\\?\UNC\`) are stripped, and plain
+///   UNC paths (`\\server\share`) keep their leading `//` after normalization.
 /// - Non-UTF-8 bytes are replaced with the lossy replacement character; this is
 ///   a best-effort key and is unavoidable because `PendingOpenFile.path` is a
 ///   string sent to the frontend.
@@ -84,23 +111,39 @@ fn path_identity_key(path: &Path) -> String {
         // Canonicalized Windows paths may carry the extended-length (`\\?\`) or
         // extended-length UNC (`\\?\UNC\`) verbatim prefix. Strip it before
         // slash normalization so the identity key matches ordinary paths sent
-        // by the frontend.
-        let mut normalized = lossy.into_owned();
-        if let Some(rest) = normalized.strip_prefix(r"\\?\UNC\") {
-            normalized = format!(r"\\{}", rest);
-        } else if let Some(rest) = normalized.strip_prefix(r"\\?\") {
-            normalized = rest.to_string();
-        }
+        // by the frontend. Plain UNC paths (`\\server\share`) keep their leading
+        // `//` after normalization.
+        let raw = lossy.into_owned();
+        let (rest, is_unc) = if let Some(r) = raw.strip_prefix(r"\\?\UNC\") {
+            (r, true)
+        } else if let Some(r) = raw.strip_prefix(r"\\?\") {
+            (r, false)
+        } else if raw.starts_with("\\\\") {
+            (&raw[2..], true)
+        } else {
+            (raw.as_str(), false)
+        };
 
-        normalized.replace('\\', "/").to_lowercase()
+        let slash_normalized = rest.replace('\\', "/");
+        let collapsed = collapse_duplicate_slashes(&slash_normalized);
+        let without_trailing = strip_trailing_slash(&collapsed);
+        let with_prefix = if is_unc {
+            format!("//{}", without_trailing)
+        } else {
+            without_trailing.to_string()
+        };
+
+        with_prefix.to_lowercase()
     }
     #[cfg(target_os = "macos")]
     {
-        lossy.to_lowercase()
+        let collapsed = collapse_duplicate_slashes(&lossy);
+        strip_trailing_slash(&collapsed).to_lowercase()
     }
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        lossy.into_owned()
+        let collapsed = collapse_duplicate_slashes(&lossy);
+        strip_trailing_slash(&collapsed).to_string()
     }
 }
 
@@ -228,6 +271,19 @@ mod tests {
                 path_identity_key(Path::new(r"C:/foo\\bar.txt")),
                 "c:/foo/bar.txt"
             );
+            assert_eq!(path_identity_key(Path::new(r"C:\foo\\bar\")), "c:/foo/bar");
+            assert_eq!(
+                path_identity_key(Path::new(r"C:/foo//bar.txt")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\server\share\file.fig")),
+                "//server/share/file.fig"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\server\share\dir\\")),
+                "//server/share/dir"
+            );
         }
     }
 
@@ -242,7 +298,15 @@ mod tests {
                 "c:/foo/bar.txt"
             );
             assert_eq!(
+                path_identity_key(Path::new(r"\\?\C:\foo\bar.txt\\")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
                 path_identity_key(Path::new(r"\\?\UNC\server\share\file.fig")),
+                "//server/share/file.fig"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\UNC\server\share\file.fig\\")),
                 "//server/share/file.fig"
             );
             assert_eq!(
@@ -266,6 +330,45 @@ mod tests {
             assert_eq!(
                 path_identity_key(Path::new("/Users/Joey/File.txt")),
                 "/Users/Joey/File.txt"
+            );
+        }
+    }
+
+    #[test]
+    fn collapses_slashes_and_strips_trailing_slash_respecting_case_sensitivity() {
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey//File.txt/")),
+                "/users/joey/file.txt"
+            );
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey//File.txt/")),
+                "/Users/Joey/File.txt"
+            );
+        }
+    }
+
+    #[test]
+    fn posix_preserves_backslash_as_legal_filename_character() {
+        // Backslash is a legal filename character on POSIX filesystems and must
+        // not be treated as a path separator. Case folding is still applied on
+        // macOS, which is case-insensitive by default.
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/joeyc/my\\file.fig")),
+                "/users/joeyc/my\\file.fig"
+            );
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/joeyc/my\\file.fig")),
+                "/Users/joeyc/my\\file.fig"
             );
         }
     }
