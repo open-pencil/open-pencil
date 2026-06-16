@@ -214,4 +214,20 @@ describe('yieldToUI', () => {
     expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(id)
     expect(rafCallbacks.size).toBe(0)
   })
+
+  test('clears the fallback timeout when requestAnimationFrame is a synchronous no-op', async () => {
+    setGlobal(
+      'requestAnimationFrame',
+      vi.fn((cb: FrameRequestCallback) => {
+        cb(0)
+        return 0
+      })
+    )
+    setGlobal('cancelAnimationFrame', vi.fn())
+
+    await yieldToUI(100)
+
+    expect(clearTimeoutSpy).toHaveBeenCalled()
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })

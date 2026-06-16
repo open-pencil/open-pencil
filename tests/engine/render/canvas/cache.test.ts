@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import {
@@ -17,26 +17,25 @@ import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
+setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
+
 let graph: SceneGraph
 let movingNodeId: string
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
-beforeAll(
-  async () => {
-    ck = await initCanvasKit()
-    await initCodec()
-    const buf = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
-    graph = await parseFigFile(buf.buffer as ArrayBuffer)
-    computeAllLayouts(graph)
-    const preview = [...graph.getAllNodes()].find((node) => node.name === 'Preview Thumbnail')
-    const input = preview
-      ? graph.getChildren(preview.id).find((node) => node.name === 'Input')
-      : undefined
-    if (!input) throw new Error('gold-preview Input fixture node not found')
-    movingNodeId = input.id
-  },
-  { timeout: HEAVY_TEST_TIMEOUT_MS }
-)
+beforeAll(async () => {
+  ck = await initCanvasKit()
+  await initCodec()
+  const buf = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
+  graph = await parseFigFile(buf.buffer as ArrayBuffer)
+  computeAllLayouts(graph)
+  const preview = [...graph.getAllNodes()].find((node) => node.name === 'Preview Thumbnail')
+  const input = preview
+    ? graph.getChildren(preview.id).find((node) => node.name === 'Input')
+    : undefined
+  if (!input) throw new Error('gold-preview Input fixture node not found')
+  movingNodeId = input.id
+})
 
 function renderPreview(renderer: SkiaRenderer, sceneVersion: number): Uint8Array {
   renderer.render(graph, new Set(), {}, sceneVersion)
