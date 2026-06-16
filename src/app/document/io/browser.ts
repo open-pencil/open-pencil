@@ -36,7 +36,10 @@ export function createDocumentViewportActions(editor: ViewportEditor, viewportSi
 }
 
 export function downloadBlob(data: Uint8Array, filename: string, mime: string) {
-  const blob = new Blob([data.buffer as ArrayBuffer], { type: mime })
+  // Pass the TypedArray view directly. Using `data.buffer` would discard
+  // `byteOffset`/`byteLength` and include adjacent bytes when `data` is a
+  // subarray of a larger ArrayBuffer.
+  const blob = new Blob([data as BlobPart], { type: mime })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
