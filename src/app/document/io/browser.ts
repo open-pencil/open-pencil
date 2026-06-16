@@ -2,18 +2,36 @@ import type { ViewportSize } from '@/app/document/io/types'
 
 export function yieldToUI(timeoutMs = 100): Promise<void> {
   let timeoutId: ReturnType<typeof setTimeout>
+  let animationFrameId: number
   const animation = new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      clearTimeout(timeoutId)
+    let resolved = false
+    const settle = () => {
+      if (resolved) return
+      resolved = true
       resolve()
+    }
+
+    animationFrameId = requestAnimationFrame(() => {
+      clearTimeout(timeoutId)
+      settle()
     })
   })
   const fallback = new Promise<void>((resolve) => {
-    timeoutId = setTimeout(() => resolve(), timeoutMs)
+    let resolved = false
+    const settle = () => {
+      if (resolved) return
+      resolved = true
+      resolve()
+    }
+
+    timeoutId = setTimeout(() => {
+      cancelAnimationFrame(animationFrameId)
+      settle()
+    }, timeoutMs)
   })
   // Race so the UI continues even if requestAnimationFrame is throttled or
-  // suspended while the window is hidden. When the animation frame fires
-  // first, the fallback timer is cleared to avoid a dangling callback.
+  // suspended while the window is hidden. Whichever callback fires first
+  // cancels the other to avoid leaving dangling timers or rAF callbacks.
   return Promise.race([animation, fallback])
 }
 

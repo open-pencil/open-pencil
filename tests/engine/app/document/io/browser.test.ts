@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
-import { downloadBlob } from '@/app/document/io/browser'
+import { downloadBlob, yieldToUI } from '@/app/document/io/browser'
 
 type BlobCall = {
   parts: unknown[] | undefined
@@ -144,5 +144,74 @@ describe('downloadBlob', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
     expect(removeChild).toHaveBeenCalledWith(anchor)
     expect(anchorMocks).toHaveLength(0)
+  })
+})
+
+describe('yieldToUI', () => {
+  let rafCallbacks: Map<number, FrameRequestCallback>
+  let nextRafId: number
+  let clearTimeoutSpy: ReturnType<typeof vi.fn>
+  let cancelAnimationFrameSpy: ReturnType<typeof vi.fn>
+  let originalRequestAnimationFrame: typeof requestAnimationFrame
+  let originalCancelAnimationFrame: typeof cancelAnimationFrame
+
+  function setupYieldMocks() {
+    vi.useFakeTimers()
+    rafCallbacks = new Map()
+    nextRafId = 1
+    originalRequestAnimationFrame = globalThis.requestAnimationFrame
+    originalCancelAnimationFrame = globalThis.cancelAnimationFrame
+
+    cancelAnimationFrameSpy = vi.fn((id: number) => {
+      rafCallbacks.delete(id)
+    })
+    setGlobal(
+      'requestAnimationFrame',
+      vi.fn((cb: FrameRequestCallback) => {
+        const id = nextRafId++
+        rafCallbacks.set(id, cb)
+        return id
+      })
+    )
+    setGlobal('cancelAnimationFrame', cancelAnimationFrameSpy)
+    clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+  }
+
+  function teardownYieldMocks() {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame
+    globalThis.cancelAnimationFrame = originalCancelAnimationFrame
+    vi.useRealTimers()
+  }
+
+  beforeEach(setupYieldMocks)
+  afterEach(teardownYieldMocks)
+
+  test('clears the timeout when requestAnimationFrame fires first', async () => {
+    const promise = yieldToUI(100)
+
+    expect(rafCallbacks.size).toBe(1)
+    const [id] = rafCallbacks.keys()
+    const callback = rafCallbacks.get(id)
+    expect(callback).toBeDefined()
+    rafCallbacks.delete(id)
+    callback?.(0)
+
+    await promise
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(1)
+    expect(cancelAnimationFrameSpy).not.toHaveBeenCalled()
+  })
+
+  test('cancels the requestAnimationFrame callback when the timeout fires first', async () => {
+    const promise = yieldToUI(100)
+
+    expect(rafCallbacks.size).toBe(1)
+    const [id] = rafCallbacks.keys()
+
+    vi.advanceTimersByTime(100)
+    await promise
+
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(id)
+    expect(rafCallbacks.size).toBe(0)
   })
 })
