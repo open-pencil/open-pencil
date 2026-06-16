@@ -8,3 +8,7 @@ export const runsHeavyTests = process.env.BUN_HEAVY_TESTS
   : true
 
 export const heavy = describe.if(runsHeavyTests)
+
+// Default per-test timeout in CI is often too short for fixture I/O tests that parse/export
+// real .fig files. Use this timeout for tests that are bounded by fixture parsing speed.
+export const HEAVY_TEST_TIMEOUT_MS = 30_000
