@@ -10,6 +10,7 @@
 
 ### Fixes
 
+- Fix leaking `vi.mock` calls in tab/file IO tests that replaced `computeAllLayouts` with a no-op and broke unrelated layout/text tests in the same `bun test` process. Mocks are now scoped to each test with `vi.spyOn` and restored with `vi.restoreAllMocks()`.
 - Fix Rust path identity normalization to collapse duplicate slashes, strip trailing slashes, and preserve UNC `//` prefix so desktop file-association identity keys match the frontend `normalizeFilePath` contract.
 - Fix `downloadBlob` passing `Uint8Array.buffer` to `Blob`, which included adjacent bytes for subarray payloads; it now passes the typed-array view directly.
 - Fix `yieldToUI` leaving a dangling queued `requestAnimationFrame` callback when the `setTimeout` fallback resolved first (e.g. hidden window). The rAF callback is now cancelled by the fallback.
