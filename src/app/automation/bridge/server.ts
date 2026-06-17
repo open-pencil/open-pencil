@@ -74,12 +74,16 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     ws.onclose = (event) => {
       ws = null
       if (intentionalDisconnect || event.code === 1000) return
-      console.error('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
+      // A close without a status (1005) is normal when the MCP server replaces an
+      // older browser connection, or when the browser page is torn down. The
+      // bridge reconnects automatically, so treat this as a warning rather than
+      // an application error.
+      console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()
     }
 
     ws.onerror = (event) => {
-      console.error('[Automation] WebSocket error:', event)
+      console.warn('[Automation] WebSocket error:', event)
       ws?.close()
     }
   }
