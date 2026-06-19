@@ -222,7 +222,7 @@ describe('analyze overlaps visible bounds', () => {
     // into the gap is caused by the stroked bounds, not the raw node box.
     const plain = new SceneGraph()
     const plainPage = pageId(plain)
-    graph.createNode('RECTANGLE', plainPage, {
+    plain.createNode('RECTANGLE', plainPage, {
       name: 'RotatedPlain',
       x: 45,
       y: 45,
