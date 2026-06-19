@@ -9,7 +9,7 @@ import {
   getDiscoveryPath,
   platformHasUnixSockets,
   platformName
-} from '@open-pencil/mcp/transport'
+} from '#mcp/transport/paths'
 
 describe('transport/paths', () => {
   describe('getSocketDir', () => {
@@ -123,25 +123,32 @@ describe('transport/paths', () => {
   })
 
   describe('getDiscoveryPath', () => {
+    // The test preload (tests/helpers/mcp-discovery-isolation.ts) sets
+    // OPENPENCIL_MCP_DISCOVERY_PATH to a per-process temp path. Each case
+    // below saves/clears/restores both env vars so platform-default behavior
+    // can be asserted independently of the preload.
     it('returns a path ending in mcp.json', async () => {
       const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
+      const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
       delete process.env.OPENPENCIL_MCP_SOCKET
+      delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
       try {
         const path = await getDiscoveryPath()
         expect(path).toMatch(/mcp\.json$/)
       } finally {
-        if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
-        } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
-        }
+        if (originalSocket == null) delete process.env.OPENPENCIL_MCP_SOCKET
+        else process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalDiscovery == null) delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+        else process.env.OPENPENCIL_MCP_DISCOVERY_PATH = originalDiscovery
       }
     })
 
     it('ignores OPENPENCIL_MCP_SOCKET override (stays on platform path)', async () => {
       const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
+      const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
       const overrideDir = join(tmpdir(), 'openpencil-test-discovery-override')
       process.env.OPENPENCIL_MCP_SOCKET = join(overrideDir, 'mcp.sock')
+      delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
       try {
         const path = await getDiscoveryPath()
         // The discovery file must NOT be co-located with the override socket —
@@ -150,11 +157,34 @@ describe('transport/paths', () => {
         expect(path).not.toBe(join(overrideDir, 'mcp.json'))
         expect(path).toMatch(/mcp\.json$/)
       } finally {
-        if (originalSocket == null) {
-          delete process.env.OPENPENCIL_MCP_SOCKET
-        } else {
-          process.env.OPENPENCIL_MCP_SOCKET = originalSocket
-        }
+        if (originalSocket == null) delete process.env.OPENPENCIL_MCP_SOCKET
+        else process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalDiscovery == null) delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+        else process.env.OPENPENCIL_MCP_DISCOVERY_PATH = originalDiscovery
+      }
+    })
+
+    it('respects OPENPENCIL_MCP_DISCOVERY_PATH override', async () => {
+      const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
+      const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+      const overrideDir = join(tmpdir(), `openpencil-test-discovery-path-${process.pid}`)
+      const overridePath = join(overrideDir, 'mcp.json')
+      process.env.OPENPENCIL_MCP_DISCOVERY_PATH = overridePath
+      try {
+        const path = await getDiscoveryPath()
+        expect(path).toBe(overridePath)
+        // The parent directory is created (0o700) so writeDiscoveryFile can
+        // write its temp file in the same directory before the atomic rename.
+        const info = await stat(overrideDir).catch(() => null)
+        expect(info).not.toBeNull()
+        expect(info?.isDirectory()).toBe(true)
+      } finally {
+        if (originalSocket == null) delete process.env.OPENPENCIL_MCP_SOCKET
+        else process.env.OPENPENCIL_MCP_SOCKET = originalSocket
+        if (originalDiscovery == null) delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+        else process.env.OPENPENCIL_MCP_DISCOVERY_PATH = originalDiscovery
+        const { rm } = await import('node:fs/promises')
+        await rm(overrideDir, { recursive: true, force: true }).catch(() => null)
       }
     })
   })

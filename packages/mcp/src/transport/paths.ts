@@ -13,9 +13,11 @@ import { dirname, join } from 'node:path'
  *
  * On Windows, Unix domain sockets are unavailable — the server uses TCP only.
  *
- * Discovery file: always at the platform-default path above (NOT moved by
- * OPENPENCIL_MCP_SOCKET). The socket override is recorded in the discovery
- * file's `socketPath` field so clients read it from the well-known location.
+ * Discovery file: at the platform-default path above, UNLESS
+ * OPENPENCIL_MCP_DISCOVERY_PATH is set (see getDiscoveryPath()). The socket
+ * override (OPENPENCIL_MCP_SOCKET) never moves the discovery file — it is
+ * recorded in the discovery file's `socketPath` field so clients read it
+ * from the well-known location.
  * Socket file:     <socketDir>/mcp.sock  (or the override path)
  *
  * IMPORTANT: getSocketDir() returns the directory that contains the socket
@@ -113,13 +115,25 @@ export async function getSocketPath(): Promise<string> {
 /**
  * Returns the full path to the MCP discovery JSON file.
  *
- * The discovery file always lives at the platform-default location so clients
- * can find it without knowing whether OPENPENCIL_MCP_SOCKET is set. It contains
+ * The discovery file lives at the platform-default location so clients can
+ * find it without knowing whether OPENPENCIL_MCP_SOCKET is set. It contains
  * the actual socket path (which may be overridden) in its `socketPath` field,
  * so clients read the discovery file to learn where to connect — not the other
  * way around.
+ *
+ * Set OPENPENCIL_MCP_DISCOVERY_PATH to relocate the discovery file (e.g. to a
+ * temp directory for test isolation). The desktop app reads the platform
+ * default via its own path computation (src/app/automation/mcp/spawn.ts) and
+ * does not honor this override, so it is primarily useful for tests and
+ * standalone server invocations. The parent directory is created (0o700) so
+ * writeDiscoveryFile's atomic temp-then-rename succeeds.
  */
 export async function getDiscoveryPath(): Promise<string> {
+  const override = process.env.OPENPENCIL_MCP_DISCOVERY_PATH?.trim()
+  if (override) {
+    await mkdir(dirname(override), { recursive: true, mode: 0o700 })
+    return override
+  }
   const dir = await getPlatformDir()
   return join(dir, DISCOVERY_FILENAME)
 }

@@ -321,7 +321,7 @@ describe('MCP server with mcpRoot', () => {
 describe('MCP server lifecycle', () => {
   test('close() removes the discovery file from disk', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
     const discoveryPath = await getDiscoveryPath()
 
     const handle = await startServer({
@@ -427,7 +427,7 @@ describe('MCP server lifecycle', () => {
 describe('MCP server concurrent startServer', () => {
   test('two simultaneous startServer calls each get their own discovery file and both stay up', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
 
     // Use unique socket paths so the two servers don't fight over the
     // socket file. The test still covers discovery atomicity by writing
@@ -483,7 +483,7 @@ describe('MCP server concurrent startServer', () => {
 
   test("closing one server does not delete another server's discovery file", async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
 
     const a = await startServer({
       httpPort: 0,

@@ -7,7 +7,8 @@ import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 import { SceneGraph } from '@open-pencil/core/scene-graph'
-import { startServer, type ServerHandle } from '@open-pencil/mcp'
+
+import { startServer, type ServerHandle } from '#mcp/server'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 

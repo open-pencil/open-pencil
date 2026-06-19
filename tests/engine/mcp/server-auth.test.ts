@@ -359,7 +359,7 @@ describe('MCP session limits', () => {
 describe('Discovery PID liveness', () => {
   test('readDiscoveryFile does not treat a recycled PID as live', async () => {
     if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
-    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
 
     const handle = await startServer({
       httpPort: 0,
@@ -385,7 +385,7 @@ describe('Discovery PID liveness', () => {
   })
 
   test('readDiscoveryFile returns null for a discovery file with a dead PID', async () => {
-    const { getDiscoveryPath } = await import('@open-pencil/mcp/transport')
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
     const { readDiscoveryFile } = await import('#mcp/transport/discovery')
     const discoveryPath = await getDiscoveryPath()
 
