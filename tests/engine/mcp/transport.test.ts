@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { randomUUID } from 'node:crypto'
 import { stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -167,7 +168,7 @@ describe('transport/paths', () => {
     it('respects OPENPENCIL_MCP_DISCOVERY_PATH override', async () => {
       const originalSocket = process.env.OPENPENCIL_MCP_SOCKET
       const originalDiscovery = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
-      const overrideDir = join(tmpdir(), `openpencil-test-discovery-path-${process.pid}`)
+      const overrideDir = join(tmpdir(), `openpencil-test-discovery-path-${randomUUID()}`)
       const overridePath = join(overrideDir, 'mcp.json')
       process.env.OPENPENCIL_MCP_DISCOVERY_PATH = overridePath
       try {
