@@ -4,7 +4,7 @@
  * Connects to the bridge via WebSocket, receives RPC requests,
  * executes them against the live EditorStore, and sends results back.
  */
-import { AUTOMATION_WS_PORT } from '@open-pencil/core/constants'
+import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
@@ -28,7 +28,8 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
 
   function connect() {
     try {
-      ws = new WebSocket(`ws://127.0.0.1:${AUTOMATION_WS_PORT}`)
+      // WebSocket upgrade now happens on the same HTTP port (unified server)
+      ws = new WebSocket(`ws://127.0.0.1:${AUTOMATION_HTTP_PORT}`)
     } catch (e) {
       console.error(
         '[Automation] WebSocket constructor failed:',
@@ -73,12 +74,16 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
     ws.onclose = (event) => {
       ws = null
       if (intentionalDisconnect || event.code === 1000) return
-      console.error('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
+      // A close without a status (1005) is normal when the MCP server replaces an
+      // older browser connection, or when the browser page is torn down. The
+      // bridge reconnects automatically, so treat this as a warning rather than
+      // an application error.
+      console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()
     }
 
     ws.onerror = (event) => {
-      console.error('[Automation] WebSocket error:', event)
+      console.warn('[Automation] WebSocket error:', event)
       ws?.close()
     }
   }

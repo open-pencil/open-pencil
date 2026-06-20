@@ -24,6 +24,7 @@ export const VALID_NODE_TYPES = new Set<string>([
   'COMPONENT',
   'COMPONENT_SET',
   'INSTANCE',
+  'BOOLEAN_OPERATION',
   'CONNECTOR',
   'SHAPE_WITH_TEXT'
 ])

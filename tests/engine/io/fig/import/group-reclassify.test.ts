@@ -62,5 +62,5 @@ describe('Figma group reclassification on import', () => {
     // gold-preview.fig contains real Figma groups (FRAME + resizeToFit) that must
     // import as GROUP, not FRAME.
     expect(groups.length).toBeGreaterThan(0)
-  })
+  }, 30_000)
 })

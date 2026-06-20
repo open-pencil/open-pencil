@@ -92,7 +92,7 @@ Colaboración peer-to-peer en tiempo real vía Trystero (WebRTC) + Yjs CRDT. Sin
 
 ### Puente RPC CLI-a-App
 
-Cuando la app de escritorio está en ejecución, los comandos CLI se conectan a ella vía WebSocket en lugar de requerir un archivo .fig. El servidor de automatización corre en `127.0.0.1:7600` (HTTP) y `127.0.0.1:7601` (WebSocket). Los comandos se ejecutan contra el estado del editor en vivo, permitiendo que scripts de automatización y agentes IA interactúen con la app en ejecución.
+Cuando la app de escritorio está en ejecución, los comandos CLI se conectan a ella vía el servidor MCP en lugar de requerir un archivo .fig. En macOS y Linux, el servidor MCP escucha en un socket de dominio Unix con TCP opcional en `127.0.0.1:7600` (HTTP + WebSocket). En Windows, el servidor se vincula solo por TCP en `127.0.0.1:7600`. Los comandos se ejecutan contra el estado del editor en vivo, permitiendo que scripts de automatización y agentes IA interactúen con la app en ejecución.
 
 ## Próximos pasos
 

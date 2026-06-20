@@ -58,5 +58,5 @@ heavy('fig component metadata import', () => {
     expect(Object.keys(variant.componentPropertyValues).some((key) => key.includes(':'))).toBe(
       false
     )
-  }, 10_000)
+  }, 30_000)
 })

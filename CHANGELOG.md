@@ -2,14 +2,35 @@
 
 ## Unreleased
 
+### Added
+
+- MCP server uses Unix domain socket as the primary transport on macOS/Linux, with optional TCP fallback for browser connections; Windows uses TCP exclusively
+- Discovery file (`mcp.json`) for stdio bridge and CLI auto-connection, stored with `0o600` permissions at the platform-default path
+- `OPENPENCIL_MCP_SOCKET` environment variable overrides the socket path in the discovery file; TCP is controlled by `PORT` (>0 = on, 0 = off)
+- Add JSX authoring support for components, component sets, and instances.
+- Add `unbind_variable` MCP tool for removing variable bindings.
+
+### Security
+
+- Auth token comparison uses `crypto.timingSafeEqual` to prevent timing attacks
+- Auth token auto-generated on startup (32-hex random); no longer exposed via `/health` endpoint
+- Restrictive file permissions on socket (`0o600`) and discovery file (`0o600`)
+- Path traversal protection hardened against symlink attacks via `fs.realpath` in `resolveSafePath`
+
 ### Changed
 
-- Add JSX authoring support for components, component sets, and instances.
-- Add type-validated `bindVariable`/`unbindVariable` with event emission and indexed binding format (`fills/N/color` instead of `fills[N]`).
-- Add `unbind_variable` MCP tool for removing variable bindings.
+- Stdio bridge connects via HTTP-over-socket instead of WebSocket
+- WebSocket upgrades happen on the same HTTP port (no separate WS_PORT)
+- Enhanced type-validated `bindVariable`/`unbindVariable` to emit events and use indexed binding format (`fills/N/color` instead of `fills[N]`)
+
+### Breaking
+
+- `startServer()` is now async, returns `Promise<ServerHandle { app, server, socketPath, httpPort, close }>` instead of `{ app, wss, httpPort, close }`
+- `WS_PORT` and `AUTOMATION_WS_PORT` removed; WebSocket uses the unified HTTP port
 
 ### Fixes
 
+- Fix MCP tool calls failing immediately on first connect when the desktop app has not registered yet — `sendRpc` now waits up to 10 seconds for the app to connect before returning an error
 - Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.
 - Fix instance overrides shallow-copied on clone — override values containing objects are now deep-copied.
 - Fix stale variable bindings not cleaned up when fills/strokes arrays shrink — any indexed sub-path is now handled, not just `/color`.

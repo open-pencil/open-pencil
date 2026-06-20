@@ -8,7 +8,7 @@ import type {
 } from '@agentclientprotocol/sdk'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { AUTOMATION_HTTP_PORT, type ACPAgentDef } from '@open-pencil/core/constants'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
 
@@ -263,7 +263,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           {
             type: 'http' as const,
             name: 'open-pencil',
-            url: 'http://127.0.0.1:7600/mcp',
+            url: `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/mcp`,
             headers: automationAuthToken
               ? [{ name: 'Authorization', value: `Bearer ${automationAuthToken}` }]
               : []

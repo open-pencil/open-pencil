@@ -11,7 +11,7 @@ Bun workspace with three packages:
 - `packages/core` — `@open-pencil/core`: scene graph, renderer, layout, codec, kiwi, clipboard, vector, snap, undo. Zero DOM deps, runs headless in Bun.
 - `packages/cli` — `@open-pencil/cli`: headless CLI for .fig inspection, export, linting. Uses `citty` + `agentfmt`.
 - `packages/docs` — `@open-pencil/docs`: VitePress documentation site. Run with `cd packages/docs && bun run dev`.
-- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Stdio + HTTP (Hono). Reuses `createServer()` factory with all core tools.
+- `packages/mcp` — `@open-pencil/mcp`: MCP server for AI coding tools. Transport auto-discovered via `mcp.json` file (Unix socket preferred on macOS/Linux, TCP HTTP fallback on all platforms including Windows). Stdio bridge reads discovery file to find server socket/port.
 
 - `packages/vue` — `@open-pencil/vue`: headless Vue 3 SDK (Reka UI-style) for building custom OpenPencil-powered editor shells and embedded editing surfaces. Renderless components and composables. The app is one consumer of the SDK.
 
@@ -206,9 +206,13 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - AI adapter (`packages/core/src/tools/ai-adapter.ts`): `toolsToAI()` converts ToolDefs → valibot schemas + Vercel AI `tool()` wrappers
 - `src/app/ai/tools/index.ts` is just a thin wire: creates FigmaAPI from editor store, calls `toolsToAI()`
 - CLI commands (`packages/cli/src/commands/`) are **not** generated from ToolDefs — they have custom agentfmt formatting, tree walking, pagination. The `eval` command is the CLI's access to all ToolDef operations via FigmaAPI.
-- MCP adapter (`packages/mcp/src/server.ts`): `startServer()` creates unified HTTP + WebSocket server. Registers all ToolDefs as MCP tools (zod schemas). Single entry point: `index.ts` (Hono + Streamable HTTP with sessions). Browser connects via WebSocket, tool calls proxied through.
+- MCP adapter (`packages/mcp/src/server.ts`): `startServer()` is async, returns `ServerHandle { app, server, socketPath, httpPort, close }`. Dual HTTP server instances sharing one Hono app and WebSocketServer. Primary Unix domain socket for local tools, secondary TCP HTTP+WS for browser/external. Registers all ToolDefs as MCP tools (zod schemas).
+- Transport architecture (`packages/mcp/src/transport/`): `paths.ts` resolves platform-specific socket dir/path (macOS `~/Library/`, Linux `XDG_RUNTIME_DIR`, Windows `%LOCALAPPDATA%`). `discovery.ts` writes/reads `mcp.json` discovery file with PID liveness check, stale socket cleanup, and auth token. Socket permissions `0o600` on Unix. `OPENPENCIL_MCP_DISCOVERY_PATH` overrides the discovery file location (parent dir created `0o700`); the desktop app reads the platform default and does not honor it, so it is mainly for test isolation — `tests/helpers/mcp-discovery-isolation.ts` is registered as a `bunfig.toml` `[test]` preload so engine tests never clobber the real `mcp.json` (which would break a running app by deleting its published auth token).
+- `stdio-bridge.ts` connects to the MCP server via discovery-driven HTTP transport: HTTP-over-Unix-socket (`node:http request({ socketPath })`) when Unix sockets are available, otherwise HTTP-over-TCP fallback (platform-dependent). Auth token is read from `OPENPENCIL_MCP_AUTH_TOKEN` env var or the discovery file.
+- Auth token comparison uses `crypto.timingSafeEqual` to prevent timing attacks. Token is auto-generated on startup and stored in the discovery file (`0o600`), not exposed via `/health` endpoint. The `0o600` permissions prevent access from other users on the same machine but do **not** prevent access from other processes running as the same user.
+- Path scoping (`resolveSafePath`) is async and uses `fs.realpath` to resolve symlinks, preventing traversal attacks where a symlink inside root points outside.
 - MCP-only tools (`open_file`, `new_document`, `save_file`, `get_codegen_prompt`) are registered directly in `server.ts`, not as ToolDefs — they need Node.js fs access or don't operate on the scene graph
-- `open_file` and `new_document` are only registered when `OPENPENCIL_MCP_ROOT` is set (path scoping for security)
+- `open_file` and `new_document` are only registered when `mcpRoot` is non-null (path scoping for security). The server library API defaults `mcpRoot` to `null` (tools not registered unless explicitly configured); the CLI (`packages/mcp/src/index.ts`) defaults `mcpRoot` to `process.cwd()` when `OPENPENCIL_MCP_ROOT` is unset, so these tools are always available in CLI usage
 - Export tools (`export_image`, `export_svg`, `get_jsx`) accept an optional `path` param — when provided and `OPENPENCIL_MCP_ROOT` is set, the MCP server writes output to disk and returns `{ written, byteLength }` instead of the raw data
 - Core prompts (`CODEGEN_PROMPT`, `JSX_REFERENCE`) live as markdown files in `packages/core/src/tools/prompts/`, loaded via raw-md bundler plugin; app chat/ACP prompts live under `src/app/ai/**` markdown files.
 - To add a new tool: add a `defineTool()` in the appropriate domain file, add to `ALL_TOOLS` in `registry.ts` — it's instantly available in AI chat, MCP, and via `eval` in CLI
@@ -221,7 +225,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - ACP design context prompt (`ACP_DESIGN_CONTEXT`) is authored in `src/app/ai/acp/design-context.md` and re-exported from `src/constants.ts`
 - Agent definitions (`ACP_AGENTS`) in `packages/core/src/constants.ts`
 - MCP server: Vite plugin in dev, `openpencil-mcp` via shell plugin in production Tauri (requires `npm i -g @open-pencil/mcp`; follow-up: bundle as Tauri sidecar)
-- Architecture: browser ↔ WebSocket :7601 ↔ MCP server :7600 ↔ HTTP ↔ agent subprocess
+- Architecture: browser ↔ WebSocket (same HTTP port) ↔ MCP server ↔ stdio ↔ agent subprocess. The MCP server itself listens on Unix socket (primary on macOS/Linux) or TCP (fallback/Windows); the browser connects to its HTTP+WS port, while the stdio bridge (`openpencil-mcp`) connects via socket or TCP
 - Shell permissions scoped per-command in `desktop/capabilities/default.json` (`args: true` — agents need dynamic SDK flags)
 - ACP providers visible only in Tauri desktop when MCP server is reachable
 - Permission requests shown in AlertDialog — user must approve/reject each request (60s auto-reject timeout)
