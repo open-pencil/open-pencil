@@ -1,3 +1,5 @@
+import { type RequestOptions, request as httpRequest } from 'node:http'
+
 import { WebSocket } from 'ws'
 
 import {
@@ -25,6 +27,140 @@ export interface MockBrowser {
   graph: SceneGraph
   requests: MockBrowserRequest[]
   close: () => void
+}
+
+/** Read the next WebSocket JSON message with a timeout. */
+export function readWsJson<T>(ws: WebSocket, timeoutMs = 1000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timer)
+      ws.off('message', onMessage)
+      ws.off('error', onError)
+    }
+    const onMessage = (raw: WebSocket.RawData) => {
+      cleanup()
+      try {
+        resolve(JSON.parse(raw.toString()) as T)
+      } catch (error) {
+        reject(error)
+      }
+    }
+    const onError = (error: Error) => {
+      cleanup()
+      reject(error)
+    }
+    const timer = setTimeout(() => {
+      cleanup()
+      reject(new Error('Timed out waiting for WebSocket message'))
+    }, timeoutMs)
+    ws.on('message', onMessage)
+    ws.on('error', onError)
+  })
+}
+
+/** Open a WebSocket connection, optionally authenticating as a stdio bridge client. */
+export function openWs(url: string, authToken?: string | null): Promise<WebSocket> {
+  const ws = new WebSocket(url)
+  return new Promise((resolve, reject) => {
+    ws.once('open', () => {
+      if (authToken) {
+        // Authenticate as a stdio bridge client (not the browser app).
+        // The "auth" message type validates the token and adds the client
+        // to authenticatedClients without replacing the registered browser.
+        ws.send(JSON.stringify({ type: 'auth', token: authToken }))
+      }
+      resolve(ws)
+    })
+    ws.once('error', reject)
+  })
+}
+
+/** Read the next WebSocket JSON message, skipping any 'register' broadcasts. */
+export async function readNextResponse<T>(ws: WebSocket, timeoutMs = 5000): Promise<T> {
+  const start = Date.now()
+  for (let i = 0; ; i++) {
+    const remaining = timeoutMs - (Date.now() - start)
+    if (remaining <= 0) throw new Error(`Timed out after reading ${i} register messages`)
+    const msg = await readWsJson<T & { type: string }>(ws, remaining)
+    if (msg.type !== 'register') return msg
+  }
+}
+
+/** Low-level HTTP request via Node's http module, with timeout. */
+export function nodeHttpRequest(
+  opts: RequestOptions,
+  bodyJson?: string,
+  timeoutMs = 5_000
+): Promise<{ status: number; data: unknown }> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      req.destroy(new Error(`nodeHttpRequest timed out after ${timeoutMs / 1000}s`))
+    }, timeoutMs)
+    const req = httpRequest(opts, (res) => {
+      const chunks: Buffer[] = []
+      res.on('data', (chunk: Buffer) => chunks.push(chunk))
+      res.on('end', () => {
+        clearTimeout(timeout)
+        const raw = Buffer.concat(chunks).toString('utf-8')
+        let data: unknown
+        try {
+          data = JSON.parse(raw)
+        } catch {
+          data = raw
+        }
+        resolve({ status: res.statusCode ?? 200, data })
+      })
+      res.on('error', (err) => {
+        clearTimeout(timeout)
+        reject(err)
+      })
+    })
+    req.on('error', (err) => {
+      clearTimeout(timeout)
+      reject(err)
+    })
+    // Connection-level timeout: destroys the socket if the server stalls
+    // during connection or mid-request. The response-level timeout above
+    // handles slow responses; this handles hung connections (e.g., socket
+    // exists but no one is listening).
+    req.setTimeout(timeoutMs, () => {
+      req.destroy(new Error(`nodeHttpRequest connection timed out after ${timeoutMs / 1000}s`))
+    })
+    if (bodyJson) req.write(bodyJson)
+    req.end()
+  })
+}
+
+/** Make an HTTP request via TCP to a specific port. */
+export function tcpRequest(
+  port: number,
+  method: string,
+  path: string,
+  body?: Record<string, unknown>,
+  headers?: Record<string, string>
+): Promise<{ status: number; data: unknown }> {
+  if (!port) throw new Error('tcpRequest: port not initialized — beforeAll must run first')
+  const bodyJson = body ? JSON.stringify(body) : undefined
+  return nodeHttpRequest(
+    {
+      hostname: '127.0.0.1',
+      port,
+      path,
+      method,
+      headers: { ...(bodyJson ? { 'Content-Type': 'application/json' } : {}), ...headers }
+    },
+    bodyJson
+  )
+}
+
+/** Make an HTTP request via Unix domain socket. */
+export function socketRequest(
+  socketPath: string,
+  method: string,
+  path: string,
+  headers?: Record<string, string>
+): Promise<{ status: number; data: unknown }> {
+  return nodeHttpRequest({ socketPath, path, method, headers: headers ?? {} })
 }
 
 /** Generate a random hex string of the given byte length using crypto.getRandomValues(). */
