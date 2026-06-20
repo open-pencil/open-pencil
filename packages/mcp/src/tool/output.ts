@@ -4,6 +4,13 @@ import { dirname, basename, isAbsolute, join, parse, resolve, sep as osSep } fro
 import { ok } from '#mcp/result'
 import type { MCPResult } from '#mcp/result'
 
+/** Returns true for filesystem errors that indicate a missing or unresolvable path (ENOENT, ENOTDIR, ELOOP). */
+function isMissingPathError(e: unknown): boolean {
+  const code =
+    typeof e === 'object' && e !== null && 'code' in e ? (e as { code?: unknown }).code : undefined
+  return code === 'ENOENT' || code === 'ENOTDIR' || code === 'ELOOP'
+}
+
 /**
  * Resolve a file path and verify it stays within the allowed root directory.
  * Uses fs.realpath to resolve symlinks for the security check, preventing
@@ -22,7 +29,8 @@ async function resolveRealAncestor(
     try {
       const real = await realpath(current)
       return { realAncestor: real, remainder }
-    } catch {
+    } catch (e) {
+      if (!isMissingPathError(e)) throw e
       const parent = dirname(current)
       if (parent === current) return { realAncestor: current, remainder }
       remainder = osSep + basename(current) + remainder
@@ -56,6 +64,7 @@ async function assertNoSymlinksInRemainder(realAncestor: string, remainder: stri
       }
     } catch (e) {
       if (e instanceof Error && e.message.includes('outside the allowed root')) throw e
+      if (!isMissingPathError(e)) throw e
       // lstat failed — the component doesn't exist at all, which is expected
       // since we're creating a new file. No symlink to worry about.
     }
@@ -78,13 +87,15 @@ function assertNarrowRoot(rootPath: string, original: string): void {
 async function resolveRealPath(p: string): Promise<string> {
   try {
     return await realpath(p)
-  } catch {
+  } catch (e) {
+    if (!isMissingPathError(e)) throw e
     const parentDir = dirname(p)
     const baseName = basename(p)
     try {
       const realParent = await realpath(parentDir)
       return join(realParent, baseName)
-    } catch {
+    } catch (e) {
+      if (!isMissingPathError(e)) throw e
       const { realAncestor, remainder } = await resolveRealAncestor(parentDir)
       await assertNoSymlinksInRemainder(realAncestor, remainder)
       return join(realAncestor, remainder.slice(osSep.length), baseName)
@@ -138,6 +149,7 @@ async function resolveDanglingSymlink(
       )
         throw e
     }
+    if (!isMissingPathError(e)) throw e
     // lstat failed (file doesn't exist at all) — not a symlink
     return undefined
   }
@@ -165,7 +177,8 @@ export async function resolveSafePath(
   let realRoot: string
   try {
     realRoot = await realpath(root)
-  } catch {
+  } catch (e) {
+    if (!isMissingPathError(e)) throw e
     const { realAncestor, remainder } = await resolveRealAncestor(root)
     realRoot = remainder ? join(realAncestor, remainder.slice(osSep.length)) : realAncestor
   }
@@ -179,7 +192,8 @@ export async function resolveSafePath(
   let realPath: string
   try {
     realPath = await realpath(resolved)
-  } catch {
+  } catch (e) {
+    if (!isMissingPathError(e)) throw e
     // realpath failed — may be a dangling symlink or a non-existent file.
     const symlinkRealPath = await resolveDanglingSymlink(resolved, root, symlinkDepth)
     realPath = symlinkRealPath ?? (await resolveRealPath(resolved))
@@ -202,7 +216,16 @@ export async function writeToolOutput(
   // an attacker could swap a directory component with a symlink between
   // resolveSafePath's validation and the writeFile call. Writing to the
   // realpath-validated path ensures the write lands inside root.
-  await mkdir(dirname(realPath), { recursive: true })
+  const parentDir = dirname(realPath)
+  await mkdir(parentDir, { recursive: true })
+  // TOCTOU mitigation: verify the parent directory is still a real directory
+  // (not a symlink) after mkdir. An attacker who replaces a directory
+  // component with a symlink between resolveSafePath and the write would be
+  // detected here. This narrows the race window significantly.
+  const parentStat = await lstat(parentDir)
+  if (parentStat.isSymbolicLink()) {
+    throw new Error(`Security: parent directory replaced with symlink: ${parentDir}`)
+  }
   if (toolName === 'export_svg' && typeof result.svg === 'string') {
     await writeFile(realPath, result.svg, 'utf8')
     return ok({ written: resolved, byteLength: Buffer.byteLength(result.svg, 'utf8') })

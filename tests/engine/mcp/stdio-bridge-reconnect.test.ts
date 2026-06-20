@@ -130,7 +130,6 @@ async function closeMockServer(server: Server | null, socketPath?: string): Prom
 // ---------------------------------------------------------------------------
 
 describe('stdio-bridge transport reconnection', () => {
-  const skipReason = !isUnix ? 'Unix domain sockets not available on this platform' : undefined
   const origSocketEnv = process.env.OPENPENCIL_MCP_SOCKET
 
   afterEach(async () => {
@@ -148,7 +147,7 @@ describe('stdio-bridge transport reconnection', () => {
     await rm(TEST_DIR, { recursive: true, force: true })
   })
 
-  test.skipIf(skipReason)(
+  test.skipIf(!isUnix)(
     'bridge reconnects after server restart on the same socket path',
     async () => {
       let server1: Server | null = null
@@ -214,7 +213,7 @@ describe('stdio-bridge transport reconnection', () => {
     15_000
   )
 
-  test.skipIf(skipReason)(
+  test.skipIf(!isUnix)(
     'auto-discovered socket path is refreshed after transport reset',
     async () => {
       let server1: Server | null = null
@@ -284,7 +283,7 @@ describe('stdio-bridge transport reconnection', () => {
     15_000
   )
 
-  test.skipIf(skipReason)(
+  test.skipIf(!isUnix)(
     'explicit socket path override is never overwritten by discovery',
     async () => {
       let server1: Server | null = null
@@ -343,7 +342,7 @@ describe('stdio-bridge transport reconnection', () => {
     15_000
   )
 
-  test.skipIf(skipReason)(
+  test.skipIf(!isUnix)(
     'auto-discovered socket path picks up a CHANGED path from discovery after transport reset',
     async () => {
       let server1: Server | null = null

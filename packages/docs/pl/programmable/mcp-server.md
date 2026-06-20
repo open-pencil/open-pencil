@@ -52,7 +52,7 @@ Serwer zapisuje **plik odkrywania** przy uruchomieniu. Most stdio odczytuje ten 
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (alternatywa: `~/.openpencil/mcp.json`) |
 | Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-`OPENPENCIL_MCP_SOCKET` nadpisuje jedynie ścieżkę gniazda — plik odkrywania zawsze pozostaje na ścieżce platformy podanej powyżej.
+`OPENPENCIL_MCP_SOCKET` nadpisuje jedynie ścieżkę gniazda. Domyślnie plik odkrywania pozostaje na ścieżce platformy podanej powyżej, chyba że ustawiono `OPENPENCIL_MCP_DISCOVERY_PATH`.
 
 ### Zawartość pliku odkrywania
 
@@ -200,6 +200,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 |---------|----------|------|
 | `PORT` | `7600` | Port TCP. Ustaw `0`, aby wyłączyć TCP (tylko gniazdo na macOS/Linux). ⚠️ W systemie Windows `PORT=0` wyłącza jedyny dostępny transport, przez co serwer staje się nieosiągalny. |
 | `OPENPENCIL_MCP_SOCKET` | Domyślna dla platformy | Nadpisuje ścieżkę gniazda (tylko macOS/Linux — Windows nie obsługuje gniazd Unix) |
+| `OPENPENCIL_MCP_DISCOVERY_PATH` | Domyślna dla platformy | Nadpisuje lokalizację pliku odkrywania (`mcp.json`) |
 | `OPENPENCIL_MCP_TCP` | Przestarzała | Brak efektu — TCP jest kontrolowane przez `PORT` (>0 = włączone, 0 = wyłączone) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Automatycznie generowany | Token uwierzytelniający serwera. Jeśli nieustawiony, jest generowany przy uruchomieniu. Jeśli ustawiony na pusty ciąg (`""`), uwierzytelnianie jest wyłączone. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Zakres katalogu dla narzędzi `open_file`, `new_document` i eksportu zapisującego pliki. `save_file` jest zawsze dostępne; ścieżka jest walidowana względem tego katalogu, gdy jest ustawiony |
@@ -284,7 +285,7 @@ Działa z Claude Code, Cursor, Windsurf, Codex i każdym agentem obsługującym 
 | `save_file` | Zapisz bieżący dokument do pliku `.fig` |
 | `new_document` | Utwórz nowy pusty dokument |
 
-Uwaga: `open_file` i `new_document` wymagają ustawienia `OPENPENCIL_MCP_ROOT`. `save_file` jest zawsze dostępne; jego ścieżka jest walidowana względem `OPENPENCIL_MCP_ROOT` tylko gdy katalog główny jest skonfigurowany.
+Uwaga: `open_file`, `new_document` oraz narzędzia eksportu zapisujące pliki są zawsze dostępne — ich ścieżki są ograniczone do `OPENPENCIL_MCP_ROOT`, które domyślnie przyjmuje bieżący katalog roboczy (`cwd()`) gdy nie jest ustawione. `save_file` jest zawsze dostępne; jego ścieżka jest walidowana względem `OPENPENCIL_MCP_ROOT` tylko gdy katalog główny jest skonfigurowany.
 
 ### Odczyt
 

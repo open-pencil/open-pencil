@@ -59,7 +59,7 @@ export { registerTools, type RegisterToolsOptions, type RpcSender } from '#mcp/t
 export { paramToZod } from '#mcp/tool/schema'
 
 export interface ServerOptions {
-  /** TCP port for the HTTP + WebSocket server. 0 to disable TCP. Defaults to 7600. */
+  /** TCP port for the HTTP + WebSocket server. Ignored when `withTcp` is false. When set to 0 with `withTcp: true`, binds to an ephemeral port. Defaults to 7600. */
   httpPort?: number
   /** Path to the Unix domain socket. Auto-resolved if omitted. */
   socketPath?: string | null
@@ -372,9 +372,11 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
     // Tear down any listeners that started before the failure, then close
     // all resources so nothing leaks when startServer rejects.
     await teardownListeners(state).catch(() => undefined)
-    ctx.wss.close()
     ctx.browserRpc.close()
-    ctx.mcpSessions.clear().catch(() => undefined)
+    await new Promise<void>((resolve) => {
+      ctx.wss.close(() => resolve())
+    })
+    await ctx.mcpSessions.clear().catch(() => undefined)
     throw err
   }
 

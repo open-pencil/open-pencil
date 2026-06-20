@@ -52,7 +52,7 @@ The server writes a **discovery file** on startup. The stdio bridge reads this f
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
 | Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-`OPENPENCIL_MCP_SOCKET` overrides only the socket path — the discovery file always stays at the platform path above.
+`OPENPENCIL_MCP_SOCKET` overrides only the socket path — the discovery file stays at the platform path above unless `OPENPENCIL_MCP_DISCOVERY_PATH` is set.
 
 ### What's in the discovery file
 
@@ -200,6 +200,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 |----------|---------|-------------|
 | `PORT` | `7600` | TCP port. Set `0` to disable TCP (socket-only on macOS/Linux; disables all transport on Windows). ⚠️ **On Windows, `PORT=0` disables the only available transport, making the server unreachable.** |
 | `OPENPENCIL_MCP_SOCKET` | Platform default | Override socket path (macOS/Linux only — Windows has no Unix socket support) |
+| `OPENPENCIL_MCP_DISCOVERY_PATH` | Platform default | Override discovery file (`mcp.json`) location |
 | `OPENPENCIL_MCP_TCP` | Deprecated | No effect — TCP is controlled by `PORT` (>0 = on, 0 = off) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generated | Server auth token. If unset, one is generated at startup. If set to an empty string (`""`), auth is disabled. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope for `open_file`, `new_document`, and file-writing export tools. `save_file` is always available; path is validated against this directory when set |
@@ -284,7 +285,7 @@ Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [sk
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
 
-Note: `open_file` and `new_document` require `OPENPENCIL_MCP_ROOT` to be set. `save_file` is always available — its path is validated against `OPENPENCIL_MCP_ROOT` only when the root is configured.
+Note: `open_file`, `new_document`, and file-writing export tools are always available — their paths are scoped to `OPENPENCIL_MCP_ROOT`, which defaults to the current working directory (`cwd()`) when unset. `save_file` is always available; its path is validated against `OPENPENCIL_MCP_ROOT` only when the root is explicitly configured.
 
 ### Read
 

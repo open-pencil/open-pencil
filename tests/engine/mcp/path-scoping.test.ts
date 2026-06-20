@@ -1,4 +1,5 @@
 import { describe, test, expect } from 'bun:test'
+import { randomUUID } from 'node:crypto'
 import { mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
@@ -6,9 +7,10 @@ import { resolve } from 'node:path'
 import { resolveSafePath } from '#mcp/tool/output'
 
 const isUnix = process.platform !== 'win32'
+const TEST_ID = randomUUID().slice(0, 8)
 
 describe('MCP path scoping', () => {
-  const root = resolve(tmpdir(), 'mcp-test-root')
+  const root = resolve(tmpdir(), 'mcp-' + TEST_ID + '-test-root')
 
   test('allows path inside root', async () => {
     try {
@@ -45,7 +47,7 @@ describe('MCP path scoping', () => {
   })
 
   test('rejects path outside root', async () => {
-    const outsideRoot = resolve(tmpdir(), 'mcp-outside-root')
+    const outsideRoot = resolve(tmpdir(), 'mcp-' + TEST_ID + '-outside-root')
     await expect(resolveSafePath(`${outsideRoot}/passwd`, root)).rejects.toThrow(
       'outside the allowed root'
     )
@@ -70,9 +72,9 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('rejects dangling symlink pointing outside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-test')
     const linkPath = `${testDir}/escape.fig`
-    const outsideTarget = resolve(tmpdir(), 'mcp-symlink-outside-target')
+    const outsideTarget = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-outside-target')
     try {
       await mkdir(testDir, { recursive: true })
       // Create the target so the symlink is NOT dangling — this exercises
@@ -87,7 +89,7 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('allows dangling symlink pointing inside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-dangling-inside-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-dangling-inside-test')
     const linkPath = `${testDir}/dangling.fig`
     const insideTarget = `${testDir}/nonexistent-target.fig`
     try {
@@ -107,7 +109,7 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('allows symlink pointing inside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-safe-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-safe-test')
     const targetDir = `${testDir}/targets`
     const targetFile = `${targetDir}/real.fig`
     const linkPath = `${testDir}/link.fig`
@@ -128,9 +130,9 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('rejects dangling symlink pointing outside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-dangling-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-dangling-test')
     const linkPath = `${testDir}/dangling.fig`
-    const outsideTarget = resolve(tmpdir(), 'mcp-symlink-dangling-outside')
+    const outsideTarget = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-dangling-outside')
     try {
       await mkdir(testDir, { recursive: true })
       // Dangling symlink: target doesn't exist, points outside root
@@ -142,7 +144,7 @@ describe('MCP path scoping', () => {
   })
 
   test('allows nonexistent file inside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-nonexistent-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-nonexistent-test')
     const filePath = `${testDir}/new.fig`
     try {
       await mkdir(testDir, { recursive: true })
@@ -191,7 +193,7 @@ describe('MCP path scoping', () => {
     // segments, resolveRealAncestor is called for the parent directory and
     // must fail closed. This exercises the second call site (line 142 in
     // output.ts: resolveRealAncestor(parentDir)).
-    const testDir = resolve(tmpdir(), 'mcp-deep-path-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-deep-path-test')
     try {
       await mkdir(testDir, { recursive: true })
       // 70 non-existent subdirectories under an existing root
@@ -203,7 +205,7 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('rejects symlinked root that resolves to /', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-root-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-root-test')
     const rootLink = `${testDir}/root-link`
     try {
       await mkdir(testDir, { recursive: true })
@@ -217,7 +219,7 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('rejects circular symlinks', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-circular-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-circular-test')
     const linkA = `${testDir}/a.fig`
     const linkB = `${testDir}/b.fig`
     try {
@@ -232,7 +234,7 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('allows absolute symlink target inside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-abs-inside-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-abs-inside-test')
     const targetDir = `${testDir}/targets`
     const targetFile = `${targetDir}/real.fig`
     const linkPath = `${testDir}/link.fig`
@@ -251,8 +253,8 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('rejects absolute symlink target outside root', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-abs-outside-test')
-    const outsideDir = resolve(tmpdir(), 'mcp-symlink-abs-outside-target')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-abs-outside-test')
+    const outsideDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-abs-outside-target')
     const outsideFile = `${outsideDir}/secret.fig`
     const linkPath = `${testDir}/link.fig`
     try {
@@ -271,7 +273,7 @@ describe('MCP path scoping', () => {
   test.skipIf(!isUnix)(
     'allows relative symlink with traversal that stays inside root',
     async () => {
-      const testDir = resolve(tmpdir(), 'mcp-symlink-rel-traversal-test')
+      const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-rel-traversal-test')
       const subDir = `${testDir}/sub`
       const targetFile = `${testDir}/target.fig`
       const linkPath = `${subDir}/link.fig`
@@ -291,7 +293,7 @@ describe('MCP path scoping', () => {
   )
 
   test.skipIf(!isUnix)('rejects self-referencing symlink', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-self-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-self-test')
     const linkPath = `${testDir}/self.fig`
     try {
       await mkdir(testDir, { recursive: true })
@@ -304,7 +306,7 @@ describe('MCP path scoping', () => {
   })
 
   test.skipIf(!isUnix)('allows symlink chain inside root (non-dangling)', async () => {
-    const testDir = resolve(tmpdir(), 'mcp-symlink-chain-test')
+    const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-chain-test')
     const targetFile = `${testDir}/real.fig`
     const link1 = `${testDir}/link1.fig`
     const link2 = `${testDir}/link2.fig`

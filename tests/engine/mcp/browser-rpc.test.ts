@@ -311,15 +311,15 @@ describe('BrowserRpcBridge reconnection', () => {
     // Also wire the non-browser client into the bridge so it can send
     // messages via handleMessage (simulating a stdio bridge WS).
     // Authenticate it first so handleMessage doesn't reject at the auth gate.
+    clientPair.serverWs.on('message', (raw: Buffer) => {
+      const data = Buffer.from(raw as Buffer).toString('utf-8')
+      bridge.handleMessage(data, clientPair.serverWs)
+    })
     bridge.handleConnection(clientPair.serverWs)
     await new Promise<void>((resolve) => {
       clientPair.clientWs.send(JSON.stringify({ type: 'auth', token: AUTH_TOKEN }))
       // Wait briefly for the auth message to be processed
       clientPair.clientWs.once('message', () => resolve())
-    })
-    clientPair.serverWs.on('message', (raw: Buffer) => {
-      const data = Buffer.from(raw as Buffer).toString('utf-8')
-      bridge.handleMessage(data, clientPair.serverWs)
     })
 
     // Capture the request ID from the browser side. Set up the listener
@@ -385,14 +385,14 @@ describe('BrowserRpcBridge reconnection', () => {
     // Wire the attacker's WS into the bridge so it can send messages.
     // Authenticate it first so handleMessage doesn't reject at the auth gate,
     // ensuring the ws-guard logic is actually tested.
+    attackerPair.serverWs.on('message', (raw: Buffer) => {
+      const data = Buffer.from(raw as Buffer).toString('utf-8')
+      bridge.handleMessage(data, attackerPair.serverWs)
+    })
     bridge.handleConnection(attackerPair.serverWs)
     await new Promise<void>((resolve) => {
       attackerPair.clientWs.send(JSON.stringify({ type: 'auth', token: AUTH_TOKEN }))
       attackerPair.clientWs.once('message', () => resolve())
-    })
-    attackerPair.serverWs.on('message', (raw: Buffer) => {
-      const data = Buffer.from(raw as Buffer).toString('utf-8')
-      bridge.handleMessage(data, attackerPair.serverWs)
     })
 
     // Set up the message listener BEFORE sending the RPC to avoid a race

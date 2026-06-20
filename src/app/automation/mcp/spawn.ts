@@ -217,7 +217,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   }
 
   const authToken = randomHex(32)
-  runtimeAutomationAuthToken = authToken
+  // Cache only after MCP startup is confirmed healthy.
 
   const { Command } = await import('@tauri-apps/plugin-shell')
   const isWindows = navigator.platform.includes('Win')
@@ -276,6 +276,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   }
 
   await child.kill()
+  runtimeAutomationAuthToken = null
   throw new Error(
     `Failed to start MCP server. Install @open-pencil/mcp@${APP_VERSION} globally with your package manager, then restart OpenPencil.`
   )

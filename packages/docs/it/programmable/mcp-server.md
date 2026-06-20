@@ -52,7 +52,7 @@ Il server scrive un **file di discovery** all'avvio. Il bridge stdio legge quest
 | Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (fallback: `~/.openpencil/mcp.json`) |
 | Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
 
-`OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) sovrascrive solo il percorso del socket — il file di discovery rimane sempre nel percorso della piattaforma sopra indicato.
+`OPENPENCIL_MCP_SOCKET` (solo macOS/Linux) sovrascrive solo il percorso del socket — il file di discovery rimane nel percorso della piattaforma sopra indicato a meno che non sia impostato `OPENPENCIL_MCP_DISCOVERY_PATH`.
 
 ### Contenuto del file di discovery
 
@@ -200,6 +200,7 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 |-----------|---------|-------------|
 | `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP. ⚠️ Su Windows, `PORT=0` disabilita l'unico trasporto disponibile, rendendo il server irraggiungibile. |
 | `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux) |
+| `OPENPENCIL_MCP_DISCOVERY_PATH` | Per piattaforma | Sovrascrivi posizione del file di discovery (`mcp.json`) |
 | `OPENPENCIL_MCP_TCP` | Deprecato | Nessun effetto — TCP è controllato da `PORT` (>0 = attivo, 0 = disattivato) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generato | Token auth del server. Se non impostato, viene generato automaticamente; se impostato a stringa vuota (`""`), l'autenticazione viene disabilitata. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope per `open_file`, `new_document` e export con scrittura. `save_file` è sempre disponibile; il percorso viene validato contro questa directory quando impostato |
@@ -284,7 +285,7 @@ Funziona con Claude Code, Cursor, Windsurf, Codex e qualsiasi agente che support
 | `save_file` | Salva il documento corrente su un file `.fig` |
 | `new_document` | Crea un nuovo documento vuoto |
 
-Nota: `open_file` e `new_document` richiedono che `OPENPENCIL_MCP_ROOT` sia impostato. `save_file` è sempre disponibile; il suo percorso viene validato contro `OPENPENCIL_MCP_ROOT` solo quando la radice è configurata.
+Nota: `open_file`, `new_document` e gli strumenti di esportazione che scrivono file sono sempre disponibili — i loro percorsi sono limitati a `OPENPENCIL_MCP_ROOT`, che per impostazione predefinita corrisponde alla directory di lavoro corrente (`cwd()`) quando non impostato. `save_file` è sempre disponibile; il suo percorso viene validato contro `OPENPENCIL_MCP_ROOT` solo quando la radice è configurata.
 
 ### Lettura
 
