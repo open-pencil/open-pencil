@@ -275,8 +275,11 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
     }
   }
 
-  await child.kill()
-  runtimeAutomationAuthToken = null
+  try {
+    await child.kill()
+  } finally {
+    runtimeAutomationAuthToken = null
+  }
   throw new Error(
     `Failed to start MCP server. Install @open-pencil/mcp@${APP_VERSION} globally with your package manager, then restart OpenPencil.`
   )
