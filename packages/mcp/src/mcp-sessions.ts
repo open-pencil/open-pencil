@@ -154,6 +154,21 @@ export function createMcpSessionManager({
     if (session) session.lastSeen = Date.now()
   }
 
+  /**
+   * Look up an existing session's transport without creating a new session.
+   * Used for DELETE requests where creating a session just to delete it
+   * would waste a session slot.
+   */
+  function getExistingTransport(
+    sessionId: string | undefined
+  ): MCPTransport | { error: 'not_found' | 'closed' } {
+    if (closed) return { error: 'closed' }
+    if (!sessionId) return { error: 'not_found' }
+    const existing = sessions.get(sessionId)
+    if (existing) return existing.transport
+    return { error: 'not_found' }
+  }
+
   function deleteSession(sessionId: string | undefined) {
     if (!sessionId) return
     const session = sessions.get(sessionId)
@@ -174,5 +189,5 @@ export function createMcpSessionManager({
     await Promise.all(all.map(closeSession))
   }
 
-  return { clear, deleteSession, notifyToolsChanged, resolveTransport, touch }
+  return { clear, deleteSession, getExistingTransport, notifyToolsChanged, resolveTransport, touch }
 }

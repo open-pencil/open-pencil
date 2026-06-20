@@ -116,7 +116,8 @@ export async function writeDiscovery(
   actualHttpPort: number,
   authToken: string | null,
   version: string
-): Promise<void> {
+): Promise<string> {
+  const startedAt = new Date().toISOString()
   await writeDiscoveryFile({
     pid: process.pid,
     socketPath: resolvedSocketPath ?? '',
@@ -124,8 +125,9 @@ export async function writeDiscovery(
     authRequired: authToken !== null,
     authToken,
     version,
-    startedAt: new Date().toISOString()
+    startedAt
   })
+  return startedAt
 }
 
 export async function closeServer(srv: HttpServer | null): Promise<void> {
@@ -175,7 +177,11 @@ export async function cleanupSocket(socketPath: string | null): Promise<void> {
           finish(!isDead)
         })
       // Fail fast — we only need to know if something is listening.
-      client.setTimeout(500, () => finish(false))
+      // Treat timeout as inconclusive (alive) rather than dead: during
+      // system restarts or high load, a timeout doesn't reliably indicate
+      // nobody is listening. Being conservative prevents unlinking a live
+      // replacement server's socket.
+      client.setTimeout(500, () => finish(true))
     })
     if (alive) return // Another server owns this socket — leave it alone.
   } catch {
@@ -194,14 +200,17 @@ export async function cleanupSocket(socketPath: string | null): Promise<void> {
 export async function cleanupDiscovery(
   ownAuthToken: string | null,
   ownSocketPath: string | null,
-  ownHttpPort: number
+  ownHttpPort: number,
+  ownStartedAt: string
 ): Promise<void> {
   // Only remove the discovery file if it was written by this server instance.
   // Without this guard, closing one of two concurrent servers can delete the
   // other's discovery file, breaking auto-discovery for the surviving server.
-  // We verify all three identifying fields (authToken, socketPath, httpPort)
-  // to handle the case where authToken is null (auth disabled) and two
-  // servers share the same null token.
+  // We verify all four identifying fields (authToken, socketPath, httpPort,
+  // startedAt) to handle the case where authToken is null (auth disabled) and
+  // two servers share the same null token. The startedAt timestamp uniquely
+  // identifies the instance since two servers starting at the exact same
+  // millisecond is extremely unlikely.
   const discoveryPath = await getDiscoveryPath()
   try {
     const raw = await readFile(discoveryPath, 'utf-8')
@@ -209,6 +218,7 @@ export async function cleanupDiscovery(
       authToken: string | null
       socketPath?: string
       httpPort?: number
+      startedAt?: string
     }
     // If any identifying field doesn't match, another server owns the file.
     // Compare unconditionally (not truthy-gated) so that null/0 values
@@ -216,6 +226,7 @@ export async function cleanupDiscovery(
     if (info.authToken !== ownAuthToken) return
     if (info.socketPath !== (ownSocketPath ?? '')) return
     if (info.httpPort !== ownHttpPort) return
+    if (info.startedAt !== ownStartedAt) return
   } catch {
     // File doesn't exist or can't be parsed — fall through to removeDiscoveryFile
     // which handles ENOENT gracefully.
@@ -241,6 +252,38 @@ export async function teardownListeners(state: ListenerState): Promise<void> {
   }
 }
 
+/**
+ * Close the WebSocket server with a grace period. Prevents new connections,
+ * then terminates any lingering clients after 2 seconds to ensure shutdown
+ * completes promptly even with unresponsive clients.
+ */
+export async function closeWssGracefully(wss: WebSocketServer): Promise<void> {
+  await new Promise<void>((resolve) => {
+    let settled = false
+    const done = () => {
+      if (settled) return
+      settled = true
+      resolve()
+    }
+    const graceTimer = setTimeout(() => {
+      // Snapshot clients before iterating — terminate() triggers handleClose
+      // which modifies wss.clients mid-iteration via clients.delete(ws).
+      const snapshot = [...wss.clients]
+      for (const ws of snapshot) {
+        try {
+          ws.terminate()
+        } catch (e) {
+          console.warn('[MCP] Failed to terminate WebSocket client:', e)
+        }
+      }
+    }, 2_000).unref()
+    wss.close(() => {
+      clearTimeout(graceTimer)
+      done()
+    })
+  })
+}
+
 export async function tryStartTcp(
   app: Hono,
   wss: WebSocketServer,
@@ -263,9 +306,9 @@ export async function tryWriteDiscovery(
   authToken: string | null,
   version: string,
   state: ListenerState
-): Promise<void> {
+): Promise<string> {
   try {
-    await writeDiscovery(resolvedSocketPath, actualHttpPort, authToken, version)
+    return await writeDiscovery(resolvedSocketPath, actualHttpPort, authToken, version)
   } catch (err) {
     // If discovery file write fails after both listeners are up, tear down
     // both listeners so we never advertise a running server that clients

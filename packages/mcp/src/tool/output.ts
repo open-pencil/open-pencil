@@ -231,8 +231,9 @@ export async function writeToolOutput(
     return ok({ written: resolved, byteLength: Buffer.byteLength(result.svg, 'utf8') })
   }
   if (toolName === 'export_image' && typeof result.base64 === 'string') {
-    await writeFile(realPath, Buffer.from(result.base64, 'base64'))
-    return ok({ written: resolved, byteLength: result.byteLength ?? null })
+    const buffer = Buffer.from(result.base64, 'base64')
+    await writeFile(realPath, buffer)
+    return ok({ written: resolved, byteLength: buffer.length })
   }
   if (toolName === 'get_jsx' && typeof result.jsx === 'string') {
     await writeFile(realPath, result.jsx, 'utf8')

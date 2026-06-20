@@ -93,9 +93,6 @@ export function nodeHttpRequest(
   timeoutMs = 5_000
 ): Promise<{ status: number; data: unknown }> {
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      req.destroy(new Error(`nodeHttpRequest timed out after ${timeoutMs / 1000}s`))
-    }, timeoutMs)
     const req = httpRequest(opts, (res) => {
       const chunks: Buffer[] = []
       res.on('data', (chunk: Buffer) => chunks.push(chunk))
@@ -115,6 +112,9 @@ export function nodeHttpRequest(
         reject(err)
       })
     })
+    const timeout = setTimeout(() => {
+      req.destroy(new Error(`nodeHttpRequest timed out after ${timeoutMs / 1000}s`))
+    }, timeoutMs)
     req.on('error', (err) => {
       clearTimeout(timeout)
       reject(err)

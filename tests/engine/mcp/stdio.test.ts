@@ -150,6 +150,7 @@ describe('MCP stdio transport', () => {
     } catch (err) {
       if (client) await client.close().catch(() => undefined)
       if (browser) browser.close()
+      if (transport) await transport.close().catch(() => undefined)
       if (handle) await handle.close().catch(() => undefined)
       throw err
     }
@@ -158,6 +159,7 @@ describe('MCP stdio transport', () => {
   afterEach(async () => {
     if (client) await client.close().catch(() => undefined)
     if (browser) browser.close()
+    if (transport) await transport.close().catch(() => undefined)
     if (handle) await handle.close().catch(() => undefined)
     if (isUnix) await rm(SOCKET_DIR, { recursive: true, force: true })
     handle = undefined

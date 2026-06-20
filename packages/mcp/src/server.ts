@@ -21,6 +21,7 @@ import packageJson from '../package.json' with { type: 'json' }
 import {
   type ListenerState,
   cleanupDiscovery,
+  closeWssGracefully,
   createAppServer,
   startSocketListener,
   teardownListeners,
@@ -165,6 +166,21 @@ function createHonoApp(options: {
     if (c.req.method === 'DELETE' && !sessionId) {
       return c.json({ error: 'Missing MCP session id' }, 400)
     }
+    // For DELETE, look up the existing session without creating a new one.
+    // resolveTransport() would allocate a fresh session for an unknown ID,
+    // only to immediately delete it — wasting a session slot.
+    if (c.req.method === 'DELETE' && sessionId) {
+      const existing = mcpSessions.getExistingTransport(sessionId)
+      if ('error' in existing) {
+        if (existing.error === 'closed') {
+          return c.json({ error: 'MCP server is shutting down' }, 503)
+        }
+        return c.json({ error: 'MCP session not found' }, 404)
+      }
+      const response = await existing.handleRequest(c.req.raw)
+      mcpSessions.deleteSession(sessionId)
+      return response
+    }
     const transport = await mcpSessions.resolveTransport(sessionId)
     if ('error' in transport) {
       if (transport.error === 'closed') {
@@ -176,11 +192,7 @@ function createHonoApp(options: {
       )
     }
     mcpSessions.touch(sessionId, transport)
-    const response = await transport.handleRequest(c.req.raw)
-    if (c.req.method === 'DELETE') {
-      mcpSessions.deleteSession(sessionId)
-    }
-    return response
+    return transport.handleRequest(c.req.raw)
   })
 
   return app
@@ -287,7 +299,8 @@ function buildHandle(
   state: ListenerState,
   resolvedSocketPath: string | null,
   actualHttpPort: number,
-  authToken: string | null
+  authToken: string | null,
+  startedAt: string
 ): ServerHandle {
   // Promise-based lock ensures idempotency even under concurrent calls:
   // the first call creates the teardown promise; subsequent calls return
@@ -300,38 +313,9 @@ function buildHandle(
     closePromise = (async () => {
       browserRpc.close()
       await mcpSessions.clear()
-
-      // Close the WebSocket server. wss.close() prevents new connections
-      // but waits for existing ones to close naturally. If a client is
-      // unresponsive, this can hang shutdown. Terminate lingering clients
-      // after a short grace period to ensure shutdown completes promptly.
-      await new Promise<void>((resolve) => {
-        let settled = false
-        const done = () => {
-          if (settled) return
-          settled = true
-          resolve()
-        }
-        const graceTimer = setTimeout(() => {
-          // Snapshot clients before iterating — terminate() triggers handleClose
-          // which modifies wss.clients mid-iteration via clients.delete(ws).
-          const snapshot = [...wss.clients]
-          for (const ws of snapshot) {
-            try {
-              ws.terminate()
-            } catch (e) {
-              console.warn('[MCP] Failed to terminate WebSocket client:', e)
-            }
-          }
-        }, 2_000).unref()
-        wss.close(() => {
-          clearTimeout(graceTimer)
-          done()
-        })
-      })
-
+      await closeWssGracefully(wss)
       await teardownListeners(state)
-      await cleanupDiscovery(authToken, resolvedSocketPath, actualHttpPort)
+      await cleanupDiscovery(authToken, resolvedSocketPath, actualHttpPort, startedAt)
     })()
     return closePromise
   }
@@ -354,6 +338,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   wireConnectionHandling(ctx.wss, ctx.browserRpc)
 
   const state: ListenerState = { socketResult: null, tcpResult: null }
+  let startedAt = ''
   try {
     state.socketResult = await startSocketListener(ctx.app, ctx.wss, options.socketPath ?? null)
     state.tcpResult = ctx.withTcp ? await tryStartTcp(ctx.app, ctx.wss, ctx.httpPort, state) : null
@@ -367,15 +352,19 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
       )
     }
 
-    await tryWriteDiscovery(resolvedSocketPath, actualHttpPort, ctx.authToken, MCP_VERSION, state)
+    startedAt = await tryWriteDiscovery(
+      resolvedSocketPath,
+      actualHttpPort,
+      ctx.authToken,
+      MCP_VERSION,
+      state
+    )
   } catch (err) {
     // Tear down any listeners that started before the failure, then close
     // all resources so nothing leaks when startServer rejects.
     await teardownListeners(state).catch(() => undefined)
     ctx.browserRpc.close()
-    await new Promise<void>((resolve) => {
-      ctx.wss.close(() => resolve())
-    })
+    await closeWssGracefully(ctx.wss)
     await ctx.mcpSessions.clear().catch(() => undefined)
     throw err
   }
@@ -391,6 +380,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
     state,
     resolvedSocketPath,
     actualHttpPort,
-    ctx.authToken
+    ctx.authToken,
+    startedAt
   )
 }
