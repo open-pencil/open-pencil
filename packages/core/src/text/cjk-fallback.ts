@@ -19,6 +19,7 @@ export interface CJKFallbackHost {
   loadFont(family: string, style?: string): Promise<ArrayBuffer | null>
   registerFontInBrowser(family: string, style: string, data: ArrayBuffer): void
   onFallbackLoadFailed?(): void
+  onFallbackLoaded?(): void
 }
 
 export class FontCJKFallback {
@@ -42,11 +43,29 @@ export class FontCJKFallback {
     if (this.bundledCJKBuffer) this.applyBundledToProvider(this.bundledCJKBuffer)
   }
 
-  async ensure(): Promise<string[]> {
+  async ensureBundled(): Promise<string[]> {
     const families = this.host.getCjkFallbackFamilies()
-    if (families.length > 0) return families
+    if (families.includes(BUNDLED_CJK_FAMILY)) {
+      this.applyBundledIfReady()
+      return families
+    }
     if (!this.host.getFontProvider()) {
       this.prefetch()
+      return []
+    }
+    await this.tryBundledFonts()
+    return this.host.getCjkFallbackFamilies()
+  }
+
+  async ensure(): Promise<string[]> {
+    const families = this.host.getCjkFallbackFamilies()
+    if (families.length > 0) {
+      this.applyBundledIfReady()
+      return families
+    }
+    if (!this.host.getFontProvider()) {
+      this.prefetch()
+      if (this.promise) return this.promise
       return []
     }
     if (!this.promise) {
@@ -59,7 +78,9 @@ export class FontCJKFallback {
   }
 
   private async loadFallbacks(): Promise<string[]> {
-    await this.tryBundledFonts()
+    if (!this.host.getCjkFallbackFamilies().includes(BUNDLED_CJK_FAMILY)) {
+      await this.tryBundledFonts()
+    }
     await this.tryLocalFonts()
     if (this.host.getCjkFallbackFamilies().length === 0) await this.tryGoogleFonts()
     if (this.host.getCjkFallbackFamilies().length > 0) this.notifyLoaded()
@@ -73,6 +94,7 @@ export class FontCJKFallback {
         .fetchBundledFont(BUNDLED_CJK_FONT_URL)
         .then((buf) => {
           this.bundledCJKBuffer = buf
+          if (buf) this.applyBundledToProvider(buf)
           return buf
         })
         .catch((e) => {
@@ -106,14 +128,14 @@ export class FontCJKFallback {
   }
 
   private applyBundledToProvider(buffer: ArrayBuffer): boolean {
-    const families = this.host.getCjkFallbackFamilies()
-    if (!this.host.getFontProvider() || families.includes(BUNDLED_CJK_FAMILY)) return false
+    if (!this.host.getFontProvider()) return false
     if (!this.host.registerFontInCanvasKit(BUNDLED_CJK_FAMILY, buffer)) return false
 
     const manifest = fontFallbackEntry('cjk', this.host.getFallbackUserAgent())
     const aliases = [...new Set([...manifest.remoteFamilies, ...manifest.localFamilies])]
     this.registerAliases(BUNDLED_CJK_FAMILY, 'Regular', buffer, aliases)
-    this.addFamily(BUNDLED_CJK_FAMILY, { prepend: true })
+    const wasReady = this.host.getCjkFallbackFamilies().includes(BUNDLED_CJK_FAMILY)
+    if (!wasReady) this.addFamily(BUNDLED_CJK_FAMILY, { prepend: true })
     this.notifyLoaded()
     return true
   }
@@ -152,6 +174,7 @@ export class FontCJKFallback {
 
   private notifyLoaded(): void {
     if (this.host.getCjkFallbackFamilies().length === 0) return
+    this.host.onFallbackLoaded?.()
     for (const callback of this.listeners) callback()
   }
 }

@@ -24,6 +24,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const originalCJKPromise = manager.cjkFallbackPromise
     const originalArabicFamilies = [...manager.arabicFallbackFamilies]
     const originalArabicPromise = manager.arabicFallbackPromise
+    const originalEnsureBundledCJKFallback = fontManager.ensureBundledCJKFallback.bind(fontManager)
     const originalEnsureCJKFallback = fontManager.ensureCJKFallback.bind(fontManager)
     const originalEnsureArabicFallback = fontManager.ensureArabicFallback.bind(fontManager)
 
@@ -41,6 +42,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     let renderCount = 0
     const originalRender = renderer.renderFromEditorState.bind(renderer)
 
+    fontManager.ensureBundledCJKFallback = async () => []
     fontManager.ensureCJKFallback = async () => {
       await fallbackGate
       fontManager.setCJKFallbackFamily('Regression CJK Fallback')
@@ -103,6 +105,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       manager.cjkFallbackPromise = originalCJKPromise
       manager.arabicFallbackFamilies = originalArabicFamilies
       manager.arabicFallbackPromise = originalArabicPromise
+      fontManager.ensureBundledCJKFallback = originalEnsureBundledCJKFallback
       fontManager.ensureCJKFallback = originalEnsureCJKFallback
       fontManager.ensureArabicFallback = originalEnsureArabicFallback
       renderer.renderFromEditorState = originalRender

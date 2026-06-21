@@ -4,6 +4,7 @@ import { uniq } from 'es-toolkit/array'
 import { DEFAULT_FONT_FAMILY, IS_BROWSER, GOOGLE_FONTS_API_KEY } from '#core/constants'
 import type { SceneGraph } from '#core/scene-graph'
 import { FontCJKFallback, BUNDLED_CJK_FAMILY, BUNDLED_CJK_FONT_URL } from '#core/text/cjk-fallback'
+import { clearParagraphFontFamilyCache } from '#core/text/paragraph-fonts'
 import { fontFaceRenderFamily, parseFontStyle } from '#core/text/face'
 import { fontFallbackEntry, loadRemoteFallbackFamilies } from '#core/text/fallbacks'
 import type { FontFallbackScript } from '#core/text/fallbacks'
@@ -130,7 +131,8 @@ export class FontManager {
     findLocalFont: (family, style, options) => this.findLocalFont(family, style, options),
     loadFont: (family, style) => this.loadFont(family, style),
     registerFontInBrowser: (family, style, data) => this.registerFontInBrowser(family, style, data),
-    onFallbackLoadFailed: () => this.scheduleCJKFallbackRetry()
+    onFallbackLoadFailed: () => this.scheduleCJKFallbackRetry(),
+    onFallbackLoaded: () => clearParagraphFontFamilyCache()
   })
   private arabicFallbackFamilies: string[] = []
   private arabicFallbackPromise: Promise<string[]> | null = null
@@ -346,6 +348,10 @@ export class FontManager {
     for (const id of nodeIds) collect(id)
 
     return [...fontKeys].map((k) => k.split('\0') as [string, string])
+  }
+
+  async ensureBundledCJKFallback(): Promise<string[]> {
+    return this.cjkController.ensureBundled()
   }
 
   async ensureCJKFallback(): Promise<string[]> {
