@@ -7,11 +7,25 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
 import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/chat/model'
+import COMPACT_SYSTEM_PROMPT from '@/app/ai/chat/system-prompt-compact.md?raw'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/app/ai/tools'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 
 type EditorStore = ReturnType<typeof getActiveEditorStore>
+
+// The custom-endpoint providers are typically pointed at self-hosted or smaller
+// models (Ollama, vLLM, LM Studio, ...). Those models tend to imitate the full
+// prompt's inline JSX examples as plain text instead of emitting tool calls,
+// leaving the canvas empty. Give them a compact, tool-forcing prompt instead.
+const COMPACT_PROMPT_PROVIDERS = new Set<AIProviderID>([
+  'openai-compatible',
+  'anthropic-compatible'
+])
+
+function systemPromptFor(providerID: AIProviderID): string {
+  return COMPACT_PROMPT_PROVIDERS.has(providerID) ? COMPACT_SYSTEM_PROMPT : SYSTEM_PROMPT
+}
 
 type ChatSessionOptions = {
   isConfigured: ComputedRef<boolean>
@@ -84,7 +98,7 @@ export function createToolLoopTransport({
       customBaseURL,
       customAPIType
     }),
-    instructions: SYSTEM_PROMPT,
+    instructions: systemPromptFor(providerID),
     tools,
     stopWhen: stepCountIs(MAX_AGENT_STEPS),
     maxOutputTokens,
