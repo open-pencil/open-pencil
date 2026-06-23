@@ -295,7 +295,6 @@ export {
   FIG_KIWI_DEFAULT_VERSION,
   buildFigKiwi,
   parseFigKiwiChunks,
-  decompressFigKiwiData,
   decompressFigKiwiDataAsync,
   buildFontDigestMap,
   sceneNodeToKiwi,
