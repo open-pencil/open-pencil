@@ -181,6 +181,7 @@ export type AIProviderID =
   | 'openai-compatible'
   | 'zai'
   | 'minimax'
+  | 'atlascloud'
   | 'anthropic-compatible'
   | `acp:${ACPAgentID}`
 
@@ -308,6 +309,28 @@ export const AI_PROVIDERS: AIProviderDef[] = [
       { id: 'MiniMax-M2.1', name: 'MiniMax-M2.1' },
       { id: 'MiniMax-M2.1-highspeed', name: 'MiniMax-M2.1 Highspeed', tag: 'Fast' },
       { id: 'MiniMax-M2', name: 'MiniMax-M2' }
+    ]
+  },
+  {
+    id: 'atlascloud',
+    name: 'Atlas Cloud',
+    keyPlaceholder: 'apikey-…',
+    keyURL: 'https://www.atlascloud.ai/console/api-keys',
+    defaultModel: 'deepseek-ai/deepseek-v4-pro',
+    supportsCustomModel: true,
+    models: [
+      { id: 'deepseek-ai/deepseek-v4-pro', name: 'DeepSeek V4 Pro', tag: 'Best for design' },
+      { id: 'deepseek-ai/deepseek-v4-flash', name: 'DeepSeek V4 Flash', tag: 'Fast' },
+      { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', tag: 'Vision' },
+      { id: 'anthropic/claude-opus-4.8', name: 'Claude Opus 4.8', tag: 'Smartest' },
+      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
+      { id: 'google/gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: '1M context' },
+      { id: 'qwen/qwen3-vl-235b-a22b-thinking', name: 'Qwen3-VL 235B Thinking', tag: 'Vision' },
+      { id: 'Qwen/Qwen3-Coder', name: 'Qwen3 Coder' },
+      { id: 'zai-org/glm-5.1', name: 'GLM-5.1' },
+      { id: 'moonshotai/kimi-k2.6', name: 'Kimi K2.6', tag: 'Vision' },
+      { id: 'MiniMaxAI/MiniMax-M2', name: 'MiniMax-M2' },
+      { id: 'xai/grok-4.3', name: 'Grok 4.3' }
     ]
   },
   {

@@ -20,7 +20,9 @@ export function resolveLanguageModelID(
   config: Pick<ModelConfig, 'providerID' | 'modelID' | 'customModelID'>
 ) {
   const customModelID = config.customModelID.trim()
-  if (config.providerID === 'openrouter') return customModelID || config.modelID
+  if (config.providerID === 'openrouter' || config.providerID === 'atlascloud') {
+    return customModelID || config.modelID
+  }
   if (config.providerID === 'openai-compatible' || config.providerID === 'anthropic-compatible') {
     return customModelID
   }
@@ -70,6 +72,13 @@ export function createLanguageModel(config: ModelConfig): LanguageModel {
         baseURL: 'https://api.minimax.io/v1'
       })
       return minimax.chat(effectiveModelID)
+    }
+    case 'atlascloud': {
+      const atlascloud = createOpenAI({
+        apiKey: config.apiKey,
+        baseURL: 'https://api.atlascloud.ai/v1'
+      })
+      return atlascloud.chat(effectiveModelID)
     }
     case 'openai-compatible': {
       const custom = createOpenAI({

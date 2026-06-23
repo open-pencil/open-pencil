@@ -8,6 +8,14 @@ Open-source design editor. Opens `.fig` and `.pen` design files, includes built-
 
 **[Try it online →](https://app.openpencil.dev/demo)** · [Download](https://github.com/open-pencil/open-pencil/releases/latest) · [Documentation](https://openpencil.dev) · [llms.txt](https://openpencil.dev/llms.txt)
 
+<p align="center">
+  <a href="https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=open-pencil">
+    <img src="public/atlas-cloud-logo.png" alt="Atlas Cloud" width="200">
+  </a>
+</p>
+
+> 🎁 **[Atlas Cloud](https://www.atlascloud.ai/?utm_source=github&utm_medium=link&utm_campaign=open-pencil)** is a full-modal, OpenAI-compatible AI inference platform you can plug into OpenPencil's AI chat as a single drop-in backend — one API key gives the editor's 90+ design tools access to DeepSeek, Claude, GPT, Gemini, Qwen, GLM, Kimi, MiniMax and more, no multi-vendor setup needed. Select **Atlas Cloud** in the provider dropdown, or point any OpenAI-compatible endpoint at `https://api.atlascloud.ai/v1`. Budget-friendly plans: [coding plan](https://www.atlascloud.ai/console/coding-plan).
+
 ![OpenPencil](packages/docs/public/screenshot.png)
 
 ## Installation
@@ -23,7 +31,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 ## What it does
 
 - **Opens `.fig` and `.pen` files** — read and write native Figma files, open supported Pencil documents from the app or OS file browser, copy & paste nodes between apps
-- **AI builds designs** — describe what you want in chat, 90+ tools create and modify nodes. Connect OpenRouter, Anthropic, OpenAI, Google AI, Z.ai, MiniMax, or compatible endpoints
+- **AI builds designs** — describe what you want in chat, 90+ tools create and modify nodes. Connect OpenRouter, Anthropic, OpenAI, Google AI, Z.ai, MiniMax, Atlas Cloud, or compatible endpoints
 - **Fully programmable** — headless CLI, XPath queries, Figma Plugin API via `eval`, MCP server for AI agents, and desktop agent integrations for Claude Code, Codex, and Gemini CLI
 - **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
 - **Components and variants** — create reusable components, group variants into component sets, insert local assets as instances, and switch variants from the inspector
@@ -152,7 +160,32 @@ All commands support `--json` for machine-readable output.
 
 ### Built-in chat
 
-Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. It has 100+ tools that can create shapes, set fills and strokes, manage auto-layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Bring your own API key for OpenRouter, Anthropic, OpenAI, Google AI, Z.ai, MiniMax, or compatible endpoints. No backend, no account.
+Press <kbd>⌘</kbd><kbd>J</kbd> to open the AI assistant. It has 100+ tools that can create shapes, set fills and strokes, manage auto-layout, work with components and variables, run boolean operations, analyze design tokens, and export assets. Bring your own API key for OpenRouter, Anthropic, OpenAI, Google AI, Z.ai, MiniMax, Atlas Cloud, or compatible endpoints. No backend, no account.
+
+#### Atlas Cloud (OpenAI-compatible)
+
+Select **Atlas Cloud** in the provider dropdown and paste your [Atlas Cloud API key](https://www.atlascloud.ai/console/api-keys). One key reaches DeepSeek, Claude, GPT, Gemini, Qwen, GLM, Kimi, MiniMax, Grok and more through a single OpenAI-compatible endpoint (`https://api.atlascloud.ai/v1`). The default model is `deepseek-ai/deepseek-v4-pro`; you can type any other Atlas model ID in the custom model field.
+
+> `deepseek-ai/deepseek-v4-pro` and other reasoning models spend tokens on a thinking phase first — keep the response budget generous (>= 512 tokens) so the visible answer isn't truncated.
+
+<details>
+<summary>All Atlas Cloud chat models (59)</summary>
+
+- **Anthropic (Claude):** `anthropic/claude-haiku-4.5-20251001`, `anthropic/claude-opus-4.8`, `anthropic/claude-sonnet-4.6`
+- **OpenAI (GPT):** `openai/gpt-5.4`, `openai/gpt-5.5`
+- **Google (Gemini):** `google/gemini-3.1-flash-lite`, `google/gemini-3.1-pro-preview`, `google/gemini-3.5-flash`
+- **Alibaba (Qwen):** `qwen/qwen2.5-7b-instruct`, `Qwen/Qwen3-235B-A22B-Instruct-2507`, `qwen/qwen3-235b-a22b-thinking-2507`, `qwen/qwen3-30b-a3b`, `Qwen/Qwen3-30B-A3B-Instruct-2507`, `qwen/qwen3-30b-a3b-thinking-2507`, `qwen/qwen3-32b`, `qwen/qwen3-8b`, `Qwen/Qwen3-Coder`, `qwen/qwen3-coder-next`, `qwen/qwen3-max-2026-01-23`, `Qwen/Qwen3-Next-80B-A3B-Instruct`, `Qwen/Qwen3-Next-80B-A3B-Thinking`, `Qwen/Qwen3-VL-235B-A22B-Instruct`, `qwen/qwen3-vl-235b-a22b-thinking`, `qwen/qwen3-vl-30b-a3b-instruct`, `qwen/qwen3-vl-30b-a3b-thinking`, `qwen/qwen3-vl-8b-instruct`, `qwen/qwen3.5-122b-a10b`, `qwen/qwen3.5-27b`, `qwen/qwen3.5-35b-a3b`, `qwen/qwen3.5-397b-a17b`, `qwen/qwen3.6-35b-a3b`, `qwen/qwen3.6-plus`
+- **DeepSeek:** `deepseek-ai/deepseek-ocr`, `deepseek-ai/deepseek-r1-0528`, `deepseek-ai/DeepSeek-V3-0324`, `deepseek-ai/DeepSeek-V3.1`, `deepseek-ai/DeepSeek-V3.1-Terminus`, `deepseek-ai/deepseek-v3.2`, `deepseek-ai/DeepSeek-V3.2-Exp`, `deepseek-ai/deepseek-v4-flash`, `deepseek-ai/deepseek-v4-pro`
+- **Moonshot (Kimi):** `moonshotai/Kimi-K2-Instruct`, `moonshotai/Kimi-K2-Instruct-0905`, `moonshotai/Kimi-K2-Thinking`, `moonshotai/kimi-k2.5`, `moonshotai/kimi-k2.6`
+- **Zhipu (GLM):** `zai-org/GLM-4.6`, `zai-org/glm-4.7`, `zai-org/glm-5`, `zai-org/glm-5-turbo`, `zai-org/glm-5.1`, `zai-org/glm-5v-turbo`
+- **MiniMax:** `MiniMaxAI/MiniMax-M2`, `minimaxai/minimax-m2.1`, `minimaxai/minimax-m2.5`, `minimaxai/minimax-m2.7`
+- **xAI (Grok):** `xai/grok-4.3`
+- **Kuaishou (KAT):** `kwaipilot/kat-coder-pro-v2`
+- **Other:** `owl`
+
+See the [Atlas Cloud model catalog](https://www.atlascloud.ai/models) for the live list.
+
+</details>
 
 ### Coding agents (desktop)
 
