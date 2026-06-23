@@ -360,6 +360,9 @@ export class SceneGraph {
   }
   updateNodePreview(id: string, changes: Partial<SceneNode>): void {
     updateNodePreview(this, id, changes)
+    if(changes?.vectorNetwork){
+      this.emitter.emit('node:updated', id, changes)
+    }
   }
   updateNode(id: string, changes: Partial<SceneNode>): void {
     if (this.previewMutationDepth > 0) {
