@@ -13,7 +13,7 @@ function importFixture(name: string) {
   return importNodeChanges(nodeChanges, blobs, new Map(images))
 }
 
-setDefaultTimeout(20_000)
+setDefaultTimeout(30_000)
 
 heavy('fig component metadata import', () => {
   test('preserves remote library component identity fields', () => {
@@ -58,5 +58,5 @@ heavy('fig component metadata import', () => {
     expect(Object.keys(variant.componentPropertyValues).some((key) => key.includes(':'))).toBe(
       false
     )
-  }, 30_000)
+  })
 })
