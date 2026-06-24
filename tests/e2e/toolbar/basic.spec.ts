@@ -1,6 +1,10 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { getPageChildren } from '#tests/helpers/store'
-import { toolbarFlyoutItemTestId, toolbarFlyoutTestId } from '#tests/helpers/test-ids'
+import {
+  toolbarFlyoutItemTestId,
+  toolbarFlyoutTestId,
+  toolbarToolTestId
+} from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
 
@@ -93,5 +97,22 @@ test('Frame flyout shows Frame and Section items', async () => {
   await editor.page.getByTestId(toolbarFlyoutTestId('FRAME')).click()
   await expect(editor.page.getByTestId(toolbarFlyoutItemTestId('FRAME'))).toBeVisible()
   await expect(editor.page.getByTestId(toolbarFlyoutItemTestId('SECTION'))).toBeVisible()
+  editor.canvas.assertNoErrors()
+})
+
+test('Frame tool shows frame presets and clicking one creates a sized FRAME node', async () => {
+  await editor.canvas.click(10, 10)
+  await editor.canvas.pressKey('Escape')
+  await editor.page.getByTestId(toolbarToolTestId('FRAME')).click()
+  await expect(editor.page.getByTestId('frame-presets-section')).toBeVisible()
+
+  await editor.page.getByTestId('frame-preset-iphone-se').click()
+  await editor.canvas.waitForRender()
+
+  const children = await getPageChildren(editor.page)
+  const frame = children.find(
+    (n) => n.type === 'FRAME' && n.width === 375 && n.height === 667
+  )
+  expect(frame).toBeDefined()
   editor.canvas.assertNoErrors()
 })

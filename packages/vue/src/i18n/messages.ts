@@ -289,7 +289,24 @@ export const panelMessages = i18n('panels', {
   setToCurrentHeight: 'Set to current height',
   sizingFillFr: 'Fill (fr)',
   sizingFixedPx: 'Fixed (px)',
-  searchFonts: 'Search fonts...'
+  searchFonts: 'Search fonts...',
+
+  framePresets: 'Frame presets',
+  framePresetCategoryDesktop: 'Desktop',
+  framePresetCategoryTablet: 'Tablet',
+  framePresetCategoryPhone: 'Phone',
+  framePresetCategoryWatch: 'Watch',
+  framePresetDesktop: 'Desktop',
+  framePresetDesktopLarge: 'Desktop (Large)',
+  framePresetMacBookAir: 'MacBook Air',
+  framePresetIPadMini: 'iPad Mini',
+  framePresetIPadPro11: 'iPad Pro 11"',
+  framePresetSurfacePro7: 'Surface Pro 7',
+  framePresetIPhone16Pro: 'iPhone 16 Pro',
+  framePresetIPhoneSE: 'iPhone SE',
+  framePresetAndroidLarge: 'Android Large',
+  framePresetAppleWatch45: 'Apple Watch 45mm',
+  framePresetAppleWatch41: 'Apple Watch 41mm'
 })
 
 export const variableTypeMessages = i18n('variableTypes', {

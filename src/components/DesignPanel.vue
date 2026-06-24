@@ -3,12 +3,14 @@ import { computed, ref } from 'vue'
 
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
+import { useEditorStore } from '@/app/editor/active-store'
 import VariablesDialog from './VariablesDialog.vue'
 import BooleanOperationsControl from './properties/BooleanOperationsControl.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'
 import ExportSection from './properties/ExportSection.vue'
 import FillSection from './properties/FillSection.vue'
+import FramePresetsSection from './properties/FramePresetsSection.vue'
 import LayoutSection from './properties/LayoutSection/LayoutSection.vue'
 import PageSection from './properties/PageSection.vue'
 import PositionSection from './properties/PositionSection.vue'
@@ -18,6 +20,8 @@ import VariablesSection from './properties/VariablesSection.vue'
 import VariantSection from './properties/VariantSection.vue'
 
 const variablesOpen = ref(false)
+const editor = useEditorStore()
+const activeTool = computed(() => editor.state.activeTool)
 const { selectedNode: node, selectedCount: multiCount } = useSelectionState()
 const showBooleanOperations = computed(() => multiCount.value >= 2)
 const { getCommand } = useEditorCommands()
@@ -112,6 +116,7 @@ const { panels } = useI18n()
     data-test-id="design-panel-empty"
     class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
+    <FramePresetsSection v-if="activeTool === 'FRAME'" />
     <PageSection />
     <VariablesSection @open-dialog="variablesOpen = true" />
     <ExportSection />
