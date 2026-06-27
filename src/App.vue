@@ -5,6 +5,7 @@ import { TooltipProvider } from 'reka-ui'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 import AppToast from '@/components/AppToast.vue'
+
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import { useAppTheme } from '@/app/shell/theme'

@@ -6,7 +6,7 @@ import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { defineTool } from '#core/tools/schema'
 import type { Rect } from '#core/types'
 
-function parseSvgViewBox(svg: string): Rect | null {
+export function parseSvgViewBox(svg: string): Rect | null {
   const match = svg.match(/viewBox="([^"]+)"/)
   if (!match) return null
   const [x, y, w, h] = match[1].split(/[\s,]+/).map(Number)
@@ -21,7 +21,7 @@ function parseSvgDimension(svg: string, attr: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null
 }
 
-function parseSvgSize(svg: string): { width: number; height: number } {
+export function parseSvgSize(svg: string): { width: number; height: number } {
   const viewBox = parseSvgViewBox(svg)
   const w = parseSvgDimension(svg, 'width')
   const h = parseSvgDimension(svg, 'height')

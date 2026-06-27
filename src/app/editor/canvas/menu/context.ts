@@ -13,7 +13,7 @@ const STATIC_SELECTION_COMMAND_IDS = new Set(['selection.duplicate', 'selection.
 
 type CanvasMenuActions = ReturnType<typeof createCanvasMenuActions>
 
-type CanvasCopyLabels = {
+type CanvasContextMenuLabels = {
   copyPasteAs: string
   copyAsText: string
   copyAsSVG: string
@@ -21,6 +21,7 @@ type CanvasCopyLabels = {
   copyAsJSX: string
   copyNodeId: string
   copyXPath: string
+  convertToVector: string
 }
 
 function withoutStaticSelectionCommands(entries: readonly MenuEntry[]): MenuEntry[] {
@@ -66,7 +67,7 @@ function copyAction(
 function copyPasteAsEntry(
   editor: Editor,
   actions: CanvasMenuActions,
-  labels: CanvasCopyLabels
+  labels: CanvasContextMenuLabels
 ): MenuEntry {
   return {
     label: labels.copyPasteAs,
@@ -85,11 +86,27 @@ export function useCanvasContextMenu(
   hasSelection: Ref<boolean>,
   editor: Editor,
   actions: CanvasMenuActions,
-  labels: Ref<CanvasCopyLabels>
+  labels: Ref<CanvasContextMenuLabels>
 ) {
   return computed<MenuEntry[]>(() => {
     const entries = withoutStaticSelectionCommands(baseEntries.value)
     if (!hasSelection.value) return entries
-    return [...entries, { separator: true }, copyPasteAsEntry(editor, actions, labels.value)]
+
+    const trailing: MenuEntry[] = [
+      { separator: true },
+      copyPasteAsEntry(editor, actions, labels.value)
+    ]
+    if (actions.canVectorizeImage()) {
+      trailing.unshift(
+        { separator: true },
+        {
+          label: labels.value.convertToVector,
+          testId: 'context-vectorize',
+          action: runAsync(actions.vectorizeImage)
+        }
+      )
+    }
+
+    return [...entries, ...trailing]
   })
 }

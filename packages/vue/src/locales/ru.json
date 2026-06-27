@@ -43,7 +43,8 @@
     "checkUpdates": "Проверить обновления…",
     "booleanOperations": "Boolean operations",
     "strikethrough": "Зачёркивание",
-    "closeTab": "Закрыть вкладку"
+    "closeTab": "Закрыть вкладку",
+    "convertToVector": "Преобразовать в вектор"
   },
   "commands": {
     "undo": "Отменить",
@@ -335,7 +336,16 @@
     "you": "Вы",
     "youSuffix": "вы",
     "followingPeerStop": "Следите за {name} (нажмите, чтобы остановить)",
-    "clickToFollowPeer": "Нажмите, чтобы следить за {name}"
+    "clickToFollowPeer": "Нажмите, чтобы следить за {name}",
+    "vectorizeProvider": "Векторизация изображения",
+    "recraftAPIKey": "Recraft API Key",
+    "falAPIKey": "fal API Key",
+    "getRecraftAPIKey": "Get Recraft API key →",
+    "getFalAPIKey": "Get fal API key →",
+    "vectorizeKeyOptional": "Требуется для «Преобразовать в вектор»",
+    "vectorizeMissingKeyPrefix": "Введите API-ключ для модели «изображение в вектор». ",
+    "vectorizeMissingKeyLink": "Нажмите здесь",
+    "vectorizeKeySaved": "Ключ {provider} сохранён"
   },
   "variableTypes": {
     "color": "Цвет",

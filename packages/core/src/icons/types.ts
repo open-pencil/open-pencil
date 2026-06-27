@@ -45,4 +45,6 @@ export interface IconPathInfo {
   strokeCap: string
   strokeJoin: string
   fillRule: WindingRule
+  /** Raw SVG transform attribute on the source element, if any. */
+  transform: string | null
 }

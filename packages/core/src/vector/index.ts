@@ -9,6 +9,7 @@ export {
   removeVertex,
   splitSegmentAt
 } from './bezier'
+export { scaleVectorNetwork } from './scale'
 
 import type { CanvasKit, Path } from 'canvaskit-wasm'
 

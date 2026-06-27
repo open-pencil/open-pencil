@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 
 import ProviderSelectField from '@/components/chat/ProviderSelect/ProviderSelectField.vue'
+import ProviderSettings from '@/components/chat/ProviderSettings/ProviderSettings.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import { useAIChat } from '@/app/ai/chat/use'
@@ -38,7 +39,13 @@ function save() {
 </script>
 
 <template>
-  <div data-test-id="provider-setup" class="flex flex-1 flex-col items-center justify-center px-6">
+  <div
+    data-test-id="provider-setup"
+    class="relative flex flex-1 flex-col items-center justify-center px-6"
+  >
+    <div class="absolute top-3 right-3">
+      <ProviderSettings />
+    </div>
     <icon-lucide-sparkles class="mb-3 size-7 text-muted" />
     <p class="mb-5 text-center text-xs text-muted">{{ dialogs.connectAIProvider }}</p>
 

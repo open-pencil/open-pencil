@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import { PopoverClose, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import { ref } from 'vue'
+import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { ref, watch } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
-import ApiKeySection from '@/components/chat/ProviderSettings/ApiKeySection.vue'
-import ApiTypeSection from '@/components/chat/ProviderSettings/ApiTypeSection.vue'
-import CustomEndpointSection from '@/components/chat/ProviderSettings/CustomEndpointSection.vue'
-import MaxTokensSection from '@/components/chat/ProviderSettings/MaxTokensSection.vue'
-import ProviderSelectField from '@/components/chat/ProviderSelect/ProviderSelectField.vue'
-import StockPhotoKeysSection from '@/components/chat/ProviderSettings/StockPhotoKeysSection.vue'
+import ProviderSettingsBody from '@/components/chat/ProviderSettings/ProviderSettingsBody.vue'
 import { provideProviderSettings } from '@/components/chat/ProviderSettings/context'
+import { providerSettingsOpenTick } from '@/app/ai/chat/use'
 import { usePopoverUI } from '@/components/ui/popover'
 import Tip from '@/components/ui/Tip.vue'
 
@@ -18,13 +14,27 @@ const cls = usePopoverUI({ content: 'isolate z-[51] w-64 p-3' })
 const popoverOpen = ref(false)
 const providerSettings = provideProviderSettings()
 
-function onInteractOutside(e: Event) {
-  const target = e.target as HTMLElement | null
-  if (target?.closest('[role=listbox], [data-reka-popper-content-wrapper]')) {
+watch(providerSettingsOpenTick, () => {
+  popoverOpen.value = true
+})
+
+watch(popoverOpen, (open, wasOpen) => {
+  if (wasOpen && !open) providerSettings.save()
+})
+
+function isNestedSelectLayer(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return !!target.closest(
+    '[role="listbox"], [role="combobox"], [data-reka-popper-content-wrapper], [data-reka-select-viewport]'
+  )
+}
+
+function onDismissableOutside(e: Event) {
+  const event = e as CustomEvent<{ originalEvent?: Event }>
+  const target = event.detail?.originalEvent?.target ?? event.target
+  if (isNestedSelectLayer(target)) {
     e.preventDefault()
-    return
   }
-  providerSettings.save()
 }
 </script>
 
@@ -49,25 +59,11 @@ function onInteractOutside(e: Event) {
         :collision-padding="16"
         :avoid-collisions="true"
         :class="cls.content"
-        @interact-outside="onInteractOutside"
+        @pointer-down-outside="onDismissableOutside"
+        @interact-outside="onDismissableOutside"
+        @focus-outside="onDismissableOutside"
       >
-        <div class="flex flex-col gap-2.5">
-          <h3 class="text-[11px] font-semibold text-surface">{{ dialogs.aiProvider }}</h3>
-          <ProviderSelectField test-id="provider-settings-provider" />
-          <MaxTokensSection />
-          <StockPhotoKeysSection />
-          <CustomEndpointSection />
-          <ApiTypeSection />
-          <ApiKeySection />
-
-          <PopoverClose
-            class="mt-1 w-full rounded bg-accent px-2 py-1 text-center text-[11px] font-medium text-white hover:bg-accent/90"
-            data-test-id="provider-settings-done"
-            @click="providerSettings.save"
-          >
-            {{ dialogs.done }}
-          </PopoverClose>
-        </div>
+        <ProviderSettingsBody />
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>

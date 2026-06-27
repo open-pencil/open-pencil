@@ -43,7 +43,8 @@
     "checkUpdates": "Nach Updates suchen…",
     "booleanOperations": "Boolean operations",
     "strikethrough": "Durchstreichen",
-    "closeTab": "Tab schließen"
+    "closeTab": "Tab schließen",
+    "convertToVector": "In Vektor umwandeln"
   },
   "commands": {
     "undo": "Rückgängig",
@@ -335,7 +336,16 @@
     "you": "Du",
     "youSuffix": "du",
     "followingPeerStop": "Folge {name} (zum Stoppen klicken)",
-    "clickToFollowPeer": "Klicken, um {name} zu folgen"
+    "clickToFollowPeer": "Klicken, um {name} zu folgen",
+    "vectorizeProvider": "Bildvektorisierung",
+    "recraftAPIKey": "Recraft API Key",
+    "falAPIKey": "fal API Key",
+    "getRecraftAPIKey": "Get Recraft API key →",
+    "getFalAPIKey": "Get fal API key →",
+    "vectorizeKeyOptional": "Erforderlich für „In Vektor umwandeln“",
+    "vectorizeMissingKeyPrefix": "Geben Sie einen API-Schlüssel für das Bild-zu-Vektor-Modell ein. ",
+    "vectorizeMissingKeyLink": "Hier klicken",
+    "vectorizeKeySaved": "{provider}-Schlüssel gespeichert"
   },
   "variableTypes": {
     "color": "Farbe",

@@ -24,6 +24,11 @@ export interface Matrix {
   m12: number
 }
 
+export interface Size {
+  width: number
+  height: number
+}
+
 export interface Rect {
   x: number
   y: number
