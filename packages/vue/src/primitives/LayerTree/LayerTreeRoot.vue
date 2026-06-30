@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onScopeDispose, ref, watch } from 'vue'
 import { TreeRoot } from 'reka-ui'
 
 import { useEditor } from '#vue/editor/context'
@@ -50,13 +50,27 @@ function buildTree(parentId: string): LayerNode[] {
 }
 
 const items = ref(buildTree(editor.state.currentPageId))
-const treeKey = ref(0)
+const treeVersion = ref(0)
 const expanded = ref<string[]>([])
 const selectedIds = computed(() => editor.state.selectedIds)
 
-watch([() => editor.state.sceneVersion, () => editor.state.currentPageId], () => {
+function rebuildTree() {
   items.value = buildTree(editor.state.currentPageId)
-  treeKey.value++
+  treeVersion.value++
+}
+
+const unsubscribe = [
+  editor.onEditorEvent('graph:replaced', rebuildTree),
+  editor.onEditorEvent('page:changed', rebuildTree),
+  editor.onEditorEvent('node:created', rebuildTree),
+  editor.onEditorEvent('node:deleted', rebuildTree),
+  editor.onEditorEvent('node:reparented', rebuildTree),
+  editor.onEditorEvent('node:reordered', rebuildTree),
+  editor.onEditorEvent('node:updated', rebuildTree)
+]
+
+onScopeDispose(() => {
+  for (const stop of unsubscribe) stop()
 })
 
 const rowRefs = new Map<string, HTMLElement>()
@@ -134,7 +148,7 @@ provideLayerTree({
   editor,
   items,
   expanded,
-  treeKey,
+  treeVersion,
   selectedIds,
   indentPerLevel,
   draggingId,
@@ -161,7 +175,6 @@ provideLayerTree({
 
 <template>
   <TreeRoot
-    :key="treeKey"
     v-slot="{ flattenItems }"
     as="div"
     class="flex min-h-0 flex-1 flex-col overflow-hidden"
@@ -174,7 +187,7 @@ provideLayerTree({
       :items="items"
       :flatten-items="flattenItems"
       :expanded="expanded"
-      :tree-key="treeKey"
+      :tree-version="treeVersion"
       :selected-ids="selectedIds"
       :dragging-id="draggingId"
       :instruction="instruction"
