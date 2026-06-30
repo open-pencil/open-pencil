@@ -110,12 +110,15 @@ function modeId(columnId: string): string {
   <DialogRoot v-model:open="open">
     <DialogPortal>
       <DialogOverlay :class="cls.overlay" />
-      <DialogContent data-test-id="variables-dialog" :class="cls.content">
+      <DialogContent
+        data-test-id="variables-dialog"
+        :aria-describedby="undefined"
+        :class="cls.content"
+      >
+        <DialogTitle class="sr-only">{{ dialogs.localVariables }}</DialogTitle>
         <div v-if="!ctx.hasCollections" class="flex flex-1 flex-col">
           <div class="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-            <DialogTitle class="text-sm font-semibold text-surface">{{
-              dialogs.localVariables
-            }}</DialogTitle>
+            <h2 class="text-sm font-semibold text-surface">{{ dialogs.localVariables }}</h2>
             <DialogClose
               class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
             >

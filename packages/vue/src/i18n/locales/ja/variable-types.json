@@ -1,0 +1,10 @@
+{
+  "color": "カラー",
+  "colorHint": "塗りの値",
+  "number": "数値",
+  "numberHint": "サイズ、間隔、不透明度",
+  "text": "テキスト",
+  "textHint": "テキストとラベル",
+  "boolean": "ブーリアン (真偽値)",
+  "booleanHint": "真 (True) または 偽 (False)"
+}

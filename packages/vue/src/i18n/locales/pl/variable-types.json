@@ -1,0 +1,10 @@
+{
+  "color": "Kolor",
+  "colorHint": "Wartości wypełnień",
+  "number": "Liczba",
+  "numberHint": "Rozmiary, odstępy, krycie",
+  "text": "Tekst",
+  "textHint": "Tekst i etykiety",
+  "boolean": "Boolowski",
+  "booleanHint": "Prawda lub fałsz"
+}

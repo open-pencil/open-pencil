@@ -1,0 +1,10 @@
+{
+  "color": "颜色",
+  "colorHint": "绘制值",
+  "number": "数字",
+  "numberHint": "尺寸、间距、不透明度",
+  "text": "文本",
+  "textHint": "文案和标签",
+  "boolean": "布尔值",
+  "booleanHint": "真或假"
+}

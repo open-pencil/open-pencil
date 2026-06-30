@@ -420,7 +420,8 @@ const noShortcutTextInLabels = createTextRule(
   (sourceRel, content) => {
     if (
       sourceRel !== 'packages/vue/src/i18n/messages.ts' &&
-      !sourceRel.startsWith('packages/vue/src/locales/')
+      !sourceRel.startsWith('packages/vue/src/i18n/messages/') &&
+      !sourceRel.startsWith('packages/vue/src/i18n/locales/')
     ) {
       return []
     }

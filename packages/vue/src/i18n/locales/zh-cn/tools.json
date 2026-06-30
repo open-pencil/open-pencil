@@ -1,0 +1,13 @@
+{
+  "move": "移动",
+  "frame": "画框",
+  "section": "分区",
+  "rectangle": "矩形",
+  "ellipse": "椭圆",
+  "line": "直线",
+  "polygon": "多边形",
+  "star": "星形",
+  "pen": "钢笔",
+  "text": "文本",
+  "hand": "抓手"
+}

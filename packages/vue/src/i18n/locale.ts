@@ -3,6 +3,29 @@ import { atom } from 'nanostores'
 
 export const AVAILABLE_LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
 export type Locale = (typeof AVAILABLE_LOCALES)[number]
+export type TranslatedLocale = Exclude<Locale, 'en'>
+
+export const TRANSLATED_LOCALES = [
+  'de',
+  'es',
+  'fr',
+  'it',
+  'ja',
+  'pl',
+  'ru',
+  'zh-CN'
+] as const satisfies ReadonlyArray<TranslatedLocale>
+
+export const LOCALE_DIR_NAMES = {
+  de: 'de',
+  es: 'es',
+  fr: 'fr',
+  it: 'it',
+  ja: 'ja',
+  pl: 'pl',
+  ru: 'ru',
+  'zh-CN': 'zh-cn'
+} as const satisfies Record<TranslatedLocale, string>
 
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',

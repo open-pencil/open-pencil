@@ -150,14 +150,35 @@ export type { ToolbarContext } from '#vue/primitives/Toolbar'
 export { blurTarget, inputNumberValue, inputValue, selectTarget } from '#vue/shared/dom-events'
 
 /** Internationalization. */
-export { useI18n } from '#vue/i18n'
-export { locale, localeSetting, setLocale, AVAILABLE_LOCALES, LOCALE_LABELS } from '#vue/i18n'
-export type { Locale } from '#vue/i18n'
+export {
+  useI18n,
+  useI18nNamespace,
+  useMenuMessages,
+  useCommandMessages,
+  useToolMessages,
+  usePanelMessages,
+  useVariableTypeMessages,
+  usePageMessages,
+  useDialogMessages,
+  i18n
+} from '#vue/i18n'
+export {
+  locale,
+  localeSetting,
+  setLocale,
+  AVAILABLE_LOCALES,
+  TRANSLATED_LOCALES,
+  LOCALE_DIR_NAMES,
+  LOCALE_LABELS
+} from '#vue/i18n'
+export type { Locale, TranslatedLocale } from '#vue/i18n'
 export {
   menuMessages,
   commandMessages,
   toolMessages,
   panelMessages,
+  variableTypeMessages,
   pageMessages,
-  dialogMessages
+  dialogMessages,
+  messageDefaults
 } from '#vue/i18n'
