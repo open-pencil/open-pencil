@@ -86,9 +86,9 @@ export function createReloadActions({
     editor.replaceGraph(imported)
 
     editor.undo.clear()
-    setSavedVersion(state.sceneVersion)
     restoreReloadState(editor, state, snapshot)
     editor.requestRender()
+    setSavedVersion(state.sceneVersion)
   }
 
   return { reloadFromDisk }

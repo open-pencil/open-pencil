@@ -1,7 +1,7 @@
 import type { Canvas, EmbindEnumEntity, Paint } from 'canvaskit-wasm'
 
-import type { SceneNode, Stroke } from '#core/scene-graph'
-import type { Color } from '#core/types'
+import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'

@@ -1,3 +1,5 @@
+import { copyFills, copyStyleRuns } from '@open-pencil/scene-graph/copy'
+
 import { applyOverridePatch, type OverridePatch } from '#core/kiwi/fig/instance-overrides/patches'
 import { getComponentRoot } from '#core/kiwi/fig/instance-overrides/resolve'
 import type {
@@ -6,7 +8,6 @@ import type {
   OverrideContext
 } from '#core/kiwi/fig/instance-overrides/types'
 import { guidToString } from '#core/kiwi/fig/node-change/convert'
-import { copyFills, copyStyleRuns } from '#core/scene-graph/copy'
 
 import { propTextCharacters } from './values'
 

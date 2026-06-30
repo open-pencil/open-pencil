@@ -1,19 +1,22 @@
+import type {
+  ComponentPropertyDefinition,
+  SceneGraph,
+  SceneNode,
+  NodeType
+} from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { parseColor } from '#core/color'
 import type { RenderOptions } from '#core/design-jsx/types'
 import { fetchIcons } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
 import { computeAllLayouts } from '#core/layout'
 import { randomHex } from '#core/random'
-import type {
-  ComponentPropertyDefinition,
-  SceneGraph,
-  SceneNode,
-  NodeType
-} from '#core/scene-graph'
 
 import { applySizeOverrides, propsToOverrides } from './props-overrides'
 import { isTreeNode } from './tree'
 import type { TreeNode } from './tree'
+import { isVariable, type DesignVariable } from './vars'
 
 const TYPE_MAP: Partial<Record<string, NodeType>> = {
   frame: 'FRAME',
@@ -75,6 +78,115 @@ export async function renderTree(
     name: result.name,
     type: result.type,
     childIds: result.childIds
+  }
+}
+
+interface PreparedProps {
+  props: Record<string, unknown>
+  bindings: Record<string, string>
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function resolveVariableId(graph: SceneGraph, variable: DesignVariable): string | undefined {
+  if (variable.id && graph.variables.has(variable.id)) return variable.id
+  if (variable.id && !variable.name) return variable.id
+  for (const candidate of graph.variables.values()) {
+    if (candidate.name === variable.name || candidate.id === variable.name) return candidate.id
+  }
+  return variable.id
+}
+
+function variableFallback(graph: SceneGraph, variable: DesignVariable): string | Color | undefined {
+  if (variable.value !== undefined) return variable.value
+  const variableId = resolveVariableId(graph, variable)
+  return variableId ? graph.resolveColorVariable(variableId) : undefined
+}
+
+function bindVariableProp(
+  graph: SceneGraph,
+  props: Record<string, unknown>,
+  bindings: Record<string, string>,
+  key: string,
+  field: string
+): void {
+  const value = props[key]
+  if (!isVariable(value)) return
+  const variableId = resolveVariableId(graph, value)
+  if (variableId) bindings[field] = variableId
+  const fallback = variableFallback(graph, value)
+  if (fallback !== undefined) props[key] = fallback
+}
+
+function bindStyleVariableProp(
+  graph: SceneGraph,
+  style: Record<string, unknown>,
+  bindings: Record<string, string>,
+  key: string,
+  field: string
+): void {
+  const value = style[key]
+  if (!isVariable(value)) return
+  const variableId = resolveVariableId(graph, value)
+  if (variableId) bindings[field] = variableId
+  const fallback = variableFallback(graph, value)
+  if (fallback !== undefined) style[key] = fallback
+}
+
+function preparePropsForRender(
+  graph: SceneGraph,
+  source: Record<string, unknown>,
+  isText: boolean
+): PreparedProps {
+  const props = { ...source }
+  const bindings: Record<string, string> = {}
+
+  if (Array.isArray(props.fills)) {
+    props.fills = props.fills.map((value, index) => {
+      if (!isVariable(value)) return value
+      const variableId = resolveVariableId(graph, value)
+      if (variableId) bindings[`fills/${index}/color`] = variableId
+      return variableFallback(graph, value) ?? value
+    })
+  }
+
+  for (const key of ['bg', 'fill', 'background', 'backgroundColor']) {
+    bindVariableProp(graph, props, bindings, key, 'fills/0/color')
+  }
+  if (isText) bindVariableProp(graph, props, bindings, 'color', 'fills/0/color')
+  for (const key of ['stroke', 'border', 'borderColor']) {
+    bindVariableProp(graph, props, bindings, key, 'strokes/0/color')
+  }
+
+  if (isObjectRecord(props.style)) {
+    const style = { ...props.style }
+    for (const key of ['background', 'backgroundColor']) {
+      bindStyleVariableProp(graph, style, bindings, key, 'fills/0/color')
+    }
+    if (isText) bindStyleVariableProp(graph, style, bindings, 'color', 'fills/0/color')
+    bindStyleVariableProp(graph, style, bindings, 'borderColor', 'strokes/0/color')
+    props.style = style
+  }
+
+  if (isObjectRecord(props.bind)) {
+    for (const [field, value] of Object.entries(props.bind)) {
+      if (isVariable(value)) {
+        const variableId = resolveVariableId(graph, value)
+        if (variableId) bindings[field] = variableId
+      } else if (typeof value === 'string') {
+        bindings[field] = value
+      }
+    }
+  }
+
+  return { props, bindings }
+}
+
+function applyBindings(graph: SceneGraph, nodeId: string, bindings: Record<string, string>): void {
+  for (const [field, variableId] of Object.entries(bindings)) {
+    graph.bindVariable(nodeId, field, variableId)
   }
 }
 
@@ -220,16 +332,18 @@ async function renderInstanceNode(
 ): Promise<SceneNode> {
   const parent = graph.getNode(parentId)
   const parentLayout = parent?.layoutMode ?? 'NONE'
-  const component = resolveComponent(graph, tree.props)
+  const { props, bindings } = preparePropsForRender(graph, tree.props, false)
+  const component = resolveComponent(graph, props)
   if (!component) {
-    const ref = tree.props.component ?? tree.props.componentId ?? tree.props.of
+    const ref = props.component ?? props.componentId ?? props.of
     const label = typeof ref === 'string' || typeof ref === 'number' ? String(ref) : ''
     throw new Error(`<Instance> component not found: ${label}`)
   }
-  const overrides = propsToOverrides(tree.props, false, parentLayout)
-  return (
+  const overrides = propsToOverrides(props, false, parentLayout)
+  const instance =
     graph.createInstance(component.id, parentId, overrides) ?? graph.createNode('FRAME', parentId)
-  )
+  applyBindings(graph, instance.id, bindings)
+  return instance
 }
 
 async function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): Promise<SceneNode> {
@@ -243,22 +357,19 @@ async function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): 
   const parentLayout = parent?.layoutMode ?? 'NONE'
 
   const isText = nodeType === 'TEXT'
-  const overrides = propsToOverrides(tree.props, isText, parentLayout)
+  const { props, bindings } = preparePropsForRender(graph, tree.props, isText)
+  const overrides = propsToOverrides(props, isText, parentLayout)
 
   if (isText) {
     const childText = tree.children.filter((c): c is string => typeof c === 'string').join('')
     const propText =
-      tree.props.text ??
-      tree.props.characters ??
-      tree.props.content ??
-      tree.props.label ??
-      tree.props.value ??
-      tree.props.title
+      props.text ?? props.characters ?? props.content ?? props.label ?? props.value ?? props.title
     if (childText) overrides.text = childText
     else if (typeof propText === 'string') overrides.text = propText
   }
 
   const node = graph.createNode(nodeType, parentId, overrides)
+  applyBindings(graph, node.id, bindings)
 
   for (const child of tree.children) {
     if (typeof child === 'string') continue

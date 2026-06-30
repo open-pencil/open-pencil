@@ -58,7 +58,7 @@ Tests cover:
 
 ```typescript
 import { describe, expect, it } from 'bun:test'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('SceneGraph', () => {
   it('creates and retrieves a node', () => {

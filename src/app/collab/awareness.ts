@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import type * as awarenessProtocol from 'y-protocols/awareness'
 
 import { randomIndex } from '@open-pencil/core/random'
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { PEER_COLORS, ROOM_ID_CHARS, ROOM_ID_LENGTH } from '@/constants'

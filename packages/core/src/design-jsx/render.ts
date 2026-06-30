@@ -1,9 +1,19 @@
 import { transform } from 'sucrase'
 
-import type { RenderOptions as RenderJSXOptions } from '#core/design-jsx/types'
-import type { SceneGraph } from '#core/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import type { RenderOptions as RenderJSXOptions } from '#core/design-jsx/types'
+
+import { backgroundBlur, dropShadow, foregroundBlur, innerShadow, layerBlur } from './effects'
 import * as React from './mini-react'
+import {
+  angularGradient,
+  diamondGradient,
+  gradient,
+  linearGradient,
+  radialGradient,
+  solid
+} from './paints'
 import { renderTree, type RenderResult } from './renderer'
 import { isTreeNode, resolveToTree, type TreeNode } from './tree'
 
@@ -50,6 +60,7 @@ const SUPPORTED_PROPS = new Set([
   'pl',
   'bg',
   'fill',
+  'fills',
   'background',
   'backgroundColor',
   'stroke',
@@ -74,6 +85,7 @@ const SUPPORTED_PROPS = new Set([
   'overflow',
   'shadow',
   'blur',
+  'effects',
   'size',
   'fontSize',
   'font',
@@ -112,6 +124,7 @@ const SUPPORTED_PROPS = new Set([
   'innerRadius',
   'label',
   'style',
+  'bind',
   'component',
   'componentId',
   'of'
@@ -149,6 +162,24 @@ export function buildComponent(jsxString: string): React.ComponentType {
     const Group = 'group', Section = 'section', View = 'frame', Rect = 'rectangle'
     const Component = 'component', ComponentSet = 'component-set', Instance = 'instance'
     const Icon = 'icon'
+    const dropShadow = __helpers.dropShadow
+    const innerShadow = __helpers.innerShadow
+    const layerBlur = __helpers.layerBlur
+    const backgroundBlur = __helpers.backgroundBlur
+    const foregroundBlur = __helpers.foregroundBlur
+    const solid = __helpers.solid
+    const gradient = __helpers.gradient
+    const linearGradient = __helpers.linearGradient
+    const radialGradient = __helpers.radialGradient
+    const angularGradient = __helpers.angularGradient
+    const diamondGradient = __helpers.diamondGradient
+    const __varSymbol = Symbol.for('open-pencil.variable')
+    const designVar = (def, value) => typeof def === 'string'
+      ? ({ [__varSymbol]: true, id: def, name: def, value })
+      : ({ [__varSymbol]: true, id: def.id, name: def.name ?? def.id ?? '', value: def.value })
+    const defineVars = (vars) => Object.fromEntries(
+      Object.entries(vars).map(([key, def]) => [key, designVar(def)])
+    )
   `
   const opts = {
     transforms: ['typescript', 'jsx'] as Array<'typescript' | 'jsx'>,
@@ -165,7 +196,19 @@ export function buildComponent(jsxString: string): React.ComponentType {
   }
 
   // eslint-disable-next-line typescript-eslint/no-implied-eval -- sucrase output must be evaluated at runtime
-  return new Function('React', code)(React) as React.ComponentType
+  return new Function('React', '__helpers', code)(React, {
+    backgroundBlur,
+    dropShadow,
+    foregroundBlur,
+    innerShadow,
+    layerBlur,
+    angularGradient,
+    diamondGradient,
+    gradient,
+    linearGradient,
+    radialGradient,
+    solid
+  }) as React.ComponentType
 }
 
 /**

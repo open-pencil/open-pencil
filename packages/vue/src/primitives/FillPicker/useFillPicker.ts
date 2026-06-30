@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 
 import { colorToCSS } from '@open-pencil/core/color'
-import type { Fill, GradientStop } from '@open-pencil/core/scene-graph'
+import type { Fill, GradientStop } from '@open-pencil/scene-graph'
 
 type FillCategory = 'SOLID' | 'GRADIENT' | 'IMAGE'
 

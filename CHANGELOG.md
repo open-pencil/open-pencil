@@ -2,14 +2,53 @@
 
 ## Unreleased
 
+### Changed
+
+- Add JSX authoring support for components, component sets, and instances.
+- Add design JSX variable helpers so color props can use `designVar()` / `defineVars()` references and emit graph variable bindings.
+- Add structured design JSX paint helpers for solid fills, multiple fills, and gradients.
+- Add structured design JSX effect helpers for shadows and blur effects.
+- Add the `@open-pencil/dom-css` package skeleton for DOM/CSS projection and browser/headless CSS runtime adapters.
+- Add initial `@open-pencil/dom-css` DesignDOM ⇄ SceneGraph conversion helpers for HTML/CSS-shaped card layouts.
+- Add `parse5`-backed headless HTML parsing for `@open-pencil/dom-css` DesignDOM documents.
+- Add CSSOM-backed headless style computation for basic `tag`, `.class`, `#id`, descendant, and child selectors with shorthand expansion.
+- Add an HTML/CSS card round-trip fixture covering DesignDOM style computation, SceneGraph import, and HTML serialization.
+- Add `compileTailwindCSS()` to delegate utility compilation to Tailwind v4 and cover generated CSS ingestion through CSSOM and SceneGraph conversion.
+- Add browser-oracle DOM/CSS fixtures for Tailwind cards/buttons, CSS custom properties, `calc()`, and modern computed color output.
+- Add high-level `htmlToDesignDocument()`, `htmlToSceneGraph()`, `tailwindHTMLToDesignDocument()`, and `tailwindHTMLToSceneGraph()` helpers.
+- Improve `@open-pencil/dom-css` conversion for flex alignment, independent corner radii, per-side stroke weights, clipping, and size constraints.
+- Expand DOM/CSS fixture coverage for inputs, badges, nav rows, dialogs, and Tailwind-generated utility styles.
+- Add package-local `@open-pencil/dom-css` tests so the package can be validated independently with `bun run test` from `packages/dom-css`.
+- Add standalone `@open-pencil/dom-css` typecheck, check, and built-package smoke scripts for external package maintenance.
+- Improve `@open-pencil/dom-css` SceneGraph → CSS export parity for logical padding, independent border sides, opacity, text typography, and shadows.
+- Add `@open-pencil/dom-css` JSX runtime helpers for DOM-shaped authoring into DesignDOM, CSS runtime styling, SceneGraph conversion, and Tailwind-generated CSS flows.
+- Add browser-first JSX/Tailwind helpers for native `getComputedStyle()` conversion, expand CSS mapping for flex wrapping, self alignment, absolute positioning basics, and document the future `@open-pencil/kiwi` / `@open-pencil/fig` package split plan.
+- Add a CLI `dom` command for converting HTML/CSS/Tailwind input into editable `.fig` documents through `@open-pencil/dom-css`.
+- Add type-validated `bindVariable`/`unbindVariable` with event emission and indexed binding format (`fills/N/color` instead of `fills[N]`).
+- Add `unbind_variable` MCP tool for removing variable bindings.
+- Add `openpencil analyze overlaps`, the `analyze_overlaps` RPC command, and the `analyze_overlaps` ToolDef for heuristic overlap detection. The command reports sibling overlaps, children overflowing non-clipping parents, and overlay/backdrop patterns, with filters for page/page ID, scope, category, severity, min area/ratio, node type, hidden/locked/absolute nodes, result limit, and `--json` output.
+- Add overlap analysis exports for automation consumers, including `computeOverlaps`, `analyzeOverlaps`, overlap result types, and parameter parsers from core subpath exports.
+- Add world-matrix visual bounds to overlap analysis, covering vector/stroke/text geometry, ancestor clipping, rotated clipping frames, and nested ancestor rotations.
+- Add the `@open-pencil/core/package.json` subpath export for package metadata consumers.
+
 ### Fixes
 
-- Desktop "Share This File" now copies a public `https://app.openpencil.dev/share/{roomId}` link (instead of an internal `tauri://localhost` URL that only the sharer's own desktop app can open). Recipients can now join from any browser; collaboration remains P2P (Trystero + WebRTC + Yjs).
+- Increase per-test timeout for slow `gold-preview.fig` fixture tests (`clipboard roundtrip`, `group reclassification`, `glyph blob preservation`, `auto-layout text measurement`, and `render/canvas/cache`) so they no longer flake on slower CI runners.
+- Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.
+- Fix instance overrides shallow-copied on clone — override values containing objects are now deep-copied.
+- Fix stale variable bindings not cleaned up when fills/strokes arrays shrink — any indexed sub-path is now handled, not just `/color`.
+- Fix desktop "Share This File" links to use the public `https://app.openpencil.dev/share/{roomId}` URL instead of the internal `tauri://localhost` app scheme.
 - Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
 - Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
 - Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
 - Preserve rotated Figma transform origins for imported vector nodes.
 - Render complex text fills through vector glyph outlines so imported Figma text can use the normal fill pipeline for gradients, images, patterns, and other non-solid paints.
+- Fix file-backed CLI commands (`convert`, `eval --output`, `export`) to use Node `fs/promises` instead of Bun runtime APIs, so the published CLI works when installed and run under Node.
+- Fix `analyze_overlaps` stroke-overflow bounds for rotated nodes by expanding the local rectangle before transforming through the world matrix, so stroked rotated nodes are measured with their true rotated footprint.
+- Fix `analyze_overlaps` clipping across multiple rotated ancestors by preserving the clipped polygon through the full clip chain instead of collapsing to an AABB between clips, which could reintroduce corners removed by an inner clip.
+- Fix `analyze_overlaps` `limit` of `0` (or a negative value) so it caps the returned overlaps to an empty list instead of returning the full set; summary totals still reflect the complete result.
+- Trim whitespace from `analyze_overlaps` `scope` and `severity` inputs so values like `" major "` resolve instead of falling back to defaults.
+- Export `OverlapScope`, `AnalyzeOverlapsSummary`, and `OverlapIntersection` from the `@open-pencil/core/tools/analyze` barrel so consumers do not need to deep-import the overlaps module.
 
 ## 0.13.2 — 2026-05-30
 

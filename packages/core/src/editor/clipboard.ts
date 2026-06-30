@@ -1,11 +1,12 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import {
   importClipboardNodes,
   parseFigmaClipboard,
   parseOpenPencilClipboard
 } from '#core/clipboard'
 import { computeAllLayouts } from '#core/layout'
-import type { SceneNode } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 
 import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'

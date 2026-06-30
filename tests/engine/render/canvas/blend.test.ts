@@ -2,11 +2,12 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { BlendMode, Fill, SceneNode } from '@open-pencil/scene-graph'
+
 import { figmaBlendModeToSkia } from '#core/canvas/blend'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderNode, renderSection } from '#core/canvas/scene'
-import { SceneGraph } from '#core/scene-graph'
-import type { BlendMode, Fill, SceneNode } from '#core/scene-graph'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

@@ -1,6 +1,7 @@
 import {
   analyzeClusters,
   analyzeColors,
+  analyzeOverlaps,
   analyzeSpacing,
   analyzeTypography,
   diffCreate,
@@ -75,7 +76,8 @@ import {
   getVariable,
   listCollections,
   listVariables,
-  setVariable
+  setVariable,
+  unbindVariable
 } from './variables'
 import {
   booleanExclude,
@@ -160,6 +162,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   setVariable,
   deleteVariable,
   bindVariable,
+  unbindVariable,
   getCollection,
   createCollection,
   deleteCollection,
@@ -183,6 +186,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   analyzeTypography,
   analyzeSpacing,
   analyzeClusters,
+  analyzeOverlaps,
   diffCreate,
   diffShow,
   // Codegen

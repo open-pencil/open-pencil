@@ -9,7 +9,7 @@ import { PropertyListRoot, vTestId, useEffectsControls, useI18n } from '@open-pe
 
 import { colorToCSS } from '@open-pencil/core/color'
 
-import type { Effect } from '@open-pencil/core/scene-graph'
+import type { Effect } from '@open-pencil/scene-graph'
 
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()

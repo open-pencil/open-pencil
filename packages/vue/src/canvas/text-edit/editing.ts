@@ -2,8 +2,8 @@ import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 const CARET_BLINK_MS = 530
 

@@ -1,5 +1,5 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { cloneVectorNetwork } from '@open-pencil/core/scene-graph'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize, OrigChildState } from '#vue/shared/input/types'

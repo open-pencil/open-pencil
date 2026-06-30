@@ -8,15 +8,11 @@
   },
   "sideEffects": false,
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js",
       "import": "./dist/index.js"
-    },
-    "./scene-graph": {
-      "types": "./dist/scene-graph/index.d.ts",
-      "default": "./dist/scene-graph/index.js",
-      "import": "./dist/scene-graph/index.js"
     },
     "./color": {
       "types": "./dist/color/index.d.ts",
@@ -133,11 +129,6 @@
       "default": "./dist/xpath.js",
       "import": "./dist/xpath.js"
     },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "default": "./dist/types.js",
-      "import": "./dist/types.js"
-    },
     "./canvaskit": {
       "types": "./dist/canvaskit.d.ts",
       "default": "./dist/canvaskit.js",
@@ -147,11 +138,6 @@
       "types": "./dist/layout.d.ts",
       "default": "./dist/layout.js",
       "import": "./dist/layout.js"
-    },
-    "./geometry": {
-      "types": "./dist/geometry.d.ts",
-      "default": "./dist/geometry.js",
-      "import": "./dist/geometry.js"
     }
   },
   "main": "./dist/index.js",
@@ -176,6 +162,7 @@
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",
     "@iconify/utils": "^3.1.0",
+    "@open-pencil/kiwi": "workspace:*",
     "@tauri-apps/api": "^2",
     "acorn": "^8.16.0",
     "canvaskit-wasm": "^0.40.0",
@@ -193,7 +180,9 @@
     "svg2pdf.js": "^2.7.0",
     "svgpath": "^2.6.0",
     "twirlwind": "^0.3.0",
-    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3"
+    "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
+    "@open-pencil/scene-graph": "workspace:*",
+    "@open-pencil/pen": "workspace:*"
   },
   "devDependencies": {
     "@types/culori": "^4.0.1",

@@ -3,6 +3,7 @@ import { defineCommand, runMain } from 'citty'
 
 import analyze from './commands/analyze'
 import convert from './commands/convert'
+import dom from './commands/dom'
 import evalCmd from './commands/eval'
 import exportCmd from './commands/export'
 import find from './commands/find'
@@ -27,6 +28,7 @@ const main = defineCommand({
   subCommands: {
     analyze,
     convert,
+    dom,
     eval: evalCmd,
     export: exportCmd,
     find,

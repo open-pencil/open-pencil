@@ -1,5 +1,6 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import type { EditorContext } from '#core/editor/types'
-import type { SceneNode } from '#core/scene-graph'
 
 type InstanceCreateSnapshot = Partial<SceneNode> & { id: string }
 

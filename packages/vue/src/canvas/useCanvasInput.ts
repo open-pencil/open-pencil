@@ -2,7 +2,7 @@ import { useEventListener } from '@vueuse/core'
 import { ref, type Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import {
   handleBendHandleMove,

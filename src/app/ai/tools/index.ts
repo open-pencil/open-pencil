@@ -3,9 +3,9 @@ import { tool } from 'ai'
 import * as v from 'valibot'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import { CORE_TOOLS, toolsToAI } from '@open-pencil/core/tools'
 import type { StepBudget, ToolLogEntry } from '@open-pencil/core/tools'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { getActiveEditorStore } from '@/app/editor/active-store'

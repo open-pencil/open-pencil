@@ -2,13 +2,15 @@ name: Heavy tests
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'
 
 concurrency:
   group: heavy-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  fig-roundtrip:
+  fixture-heavy-unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -18,7 +20,17 @@ jobs:
         with:
           lfs: 'true'
 
-      - name: Heavy fig roundtrip tests
-        run: bun test --timeout 180000 tests/engine/fig-roundtrip.test.ts
+      - name: Build packages
+        run: bun run build:packages
+
+      - name: Heavy fixture unit tests
+        shell: bash
+        run: |
+          mapfile -t test_files < <(bun tools/unit-tests/src/list.ts all --heavy-only)
+          if [ "${#test_files[@]}" -eq 0 ]; then
+            echo "No heavy unit tests found"
+            exit 0
+          fi
+          bun test --timeout 180000 "${test_files[@]}"
         env:
           BUN_HEAVY_TESTS: 'true'

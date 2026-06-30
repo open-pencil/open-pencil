@@ -3,8 +3,9 @@ import { readFileSync } from 'node:fs'
 
 import ts from 'typescript'
 
+import { parseSchema } from '@open-pencil/kiwi/schema-runtime'
+
 import { FIGMA_RAW_NODE_FIELD_KEYS } from '#core/kiwi/fig/node-change/convert'
-import { parseSchema } from '#core/kiwi/schema-runtime'
 
 interface SchemaField {
   name: string
@@ -28,8 +29,8 @@ type SchemaCoverageBucket =
   | 'mediaMotionMetadata'
   | 'internalBookkeeping'
 
-const SCHEMA_PATH = 'packages/core/src/kiwi/fig/codec/schema/fig.kiwi'
-const CODEC_PATH = 'packages/core/src/kiwi/fig/codec/index.ts'
+const SCHEMA_PATH = 'packages/kiwi/src/fig/schema/fig.kiwi'
+const CODEC_PATH = 'packages/kiwi/src/fig/codec.ts'
 
 function nodeChangeSchemaFields(): SchemaField[] {
   const schema = parseSchema(readFileSync(SCHEMA_PATH, 'utf8'))

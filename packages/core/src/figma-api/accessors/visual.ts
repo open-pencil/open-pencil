@@ -1,3 +1,6 @@
+import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+
 import { normalizeColor } from '#core/color'
 import {
   raw,
@@ -5,8 +8,6 @@ import {
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
-import type { Effect, Fill, SceneNode, Stroke } from '#core/scene-graph'
-import { copyEffects, copyFills, copyStrokes } from '#core/scene-graph/copy'
 
 export function installVisualNodeProxyAccessors(
   prototype: object,

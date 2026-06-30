@@ -1,7 +1,8 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import { createFlipRotateActions } from '#core/editor/alignment/flip-rotate'
-import { computeAbsoluteBounds } from '#core/geometry'
-import type { SceneNode } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import type { EditorContext } from './types'

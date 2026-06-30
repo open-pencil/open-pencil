@@ -1,7 +1,10 @@
 import { isNotNil } from 'es-toolkit/predicate'
 
+import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { VariableType, VariableValue } from '@open-pencil/scene-graph'
+
 import { BLACK } from '#core/constants'
-import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '#core/kiwi/fig/codec'
 import { populateAndApplyOverrides } from '#core/kiwi/fig/instance-overrides'
 import type { InstanceNodeChange } from '#core/kiwi/fig/instance-overrides'
 import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
@@ -13,8 +16,6 @@ import {
   VARIABLE_BINDING_FIELDS_INVERSE
 } from '#core/kiwi/fig/node-change/convert'
 import { applyStyleRefsToFields } from '#core/kiwi/fig/node-change/style-refs'
-import { SceneGraph } from '#core/scene-graph'
-import type { VariableType, VariableValue } from '#core/scene-graph'
 
 type AssetRef = { key: string; version?: string }
 type AliasRef = { guid?: GUID; assetRef?: AssetRef }

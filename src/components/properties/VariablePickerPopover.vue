@@ -16,7 +16,7 @@ import { vTestId } from '@open-pencil/vue'
 
 import { useTooltipUI } from '@/components/ui/tooltip'
 
-import type { Variable } from '@open-pencil/core/scene-graph'
+import type { Variable } from '@open-pencil/scene-graph'
 
 const searchTerm = defineModel<string>('searchTerm', { default: '' })
 

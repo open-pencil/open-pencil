@@ -1,6 +1,7 @@
+import { normalizeVectorNetwork, validateVectorNetwork } from '@open-pencil/scene-graph'
+import type { VectorNetwork } from '@open-pencil/scene-graph'
+
 import { parseColor } from '#core/color'
-import { normalizeVectorNetwork, validateVectorNetwork } from '#core/scene-graph'
-import type { VectorNetwork } from '#core/scene-graph'
 import { defineTool, nodeSummary } from '#core/tools/schema'
 
 export const createVector = defineTool({

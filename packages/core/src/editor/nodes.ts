@@ -1,6 +1,6 @@
 import { pick } from 'es-toolkit/object'
 
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { createLayoutModeActions } from './layout-mode'
 import { createNudgeActions } from './nudge'

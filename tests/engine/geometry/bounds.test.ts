@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
-import { computeAbsoluteBounds, computeBounds, type Vector } from '@open-pencil/core'
+import { computeAbsoluteBounds, computeBounds, type Vector } from '@open-pencil/scene-graph'
 
 describe('computeBounds', () => {
   test('empty iterable returns zero rect', () => {

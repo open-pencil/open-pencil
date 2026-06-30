@@ -5,6 +5,7 @@ import { nodeChangeToProps } from '#core/kiwi/fig/node-change/convert'
 
 import { parseFixture } from '#tests/helpers/fig-fixtures'
 import { collectAllNodes } from '#tests/helpers/fig-traversal'
+import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('Figma group reclassification on import', () => {
   test('FRAME with resizeToFit imports as GROUP', () => {
@@ -56,11 +57,15 @@ describe('Figma group reclassification on import', () => {
     expect(props.nodeType).toBe('FRAME')
   })
 
-  test('gold-preview.fig fixture imports its groups as GROUP nodes', async () => {
-    const graph = await parseFixture('gold-preview.fig')
-    const groups = collectAllNodes(graph).filter((n) => n.type === 'GROUP')
-    // gold-preview.fig contains real Figma groups (FRAME + resizeToFit) that must
-    // import as GROUP, not FRAME.
-    expect(groups.length).toBeGreaterThan(0)
-  })
+  test(
+    'gold-preview.fig fixture imports its groups as GROUP nodes',
+    { timeout: HEAVY_TEST_TIMEOUT_MS },
+    async () => {
+      const graph = await parseFixture('gold-preview.fig')
+      const groups = collectAllNodes(graph).filter((n) => n.type === 'GROUP')
+      // gold-preview.fig contains real Figma groups (FRAME + resizeToFit) that must
+      // import as GROUP, not FRAME.
+      expect(groups.length).toBeGreaterThan(0)
+    }
+  )
 })

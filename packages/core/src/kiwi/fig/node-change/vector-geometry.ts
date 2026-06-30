@@ -1,6 +1,7 @@
-import type { NodeChange } from '#core/kiwi/fig/codec'
-import type { GeometryPath, VectorNetwork, WindingRule } from '#core/scene-graph'
-import type { Vector } from '#core/types'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GeometryPath, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import { decodeVectorNetworkBlob } from '#core/vector'
 
 export function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): VectorNetwork | null {

@@ -1,7 +1,7 @@
 import { computed, inject, provide, proxyRefs } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
 
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   createColorPickerModel,
   createOkHCLSliderGradientModel,

@@ -1,4 +1,3 @@
-import { colorToHex8 } from '#core/color'
 import type {
   SceneGraph,
   SceneNode,
@@ -7,7 +6,9 @@ import type {
   Effect,
   Color,
   GridTrack
-} from '#core/scene-graph'
+} from '@open-pencil/scene-graph'
+
+import { colorToHex8 } from '#core/color'
 
 export function formatColor(color: Color, opacity = 1): string {
   return colorToHex8(color, opacity)

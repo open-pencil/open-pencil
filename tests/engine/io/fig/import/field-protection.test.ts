@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, Stroke } from '@open-pencil/scene-graph'
+
 import { protectField, type ProtectionMap } from '#core/kiwi/fig/instance-overrides/patches'
 import { syncNodeProps } from '#core/kiwi/fig/instance-overrides/sync'
-import { SceneGraph } from '#core/scene-graph'
-import type { Fill, Stroke } from '#core/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id

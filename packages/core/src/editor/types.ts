@@ -1,18 +1,19 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type { RenderOverlays } from '#core/canvas/renderer/types'
 import type {
   SceneGraph,
   SceneGraphEvents,
   SceneNode,
   VectorSegment,
   VectorVertex
-} from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
-import type { UndoManager } from '#core/scene-graph/undo'
+} from '@open-pencil/scene-graph'
+import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+import type { UndoManager } from '@open-pencil/scene-graph/undo'
+
+import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
+import type { RenderOverlays } from '#core/canvas/renderer/types'
 import type { TextEditor } from '#core/text/editor'
-import type { Color, Rect, Vector } from '#core/types'
 
 export type Tool =
   | 'SELECT'

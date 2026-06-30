@@ -1,6 +1,7 @@
+import type { Effect } from '@open-pencil/scene-graph'
+
 import { parseColor } from '#core/color'
 import { DEFAULT_SHADOW_COLOR, TRANSPARENT } from '#core/constants'
-import type { Effect } from '#core/scene-graph'
 import { defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const setEffects = defineTool({

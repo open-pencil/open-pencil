@@ -8,7 +8,7 @@ import type {
   RasterExportFormat
 } from '@open-pencil/core/io'
 import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
 import { isTauri } from '@/app/tauri/env'

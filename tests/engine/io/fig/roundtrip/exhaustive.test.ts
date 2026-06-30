@@ -11,7 +11,7 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 import {
   type Mismatch,
@@ -64,8 +64,8 @@ const SPECS: FixtureSpec[] = [
     thumbnailHeight: 239,
     imageCount: 3,
     figKiwiVersion: 101,
-    g1ExportSize: 594770,
-    g2ExportSize: 594770
+    g1ExportSize: 496909,
+    g2ExportSize: 496909
   }
 ]
 

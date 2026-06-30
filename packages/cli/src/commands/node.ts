@@ -2,7 +2,7 @@ import { defineCommand } from 'citty'
 
 import { colorToHex } from '@open-pencil/core/color'
 import type { NodeResult } from '@open-pencil/core/rpc'
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { fmtNode, printError, formatType } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'

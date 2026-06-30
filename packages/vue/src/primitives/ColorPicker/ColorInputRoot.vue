@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
 
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { OkHCLControls } from '#vue/primitives/ColorPicker/types'
 
 const {

@@ -1,5 +1,6 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import type { FigmaAPI } from '#core/figma-api'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
 
 interface ComponentInfo {

@@ -1,5 +1,6 @@
-import type { NodeChange } from '#core/kiwi/fig/codec'
-import type { CharacterStyleOverride, StyleRun } from '#core/scene-graph'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { CharacterStyleOverride, StyleRun } from '@open-pencil/scene-graph'
+
 import { styleToWeight } from '#core/text/fonts'
 
 import { convertFontFeatures } from './font/features'

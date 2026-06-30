@@ -1,4 +1,5 @@
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const updateNode = defineTool({

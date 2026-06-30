@@ -1,8 +1,9 @@
+import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { colorToHex } from '#core/color'
 import { colorToDisplayCss, getDefaultRenderColorSpace } from '#core/color/management'
 import type { RenderColorSpace } from '#core/color/management'
-import type { Effect, Fill, SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'

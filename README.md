@@ -2,9 +2,7 @@
 
 Open-source design editor. Opens `.fig` and `.pen` design files, includes built-in AI, and ships as a programmable toolkit with a headless Vue SDK for building custom editors.
 
-> **Status:** Active development. Not ready for production use.
->
-> **Note:** There is another open-source project with the same name — [OpenPencil by ZSeven-W](https://github.com/ZSeven-W/openpencil), focused on AI-native design-to-code workflows. This project focuses on Figma-compatible visual design with real-time collaboration.
+> **Status:** Active development. Usable today, with some rough edges as features evolve.
 
 **[Try it online →](https://app.openpencil.dev/demo)** · [Download](https://github.com/open-pencil/open-pencil/releases/latest) · [Documentation](https://openpencil.dev) · [llms.txt](https://openpencil.dev/llms.txt)
 
@@ -82,6 +80,14 @@ openpencil export design.fig -f jpg -s 2 -q 90        # JPG at 2x, quality 90
 openpencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
 openpencil export design.fig -f jsx --style tailwind   # Tailwind JSX
 openpencil convert design.pen output.fig               # Convert between document formats
+openpencil dom page.html --css styles.css -o page.fig  # HTML/CSS → editable .fig
+```
+
+DOM/CSS input flows through `@open-pencil/dom-css`, so HTML, authored CSS, and Tailwind utility CSS can become editable OpenPencil layers:
+
+```sh
+openpencil dom card.html --css card.css -o card.fig
+openpencil dom card.html --tailwind "flex flex-col gap-3 w-80 p-6 rounded-xl bg-white" -o card.fig
 ```
 
 ```html
@@ -111,6 +117,7 @@ openpencil analyze colors design.fig
 openpencil analyze typography design.fig
 openpencil analyze spacing design.fig
 openpencil analyze clusters design.fig
+openpencil analyze overlaps design.fig
 openpencil variables design.fig
 ```
 

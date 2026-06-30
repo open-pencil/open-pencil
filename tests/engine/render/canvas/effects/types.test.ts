@@ -2,10 +2,11 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
 import { renderEffects } from '#core/canvas/shadows'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
 
 import { createMockCanvas, createMockRenderer, mockCalls } from './helpers'
 

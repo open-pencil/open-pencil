@@ -7,16 +7,15 @@ import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
 
 export {
   buildFigKiwi,
-  decompressFigKiwiData,
   decompressFigKiwiDataAsync,
   FIG_KIWI_DEFAULT_VERSION,
   parseFigKiwiChunks
-} from '#core/kiwi/fig/container/kiwi'
+} from '@open-pencil/kiwi/fig/container'
 export { buildFontDigestMap } from './font/digests'
 
-import type { NodeChange, Paint, VariableConsumptionEntry } from '#core/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color, GUID, JsonObject, Matrix } from '#core/types'
+import type { NodeChange, Paint, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color, GUID, JsonObject, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { guidToString, stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
 import {
@@ -515,7 +514,8 @@ export function sceneNodeToKiwi(
   fontDigestMap?: Map<string, Uint8Array>,
   varIdToGuid?: Map<string, GUID>,
   glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>
+  blobIndexByHex?: Map<string, number>,
+  assignedGuidValues?: Set<string>
 ): KiwiNodeChange[] {
   // Build assetRef to guid mapping for converting colorVar references in raw paints
   const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
@@ -524,6 +524,7 @@ export function sceneNodeToKiwi(
     blobs,
     blobIndexByHex,
     nodeIdToGuid,
+    assignedGuidValues,
     fontDigestMap,
     glyphBlobMap,
     varIdToGuid,

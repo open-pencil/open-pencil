@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from 'reka-ui'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'

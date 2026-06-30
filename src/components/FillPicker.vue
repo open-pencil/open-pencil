@@ -9,7 +9,7 @@ import ImageFillPicker from './ImageFillPicker.vue'
 import Tip from './ui/Tip.vue'
 import { usePopoverUI } from './ui/popover'
 
-import type { Fill } from '@open-pencil/core/scene-graph'
+import type { Fill } from '@open-pencil/scene-graph'
 import type { OkHCLControls } from '@open-pencil/vue'
 
 const TAB_BASE =

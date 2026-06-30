@@ -19,7 +19,7 @@ import Tip from '@/components/ui/Tip.vue'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { Color, SceneNode, Stroke } from '@open-pencil/core/scene-graph'
+import type { Color, SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 const strokeCtx = useStrokeControls()
 const strokeVarCtx = useColorVariableBinding('strokes')

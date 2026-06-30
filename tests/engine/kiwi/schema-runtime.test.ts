@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import figSchema from '#core/kiwi/fig/codec/schema'
-import { expectEnumValue, expectFieldNumber, validateSchema } from '#core/kiwi/schema-runtime'
+import { figmaSchema as figSchema } from '@open-pencil/kiwi/fig'
+import {
+  expectEnumValue,
+  expectFieldNumber,
+  validateSchema
+} from '@open-pencil/kiwi/schema-runtime'
 
 describe('Kiwi schema runtime', () => {
   test('validates the static Figma schema', () => {

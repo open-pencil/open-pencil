@@ -12,7 +12,7 @@ import {
   useI18n
 } from '@open-pencil/vue'
 
-import type { Fill } from '@open-pencil/core/scene-graph'
+import type { Fill } from '@open-pencil/scene-graph'
 
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()

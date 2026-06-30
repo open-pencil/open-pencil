@@ -1,9 +1,10 @@
 import type { Canvas, Image as CKImage, Surface } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
-import { computeDescendantVisualBounds } from '#core/geometry'
-import type { SceneGraph } from '#core/scene-graph'
 
 import type { RenderLayer } from './pipeline'
 

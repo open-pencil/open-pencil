@@ -1,9 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import type { OverrideContext } from '#core/kiwi/fig/instance-overrides'
 import { buildDsdLayoutUpdates } from '#core/kiwi/fig/instance-overrides/derived-symbol-data/layout'
 import { propagateDsdChanges } from '#core/kiwi/fig/instance-overrides/derived-symbol-data/propagate'
-import { SceneGraph } from '#core/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id

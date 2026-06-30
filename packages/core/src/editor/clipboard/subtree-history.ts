@@ -1,11 +1,11 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 export function collectSubtrees(graph: SceneGraph, rootIds: string[]): SceneNode[] {
   const result: SceneNode[] = []
   function walk(id: string) {
     const node = graph.getNode(id)
     if (!node) return
-    result.push({ ...node })
+    result.push(structuredClone(node))
     for (const childId of node.childIds) walk(childId)
   }
   for (const id of rootIds) walk(id)

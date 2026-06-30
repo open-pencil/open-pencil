@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { guidToString } from '@open-pencil/core/kiwi/fig/node-change/convert'
-import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
+import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
 function decodeExport(bytes: Uint8Array) {
   return parseFigBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
@@ -335,6 +335,26 @@ describe('fig roundtrip source metadata', () => {
     })
 
     expect(rect.source.fig.rawNodeFields.effects).toBeUndefined()
+  })
+
+  test('clears raw geometry payloads when independent stroke weights are edited', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const rect = graph.createNode('RECTANGLE', page.id, { name: 'Independent stroke metadata' })
+    rect.source.format = 'fig'
+    rect.source.id = '4:507'
+    rect.source.fig.rawNodeFields.fillGeometry = [{ windingRule: 'NONZERO', commands: [] }]
+    rect.source.fig.rawNodeFields.strokeGeometry = [{ windingRule: 'NONZERO', commands: [] }]
+
+    graph.updateNode(rect.id, {
+      independentStrokeWeights: true,
+      borderTopWeight: 2,
+      borderRightWeight: 4,
+      borderBottomWeight: 6,
+      borderLeftWeight: 8
+    })
+
+    expect(rect.source.fig.rawNodeFields).toEqual({})
   })
 
   test('clears raw font variation payloads when normalized axes are edited', async () => {

@@ -14,7 +14,7 @@ import { createFillOkhclAdapter } from '@/components/properties/fill-okhcl'
 import { useIconButtonUI } from '@/components/ui/icon-button'
 import { useSectionUI } from '@/components/ui/section'
 
-import type { Fill, SceneNode } from '@open-pencil/core/scene-graph'
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()

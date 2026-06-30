@@ -1,5 +1,5 @@
 import { randomHex } from '@open-pencil/core/random'
-import type { VariableCollection } from '@open-pencil/core/scene-graph'
+import type { VariableCollection } from '@open-pencil/scene-graph'
 
 import { useVariableBinding } from '#vue/controls/variable-binding/use'
 

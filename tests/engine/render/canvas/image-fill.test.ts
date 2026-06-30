@@ -1,8 +1,9 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+
 import { makeImageFillLocalMatrix, patternTileLayout } from '#core/canvas/fills'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import type { Fill, SceneNode } from '#core/scene-graph'
 
 function createRenderer() {
   return {

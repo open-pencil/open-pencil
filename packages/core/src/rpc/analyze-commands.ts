@@ -1,11 +1,19 @@
 import { orderBy, sortBy } from 'es-toolkit/array'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { colorToHex, colorDistance as colorDist } from '#core/color'
 import type { ColorUsageEntry } from '#core/color/analysis'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
+import {
+  computeOverlaps,
+  type AnalyzeOverlapsArgs,
+  type AnalyzeOverlapsResult
+} from '#core/tools/analyze/overlaps'
 
 import type { RpcCommand } from './types'
+
+export type { AnalyzeOverlapsArgs, AnalyzeOverlapsResult } from '#core/tools/analyze/overlaps'
 
 // ── analyze colors ──
 
@@ -296,4 +304,11 @@ export const analyzeClustersCommand: RpcCommand<AnalyzeClustersArgs, AnalyzeClus
 
     return { clusters, totalNodes }
   }
+}
+
+// ── analyze overlaps ──
+
+export const analyzeOverlapsCommand: RpcCommand<AnalyzeOverlapsArgs, AnalyzeOverlapsResult> = {
+  name: 'analyze_overlaps',
+  execute: (graph, args) => computeOverlaps(graph, args)
 }
