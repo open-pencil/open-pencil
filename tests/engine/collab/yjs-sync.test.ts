@@ -11,9 +11,7 @@ import { SceneGraph } from '#core/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
-// Mirrors src/app/collab/yjs-sync.ts applyYnodeToGraph: decode the synced props,
-// then update in place if the node already exists or reconstruct it under its own
-// id. Kept in lockstep with the real apply so the test exercises the same path.
+// Test copy of the private apply path.
 function applyYnodeToGraph(peer: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
   const props = yNodeToProps(ynode)
   if (peer.getNode(nodeId)) {
@@ -22,11 +20,11 @@ function applyYnodeToGraph(peer: SceneGraph, nodeId: string, ynode: Y.Map<unknow
   }
   const type = props.type as SceneNode['type'] | undefined
   if (!type) return
-  const parentId = typeof props.parentId === 'string' ? props.parentId : ''
+  const parentId = typeof props.parentId === 'string' ? props.parentId : null
   peer.createNodeWithId(nodeId, type, parentId, props as Partial<SceneNode>)
+  if (parentId === null) peer.rootId = nodeId
 }
 
-// Seed every host node into a Yjs nodes map, exactly like syncAllNodesToYjs.
 function seedHostIntoYjs(host: SceneGraph): Y.Map<Y.Map<unknown>> {
   const doc = new Y.Doc()
   const ynodes = doc.getMap<Y.Map<unknown>>('nodes')
@@ -45,6 +43,20 @@ function firstPage(graph: SceneGraph): SceneNode {
 }
 
 describe('collab yjs-sync', () => {
+  test('createNodeWithId forces the requested id even if synced props contain a stale id', () => {
+    const graph = new SceneGraph()
+    const page = firstPage(graph)
+    const node = graph.createNodeWithId('remote-id', 'RECTANGLE', page.id, {
+      id: 'stale-local-id',
+      width: 50
+    })
+
+    expect(node.id).toBe('remote-id')
+    expect(graph.getNode('remote-id')).toBe(node)
+    expect(graph.getNode('stale-local-id')).toBeUndefined()
+    expect(page.childIds).toContain('remote-id')
+  })
+
   test('binary geometry fields round-trip as Uint8Array, not strings', () => {
     const host = new SceneGraph()
     const page = firstPage(host)
@@ -60,14 +72,15 @@ describe('collab yjs-sync', () => {
     const ynode = new Y.Map<unknown>()
     doc.getMap<Y.Map<unknown>>('nodes').set(ellipse.id, ynode)
     syncNodePropsToYMap(ellipse, ynode)
+    blob[0] = 99
     const props = yNodeToProps(ynode)
 
+    expect(typeof ynode.get('fillGeometry')).not.toBe('string')
     const decoded = props.fillGeometry as GeometryPath[]
     expect(Array.isArray(decoded)).toBe(true)
     const commandsBlob = expectDefined(decoded[0], 'decoded geometry path').commandsBlob
     expect(commandsBlob).toBeInstanceOf(Uint8Array)
     expect(Array.from(commandsBlob)).toEqual([1, 2, 3, 250])
-    // strokeGeometry defaults to [] — must decode to an array, never the string "[]".
     expect(Array.isArray(props.strokeGeometry)).toBe(true)
   })
 
@@ -78,8 +91,6 @@ describe('collab yjs-sync', () => {
 
     const ynodes = seedHostIntoYjs(host)
 
-    // Apply in REVERSE document order (ellipse before its page/root) to prove the
-    // apply no longer depends on parents arriving first.
     const peer = new SceneGraph()
     const ids = [...ynodes.keys()].reverse()
     for (const id of ids) applyYnodeToGraph(peer, id, expectDefined(ynodes.get(id), `ynode ${id}`))
@@ -90,7 +101,8 @@ describe('collab yjs-sync', () => {
 
     const peerPage = getNodeOrThrow(peer, hostPage.id)
     const refs = peerPage.childIds.filter((c) => c === ellipse.id)
-    expect(refs).toHaveLength(1) // exactly one reference — no duplicate-layer corruption
+    expect(refs).toHaveLength(1)
+    expect(peer.getPages().map((page) => page.id)).toContain(hostPage.id)
   })
 
   test('a live-created node links into its parent even when the parent childIds was not re-synced', () => {
@@ -98,8 +110,6 @@ describe('collab yjs-sync', () => {
     const hostPage = firstPage(host)
     const rect = host.createNode('RECTANGLE', hostPage.id, { width: 50, height: 50 })
 
-    // Drawing a shape after sharing only syncs the new node — createNode never
-    // re-syncs the parent — so the parent arrives WITHOUT the child in its childIds.
     const doc = new Y.Doc()
     const ynodes = doc.getMap<Y.Map<unknown>>('nodes')
     doc.transact(() => {
@@ -117,7 +127,7 @@ describe('collab yjs-sync', () => {
     applyYnodeToGraph(peer, rect.id, expectDefined(ynodes.get(rect.id), 'rect ynode'))
 
     const peerPage = getNodeOrThrow(peer, hostPage.id)
-    expect(peerPage.childIds).toEqual([rect.id]) // linked exactly once
+    expect(peerPage.childIds).toEqual([rect.id])
     expect(getNodeOrThrow(peer, rect.id).type).toBe('RECTANGLE')
   })
 
@@ -133,8 +143,6 @@ describe('collab yjs-sync', () => {
     }
 
     const peerEllipse = getNodeOrThrow(peer, ellipse.id)
-    // Pre-fix this threw `Cannot read properties of undefined (reading 'buffer')`
-    // because fillGeometry arrived as the string "[]".
     expect(() =>
       nodeVisualBounds(peerEllipse, (id) => {
         const n = peer.getNode(id)

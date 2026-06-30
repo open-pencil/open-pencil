@@ -264,7 +264,7 @@ export class SceneGraph {
     return id
   }
 
-  private registerNode(node: SceneNode, parentId: string): SceneNode {
+  private registerNode(node: SceneNode, parentId: string | null): SceneNode {
     node.parentId = parentId
     this.nodes.set(node.id, node)
     if (node.type === 'INSTANCE' && node.componentId) {
@@ -285,18 +285,16 @@ export class SceneGraph {
     return this.registerNode(node, parentId)
   }
 
-  // Reconstruct a node under a known id (collaboration sync). No fresh id (avoids
-  // the duplicate-childIds corruption of the old create-then-swap hack); links to
-  // its parent idempotently because a live-created remote node never re-syncs the
-  // parent's childIds, and the includes() guard prevents a duplicate when it does.
+  // Reconstruct a synced node under its remote id.
   createNodeWithId(
     id: string,
     type: NodeType,
-    parentId: string,
+    parentId: string | null,
     overrides: Partial<SceneNode> = {}
   ): SceneNode {
     const node = createDefaultNode(() => id, type, overrides)
-    const parent = this.nodes.get(parentId)
+    node.id = id
+    const parent = parentId ? this.nodes.get(parentId) : undefined
     if (parent && !parent.childIds.includes(id)) parent.childIds.push(id)
     return this.registerNode(node, parentId)
   }

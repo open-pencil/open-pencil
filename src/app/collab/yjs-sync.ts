@@ -33,47 +33,21 @@ type YjsGraphSyncOptions = {
   setSuppressYjsEvents: (value: boolean) => void
 }
 
-// Tagged form used to round-trip binary node fields (e.g. geometry `commandsBlob`)
-// through JSON, which has no native typed-array representation.
-interface U8Tagged {
-  __u8: number[]
+function logCollabSyncError(context: string, error: unknown) {
+  console.error(`[Collab] ${context}:`, error)
 }
 
-function isU8Tagged(val: unknown): val is U8Tagged {
-  return typeof val === 'object' && val !== null && Array.isArray((val as U8Tagged).__u8)
-}
-
-// Every node field is stored as a JSON string so the decoder can reconstruct it
-// without a per-field whitelist. The previous codec stringified objects on write
-// but only re-parsed a hand-maintained set of keys on read, so any object-valued
-// field outside that set (fillGeometry, strokeGeometry, arcData, …) arrived as a
-// raw string and crashed downstream consumers. Encoding/decoding symmetrically —
-// and preserving Uint8Array via the tag — fixes that class of bug for all fields.
-function encodeFieldValue(value: unknown): string {
-  return JSON.stringify(value, (_key, val) =>
-    val instanceof Uint8Array ? ({ __u8: Array.from(val) } satisfies U8Tagged) : val
-  )
-}
-
-function decodeFieldValue(encoded: unknown): unknown {
-  if (typeof encoded !== 'string') return encoded
-  try {
-    return JSON.parse(encoded, (_key, val) => (isU8Tagged(val) ? new Uint8Array(val.__u8) : val))
-  } catch {
-    return encoded
-  }
-}
-
+// Clone across the graph/Yjs boundary to avoid shared mutable nested data.
 export function syncNodePropsToYMap(node: SceneNode, ynode: Y.Map<unknown>) {
   for (const [key, value] of Object.entries(node)) {
-    ynode.set(key, encodeFieldValue(value))
+    ynode.set(key, structuredClone(value))
   }
 }
 
 export function yNodeToProps(ynode: Y.Map<unknown>): Record<string, unknown> {
   const props: Record<string, unknown> = {}
   for (const [key, value] of ynode.entries()) {
-    props[key] = decodeFieldValue(value)
+    props[key] = structuredClone(value)
   }
   return props
 }
@@ -102,10 +76,15 @@ export function bindCollabGraphEvents({
       const ynodes = getYnodes()
       if (!getSuppressGraphSync() && ydoc && ynodes) {
         setSuppressYjsEvents(true)
-        ydoc.transact(() => {
-          ynodes.delete(id)
-        })
-        setSuppressYjsEvents(false)
+        try {
+          ydoc.transact(() => {
+            ynodes.delete(id)
+          })
+        } catch (error) {
+          logCollabSyncError('Failed to delete synced node', error)
+        } finally {
+          setSuppressYjsEvents(false)
+        }
       }
     })
   ]
@@ -127,23 +106,29 @@ export function registerYjsObservers({
     setSuppressGraphSync(true)
     try {
       applyYjsToGraph(events)
+      store.requestRender()
+    } catch (error) {
+      logCollabSyncError('Failed to apply remote graph changes', error)
     } finally {
       setSuppressGraphSync(false)
     }
-    store.requestRender()
   })
 
   yimages.observe((event) => {
     if (getSuppressYjsEvents()) return
-    for (const [key, change] of event.changes.keys) {
-      if (change.action === 'add' || change.action === 'update') {
-        const data = yimages.get(key)
-        if (data) store.graph.images.set(key, new Uint8Array(data))
-      } else {
-        store.graph.images.delete(key)
+    try {
+      for (const [key, change] of event.changes.keys) {
+        if (change.action === 'add' || change.action === 'update') {
+          const data = yimages.get(key)
+          if (data) store.graph.images.set(key, new Uint8Array(data))
+        } else {
+          store.graph.images.delete(key)
+        }
       }
+      store.requestRender()
+    } catch (error) {
+      logCollabSyncError('Failed to apply remote image changes', error)
     }
-    store.requestRender()
   })
 }
 
@@ -164,24 +149,29 @@ export function createYjsGraphSync({
 
     const localYimages = getYimages()
     setSuppressYjsEvents(true)
-    ydoc.transact(() => {
-      let ynode = ynodes.get(nodeId)
-      if (!ynode) {
-        ynode = new Y.Map()
-        ynodes.set(nodeId, ynode)
-      }
-      syncNodePropsToYMap(node, ynode)
+    try {
+      ydoc.transact(() => {
+        let ynode = ynodes.get(nodeId)
+        if (!ynode) {
+          ynode = new Y.Map()
+          ynodes.set(nodeId, ynode)
+        }
+        syncNodePropsToYMap(node, ynode)
 
-      if (localYimages) {
-        for (const fill of node.fills) {
-          if (fill.imageHash && !localYimages.has(fill.imageHash)) {
-            const data = store.graph.images.get(fill.imageHash)
-            if (data) localYimages.set(fill.imageHash, data)
+        if (localYimages) {
+          for (const fill of node.fills) {
+            if (fill.imageHash && !localYimages.has(fill.imageHash)) {
+              const data = store.graph.images.get(fill.imageHash)
+              if (data) localYimages.set(fill.imageHash, data)
+            }
           }
         }
-      }
-    })
-    setSuppressYjsEvents(false)
+      })
+    } catch (error) {
+      logCollabSyncError(`Failed to sync node ${nodeId}`, error)
+    } finally {
+      setSuppressYjsEvents(false)
+    }
   }
 
   function syncAllNodesToYjs() {
@@ -191,26 +181,31 @@ export function createYjsGraphSync({
     if (!ydoc || !ynodes) return
     const localYimages = getYimages()
     setSuppressYjsEvents(true)
-    ydoc.transact(() => {
-      for (const node of store.graph.getAllNodes()) {
-        let ynode = ynodes.get(node.id)
-        if (!ynode) {
-          ynode = new Y.Map()
-          ynodes.set(node.id, ynode)
-        }
-        syncNodePropsToYMap(node, ynode)
-      }
-    })
-    if (localYimages) {
+    try {
       ydoc.transact(() => {
-        for (const [hash, data] of store.graph.images) {
-          if (!localYimages.has(hash)) {
-            localYimages.set(hash, data)
+        for (const node of store.graph.getAllNodes()) {
+          let ynode = ynodes.get(node.id)
+          if (!ynode) {
+            ynode = new Y.Map()
+            ynodes.set(node.id, ynode)
           }
+          syncNodePropsToYMap(node, ynode)
         }
       })
+      if (localYimages) {
+        ydoc.transact(() => {
+          for (const [hash, data] of store.graph.images) {
+            if (!localYimages.has(hash)) {
+              localYimages.set(hash, data)
+            }
+          }
+        })
+      }
+    } catch (error) {
+      logCollabSyncError('Failed to sync document', error)
+    } finally {
+      setSuppressYjsEvents(false)
     }
-    setSuppressYjsEvents(false)
   }
 
   function applyYjsToGraph(events: Y.YEvent<Y.Map<unknown>>[]) {
@@ -250,19 +245,28 @@ export function createYjsGraphSync({
     const store = getStore()
     const existing = store.graph.getNode(nodeId)
     const props = yNodeToProps(ynode)
+    const parentId = typeof props.parentId === 'string' ? props.parentId : null
 
     if (existing) {
       store.graph.updateNode(nodeId, props as Partial<SceneNode>)
+      if (parentId === null) store.graph.rootId = nodeId
+      ensureCurrentPageExists(store)
       return
     }
 
     const type = props.type as SceneNode['type'] | undefined
     if (!type) return
-    // Create under the node's own id regardless of whether the parent exists yet:
-    // parentage is carried by the synced parentId + the parent's synced childIds,
-    // so order doesn't matter and nothing pollutes the parent's child list.
-    const parentId = typeof props.parentId === 'string' ? props.parentId : ''
+    // Parent childIds may arrive before or after the child node.
     store.graph.createNodeWithId(nodeId, type, parentId, props as Partial<SceneNode>)
+    if (parentId === null) store.graph.rootId = nodeId
+    ensureCurrentPageExists(store)
+  }
+
+  function ensureCurrentPageExists(store: EditorStore) {
+    const pages = store.graph.getPages()
+    if (pages.some((page) => page.id === store.state.currentPageId)) return
+    if (pages.length === 0) return
+    void store.switchPage(pages[0].id)
   }
 
   return { syncNodeToYjs, syncAllNodesToYjs, applyYjsToGraph }
