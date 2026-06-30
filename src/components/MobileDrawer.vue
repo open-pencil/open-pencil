@@ -8,7 +8,7 @@ import { computed, ref } from 'vue'
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
 import DesignPanel from './DesignPanel.vue'
-import LayerTree from './LayerTree.vue'
+import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 import {
   DRAWER_SPRING_DAMPING,

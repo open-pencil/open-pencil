@@ -134,7 +134,7 @@ export {
   GradientEditorStop
 } from '#vue/primitives/GradientEditor'
 export { LayerTreeRoot, LayerTreeItem, useLayerTree } from '#vue/primitives/LayerTree'
-export type { LayerTreeContext, LayerNode } from '#vue/primitives/LayerTree'
+export type { LayerDragInstruction, LayerTreeContext, LayerNode } from '#vue/primitives/LayerTree'
 export { LayoutControlsRoot, useLayoutControlsContext } from '#vue/primitives/LayoutControls'
 export type { LayoutControlsContext } from '#vue/primitives/LayoutControls'
 export { AppearanceControlsRoot } from '#vue/primitives/AppearanceControls'

@@ -6,7 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import AppMenu from './AppMenu.vue'
 import AssetsPanel from './AssetsPanel.vue'
-import LayerTree from './LayerTree.vue'
+import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 
 const { menu, panels } = useI18n()
