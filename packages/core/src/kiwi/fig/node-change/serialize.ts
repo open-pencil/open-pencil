@@ -7,7 +7,6 @@ import { encodeVectorNetworkBlob, buildStyleOverrideTable } from '#core/vector'
 
 export {
   buildFigKiwi,
-  decompressFigKiwiData,
   decompressFigKiwiDataAsync,
   FIG_KIWI_DEFAULT_VERSION,
   parseFigKiwiChunks
@@ -515,7 +514,8 @@ export function sceneNodeToKiwi(
   fontDigestMap?: Map<string, Uint8Array>,
   varIdToGuid?: Map<string, GUID>,
   glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>
+  blobIndexByHex?: Map<string, number>,
+  assignedGuidValues?: Set<string>
 ): KiwiNodeChange[] {
   // Build assetRef to guid mapping for converting colorVar references in raw paints
   const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined
@@ -524,6 +524,7 @@ export function sceneNodeToKiwi(
     blobs,
     blobIndexByHex,
     nodeIdToGuid,
+    assignedGuidValues,
     fontDigestMap,
     glyphBlobMap,
     varIdToGuid,

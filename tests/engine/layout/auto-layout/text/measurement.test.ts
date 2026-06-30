@@ -6,6 +6,7 @@ import { createEditorStore } from '@/app/editor/session'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, loadFixtureGraph, pageId, rect } from '#tests/helpers/layout'
+import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('text measurement', () => {
   test('derived text layout preserves imported auto-layout text bounds during measurement', () => {
@@ -85,80 +86,91 @@ describe('text measurement', () => {
     expect(graph.getNode(tabs.id)?.height).toBe(62)
   })
 
-  test('opening imported fig keeps stored text bounds before CanvasKit measurement', async () => {
-    const graph = await loadFixtureGraph('gold-preview.fig')
-    const store = createEditorStore(graph)
-    const title = [...store.graph.getAllNodes()].find(
-      (node) => node.type === 'TEXT' && node.text === "World's largest"
-    )
-    const subtitle = [...store.graph.getAllNodes()].find(
-      (node) =>
-        node.type === 'TEXT' && node.text === 'Preline UI Figma - crafted with Tailwind CSS styles'
-    )
-    const description = [...store.graph.getAllNodes()].find(
-      (node) =>
-        node.type === 'TEXT' &&
-        node.text.startsWith('Preline UI Figma is the largest free design system for Figma')
-    )
+  test(
+    'opening imported fig keeps stored text bounds before CanvasKit measurement',
+    { timeout: HEAVY_TEST_TIMEOUT_MS },
+    async () => {
+      const graph = await loadFixtureGraph('gold-preview.fig')
+      const store = createEditorStore(graph)
+      const title = [...store.graph.getAllNodes()].find(
+        (node) => node.type === 'TEXT' && node.text === "World's largest"
+      )
+      const subtitle = [...store.graph.getAllNodes()].find(
+        (node) =>
+          node.type === 'TEXT' &&
+          node.text === 'Preline UI Figma - crafted with Tailwind CSS styles'
+      )
+      const description = [...store.graph.getAllNodes()].find(
+        (node) =>
+          node.type === 'TEXT' &&
+          node.text.startsWith('Preline UI Figma is the largest free design system for Figma')
+      )
 
-    if (!title || !subtitle || !description) {
-      throw new Error('Expected imported text nodes in gold-preview.fig')
+      if (!title || !subtitle || !description) {
+        throw new Error('Expected imported text nodes in gold-preview.fig')
+      }
+
+      expect(title.width).toBe(444)
+      expect(title.height).toBe(73)
+      expect(subtitle.width).toBe(439)
+      expect(subtitle.height).toBe(22)
+      expect(description.width).toBe(878)
+      expect(description.height).toBe(60)
+
+      await store.switchPage(store.graph.getPages()[0].id)
+
+      expect(store.graph.getNode(title.id)?.width).toBe(444)
+      expect(store.graph.getNode(title.id)?.height).toBe(73)
+      expect(store.graph.getNode(subtitle.id)?.width).toBe(439)
+      expect(store.graph.getNode(subtitle.id)?.height).toBe(22)
+      expect(store.graph.getNode(description.id)?.width).toBe(878)
+      expect(store.graph.getNode(description.id)?.height).toBe(60)
     }
+  )
 
-    expect(title.width).toBe(444)
-    expect(title.height).toBe(73)
-    expect(subtitle.width).toBe(439)
-    expect(subtitle.height).toBe(22)
-    expect(description.width).toBe(878)
-    expect(description.height).toBe(60)
+  test(
+    'imported nested instance layout keeps hidden sibling offsets stable',
+    { timeout: HEAVY_TEST_TIMEOUT_MS },
+    async () => {
+      const graph = await loadFixtureGraph('gold-preview.fig')
+      const previewRoot = graph.getChildren(graph.getPages()[0].id)[0]
+      const wysiwygEditor = graph
+        .getChildren(previewRoot.id)
+        .find((node) => node.name === '_WYSIWYG-editor')
+      const toolbarVariant = wysiwygEditor
+        ? graph
+            .getChildren(wysiwygEditor.id)
+            .find((node) => node.name === '_on-text-WYSIWYG-toolbar')
+        : undefined
+      const toolbarRow = toolbarVariant
+        ? graph.getChildren(toolbarVariant.id).find((node) => node.name === 'Toolbar')
+        : undefined
+      const hiddenInput = toolbarRow
+        ? graph.getChildren(toolbarRow.id).find((node) => node.name === 'Input')
+        : undefined
+      const visibleToolbar = toolbarRow
+        ? graph
+            .getChildren(toolbarRow.id)
+            .find((node) => node.name === 'Toolbar' && node.id !== toolbarRow.id)
+        : undefined
 
-    await store.switchPage(store.graph.getPages()[0].id)
+      if (!toolbarRow || !hiddenInput || !visibleToolbar) {
+        throw new Error('Expected imported WYSIWYG toolbar nodes in gold-preview.fig')
+      }
 
-    expect(store.graph.getNode(title.id)?.width).toBe(444)
-    expect(store.graph.getNode(title.id)?.height).toBe(73)
-    expect(store.graph.getNode(subtitle.id)?.width).toBe(439)
-    expect(store.graph.getNode(subtitle.id)?.height).toBe(22)
-    expect(store.graph.getNode(description.id)?.width).toBe(878)
-    expect(store.graph.getNode(description.id)?.height).toBe(60)
-  })
+      expect(hiddenInput.visible).toBe(false)
+      // x=8 is the Figma-exported fixture value (verified via fixture inspection 2026-05-03).
+      // The old assertion of x=298 was incorrect — it was a post-layout computed value from
+      // an older layout implementation. Post-layout, left-aligned HUG content retains x=8.
+      expect(visibleToolbar.x).toBe(8)
 
-  test('imported nested instance layout keeps hidden sibling offsets stable', async () => {
-    const graph = await loadFixtureGraph('gold-preview.fig')
-    const previewRoot = graph.getChildren(graph.getPages()[0].id)[0]
-    const wysiwygEditor = graph
-      .getChildren(previewRoot.id)
-      .find((node) => node.name === '_WYSIWYG-editor')
-    const toolbarVariant = wysiwygEditor
-      ? graph.getChildren(wysiwygEditor.id).find((node) => node.name === '_on-text-WYSIWYG-toolbar')
-      : undefined
-    const toolbarRow = toolbarVariant
-      ? graph.getChildren(toolbarVariant.id).find((node) => node.name === 'Toolbar')
-      : undefined
-    const hiddenInput = toolbarRow
-      ? graph.getChildren(toolbarRow.id).find((node) => node.name === 'Input')
-      : undefined
-    const visibleToolbar = toolbarRow
-      ? graph
-          .getChildren(toolbarRow.id)
-          .find((node) => node.name === 'Toolbar' && node.id !== toolbarRow.id)
-      : undefined
+      setTextMeasurer(null)
+      computeAllLayouts(graph, graph.getPages()[0].id)
 
-    if (!toolbarRow || !hiddenInput || !visibleToolbar) {
-      throw new Error('Expected imported WYSIWYG toolbar nodes in gold-preview.fig')
+      expect(graph.getNode(visibleToolbar.id)?.x).toBe(8)
+      expect(graph.getNode(visibleToolbar.id)?.y).toBe(8)
     }
-
-    expect(hiddenInput.visible).toBe(false)
-    // x=8 is the Figma-exported fixture value (verified via fixture inspection 2026-05-03).
-    // The old assertion of x=298 was incorrect — it was a post-layout computed value from
-    // an older layout implementation. Post-layout, left-aligned HUG content retains x=8.
-    expect(visibleToolbar.x).toBe(8)
-
-    setTextMeasurer(null)
-    computeAllLayouts(graph, graph.getPages()[0].id)
-
-    expect(graph.getNode(visibleToolbar.id)?.x).toBe(8)
-    expect(graph.getNode(visibleToolbar.id)?.y).toBe(8)
-  })
+  )
 
   test('WIDTH_AND_HEIGHT text uses measured width in centered layout', () => {
     const graph = new SceneGraph()

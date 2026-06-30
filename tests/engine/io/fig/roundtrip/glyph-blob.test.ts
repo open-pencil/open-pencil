@@ -7,6 +7,8 @@ import { fontManager } from '@open-pencil/core/text'
 
 import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 
+import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
+
 const FIXTURES = resolve(import.meta.dir, '../../../../fixtures')
 const INTER_ASSETS = resolve(import.meta.dir, '../../../../../packages/core/assets')
 
@@ -44,27 +46,34 @@ function loadInterFonts() {
 }
 
 describe('roundtrip: text glyph blobs', () => {
-  beforeAll(async () => {
-    await initCodec()
-  })
+  beforeAll(
+    async () => {
+      await initCodec()
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
+  )
 
-  test('preserves imported Figma glyph blobs for fallback rendering', async () => {
-    const fixtureBytes = new Uint8Array(readFileSync(resolve(FIXTURES, 'gold-preview.fig')))
-    const input = countGlyphBlobs(fixtureBytes)
+  test(
+    'preserves imported Figma glyph blobs for fallback rendering',
+    { timeout: HEAVY_TEST_TIMEOUT_MS },
+    async () => {
+      const fixtureBytes = new Uint8Array(readFileSync(resolve(FIXTURES, 'gold-preview.fig')))
+      const input = countGlyphBlobs(fixtureBytes)
 
-    const graph = await parseFigFile(
-      fixtureBytes.buffer.slice(
-        fixtureBytes.byteOffset,
-        fixtureBytes.byteOffset + fixtureBytes.byteLength
+      const graph = await parseFigFile(
+        fixtureBytes.buffer.slice(
+          fixtureBytes.byteOffset,
+          fixtureBytes.byteOffset + fixtureBytes.byteLength
+        )
       )
-    )
-    const exported = await exportFigFile(graph)
-    const output = countGlyphBlobs(exported)
+      const exported = await exportFigFile(graph)
+      const output = countGlyphBlobs(exported)
 
-    expect(input.glyphsWithBlob).toBeGreaterThan(0)
-    expect(output.glyphsWithBlob).toBe(input.glyphsWithBlob)
-    expect(output.uniqueGlyphBlobs).toBeLessThanOrEqual(input.uniqueGlyphBlobs)
-  })
+      expect(input.glyphsWithBlob).toBeGreaterThan(0)
+      expect(output.glyphsWithBlob).toBe(input.glyphsWithBlob)
+      expect(output.uniqueGlyphBlobs).toBeLessThanOrEqual(input.uniqueGlyphBlobs)
+    }
+  )
 
   test('deduplicates generated glyph blobs across repeated text', async () => {
     loadInterFonts()

@@ -230,13 +230,13 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.wrapInAutoLayout'
       },
       { type: 'separator' },
-      { id: 'align-left', label: 'Align Left', shortcut: 'ALT+A' },
-      { id: 'align-center', label: 'Align Center', shortcut: 'ALT+H' },
-      { id: 'align-right', label: 'Align Right', shortcut: 'ALT+D' },
+      { id: 'arrange.align-left', label: 'Align Left', shortcut: 'ALT+A' },
+      { id: 'arrange.align-center', label: 'Align Center', shortcut: 'ALT+H' },
+      { id: 'arrange.align-right', label: 'Align Right', shortcut: 'ALT+D' },
       { type: 'separator' },
-      { id: 'align-top', label: 'Align Top', shortcut: 'ALT+W' },
-      { id: 'align-middle', label: 'Align Middle', shortcut: 'ALT+V' },
-      { id: 'align-bottom', label: 'Align Bottom', shortcut: 'ALT+S' }
+      { id: 'arrange.align-top', label: 'Align Top', shortcut: 'ALT+W' },
+      { id: 'arrange.align-middle', label: 'Align Middle', shortcut: 'ALT+V' },
+      { id: 'arrange.align-bottom', label: 'Align Bottom', shortcut: 'ALT+S' }
     ]
   }
 ] satisfies AppMenuGroupSchema[]

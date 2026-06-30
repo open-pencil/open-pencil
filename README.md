@@ -2,9 +2,7 @@
 
 Open-source design editor. Opens `.fig` and `.pen` design files, includes built-in AI, and ships as a programmable toolkit with a headless Vue SDK for building custom editors.
 
-> **Status:** Active development. Not ready for production use.
->
-> **Note:** There is another open-source project with the same name — [OpenPencil by ZSeven-W](https://github.com/ZSeven-W/openpencil), focused on AI-native design-to-code workflows. This project focuses on Figma-compatible visual design with real-time collaboration.
+> **Status:** Active development. Usable today, with some rough edges as features evolve.
 
 **[Try it online →](https://app.openpencil.dev/demo)** · [Download](https://github.com/open-pencil/open-pencil/releases/latest) · [Documentation](https://openpencil.dev) · [llms.txt](https://openpencil.dev/llms.txt)
 
@@ -111,6 +109,7 @@ openpencil analyze colors design.fig
 openpencil analyze typography design.fig
 openpencil analyze spacing design.fig
 openpencil analyze clusters design.fig
+openpencil analyze overlaps design.fig
 openpencil variables design.fig
 ```
 

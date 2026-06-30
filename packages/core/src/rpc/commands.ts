@@ -3,6 +3,7 @@ import type { SceneGraph } from '#core/scene-graph'
 import {
   analyzeClustersCommand,
   analyzeColorsCommand,
+  analyzeOverlapsCommand,
   analyzeSpacingCommand,
   analyzeTypographyCommand
 } from './analyze-commands'
@@ -33,7 +34,8 @@ export const ALL_RPC_COMMANDS = [
   analyzeColorsCommand,
   analyzeTypographyCommand,
   analyzeSpacingCommand,
-  analyzeClustersCommand
+  analyzeClustersCommand,
+  analyzeOverlapsCommand
 ] as RpcCommand[]
 
 export function executeRpcCommand(graph: SceneGraph, name: string, args: unknown): unknown {

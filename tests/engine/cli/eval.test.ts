@@ -3,8 +3,10 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { cliSourcePath, repoPath } from '#tests/helpers/paths'
+import { cliSourcePath, repoPath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
+
+requireBuiltWorkspacePackages()
 
 setDefaultTimeout(30_000)
 

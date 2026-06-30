@@ -29,7 +29,9 @@ export function selectedTextNode(): SceneNode | undefined {
 
 export function toggleSelectedTextBold(): void {
   const node = selectedTextNode()
-  updateSelectedText({ fontWeight: node && node.fontWeight >= 700 ? 400 : 700 })
+  updateSelectedText({
+    fontWeight: node && node.fontWeight >= 700 ? 400 : 700
+  })
 }
 
 export function toggleSelectedTextItalic(): void {
@@ -59,11 +61,11 @@ export function createSharedEditorMenuActions(
     'text.bold': toggleSelectedTextBold,
     'text.italic': toggleSelectedTextItalic,
     'text.underline': toggleSelectedTextUnderline,
-    'align-left': () => alignSelected('horizontal', 'min'),
-    'align-center': () => alignSelected('horizontal', 'center'),
-    'align-right': () => alignSelected('horizontal', 'max'),
-    'align-top': () => alignSelected('vertical', 'min'),
-    'align-middle': () => alignSelected('vertical', 'center'),
-    'align-bottom': () => alignSelected('vertical', 'max')
+    'arrange.align-left': () => alignSelected('horizontal', 'min'),
+    'arrange.align-center': () => alignSelected('horizontal', 'center'),
+    'arrange.align-right': () => alignSelected('horizontal', 'max'),
+    'arrange.align-top': () => alignSelected('vertical', 'min'),
+    'arrange.align-middle': () => alignSelected('vertical', 'center'),
+    'arrange.align-bottom': () => alignSelected('vertical', 'max')
   }
 }
