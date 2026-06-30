@@ -1,4 +1,5 @@
 import { decodeTauriStderr } from '@/app/shell/ui'
+import { resolvePlatformCommand } from '@/app/tauri/command'
 
 export type TauriChild = {
   write(data: number[]): Promise<void>
@@ -21,7 +22,8 @@ export async function spawnAcpProcess({
   onUnexpectedClose
 }: AcpProcessOptions) {
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const command = Command.create(commandName, args, { encoding: 'raw' })
+  const resolved = resolvePlatformCommand(commandName, args)
+  const command = Command.create(resolved.command, resolved.args, { encoding: 'raw' })
 
   const stdoutChunks: Uint8Array[] = []
   let stdoutResolver: ((chunk: Uint8Array | null) => void) | null = null
