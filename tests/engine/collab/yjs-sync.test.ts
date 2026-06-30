@@ -2,7 +2,9 @@ import { describe, test, expect } from 'bun:test'
 
 import * as Y from 'yjs'
 
-import type { Fill, GeometryPath, SceneNode } from '@open-pencil/core'
+import type { Fill, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import {
   createYjsGraphSync,
@@ -11,9 +13,6 @@ import {
   yNodeToProps
 } from '@/app/collab/yjs-sync'
 import { createEditorStore } from '@/app/editor/session'
-
-import { nodeVisualBounds } from '#core/geometry'
-import { SceneGraph } from '#core/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { connectYDocs } from '#tests/helpers/yjs'

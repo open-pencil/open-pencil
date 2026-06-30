@@ -262,13 +262,11 @@ export class SceneGraph {
       height: node?.height ?? 0
     }
   }
-
   private generateNodeId(): string {
     let id = generateId()
     while (this.nodes.has(id)) id = generateId()
     return id
   }
-
   private registerNode(node: SceneNode, parentId: string | null): SceneNode {
     node.parentId = parentId
     this.nodes.set(node.id, node)
@@ -283,14 +281,11 @@ export class SceneGraph {
     this.emitter.emit('node:created', node)
     return node
   }
-
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
     const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
     this.nodes.get(parentId)?.childIds.push(node.id)
     return this.registerNode(node, parentId)
   }
-
-  // Reconstruct a synced node under its remote id.
   createNodeWithId(
     id: string,
     type: NodeType,
