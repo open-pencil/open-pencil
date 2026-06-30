@@ -305,7 +305,7 @@
     "updateInstallPrompt": "¿Descargar e instalar ahora? La app se reiniciará después de instalar la actualización.",
     "downloadingUpdate": "Descargando OpenPencil {version}",
     "updateInstalledTitle": "Actualización instalada",
-    "updateInstalled": "Se ha instalado la versión {version} de OpenPencil. Reiniciando ahora...",
+    "updateInstalled": "Se ha instalado la versión {version} de OpenPencil{size}. Reiniciando ahora...",
     "updateCheckFailed": "Error al encontrar actualizaciones: {error}",
     "updateUnavailable": "Las actualizaciones aún no están disponibles. Publica primero una versión firmada con latest.json.",
     "renameCollection": "Renombrar coleccion",

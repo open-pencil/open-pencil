@@ -305,7 +305,7 @@
     "updateInstallPrompt": "今すぐダウンロードしてインストールしますか？インストール後、アプリが再起動します。",
     "downloadingUpdate": "OpenPencil {version} をダウンロード中",
     "updateInstalledTitle": "アップデート完了",
-    "updateInstalled": "OpenPencil のバージョン {version} がインストールされました。再起動しています...",
+    "updateInstalled": "OpenPencil のバージョン {version} がインストールされました{size}。再起動しています...",
     "updateCheckFailed": "アップデートの確認中にエラーが発生しました: {error}",
     "updateUnavailable": "アップデートはまだ利用できません。まず、latest.json を含む署名付きバージョンを公開してください。",
     "renameCollection": "コレクションの名前を変更",
