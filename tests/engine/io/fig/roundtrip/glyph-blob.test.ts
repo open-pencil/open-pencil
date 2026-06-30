@@ -46,7 +46,7 @@ function loadInterFonts() {
 describe('roundtrip: text glyph blobs', () => {
   beforeAll(async () => {
     await initCodec()
-  })
+  }, 30_000)
 
   test('preserves imported Figma glyph blobs for fallback rendering', async () => {
     const fixtureBytes = new Uint8Array(readFileSync(resolve(FIXTURES, 'gold-preview.fig')))
@@ -64,7 +64,7 @@ describe('roundtrip: text glyph blobs', () => {
     expect(input.glyphsWithBlob).toBeGreaterThan(0)
     expect(output.glyphsWithBlob).toBe(input.glyphsWithBlob)
     expect(output.uniqueGlyphBlobs).toBeLessThanOrEqual(input.uniqueGlyphBlobs)
-  })
+  }, 30_000)
 
   test('deduplicates generated glyph blobs across repeated text', async () => {
     loadInterFonts()

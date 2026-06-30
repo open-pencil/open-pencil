@@ -41,6 +41,9 @@ interface SceneNodeToKiwiContext {
   blobs: Uint8Array[]
   blobIndexByHex?: Map<string, number>
   nodeIdToGuid?: Map<string, GUID>
+  /** Reverse index of assigned GUID values ("sessionID:localID") for O(1)
+   *  collision detection. Populated alongside every nodeIdToGuid.set() call. */
+  assignedGuidValues?: Set<string>
   fontDigestMap?: Map<string, Uint8Array>
   glyphBlobMap?: Map<string, number>
   varIdToGuid?: Map<string, GUID>
@@ -287,13 +290,28 @@ function getOrCreateNodeGuid(
   nodeId: string,
   localIdCounter: { value: number }
 ): GUID | undefined {
-  if (!context.graph.getNode(nodeId)) return undefined
+  const node = context.graph.getNode(nodeId)
+  if (!node) return undefined
   const existing = context.nodeIdToGuid?.get(nodeId)
   if (existing) return existing
-  const node = context.graph.getNode(nodeId)
-  const importedGuid = node?.source.id ? parseGuidOrNull(node.source.id) : null
+  const importedGuid = node.source.id ? parseGuidOrNull(node.source.id) : null
+
+  // When source.id maps to a GUID value that is already assigned to a
+  // different node (e.g. two nodes from different canvases with the same
+  // source.id "1:94"), fall back to the counter to avoid collisions.
+  if (importedGuid && context.assignedGuidValues) {
+    const key = `${importedGuid.sessionID}:${importedGuid.localID}`
+    if (context.assignedGuidValues.has(key)) {
+      const guid: GUID = { sessionID: 1, localID: localIdCounter.value++ }
+      context.nodeIdToGuid?.set(nodeId, guid)
+      context.assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
+      return guid
+    }
+  }
+
   const guid = importedGuid ?? { sessionID: 1, localID: localIdCounter.value++ }
   context.nodeIdToGuid?.set(nodeId, guid)
+  context.assignedGuidValues?.add(`${guid.sessionID}:${guid.localID}`)
   return guid
 }
 
@@ -684,7 +702,9 @@ export function sceneNodeToKiwiWithContext(
   applyInstancePayload(context, node, nc, localIdCounter)
   if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
-  if (node.type === 'BOOLEAN_OPERATION') nc.booleanOperation = node.booleanOperation ?? 'UNION'
+  if (node.type === 'BOOLEAN_OPERATION')
+    nc.booleanOperation =
+      node.booleanOperation === 'EXCLUDE' ? 'XOR' : (node.booleanOperation ?? 'UNION')
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)

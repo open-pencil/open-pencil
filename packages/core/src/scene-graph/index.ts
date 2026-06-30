@@ -2,8 +2,10 @@ export * from './snap'
 export * from './export-scale'
 export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
 
+import { omit } from 'es-toolkit/object'
 import { createNanoEvents } from 'nanoevents'
 
+import { cloneNodeProps } from './copy'
 import * as HitTest from './hit-test'
 import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
@@ -27,6 +29,7 @@ import type {
   SceneGraphEventHandlers,
   SceneGraphEvents,
   SceneNode,
+  SourceMetadata,
   Variable,
   VariableCollection,
   VariableType,
@@ -35,6 +38,23 @@ import type {
 
 export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
 
+function removeStaleBindings(
+  node: SceneNode,
+  field: 'fills' | 'strokes',
+  changes: Partial<SceneNode>
+): void {
+  const len = node[field].length
+  const stale = Object.keys(node.boundVariables).filter((k) => {
+    if (k === field) return true
+    if (!k.startsWith(`${field}/`)) return false
+    const i = Number.parseInt(k.split('/')[1] ?? '', 10)
+    return Number.isNaN(i) || i < 0 || i >= len
+  })
+  if (stale.length > 0) {
+    node.boundVariables = omit(node.boundVariables, stale)
+    changes.boundVariables = { ...node.boundVariables }
+  }
+}
 let nextLocalID = 1
 
 export function generateId(): string {
@@ -70,7 +90,6 @@ export class SceneGraph {
 
     this.addPage('Page 1')
   }
-
   addPage(name: string): SceneNode {
     return this.createNode('CANVAS', this.rootId, { name, width: 0, height: 0 })
   }
@@ -80,15 +99,12 @@ export class SceneGraph {
       (n) => n.type === 'CANVAS' && (includeInternal || !n.internalOnly)
     )
   }
-
   getAllNodes(): Iterable<SceneNode> {
     return this.nodes.values()
   }
-
   getNode(id: string): SceneNode | undefined {
     return this.nodes.get(id)
   }
-
   onNodeEvents(handlers: SceneGraphEventHandlers): () => void {
     const unbinds = [
       handlers.created ? this.emitter.on('node:created', handlers.created) : null,
@@ -121,21 +137,16 @@ export class SceneGraph {
     }
     return count
   }
-
   // --- Variables ---
-
   addVariable(variable: Variable): void {
     Variables.addVariable(this, variable)
   }
-
   removeVariable(id: string): void {
     Variables.removeVariable(this, id)
   }
-
   addCollection(collection: VariableCollection): void {
     Variables.addCollection(this, collection)
   }
-
   createVariable(
     name: string,
     type: VariableType,
@@ -394,6 +405,8 @@ export class SceneGraph {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     }
     Object.assign(node, changes)
+    if (changes.fills) removeStaleBindings(node, 'fills', changes)
+    if (changes.strokes) removeStaleBindings(node, 'strokes', changes)
     this.emitter.emit('node:updated', id, changes)
   }
 
@@ -525,8 +538,12 @@ export class SceneGraph {
     const src = this.nodes.get(sourceId)
     if (!src) return null
 
-    const { id: _srcId, parentId: _srcParent, childIds: _srcChildren, ...rest } = src
-    const clone = this.createNode(src.type, parentId, { ...rest, ...overrides })
+    const props = cloneNodeProps(src, null)
+    // Null out Figma source identifiers so the clone is treated as local.
+    // `as SourceMetadata` required: cloneNodeProps returns Partial<SceneNode>,
+    // so props.source is SourceMetadata | undefined, but we know it's always set.
+    props.source = { ...(props.source as SourceMetadata), id: null, orderKey: null }
+    const clone = this.createNode(src.type, parentId, { ...props, ...overrides })
 
     for (const childId of src.childIds) {
       this.cloneTree(childId, clone.id)
@@ -571,7 +588,6 @@ export class SceneGraph {
     const id = parentId ?? this.rootId
     const parent = this.nodes.get(id)
     if (!parent) return []
-
     const result: Array<{ node: SceneNode; depth: number }> = []
     for (const childId of parent.childIds) {
       const child = this.nodes.get(childId)

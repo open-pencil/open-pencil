@@ -19,20 +19,22 @@ export function parseFigKiwiChunks(binary: Uint8Array): Uint8Array[] | null {
   return chunks.length >= 2 ? chunks : null
 }
 
-export function decompressFigKiwiData(compressed: Uint8Array): Uint8Array {
-  try {
-    return inflateSync(compressed)
-  } catch {
-    throw new Error('Failed to decompress fig-kiwi data')
-  }
-}
-
 export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promise<Uint8Array> {
+  if (
+    compressed.length >= 4 &&
+    compressed[0] === 0x28 &&
+    compressed[1] === 0xb5 &&
+    compressed[2] === 0x2f &&
+    compressed[3] === 0xfd
+  ) {
+    const { decompress } = await import('fzstd')
+    return decompress(compressed)
+  }
   try {
     return inflateSync(compressed)
   } catch {
-    const fzstd = await import('fzstd')
-    return fzstd.decompress(compressed)
+    const { decompress } = await import('fzstd')
+    return decompress(compressed)
   }
 }
 
@@ -41,9 +43,18 @@ export function buildFigKiwi(
   dataRaw: Uint8Array,
   version = FIG_KIWI_DEFAULT_VERSION
 ): Uint8Array {
-  const dataDeflated = deflateSync(dataRaw)
+  let dataCompressed: Uint8Array
+  const zstdCompress: ((data: Uint8Array) => Uint8Array) | undefined = (() => {
+    const g = globalThis as { Bun?: { zstdCompressSync?: (data: Uint8Array) => Uint8Array } }
+    return g.Bun?.zstdCompressSync
+  })()
+  if (zstdCompress) {
+    dataCompressed = zstdCompress(dataRaw)
+  } else {
+    dataCompressed = deflateSync(dataRaw)
+  }
 
-  const total = 8 + 4 + 4 + schemaDeflated.length + 4 + dataDeflated.length
+  const total = 8 + 4 + 4 + schemaDeflated.length + 4 + dataCompressed.length
   const out = new Uint8Array(total)
   const view = new DataView(out.buffer)
 
@@ -56,9 +67,9 @@ export function buildFigKiwi(
   out.set(schemaDeflated, offset)
   offset += schemaDeflated.length
 
-  view.setUint32(offset, dataDeflated.length, true)
+  view.setUint32(offset, dataCompressed.length, true)
   offset += 4
-  out.set(dataDeflated, offset)
+  out.set(dataCompressed, offset)
 
   return out
 }
