@@ -2,14 +2,21 @@ import { describe, test, expect } from 'bun:test'
 
 import * as Y from 'yjs'
 
-import type { GeometryPath, SceneNode } from '@open-pencil/core'
+import type { Fill, GeometryPath, SceneNode } from '@open-pencil/core'
 
-import { syncNodePropsToYMap, yNodeToProps } from '@/app/collab/yjs-sync'
+import {
+  createYjsGraphSync,
+  registerYjsObservers,
+  syncNodePropsToYMap,
+  yNodeToProps
+} from '@/app/collab/yjs-sync'
+import { createEditorStore } from '@/app/editor/session'
 
 import { nodeVisualBounds } from '#core/geometry'
 import { SceneGraph } from '#core/scene-graph'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { connectYDocs } from '#tests/helpers/yjs'
 
 // Test copy of the private apply path.
 function applyYnodeToGraph(peer: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
@@ -40,6 +47,92 @@ function seedHostIntoYjs(host: SceneGraph): Y.Map<Y.Map<unknown>> {
 
 function firstPage(graph: SceneGraph): SceneNode {
   return expectDefined(graph.getPages()[0], 'first page')
+}
+
+type SyncedStores = ReturnType<typeof createSyncedStores>
+
+function createSyncedStores() {
+  const hostStore = createEditorStore(new SceneGraph())
+  const peerStore = createEditorStore(new SceneGraph())
+  const hostDoc = new Y.Doc()
+  const peerDoc = new Y.Doc()
+  const hostNodes = hostDoc.getMap<Y.Map<unknown>>('nodes')
+  const peerNodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
+  const hostImages = hostDoc.getMap<Uint8Array>('images')
+  const peerImages = peerDoc.getMap<Uint8Array>('images')
+  let hostSuppressYjsEvents = false
+  let peerSuppressYjsEvents = false
+  let hostSuppressGraphSync = false
+  let peerSuppressGraphSync = false
+
+  const hostSync = createYjsGraphSync({
+    getStore: () => hostStore,
+    getYdoc: () => hostDoc,
+    getYnodes: () => hostNodes,
+    getYimages: () => hostImages,
+    setSuppressYjsEvents: (value) => {
+      hostSuppressYjsEvents = value
+    }
+  })
+  const peerSync = createYjsGraphSync({
+    getStore: () => peerStore,
+    getYdoc: () => peerDoc,
+    getYnodes: () => peerNodes,
+    getYimages: () => peerImages,
+    setSuppressYjsEvents: (value) => {
+      peerSuppressYjsEvents = value
+    }
+  })
+
+  registerYjsObservers({
+    store: hostStore,
+    ynodes: hostNodes,
+    yimages: hostImages,
+    getSuppressYjsEvents: () => hostSuppressYjsEvents,
+    setSuppressGraphSync: (value) => {
+      hostSuppressGraphSync = value
+    },
+    applyYjsToGraph: hostSync.applyYjsToGraph
+  })
+  registerYjsObservers({
+    store: peerStore,
+    ynodes: peerNodes,
+    yimages: peerImages,
+    getSuppressYjsEvents: () => peerSuppressYjsEvents,
+    setSuppressGraphSync: (value) => {
+      peerSuppressGraphSync = value
+    },
+    applyYjsToGraph: peerSync.applyYjsToGraph
+  })
+
+  const disconnectYDocs = connectYDocs(hostDoc, peerDoc)
+
+  return {
+    hostStore,
+    peerStore,
+    hostSync,
+    peerSync,
+    get hostSuppressGraphSync() {
+      return hostSuppressGraphSync
+    },
+    get peerSuppressGraphSync() {
+      return peerSuppressGraphSync
+    },
+    cleanup: () => {
+      disconnectYDocs()
+      hostDoc.destroy()
+      peerDoc.destroy()
+    }
+  }
+}
+
+function withSyncedStores(run: (stores: SyncedStores) => void) {
+  const stores = createSyncedStores()
+  try {
+    run(stores)
+  } finally {
+    stores.cleanup()
+  }
 }
 
 describe('collab yjs-sync', () => {
@@ -129,6 +222,63 @@ describe('collab yjs-sync', () => {
     const peerPage = getNodeOrThrow(peer, hostPage.id)
     expect(peerPage.childIds).toEqual([rect.id])
     expect(getNodeOrThrow(peer, rect.id).type).toBe('RECTANGLE')
+  })
+
+  test('syncAllNodesToYjs populates peer graph and current page', () => {
+    withSyncedStores(({ hostStore, peerStore, hostSync }) => {
+      const hostPage = firstPage(hostStore.graph)
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { width: 80, height: 60 })
+
+      hostSync.syncAllNodesToYjs()
+
+      expect(peerStore.graph.rootId).toBe(hostStore.graph.rootId)
+      expect(peerStore.state.currentPageId).toBe(hostPage.id)
+      expect(peerStore.graph.getPages().map((page) => page.id)).toContain(hostPage.id)
+      expect(getNodeOrThrow(peerStore.graph, rect.id).type).toBe('RECTANGLE')
+    })
+  })
+
+  test('live-created and edited nodes sync in both directions', () => {
+    withSyncedStores(({ hostStore, peerStore, hostSync, peerSync }) => {
+      const hostPage = firstPage(hostStore.graph)
+      hostSync.syncAllNodesToYjs()
+
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { width: 50, height: 50 })
+      hostSync.syncNodeToYjs(rect.id)
+
+      const peerRect = getNodeOrThrow(peerStore.graph, rect.id)
+      expect(peerRect.parentId).toBe(hostPage.id)
+      expect(getNodeOrThrow(peerStore.graph, hostPage.id).childIds).toContain(rect.id)
+
+      peerStore.graph.updateNode(rect.id, { x: 42, y: 24 })
+      peerSync.syncNodeToYjs(rect.id)
+
+      expect(getNodeOrThrow(hostStore.graph, rect.id).x).toBe(42)
+      expect(getNodeOrThrow(hostStore.graph, rect.id).y).toBe(24)
+    })
+  })
+
+  test('image fills sync image bytes', () => {
+    withSyncedStores(({ hostStore, peerStore, hostSync }) => {
+      const hostPage = firstPage(hostStore.graph)
+      const imageHash = 'image-hash'
+      const imageFill: Fill = {
+        type: 'IMAGE',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        opacity: 1,
+        visible: true,
+        imageHash,
+        imageScaleMode: 'FILL'
+      }
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { fills: [imageFill] })
+      hostStore.graph.images.set(imageHash, new Uint8Array([9, 8, 7]))
+
+      hostSync.syncNodeToYjs(rect.id)
+
+      expect(
+        Array.from(expectDefined(peerStore.graph.images.get(imageHash), 'peer image'))
+      ).toEqual([9, 8, 7])
+    })
   })
 
   test('synced node does not crash the visual-bounds helper', () => {
