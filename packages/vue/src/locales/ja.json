@@ -76,7 +76,7 @@
     "zoomToFit": "画面に合わせる",
     "zoomToSelection": "選択範囲にズーム",
     "groupSelection": "グループ化",
-    "frameSelection": "フレームの選択",
+    "frameSelection": "選択範囲をフレーム化",
     "showHide": "表示/非表示",
     "lockUnlock": "ロック/ロック解除",
     "unionSelection": "選択範囲を結合 (合体)",
