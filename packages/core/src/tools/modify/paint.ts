@@ -1,7 +1,8 @@
+import type { Matrix } from '@open-pencil/scene-graph/primitives'
+
 import { parseColor } from '#core/color'
 import { BLACK } from '#core/constants'
 import { defineTool } from '#core/tools/schema'
-import type { Matrix } from '#core/types'
 
 export const setFill = defineTool({
   name: 'set_fill',

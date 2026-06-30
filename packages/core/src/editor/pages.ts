@@ -1,7 +1,8 @@
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
-import type { Color } from '#core/types'
 
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'

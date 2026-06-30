@@ -18,7 +18,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 const IS_DEV = import.meta.env.DEV
 

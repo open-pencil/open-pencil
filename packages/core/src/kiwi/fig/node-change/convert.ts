@@ -1,9 +1,10 @@
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
+
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
-import { parseVariantName } from '#core/scene-graph/variant-name'
 import { styleToWeight } from '#core/text/fonts'
 
-import { guidToString } from './guid'
 import { convertEffects, convertFills, convertStrokes } from './paint'
 import { importStyleRuns } from './style-runs'
 export { importStyleRuns } from './style-runs'
@@ -26,7 +27,7 @@ import {
 import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
 export { resolveGeometryPaths } from './vector-geometry'
 
-import type { NodeChange } from '#core/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   SceneNode,
   NodeType,
@@ -48,31 +49,53 @@ import type {
   ComponentPropertyType,
   SymbolLink,
   VariantPropSpec
-} from '#core/scene-graph'
-import type { GUID } from '#core/types'
+} from '@open-pencil/scene-graph'
+import type { GUID } from '@open-pencil/scene-graph/primitives'
 
-export { guidToString, stringToGuid } from './guid'
+export { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
+  // Corner radius
   cornerRadius: 'CORNER_RADIUS',
   topLeftRadius: 'RECTANGLE_TOP_LEFT_CORNER_RADIUS',
   topRightRadius: 'RECTANGLE_TOP_RIGHT_CORNER_RADIUS',
   bottomLeftRadius: 'RECTANGLE_BOTTOM_LEFT_CORNER_RADIUS',
   bottomRightRadius: 'RECTANGLE_BOTTOM_RIGHT_CORNER_RADIUS',
+  // Stroke
   strokeWeight: 'STROKE_WEIGHT',
+  borderTopWeight: 'BORDER_TOP_WEIGHT',
+  borderBottomWeight: 'BORDER_BOTTOM_WEIGHT',
+  borderLeftWeight: 'BORDER_LEFT_WEIGHT',
+  borderRightWeight: 'BORDER_RIGHT_WEIGHT',
+  // Auto-layout spacing & padding
   itemSpacing: 'STACK_SPACING',
   paddingLeft: 'STACK_PADDING_LEFT',
   paddingTop: 'STACK_PADDING_TOP',
   paddingRight: 'STACK_PADDING_RIGHT',
   paddingBottom: 'STACK_PADDING_BOTTOM',
   counterAxisSpacing: 'STACK_COUNTER_SPACING',
+  // Grid gaps
+  gridRowGap: 'GRID_ROW_GAP',
+  gridColumnGap: 'GRID_COLUMN_GAP',
+  // Visibility & opacity
   visible: 'VISIBLE',
   opacity: 'OPACITY',
+  // Dimensions
   width: 'WIDTH',
   height: 'HEIGHT',
+  minWidth: 'MIN_WIDTH',
+  maxWidth: 'MAX_WIDTH',
+  minHeight: 'MIN_HEIGHT',
+  maxHeight: 'MAX_HEIGHT',
+  // Position & rotation
+  x: 'X_POSITION',
+  y: 'Y_POSITION',
+  rotation: 'ROTATION',
+  // Text
   fontSize: 'FONT_SIZE',
   letterSpacing: 'LETTER_SPACING',
-  lineHeight: 'LINE_HEIGHT'
+  lineHeight: 'LINE_HEIGHT',
+  fontFamily: 'FONT_FAMILY'
 }
 
 export const VARIABLE_BINDING_FIELDS_INVERSE: Record<string, string> = Object.fromEntries(
@@ -110,10 +133,11 @@ function mapNodeType(type?: string): NodeType | 'DOCUMENT' | 'VARIABLE' {
 
 function mapBooleanOperation(nc: NodeChange): SceneNode['booleanOperation'] {
   if (nc.type !== 'BOOLEAN_OPERATION') return undefined
-  switch (nc.booleanOperation) {
+  const operation = nc.booleanOperation as NodeChange['booleanOperation'] | 'EXCLUDE' | undefined
+  switch (operation) {
     case 'SUBTRACT':
     case 'INTERSECT':
-      return nc.booleanOperation
+      return operation
     case 'EXCLUDE':
     case 'XOR':
       return 'EXCLUDE'

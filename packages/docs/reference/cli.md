@@ -109,6 +109,32 @@ openpencil export [file] [options]
 | `--width` | | Thumbnail width (default: 1920) |
 | `--height` | | Thumbnail height (default: 1080) |
 
+## dom
+
+Convert HTML/CSS/Tailwind into an editable OpenPencil document.
+
+```sh
+openpencil dom page.html [options]
+```
+
+| Option | Alias | Description |
+|--------|-------|-------------|
+| `--format` | `-f` | Output format: `fig` (default), `html`, `json` |
+| `--output` | `-o` | Output file path (default: `<name>.<format>`) |
+| `--css` | | CSS file to apply before conversion |
+| `--css-text` | | Inline CSS text to apply before conversion |
+| `--tailwind` | | Tailwind utility candidates to compile and apply |
+| `--tailwind-file` | | File containing Tailwind utility candidates |
+| `--page-name` | | Scene graph page name (default: `DOM/CSS`) |
+| `--json` | | Print a machine-readable summary |
+
+Examples:
+
+```sh
+openpencil dom card.html --css card.css -o card.fig
+openpencil dom card.html --tailwind "flex flex-col gap-3 w-80 p-6 rounded-xl bg-white" -o card.fig
+```
+
 ## eval
 
 Execute JavaScript with the Figma Plugin API.

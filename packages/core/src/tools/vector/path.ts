@@ -1,6 +1,7 @@
+import { cloneVectorNetwork } from '@open-pencil/scene-graph'
+import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+
 import type { FigmaAPI } from '#core/figma-api'
-import { cloneVectorNetwork } from '#core/scene-graph'
-import type { SceneNode, VectorNetwork } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
 
 function getVectorNode(

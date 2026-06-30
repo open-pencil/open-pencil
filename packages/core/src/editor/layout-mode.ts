@@ -1,7 +1,8 @@
 import { pick } from 'es-toolkit/object'
 
+import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+
 import { computeLayout } from '#core/layout'
-import type { LayoutMode, SceneNode } from '#core/scene-graph'
 
 import type { EditorContext } from './types'
 

@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai'
 
 import { buildDebugLog } from '@open-pencil/core/tools'
 import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
 

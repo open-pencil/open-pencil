@@ -1,5 +1,6 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import type { EditorContext } from '#core/editor/types'
-import type { SceneNode } from '#core/scene-graph'
 
 export function topLevelSelectedNodes(selectedNodes: SceneNode[]): SceneNode[] {
   const selectedSet = new Set(selectedNodes.map((node) => node.id))

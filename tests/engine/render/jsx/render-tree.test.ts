@@ -14,11 +14,18 @@ import {
   Section,
   Component,
   ComponentSet,
-  Instance
+  Instance,
+  defineVars,
+  designVar,
+  dropShadow,
+  innerShadow,
+  layerBlur,
+  linearGradient,
+  solid
 } from '@open-pencil/core'
 
 import { expectDefined, getNodeOrThrow, childIdAt } from '#tests/helpers/assert'
-import { makeSceneGraph } from '#tests/helpers/scene'
+import { addTestColorVariable, makeSceneGraph } from '#tests/helpers/scene'
 
 describe('renderTree', () => {
   it('renders a simple frame', async () => {
@@ -34,6 +41,80 @@ describe('renderTree', () => {
     expect(node.height).toBe(100)
     expect(node.fills.length).toBe(1)
     expect(expectDefined(node.fills[0], 'first fill').type).toBe('SOLID')
+  })
+
+  it('renders structured fill helpers', async () => {
+    const g = makeSceneGraph()
+    const result = await renderTree(
+      g,
+      Frame({
+        name: 'Paints',
+        w: 200,
+        h: 100,
+        fills: [
+          solid('#112233'),
+          linearGradient([
+            ['#ffffff', 0],
+            ['rgba(0, 0, 0, 0)', 1]
+          ])
+        ]
+      })
+    )
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.fills).toHaveLength(2)
+    expect(node.fills[0]?.type).toBe('SOLID')
+    expect(node.fills[1]?.type).toBe('GRADIENT_LINEAR')
+    expect(node.fills[1]?.gradientStops).toHaveLength(2)
+  })
+
+  it('renders structured fill helpers from JSX strings', async () => {
+    const g = makeSceneGraph()
+    const [result] = await renderJSX(
+      g,
+      `<Frame name="Paints" w={200} h={100} fills={[solid('#112233'), linearGradient([['#fff', 0], ['#0000', 1]])]} />`
+    )
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.fills).toHaveLength(2)
+    expect(node.fills[1]?.type).toBe('GRADIENT_LINEAR')
+  })
+
+  it('renders structured effect helpers', async () => {
+    const g = makeSceneGraph()
+    const result = await renderTree(
+      g,
+      Frame({
+        name: 'Effects',
+        w: 200,
+        h: 100,
+        effects: [
+          dropShadow({ x: 0, y: 8, radius: 16 }),
+          innerShadow({ color: '#ff000080' }),
+          layerBlur(4)
+        ]
+      })
+    )
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.effects).toHaveLength(3)
+    expect(node.effects[0]?.type).toBe('DROP_SHADOW')
+    expect(node.effects[0]?.offset.y).toBe(8)
+    expect(node.effects[1]?.type).toBe('INNER_SHADOW')
+    expect(node.effects[2]?.type).toBe('LAYER_BLUR')
+  })
+
+  it('renders structured effect helpers from JSX strings', async () => {
+    const g = makeSceneGraph()
+    const [result] = await renderJSX(
+      g,
+      `<Frame name="Effects" w={200} h={100} effects={[dropShadow({ x: 0, y: 8, radius: 16 }), backgroundBlur(12)]} />`
+    )
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.effects).toHaveLength(2)
+    expect(node.effects[0]?.type).toBe('DROP_SHADOW')
+    expect(node.effects[1]?.type).toBe('BACKGROUND_BLUR')
   })
 
   it('renders text node with content', async () => {
@@ -77,6 +158,68 @@ describe('renderTree', () => {
     expect(heading.fontSize).toBe(20)
     expect(heading.fontWeight).toBe(700)
     expect(heading.fills.length).toBe(1)
+  })
+
+  it('binds variable refs used as style values', async () => {
+    const g = makeSceneGraph()
+    g.addCollection({
+      id: 'colors',
+      name: 'Colors',
+      modes: [{ modeId: 'light', name: 'Light' }],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    g.addVariable({
+      id: 'var-bg',
+      name: 'Background',
+      type: 'COLOR',
+      collectionId: 'colors',
+      valuesByMode: { light: { r: 1, g: 0, b: 0, a: 1 } },
+      description: '',
+      hiddenFromPublishing: false
+    })
+
+    const vars = defineVars({ bg: { id: 'var-bg', name: 'Background' } })
+    const result = await renderTree(g, Frame({ name: 'Bound', w: 100, h: 100, fill: vars.bg }))
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.boundVariables['fills/0/color']).toBe('var-bg')
+    expect(node.fills[0]?.type).toBe('SOLID')
+  })
+
+  it('supports explicit variable bindings for supported paths', async () => {
+    const g = makeSceneGraph()
+    addTestColorVariable(g, 'var-shadow', 'Shadow', { r: 0, g: 0, b: 0, a: 1 })
+    addTestColorVariable(g, 'var-bg', 'Background')
+    const variable = designVar('var-shadow', '#000000')
+    const result = await renderTree(
+      g,
+      Frame({
+        name: 'Bound explicit',
+        w: 100,
+        h: 100,
+        fill: '#ffffff',
+        stroke: '#000000',
+        bind: { 'strokes/0/color': variable, 'fills/0/color': 'var-bg' }
+      })
+    )
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.boundVariables['strokes/0/color']).toBe('var-shadow')
+    expect(node.boundVariables['fills/0/color']).toBe('var-bg')
+  })
+
+  it('binds variables from JSX strings', async () => {
+    const g = makeSceneGraph()
+    addTestColorVariable(g, 'var-bg', 'Background')
+    const [result] = await renderJSX(
+      g,
+      `<Frame name="Bound JSX" w={100} h={100} fill={designVar('var-bg', '#ffffff')} />`
+    )
+    const node = getNodeOrThrow(g, result.id)
+
+    expect(node.boundVariables['fills/0/color']).toBe('var-bg')
+    expect(node.fills[0]?.type).toBe('SOLID')
   })
 
   it('renders components and instances', async () => {

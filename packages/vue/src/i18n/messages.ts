@@ -9,6 +9,7 @@ const localeLoaders: Record<Exclude<Locale, 'en'>, () => Promise<{ default: Comp
   es: () => import('#vue/locales/es.json'),
   fr: () => import('#vue/locales/fr.json'),
   it: () => import('#vue/locales/it.json'),
+  ja: () => import('#vue/locales/ja.json'),
   pl: () => import('#vue/locales/pl.json'),
   ru: () => import('#vue/locales/ru.json'),
   'zh-CN': () => import('#vue/locales/zh-CN.json')
@@ -42,8 +43,10 @@ export const menuMessages = i18n('menu', {
   copy: 'Copy',
   paste: 'Paste',
 
-  zoomIn: 'Zoom in',
-  zoomOut: 'Zoom out',
+  theme: 'Theme',
+  themeLight: 'Light',
+  themeDark: 'Dark',
+  themeAuto: 'Auto',
   profiler: 'Performance profiler',
   language: 'Language',
   checkUpdates: 'Check for updates…',
@@ -73,7 +76,15 @@ export const menuMessages = i18n('menu', {
   copyAsJSX: 'Copy as JSX',
   copyNodeId: 'Copy node ID',
   copyXPath: 'Copy XPath',
-  booleanOperations: 'Boolean operations'
+  booleanOperations: 'Boolean operations',
+  arrangeAlignLeft: 'Align left',
+  arrangeAlignCenter: 'Align center',
+  arrangeAlignRight: 'Align right',
+  arrangeAlignTop: 'Align top',
+  arrangeAlignMiddle: 'Align middle',
+  arrangeAlignBottom: 'Align bottom',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out'
 })
 
 export const commandMessages = i18n('commands', {

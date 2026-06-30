@@ -1,4 +1,4 @@
-import type { Color } from '@open-pencil/core/scene-graph'
+import type { Color } from '@open-pencil/scene-graph'
 
 import { DEMO_COLORS } from '@/app/demo/colors'
 import type { EditorStore } from '@/app/editor/session'

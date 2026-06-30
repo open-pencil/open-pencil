@@ -1,13 +1,12 @@
-import type { NodeChange, PluginData, PluginRelaunchData } from '#core/kiwi/fig/codec'
-import { clampExportScale } from '#core/scene-graph'
-import type {
-  ExportFormatId,
-  ExportSetting,
-  PluginDataEntry,
-  PluginRelaunchDataEntry
-} from '#core/scene-graph'
-
-import { guidToString } from './guid'
+import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import {
+  clampExportScale,
+  type ExportFormatId,
+  type ExportSetting,
+  type PluginDataEntry,
+  type PluginRelaunchDataEntry
+} from '@open-pencil/scene-graph'
 
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'

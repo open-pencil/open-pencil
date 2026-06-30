@@ -1,6 +1,6 @@
 import * as Y from 'yjs'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { EditorStore } from '@/app/editor/active-store'
 

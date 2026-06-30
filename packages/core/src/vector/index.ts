@@ -19,7 +19,7 @@ import type {
   VectorSegment,
   VectorVertex,
   WindingRule
-} from '#core/scene-graph'
+} from '@open-pencil/scene-graph'
 
 import { addOpenSegmentsToPath, addSegmentDirected } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'

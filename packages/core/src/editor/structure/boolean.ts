@@ -1,9 +1,10 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import type { EditorContext } from '#core/editor/types'
-import { computeAbsoluteBounds } from '#core/geometry'
-import type { SceneNode } from '#core/scene-graph'
-import { copyFills, copyStrokes } from '#core/scene-graph/copy'
 
 import { selectedNodesInSharedParent } from './selection'
 

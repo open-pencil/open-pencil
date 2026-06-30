@@ -1,6 +1,6 @@
 import type { BlendMode as SkBlendMode, CanvasKit } from 'canvaskit-wasm'
 
-import type { BlendMode } from '#core/scene-graph'
+import type { BlendMode } from '@open-pencil/scene-graph'
 
 export function figmaBlendModeToSkia(ck: CanvasKit, mode?: BlendMode): SkBlendMode {
   switch (mode) {

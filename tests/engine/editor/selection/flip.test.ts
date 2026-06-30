@@ -41,7 +41,7 @@ describe('flip', () => {
 
 describe('flip roundtrip via kiwi', () => {
   async function roundtrip(graph: SceneGraph) {
-    const { initCodec } = await import('#core/kiwi/fig/codec')
+    const { initCodec } = await import('@open-pencil/kiwi/fig/codec')
     const { parseFigFile } = await import('#core/kiwi/fig/file')
     const { exportFigFile } = await import('#core/io/formats/fig/export')
     await initCodec()

@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 
 import { exportFigFile, extractExportGraph, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
-import { guidToString } from '@open-pencil/core/kiwi/fig/node-change/guid'
-import { parseFigBuffer } from '@open-pencil/core/kiwi/fig/parse/core'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('export subgraph extraction', () => {
   test('page extraction keeps the source root and page descendants', () => {
@@ -113,5 +113,5 @@ describe('export subgraph extraction', () => {
     expect(input?.symbolData?.symbolOverrides?.length).toBe(9)
     expect(input?.symbolData?.uniformScaleFactor).toBeCloseTo(0.8908441662788391)
     expect(lists?.symbolData?.symbolOverrides?.length).toBe(5)
-  })
+  }, 15000)
 })

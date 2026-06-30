@@ -1,5 +1,5 @@
-import { getAbsoluteRotation } from '@open-pencil/core/canvas'
 import type { Editor } from '@open-pencil/core/editor'
+import { getAbsoluteRotation } from '@open-pencil/scene-graph/coordinate'
 
 import {
   buildResizeCursor,

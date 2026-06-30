@@ -15,7 +15,7 @@ import {
 import { colorToHexRaw } from '@open-pencil/core/color'
 
 import type { ColorVariableBindingApi } from '@/components/properties/color-style-row'
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const {
   item,

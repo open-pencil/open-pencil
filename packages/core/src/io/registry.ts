@@ -1,4 +1,4 @@
-import type { SceneGraph } from '#core/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportRequest, IOContext, IOFormatAdapter, ReadDocumentInput } from './types'
 

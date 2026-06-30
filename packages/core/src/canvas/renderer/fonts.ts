@@ -1,3 +1,5 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   COMPONENT_LABEL_FONT_SIZE,
@@ -7,7 +9,6 @@ import {
   SECTION_TITLE_FONT_SIZE,
   SIZE_FONT_SIZE
 } from '#core/constants'
-import type { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text/fonts'
 
 export function getFontProvider(r: SkiaRenderer) {

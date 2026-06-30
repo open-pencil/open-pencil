@@ -1,6 +1,7 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
 import { populateAndApplyOverrides } from '#core/kiwi/fig/instance-overrides'
 import type { InstanceNodeChange } from '#core/kiwi/fig/instance-overrides'
-import type { SceneGraph } from '#core/scene-graph'
 
 export interface LazyFigImportContext {
   changeMap: Map<string, InstanceNodeChange>

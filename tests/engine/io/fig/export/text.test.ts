@@ -1,7 +1,13 @@
 import { describe, expect, setDefaultTimeout, test } from 'bun:test'
 
-import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/core/types'
+import {
+  decompressFigKiwiDataAsync,
+  exportFigFile,
+  initCodec,
+  parseFigFile,
+  SceneGraph
+} from '@open-pencil/core'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'
@@ -64,7 +70,7 @@ describe('text node export', () => {
 
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
-      await import('#core/kiwi/schema-runtime')
+      await import('@open-pencil/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -93,7 +99,7 @@ describe('text node export', () => {
     const compiled = compileSchema(schema) as {
       decodeMessage(data: Uint8Array): Record<string, unknown>
     }
-    const dataRaw = inflateSync(chunks?.[1] ?? new Uint8Array())
+    const dataRaw = await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
     const message = compiled.decodeMessage(dataRaw)
 
     const nodeChanges = message.nodeChanges as JsonObject[]
@@ -126,7 +132,7 @@ describe('text node export', () => {
 
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
-      await import('#core/kiwi/schema-runtime')
+      await import('@open-pencil/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -149,7 +155,9 @@ describe('text node export', () => {
     const compiled = compileSchema(schema) as {
       decodeMessage(data: Uint8Array): Record<string, unknown>
     }
-    const message = compiled.decodeMessage(inflateSync(chunks?.[1] ?? new Uint8Array()))
+    const message = compiled.decodeMessage(
+      await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
+    )
     const nodeChanges = message.nodeChanges as JsonObject[]
     const textNc = expectDefined(
       nodeChanges.find((nc) => nc.type === 'TEXT'),
@@ -170,7 +178,7 @@ describe('text node export', () => {
 
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
-      await import('#core/kiwi/schema-runtime')
+      await import('@open-pencil/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -200,7 +208,9 @@ describe('text node export', () => {
     const compiled = compileSchema(schema) as {
       decodeMessage(data: Uint8Array): Record<string, unknown>
     }
-    const message = compiled.decodeMessage(inflateSync(chunks?.[1] ?? new Uint8Array()))
+    const message = compiled.decodeMessage(
+      await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
+    )
     const nodeChanges = message.nodeChanges as JsonObject[]
     const textNc = expectDefined(
       nodeChanges.find((nc) => nc.type === 'TEXT'),
@@ -217,7 +227,7 @@ describe('text node export', () => {
 
     const { unzipSync, inflateSync } = await import('fflate')
     const { decodeBinarySchema, compileSchema, ByteBuffer } =
-      await import('#core/kiwi/schema-runtime')
+      await import('@open-pencil/kiwi/schema-runtime')
     const { parseFigKiwiChunks } = await import('@open-pencil/core')
 
     const graph = new SceneGraph()
@@ -247,7 +257,7 @@ describe('text node export', () => {
     const compiled = compileSchema(schema) as {
       decodeMessage(data: Uint8Array): Record<string, unknown>
     }
-    const dataRaw = inflateSync(chunks?.[1] ?? new Uint8Array())
+    const dataRaw = await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
     const message = compiled.decodeMessage(dataRaw)
 
     const nodeChanges = message.nodeChanges as JsonObject[]

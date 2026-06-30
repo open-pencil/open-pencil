@@ -1,3 +1,5 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { buildCloneIndex, instanceAndClones } from '#core/kiwi/fig/instance-overrides/clone-index'
 import { applyComponentPropRef } from '#core/kiwi/fig/instance-overrides/component-props/apply'
 import {
@@ -13,7 +15,6 @@ import type {
   ComponentPropValue,
   OverrideContext
 } from '#core/kiwi/fig/instance-overrides/types'
-import type { SceneNode } from '#core/scene-graph'
 
 function applyChildPropRefs(
   ctx: OverrideContext,

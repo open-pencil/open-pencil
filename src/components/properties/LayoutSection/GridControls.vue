@@ -4,7 +4,7 @@ import ScrubInput from '@/components/ScrubInput.vue'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import type { GridTrackProp } from '@/components/properties/LayoutSection/types'
-import type { GridTrackSizing } from '@open-pencil/core/scene-graph'
+import type { GridTrackSizing } from '@open-pencil/scene-graph'
 
 const ctx = useLayoutControlsContext()
 

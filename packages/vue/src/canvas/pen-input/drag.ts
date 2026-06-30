@@ -1,5 +1,5 @@
 import type { Editor } from '@open-pencil/core/editor'
-import type { Vector } from '@open-pencil/core/types'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { DragState } from '#vue/shared/input/types'
 

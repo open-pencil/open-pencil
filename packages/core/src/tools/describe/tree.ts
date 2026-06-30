@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { detectIssues } from './issues'
 import type { DescribeIssue } from './issues'
@@ -21,7 +21,8 @@ function describeChild(
   gridSize: number
 ): ChildDescription {
   const role = detectRole(node)
-  const summary = node.type === 'TEXT' ? summarizeText(node) : summarizeContainer(node)
+  const summary =
+    node.type === 'TEXT' ? summarizeText(node, graph) : summarizeContainer(node, graph)
   const result: ChildDescription = { role, name: node.name, summary, id: node.id }
 
   const issues = detectIssues(node, gridSize, graph)
@@ -49,7 +50,7 @@ export function describeOneNode(
   if (!raw) return { id: nodeId, error: `Node "${nodeId}" not found` }
 
   const role = detectRole(raw)
-  const visual = describeVisual(raw)
+  const visual = describeVisual(raw, figma.graph)
   const layout = describeLayout(raw)
   const issues = detectIssues(raw, gridSize, figma.graph)
 

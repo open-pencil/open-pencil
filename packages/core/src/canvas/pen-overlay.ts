@@ -1,8 +1,9 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS, PEN_CLOSE_RADIUS_BOOST } from '#core/constants'
-import type { SceneGraph } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 
 import { getWorldMatrix } from './coordinate'
 import Matrix from './matrix'

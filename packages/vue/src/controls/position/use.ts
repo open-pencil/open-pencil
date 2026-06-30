@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
 import { useEditor } from '#vue/editor/context'

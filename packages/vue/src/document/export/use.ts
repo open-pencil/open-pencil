@@ -11,7 +11,7 @@ import {
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
-export type { ExportFormatId, ExportSetting } from '@open-pencil/core/scene-graph'
+export type { ExportFormatId, ExportSetting } from '@open-pencil/scene-graph'
 export type { ExportPanelTarget } from '#vue/document/export/helpers'
 
 export function useExport() {

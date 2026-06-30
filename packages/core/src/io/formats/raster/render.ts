@@ -1,10 +1,11 @@
 import type { CanvasKit, Canvas } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+
 import type { SkiaRenderer } from '#core/canvas'
 import type { RenderColorSpace } from '#core/color/management'
-import { computeDescendantVisualBounds } from '#core/geometry'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
-import type { SceneGraph } from '#core/scene-graph'
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
 export type ExportFormat = RasterExportFormat | 'SVG'

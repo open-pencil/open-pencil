@@ -3,8 +3,8 @@ import type { Color as RekaColor, HSBColor, HSLColor, RGBColor } from 'reka-ui'
 
 import { colorToCSS, okhclToRGBA, rgba255ToColor } from '@open-pencil/core/color'
 import type { OkHCLColor } from '@open-pencil/core/color'
-import type { Fill, Stroke } from '@open-pencil/core/scene-graph'
-import type { Color } from '@open-pencil/core/types'
+import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export interface ColorPickerModel {
   rekaColor: RekaColor

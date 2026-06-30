@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import type { useOkHCL } from '@open-pencil/vue'
 
 type OkhclControls = ReturnType<typeof useOkHCL>

@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises'
 import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
@@ -52,7 +53,7 @@ export default defineCommand({
     const graph = await loadDocument(file)
     const result = await io.writeDocument(format, graph)
     const output = args.output ? resolve(args.output) : defaultOutput(file, format)
-    await Bun.write(output, result.data as Uint8Array)
+    await writeFile(output, result.data as Uint8Array)
     console.log(ok(`Converted ${file} → ${output}`))
   }
 })

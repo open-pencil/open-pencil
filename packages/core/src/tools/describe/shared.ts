@@ -1,5 +1,5 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export const CONTAINER_TYPES = new Set(['FRAME', 'COMPONENT', 'INSTANCE'])
 

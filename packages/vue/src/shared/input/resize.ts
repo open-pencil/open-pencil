@@ -2,7 +2,7 @@ export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
 import type { Editor } from '@open-pencil/core/editor'
 import { computeLayout } from '@open-pencil/core/layout'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
@@ -107,6 +107,9 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
   } else {
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
     editor.updateNode(d.nodeId, finalChanges)
-    editor.commitResize(d.nodeId, d.origRect)
+    editor.commitResize(d.nodeId, {
+      ...d.origRect,
+      ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {})
+    })
   }
 }

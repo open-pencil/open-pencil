@@ -23,12 +23,39 @@ export {
   type BaseProps,
   type TextProps,
   type StyleProps,
+  type PaintProp,
   isTreeNode,
   node,
   resolveToTree
 } from './tree'
 
 export { renderTree, type RenderResult } from './renderer'
+
+export {
+  backgroundBlur,
+  dropShadow,
+  foregroundBlur,
+  innerShadow,
+  layerBlur,
+  type BlurEffectOptions,
+  type EffectColor,
+  type ShadowEffectOptions
+} from './effects'
+
+export {
+  angularGradient,
+  diamondGradient,
+  gradient,
+  linearGradient,
+  radialGradient,
+  solid,
+  type GradientPaintOptions,
+  type PaintColor,
+  type PaintStop,
+  type SolidPaintOptions
+} from './paints'
+
+export { defineVars, designVar, isVariable, type DesignVariable, type VarDef } from './vars'
 
 export { createElement } from './mini-react'
 

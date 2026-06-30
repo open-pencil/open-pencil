@@ -1807,7 +1807,7 @@ const noLocalJsonObjectAliases = {
         if (!isRecordStringUnknownType(node.typeAnnotation)) return
         context.report({
           node,
-          message: 'Import JsonObject from @open-pencil/core/types instead of declaring a local alias.'
+          message: 'Import JsonObject from @open-pencil/scene-graph/primitives instead of declaring a local alias.'
         })
       }
     }

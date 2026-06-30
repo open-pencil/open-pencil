@@ -1,10 +1,11 @@
 /* eslint-disable max-lines -- scene dispatch stays together while shape domains live in sibling modules */
 import type { Canvas, Path } from 'canvaskit-wasm'
 
+import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE, SECTION_CORNER_RADIUS } from '#core/constants'
-import { computeDescendantVisualBounds } from '#core/geometry'
-import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
-import type { Color } from '#core/types'
 import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'

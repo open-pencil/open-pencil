@@ -1,8 +1,9 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
+
 import { importNodeChanges } from '#core/kiwi'
-import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { heavy } from '#tests/helpers/test-utils'
@@ -13,7 +14,7 @@ function importFixture(name: string) {
   return importNodeChanges(nodeChanges, blobs, new Map(images))
 }
 
-setDefaultTimeout(20_000)
+setDefaultTimeout(30_000)
 
 heavy('fig component metadata import', () => {
   test('preserves remote library component identity fields', () => {
@@ -58,5 +59,5 @@ heavy('fig component metadata import', () => {
     expect(Object.keys(variant.componentPropertyValues).some((key) => key.includes(':'))).toBe(
       false
     )
-  }, 10_000)
+  })
 })

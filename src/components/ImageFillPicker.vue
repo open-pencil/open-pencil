@@ -6,7 +6,7 @@ import AppSelect from './ui/AppSelect.vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 
-import type { Fill, ImageScaleMode } from '@open-pencil/core/scene-graph'
+import type { Fill, ImageScaleMode } from '@open-pencil/scene-graph'
 
 const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
   { value: 'FILL', label: 'Fill' },

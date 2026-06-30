@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { isNodeFontLoaded } from '#core/canvas/text'
-import type { SceneNode } from '#core/scene-graph'
 import { fontManager } from '#core/text/fonts'
 
 describe('canvas text font readiness', () => {

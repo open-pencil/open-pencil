@@ -1,7 +1,8 @@
+import type { Variable, VariableCollection, VariableValue } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { colorToHex } from '#core/color'
-import type { Variable, VariableCollection, VariableValue } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
-import type { Color } from '#core/types'
 
 function slugify(name: string): string {
   return name

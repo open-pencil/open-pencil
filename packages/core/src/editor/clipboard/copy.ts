@@ -1,6 +1,7 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { buildFigmaClipboardHTML, buildOpenPencilClipboardHTML } from '#core/clipboard'
 import type { EditorContext } from '#core/editor/types'
-import type { SceneNode } from '#core/scene-graph'
 
 export function createClipboardCopyActions(ctx: EditorContext) {
   async function writeCopyData(clipboardData: DataTransfer, selectedNodes: SceneNode[]) {

@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises'
 import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
@@ -29,7 +30,7 @@ interface ExportArgs {
 }
 
 async function writeAndLog(path: string, content: string | Uint8Array) {
-  await Bun.write(path, content)
+  await writeFile(path, content)
   const size = typeof content === 'string' ? content.length : content.length
   console.log(ok(`Exported ${path} (${(size / 1024).toFixed(1)} KB)`))
 }

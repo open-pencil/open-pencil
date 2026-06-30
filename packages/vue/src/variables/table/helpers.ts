@@ -2,8 +2,8 @@ import type { ColumnDef } from '@tanstack/vue-table'
 import { EditableArea, EditableInput, EditablePreview, EditableRoot } from 'reka-ui'
 import { h, type Component, type ComputedRef } from 'vue'
 
-import type { Variable, VariableValue } from '@open-pencil/core/scene-graph'
-import type { Color } from '@open-pencil/core/types'
+import type { Variable, VariableValue } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export interface VariablesTableOptions {
   activeModes: ComputedRef<{ modeId: string; name: string }[]>

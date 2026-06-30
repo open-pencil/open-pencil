@@ -39,7 +39,7 @@ import Tip from './ui/Tip.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 import { useMenuUI } from '@/components/ui/menu'
 
-import type { VariableType } from '@open-pencil/core/scene-graph'
+import type { VariableType } from '@open-pencil/scene-graph'
 
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI({ content: 'flex h-[75vh] w-[800px] max-w-[90vw] flex-col' })

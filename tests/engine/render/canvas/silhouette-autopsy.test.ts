@@ -14,13 +14,19 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
-import { SceneGraph } from '#core/scene-graph'
 import { fontManager } from '#core/text'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { coreSourcePath, publicPath, testPath as repoTestPath } from '#tests/helpers/paths'
+import {
+  coreSourcePath,
+  publicPath,
+  repoPath,
+  testPath as repoTestPath
+} from '#tests/helpers/paths'
 
 // === CLAIM EXTRACTION ===
 // Each claim is: [doc_section, claim_text, verification_strategy]
@@ -31,11 +37,11 @@ const shadowsPath = coreSourcePath('canvas/shadows.ts')
 const effectsPath = coreSourcePath('canvas/effects.ts')
 const scenePath = coreSourcePath('canvas/scene.ts')
 const rendererPath = coreSourcePath('canvas/renderer.ts')
-const sgTypesPath = coreSourcePath('scene-graph/types.ts')
+const sgTypesPath = repoPath('packages/scene-graph/src/types.ts')
 const nodeExportPath = coreSourcePath('kiwi/fig/node-change/export-node.ts')
 const convertPath = coreSourcePath('kiwi/fig/node-change/paint.ts')
-const schemaPath = coreSourcePath('kiwi/fig/codec/schema/fig.kiwi')
-const codecPath = coreSourcePath('kiwi/fig/codec/index.ts')
+const schemaPath = repoPath('packages/kiwi/src/fig/schema/fig.kiwi')
+const codecPath = repoPath('packages/kiwi/src/fig/codec.ts')
 const lifecyclePath = coreSourcePath('canvas/renderer/lifecycle.ts')
 
 function readSource(path: string): string {

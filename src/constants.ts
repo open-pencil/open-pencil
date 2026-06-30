@@ -59,7 +59,7 @@ export {
   RULER_MAJOR_TOLERANCE
 } from '@open-pencil/core/constants'
 
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export const TRYSTERO_APP_ID = 'openpencil'
 export const ROOM_ID_LENGTH = 8

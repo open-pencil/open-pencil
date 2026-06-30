@@ -1,8 +1,9 @@
+import type { Fill } from '@open-pencil/scene-graph'
+
 import { TRANSPARENT } from '#core/constants'
 import { resolvePasteTarget } from '#core/editor/clipboard/paste-target'
 import type { EditorContext } from '#core/editor/types'
 import { computeImageHash } from '#core/figma-api'
-import type { Fill } from '#core/scene-graph'
 
 const IMAGE_MAX_DIMENSION = 4096
 const IMAGE_GAP = 20

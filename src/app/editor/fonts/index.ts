@@ -1,12 +1,12 @@
 import { useLocalStorage } from '@vueuse/core'
 
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
 import {
   fontManager,
   styleToWeight,
   type FontFamilyOption,
   type LocalFontAccessState
 } from '@open-pencil/core/text'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import {
   clearDownloadedFontCache as clearTauriDownloadedFontCache,

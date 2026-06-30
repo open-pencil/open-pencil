@@ -1,7 +1,8 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
-import { polygonVertices } from '#core/geometry'
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { polygonVertices } from '@open-pencil/scene-graph/geometry'
+
 import { vectorNetworkToPath, geometryBlobToPath } from '#core/vector'
 
 import type { SkiaRenderer } from './renderer'

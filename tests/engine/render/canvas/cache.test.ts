@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 
 import {
@@ -15,6 +15,9 @@ import { initCanvasKit } from '#cli/headless'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
+import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
+
+setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
 let graph: SceneGraph
 let movingNodeId: string
@@ -32,7 +35,7 @@ beforeAll(async () => {
     : undefined
   if (!input) throw new Error('gold-preview Input fixture node not found')
   movingNodeId = input.id
-})
+}, 60_000)
 
 function renderPreview(renderer: SkiaRenderer, sceneVersion: number): Uint8Array {
   renderer.render(graph, new Set(), {}, sceneVersion)

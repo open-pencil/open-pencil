@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { NodeChange } from '#core/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+
 import { importNodeChanges } from '#core/kiwi/fig/import'
 import { nodeChangeToProps } from '#core/kiwi/fig/node-change/convert'
 
