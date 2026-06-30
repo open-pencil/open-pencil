@@ -65,11 +65,11 @@ export function updateNodePreview(
   graph: PreviewGraph,
   id: string,
   changes: Partial<SceneNode>
-): void {
+): Partial<SceneNode> | null {
   const node = graph.nodes.get(id)
-  if (!node) return
+  if (!node) return null
   if ((Object.keys(changes) as (keyof SceneNode)[]).every((key) => node[key] === changes[key])) {
-    return
+    return null
   }
   const affectsLayout = Object.keys(changes).some((key) => LAYOUT_AFFECTING_KEYS.has(key))
   if (affectsLayout) graph.clearAbsPosCache()
@@ -85,4 +85,5 @@ export function updateNodePreview(
     : changes
   graph.positionPreviewVersion++
   Object.assign(node, normalizedChanges)
+  return normalizedChanges
 }

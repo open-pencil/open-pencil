@@ -107,6 +107,9 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
   } else {
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
     editor.updateNode(d.nodeId, finalChanges)
-    editor.commitResize(d.nodeId, d.origRect)
+    editor.commitResize(d.nodeId, {
+      ...d.origRect,
+      ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {})
+    })
   }
 }

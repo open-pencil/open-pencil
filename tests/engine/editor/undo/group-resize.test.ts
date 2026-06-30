@@ -29,7 +29,44 @@ const scaledVectorNetwork: VectorNetwork = {
   }))
 }
 
-describe('group resize undo', () => {
+describe('resize undo', () => {
+  test('restores single vector geometry', () => {
+    const editor = createEditor()
+    const page = editor.graph.getPages()[0]
+    const vector = editor.graph.createNode('VECTOR', page.id, {
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      vectorNetwork: originalVectorNetwork
+    })
+
+    editor.graph.updateNode(vector.id, {
+      width: 20,
+      height: 20,
+      vectorNetwork: scaledVectorNetwork
+    })
+    editor.commitResize(vector.id, {
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      vectorNetwork: originalVectorNetwork
+    })
+
+    editor.undo.undo()
+    const restored = getNodeOrThrow(editor.graph, vector.id)
+    expect(restored.width).toBe(10)
+    expect(restored.height).toBe(10)
+    expect(restored.vectorNetwork?.vertices).toEqual(originalVectorNetwork.vertices)
+
+    editor.undo.redo()
+    const redone = getNodeOrThrow(editor.graph, vector.id)
+    expect(redone.width).toBe(20)
+    expect(redone.height).toBe(20)
+    expect(redone.vectorNetwork?.vertices).toEqual(scaledVectorNetwork.vertices)
+  })
+
   test('restores descendant vector geometry', () => {
     const editor = createEditor()
     const page = editor.graph.getPages()[0]

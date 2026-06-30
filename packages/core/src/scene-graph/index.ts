@@ -6,6 +6,7 @@ import { omit } from 'es-toolkit/object'
 import { createNanoEvents } from 'nanoevents'
 
 import { cloneNodeProps } from './copy'
+import { bindNodeEvents } from './events'
 import * as HitTest from './hit-test'
 import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
@@ -106,17 +107,7 @@ export class SceneGraph {
     return this.nodes.get(id)
   }
   onNodeEvents(handlers: SceneGraphEventHandlers): () => void {
-    const unbinds = [
-      handlers.created ? this.emitter.on('node:created', handlers.created) : null,
-      handlers.updated ? this.emitter.on('node:updated', handlers.updated) : null,
-      handlers.deleted ? this.emitter.on('node:deleted', handlers.deleted) : null,
-      handlers.reparented ? this.emitter.on('node:reparented', handlers.reparented) : null,
-      handlers.reordered ? this.emitter.on('node:reordered', handlers.reordered) : null
-    ].filter((unbind): unbind is () => void => !!unbind)
-
-    return () => {
-      for (const unbind of unbinds) unbind()
-    }
+    return bindNodeEvents(this.emitter, handlers)
   }
 
   countDescendants(nodeId: string): number {
@@ -359,7 +350,8 @@ export class SceneGraph {
     this.updateNodePreview(id, { x, y })
   }
   updateNodePreview(id: string, changes: Partial<SceneNode>): void {
-    updateNodePreview(this, id, changes)
+    const appliedChanges = updateNodePreview(this, id, changes)
+    if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
   }
   updateNode(id: string, changes: Partial<SceneNode>): void {
     if (this.previewMutationDepth > 0) {
