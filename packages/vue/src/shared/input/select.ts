@@ -3,7 +3,7 @@ export { resolveHit } from '#vue/shared/input/select/hit'
 import { resolveHit } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { tryStartResize } from '#vue/shared/input/resize'
 import { createSelectionMoveDrag, selectionIsLocked } from '#vue/shared/input/select/move'

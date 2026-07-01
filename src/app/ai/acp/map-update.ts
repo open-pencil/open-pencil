@@ -1,7 +1,7 @@
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 import type { UIMessageChunk } from 'ai'
 
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 export interface MapResult {
   chunks: UIMessageChunk[]

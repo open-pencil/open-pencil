@@ -13,7 +13,7 @@ const ctx = useColorPickerPanelContext()
   <div class="flex flex-col gap-2">
     <AppSelect
       class="w-[120px]"
-      test-id="color-format-select"
+      data-test-id="color-format-select"
       :model-value="ctx.fieldFormat"
       :options="ctx.fieldOptions"
       @update:model-value="ctx.setFieldFormat"

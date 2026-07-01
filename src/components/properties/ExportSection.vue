@@ -3,9 +3,9 @@ import { ref, computed, watch, onScopeDispose } from 'vue'
 
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import PanelSection from '@/components/ui/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
-import { useIconButtonUI } from '@/components/ui/icon-button'
-import { useSectionUI } from '@/components/ui/section'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useExport, useI18n } from '@open-pencil/vue'
 
@@ -13,7 +13,6 @@ import type { ExportFormatId } from '@open-pencil/vue'
 
 const editorStore = useEditorStore()
 const { panels } = useI18n()
-const sectionCls = useSectionUI()
 const {
   activeTarget,
   activeName,
@@ -114,19 +113,12 @@ onScopeDispose(() => {
 </script>
 
 <template>
-  <div data-test-id="export-section" :class="sectionCls.wrapper">
-    <div class="flex items-center justify-between">
-      <label :class="sectionCls.label">{{ panels.export }}</label>
-      <Tip :label="panels.addExport">
-        <button
-          data-test-id="export-section-add"
-          :class="useIconButtonUI().base"
-          @click="addSetting"
-        >
-          +
-        </button>
-      </Tip>
-    </div>
+  <PanelSection :label="panels.export" data-test-id="export-section">
+    <template #actions>
+      <IconButton :label="panels.addExport" data-test-id="export-section-add" @click="addSetting">
+        <icon-lucide-plus class="size-3.5" />
+      </IconButton>
+    </template>
     <p v-if="mixed" class="text-[11px] text-muted">
       {{ panels.mixed }}
     </p>
@@ -140,6 +132,7 @@ onScopeDispose(() => {
     >
       <ExportScaleInput
         v-if="formatSupportsScale(setting.format)"
+        data-test-id="export-scale-input"
         :model-value="setting.scale"
         :presets="scales"
         :clamp="clampExportScale"
@@ -147,19 +140,15 @@ onScopeDispose(() => {
         @update:model-value="updateScale(i, $event)"
       />
       <AppSelect
+        data-test-id="app-select-trigger"
         :model-value="setting.format"
         :options="FORMAT_OPTIONS"
         :label="panels.exportFormat"
         @update:model-value="updateFormat(i, $event as ExportFormatId)"
       />
-      <Tip :label="panels.removeExport">
-        <button
-          :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base"
-          @click="removeSetting(i)"
-        >
-          −
-        </button>
-      </Tip>
+      <IconButton :label="panels.removeExport" class="shrink-0" @click="removeSetting(i)">
+        <icon-lucide-minus class="size-3.5" />
+      </IconButton>
     </div>
 
     <button
@@ -201,5 +190,5 @@ onScopeDispose(() => {
     >
       {{ panels.exportRenderingPreview }}
     </div>
-  </div>
+  </PanelSection>
 </template>

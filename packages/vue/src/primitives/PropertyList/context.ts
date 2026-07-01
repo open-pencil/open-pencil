@@ -1,9 +1,9 @@
 import { type ComputedRef, type InjectionKey, inject, provide } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
-type ArrayPropKey = 'fills' | 'strokes' | 'effects'
+export type ArrayPropKey = 'fills' | 'strokes' | 'effects'
 
 export interface PropertyListContext<T = unknown> {
   editor: Editor

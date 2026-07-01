@@ -12,7 +12,7 @@ const collab = useCollabPanelContext()
     <AppInput
       :model-value="collab.shareUrl"
       readonly
-      test-id="collab-room-link"
+      data-test-id="collab-room-link"
       :ui="{ base: 'min-w-0 flex-1' }"
       @focus="selectTarget($event)"
     />

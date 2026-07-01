@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import type { TestIdProps } from '@open-pencil/vue'
-
 import AppInput from '@/components/ui/AppInput.vue'
 
-interface ProviderSettingsInputProps extends TestIdProps {
+interface ProviderSettingsInputProps {
   type?: 'text' | 'password' | 'number'
   placeholder?: string
   min?: number
@@ -11,14 +9,7 @@ interface ProviderSettingsInputProps extends TestIdProps {
   step?: number
 }
 
-const {
-  type = 'text',
-  placeholder,
-  testId,
-  min,
-  max,
-  step
-} = defineProps<ProviderSettingsInputProps>()
+const { type = 'text', placeholder, min, max, step } = defineProps<ProviderSettingsInputProps>()
 
 const modelValue = defineModel<string | number>({ required: true })
 const emit = defineEmits<{ change: [] }>()
@@ -28,7 +19,6 @@ const emit = defineEmits<{ change: [] }>()
   <AppInput
     v-model="modelValue"
     :type="type"
-    :test-id="testId"
     :placeholder="placeholder"
     :min="min"
     :max="max"

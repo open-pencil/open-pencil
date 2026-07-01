@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import { parse as parseVueSfc } from 'vue/compiler-sfc'
+
 import {
   collectFolders,
   createFileRule,
@@ -360,6 +362,57 @@ const noHardcodedMacOSShortcutGlyphs = createTextRule(
   }
 )
 
+const VUE_ATTRIBUTE_NODE = 6
+const VUE_DIRECTIVE_NODE = 7
+
+type VueTemplateNode = {
+  type?: number
+  name?: string
+  arg?: { content?: string }
+  props?: VueTemplateNode[]
+  children?: VueTemplateNode[]
+  loc?: { start?: { line?: number; column?: number } }
+}
+
+function walkVueTemplateAst(node: VueTemplateNode, visitor: (node: VueTemplateNode) => void) {
+  visitor(node)
+  for (const prop of node.props ?? []) walkVueTemplateAst(prop, visitor)
+  for (const child of node.children ?? []) walkVueTemplateAst(child, visitor)
+}
+
+function vuePropName(prop: VueTemplateNode) {
+  if (prop.type === VUE_ATTRIBUTE_NODE) return prop.name ?? null
+  if (prop.type === VUE_DIRECTIVE_NODE && prop.name === 'bind') return prop.arg?.content ?? null
+  return null
+}
+
+const noNativeTitleAttributesInVue = createTextRule(
+  'open-pencil/no-native-title-attributes-in-vue',
+  (sourceRel, content) => {
+    if (
+      !sourceRel.endsWith('.vue') ||
+      (!sourceRel.startsWith('src/') && !sourceRel.startsWith('packages/vue/src/'))
+    ) {
+      return []
+    }
+
+    const template = parseVueSfc(content, { filename: sourceRel }).descriptor.template?.ast
+    if (!template) return []
+
+    const diagnostics: Array<{ message: string; line?: number; column?: number }> = []
+    walkVueTemplateAst(template as VueTemplateNode, (node) => {
+      if (vuePropName(node) !== 'title') return
+      const loc = node.loc?.start
+      diagnostics.push({
+        message: 'Use Tip/Reka tooltip patterns instead of native title attributes.',
+        line: loc?.line,
+        column: loc?.column
+      })
+    })
+    return diagnostics
+  }
+)
+
 const SHORTCUT_LABEL_PATTERN = /(?:Shift|Ctrl|Alt|Option|Cmd|Command|⌘|⇧|⌥|⌃)\s*[+)\w]/u
 
 const noShortcutTextInLabels = createTextRule(
@@ -429,6 +482,7 @@ export const openPencilArchitecturePlugin = {
     noNonUiImportsInSharedUi,
     noAppImportsInSharedUi,
     noPropertyPanelInternalsOutsidePanel,
+    noNativeTitleAttributesInVue,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
     noUiImportsInCore

@@ -11,6 +11,8 @@ import {
   requestLocalFontAccess
 } from '@/app/editor/fonts'
 
+import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
+
 import type { FontPickerUi } from '@open-pencil/vue'
 
 const modelValue = defineModel<string>({ required: true })
@@ -42,7 +44,7 @@ const localFontAccess = {
 }
 
 function loadPreviewFont(family: string, source: string) {
-  if (source !== 'google') return
+  if (!WEB_FONT_PROVIDER_IDS.includes(source as (typeof WEB_FONT_PROVIDER_IDS)[number])) return
   if (previewFontLoads.has(family)) return
   previewFontLoads.add(family)
   void loadFont(family)

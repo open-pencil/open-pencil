@@ -10,13 +10,13 @@ import {
   PopoverTrigger
 } from 'reka-ui'
 
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useAttrs, watch } from 'vue'
 
 import { vTestId } from '@open-pencil/vue'
 
 import { useTooltipUI } from '@/components/ui/tooltip'
 
-import type { Variable } from '@open-pencil/core/scene-graph'
+import type { Variable } from '@open-pencil/scene-graph'
 
 const searchTerm = defineModel<string>('searchTerm', { default: '' })
 
@@ -29,8 +29,6 @@ const {
   createNamePlaceholder = 'Variable name',
   createSubmitLabel = 'Create',
   createDefaultName = '',
-  createTestId,
-  triggerTestId,
   swatchBackground
 } = defineProps<{
   variables: Variable[]
@@ -41,10 +39,10 @@ const {
   createNamePlaceholder?: string
   createSubmitLabel?: string
   createDefaultName?: string
-  createTestId?: string
-  triggerTestId?: string
   swatchBackground?: (variableId: string) => string
 }>()
+
+defineOptions({ inheritAttrs: false })
 
 const emit = defineEmits<{
   select: [variable: Variable]
@@ -57,7 +55,12 @@ const creating = ref(false)
 const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
 const canCreate = computed(() => createName.value.trim().length > 0)
+const attrs = useAttrs()
 const tooltipCls = useTooltipUI({ content: 'animate-in zoom-in-95 fade-in' })
+const createDataTestId = computed(() => {
+  const triggerId = attrs['data-test-id']
+  return typeof triggerId === 'string' ? `${triggerId}-create` : undefined
+})
 
 watch(open, (value) => {
   if (!value) creating.value = false
@@ -84,7 +87,7 @@ function submitCreate() {
   <PopoverRoot v-model:open="open">
     <div class="relative shrink-0">
       <PopoverTrigger
-        v-test-id="triggerTestId"
+        v-bind="attrs"
         :aria-label="triggerLabel"
         class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
         @pointerdown.prevent.stop
@@ -163,7 +166,7 @@ function submitCreate() {
                 class="min-w-0 flex-1 rounded border border-border bg-transparent px-1.5 py-1 text-[11px] text-surface outline-none placeholder:text-muted focus:border-accent"
               />
               <button
-                v-test-id="createTestId"
+                v-test-id="createDataTestId"
                 :disabled="!canCreate"
                 class="rounded border border-border bg-panel px-1.5 py-1 text-[11px] text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                 type="submit"
@@ -173,7 +176,7 @@ function submitCreate() {
             </form>
             <button
               v-else
-              v-test-id="createTestId"
+              v-test-id="createDataTestId"
               class="flex w-full cursor-pointer items-center gap-1.5 bg-transparent px-2 py-1.5 text-left text-[11px] text-muted hover:bg-hover hover:text-surface"
               @click="startCreate"
             >

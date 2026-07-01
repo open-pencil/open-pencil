@@ -118,7 +118,7 @@ function activeKeyForTool(tool: EditorToolDef) {
             <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
               <ToolButton
                 mobile
-                :test-id="toolbarToolTestId(tool.key, true)"
+                :data-test-id="toolbarToolTestId(tool.key, true)"
                 :icon="toolIcons[tool.key]"
                 :active="active || activeKeyForTool(tool) === activeTool"
                 @click="actions.select"

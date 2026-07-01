@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { inputNumberValue, vTestId, type TestIdProps } from '@open-pencil/vue'
+import { inputNumberValue } from '@open-pencil/vue'
 import { usePickerSliderUI } from './ui/picker-slider'
 
 type PickerSliderDisplay = {
@@ -11,7 +11,7 @@ type PickerSliderDisplay = {
   parse?: (value: number) => number
 }
 
-interface PickerSliderProps extends TestIdProps {
+interface PickerSliderProps {
   label: string
   modelValue: number
   min: number
@@ -36,7 +36,6 @@ const {
   gradientStyle,
   checkerboard = false,
   thumbFill = '#fff',
-  testId,
   ui
 } = defineProps<PickerSliderProps>()
 
@@ -64,7 +63,7 @@ function thumbLeft(): string {
 </script>
 
 <template>
-  <div :class="cls.root" v-test-id="testId">
+  <div :class="cls.root">
     <span :class="cls.label">{{ label }}</span>
     <div :class="cls.track">
       <div :class="cls.gradient" :style="gradientStyle" />

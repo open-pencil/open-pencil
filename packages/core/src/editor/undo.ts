@@ -1,9 +1,8 @@
 import { pick } from 'es-toolkit/object'
 
-import { cloneVectorNetwork } from '#core/scene-graph'
-import type { SceneNode } from '#core/scene-graph'
-import type { UndoEntry } from '#core/scene-graph/undo'
-import type { Rect, Vector } from '#core/types'
+import { cloneVectorNetwork, type SceneNode } from '@open-pencil/scene-graph'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { collectNodePositions, pushPositionUndo } from './history/position'
@@ -15,6 +14,7 @@ import {
 import type { EditorContext } from './types'
 
 type ResizeSnapshot = Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'vectorNetwork'>
+type ResizeOriginal = Rect & { vectorNetwork?: SceneNode['vectorNetwork'] }
 
 function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
   return {
@@ -90,18 +90,21 @@ export function createUndoActions(ctx: EditorContext) {
     })
   }
 
-  function commitResize(nodeId: string, origRect: Rect) {
+  function commitResize(nodeId: string, original: ResizeOriginal) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
-    const finalRect = { x: node.x, y: node.y, width: node.width, height: node.height }
+    const final: ResizeOriginal =
+      'vectorNetwork' in original
+        ? createResizeSnapshot(node)
+        : { x: node.x, y: node.y, width: node.width, height: node.height }
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, finalRect)
+        ctx.graph.updateNode(nodeId, final)
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, origRect)
+        ctx.graph.updateNode(nodeId, original)
         ctx.runLayoutForNode(nodeId)
       }
     })

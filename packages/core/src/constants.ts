@@ -1,5 +1,5 @@
-import type { Fill, Stroke } from './scene-graph'
-import type { Color } from './types'
+import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export const IS_BROWSER = typeof window !== 'undefined'
 export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window

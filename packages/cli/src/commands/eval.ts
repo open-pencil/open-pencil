@@ -1,3 +1,5 @@
+import { writeFile } from 'node:fs/promises'
+
 import { defineCommand } from 'citty'
 
 import { FigmaAPI } from '@open-pencil/core/figma-api'
@@ -96,7 +98,7 @@ export default defineCommand({
       const io = new IORegistry(BUILTIN_IO_FORMATS)
       const outPath = args.output ? args.output : file
       const result = await io.writeDocument('fig', graph)
-      await Bun.write(outPath, result.data as Uint8Array)
+      await writeFile(outPath, result.data as Uint8Array)
       if (!args.quiet) {
         console.error(`Written to ${outPath}`)
       }

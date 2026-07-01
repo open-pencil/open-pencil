@@ -2,18 +2,17 @@
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import ScrubInput from '@/components/ScrubInput.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import PanelSection from '@/components/ui/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
-import { useIconButtonUI } from '@/components/ui/icon-button'
-import { useSectionUI } from '@/components/ui/section'
 import { PropertyListRoot, vTestId, useEffectsControls, useI18n } from '@open-pencil/vue'
 
 import { colorToCSS } from '@open-pencil/core/color'
 
-import type { Effect } from '@open-pencil/core/scene-graph'
+import type { Effect } from '@open-pencil/scene-graph'
 
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()
-const sectionCls = useSectionUI()
 </script>
 
 <template>
@@ -22,24 +21,21 @@ const sectionCls = useSectionUI()
     prop-key="effects"
     :label="panels.effects"
   >
-    <div data-test-id="effects-section" :class="sectionCls.wrapper">
-      <div class="flex items-center justify-between">
-        <label :class="sectionCls.label">{{ panels.effects }}</label>
-        <Tip :label="panels.addEffect">
-          <button
-            data-test-id="effects-section-add"
-            :class="useIconButtonUI().base"
-            @click="actions.add(effectsCtx.createDefaultEffect())"
-          >
-            +
-          </button>
-        </Tip>
-      </div>
+    <PanelSection :label="panels.effects" data-test-id="effects-section">
+      <template #actions>
+        <IconButton
+          :label="panels.addEffect"
+          data-test-id="effects-section-add"
+          @click="actions.add(effectsCtx.createDefaultEffect())"
+        >
+          <icon-lucide-plus class="size-3.5" />
+        </IconButton>
+      </template>
 
       <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedEffectsHelp }}</p>
 
       <div
-        v-for="(effect, i) in items as Effect[]"
+        v-for="(effect, i) in items"
         :key="`${i}:${effect.visible ? 'visible' : 'hidden'}`"
         data-test-id="effect-item"
         :data-test-index="i"
@@ -90,14 +86,12 @@ const sectionCls = useSectionUI()
               <icon-lucide-eye-off v-else data-test-id="visibility-icon-off" class="size-3.5" />
             </button>
           </Tip>
-          <Tip :label="panels.removeEffect">
-            <button
-              :class="useIconButtonUI().base"
-              @click="effectsCtx.handleRemove(actions.remove, i)"
-            >
-              −
-            </button>
-          </Tip>
+          <IconButton
+            :label="panels.removeEffect"
+            @click="effectsCtx.handleRemove(actions.remove, i)"
+          >
+            <icon-lucide-minus class="size-3.5" />
+          </IconButton>
         </div>
 
         <div class="flex flex-col gap-1.5 py-1.5">
@@ -197,6 +191,6 @@ const sectionCls = useSectionUI()
           </template>
         </div>
       </div>
-    </div>
+    </PanelSection>
   </PropertyListRoot>
 </template>

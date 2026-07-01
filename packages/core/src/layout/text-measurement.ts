@@ -1,4 +1,5 @@
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { weightToStyle } from '#core/text/fonts'
 import { measureTextWithOpenType } from '#core/text/opentype'
 

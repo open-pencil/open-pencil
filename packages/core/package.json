@@ -2,180 +2,169 @@
   "name": "@open-pencil/core",
   "version": "0.13.2",
   "license": "MIT",
-  "type": "module",
-  "imports": {
-    "#core/*": "./src/*"
-  },
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js",
-      "import": "./dist/index.js"
-    },
-    "./scene-graph": {
-      "types": "./dist/scene-graph/index.d.ts",
-      "default": "./dist/scene-graph/index.js",
-      "import": "./dist/scene-graph/index.js"
-    },
-    "./color": {
-      "types": "./dist/color/index.d.ts",
-      "default": "./dist/color/index.js",
-      "import": "./dist/color/index.js"
-    },
-    "./text": {
-      "types": "./dist/text/index.d.ts",
-      "default": "./dist/text/index.js",
-      "import": "./dist/text/index.js"
-    },
-    "./vector": {
-      "types": "./dist/vector/index.d.ts",
-      "default": "./dist/vector/index.js",
-      "import": "./dist/vector/index.js"
-    },
-    "./figma-api": {
-      "types": "./dist/figma-api/index.d.ts",
-      "default": "./dist/figma-api/index.js",
-      "import": "./dist/figma-api/index.js"
-    },
-    "./icons": {
-      "types": "./dist/icons/index.d.ts",
-      "default": "./dist/icons/index.js",
-      "import": "./dist/icons/index.js"
-    },
-    "./canvas": {
-      "types": "./dist/canvas/index.d.ts",
-      "default": "./dist/canvas/index.js",
-      "import": "./dist/canvas/index.js"
-    },
-    "./design-jsx": {
-      "types": "./dist/design-jsx/index.d.ts",
-      "default": "./dist/design-jsx/index.js",
-      "import": "./dist/design-jsx/index.js"
-    },
-    "./editor": {
-      "types": "./dist/editor/index.d.ts",
-      "default": "./dist/editor/index.js",
-      "import": "./dist/editor/index.js"
-    },
-    "./tools": {
-      "types": "./dist/tools/index.d.ts",
-      "default": "./dist/tools/index.js",
-      "import": "./dist/tools/index.js"
-    },
-    "./profiler": {
-      "types": "./dist/profiler/index.d.ts",
-      "default": "./dist/profiler/index.js",
-      "import": "./dist/profiler/index.js"
-    },
-    "./rpc": {
-      "types": "./dist/rpc/index.d.ts",
-      "default": "./dist/rpc/index.js",
-      "import": "./dist/rpc/index.js"
-    },
-    "./lint": {
-      "types": "./dist/lint/index.d.ts",
-      "default": "./dist/lint/index.js",
-      "import": "./dist/lint/index.js"
-    },
-    "./io": {
-      "types": "./dist/io/index.d.ts",
-      "default": "./dist/io/index.js",
-      "import": "./dist/io/index.js"
-    },
-    "./io/formats/fig": {
-      "types": "./dist/io/formats/fig/index.d.ts",
-      "default": "./dist/io/formats/fig/index.js",
-      "import": "./dist/io/formats/fig/index.js"
-    },
-    "./io/formats/pen": {
-      "types": "./dist/io/formats/pen/index.d.ts",
-      "default": "./dist/io/formats/pen/index.js",
-      "import": "./dist/io/formats/pen/index.js"
-    },
-    "./io/formats/jsx": {
-      "types": "./dist/io/formats/jsx/index.d.ts",
-      "default": "./dist/io/formats/jsx/index.js",
-      "import": "./dist/io/formats/jsx/index.js"
-    },
-    "./io/formats/raster": {
-      "types": "./dist/io/formats/raster/index.d.ts",
-      "default": "./dist/io/formats/raster/index.js",
-      "import": "./dist/io/formats/raster/index.js"
-    },
-    "./io/formats/svg": {
-      "types": "./dist/io/formats/svg/index.d.ts",
-      "default": "./dist/io/formats/svg/index.js",
-      "import": "./dist/io/formats/svg/index.js"
-    },
-    "./kiwi": {
-      "types": "./dist/kiwi/index.d.ts",
-      "default": "./dist/kiwi/index.js",
-      "import": "./dist/kiwi/index.js"
-    },
-    "./clipboard": {
-      "types": "./dist/clipboard.d.ts",
-      "default": "./dist/clipboard.js",
-      "import": "./dist/clipboard.js"
-    },
-    "./constants": {
-      "types": "./dist/constants.d.ts",
-      "default": "./dist/constants.js",
-      "import": "./dist/constants.js"
-    },
-    "./random": {
-      "types": "./dist/random.d.ts",
-      "default": "./dist/random.js",
-      "import": "./dist/random.js"
-    },
-    "./xpath": {
-      "types": "./dist/xpath.d.ts",
-      "default": "./dist/xpath.js",
-      "import": "./dist/xpath.js"
-    },
-    "./types": {
-      "types": "./dist/types.d.ts",
-      "default": "./dist/types.js",
-      "import": "./dist/types.js"
-    },
-    "./canvaskit": {
-      "types": "./dist/canvaskit.d.ts",
-      "default": "./dist/canvaskit.js",
-      "import": "./dist/canvaskit.js"
-    },
-    "./layout": {
-      "types": "./dist/layout.d.ts",
-      "default": "./dist/layout.js",
-      "import": "./dist/layout.js"
-    },
-    "./geometry": {
-      "types": "./dist/geometry.d.ts",
-      "default": "./dist/geometry.js",
-      "import": "./dist/geometry.js"
-    }
-  },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "assets"
-  ],
-  "scripts": {
-    "build": "bunx tsdown --config tsdown.config.ts",
-    "prepublishOnly": "bun run build"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/open-pencil/open-pencil.git",
     "directory": "packages/core"
   },
+  "files": [
+    "dist",
+    "assets"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "imports": {
+    "#core/*": "./src/*"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./color": {
+      "types": "./dist/color/index.d.ts",
+      "import": "./dist/color/index.js",
+      "default": "./dist/color/index.js"
+    },
+    "./text": {
+      "types": "./dist/text/index.d.ts",
+      "import": "./dist/text/index.js",
+      "default": "./dist/text/index.js"
+    },
+    "./vector": {
+      "types": "./dist/vector/index.d.ts",
+      "import": "./dist/vector/index.js",
+      "default": "./dist/vector/index.js"
+    },
+    "./figma-api": {
+      "types": "./dist/figma-api/index.d.ts",
+      "import": "./dist/figma-api/index.js",
+      "default": "./dist/figma-api/index.js"
+    },
+    "./icons": {
+      "types": "./dist/icons/index.d.ts",
+      "import": "./dist/icons/index.js",
+      "default": "./dist/icons/index.js"
+    },
+    "./canvas": {
+      "types": "./dist/canvas/index.d.ts",
+      "import": "./dist/canvas/index.js",
+      "default": "./dist/canvas/index.js"
+    },
+    "./design-jsx": {
+      "types": "./dist/design-jsx/index.d.ts",
+      "import": "./dist/design-jsx/index.js",
+      "default": "./dist/design-jsx/index.js"
+    },
+    "./editor": {
+      "types": "./dist/editor/index.d.ts",
+      "import": "./dist/editor/index.js",
+      "default": "./dist/editor/index.js"
+    },
+    "./tools": {
+      "types": "./dist/tools/index.d.ts",
+      "import": "./dist/tools/index.js",
+      "default": "./dist/tools/index.js"
+    },
+    "./profiler": {
+      "types": "./dist/profiler/index.d.ts",
+      "import": "./dist/profiler/index.js",
+      "default": "./dist/profiler/index.js"
+    },
+    "./rpc": {
+      "types": "./dist/rpc/index.d.ts",
+      "import": "./dist/rpc/index.js",
+      "default": "./dist/rpc/index.js"
+    },
+    "./lint": {
+      "types": "./dist/lint/index.d.ts",
+      "import": "./dist/lint/index.js",
+      "default": "./dist/lint/index.js"
+    },
+    "./io": {
+      "types": "./dist/io/index.d.ts",
+      "import": "./dist/io/index.js",
+      "default": "./dist/io/index.js"
+    },
+    "./io/formats/fig": {
+      "types": "./dist/io/formats/fig/index.d.ts",
+      "import": "./dist/io/formats/fig/index.js",
+      "default": "./dist/io/formats/fig/index.js"
+    },
+    "./io/formats/pen": {
+      "types": "./dist/io/formats/pen/index.d.ts",
+      "import": "./dist/io/formats/pen/index.js",
+      "default": "./dist/io/formats/pen/index.js"
+    },
+    "./io/formats/jsx": {
+      "types": "./dist/io/formats/jsx/index.d.ts",
+      "import": "./dist/io/formats/jsx/index.js",
+      "default": "./dist/io/formats/jsx/index.js"
+    },
+    "./io/formats/raster": {
+      "types": "./dist/io/formats/raster/index.d.ts",
+      "import": "./dist/io/formats/raster/index.js",
+      "default": "./dist/io/formats/raster/index.js"
+    },
+    "./io/formats/svg": {
+      "types": "./dist/io/formats/svg/index.d.ts",
+      "import": "./dist/io/formats/svg/index.js",
+      "default": "./dist/io/formats/svg/index.js"
+    },
+    "./kiwi": {
+      "types": "./dist/kiwi/index.d.ts",
+      "import": "./dist/kiwi/index.js",
+      "default": "./dist/kiwi/index.js"
+    },
+    "./clipboard": {
+      "types": "./dist/clipboard.d.ts",
+      "import": "./dist/clipboard.js",
+      "default": "./dist/clipboard.js"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "import": "./dist/constants.js",
+      "default": "./dist/constants.js"
+    },
+    "./random": {
+      "types": "./dist/random.d.ts",
+      "import": "./dist/random.js",
+      "default": "./dist/random.js"
+    },
+    "./xpath": {
+      "types": "./dist/xpath.d.ts",
+      "import": "./dist/xpath.js",
+      "default": "./dist/xpath.js"
+    },
+    "./canvaskit": {
+      "types": "./dist/canvaskit.d.ts",
+      "import": "./dist/canvaskit.js",
+      "default": "./dist/canvaskit.js"
+    },
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js",
+      "default": "./dist/layout.js"
+    }
+  },
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "prepublishOnly": "bun run build"
+  },
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",
     "@iconify/utils": "^3.1.0",
+    "@open-pencil/kiwi": "workspace:*",
+    "@open-pencil/pen": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
     "@tauri-apps/api": "^2",
     "acorn": "^8.16.0",
     "canvaskit-wasm": "^0.40.0",
@@ -193,6 +182,7 @@
     "svg2pdf.js": "^2.7.0",
     "svgpath": "^2.6.0",
     "twirlwind": "^0.3.0",
+    "unifont": "^0.7.4",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3"
   },
   "devDependencies": {

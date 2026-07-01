@@ -151,6 +151,9 @@
     "open-pencil/no-vue-style-blocks": "error",
     "open-pencil/no-native-title-attributes-in-vue": "error",
     "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
+    "open-pencil/no-raw-svg-in-app-vue-templates": "error",
+    "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
+    "open-pencil/no-large-property-section-components": "error",
     "open-pencil/no-raw-test-id-string-props": "error",
     "open-pencil/no-dynamic-data-test-id-in-vue": "error",
     "open-pencil/no-test-id-helper-bind-in-vue": "error",
@@ -418,7 +421,8 @@
     },
     {
       "files": [
-        "**/kiwi/schema-runtime/**"
+        "**/kiwi/schema-runtime/**",
+        "**/kiwi/src/schema-runtime/**"
       ],
       "rules": {
         "typescript/no-explicit-any": "off",
@@ -469,6 +473,22 @@
       ],
       "rules": {
         "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/scene-graph/src/constants.ts"
+      ],
+      "rules": {
+        "open-pencil/no-hardcoded-color-constants": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/scene-graph/src/index.ts"
+      ],
+      "rules": {
+        "open-pencil/no-direct-graph-emitter-subscriptions": "off"
       }
     },
     {

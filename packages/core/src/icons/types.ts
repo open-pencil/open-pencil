@@ -1,4 +1,4 @@
-import type { VectorNetwork, WindingRule } from '#core/scene-graph'
+import type { VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 
 export interface IconPath {
   vectorNetwork: VectorNetwork

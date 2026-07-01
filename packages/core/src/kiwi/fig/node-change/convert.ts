@@ -1,9 +1,10 @@
+import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
+
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
-import { parseVariantName } from '#core/scene-graph/variant-name'
 import { styleToWeight } from '#core/text/fonts'
 
-import { guidToString } from './guid'
 import { convertEffects, convertFills, convertStrokes } from './paint'
 import { importStyleRuns } from './style-runs'
 export { importStyleRuns } from './style-runs'
@@ -26,7 +27,7 @@ import {
 import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
 export { resolveGeometryPaths } from './vector-geometry'
 
-import type { NodeChange } from '#core/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   SceneNode,
   NodeType,
@@ -48,10 +49,10 @@ import type {
   ComponentPropertyType,
   SymbolLink,
   VariantPropSpec
-} from '#core/scene-graph'
-import type { GUID } from '#core/types'
+} from '@open-pencil/scene-graph'
+import type { GUID } from '@open-pencil/scene-graph/primitives'
 
-export { guidToString, stringToGuid } from './guid'
+export { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 
 export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
   // Corner radius
@@ -132,10 +133,11 @@ function mapNodeType(type?: string): NodeType | 'DOCUMENT' | 'VARIABLE' {
 
 function mapBooleanOperation(nc: NodeChange): SceneNode['booleanOperation'] {
   if (nc.type !== 'BOOLEAN_OPERATION') return undefined
-  switch (nc.booleanOperation) {
+  const operation = nc.booleanOperation as NodeChange['booleanOperation'] | 'EXCLUDE' | undefined
+  switch (operation) {
     case 'SUBTRACT':
     case 'INTERSECT':
-      return nc.booleanOperation
+      return operation
     case 'EXCLUDE':
     case 'XOR':
       return 'EXCLUDE'

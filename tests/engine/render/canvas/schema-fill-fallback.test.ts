@@ -1,9 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+
 import { applyFill } from '#core/canvas/fills'
 import type { SkiaRenderer } from '#core/canvas/renderer'
-import { SceneGraph } from '#core/scene-graph'
-import type { Fill, SceneNode } from '#core/scene-graph'
 
 function createRenderer() {
   const picture = {

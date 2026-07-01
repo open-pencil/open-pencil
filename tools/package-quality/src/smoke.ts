@@ -4,7 +4,17 @@ import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const rootDir = fileURLToPath(new URL('../../..', import.meta.url))
-const packageDirs = ['packages/core', 'packages/vue', 'packages/mcp', 'packages/cli']
+const packageDirs = [
+  'packages/scene-graph',
+  'packages/pen',
+  'packages/kiwi',
+  'packages/fig',
+  'packages/core',
+  'packages/dom-css',
+  'packages/vue',
+  'packages/mcp',
+  'packages/cli'
+]
 
 function run(command: string[], cwd = rootDir): string {
   const proc = Bun.spawnSync(command, { cwd, stdout: 'pipe', stderr: 'pipe' })
@@ -55,10 +65,63 @@ try {
   run(['npm', 'init', '-y'], tempDir)
   run(['npm', 'install', '--ignore-scripts', '--no-audit', '--no-fund', ...tarballs], tempDir)
 
+  nodeEval("await import('@open-pencil/kiwi')", tempDir)
+  nodeEval("await import('@open-pencil/kiwi/schema-runtime')", tempDir)
+  nodeEval("await import('@open-pencil/kiwi/fig')", tempDir)
+  nodeEval("await import('@open-pencil/kiwi/fig/codec')", tempDir)
+  nodeEval("await import('@open-pencil/kiwi/fig/container')", tempDir)
+  nodeEval("await import('@open-pencil/kiwi/fig/guid')", tempDir)
+  nodeEval("await import('@open-pencil/kiwi/fig/parse')", tempDir)
+  nodeEval("await import('@open-pencil/fig')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/copy')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/coordinate')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/geometry')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/images')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/matrix')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/parse-path')", tempDir)
+  nodeEval("await import('@open-pencil/scene-graph/primitives')", tempDir)
+  nodeEval("await import('@open-pencil/pen')", tempDir)
   nodeEval("await import('@open-pencil/core')", tempDir)
-  nodeEval("await import('@open-pencil/core/scene-graph')", tempDir)
+  nodeEval("await import('@open-pencil/dom-css')", tempDir)
+  nodeEval("await import('@open-pencil/dom-css/browser')", tempDir)
+  nodeEval("await import('@open-pencil/dom-css/jsx-runtime')", tempDir)
+  nodeEval("await import('@open-pencil/dom-css/jsx-dev-runtime')", tempDir)
   nodeEval("await import('@open-pencil/vue')", tempDir)
   nodeEval("await import('@open-pencil/mcp')", tempDir)
+
+  nodeEval(
+    "const { guidToString } = await import('@open-pencil/kiwi/fig/guid'); if (guidToString({ sessionID: 1, localID: 2 }) !== '1:2') throw new Error('Kiwi GUID subpath failed')",
+    tempDir
+  )
+  nodeEval(
+    "const { buildFigKiwi, parseFigKiwiChunks } = await import('@open-pencil/kiwi/fig/container'); const chunks = parseFigKiwiChunks(buildFigKiwi(new Uint8Array([1]), new Uint8Array([2]))); if (chunks?.length !== 2) throw new Error('Kiwi container subpath failed')",
+    tempDir
+  )
+  nodeEval(
+    "const { FIG_PACKAGE_STATUS, readFigContainer, writeFigContainer } = await import('@open-pencil/fig'); if (FIG_PACKAGE_STATUS !== 'container-api') throw new Error('Fig package status smoke failed'); const document = readFigContainer(writeFigContainer({ schemaDeflated: new Uint8Array([1]), dataRaw: new Uint8Array([2]) })); if (document.dataRaw[0] !== 2) throw new Error('Fig container smoke failed')",
+    tempDir
+  )
+  nodeEval(
+    "const { SceneGraph } = await import('@open-pencil/scene-graph'); const graph = new SceneGraph(); if (graph.getPages().length !== 1) throw new Error('SceneGraph package smoke failed')",
+    tempDir
+  )
+  nodeEval(
+    "const { parsePenFile } = await import('@open-pencil/pen'); const graph = parsePenFile(JSON.stringify({ version: '1', children: [{ id: 'frame', type: 'frame', width: 100, height: 50 }] })); if (graph.getPages()[0].childIds.length !== 1) throw new Error('Pen package smoke failed')",
+    tempDir
+  )
+  nodeEval(
+    "const { htmlToSceneGraph } = await import('@open-pencil/dom-css'); const graph = await htmlToSceneGraph('<div class=card>OpenPencil</div>', { cssText: '.card { width: 320px; }' }); if (graph.getPages()[0].width !== 320) throw new Error('DOM/CSS scene graph smoke failed')",
+    tempDir
+  )
+  nodeEval(
+    "const browser = await import('@open-pencil/dom-css/browser'); for (const key of ['browserHTMLToDesignDocument', 'browserHTMLToSceneGraph', 'browserTailwindJSXToSceneGraph']) if (typeof browser[key] !== 'function') throw new Error('DOM/CSS browser export missing: ' + key)",
+    tempDir
+  )
+  nodeEval(
+    "const { jsx, jsxToDesignDocument } = await import('@open-pencil/dom-css/jsx-runtime'); const document = await jsxToDesignDocument(jsx('section', { class: 'card', style: { width: '120px' }, children: 'OpenPencil' })); const node = document.children[0]; if (node?.type !== 'element' || node.inlineStyle?.width !== '120px') throw new Error('DOM/CSS JSX runtime smoke failed')",
+    tempDir
+  )
 
   run(['node', 'node_modules/.bin/openpencil', '--help'], tempDir)
   run(['node', 'node_modules/.bin/openpencil-mcp', '--help'], tempDir)

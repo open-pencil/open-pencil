@@ -1,7 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
 import type { Fill, Stroke, Effect, StyleRun, GeometryPath } from '@open-pencil/core'
-
 import {
   copyFill,
   copyFills,
@@ -9,7 +8,7 @@ import {
   copyEffect,
   copyStyleRun,
   copyGeometryPaths
-} from '#core/scene-graph/copy'
+} from '@open-pencil/scene-graph/copy'
 
 import { expectDefined } from '#tests/helpers/assert'
 

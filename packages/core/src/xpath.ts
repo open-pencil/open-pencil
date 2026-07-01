@@ -1,6 +1,6 @@
 import type { IDomFacade } from 'fontoxpath'
 
-import type { SceneGraph, SceneNode } from './scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 const NODE_TYPES = {
   ELEMENT_NODE: 1,

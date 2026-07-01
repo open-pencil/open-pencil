@@ -1,5 +1,6 @@
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { CANVAS_BG_COLOR } from '#core/constants'
-import type { Color } from '#core/types'
 
 import type { EditorContext } from './types'
 

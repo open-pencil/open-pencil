@@ -9,7 +9,7 @@ import type {
   VariableCollection,
   VariableType,
   VariableValue
-} from '@open-pencil/core/scene-graph'
+} from '@open-pencil/scene-graph'
 
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
   function setActiveCollection(id: string) {

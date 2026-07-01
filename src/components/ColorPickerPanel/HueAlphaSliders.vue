@@ -18,7 +18,7 @@ const ctx = useColorPickerPanelContext()
       gradient-style="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);"
       :thumb-fill="colorToCSS(ctx.sliderPreview.hue)"
       :ui="{ root: 'gap-0', label: 'hidden', input: 'hidden' }"
-      test-id="color-slider-hue"
+      data-test-id="color-slider-hue"
       @update:model-value="ctx.updateRGBAHue"
     />
 
@@ -32,7 +32,7 @@ const ctx = useColorPickerPanelContext()
       :gradient-style="`background: linear-gradient(to right, transparent, ${colorToCSS({ ...ctx.color, a: 1 })})`"
       :thumb-fill="colorToCSS(ctx.color)"
       :ui="{ root: 'gap-0', label: 'hidden', input: 'hidden' }"
-      test-id="color-slider-alpha"
+      data-test-id="color-slider-alpha"
       @update:model-value="ctx.updateRGBAAlpha"
     />
   </template>

@@ -1,12 +1,12 @@
 import { computed } from 'vue'
 
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
 import type { MenuEntry } from '@open-pencil/vue'
+import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
-import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
+import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
@@ -43,7 +43,23 @@ export function useAppMenu() {
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     language: 'language',
-    profiler: 'profiler'
+    profiler: 'profiler',
+    'toggle-ui': 'toggleUI',
+    theme: 'theme',
+    'theme-light': 'themeLight',
+    'theme-dark': 'themeDark',
+    'theme-auto': 'themeAuto',
+    'zoom-in': 'zoomIn',
+    'zoom-out': 'zoomOut',
+    'text.bold': 'bold',
+    'text.italic': 'italic',
+    'text.underline': 'underline',
+    'arrange.align-left': 'arrangeAlignLeft',
+    'arrange.align-center': 'arrangeAlignCenter',
+    'arrange.align-right': 'arrangeAlignRight',
+    'arrange.align-top': 'arrangeAlignTop',
+    'arrange.align-middle': 'arrangeAlignMiddle',
+    'arrange.align-bottom': 'arrangeAlignBottom'
   }
 
   const languageMenu = computed<MenuEntry[]>(() =>

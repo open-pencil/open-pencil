@@ -1,6 +1,6 @@
 import type { Node as YogaNode } from 'yoga-layout'
 
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 export type ComputeLayoutFn = (graph: SceneGraph, frameId: string) => void
 

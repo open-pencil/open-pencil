@@ -1,5 +1,5 @@
 import type { Editor, Tool } from '@open-pencil/core/editor'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import {
   absoluteVertices,

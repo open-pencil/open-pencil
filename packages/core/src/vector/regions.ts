@@ -1,4 +1,4 @@
-import type { VectorRegion, VectorSegment } from '#core/scene-graph'
+import type { VectorRegion, VectorSegment } from '@open-pencil/scene-graph'
 
 export function remapRegions(
   regions: VectorRegion[],

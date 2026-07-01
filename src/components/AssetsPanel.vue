@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from 'reka-ui'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
@@ -181,7 +181,7 @@ function insertSelectedAsset() {
       <AppInput
         v-model="query"
         type="search"
-        test-id="assets-search"
+        data-test-id="assets-search"
         size="sm"
         :placeholder="panels.searchLocalComponents"
       />

@@ -1,10 +1,11 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import type {
   DerivedSymbolOverride,
   OverrideContext
 } from '#core/kiwi/fig/instance-overrides/types'
 import { convertLetterSpacing, convertLineHeight } from '#core/kiwi/fig/node-change/convert'
 import { convertFigmaDerivedTextGlyphs } from '#core/kiwi/fig/node-change/derived-text-glyphs'
-import type { SceneNode } from '#core/scene-graph'
 
 import { resolveDsdGeometry } from './geometry'
 

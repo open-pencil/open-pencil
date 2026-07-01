@@ -1,6 +1,7 @@
 import type { Canvas, Path, PathOp } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import { getTextOutlineSupport } from '#core/text/outlines'
 
 import { makeArcPath } from './fills'

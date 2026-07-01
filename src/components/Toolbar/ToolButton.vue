@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { vTestId, type RequiredTestIdProps } from '@open-pencil/vue'
 import type { Component } from 'vue'
 
-interface ToolButtonProps extends RequiredTestIdProps {
+interface ToolButtonProps {
   icon: Component
   active?: boolean
   mobile?: boolean
 }
 
-const { icon, active = false, mobile = false, testId } = defineProps<ToolButtonProps>()
+const { icon, active = false, mobile = false } = defineProps<ToolButtonProps>()
 
 const emit = defineEmits<{
   click: []
@@ -17,7 +16,6 @@ const emit = defineEmits<{
 
 <template>
   <button
-    v-test-id="testId"
     class="flex size-8 cursor-pointer items-center justify-center border-none transition-colors"
     :class="[
       mobile ? 'rounded-[6px] select-none' : 'rounded-lg',

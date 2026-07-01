@@ -281,17 +281,17 @@
         "type": "separator"
       },
       {
-        "id": "align-left",
+        "id": "arrange.align-left",
         "label": "Align Left",
         "accelerator": "Alt+A"
       },
       {
-        "id": "align-center",
+        "id": "arrange.align-center",
         "label": "Align Center",
         "accelerator": "Alt+H"
       },
       {
-        "id": "align-right",
+        "id": "arrange.align-right",
         "label": "Align Right",
         "accelerator": "Alt+D"
       },
@@ -299,17 +299,17 @@
         "type": "separator"
       },
       {
-        "id": "align-top",
+        "id": "arrange.align-top",
         "label": "Align Top",
         "accelerator": "Alt+W"
       },
       {
-        "id": "align-middle",
+        "id": "arrange.align-middle",
         "label": "Align Middle",
         "accelerator": "Alt+V"
       },
       {
-        "id": "align-bottom",
+        "id": "arrange.align-bottom",
         "label": "Align Bottom",
         "accelerator": "Alt+S"
       }

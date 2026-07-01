@@ -1,8 +1,9 @@
 import { createTwoFilesPatch } from 'diff'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { colorToHex, parseColor } from '#core/color'
 import type { FigmaAPI } from '#core/figma-api'
-import type { SceneNode } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
 
 function serializePaintProps(raw: SceneNode, lines: string[]): void {

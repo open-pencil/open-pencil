@@ -61,14 +61,7 @@ export {
   variablesAddTestId
 } from '#vue/testing/test-id'
 export { vTestId } from '#vue/testing/v-test-id'
-export type {
-  RequiredTestIdProps,
-  TestId,
-  TestIdProps,
-  WithoutTestId,
-  WithRequiredTestId,
-  WithTestId
-} from '#vue/testing/test-id'
+export type { TestId } from '#vue/testing/test-id'
 
 /** Property-panel composables. */
 export { usePosition } from '#vue/controls/position/use'
@@ -134,7 +127,7 @@ export {
   GradientEditorStop
 } from '#vue/primitives/GradientEditor'
 export { LayerTreeRoot, LayerTreeItem, useLayerTree } from '#vue/primitives/LayerTree'
-export type { LayerTreeContext, LayerNode } from '#vue/primitives/LayerTree'
+export type { LayerDragInstruction, LayerTreeContext, LayerNode } from '#vue/primitives/LayerTree'
 export { LayoutControlsRoot, useLayoutControlsContext } from '#vue/primitives/LayoutControls'
 export type { LayoutControlsContext } from '#vue/primitives/LayoutControls'
 export { AppearanceControlsRoot } from '#vue/primitives/AppearanceControls'

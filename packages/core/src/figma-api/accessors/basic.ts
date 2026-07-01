@@ -1,3 +1,6 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
 import {
   graph,
   nodeId,
@@ -6,8 +9,6 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
-import type { SceneNode } from '#core/scene-graph'
-import type { Rect } from '#core/types'
 
 export function installBasicNodeProxyAccessors(
   prototype: object,

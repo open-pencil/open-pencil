@@ -13,8 +13,7 @@ const { dialogs } = useI18n()
     v-model="ctx.pexelsKeyInput"
     :label="dialogs.pexelsAPIKey"
     :saved="!!ctx.pexelsApiKey"
-    clear-test-id="provider-settings-clear-pexels-key"
-    input-test-id="provider-settings-pexels-key"
+    kind="pexels"
     :placeholder="
       ctx.hasExistingPexelsKey ? dialogs.keySavedReplace : dialogs.stockPhotoToolOptional
     "
@@ -28,8 +27,7 @@ const { dialogs } = useI18n()
     v-model="ctx.unsplashKeyInput"
     :label="dialogs.unsplashAccessKey"
     :saved="!!ctx.unsplashAccessKey"
-    clear-test-id="provider-settings-clear-unsplash-key"
-    input-test-id="provider-settings-unsplash-key"
+    kind="unsplash"
     :placeholder="
       ctx.hasExistingUnsplashKey ? dialogs.keySavedReplace : dialogs.pexelsAlternativeOptional
     "

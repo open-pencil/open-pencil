@@ -47,7 +47,7 @@ const ctx = useColorPickerPanelContext()
     :display="{ value: Math.round(ctx.hslColor.s ?? 0), min: 0, max: 100, step: 1 }"
     :gradient-style="ctx.sliderGradient.hslSaturation"
     :thumb-fill="colorToCSS(ctx.sliderPreview.hslSaturation)"
-    test-id="color-slider-hsl-s"
+    data-test-id="color-slider-hsl-s"
     @update:model-value="ctx.updateHSLChannelValue('s', $event)"
   />
 
@@ -60,7 +60,7 @@ const ctx = useColorPickerPanelContext()
     :display="{ value: Math.round(ctx.hslColor.l ?? 0), min: 0, max: 100, step: 1 }"
     :gradient-style="ctx.sliderGradient.hslLightness"
     :thumb-fill="colorToCSS(ctx.sliderPreview.hslLightness)"
-    test-id="color-slider-hsl-l"
+    data-test-id="color-slider-hsl-l"
     @update:model-value="ctx.updateHSLChannelValue('l', $event)"
   />
 

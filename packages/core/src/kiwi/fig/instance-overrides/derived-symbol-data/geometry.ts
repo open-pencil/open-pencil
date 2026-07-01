@@ -1,6 +1,7 @@
+import type { GeometryPath, SceneNode } from '@open-pencil/scene-graph'
+
 import type { DerivedSymbolOverride } from '#core/kiwi/fig/instance-overrides/types'
 import { resolveGeometryPaths } from '#core/kiwi/fig/node-change/convert'
-import type { GeometryPath, SceneNode } from '#core/scene-graph'
 
 function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): GeometryPath[] {
   if (sx === 1 && sy === 1) return geom

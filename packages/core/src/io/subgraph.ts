@@ -1,4 +1,4 @@
-import { SceneGraph } from '#core/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportTarget } from './types'
 

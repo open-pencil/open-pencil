@@ -1,6 +1,12 @@
+import type {
+  SceneNode,
+  VectorNetwork,
+  VectorSegment,
+  VectorVertex
+} from '@open-pencil/scene-graph'
+import { polygonVertices } from '@open-pencil/scene-graph/geometry'
+
 import { nodeHasRadius } from '#core/canvas/shapes'
-import { polygonVertices } from '#core/geometry'
-import type { SceneNode, VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
 
 const CMD_CLOSE = 0
 const CMD_MOVE_TO = 1

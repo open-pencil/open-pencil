@@ -1,5 +1,8 @@
 import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 
+import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+
 import {
   RULER_SIZE,
   RULER_BADGE_HEIGHT,
@@ -13,8 +16,6 @@ import {
   RULER_TARGET_PIXEL_SPACING,
   RULER_MAJOR_TOLERANCE
 } from '#core/constants'
-import { computeAbsoluteBounds } from '#core/geometry'
-import type { SceneNode, SceneGraph } from '#core/scene-graph'
 
 import type { SkiaRenderer } from './renderer'
 

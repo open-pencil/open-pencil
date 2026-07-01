@@ -1,8 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
 
 import { colorToCSS, parseColor } from '@open-pencil/core/color'
-import type { Fill, GradientStop, GradientTransform } from '@open-pencil/core/scene-graph'
-import type { Color } from '@open-pencil/core/types'
+import type { Fill, GradientStop, GradientTransform } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 type GradientSubtype =
   | 'GRADIENT_LINEAR'

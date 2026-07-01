@@ -1,8 +1,9 @@
 import { twirl } from 'twirlwind'
 
+import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import { colorToCSSCompact } from '#core/color'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import type { GridTrack, SceneGraph, SceneNode } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import { formatTrack, getNodeContext, solidFillColor, solidStroke } from './helpers'

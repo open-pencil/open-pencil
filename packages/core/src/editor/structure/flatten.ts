@@ -1,8 +1,9 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { canMakeBooleanSourceNode, hasVisibleStrokeSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps, outlineStrokeNodesToVectorProps } from '#core/canvas/flatten'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import type { EditorContext } from '#core/editor/types'
-import type { SceneNode } from '#core/scene-graph'
 
 import { selectedNodesInSharedParent } from './selection'
 

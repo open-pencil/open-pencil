@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { TestIdProps } from '@open-pencil/vue'
+import { computed } from 'vue'
 
 import { useInputUI } from '@/components/ui/input'
 
-interface AppInputProps extends TestIdProps {
+interface AppInputProps {
   type?: 'text' | 'password' | 'number' | 'search'
   placeholder?: string
   readonly?: boolean
@@ -28,9 +28,10 @@ const {
   max,
   step,
   ui,
-  size = 'md',
-  testId
+  size = 'md'
 } = defineProps<AppInputProps>()
+
+const inputClass = computed(() => useInputUI({ size, ui }).base)
 
 const modelValue = defineModel<string | number>({ required: true })
 const emit = defineEmits<{
@@ -44,7 +45,6 @@ const emit = defineEmits<{
   <input
     v-model="modelValue"
     :type="type"
-    :data-test-id="testId"
     :placeholder="placeholder"
     :readonly="readonly"
     :disabled="disabled"
@@ -52,7 +52,7 @@ const emit = defineEmits<{
     :min="min"
     :max="max"
     :step="step"
-    :class="useInputUI({ size, ui }).base"
+    :class="inputClass"
     @change="emit('change')"
     @keydown.enter="emit('enter', $event)"
     @focus="emit('focus', $event)"

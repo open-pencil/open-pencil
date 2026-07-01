@@ -55,7 +55,7 @@ function activeKeyForTool(tool: EditorToolDef) {
         <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
           <Tip :label="`${toolLabels[tool.key]} (${tool.shortcut})`">
             <ToolButton
-              :test-id="toolbarToolTestId(tool.key)"
+              :data-test-id="toolbarToolTestId(tool.key)"
               :icon="toolIcons[tool.key]"
               :active="active || isActive(tool)"
               @click="actions.select"

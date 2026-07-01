@@ -1,6 +1,6 @@
 import { omit } from 'es-toolkit/object'
 
-import type { CharacterStyleOverride, StyleRun, TextDecoration } from '#core/scene-graph'
+import type { CharacterStyleOverride, StyleRun, TextDecoration } from '@open-pencil/scene-graph'
 
 export function getStyleAt(runs: StyleRun[], index: number): CharacterStyleOverride {
   for (const run of runs) {

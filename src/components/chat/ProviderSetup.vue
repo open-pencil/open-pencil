@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import {
+  testProviderConnection,
+  type ProviderConnectionTestFailureReason
+} from '@/app/ai/chat/connection-test'
+import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
 import ProviderSelectField from '@/components/chat/ProviderSelect/ProviderSelectField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
@@ -9,7 +14,8 @@ import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { openExternalLink } from '@/app/shell/ui'
 import { useI18n } from '@open-pencil/vue'
 
-const { providerID, providerDef, setAPIKey, customBaseURL, customModelID } = useAIChat()
+const { providerID, providerDef, setAPIKey, modelID, customBaseURL, customModelID, customAPIType } =
+  useAIChat()
 const { dialogs } = useI18n()
 
 const isACP = computed(() => providerID.value.startsWith('acp:'))
@@ -22,6 +28,57 @@ const acpAgent = computed(() => {
 const keyInput = ref('')
 const baseURLInput = ref(customBaseURL.value)
 const customModelInput = ref(customModelID.value)
+const connectionTestStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
+const connectionTestReason = ref<ProviderConnectionTestFailureReason | null>(null)
+
+const canTestConnection = computed(() => {
+  if (isACP.value) return false
+  if (!keyInput.value.trim()) return false
+  if (providerDef.value.supportsCustomBaseURL && !baseURLInput.value.trim()) return false
+  if (
+    providerDef.value.supportsCustomModel &&
+    providerID.value !== 'openrouter' &&
+    !customModelInput.value.trim()
+  ) {
+    return false
+  }
+  return true
+})
+
+function resetConnectionTest() {
+  connectionTestStatus.value = 'idle'
+  connectionTestReason.value = null
+}
+
+watch([providerID, keyInput, baseURLInput, customModelInput, customAPIType], resetConnectionTest)
+
+async function testConnection() {
+  if (connectionTestStatus.value === 'testing') return
+  connectionTestStatus.value = 'testing'
+  connectionTestReason.value = null
+
+  const result = await testProviderConnection({
+    providerID: providerID.value,
+    apiKey: keyInput.value.trim(),
+    modelID: modelID.value,
+    customModelID: providerDef.value.supportsCustomModel
+      ? customModelInput.value.trim()
+      : customModelID.value,
+    customBaseURL: providerDef.value.supportsCustomBaseURL
+      ? baseURLInput.value.trim()
+      : customBaseURL.value,
+    customAPIType: customAPIType.value
+  })
+
+  if (result.ok) {
+    connectionTestStatus.value = 'success'
+    connectionTestReason.value = null
+    return
+  }
+
+  connectionTestStatus.value = 'error'
+  connectionTestReason.value = result.reason
+}
 
 function save() {
   const key = keyInput.value.trim()
@@ -43,13 +100,13 @@ function save() {
     <p class="mb-5 text-center text-xs text-muted">{{ dialogs.connectAIProvider }}</p>
 
     <form v-if="!isACP" class="flex w-full flex-col gap-2" @submit.prevent="save">
-      <ProviderSelectField test-id="provider-selector" />
+      <ProviderSelectField data-test-id="provider-selector" />
 
       <!-- Base URL (compatible providers only) -->
       <AppInput
         v-if="providerDef.supportsCustomBaseURL"
         v-model="baseURLInput"
-        test-id="provider-base-url"
+        data-test-id="provider-base-url"
         :placeholder="dialogs.baseURLPlaceholder"
       />
 
@@ -57,15 +114,22 @@ function save() {
       <AppInput
         v-if="providerDef.supportsCustomModel && providerID !== 'openrouter'"
         v-model="customModelInput"
-        test-id="provider-custom-model"
+        data-test-id="provider-custom-model"
         :placeholder="dialogs.modelIDPlaceholder"
       />
 
       <AppInput
         v-model="keyInput"
         type="password"
-        test-id="api-key-input"
+        data-test-id="api-key-input"
         :placeholder="providerDef.keyPlaceholder"
+      />
+
+      <ProviderConnectionTestButton
+        :status="connectionTestStatus"
+        :reason="connectionTestReason"
+        :disabled="!canTestConnection"
+        @test="testConnection"
       />
 
       <button
@@ -80,7 +144,7 @@ function save() {
 
     <!-- ACP agent — no API key needed -->
     <div v-else class="flex w-full flex-col gap-2">
-      <ProviderSelectField test-id="provider-selector" />
+      <ProviderSelectField data-test-id="provider-selector" />
 
       <p class="text-center text-[10px] leading-relaxed text-muted">
         Uses your existing {{ acpAgent?.name }} subscription.
@@ -103,7 +167,7 @@ function save() {
 
     <AppTextButton
       v-if="!isACP && providerDef.keyURL"
-      test-id="api-key-get-link"
+      data-test-id="api-key-get-link"
       underline
       :ui="{ base: 'mt-2.5' }"
       @click="openExternalLink(providerDef.keyURL as string)"

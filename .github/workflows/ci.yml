@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,13 +25,34 @@ jobs:
       - name: Format check
         run: bun run format:check
 
-      - name: Lint & typecheck
+      - name: Lint, typecheck, architecture, package, and tooling checks
         run: bun run check
 
-      - name: Unit tests
-        run: bun test tests/engine/
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        group: [app, dom, editor, fig, render, scene, vue]
+    name: Unit tests (${{ matrix.group }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          lfs: 'true'
+
+      - name: Build packages
+        run: bun run build:packages
+
+      - name: Run quick unit test shard
+        shell: bash
+        run: |
+          mapfile -t test_files < <(bun tools/unit-tests/src/list.ts "${{ matrix.group }}")
+          if [ "${#test_files[@]}" -eq 0 ]; then
+            echo "No tests found for shard ${{ matrix.group }}"
+            exit 0
+          fi
+          bun test "${test_files[@]}"
         env:
           BUN_HEAVY_TESTS: 'false'
-
-      - name: Copy-paste detection
-        run: bun run test:dupes

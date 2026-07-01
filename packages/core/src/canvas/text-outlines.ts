@@ -1,6 +1,7 @@
 import type { Path } from 'canvaskit-wasm'
 
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import type { OutlineCommand } from '#core/text/opentype'
 import { textNodeToOutlineLayout } from '#core/text/outlines'
 

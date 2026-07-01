@@ -1,28 +1,29 @@
 <script setup lang="ts">
-import { ToggleGroupItem, ToggleGroupRoot } from 'reka-ui'
-
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
 import FontPicker from '@/components/FontPicker.vue'
 import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import PanelRow from '@/components/ui/PanelRow.vue'
+import PanelSection from '@/components/ui/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
-import { useSectionUI } from '@/components/ui/section'
 import { loadFont } from '@/app/editor/fonts'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 
 const { panels, menu } = useI18n()
-const sectionCls = useSectionUI()
 const fontLoader = { load: loadFont }
 </script>
 
 <template>
   <TypographyControlsRoot v-slot="ctx" :font-loader="fontLoader">
-    <div v-if="ctx.node.value" data-test-id="typography-section" :class="sectionCls.wrapper">
-      <label class="mb-1.5 block text-[11px] text-muted">{{ panels.typography }}</label>
-
-      <div class="mb-1.5 flex items-center gap-1.5">
+    <PanelSection
+      v-if="ctx.node.value"
+      :label="panels.typography"
+      data-test-id="typography-section"
+    >
+      <PanelRow class="mb-1.5">
         <FontPicker
           class="min-w-0 flex-1"
           :model-value="ctx.node.value.fontFamily"
@@ -43,9 +44,9 @@ const fontLoader = { load: loadFont }
             class="size-3.5 shrink-0 text-[var(--color-warning-action)]"
           />
         </Tip>
-      </div>
+      </PanelRow>
 
-      <div class="mb-1.5 flex gap-1.5">
+      <PanelRow cols="two" class="mb-1.5">
         <AppSelect
           :model-value="ctx.node.value.fontWeight"
           :options="ctx.weights"
@@ -61,9 +62,9 @@ const fontLoader = { load: loadFont }
           @update:model-value="ctx.actions.updateProp('fontSize', $event)"
           @commit="(v: number, p: number) => ctx.actions.commitProp('fontSize', v, p)"
         />
-      </div>
+      </PanelRow>
 
-      <div class="mb-1.5 flex gap-1.5">
+      <PanelRow cols="two" class="mb-1.5">
         <VariableScrubInput
           class="flex-1"
           :model-value="
@@ -92,7 +93,7 @@ const fontLoader = { load: loadFont }
             <icon-lucide-a-large-small class="size-3" />
           </template>
         </VariableScrubInput>
-      </div>
+      </PanelRow>
 
       <div class="mb-1.5">
         <label class="mb-1 block text-[11px] text-muted">{{ panels.direction }}</label>
@@ -107,64 +108,69 @@ const fontLoader = { load: loadFont }
         />
       </div>
 
-      <div class="flex items-center gap-3">
-        <ToggleGroupRoot
-          type="single"
-          class="flex gap-0.5"
-          :model-value="ctx.node.value.textAlignHorizontal"
-          @update:model-value="ctx.actions.align"
-        >
-          <ToggleGroupItem
-            v-for="align in ['LEFT', 'CENTER', 'RIGHT'] as const"
-            :key="align"
-            :value="align"
-            class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
+      <PanelRow class="gap-3">
+        <PanelRow gap="sm">
+          <IconButton
+            :label="panels.alignLeft"
+            size="md"
+            :active="ctx.node.value.textAlignHorizontal === 'LEFT'"
+            @click="ctx.actions.align('LEFT')"
           >
-            <icon-lucide-align-left v-if="align === 'LEFT'" class="size-3.5" />
-            <icon-lucide-align-center v-else-if="align === 'CENTER'" class="size-3.5" />
-            <icon-lucide-align-right v-else class="size-3.5" />
-          </ToggleGroupItem>
-        </ToggleGroupRoot>
-        <div class="flex gap-0.5">
-          <Tip :label="`${menu.bold} (${appMenuShortcutLabel('text.bold')})`">
-            <button
-              data-test-id="typography-bold-button"
-              class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 font-bold text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
-              :data-state="ctx.activeFormatting.value.includes('bold') ? 'on' : 'off'"
-              @click="ctx.actions.toggleBold"
-            >
-              <icon-lucide-bold class="size-3.5" />
-            </button>
-          </Tip>
-          <Tip :label="`${menu.italic} (${appMenuShortcutLabel('text.italic')})`">
-            <button
-              class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
-              :data-state="ctx.activeFormatting.value.includes('italic') ? 'on' : 'off'"
-              @click="ctx.actions.toggleItalic"
-            >
-              <icon-lucide-italic class="size-3.5" />
-            </button>
-          </Tip>
-          <Tip :label="`${menu.underline} (${appMenuShortcutLabel('text.underline')})`">
-            <button
-              class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
-              :data-state="ctx.activeFormatting.value.includes('underline') ? 'on' : 'off'"
-              @click="ctx.actions.toggleDecoration('UNDERLINE')"
-            >
-              <icon-lucide-underline class="size-3.5" />
-            </button>
-          </Tip>
-          <Tip :label="menu.strikethrough">
-            <button
-              class="flex cursor-pointer items-center justify-center rounded border border-border bg-input px-2 py-1 text-muted hover:bg-hover hover:text-surface data-[state=on]:border-accent data-[state=on]:bg-accent data-[state=on]:text-white"
-              :data-state="ctx.activeFormatting.value.includes('strikethrough') ? 'on' : 'off'"
-              @click="ctx.actions.toggleDecoration('STRIKETHROUGH')"
-            >
-              <icon-lucide-strikethrough class="size-3.5" />
-            </button>
-          </Tip>
-        </div>
-      </div>
-    </div>
+            <icon-lucide-align-left class="size-3.5" />
+          </IconButton>
+          <IconButton
+            :label="panels.alignCenterHorizontally"
+            size="md"
+            :active="ctx.node.value.textAlignHorizontal === 'CENTER'"
+            @click="ctx.actions.align('CENTER')"
+          >
+            <icon-lucide-align-center class="size-3.5" />
+          </IconButton>
+          <IconButton
+            :label="panels.alignRight"
+            size="md"
+            :active="ctx.node.value.textAlignHorizontal === 'RIGHT'"
+            @click="ctx.actions.align('RIGHT')"
+          >
+            <icon-lucide-align-right class="size-3.5" />
+          </IconButton>
+        </PanelRow>
+        <PanelRow gap="sm">
+          <IconButton
+            :label="`${menu.bold} (${appMenuShortcutLabel('text.bold')})`"
+            size="md"
+            :active="ctx.activeFormatting.value.includes('bold')"
+            data-test-id="typography-bold-button"
+            @click="ctx.actions.toggleBold"
+          >
+            <icon-lucide-bold class="size-3.5" />
+          </IconButton>
+          <IconButton
+            :label="`${menu.italic} (${appMenuShortcutLabel('text.italic')})`"
+            size="md"
+            :active="ctx.activeFormatting.value.includes('italic')"
+            @click="ctx.actions.toggleItalic"
+          >
+            <icon-lucide-italic class="size-3.5" />
+          </IconButton>
+          <IconButton
+            :label="`${menu.underline} (${appMenuShortcutLabel('text.underline')})`"
+            size="md"
+            :active="ctx.activeFormatting.value.includes('underline')"
+            @click="ctx.actions.toggleDecoration('UNDERLINE')"
+          >
+            <icon-lucide-underline class="size-3.5" />
+          </IconButton>
+          <IconButton
+            :label="menu.strikethrough"
+            size="md"
+            :active="ctx.activeFormatting.value.includes('strikethrough')"
+            @click="ctx.actions.toggleDecoration('STRIKETHROUGH')"
+          >
+            <icon-lucide-strikethrough class="size-3.5" />
+          </IconButton>
+        </PanelRow>
+      </PanelRow>
+    </PanelSection>
   </TypographyControlsRoot>
 </template>

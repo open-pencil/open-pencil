@@ -1,3 +1,7 @@
+import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+
 import type { ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
@@ -12,10 +16,7 @@ import {
 } from '#core/constants'
 import type { EditorState } from '#core/editor/types'
 import { RenderProfiler } from '#core/profiler'
-import type { SceneNode, SceneGraph, Fill, Stroke } from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
-import type { Color, Rect, Vector } from '#core/types'
 
 import { LabelCache } from './labels/cache'
 import * as LabelHitTest from './labels/hit-test'

@@ -1,10 +1,11 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+
 import { drawPageGuides } from '#core/canvas/page-guides'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import type { EditorState } from '#core/editor/types'
-import { computeDescendantVisualBounds } from '#core/geometry'
-import type { SceneGraph } from '#core/scene-graph'
 
 import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-backing'
 

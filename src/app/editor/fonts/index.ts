@@ -1,32 +1,71 @@
 import { useLocalStorage } from '@vueuse/core'
+import { watch } from 'vue'
 
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
 import {
+  DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
+  WEB_FONT_PROVIDER_IDS,
   fontManager,
   styleToWeight,
   type FontFamilyOption,
-  type LocalFontAccessState
+  type LocalFontAccessState,
+  type WebFontProviderId
 } from '@open-pencil/core/text'
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import { dialogMessages } from '@open-pencil/vue'
 
 import {
   clearDownloadedFontCache as clearTauriDownloadedFontCache,
   createTauriDownloadedFontCache,
   downloadedFontCacheSummary as tauriDownloadedFontCacheSummary
 } from '@/app/editor/fonts/cache'
+import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
+import { tauriFetch } from '@/app/tauri/http'
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
 }
 
-export const googleFontsEnabled = useLocalStorage('op-google-fonts-enabled', true)
+export type FontProviderSettings = Record<WebFontProviderId, boolean>
+
+export const onlineFontsEnabled = useLocalStorage('op-online-fonts-enabled', true)
+export const fontProviderSettings = useLocalStorage<FontProviderSettings>(
+  'op-font-providers',
+  DEFAULT_WEB_FONT_PROVIDER_SETTINGS
+)
+
+watch(
+  [onlineFontsEnabled, fontProviderSettings],
+  () => {
+    fontManager.setOnlineFontProviders(
+      onlineFontsEnabled.value
+        ? Object.fromEntries(
+            WEB_FONT_PROVIDER_IDS.map((provider) => [
+              provider,
+              fontProviderSettings.value[provider]
+            ])
+          )
+        : {}
+    )
+  },
+  { deep: true, immediate: true }
+)
 
 let tauriFontCacheConfigured = false
+let webFontUnavailableToastShown = false
+
+function showWebFontUnavailableToast(): void {
+  if (webFontUnavailableToastShown || isTauri() || !onlineFontsEnabled.value) return
+  if (!WEB_FONT_PROVIDER_IDS.some((provider) => fontProviderSettings.value[provider])) return
+  webFontUnavailableToastShown = true
+  toast.warning(dialogMessages.get().webFontProvidersRequireDesktopApp)
+}
 
 function configureTauriFontCache() {
   if (tauriFontCacheConfigured || !isTauri()) return
   tauriFontCacheConfigured = true
   fontManager.setDownloadedFontCache(createTauriDownloadedFontCache())
+  fontManager.setWebFontFetch(tauriFetch)
 }
 
 configureTauriFontCache()
@@ -59,7 +98,7 @@ export function preloadFonts(): void {
     void getTauriFonts().then(registerFontFaces)
     return
   }
-  if (googleFontsEnabled.value) fontManager.preloadGoogleFamilies()
+  if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
 }
 
 export function localFontAccessState(): LocalFontAccessState {
@@ -99,11 +138,17 @@ function registerFontFaces(fonts: TauriFontFamily[]): void {
 export async function listFamilies(): Promise<FontFamilyOption[]> {
   configureTauriFontCache()
   if (isTauri()) {
-    const fonts = await getTauriFonts()
-    return fonts.map((f) => ({ family: f.family, source: 'local' }))
+    const [systemFonts, webFonts] = await Promise.all([
+      getTauriFonts(),
+      fontManager.listFamilyOptions()
+    ])
+    const byFamily = new Map(webFonts.map((font) => [font.family, font]))
+    for (const font of systemFonts)
+      byFamily.set(font.family, { family: font.family, source: 'local' })
+    return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
-  const fonts = await fontManager.listFamilyOptions()
-  return googleFontsEnabled.value ? fonts : fonts.filter((font) => font.source !== 'google')
+  showWebFontUnavailableToast()
+  return fontManager.listFamilyOptions()
 }
 
 export async function listFonts(): Promise<TauriFontFamily[]> {
@@ -156,5 +201,7 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
     }
   }
 
-  return fontManager.loadFont(family, style)
+  const loaded = await fontManager.loadFont(family, style)
+  if (!loaded) showWebFontUnavailableToast()
+  return loaded
 }

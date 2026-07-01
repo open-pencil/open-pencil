@@ -19,7 +19,7 @@ const ctx = useColorPickerPanelContext()
       :display="{ value: Math.round(ctx.okhcl.okhcl.h), min: 0, max: 360, step: 1 }"
       gradient-style="background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);"
       :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclHue ?? ctx.color)"
-      test-id="color-slider-okhcl-h"
+      data-test-id="color-slider-okhcl-h"
       @update:model-value="ctx.updateOkHCLChannel('h', $event)"
     />
 
@@ -38,7 +38,7 @@ const ctx = useColorPickerPanelContext()
       }"
       :gradient-style="ctx.okhclSliderGradient?.okhclChroma ?? undefined"
       :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclChroma ?? ctx.color)"
-      test-id="color-slider-okhcl-c"
+      data-test-id="color-slider-okhcl-c"
       @update:model-value="ctx.updateOkHCLChannel('c', $event)"
     />
 
@@ -57,7 +57,7 @@ const ctx = useColorPickerPanelContext()
       }"
       :gradient-style="ctx.okhclSliderGradient?.okhclLightness ?? undefined"
       :thumb-fill="colorToCSS(ctx.okhclSliderPreview?.okhclLightness ?? ctx.color)"
-      test-id="color-slider-okhcl-l"
+      data-test-id="color-slider-okhcl-l"
       @update:model-value="ctx.updateOkHCLChannel('l', $event)"
     />
 
@@ -77,7 +77,7 @@ const ctx = useColorPickerPanelContext()
       checkerboard
       :gradient-style="`background: linear-gradient(to right, transparent, ${colorToCSS(ctx.color)})`"
       :thumb-fill="colorToCSS(ctx.color)"
-      test-id="color-slider-okhcl-a"
+      data-test-id="color-slider-okhcl-a"
       @update:model-value="ctx.updateOkHCLChannel('a', $event)"
     />
 

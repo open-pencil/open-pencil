@@ -1,8 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { SELECTION_COLOR } from '#core/constants'
-import type { SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
 
 import type { SkiaRenderer } from './renderer'
 

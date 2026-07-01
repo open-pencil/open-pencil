@@ -1,8 +1,9 @@
 import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
-import type { NodeChange } from '#core/kiwi/fig/codec'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { encodePathCommandsBlob } from '#core/kiwi/fig/node-change/path-commands'
-import type { SceneNode } from '#core/scene-graph'
 import { normalizeFontFamily, weightToFigmaStyle, weightToStyle } from '#core/text/fonts'
 import { type GlyphOutlineMetrics, getGlyphOutlineMetricsSync } from '#core/text/opentype'
 

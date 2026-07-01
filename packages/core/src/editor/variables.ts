@@ -1,5 +1,11 @@
+import type {
+  Variable,
+  VariableCollection,
+  VariableType,
+  VariableValue
+} from '@open-pencil/scene-graph'
+
 import { randomHex } from '#core/random'
-import type { Variable, VariableCollection, VariableType, VariableValue } from '#core/scene-graph'
 
 import type { EditorContext } from './types'
 

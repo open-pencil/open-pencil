@@ -1,6 +1,7 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
 import { computeContentBounds } from '#core/io/formats/raster'
 import { renderNodesToSVG } from '#core/io/formats/svg'
-import type { SceneGraph } from '#core/scene-graph'
 
 export interface PDFExportOptions {
   title?: string

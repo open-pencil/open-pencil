@@ -1,4 +1,5 @@
-import { computeBounds } from '#core/geometry'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
+
 import { defineTool } from '#core/tools/schema'
 
 export const listPages = defineTool({

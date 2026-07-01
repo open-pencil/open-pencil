@@ -1,7 +1,8 @@
 import { isNotNil } from 'es-toolkit/predicate'
 
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
+
 import type { EditorContext } from '#core/editor/types'
-import { computeBounds } from '#core/geometry'
 
 export function createClipboardPlacementActions(ctx: EditorContext) {
   function centerNodesAt(nodeIds: string[], cx: number, cy: number) {

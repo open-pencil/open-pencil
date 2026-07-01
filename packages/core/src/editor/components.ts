@@ -1,5 +1,6 @@
+import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+
 import { randomHex } from '#core/random'
-import type { ComponentPropertyDefinition, SceneNode } from '#core/scene-graph'
 
 import { createComponentFocusActions } from './components/focus'
 import { createComponentInstanceActions } from './components/instances'
