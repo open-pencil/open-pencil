@@ -1,7 +1,9 @@
 import type {
   CanvasKit,
+  FontMgr,
   FontWeight,
   Paragraph,
+  ParagraphBuilder,
   TextFontFeatures,
   TextFontVariations,
   TypefaceFontProvider
@@ -21,6 +23,7 @@ interface TextRenderer {
   ck: CanvasKit
   fontProvider: TypefaceFontProvider | null
   fontsLoaded: boolean
+  paragraphFontMgrCache: Map<string, FontMgr>
 }
 
 export interface ClipboardShapedGlyph {
@@ -41,10 +44,14 @@ export interface ClipboardShapedText {
   logicalIndexToCharacterOffsetMap: number[]
 }
 
-const CJK_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+const CJK_RE =
+  /[\u1100-\u11ff\u3040-\u30ff\u3130-\u318f\u3400-\u9fff\ua960-\ua97f\uac00-\ud7ff\uf900-\ufaff]/u
 const ARABIC_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
 const FONT_FAMILY_CACHE_LIMIT = 256
+const PARAGRAPH_FONT_MGR_CACHE_LIMIT = 64
 const fontFamilyCache = new Map<string, string[]>()
+const fontDataIds = new WeakMap<ArrayBuffer, number>()
+let nextFontDataId = 1
 
 function hasRequiredFallbackFonts(text: string): boolean {
   if (CJK_RE.test(text) && fontManager.getCJKFallbackFamilies().length === 0) return false
@@ -131,10 +138,11 @@ function resolveParagraphFontFamilies(
   primary: string,
   style: string,
   arabicFallbacks: readonly string[],
-  cjkFallbacks: readonly string[]
+  cjkFallbacks: readonly string[],
+  useRenderFamily: boolean
 ): string[] {
-  const renderPrimary = fontManager.renderFamily(primary, style)
-  const key = `${renderPrimary}\0${arabicFallbacks.join('\0')}\0${cjkFallbacks.join('\0')}`
+  const renderPrimary = useRenderFamily ? fontManager.renderFamily(primary, style) : primary
+  const key = `${useRenderFamily ? 'provider' : 'fontmgr'}\0${renderPrimary}\0${arabicFallbacks.join('\0')}\0${cjkFallbacks.join('\0')}`
   const cached = fontFamilyCache.get(key)
   if (cached) return cached
 
@@ -149,6 +157,94 @@ function resolveParagraphFontFamilies(
     if (oldestKey) fontFamilyCache.delete(oldestKey)
   }
   return resolved
+}
+
+function fontDataId(buffer: ArrayBuffer): number {
+  const cached = fontDataIds.get(buffer)
+  if (cached) return cached
+  const id = nextFontDataId++
+  fontDataIds.set(buffer, id)
+  return id
+}
+
+function collectParagraphFontData(
+  node: SceneNode,
+  arabicFallbacks: readonly string[],
+  cjkFallbacks: readonly string[]
+): { buffers: ArrayBuffer[]; key: string } | null {
+  const requiresArabicFallback = ARABIC_RE.test(node.text)
+  const requiresCjkFallback = CJK_RE.test(node.text)
+  if (requiresArabicFallback && arabicFallbacks.length === 0) return null
+  if (requiresCjkFallback && cjkFallbacks.length === 0) return null
+
+  const buffers: ArrayBuffer[] = []
+  const fontKeys: string[] = []
+  const keys = new Set<string>()
+  const add = (family: string, style: string) => {
+    const key = `${family}\0${style}`
+    if (keys.has(key)) return true
+    keys.add(key)
+
+    const buffer = fontManager.loadedData(family, style)
+    if (!buffer) return false
+
+    buffers.push(buffer)
+    fontKeys.push(`${key}\0${fontDataId(buffer)}\0${buffer.byteLength}`)
+    return true
+  }
+
+  const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
+  if (!add(baseFamily, weightToStyle(node.fontWeight, node.italic))) return null
+  if (baseFamily !== DEFAULT_FONT_FAMILY && !add(DEFAULT_FONT_FAMILY, 'Regular')) return null
+
+  for (const run of node.styleRuns) {
+    const style = run.style
+    const family = style.fontFamily ?? baseFamily
+    const runStyle = weightToStyle(style.fontWeight ?? node.fontWeight, style.italic ?? node.italic)
+    if (!add(family, runStyle)) return null
+  }
+
+  if (requiresArabicFallback) {
+    for (const family of arabicFallbacks) {
+      if (!add(family, 'Regular')) return null
+    }
+  }
+  if (requiresCjkFallback) {
+    for (const family of cjkFallbacks) {
+      if (!add(family, 'Regular')) return null
+    }
+  }
+
+  return { buffers, key: fontKeys.join('\u0001') }
+}
+
+function createParagraphFontMgr(
+  ck: CanvasKit,
+  cache: Map<string, FontMgr>,
+  node: SceneNode,
+  arabicFallbacks: readonly string[],
+  cjkFallbacks: readonly string[]
+): FontMgr | null {
+  if (!CJK_RE.test(node.text)) return null
+
+  const fontData = collectParagraphFontData(node, arabicFallbacks, cjkFallbacks)
+  if (!fontData || fontData.buffers.length === 0) return null
+
+  const cached = cache.get(fontData.key)
+  if (cached) return cached
+
+  const mgr = ck.FontMgr.FromData(...fontData.buffers)
+  if (!mgr) return null
+  cache.set(fontData.key, mgr)
+  if (cache.size > PARAGRAPH_FONT_MGR_CACHE_LIMIT) {
+    const oldestKey = cache.keys().next().value
+    if (oldestKey) {
+      const oldest = cache.get(oldestKey)
+      cache.delete(oldestKey)
+      oldest?.delete()
+    }
+  }
+  return mgr
 }
 
 function getParagraphTextAlign(
@@ -241,7 +337,7 @@ function styleRunColor(
 
 function pushStyleRun(
   r: TextRenderer,
-  builder: ReturnType<CanvasKit['ParagraphBuilder']['MakeFromFontProvider']>,
+  builder: ParagraphBuilder,
   node: SceneNode,
   run: SceneNode['styleRuns'][number],
   baseColor: Float32Array,
@@ -290,7 +386,7 @@ function pushStyleRun(
 
 function addStyledRuns(
   r: TextRenderer,
-  builder: ReturnType<CanvasKit['ParagraphBuilder']['MakeFromFontProvider']>,
+  builder: ParagraphBuilder,
   node: SceneNode,
   baseColor: Float32Array,
   baseFontSize: number,
@@ -318,10 +414,20 @@ export function buildParagraph(
   { halfLeading = false }: { halfLeading?: boolean } = {}
 ): Paragraph {
   const ck = r.ck
+  if (!r.fontProvider) throw new Error('Font provider not initialized')
+
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
-  const cjkFallbacks = fontManager.getCJKFallbackFamilies()
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
+  const cjkFallbacks = fontManager.getCJKFallbackFamilies()
+  const paragraphFontMgr = createParagraphFontMgr(
+    ck,
+    r.paragraphFontMgrCache,
+    node,
+    arabicFallbacks,
+    cjkFallbacks
+  )
+  const useRenderFamily = paragraphFontMgr === null
   const textDirection = resolveNodeTextDirection(node)
 
   const truncateOpts = buildTruncateOpts(node, baseFontSize)
@@ -331,7 +437,8 @@ export function buildParagraph(
       primary,
       weightToStyle(weight, italic),
       arabicFallbacks,
-      cjkFallbacks
+      cjkFallbacks,
+      useRenderFamily
     )
 
   const paraStyle = new ck.ParagraphStyle({
@@ -363,24 +470,33 @@ export function buildParagraph(
     }
   })
 
-  if (!r.fontProvider) throw new Error('Font provider not initialized')
-  const builder = ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, r.fontProvider)
+  let builder: ParagraphBuilder | null = null
+  let paragraph: Paragraph | null = null
+  try {
+    builder = paragraphFontMgr
+      ? ck.ParagraphBuilder.Make(paraStyle, paragraphFontMgr)
+      : ck.ParagraphBuilder.MakeFromFontProvider(paraStyle, r.fontProvider)
 
-  if (node.styleRuns.length === 0) {
-    builder.addText(node.text)
-  } else {
-    addStyledRuns(r, builder, node, baseColor, baseFontSize, fontFamilies, halfLeading)
-  }
+    if (node.styleRuns.length === 0) {
+      builder.addText(node.text)
+    } else {
+      addStyledRuns(r, builder, node, baseColor, baseFontSize, fontFamilies, halfLeading)
+    }
 
-  const paragraph = builder.build()
-  if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
-    paragraph.layout(1e6)
-    paragraph.layout(Math.max(node.width || 1, Math.ceil(paragraph.getLongestLine())))
-  } else {
-    paragraph.layout(resolveParagraphLayoutWidth(node))
+    paragraph = builder.build()
+    if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
+      paragraph.layout(1e6)
+      paragraph.layout(Math.max(node.width || 1, Math.ceil(paragraph.getLongestLine())))
+    } else {
+      paragraph.layout(resolveParagraphLayoutWidth(node))
+    }
+    return paragraph
+  } catch (error) {
+    paragraph?.delete()
+    throw error
+  } finally {
+    builder?.delete()
   }
-  builder.delete()
-  return paragraph
 }
 
 function addShapedRunGlyphs(
@@ -437,45 +553,49 @@ export async function shapeTextForClipboard(node: SceneNode): Promise<ClipboardS
   const fontProvider = fontManager.provider()
   if (!fontProvider) return null
 
-  const paragraph = buildParagraph({ ck, fontProvider, fontsLoaded: true }, node)
-  paragraph.layout(node.textAutoResize === 'WIDTH_AND_HEIGHT' ? 1e6 : node.width)
-  const shapedLines = paragraph.getShapedLines()
-  const lineMetrics = paragraph.getLineMetrics()
-  if (shapedLines.length === 0 || lineMetrics.length === 0) {
-    paragraph.delete()
-    return null
-  }
-  const firstMetrics = lineMetrics[0]
-
-  const glyphs: ClipboardShapedGlyph[] = []
-  const baselines: NonNullable<ClipboardShapedText['baselines']> = []
-  const logicalIndexToCharacterOffsetMap = Array.from({ length: node.text.length + 1 }, () => 0)
-
-  for (let lineIdx = 0; lineIdx < shapedLines.length; lineIdx++) {
-    const line = shapedLines[lineIdx]
-    const metrics = lineMetrics[lineIdx] ?? firstMetrics
-    const lineY = metrics.baseline
-    for (const run of line.runs) {
-      addShapedRunGlyphs(run, glyphs, logicalIndexToCharacterOffsetMap, lineY, metrics.width)
+  const paragraphFontMgrCache = new Map<string, FontMgr>()
+  let paragraph: Paragraph | null = null
+  try {
+    paragraph = buildParagraph({ ck, fontProvider, fontsLoaded: true, paragraphFontMgrCache }, node)
+    paragraph.layout(node.textAutoResize === 'WIDTH_AND_HEIGHT' ? 1e6 : node.width)
+    const shapedLines = paragraph.getShapedLines()
+    const lineMetrics = paragraph.getLineMetrics()
+    if (shapedLines.length === 0 || lineMetrics.length === 0) {
+      return null
     }
-    addLineBaseline(metrics, node.text.length, baselines)
-  }
+    const firstMetrics = lineMetrics[0]
 
-  for (let i = 1; i < logicalIndexToCharacterOffsetMap.length; i++) {
-    if (logicalIndexToCharacterOffsetMap[i] === 0) {
-      logicalIndexToCharacterOffsetMap[i] = logicalIndexToCharacterOffsetMap[i - 1]
+    const glyphs: ClipboardShapedGlyph[] = []
+    const baselines: NonNullable<ClipboardShapedText['baselines']> = []
+    const logicalIndexToCharacterOffsetMap = Array.from({ length: node.text.length + 1 }, () => 0)
+
+    for (let lineIdx = 0; lineIdx < shapedLines.length; lineIdx++) {
+      const line = shapedLines[lineIdx]
+      const metrics = lineMetrics[lineIdx] ?? firstMetrics
+      const lineY = metrics.baseline
+      for (const run of line.runs) {
+        addShapedRunGlyphs(run, glyphs, logicalIndexToCharacterOffsetMap, lineY, metrics.width)
+      }
+      addLineBaseline(metrics, node.text.length, baselines)
     }
-  }
 
-  paragraph.delete()
+    for (let i = 1; i < logicalIndexToCharacterOffsetMap.length; i++) {
+      if (logicalIndexToCharacterOffsetMap[i] === 0) {
+        logicalIndexToCharacterOffsetMap[i] = logicalIndexToCharacterOffsetMap[i - 1]
+      }
+    }
 
-  return {
-    lineHeight: firstMetrics.height,
-    lineAscent: Math.abs(firstMetrics.ascent),
-    lineWidth: firstMetrics.width,
-    baseline: firstMetrics.baseline,
-    baselines,
-    glyphs,
-    logicalIndexToCharacterOffsetMap
+    return {
+      lineHeight: firstMetrics.height,
+      lineAscent: Math.abs(firstMetrics.ascent),
+      lineWidth: firstMetrics.width,
+      baseline: firstMetrics.baseline,
+      baselines,
+      glyphs,
+      logicalIndexToCharacterOffsetMap
+    }
+  } finally {
+    paragraph?.delete()
+    for (const mgr of paragraphFontMgrCache.values()) mgr.delete()
   }
 }
