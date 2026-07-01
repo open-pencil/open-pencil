@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, type ComponentPublicInstance } from 'vue'
 import { templateRef } from '@vueuse/core'
 import {
   ContextMenuContent,
@@ -10,7 +10,7 @@ import {
 } from 'reka-ui'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { PageListRoot, useI18n, useInlineRename } from '@open-pencil/vue'
+import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
 import Tip from '@/components/ui/Tip.vue'
 import { useMenuUI } from '@/components/ui/menu'
@@ -29,9 +29,12 @@ const { panels, pages: pageMessages } = useI18n()
 const menuCls = useMenuUI({ content: 'min-w-36 shadow-[0_8px_30px_rgb(0_0_0/0.4)]' })
 
 const pageActions = ref<Pick<PageActions, 'rename'> | null>(null)
-const draggingPageId = ref<string | null>(null)
-const dragTargetPageId = ref<string | null>(null)
-const dragPlacement = ref<'above' | 'below' | null>(null)
+const currentPages = ref<readonly PageItem[]>([])
+const currentMovePage = ref<PageActions['move'] | null>(null)
+const pageReorder = useFlatReorderDrag<PageItem>({
+  items: () => currentPages.value,
+  onMove: (pageId, index) => currentMovePage.value?.(pageId, index)
+})
 
 function setPageActions(renamePage: (pageId: string, name: string) => void) {
   pageActions.value = { rename: renamePage }
@@ -46,49 +49,22 @@ function startRename(pg: PageItem, renamePage: (pageId: string, name: string) =>
   rename.start(pg.id, pg.name)
 }
 
-function isDraggingTarget(pg: PageItem, placement: 'above' | 'below') {
-  return dragTargetPageId.value === pg.id && dragPlacement.value === placement
+function isDraggingTarget(pg: PageItem, operation: 'reorder-before' | 'reorder-after') {
+  return (
+    pageReorder.instructionTargetId.value === pg.id &&
+    pageReorder.instruction.value?.operation === operation
+  )
 }
 
-function resetDragState() {
-  draggingPageId.value = null
-  dragTargetPageId.value = null
-  dragPlacement.value = null
-}
-
-function onDragStart(event: DragEvent, pageId: string) {
-  draggingPageId.value = pageId
-  event.dataTransfer?.setData('text/plain', pageId)
-  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
-}
-
-function onDragOver(event: DragEvent, pageId: string) {
-  if (!draggingPageId.value || draggingPageId.value === pageId) return
-  event.preventDefault()
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-  dragTargetPageId.value = pageId
-  dragPlacement.value = event.clientY < rect.top + rect.height / 2 ? 'above' : 'below'
-  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
-}
-
-function onDrop(
-  event: DragEvent,
-  targetPageId: string,
-  pages: PageItem[],
+function setupPageRowRef(
+  value: Element | ComponentPublicInstance | null,
+  pg: PageItem,
+  pages: readonly PageItem[],
   movePage: PageActions['move']
 ) {
-  event.preventDefault()
-  const sourcePageId = draggingPageId.value ?? event.dataTransfer?.getData('text/plain')
-  const placement = dragPlacement.value
-  resetDragState()
-
-  if (!sourcePageId || !placement || sourcePageId === targetPageId) return
-
-  const orderedIds = pages.map((page) => page.id).filter((id) => id !== sourcePageId)
-  const targetIndex = orderedIds.indexOf(targetPageId)
-  if (targetIndex === -1) return
-
-  movePage(sourcePageId, targetIndex + (placement === 'below' ? 1 : 0))
+  currentPages.value = pages
+  currentMovePage.value = movePage
+  pageReorder.setupItem(value instanceof HTMLElement ? value : null, () => ({ id: pg.id }))
 }
 </script>
 
@@ -118,19 +94,13 @@ function onDrop(
             <ContextMenuTrigger as-child>
               <div
                 data-test-id="pages-row"
+                :ref="(value) => setupPageRowRef(value, pg, pages, actions.move)"
                 class="relative cursor-grab active:cursor-grabbing"
-                :class="draggingPageId === pg.id ? 'opacity-60' : ''"
+                :class="pageReorder.draggingId.value === pg.id ? 'opacity-60' : ''"
                 :data-page-id="pg.id"
-                draggable="true"
-                @dragstart="onDragStart($event, pg.id)"
-                @dragenter="onDragOver($event, pg.id)"
-                @dragover="onDragOver($event, pg.id)"
-                @dragleave="dragTargetPageId === pg.id && (dragTargetPageId = null)"
-                @drop="onDrop($event, pg.id, pages, actions.move)"
-                @dragend="resetDragState"
               >
                 <div
-                  v-if="isDraggingTarget(pg, 'above')"
+                  v-if="isDraggingTarget(pg, 'reorder-before')"
                   data-test-id="pages-drop-indicator"
                   class="pointer-events-none absolute inset-x-1 top-0 z-10 h-0.5 rounded-full bg-accent"
                 />
@@ -172,7 +142,7 @@ function onDrop(
                   <span class="truncate">{{ pg.name }}</span>
                 </button>
                 <div
-                  v-if="isDraggingTarget(pg, 'below')"
+                  v-if="isDraggingTarget(pg, 'reorder-after')"
                   data-test-id="pages-drop-indicator"
                   class="pointer-events-none absolute inset-x-1 bottom-0 z-10 h-0.5 rounded-full bg-accent"
                 />

@@ -46,6 +46,13 @@ export type { MenuActionNode, MenuEntry, MenuSeparatorNode } from '#vue/editor/m
 /** Miscellaneous editor-shell helpers. */
 export { useViewportKind } from '#vue/editor/viewport-kind/use'
 export { useLayerDrag } from '#vue/primitives/LayerTree/useLayerDrag'
+export { useFlatReorderDrag } from '#vue/shared/drag/useFlatReorderDrag'
+export type {
+  FlatReorderAxis,
+  FlatReorderInstruction,
+  FlatReorderItem,
+  UseFlatReorderDragOptions
+} from '#vue/shared/drag/useFlatReorderDrag'
 export { useInlineRename } from '#vue/editor/inline-rename/use'
 export { useToolbarState } from '#vue/primitives/Toolbar/useToolbarState'
 export { useNodeFontStatus } from '#vue/shared/font-status/use'
