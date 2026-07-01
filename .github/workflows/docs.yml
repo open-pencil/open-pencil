@@ -2,9 +2,8 @@ name: Deploy docs
 
 on:
   push:
-    branches: [master]
-    paths:
-      - 'packages/docs/**'
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -24,4 +23,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy packages/docs/.vitepress/dist --project-name=openpencil-docs
+          command: pages deploy packages/docs/.vitepress/dist --project-name=openpencil-docs --branch=master

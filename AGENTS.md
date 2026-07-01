@@ -72,11 +72,14 @@ The app editor session (`src/app/editor/session/create.ts`) is a Vue wrapper aro
    - Builds Tauri binaries for macOS (arm64 + x64), Windows (x64 + arm64), Linux (x64)
    - Creates a draft GitHub Release with all platform binaries
    - Publishes public workspace packages to npm with provenance. Keep the exact package list in sync with `.github/workflows/build.yml`.
-7. Go to GitHub Releases → edit the draft → paste changelog section → publish
+7. The production web app/docs deploy workflows (`app.yml`, `docs.yml`) also trigger on `v*` tags. They do **not** deploy on ordinary `master` pushes.
+8. Go to GitHub Releases → edit the draft → paste changelog section → publish
 
 ### CI workflows
 
 Key workflows live in `.github/workflows/`. Use `build.yml` as the source of truth for release packaging and npm publishing, `ci.yml` / `heavy-tests.yml` for validation gates, and `app.yml` / `docs.yml` for Cloudflare Pages deploys.
+
+Production Cloudflare Pages deploys are intentionally release/manual only: `app.yml` and `docs.yml` run on `v*` tags and `workflow_dispatch`, not on `master` pushes. To deploy manually, run the relevant workflow from GitHub Actions (`Deploy app` or `Deploy docs`) on the desired ref; the workflow deploys to the configured production branch (`master`).
 
 ## Documentation
 
