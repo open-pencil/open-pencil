@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ColorPickerRoot } from '@open-pencil/vue'
 
-import ColorPickerPanel from '@/components/ColorPickerPanel/ColorPickerPanel.vue'
+import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import { usePopoverUI } from '@/components/ui/popover'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'

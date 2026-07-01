@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
 
-import ScrubInput from '@/components/ScrubInput.vue'
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import IconButton from '@/components/ui/IconButton.vue'

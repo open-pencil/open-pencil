@@ -137,6 +137,7 @@
     ],
     "vue/require-default-export": "error",
     "vue/require-typed-ref": "error",
+    "open-pencil/no-import-type-annotations": "error",
     "open-pencil/no-inline-named-types": [
       "error",
       {
@@ -208,7 +209,7 @@
     "open-pencil/prefer-vueuse-intervals": "error",
     "open-pencil/prefer-vueuse-timeouts": "error",
     "open-pencil/vue-component-file-pascal-case": "error",
-    "open-pencil/component-namespace-pascal-case": "error",
+    "open-pencil/component-namespace-casing": "error",
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
     "open-pencil/no-flat-kiwi-modules": "error",

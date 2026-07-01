@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ScrubInput from '@/components/ScrubInput.vue'
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelRow from '@/components/ui/PanelRow.vue'
 import PanelSection from '@/components/ui/PanelSection.vue'

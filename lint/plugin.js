@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+
 import { parse as parseVueSfc } from 'vue/compiler-sfc'
 
 function normalizedFilename(context) {
@@ -311,7 +312,10 @@ const noNativeTitleAttributesInVue = {
         let hasTitleAttribute = false
         walkVueTemplateAst(template, (templateNode) => {
           if (hasTitleAttribute) return
-          if (isStaticVueAttribute(templateNode, 'title') || isVueBindDirective(templateNode, 'title')) {
+          if (
+            isStaticVueAttribute(templateNode, 'title') ||
+            isVueBindDirective(templateNode, 'title')
+          ) {
             hasTitleAttribute = true
           }
         })
@@ -451,7 +455,8 @@ const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const noRawTestIdStringProps = {
   meta: {
     docs: {
-      description: 'Disallow test-id component props — use data-test-id attrs or internal semantic ids'
+      description:
+        'Disallow test-id component props — use data-test-id attrs or internal semantic ids'
     }
   },
   create(context) {
@@ -624,9 +629,7 @@ const noRawTestIdSelectorsInTests = {
 
 function isGeneratedTestIdLiteral(value) {
   if (typeof value !== 'string') return false
-  const toolbarValue = value.startsWith('mobile-toolbar-')
-    ? value.slice('mobile-'.length)
-    : value
+  const toolbarValue = value.startsWith('mobile-toolbar-') ? value.slice('mobile-'.length) : value
   return (
     toolbarValue.startsWith('toolbar-tool-') ||
     toolbarValue.startsWith('toolbar-flyout-') ||
@@ -714,7 +717,8 @@ const noBrowserSideEffectsInVue = {
         ) {
           context.report({
             node,
-            message: 'Use VueUse useEventListener() instead of direct browser event listeners in Vue components.'
+            message:
+              'Use VueUse useEventListener() instead of direct browser event listeners in Vue components.'
           })
           return
         }
@@ -743,7 +747,8 @@ const noBrowserSideEffectsInVue = {
 const noDocumentQuerySelectorInVue = {
   meta: {
     docs: {
-      description: 'Disallow document.querySelector in Vue components — use template refs or composables'
+      description:
+        'Disallow document.querySelector in Vue components — use template refs or composables'
     }
   },
   create(context) {
@@ -756,7 +761,10 @@ const noDocumentQuerySelectorInVue = {
         if (callee?.type !== 'MemberExpression') return
         if (callee.object?.type !== 'Identifier' || callee.object.name !== 'document') return
         if (callee.property?.type !== 'Identifier') return
-        if (callee.property.name !== 'querySelector' && callee.property.name !== 'querySelectorAll') {
+        if (
+          callee.property.name !== 'querySelector' &&
+          callee.property.name !== 'querySelectorAll'
+        ) {
           return
         }
         context.report({
@@ -772,7 +780,8 @@ const noDocumentQuerySelectorInVue = {
 const noDirectSelectionToolStateMutation = {
   meta: {
     docs: {
-      description: 'Disallow direct editor selection/tool state assignment outside core editor internals'
+      description:
+        'Disallow direct editor selection/tool state assignment outside core editor internals'
     }
   },
   create(context) {
@@ -843,7 +852,8 @@ function colorObjectLiteral(node, color) {
 const noHardcodedColorConstants = {
   meta: {
     docs: {
-      description: 'Use named color constants instead of inline Color object literals for shared colors'
+      description:
+        'Use named color constants instead of inline Color object literals for shared colors'
     }
   },
   create(context) {
@@ -853,10 +863,17 @@ const noHardcodedColorConstants = {
     return {
       ObjectExpression(node) {
         if (colorObjectLiteral(node, { r: 0, g: 0, b: 0, a: 1 })) {
-          context.report({ node, message: 'Use BLACK from constants instead of an inline black Color literal.' })
+          context.report({
+            node,
+            message: 'Use BLACK from constants instead of an inline black Color literal.'
+          })
         }
         if (colorObjectLiteral(node, { r: 0, g: 0, b: 0, a: 0 })) {
-          context.report({ node, message: 'Use TRANSPARENT from constants instead of an inline transparent Color literal.' })
+          context.report({
+            node,
+            message:
+              'Use TRANSPARENT from constants instead of an inline transparent Color literal.'
+          })
         }
       }
     }
@@ -1551,10 +1568,10 @@ const vueComponentFilePascalCase = {
   }
 }
 
-const componentNamespacePascalCase = {
+const componentNamespaceCasing = {
   meta: {
     docs: {
-      description: 'Require component namespace folders to use PascalCase names'
+      description: 'Require component namespace folders to use the project casing convention'
     }
   },
   create(context) {
@@ -1577,12 +1594,11 @@ const componentNamespacePascalCase = {
         const parts = componentMatch[1].split('/')
         const first = parts[0]
         const second = parts[1]
-        const allowedGroups = new Set(['chat', 'properties', 'ui'])
 
-        if (parts.length > 1 && !allowedGroups.has(first) && !isPascalCaseName(first)) {
+        if (parts.length > 1 && !isPascalCaseName(first) && !isKebabOrLowercaseName(first)) {
           context.report({
             node,
-            message: `Component namespace folder '${first}' must use PascalCase.`
+            message: `Component namespace folder '${first}' must use PascalCase or kebab-case.`
           })
           return
         }
@@ -1591,11 +1607,12 @@ const componentNamespacePascalCase = {
           parts.length > 2 &&
           (first === 'chat' || first === 'properties') &&
           second !== undefined &&
-          !isPascalCaseName(second)
+          !isPascalCaseName(second) &&
+          !isKebabOrLowercaseName(second)
         ) {
           context.report({
             node,
-            message: `Nested component namespace folder '${first}/${second}' must use PascalCase.`
+            message: `Nested component namespace folder '${first}/${second}' must use PascalCase or kebab-case.`
           })
         }
       }
@@ -1789,7 +1806,8 @@ const noDirectOpenPencilBrowserStore = {
         if (!isOpenPencilMember(node.object)) return
         context.report({
           node,
-          message: 'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
+          message:
+            'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
         })
       }
     }
@@ -1887,7 +1905,8 @@ function hasAstChild(node, predicate, seen = new WeakSet()) {
 function containsRecordStringUnknownType(node) {
   if (isRecordStringUnknownType(node)) return true
   if (node?.type === 'TSArrayType') return isRecordStringUnknownType(node.elementType)
-  if (node?.type === 'TSUnionType') return node.types?.some(containsRecordStringUnknownType) ?? false
+  if (node?.type === 'TSUnionType')
+    return node.types?.some(containsRecordStringUnknownType) ?? false
   return false
 }
 
@@ -1942,7 +1961,8 @@ const noBroadUnknownTypeAssertions = {
 function typeNameText(node) {
   if (!node) return 'unknown'
   if (node.type === 'Identifier') return node.name
-  if (node.type === 'TSQualifiedName') return `${typeNameText(node.left)}.${typeNameText(node.right)}`
+  if (node.type === 'TSQualifiedName')
+    return `${typeNameText(node.left)}.${typeNameText(node.right)}`
   return node.type
 }
 
@@ -2034,7 +2054,8 @@ const noDuplicateTypeShapes = {
         }
         context.report({
           node,
-          message: 'Duplicate object type shape. Reuse the existing named type instead of redeclaring the same members.'
+          message:
+            'Duplicate object type shape. Reuse the existing named type instead of redeclaring the same members.'
         })
       }
     }
@@ -2054,7 +2075,27 @@ const noLocalJsonObjectAliases = {
         if (!isRecordStringUnknownType(node.typeAnnotation)) return
         context.report({
           node,
-          message: 'Import JsonObject from @open-pencil/scene-graph/primitives instead of declaring a local alias.'
+          message:
+            'Import JsonObject from @open-pencil/scene-graph/primitives instead of declaring a local alias.'
+        })
+      }
+    }
+  }
+}
+
+const noImportTypeAnnotations = {
+  meta: {
+    docs: {
+      description: 'Disallow inline import() type annotations — use top-level import type instead'
+    }
+  },
+  create(context) {
+    return {
+      TSImportType(node) {
+        context.report({
+          node,
+          message:
+            'Use a top-level import type instead of an inline import() type annotation. Dynamic imports are only for runtime lazy loading.'
         })
       }
     }
@@ -2062,7 +2103,6 @@ const noLocalJsonObjectAliases = {
 }
 
 const noFlatKiwiModules = createProgramFilenameRule({
-
   description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
   check(file) {
     const marker = '/packages/core/src/kiwi/'
@@ -2080,6 +2120,7 @@ const plugin = {
   meta: { name: 'open-pencil' },
   rules: {
     'no-inline-named-types': noInlineNamedTypes,
+    'no-import-type-annotations': noImportTypeAnnotations,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
@@ -2136,7 +2177,7 @@ const plugin = {
     'prefer-vueuse-timeouts': preferVueUseTimeouts,
     'max-composition-root-lines': maxCompositionRootLines,
     'vue-component-file-pascal-case': vueComponentFilePascalCase,
-    'component-namespace-pascal-case': componentNamespacePascalCase,
+    'component-namespace-casing': componentNamespaceCasing,
     'non-component-source-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
     'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,

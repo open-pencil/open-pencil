@@ -1,0 +1,10 @@
+{
+  "color": "Farbe",
+  "colorHint": "Farbwerte",
+  "number": "Zahl",
+  "numberHint": "Größen, Abstände, Deckkraft",
+  "text": "Text",
+  "textHint": "Text und Beschriftungen",
+  "boolean": "Boolean",
+  "booleanHint": "Wahr oder falsch"
+}

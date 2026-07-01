@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useAppearance, useI18n } from '@open-pencil/vue'
 
-import ScrubInput from '@/components/ScrubInput.vue'
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelSection from '@/components/ui/PanelSection.vue'

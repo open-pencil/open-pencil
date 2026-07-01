@@ -33,6 +33,7 @@
 
 ### Fixes
 
+- Fix desktop clipboard copy/cut/paste by using Tauri's system clipboard bridge when browser clipboard events are unavailable.
 - Add AI provider connection testing with clearer setup errors for OpenAI-compatible endpoints.
 - Increase per-test timeout for slow `gold-preview.fig` fixture tests (`clipboard roundtrip`, `group reclassification`, `glyph blob preservation`, `auto-layout text measurement`, and `render/canvas/cache`) so they no longer flake on slower CI runners.
 - Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.

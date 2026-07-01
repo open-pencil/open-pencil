@@ -56,11 +56,14 @@
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
+    "@open-pencil/pen": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/vue": "workspace:*",
     "@openrouter/ai-sdk-provider": "^2.9.0",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/vue-table": "^8.21.3",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-clipboard-manager": "^2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "@tauri-apps/plugin-opener": "^2",
@@ -95,12 +98,7 @@
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
     "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
-    "zod": "^4.3.6",
-    "@open-pencil/scene-graph": "workspace:*",
-    "@open-pencil/pen": "workspace:*"
-  },
-  "overrides": {
-    "brace-expansion": "5.0.6"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@agentclientprotocol/sdk": "^0.14.1",
@@ -139,5 +137,8 @@
     "vue-tsc": "^3.2.5",
     "workbox-window": "^7.4.0",
     "ws": "^8.19.0"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.6"
   }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
-import FontPicker from '@/components/FontPicker.vue'
+import FontPicker from '@/components/font-picker/FontPicker.vue'
 import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'

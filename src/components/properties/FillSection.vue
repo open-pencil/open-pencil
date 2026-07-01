@@ -2,7 +2,7 @@
 import { PropertyListRoot, useFillControls, useOkHCL, useI18n, inputValue } from '@open-pencil/vue'
 import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
 
-import FillPicker from '@/components/FillPicker.vue'
+import FillPicker from '@/components/fill-picker/FillPicker.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelSection from '@/components/ui/PanelSection.vue'
 import ColorStyleRow from '@/components/properties/ColorStyleRow.vue'

@@ -11,7 +11,7 @@ import {
 import { LayerTreeRoot, LayerTreeItem, useInlineRename } from '@open-pencil/vue'
 import type { LayerDragInstruction, LayerNode } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
-import CanvasMenu from '../CanvasMenu.vue'
+import CanvasMenu from '../canvas/CanvasMenu.vue'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 

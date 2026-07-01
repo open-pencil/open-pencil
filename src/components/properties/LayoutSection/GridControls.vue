@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppSelect from '@/components/ui/AppSelect.vue'
-import ScrubInput from '@/components/ScrubInput.vue'
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 

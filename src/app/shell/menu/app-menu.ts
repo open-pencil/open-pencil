@@ -4,6 +4,7 @@ import type { MenuEntry } from '@open-pencil/vue'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
@@ -84,7 +85,9 @@ export function useAppMenu() {
     save: () => void store.saveFigFile(),
     'save-as': () => void store.saveFigFileAs(),
     'export-selection': () => exportSelection('png'),
-    cut: () => document.execCommand('cut'),
+    copy: () => void executeClipboardCommand(store, 'copy'),
+    cut: () => void executeClipboardCommand(store, 'cut'),
+    paste: () => void executeClipboardCommand(store, 'paste'),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-fig': () => exportSelection('fig'),
