@@ -35,6 +35,7 @@ Pull requests must be reviewable without guessing the author's intent.
 - Explain what changed and why it changed.
 - Include a concrete list or paragraph of meaningful changes.
 - Document validation, such as `bun run check`, targeted tests, docs-only review, or an explicit reason validation was not run.
+- If AI-generated code is substantial, add one model identifier line when it helps reviewers calibrate risk, for example `Model: claude-sonnet-4.5`. Do not add coding-harness branding, `Co-authored-by` AI trailers, or generated-with footers.
 - Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
 
 ### Reviewability

@@ -49,5 +49,8 @@ vue-stream-markdown/
 # Agent scratch space (reviews, test artifacts)
 scratch/
 
+# Agent local config and scratch space
+.claude/
+
 # OpenCode
 .opencode/
