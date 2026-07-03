@@ -125,8 +125,13 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - Registries (`registry*.ts`) assemble tool sets. Add new tools to the appropriate registry so AI chat, MCP, and CLI eval paths can see them.
 - AI adapter (`packages/core/src/tools/ai-adapter.ts`) converts ToolDefs to Vercel AI tools with valibot schemas. `src/app/ai/tools/index.ts` is a thin app wire that creates `FigmaAPI` from the active editor.
 - CLI commands in `packages/cli/src/commands/**` are not generated from ToolDefs; they own CLI UX, pagination, and agentfmt formatting. The `eval` command exposes ToolDef operations through `FigmaAPI`.
-- MCP server code lives in `packages/mcp/src/server.ts`. MCP-only tools such as `open_file`, `new_document`, `save_file`, and `get_codegen_prompt` are registered there because they need server filesystem access or are not scene-graph tools.
-- `open_file` and `new_document` are only registered when `OPENPENCIL_MCP_ROOT` is set. Export tools can write files under that root when given a `path`.
+- MCP server code lives in `packages/mcp/src/server.ts`. `startServer()` is async and returns `ServerHandle { app, server, socketPath, httpPort, close }`. The server uses one Hono app with Unix-socket HTTP where available plus TCP HTTP/WS for browser/external access, and registers ToolDefs as MCP tools.
+- Transport architecture (`packages/mcp/src/transport/`) owns platform-specific socket paths, discovery-file read/write, PID liveness checks, stale socket cleanup, and auth-token storage. The discovery file and socket use restrictive permissions on Unix; `OPENPENCIL_MCP_DISCOVERY_PATH` is mainly for test isolation.
+- `stdio-bridge.ts` connects to the MCP server via discovery-driven HTTP transport: HTTP-over-Unix-socket when available, otherwise TCP fallback. Auth token comes from `OPENPENCIL_MCP_AUTH_TOKEN` or the discovery file.
+- Auth token comparison uses `crypto.timingSafeEqual`; the token is generated on startup, stored in the discovery file, and not exposed via `/health`. Same-user processes can still read same-user files, so this is local hardening rather than a sandbox.
+- Path scoping (`resolveSafePath`) resolves symlinks with `fs.realpath` so a symlink inside the configured root cannot escape that root.
+- MCP-only tools such as `open_file`, `new_document`, `save_file`, and `get_codegen_prompt` are registered directly in `server.ts` because they need server filesystem access or are not scene-graph tools.
+- `open_file` and `new_document` are only registered when the MCP server has an `mcpRoot`. Export tools can write files under that root when given a `path`.
 - Core codegen prompts live as markdown under `packages/core/src/tools/prompts/`; app chat/ACP prompts live under `src/app/ai/**` markdown files.
 - `FigmaAPI` (`packages/core/src/figma-api/`) is the execution target for tools and CLI eval. It is Figma Plugin API compatible and uses Symbols for hidden internals.
 

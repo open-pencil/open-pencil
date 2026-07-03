@@ -92,7 +92,7 @@ Współpraca peer-to-peer w czasie rzeczywistym przez Trystero (WebRTC) + Yjs CR
 
 ### Most RPC CLI-do-Aplikacji
 
-Gdy aplikacja desktopowa jest uruchomiona, komendy CLI łączą się z nią przez WebSocket zamiast wymagać pliku .fig. Serwer automatyzacji działa na `127.0.0.1:7600` (HTTP) i `127.0.0.1:7601` (WebSocket). Komendy wykonują się na stanie edytora na żywo, umożliwiając skryptom automatyzacji i agentom AI interakcję z uruchomioną aplikacją.
+Gdy aplikacja desktopowa jest uruchomiona, komendy CLI łączą się z nią przez serwer MCP zamiast wymagać pliku .fig. Na macOS i Linux serwer MCP nasłuchuje na gnieździe domeny Unix z opcjonalnym TCP na `127.0.0.1:7600` (HTTP + WebSocket). Na Windows serwer nasłuchuje wyłącznie przez TCP na `127.0.0.1:7600`. Komendy wykonują się na stanie edytora na żywo, umożliwiając skryptom automatyzacji i agentom AI interakcję z uruchomioną aplikacją.
 
 ## Co dalej
 

@@ -2,8 +2,11 @@
 
 ## Unreleased
 
-### Changed
+### Added
 
+- MCP server uses Unix domain socket as the primary transport on macOS/Linux, with optional TCP fallback for browser connections; Windows uses TCP exclusively
+- Discovery file (`mcp.json`) for stdio bridge and CLI auto-connection, stored with `0o600` permissions at the platform-default path
+- `OPENPENCIL_MCP_SOCKET` environment variable overrides the socket path in the discovery file; TCP is controlled by `PORT` (>0 = on, 0 = off)
 - Add Figma-style page management in the Pages panel with a context menu for renaming/deleting pages and drag-and-drop page reordering.
 - Add JSX authoring support for components, component sets, and instances.
 - Add design JSX variable helpers so color props can use `designVar()` / `defineVars()` references and emit graph variable bindings.
@@ -32,15 +35,39 @@
 - Add world-matrix visual bounds to overlap analysis, covering vector/stroke/text geometry, ancestor clipping, rotated clipping frames, and nested ancestor rotations.
 - Add the `@open-pencil/core/package.json` subpath export for package metadata consumers.
 
+### Security
+
+- Auth token comparison uses `crypto.timingSafeEqual` to prevent timing attacks (applied to HTTP endpoints and WebSocket browser registration)
+- Auth token auto-generated on startup (32-hex random); no longer exposed via `/health` endpoint; stored in discovery file with `0o600` permissions
+- Restrictive file permissions: socket `0o600`, directory `0o700` (best-effort; subject to process umask); prevents access from other users but not from same-user processes
+- Path traversal protection hardened against symlink attacks via `fs.realpath` in `resolveSafePath`; symlink targets are validated against root before returning the user-provided normalized path
+
+### Changed
+
+- Stdio bridge connects via HTTP-over-socket instead of WebSocket
+- WebSocket upgrades happen on the same HTTP port (no separate WS_PORT)
+- Discovery file checks if the recorded PID is still running to detect stale entries (note: PID recycling may cause false positives on long-running systems)
+
+### Breaking
+
+- `startServer()` is now async, returns `Promise<ServerHandle { app, server, socketPath, httpPort, close }>` instead of `{ app, wss, httpPort, close }`
+- `WS_PORT` removed and `AUTOMATION_WS_PORT` constant removed; WebSocket uses the unified HTTP port
+
 ### Fixes
 
 - Match Figma auto-layout reflow when deleting children or hiding optional instance slots, including HUG-height component instances.
+- Render CJK fallback text with script-specific font packs and avoid outline rendering when paragraph-only text features such as truncation, decorations, or rich style-run fills must be preserved.
 - Fix desktop clipboard copy/cut/paste by using Tauri's system clipboard bridge when browser clipboard events are unavailable.
 - Add AI provider connection testing with clearer setup errors for OpenAI-compatible endpoints.
 - Increase per-test timeout for slow `gold-preview.fig` fixture tests (`clipboard roundtrip`, `group reclassification`, `glyph blob preservation`, `auto-layout text measurement`, and `render/canvas/cache`) so they no longer flake on slower CI runners.
+- Fix leaking `vi.mock` calls in tab/file IO tests that replaced `computeAllLayouts` with a no-op and broke unrelated layout/text tests in the same `bun test` process. Mocks are now scoped to each test with `vi.spyOn` and restored with `vi.restoreAllMocks()`.
+- Fix Rust path identity normalization to collapse duplicate slashes, strip trailing slashes, and preserve UNC `//` prefix so desktop file-association identity keys match the frontend `normalizeFilePath` contract.
+- Fix `downloadBlob` passing `Uint8Array.buffer` to `Blob`, which included adjacent bytes for subarray payloads; it now passes the typed-array view directly.
+- Fix `yieldToUI` leaving a dangling queued `requestAnimationFrame` callback when the `setTimeout` fallback resolved first, and fix a dangling `setTimeout` fallback when `requestAnimationFrame` is a synchronous no-op. The surviving callback always cancels the other side.
 - Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.
 - Fix instance overrides shallow-copied on clone — override values containing objects are now deep-copied.
 - Fix stale variable bindings not cleaned up when fills/strokes arrays shrink — any indexed sub-path is now handled, not just `/color`.
+- Fix MCP tool calls failing immediately on first connect when the desktop app has not registered yet — `sendRpc` now waits up to 10 seconds for the app to connect before returning an error
 - Fix desktop "Share This File" links to use the public `https://app.openpencil.dev/share/{roomId}` URL instead of the internal `tauri://localhost` app scheme.
 - Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
 - Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
@@ -48,11 +75,6 @@
 - Preserve rotated Figma transform origins for imported vector nodes.
 - Render complex text fills through vector glyph outlines so imported Figma text can use the normal fill pipeline for gradients, images, patterns, and other non-solid paints.
 - Fix file-backed CLI commands (`convert`, `eval --output`, `export`) to use Node `fs/promises` instead of Bun runtime APIs, so the published CLI works when installed and run under Node.
-- Fix `analyze_overlaps` stroke-overflow bounds for rotated nodes by expanding the local rectangle before transforming through the world matrix, so stroked rotated nodes are measured with their true rotated footprint.
-- Fix `analyze_overlaps` clipping across multiple rotated ancestors by preserving the clipped polygon through the full clip chain instead of collapsing to an AABB between clips, which could reintroduce corners removed by an inner clip.
-- Fix `analyze_overlaps` `limit` of `0` (or a negative value) so it caps the returned overlaps to an empty list instead of returning the full set; summary totals still reflect the complete result.
-- Trim whitespace from `analyze_overlaps` `scope` and `severity` inputs so values like `" major "` resolve instead of falling back to defaults.
-- Export `OverlapScope`, `AnalyzeOverlapsSummary`, and `OverlapIntersection` from the `@open-pencil/core/tools/analyze` barrel so consumers do not need to deep-import the overlaps module.
 
 ## 0.13.2 — 2026-05-30
 
@@ -62,6 +84,9 @@
 
 ### Fixes
 
+- Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
+- Preserve rotated Figma transform origins for imported vector nodes.
+- Render complex text fills through vector glyph outlines so imported Figma text can use the normal fill pipeline for gradients, images, patterns, and other non-solid paints.
 - Fix the published MCP package so global installs include the `openpencil-mcp` and `openpencil-mcp-http` launchers required by desktop app integrations.
 
 ## 0.13.1 — 2026-05-29

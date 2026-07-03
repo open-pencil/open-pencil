@@ -1,0 +1,210 @@
+import { randomBytes } from 'node:crypto'
+import { access, constants, lstat, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { createConnection } from 'node:net'
+
+import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
+
+/**
+ * Metadata written to the discovery file so clients can auto-locate
+ * the running MCP server without knowing the socket path or TCP port.
+ *
+ * WARNING: The discovery file contains a plaintext auth token. Do not sync
+ * this file to cloud storage or include it in backups without encryption.
+ * Any process running as the same user can read this file.
+ */
+export interface DiscoveryInfo {
+  pid: number
+  socketPath: string
+  httpPort: number
+  authRequired: boolean
+  authToken: string | null
+  version: string
+  startedAt: string
+}
+
+/**
+ * Writes the discovery JSON file at the platform-appropriate location.
+ * Overwrites any existing file (from a previous server instance).
+ *
+ * The write is atomic: a sibling temp file is written first with `0o600`
+ * permissions, then renamed over the final path. This avoids leaving
+ * a half-written file visible to readers if the process is killed
+ * mid-write, and prevents concurrent writers from corrupting the file
+ * by interleaving their writes.
+ *
+ * WARNING: The auth token is written in plaintext. Do not sync the discovery
+ * file to cloud storage or include it in backups without encryption.
+ */
+export async function writeDiscoveryFile(info: DiscoveryInfo): Promise<void> {
+  const path = await getDiscoveryPath()
+  const json = JSON.stringify(info, null, 2)
+  // Add a random component to guarantee uniqueness
+  const random = randomBytes(6).toString('hex')
+  const tmpPath = `${path}.${process.pid}.${random}.tmp`
+  await writeFile(tmpPath, json, { mode: 0o600, encoding: 'utf-8' })
+  try {
+    await rename(tmpPath, path)
+  } catch (err) {
+    // Best-effort cleanup of the temp file on rename failure
+    await unlink(tmpPath).catch(() => undefined)
+    throw err
+  }
+}
+
+/**
+ * Reads the discovery file. Returns null if:
+ * - The file does not exist
+ * - The file cannot be parsed
+ * - The recorded PID is no longer running (stale file)
+ *
+ * On success, returns the parsed DiscoveryInfo.
+ */
+export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
+  const path = await getDiscoveryPath()
+  let raw: string
+  try {
+    raw = await readFile(path, 'utf-8')
+  } catch (e) {
+    if (isEnoent(e)) return null
+    return null
+  }
+
+  let info: DiscoveryInfo
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return null
+    info = parsed as DiscoveryInfo
+  } catch {
+    return null
+  }
+
+  // Validate structurally required fields
+  if (
+    typeof info.pid !== 'number' ||
+    !Number.isInteger(info.pid) ||
+    info.pid <= 0 ||
+    typeof info.version !== 'string' ||
+    typeof info.httpPort !== 'number' ||
+    !Number.isInteger(info.httpPort) ||
+    info.httpPort < 0 ||
+    info.httpPort > 65535 ||
+    typeof info.authRequired !== 'boolean' ||
+    typeof info.startedAt !== 'string' ||
+    typeof info.socketPath !== 'string' ||
+    (info.authToken !== null && typeof info.authToken !== 'string')
+  )
+    return null
+
+  // Check if the recorded process is still alive
+  if (!isProcessAlive(info.pid)) return null
+
+  return info
+}
+
+/**
+ * Removes the discovery file. Does not throw if the file does not exist.
+ */
+export async function removeDiscoveryFile(): Promise<void> {
+  const path = await getDiscoveryPath()
+  try {
+    await unlink(path)
+  } catch (e) {
+    if (!isEnoent(e)) throw e
+  }
+}
+
+/**
+ * Removes a stale Unix domain socket file if it exists and is not live.
+ * A socket is considered stale if no process is listening on it.
+ */
+export async function removeStaleSocket(socketPathOverride?: string): Promise<void> {
+  if (!platformHasUnixSockets()) return
+
+  const socketPath = socketPathOverride ?? (await getSocketPath())
+  let exists: boolean
+  try {
+    await access(socketPath, constants.F_OK)
+    exists = true
+  } catch {
+    exists = false
+  }
+
+  if (!exists) return
+
+  // Verify the path is actually a socket before unlinking it.
+  // A misconfigured OPENPENCIL_MCP_SOCKET could point at a regular file;
+  // we must never delete non-socket paths.
+  const stat = await lstat(socketPath).catch((e) => {
+    if (isEnoent(e)) return null
+    throw e
+  })
+  if (!stat) return
+  if (!stat.isSocket()) {
+    throw new Error(`Refusing to remove non-socket path: ${socketPath}`)
+  }
+
+  // Test if the socket is live by attempting a connection
+  const isLive = await testSocketConnection(socketPath)
+  if (!isLive) {
+    try {
+      await unlink(socketPath)
+    } catch (e) {
+      // Another process may have removed it; safe to ignore
+      if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code !== 'ENOENT') {
+        process.stderr.write(`Failed to remove stale socket: ${e.message}\n`)
+      }
+    }
+  }
+}
+
+/**
+ * Tests whether a Unix domain socket is live by attempting a brief connection.
+ * Returns true if the connection succeeds (or at least isn't refused),
+ * false if the socket is dead.
+ */
+function testSocketConnection(socketPath: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = createConnection(socketPath)
+    let result: boolean | null = null
+
+    function finish(live: boolean) {
+      if (result !== null) return
+      result = live
+      clearTimeout(timeout)
+      socket.destroy()
+      // eslint-disable-next-line promise/no-multiple-resolved
+      resolve(live)
+    }
+
+    const timeout = setTimeout(() => {
+      finish(false) // Timeout = unreachable; treat as stale
+    }, 2000)
+
+    socket.on('connect', () => {
+      finish(true)
+    })
+
+    socket.on('error', (err: NodeJS.ErrnoException) => {
+      const isStale = err.code === 'ECONNREFUSED' || err.code === 'ENOENT'
+      finish(!isStale)
+    })
+  })
+}
+
+/**
+ * Checks if a process with the given PID is still running.
+ * Uses process.kill(pid, 0) which doesn't send a signal, just checks existence.
+ * Works on both Unix and Windows.
+ */
+function isProcessAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isEnoent(e: unknown): boolean {
+  return e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code === 'ENOENT'
+}

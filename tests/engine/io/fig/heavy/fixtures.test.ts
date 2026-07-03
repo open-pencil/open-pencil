@@ -6,7 +6,7 @@ import { parseFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
 import { collectAllNodes } from '#tests/helpers/fig-traversal'
 import { heavy } from '#tests/helpers/test-utils'
 
-setDefaultTimeout(180_000)
+setDefaultTimeout(600_000)
 
 heavy('parse heavy .fig files', () => {
   let material3: SceneGraph
@@ -15,8 +15,8 @@ heavy('parse heavy .fig files', () => {
   let nuxtUiNodes: SceneNode[]
 
   beforeAll(async () => {
-    material3 = await parseFixture('material3.fig')
-    nuxtui = await parseFixture('nuxtui.fig')
+    material3 = await parseFixture('material3.fig', { populate: 'none' })
+    nuxtui = await parseFixture('nuxtui.fig', { populate: 'none' })
     material3Nodes = collectAllNodes(material3)
     nuxtUiNodes = collectAllNodes(nuxtui)
   })

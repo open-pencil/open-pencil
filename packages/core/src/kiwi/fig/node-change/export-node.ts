@@ -19,6 +19,8 @@ export type KiwiNodeChange = NodeChange & Record<string, unknown>
 type KiwiBooleanOperation = NonNullable<NodeChange['booleanOperation']>
 
 function toKiwiBooleanOperation(operation: SceneNode['booleanOperation']): KiwiBooleanOperation {
+  // Figma wire format uses XOR for boolean exclusion; SceneNode API uses EXCLUDE.
+  // Figma does not have a distinct EXCLUDE operation, so normalize on export.
   return operation === 'EXCLUDE' ? 'XOR' : (operation ?? 'UNION')
 }
 

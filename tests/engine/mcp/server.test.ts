@@ -1,160 +1,88 @@
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
-import type { AddressInfo } from 'node:net'
+import { mkdir, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import path from 'node:path'
+import { join } from 'node:path'
 
-import { serve } from '@hono/node-server'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
-import WebSocket from 'ws'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { startServer } from '#mcp/server'
 
 import {
-  ALL_TOOLS,
-  FigmaAPI,
-  SceneGraph,
-  computeAllLayouts,
-  executeRpcCommand
-} from '@open-pencil/core'
+  connectMockBrowser,
+  waitForBrowserRegistration,
+  type HealthResponse,
+  type MockBrowser
+} from './helpers'
 
-import { startServer, paramToZod } from '#mcp/server'
+const isUnix = process.platform !== 'win32'
+const SOCKET_DIR = join(tmpdir(), `openpencil-test-server-${process.pid}`)
+const TEST_MCP_ROOT = join(tmpdir(), 'open-pencil-mcp-root')
+const TEST_AUTH_TOKEN = 'test-auth-token'
+let testCounter = 0
 
-interface MockBrowserRequest {
-  command: string
-  args?: unknown
-}
+// ---------------------------------------------------------------------------
+// Test client: starts server with ephemeral TCP port, connects mock browser + MCP client
+// ---------------------------------------------------------------------------
 
-interface MockBrowser {
-  ws: WebSocket
-  graph: SceneGraph
-  requests: MockBrowserRequest[]
-  close: () => void
-}
-
-const TEST_MCP_ROOT = path.join(tmpdir(), 'open-pencil-mcp-root')
-
-function connectMockBrowser(port: number, graph: SceneGraph): Promise<MockBrowser> {
-  return new Promise((resolve, reject) => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}`)
-    const requests: MockBrowserRequest[] = []
-    const token = 'test-token-' + Date.now()
-
-    ws.on('open', () => {
-      ws.send(JSON.stringify({ type: 'register', token }))
-
-      ws.on('message', async (raw) => {
-        const msg = JSON.parse(raw.toString()) as {
-          type: string
-          id: string
-          command: string
-          args?: unknown
-        }
-        if (msg.type !== 'request') return
-
-        try {
-          const command = msg.command
-          requests.push({ command, args: msg.args })
-          const args = msg.args as { name?: string; args?: Record<string, unknown> } | undefined
-
-          let result: unknown
-          if (command === 'tool' && args?.name) {
-            const def = ALL_TOOLS.find((t) => t.name === args.name)
-            if (!def) throw new Error(`Unknown tool: ${args.name}`)
-            const api = new FigmaAPI(graph)
-            api.currentPage = api.wrapNode(graph.getPages()[0].id)
-            result = await def.execute(api, args.args ?? {})
-            if (def.mutates) computeAllLayouts(graph)
-          } else if (
-            command === 'save_file' ||
-            command === 'new_document' ||
-            command === 'open_file'
-          ) {
-            result = {}
-          } else {
-            result = executeRpcCommand(graph, command, args ?? {})
-          }
-
-          ws.send(JSON.stringify({ type: 'response', id: msg.id, ok: true, result }))
-        } catch (e) {
-          ws.send(
-            JSON.stringify({
-              type: 'response',
-              id: msg.id,
-              ok: false,
-              error: e instanceof Error ? e.message : String(e)
-            })
-          )
-        }
-      })
-
-      resolve({ ws, graph, requests, close: () => ws.close() })
-    })
-
-    ws.on('error', reject)
-  })
-}
-
-function readWsJson<T>(ws: WebSocket): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error('Timed out waiting for WebSocket message')),
-      1000
-    )
-    ws.once('message', (raw) => {
-      clearTimeout(timer)
-      try {
-        resolve(JSON.parse(raw.toString()) as T)
-      } catch (error) {
-        reject(error)
-      }
-    })
-    ws.once('error', (error) => {
-      clearTimeout(timer)
-      reject(error)
-    })
-  })
-}
-
-function openWs(url: string): Promise<WebSocket> {
-  const ws = new WebSocket(url)
-  return new Promise((resolve, reject) => {
-    ws.once('open', () => resolve(ws))
-    ws.once('error', reject)
-  })
-}
-
-function waitForWsListening(wss: InstanceType<typeof WebSocket.Server>): Promise<number> {
-  return new Promise((resolve) => {
-    if (wss.address()) {
-      resolve((wss.address() as AddressInfo).port)
-      return
-    }
-    wss.on('listening', () => resolve((wss.address() as AddressInfo).port))
-  })
+function testSocketPath(): string | null {
+  if (!isUnix) return null
+  return join(SOCKET_DIR, `mcp-test-${process.pid}-${++testCounter}.sock`)
 }
 
 async function createTestClient() {
-  const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-  const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
-  const actualHttpPort = (httpServer.address() as AddressInfo).port
-  const actualWsPort = await waitForWsListening(wss)
+  if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+  const authToken = 'test-client-token'
+  const handle = await startServer({
+    httpPort: 0,
+    withTcp: true,
+    socketPath: testSocketPath(),
+    authToken,
+    enableEval: false,
+    mcpRoot: null
+  })
+
+  const httpPort = handle.httpPort
+  if (!httpPort) {
+    await handle.close()
+    throw new Error('TCP listener not started')
+  }
 
   const graph = new SceneGraph()
-  const browser = await connectMockBrowser(actualWsPort, graph)
+  let browser: MockBrowser | undefined
+  let client: Client | undefined
 
-  const client = new Client({ name: 'test-client', version: '0.0.0' })
-  const transport = new StreamableHTTPClientTransport(
-    new URL(`http://127.0.0.1:${actualHttpPort}/mcp`)
-  )
-  await client.connect(transport)
+  try {
+    browser = await connectMockBrowser(httpPort, graph, authToken)
+    await waitForBrowserRegistration(httpPort)
 
+    client = new Client({ name: 'test-client', version: '0.0.0' })
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${httpPort}/mcp`),
+      {
+        requestInit: { headers: { Authorization: `Bearer ${authToken}` } }
+      }
+    )
+    await client.connect(transport)
+  } catch (e) {
+    await client?.close().catch(() => undefined)
+    browser?.close()
+    await handle.close()
+    throw e
+  }
+
+  const safeClient = client
+  const safeBrowser = browser
   return {
-    client,
+    client: safeClient,
     graph,
+    handle,
     close: async () => {
-      await client.close()
-      browser.close()
-      closeServer()
-      httpServer.close()
+      await safeClient?.close()
+      safeBrowser?.close()
+      await handle.close()
     }
   }
 }
@@ -164,20 +92,30 @@ function parseResult(result: { content: { type: string; text?: string }[] }): un
   return textContent?.text ? JSON.parse(textContent.text) : null
 }
 
+// ---------------------------------------------------------------------------
+// MCP tool + session tests
+// ---------------------------------------------------------------------------
+
 describe('MCP server', () => {
   let client: Client
   let graph: SceneGraph
-  let cleanup: () => Promise<void>
+  let cleanup: (() => Promise<void>) | null = null
 
   beforeEach(async () => {
-    const ctx = await createTestClient()
-    client = ctx.client
-    graph = ctx.graph
-    cleanup = ctx.close
+    try {
+      const ctx = await createTestClient()
+      client = ctx.client
+      graph = ctx.graph
+      cleanup = ctx.close
+    } catch (e) {
+      if (cleanup) await cleanup().catch(() => undefined)
+      throw e
+    }
   })
 
   afterEach(async () => {
-    await cleanup()
+    if (cleanup) await cleanup()
+    cleanup = null
   })
 
   test('lists all registered tools', async () => {
@@ -279,306 +217,310 @@ describe('MCP server', () => {
   })
 })
 
-describe('MCP Streamable HTTP transport', () => {
-  test('returns JSON responses for request/response calls', async () => {
-    const { app, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
-    const actualHttpPort = (httpServer.address() as AddressInfo).port
-
-    try {
-      const response = await fetch(`http://127.0.0.1:${actualHttpPort}/mcp`, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json, text/event-stream',
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'initialize',
-          params: {
-            protocolVersion: '2025-06-18',
-            capabilities: {},
-            clientInfo: { name: 'raw-test', version: '0.0.0' }
-          }
-        })
-      })
-
-      expect(response.status).toBe(200)
-      expect(response.headers.get('content-type')).toContain('application/json')
-      expect(response.headers.get('content-type')).not.toContain('text/event-stream')
-    } finally {
-      closeServer()
-      httpServer.close()
-    }
-  })
-})
-
-describe('MCP WebSocket stdio bridge routing', () => {
-  test('forwards stdio client requests to the registered desktop app', async () => {
-    const { wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-    const wsPort = await waitForWsListening(wss)
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(wsPort, graph)
-    const clientWs = await openWs(`ws://127.0.0.1:${wsPort}`)
-
-    try {
-      const register = await readWsJson<{ type: string; token?: string }>(clientWs)
-      expect(register.type).toBe('register')
-      expect(register.token).toBeTruthy()
-
-      clientWs.send(
-        JSON.stringify({
-          type: 'request',
-          id: 'stdio-1',
-          command: 'tool',
-          args: { name: 'get_current_page', args: {} }
-        })
-      )
-      const response = await readWsJson<{
-        type: string
-        id: string
-        ok?: boolean
-        result?: { name: string }
-      }>(clientWs)
-
-      expect(response.type).toBe('response')
-      expect(response.id).toBe('stdio-1')
-      expect(response.ok).toBe(true)
-      expect(response.result?.name).toBe('Page 1')
-      expect(browser.requests.at(-1)?.command).toBe('tool')
-    } finally {
-      clientWs.close()
-      browser.close()
-      closeServer()
-    }
-  })
-
-  test('returns a disconnected response instead of timing out when no app is registered', async () => {
-    const { wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-    const wsPort = await waitForWsListening(wss)
-    const clientWs = await openWs(`ws://127.0.0.1:${wsPort}`)
-
-    try {
-      clientWs.send(
-        JSON.stringify({
-          type: 'request',
-          id: 'stdio-no-app',
-          command: 'tool',
-          args: { name: 'get_current_page', args: {} }
-        })
-      )
-      const response = await readWsJson<{ type: string; id: string; ok?: boolean; error?: string }>(
-        clientWs
-      )
-
-      expect(response.type).toBe('response')
-      expect(response.id).toBe('stdio-no-app')
-      expect(response.ok).toBe(false)
-      expect(response.error).toContain('OpenPencil app is not connected')
-    } finally {
-      clientWs.close()
-      closeServer()
-    }
-  })
-
-  test('notifies already-connected stdio clients when the desktop app registers later', async () => {
-    const { wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-    const wsPort = await waitForWsListening(wss)
-    const clientWs = await openWs(`ws://127.0.0.1:${wsPort}`)
-    const graph = new SceneGraph()
-    let browser: MockBrowser | null = null
-
-    try {
-      browser = await connectMockBrowser(wsPort, graph)
-      const register = await readWsJson<{ type: string; token?: string }>(clientWs)
-      expect(register.type).toBe('register')
-      expect(register.token).toBeTruthy()
-    } finally {
-      clientWs.close()
-      browser?.close()
-      closeServer()
-    }
-  })
-
-  test('routes new requests to the latest registered desktop app after reconnect', async () => {
-    const { wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-    const wsPort = await waitForWsListening(wss)
-    const firstBrowser = await connectMockBrowser(wsPort, new SceneGraph())
-    const secondBrowser = await connectMockBrowser(wsPort, new SceneGraph())
-    const clientWs = await openWs(`ws://127.0.0.1:${wsPort}`)
-
-    try {
-      await readWsJson<{ type: string; token?: string }>(clientWs)
-      clientWs.send(
-        JSON.stringify({
-          type: 'request',
-          id: 'stdio-after-reconnect',
-          command: 'tool',
-          args: { name: 'get_current_page', args: {} }
-        })
-      )
-      const response = await readWsJson<{ type: string; id: string; ok?: boolean }>(clientWs)
-
-      expect(response.type).toBe('response')
-      expect(response.id).toBe('stdio-after-reconnect')
-      expect(response.ok).toBe(true)
-      expect(firstBrowser.requests).toHaveLength(0)
-      expect(secondBrowser.requests.at(-1)?.command).toBe('tool')
-    } finally {
-      clientWs.close()
-      firstBrowser.close()
-      secondBrowser.close()
-      closeServer()
-    }
-  })
-})
+// ---------------------------------------------------------------------------
+// mcpRoot tests
+// ---------------------------------------------------------------------------
 
 describe('MCP server with mcpRoot', () => {
+  async function withMcpRootServer(
+    mcpRoot: string | null,
+    fn: (client: Client, browser: MockBrowser, graph: SceneGraph) => Promise<void>
+  ) {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    if (mcpRoot) await mkdir(mcpRoot, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot
+    })
+
+    let browser: MockBrowser | null = null
+    let client: Client | null = null
+
+    try {
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      const graph = new SceneGraph()
+      browser = await connectMockBrowser(httpPort, graph, TEST_AUTH_TOKEN)
+      await waitForBrowserRegistration(httpPort)
+
+      client = new Client({ name: 'test-root', version: '0.0.0' })
+      const transport = new StreamableHTTPClientTransport(
+        new URL(`http://127.0.0.1:${httpPort}/mcp`),
+        { requestInit: { headers: { Authorization: `Bearer ${TEST_AUTH_TOKEN}` } } }
+      )
+      await client.connect(transport)
+
+      await fn(client, browser, graph)
+    } finally {
+      await client?.close().catch(() => undefined)
+      browser?.close()
+      await handle.close()
+    }
+  }
+
   test('registers open_file and new_document tools when mcpRoot is set', async () => {
-    const {
-      app,
-      wss,
-      close: closeServer
-    } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: TEST_MCP_ROOT })
-    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
-    const actualWsPort = await waitForWsListening(wss)
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(actualWsPort, graph)
-
-    const client = new Client({ name: 'test-root', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
-    )
-    await client.connect(transport)
-
-    const { tools } = await client.listTools()
-    const names = tools.map((t) => t.name)
-    expect(names).toContain('open_file')
-    expect(names).toContain('new_document')
-
-    await client.close()
-    browser.close()
-    closeServer()
-    httpServer.close()
+    await withMcpRootServer(TEST_MCP_ROOT, async (client) => {
+      const { tools } = await client.listTools()
+      const names = tools.map((t) => t.name)
+      expect(names).toContain('open_file')
+      expect(names).toContain('new_document')
+    })
   })
 
   test('save_file accepts an explicit path inside mcpRoot', async () => {
-    const {
-      app,
-      wss,
-      close: closeServer
-    } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: TEST_MCP_ROOT })
-    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
-    const actualWsPort = await waitForWsListening(wss)
+    await withMcpRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      await mkdir(join(TEST_MCP_ROOT, 'unicode'), { recursive: true })
+      const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
+      const result = await client.callTool({
+        name: 'save_file',
+        arguments: { path: savePath }
+      })
 
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(actualWsPort, graph)
-
-    const client = new Client({ name: 'test-root-save', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
-    )
-    await client.connect(transport)
-
-    const savePath = path.join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
-    const result = await client.callTool({
-      name: 'save_file',
-      arguments: { path: savePath }
+      expect(result.isError).not.toBe(true)
+      const request = browser.requests.find((item) => item.command === 'save_file')
+      // The server sends the canonical (realpath-resolved) path to the browser
+      // to prevent TOCTOU races. On macOS, /var -> /private/var.
+      const { realpath } = await import('node:fs/promises')
+      const { dirname, basename } = await import('node:path')
+      const canonicalPath = join(await realpath(dirname(savePath)), basename(savePath))
+      expect(request?.args).toEqual({ path: canonicalPath })
     })
-
-    expect(result.isError).not.toBe(true)
-    const request = browser.requests.find((item) => item.command === 'save_file')
-    expect(request?.args).toEqual({ path: savePath })
-
-    await client.close()
-    browser.close()
-    closeServer()
-    httpServer.close()
   })
 
   test('save_file rejects paths outside mcpRoot', async () => {
-    const {
-      app,
-      wss,
-      close: closeServer
-    } = startServer({ httpPort: 0, wsPort: 0, mcpRoot: TEST_MCP_ROOT })
-    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
-    const actualWsPort = await waitForWsListening(wss)
+    await withMcpRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const result = await client.callTool({
+        name: 'save_file',
+        arguments: { path: join(join(TEST_MCP_ROOT, '..'), 'outside.fig') }
+      })
 
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(actualWsPort, graph)
-
-    const client = new Client({ name: 'test-root-save-outside', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
-    )
-    await client.connect(transport)
-
-    const result = await client.callTool({
-      name: 'save_file',
-      arguments: { path: path.join(path.dirname(TEST_MCP_ROOT), 'outside.fig') }
+      expect(result.isError).toBe(true)
+      expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
     })
-
-    expect(result.isError).toBe(true)
-    expect(browser.requests.some((item) => item.command === 'save_file')).toBe(false)
-
-    await client.close()
-    browser.close()
-    closeServer()
-    httpServer.close()
   })
 
   test('does not register open_file when mcpRoot is null', async () => {
-    const { app, wss, close: closeServer } = startServer({ httpPort: 0, wsPort: 0 })
-    const httpServer = serve({ fetch: app.fetch, port: 0, hostname: '127.0.0.1' })
-    const actualWsPort = await waitForWsListening(wss)
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(actualWsPort, graph)
-
-    const client = new Client({ name: 'test-no-root', version: '0.0.0' })
-    const transport = new StreamableHTTPClientTransport(
-      new URL(`http://127.0.0.1:${(httpServer.address() as AddressInfo).port}/mcp`)
-    )
-    await client.connect(transport)
-
-    const { tools } = await client.listTools()
-    const names = tools.map((t) => t.name)
-    expect(names).not.toContain('open_file')
-    expect(names).not.toContain('new_document')
-
-    await client.close()
-    browser.close()
-    closeServer()
-    httpServer.close()
+    await withMcpRootServer(null, async (client) => {
+      const { tools } = await client.listTools()
+      const names = tools.map((t) => t.name)
+      expect(names).not.toContain('open_file')
+      expect(names).not.toContain('new_document')
+    })
   })
 })
 
-describe('paramToZod coercion', () => {
-  test('number param accepts numeric strings', () => {
-    const schema = paramToZod({ type: 'number', description: 'x', required: true })
-    expect(schema.parse('42')).toBe(42)
-    expect(schema.parse(42)).toBe(42)
-    expect(schema.parse('3.14')).toBeCloseTo(3.14)
-  })
+// ---------------------------------------------------------------------------
+// GAP-01: server.close() resource cleanup
+// ---------------------------------------------------------------------------
 
-  test('number param rejects non-numeric strings', () => {
-    const schema = paramToZod({ type: 'number', description: 'x', required: true })
-    expect(() => schema.parse('abc')).toThrow()
-  })
+describe('MCP server lifecycle', () => {
+  test('close() removes the discovery file from disk', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
+    const discoveryPath = await getDiscoveryPath()
 
-  test('number param respects min/max after coercion', () => {
-    const schema = paramToZod({
-      type: 'number',
-      description: 'x',
-      required: true,
-      min: 0,
-      max: 100
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
     })
-    expect(schema.parse('50')).toBe(50)
-    expect(() => schema.parse('200')).toThrow()
-    expect(() => schema.parse('-1')).toThrow()
+    expect(await Bun.file(discoveryPath).exists()).toBe(true)
+
+    await handle.close()
+    expect(await Bun.file(discoveryPath).exists()).toBe(false)
   })
+
+  test('close() removes the unix socket file from disk', async () => {
+    if (!isUnix) return
+    await mkdir(SOCKET_DIR, { recursive: true })
+    const socketPath = testSocketPath()
+    expect(socketPath).toBeTruthy()
+
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath,
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const info = await stat(socketPath)
+    expect(info.isSocket()).toBe(true)
+
+    await handle.close()
+    await expect(stat(socketPath)).rejects.toThrow()
+  })
+
+  test('close() removes socket file when no replacement server is listening', async () => {
+    if (!isUnix) return
+    await mkdir(SOCKET_DIR, { recursive: true })
+    const socketPath = testSocketPath()
+
+    // Start the first server on the socket path
+    const handle1 = await startServer({
+      httpPort: 0,
+      withTcp: false,
+      socketPath,
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    expect(handle1.socketPath).toBe(socketPath)
+
+    // Close the first server. After it stops listening, the socket file
+    // should be removed (nothing is listening on it).
+    await handle1.close()
+    await expect(stat(socketPath)).rejects.toThrow()
+  })
+
+  test('close() is idempotent and does not throw on second call', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    await handle.close()
+    await expect(handle.close()).resolves.toBeUndefined()
+  })
+
+  test('close() rejects subsequent RPC requests', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    const healthyResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
+    expect(healthyResp.status).toBe(200)
+
+    await handle.close()
+
+    await expect(fetch(`http://127.0.0.1:${httpPort}/health`)).rejects.toThrow()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// GAP-02: concurrent startServer calls produce non-overlapping servers
+// ---------------------------------------------------------------------------
+
+describe('MCP server concurrent startServer', () => {
+  test('two simultaneous startServer calls each get their own discovery file and both stay up', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
+
+    // Use unique socket paths so the two servers don't fight over the
+    // socket file. The test still covers discovery atomicity by writing
+    // to the same shared discovery path.
+    const [a, b] = await Promise.all([
+      startServer({
+        httpPort: 0,
+        withTcp: true,
+        socketPath: testSocketPath(),
+        authToken: 'token-a',
+        enableEval: false,
+        mcpRoot: null
+      }),
+      startServer({
+        httpPort: 0,
+        withTcp: true,
+        socketPath: testSocketPath(),
+        authToken: 'token-b',
+        enableEval: false,
+        mcpRoot: null
+      })
+    ])
+
+    try {
+      // Both servers are listening on their own ephemeral ports.
+      expect(a.httpPort).toBeGreaterThan(0)
+      expect(b.httpPort).toBeGreaterThan(0)
+      expect(a.httpPort).not.toBe(b.httpPort)
+
+      // Each responds on /health with the expected auth state.
+      const aHealth = (await (
+        await fetch(`http://127.0.0.1:${a.httpPort}/health`)
+      ).json()) as HealthResponse
+      const bHealth = (await (
+        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
+      ).json()) as HealthResponse
+      expect(aHealth.status).toBe('no_app')
+      expect(bHealth.status).toBe('no_app')
+
+      // Discovery file exists and was last written by one of the two servers
+      // (atomic rename guarantees it's a complete file, not interleaved).
+      const discoveryPath = await getDiscoveryPath()
+      const file = Bun.file(discoveryPath)
+      expect(await file.exists()).toBe(true)
+      const info = (await file.json()) as { pid: number; authToken: string }
+      expect(info.pid).toBe(process.pid)
+      expect(['token-a', 'token-b']).toContain(info.authToken)
+    } finally {
+      await a.close()
+      await b.close()
+    }
+  }, 15000)
+
+  test("closing one server does not delete another server's discovery file", async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const { getDiscoveryPath } = await import('#mcp/transport/paths')
+
+    const a = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: 'token-a',
+      enableEval: false,
+      mcpRoot: null
+    })
+    const b = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: 'token-b',
+      enableEval: false,
+      mcpRoot: null
+    })
+
+    try {
+      // Close server a — its discovery cleanup should NOT remove the file
+      // because server b still owns it (different auth token).
+      await a.close()
+
+      // Server b should still be healthy and reachable.
+      const bHealth = (await (
+        await fetch(`http://127.0.0.1:${b.httpPort}/health`)
+      ).json()) as HealthResponse
+      expect(bHealth.status).toBe('no_app')
+
+      // Discovery file should still exist (owned by server b now).
+      const discoveryPath = await getDiscoveryPath()
+      const file = Bun.file(discoveryPath)
+      expect(await file.exists()).toBe(true)
+      const info = (await file.json()) as { authToken: string }
+      expect(info.authToken).toBe('token-b')
+    } finally {
+      await b.close()
+    }
+  }, 15000)
 })

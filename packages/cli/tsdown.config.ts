@@ -11,6 +11,7 @@ export default defineConfig({
   outDir: './dist',
   treeshake: false,
   deps: {
+    alwaysBundle: ['@open-pencil/mcp', /^@open-pencil\/mcp\//],
     neverBundle: ['@open-pencil/core', /^@open-pencil\/core\//, 'canvaskit-wasm', /^node:/],
     onlyBundle: false
   }
