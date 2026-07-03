@@ -19,7 +19,7 @@ import PaddingControls from '@/components/properties/LayoutSection/PaddingContro
 import { useSelectUI } from '@/components/ui/select'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
-import type { LayoutDirection, LayoutAlign } from '@open-pencil/core/scene-graph'
+import type { LayoutDirection, LayoutAlign } from '@open-pencil/scene-graph'
 
 const ctx = useLayoutControlsContext()
 const gapFieldRef = ref<HTMLElement | null>(null)

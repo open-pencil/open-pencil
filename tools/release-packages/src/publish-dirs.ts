@@ -27,7 +27,12 @@ const PACKAGE_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies'] a
 const PUBLISH_CONFIG_FIELDS = new Set(['access', 'provenance', 'registry'])
 
 export const DEFAULT_PACKAGES: PackagePublishConfig[] = [
+  { dir: 'packages/scene-graph', include: ['dist'], extraFiles: ['README.md'] },
+  { dir: 'packages/pen', include: ['dist'], extraFiles: ['README.md'] },
+  { dir: 'packages/kiwi', include: ['dist'], extraFiles: ['README.md'] },
+  { dir: 'packages/fig', include: ['dist'], extraFiles: ['README.md'] },
   { dir: 'packages/core', include: ['dist', 'src', 'assets'], extraFiles: [] },
+  { dir: 'packages/dom-css', include: ['dist'], extraFiles: ['README.md'] },
   { dir: 'packages/cli', include: ['bin', 'dist'], extraFiles: [] },
   { dir: 'packages/mcp', include: ['dist'], extraFiles: [] },
   { dir: 'packages/vue', include: ['dist'], extraFiles: ['README.md'] }

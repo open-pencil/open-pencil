@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { drawLayoutGrids } from '#core/canvas/layout-grids'
-import type { SceneNode } from '#core/scene-graph'
 
 import { createMockCanvas, createMockRenderer, mockCalls } from './effects/helpers'
 

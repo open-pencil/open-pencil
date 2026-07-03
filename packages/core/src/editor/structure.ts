@@ -1,5 +1,6 @@
+import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+
 import { DEFAULT_FRAME_FILL } from '#core/constants'
-import type { NodeType, SceneNode } from '#core/scene-graph'
 
 import { wrapInAutoLayout as wrapInAutoLayoutImpl } from './structure/auto-layout-wrap'
 import {

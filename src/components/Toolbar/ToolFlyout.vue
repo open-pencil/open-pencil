@@ -65,7 +65,7 @@ function activeKeyForTool() {
   <div class="flex items-center">
     <slot :label="`${toolLabels[activeKeyForTool()]} (${tool.shortcut})`">
       <ToolButton
-        :test-id="toolbarToolTestId(activeKeyForTool(), mobile)"
+        :data-test-id="toolbarToolTestId(activeKeyForTool(), mobile)"
         :icon="toolIcons[activeKeyForTool()]"
         :active="isActiveTool(activeKeyForTool())"
         :mobile="mobile"

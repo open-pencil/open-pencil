@@ -11,8 +11,6 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
-import { vTestId, type TestIdProps } from '@open-pencil/vue'
-
 import { useSelectUI } from '@/components/ui/select'
 
 interface SelectOption<TValue extends string | number> {
@@ -33,13 +31,15 @@ interface GroupedSelectUi {
   separator?: string
 }
 
-interface AppGroupedSelectProps<TValue extends string | number> extends TestIdProps {
+interface AppGroupedSelectProps<TValue extends string | number> {
   groups: SelectGroupDef<TValue>[]
   displayValue: string
   ui?: GroupedSelectUi
 }
 
-const { groups, displayValue, ui, testId } = defineProps<AppGroupedSelectProps<T>>()
+defineOptions({ inheritAttrs: false })
+
+const { groups, displayValue, ui } = defineProps<AppGroupedSelectProps<T>>()
 
 const modelValue = defineModel<T>({ required: true })
 
@@ -57,7 +57,7 @@ const separator = ui?.separator ?? 'mx-1 my-1 h-px bg-border'
 
 <template>
   <SelectRoot v-model="modelValue">
-    <SelectTrigger v-test-id="testId" :class="select.trigger">
+    <SelectTrigger v-bind="$attrs" :class="select.trigger">
       <slot name="value">{{ displayValue }}</slot>
       <icon-lucide-chevron-down class="size-2.5 shrink-0 text-muted" />
     </SelectTrigger>

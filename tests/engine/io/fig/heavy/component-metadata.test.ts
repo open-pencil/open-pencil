@@ -1,19 +1,19 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
+
+import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
 import { importNodeChanges } from '#core/kiwi'
-import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { heavy } from '#tests/helpers/test-utils'
+import { readFixtureArrayBuffer } from '#tests/helpers/fig-fixtures'
+import { HEAVY_TEST_TIMEOUT_MS, heavy } from '#tests/helpers/test-utils'
 
 function importFixture(name: string) {
-  const buffer = readFileSync(`tests/fixtures/${name}`).buffer
-  const { nodeChanges, blobs, images } = parseFigBuffer(buffer)
-  return importNodeChanges(nodeChanges, blobs, new Map(images))
+  const { nodeChanges, blobs, images } = parseFigBuffer(readFixtureArrayBuffer(name))
+  return importNodeChanges(nodeChanges, blobs, new Map(images), { populate: 'none' })
 }
 
-setDefaultTimeout(20_000)
+setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
 heavy('fig component metadata import', () => {
   test('preserves remote library component identity fields', () => {
@@ -30,7 +30,7 @@ heavy('fig component metadata import', () => {
     expect(component.overrideKey).toBe('4132:5801')
     expect(component.sharedSymbolVersion).toBe('4152:1913')
     expect(component.isSymbolPublishable).toBe(false)
-  }, 10_000)
+  })
 
   test('imports component set docs and variant property specs', () => {
     const graph = importFixture('material3.fig')
@@ -58,5 +58,5 @@ heavy('fig component metadata import', () => {
     expect(Object.keys(variant.componentPropertyValues).some((key) => key.includes(':'))).toBe(
       false
     )
-  }, 30_000)
+  })
 })

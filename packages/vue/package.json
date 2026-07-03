@@ -3,13 +3,6 @@
   "version": "0.13.2",
   "license": "MIT",
   "type": "module",
-  "imports": {
-    "#vue/*": {
-      "types": "./src/*",
-      "bun": "./src/*",
-      "default": "./dist/*"
-    }
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -38,9 +31,9 @@
     "provenance": true
   },
   "peerDependencies": {
-    "vue": "^3.4.0",
     "@open-pencil/core": "workspace:*",
-    "canvaskit-wasm": ">=0.39.0"
+    "canvaskit-wasm": ">=0.39.0",
+    "vue": "^3.4.0"
   },
   "peerDependenciesMeta": {
     "canvaskit-wasm": {
@@ -52,13 +45,14 @@
     "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
     "@nanostores/i18n": "^1.2.2",
     "@nanostores/vue": "^1.1.0",
+    "@open-pencil/scene-graph": "workspace:*",
     "@tanstack/vue-table": "^8.21.3",
     "@vueuse/core": "^14.2.1",
     "nanostores": "^1.2.0",
     "reka-ui": "^2.9.0"
   },
   "devDependencies": {
-    "tsdown": "^0.21.7",
+    "tsdown": "^0.22.3",
     "unplugin-raw": "^0.6.4",
     "unplugin-vue": "^7.1.1"
   }

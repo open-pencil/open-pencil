@@ -14,7 +14,7 @@ const { dialogs } = useI18n()
     <ProviderSettingsInput
       v-model.number="ctx.maxOutputTokens"
       type="number"
-      test-id="provider-settings-max-tokens"
+      data-test-id="provider-settings-max-tokens"
       :min="1024"
       :max="128000"
       :step="1024"

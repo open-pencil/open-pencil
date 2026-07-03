@@ -1,5 +1,7 @@
 import { existsSync } from 'node:fs'
 
+import { parse as parseVueSfc } from 'vue/compiler-sfc'
+
 function normalizedFilename(context) {
   return (context.filename ?? context.getFilename?.() ?? '').replace(/\\/g, '/')
 }
@@ -172,6 +174,103 @@ const noStructuredCloneSceneArrays = {
   }
 }
 
+function vueSfcDescriptor(source, filename) {
+  return parseVueSfc(source, { filename }).descriptor
+}
+
+function vueTemplateAst(source, filename) {
+  return vueSfcDescriptor(source, filename).template?.ast ?? null
+}
+
+function isVueSourceFile(file) {
+  return (
+    file.endsWith('.vue') &&
+    (file.startsWith('src/') ||
+      file.includes('/src/') ||
+      file.startsWith('packages/vue/src/') ||
+      file.includes('/packages/vue/src/'))
+  )
+}
+
+function sourceLineCount(source) {
+  const normalized = source.endsWith('\n') ? source.slice(0, -1) : source
+  return normalized.split('\n').length
+}
+
+const VUE_ELEMENT_NODE = 1
+const VUE_SIMPLE_EXPRESSION_NODE = 4
+const VUE_INTERPOLATION_NODE = 5
+const VUE_ATTRIBUTE_NODE = 6
+const VUE_DIRECTIVE_NODE = 7
+
+function walkVueTemplateAst(node, visitor) {
+  visitor(node)
+  for (const prop of node.props ?? []) walkVueTemplateAst(prop, visitor)
+  for (const child of node.children ?? []) walkVueTemplateAst(child, visitor)
+  if (node.type === VUE_INTERPOLATION_NODE && node.content) {
+    walkVueTemplateAst(node.content, visitor)
+  }
+  if (node.type === VUE_DIRECTIVE_NODE) {
+    if (node.arg) walkVueTemplateAst(node.arg, visitor)
+    if (node.exp) walkVueTemplateAst(node.exp, visitor)
+  }
+}
+
+function walkExpressionAst(node, visitor) {
+  if (!node || typeof node !== 'object') return
+  visitor(node)
+  for (const value of Object.values(node)) {
+    if (!value || value === node.loc) continue
+    if (Array.isArray(value)) {
+      for (const item of value) walkExpressionAst(item, visitor)
+      continue
+    }
+    walkExpressionAst(value, visitor)
+  }
+}
+
+function isUiHelperName(name) {
+  const prefix = 'use'
+  const suffix = 'UI'
+  if (!name.startsWith(prefix) || !name.endsWith(suffix)) return false
+  const firstDomainChar = name.at(prefix.length)
+  return firstDomainChar !== undefined && firstDomainChar === firstDomainChar.toUpperCase()
+}
+
+function hasExpressionCall(expression, predicate) {
+  if (expression?.type !== VUE_SIMPLE_EXPRESSION_NODE || !expression.ast) return false
+  let found = false
+  walkExpressionAst(expression.ast, (node) => {
+    if (found || node.type !== 'CallExpression') return
+    if (node.callee?.type === 'Identifier' && predicate(node.callee.name)) found = true
+  })
+  return found
+}
+
+function hasUiHelperCall(expression) {
+  return hasExpressionCall(expression, isUiHelperName)
+}
+
+function isStaticVueAttribute(node, name) {
+  return node.type === VUE_ATTRIBUTE_NODE && node.name === name
+}
+
+function isVueBindDirective(node, name) {
+  return node.type === VUE_DIRECTIVE_NODE && node.name === 'bind' && node.arg?.content === name
+}
+
+function isBoundStringLiteral(node, name) {
+  if (!isVueBindDirective(node, name)) return false
+  const expression = node.exp
+  if (expression?.type !== VUE_SIMPLE_EXPRESSION_NODE) return false
+  const ast = expression.ast
+  if (!ast) return false
+  if (ast.type === 'StringLiteral' || (ast.type === 'Literal' && typeof ast.value === 'string')) {
+    return true
+  }
+  return ast.type === 'TemplateLiteral' && ast.expressions?.length === 0
+}
+
 const noVueStyleBlocks = {
   meta: {
     docs: {
@@ -180,19 +279,17 @@ const noVueStyleBlocks = {
   },
   create(context) {
     const file = normalizedFilename(context)
-    if (!file.endsWith('.vue')) return {}
-    if (!file.includes('/src/') && !file.includes('/packages/vue/src/')) return {}
+    if (!isVueSourceFile(file)) return {}
 
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        if (/<style\b/i.test(source)) {
-          context.report({
-            node,
-            message:
-              'Vue components must not use <style> blocks. Use Tailwind utilities or global app.css tokens.'
-          })
-        }
+        const descriptor = vueSfcDescriptor(context.sourceCode.getText(), file)
+        if (descriptor.styles.length === 0) return
+        context.report({
+          node,
+          message:
+            'Vue components must not use <style> blocks. Use Tailwind utilities or global app.css tokens.'
+        })
       }
     }
   }
@@ -206,18 +303,27 @@ const noNativeTitleAttributesInVue = {
   },
   create(context) {
     const file = normalizedFilename(context)
-    if (!file.endsWith('.vue')) return {}
-    if (!file.includes('/src/') && !file.includes('/packages/vue/src/')) return {}
+    if (!isVueSourceFile(file)) return {}
 
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        if (/\s:?title=/.test(source)) {
-          context.report({
-            node,
-            message: 'Use the shared tooltip UI instead of native title attributes.'
-          })
-        }
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasTitleAttribute = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (hasTitleAttribute) return
+          if (
+            isStaticVueAttribute(templateNode, 'title') ||
+            isVueBindDirective(templateNode, 'title')
+          ) {
+            hasTitleAttribute = true
+          }
+        })
+        if (!hasTitleAttribute) return
+        context.report({
+          node,
+          message: 'Use the shared tooltip UI instead of native title attributes.'
+        })
       }
     }
   }
@@ -231,18 +337,114 @@ const noHardcodedTipLabelsInVue = {
   },
   create(context) {
     const file = normalizedFilename(context)
-    if (!file.endsWith('.vue')) return {}
-    if (!file.includes('/src/') && !file.includes('/packages/vue/src/')) return {}
+    if (!isVueSourceFile(file)) return {}
 
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        if (/<Tip\b[^>]*\slabel=["']/.test(source)) {
-          context.report({
-            node,
-            message: 'Use a localized binding for Tip labels, not a hardcoded string.'
-          })
-        }
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasHardcodedTipLabel = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (hasHardcodedTipLabel) return
+          if (templateNode.type !== VUE_ELEMENT_NODE || templateNode.tag !== 'Tip') return
+          hasHardcodedTipLabel = templateNode.props?.some(
+            (prop) => isStaticVueAttribute(prop, 'label') || isBoundStringLiteral(prop, 'label')
+          )
+        })
+        if (!hasHardcodedTipLabel) return
+        context.report({
+          node,
+          message: 'Use a localized binding for Tip labels, not a hardcoded string.'
+        })
+      }
+    }
+  }
+}
+
+const noRawSvgInAppVueTemplates = {
+  meta: {
+    docs: {
+      description: 'Disallow raw SVG in app Vue templates — use Iconify/unplugin icons'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!isVueSourceFile(file)) return {}
+
+    return {
+      Program(node) {
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasRawSvg = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (templateNode.type === VUE_ELEMENT_NODE && templateNode.tag === 'svg') {
+            hasRawSvg = true
+          }
+        })
+        if (!hasRawSvg) return
+        context.report({
+          node,
+          message: 'Use Iconify/unplugin icon components instead of raw <svg> in app templates.'
+        })
+      }
+    }
+  }
+}
+
+const noUiHelperCallsInVueTemplates = {
+  meta: {
+    docs: {
+      description: 'Disallow use*UI() helper calls inside Vue templates'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue') || !file.includes('/src/components/')) return {}
+
+    return {
+      Program(node) {
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasTemplateUiHelperCall = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (!hasTemplateUiHelperCall && hasUiHelperCall(templateNode)) {
+            hasTemplateUiHelperCall = true
+          }
+        })
+        if (!hasTemplateUiHelperCall) return
+        context.report({
+          node,
+          message: 'Hoist use*UI() calls out of templates or hide them inside shared UI components.'
+        })
+      }
+    }
+  }
+}
+
+const PROPERTY_SECTION_LINE_ALLOWLIST = new Set([
+  '/src/components/properties/LayoutSection/SizeControls.vue'
+])
+
+const noLargePropertySectionComponents = {
+  meta: {
+    docs: {
+      description: 'Disallow oversized property-section Vue components'
+    }
+  },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.endsWith('.vue') || !file.includes('/src/components/properties/')) return {}
+    if ([...PROPERTY_SECTION_LINE_ALLOWLIST].some((suffix) => file.endsWith(suffix))) return {}
+
+    return {
+      Program(node) {
+        const lineCount = sourceLineCount(context.sourceCode.getText())
+        if (lineCount <= 250) return
+        context.report({
+          node,
+          message:
+            'Split property-section components over 250 lines into focused controls or document an explicit allowlist.'
+        })
       }
     }
   }
@@ -253,34 +455,27 @@ const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 const noRawTestIdStringProps = {
   meta: {
     docs: {
-      description: 'Disallow raw testId string props — use TestIdProps or RequiredTestIdProps'
+      description:
+        'Disallow test-id component props — use data-test-id attrs or internal semantic ids'
     }
   },
   create(context) {
     const file = normalizedFilename(context)
-    if (file.endsWith('/packages/vue/src/testing/test-id.ts')) return {}
+    if (!file.endsWith('.vue')) return {}
 
     function isTestIdKey(key) {
-      return key?.type === 'Identifier' && key.name === 'testId'
-    }
-
-    function isStringType(member) {
-      return member.typeAnnotation?.typeAnnotation?.type === 'TSStringKeyword'
-    }
-
-    function report(node, optional) {
-      context.report({
-        node,
-        message: optional
-          ? 'Use TestIdProps instead of declaring testId?: string directly.'
-          : 'Use RequiredTestIdProps or TestId instead of declaring testId: string directly.'
-      })
+      if (key?.type !== 'Identifier') return false
+      return key.name === 'testId' || /TestId$/u.test(key.name)
     }
 
     return {
       TSPropertySignature(node) {
-        if (!isTestIdKey(node.key) || !isStringType(node)) return
-        report(node, !!node.optional)
+        if (!isTestIdKey(node.key)) return
+        context.report({
+          node,
+          message:
+            'Do not expose test-id component props. Let callers pass data-test-id attrs or derive internal ids from semantic component state.'
+        })
       }
     }
   }
@@ -298,13 +493,18 @@ const noDynamicDataTestIdInVue = {
 
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        if (/\B:data-test-id\s*=|\bv-bind:data-test-id\s*=/.test(source)) {
-          context.report({
-            node,
-            message: 'Use v-test-id for dynamic/configurable test ids instead of :data-test-id.'
-          })
-        }
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasDynamicDataTestId = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (hasDynamicDataTestId) return
+          if (isVueBindDirective(templateNode, 'data-test-id')) hasDynamicDataTestId = true
+        })
+        if (!hasDynamicDataTestId) return
+        context.report({
+          node,
+          message: 'Use v-test-id for dynamic/configurable test ids instead of :data-test-id.'
+        })
       }
     }
   }
@@ -322,13 +522,23 @@ const noTestIdHelperBindInVue = {
 
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        if (/\bv-bind\s*=\s*"testId(?:Attr)?\(/.test(source)) {
-          context.report({
-            node,
-            message: 'Use v-test-id instead of v-bind="testId(...)" in Vue templates.'
-          })
-        }
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasTestIdHelperBind = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (hasTestIdHelperBind) return
+          if (templateNode.type !== VUE_DIRECTIVE_NODE || templateNode.name !== 'bind') return
+          if (templateNode.arg) return
+          hasTestIdHelperBind = hasExpressionCall(
+            templateNode.exp,
+            (name) => name === 'testId' || name === 'testIdAttr'
+          )
+        })
+        if (!hasTestIdHelperBind) return
+        context.report({
+          node,
+          message: 'Use v-test-id instead of v-bind="testId(...)" in Vue templates.'
+        })
       }
     }
   }
@@ -346,26 +556,37 @@ const noInvalidTestIdAttributes = {
 
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        const invalidAttr = source.match(/\bdata-testid\s*=/)
-        if (invalidAttr) {
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let invalidId = null
+        let hasInvalidSpelling = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (hasInvalidSpelling || invalidId !== null) return
+          if (
+            isStaticVueAttribute(templateNode, 'data-testid') ||
+            isVueBindDirective(templateNode, 'data-testid') ||
+            isStaticVueAttribute(templateNode, 'test-id') ||
+            isVueBindDirective(templateNode, 'test-id')
+          ) {
+            hasInvalidSpelling = true
+            return
+          }
+          if (!isStaticVueAttribute(templateNode, 'data-test-id')) return
+          const id = templateNode.value?.content ?? ''
+          if (!TEST_ID_FORMAT.test(id)) invalidId = id
+        })
+        if (hasInvalidSpelling) {
           context.report({
             node,
-            message: 'Use data-test-id instead of data-testid.'
+            message: 'Use data-test-id attrs instead of data-testid or test-id component props.'
           })
           return
         }
-
-        const attrPattern = /\bdata-test-id\s*=\s*"([^"]+)"/g
-        for (const match of source.matchAll(attrPattern)) {
-          const id = match[1]
-          if (TEST_ID_FORMAT.test(id)) continue
-          context.report({
-            node,
-            message: `Static data-test-id values must be kebab-case. Invalid id: "${id}".`
-          })
-          return
-        }
+        if (invalidId === null) return
+        context.report({
+          node,
+          message: `Static data-test-id values must be kebab-case. Invalid id: "${invalidId}".`
+        })
       }
     }
   }
@@ -406,6 +627,20 @@ const noRawTestIdSelectorsInTests = {
   }
 }
 
+function isGeneratedTestIdLiteral(value) {
+  if (typeof value !== 'string') return false
+  const toolbarValue = value.startsWith('mobile-toolbar-') ? value.slice('mobile-'.length) : value
+  return (
+    toolbarValue.startsWith('toolbar-tool-') ||
+    toolbarValue.startsWith('toolbar-flyout-') ||
+    toolbarValue.startsWith('toolbar-flyout-item-') ||
+    value === 'variables-add-float' ||
+    value === 'variables-add-string' ||
+    value === 'variables-add-boolean' ||
+    value.startsWith('acp-permission-option-')
+  )
+}
+
 const noGeneratedTestIdLiterals = {
   meta: {
     docs: {
@@ -418,18 +653,31 @@ const noGeneratedTestIdLiterals = {
     if (file.endsWith('/tests/helpers/test-ids.ts')) return {}
     if (!file.includes('/src/') && !file.includes('/tests/')) return {}
 
+    function report(node) {
+      context.report({
+        node,
+        message:
+          'Use shared generated test-id helpers instead of hand-written toolbar/variable/permission id literals.'
+      })
+    }
+
     return {
       Program(node) {
-        const source = context.sourceCode.getText()
-        const match = source.match(
-          /["'`](?:mobile-)?toolbar-(?:tool|flyout|flyout-item)-|["'`]variables-add-(?:float|string|boolean)["'`]|["'`]acp-permission-option-/
-        )
-        if (!match) return
-        context.report({
-          node,
-          message:
-            'Use shared generated test-id helpers instead of hand-written toolbar/variable/permission id literals.'
+        if (!file.endsWith('.vue')) return
+        const template = vueTemplateAst(context.sourceCode.getText(), file)
+        if (!template) return
+        let hasGeneratedTemplateId = false
+        walkVueTemplateAst(template, (templateNode) => {
+          if (hasGeneratedTemplateId || !isStaticVueAttribute(templateNode, 'data-test-id')) return
+          hasGeneratedTemplateId = isGeneratedTestIdLiteral(templateNode.value?.content)
         })
+        if (hasGeneratedTemplateId) report(node)
+      },
+      Literal(node) {
+        if (isGeneratedTestIdLiteral(node.value)) report(node)
+      },
+      TemplateElement(node) {
+        if (isGeneratedTestIdLiteral(node.value?.raw)) report(node)
       }
     }
   }
@@ -469,7 +717,8 @@ const noBrowserSideEffectsInVue = {
         ) {
           context.report({
             node,
-            message: 'Use VueUse useEventListener() instead of direct browser event listeners in Vue components.'
+            message:
+              'Use VueUse useEventListener() instead of direct browser event listeners in Vue components.'
           })
           return
         }
@@ -498,7 +747,8 @@ const noBrowserSideEffectsInVue = {
 const noDocumentQuerySelectorInVue = {
   meta: {
     docs: {
-      description: 'Disallow document.querySelector in Vue components — use template refs or composables'
+      description:
+        'Disallow document.querySelector in Vue components — use template refs or composables'
     }
   },
   create(context) {
@@ -511,7 +761,10 @@ const noDocumentQuerySelectorInVue = {
         if (callee?.type !== 'MemberExpression') return
         if (callee.object?.type !== 'Identifier' || callee.object.name !== 'document') return
         if (callee.property?.type !== 'Identifier') return
-        if (callee.property.name !== 'querySelector' && callee.property.name !== 'querySelectorAll') {
+        if (
+          callee.property.name !== 'querySelector' &&
+          callee.property.name !== 'querySelectorAll'
+        ) {
           return
         }
         context.report({
@@ -527,7 +780,8 @@ const noDocumentQuerySelectorInVue = {
 const noDirectSelectionToolStateMutation = {
   meta: {
     docs: {
-      description: 'Disallow direct editor selection/tool state assignment outside core editor internals'
+      description:
+        'Disallow direct editor selection/tool state assignment outside core editor internals'
     }
   },
   create(context) {
@@ -598,7 +852,8 @@ function colorObjectLiteral(node, color) {
 const noHardcodedColorConstants = {
   meta: {
     docs: {
-      description: 'Use named color constants instead of inline Color object literals for shared colors'
+      description:
+        'Use named color constants instead of inline Color object literals for shared colors'
     }
   },
   create(context) {
@@ -608,10 +863,17 @@ const noHardcodedColorConstants = {
     return {
       ObjectExpression(node) {
         if (colorObjectLiteral(node, { r: 0, g: 0, b: 0, a: 1 })) {
-          context.report({ node, message: 'Use BLACK from constants instead of an inline black Color literal.' })
+          context.report({
+            node,
+            message: 'Use BLACK from constants instead of an inline black Color literal.'
+          })
         }
         if (colorObjectLiteral(node, { r: 0, g: 0, b: 0, a: 0 })) {
-          context.report({ node, message: 'Use TRANSPARENT from constants instead of an inline transparent Color literal.' })
+          context.report({
+            node,
+            message:
+              'Use TRANSPARENT from constants instead of an inline transparent Color literal.'
+          })
         }
       }
     }
@@ -631,14 +893,16 @@ const noHandRolledColor = {
 
     return {
       TemplateLiteral(node) {
-        const raw = context.sourceCode.getText(node)
-        if (/rgba?\s*\(/.test(raw)) {
-          context.report({
-            node,
-            message:
-              'Use colorToCSS() or colorToHex() from color.ts instead of hand-rolled rgba()/rgb() strings.'
-          })
-        }
+        const hasHandRolledRgb = node.quasis?.some((quasi) => {
+          const raw = quasi.value?.raw
+          return typeof raw === 'string' && (raw.includes('rgb(') || raw.includes('rgba('))
+        })
+        if (!hasHandRolledRgb) return
+        context.report({
+          node,
+          message:
+            'Use colorToCSS() or colorToHex() from color.ts instead of hand-rolled rgba()/rgb() strings.'
+        })
       }
     }
   }
@@ -1304,10 +1568,10 @@ const vueComponentFilePascalCase = {
   }
 }
 
-const componentNamespacePascalCase = {
+const componentNamespaceCasing = {
   meta: {
     docs: {
-      description: 'Require component namespace folders to use PascalCase names'
+      description: 'Require component namespace folders to use the project casing convention'
     }
   },
   create(context) {
@@ -1330,12 +1594,11 @@ const componentNamespacePascalCase = {
         const parts = componentMatch[1].split('/')
         const first = parts[0]
         const second = parts[1]
-        const allowedGroups = new Set(['chat', 'properties', 'ui'])
 
-        if (parts.length > 1 && !allowedGroups.has(first) && !isPascalCaseName(first)) {
+        if (parts.length > 1 && !isPascalCaseName(first) && !isKebabOrLowercaseName(first)) {
           context.report({
             node,
-            message: `Component namespace folder '${first}' must use PascalCase.`
+            message: `Component namespace folder '${first}' must use PascalCase or kebab-case.`
           })
           return
         }
@@ -1344,11 +1607,12 @@ const componentNamespacePascalCase = {
           parts.length > 2 &&
           (first === 'chat' || first === 'properties') &&
           second !== undefined &&
-          !isPascalCaseName(second)
+          !isPascalCaseName(second) &&
+          !isKebabOrLowercaseName(second)
         ) {
           context.report({
             node,
-            message: `Nested component namespace folder '${first}/${second}' must use PascalCase.`
+            message: `Nested component namespace folder '${first}/${second}' must use PascalCase or kebab-case.`
           })
         }
       }
@@ -1542,7 +1806,8 @@ const noDirectOpenPencilBrowserStore = {
         if (!isOpenPencilMember(node.object)) return
         context.report({
           node,
-          message: 'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
+          message:
+            'Use window.openPencil.getStore() instead of accessing window.openPencil.store directly.'
         })
       }
     }
@@ -1640,7 +1905,8 @@ function hasAstChild(node, predicate, seen = new WeakSet()) {
 function containsRecordStringUnknownType(node) {
   if (isRecordStringUnknownType(node)) return true
   if (node?.type === 'TSArrayType') return isRecordStringUnknownType(node.elementType)
-  if (node?.type === 'TSUnionType') return node.types?.some(containsRecordStringUnknownType) ?? false
+  if (node?.type === 'TSUnionType')
+    return node.types?.some(containsRecordStringUnknownType) ?? false
   return false
 }
 
@@ -1695,7 +1961,8 @@ const noBroadUnknownTypeAssertions = {
 function typeNameText(node) {
   if (!node) return 'unknown'
   if (node.type === 'Identifier') return node.name
-  if (node.type === 'TSQualifiedName') return `${typeNameText(node.left)}.${typeNameText(node.right)}`
+  if (node.type === 'TSQualifiedName')
+    return `${typeNameText(node.left)}.${typeNameText(node.right)}`
   return node.type
 }
 
@@ -1787,7 +2054,8 @@ const noDuplicateTypeShapes = {
         }
         context.report({
           node,
-          message: 'Duplicate object type shape. Reuse the existing named type instead of redeclaring the same members.'
+          message:
+            'Duplicate object type shape. Reuse the existing named type instead of redeclaring the same members.'
         })
       }
     }
@@ -1807,7 +2075,27 @@ const noLocalJsonObjectAliases = {
         if (!isRecordStringUnknownType(node.typeAnnotation)) return
         context.report({
           node,
-          message: 'Import JsonObject from @open-pencil/core/types instead of declaring a local alias.'
+          message:
+            'Import JsonObject from @open-pencil/scene-graph/primitives instead of declaring a local alias.'
+        })
+      }
+    }
+  }
+}
+
+const noImportTypeAnnotations = {
+  meta: {
+    docs: {
+      description: 'Disallow inline import() type annotations — use top-level import type instead'
+    }
+  },
+  create(context) {
+    return {
+      TSImportType(node) {
+        context.report({
+          node,
+          message:
+            'Use a top-level import type instead of an inline import() type annotation. Dynamic imports are only for runtime lazy loading.'
         })
       }
     }
@@ -1815,7 +2103,6 @@ const noLocalJsonObjectAliases = {
 }
 
 const noFlatKiwiModules = createProgramFilenameRule({
-
   description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
   check(file) {
     const marker = '/packages/core/src/kiwi/'
@@ -1833,10 +2120,14 @@ const plugin = {
   meta: { name: 'open-pencil' },
   rules: {
     'no-inline-named-types': noInlineNamedTypes,
+    'no-import-type-annotations': noImportTypeAnnotations,
     'no-structuredclone-scene-arrays': noStructuredCloneSceneArrays,
     'no-vue-style-blocks': noVueStyleBlocks,
     'no-native-title-attributes-in-vue': noNativeTitleAttributesInVue,
     'no-hardcoded-tip-labels-in-vue': noHardcodedTipLabelsInVue,
+    'no-raw-svg-in-app-vue-templates': noRawSvgInAppVueTemplates,
+    'no-ui-helper-calls-in-vue-templates': noUiHelperCallsInVueTemplates,
+    'no-large-property-section-components': noLargePropertySectionComponents,
     'no-raw-test-id-string-props': noRawTestIdStringProps,
     'no-dynamic-data-test-id-in-vue': noDynamicDataTestIdInVue,
     'no-test-id-helper-bind-in-vue': noTestIdHelperBindInVue,
@@ -1886,7 +2177,7 @@ const plugin = {
     'prefer-vueuse-timeouts': preferVueUseTimeouts,
     'max-composition-root-lines': maxCompositionRootLines,
     'vue-component-file-pascal-case': vueComponentFilePascalCase,
-    'component-namespace-pascal-case': componentNamespacePascalCase,
+    'component-namespace-casing': componentNamespaceCasing,
     'non-component-source-directories-kebab-case': nonComponentSourceDirectoriesKebabCase,
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
     'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,

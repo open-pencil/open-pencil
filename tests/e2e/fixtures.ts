@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { E2E_SLOW_TEST_TIMEOUT_MS } from '#tests/helpers/e2e-timeouts'
 
 /**
  * Module-level cache for external API responses, shared across all test files.
@@ -43,9 +44,11 @@ export function useEditorSetup(url = '/') {
   let page: Page
   let canvas: CanvasHelper
 
-  test.describe.configure({ mode: 'serial' })
+  test.describe.configure({ mode: 'serial', timeout: E2E_SLOW_TEST_TIMEOUT_MS })
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(E2E_SLOW_TEST_TIMEOUT_MS)
+
     page = await browser.newPage()
     await setupExternalApiCache(page)
     await page.goto(url)

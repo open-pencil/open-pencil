@@ -61,6 +61,8 @@ export default defineConfig({
       /^vue\//,
       '@open-pencil/core',
       /^@open-pencil\/core\//,
+      '@open-pencil/scene-graph',
+      /^@open-pencil\/scene-graph\//,
       'canvaskit-wasm',
       'opentype.js',
       '@vueuse/core',

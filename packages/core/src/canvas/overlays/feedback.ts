@@ -1,5 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+
 import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
@@ -11,9 +15,6 @@ import {
   LAYOUT_INDICATOR_STROKE,
   MARQUEE_FILL_ALPHA
 } from '#core/constants'
-import type { SceneGraph } from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
-import type { Rect } from '#core/types'
 
 export function drawSnapGuides(r: SkiaRenderer, canvas: Canvas, guides?: SnapGuide[]): void {
   if (!guides || guides.length === 0) return

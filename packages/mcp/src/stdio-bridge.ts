@@ -319,7 +319,7 @@ export function createStdioRpcBridge({
                 // means the operation was not executed.
                 if (settled) {
                   req.destroy()
-                  return
+                  return undefined
                 }
 
                 if (status === 401) {
@@ -331,27 +331,28 @@ export function createStdioRpcBridge({
                     resolvedAuthToken = null
                     void readDiscoveryFile()
                       .then((info) => {
-                        if (settled) return
+                        if (settled) return undefined
                         if (info?.authToken) {
                           resolvedAuthToken = info.authToken
                           // Keep existing transport mode (socket path / port
                           // doesn't change on server restart — only the token
                           // does). Retry exactly once with the new token.
                           attempt(false)
-                        } else {
-                          clearTimeout(timer)
-                          // The discovery file exists but has no token; treat
-                          // this like a reconnection event and clear any
-                          // auto-discovered transport state so the next connect()
-                          // starts from a clean slate.
-                          transportMode = null
-                          if (!hasExplicitSocketPath) resolvedSocketPath = null
-                          resolvedHttpPort = null
-                          ready = false
-                          settled = true
-                          scheduleReconnect()
-                          reject(new Error('Unauthorized'))
+                          return undefined
                         }
+                        clearTimeout(timer)
+                        // The discovery file exists but has no token; treat
+                        // this like a reconnection event and clear any
+                        // auto-discovered transport state so the next connect()
+                        // starts from a clean slate.
+                        transportMode = null
+                        if (!hasExplicitSocketPath) resolvedSocketPath = null
+                        resolvedHttpPort = null
+                        ready = false
+                        settled = true
+                        scheduleReconnect()
+                        reject(new Error('Unauthorized'))
+                        return undefined
                       })
                       .catch(() => {
                         if (settled) return
@@ -366,7 +367,7 @@ export function createStdioRpcBridge({
                         scheduleReconnect()
                         reject(new Error(DISCONNECTED_MESSAGE))
                       })
-                    return
+                    return undefined
                   }
 
                   // Explicit token was rejected (config error), or auto-retry
@@ -384,7 +385,7 @@ export function createStdioRpcBridge({
                   settled = true
                   scheduleReconnect()
                   reject(new Error('Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'))
-                  return
+                  return undefined
                 }
 
                 clearTimeout(timer)
@@ -393,10 +394,11 @@ export function createStdioRpcBridge({
                   const errData = data as { error?: string }
                   settled = true
                   reject(new Error(errData.error ?? `RPC failed with status ${status}`))
-                  return
+                  return undefined
                 }
                 settled = true
                 resolve(data)
+                return undefined
               })
               .catch(() => {
                 if (settled) return

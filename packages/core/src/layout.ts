@@ -20,6 +20,8 @@ export {
   setTextMeasurer,
   type TextMeasurer
 } from './layout/text-measurement'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import { estimateTextSize, getTextMeasurer } from './layout/text-measurement'
 import {
   applyMinMaxConstraints,
@@ -31,7 +33,6 @@ import {
   mapGridTrack,
   mapJustify
 } from './layout/yoga-helpers'
-import type { SceneGraph, SceneNode } from './scene-graph'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
   const frame = graph.getNode(frameId)
@@ -74,9 +75,13 @@ function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<
     computeLayoutsBottomUp(graph, childId, visited)
   }
 
-  if (node.layoutMode !== 'NONE' && node.type !== 'INSTANCE') {
+  if (node.layoutMode !== 'NONE' && !preservesImportedInstanceLayout(node)) {
     computeLayout(graph, nodeId)
   }
+}
+
+function preservesImportedInstanceLayout(node: SceneNode): boolean {
+  return node.type === 'INSTANCE' && node.source.format === 'fig'
 }
 
 // --- Flex layout ---

@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
-import { SceneGraph } from '#core/scene-graph'
 
 describe('Figma paint schema field export', () => {
   test('exports pattern, noise, and custom fill metadata', () => {

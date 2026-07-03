@@ -1,6 +1,6 @@
 import { type InjectionKey, type Ref, inject, provide } from 'vue'
 
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 export interface CanvasContext {
   canvasRef: Ref<HTMLCanvasElement | null>

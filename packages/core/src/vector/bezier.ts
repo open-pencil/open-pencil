@@ -14,8 +14,8 @@ export {
   type NetworkNearestResult
 } from './curve-math'
 
-import type { VectorNetwork, VectorSegment, VectorVertex } from '#core/scene-graph'
-import type { Vector } from '#core/types'
+import type { VectorNetwork, VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 function finishSplitSegment(
   network: VectorNetwork,

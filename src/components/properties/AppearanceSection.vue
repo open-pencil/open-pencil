@@ -3,11 +3,11 @@ import { computed, ref } from 'vue'
 
 import { useAppearance, useI18n } from '@open-pencil/vue'
 
-import ScrubInput from '@/components/ScrubInput.vue'
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import PanelSection from '@/components/ui/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
-import { useIconButtonUI } from '@/components/ui/icon-button'
-import { useSectionUI } from '@/components/ui/section'
 
 const { panels } = useI18n()
 const {
@@ -27,7 +27,6 @@ const {
   commitCornerProp
 } = useAppearance()
 
-const sectionCls = useSectionUI()
 const manualExpanded = ref<boolean | null>(null)
 
 const showIndependentCorners = computed(() => {
@@ -49,22 +48,19 @@ function onToggleCorners() {
 </script>
 
 <template>
-  <div v-if="active" data-test-id="appearance-section" :class="sectionCls.wrapper">
-    <div class="mb-1.5 flex items-center justify-between">
-      <label class="text-[11px] text-muted">{{ panels.appearance }}</label>
-      <Tip :label="panels.toggleVisibility">
-        <button
-          data-test-id="appearance-visibility"
-          class="flex cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 text-muted hover:bg-hover hover:text-surface"
-          :class="{ 'text-accent': visibilityState === 'hidden' }"
-          @click="toggleVisibility"
-        >
-          <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
-          <icon-lucide-eye-off v-else-if="visibilityState === 'hidden'" class="size-3.5" />
-          <icon-lucide-eye v-else class="size-3.5 opacity-50" />
-        </button>
-      </Tip>
-    </div>
+  <PanelSection v-if="active" :label="panels.appearance" data-test-id="appearance-section">
+    <template #actions>
+      <IconButton
+        :label="panels.toggleVisibility"
+        :active="visibilityState === 'hidden'"
+        data-test-id="appearance-visibility"
+        @click="toggleVisibility"
+      >
+        <icon-lucide-eye v-if="visibilityState === 'visible'" class="size-3.5" />
+        <icon-lucide-eye-off v-else-if="visibilityState === 'hidden'" class="size-3.5" />
+        <icon-lucide-eye v-else class="size-3.5 opacity-50" />
+      </IconButton>
+    </template>
 
     <div class="flex gap-1.5">
       <Tip :label="panels.opacity">
@@ -128,29 +124,16 @@ function onToggleCorners() {
           </ScrubInput>
         </Tip>
 
-        <Tip :label="panels.independentCornerRadii">
-          <button
-            data-test-id="independent-corners-toggle"
-            :class="[
-              useIconButtonUI({ size: 'md', ui: { base: 'size-[26px] shrink-0' } }).base,
-              { '!border-accent !text-accent': showIndependentCorners }
-            ]"
-            @click="onToggleCorners"
-          >
-            <svg
-              class="size-3"
-              viewBox="0 0 12 12"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-            >
-              <path d="M1 4V2.5A1.5 1.5 0 0 1 2.5 1H4" />
-              <path d="M8 1h1.5A2.5 2.5 0 0 1 11 3.5V5" />
-              <path d="M11 8v1a2 2 0 0 1-2 2H8" />
-              <path d="M4 11H3a2 2 0 0 1-2-2V8" />
-            </svg>
-          </button>
-        </Tip>
+        <IconButton
+          :label="panels.independentCornerRadii"
+          size="md"
+          class="size-[26px] shrink-0"
+          :active="showIndependentCorners"
+          data-test-id="independent-corners-toggle"
+          @click="onToggleCorners"
+        >
+          <icon-lucide-square-round-corner class="size-3" />
+        </IconButton>
       </template>
     </div>
 
@@ -161,88 +144,44 @@ function onToggleCorners() {
     >
       <VariableScrubInput
         data-test-id="corner-tl-input"
+        label="TL"
         :model-value="node.topLeftRadius"
         :min="0"
         :node-id="node.id"
         binding-path="topLeftRadius"
         @update:model-value="updateCornerProp('topLeftRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('topLeftRadius', v, p)"
-      >
-        <template #icon>
-          <svg
-            class="size-3"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path d="M1 11V4a3 3 0 0 1 3-3h7" />
-          </svg>
-        </template>
-      </VariableScrubInput>
+      />
       <VariableScrubInput
         data-test-id="corner-tr-input"
+        label="TR"
         :model-value="node.topRightRadius"
         :min="0"
         :node-id="node.id"
         binding-path="topRightRadius"
         @update:model-value="updateCornerProp('topRightRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('topRightRadius', v, p)"
-      >
-        <template #icon>
-          <svg
-            class="size-3"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path d="M11 11V4a3 3 0 0 0-3-3H1" />
-          </svg>
-        </template>
-      </VariableScrubInput>
+      />
       <VariableScrubInput
         data-test-id="corner-bl-input"
+        label="BL"
         :model-value="node.bottomLeftRadius"
         :min="0"
         :node-id="node.id"
         binding-path="bottomLeftRadius"
         @update:model-value="updateCornerProp('bottomLeftRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('bottomLeftRadius', v, p)"
-      >
-        <template #icon>
-          <svg
-            class="size-3"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path d="M1 1v7a3 3 0 0 0 3 3h7" />
-          </svg>
-        </template>
-      </VariableScrubInput>
+      />
       <VariableScrubInput
         data-test-id="corner-br-input"
+        label="BR"
         :model-value="node.bottomRightRadius"
         :min="0"
         :node-id="node.id"
         binding-path="bottomRightRadius"
         @update:model-value="updateCornerProp('bottomRightRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('bottomRightRadius', v, p)"
-      >
-        <template #icon>
-          <svg
-            class="size-3"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-          >
-            <path d="M11 1v7a3 3 0 0 1-3 3H1" />
-          </svg>
-        </template>
-      </VariableScrubInput>
+      />
     </div>
-  </div>
+  </PanelSection>
 </template>

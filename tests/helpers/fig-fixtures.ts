@@ -6,6 +6,8 @@ import type { SceneGraph, SceneNode } from '@open-pencil/core'
 
 import { collectAllNodes } from './fig-traversal'
 
+type ParseFixtureOptions = NonNullable<Parameters<typeof parseFigFile>[1]>
+
 export const FIXTURES = resolve(import.meta.dir, '../fixtures')
 
 export const VALID_NODE_TYPES = new Set<string>([
@@ -33,9 +35,22 @@ export function readFixtureBytes(name: string): Uint8Array {
   return readFileSync(resolve(FIXTURES, name))
 }
 
-export async function parseFixture(name: string): Promise<SceneGraph> {
+export function readFixtureArrayBuffer(name: string): ArrayBuffer {
   const bytes = readFixtureBytes(name)
-  return parseFigFile(bytes.buffer as ArrayBuffer)
+  const buffer = bytes.buffer
+  if (buffer instanceof ArrayBuffer)
+    return buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return copy.buffer
+}
+
+export async function parseFixture(
+  name: string,
+  options: ParseFixtureOptions = {}
+): Promise<SceneGraph> {
+  return parseFigFile(readFixtureArrayBuffer(name), options)
 }
 
 export async function parseGoldPreviewFixture(): Promise<{

@@ -1,7 +1,8 @@
+import type { LayoutMode, SceneNode } from '@open-pencil/scene-graph'
+import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+
 import type { EditorContext } from '#core/editor/types'
-import { computeAbsoluteBounds } from '#core/geometry'
 import { computeLayout } from '#core/layout'
-import type { LayoutMode, SceneNode } from '#core/scene-graph'
 
 export function wrapInAutoLayout(
   ctx: EditorContext,

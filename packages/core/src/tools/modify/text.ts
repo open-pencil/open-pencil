@@ -1,5 +1,6 @@
+import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+
 import { parseColor } from '#core/color'
-import type { CharacterStyleOverride, SceneNode } from '#core/scene-graph'
 import { styleToWeight } from '#core/text/fonts'
 import { applyStyleToRange } from '#core/text/style-runs'
 import { defineTool, nodeNotFound } from '#core/tools/schema'

@@ -1,8 +1,9 @@
 import { wcagLuminance } from 'culori'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { colorToHex } from '#core/color'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
 
 import type { DescribeIssue } from './issues'
 import { CONTAINER_TYPES, findAncestorBackground } from './shared'

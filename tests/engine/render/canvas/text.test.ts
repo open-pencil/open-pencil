@@ -6,12 +6,12 @@ import {
   SceneGraph,
   SkiaRenderer as SkiaRendererClass
 } from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
-import { buildParagraph } from '#core/canvas/text'
-import type { SceneNode } from '#core/scene-graph'
+import { buildParagraph, isNodeFontLoaded } from '#core/canvas/text'
 import { fontManager } from '#core/text/fonts'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -236,6 +236,26 @@ describe('renderText headless visual', () => {
     expect(resolveTextDirection('AUTO', 'مرحبا world')).toBe('RTL')
     expect(resolveTextDirection('AUTO', 'Hello مرحبا')).toBe('LTR')
     expect(resolveTextDirection('RTL', 'Hello')).toBe('RTL')
+  })
+
+  test('does not require fallback families when the primary font covers CJK glyphs', async () => {
+    const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+    const notoData = await Bun.file(notoPath).arrayBuffer()
+    fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
+    const originalFallbacks = [...manager.cjkFallbackFamilies]
+    manager.cjkFallbackFamilies = []
+
+    try {
+      const loaded = isNodeFontLoaded(
+        { fontProvider: {}, fontsLoaded: true } as never,
+        textNode({ text: '你好世界', fontFamily: 'Noto Sans SC', fontWeight: 400 })
+      )
+
+      expect(loaded).toBe(true)
+    } finally {
+      manager.cjkFallbackFamilies = originalFallbacks
+    }
   })
 
   test('renders CJK text via fallback font through paragraph shaper', async () => {

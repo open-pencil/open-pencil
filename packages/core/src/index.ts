@@ -1,13 +1,6 @@
-export type { GUID, Color, Vector, Matrix, Rect } from './types'
-export {
-  computeBounds,
-  computeAbsoluteBounds,
-  degToRad,
-  radToDeg,
-  rotatePoint,
-  rotatedCorners,
-  rotatedBBox
-} from './geometry'
+import codegenPrompt from './tools/prompts/codegen.md'
+import jsxReference from './tools/prompts/jsx-reference.md'
+
 export { randomHex, randomInt, randomIndex } from './random'
 
 export * from './constants'
@@ -74,7 +67,7 @@ export {
   type StyleRun,
   type SceneGraphEvents,
   type DocumentColorSpace
-} from './scene-graph'
+} from '@open-pencil/scene-graph'
 
 export { FigmaAPI, FigmaNodeProxy, computeImageHash, type FigmaFontName } from './figma-api'
 export {
@@ -248,8 +241,8 @@ export {
   type NearestResult,
   type NetworkNearestResult
 } from './vector/bezier'
-export { computeSelectionBounds, computeSnap, type SnapGuide } from './scene-graph/snap'
-export { UndoManager, type UndoEntry, type UndoManagerOptions } from './scene-graph/undo'
+export { computeSelectionBounds, computeSnap, type SnapGuide } from '@open-pencil/scene-graph/snap'
+export { UndoManager, type UndoEntry, type UndoManagerOptions } from '@open-pencil/scene-graph/undo'
 export { TextEditor, type TextCaret, type TextEditorState } from './text/editor'
 export {
   getStyleAt,
@@ -295,7 +288,6 @@ export {
   FIG_KIWI_DEFAULT_VERSION,
   buildFigKiwi,
   parseFigKiwiChunks,
-  decompressFigKiwiData,
   decompressFigKiwiDataAsync,
   buildFontDigestMap,
   sceneNodeToKiwi,
@@ -310,6 +302,20 @@ export {
   renderJSX,
   renderTreeNode,
   buildComponent,
+  backgroundBlur,
+  dropShadow,
+  foregroundBlur,
+  innerShadow,
+  layerBlur,
+  angularGradient,
+  diamondGradient,
+  gradient,
+  linearGradient,
+  radialGradient,
+  solid,
+  defineVars,
+  designVar,
+  isVariable,
   Frame,
   Text,
   Rectangle,
@@ -337,6 +343,16 @@ export {
   type BaseProps,
   type TextProps,
   type StyleProps,
+  type PaintProp,
+  type BlurEffectOptions,
+  type EffectColor,
+  type ShadowEffectOptions,
+  type GradientPaintOptions,
+  type PaintColor,
+  type PaintStop,
+  type SolidPaintOptions,
+  type DesignVariable,
+  type VarDef,
   type RenderResult,
   sceneNodeToJSX,
   selectionToJSX,
@@ -405,8 +421,8 @@ export {
 export * from './io'
 export * from './lint'
 
-export { default as CODEGEN_PROMPT } from './tools/prompts/codegen.md'
-export { default as JSX_REFERENCE } from './tools/prompts/jsx-reference.md'
+export const CODEGEN_PROMPT: string = codegenPrompt
+export const JSX_REFERENCE: string = jsxReference
 export {
   setPexelsApiKey,
   setUnsplashAccessKey,
@@ -415,11 +431,3 @@ export {
   getStockPhotoProviders
 } from './tools/stock-photo'
 export type { StockPhotoProvider, StockPhotoResult } from './tools/stock-photo'
-
-export {
-  getAbsoluteRotation,
-  getWorldHandles,
-  getWorldMatrix,
-  getAbsolutePosition
-} from './canvas/coordinate'
-export { default as TransformMatrix } from './canvas/matrix'

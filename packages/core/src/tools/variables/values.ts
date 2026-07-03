@@ -1,5 +1,6 @@
+import type { VariableType, VariableValue } from '@open-pencil/scene-graph'
+
 import { parseColor } from '#core/color'
-import type { VariableType, VariableValue } from '#core/scene-graph'
 import { defineTool } from '#core/tools/schema'
 
 function parseVariableValue(type: VariableType, value: string): VariableValue {

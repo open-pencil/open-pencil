@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, paramToZod } from '#mcp/server'
 import type { DiscoveryInfo } from '#mcp/transport/discovery'
@@ -408,9 +408,7 @@ describe('Discovery PID liveness', () => {
     })
     const deadPid = child.pid
     child.kill()
-    await new Promise<void>((resolve) => {
-      child.exited.then(() => resolve())
-    })
+    await child.exited
     const discoveryDir = dirname(discoveryPath)
     await mkdir(discoveryDir, { recursive: true })
     await Bun.write(

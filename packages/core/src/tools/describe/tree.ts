@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { detectIssues } from './issues'
 import type { DescribeIssue } from './issues'

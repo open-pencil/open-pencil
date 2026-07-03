@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createNodeChangesMessage, encodeMessage, initCodec } from '@open-pencil/kiwi/fig/codec'
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
-import { SceneGraph } from '#core/scene-graph'
 
 describe('Figma boolean operation export', () => {
   test('exports boolean operation node type and operation', () => {
@@ -17,7 +19,7 @@ describe('Figma boolean operation export', () => {
     expect(changes[0].booleanOperation).toBe('INTERSECT')
   })
 
-  test('normalizes EXCLUDE to XOR (Figma compatibility)', () => {
+  test('normalizes EXCLUDE to XOR (Figma compatibility)', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const node = graph.createNode('BOOLEAN_OPERATION', page.id, {
@@ -28,6 +30,9 @@ describe('Figma boolean operation export', () => {
 
     expect(changes[0].type).toBe('BOOLEAN_OPERATION')
     expect(changes[0].booleanOperation).toBe('XOR')
+
+    await initCodec()
+    expect(() => encodeMessage(createNodeChangesMessage(1, 1, changes))).not.toThrow()
   })
 
   test('normalizes UNION as default when booleanOperation is undefined', () => {

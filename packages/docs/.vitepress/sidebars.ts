@@ -81,6 +81,7 @@ export const referenceSidebar = (prefix: string, label: string): DefaultTheme.Si
       { text: 'CLI', link: `${prefix}/reference/cli` },
       { text: 'Node Types', link: `${prefix}/reference/node-types` },
       { text: 'Scene Graph', link: `${prefix}/reference/scene-graph` },
+      { text: 'DOM/CSS Mapping', link: `${prefix}/reference/dom-css-mapping` },
       { text: 'File Format', link: `${prefix}/reference/file-format` },
     ],
   },

@@ -74,6 +74,7 @@ export function createCanvasSurfaceManager({
     if (reloadFonts && !isDestroyed()) {
       void state.renderer.loadFonts(renderNow).then(() => {
         if (!isDestroyed()) renderNow()
+        return undefined
       })
     }
   }

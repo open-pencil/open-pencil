@@ -14,6 +14,7 @@ import {
 } from '@open-pencil/core'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('gold-preview.fig clipboard roundtrip', () => {
   let graph: SceneGraph
@@ -29,15 +30,18 @@ describe('gold-preview.fig clipboard roundtrip', () => {
     return res
   }
 
-  beforeAll(async () => {
-    await initCodec()
-    const buf = readFileSync('tests/fixtures/gold-preview.fig')
-    const file = new File([buf], 'gold-preview.fig')
-    graph = await readFigFile(file)
-    const page = graph.getPages()[0]
-    pageId = page.id
-    topLevelNodes = graph.getChildren(pageId)
-  }, 30_000)
+  beforeAll(
+    async () => {
+      await initCodec()
+      const buf = readFileSync('tests/fixtures/gold-preview.fig')
+      const file = new File([buf], 'gold-preview.fig')
+      graph = await readFigFile(file)
+      const page = graph.getPages()[0]
+      pageId = page.id
+      topLevelNodes = graph.getChildren(pageId)
+    },
+    { timeout: HEAVY_TEST_TIMEOUT_MS }
+  )
 
   it('OpenPencil format: zero property differences', () => {
     const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
@@ -71,7 +75,7 @@ describe('gold-preview.fig clipboard roundtrip', () => {
       }
     }
     expect(diffs).toBe(0)
-  }, 30_000)
+  })
 
   it('OpenPencil format: compressed data is under 1MB', () => {
     const html = buildOpenPencilClipboardHTML(topLevelNodes, graph)
@@ -129,5 +133,5 @@ describe('gold-preview.fig clipboard roundtrip', () => {
         errors.push(`arcData: "${o.name}" expected ${o.arcData != null}, got ${p.arcData != null}`)
     }
     if (errors.length > 0) throw new Error(`${errors.length} mismatches:\n${errors.join('\n')}`)
-  }, 30_000)
+  })
 })

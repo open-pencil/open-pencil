@@ -1,8 +1,9 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
+
 import { BLACK } from '#core/constants'
-import type { SceneNode } from '#core/scene-graph'
-import type { Color, Vector } from '#core/types'
 
 import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'

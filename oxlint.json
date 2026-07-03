@@ -137,6 +137,7 @@
     ],
     "vue/require-default-export": "error",
     "vue/require-typed-ref": "error",
+    "open-pencil/no-import-type-annotations": "error",
     "open-pencil/no-inline-named-types": [
       "error",
       {
@@ -151,6 +152,9 @@
     "open-pencil/no-vue-style-blocks": "error",
     "open-pencil/no-native-title-attributes-in-vue": "error",
     "open-pencil/no-hardcoded-tip-labels-in-vue": "error",
+    "open-pencil/no-raw-svg-in-app-vue-templates": "error",
+    "open-pencil/no-ui-helper-calls-in-vue-templates": "error",
+    "open-pencil/no-large-property-section-components": "error",
     "open-pencil/no-raw-test-id-string-props": "error",
     "open-pencil/no-dynamic-data-test-id-in-vue": "error",
     "open-pencil/no-test-id-helper-bind-in-vue": "error",
@@ -205,7 +209,7 @@
     "open-pencil/prefer-vueuse-intervals": "error",
     "open-pencil/prefer-vueuse-timeouts": "error",
     "open-pencil/vue-component-file-pascal-case": "error",
-    "open-pencil/component-namespace-pascal-case": "error",
+    "open-pencil/component-namespace-casing": "error",
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
     "open-pencil/no-flat-kiwi-modules": "error",
@@ -215,6 +219,7 @@
     "block-scoped-var": "error",
     "default-case-last": "error",
     "default-param-last": "error",
+    "guard-for-in": "error",
     "no-array-constructor": "error",
     "no-case-declarations": "error",
     "no-caller": "error",
@@ -306,6 +311,8 @@
     "import/no-dynamic-require": "error",
     "import/no-empty-named-blocks": "error",
     "import/no-webpack-loader-syntax": "error",
+    "promise/always-return": "error",
+    "promise/catch-or-return": "error",
     "promise/no-callback-in-promise": "error",
     "promise/no-multiple-resolved": "error",
     "promise/no-new-statics": "error",
@@ -418,7 +425,8 @@
     },
     {
       "files": [
-        "**/kiwi/schema-runtime/**"
+        "**/kiwi/schema-runtime/**",
+        "**/kiwi/src/schema-runtime/**"
       ],
       "rules": {
         "typescript/no-explicit-any": "off",
@@ -469,6 +477,22 @@
       ],
       "rules": {
         "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/scene-graph/src/constants.ts"
+      ],
+      "rules": {
+        "open-pencil/no-hardcoded-color-constants": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/scene-graph/src/index.ts"
+      ],
+      "rules": {
+        "open-pencil/no-direct-graph-emitter-subscriptions": "off"
       }
     },
     {

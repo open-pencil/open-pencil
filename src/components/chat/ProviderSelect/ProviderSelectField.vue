@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import type { TestIdProps } from '@open-pencil/vue'
-
 import ProviderSelect from '@/components/chat/ProviderSelect/ProviderSelect.vue'
-
-const { testId = 'provider-selector' } = defineProps<TestIdProps>()
 </script>
 
 <template>
   <ProviderSelect
-    :test-id="testId"
     :ui="{
       trigger:
         'w-full justify-between rounded border border-border bg-input px-2.5 py-1.5 text-xs text-surface',

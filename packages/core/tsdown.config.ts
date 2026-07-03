@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
 
 import { defineConfig } from 'tsdown'
-import type { Plugin } from 'rolldown'
+import type { Rolldown } from 'tsdown'
 
 const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   dependencies?: Record<string, string>
 }
 
-function rawText(): Plugin {
+function rawText(): Rolldown.Plugin {
   return {
     name: 'raw-text',
     load(id) {

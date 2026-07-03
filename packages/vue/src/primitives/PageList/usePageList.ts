@@ -22,6 +22,7 @@ export function usePageList() {
     switchPage: editor.switchPage,
     addPage: editor.addPage,
     deletePage: editor.deletePage,
+    movePage: editor.movePage,
     renamePage: editor.renamePage
   }
 }

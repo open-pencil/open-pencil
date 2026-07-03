@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
-import VariablesDialog from './VariablesDialog.vue'
+import VariablesDialog from './variables/VariablesDialog.vue'
 import BooleanOperationsControl from './properties/BooleanOperationsControl.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'
 import EffectsSection from './properties/EffectsSection.vue'

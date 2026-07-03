@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { presets } from './presets'
 import { allRules } from './rules'

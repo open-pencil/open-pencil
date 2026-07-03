@@ -1,5 +1,6 @@
+import type { SceneGraph, SceneNode, NodeType } from '@open-pencil/scene-graph'
+
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import type { SceneGraph, SceneNode, NodeType } from '#core/scene-graph'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import {

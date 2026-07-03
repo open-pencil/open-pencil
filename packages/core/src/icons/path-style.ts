@@ -1,5 +1,5 @@
-import type { SceneNode, Stroke } from '#core/scene-graph'
-import type { Color } from '#core/types'
+import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const STROKE_CAP_MAP: Record<string, SceneNode['strokeCap']> = {
   butt: 'NONE',

@@ -8,7 +8,7 @@ import type {
   LayoutCounterAlign,
   LayoutSizing,
   SceneNode
-} from '@open-pencil/core/scene-graph'
+} from '@open-pencil/scene-graph'
 
 import type { useI18n } from '#vue/i18n'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'

@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import type { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 
@@ -15,6 +15,7 @@ import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 import { connectMockBrowser, waitForBrowserRegistration, type MockBrowser } from './helpers'
 
 const AUTH_TOKEN = 'test-stdio-token'
+const NO_DOCUMENT_AUTH_TOKEN = 'test-stdio-no-document-token'
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-stdio-${process.pid}`)
 const SOCKET_PATH = isUnix ? join(SOCKET_DIR, 'mcp.sock') : null
@@ -44,9 +45,12 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
 
   const client = new Client({ name: 'test-stdio-client', version: '0.0.0' })
 
-  // The bridge must connect to the server before tool calls can work.
-  // Wait for "Connected to OpenPencil" on stderr — this confirms the
-  // bridge's checkHealth() succeeded and ready=true.
+  let stderrBuffer = ''
+
+  // The bridge must reach the MCP server before tool calls can be sent.
+  // Wait for the stderr readiness marker — this confirms server reachability
+  // and ready=true, but document/browser availability is still checked per
+  // tool call.
   // Also reject on timeout or stream end so the test fails fast if the
   // bridge never connects.
   const BRIDGE_TIMEOUT = 10_000
@@ -58,7 +62,6 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
     const stderr = transport.stderr
     if (stderr && 'on' in stderr) {
       const stream = stderr as NodeJS.ReadableStream
-      let stderrBuffer = ''
       stream.on('data', (chunk: Buffer) => {
         // Buffer stderr so the readiness marker is not missed if it
         // straddles a chunk boundary.
@@ -93,7 +96,7 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
     throw err
   }
 
-  return { client, transport }
+  return { client, transport, stderrText: () => stderrBuffer }
 }
 
 function textContent(content: unknown): string {
@@ -250,4 +253,40 @@ describe('MCP stdio transport', () => {
     expect(allStderr).not.toContain('"jsonrpc"')
     expect(allStderr).not.toContain('"method"')
   }, 10000)
+})
+
+describe('MCP stdio readiness without an open document', () => {
+  test('readiness marker means server reachable, while document tools report no document', async () => {
+    if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: isUnix ? join(SOCKET_DIR, 'mcp-no-document.sock') : null,
+      authToken: NO_DOCUMENT_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null
+    })
+
+    let client: Client | undefined
+    let transport: StdioClientTransport | undefined
+    try {
+      const socketPath = handle.socketPath ?? ''
+      const ctx = await createStdioClient(socketPath, NO_DOCUMENT_AUTH_TOKEN)
+      client = ctx.client
+      transport = ctx.transport
+
+      expect(ctx.stderrText()).toContain('document availability is checked per tool call')
+
+      const result = await client.callTool({ name: 'get_current_page', arguments: {} })
+      expect(result.isError).toBe(true)
+      const message = textContent(result.content)
+      expect(message).toContain('OpenPencil app is not connected')
+      expect(message).toContain('no document is open')
+    } finally {
+      await client?.close().catch(() => undefined)
+      await transport?.close().catch(() => undefined)
+      await handle.close().catch(() => undefined)
+      if (isUnix) await rm(SOCKET_DIR, { recursive: true, force: true })
+    }
+  }, 30000)
 })

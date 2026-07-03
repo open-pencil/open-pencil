@@ -15,8 +15,8 @@ heavy('parse heavy .fig files', () => {
   let nuxtUiNodes: SceneNode[]
 
   beforeAll(async () => {
-    material3 = await parseFixture('material3.fig')
-    nuxtui = await parseFixture('nuxtui.fig')
+    material3 = await parseFixture('material3.fig', { populate: 'none' })
+    nuxtui = await parseFixture('nuxtui.fig', { populate: 'none' })
     material3Nodes = collectAllNodes(material3)
     nuxtUiNodes = collectAllNodes(nuxtui)
   })

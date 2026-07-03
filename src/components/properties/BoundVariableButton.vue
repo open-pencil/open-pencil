@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { vTestId, type TestIdProps } from '@open-pencil/vue'
-
 import Tip from '@/components/ui/Tip.vue'
 
-interface BoundVariableButtonProps extends TestIdProps {
+interface BoundVariableButtonProps {
   label: string
 }
 
-const { label, testId } = defineProps<BoundVariableButtonProps>()
+defineOptions({ inheritAttrs: false })
+
+const { label } = defineProps<BoundVariableButtonProps>()
 
 const emit = defineEmits<{
   detach: []
@@ -17,7 +17,7 @@ const emit = defineEmits<{
 <template>
   <Tip :label="label">
     <button
-      v-test-id="testId"
+      v-bind="$attrs"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-violet-400 hover:text-surface"
       @click="emit('detach')"
     >

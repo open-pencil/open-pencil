@@ -7,7 +7,7 @@ import { useAIChat } from '@/app/ai/chat/use'
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
 import DesignPanel from './DesignPanel.vue'
-import ZoomDropdown from './ZoomDropdown.vue'
+import ZoomDropdown from './editor/ZoomDropdown.vue'
 
 const { activeTab } = useAIChat()
 const { panels } = useI18n()

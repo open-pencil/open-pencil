@@ -62,7 +62,7 @@ Il server scrive un **file di discovery** all'avvio. Il bridge stdio legge quest
   "socketPath": "~/Library/Application Support/OpenPencil/mcp.sock",
   "httpPort": 7600,
   "authRequired": true,
-  "authToken": "a1b2c3...32-hex-chars",
+  "authToken": "<redacted-auth-token>",
   "version": "0.13.2",
   "startedAt": "2026-06-01T12:00:00.000Z"
 }

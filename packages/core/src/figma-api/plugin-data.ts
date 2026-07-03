@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 export const OPEN_PENCIL_PLUGIN_DATA_NAMESPACE = 'open-pencil'
 

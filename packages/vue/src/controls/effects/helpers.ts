@@ -1,8 +1,8 @@
 import type { Ref } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { Effect, SceneNode } from '@open-pencil/core/scene-graph'
-import type { Color } from '@open-pencil/core/types'
+import type { Effect, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useI18n } from '#vue/i18n/useI18n.js'
 
@@ -11,11 +11,11 @@ type EffectType = Effect['type']
 const { panels } = useI18n()
 
 const EFFECT_LABELS: Record<string, string> = {
-  DROP_SHADOW: panels.value.dropShadow || 'Drop shadow',
-  INNER_SHADOW: panels.value.innerShadow || 'Inner shadow',
-  LAYER_BLUR: panels.value.layerBlur || 'Layer blur',
-  BACKGROUND_BLUR: panels.value.backgroundBlur || 'Background blur',
-  FOREGROUND_BLUR: panels.value.foregroundBlur || 'Foreground blur'
+  DROP_SHADOW: panels.value.dropShadow,
+  INNER_SHADOW: panels.value.innerShadow,
+  LAYER_BLUR: panels.value.layerBlur,
+  BACKGROUND_BLUR: panels.value.backgroundBlur,
+  FOREGROUND_BLUR: panels.value.foregroundBlur
 }
 
 export const EFFECT_TYPES = Object.keys(EFFECT_LABELS) as EffectType[]

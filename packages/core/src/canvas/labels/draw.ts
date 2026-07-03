@@ -1,5 +1,7 @@
 import type { Canvas, Font } from 'canvaskit-wasm'
 
+import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
   SECTION_TITLE_HEIGHT,
@@ -11,7 +13,6 @@ import {
   COMPONENT_LABEL_ICON_SIZE,
   COMPONENT_LABEL_ICON_GAP
 } from '#core/constants'
-import type { SceneNode, SceneGraph } from '#core/scene-graph'
 
 import { ellipsizeLabelText } from './text'
 

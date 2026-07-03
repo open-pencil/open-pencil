@@ -1,4 +1,4 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 export function collectSubtrees(graph: SceneGraph, rootIds: string[]): SceneNode[] {
   const result: SceneNode[] = []

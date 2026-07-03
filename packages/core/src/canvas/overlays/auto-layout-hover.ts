@@ -1,5 +1,8 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
   AUTO_LAYOUT_HOVER_BLUE,
@@ -16,8 +19,6 @@ import {
   AUTO_LAYOUT_HOVER_VALUE_PILL_PADDING_X,
   AUTO_LAYOUT_HOVER_VALUE_PILL_RADIUS
 } from '#core/constants'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
 
 type Hover = NonNullable<RenderOverlays['autoLayoutHover']>
 type RectTuple = [x: number, y: number, width: number, height: number]

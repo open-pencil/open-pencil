@@ -4,8 +4,8 @@ import { useVariableBinding } from '#vue/controls/variable-binding/use'
 
 const FALLBACK_COLOR_VARIABLE_NAME = 'New color'
 
-import type { VariableCollection } from '@open-pencil/core/scene-graph'
-import type { Color } from '@open-pencil/core/types'
+import type { VariableCollection } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 type ColorBindingKind = 'fills' | 'strokes'
 

@@ -191,6 +191,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           })
           .then((result) => {
             finish(result.stopReason === 'end_turn' ? 'stop' : 'other')
+            return undefined
           })
           .catch((e) => {
             finish('error', formatConnectionError(e, this.agentDef))

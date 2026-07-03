@@ -1,5 +1,9 @@
 import type { ImageFilter, MaskFilter, Canvas, Paint, Path } from 'canvaskit-wasm'
 
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+
 import * as Effects from '#core/canvas/effects'
 import * as Fills from '#core/canvas/fills'
 import * as Labels from '#core/canvas/labels/draw'
@@ -15,10 +19,7 @@ import * as SceneRender from '#core/canvas/scene'
 import { renderEffects as renderShadowEffects } from '#core/canvas/shadows'
 import * as Shapes from '#core/canvas/shapes'
 import * as Strokes from '#core/canvas/strokes'
-import type { Fill, SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
 import type { TextEditor } from '#core/text/editor'
-import type { Rect, Vector } from '#core/types'
 
 const rendererMethods: ThisType<SkiaRenderer> = {
   drawHoverHighlight(canvas: Canvas, graph: SceneGraph, hoveredNodeId?: string | null): void {

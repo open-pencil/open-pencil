@@ -1,9 +1,9 @@
-import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/core/canvas'
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import { degToRad } from '@open-pencil/core/geometry'
-import type { SceneGraph, SceneNode } from '@open-pencil/core/scene-graph'
-import type { Vector } from '@open-pencil/core/types'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/scene-graph/coordinate'
+import { degToRad } from '@open-pencil/scene-graph/geometry'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
 import rotateCursorSvg from '#vue/shared/assets/rotate-cursor.svg?raw'
@@ -178,9 +178,8 @@ export function getHitHandleByMatrix(
   const CORNER_R = HANDLE_HIT_RADIUS / zoom
 
   const rotation = getAbsoluteRotation(node, graph)
-  for (const key in handles) {
+  for (const [key, p] of Object.entries(handles)) {
     const handleKey = key as HandlePosition
-    const p = handles[handleKey]
 
     const dx = cx - p.x
     const dy = cy - p.y

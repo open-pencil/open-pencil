@@ -34,6 +34,10 @@ function pageItems() {
   return editor.page.getByTestId('pages-item')
 }
 
+function pageRows() {
+  return editor.page.getByTestId('pages-row')
+}
+
 function addPageButton() {
   return editor.page.getByTestId('pages-add')
 }
@@ -204,6 +208,64 @@ test('cannot delete the last page', async () => {
 
   const after = await getPages()
   expect(after).toHaveLength(1)
+
+  await pageRows().first().click({ button: 'right' })
+  await expect(editor.page.getByTestId('pages-context-delete')).toHaveAttribute('data-disabled', '')
+
+  editor.canvas.assertNoErrors()
+})
+
+test('page context menu deletes a page', async () => {
+  await addPageButton().click()
+  await addPageButton().click()
+  await editor.canvas.waitForRender()
+
+  const before = await getPages()
+  const deletedId = before[1].id
+
+  await pageRows().nth(1).click({ button: 'right' })
+  await editor.page.getByTestId('pages-context-delete').click()
+  await editor.canvas.waitForRender()
+
+  const after = await getPages()
+  expect(after).toHaveLength(before.length - 1)
+  expect(after.some((page) => page.id === deletedId)).toBe(false)
+
+  editor.canvas.assertNoErrors()
+})
+
+test('dragging a page row reorders pages', async () => {
+  const currentPageId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    while (store.graph.getPages().length < 3) store.addPage()
+    for (const [index, page] of store.graph.getPages().entries()) {
+      store.renamePage(page.id, `Order ${index + 1}`)
+    }
+    const page = store.graph.getPages()[1]
+    if (!page) throw new Error('Expected at least two pages')
+    store.switchPage(page.id)
+    return page.id
+  })
+  await editor.canvas.waitForRender()
+
+  await pageRows()
+    .first()
+    .dragTo(pageRows().nth(2), {
+      targetPosition: { x: 12, y: 18 }
+    })
+  await editor.canvas.waitForRender()
+
+  const pages = await getPages()
+  const names = pages.map((page) => page.name)
+  const currentAfterReorder = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.currentPageId
+  })
+
+  expect(names).toEqual(['Order 2', 'Order 3', 'Order 1'])
+  expect(currentAfterReorder).toBe(currentPageId)
 
   editor.canvas.assertNoErrors()
 })

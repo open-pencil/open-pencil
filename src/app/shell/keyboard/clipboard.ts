@@ -3,18 +3,39 @@ import { useEventListener } from '@vueuse/core'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import {
+  copySelectionToTauriClipboard,
+  pasteFromTauriClipboard
+} from '@/app/editor/clipboard/system'
 import { isEditing } from '@/app/shell/keyboard/focus'
+import { isTauri } from '@/app/tauri/env'
+
+function cursorPosition(store: EditorStore) {
+  const { cursorCanvasX: ccx, cursorCanvasY: ccy } = store.state
+  return ccx != null && ccy != null ? { x: ccx, y: ccy } : undefined
+}
 
 export function bindEditorClipboard(store: EditorStore) {
   useEventListener(window, 'copy', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
+    if (isTauri()) {
+      void copySelectionToTauriClipboard(store)
+      return
+    }
     if (e.clipboardData) void store.writeCopyData(e.clipboardData)
   })
 
   useEventListener(window, 'cut', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()
+    if (isTauri()) {
+      void copySelectionToTauriClipboard(store).then((copied) => {
+        if (copied) store.deleteSelected()
+        return undefined
+      })
+      return
+    }
     if (e.clipboardData) void store.writeCopyData(e.clipboardData)
     store.deleteSelected()
   })
@@ -23,8 +44,7 @@ export function bindEditorClipboard(store: EditorStore) {
     if (isEditing(e)) return
     e.preventDefault()
 
-    const { cursorCanvasX: ccx, cursorCanvasY: ccy } = store.state
-    const cursorPos = ccx != null && ccy != null ? { x: ccx, y: ccy } : undefined
+    const cursorPos = cursorPosition(store)
 
     const imageFiles = extractImageFilesFromClipboard(e)
     if (imageFiles.length) {
@@ -35,6 +55,11 @@ export function bindEditorClipboard(store: EditorStore) {
     }
 
     const html = e.clipboardData?.getData('text/html') ?? ''
-    if (html) void store.pasteFromHTML(html, cursorPos)
+    if (html) {
+      void store.pasteFromHTML(html, cursorPos)
+      return
+    }
+
+    if (isTauri()) void pasteFromTauriClipboard(store, cursorPos)
   })
 }

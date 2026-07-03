@@ -1,7 +1,15 @@
+import type {
+  Effect,
+  Fill,
+  GridTrack,
+  LayoutMode,
+  SceneNode,
+  Stroke
+} from '@open-pencil/scene-graph'
+import type { Color, JsonObject } from '@open-pencil/scene-graph/primitives'
+
 import { colorToFill, parseColor } from '#core/color'
 import { TRANSPARENT } from '#core/constants'
-import type { GridTrack, LayoutMode, SceneNode, Stroke } from '#core/scene-graph'
-import type { JsonObject } from '#core/types'
 
 const WEIGHT_MAP: Record<string, number> = {
   normal: 400,
@@ -60,8 +68,8 @@ function parseDirection(value: unknown): SceneNode['textDirection'] | undefined 
   return DIRECTION_MAP[value.toLowerCase()] ?? 'AUTO'
 }
 
-function parseStroke(value: string, width: number): Stroke {
-  const color = parseColor(value)
+function parseStroke(value: string | Color, width: number): Stroke {
+  const color = typeof value === 'string' ? parseColor(value) : value
   return {
     color,
     opacity: color.a,
@@ -159,14 +167,49 @@ function applyFillSizing(
   }
 }
 
+function isFill(value: unknown): value is Fill {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'type' in value &&
+    'color' in value &&
+    'visible' in value
+  )
+}
+
+function isFillValue(value: unknown): value is string | Color | Fill {
+  return typeof value === 'string' || isColor(value) || isFill(value)
+}
+
+function fillFromValue(value: string | Color | Fill): Fill {
+  return isFill(value) ? structuredClone(value) : colorToFill(value)
+}
+
+function isColor(value: unknown): value is Color {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'r' in value &&
+    'g' in value &&
+    'b' in value &&
+    'a' in value
+  )
+}
+
 function applyFillOverride(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+  if (Array.isArray(props.fills)) {
+    const fills = props.fills.filter(isFillValue).map(fillFromValue)
+    if (fills.length > 0) o.fills = fills
+    return
+  }
+
   const bg = props.bg ?? props.fill ?? props.background ?? props.backgroundColor
-  if (typeof bg === 'string') o.fills = [colorToFill(bg)]
+  if (isFillValue(bg)) o.fills = [fillFromValue(bg)]
 }
 
 function applyStrokeOverride(props: Record<string, unknown>, o: Partial<SceneNode>): void {
   const stroke = props.stroke ?? props.border ?? props.borderColor
-  if (typeof stroke !== 'string') return
+  if (typeof stroke !== 'string' && !isColor(stroke)) return
   const strokeWidth =
     (props.strokeWidth as number | undefined) ?? (props.borderWidth as number | undefined) ?? 1
   o.strokes = [parseStroke(stroke, strokeWidth)]
@@ -418,7 +461,7 @@ function applyTextStyleOverrides(props: Record<string, unknown>, o: Partial<Scen
     o.fontWeight = WEIGHT_MAP[weight] ?? 400
   }
 
-  if (typeof props.color === 'string') {
+  if (typeof props.color === 'string' || isColor(props.color)) {
     o.fills = [colorToFill(props.color)]
   }
 
@@ -484,7 +527,22 @@ function applyTextOverrides(
   applyTextAutoResize(props, o, parentLayout)
 }
 
+function isEffect(value: unknown): value is Effect {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'type' in value &&
+    'radius' in value &&
+    'visible' in value
+  )
+}
+
 function applyShapeAndEffectOverrides(props: Record<string, unknown>, o: Partial<SceneNode>): void {
+  if (Array.isArray(props.effects)) {
+    const effects = props.effects.filter(isEffect).map((effect) => structuredClone(effect))
+    if (effects.length > 0) o.effects = effects
+  }
+
   if (props.points !== undefined) o.pointCount = props.points as number
   if (props.innerRadius !== undefined) o.starInnerRadius = props.innerRadius as number
   if (props.pointCount !== undefined) o.pointCount = props.pointCount as number

@@ -2,6 +2,61 @@ import { test, expect } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
+test('tool-created CJK text requests fallback through app font loading', async ({ page }) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+  await canvas.waitForInit()
+
+  const result = await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+
+    const { ensureGraphFonts, loadFont } = await import('/src/app/editor/fonts/index.ts')
+    await loadFont('Inter', 'Regular')
+    const { fontManager } = await import('/packages/core/src/text/fonts.ts')
+    const originalEnsureFallbackPack = fontManager.ensureFallbackPack.bind(fontManager)
+    let requestedScripts: string[] = []
+
+    fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
+      requestedScripts = [...scripts]
+      return { cjk: ['Regression CJK Fallback'], arabic: [] }
+    }
+
+    const pageNode = store.graph.getNode(store.state.currentPageId)
+    if (!pageNode) throw new Error(`Page ${store.state.currentPageId} not found`)
+    const text = store.graph.createNode('TEXT', pageNode.id, {
+      name: 'Tool CJK Regression',
+      x: 80,
+      y: 80,
+      width: 300,
+      height: 60,
+      text: '你好世界',
+      fontSize: 32,
+      fontFamily: 'Inter',
+      textPicture: new Uint8Array([1, 2, 3]),
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
+
+    try {
+      const changed = await ensureGraphFonts(store.graph, [text.id])
+      return {
+        changed,
+        requestedScripts,
+        textPictureCleared: store.graph.getNode(text.id)?.textPicture === null
+      }
+    } finally {
+      fontManager.ensureFallbackPack = originalEnsureFallbackPack
+    }
+  })
+
+  expect(result).toEqual({
+    changed: true,
+    requestedScripts: ['cjk-sc'],
+    textPictureCleared: true
+  })
+  canvas.assertNoErrors()
+})
+
 test('CJK text waits for fallback fonts and repaints after they load', async ({ page }) => {
   const canvas = new CanvasHelper(page)
   await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')

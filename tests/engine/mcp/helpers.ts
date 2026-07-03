@@ -241,6 +241,7 @@ export function connectMockBrowser(
         // the browser as connected, causing race conditions.
         void waitForBrowserRegistration(port).then(() => {
           resolve({ ws, graph, requests, close: () => ws.close() })
+          return undefined
         }, reject)
       }
     })

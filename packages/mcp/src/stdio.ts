@@ -52,10 +52,14 @@ const authToken = resolveAuthToken(rawAuthToken)
 const bridge = createStdioRpcBridge({
   authToken,
   onReady: () => {
-    process.stderr.write('Connected to OpenPencil MCP server\n')
+    process.stderr.write(
+      'Connected to OpenPencil MCP server; document availability is checked per tool call\n'
+    )
   },
   onReconnect: () => {
-    process.stderr.write('Reconnected to OpenPencil MCP server\n')
+    process.stderr.write(
+      'Reconnected to OpenPencil MCP server; document availability is checked per tool call\n'
+    )
   }
 })
 

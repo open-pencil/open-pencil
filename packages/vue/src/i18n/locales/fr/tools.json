@@ -1,0 +1,13 @@
+{
+  "move": "Déplacer",
+  "frame": "Cadre",
+  "section": "Section",
+  "rectangle": "Rectangle",
+  "ellipse": "Ellipse",
+  "line": "Ligne",
+  "polygon": "Polygone",
+  "star": "Étoile",
+  "pen": "Plume",
+  "text": "Texte",
+  "hand": "Main"
+}

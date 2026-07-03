@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationDir": "./dist",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "@open-pencil/dom-css",
+    "types": ["bun"],
+    "paths": {
+      "#dom-css/*": ["./src/*"],
+      "@open-pencil/dom-css": ["./src/index.ts"],
+      "@open-pencil/dom-css/browser": ["./src/browser.ts"],
+      "@open-pencil/dom-css/jsx-runtime": ["./src/jsx/runtime.ts"],
+      "@open-pencil/dom-css/jsx-dev-runtime": ["./src/jsx/dev-runtime.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

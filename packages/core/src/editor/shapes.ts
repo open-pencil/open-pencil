@@ -1,3 +1,5 @@
+import type { Fill, NodeType, SceneNode } from '@open-pencil/scene-graph'
+
 import {
   BLACK,
   DEFAULT_FRAME_FILL,
@@ -5,7 +7,6 @@ import {
   SECTION_DEFAULT_FILL,
   SECTION_DEFAULT_STROKE
 } from '#core/constants'
-import type { Fill, NodeType, SceneNode } from '#core/scene-graph'
 
 import { createPenActions } from './shapes/pen'
 import { adoptNodesIntoSection as adoptNodesIntoSectionImpl } from './shapes/section-adopt'

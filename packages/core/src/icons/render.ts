@@ -1,7 +1,8 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { parseColor } from '#core/color'
 import { createPathStroke } from '#core/icons/path-style'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color } from '#core/types'
 
 import type { IconData } from './types'
 

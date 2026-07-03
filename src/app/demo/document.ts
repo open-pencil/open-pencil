@@ -32,5 +32,6 @@ export function createDemoShapes(store: EditorStore) {
   store.clearSelection()
   void store.loadFontsForNodes(graph.getPages().flatMap((page) => page.childIds)).then(() => {
     store.requestRender()
+    return undefined
   })
 }

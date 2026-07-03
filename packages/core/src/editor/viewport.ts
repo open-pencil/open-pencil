@@ -1,5 +1,6 @@
+import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
+
 import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
-import { computeBounds, computeAbsoluteBounds } from '#core/geometry'
 
 import type { EditorContext } from './types'
 

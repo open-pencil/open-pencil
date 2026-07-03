@@ -88,7 +88,7 @@ function handleSubmit(e: Event) {
       <form class="flex gap-1.5" @submit="handleSubmit">
         <AppInput
           v-model="input"
-          test-id="chat-input"
+          data-test-id="chat-input"
           :placeholder="dialogs.describeChange"
           :ui="{ base: 'min-w-0 flex-1 placeholder:text-muted' }"
           :disabled="isStreaming"
