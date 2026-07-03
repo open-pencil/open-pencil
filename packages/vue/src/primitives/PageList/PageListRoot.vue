@@ -12,9 +12,11 @@ const emit = defineEmits<{
   switch: [pageId: string]
   rename: [pageId: string, name: string]
   delete: [pageId: string]
+  move: [pageId: string, index: number]
 }>()
 
-const { pages, currentPageId, switchPage, addPage, renamePage, deletePage } = usePageList()
+const { pages, currentPageId, switchPage, addPage, renamePage, deletePage, movePage } =
+  usePageList()
 
 const dividerPattern = computed(() => customDividerPattern ?? /^[-–—*\s]+$/)
 
@@ -42,11 +44,17 @@ function handleDelete(pageId: string) {
   emit('delete', pageId)
 }
 
+function handleMove(pageId: string, index: number) {
+  movePage(pageId, index)
+  emit('move', pageId, index)
+}
+
 const actions = {
   add: handleAdd,
   switch: handleSwitch,
   rename: handleRename,
-  delete: handleDelete
+  delete: handleDelete,
+  move: handleMove
 }
 </script>
 

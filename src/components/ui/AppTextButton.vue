@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { twMerge } from 'tailwind-merge'
-import type { TestIdProps } from '@open-pencil/vue'
-
-interface AppTextButtonProps extends TestIdProps {
+interface AppTextButtonProps {
   ui?: {
     base?: string
   }
@@ -11,7 +9,7 @@ interface AppTextButtonProps extends TestIdProps {
   underline?: boolean
 }
 
-const { ui, size = 'sm', underline = false, testId } = defineProps<AppTextButtonProps>()
+const { ui, size = 'sm', underline = false } = defineProps<AppTextButtonProps>()
 
 const emit = defineEmits<{ click: [event: MouseEvent] }>()
 
@@ -26,7 +24,7 @@ const cls = computed(() =>
 </script>
 
 <template>
-  <button type="button" :data-test-id="testId" :class="cls" @click="emit('click', $event)">
+  <button type="button" :class="cls" @click="emit('click', $event)">
     <slot />
   </button>
 </template>

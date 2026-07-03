@@ -1,8 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { TEXT_CARET_COLOR, TEXT_CARET_WIDTH, TEXT_SELECTION_COLOR } from '#core/constants'
-import type { SceneNode } from '#core/scene-graph'
 import type { TextEditor } from '#core/text/editor'
 
 export function drawTextEditOverlay(

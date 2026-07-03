@@ -12,27 +12,26 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import ScrubInput from '@/components/ScrubInput.vue'
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useSelectUI } from '@/components/ui/select'
 import {
-  testId as testIdAttr,
   vTestId,
   useI18n,
   useLayoutControlsContext,
   useNumberVariableBinding
 } from '@open-pencil/vue'
 
-import type { LayoutSizing } from '@open-pencil/core/scene-graph'
+import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp, TestId } from '@open-pencil/vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 
 type ActiveSizeLimit = {
   prop: SizeLimitProp
-  testId: TestId
+  testHook: TestId
   icon: () => string
   value: () => number | null
   setLabel: () => string
@@ -65,7 +64,7 @@ const widthLimitItems = [
 const activeSizeLimits: ActiveSizeLimit[] = [
   {
     prop: 'minWidth',
-    testId: 'layout-min-width-input',
+    testHook: 'layout-min-width-input',
     icon: () => panels.value.minWidthShort,
     value: () => ctx.node.minWidth,
     setLabel: () => panels.value.setToCurrentWidth,
@@ -73,7 +72,7 @@ const activeSizeLimits: ActiveSizeLimit[] = [
   },
   {
     prop: 'maxWidth',
-    testId: 'layout-max-width-input',
+    testHook: 'layout-max-width-input',
     icon: () => panels.value.maxWidthShort,
     value: () => ctx.node.maxWidth,
     setLabel: () => panels.value.setToCurrentWidth,
@@ -81,7 +80,7 @@ const activeSizeLimits: ActiveSizeLimit[] = [
   },
   {
     prop: 'minHeight',
-    testId: 'layout-min-height-input',
+    testHook: 'layout-min-height-input',
     icon: () => panels.value.minHeightShort,
     value: () => ctx.node.minHeight,
     setLabel: () => panels.value.setToCurrentHeight,
@@ -89,7 +88,7 @@ const activeSizeLimits: ActiveSizeLimit[] = [
   },
   {
     prop: 'maxHeight',
-    testId: 'layout-max-height-input',
+    testHook: 'layout-max-height-input',
     icon: () => panels.value.maxHeightShort,
     value: () => ctx.node.maxHeight,
     setLabel: () => panels.value.setToCurrentHeight,
@@ -182,7 +181,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
           <template #suffix>
             <BoundVariableButton
               v-if="widthVariableBinding.getBoundVariable(ctx.node.id)"
-              test-id="layout-width-unbind-variable"
+              data-test-id="layout-width-unbind-variable"
               :label="panels.detachVariable"
               @detach="widthVariableBinding.unbindVariable(ctx.node.id)"
             />
@@ -193,11 +192,11 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               :trigger-label="panels.applyVariable"
               :search-placeholder="dialogs.search"
               :empty-label="panels.noVariablesFound"
-              :trigger-test-id="'layout-width-apply-variable'"
+              :trigger-data-test-id="'layout-width-apply-variable'"
               :create-label="panels.createNumberVariable({ value: Math.round(ctx.node.width) })"
               :create-name-placeholder="panels.variableName"
               :create-submit-label="panels.create"
-              :create-test-id="'layout-width-apply-variable-create'"
+              :create-data-test-id="'layout-width-apply-variable-create'"
               @select="bindSizeVariable('width', $event.id)"
               @create="createAndBindSizeVariable('width', $event)"
             />
@@ -266,7 +265,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
           <template #suffix>
             <BoundVariableButton
               v-if="heightVariableBinding.getBoundVariable(ctx.node.id)"
-              test-id="layout-height-unbind-variable"
+              data-test-id="layout-height-unbind-variable"
               :label="panels.detachVariable"
               @detach="heightVariableBinding.unbindVariable(ctx.node.id)"
             />
@@ -277,11 +276,11 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               :trigger-label="panels.applyVariable"
               :search-placeholder="dialogs.search"
               :empty-label="panels.noVariablesFound"
-              :trigger-test-id="'layout-height-apply-variable'"
+              :trigger-data-test-id="'layout-height-apply-variable'"
               :create-label="panels.createNumberVariable({ value: Math.round(ctx.node.height) })"
               :create-name-placeholder="panels.variableName"
               :create-submit-label="panels.create"
-              :create-test-id="'layout-height-apply-variable-create'"
+              :create-data-test-id="'layout-height-apply-variable-create'"
               @select="bindSizeVariable('height', $event.id)"
               @create="createAndBindSizeVariable('height', $event)"
             />
@@ -351,7 +350,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
       <div :ref="limitFieldRefs.set" class="min-w-0">
         <VariableScrubInput
           v-if="ctx.node"
-          v-bind="testIdAttr(item.testId)"
+          v-test-id="item.testHook"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
           :min="0"
@@ -366,7 +365,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
             >
               <SelectTrigger
-                v-test-id="`${item.testId}-menu`"
+                v-test-id="`${item.testHook}-menu`"
                 :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop
@@ -395,7 +394,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
         </VariableScrubInput>
         <ScrubInput
           v-else
-          v-bind="testIdAttr(item.testId)"
+          v-test-id="item.testHook"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
           :min="0"
@@ -408,7 +407,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
             >
               <SelectTrigger
-                v-test-id="`${item.testId}-menu`"
+                v-test-id="`${item.testHook}-menu`"
                 :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop

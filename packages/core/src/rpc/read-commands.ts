@@ -1,4 +1,5 @@
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+
 import { queryByXPath } from '#core/xpath'
 
 import type { RpcCommand } from './types'

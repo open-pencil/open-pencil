@@ -1,10 +1,11 @@
 /* eslint-disable max-lines -- scene dispatch stays together while shape domains live in sibling modules */
 import type { Canvas, Path } from 'canvaskit-wasm'
 
+import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE, SECTION_CORNER_RADIUS } from '#core/constants'
-import { computeDescendantVisualBounds } from '#core/geometry'
-import type { SceneNode, SceneGraph, Fill } from '#core/scene-graph'
-import type { Color } from '#core/types'
 import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
@@ -605,6 +606,12 @@ function drawOutlinedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boo
   return true
 }
 
+const CJK_TEXT_PATTERN = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+
+function shouldRenderCJKAsOutline(node: SceneNode): boolean {
+  return CJK_TEXT_PATTERN.test(node.text)
+}
+
 function drawGradientText(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -665,7 +672,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.restore()
     return
   }
-  if (shouldRenderTextAsOutline(fill) && drawOutlinedText(r, canvas, node)) {
+  if (
+    (shouldRenderTextAsOutline(fill) || shouldRenderCJKAsOutline(node)) &&
+    drawOutlinedText(r, canvas, node)
+  ) {
     canvas.restore()
     return
   }

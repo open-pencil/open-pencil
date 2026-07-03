@@ -20,7 +20,7 @@ export interface LayerTreeContext {
   editor: Editor
   items: Ref<LayerNode[]>
   expanded: Ref<string[]>
-  treeKey: Ref<number>
+  treeVersion: Ref<number>
   selectedIds: ComputedRef<Set<string>>
   indentPerLevel: number
   draggingId: Ref<string | null>

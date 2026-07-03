@@ -1,0 +1,13 @@
+{
+  "move": "Przesuń",
+  "frame": "Ramka",
+  "section": "Sekcja",
+  "rectangle": "Prostokąt",
+  "ellipse": "Elipsa",
+  "line": "Linia",
+  "polygon": "Wielokąt",
+  "star": "Gwiazda",
+  "pen": "Pióro",
+  "text": "Tekst",
+  "hand": "Dłoń"
+}

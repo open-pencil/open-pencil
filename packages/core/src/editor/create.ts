@@ -2,12 +2,13 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { createNanoEvents } from 'nanoevents'
 import type { Emitter } from 'nanoevents'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { UndoManager } from '@open-pencil/scene-graph/undo'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { prefetchFigmaSchema } from '#core/clipboard'
 import { IS_BROWSER } from '#core/constants'
 import { setTextMeasurer } from '#core/layout'
-import { SceneGraph } from '#core/scene-graph'
-import { UndoManager } from '#core/scene-graph/undo'
 import { TextEditor } from '#core/text/editor'
 import { fontManager } from '#core/text/fonts'
 

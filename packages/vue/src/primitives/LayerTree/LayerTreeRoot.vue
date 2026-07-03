@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onScopeDispose, ref, watch } from 'vue'
 import { TreeRoot } from 'reka-ui'
 
 import { useEditor } from '#vue/editor/context'
@@ -7,6 +7,7 @@ import { provideLayerTree } from '#vue/primitives/LayerTree/context'
 import { useLayerDrag } from '#vue/primitives/LayerTree/useLayerDrag'
 
 import type { LayerNode } from '#vue/primitives/LayerTree/context'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 const { indentPerLevel = 16 } = defineProps<{
   indentPerLevel?: number
@@ -32,6 +33,17 @@ const { draggingId, instruction, instructionTargetId, setupItem } = useLayerDrag
   expandNode
 )
 
+function nodeToLayerNode(node: SceneNode): LayerNode {
+  return {
+    id: node.id,
+    name: node.name,
+    type: node.type,
+    layoutMode: node.layoutMode,
+    visible: node.visible,
+    locked: node.locked
+  }
+}
+
 function buildTree(parentId: string): LayerNode[] {
   const parent = editor.graph.getNode(parentId)
   if (!parent) return []
@@ -39,24 +51,73 @@ function buildTree(parentId: string): LayerNode[] {
     .map((cid) => editor.graph.getNode(cid))
     .filter((n): n is NonNullable<typeof n> => !!n)
     .map((node) => ({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      layoutMode: node.layoutMode,
-      visible: node.visible,
-      locked: node.locked,
+      ...nodeToLayerNode(node),
       children: node.childIds.length > 0 ? buildTree(node.id) : undefined
     }))
 }
 
 const items = ref(buildTree(editor.state.currentPageId))
-const treeKey = ref(0)
+const treeVersion = ref(0)
 const expanded = ref<string[]>([])
 const selectedIds = computed(() => editor.state.selectedIds)
 
-watch([() => editor.state.sceneVersion, () => editor.state.currentPageId], () => {
+function rebuildTree() {
   items.value = buildTree(editor.state.currentPageId)
-  treeKey.value++
+  treeVersion.value++
+}
+
+function replaceLayerNode(nodes: LayerNode[], replacement: LayerNode): LayerNode[] | null {
+  let changed = false
+  const next = nodes.map((node) => {
+    if (node.id === replacement.id) {
+      changed = true
+      return { ...replacement, children: node.children }
+    }
+    if (!node.children) return node
+    const children = replaceLayerNode(node.children, replacement)
+    if (!children) return node
+    changed = true
+    return { ...node, children }
+  })
+  return changed ? next : null
+}
+
+function patchLayerNode(id: string, changes: Partial<SceneNode>) {
+  if ('childIds' in changes || 'parentId' in changes) {
+    rebuildTree()
+    return
+  }
+
+  if (
+    !(
+      'name' in changes ||
+      'type' in changes ||
+      'layoutMode' in changes ||
+      'visible' in changes ||
+      'locked' in changes
+    )
+  ) {
+    return
+  }
+
+  const node = editor.graph.getNode(id)
+  if (!node) return
+  const next = replaceLayerNode(items.value, nodeToLayerNode(node))
+  if (next) items.value = next
+}
+
+const unsubscribe = [
+  editor.onEditorEvent('graph:replaced', rebuildTree),
+  editor.onEditorEvent('page:changed', rebuildTree),
+  editor.onEditorEvent('node:created', rebuildTree),
+  editor.onEditorEvent('node:deleted', rebuildTree),
+  editor.onEditorEvent('node:reparented', rebuildTree),
+  editor.onEditorEvent('node:reordered', rebuildTree),
+  editor.onEditorEvent('node:updated', patchLayerNode)
+]
+
+onScopeDispose(() => {
+  for (const stop of unsubscribe) stop()
 })
 
 const rowRefs = new Map<string, HTMLElement>()
@@ -134,7 +195,7 @@ provideLayerTree({
   editor,
   items,
   expanded,
-  treeKey,
+  treeVersion,
   selectedIds,
   indentPerLevel,
   draggingId,
@@ -161,11 +222,10 @@ provideLayerTree({
 
 <template>
   <TreeRoot
-    :key="treeKey"
     v-slot="{ flattenItems }"
     as="div"
     class="flex min-h-0 flex-1 flex-col overflow-hidden"
-    :expanded="expanded"
+    v-model:expanded="expanded"
     :items="items"
     :get-key="getKey"
     :get-children="getChildren"
@@ -174,7 +234,7 @@ provideLayerTree({
       :items="items"
       :flatten-items="flattenItems"
       :expanded="expanded"
-      :tree-key="treeKey"
+      :tree-version="treeVersion"
       :selected-ids="selectedIds"
       :dragging-id="draggingId"
       :instruction="instruction"

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import ScrubInput from '@/components/ScrubInput.vue'
+import { computed, useAttrs } from 'vue'
+
+import ScrubInput from '@/components/inputs/ScrubInput.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import Tip from '@/components/ui/Tip.vue'
-import { useIconButtonUI } from '@/components/ui/icon-button'
 
-import { vTestId, useI18n } from '@open-pencil/vue'
+import { useI18n, vTestId } from '@open-pencil/vue'
 
 import {
   opacityFromPercent,
@@ -15,26 +17,13 @@ import {
 import { colorToHexRaw } from '@open-pencil/core/color'
 
 import type { ColorVariableBindingApi } from '@/components/properties/color-style-row'
-import type { Color } from '@open-pencil/core/types'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
-const {
-  item,
-  index,
-  activeNodeId,
-  bindingApi,
-  visibilityTestId,
-  applyVariableTestId,
-  unbindTestId,
-  variableColor,
-  removeLabel
-} = defineProps<{
+const { item, index, activeNodeId, bindingApi, variableColor, removeLabel } = defineProps<{
   item: { opacity: number; visible: boolean }
   index: number
   activeNodeId?: string | null
   bindingApi: ColorVariableBindingApi
-  visibilityTestId: string
-  applyVariableTestId?: string
-  unbindTestId?: string
   variableColor?: Color
   removeLabel: string
 }>()
@@ -46,6 +35,15 @@ const emit = defineEmits<{
 }>()
 
 const { panels, dialogs } = useI18n()
+const attrs = useAttrs()
+const testPrefix = computed(() => {
+  const rowId = attrs['data-test-id']
+  if (rowId === 'stroke-item') return 'stroke'
+  return 'fill'
+})
+const visibilityDataTestId = computed(() => `${testPrefix.value}-visibility-${index}`)
+const applyVariableDataTestId = computed(() => `${testPrefix.value}-apply-variable-${index}`)
+const unbindDataTestId = computed(() => `${testPrefix.value}-unbind-variable`)
 </script>
 
 <template>
@@ -77,7 +75,7 @@ const { panels, dialogs } = useI18n()
       :trigger-label="panels.applyVariable"
       :search-placeholder="dialogs.search"
       :empty-label="panels.noVariablesFound"
-      :trigger-test-id="applyVariableTestId"
+      :data-test-id="applyVariableDataTestId"
       :create-label="
         variableColor && bindingApi.createAndBindVariable
           ? panels.createColorVariable({ value: colorToHexRaw(variableColor) })
@@ -86,7 +84,6 @@ const { panels, dialogs } = useI18n()
       :create-name-placeholder="panels.variableName"
       :create-submit-label="panels.create"
       :create-default-name="bindingApi.searchTerm.value"
-      :create-test-id="applyVariableTestId ? `${applyVariableTestId}-create` : undefined"
       :swatch-background="(variableId) => variableSwatchBackground(bindingApi, variableId)"
       @select="activeNodeId && bindingApi.bindVariable(activeNodeId, index, $event.id)"
       @create="
@@ -98,14 +95,14 @@ const { panels, dialogs } = useI18n()
 
     <BoundVariableButton
       v-else-if="activeNodeId && bindingApi.getBoundVariable(activeNodeId, index)"
-      :test-id="unbindTestId"
+      :data-test-id="unbindDataTestId"
       :label="panels.detachVariable"
       @detach="bindingApi.unbindVariable(activeNodeId, index)"
     />
 
     <Tip :label="panels.toggleVisibility">
       <button
-        v-test-id="visibilityTestId"
+        v-test-id="visibilityDataTestId"
         :data-visible="item.visible ? 'true' : 'false'"
         class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted hover:text-surface"
         @click="emit('toggleVisibility')"
@@ -115,10 +112,8 @@ const { panels, dialogs } = useI18n()
       </button>
     </Tip>
 
-    <Tip :label="removeLabel">
-      <button :class="useIconButtonUI({ ui: { base: 'shrink-0' } }).base" @click="emit('remove')">
-        −
-      </button>
-    </Tip>
+    <IconButton :label="removeLabel" class="shrink-0" @click="emit('remove')">
+      <icon-lucide-minus class="size-3.5" />
+    </IconButton>
   </div>
 </template>

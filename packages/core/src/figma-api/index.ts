@@ -1,9 +1,3 @@
-import type { SkiaRenderer } from '#core/canvas'
-import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
-import { flattenNodesToVectorProps } from '#core/canvas/flatten'
-import { IS_BROWSER } from '#core/constants'
-import { computeBounds } from '#core/geometry'
-import type { RasterExportFormat } from '#core/io/formats/raster'
 import type {
   SceneGraph,
   SceneNode as CoreSceneNode,
@@ -12,9 +6,17 @@ import type {
   VariableCollection,
   VariableType,
   VariableValue
-} from '#core/scene-graph'
-import { copyFills, copyStrokes, copyEffects } from '#core/scene-graph/copy'
-import type { Rect, Vector } from '#core/types'
+} from '@open-pencil/scene-graph'
+import { copyFills, copyStrokes, copyEffects } from '@open-pencil/scene-graph/copy'
+import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import { computeImageHash } from '@open-pencil/scene-graph/images'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+
+import type { SkiaRenderer } from '#core/canvas'
+import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
+import { flattenNodesToVectorProps } from '#core/canvas/flatten'
+import { IS_BROWSER } from '#core/constants'
+import type { RasterExportFormat } from '#core/io/formats/raster'
 
 import type {
   FigmaBooleanOperationNode,
@@ -58,39 +60,7 @@ export type {
 } from './node-types'
 export type { FigmaFont, FigmaFontName } from './proxy'
 
-export function computeImageHash(data: Uint8Array): string {
-  let h1 = 0x811c9dc5 >>> 0
-  let h2 = 0x811c9dc5 >>> 0
-  let h3 = 0x811c9dc5 >>> 0
-  let h4 = 0x811c9dc5 >>> 0
-  let h5 = 0x811c9dc5 >>> 0
-  for (let i = 0; i < data.length; i++) {
-    const b = data[i]
-    switch (i % 5) {
-      case 0:
-        h1 ^= b
-        h1 = Math.imul(h1, 0x01000193) >>> 0
-        break
-      case 1:
-        h2 ^= b
-        h2 = Math.imul(h2, 0x01000193) >>> 0
-        break
-      case 2:
-        h3 ^= b
-        h3 = Math.imul(h3, 0x01000193) >>> 0
-        break
-      case 3:
-        h4 ^= b
-        h4 = Math.imul(h4, 0x01000193) >>> 0
-        break
-      case 4:
-        h5 ^= b
-        h5 = Math.imul(h5, 0x01000193) >>> 0
-        break
-    }
-  }
-  return [h1, h2, h3, h4, h5].map((h) => h.toString(16).padStart(8, '0')).join('')
-}
+export { computeImageHash }
 
 // TODO(figma-api): Implement the full official PluginAPI interface once our compatibility
 // layer covers all required node-specific return types and unsupported APIs are modeled explicitly.

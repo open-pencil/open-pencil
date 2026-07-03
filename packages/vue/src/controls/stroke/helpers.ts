@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 
 import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode, Stroke } from '@open-pencil/core/scene-graph'
+import type { SceneNode, Stroke } from '@open-pencil/scene-graph'
 
 export type StrokeSides = 'ALL' | 'TOP' | 'BOTTOM' | 'LEFT' | 'RIGHT' | 'CUSTOM'
 
@@ -24,7 +24,8 @@ export const DEFAULT_STROKE: Stroke = {
   align: 'CENTER'
 }
 
-export function updateAlign(editor: Editor, align: Stroke['align'], activeNode: SceneNode) {
+export function updateAlign(editor: Editor, align: Stroke['align'], activeNode: SceneNode | null) {
+  if (!activeNode) return
   const strokes = activeNode.strokes.map((s) => ({ ...s, align }))
   editor.updateNodeWithUndo(activeNode.id, { strokes }, 'Change stroke align')
 }
@@ -54,8 +55,38 @@ export function currentSides(activeNode: SceneNode | null): StrokeSides {
   return 'CUSTOM'
 }
 
+export function dashState(stroke: Stroke | undefined): { dash: number; gap: number; on: boolean } {
+  const pattern = stroke?.dashPattern
+  if (!pattern || pattern.length === 0) return { dash: 6, gap: 6, on: false }
+  const dash = pattern[0]
+  return { dash, gap: pattern[1] ?? dash, on: true }
+}
+
+export function toggleDash(stroke: Stroke | undefined): Partial<Stroke> {
+  const { dash, gap, on } = dashState(stroke)
+  return { dashPattern: on ? [] : [Math.max(dash, 1), Math.max(gap, 1)] }
+}
+
+export function setDash(stroke: Stroke | undefined, value: number): Partial<Stroke> {
+  const { gap } = dashState(stroke)
+  return { dashPattern: [Math.max(1, value), gap] }
+}
+
+export function setGap(stroke: Stroke | undefined, value: number): Partial<Stroke> {
+  const { dash } = dashState(stroke)
+  return { dashPattern: [dash, Math.max(1, value)] }
+}
+
+export function borderWeight(activeNode: SceneNode | null, side: (typeof BORDER_SIDES)[number]) {
+  if (!activeNode) return 0
+  const key = `border${side[0].toUpperCase()}${side.slice(1)}Weight` as keyof SceneNode
+  const value = activeNode[key]
+  return typeof value === 'number' ? value : 0
+}
+
 export function createStrokeSideActions(editor: Editor, sideMenuOpen: Ref<boolean>) {
-  function selectSide(side: StrokeSides, activeNode: SceneNode) {
+  function selectSide(side: StrokeSides, activeNode: SceneNode | null) {
+    if (!activeNode) return
     const weight = activeNode.strokes.length > 0 ? activeNode.strokes[0].weight : 1
     if (side === 'ALL') {
       editor.updateNodeWithUndo(
@@ -108,8 +139,9 @@ export function createStrokeSideActions(editor: Editor, sideMenuOpen: Ref<boolea
   function updateBorderWeight(
     side: (typeof BORDER_SIDES)[number],
     value: number,
-    activeNode: SceneNode
+    activeNode: SceneNode | null
   ) {
+    if (!activeNode) return
     const key = `border${side[0].toUpperCase()}${side.slice(1)}Weight` as keyof SceneNode
     editor.updateNodeWithUndo(
       activeNode.id,

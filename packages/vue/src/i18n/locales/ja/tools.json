@@ -1,0 +1,13 @@
+{
+  "move": "移動",
+  "frame": "フレーム",
+  "section": "セクション",
+  "rectangle": "長方形",
+  "ellipse": "楕円",
+  "line": "直線",
+  "polygon": "多角形",
+  "star": "スター",
+  "pen": "ペンツール",
+  "text": "テキスト",
+  "hand": "手のひらツール"
+}

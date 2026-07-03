@@ -1,5 +1,7 @@
 export * from './editor'
 export * from './style-runs'
 export * from './direction'
+export * from './coverage'
 export * from './fonts'
 export * from './fallbacks'
+export * from './web-fonts'

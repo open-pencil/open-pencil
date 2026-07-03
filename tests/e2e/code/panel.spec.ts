@@ -98,3 +98,51 @@ test('switching back to Design tab works', async () => {
       .first()
   ).toBeVisible()
 })
+
+test('shows import errors in the Code panel', async () => {
+  await codeTab().click()
+  await editor.page.getByTestId('code-panel-import-toggle').click()
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const importDOMText = store.importDOMText
+    store.importDOMText = async () => {
+      store.importDOMText = importDOMText
+      throw new Error('CSS import failed')
+    }
+  })
+
+  await editor.page.getByTestId('code-panel-import-html').fill('<div class="card">Broken DOM</div>')
+  await editor.page.getByTestId('code-panel-import').click()
+
+  await expect(editor.page.getByTestId('code-panel-import-error')).toBeVisible()
+  await expect(editor.page.getByTestId('code-panel-import-error')).toContainText(
+    'CSS import failed'
+  )
+
+  await editor.page.getByTestId('code-panel-import-html').fill('<div class="card">Recovered</div>')
+  await expect(editor.page.getByTestId('code-panel-import-error')).toBeHidden()
+  await editor.page.getByTestId('code-panel-import-toggle').click()
+})
+
+test('imports HTML and CSS into the canvas', async () => {
+  await codeTab().click()
+  await editor.page.getByTestId('code-panel-import-toggle').click()
+  await editor.page.getByTestId('code-panel-import-html').fill('<div class="card">Hello DOM</div>')
+  await editor.page
+    .getByTestId('code-panel-import-css')
+    .fill('.card { width: 240px; height: 120px; padding: 16px; background: #ffffff; }')
+  await editor.page.getByTestId('code-panel-import').click()
+  await editor.page.waitForFunction(() => {
+    const store = window.openPencil?.getStore?.()
+    return store?.graph.getAllNodes().some((node) => node.name.includes('Hello DOM'))
+  })
+  await editor.canvas.waitForRender()
+
+  const imported = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.graph.getAllNodes().some((node) => node.name.includes('Hello DOM'))
+  })
+  expect(imported).toBe(true)
+})

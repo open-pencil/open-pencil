@@ -1,9 +1,10 @@
 import { orderBy } from 'es-toolkit/array'
 
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { colorDistance, colorToHex } from '#core/color'
 import type { ColorUsageEntry } from '#core/color/analysis'
 import { defineTool } from '#core/tools/schema'
-import type { Color } from '#core/types'
 
 type ColorEntry = ColorUsageEntry
 

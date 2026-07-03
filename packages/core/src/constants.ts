@@ -1,5 +1,5 @@
-import type { Fill, Stroke } from './scene-graph'
-import type { Color } from './types'
+import type { Fill, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export const IS_BROWSER = typeof window !== 'undefined'
 export const IS_TAURI = IS_BROWSER && '__TAURI_INTERNALS__' in window
@@ -342,9 +342,11 @@ export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 
 export const CJK_FALLBACK_FAMILIES_MACOS = [
   'PingFang SC',
+  'PingFang TC',
   'Hiragino Sans',
   'Apple SD Gothic Neo',
-  'Heiti SC'
+  'Heiti SC',
+  'Heiti TC'
 ]
 
 export const CJK_FALLBACK_FAMILIES_WINDOWS = [
@@ -359,13 +361,14 @@ export const CJK_FALLBACK_FAMILIES_WINDOWS = [
 
 export const CJK_FALLBACK_FAMILIES_LINUX = [
   'Noto Sans CJK SC',
+  'Noto Sans CJK TC',
   'Noto Sans CJK JP',
   'Noto Sans CJK KR',
   'WenQuanYi Micro Hei',
   'Droid Sans Fallback'
 ]
 
-export const CJK_GOOGLE_FONTS = ['Noto Sans SC', 'Noto Sans JP', 'Noto Sans KR']
+export const CJK_GOOGLE_FONTS = ['Noto Sans SC', 'Noto Sans TC', 'Noto Sans JP', 'Noto Sans KR']
 
 export const DEFAULT_SHAPE_FILL: Fill = {
   type: 'SOLID',

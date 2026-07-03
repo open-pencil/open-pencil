@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { sceneNodeToKiwi } from '#core/kiwi/fig/node-change/serialize'
-import { SceneGraph } from '#core/scene-graph'
 
 describe('Figma font variation export', () => {
   test('exports base and styled-run variable font axes', () => {

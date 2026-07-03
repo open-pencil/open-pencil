@@ -4,7 +4,7 @@ import {
   AUTO_LAYOUT_HOVER_TICK_HIT_TOLERANCE
 } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 type AutoLayoutHover = NonNullable<Editor['state']['autoLayoutHover']>
 

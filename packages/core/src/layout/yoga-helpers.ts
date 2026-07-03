@@ -7,7 +7,7 @@ import Yoga, {
   type Node as YogaNode
 } from 'yoga-layout'
 
-import type { GridTrack, SceneNode } from '#core/scene-graph'
+import type { GridTrack, SceneNode } from '@open-pencil/scene-graph'
 
 const yogaConfig = Yoga.Config.create()
 yogaConfig.setPointScaleFactor(0)

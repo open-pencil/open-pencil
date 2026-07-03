@@ -1,4 +1,4 @@
-import type { SceneNode } from '#core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 export type ProtectedField =
   | 'text'

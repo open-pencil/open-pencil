@@ -24,7 +24,7 @@ async function loadModelSuggestions() {
     <ProviderSettingsField v-if="ctx.providerDef.supportsCustomBaseURL" :label="dialogs.baseURL">
       <ProviderSettingsInput
         v-model="ctx.baseURLInput"
-        test-id="provider-settings-base-url"
+        data-test-id="provider-settings-base-url"
         placeholder="http://localhost:11434/v1"
         @change="ctx.save"
       />
@@ -34,7 +34,7 @@ async function loadModelSuggestions() {
       <AppComboboxInput
         v-if="showModelSuggestions"
         v-model="ctx.customModelInput"
-        test-id="provider-settings-custom-model"
+        data-test-id="provider-settings-custom-model"
         :options="suggestedModels.map((model) => ({ value: model.id, label: model.name }))"
         placeholder="e.g. meta-llama/llama-3.3-70b-instruct"
         @focusin="loadModelSuggestions"
@@ -43,7 +43,7 @@ async function loadModelSuggestions() {
       <ProviderSettingsInput
         v-else
         v-model="ctx.customModelInput"
-        test-id="provider-settings-custom-model"
+        data-test-id="provider-settings-custom-model"
         placeholder="e.g. llama-3.3-70b"
         @change="ctx.save"
       />

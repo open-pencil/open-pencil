@@ -30,8 +30,8 @@ import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
 import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
 import IconLucidePanelTop from '~icons/lucide/panel-top'
-import CanvasMenu from './CanvasMenu.vue'
-import ScrubInput from './ScrubInput.vue'
+import CanvasMenu from './canvas/CanvasMenu.vue'
+import ScrubInput from './inputs/ScrubInput.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
@@ -173,19 +173,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             data-test-id="canvas-loading"
             class="absolute inset-0 z-50 flex items-center justify-center bg-canvas"
           >
-            <svg
-              class="size-8 text-surface opacity-45"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="m15.232 5.232 3.536 3.536m-2.036-5.036a2.5 2.5 0 0 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732Z"
-              />
-            </svg>
+            <icon-lucide-pencil-line class="size-8 text-surface opacity-45" />
             <div
               class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
             >

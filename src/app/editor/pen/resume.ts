@@ -1,5 +1,5 @@
 import type { EditorState } from '@open-pencil/core/editor'
-import type { SceneNode, VectorSegment, VectorVertex } from '@open-pencil/core/scene-graph'
+import type { SceneNode, VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
 
 export type PenState = EditorState
 type PenStateInit = NonNullable<EditorState['penState']>

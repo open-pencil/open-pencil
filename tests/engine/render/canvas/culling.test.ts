@@ -1,8 +1,9 @@
 import { describe, expect, mock, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderNode } from '#core/canvas/scene'
-import { SceneGraph } from '#core/scene-graph'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

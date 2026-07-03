@@ -1,6 +1,6 @@
 import type { Path } from 'canvaskit-wasm'
 
-import type { VectorSegment, VectorVertex } from '#core/scene-graph'
+import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
 
 export function addSegmentDirected(
   path: Path,

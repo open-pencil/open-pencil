@@ -4,9 +4,14 @@ import {
   BORDER_SIDES,
   DEFAULT_STROKE,
   SIDE_OPTIONS,
+  borderWeight,
   createStrokeSideActions,
   currentAlign,
   currentSides,
+  dashState,
+  setDash,
+  setGap,
+  toggleDash,
   updateAlign
 } from '#vue/controls/stroke/helpers'
 import { useEditor } from '#vue/editor/context'
@@ -38,6 +43,11 @@ export function useStrokeControls() {
     updateAlign: updateAlign.bind(null, store),
     currentAlign,
     currentSides,
+    dashState,
+    toggleDash,
+    setDash,
+    setGap,
+    borderWeight,
     selectSide,
     updateBorderWeight
   }

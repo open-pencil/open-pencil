@@ -1,8 +1,8 @@
 import type { Paragraph } from 'canvaskit-wasm'
 
-import type { SceneNode, StyleRun } from '#core/scene-graph'
-import { copyStyleRuns } from '#core/scene-graph/copy'
-import type { JsonObject } from '#core/types'
+import type { SceneNode, StyleRun } from '@open-pencil/scene-graph'
+import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 export type TextEditSizeSnapshot = Partial<Pick<SceneNode, 'width' | 'height'>>
 

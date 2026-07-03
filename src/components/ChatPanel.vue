@@ -18,7 +18,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import type { JsonObject } from '@open-pencil/core/types'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 const IS_DEV = import.meta.env.DEV
 
@@ -27,9 +27,14 @@ const { dialogs } = useI18n()
 
 const chat = ref<Chat<UIMessage> | null>(null)
 
-ensureChat().then((c) => {
-  if (c) chat.value = markRaw(c)
-})
+void ensureChat()
+  .then((c) => {
+    if (c) chat.value = markRaw(c)
+    return undefined
+  })
+  .catch((error: unknown) => {
+    toast.error(error instanceof Error ? error.message : 'Failed to initialize chat')
+  })
 const messagesEnd = ref<HTMLDivElement>()
 const debugCopied = refAutoReset(false, 1500)
 const acpLogCopied = refAutoReset(false, 1500)

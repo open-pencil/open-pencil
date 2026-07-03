@@ -1,10 +1,11 @@
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
 import { parseColor } from '#core/color'
 import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { defineTool } from '#core/tools/schema'
-import type { Rect } from '#core/types'
 
 function parseSvgViewBox(svg: string): Rect | null {
   const match = svg.match(/viewBox="([^"]+)"/)

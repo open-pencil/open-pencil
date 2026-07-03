@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="K extends ArrayPropKey">
 import { computed } from 'vue'
 
 import { useEditor } from '#vue/editor/context'
@@ -7,21 +7,29 @@ import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import { providePropertyList } from '#vue/primitives/PropertyList/context'
 
-import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/core/scene-graph'
+import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { ArrayPropKey } from '#vue/primitives/PropertyList/context'
 
-type ArrayPropKey = 'fills' | 'strokes' | 'effects'
+type ArrayItemFor<T extends ArrayPropKey> = T extends 'fills'
+  ? Fill
+  : T extends 'strokes'
+    ? Stroke
+    : Effect
+
 type ArrayItemType = Fill | Stroke | Effect
+type PropertyListItem = ArrayItemFor<K>
+type PropertyListPatch = Partial<PropertyListItem>
 
 const { propKey } = defineProps<{
-  propKey: ArrayPropKey
+  propKey: K
   label?: string
 }>()
 
 const emit = defineEmits<{
-  add: [item: ArrayItemType]
+  add: [item: PropertyListItem]
   remove: [index: number]
-  update: [index: number, item: ArrayItemType]
-  patch: [index: number, changes: Record<string, unknown>]
+  update: [index: number, item: PropertyListItem]
+  patch: [index: number, changes: PropertyListPatch]
   toggleVisibility: [index: number]
 }>()
 
@@ -42,10 +50,10 @@ const active = computed(() => selectedNodes.value.length > 0)
 
 const isMixed = computed(() => isArrayMixed(propKey))
 
-const items = useSceneComputed(() => {
+const items = useSceneComputed<PropertyListItem[]>(() => {
   void editor.state.sceneVersion
   if (isMixed.value) return []
-  return (activeNode.value?.[propKey] ?? []) as ArrayItemType[]
+  return (activeNode.value?.[propKey] ?? []) as PropertyListItem[]
 })
 
 function targetNodes(): SceneNode[] {
@@ -53,11 +61,15 @@ function targetNodes(): SceneNode[] {
   return activeNode.value ? [activeNode.value] : []
 }
 
-function add(defaults: ArrayItemType) {
+function propArray(node: SceneNode): PropertyListItem[] {
+  return node[propKey] as PropertyListItem[]
+}
+
+function add(defaults: PropertyListItem) {
   batch.flush()
   emit('add', defaults)
   for (const n of targetNodes()) {
-    const arr = isMulti.value ? [defaults] : [...n[propKey], defaults]
+    const arr = isMulti.value ? [defaults] : [...propArray(n), defaults]
     editor.updateNodeWithUndo(
       n.id,
       { [propKey]: arr } as Partial<SceneNode>,
@@ -73,35 +85,35 @@ function remove(index: number) {
     editor.updateNodeWithUndo(
       n.id,
       {
-        [propKey]: (n[propKey] as ArrayItemType[]).filter((_, i) => i !== index)
+        [propKey]: propArray(n).filter((_, i) => i !== index)
       } as Partial<SceneNode>,
       `Remove ${propKey}`
     )
   }
 }
 
-function update(index: number, item: ArrayItemType) {
+function update(index: number, item: PropertyListItem) {
   emit('update', index, item)
   const nodes = targetNodes()
   if (nodes.length === 0) return
   const key = `update:${propKey}:${index}:${nodes.map((n) => n.id).join(',')}`
   batch.ensure(key, `Change ${propKey}`)
   for (const n of nodes) {
-    const arr = [...n[propKey]] as ArrayItemType[]
+    const arr = [...propArray(n)]
     arr[index] = item
     editor.updateNodeWithUndo(n.id, { [propKey]: arr } as Partial<SceneNode>, `Change ${propKey}`)
   }
 }
 
-function patch(index: number, changes: Record<string, unknown>) {
+function patch(index: number, changes: PropertyListPatch) {
   emit('patch', index, changes)
   const nodes = targetNodes()
   if (nodes.length === 0) return
   const key = `patch:${propKey}:${index}:${nodes.map((n) => n.id).join(',')}`
   batch.ensure(key, `Change ${propKey}`)
   for (const n of nodes) {
-    const arr = [...n[propKey]] as ArrayItemType[]
-    arr[index] = { ...arr[index], ...changes } as ArrayItemType
+    const arr = [...propArray(n)]
+    arr[index] = { ...arr[index], ...changes } as PropertyListItem
     editor.updateNodeWithUndo(n.id, { [propKey]: arr } as Partial<SceneNode>, `Change ${propKey}`)
   }
 }
@@ -121,7 +133,7 @@ function toggleVisibility(index: number) {
       newArr[index] = { ...newArr[index], visible: !arr[index].visible }
       editor.updateNodeWithUndo(
         n.id,
-        { [propKey]: newArr } as Partial<SceneNode>,
+        { [propKey]: newArr as ArrayItemType[] } as Partial<SceneNode>,
         `Toggle ${propKey} visibility`
       )
     }
@@ -151,6 +163,16 @@ providePropertyList({
   patch,
   toggleVisibility
 })
+
+defineSlots<{
+  default?: (props: {
+    items: PropertyListItem[]
+    isMixed: boolean
+    isMulti: boolean
+    activeNode: SceneNode | null
+    actions: typeof actions
+  }) => unknown
+}>()
 </script>
 
 <template>

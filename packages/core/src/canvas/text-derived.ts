@@ -1,6 +1,7 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
-import type { Fill, SceneNode, StyleRun, TextDecorationStyle } from '#core/scene-graph'
+import type { Fill, SceneNode, StyleRun, TextDecorationStyle } from '@open-pencil/scene-graph'
+
 import { geometryBlobToPath } from '#core/vector'
 
 import type { SkiaRenderer } from './renderer'

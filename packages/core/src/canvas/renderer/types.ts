@@ -1,7 +1,8 @@
-import type { VectorRegion, VectorVertex } from '#core/scene-graph'
-import type { SnapGuide } from '#core/scene-graph/snap'
+import type { VectorRegion, VectorVertex } from '@open-pencil/scene-graph'
+import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { SnapGuide } from '@open-pencil/scene-graph/snap'
+
 import type { TextEditor } from '#core/text/editor'
-import type { Color, Rect, Vector } from '#core/types'
 
 export interface RulerTheme {
   background: Color

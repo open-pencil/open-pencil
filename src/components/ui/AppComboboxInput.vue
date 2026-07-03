@@ -10,8 +10,6 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 
-import type { TestIdProps } from '@open-pencil/vue'
-
 import AppBadge from '@/components/ui/AppBadge.vue'
 import { useInputUI } from '@/components/ui/input'
 import { useSelectUI } from '@/components/ui/select'
@@ -22,7 +20,7 @@ export type AppComboboxOption = {
   meta?: string
 }
 
-interface AppComboboxInputProps extends TestIdProps {
+interface AppComboboxInputProps {
   options: AppComboboxOption[]
   placeholder?: string
   ui?: {
@@ -34,12 +32,9 @@ interface AppComboboxInputProps extends TestIdProps {
   }
 }
 
-const {
-  options,
-  placeholder,
-  testId = 'app-combobox-input',
-  ui
-} = defineProps<AppComboboxInputProps>()
+defineOptions({ inheritAttrs: false })
+
+const { options, placeholder, ui } = defineProps<AppComboboxInputProps>()
 
 const modelValue = defineModel<string>({ required: true })
 const open = ref(false)
@@ -82,7 +77,7 @@ function updateValue(value: AcceptableValue) {
       :model-value="modelValue"
       :display-value="() => modelValue"
       type="text"
-      :data-test-id="testId"
+      v-bind="$attrs"
       :placeholder="placeholder"
       :class="inputClass"
       autocomplete="off"

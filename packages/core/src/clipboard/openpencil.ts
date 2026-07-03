@@ -1,7 +1,7 @@
 import { deflateSync, inflateSync } from 'fflate'
 
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { JsonObject } from '#core/types'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 // --- Internal copy/paste (OpenPencil ↔ OpenPencil) ---
 

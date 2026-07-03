@@ -4,8 +4,7 @@ import { resolve } from 'node:path'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 import { fontManager } from '@open-pencil/core/text'
-
-import { parseFigBuffer } from '#core/kiwi/fig/parse/core'
+import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 

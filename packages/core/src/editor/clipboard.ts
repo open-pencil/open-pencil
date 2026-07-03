@@ -1,11 +1,12 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import {
   importClipboardNodes,
   parseFigmaClipboard,
   parseOpenPencilClipboard
 } from '#core/clipboard'
 import { computeAllLayouts } from '#core/layout'
-import type { SceneNode } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 
 import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'
@@ -194,17 +195,26 @@ export function createClipboardActions(ctx: EditorContext) {
     }
     if (entries.length === 0) return
 
+    const relayoutParents = () => {
+      for (const parentId of new Set(entries.map((entry) => entry.parentId))) {
+        ctx.runLayoutForNode(parentId)
+      }
+    }
+
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
+    relayoutParents()
 
     ctx.undo.push({
       label: 'Delete',
       forward: () => {
         for (const { id } of entries) ctx.graph.deleteNode(id)
+        relayoutParents()
         ctx.setSelectedIds(new Set())
       },
       inverse: () => {
         restoreDeletedEntries(ctx, entries)
+        relayoutParents()
         ctx.setSelectedIds(prevSelection)
       }
     })

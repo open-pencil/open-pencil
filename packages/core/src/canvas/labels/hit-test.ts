@@ -1,5 +1,8 @@
 import type { Font } from 'canvaskit-wasm'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import {
   COMPONENT_LABEL_FONT_SIZE,
   COMPONENT_LABEL_GAP,
@@ -11,8 +14,6 @@ import {
   SECTION_TITLE_HEIGHT,
   SECTION_TITLE_PADDING_X
 } from '#core/constants'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Vector } from '#core/types'
 
 import type { CachedComponent, CachedSection, LabelCache } from './cache'
 

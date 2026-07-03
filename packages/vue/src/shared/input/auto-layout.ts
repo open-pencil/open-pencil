@@ -1,7 +1,7 @@
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/core/scene-graph'
 import { resolveNodeLayoutDirection } from '@open-pencil/core/text'
-import type { Vector } from '@open-pencil/core/types'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { DragMove } from '#vue/shared/input/types'
 

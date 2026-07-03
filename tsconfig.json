@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -17,18 +21,70 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "#vue/*": ["./packages/vue/src/*", "./packages/vue/src/*.vue"],
-      "#core/*": ["./packages/core/src/*"],
-      "#cli/*": ["./packages/cli/src/*"],
-      "#mcp/*": ["./packages/mcp/src/*"],
-      "#tests/*": ["./tests/*"],
-      "tinykeys": ["./node_modules/tinykeys/dist/tinykeys.d.ts"],
-      "@open-pencil/vue": ["./packages/vue/src/index.ts"],
-      "@open-pencil/core": ["./packages/core/src/index.ts"],
-      "@open-pencil/core/*": ["./packages/core/src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "#vue/*": [
+        "./packages/vue/src/*",
+        "./packages/vue/src/*.vue"
+      ],
+      "#core/*": [
+        "./packages/core/src/*"
+      ],
+      "#cli/*": [
+        "./packages/cli/src/*"
+      ],
+      "#mcp/*": [
+        "./packages/mcp/src/*"
+      ],
+      "#dom-css/*": [
+        "./packages/dom-css/src/*"
+      ],
+      "#tests/*": [
+        "./tests/*"
+      ],
+      "tinykeys": [
+        "./node_modules/tinykeys/dist/tinykeys.d.ts"
+      ],
+      "@open-pencil/vue": [
+        "./packages/vue/src/index.ts"
+      ],
+      "@open-pencil/core": [
+        "./packages/core/src/index.ts"
+      ],
+      "@open-pencil/core/*": [
+        "./packages/core/src/*"
+      ],
+      "@open-pencil/dom-css": [
+        "./packages/dom-css/src/index.ts"
+      ],
+      "#scene-graph/*": [
+        "./packages/scene-graph/src/*"
+      ],
+      "@open-pencil/scene-graph": [
+        "./packages/scene-graph/src/index.ts"
+      ],
+      "@open-pencil/scene-graph/*": [
+        "./packages/scene-graph/src/*"
+      ],
+      "#pen/*": [
+        "./packages/pen/src/*"
+      ],
+      "@open-pencil/pen": [
+        "./packages/pen/src/index.ts"
+      ],
+      "@open-pencil/pen/*": [
+        "./packages/pen/src/*"
+      ]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.vue"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }

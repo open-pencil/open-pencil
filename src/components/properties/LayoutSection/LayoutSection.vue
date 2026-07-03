@@ -7,10 +7,9 @@ import FlexControls from '@/components/properties/LayoutSection/FlexControls.vue
 import GridControls from '@/components/properties/LayoutSection/GridControls.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
 import SizeControls from '@/components/properties/LayoutSection/SizeControls.vue'
-import { useSectionUI } from '@/components/ui/section'
+import PanelSection from '@/components/ui/PanelSection.vue'
 
 const { panels } = useI18n()
-const sectionCls = useSectionUI()
 
 const CONTAINER_TYPES = ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE']
 </script>
@@ -18,13 +17,12 @@ const CONTAINER_TYPES = ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE']
 <template>
   <LayoutControlsRoot v-slot="ctx">
     <template v-if="ctx.node">
-      <div data-test-id="layout-section" :class="sectionCls.wrapper">
-        <label class="mb-1.5 block text-[11px] text-muted">{{ panels.layout }}</label>
+      <PanelSection :label="panels.layout" data-test-id="layout-section">
         <SizeControls />
-      </div>
+      </PanelSection>
 
       <template v-if="CONTAINER_TYPES.includes(ctx.node.type)">
-        <div :class="sectionCls.wrapper">
+        <PanelSection :label="panels.autoLayout">
           <AutoLayoutControls />
 
           <template v-if="ctx.node.layoutMode !== 'NONE'">
@@ -35,7 +33,7 @@ const CONTAINER_TYPES = ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE']
               <ClipContentControl />
             </template>
           </template>
-        </div>
+        </PanelSection>
       </template>
     </template>
   </LayoutControlsRoot>

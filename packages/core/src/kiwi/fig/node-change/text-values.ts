@@ -1,4 +1,4 @@
-import type { TextDecoration } from '#core/scene-graph'
+import type { TextDecoration } from '@open-pencil/scene-graph'
 
 export function mapTextDecoration(d?: string): TextDecoration {
   switch (d) {

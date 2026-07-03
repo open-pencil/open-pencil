@@ -136,7 +136,8 @@ jobs:
 
       - name: Build packages for publish
         run: |
-          for dir in packages/core packages/cli packages/mcp packages/vue; do
+          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/core packages/dom-css packages/cli packages/mcp packages/vue"
+          for dir in $publish_packages; do
             if [ -f "$dir/package.json" ] && node -p "require('./$dir/package.json').scripts?.build" 2>/dev/null | grep -qv undefined; then
               echo "Building $dir..."
               (cd "$dir" && bun run build)
@@ -163,14 +164,15 @@ jobs:
             fi
           }
           root_dir="$PWD"
-          pack_if_new packages/core
-          pack_if_new packages/cli
-          pack_if_new packages/mcp
-          pack_if_new packages/vue
+          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/core packages/dom-css packages/cli packages/mcp packages/vue"
+          for dir in $publish_packages; do
+            pack_if_new "$dir"
+          done
           ls -la .npm-packages
-          tar -tf .npm-packages/open-pencil-cli-*.tgz | sed -n '1,40p' || true
-          tar -tf .npm-packages/open-pencil-mcp-*.tgz | sed -n '1,40p' || true
-          tar -tf .npm-packages/open-pencil-vue-*.tgz | sed -n '1,60p' || true
+          for tarball in .npm-packages/open-pencil-*.tgz; do
+            echo "Contents of $tarball"
+            tar -tf "$tarball" | sed -n '1,60p' || true
+          done
           bun tools/release-packages/src/validate-tarballs.ts
 
       - name: Publish packages to npm
@@ -187,7 +189,7 @@ jobs:
               npm publish "./.npm-packages/${tarball}" --access public --provenance
             fi
           }
-          publish_if_new packages/core
-          publish_if_new packages/cli
-          publish_if_new packages/mcp
-          publish_if_new packages/vue
+          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/core packages/dom-css packages/cli packages/mcp packages/vue"
+          for dir in $publish_packages; do
+            publish_if_new "$dir"
+          done

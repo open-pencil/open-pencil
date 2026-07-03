@@ -1,7 +1,7 @@
 export { prefetchFigmaSchema } from '#core/clipboard'
 export { readFigFile, parseFigFile } from './fig/file'
 export { importNodeChanges } from './fig/import'
-export { deduplicateNodeChangePluginData } from './fig/parse/core'
+export { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 export {
   initCodec,
   encodeMessage,
@@ -29,7 +29,7 @@ export {
   type VariableDataValuesEntry,
   type ParentIndex,
   type FigmaMessage
-} from './fig/codec'
+} from '@open-pencil/kiwi/fig/codec'
 export {
   MESSAGE_TYPES,
   NODE_TYPES,
@@ -48,4 +48,4 @@ export {
   getKiwiMessageType,
   parseVarint,
   FIG_WIRE_MAGIC
-} from './fig/codec/protocol'
+} from '@open-pencil/kiwi/fig'

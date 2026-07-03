@@ -105,6 +105,7 @@ async function createStdioClient(wsPort: number) {
     }
     void client.connect(transport).then(() => {
       setTimeout(resolve, 1000)
+      return undefined
     })
   })
 

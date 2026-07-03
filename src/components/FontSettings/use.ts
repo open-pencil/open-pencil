@@ -1,14 +1,21 @@
 import { computed, ref } from 'vue'
 
-import type { FontFamilyOption, LocalFontAccessState } from '@open-pencil/core/text'
+import type {
+  FontFamilyOption,
+  LocalFontAccessState,
+  WebFontProviderId
+} from '@open-pencil/core/text'
+import { useI18n } from '@open-pencil/vue'
 
 import {
   clearDownloadedFontCache,
   downloadedFontCacheSummary,
-  googleFontsEnabled,
+  fontProviderSettings,
   localFontAccessState,
+  onlineFontsEnabled,
   predownloadFallbackFonts,
-  requestLocalFontAccess
+  requestLocalFontAccess,
+  type FontProviderSettings
 } from '@/app/editor/fonts'
 import type { DownloadedFontCacheSummary } from '@/app/editor/fonts/cache'
 
@@ -20,7 +27,8 @@ export interface FontSettingsActions {
   localFontAccessState: () => LocalFontAccessState
   predownloadFallbackFonts: () => Promise<unknown>
   requestLocalFontAccess: () => Promise<string[] | FontFamilyOption[]>
-  googleFontsEnabled: { value: boolean }
+  onlineFontsEnabled: { value: boolean }
+  fontProviderSettings: { value: FontProviderSettings }
 }
 
 export type FontSettingsBusyAction = 'access' | 'download' | 'clear' | 'refresh'
@@ -31,23 +39,26 @@ const defaultActions: FontSettingsActions = {
   localFontAccessState,
   predownloadFallbackFonts,
   requestLocalFontAccess,
-  googleFontsEnabled
+  onlineFontsEnabled,
+  fontProviderSettings
 }
 
 export function useFontSettings(actions: FontSettingsActions = defaultActions) {
+  const { dialogs } = useI18n()
   const cacheCount = ref(0)
   const cacheByteLength = ref(0)
   const cacheUpdatedAt = ref<number | null>(null)
   const accessState = ref(actions.localFontAccessState())
   const busyAction = ref<FontSettingsBusyAction | null>(null)
   const status = ref('')
-  const googleFontsEnabled = actions.googleFontsEnabled
+  const onlineFontsEnabled = actions.onlineFontsEnabled
+  const fontProviderSettings = actions.fontProviderSettings
 
   const accessStateLabel = computed(() => {
-    if (accessState.value === 'granted') return 'Enabled'
-    if (accessState.value === 'denied') return 'Denied'
-    if (accessState.value === 'unsupported') return 'Unavailable'
-    return 'Not requested'
+    if (accessState.value === 'granted') return dialogs.value.enabled
+    if (accessState.value === 'denied') return dialogs.value.denied
+    if (accessState.value === 'unsupported') return dialogs.value.unavailable
+    return dialogs.value.notRequested
   })
 
   const cacheSize = computed(() => {
@@ -56,7 +67,7 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
   })
 
   const cacheUpdatedLabel = computed(() => {
-    if (cacheUpdatedAt.value === null) return 'Never'
+    if (cacheUpdatedAt.value === null) return dialogs.value.never
     return new Date(cacheUpdatedAt.value).toLocaleDateString()
   })
 
@@ -83,18 +94,27 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
     try {
       await actions.requestLocalFontAccess()
       accessState.value = actions.localFontAccessState()
-      status.value = 'Local font access enabled.'
+      status.value = dialogs.value.localFontAccessEnabled
     } catch {
       accessState.value = actions.localFontAccessState()
-      status.value = 'Local font access was not granted.'
+      status.value = dialogs.value.localFontAccessNotGranted
     } finally {
       busyAction.value = null
     }
   }
 
-  function setGoogleFontsEnabled(enabled: boolean) {
-    googleFontsEnabled.value = enabled
-    status.value = enabled ? 'Google Fonts enabled.' : 'Google Fonts disabled.'
+  function setOnlineFontsEnabled(enabled: boolean) {
+    onlineFontsEnabled.value = enabled
+    status.value = enabled
+      ? dialogs.value.onlineFontProvidersEnabled
+      : dialogs.value.onlineFontProvidersDisabled
+  }
+
+  function setFontProviderEnabled(provider: WebFontProviderId, enabled: boolean) {
+    fontProviderSettings.value = { ...fontProviderSettings.value, [provider]: enabled }
+    status.value = enabled
+      ? dialogs.value.fontProviderEnabled({ provider })
+      : dialogs.value.fontProviderDisabled({ provider })
   }
 
   async function downloadFallbacks() {
@@ -103,9 +123,9 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
     try {
       await actions.predownloadFallbackFonts()
       await refreshSummary()
-      status.value = 'Fallback fonts downloaded.'
+      status.value = dialogs.value.fallbackFontsDownloaded
     } catch {
-      status.value = 'Could not download fallback fonts.'
+      status.value = dialogs.value.fallbackFontsDownloadFailed
     } finally {
       busyAction.value = null
     }
@@ -117,9 +137,9 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
     try {
       await actions.clearDownloadedFontCache()
       await refreshSummary()
-      status.value = 'Downloaded font cache cleared.'
+      status.value = dialogs.value.downloadedFontCacheCleared
     } catch {
-      status.value = 'Could not clear downloaded font cache.'
+      status.value = dialogs.value.downloadedFontCacheClearFailed
     } finally {
       busyAction.value = null
     }
@@ -134,11 +154,13 @@ export function useFontSettings(actions: FontSettingsActions = defaultActions) {
     cacheSize,
     cacheUpdatedLabel,
     status,
-    googleFontsEnabled,
+    onlineFontsEnabled,
+    fontProviderSettings,
     clearCache,
     downloadFallbacks,
     refreshSummary,
     requestAccess,
-    setGoogleFontsEnabled
+    setOnlineFontsEnabled,
+    setFontProviderEnabled
   }
 }

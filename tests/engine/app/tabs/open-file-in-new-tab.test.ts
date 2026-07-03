@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import * as figMod from '@open-pencil/core/io/formats/fig'
 import * as layoutMod from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
 
@@ -109,6 +109,21 @@ describe('openFileInNewTab', () => {
     expect(second).toBeUndefined()
   })
 
+  test('routes HTML files through DOM import on the claimed tab', async () => {
+    const store = getActiveStore()
+    const openDOMFile = vi.spyOn(store, 'openDOMFile').mockResolvedValue(undefined)
+
+    const file = new File(['<main>Hello</main>'], 'card.html', { type: 'text/html' })
+    await openFileInNewTab(file, undefined, '/imports/card.html')
+
+    expect(openDOMFile).toHaveBeenCalledWith(file, {
+      handle: undefined,
+      path: '/imports/card.html'
+    })
+    expect(getActiveStore()).toBe(store)
+    expect(store.getSourcePath()).toBe('/imports/card.html')
+  })
+
   describe('when the file read fails', () => {
     test('clears source identity and resets the name of a reused untouched tab', async () => {
       const store = getActiveStore()
@@ -160,6 +175,24 @@ describe('openFileInNewTab', () => {
 
       expect(store.getSourcePath()).toBe('/failure/retry.fig')
       expect(store.state.documentName).toBe('file')
+    })
+
+    test('clears preclaimed source identity when DOM import fails', async () => {
+      const store = getActiveStore()
+      vi.spyOn(store, 'openDOMFile').mockRejectedValue(new Error('dom failed'))
+
+      await expect(
+        openFileInNewTab(
+          new File(['<main>Broken</main>'], 'broken.html'),
+          undefined,
+          '/broken.html'
+        )
+      ).rejects.toThrow('dom failed')
+
+      expect(getActiveStore()).toBe(store)
+      expect(store.getSourcePath()).toBeNull()
+      expect(store.getSourceFileName()).toBeNull()
+      expect(store.state.documentName).toBe('Untitled')
     })
   })
 })

@@ -1,9 +1,10 @@
 import { writeFile } from 'node:fs/promises'
 
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
-import type { SceneNode } from '#core/scene-graph'
 
 import { createAPI } from '#tests/engine/figma/api/helpers'
 import { expectDefined } from '#tests/helpers/assert'

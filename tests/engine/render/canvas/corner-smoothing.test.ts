@@ -2,10 +2,11 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
+
 import { drawNodeFill } from '#core/canvas/fills'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { makeSmoothRRectPath } from '#core/canvas/shapes'
-import { SceneGraph } from '#core/scene-graph'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id

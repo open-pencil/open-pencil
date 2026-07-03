@@ -2,11 +2,8 @@ name: Deploy app
 
 on:
   push:
-    branches: [master]
-    paths-ignore:
-      - 'packages/docs/**'
-      - 'openspec/**'
-      - '*.md'
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -29,4 +26,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=openpencil-app
+          command: pages deploy dist --project-name=openpencil-app --branch=master

@@ -1,10 +1,3 @@
-import {
-  getFillOkHCL,
-  getStrokeOkHCL,
-  setNodeFillOkHCL,
-  setNodeStrokeOkHCL
-} from '#core/color/okhcl'
-import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 import type {
   SceneGraph,
   SceneNode,
@@ -13,8 +6,16 @@ import type {
   Stroke,
   Effect,
   LayoutMode
-} from '#core/scene-graph'
-import type { Rect } from '#core/types'
+} from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
+import {
+  getFillOkHCL,
+  getStrokeOkHCL,
+  setNodeFillOkHCL,
+  setNodeStrokeOkHCL
+} from '#core/color/okhcl'
+import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'

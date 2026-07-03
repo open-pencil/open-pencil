@@ -87,4 +87,39 @@ describe('hidden children', () => {
     expect(innerNode.height).toBe(50)
     expect(children[1].x).toBe(0)
   })
+
+  test('hidden children in HUG auto-layout instances collapse layout', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const component = graph.createNode('COMPONENT', page, {
+      name: 'Optional slot component',
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'FIXED',
+      width: 300,
+      height: 1,
+      itemSpacing: 0
+    })
+    rect(graph, component.id, 300, 40, { name: 'Slot / Pinned at Top' })
+    rect(graph, component.id, 300, 74, { name: 'Slot / Content' })
+    rect(graph, component.id, 300, 40, { name: 'Slot / Pinned at Bottom' })
+    const instance = graph.createInstance(component.id, page, { x: 360, y: 0 })
+    if (!instance) throw new Error('Expected instance to be created')
+
+    computeLayout(graph, instance.id)
+    expect(getNodeOrThrow(graph, instance.id).height).toBe(154)
+    const content = graph.getChildren(instance.id).find((child) => child.name === 'Slot / Content')
+    const bottom = graph
+      .getChildren(instance.id)
+      .find((child) => child.name === 'Slot / Pinned at Bottom')
+    if (!content || !bottom) throw new Error('Expected instance slot children')
+    expect(getNodeOrThrow(graph, bottom.id).y).toBe(114)
+
+    graph.updateNode(content.id, { visible: false })
+    computeLayout(graph, instance.id)
+
+    expect(getNodeOrThrow(graph, instance.id).height).toBe(80)
+    expect(getNodeOrThrow(graph, bottom.id).y).toBe(40)
+    expect(getNodeOrThrow(graph, content.id).height).toBe(74)
+  })
 })

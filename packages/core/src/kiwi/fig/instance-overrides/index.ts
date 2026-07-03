@@ -10,10 +10,11 @@ export type {
   SymbolOverride
 } from './types'
 
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { copyFills, copyStyleRuns } from '@open-pencil/scene-graph/copy'
+import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+
 import { guidToString } from '#core/kiwi/fig/node-change/convert'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import { copyFills, copyStyleRuns } from '#core/scene-graph/copy'
-import type { JsonObject } from '#core/types'
 
 import { applyComponentProperties } from './component-props'
 import { applyConstraintScaling } from './constraints'

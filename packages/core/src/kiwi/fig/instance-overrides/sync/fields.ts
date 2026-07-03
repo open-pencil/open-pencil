@@ -1,7 +1,8 @@
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { copyFills, copyStrokes, copyEffects, copyStyleRuns } from '@open-pencil/scene-graph/copy'
+
 import type { ProtectionMap, ProtectedField } from '#core/kiwi/fig/instance-overrides/patches'
 import { isFieldProtected } from '#core/kiwi/fig/instance-overrides/patches'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import { copyFills, copyStrokes, copyEffects, copyStyleRuns } from '#core/scene-graph/copy'
 
 function canSync(
   protections: ProtectionMap | undefined,

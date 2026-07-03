@@ -3,7 +3,11 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { preparePublishDirectories, publishPackageJSON } from '../src/publish-dirs'
+import {
+  DEFAULT_PACKAGES,
+  preparePublishDirectories,
+  publishPackageJSON
+} from '../src/publish-dirs'
 
 async function fixtureRoot() {
   const root = join(tmpdir(), `open-pencil-release-packages-${crypto.randomUUID()}`)
@@ -45,6 +49,22 @@ describe('publishPackageJSON', () => {
       dependencies: { '@open-pencil/core': '^0.13.2', zod: '^4.0.0' },
       main: './dist/index.js'
     })
+  })
+})
+
+describe('DEFAULT_PACKAGES', () => {
+  test('includes every public workspace package that release publish must pack', () => {
+    expect(DEFAULT_PACKAGES.map((pkg) => pkg.dir)).toEqual([
+      'packages/scene-graph',
+      'packages/pen',
+      'packages/kiwi',
+      'packages/fig',
+      'packages/core',
+      'packages/dom-css',
+      'packages/cli',
+      'packages/mcp',
+      'packages/vue'
+    ])
   })
 })
 

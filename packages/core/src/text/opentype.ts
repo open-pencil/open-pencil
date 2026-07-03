@@ -91,10 +91,22 @@ export interface GlyphOutlineMetrics {
   advance: number
 }
 
-export function fontHasGlyphSync(family: string, style: string, char: string): boolean {
+export type FontGlyphCoverage = 'has' | 'missing' | 'unknown'
+
+export function fontGlyphCoverageSync(
+  family: string,
+  style: string,
+  char: string
+): FontGlyphCoverage {
+  const bytes = fontManager.loadedData(family, style)
+  if (!bytes) return 'unknown'
   const font = getParsedFont(family, style)
-  if (!font) return false
-  return font.charToGlyphIndex(char) !== 0
+  if (!font) return 'unknown'
+  return font.charToGlyphIndex(char) !== 0 ? 'has' : 'missing'
+}
+
+export function fontHasGlyphSync(family: string, style: string, char: string): boolean {
+  return fontGlyphCoverageSync(family, style, char) === 'has'
 }
 
 export function getGlyphOutlineMetricsSync(

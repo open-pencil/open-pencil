@@ -1,9 +1,10 @@
+import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import { resolveNodeFillColor, resolveNodeStrokeColor } from '#core/color/management'
 import type { ResolvedRenderColor } from '#core/color/management'
 import { normalizeColor } from '#core/color/normalize'
 import { getFillOkHCL, getStrokeOkHCL } from '#core/color/okhcl'
-import type { Fill, SceneGraph, SceneNode, Stroke } from '#core/scene-graph'
-import type { Color } from '#core/types'
 
 function resolvedVariableColor(color: Color, graph: SceneGraph): ResolvedRenderColor {
   return {

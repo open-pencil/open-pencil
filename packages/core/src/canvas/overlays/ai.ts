@@ -1,5 +1,7 @@
 import type { Canvas } from 'canvaskit-wasm'
 
+import type { SceneGraph } from '@open-pencil/scene-graph'
+
 import { drawNodeHighlightRect } from '#core/canvas/highlight-rect'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
@@ -8,7 +10,6 @@ import {
   AI_PULSE_PERIOD_MS,
   AI_DONE_DURATION_MS
 } from '#core/constants'
-import type { SceneGraph } from '#core/scene-graph'
 
 export function drawAiOverlays(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
   const now = performance.now()

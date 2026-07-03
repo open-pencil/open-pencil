@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import Tip from '@/components/ui/Tip.vue'
-import { vTestId, useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import PanelRow from '@/components/ui/PanelRow.vue'
+import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
-import type { LayoutMode } from '@open-pencil/core/scene-graph'
+import type { LayoutMode } from '@open-pencil/scene-graph'
 
 const ctx = useLayoutControlsContext()
 
@@ -16,57 +17,46 @@ const layoutModes: { mode: LayoutMode; test: string }[] = [
 </script>
 
 <template>
-  <div class="flex items-center justify-between">
-    <label class="mb-1.5 block text-[11px] text-muted">{{ panels.autoLayout }}</label>
-    <Tip v-if="ctx.node.layoutMode === 'NONE'" :label="panels.addAutoLayout">
-      <button
-        class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
-        data-test-id="layout-add-auto"
-        @click="ctx.editor.setLayoutMode(ctx.node.id, 'VERTICAL')"
-      >
-        +
-      </button>
-    </Tip>
-    <Tip v-else :label="panels.removeAutoLayout">
-      <button
-        class="cursor-pointer rounded border-none bg-transparent px-1 text-base leading-none text-muted hover:bg-hover hover:text-surface"
-        data-test-id="layout-remove-auto"
-        @click="ctx.editor.setLayoutMode(ctx.node.id, 'NONE')"
-      >
-        −
-      </button>
-    </Tip>
-  </div>
+  <PanelRow>
+    <IconButton
+      v-if="ctx.node.layoutMode === 'NONE'"
+      :label="panels.addAutoLayout"
+      data-test-id="layout-add-auto"
+      @click="ctx.editor.setLayoutMode(ctx.node.id, 'VERTICAL')"
+    >
+      <icon-lucide-plus class="size-3.5" />
+    </IconButton>
+    <IconButton
+      v-else
+      :label="panels.removeAutoLayout"
+      data-test-id="layout-remove-auto"
+      @click="ctx.editor.setLayoutMode(ctx.node.id, 'NONE')"
+    >
+      <icon-lucide-minus class="size-3.5" />
+    </IconButton>
+  </PanelRow>
 
-  <div v-if="ctx.node.layoutMode !== 'NONE'" class="mt-1.5 flex gap-0.5">
-    <button
+  <PanelRow v-if="ctx.node.layoutMode !== 'NONE'" class="mt-1.5" gap="sm">
+    <IconButton
       v-for="dir in layoutModes"
       :key="dir.mode"
-      v-test-id="`layout-direction-${dir.test}`"
-      class="flex cursor-pointer items-center justify-center rounded border px-2 py-1"
-      :class="
-        (dir.mode === 'GRID' ? ctx.isGrid : ctx.node.layoutMode === dir.mode)
-          ? 'border-accent bg-accent/10 text-accent'
-          : 'border-border text-muted hover:bg-hover hover:text-surface'
-      "
+      size="md"
+      :active="dir.mode === 'GRID' ? ctx.isGrid : ctx.node.layoutMode === dir.mode"
+      :data-test-id="`layout-direction-${dir.test}`"
       @click="ctx.editor.setLayoutMode(ctx.node.id, dir.mode)"
     >
       <icon-lucide-arrow-right v-if="dir.mode === 'HORIZONTAL'" class="size-3.5" />
       <icon-lucide-arrow-down v-else-if="dir.mode === 'VERTICAL'" class="size-3.5" />
       <icon-lucide-layout-grid v-else class="size-3.5" />
-    </button>
-    <button
+    </IconButton>
+    <IconButton
       v-if="ctx.isFlex"
+      size="md"
+      :active="ctx.node.layoutWrap === 'WRAP'"
       data-test-id="layout-direction-wrap"
-      class="flex cursor-pointer items-center justify-center rounded border px-2 py-1"
-      :class="
-        ctx.node.layoutWrap === 'WRAP'
-          ? 'border-accent bg-accent/10 text-accent'
-          : 'border-border text-muted hover:bg-hover hover:text-surface'
-      "
       @click="ctx.updateProp('layoutWrap', ctx.node.layoutWrap === 'WRAP' ? 'NO_WRAP' : 'WRAP')"
     >
       <icon-lucide-wrap-text class="size-3.5" />
-    </button>
-  </div>
+    </IconButton>
+  </PanelRow>
 </template>

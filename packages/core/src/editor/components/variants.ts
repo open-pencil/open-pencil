@@ -1,13 +1,14 @@
 import { omit } from 'es-toolkit/object'
 
-import type { EditorContext } from '#core/editor/types'
-import { randomHex } from '#core/random'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyType,
   SceneNode
-} from '#core/scene-graph'
-import { buildVariantName, parseVariantName } from '#core/scene-graph/variant-name'
+} from '@open-pencil/scene-graph'
+import { buildVariantName, parseVariantName } from '@open-pencil/scene-graph/variant-name'
+
+import type { EditorContext } from '#core/editor/types'
+import { randomHex } from '#core/random'
 
 export type VariantConflict = {
   values: Record<string, string>

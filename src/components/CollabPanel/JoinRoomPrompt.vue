@@ -15,7 +15,7 @@ const collab = useCollabPanelContext()
     <label class="mb-1 block text-xs text-muted">{{ collab.dialogs.yourName }}</label>
     <AppInput
       v-model="collab.nameDraft"
-      test-id="collab-name-input"
+      data-test-id="collab-name-input"
       :placeholder="collab.dialogs.enterYourName"
       autofocus
       @enter="collab.join"

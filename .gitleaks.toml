@@ -1,0 +1,47 @@
+title = "OpenPencil Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Local and generated artifacts"
+paths = [
+  '''(^|/)\.env$''',
+  '''(^|/)\.worktrees/''',
+  '''(^|/)dist/''',
+  '''(^|/)node_modules/''',
+  '''^desktop/target/''',
+  '''^packages/[^/]+/dist/''',
+  '''^test-results/''',
+  '''^scratch/'''
+]
+
+[[allowlists]]
+description = "Public Google Fonts browser API key"
+regexTarget = "line"
+paths = ['''packages/core/src/constants\.ts''']
+regexes = ['''GOOGLE_FONTS_API_KEY''']
+
+[[allowlists]]
+description = "Keyboard shortcut metadata is not a secret"
+regexTarget = "line"
+paths = ['''packages/vue/src/editor/commands/registry\.ts''']
+regexes = ['''keybinding:\s*['\"][^'\"]+['\"]''']
+
+[[allowlists]]
+description = "Documented dummy OpenRouter test key"
+regexTarget = "line"
+paths = ['''tests/e2e/chat/panel\.spec\.ts''']
+regexes = ['''sk-or-test-key-12345''']
+
+[[allowlists]]
+description = "Figma fixture identifiers are public test metadata"
+regexTarget = "line"
+paths = [
+  '''tests/engine/io/fig/heavy/component-metadata\.test\.ts''',
+  '''tests/fixtures/figma-oracles/.*\.json'''
+]
+regexes = [
+  '''componentKey''',
+  '''"fileKey"'''
+]

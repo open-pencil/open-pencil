@@ -5,6 +5,7 @@ export function createStructureStateActions(ctx: EditorContext) {
     const node = ctx.graph.getNode(id)
     if (!node) return
     ctx.graph.updateNode(id, { visible: !node.visible })
+    if (node.parentId) ctx.runLayoutForNode(node.parentId)
   }
 
   function toggleNodeLock(id: string) {

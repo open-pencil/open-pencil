@@ -2,7 +2,7 @@ import { shallowReactive } from 'vue'
 
 import { createEditor } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import {
   getActiveEditorStore,

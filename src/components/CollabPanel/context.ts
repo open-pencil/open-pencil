@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
 import { toast } from '@/app/shell/ui'
+import { getShareUrl } from '@/constants'
 
 function createCollabPanelContext() {
   const route = useRoute()
@@ -26,7 +27,7 @@ function createCollabPanelContext() {
   const followingPeer = computed(() => collab?.followingPeer.value ?? null)
   const shareUrl = computed(() => {
     if (!state.value.roomId) return ''
-    return `${window.location.origin}/share/${state.value.roomId}`
+    return getShareUrl(state.value.roomId)
   })
   const isJoining = computed(() => !!pendingRoomId.value && !state.value.connected)
 
@@ -49,7 +50,7 @@ function createCollabPanelContext() {
     collab.setLocalName(nameDraft.value.trim())
     const roomId = collab.shareCurrentDoc()
     void router.push(`/share/${roomId}`)
-    void copy(`${window.location.origin}/share/${roomId}`)
+    void copy(getShareUrl(roomId))
     toast.info('Link copied to clipboard')
     popoverOpen.value = false
   }

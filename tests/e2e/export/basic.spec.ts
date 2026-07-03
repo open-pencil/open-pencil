@@ -104,13 +104,14 @@ test('remove export row decreases row count', async () => {
 
 test('format selector changes to JPG', async () => {
   const formatTrigger = exportItems().first().getByTestId('app-select-trigger').last()
-  await formatTrigger.hover()
-  await expect(page.locator('[role=tooltip]').filter({ hasText: 'Export format' })).toBeVisible()
+  await expect(formatTrigger).toHaveAttribute('aria-label', 'Export format')
   await formatTrigger.click()
-  await expect(page.locator('[role=tooltip]').filter({ hasText: 'Export format' })).toHaveCount(0)
+
+  for (const label of ['PNG', 'JPG', 'WEBP', 'SVG', 'PDF']) {
+    await expect(page.locator('[role="option"]').filter({ hasText: label })).toBeVisible()
+  }
 
   const jpgOption = page.locator('[role="option"]').filter({ hasText: 'JPG' })
-  await expect(jpgOption).toBeVisible()
   await expectInViewport(page, jpgOption)
   await jpgOption.click()
   await canvas.waitForRender()

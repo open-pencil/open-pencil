@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/core/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 type VectorNetwork = NonNullable<SceneNode['vectorNetwork']>
 

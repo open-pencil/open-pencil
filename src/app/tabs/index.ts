@@ -3,7 +3,7 @@ import { shallowRef, computed, triggerRef } from 'vue'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { yieldToUI } from '@/app/document/io/browser'
@@ -93,6 +93,10 @@ export function closeTab(tabId: string) {
   closingTab.store.dispose()
 }
 
+function isDOMImportFile(file: File): boolean {
+  return /\.(html?|xhtml)$/i.test(file.name)
+}
+
 export async function openFileInNewTab(
   file: File,
   handle?: FileSystemFileHandle,
@@ -133,6 +137,24 @@ export async function openFileInNewTab(
 
   const { tab, isUntouched, previousDocumentName } = context
   const store = tab.store
+  if (isDOMImportFile(file)) {
+    try {
+      await store.openDOMFile(file, { handle, path })
+    } catch (error) {
+      store.clearSourceIdentity()
+      if (isUntouched && previousDocumentName !== undefined) {
+        store.state.documentName = previousDocumentName
+      }
+      if (!isUntouched) {
+        closeTab(tab.id)
+      }
+      throw error
+    }
+    if (isUntouched) {
+      activateTab(tab)
+    }
+    return
+  }
   const documentName = file.name.replace(/\.[^.]+$/i, '')
 
   store.state.documentName = documentName

@@ -1,5 +1,6 @@
 mod fig_container;
 mod fonts;
+mod http;
 mod menu;
 mod menu_events;
 #[cfg(target_os = "macos")]
@@ -7,6 +8,7 @@ mod window;
 
 use fig_container::build_fig_file;
 use fonts::{list_system_fonts, load_system_font};
+use http::proxy_http_request;
 use menu::install_app_menu;
 use menu_events::handle_menu_event;
 use std::{
@@ -211,10 +213,12 @@ pub fn run() {
             build_fig_file,
             list_system_fonts,
             load_system_font,
+            proxy_http_request,
             take_pending_open
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())

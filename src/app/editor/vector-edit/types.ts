@@ -4,8 +4,8 @@ import type {
   VectorRegion,
   VectorSegment,
   VectorVertex
-} from '@open-pencil/core/scene-graph'
-import type { Rect } from '@open-pencil/core/types'
+} from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 export type NodeEditState = {
   nodeId: string

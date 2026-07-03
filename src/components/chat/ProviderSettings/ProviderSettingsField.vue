@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import AppTextButton from '@/components/ui/AppTextButton.vue'
-import type { TestIdProps } from '@open-pencil/vue'
 
-interface ProviderSettingsFieldProps extends TestIdProps {
+interface ProviderSettingsFieldProps {
   label: string
   clearLabel?: string
 }
 
-const { label, clearLabel, testId } = defineProps<ProviderSettingsFieldProps>()
+defineOptions({ inheritAttrs: false })
+
+const { label, clearLabel } = defineProps<ProviderSettingsFieldProps>()
 
 const emit = defineEmits<{ clear: [] }>()
 </script>
@@ -16,7 +17,7 @@ const emit = defineEmits<{ clear: [] }>()
   <div class="flex flex-col gap-1">
     <div class="flex items-center justify-between">
       <label class="text-[10px] text-muted">{{ label }}</label>
-      <AppTextButton v-if="clearLabel" :test-id="testId" @click="emit('clear')">
+      <AppTextButton v-if="clearLabel" v-bind="$attrs" @click="emit('clear')">
         {{ clearLabel }}
       </AppTextButton>
     </div>

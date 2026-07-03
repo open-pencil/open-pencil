@@ -7,6 +7,9 @@ import type { LanguageModel } from 'ai'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
 
+import { isTauri } from '@/app/tauri/env'
+import { tauriFetch } from '@/app/tauri/http'
+
 export type ModelConfig = {
   providerID: AIProviderID
   apiKey: string
@@ -27,13 +30,19 @@ export function resolveLanguageModelID(
   return config.modelID
 }
 
+function desktopFetch(): typeof fetch | undefined {
+  return isTauri() ? tauriFetch : undefined
+}
+
 export function createLanguageModel(config: ModelConfig): LanguageModel {
   const effectiveModelID = resolveLanguageModelID(config)
+  const fetch = desktopFetch()
 
   switch (config.providerID) {
     case 'openrouter': {
       const openrouter = createOpenRouter({
         apiKey: config.apiKey,
+        fetch,
         headers: {
           'X-OpenRouter-Title': 'OpenPencil',
           'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
@@ -42,39 +51,42 @@ export function createLanguageModel(config: ModelConfig): LanguageModel {
       return openrouter(effectiveModelID)
     }
     case 'anthropic': {
-      const anthropic = createAnthropic({ apiKey: config.apiKey })
+      const anthropic = createAnthropic({ apiKey: config.apiKey, fetch })
       return anthropic(effectiveModelID)
     }
     case 'openai': {
-      const openai = createOpenAI({ apiKey: config.apiKey })
+      const openai = createOpenAI({ apiKey: config.apiKey, fetch })
       return openai(effectiveModelID)
     }
     case 'google': {
-      const google = createGoogleGenerativeAI({ apiKey: config.apiKey })
+      const google = createGoogleGenerativeAI({ apiKey: config.apiKey, fetch })
       return google(effectiveModelID)
     }
     case 'deepseek': {
-      const deepseek = createDeepSeek({ apiKey: config.apiKey })
+      const deepseek = createDeepSeek({ apiKey: config.apiKey, fetch })
       return deepseek(effectiveModelID)
     }
     case 'zai': {
       const zai = createAnthropic({
         apiKey: config.apiKey,
-        baseURL: 'https://api.z.ai/api/anthropic'
+        baseURL: 'https://api.z.ai/api/anthropic',
+        fetch
       })
       return zai(effectiveModelID)
     }
     case 'minimax': {
       const minimax = createOpenAI({
         apiKey: config.apiKey,
-        baseURL: 'https://api.minimax.io/v1'
+        baseURL: 'https://api.minimax.io/v1',
+        fetch
       })
       return minimax.chat(effectiveModelID)
     }
     case 'openai-compatible': {
       const custom = createOpenAI({
         apiKey: config.apiKey,
-        baseURL: config.customBaseURL
+        baseURL: config.customBaseURL,
+        fetch
       })
       return config.customAPIType === 'responses'
         ? custom.responses(effectiveModelID)
@@ -83,7 +95,8 @@ export function createLanguageModel(config: ModelConfig): LanguageModel {
     case 'anthropic-compatible': {
       const custom = createAnthropic({
         apiKey: config.apiKey,
-        baseURL: config.customBaseURL
+        baseURL: config.customBaseURL,
+        fetch
       })
       return custom(effectiveModelID)
     }

@@ -2,6 +2,7 @@ import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { prefetchFigmaSchema } from '@open-pencil/core/kiwi'
 
 import { createDocumentViewportActions, downloadBlob } from '@/app/document/io/browser'
+import { createDOMOpenActions } from '@/app/document/io/dom'
 import { createOpenActions, createReloadActions } from '@/app/document/io/read'
 import { createDocumentSourceActions, createDocumentSourceState } from '@/app/document/io/source'
 import type { ViewportSize } from '@/app/document/io/types'
@@ -55,6 +56,12 @@ export function createDocumentIOActions(
     setDocumentSource: sourceActions.setDocumentSource,
     fitCurrentPageToViewport
   })
+  const { openDOMFile, importDOMText } = createDOMOpenActions({
+    editor,
+    state,
+    setDocumentSource: sourceActions.setDocumentSource,
+    fitCurrentPageToViewport
+  })
 
   return {
     downloadBlob,
@@ -67,6 +74,8 @@ export function createDocumentIOActions(
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
     disposeDocumentIO: sourceActions.disposeDocumentIO,
     openFigFile,
+    openDOMFile,
+    importDOMText,
     saveFigFile: sourceActions.saveFigFile,
     saveFigFileAs: sourceActions.saveFigFileAs,
 

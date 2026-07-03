@@ -1,8 +1,10 @@
 import { describe, test, expect } from 'bun:test'
 
 import type { Vector } from '@open-pencil/core'
-
-import { computeDescendantVisualBounds, computeVisualBounds } from '#core/geometry'
+import {
+  computeDescendantVisualBounds,
+  computeVisualBounds
+} from '@open-pencil/scene-graph/geometry'
 
 function commandsBlobFromPoints(points: Vector[]): Uint8Array {
   const blob = new Uint8Array(points.length * 9 + 1)

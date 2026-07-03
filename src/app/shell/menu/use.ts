@@ -5,6 +5,7 @@ import type { EditorCommandId } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
+import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
 import { useAppTheme } from '@/app/shell/theme'
@@ -42,10 +43,6 @@ const COMMAND_MENU_IDS = new Set<string>([
 export { importFileDialog, openFileDialog }
 export { openFileFromPath } from '@/app/shell/menu/files'
 
-function execBrowserCommand(command: 'copy' | 'cut' | 'paste'): void {
-  document.execCommand(command)
-}
-
 export function useMenu() {
   if (!isTauri()) return
 
@@ -77,16 +74,16 @@ export function useMenu() {
     autosave: () => {
       store.state.autosaveEnabled = !store.state.autosaveEnabled
     },
-    copy: () => execBrowserCommand('copy'),
-    cut: () => execBrowserCommand('cut'),
-    paste: () => execBrowserCommand('paste'),
+    copy: () => void executeClipboardCommand(store, 'copy'),
+    cut: () => void executeClipboardCommand(store, 'cut'),
+    paste: () => void executeClipboardCommand(store, 'paste'),
     'paste-to-replace': () => void pasteClipboardToReplace(store),
     'check-updates': () => void checkForAppUpdate({ messages: dialogs }),
     ...createSharedEditorMenuActions(setTheme)
   }
 
   void import('@tauri-apps/api/event').then(({ listen }) => {
-    void listen<string>('menu-event', (event) => {
+    return listen<string>('menu-event', (event) => {
       if (COMMAND_MENU_IDS.has(event.payload)) {
         runCommand(event.payload as EditorCommandId)
         return
@@ -94,6 +91,7 @@ export function useMenu() {
       actions[event.payload]?.()
     }).then((fn) => {
       unlisten = fn
+      return undefined
     })
   })
 

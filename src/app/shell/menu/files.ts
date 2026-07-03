@@ -5,7 +5,11 @@ import { openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 import { IS_BROWSER } from '@/constants'
 
-const fileDialog = useFileDialog({ accept: '.fig,.pen', multiple: false, reset: true })
+const fileDialog = useFileDialog({
+  accept: '.fig,.pen,.html,.htm,.xhtml',
+  multiple: false,
+  reset: true
+})
 
 fileDialog.onChange((files) => {
   const file = files?.[0]
@@ -31,7 +35,7 @@ export async function readTauriDesignFile(path: string): Promise<File> {
 export async function chooseTauriOpenPath(): Promise<string | null> {
   const { open } = await import('@tauri-apps/plugin-dialog')
   const path = await open({
-    filters: [{ name: 'Design file', extensions: ['fig', 'pen'] }],
+    filters: [{ name: 'Design file', extensions: ['fig', 'pen', 'html', 'htm', 'xhtml'] }],
     multiple: false
   })
   return typeof path === 'string' ? path : null
@@ -60,6 +64,8 @@ export async function openFileDialog() {
             accept: {
               'application/octet-stream': ['.fig'],
               'application/json': ['.pen'],
+              'text/html': ['.html', '.htm'],
+              'application/xhtml+xml': ['.xhtml'],
               'text/plain': ['.pen']
             }
           }

@@ -1,10 +1,11 @@
+import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
+import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { Color, GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
+
 /* eslint-disable max-lines */
 import { bytesToHex } from '#core/bytes/hex'
-import type { NodeChange, Paint } from '#core/kiwi/fig/codec'
-import type { SceneGraph, SceneNode } from '#core/scene-graph'
-import type { Color, GUID, Matrix, Vector } from '#core/types'
 
-import { stringToGuid } from './guid'
 import {
   applyExportSettingsPluginData,
   mergePluginData,
@@ -14,6 +15,12 @@ import {
 } from './plugin-data'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
+
+type KiwiBooleanOperation = NonNullable<NodeChange['booleanOperation']>
+
+function toKiwiBooleanOperation(operation: SceneNode['booleanOperation']): KiwiBooleanOperation {
+  return operation === 'EXCLUDE' ? 'XOR' : (operation ?? 'UNION')
+}
 
 /**
  * Build a mapping from assetRef key strings ("key@version" or "key") to
@@ -703,8 +710,7 @@ export function sceneNodeToKiwiWithContext(
   if (node.type === 'COMPONENT_SET') upsertPluginData(node, NODE_TYPE_PLUGIN_KEY, node.type)
   if (nc.type === 'CANVAS') nc.pageType = 'DESIGN'
   if (node.type === 'BOOLEAN_OPERATION')
-    nc.booleanOperation =
-      node.booleanOperation === 'EXCLUDE' ? 'XOR' : (node.booleanOperation ?? 'UNION')
+    nc.booleanOperation = toKiwiBooleanOperation(node.booleanOperation)
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
