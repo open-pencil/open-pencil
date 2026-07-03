@@ -53,6 +53,11 @@
 - Fix `analyze_overlaps` `limit` of `0` (or a negative value) so it caps the returned overlaps to an empty list instead of returning the full set; summary totals still reflect the complete result.
 - Trim whitespace from `analyze_overlaps` `scope` and `severity` inputs so values like `" major "` resolve instead of falling back to defaults.
 - Export `OverlapScope`, `AnalyzeOverlapsSummary`, and `OverlapIntersection` from the `@open-pencil/core/tools/analyze` barrel so consumers do not need to deep-import the overlaps module.
+- Deduplicate file opens across all platforms (Tauri desktop, browser File System Access API, drag-and-drop) by normalizing file paths into a canonical identity key and switching to an existing tab when one is already open, rather than creating a duplicate.
+- Fix Rust path identity normalization to collapse duplicate slashes, strip trailing slashes, and preserve UNC `//` prefix so desktop file-association identity keys match the frontend `normalizeFilePath` contract.
+- Fix `downloadBlob` passing `Uint8Array.buffer` to `Blob`, which included adjacent bytes for subarray payloads; it now passes the typed-array view directly.
+- Fix `yieldToUI` leaving a dangling queued `requestAnimationFrame` callback when the `setTimeout` fallback resolved first, and fix a dangling `setTimeout` fallback when `requestAnimationFrame` is a synchronous no-op. The surviving callback always cancels the other side.
+- Fix leaking `vi.mock` calls in tab/file IO tests that replaced `computeAllLayouts` with a no-op and broke unrelated layout/text tests in the same `bun test` process. Mocks are now scoped to each test with `vi.spyOn` and restored with `vi.restoreAllMocks()`.
 
 ## 0.13.2 — 2026-05-30
 

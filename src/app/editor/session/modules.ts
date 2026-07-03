@@ -77,8 +77,18 @@ export function createEditorStoreModules(
     saveFigFileAs: documentIO.saveFigFileAs,
     setDocumentSource: documentIO.setDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
+    updateSourceIdentity: documentIO.updateSourceIdentity,
+    clearSourceIdentity: documentIO.clearSourceIdentity,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
     dispose: documentIO.disposeDocumentIO,
+
+    // Identity getters for file-open deduplication.
+    getSourceHandle: documentIO.getSourceHandle,
+    getSourcePath: documentIO.getSourcePath,
+    getSourceFileName: documentIO.getSourceFileName,
+    getFileHandle: documentIO.getFileHandle,
+    getFilePath: documentIO.getFilePath,
+
     ...documentExport,
     ...mobileClipboard,
     ...profiler
