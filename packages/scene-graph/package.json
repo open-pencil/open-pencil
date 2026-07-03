@@ -6,127 +6,106 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./copy": {
       "types": "./dist/copy.d.ts",
-      "bun": "./src/copy.ts",
       "import": "./dist/copy.js",
       "default": "./dist/copy.js"
     },
     "./node-defaults": {
       "types": "./dist/node-defaults.d.ts",
-      "bun": "./src/node-defaults.ts",
       "import": "./dist/node-defaults.js",
       "default": "./dist/node-defaults.js"
     },
     "./instances": {
       "types": "./dist/instances.d.ts",
-      "bun": "./src/instances.ts",
       "import": "./dist/instances.js",
       "default": "./dist/instances.js"
     },
     "./snap": {
       "types": "./dist/snap.d.ts",
-      "bun": "./src/snap.ts",
       "import": "./dist/snap.js",
       "default": "./dist/snap.js"
     },
     "./source-metadata": {
       "types": "./dist/source-metadata.d.ts",
-      "bun": "./src/source-metadata.ts",
       "import": "./dist/source-metadata.js",
       "default": "./dist/source-metadata.js"
     },
     "./undo": {
       "types": "./dist/undo.d.ts",
-      "bun": "./src/undo.ts",
       "import": "./dist/undo.js",
       "default": "./dist/undo.js"
     },
     "./variant-name": {
       "types": "./dist/variant-name.d.ts",
-      "bun": "./src/variant-name.ts",
       "import": "./dist/variant-name.js",
       "default": "./dist/variant-name.js"
     },
     "./vector-network": {
       "types": "./dist/vector-network.d.ts",
-      "bun": "./src/vector-network.ts",
       "import": "./dist/vector-network.js",
       "default": "./dist/vector-network.js"
     },
     "./types": {
       "types": "./dist/types.d.ts",
-      "bun": "./src/types.ts",
       "import": "./dist/types.js",
       "default": "./dist/types.js"
     },
     "./primitives": {
       "types": "./dist/primitives.d.ts",
-      "bun": "./src/primitives.ts",
       "import": "./dist/primitives.js",
       "default": "./dist/primitives.js"
     },
     "./constants": {
       "types": "./dist/constants.d.ts",
-      "bun": "./src/constants.ts",
       "import": "./dist/constants.js",
       "default": "./dist/constants.js"
     },
     "./hit-test": {
       "types": "./dist/hit-test.d.ts",
-      "bun": "./src/hit-test.ts",
       "import": "./dist/hit-test.js",
       "default": "./dist/hit-test.js"
     },
     "./preview": {
       "types": "./dist/preview.d.ts",
-      "bun": "./src/preview.ts",
       "import": "./dist/preview.js",
       "default": "./dist/preview.js"
     },
     "./text-picture": {
       "types": "./dist/text-picture.d.ts",
-      "bun": "./src/text-picture.ts",
       "import": "./dist/text-picture.js",
       "default": "./dist/text-picture.js"
     },
     "./variables": {
       "types": "./dist/variables.d.ts",
-      "bun": "./src/variables.ts",
       "import": "./dist/variables.js",
       "default": "./dist/variables.js"
     },
     "./images": {
       "types": "./dist/images.d.ts",
-      "bun": "./src/images.ts",
       "import": "./dist/images.js",
       "default": "./dist/images.js"
     },
     "./coordinate": {
       "types": "./dist/coordinate.d.ts",
-      "bun": "./src/coordinate.ts",
       "import": "./dist/coordinate.js",
       "default": "./dist/coordinate.js"
     },
     "./matrix": {
       "types": "./dist/matrix.d.ts",
-      "bun": "./src/matrix.ts",
       "import": "./dist/matrix.js",
       "default": "./dist/matrix.js"
     },
     "./geometry": {
       "types": "./dist/geometry.d.ts",
-      "bun": "./src/geometry.ts",
       "import": "./dist/geometry.js",
       "default": "./dist/geometry.js"
     },
     "./parse-path": {
       "types": "./dist/parse-path.d.ts",
-      "bun": "./src/parse-path.ts",
       "import": "./dist/parse-path.js",
       "default": "./dist/parse-path.js"
     }

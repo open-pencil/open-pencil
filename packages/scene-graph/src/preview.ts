@@ -1,3 +1,4 @@
+import { clearInvalidatedTextRenderingData } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -42,25 +43,6 @@ const LAYOUT_AFFECTING_KEYS = new Set<string>([
   'textAutoResize'
 ])
 
-const TEXT_PICTURE_KEYS = new Set<string>([
-  'text',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'italic',
-  'textAlignHorizontal',
-  'textDirection',
-  'textAlignVertical',
-  'lineHeight',
-  'letterSpacing',
-  'textDecoration',
-  'textCase',
-  'styleRuns',
-  'fills',
-  'width',
-  'height'
-])
-
 export function updateNodePreview(
   graph: PreviewGraph,
   id: string,
@@ -73,14 +55,10 @@ export function updateNodePreview(
   }
   const affectsLayout = Object.keys(changes).some((key) => LAYOUT_AFFECTING_KEYS.has(key))
   if (affectsLayout) graph.clearAbsPosCache()
-  if (node.type === 'TEXT') {
-    const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
-    if (node.textPicture && textChanged) node.textPicture = null
-    if (node.figmaDerivedTextGlyphs && textChanged) node.figmaDerivedTextGlyphs = null
-  }
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     : changes
+  clearInvalidatedTextRenderingData(node, normalizedChanges)
   graph.positionPreviewVersion++
   Object.assign(node, normalizedChanges)
   return normalizedChanges

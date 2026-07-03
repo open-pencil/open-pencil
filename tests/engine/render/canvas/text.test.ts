@@ -6,13 +6,14 @@ import {
   SceneGraph,
   SkiaRenderer as SkiaRendererClass
 } from '@open-pencil/core'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { Fill, SceneNode } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderText } from '#core/canvas/scene'
 import { buildParagraph, isNodeFontLoaded } from '#core/canvas/text'
 import { fontManager } from '#core/text/fonts'
+import { textNodeToOutlineLayout } from '#core/text/outlines'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
@@ -94,6 +95,20 @@ function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
   } as SceneNode
 }
 
+function solidFill(color: Fill['color']): Fill {
+  return { type: 'SOLID', color, opacity: 1, visible: true }
+}
+
+async function loadCJKOutlineFonts(): Promise<void> {
+  const interData = await Bun.file(repoPath('public/Inter-Regular.ttf')).arrayBuffer()
+  const notoData = await Bun.file(
+    repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+  ).arrayBuffer()
+  fontManager.markLoaded('Inter', 'Regular', interData)
+  fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+  fontManager.setCJKFallbackFamily('Noto Sans SC')
+}
+
 async function createTextRenderer() {
   const ck = await initCanvasKit()
   const surface = expectDefined(ck.MakeSurface(400, 120), 'surface')
@@ -169,6 +184,118 @@ describe('renderText', () => {
     expect(canvas.saveLayer).not.toHaveBeenCalled()
   })
 
+  test('renders simple CJK fallback text as vector outlines when outline font data is available', async () => {
+    await loadCJKOutlineFonts()
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({ text: '你好世界', fontFamily: 'Inter', width: 160, height: 48 }),
+      solidFill({ r: 0, g: 0, b: 0, a: 1 })
+    )
+
+    expect(canvas.drawPath).toHaveBeenCalledTimes(1)
+    expect(r.buildParagraph).not.toHaveBeenCalled()
+  })
+
+  test('wraps fixed-width CJK fallback outline text before drawing', async () => {
+    await loadCJKOutlineFonts()
+
+    const layout = textNodeToOutlineLayout(
+      textNode({
+        text: '你好世界你好世界',
+        fontFamily: 'Inter',
+        fontSize: 32,
+        width: 70,
+        height: 200,
+        lineHeight: 40
+      })
+    )
+
+    expect(layout?.height).toBe(160)
+    expect(layout?.width).toBeLessThanOrEqual(70)
+    expect(new Set(layout?.glyphs.map((glyph) => glyph.y))).toHaveLength(4)
+  })
+
+  test('keeps CJK text with paragraph-only font features on the paragraph path', async () => {
+    await loadCJKOutlineFonts()
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({
+        text: '你好世界',
+        fontFamily: 'Inter',
+        width: 160,
+        height: 48,
+        fontFeatures: [{ tag: 'liga', enabled: false }],
+        fontVariations: [{ axis: 'wght', value: 500 }],
+        leadingTrim: 'CAP_HEIGHT',
+        textAlignHorizontal: 'JUSTIFIED'
+      }),
+      solidFill({ r: 0, g: 0, b: 0, a: 1 })
+    )
+
+    expect(canvas.drawPath).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps truncated CJK text on the paragraph path so ellipsis semantics survive', async () => {
+    await loadCJKOutlineFonts()
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({
+        text: '你好世界你好世界',
+        fontFamily: 'Inter',
+        width: 80,
+        height: 24,
+        textTruncation: 'ENDING',
+        maxLines: 1
+      })
+    )
+
+    expect(canvas.drawPath).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps rich CJK style-run fills on the paragraph path', async () => {
+    await loadCJKOutlineFonts()
+    const r = createMockRenderer()
+    const canvas = createMockCanvas()
+
+    renderText(
+      r,
+      canvas as never,
+      textNode({
+        text: '你好世界',
+        fontFamily: 'Inter',
+        width: 160,
+        height: 48,
+        styleRuns: [
+          {
+            start: 0,
+            length: 2,
+            style: { fills: [solidFill({ r: 1, g: 0, b: 0, a: 1 })] }
+          }
+        ]
+      })
+    )
+
+    expect(canvas.drawPath).not.toHaveBeenCalled()
+    expect(r.buildParagraph).toHaveBeenCalledTimes(1)
+    expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
+  })
+
   test('prefers textPicture over paragraph', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
@@ -242,9 +369,11 @@ describe('renderText headless visual', () => {
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
     const notoData = await Bun.file(notoPath).arrayBuffer()
     fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
-    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
-    const originalFallbacks = [...manager.cjkFallbackFamilies]
-    manager.cjkFallbackFamilies = []
+    const manager = fontManager as typeof fontManager & {
+      cjkFallbackFamilies: Map<string, string[]>
+    }
+    const originalFallbacks = new Map(manager.cjkFallbackFamilies)
+    manager.cjkFallbackFamilies = new Map()
 
     try {
       const loaded = isNodeFontLoaded(
@@ -270,7 +399,8 @@ describe('renderText headless visual', () => {
     const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
     const notoData = await Bun.file(notoPath).arrayBuffer()
     fontProvider.registerFont(notoData, 'Noto Sans SC')
-    fontManager.setCJKFallbackFamily('Noto Sans SC')
+    fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+    await fontManager.ensureFallbackPack(['cjk-sc'])
 
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

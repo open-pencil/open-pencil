@@ -24,6 +24,8 @@ Please give us a reasonable opportunity to investigate and release a fix before 
 
 ## MCP server
 
-The MCP HTTP transport (`openpencil-mcp-http`) binds to `127.0.0.1` by default with `eval` disabled, CORS disabled, and file access restricted to the working directory. See [MCP docs](https://openpencil.dev/reference/mcp-tools) for configuration.
+The MCP server uses a Unix domain socket as the primary transport, with optional TCP on `127.0.0.1`. An auth token is auto-generated on startup and stored in a discovery file with owner-only permissions (`0o600`). This prevents access from other users on the same machine. It does **not** prevent access from other processes running as the same user — any process owned by the same user can read the discovery file and authenticate.
 
-The stdio transport (`openpencil-mcp`) is intended for local use only and does not apply these restrictions.
+The HTTP transport (`openpencil-mcp-http`) binds to `127.0.0.1` by default with `eval` disabled, CORS disabled, and file access restricted to the working directory. See [MCP docs](https://openpencil.dev/reference/mcp-tools) for configuration.
+
+The stdio bridge (`openpencil-mcp`) connects to the MCP server via the Unix socket and sends the auth token on every request. It inherits the same auth requirements as direct connections.

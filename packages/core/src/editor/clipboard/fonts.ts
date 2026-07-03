@@ -1,5 +1,6 @@
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
+import { ensureTextFallbackPacksForNodes } from '#core/text/coverage'
 import { fontManager } from '#core/text/fonts'
 
 export function createClipboardFontActions(ctx: EditorContext) {
@@ -8,6 +9,7 @@ export function createClipboardFontActions(ctx: EditorContext) {
     if (toLoad.length === 0) return []
 
     const results = await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
+    await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)
     const failed = toLoad.filter((_, i) => results[i] === null)
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     return failed

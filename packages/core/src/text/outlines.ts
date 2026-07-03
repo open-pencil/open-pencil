@@ -2,6 +2,8 @@ import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
+import { fallbackScriptsForCharacter } from '#core/text/coverage'
+import { cjkFallbackFamiliesForScripts } from '#core/text/fallback-order'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 import {
   fontHasGlyphSync,
@@ -33,6 +35,7 @@ export interface TextOutlineLayout {
 }
 
 const COMPLEX_SCRIPT_PATTERN = /[\u0590-\u08ff\u0900-\u0dff\ufb1d-\ufdff\ufe70-\ufeff]/
+const CJK_TEXT_PATTERN = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
 
 type TextStyle = Required<
   Pick<
@@ -74,7 +77,7 @@ function textStyleAt(node: SceneNode, index: number): TextStyle {
 
 function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
   if (fontHasGlyphSync(style.fontFamily, styleName(style), char)) return style
-  const family = fallbackFamilies().find((candidate) => {
+  const family = fallbackFamilies(char).find((candidate) => {
     const next = fallbackStyle(style, candidate)
     return (
       fontManager.loadedData(next.fontFamily, styleName(next)) &&
@@ -84,8 +87,18 @@ function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
   return family ? fallbackStyle(style, family) : null
 }
 
-function fallbackFamilies(): string[] {
-  return [...fontManager.getCJKFallbackFamilies(), ...fontManager.getArabicFallbackFamilies()]
+function fallbackFamilies(char: string): string[] {
+  const scripts = fallbackScriptsForCharacter(char)
+  if (scripts.length === 0) {
+    return [...fontManager.getCJKFallbackFamilies(), ...fontManager.getArabicFallbackFamilies()]
+  }
+
+  const families: string[] = []
+  if (scripts.some((script) => script !== 'arabic')) {
+    families.push(...cjkFallbackFamiliesForScripts(fontManager, scripts))
+  }
+  if (scripts.includes('arabic')) families.push(...fontManager.getArabicFallbackFamilies())
+  return families
 }
 
 function fallbackStyle(style: TextStyle, family: string): TextStyle {
@@ -184,7 +197,9 @@ function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
 function textLines(node: SceneNode): TextLine[] {
   const hardLines = hardTextLines(node.text)
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return hardLines
-  if (node.styleRuns.length > 0) return hardLines.flatMap((line) => wrapStyledLine(node, line))
+  if (node.styleRuns.length > 0 || hardLines.some((line) => CJK_TEXT_PATTERN.test(line.text))) {
+    return hardLines.flatMap((line) => wrapStyledLine(node, line))
+  }
 
   const result: TextLine[] = []
   for (const hardLine of hardLines) {

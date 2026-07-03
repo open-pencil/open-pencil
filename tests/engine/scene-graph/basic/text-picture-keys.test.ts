@@ -14,16 +14,64 @@ describe('TEXT_PICTURE_KEYS membership', () => {
       'textAlignHorizontal',
       'textDirection',
       'textAlignVertical',
+      'textAutoResize',
       'lineHeight',
       'letterSpacing',
       'textDecoration',
+      'textDecorationStyle',
+      'textDecorationThickness',
+      'textDecorationFills',
+      'textDecorationSkipInk',
+      'textUnderlineOffset',
       'textCase',
+      'leadingTrim',
+      'maxLines',
       'styleRuns',
+      'fontVariations',
+      'fontFeatures',
+      'textTruncation',
       'fills',
       'width',
       'height'
     ]) {
       expect(keys.has(k)).toBe(true)
+    }
+  })
+
+  test('keeps imported glyph geometry invalidation narrower than text pictures', () => {
+    const keys = SceneGraph.FIGMA_DERIVED_TEXT_GLYPH_KEYS
+    for (const k of [
+      'text',
+      'fontSize',
+      'fontFamily',
+      'fontWeight',
+      'italic',
+      'textAlignHorizontal',
+      'textDirection',
+      'textAlignVertical',
+      'textAutoResize',
+      'lineHeight',
+      'letterSpacing',
+      'textDecoration',
+      'textDecorationStyle',
+      'textDecorationThickness',
+      'textDecorationFills',
+      'textDecorationSkipInk',
+      'textUnderlineOffset',
+      'textCase',
+      'leadingTrim',
+      'maxLines',
+      'styleRuns',
+      'fontVariations',
+      'fontFeatures',
+      'textTruncation',
+      'width',
+      'height'
+    ]) {
+      expect(keys.has(k)).toBe(true)
+    }
+    for (const k of ['fills', 'opacity', 'visible', 'name']) {
+      expect(keys.has(k)).toBe(false)
     }
   })
 

@@ -82,6 +82,7 @@ export function createDOMOpenActions({
     } catch (e) {
       console.error('Failed to open DOM/CSS file:', e)
       toast.error(`Failed to open DOM/CSS file: ${e instanceof Error ? e.message : String(e)}`)
+      throw e
     } finally {
       state.loading = false
     }

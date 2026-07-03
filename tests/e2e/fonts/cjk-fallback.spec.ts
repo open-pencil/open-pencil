@@ -19,7 +19,7 @@ test('tool-created CJK text requests fallback through app font loading', async (
 
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
       requestedScripts = [...scripts]
-      return { cjk: ['Regression CJK Fallback'], arabic: [] }
+      return { 'cjk-sc': ['Regression CJK Fallback'], arabic: [] }
     }
 
     const pageNode = store.graph.getNode(store.state.currentPageId)
@@ -57,7 +57,9 @@ test('tool-created CJK text requests fallback through app font loading', async (
   canvas.assertNoErrors()
 })
 
-test('CJK text waits for fallback fonts and repaints after they load', async ({ page }) => {
+test('CJK text renders after generic CJK repaint while script packs remain strict', async ({
+  page
+}) => {
   const canvas = new CanvasHelper(page)
   await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
   await canvas.waitForInit()
@@ -70,25 +72,31 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
 
     const { fontManager } = await import('/packages/core/src/text/fonts.ts')
     const manager = fontManager as typeof fontManager & {
-      cjkFallbackFamilies: string[]
-      cjkFallbackPromise: Promise<string[]> | null
+      cjkFallbackFamilies: Map<string, string[]>
+      cjkFallbackPromises: Map<string, Promise<string[]>>
       arabicFallbackFamilies: string[]
       arabicFallbackPromise: Promise<string[]> | null
     }
-    const originalCJKFamilies = [...manager.cjkFallbackFamilies]
-    const originalCJKPromise = manager.cjkFallbackPromise
+    const originalCJKFamilies = new Map(
+      [...manager.cjkFallbackFamilies].map(([script, families]) => [script, [...families]])
+    )
+    const originalCJKPromises = new Map(manager.cjkFallbackPromises)
     const originalArabicFamilies = [...manager.arabicFallbackFamilies]
     const originalArabicPromise = manager.arabicFallbackPromise
     const originalEnsureCJKFallback = fontManager.ensureCJKFallback.bind(fontManager)
     const originalEnsureArabicFallback = fontManager.ensureArabicFallback.bind(fontManager)
 
-    let releaseCJKFallback: (() => void) | null = null
-    const fallbackGate = new Promise<void>((resolve) => {
-      releaseCJKFallback = resolve
+    let releaseGenericCJKFallback: (() => void) | null = null
+    const genericFallbackGate = new Promise<void>((resolve) => {
+      releaseGenericCJKFallback = resolve
+    })
+    let releaseSimplifiedCJKFallback: (() => void) | null = null
+    const simplifiedFallbackGate = new Promise<void>((resolve) => {
+      releaseSimplifiedCJKFallback = resolve
     })
 
-    manager.cjkFallbackFamilies = []
-    manager.cjkFallbackPromise = null
+    manager.cjkFallbackFamilies.clear()
+    manager.cjkFallbackPromises.clear()
     manager.arabicFallbackFamilies = []
     manager.arabicFallbackPromise = null
 
@@ -96,10 +104,11 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     let renderCount = 0
     const originalRender = renderer.renderFromEditorState.bind(renderer)
 
-    fontManager.ensureCJKFallback = async () => {
-      await fallbackGate
-      fontManager.setCJKFallbackFamily('Regression CJK Fallback')
-      return ['Regression CJK Fallback']
+    fontManager.ensureCJKFallback = async (script = 'cjk') => {
+      await (script === 'cjk-sc' ? simplifiedFallbackGate : genericFallbackGate)
+      const families = ['Regression CJK Fallback']
+      manager.cjkFallbackFamilies.set(script, families)
+      return families
     }
     fontManager.ensureArabicFallback = async () => []
     renderer.renderFromEditorState = (
@@ -140,22 +149,37 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       const loadedBeforeFallback = renderer.isNodeFontLoaded(text)
       const beforeFallbackRenderCount = fallbackRenderCount
 
-      releaseCJKFallback?.()
+      releaseGenericCJKFallback?.()
       await new Promise((resolve) => {
         setTimeout(resolve, 0)
       })
       await new Promise(requestAnimationFrame)
+      const loadedAfterGenericFallback = renderer.isNodeFontLoaded(text)
+      const afterGenericFallbackRenderCount = fallbackRenderCount
+
+      const scriptFallbackPromise = fontManager.ensureFallbackPack(['cjk-sc'])
+      releaseSimplifiedCJKFallback?.()
+      const scriptFallbacks = await scriptFallbackPromise
 
       return {
         loadedBeforeFallback,
-        loadedAfterFallback: renderer.isNodeFontLoaded(text),
+        loadedAfterGenericFallback,
+        loadedAfterScriptFallback: renderer.isNodeFontLoaded(text),
         beforeFallbackRenderCount,
+        afterGenericFallbackRenderCount,
         fallbackRenderCount,
-        renderCount
+        renderCount,
+        scriptFallbacks
       }
     } finally {
-      manager.cjkFallbackFamilies = originalCJKFamilies
-      manager.cjkFallbackPromise = originalCJKPromise
+      manager.cjkFallbackFamilies.clear()
+      for (const [script, families] of originalCJKFamilies) {
+        manager.cjkFallbackFamilies.set(script, families)
+      }
+      manager.cjkFallbackPromises.clear()
+      for (const [script, promise] of originalCJKPromises) {
+        manager.cjkFallbackPromises.set(script, promise)
+      }
       manager.arabicFallbackFamilies = originalArabicFamilies
       manager.arabicFallbackPromise = originalArabicPromise
       fontManager.ensureCJKFallback = originalEnsureCJKFallback
@@ -165,9 +189,12 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
   })
 
   expect(result.loadedBeforeFallback).toBe(false)
-  expect(result.loadedAfterFallback).toBe(true)
+  expect(result.loadedAfterGenericFallback).toBe(true)
+  expect(result.loadedAfterScriptFallback).toBe(true)
   expect(result.beforeFallbackRenderCount).toBe(0)
+  expect(result.afterGenericFallbackRenderCount).toBe(1)
   expect(result.fallbackRenderCount).toBe(1)
+  expect(result.scriptFallbacks).toEqual({ 'cjk-sc': ['Regression CJK Fallback'] })
   expect(result.renderCount).toBeGreaterThan(0)
   canvas.assertNoErrors()
 })

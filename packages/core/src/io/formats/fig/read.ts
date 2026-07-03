@@ -7,7 +7,7 @@ import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
 
 export interface ParseFigFileOptions {
-  populate?: 'all' | 'first-page'
+  populate?: 'all' | 'first-page' | 'none'
 }
 
 function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}): SceneGraph {

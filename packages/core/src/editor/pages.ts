@@ -2,6 +2,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import { computeAllLayouts } from '#core/layout'
+import { ensureTextFallbackPacksForNodes } from '#core/text/coverage'
 import { fontManager } from '#core/text/fonts'
 
 import { createPageViewportStore } from './page-viewports'
@@ -26,13 +27,12 @@ export function createPageActions(ctx: EditorContext) {
 
     const populated = populateLazyFigImportRoots(ctx.graph, [pageId])
 
-    const toLoad = fontManager.collectFontKeys(
-      ctx.graph,
-      ctx.graph.getChildren(pageId).map((n) => n.id)
-    )
+    const nodeIds = ctx.graph.getChildren(pageId).map((n) => n.id)
+    const toLoad = fontManager.collectFontKeys(ctx.graph, nodeIds)
     if (toLoad.length > 0) {
       await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
     }
+    await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)
     if (ctx.getRenderer() || populated) {
       computeAllLayouts(ctx.graph, pageId)
     }

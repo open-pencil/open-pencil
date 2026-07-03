@@ -9,6 +9,7 @@ import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTe
 import ProviderSelectField from '@/components/chat/ProviderSelect/ProviderSelectField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
+import { providerRequiresCustomModelID } from '@/app/ai/chat/model'
 import { useAIChat } from '@/app/ai/chat/use'
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { openExternalLink } from '@/app/shell/ui'
@@ -36,8 +37,7 @@ const canTestConnection = computed(() => {
   if (!keyInput.value.trim()) return false
   if (providerDef.value.supportsCustomBaseURL && !baseURLInput.value.trim()) return false
   if (
-    providerDef.value.supportsCustomModel &&
-    providerID.value !== 'openrouter' &&
+    providerRequiresCustomModelID(providerID.value, providerDef.value) &&
     !customModelInput.value.trim()
   ) {
     return false

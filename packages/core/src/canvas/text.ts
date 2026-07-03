@@ -14,9 +14,16 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { getCanvasKit } from '#core/canvaskit'
 import { resolveRGBAForPreview } from '#core/color/management'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
-import { textNeededFallbackScripts } from '#core/text/coverage'
+import {
+  fallbackScriptsForCharacter,
+  textFontStyleForCharacter,
+  textNeededFallbackScripts
+} from '#core/text/coverage'
 import { resolveNodeTextDirection } from '#core/text/direction'
+import { cjkFallbackFamiliesForScripts } from '#core/text/fallback-order'
+import type { FontFallbackScript } from '#core/text/fallbacks'
 import { fontManager, weightToStyle } from '#core/text/fonts'
+import { fontGlyphCoverageSync } from '#core/text/opentype'
 
 interface TextRenderer {
   ck: CanvasKit
@@ -45,10 +52,43 @@ export interface ClipboardShapedText {
 const FONT_FAMILY_CACHE_LIMIT = 256
 const fontFamilyCache = new Map<string, string[]>()
 
+function fallbackScriptAppliesToCharacter(script: FontFallbackScript, char: string): boolean {
+  const scripts = fallbackScriptsForCharacter(char)
+  if (scripts.includes(script)) return true
+  if (script !== 'cjk-sc' && script !== 'cjk-tc') return false
+  return scripts.includes('cjk-sc') || scripts.includes('cjk-tc')
+}
+
+function missingFallbackCharacters(
+  node: SceneNode,
+  script: FontFallbackScript
+): Array<{ char: string; style: string }> {
+  const missing: Array<{ char: string; style: string }> = []
+  for (let index = 0; index < node.text.length; index++) {
+    const char = node.text[index]
+    if (!char || !fallbackScriptAppliesToCharacter(script, char)) continue
+    const { family, style } = textFontStyleForCharacter(node, index)
+    if (fontGlyphCoverageSync(family, style, char) === 'missing') missing.push({ char, style })
+  }
+  return missing
+}
+
+function hasRenderableFallbackForScript(node: SceneNode, script: FontFallbackScript): boolean {
+  const families = fontManager.getFallbackFamiliesForScript(script)
+  if (families.length === 0) return false
+
+  return missingFallbackCharacters(node, script).every(({ char, style }) =>
+    families.some((family) => fontGlyphCoverageSync(family, style, char) !== 'missing')
+  )
+}
+
 function hasRequiredFallbackFonts(node: SceneNode): boolean {
   for (const script of textNeededFallbackScripts(node)) {
-    if (script === 'arabic' && fontManager.getArabicFallbackFamilies().length === 0) return false
-    if (script !== 'arabic' && fontManager.getCJKFallbackFamilies().length === 0) return false
+    // Generic CJK fallbacks are intentionally not script-specific pack state, but they
+    // can still be valid paragraph fallback families when they actually cover the
+    // requested glyphs. Keep pack-loading paths stricter via hasFallbackForScript(),
+    // but do not mark Korean ready just because a generic Chinese fallback exists.
+    if (!hasRenderableFallbackForScript(node, script)) return false
   }
   return true
 }
@@ -321,7 +361,8 @@ export function buildParagraph(
   const ck = r.ck
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
-  const cjkFallbacks = fontManager.getCJKFallbackFamilies()
+  const fallbackScripts = textNeededFallbackScripts(node)
+  const cjkFallbacks = cjkFallbackFamiliesForScripts(fontManager, fallbackScripts)
   const arabicFallbacks = fontManager.getArabicFallbackFamilies()
   const textDirection = resolveNodeTextDirection(node)
 

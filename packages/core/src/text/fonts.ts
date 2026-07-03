@@ -34,6 +34,9 @@ export type HostFontLoader = (family: string, style: string) => Promise<ArrayBuf
 type FindLocalFontOptions = { allowVariable?: boolean }
 
 type LocalFontMatch = Pick<FontInfo, 'family' | 'style'>
+type CJKFallbackScript = Exclude<FontFallbackScript, 'arabic'>
+
+const CJK_FALLBACK_SCRIPTS = ['cjk', 'cjk-sc', 'cjk-tc', 'cjk-jp', 'cjk-kr'] as const
 
 export function chooseLocalFontMatch<T extends LocalFontMatch>(
   fonts: T[],
@@ -142,8 +145,8 @@ export class FontManager {
   private hostFallbackFontLoader: HostFontLoader | null = null
   private webFonts = new WebFontResolver()
   private registeredRenderFamilies = new Set<string>()
-  private cjkFallbackFamilies: string[] = []
-  private cjkFallbackPromise: Promise<string[]> | null = null
+  private cjkFallbackFamilies = new Map<CJKFallbackScript, string[]>()
+  private cjkFallbackPromises = new Map<CJKFallbackScript, Promise<string[]>>()
   private arabicFallbackFamilies: string[] = []
   private arabicFallbackPromise: Promise<string[]> | null = null
 
@@ -377,24 +380,55 @@ export class FontManager {
     return [...fontKeys].map((k) => k.split('\0') as [string, string])
   }
 
-  async ensureCJKFallback(): Promise<string[]> {
-    if (this.cjkFallbackFamilies.length > 0) return this.cjkFallbackFamilies
-    if (this.cjkFallbackPromise) return this.cjkFallbackPromise
+  async ensureCJKFallback(script: CJKFallbackScript = 'cjk'): Promise<string[]> {
+    const target = this.cjkFallbackTarget(script)
+    if (target.length > 0) return target
 
-    this.cjkFallbackPromise = this.ensureFallbackFamilies('cjk', this.cjkFallbackFamilies, {
+    const pending = this.cjkFallbackPromises.get(script)
+    if (pending) return pending
+
+    const promise = this.ensureFallbackFamilies(script, target, {
       allowVariableLocalFonts: true
+    }).finally(() => {
+      this.cjkFallbackPromises.delete(script)
     })
-    return this.cjkFallbackPromise
+    this.cjkFallbackPromises.set(script, promise)
+    return promise
   }
 
   getCJKFallbackFamilies(): string[] {
-    return this.cjkFallbackFamilies
+    const families: string[] = []
+    for (const script of CJK_FALLBACK_SCRIPTS) {
+      for (const family of this.cjkFallbackFamilies.get(script) ?? []) {
+        if (!families.includes(family)) families.push(family)
+      }
+    }
+    return families
   }
 
   setCJKFallbackFamily(family: string): void {
-    if (!this.cjkFallbackFamilies.includes(family)) {
-      this.cjkFallbackFamilies.push(family)
+    this.addFallbackFamily(this.cjkFallbackTarget('cjk'), family)
+  }
+
+  getFallbackFamiliesForScript(script: FontFallbackScript): string[] {
+    if (script === 'arabic') return [...this.arabicFallbackFamilies]
+    const families = [...(this.cjkFallbackFamilies.get(script) ?? [])]
+    if (script !== 'cjk') {
+      for (const family of this.cjkFallbackFamilies.get('cjk') ?? []) {
+        if (!families.includes(family)) families.push(family)
+      }
     }
+    return families
+  }
+
+  getDirectFallbackFamiliesForScript(script: FontFallbackScript): string[] {
+    if (script === 'arabic') return [...this.arabicFallbackFamilies]
+    return [...(this.cjkFallbackFamilies.get(script) ?? [])]
+  }
+
+  hasFallbackForScript(script: FontFallbackScript): boolean {
+    if (script === 'arabic') return this.arabicFallbackFamilies.length > 0
+    return (this.cjkFallbackFamilies.get(script)?.length ?? 0) > 0
   }
 
   async ensureArabicFallback(): Promise<string[]> {
@@ -412,8 +446,7 @@ export class FontManager {
     await Promise.all(
       scripts.map(async (script) => {
         if (script === 'arabic') result[script] = await this.ensureArabicFallback()
-        else if (script === 'cjk') result[script] = await this.ensureCJKFallback()
-        else result[script] = await this.ensureFallbackFamilies(script, this.cjkFallbackFamilies)
+        else result[script] = await this.ensureCJKFallback(script)
       })
     )
     return result
@@ -443,7 +476,7 @@ export class FontManager {
           allowVariable: options.allowVariableLocalFonts
         }))
       if (buffer && this.registerAndCache(family, 'Regular', buffer)) {
-        targetFamilies.push(family)
+        this.addFallbackFamily(targetFamilies, family)
       }
     }
 
@@ -455,11 +488,25 @@ export class FontManager {
         })
       )
       for (const result of results) {
-        if (result.status === 'fulfilled' && result.value) targetFamilies.push(result.value)
+        if (result.status === 'fulfilled' && result.value) {
+          this.addFallbackFamily(targetFamilies, result.value)
+        }
       }
     }
 
     return targetFamilies
+  }
+
+  private cjkFallbackTarget(script: CJKFallbackScript): string[] {
+    const existing = this.cjkFallbackFamilies.get(script)
+    if (existing) return existing
+    const target: string[] = []
+    this.cjkFallbackFamilies.set(script, target)
+    return target
+  }
+
+  private addFallbackFamily(targetFamilies: string[], family: string): void {
+    if (!targetFamilies.includes(family)) targetFamilies.push(family)
   }
 
   private async loadHostFallbackFont(family: string, style: string): Promise<ArrayBuffer | null> {

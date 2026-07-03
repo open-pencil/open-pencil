@@ -161,6 +161,40 @@ describe('FontManager loaded font cache', () => {
     expect(recording.registrations).toHaveLength(2)
   })
 
+  test('tracks CJK fallback packs per requested script', async () => {
+    const manager = new FontManager()
+    const requestedFamilies: string[] = []
+    manager.setFallbackUserAgent('X11; Linux x86_64')
+    manager.loadFont = async (family: string) => {
+      requestedFamilies.push(family)
+      return family === 'Noto Sans SC' || family === 'Noto Sans KR' ? new ArrayBuffer(12) : null
+    }
+
+    const simplified = await manager.ensureFallbackPack(['cjk-sc'])
+
+    expect(simplified['cjk-sc']).toEqual(['Noto Sans SC'])
+    expect(manager.hasFallbackForScript('cjk-sc')).toBe(true)
+    expect(manager.hasFallbackForScript('cjk-kr')).toBe(false)
+
+    const korean = await manager.ensureFallbackPack(['cjk-kr'])
+
+    expect(korean['cjk-kr']).toContain('Noto Sans KR')
+    expect(requestedFamilies).toContain('Noto Sans KR')
+    expect(manager.hasFallbackForScript('cjk-kr')).toBe(true)
+    expect(manager.getCJKFallbackFamilies()).toEqual(['Noto Sans SC', 'Noto Sans KR'])
+  })
+
+  test('keeps generic CJK fallback usable without marking script-specific packs loaded', () => {
+    const manager = new FontManager()
+
+    manager.setCJKFallbackFamily('Generic CJK')
+
+    expect(manager.hasFallbackForScript('cjk')).toBe(true)
+    expect(manager.hasFallbackForScript('cjk-sc')).toBe(false)
+    expect(manager.hasFallbackForScript('cjk-jp')).toBe(false)
+    expect(manager.getFallbackFamiliesForScript('cjk-kr')).toEqual(['Generic CJK'])
+  })
+
   test('loads downloaded cache before other sources', async () => {
     const manager = new FontManager()
     const recording = createRecordingProvider()

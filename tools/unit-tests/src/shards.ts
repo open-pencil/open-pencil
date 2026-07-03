@@ -5,7 +5,13 @@ import { fileURLToPath } from 'node:url'
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
 export const UNIT_TEST_GROUPS = {
-  app: ['tests/engine/acp', 'tests/engine/app', 'tests/engine/cli', 'tests/engine/tauri'],
+  app: [
+    'tests/engine/acp',
+    'tests/engine/app',
+    'tests/engine/cli',
+    'tests/engine/collab',
+    'tests/engine/tauri'
+  ],
   dom: ['tests/engine/dom-css', 'tests/engine/color', 'tests/engine/icons', 'tests/engine/pen'],
   editor: [
     'tests/engine/clipboard',
@@ -13,7 +19,7 @@ export const UNIT_TEST_GROUPS = {
     'tests/engine/hit-test',
     'tests/engine/snap'
   ],
-  fig: ['tests/engine/figma', 'tests/engine/io', 'tests/engine/kiwi'],
+  fig: ['tests/engine/fig', 'tests/engine/figma', 'tests/engine/io', 'tests/engine/kiwi'],
   render: ['tests/engine/geometry', 'tests/engine/layout', 'tests/engine/render'],
   scene: [
     'tests/engine/lint',
@@ -34,6 +40,8 @@ export type UnitTestGroup = keyof typeof UNIT_TEST_GROUPS | 'all'
 
 export const HEAVY_UNIT_TEST_PATTERNS = [
   'tests/engine/clipboard/fixtures/',
+  'tests/engine/cli/eval.test.ts',
+  'tests/engine/cli/overlaps.test.ts',
   'tests/engine/io/fig/heavy/',
   'tests/engine/io/fig/roundtrip/exhaustive.test.ts',
   'tests/engine/io/fig/roundtrip/glyph-blob.test.ts',
@@ -42,7 +50,8 @@ export const HEAVY_UNIT_TEST_PATTERNS = [
   'tests/engine/io/fig/export/worker.test.ts',
   'tests/engine/io/fig/import/group-reclassify.test.ts',
   'tests/engine/layout/auto-layout/text/measurement.test.ts',
-  'tests/engine/render/canvas/cache.test.ts'
+  'tests/engine/render/canvas/cache.test.ts',
+  'tests/engine/tools/cli.test.ts'
 ] as const
 
 export function unitTestGroupNames(): UnitTestGroup[] {

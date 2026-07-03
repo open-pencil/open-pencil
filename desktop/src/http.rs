@@ -3,6 +3,7 @@ use reqwest::{
     Method,
 };
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ProxyHttpHeader {
@@ -16,6 +17,8 @@ pub struct ProxyHttpRequest {
     method: Option<String>,
     headers: Option<Vec<ProxyHttpHeader>>,
     body: Option<Vec<u8>>,
+    #[serde(rename = "timeoutMs")]
+    timeout_ms: Option<u64>,
 }
 
 #[derive(Serialize)]
@@ -60,6 +63,12 @@ pub async fn proxy_http_request(request: ProxyHttpRequest) -> Result<ProxyHttpRe
         .headers(request_headers(request.headers));
     if let Some(body) = request.body {
         builder = builder.body(body);
+    }
+    if let Some(timeout_ms) = request.timeout_ms {
+        if timeout_ms == 0 {
+            return Err("timeoutMs must be greater than 0".into());
+        }
+        builder = builder.timeout(Duration::from_millis(timeout_ms));
     }
 
     let response = builder.send().await.map_err(|e| e.to_string())?;

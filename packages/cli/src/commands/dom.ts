@@ -1,3 +1,4 @@
+import { readFile, writeFile } from 'node:fs/promises'
 import { basename, extname, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
@@ -37,7 +38,7 @@ function defaultOutput(input: string, format: string): string {
 }
 
 async function readTextFile(path: string): Promise<string> {
-  return Bun.file(requireFile(path)).text()
+  return readFile(requireFile(path), 'utf8')
 }
 
 async function cssTextForArgs(args: DomArgs): Promise<string | undefined> {
@@ -92,17 +93,17 @@ async function writeOutput(
   const output = args.output ? resolve(args.output) : defaultOutput(requireFile(args.file), format)
 
   if (format === 'json') {
-    await Bun.write(output, `${JSON.stringify(document, null, 2)}\n`)
+    await writeFile(output, `${JSON.stringify(document, null, 2)}\n`)
     return output
   }
 
   if (format === 'html') {
-    await Bun.write(output, serializeHTML(document))
+    await writeFile(output, serializeHTML(document))
     return output
   }
 
   const result = await io.writeDocument('fig', graph)
-  await Bun.write(output, result.data as Uint8Array)
+  await writeFile(output, result.data as Uint8Array)
   return output
 }
 

@@ -60,9 +60,9 @@ function cjkScriptLocalFallbackFamilies(
       })
     case 'cjk-kr':
       return platformCJKFamilies(userAgent, {
-        mac: ['Apple SD Gothic Neo', 'PingFang SC', 'Hiragino Sans'],
-        windows: ['Malgun Gothic', 'Microsoft YaHei', 'Yu Gothic'],
-        linux: ['Noto Sans CJK KR', 'Noto Sans CJK SC', 'Droid Sans Fallback']
+        mac: ['Apple SD Gothic Neo'],
+        windows: ['Malgun Gothic'],
+        linux: ['Noto Sans CJK KR', 'Droid Sans Fallback']
       })
     default:
       return platformCJKFamilies(userAgent, {
@@ -80,7 +80,7 @@ const CJK_SCRIPT_REMOTE_FAMILIES: Record<
   'cjk-sc': ['Noto Sans SC'],
   'cjk-tc': ['Noto Sans TC', 'Noto Sans SC'],
   'cjk-jp': ['Noto Sans JP', 'Noto Sans SC'],
-  'cjk-kr': ['Noto Sans KR', 'Noto Sans SC']
+  'cjk-kr': ['Noto Sans KR']
 }
 
 export function fontFallbackManifest(

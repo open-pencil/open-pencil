@@ -608,8 +608,49 @@ function drawOutlinedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boo
 
 const CJK_TEXT_PATTERN = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
 
-function shouldRenderCJKAsOutline(node: SceneNode): boolean {
-  return CJK_TEXT_PATTERN.test(node.text)
+function hasVisibleFill(fills: readonly Fill[] | undefined): boolean {
+  return fills?.some((fill) => fill.visible) === true
+}
+
+function hasArrayItems(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0
+}
+
+function hasNonDefaultLeadingTrim(value: unknown): boolean {
+  return value !== undefined && value !== 'NONE'
+}
+
+function nodeTextNeedsParagraphFeatures(node: SceneNode): boolean {
+  if (node.textTruncation === 'ENDING') return true
+  if (node.textAlignHorizontal === 'JUSTIFIED') return true
+  if (hasNonDefaultLeadingTrim(node.leadingTrim)) return true
+  if (hasArrayItems(node.fontFeatures)) return true
+  if (hasArrayItems(node.fontVariations)) return true
+  if (node.textDecoration !== 'NONE') return true
+  if (hasVisibleFill(node.textDecorationFills)) return true
+
+  return node.styleRuns.some((run) => {
+    const style = run.style
+    return (
+      hasVisibleFill(style.fills) ||
+      style.lineHeight !== undefined ||
+      (style.fontFeatures?.length ?? 0) > 0 ||
+      (style.fontVariations?.length ?? 0) > 0 ||
+      style.textDecoration !== undefined ||
+      style.textDecorationStyle !== undefined ||
+      style.textDecorationThickness !== undefined ||
+      hasVisibleFill(style.textDecorationFills)
+    )
+  })
+}
+
+function shouldRenderCJKAsOutline(node: SceneNode, fill?: Fill): boolean {
+  return (
+    fill?.type === 'SOLID' &&
+    fill.visible &&
+    CJK_TEXT_PATTERN.test(node.text) &&
+    !nodeTextNeedsParagraphFeatures(node)
+  )
 }
 
 function drawGradientText(
@@ -673,7 +714,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     return
   }
   if (
-    (shouldRenderTextAsOutline(fill) || shouldRenderCJKAsOutline(node)) &&
+    (shouldRenderTextAsOutline(fill) || shouldRenderCJKAsOutline(node, fill)) &&
     drawOutlinedText(r, canvas, node)
   ) {
     canvas.restore()

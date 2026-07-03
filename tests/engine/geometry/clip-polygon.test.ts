@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Vector } from '@open-pencil/core'
-
-import { clipBoundsToPolygon, clipPolygon } from '#core/geometry'
+import { clipBoundsToPolygon, clipPolygon } from '@open-pencil/scene-graph/geometry'
 
 describe('clipPolygon', () => {
   test('returns the subject unchanged when the clip has fewer than 3 corners', () => {

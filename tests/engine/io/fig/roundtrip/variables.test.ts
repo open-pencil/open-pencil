@@ -120,10 +120,10 @@ describe('variable roundtrip', () => {
   test.if(runsHeavyTests)(
     'material3.fig variables survive round-trip',
     async () => {
-      const original = await parseFixture('material3.fig')
+      const original = await parseFixture('material3.fig', { populate: 'none' })
 
       const exported = await exportFigFile(original)
-      const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+      const reimported = await parseFigFile(exported.buffer as ArrayBuffer, { populate: 'none' })
 
       expect(reimported.variables.size).toBe(original.variables.size)
       expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(

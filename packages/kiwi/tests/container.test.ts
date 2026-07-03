@@ -20,7 +20,8 @@ describe('Figma FIG Kiwi container helpers', () => {
 
     expect(chunks).not.toBeNull()
     expect(chunks?.[0]).toEqual(schemaDeflated)
-    expect(chunks?.[1]).toEqual(deflateSync(dataRaw))
+    expect(chunks?.[1].length).toBeGreaterThan(0)
+    expect(decompressFigKiwiData(chunks?.[1] ?? new Uint8Array())).toEqual(dataRaw)
   })
 
   test('uses the default container version', () => {

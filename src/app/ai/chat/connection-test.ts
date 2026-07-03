@@ -3,6 +3,8 @@ import { generateText } from 'ai'
 import { createLanguageModel, resolveLanguageModelID, type ModelConfig } from '@/app/ai/chat/model'
 import { isTauri } from '@/app/tauri/env'
 
+const PROVIDER_CONNECTION_TEST_TIMEOUT_MS = 15_000
+
 export type ProviderConnectionTestResult =
   | { ok: true }
   | { ok: false; reason: ProviderConnectionTestFailureReason }
@@ -71,6 +73,9 @@ function errorStatus(error: unknown): number | null {
 
 function errorText(error: unknown): string {
   if (error instanceof Error) return `${error.name}: ${error.message}`
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return `${error.name}: ${error.message}`
+  }
   return String(error)
 }
 
@@ -125,10 +130,10 @@ export async function testProviderConnection(
 
   try {
     await generateText({
-      model: createLanguageModel(config),
+      model: createLanguageModel(config, { requestTimeoutMs: PROVIDER_CONNECTION_TEST_TIMEOUT_MS }),
       prompt: 'Reply with OK.',
       maxOutputTokens: 1,
-      abortSignal: AbortSignal.timeout(15_000)
+      abortSignal: AbortSignal.timeout(PROVIDER_CONNECTION_TEST_TIMEOUT_MS)
     })
     return { ok: true }
   } catch (error) {

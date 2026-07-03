@@ -8,7 +8,7 @@ import {
 
 interface WorkerParseRequest {
   buffer: ArrayBuffer
-  options?: { populate?: 'all' | 'first-page' }
+  options?: { populate?: 'all' | 'first-page' | 'none' }
 }
 
 type WorkerScope = typeof self & {

@@ -12,7 +12,7 @@ export async function compileTailwindCSS(
   classes: string | Iterable<string>,
   options: CompileTailwindCSSOptions = {}
 ): Promise<string> {
-  const compiler = await compile(options.css ?? DEFAULT_TAILWIND_CSS, {
+  const compiler = await compile(tailwindCompilerCSS(options.css), {
     base: options.base,
     loadStylesheet: async (id, base) => {
       const content = options.loadStylesheet
@@ -22,6 +22,17 @@ export async function compileTailwindCSS(
     }
   })
   return compiler.build(normalizeClasses(classes))
+}
+
+function tailwindCompilerCSS(css: string | undefined): string {
+  const trimmed = css?.trim()
+  if (!trimmed) return DEFAULT_TAILWIND_CSS
+  if (containsTailwindImport(trimmed)) return trimmed
+  return `${DEFAULT_TAILWIND_CSS}\n${trimmed}`
+}
+
+function containsTailwindImport(css: string): boolean {
+  return /@import\s+(?:"tailwindcss"|'tailwindcss')/.test(css)
 }
 
 function normalizeClasses(classes: string | Iterable<string>): string[] {

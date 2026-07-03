@@ -13,25 +13,21 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./browser": {
       "types": "./dist/browser.d.ts",
-      "bun": "./src/browser.ts",
       "import": "./dist/browser.js",
       "default": "./dist/browser.js"
     },
     "./jsx-runtime": {
       "types": "./dist/jsx-runtime.d.ts",
-      "bun": "./src/jsx/runtime.ts",
       "import": "./dist/jsx-runtime.js",
       "default": "./dist/jsx-runtime.js"
     },
     "./jsx-dev-runtime": {
       "types": "./dist/jsx-dev-runtime.d.ts",
-      "bun": "./src/jsx/dev-runtime.ts",
       "import": "./dist/jsx-dev-runtime.js",
       "default": "./dist/jsx-dev-runtime.js"
     }

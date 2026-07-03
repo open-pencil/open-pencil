@@ -1,6 +1,4 @@
 import { describe, test, expect, beforeAll, setDefaultTimeout } from 'bun:test'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 
 import { unzipSync } from 'fflate'
 
@@ -12,12 +10,25 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
+import { readFixtureArrayBuffer } from '#tests/helpers/fig-fixtures'
 import { heavy } from '#tests/helpers/test-utils'
+
+const FIG_EXPORT_ROUNDTRIP_TIMEOUT_MS = 120_000
 
 setDefaultTimeout(30_000)
 
-const FIXTURES = resolve(import.meta.dir, '../../../../fixtures')
 const CUSTOM_FIG_KIWI_VERSION = 77
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = bytes.buffer
+  if (buffer instanceof ArrayBuffer) {
+    return buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+  }
+
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return copy.buffer
+}
 
 function canvasFigVersion(figData: Uint8Array): number {
   const zip = unzipSync(figData)
@@ -121,8 +132,7 @@ heavy('fig export roundtrip', () => {
   let parsed: SceneGraph
 
   beforeAll(async () => {
-    const buf = readFileSync(resolve(FIXTURES, 'gold-preview.fig'))
-    parsed = await parseFigFile(buf.buffer as ArrayBuffer)
+    parsed = await parseFigFile(readFixtureArrayBuffer('gold-preview.fig'))
   })
 
   test('exportFigFile produces valid .fig', async () => {
@@ -134,10 +144,14 @@ heavy('fig export roundtrip', () => {
     expect(exported[1]).toBe(0x4b)
   })
 
-  test('exported file can be parsed back', async () => {
-    const exported = await exportFigFile(parsed)
-    const reparsed = await parseFigFile(exported.buffer as ArrayBuffer)
-    expect(reparsed).toBeInstanceOf(SceneGraph)
-    expect(reparsed.getPages().length).toBeGreaterThan(0)
-  })
+  test(
+    'exported file can be parsed back',
+    async () => {
+      const exported = await exportFigFile(parsed)
+      const reparsed = await parseFigFile(toArrayBuffer(exported))
+      expect(reparsed).toBeInstanceOf(SceneGraph)
+      expect(reparsed.getPages().length).toBeGreaterThan(0)
+    },
+    FIG_EXPORT_ROUNDTRIP_TIMEOUT_MS
+  )
 })

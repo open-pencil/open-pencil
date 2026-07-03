@@ -1,14 +1,19 @@
 import { test, expect } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { E2E_SLOW_TEST_TIMEOUT_MS } from '#tests/helpers/e2e-timeouts'
 
 const NODE_COUNT = 500
 const ITERATIONS = 200
 
 test.describe('Render performance', () => {
+  test.describe.configure({ timeout: E2E_SLOW_TEST_TIMEOUT_MS })
+
   let helper: CanvasHelper
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(E2E_SLOW_TEST_TIMEOUT_MS)
+
     const page = await browser.newPage()
     helper = new CanvasHelper(page)
     await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')

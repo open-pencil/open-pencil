@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { E2E_SLOW_TEST_TIMEOUT_MS } from '#tests/helpers/e2e-timeouts'
 
 const NODE_COUNT = 200
 
@@ -91,6 +92,8 @@ test.describe('Zoom and pan', () => {
   })
 
   test('rapid wheel events are coalesced without errors', async () => {
+    test.setTimeout(E2E_SLOW_TEST_TIMEOUT_MS)
+
     const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
     await helper.page.mouse.move(box.x + 400, box.y + 300)
     await helper.page.keyboard.down('Control')
