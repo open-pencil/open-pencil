@@ -62,8 +62,11 @@ function mergeClassNames(...values: Array<string | undefined>): string | undefin
 function serializeAttrs(node: DesignElement, options: SerializeHTMLOptions): string {
   const style = serializeStyle(node)
   const tailwindClass = options.style === 'tailwind' ? serializeTailwindClasses(node) : undefined
+  const attrsWithoutStyle = { ...node.attrs }
+  delete attrsWithoutStyle.style
+  const sourceAttrs = options.style === 'tailwind' && tailwindClass ? attrsWithoutStyle : node.attrs
   const attrs = {
-    ...node.attrs,
+    ...sourceAttrs,
     ...(tailwindClass ? { class: mergeClassNames(node.attrs.class, tailwindClass) } : {}),
     ...(style && options.style !== 'tailwind' ? { style } : {})
   }

@@ -10,7 +10,8 @@ import {
   serializeHTML,
   tailwindHTMLToDesignDocument,
   tailwindHTMLToSceneGraph,
-  type DesignDocument
+  type DesignDocument,
+  type SerializeHTMLOptions
 } from '@open-pencil/dom-css'
 
 import { requireFile } from '#cli/app-client'
@@ -18,6 +19,7 @@ import { fmtList, ok, printError } from '#cli/format'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const OUTPUT_FORMATS = new Set(['fig', 'html', 'json'])
+const HTML_STYLES = new Set(['inline', 'tailwind'])
 
 interface DomArgs {
   file?: string
@@ -28,6 +30,7 @@ interface DomArgs {
   tailwind?: string
   tailwindFile?: string
   pageName: string
+  htmlStyle: SerializeHTMLOptions['style']
   json?: boolean
 }
 
@@ -97,7 +100,7 @@ async function writeOutput(
   }
 
   if (format === 'html') {
-    await Bun.write(output, serializeHTML(document))
+    await Bun.write(output, serializeHTML(document, { style: args.htmlStyle }))
     return output
   }
 
@@ -151,6 +154,11 @@ export default defineCommand({
       description: 'Scene graph page name (default: DOM/CSS)',
       default: 'DOM/CSS'
     },
+    htmlStyle: {
+      type: 'string',
+      description: 'HTML style output: inline or tailwind (default: inline)',
+      default: 'inline'
+    },
     json: {
       type: 'boolean',
       description: 'Print a machine-readable summary to stdout'
@@ -162,9 +170,16 @@ export default defineCommand({
       printError(`Invalid format "${args.format}". Use fig, html, or json.`)
       process.exit(1)
     }
+    const htmlStyleArg = args.htmlStyle.toLowerCase()
+    if (!HTML_STYLES.has(htmlStyleArg)) {
+      printError(`Invalid htmlStyle "${args.htmlStyle}". Use inline or tailwind.`)
+      process.exit(1)
+    }
+    const htmlStyle = htmlStyleArg as SerializeHTMLOptions['style']
 
-    const { document, graph } = await convertDom(args)
-    const output = await writeOutput(args, document, graph)
+    const normalizedArgs = { ...args, htmlStyle }
+    const { document, graph } = await convertDom(normalizedArgs)
+    const output = await writeOutput(normalizedArgs, document, graph)
     const pages = graph.getPages()
     const summary = {
       input: requireFile(args.file),

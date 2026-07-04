@@ -162,6 +162,36 @@ test('dom CLI writes serialized HTML output', async () => {
   expect(html).toContain('class="card"')
 })
 
+test('dom CLI can write HTML styles as Tailwind classes', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-dom-cli-html-tailwind-'))
+  const htmlPath = join(dir, 'card.html')
+  const output = join(dir, 'card.out.html')
+
+  await Bun.write(
+    htmlPath,
+    '<section class="card" style="display:flex;padding:16px;gap:8px;background-color:white">Tailwind HTML</section>'
+  )
+
+  const { stderr, exitCode } = await run([
+    'dom',
+    htmlPath,
+    '--format',
+    'html',
+    '--htmlStyle',
+    'tailwind',
+    '--output',
+    output
+  ])
+
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+
+  const html = await Bun.file(output).text()
+  expect(html).toContain('Tailwind HTML')
+  expect(html).toContain('class="card flex p-4 gap-2 bg-white"')
+  expect(html).not.toContain('style=')
+})
+
 test('dom CLI writes a .fig that core IO can import', async () => {
   const { htmlPath, cssPath, dir } = await createFixture()
   const output = join(dir, 'card.fig')
