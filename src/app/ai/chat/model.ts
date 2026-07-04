@@ -24,6 +24,7 @@ export function resolveLanguageModelID(
 ) {
   const customModelID = config.customModelID.trim()
   if (config.providerID === 'openrouter') return customModelID || config.modelID
+  if (config.providerID === 'requesty') return customModelID || config.modelID
   if (config.providerID === 'openai-compatible' || config.providerID === 'anthropic-compatible') {
     return customModelID
   }
@@ -49,6 +50,18 @@ export function createLanguageModel(config: ModelConfig): LanguageModel {
         }
       })
       return openrouter(effectiveModelID)
+    }
+    case 'requesty': {
+      const requesty = createOpenAI({
+        apiKey: config.apiKey,
+        baseURL: 'https://router.requesty.ai/v1',
+        fetch,
+        headers: {
+          'X-Title': 'OpenPencil',
+          'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
+        }
+      })
+      return requesty.chat(effectiveModelID)
     }
     case 'anthropic': {
       const anthropic = createAnthropic({ apiKey: config.apiKey, fetch })

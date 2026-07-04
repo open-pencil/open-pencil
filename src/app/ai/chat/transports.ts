@@ -45,7 +45,8 @@ function supportsAnthropicCaching(providerID: AIProviderID, modelID: string): bo
   return (
     providerID === 'anthropic' ||
     providerID === 'anthropic-compatible' ||
-    (providerID === 'openrouter' && modelID.startsWith('anthropic/'))
+    (providerID === 'openrouter' && modelID.startsWith('anthropic/')) ||
+    (providerID === 'requesty' && modelID.startsWith('anthropic/'))
   )
 }
 

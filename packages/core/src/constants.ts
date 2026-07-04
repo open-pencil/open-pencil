@@ -174,6 +174,7 @@ export const ACP_AGENTS: ACPAgentDef[] = [
 
 export type AIProviderID =
   | 'openrouter'
+  | 'requesty'
   | 'anthropic'
   | 'openai'
   | 'google'
@@ -224,6 +225,20 @@ export const AI_PROVIDERS: AIProviderDef[] = [
       { id: 'qwen/qwen3.5-flash-02-23', name: 'Qwen 3.5 Flash', tag: 'Cheap' },
       { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', tag: 'Free' },
       { id: 'openai/gpt-oss-120b:free', name: 'GPT-OSS 120B', tag: 'Free' }
+    ]
+  },
+  {
+    id: 'requesty',
+    name: 'Requesty',
+    keyPlaceholder: 'rqsty-sk-…',
+    keyURL: 'https://app.requesty.ai/api-keys',
+    defaultModel: 'anthropic/claude-sonnet-4-5',
+    supportsCustomModel: true,
+    models: [
+      { id: 'anthropic/claude-sonnet-4-5', name: 'Claude Sonnet 4.5', tag: 'Best for design' },
+      { id: 'openai/gpt-4o', name: 'GPT-4o' },
+      { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
+      { id: 'google/gemini-2.5-flash', name: 'Gemini 2.5 Flash' }
     ]
   },
   {

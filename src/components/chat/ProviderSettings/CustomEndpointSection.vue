@@ -11,7 +11,9 @@ import { useProviderSettingsContext } from '@/components/chat/ProviderSettings/c
 const ctx = useProviderSettingsContext()
 const { dialogs } = useI18n()
 const suggestedModels = ref<Array<{ id: string; name: string }>>([])
-const showModelSuggestions = computed(() => ctx.providerID === 'openrouter')
+const showModelSuggestions = computed(
+  () => ctx.providerID === 'openrouter' || ctx.providerID === 'requesty'
+)
 
 async function loadModelSuggestions() {
   if (!showModelSuggestions.value || suggestedModels.value.length) return

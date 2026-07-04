@@ -38,6 +38,7 @@ const canTestConnection = computed(() => {
   if (
     providerDef.value.supportsCustomModel &&
     providerID.value !== 'openrouter' &&
+    providerID.value !== 'requesty' &&
     !customModelInput.value.trim()
   ) {
     return false
@@ -112,7 +113,7 @@ function save() {
 
       <!-- Optional custom model ID for providers that support arbitrary model IDs. -->
       <AppInput
-        v-if="providerDef.supportsCustomModel && providerID !== 'openrouter'"
+        v-if="providerDef.supportsCustomModel && providerID !== 'openrouter' && providerID !== 'requesty'"
         v-model="customModelInput"
         data-test-id="provider-custom-model"
         :placeholder="dialogs.modelIDPlaceholder"
