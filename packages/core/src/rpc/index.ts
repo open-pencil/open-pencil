@@ -23,5 +23,6 @@ export type {
   AnalyzeClustersResult,
   AnalyzeOverlapsArgs,
   AnalyzeOverlapsResult,
-  TypographyStyle
+  TypographyStyle,
+  AutomationDocumentSummary
 } from './commands'

@@ -7,6 +7,7 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import type { RasterExportFormat } from '@open-pencil/core/io'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
+import { appTargetOptions, appTargetRpcArgs } from '#cli/app-target'
 import { ok, printError } from '#cli/format'
 import { loadDocument } from '#cli/headless'
 
@@ -27,6 +28,8 @@ interface ExportArgs {
   thumbnail?: boolean
   width: string
   height: string
+  'document-id'?: string
+  'page-id'?: string
 }
 
 async function writeAndLog(path: string, content: string | Uint8Array) {
@@ -36,8 +39,10 @@ async function writeAndLog(path: string, content: string | Uint8Array) {
 }
 
 async function exportViaApp(format: string, args: ExportArgs) {
+  const targetArgs = appTargetRpcArgs(args)
   if (format === 'SVG') {
     const result = await rpc<{ svg: string }>('tool', {
+      ...targetArgs,
       name: 'export_svg',
       args: { ids: args.node ? [args.node] : undefined }
     })
@@ -51,6 +56,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
 
   if (format === 'PDF') {
     const result = await rpc<{ base64: string }>('tool', {
+      ...targetArgs,
       name: 'export_pdf',
       args: { ids: args.node ? [args.node] : undefined }
     })
@@ -69,6 +75,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
   }
 
   const result = await rpc<{ base64: string }>('export', {
+    ...targetArgs,
     nodeIds: args.node ? [args.node] : undefined,
     scale: Number(args.scale),
     format: format.toLowerCase()
@@ -192,7 +199,8 @@ export default defineCommand({
     },
     thumbnail: { type: 'boolean', description: 'Export page thumbnail instead of full render' },
     width: { type: 'string', description: 'Thumbnail width (default: 1920)', default: '1920' },
-    height: { type: 'string', description: 'Thumbnail height (default: 1080)', default: '1080' }
+    height: { type: 'string', description: 'Thumbnail height (default: 1080)', default: '1080' },
+    ...appTargetOptions
   },
   async run({ args }) {
     const format = args.format.toUpperCase() as RasterExportFormat | 'SVG' | 'JSX' | 'FIG'

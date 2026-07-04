@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
 
+import { appTargetOptions } from '#cli/app-target'
 import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'
 
@@ -14,10 +15,16 @@ export default defineCommand({
       required: false
     },
     grid: { type: 'string', description: 'Base grid size to check against', default: '8' },
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeSpacingResult>(args.file, 'analyze_spacing')
+    const data = await loadRpcData<AnalyzeSpacingResult>(
+      args.file,
+      'analyze_spacing',
+      undefined,
+      args
+    )
     const gridSize = Number(args.grid)
 
     if (args.json) {

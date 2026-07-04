@@ -11,6 +11,7 @@ import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 import {
   guidToString,
   nodeChangeToProps,
+  shouldImportTextAsAutoSize,
   sortChildren,
   setVariableColorResolver,
   VARIABLE_BINDING_FIELDS_INVERSE
@@ -466,6 +467,9 @@ export function importNodeChanges(
 
     const { nodeType, ...props } = nodeChangeToProps(nc, blobs)
     if (nodeType === 'DOCUMENT' || nodeType === 'VARIABLE' || nc.type === 'VARIABLE_SET') return
+    if (shouldImportTextAsAutoSize(nc, changeMap.get(parentMap.get(ncId) ?? ''))) {
+      props.textAutoResize = 'WIDTH_AND_HEIGHT'
+    }
 
     const parentId = canvasIdToPageId.get(graphParentId) ?? graphParentId
     const node = graph.createNode(nodeType, parentId, props)

@@ -1,8 +1,9 @@
 import { nodeToXPath } from '@open-pencil/core/xpath'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import type { AutomationTarget } from '@/app/automation/bridge/target'
 
-export async function handleSelection(store: EditorStore): Promise<unknown> {
+export async function handleSelection(target: AutomationTarget): Promise<unknown> {
+  const store = target.store
   const ids = [...store.state.selectedIds]
   const nodes = ids
     .map((id) => store.graph.getNode(id))

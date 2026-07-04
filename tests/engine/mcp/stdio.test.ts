@@ -19,6 +19,10 @@ function createMockApp() {
   const graph = new SceneGraph()
   const wss = new WebSocketServer({ port: 0, host: '127.0.0.1' })
   let clientWs: WebSocket | null = null
+  const requests: Array<{
+    command: string
+    args?: { name?: string; document_id?: string; page_id?: string; args?: Record<string, unknown> }
+  }> = []
 
   wss.on('connection', (ws) => {
     clientWs = ws
@@ -32,6 +36,7 @@ function createMockApp() {
         args?: { name?: string; args?: Record<string, unknown> }
       }
       if (msg.type !== 'request') return
+      requests.push({ command: msg.command, args: msg.args })
 
       try {
         let result: unknown
@@ -45,6 +50,19 @@ function createMockApp() {
           if (def.mutates) computeAllLayouts(graph)
         } else if (msg.command === 'save_file') {
           result = { ok: true }
+        } else if (msg.command === 'list_documents') {
+          result = {
+            documents: [
+              {
+                id: 'doc-1',
+                name: 'Mock document',
+                active: true,
+                current_page_id: graph.getPages()[0].id,
+                current_page_name: graph.getPages()[0].name,
+                pages: graph.getPages().map((page) => ({ id: page.id, name: page.name }))
+              }
+            ]
+          }
         } else {
           result = executeRpcCommand(graph, msg.command, msg.args ?? {})
         }
@@ -69,6 +87,7 @@ function createMockApp() {
 
   return {
     graph,
+    requests,
     wss,
     port,
     close: () => {
@@ -144,7 +163,14 @@ describe('MCP stdio transport', () => {
     expect(names).toContain('create_shape')
     expect(names).toContain('get_page_tree')
     expect(names).toContain('save_file')
+    expect(names).toContain('list_documents')
     expect(names).toContain('get_codegen_prompt')
+    const createShape = expectDefined(
+      tools.find((tool) => tool.name === 'create_shape'),
+      'create_shape tool'
+    )
+    expect(JSON.stringify(createShape.inputSchema)).toContain('document_id')
+    expect(JSON.stringify(createShape.inputSchema)).toContain('page_id')
     expect(tools.length).toBeGreaterThan(30)
   })
 
@@ -163,6 +189,41 @@ describe('MCP stdio transport', () => {
     expect(data.name).toBe('StdioFrame')
 
     expect(getNodeOrThrow(app.graph, data.id).width).toBe(200)
+  })
+
+  test('tool target fields are sent in the app RPC envelope', async () => {
+    const result = await client.callTool({
+      name: 'create_shape',
+      arguments: {
+        document_id: 'doc-1',
+        page_id: 'page-1',
+        type: 'FRAME',
+        x: 10,
+        y: 20,
+        width: 200,
+        height: 100,
+        name: 'TargetedFrame'
+      }
+    })
+    expect(result.isError).not.toBe(true)
+    const request = expectDefined(
+      app.requests.find((item) => item.command === 'tool' && item.args?.name === 'create_shape'),
+      'tool request'
+    )
+    expect(request.args?.document_id).toBe('doc-1')
+    expect(request.args?.page_id).toBe('page-1')
+    expect(request.args?.args?.document_id).toBeUndefined()
+    expect(request.args?.args?.page_id).toBeUndefined()
+  })
+
+  test('list_documents via stdio returns open documents', async () => {
+    const result = await client.callTool({ name: 'list_documents', arguments: {} })
+    expect(result.isError).not.toBe(true)
+    const data = JSON.parse(textContent(result.content)) as {
+      documents: Array<{ id: string; current_page_id: string }>
+    }
+    expect(data.documents[0].id).toBe('doc-1')
+    expect(data.documents[0].current_page_id).toBe(app.graph.getPages()[0].id)
   })
 
   test('save_file via stdio succeeds', async () => {
