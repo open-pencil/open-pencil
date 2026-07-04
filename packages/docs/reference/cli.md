@@ -107,6 +107,8 @@ openpencil export [file] [options]
 | `--style` | | JSX style: `openpencil` (default), `tailwind` |
 | `--html` | | HTML mode: `fragment` (default), `standalone` |
 | `--css` | | HTML CSS output: `inline` (default), `tailwind` |
+| `--assets` | | Standalone HTML assets: `inline` (default), `external` |
+| `--fonts` | | Standalone HTML font output: `assets`, `none` (default) |
 | `--thumbnail` | | Export page thumbnail instead of full render |
 | `--width` | | Thumbnail width (default: 1920) |
 | `--height` | | Thumbnail height (default: 1080) |

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import type { DesignElement } from '../src/index'
+import type { DesignElement, DesignNode } from '../src/index'
 import {
   createHeadlessCSSRuntime,
   designDocumentToSceneGraph,
@@ -26,6 +26,16 @@ function expectText(node: SceneNode | undefined) {
   expect(node?.type).toBe('TEXT')
   if (node?.type !== 'TEXT') throw new Error('Expected text node')
   return node
+}
+
+function findTextElement(nodes: DesignNode[]): DesignElement | undefined {
+  for (const node of nodes) {
+    if (node.type !== 'element') continue
+    if (node.children.some((child) => child.type === 'text')) return node
+    const child = findTextElement(node.children)
+    if (child) return child
+  }
+  return undefined
 }
 
 function createStyleRoundTripGraph() {
@@ -242,6 +252,25 @@ describe('@open-pencil/dom-css conversion', () => {
 
     expect(html).toContain('OpenPencil')
     expect(html).toContain('box-shadow')
+  })
+
+  it('exports multiline text with preserved whitespace', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          attrs: {},
+          inlineStyle: { width: '160px' },
+          children: [{ type: 'text', text: 'Open\nPencil' }]
+        }
+      ]
+    })
+    const document = sceneGraphToDesignDocument(graph)
+    const text = findTextElement(document.children)
+
+    expect(text?.inlineStyle?.['white-space']).toBe('pre-wrap')
   })
 
   it('projects a manually built DesignDOM document into a scene graph', async () => {

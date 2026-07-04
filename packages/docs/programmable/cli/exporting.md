@@ -61,9 +61,10 @@ Use `--html standalone` for a browser-openable HTML document with reset styles a
 ```sh
 openpencil export design.fig -f html --html standalone --css inline
 openpencil export design.fig -f html --html standalone --css tailwind
+openpencil export design.fig -f html --html standalone --css tailwind --assets external
 ```
 
-Standalone Tailwind output includes Tailwind's v4 browser runtime from jsDelivr, so it needs network access when opened and is best for previews/prototypes. Use `--css inline` for a self-contained offline file.
+Standalone Tailwind output is compiled during export; it does not depend on the Tailwind browser runtime. Use `--assets external` to write CSS and extracted image assets next to the HTML file. Use `--fonts assets` with external assets to resolve detected SceneGraph text fonts through OpenPencil's configured web-font providers and emit local `@font-face` files.
 
 HTML export is available in file mode.
 

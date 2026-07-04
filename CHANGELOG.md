@@ -7,7 +7,7 @@
 - Add Figma-style page management in the Pages panel, including rename/delete actions and drag-and-drop page reordering.
 - Add DOM/CSS import and authoring support so HTML, CSS, Tailwind, and JSX can be converted into editable OpenPencil documents from the app, CLI, and SDK.
 - Add Tailwind class serialization for DOM/CSS HTML export in the SDK and CLI.
-- Add standalone browser-openable HTML export with inline CSS or Tailwind browser runtime previews.
+- Add standalone browser-openable HTML export with compiled CSS and optional external image/font assets.
 - Add richer Design JSX authoring for components, variables, structured fills, gradients, shadows, and blur effects.
 - Add overlap analysis for finding layout collisions and overflowing children from the CLI, AI tools, and MCP.
 - Add saved per-node export settings for repeat exports.

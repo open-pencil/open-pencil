@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createCSSRuntime, createHeadlessCSSRuntime, serializeHTML } from '../src/index'
+import {
+  createCSSRuntime,
+  createHeadlessCSSRuntime,
+  exportHTMLBundle,
+  serializeHTML
+} from '../src/index'
 import { cardDocument, TEST_COLORS } from './helpers'
 
 describe('@open-pencil/dom-css runtime', () => {
@@ -34,8 +39,9 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(html).toBe('<section class="card flex p-4 gap-2 bg-white">OpenPencil</section>')
   })
 
-  it('serializes standalone HTML documents when requested', () => {
-    const html = serializeHTML(cardDocument, { html: 'standalone' })
+  it('exports standalone HTML documents when requested', async () => {
+    const bundle = await exportHTMLBundle(cardDocument, { html: 'standalone' })
+    const html = String(bundle.files[0]?.content)
 
     expect(html).toContain('<!doctype html>')
     expect(html).toContain('data-open-pencil-html="standalone"')
@@ -43,12 +49,12 @@ describe('@open-pencil/dom-css runtime', () => {
     expect(html).not.toContain('@tailwindcss/browser@4')
   })
 
-  it('loads the Tailwind browser runtime for standalone Tailwind HTML', () => {
-    const html = serializeHTML(cardDocument, { html: 'standalone', style: 'tailwind' })
+  it('precompiles Tailwind CSS for standalone Tailwind HTML', async () => {
+    const bundle = await exportHTMLBundle(cardDocument, { html: 'standalone', style: 'tailwind' })
+    const html = String(bundle.files[0]?.content)
 
-    expect(html).toContain(
-      '<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>'
-    )
+    expect(html).toContain('<style>')
+    expect(html).not.toContain('@tailwindcss/browser@4')
   })
 
   it('uses the headless runtime outside browser contexts', () => {

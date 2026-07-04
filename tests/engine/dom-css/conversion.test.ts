@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 
-import type { DesignElement } from '@open-pencil/dom-css'
+import type { DesignElement, DesignNode } from '@open-pencil/dom-css'
 import {
   compileTailwindCSS,
   createHeadlessCSSRuntime,
@@ -30,6 +30,16 @@ function expectFrame(node: SceneNode | undefined) {
   expect(node?.type).toBe('FRAME')
   if (node?.type !== 'FRAME') throw new Error('Expected frame node')
   return node
+}
+
+function findTextElement(nodes: DesignNode[]): DesignElement | undefined {
+  for (const node of nodes) {
+    if (node.type !== 'element') continue
+    if (node.children.some((child) => child.type === 'text')) return node
+    const child = findTextElement(node.children)
+    if (child) return child
+  }
+  return undefined
 }
 
 function createStyleRoundTripGraph() {
@@ -236,6 +246,25 @@ describe('@open-pencil/dom-css conversion', () => {
     expect(html).toContain('OpenPencil')
     expect(html).toContain('Design with code-shaped CSS.')
     expect(html).toContain('box-shadow')
+  })
+
+  it('exports multiline text with preserved whitespace', () => {
+    const graph = designDocumentToSceneGraph({
+      type: 'document',
+      children: [
+        {
+          type: 'element',
+          tagName: 'p',
+          attrs: {},
+          inlineStyle: { width: '160px' },
+          children: [{ type: 'text', text: 'Open\nPencil' }]
+        }
+      ]
+    })
+    const document = sceneGraphToDesignDocument(graph)
+    const text = findTextElement(document.children)
+
+    expect(text?.inlineStyle?.['white-space']).toBe('pre-wrap')
   })
 
   it('maps CSS shape constraints, clipping, corners, and borders', () => {
