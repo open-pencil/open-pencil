@@ -13,7 +13,6 @@ test('unit test groups cover all declared shards', () => {
   expect(unitTestGroupNames()).toContain('all')
   expect(pathsForUnitTestGroup('dom')).toContain('tests/engine/dom-css')
   expect(pathsForUnitTestGroup('app')).toContain('tests/engine/collab')
-  expect(pathsForUnitTestGroup('fig')).toContain('tests/engine/fig')
   expect(pathsForUnitTestGroup('all')).toContain('tests/engine/io')
 })
 

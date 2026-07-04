@@ -1,12 +1,8 @@
 import { deflateSync, inflateSync } from 'fflate'
 
-export const FIG_KIWI_DEFAULT_VERSION = 101
+import { isZstdCompressed } from './protocol'
 
-function isZstdCompressed(data: Uint8Array): boolean {
-  return (
-    data.length >= 4 && data[0] === 0x28 && data[1] === 0xb5 && data[2] === 0x2f && data[3] === 0xfd
-  )
-}
+export const FIG_KIWI_DEFAULT_VERSION = 101
 
 function bunZstdDecompressSync(data: Uint8Array): Uint8Array | undefined {
   const g = globalThis as { Bun?: { zstdDecompressSync?: (data: Uint8Array) => Uint8Array } }

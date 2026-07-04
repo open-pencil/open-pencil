@@ -64,8 +64,6 @@ import { htmlToDesignDocument, type DesignDocument } from '@open-pencil/dom-css'
 import { FIG_PACKAGE_STATUS, type FigContainerDocument } from '@open-pencil/fig'
 import { FIG_KIWI_DEFAULT_VERSION, buildFigKiwi } from '@open-pencil/kiwi/fig/container'
 import { type GUID as KiwiGUID } from '@open-pencil/kiwi/fig'
-import { type DiscoveryInfo } from '@open-pencil/mcp/discovery'
-import { MCP_VERSION, type MCPResult, type ServerHandle } from '@open-pencil/mcp'
 import { parsePenFile, type PenDocument } from '@open-pencil/pen'
 import { SceneGraph, type Color, type SceneNode, type Vector } from '@open-pencil/scene-graph'
 import {
@@ -80,7 +78,6 @@ const graph = new SceneGraph()
 const editorFactory: typeof createEditor = createEditor
 declare const editor: Editor
 declare const designDocument: DesignDocument
-declare const serverHandle: ServerHandle
 
 const color: Color = { r: 1, g: 0.5, b: 0, a: 1 }
 const vector: Vector = { x: 1, y: 2 }
@@ -98,21 +95,10 @@ const mergedTestId: WithRequiredTestId<{ label: string }> = {
   testId: 'typed-smoke'
 }
 const withoutTestId: WithoutTestId<{ label: string; testId?: string }> = { label: 'clean' }
-const discovery: DiscoveryInfo = {
-  pid: 1,
-  socketPath: '/tmp/open-pencil.sock',
-  httpPort: 0,
-  authRequired: false,
-  authToken: null,
-  version: MCP_VERSION,
-  startedAt: new Date(0).toISOString()
-}
-const mcpResult: MCPResult = { content: [] }
 
 void editorFactory
 void editor
 void designDocument
-void serverHandle
 void color
 void vector
 void maybeNode
@@ -123,8 +109,6 @@ void optionalTestId
 void requiredTestId
 void mergedTestId
 void withoutTestId
-void discovery
-void mcpResult
 void FIG_PACKAGE_STATUS
 void FIG_KIWI_DEFAULT_VERSION
 void buildFigKiwi

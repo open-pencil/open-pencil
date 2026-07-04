@@ -74,7 +74,11 @@ export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
   if (isZstdCompressed(compressed)) {
     dataRaw = zstdDecompress(compressed)
   } else {
-    dataRaw = inflateSync(compressed)
+    try {
+      dataRaw = inflateSync(compressed)
+    } catch {
+      throw new Error('Failed to decompress fig-kiwi data chunk')
+    }
   }
 
   return { schemaDeflated: chunks[0], dataRaw, version }

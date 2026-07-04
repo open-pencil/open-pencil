@@ -19,7 +19,7 @@ export const UNIT_TEST_GROUPS = {
     'tests/engine/hit-test',
     'tests/engine/snap'
   ],
-  fig: ['tests/engine/fig', 'tests/engine/figma', 'tests/engine/io', 'tests/engine/kiwi'],
+  fig: ['tests/engine/figma', 'tests/engine/io', 'tests/engine/kiwi'],
   render: ['tests/engine/geometry', 'tests/engine/layout', 'tests/engine/render'],
   scene: [
     'tests/engine/lint',
