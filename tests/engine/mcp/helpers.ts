@@ -172,6 +172,49 @@ function randomHex(bytes: number): string {
     .join('')
 }
 
+async function handleMockCommand(
+  graph: SceneGraph,
+  command: string,
+  rawArgs: unknown
+): Promise<unknown> {
+  const args = rawArgs as { name?: string; args?: Record<string, unknown> } | undefined
+
+  if (command === 'tool' && args?.name) {
+    const def = ALL_TOOLS.find((t) => t.name === args.name)
+    if (!def) throw new Error(`Unknown tool: ${args.name}`)
+    const api = new FigmaAPI(graph)
+    const pages = graph.getPages()
+    if (pages.length === 0) throw new Error('No pages in graph')
+    api.currentPage = api.wrapNode(pages[0].id)
+    const result = await def.execute(api, args.args ?? {})
+    if (def.mutates) computeAllLayouts(graph)
+    return result
+  }
+
+  if (command === 'list_documents') {
+    const pages = graph.getPages()
+    const currentPage = pages[0]
+    return {
+      documents: [
+        {
+          id: 'doc-1',
+          name: 'Mock document',
+          active: true,
+          current_page_id: currentPage?.id ?? '',
+          current_page_name: currentPage?.name ?? '',
+          pages: pages.map((page) => ({ id: page.id, name: page.name }))
+        }
+      ]
+    }
+  }
+
+  if (command === 'save_file' || command === 'new_document' || command === 'open_file') {
+    return {}
+  }
+
+  return executeRpcCommand(graph, command, args ?? {})
+}
+
 export function connectMockBrowser(
   port: number,
   graph: SceneGraph,
@@ -197,43 +240,8 @@ export function connectMockBrowser(
         if (msg.type !== 'request') return
 
         try {
-          const command = msg.command
-          requests.push({ command, args: msg.args })
-          const args = msg.args as { name?: string; args?: Record<string, unknown> } | undefined
-
-          let result: unknown
-          if (command === 'tool' && args?.name) {
-            const def = ALL_TOOLS.find((t) => t.name === args.name)
-            if (!def) throw new Error(`Unknown tool: ${args.name}`)
-            const api = new FigmaAPI(graph)
-            const pages = graph.getPages()
-            if (pages.length === 0) throw new Error('No pages in graph')
-            api.currentPage = api.wrapNode(pages[0].id)
-            result = await def.execute(api, args.args ?? {})
-            if (def.mutates) computeAllLayouts(graph)
-          } else if (command === 'list_documents') {
-            result = {
-              documents: [
-                {
-                  id: 'doc-1',
-                  name: 'Mock document',
-                  active: true,
-                  current_page_id: graph.getPages()[0].id,
-                  current_page_name: graph.getPages()[0].name,
-                  pages: graph.getPages().map((page) => ({ id: page.id, name: page.name }))
-                }
-              ]
-            }
-          } else if (
-            command === 'save_file' ||
-            command === 'new_document' ||
-            command === 'open_file'
-          ) {
-            result = {}
-          } else {
-            result = executeRpcCommand(graph, command, args ?? {})
-          }
-
+          requests.push({ command: msg.command, args: msg.args })
+          const result = await handleMockCommand(graph, msg.command, msg.args)
           ws.send(JSON.stringify({ type: 'response', id: msg.id, ok: true, result }))
         } catch (e) {
           ws.send(

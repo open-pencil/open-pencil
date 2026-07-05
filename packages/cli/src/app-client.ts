@@ -13,15 +13,7 @@ let cachedInfo: DiscoveryInfo | null = null
 async function resolveDiscovery(): Promise<DiscoveryInfo> {
   if (cachedInfo) return cachedInfo
 
-  let info: DiscoveryInfo | null = null
-  try {
-    info = await readDiscoveryFile()
-  } catch (e) {
-    if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(`Failed to read discovery file: ${e.message}`)
-    }
-  }
-
+  const info = await readDiscoveryFile()
   if (!info) {
     throw new Error(
       'Could not read MCP discovery file.\n' +
@@ -65,7 +57,7 @@ function doRequest(
         } catch {
           data = raw
         }
-        resolve({ status: res.statusCode ?? 200, data })
+        resolve({ status: res.statusCode ?? 500, data })
       })
       res.on('error', (err) => {
         clearTimeout(timer)

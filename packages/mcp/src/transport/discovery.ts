@@ -65,7 +65,11 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
   let raw: string
   try {
     raw = await readFile(path, 'utf-8')
-  } catch {
+  } catch (e) {
+    if (!isEnoent(e))
+      process.stderr.write(
+        `  Discovery: read warning (${e instanceof Error ? e.message : String(e)})\n`
+      )
     return null
   }
 
@@ -94,6 +98,7 @@ function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo
   if (typeof authRequired !== 'boolean') return null
   if (typeof startedAt !== 'string') return null
   if (typeof socketPath !== 'string' && socketPath !== null) return null
+  if (socketPath === '') return null
   if (authToken !== null && typeof authToken !== 'string') return null
   return { pid, version, httpPort, authRequired, startedAt, socketPath, authToken }
 }
