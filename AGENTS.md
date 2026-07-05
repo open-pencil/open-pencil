@@ -57,7 +57,7 @@ The app editor session (`src/app/editor/session/create.ts`) is a Vue wrapper aro
 - `bun run test:unit` — engine/unit tests
 - `bun run test` — Playwright E2E and visual regression tests
 - `bun run tauri dev` — desktop app with hot reload
-- `bun open-pencil --help` — list CLI commands. Common commands include `info`, `tree`, `find`, `node`, `pages`, `variables`, `export`, `convert`, `lint`, `query`, `selection`, `formats`, `analyze ...`, and `eval` for Figma Plugin API scripting.
+- `bun open-pencil --help` — list CLI commands. Common commands include `info`, `tree`, `find`, `node`, `pages`, `variables`, `export`, `import`, `convert`, `lint`, `query`, `selection`, `formats`, `analyze ...`, and `eval` for Figma Plugin API scripting.
 
 ## Releases & CI
 

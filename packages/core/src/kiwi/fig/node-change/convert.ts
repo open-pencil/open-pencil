@@ -544,6 +544,22 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   return nodeType
 }
 
+function nearlyEqualSize(a: number | undefined, b: number | undefined): boolean {
+  return Math.abs((a ?? 0) - (b ?? 0)) <= 0.5
+}
+
+export function shouldImportTextAsAutoSize(
+  nc: NodeChange,
+  parentNc: NodeChange | undefined
+): boolean {
+  if (nc.type !== 'TEXT' || nc.textAutoResize !== 'NONE') return false
+  if (parentNc?.stackMode !== 'HORIZONTAL' && parentNc?.stackMode !== 'VERTICAL') return false
+  if (!nc.textData?.characters) return false
+  const layoutSize = nc.derivedTextData?.layoutSize
+  if (!layoutSize || !nc.size) return false
+  return nearlyEqualSize(layoutSize.x, nc.size.x) && nearlyEqualSize(layoutSize.y, nc.size.y)
+}
+
 export function nodeChangeToProps(
   nc: NodeChange,
   blobs: Uint8Array[]

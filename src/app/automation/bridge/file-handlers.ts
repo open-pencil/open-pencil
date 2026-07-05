@@ -1,9 +1,14 @@
-import type { EditorStore } from '@/app/editor/active-store'
+import {
+  resolveAutomationTarget,
+  responseWithTarget,
+  type AutomationTarget
+} from '@/app/automation/bridge/target'
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { createTab, openFileInNewTab } from '@/app/tabs'
+import { createTab, getActiveStore, openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
-export async function handleSaveFile(store: EditorStore, args: unknown): Promise<unknown> {
+export async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
+  const store = target.store
   const path = (args as { path?: string }).path
   if (path) {
     store.setPlannedFilePath(path)
@@ -25,7 +30,10 @@ export async function ensureTauriParentDirectory(path: string): Promise<void> {
   await mkdir(dir, { recursive: true })
 }
 
-export async function handleNewDocument(_store: EditorStore, args: unknown): Promise<unknown> {
+export async function handleNewDocument(
+  _target: AutomationTarget,
+  args: unknown
+): Promise<unknown> {
   const path = (args as { path?: string }).path
   const tab = createTab()
   if (path) {
@@ -34,10 +42,11 @@ export async function handleNewDocument(_store: EditorStore, args: unknown): Pro
     await tab.store.saveFigFile()
     tab.store.startWatchingCurrentFile()
   }
-  return { ok: true }
+  const target = resolveAutomationTarget(tab.store, { document_id: tab.id })
+  return responseWithTarget({ ok: true, result: { created: true } }, target)
 }
 
-export async function handleOpenFile(_store: EditorStore, args: unknown): Promise<unknown> {
+export async function handleOpenFile(_target: AutomationTarget, args: unknown): Promise<unknown> {
   const path = (args as { path?: string }).path
   if (!path) throw new Error('Missing "path" in args')
   if (isTauri()) {
@@ -49,5 +58,6 @@ export async function handleOpenFile(_store: EditorStore, args: unknown): Promis
     const file = new File([await response.blob()], name)
     await openFileInNewTab(file, undefined, path)
   }
-  return { ok: true }
+  const target = resolveAutomationTarget(getActiveStore(), undefined)
+  return responseWithTarget({ ok: true, result: { opened: true } }, target)
 }

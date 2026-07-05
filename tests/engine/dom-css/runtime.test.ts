@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'bun:test'
 
-import { createCSSRuntime, createHeadlessCSSRuntime, serializeHTML } from '@open-pencil/dom-css'
+import {
+  createCSSRuntime,
+  createHeadlessCSSRuntime,
+  exportHTMLBundle,
+  serializeHTML
+} from '@open-pencil/dom-css'
 
 import { DOM_CSS_COLORS, simpleCardDocument } from '#tests/helpers/dom-css'
 
@@ -9,6 +14,52 @@ describe('@open-pencil/dom-css', () => {
     expect(serializeHTML(simpleCardDocument)).toBe(
       '<div class="card" data-id="node-1">OpenPencil</div>'
     )
+  })
+
+  it('serializes inline styles as Tailwind classes when requested', () => {
+    const html = serializeHTML(
+      {
+        type: 'document',
+        children: [
+          {
+            type: 'element',
+            tagName: 'section',
+            attrs: { class: 'card' },
+            inlineStyle: {
+              display: 'flex',
+              padding: '16px',
+              gap: '8px',
+              'background-color': 'white'
+            },
+            children: [{ type: 'text', text: 'OpenPencil' }]
+          }
+        ]
+      },
+      { style: 'tailwind' }
+    )
+
+    expect(html).toBe('<section class="card flex p-4 gap-2 bg-white">OpenPencil</section>')
+  })
+
+  it('exports standalone HTML documents when requested', async () => {
+    const bundle = await exportHTMLBundle(simpleCardDocument, { html: 'standalone' })
+    const html = String(bundle.files[0]?.content)
+
+    expect(html).toContain('<!doctype html>')
+    expect(html).toContain('data-open-pencil-html="standalone"')
+    expect(html).toContain('OpenPencil')
+    expect(html).not.toContain('@tailwindcss/browser@4')
+  })
+
+  it('precompiles Tailwind CSS for standalone Tailwind HTML', async () => {
+    const bundle = await exportHTMLBundle(simpleCardDocument, {
+      html: 'standalone',
+      style: 'tailwind'
+    })
+    const html = String(bundle.files[0]?.content)
+
+    expect(html).toContain('<style>')
+    expect(html).not.toContain('@tailwindcss/browser@4')
   })
 
   it('uses the headless runtime outside browser contexts', () => {

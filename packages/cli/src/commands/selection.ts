@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty'
 
 import { rpc } from '#cli/app-client'
+import { appTargetOptions, appTargetRpcArgs } from '#cli/app-target'
 import { bold, entity, fmtList, formatType, printError } from '#cli/format'
 
 interface SelectionNode {
@@ -15,11 +16,12 @@ interface SelectionNode {
 export default defineCommand({
   meta: { description: 'Get current selection from the running app' },
   args: {
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
     try {
-      const nodes = await rpc<SelectionNode[]>('selection')
+      const nodes = await rpc<SelectionNode[]>('selection', appTargetRpcArgs(args))
 
       if (args.json) {
         console.log(JSON.stringify(nodes, null, 2))

@@ -258,12 +258,15 @@ The bridge reads the discovery file to locate the server. If the discovery file 
 
 ## Workflow
 
-1. **Open** — `open_file` to load an existing `.fig`, or `new_document` for a blank canvas
-2. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
-3. **Create** — `create_shape`, `render` (JSX)
-4. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
-5. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
-6. **Save** — `save_file` to write back to `.fig`
+1. **Discover targets** — call `list_documents` first when more than one document or page may be open. It returns stable `document_id` and page IDs.
+2. **Open** — `open_file` to load an existing `.fig`, or `new_document` for a blank canvas. These return target metadata for the opened or created document.
+3. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
+4. **Create** — `create_shape`, `render` (JSX)
+5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
+6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
+7. **Save** — `save_file` to write back to `.fig`
+
+Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
 ## AI Agent Skill
 
@@ -275,7 +278,7 @@ npx skills add open-pencil/skills@open-pencil
 
 Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh). The skill covers the CLI, MCP tools, JSX rendering, eval, and the running app's automation bridge.
 
-## Tools (90)
+## Tools (91)
 
 ### Document
 
@@ -284,6 +287,7 @@ Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [sk
 | `open_file` | Open a `.fig` file for editing |
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
+| `list_documents` | List open app documents/tabs and their pages |
 
 Note: `open_file`, `new_document`, and file-writing export tools are always available — their paths are scoped to `OPENPENCIL_MCP_ROOT`, which defaults to the current working directory (`cwd()`) when unset. `save_file` is always available; its path is validated against `OPENPENCIL_MCP_ROOT` only when the root is explicitly configured.
 

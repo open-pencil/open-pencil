@@ -6,33 +6,12 @@ import { join } from 'node:path'
 import { parseFigFile } from '@open-pencil/core/io'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { cliSourcePath } from '#tests/helpers/paths'
+import { runOpenPencilCLI } from '#tests/helpers/cli'
 
 setDefaultTimeout(30_000)
 
-const CLI = cliSourcePath('index.ts')
-
-interface CommandResult {
-  stdout: string
-  stderr: string
-  exitCode: number
-}
-
-async function run(args: string[]): Promise<CommandResult> {
-  const proc = Bun.spawn(['bun', CLI, ...args], {
-    stdout: 'pipe',
-    stderr: 'pipe'
-  })
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text()
-  ])
-  const exitCode = await proc.exited
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode }
-}
-
 async function createFixture() {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-dom-cli-'))
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-'))
   const htmlPath = join(dir, 'card.html')
   const cssPath = join(dir, 'card.css')
 
@@ -73,12 +52,12 @@ function findNode(nodes: Iterable<SceneNode>, name: string): SceneNode | undefin
   }
 }
 
-test('dom CLI writes DesignDOM JSON output', async () => {
+test('import CLI writes DesignDOM JSON output', async () => {
   const { htmlPath, cssPath, dir } = await createFixture()
   const output = join(dir, 'card.json')
 
-  const { stdout, stderr, exitCode } = await run([
-    'dom',
+  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    'import',
     htmlPath,
     '--css',
     cssPath,
@@ -101,8 +80,8 @@ test('dom CLI writes DesignDOM JSON output', async () => {
   expect(document.children[0].computedStyle.width).toBe('240px')
 })
 
-test('dom CLI reads embedded HTML styles without a sidecar CSS file', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-dom-cli-embedded-'))
+test('import CLI reads embedded HTML styles without a sidecar CSS file', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-embedded-'))
   const htmlPath = join(dir, 'embedded.html')
   const output = join(dir, 'embedded.json')
 
@@ -119,8 +98,8 @@ test('dom CLI reads embedded HTML styles without a sidecar CSS file', async () =
     </html>`
   )
 
-  const { stdout, stderr, exitCode } = await run([
-    'dom',
+  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    'import',
     htmlPath,
     '--format',
     'json',
@@ -139,35 +118,12 @@ test('dom CLI reads embedded HTML styles without a sidecar CSS file', async () =
   expect(document.children[0].computedStyle.gap).toBe('10px')
 })
 
-test('dom CLI writes serialized HTML output', async () => {
-  const { htmlPath, cssPath, dir } = await createFixture()
-  const output = join(dir, 'card.out.html')
-
-  const { stderr, exitCode } = await run([
-    'dom',
-    htmlPath,
-    '--css',
-    cssPath,
-    '--format',
-    'html',
-    '--output',
-    output
-  ])
-
-  expect(stderr).toBe('')
-  expect(exitCode).toBe(0)
-
-  const html = await Bun.file(output).text()
-  expect(html).toContain('DOM/CSS card')
-  expect(html).toContain('class="card"')
-})
-
-test('dom CLI writes a .fig that core IO can import', async () => {
+test('import CLI writes a .fig that core IO can import', async () => {
   const { htmlPath, cssPath, dir } = await createFixture()
   const output = join(dir, 'card.fig')
 
-  const { stdout, stderr, exitCode } = await run([
-    'dom',
+  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    'import',
     htmlPath,
     '--css',
     cssPath,
@@ -191,8 +147,8 @@ test('dom CLI writes a .fig that core IO can import', async () => {
   expect(title?.type).toBe('TEXT')
 })
 
-test('dom CLI compiles Tailwind candidates before import', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-dom-cli-tailwind-'))
+test('import CLI compiles Tailwind candidates before import', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-tailwind-'))
   const htmlPath = join(dir, 'tailwind.html')
   const output = join(dir, 'tailwind.json')
   const classes = ['flex', 'flex-col', 'gap-2', 'w-60', 'p-6', 'rounded-xl', 'bg-white']
@@ -202,8 +158,8 @@ test('dom CLI compiles Tailwind candidates before import', async () => {
     `<article class="${classes.join(' ')}"><h1 class="text-2xl">Tailwind card</h1></article>`
   )
 
-  const { stdout, stderr, exitCode } = await run([
-    'dom',
+  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    'import',
     htmlPath,
     '--tailwind',
     classes.join(' '),

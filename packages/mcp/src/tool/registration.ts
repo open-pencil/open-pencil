@@ -13,6 +13,25 @@ import { paramToZod } from '#mcp/tool/schema'
 
 export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 
+const automationTargetSchema = {
+  document_id: z.string().describe('Optional OpenPencil document/tab ID to target').optional(),
+  page_id: z.string().describe('Optional page ID to target within the document').optional()
+}
+
+function splitAutomationTarget(args: Record<string, unknown>): {
+  target: { document_id?: string; page_id?: string }
+  args: Record<string, unknown>
+} {
+  const { document_id, page_id, ...rest } = args
+  return {
+    target: {
+      ...(typeof document_id === 'string' ? { document_id } : {}),
+      ...(typeof page_id === 'string' ? { page_id } : {})
+    },
+    args: rest
+  }
+}
+
 export interface RegisterToolsOptions {
   enableEval: boolean
   mcpRoot?: string | null
@@ -32,14 +51,21 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     }
     register(
       def.name,
-      { description: def.description, inputSchema: z.object(shape) },
+      {
+        description: def.description,
+        inputSchema: z.object({ ...shape, ...automationTargetSchema })
+      },
       async (args: Record<string, unknown>) => {
         try {
-          const result = await sendRpc({ command: 'tool', args: { name: def.name, args } })
+          const { target, args: toolArgs } = splitAutomationTarget(args)
+          const result = await sendRpc({
+            command: 'tool',
+            args: { ...target, name: def.name, args: toolArgs }
+          })
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           const r = res.result as RpcJsonObject | undefined
-          const filePath = typeof args.path === 'string' ? args.path : null
+          const filePath = typeof toolArgs.path === 'string' ? toolArgs.path : null
           if (r && filePath && resolvedRoot) {
             const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
             if (written) return written
@@ -77,6 +103,25 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   register(
+    'list_documents',
+    {
+      description:
+        'List open OpenPencil documents/tabs with their IDs, file paths, current pages, and pages.',
+      inputSchema: z.object({})
+    },
+    async () => {
+      try {
+        const result = await sendRpc({ command: 'list_documents', args: {} })
+        const res = result as { ok?: boolean; result?: unknown; error?: string }
+        if (res.ok === false) return fail(new Error(res.error))
+        return ok(res.result ?? {})
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  register(
     'save_file',
     {
       description: resolvedRoot
@@ -88,20 +133,26 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
               .string()
               .min(1)
               .describe('Path for the .fig file, absolute or relative to the MCP root')
-              .optional()
+              .optional(),
+            ...automationTargetSchema
           })
-        : z.object({})
+        : z.object({ ...automationTargetSchema })
     },
-    async (args: { path?: string }) => {
+    async (args: { path?: string; document_id?: string; page_id?: string }) => {
       try {
         const safePath =
           args.path !== undefined && resolvedRoot
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
-        const result = await sendRpc({ command: 'save_file', args: { path: safePath?.realPath } })
-        const res = result as { ok?: boolean; error?: string }
+        const { target } = splitAutomationTarget(args)
+        const result = await sendRpc({ command: 'save_file', args: { ...target, path: safePath?.realPath } })
+        const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
-        return ok({ saved: true, ...(safePath ? { path: safePath.resolved } : {}) })
+        return ok({
+          saved: true,
+          ...(safePath ? { path: safePath.resolved } : {}),
+          ...(res.target ? { target: res.target } : {})
+        })
       } catch (e) {
         return fail(e)
       }
@@ -117,16 +168,18 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           path: z
             .string()
             .min(1)
-            .describe('Path to the design file, absolute or relative to the MCP root')
+            .describe('Path to the design file, absolute or relative to the MCP root'),
+          ...automationTargetSchema
         })
       },
-      async (args: { path: string }) => {
+      async (args: { path: string; document_id?: string; page_id?: string }) => {
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
-          const result = await sendRpc({ command: 'open_file', args: { path: safe.realPath } })
-          const res = result as { ok?: boolean; error?: string }
+          const { target } = splitAutomationTarget(args)
+          const result = await sendRpc({ command: 'open_file', args: { ...target, path: safe.realPath } })
+          const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
-          return ok({ opened: true })
+          return ok({ opened: true, ...(res.target ? { target: res.target } : {}) })
         } catch (e) {
           return fail(e)
         }
@@ -142,20 +195,22 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             .string()
             .min(1)
             .describe('Path for the new file, absolute or relative to the MCP root')
-            .optional()
+            .optional(),
+          ...automationTargetSchema
         })
       },
-      async (args: { path?: string }) => {
+      async (args: { path?: string; document_id?: string; page_id?: string }) => {
         try {
           const safePath =
             args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
+          const { target } = splitAutomationTarget(args)
           const result = await sendRpc({
             command: 'new_document',
-            args: { path: safePath?.realPath }
+            args: { ...target, path: safePath?.realPath }
           })
-          const res = result as { ok?: boolean; error?: string }
+          const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
-          return ok({ created: true })
+          return ok({ created: true, ...(res.target ? { target: res.target } : {}) })
         } catch (e) {
           return fail(e)
         }

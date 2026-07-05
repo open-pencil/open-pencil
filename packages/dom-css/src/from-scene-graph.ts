@@ -205,7 +205,7 @@ function styleFromTextNode(node: SceneNode): DesignStyleDeclaration {
   }
   const textTransform = textCaseToCSS(node.textCase)
   if (textTransform) style['text-transform'] = textTransform
-  if (node.maxLines === 1) style['white-space'] = 'nowrap'
+  style['white-space'] = node.maxLines === 1 ? 'nowrap' : 'pre-wrap'
   return style
 }
 

@@ -3,10 +3,13 @@ import { FigmaAPI } from '@open-pencil/core/figma-api'
 import type { EditorStore } from '@/app/editor/active-store'
 import { listFamilies, listFonts } from '@/app/editor/fonts'
 
-export function makeFigmaFromStore(store: EditorStore): FigmaAPI {
+export function makeFigmaFromStore(
+  store: EditorStore,
+  pageId = store.state.currentPageId
+): FigmaAPI {
   const api = new FigmaAPI(store.graph)
   api.setRenderer(store.renderer ?? null)
-  api.currentPage = api.wrapNode(store.state.currentPageId)
+  api.currentPage = api.wrapNode(pageId)
   api.currentPage.selection = [...store.state.selectedIds]
     .map((id) => api.getNodeById(id))
     .filter((n): n is NonNullable<typeof n> => n !== null)

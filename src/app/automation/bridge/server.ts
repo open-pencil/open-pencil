@@ -10,17 +10,15 @@ import { randomHex } from '@open-pencil/core/random'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { createAutomationCommandHandlers } from '@/app/automation/bridge/handlers'
 import type { EditorStore } from '@/app/editor/active-store'
+
 export function connectAutomation(getStore: () => EditorStore, authToken: string | null = null) {
   const token = authToken ?? randomHex(32)
   let ws: WebSocket | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined
   let intentionalDisconnect = false
 
-  function makeFigma() {
-    return makeFigmaFromStore(getStore())
-  }
-
-  const { handleRequest: handleAutomationRequest } = createAutomationCommandHandlers(makeFigma)
+  const { handleRequest: handleAutomationRequest } =
+    createAutomationCommandHandlers(makeFigmaFromStore)
 
   async function handleRequest(_id: string, command: string, args: unknown): Promise<unknown> {
     return handleAutomationRequest(getStore(), command, args)

@@ -1,12 +1,12 @@
 import { executeRpcCommand } from '@open-pencil/core/rpc'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import type { AutomationTarget } from '@/app/automation/bridge/target'
 
 export async function handleRpcFallback(
-  store: EditorStore,
+  target: AutomationTarget,
   command: string,
   args: unknown
 ): Promise<unknown> {
-  const result = executeRpcCommand(store.graph, command, args ?? {})
+  const result = executeRpcCommand(target.store.graph, command, args ?? {})
   return { ok: true, result }
 }

@@ -186,7 +186,14 @@ describe('MCP stdio transport', () => {
     expect(names).toContain('create_shape')
     expect(names).toContain('get_page_tree')
     expect(names).toContain('save_file')
+    expect(names).toContain('list_documents')
     expect(names).toContain('get_codegen_prompt')
+    const createShape = expectDefined(
+      tools.find((tool) => tool.name === 'create_shape'),
+      'create_shape tool'
+    )
+    expect(JSON.stringify(createShape.inputSchema)).toContain('document_id')
+    expect(JSON.stringify(createShape.inputSchema)).toContain('page_id')
     expect(tools.length).toBeGreaterThan(30)
   }, 10000)
 
@@ -206,6 +213,50 @@ describe('MCP stdio transport', () => {
 
     expect(getNodeOrThrow(requireGraph(), data.id).width).toBe(200)
   }, 10000)
+
+  test('tool target fields are sent in the app RPC envelope', async () => {
+    const result = await client.callTool({
+      name: 'create_shape',
+      arguments: {
+        document_id: 'doc-1',
+        page_id: 'page-1',
+        type: 'FRAME',
+        x: 10,
+        y: 20,
+        width: 200,
+        height: 100,
+        name: 'TargetedFrame'
+      }
+    })
+    expect(result.isError).not.toBe(true)
+    const request = expectDefined(
+      browser?.requests.find((item) => {
+        const args = item.args as { name?: string } | undefined
+        return item.command === 'tool' && args?.name === 'create_shape'
+      }),
+      'tool request'
+    )
+    const requestArgs = request.args as {
+      name?: string
+      document_id?: string
+      page_id?: string
+      args?: Record<string, unknown>
+    } | undefined
+    expect(requestArgs?.document_id).toBe('doc-1')
+    expect(requestArgs?.page_id).toBe('page-1')
+    expect(requestArgs?.args?.document_id).toBeUndefined()
+    expect(requestArgs?.args?.page_id).toBeUndefined()
+  })
+
+  test('list_documents via stdio returns open documents', async () => {
+    const result = await client.callTool({ name: 'list_documents', arguments: {} })
+    expect(result.isError).not.toBe(true)
+    const data = JSON.parse(textContent(result.content)) as {
+      documents: Array<{ id: string; current_page_id: string }>
+    }
+    expect(data.documents[0].id).toBe('doc-1')
+    expect(data.documents[0].current_page_id).toBe(browser?.graph.getPages()[0].id)
+  })
 
   test('save_file via stdio succeeds', async () => {
     const result = await requireClient().callTool({ name: 'save_file', arguments: {} })

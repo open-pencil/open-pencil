@@ -75,6 +75,7 @@ export function createEditorStoreModules(
     fitCurrentPageToViewport: documentIO.fitCurrentPageToViewport,
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
+    getDocumentFilePath: documentIO.getDocumentFilePath,
     setDocumentSource: documentIO.setDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,

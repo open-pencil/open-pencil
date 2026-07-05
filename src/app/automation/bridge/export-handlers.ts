@@ -1,8 +1,9 @@
 import { selectionToJSX, sceneNodeToJSX, type RasterExportFormat } from '@open-pencil/core/io'
 
-import type { EditorStore } from '@/app/editor/active-store'
+import type { AutomationTarget } from '@/app/automation/bridge/target'
 
-export async function handleExport(store: EditorStore, args: unknown): Promise<unknown> {
+export async function handleExport(target: AutomationTarget, args: unknown): Promise<unknown> {
+  const store = target.store
   const exportArgs = args as { nodeIds?: string[]; scale?: number; format?: string } | undefined
   const nodeIds = exportArgs?.nodeIds ?? [...store.state.selectedIds]
   if (nodeIds.length === 0) throw new Error('No nodes to export')
@@ -21,10 +22,11 @@ export async function handleExport(store: EditorStore, args: unknown): Promise<u
   }
 }
 
-export async function handleExportJsx(store: EditorStore, args: unknown): Promise<unknown> {
+export async function handleExportJsx(target: AutomationTarget, args: unknown): Promise<unknown> {
+  const store = target.store
   const jsxArgs = args as { nodeIds?: string[]; style?: string } | undefined
   const style = (jsxArgs?.style ?? 'openpencil') as 'openpencil' | 'tailwind'
-  const currentPage = store.graph.getNode(store.state.currentPageId)
+  const currentPage = store.graph.getNode(target.pageId)
   const nodeIds = jsxArgs?.nodeIds ?? currentPage?.childIds ?? []
   const jsx =
     nodeIds.length === 1
