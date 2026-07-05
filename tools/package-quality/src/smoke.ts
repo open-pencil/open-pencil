@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -6,6 +6,12 @@ import { fileURLToPath } from 'node:url'
 import { publicPackageDirs } from './packages'
 
 const rootDir = fileURLToPath(new URL('../../..', import.meta.url))
+const tsgoBin = join(
+  rootDir,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'tsgo.cmd' : 'tsgo'
+)
 
 function run(command: string[], cwd = rootDir): string {
   const proc = Bun.spawnSync(command, { cwd, stdout: 'pipe', stderr: 'pipe' })
@@ -22,6 +28,59 @@ function run(command: string[], cwd = rootDir): string {
 
 function nodeEval(code: string, cwd: string): void {
   run(['node', '--input-type=module', '--eval', code], cwd)
+}
+
+function writeTypeConsumer(cwd: string): void {
+  writeFileSync(
+    join(cwd, 'tsconfig.package-smoke.json'),
+    JSON.stringify(
+      {
+        compilerOptions: {
+          strict: true,
+          target: 'ES2022',
+          module: 'NodeNext',
+          moduleResolution: 'NodeNext',
+          lib: ['ES2022', 'DOM'],
+          typeRoots: [join(rootDir, 'node_modules', '@types')],
+          skipLibCheck: true,
+          noEmit: true
+        },
+        include: ['package-type-consumer.ts']
+      },
+      null,
+      2
+    ),
+    'utf8'
+  )
+
+  writeFileSync(
+    join(cwd, 'package-type-consumer.ts'),
+    `import { type DiscoveryInfo } from '@open-pencil/mcp/discovery'
+import { MCP_VERSION, type MCPResult, type ServerHandle } from '@open-pencil/mcp'
+
+declare const serverHandle: ServerHandle
+
+const discovery: DiscoveryInfo = {
+  pid: 1,
+  socketPath: '/tmp/open-pencil.sock',
+  httpPort: 0,
+  authRequired: false,
+  authToken: null,
+  version: MCP_VERSION,
+  startedAt: new Date(0).toISOString()
+}
+const mcpResult: MCPResult = { content: [] }
+
+void serverHandle
+void discovery
+void mcpResult
+`,
+    'utf8'
+  )
+}
+
+function checkTypeConsumer(cwd: string): void {
+  run([tsgoBin, '--noEmit', '-p', join(cwd, 'tsconfig.package-smoke.json')], cwd)
 }
 
 const tempDir = mkdtempSync(join(tmpdir(), 'open-pencil-package-smoke-'))
@@ -117,6 +176,9 @@ try {
   run(['node', 'node_modules/.bin/openpencil', '--help'], tempDir)
   run(['node', 'node_modules/.bin/openpencil-mcp', '--help'], tempDir)
   run(['node', 'node_modules/.bin/openpencil-mcp-http', '--help'], tempDir)
+
+  writeTypeConsumer(tempDir)
+  checkTypeConsumer(tempDir)
 
   console.log('Packed package smoke tests passed.')
 } finally {
