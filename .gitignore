@@ -1,5 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+coverage/
+*.tsbuildinfo
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,10 +16,32 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Environment and local config
+.env
+.env.*
+!.env.example
 *.local
+Caddyfile.dev
+
+# Editors, IDEs, and OS metadata
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.ruby-lsp/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Test and dev-server artifacts
+test-results/
+playwright-report/
+blob-report/
+.vite/
+.turbo/
+
 # Tauri updater private signing keys
 /desktop/*.key
 !/desktop/*.key.pub
@@ -19,34 +50,28 @@ dist-ssr
 public/canvaskit.wasm
 public/canvaskit-webgpu/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-test-results/
-# Git worktrees for parallel agent work
-.worktrees/
-.env
+# Documentation build/cache output
 packages/docs/.vitepress/cache/
 packages/docs/.vitepress/dist/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+
+# Cloudflare/Wrangler local state
+.wrangler/
 packages/collab/.wrangler/
+
+# External/generated dependency checkouts
 packages/core/vendor/canvaskit-webgpu/
 patches/skia-webgpu/
-.wrangler/
-
-Caddyfile.dev
-components.d.ts
 vue-stream-markdown/
 
-# Agent scratch space (reviews, test artifacts)
+# Generated type/component declarations
+components.d.ts
+
+# Git worktrees for parallel agent work
+.worktrees/
+
+# Agent scratch space (reviews, plans, test artifacts)
 scratch/
 
 # OpenCode
