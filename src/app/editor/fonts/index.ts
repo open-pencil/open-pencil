@@ -23,6 +23,11 @@ import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
 
+// Capture the real global fetch before any test harness or font proxy replaces
+// it, so the Tauri web-font fetcher can fall back to plain HTTP when it runs
+// outside a Tauri window (e.g. after Tauri mocks are cleared in unit tests).
+const globalFetch = globalThis.fetch
+
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
 }
@@ -63,10 +68,21 @@ function showWebFontUnavailableToast(): void {
 }
 
 function configureTauriFontCache() {
-  if (tauriFontCacheConfigured || !isTauri()) return
+  // Mark configured immediately so a later Tauri-mocked test cannot re-enter
+  // this path and leave a Tauri-specific fetcher attached to the shared
+  // fontManager after the mock is torn down.
+  if (tauriFontCacheConfigured) return
   tauriFontCacheConfigured = true
+  if (!isTauri()) return
+
   fontManager.setDownloadedFontCache(createTauriDownloadedFontCache())
-  fontManager.setWebFontFetch(tauriFetch)
+  fontManager.setWebFontFetch(async (url: string, init?: RequestInit) => {
+    // Re-check at call time: Tauri mocks may have been cleared since this
+    // fetcher was registered. Fall back to the original fetch to avoid
+    // referencing a removed window.__TAURI_INTERNALS__.
+    if (!isTauri()) return globalFetch(url, init)
+    return tauriFetch(url, init)
+  })
   fontManager.setHostFallbackFontLoader(loadFont)
 }
 

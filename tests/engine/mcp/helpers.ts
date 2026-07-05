@@ -211,6 +211,19 @@ export function connectMockBrowser(
             api.currentPage = api.wrapNode(pages[0].id)
             result = await def.execute(api, args.args ?? {})
             if (def.mutates) computeAllLayouts(graph)
+          } else if (command === 'list_documents') {
+            result = {
+              documents: [
+                {
+                  id: 'doc-1',
+                  name: 'Mock document',
+                  active: true,
+                  current_page_id: graph.getPages()[0].id,
+                  current_page_name: graph.getPages()[0].name,
+                  pages: graph.getPages().map((page) => ({ id: page.id, name: page.name }))
+                }
+              ]
+            }
           } else if (
             command === 'save_file' ||
             command === 'new_document' ||
