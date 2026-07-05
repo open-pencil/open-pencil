@@ -145,7 +145,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
         const { target } = splitAutomationTarget(args)
-        const result = await sendRpc({ command: 'save_file', args: { ...target, path: safePath?.realPath } })
+        const result = await sendRpc({
+          command: 'save_file',
+          args: { ...target, path: safePath?.realPath }
+        })
         const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
         return ok({
@@ -176,7 +179,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
           const { target } = splitAutomationTarget(args)
-          const result = await sendRpc({ command: 'open_file', args: { ...target, path: safe.realPath } })
+          const result = await sendRpc({
+            command: 'open_file',
+            args: { ...target, path: safe.realPath }
+          })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           return ok({ opened: true, ...(res.target ? { target: res.target } : {}) })

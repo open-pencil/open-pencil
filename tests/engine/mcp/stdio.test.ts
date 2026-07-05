@@ -236,12 +236,14 @@ describe('MCP stdio transport', () => {
       }),
       'tool request'
     )
-    const requestArgs = request.args as {
-      name?: string
-      document_id?: string
-      page_id?: string
-      args?: Record<string, unknown>
-    } | undefined
+    const requestArgs = request.args as
+      | {
+          name?: string
+          document_id?: string
+          page_id?: string
+          args?: Record<string, unknown>
+        }
+      | undefined
     expect(requestArgs?.document_id).toBe('doc-1')
     expect(requestArgs?.page_id).toBe('page-1')
     expect(requestArgs?.args?.document_id).toBeUndefined()
