@@ -17,7 +17,7 @@ import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { clearEditedSourceMetadata } from './source-metadata'
-import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from './text-picture'
+import { GLYPH_AFFECTING_KEYS, invalidateGlyphsIfNeeded, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -27,17 +27,6 @@ export * from './types'
 import type { Emitter } from 'nanoevents'
 
 import { getAbsolutePosition } from './coordinate'
-
-/**
- * Nulls figmaDerivedTextGlyphs when glyph-affecting properties change,
- * unless the same update explicitly provides new glyphs (import pipeline).
- */
-function invalidateGlyphsIfNeeded(node: SceneNode, changes: Partial<SceneNode>): void {
-  if (!node.figmaDerivedTextGlyphs) return
-  if (!Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))) return
-  if ('figmaDerivedTextGlyphs' in changes) return
-  node.figmaDerivedTextGlyphs = null
-}
 import type { Color, Rect, Vector } from './primitives'
 import type {
   DocumentColorSpace,

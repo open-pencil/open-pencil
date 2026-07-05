@@ -46,3 +46,17 @@ export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
   'textAlignVertical',
   'textDirection'
 ])
+
+/**
+ * Nulls figmaDerivedTextGlyphs when glyph-affecting properties change,
+ * unless the same update explicitly provides new glyphs (import pipeline).
+ */
+export function invalidateGlyphsIfNeeded(
+  node: { figmaDerivedTextGlyphs: unknown[] | null },
+  changes: object
+): void {
+  if (!node.figmaDerivedTextGlyphs) return
+  if (!Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))) return
+  if ('figmaDerivedTextGlyphs' in changes) return
+  node.figmaDerivedTextGlyphs = null
+}
