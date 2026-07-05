@@ -1,5 +1,18 @@
+import { expect } from 'bun:test'
+
 import { colorToCSS } from '@open-pencil/core/color'
 import type { DesignDocument } from '@open-pencil/dom-css'
+import type { SceneNode } from '@open-pencil/scene-graph'
+
+/**
+ * Asserts a node is a FRAME and returns it narrowed.
+ * Shared across DOM/CSS conversion test files.
+ */
+export function expectFrame(node: SceneNode | undefined) {
+  expect(node?.type).toBe('FRAME')
+  if (node?.type !== 'FRAME') throw new Error('Expected frame node')
+  return node
+}
 
 export const DOM_CSS_COLORS = {
   white: colorToCSS({ r: 1, g: 1, b: 1, a: 1 }),

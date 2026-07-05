@@ -5,6 +5,9 @@ import { readDiscoveryFile } from '@open-pencil/mcp/discovery'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
 
+/** Maximum time to wait for a single RPC request before giving up. */
+const RPC_TIMEOUT_MS = 30_000
+
 let cachedInfo: DiscoveryInfo | null = null
 
 async function resolveDiscovery(): Promise<DiscoveryInfo> {
@@ -43,15 +46,18 @@ function doRequest(
       ...(info.authToken ? { Authorization: `Bearer ${info.authToken}` } : {})
     }
 
+    // Use the narrowed `useSocket` variable (string | false) to construct
+    // request options so TypeScript knows socketPath is a string when truthy.
     const useSocket = platformHasUnixSockets() && info.socketPath
     const reqOpts = useSocket
-      ? { socketPath: info.socketPath, path, method, headers }
+      ? { socketPath: useSocket, path, method, headers }
       : { hostname: '127.0.0.1', port: info.httpPort, path, method, headers }
 
     const req = httpRequest(reqOpts, (res: IncomingMessage) => {
       const chunks: Buffer[] = []
       res.on('data', (chunk: Buffer) => chunks.push(chunk))
       res.on('end', () => {
+        clearTimeout(timer)
         const raw = Buffer.concat(chunks).toString('utf-8')
         let data: unknown
         try {
@@ -61,10 +67,20 @@ function doRequest(
         }
         resolve({ status: res.statusCode ?? 200, data })
       })
-      res.on('error', reject)
+      res.on('error', (err) => {
+        clearTimeout(timer)
+        reject(err)
+      })
     })
 
-    req.on('error', reject)
+    const timer = setTimeout(() => {
+      req.destroy(new Error(`RPC request timed out after ${RPC_TIMEOUT_MS / 1000}s`))
+    }, RPC_TIMEOUT_MS)
+
+    req.on('error', (err) => {
+      clearTimeout(timer)
+      reject(err)
+    })
     if (bodyJson) req.write(bodyJson)
     req.end()
   })
@@ -74,7 +90,9 @@ async function doRpc<T>(info: DiscoveryInfo, command: string, args: unknown): Pr
   const { status, data } = await doRequest(info, '/rpc', 'POST', { command, args })
 
   if (status === 401) {
-    throw new Error('Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN')
+    throw new UnauthorizedError(
+      'Unauthorized: the auth token in the MCP discovery file may be stale'
+    )
   }
   if (status >= 400) {
     const errData = data as { error?: string }
@@ -86,15 +104,35 @@ async function doRpc<T>(info: DiscoveryInfo, command: string, args: unknown): Pr
   return body.result as T
 }
 
+/** Error class to distinguish auth failures for retry logic. */
+class UnauthorizedError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'UnauthorizedError'
+  }
+}
+
+function isTransientError(err: unknown): boolean {
+  if (err instanceof UnauthorizedError) return true
+  if (err instanceof Error) {
+    const msg = err.message
+    if (msg.includes('ECONNREFUSED') || msg.includes('ENOENT')) return true
+    if (msg.includes('timed out')) return true
+    if (msg.includes('socket hang up')) return true
+  }
+  return false
+}
+
 export async function rpc<T = unknown>(command: string, args: unknown = {}): Promise<T> {
   const info = await resolveDiscovery()
 
   try {
     return await doRpc<T>(info, command, args)
-  } catch {
-    // One retry: the server may have restarted with new discovery info
-    // (different socket path, port, or auth token). Re-read the file
-    // and try again. If it fails a second time the error propagates.
+  } catch (err) {
+    // Only retry on transient errors (auth token rotation, connection refused,
+    // timeout). Application-level errors (bad command, 502, ok:false) are
+    // re-thrown immediately — retrying would just waste a round-trip.
+    if (!isTransientError(err)) throw err
     cachedInfo = null
     return doRpc<T>(await resolveDiscovery(), command, args)
   }

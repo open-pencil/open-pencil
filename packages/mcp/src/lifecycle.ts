@@ -120,7 +120,7 @@ export async function writeDiscovery(
   const startedAt = new Date().toISOString()
   await writeDiscoveryFile({
     pid: process.pid,
-    socketPath: resolvedSocketPath ?? '',
+    socketPath: resolvedSocketPath,
     httpPort: actualHttpPort,
     authRequired: authToken !== null,
     authToken,
@@ -216,7 +216,7 @@ export async function cleanupDiscovery(
     const raw = await readFile(discoveryPath, 'utf-8')
     const info = JSON.parse(raw) as {
       authToken: string | null
-      socketPath?: string
+      socketPath?: string | null
       httpPort?: number
       startedAt?: string
     }
@@ -224,7 +224,7 @@ export async function cleanupDiscovery(
     // Compare unconditionally (not truthy-gated) so that null/0 values
     // are treated as required equality checks, not wildcards.
     if (info.authToken !== ownAuthToken) return
-    if (info.socketPath !== (ownSocketPath ?? '')) return
+    if (info.socketPath !== ownSocketPath) return
     if (info.httpPort !== ownHttpPort) return
     if (info.startedAt !== ownStartedAt) return
   } catch {

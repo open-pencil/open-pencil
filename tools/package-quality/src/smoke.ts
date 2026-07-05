@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -139,6 +139,8 @@ try {
   nodeEval("await import('@open-pencil/dom-css/jsx-dev-runtime')", tempDir)
   nodeEval("await import('@open-pencil/vue')", tempDir)
   nodeEval("await import('@open-pencil/mcp')", tempDir)
+  nodeEval("await import('@open-pencil/mcp/discovery')", tempDir)
+  nodeEval("await import('@open-pencil/mcp/transport')", tempDir)
 
   nodeEval(
     "const { guidToString } = await import('@open-pencil/kiwi/fig/guid'); if (guidToString({ sessionID: 1, localID: 2 }) !== '1:2') throw new Error('Kiwi GUID subpath failed')",

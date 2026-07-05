@@ -14,7 +14,8 @@ import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/tr
  */
 export interface DiscoveryInfo {
   pid: number
-  socketPath: string
+  /** Unix domain socket path, or null on platforms that don't support them (Windows). */
+  socketPath: string | null
   httpPort: number
   authRequired: boolean
   authToken: string | null
@@ -64,41 +65,37 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
   let raw: string
   try {
     raw = await readFile(path, 'utf-8')
-  } catch (e) {
-    if (isEnoent(e)) return null
-    return null
-  }
-
-  let info: DiscoveryInfo
-  try {
-    const parsed: unknown = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object') return null
-    info = parsed as DiscoveryInfo
   } catch {
     return null
   }
 
-  // Validate structurally required fields
-  if (
-    typeof info.pid !== 'number' ||
-    !Number.isInteger(info.pid) ||
-    info.pid <= 0 ||
-    typeof info.version !== 'string' ||
-    typeof info.httpPort !== 'number' ||
-    !Number.isInteger(info.httpPort) ||
-    info.httpPort < 0 ||
-    info.httpPort > 65535 ||
-    typeof info.authRequired !== 'boolean' ||
-    typeof info.startedAt !== 'string' ||
-    typeof info.socketPath !== 'string' ||
-    (info.authToken !== null && typeof info.authToken !== 'string')
-  )
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
     return null
+  }
+  if (!parsed || typeof parsed !== 'object') return null
 
-  // Check if the recorded process is still alive
+  const obj = parsed as { [key: string]: unknown }
+  const info = validateDiscoveryFields(obj)
+  if (!info) return null
   if (!isProcessAlive(info.pid)) return null
 
   return info
+}
+
+function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo | null {
+  const { pid, version, httpPort, authRequired, startedAt, socketPath, authToken } = obj
+  if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) return null
+  if (typeof version !== 'string') return null
+  if (typeof httpPort !== 'number' || !Number.isInteger(httpPort)) return null
+  if (httpPort < 0 || httpPort > 65535) return null
+  if (typeof authRequired !== 'boolean') return null
+  if (typeof startedAt !== 'string') return null
+  if (typeof socketPath !== 'string' && socketPath !== null) return null
+  if (authToken !== null && typeof authToken !== 'string') return null
+  return { pid, version, httpPort, authRequired, startedAt, socketPath, authToken }
 }
 
 /**

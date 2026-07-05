@@ -61,6 +61,18 @@ const TEXT_PICTURE_KEYS = new Set<string>([
   'height'
 ])
 
+const GLYPH_AFFECTING_KEYS = new Set<string>([
+  'text',
+  'fontSize',
+  'fontFamily',
+  'fontWeight',
+  'italic',
+  'lineHeight',
+  'letterSpacing',
+  'textCase',
+  'styleRuns'
+])
+
 export function updateNodePreview(
   graph: PreviewGraph,
   id: string,
@@ -76,7 +88,8 @@ export function updateNodePreview(
   if (node.type === 'TEXT') {
     const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
     if (node.textPicture && textChanged) node.textPicture = null
-    if (node.figmaDerivedTextGlyphs && textChanged) node.figmaDerivedTextGlyphs = null
+    const glyphChanged = Object.keys(changes).some((key) => GLYPH_AFFECTING_KEYS.has(key))
+    if (node.figmaDerivedTextGlyphs && glyphChanged) node.figmaDerivedTextGlyphs = null
   }
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
