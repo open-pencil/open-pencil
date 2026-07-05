@@ -1,3 +1,4 @@
+import { GLYPH_AFFECTING_KEYS } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -61,18 +62,6 @@ const TEXT_PICTURE_KEYS = new Set<string>([
   'height'
 ])
 
-const GLYPH_AFFECTING_KEYS = new Set<string>([
-  'text',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'italic',
-  'lineHeight',
-  'letterSpacing',
-  'textCase',
-  'styleRuns'
-])
-
 export function updateNodePreview(
   graph: PreviewGraph,
   id: string,
@@ -89,7 +78,10 @@ export function updateNodePreview(
     const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
     if (node.textPicture && textChanged) node.textPicture = null
     const glyphChanged = Object.keys(changes).some((key) => GLYPH_AFFECTING_KEYS.has(key))
-    if (node.figmaDerivedTextGlyphs && glyphChanged) node.figmaDerivedTextGlyphs = null
+    // Skip nulling if the same update explicitly provides new glyphs.
+    if (node.figmaDerivedTextGlyphs && glyphChanged && !('figmaDerivedTextGlyphs' in changes)) {
+      node.figmaDerivedTextGlyphs = null
+    }
   }
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }

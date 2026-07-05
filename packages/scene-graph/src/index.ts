@@ -27,6 +27,17 @@ export * from './types'
 import type { Emitter } from 'nanoevents'
 
 import { getAbsolutePosition } from './coordinate'
+
+/**
+ * Nulls figmaDerivedTextGlyphs when glyph-affecting properties change,
+ * unless the same update explicitly provides new glyphs (import pipeline).
+ */
+function invalidateGlyphsIfNeeded(node: SceneNode, changes: Partial<SceneNode>): void {
+  if (!node.figmaDerivedTextGlyphs) return
+  if (!Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))) return
+  if ('figmaDerivedTextGlyphs' in changes) return
+  node.figmaDerivedTextGlyphs = null
+}
 import type { Color, Rect, Vector } from './primitives'
 import type {
   DocumentColorSpace,
@@ -395,8 +406,7 @@ export class SceneGraph {
     if (node.type === 'TEXT') {
       const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
       if (node.textPicture && textChanged) node.textPicture = null
-      const glyphChanged = Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))
-      if (node.figmaDerivedTextGlyphs && glyphChanged) node.figmaDerivedTextGlyphs = null
+      invalidateGlyphsIfNeeded(node, changes)
     }
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(
