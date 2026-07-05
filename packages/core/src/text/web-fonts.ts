@@ -1,14 +1,13 @@
-import {
-  createUnifont,
-  providers,
-  type RemoteFontSource,
-  type ResolveFontOptions,
-  type ResolveFontResult,
-  type Unifont
-} from 'unifont'
+import type { ResolveFontResult } from 'unifont'
 
 import { IS_BROWSER } from '#core/constants'
 import { parseFontStyle } from '#core/text/face'
+import {
+  createProviderUnifont,
+  isRemoteFontSource,
+  type WebFontResolveOptions,
+  type WebUnifont
+} from '#core/text/web-font/providers'
 
 export const WEB_FONT_PROVIDER_IDS = ['google', 'fontsource', 'bunny', 'fontshare'] as const
 export type WebFontProviderId = (typeof WEB_FONT_PROVIDER_IDS)[number]
@@ -28,171 +27,6 @@ export const DEFAULT_WEB_FONT_PROVIDER_SETTINGS: Record<WebFontProviderId, boole
 }
 
 export type WebFontFetch = (url: string, init?: RequestInit) => Promise<Response>
-
-export interface WebFontFaceRequest {
-  family: string
-  weight: number
-  style?: 'normal' | 'italic'
-}
-
-export interface WebFontFaceAsset {
-  path: string
-  content: Uint8Array
-}
-
-export interface ExportWebFontFacesOptions {
-  fonts: WebFontFaceRequest[]
-  providers?: WebFontProviderId[]
-  assetBasePath?: string
-  fetcher?: WebFontFetch
-}
-
-export interface ExportWebFontFacesResult {
-  css: string
-  assets: WebFontFaceAsset[]
-}
-
-type WebFontProvider =
-  | ReturnType<typeof providers.google>
-  | ReturnType<typeof providers.fontsource>
-  | ReturnType<typeof providers.bunny>
-  | ReturnType<typeof providers.fontshare>
-type WebUnifont = Unifont<[WebFontProvider]>
-type WebFontResolveOptions = Pick<ResolveFontOptions, 'weights' | 'styles' | 'formats' | 'subsets'>
-
-const providerFactories = {
-  google: providers.google,
-  fontsource: providers.fontsource,
-  bunny: providers.bunny,
-  fontshare: providers.fontshare
-} satisfies Record<WebFontProviderId, () => WebFontProvider>
-
-async function createProviderUnifont(provider: WebFontProviderId): Promise<WebUnifont> {
-  return createUnifont([providerFactories[provider]()], { throwOnError: false })
-}
-
-function isRemoteFontSource(
-  source: RemoteFontSource | { name: string }
-): source is RemoteFontSource {
-  return 'url' in source
-}
-
-function fontAssetExtension(source: RemoteFontSource): string {
-  if (source.format === 'woff2') return 'woff2'
-  if (source.format === 'woff') return 'woff'
-  if (source.format === 'opentype' || source.format === 'otf') return 'otf'
-  return 'ttf'
-}
-
-function fontAssetFormat(source: RemoteFontSource): string {
-  if (source.format === 'woff2') return 'woff2'
-  if (source.format === 'woff') return 'woff'
-  if (source.format === 'opentype' || source.format === 'otf') return 'opentype'
-  return 'truetype'
-}
-
-function slugFontFamily(family: string): string {
-  let slug = ''
-  let previousDash = false
-  for (const char of family.toLowerCase()) {
-    const code = char.charCodeAt(0)
-    const isAlpha = code >= 97 && code <= 122
-    const isDigit = code >= 48 && code <= 57
-    if (isAlpha || isDigit) {
-      slug += char
-      previousDash = false
-      continue
-    }
-    if (slug.length > 0 && !previousDash) {
-      slug += '-'
-      previousDash = true
-    }
-  }
-  return slug.endsWith('-') ? slug.slice(0, -1) : slug
-}
-
-async function resolveRemoteFontSource(
-  family: string,
-  request: WebFontFaceRequest,
-  provider: WebFontProviderId
-): Promise<{ source: RemoteFontSource; face: ResolveFontResult['fonts'][number] } | undefined> {
-  const unifont = await createProviderUnifont(provider)
-  const options = {
-    weights: [String(request.weight)],
-    styles: [request.style ?? 'normal'],
-    formats: ['woff2', 'woff', 'ttf'],
-    subsets: ['latin']
-  } satisfies WebFontResolveOptions
-  const result = await unifont.resolveFont(family, options)
-  for (const face of result.fonts.toSorted(
-    (a, b) => (a.meta?.priority ?? 0) - (b.meta?.priority ?? 0)
-  )) {
-    const source = face.src.find(isRemoteFontSource)
-    if (source) return { source, face }
-  }
-  return undefined
-}
-
-function serializeFontWeight(weight: string | number | [number, number]): string {
-  return Array.isArray(weight) ? weight.join(' ') : String(weight)
-}
-
-function fontFaceCSS(
-  family: string,
-  request: WebFontFaceRequest,
-  face: ResolveFontResult['fonts'][number],
-  source: RemoteFontSource,
-  path: string
-): string {
-  const descriptors = [
-    `font-family:${JSON.stringify(family)}`,
-    `src:url("${path}") format("${fontAssetFormat(source)}")`,
-    `font-weight:${serializeFontWeight(face.weight ?? request.weight)}`,
-    `font-style:${face.style ?? request.style ?? 'normal'}`,
-    `font-display:${face.display ?? 'swap'}`
-  ]
-  if (face.stretch) descriptors.push(`font-stretch:${face.stretch}`)
-  if (face.unicodeRange && face.unicodeRange.length > 0) {
-    descriptors.push(`unicode-range:${face.unicodeRange.join(',')}`)
-  }
-  return `@font-face{${descriptors.join(';')}}`
-}
-
-export async function exportWebFontFaces({
-  fonts,
-  providers = WEB_FONT_PROVIDER_IDS.slice(),
-  assetBasePath = 'assets/fonts',
-  fetcher = fetch
-}: ExportWebFontFacesOptions): Promise<ExportWebFontFacesResult> {
-  const assets: WebFontFaceAsset[] = []
-  const css: string[] = []
-  const seen = new Set<string>()
-
-  for (const request of fonts) {
-    const family = request.family
-    const key = `${family}|${request.weight}|${request.style ?? 'normal'}`
-    if (seen.has(key)) continue
-    seen.add(key)
-
-    for (const provider of providers) {
-      try {
-        const resolved = await resolveRemoteFontSource(family, request, provider)
-        if (!resolved) continue
-        const response = await fetcher(resolved.source.url, resolved.face.meta?.init)
-        if (!response.ok) continue
-        const extension = fontAssetExtension(resolved.source)
-        const path = `${assetBasePath}/${slugFontFamily(family)}-${request.weight}-${request.style ?? 'normal'}.${extension}`
-        assets.push({ path, content: new Uint8Array(await response.arrayBuffer()) })
-        css.push(fontFaceCSS(family, request, resolved.face, resolved.source, path))
-        break
-      } catch (error) {
-        console.warn(`Failed to export ${family} from ${provider} fonts`, error)
-      }
-    }
-  }
-
-  return { css: css.join(''), assets }
-}
 
 export class WebFontResolver {
   private enabled = new Set<WebFontProviderId>(

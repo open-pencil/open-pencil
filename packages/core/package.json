@@ -35,6 +35,11 @@
       "import": "./dist/text/index.js",
       "default": "./dist/text/index.js"
     },
+    "./text/web-font/assets": {
+      "types": "./dist/text/web-font/assets.d.ts",
+      "import": "./dist/text/web-font/assets.js",
+      "default": "./dist/text/web-font/assets.js"
+    },
     "./vector": {
       "types": "./dist/vector/index.d.ts",
       "import": "./dist/vector/index.js",

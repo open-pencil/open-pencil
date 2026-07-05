@@ -1,10 +1,12 @@
+import { CSSFontFaceRule } from '@acemir/cssom'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
+import { normalizeFontFamily } from '@open-pencil/core/text'
 import {
-  exportWebFontFaces,
-  normalizeFontFamily,
+  exportWebFontFaceAssets,
+  type WebFontFaceAsset,
   type WebFontFaceRequest
-} from '@open-pencil/core/text'
+} from '@open-pencil/core/text/web-font/assets'
 
 import { mergeClassNames, serializeHTML, splitWhitespace } from './serialize'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from './types'
@@ -203,6 +205,32 @@ function collectFontRequests(node: DesignNode, fonts: Map<string, WebFontFaceReq
   for (const child of node.children) collectFontRequests(child, fonts)
 }
 
+function serializeFontWeight(weight: string | number | [number, number]): string {
+  return Array.isArray(weight) ? weight.join(' ') : String(weight)
+}
+
+function fontSourceValue(asset: WebFontFaceAsset): string {
+  const url = new URL(asset.path, 'file:///')
+  const escapedPath = url.pathname.slice(1)
+  return ['url(', JSON.stringify(escapedPath), ') format(', JSON.stringify(asset.format), ')'].join(
+    ''
+  )
+}
+
+function fontFaceCSS(asset: WebFontFaceAsset): string {
+  const rule = new CSSFontFaceRule()
+  rule.style.setProperty('font-family', JSON.stringify(asset.family))
+  rule.style.setProperty('src', fontSourceValue(asset))
+  rule.style.setProperty('font-weight', serializeFontWeight(asset.weight))
+  rule.style.setProperty('font-style', asset.style)
+  rule.style.setProperty('font-display', asset.display ?? 'swap')
+  if (asset.stretch) rule.style.setProperty('font-stretch', asset.stretch)
+  if (asset.unicodeRange && asset.unicodeRange.length > 0) {
+    rule.style.setProperty('unicode-range', asset.unicodeRange.join(','))
+  }
+  return rule.cssText
+}
+
 async function fontFaceAssets(
   document: DesignDocument,
   options: Required<ExportHTMLBundleOptions>
@@ -210,11 +238,11 @@ async function fontFaceAssets(
   if (options.fonts === 'none' || options.assets !== 'external') return { css: '', files: [] }
   const requests = new Map<string, WebFontFaceRequest>()
   for (const child of document.children) collectFontRequests(child, requests)
-  const result = await exportWebFontFaces({
+  const result = await exportWebFontFaceAssets({
     fonts: [...requests.values()],
     assetBasePath: `${options.assetBasePath}/fonts`
   })
-  return { css: result.css, files: result.assets }
+  return { css: result.assets.map(fontFaceCSS).join(''), files: result.assets }
 }
 
 function dataImageParts(value: string): { mime: string; base64: string } | undefined {
