@@ -6,6 +6,7 @@ import { createEditorStore } from '@/app/editor/session'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 import { autoFrame, loadFixtureGraph, pageId, rect } from '#tests/helpers/layout'
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('text measurement', () => {
@@ -86,7 +87,7 @@ describe('text measurement', () => {
     expect(graph.getNode(tabs.id)?.height).toBe(62)
   })
 
-  test(
+  test.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))(
     'opening imported fig keeps stored text bounds before CanvasKit measurement',
     { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {
@@ -128,7 +129,7 @@ describe('text measurement', () => {
     }
   )
 
-  test(
+  test.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))(
     'imported nested instance layout keeps hidden sibling offsets stable',
     { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {

@@ -11,6 +11,7 @@ import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -272,7 +273,7 @@ describe('text node export', () => {
     expect(families).toContain('Regular')
   })
 
-  test.if(runsHeavyTests)(
+  test.skipIf(isLfsPointer('tests/fixtures/material3.fig') || !runsHeavyTests)(
     'material3.fig text nodes have derivedTextData after round-trip',
     async () => {
       const original = await parseFixture('material3.fig')

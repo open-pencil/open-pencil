@@ -4,6 +4,7 @@ import { readReloadSource } from '@/app/document/io/reload-source'
 import { chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import { createDocumentWriter } from '@/app/document/io/write'
 
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(async () => {
@@ -12,22 +13,25 @@ afterEach(async () => {
 })
 
 describe('Tauri document IO helpers', () => {
-  test('reads reload source bytes through plugin-fs', async () => {
-    const fixture = await Bun.file('tests/fixtures/gold-preview.fig').arrayBuffer()
-    await mockTauriIPC((cmd, args) => {
-      expect(cmd).toBe('plugin:fs|read_file')
-      expect(args).toEqual({ path: '/tmp/document.fig', options: undefined })
-      return [...new Uint8Array(fixture)]
-    })
+  test.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))(
+    'reads reload source bytes through plugin-fs',
+    async () => {
+      const fixture = await Bun.file('tests/fixtures/gold-preview.fig').arrayBuffer()
+      await mockTauriIPC((cmd, args) => {
+        expect(cmd).toBe('plugin:fs|read_file')
+        expect(args).toEqual({ path: '/tmp/document.fig', options: undefined })
+        return [...new Uint8Array(fixture)]
+      })
 
-    const document = await readReloadSource({
-      documentName: 'document',
-      filePath: '/tmp/document.fig',
-      fileHandle: null
-    })
+      const document = await readReloadSource({
+        documentName: 'document',
+        filePath: '/tmp/document.fig',
+        fileHandle: null
+      })
 
-    expect(document?.getPages().length).toBeGreaterThan(0)
-  })
+      expect(document?.getPages().length).toBeGreaterThan(0)
+    }
+  )
 
   test('writes document bytes through plugin-fs', async () => {
     const calls: Array<{ cmd: string; args: unknown; options: unknown }> = []

@@ -11,6 +11,7 @@ import {
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -117,7 +118,7 @@ describe('variable roundtrip', () => {
     expect(Object.keys(reimportedRect.boundVariables)).toContain('strokes/0/color')
   })
 
-  test.if(runsHeavyTests)(
+  test.skipIf(isLfsPointer('tests/fixtures/material3.fig') || !runsHeavyTests)(
     'material3.fig variables survive round-trip',
     async () => {
       const original = await parseFixture('material3.fig')

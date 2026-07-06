@@ -12,6 +12,7 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(30_000)
@@ -125,19 +126,25 @@ heavy('fig export roundtrip', () => {
     parsed = await parseFigFile(buf.buffer as ArrayBuffer)
   })
 
-  test('exportFigFile produces valid .fig', async () => {
-    const exported = await exportFigFile(parsed)
-    expect(exported).toBeInstanceOf(Uint8Array)
-    expect(exported.length).toBeGreaterThan(100)
+  test.skipIf(isLfsPointer(resolve(FIXTURES, 'gold-preview.fig')))(
+    'exportFigFile produces valid .fig',
+    async () => {
+      const exported = await exportFigFile(parsed)
+      expect(exported).toBeInstanceOf(Uint8Array)
+      expect(exported.length).toBeGreaterThan(100)
 
-    expect(exported[0]).toBe(0x50)
-    expect(exported[1]).toBe(0x4b)
-  })
+      expect(exported[0]).toBe(0x50)
+      expect(exported[1]).toBe(0x4b)
+    }
+  )
 
-  test('exported file can be parsed back', async () => {
-    const exported = await exportFigFile(parsed)
-    const reparsed = await parseFigFile(exported.buffer as ArrayBuffer)
-    expect(reparsed).toBeInstanceOf(SceneGraph)
-    expect(reparsed.getPages().length).toBeGreaterThan(0)
-  })
+  test.skipIf(isLfsPointer(resolve(FIXTURES, 'gold-preview.fig')))(
+    'exported file can be parsed back',
+    async () => {
+      const exported = await exportFigFile(parsed)
+      const reparsed = await parseFigFile(exported.buffer as ArrayBuffer)
+      expect(reparsed).toBeInstanceOf(SceneGraph)
+      expect(reparsed.getPages().length).toBeGreaterThan(0)
+    }
+  )
 })

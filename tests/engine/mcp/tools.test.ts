@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { ALL_TOOLS, FigmaAPI, SceneGraph, computeAllLayouts, parseFigFile } from '@open-pencil/core'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { isLfsPointer } from '#tests/helpers/lfs'
 
 interface PageTreeResult {
   page: string
@@ -307,13 +308,16 @@ describe('MCP tool execution', () => {
     expect(result.error).toContain('not found')
   })
 
-  test('open and query .fig file', async () => {
-    const data = await Bun.file('tests/fixtures/gold-preview.fig').arrayBuffer()
-    const { api } = await setupWithFile(data)
-    const pages = findTool('list_pages').execute(api, {}) as { pages: { name: string }[] }
-    expect(pages.pages.length).toBeGreaterThanOrEqual(1)
+  test.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))(
+    'open and query .fig file',
+    async () => {
+      const data = await Bun.file('tests/fixtures/gold-preview.fig').arrayBuffer()
+      const { api } = await setupWithFile(data)
+      const pages = findTool('list_pages').execute(api, {}) as { pages: { name: string }[] }
+      expect(pages.pages.length).toBeGreaterThanOrEqual(1)
 
-    const found = findTool('find_nodes').execute(api, { type: 'INSTANCE' }) as { count: number }
-    expect(found.count).toBeGreaterThan(0)
-  })
+      const found = findTool('find_nodes').execute(api, { type: 'INSTANCE' }) as { count: number }
+      expect(found.count).toBeGreaterThan(0)
+    }
+  )
 })

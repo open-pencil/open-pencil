@@ -1,5 +1,6 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
 
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { cliSourcePath, repoPath } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
 
@@ -28,7 +29,7 @@ function parseJSON<T>(stdout: string): T {
 }
 
 heavy('CLI tool operations via eval', () => {
-  test('create and read back a node', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('create and read back a node', async () => {
     const { stdout, exitCode } = await evalCode(`
       const r = figma.createRectangle()
       r.name = 'TestRect'
@@ -46,7 +47,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.height).toBe(150)
   })
 
-  test('set fill on a node', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('set fill on a node', async () => {
     const { stdout, exitCode } = await evalCode(`
       const r = figma.createRectangle()
       r.resize(50, 50)
@@ -59,7 +60,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.fills[0].color.r).toBe(1)
   })
 
-  test('set layout on a frame', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('set layout on a frame', async () => {
     const { stdout, exitCode } = await evalCode(`
       const f = figma.createFrame()
       f.resize(300, 200)
@@ -82,7 +83,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.paddingLeft).toBe(20)
   })
 
-  test('create component from node', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('create component from node', async () => {
     const { stdout, exitCode } = await evalCode(`
       const f = figma.createFrame()
       f.name = 'Button'
@@ -96,7 +97,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.type).toBe('COMPONENT')
   })
 
-  test('group and ungroup nodes', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('group and ungroup nodes', async () => {
     const { stdout, exitCode } = await evalCode(`
       const r1 = figma.createRectangle()
       r1.resize(50, 50)
@@ -116,7 +117,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.ungroupedExists).toBe(false)
   })
 
-  test('find nodes by type on fixture', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('find nodes by type on fixture', async () => {
     const { stdout, exitCode } = await evalCode(`
       const texts = figma.currentPage.findAllWithCriteria({ types: ['TEXT'] })
       return { count: texts.length, hasTexts: texts.length > 0 }
@@ -127,7 +128,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.count).toBeGreaterThan(0)
   })
 
-  test('clone a node', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('clone a node', async () => {
     const { stdout, exitCode } = await evalCode(`
       const r = figma.createRectangle()
       r.name = 'Original'
@@ -146,7 +147,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.cloneWidth).toBe(100)
   })
 
-  test('reparent node into frame', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('reparent node into frame', async () => {
     const { stdout, exitCode } = await evalCode(`
       const frame = figma.createFrame()
       frame.resize(300, 300)
@@ -163,7 +164,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.isChild).toBe(true)
   })
 
-  test('set constraints', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('set constraints', async () => {
     const { stdout, exitCode } = await evalCode(`
       const r = figma.createRectangle()
       r.resize(100, 100)
@@ -176,7 +177,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.vertical).toBe('STRETCH')
   })
 
-  test('set effects', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('set effects', async () => {
     const { stdout, exitCode } = await evalCode(`
       const f = figma.createFrame()
       f.resize(100, 100)
@@ -196,7 +197,7 @@ heavy('CLI tool operations via eval', () => {
     expect(result.type).toBe('DROP_SHADOW')
   })
 
-  test('list variables from fixture', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('list variables from fixture', async () => {
     const { stdout, exitCode } = await evalCode(`
       const vars = figma.getLocalVariables()
       const cols = figma.getLocalVariableCollections()
@@ -208,7 +209,7 @@ heavy('CLI tool operations via eval', () => {
     expect(typeof result.collections).toBe('number')
   })
 
-  test('switch page', async () => {
+  test.skipIf(isLfsPointer(FIXTURE))('switch page', async () => {
     const { stdout, exitCode } = await evalCode(`
       const pages = figma.root.children
       const first = pages[0]
