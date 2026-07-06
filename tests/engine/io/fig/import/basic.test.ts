@@ -3,19 +3,19 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { SceneGraph, type SceneNode } from '@open-pencil/core'
 
 import { parseGoldPreviewFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
+import { isLfsPointer } from '#tests/helpers/lfs'
 
 setDefaultTimeout(60_000)
 
-let parsed: SceneGraph
-let allNodes: SceneNode[]
+describe.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))('parse real .fig files', () => {
+  let parsed: SceneGraph
+  let allNodes: SceneNode[]
 
-beforeAll(async () => {
-  const fixture = await parseGoldPreviewFixture()
-  parsed = fixture.graph
-  allNodes = fixture.allNodes
-})
-
-describe('parse real .fig files', () => {
+  beforeAll(async () => {
+    const fixture = await parseGoldPreviewFixture()
+    parsed = fixture.graph
+    allNodes = fixture.allNodes
+  })
   test('parses without error', () => {
     expect(parsed).toBeInstanceOf(SceneGraph)
   })
