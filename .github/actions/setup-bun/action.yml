@@ -18,10 +18,10 @@ runs:
     - name: Pull LFS files
       if: inputs.lfs == 'true'
       shell: bash
+      continue-on-error: true
       run: |
         git lfs install --force
-        git lfs pull
-        head -c 4 tests/fixtures/material3.fig | xxd
+        git lfs pull || echo "::warning::LFS pull failed — LFS fixtures may be unavailable"
 
     - uses: oven-sh/setup-bun@v2
 
