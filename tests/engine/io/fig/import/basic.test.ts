@@ -7,15 +7,19 @@ import { isLfsPointer } from '#tests/helpers/lfs'
 
 setDefaultTimeout(60_000)
 
-describe.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))('parse real .fig files', () => {
-  let parsed: SceneGraph
-  let allNodes: SceneNode[]
+const fixtureIsLfs = isLfsPointer('tests/fixtures/gold-preview.fig')
 
-  beforeAll(async () => {
-    const fixture = await parseGoldPreviewFixture()
-    parsed = fixture.graph
-    allNodes = fixture.allNodes
-  })
+let parsed: SceneGraph
+let allNodes: SceneNode[]
+
+beforeAll(async () => {
+  if (fixtureIsLfs) return
+  const fixture = await parseGoldPreviewFixture()
+  parsed = fixture.graph
+  allNodes = fixture.allNodes
+})
+
+describe.skipIf(fixtureIsLfs)('parse real .fig files', () => {
   test('parses without error', () => {
     expect(parsed).toBeInstanceOf(SceneGraph)
   })
@@ -29,7 +33,7 @@ describe.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))('parse real .fi
   })
 })
 
-describe('node type coverage', () => {
+describe.skipIf(fixtureIsLfs)('node type coverage', () => {
   test('contains FRAME nodes', () => {
     expect(allNodes.some((n) => n.type === 'FRAME')).toBe(true)
   })
