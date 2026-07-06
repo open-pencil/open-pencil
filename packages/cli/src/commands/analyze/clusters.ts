@@ -3,6 +3,7 @@ import { defineCommand } from 'citty'
 import type { AnalyzeClustersResult } from '@open-pencil/core/rpc'
 import { calcClusterConfidence } from '@open-pencil/core/tools'
 
+import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtList, fmtSummary } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'
 
@@ -34,14 +35,20 @@ export default defineCommand({
     limit: { type: 'string', description: 'Max clusters to show', default: '20' },
     'min-size': { type: 'string', description: 'Min node size in px', default: '30' },
     'min-count': { type: 'string', description: 'Min instances to form cluster', default: '2' },
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeClustersResult>(args.file, 'analyze_clusters', {
-      limit: Number(args.limit),
-      minSize: Number(args['min-size']),
-      minCount: Number(args['min-count'])
-    })
+    const data = await loadRpcData<AnalyzeClustersResult>(
+      args.file,
+      'analyze_clusters',
+      {
+        limit: Number(args.limit),
+        minSize: Number(args['min-size']),
+        minCount: Number(args['min-count'])
+      },
+      args
+    )
 
     if (args.json) {
       console.log(JSON.stringify(data, null, 2))

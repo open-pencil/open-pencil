@@ -73,6 +73,7 @@
     "@acemir/cssom": "^0.9.31",
     "parse5": "^8.0.1",
     "postcss-value-parser": "^4.2.0",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "twirlwind": "^0.3.0"
   }
 }

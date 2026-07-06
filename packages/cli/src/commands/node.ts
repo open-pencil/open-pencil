@@ -4,6 +4,7 @@ import { colorToHex } from '@open-pencil/core/color'
 import type { NodeResult } from '@open-pencil/core/rpc'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { appTargetOptions } from '#cli/app-target'
 import { fmtNode, printError, formatType } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'
 
@@ -16,12 +17,18 @@ export default defineCommand({
       required: false
     },
     id: { type: 'string', description: 'Node ID', required: true },
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<NodeResult | { error: string }>(args.file, 'node', {
-      id: args.id
-    })
+    const data = await loadRpcData<NodeResult | { error: string }>(
+      args.file,
+      'node',
+      {
+        id: args.id
+      },
+      args
+    )
 
     if ('error' in data) {
       printError(data.error)

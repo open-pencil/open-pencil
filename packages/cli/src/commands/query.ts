@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { QueryNodeResult } from '@open-pencil/core/rpc'
 
+import { appTargetOptions } from '#cli/app-target'
 import { printNodeResults, printError } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'
 
@@ -22,14 +23,20 @@ export default defineCommand({
     },
     page: { type: 'string', description: 'Page name (default: all pages)' },
     limit: { type: 'string', description: 'Max results (default: 1000)', default: '1000' },
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const results = await loadRpcData<QueryNodeResult[] | { error: string }>(args.file, 'query', {
-      selector: args.selector,
-      page: args.page,
-      limit: args.limit ? Number(args.limit) : undefined
-    })
+    const results = await loadRpcData<QueryNodeResult[] | { error: string }>(
+      args.file,
+      'query',
+      {
+        selector: args.selector,
+        page: args.page,
+        limit: args.limit ? Number(args.limit) : undefined
+      },
+      args
+    )
 
     if ('error' in results) {
       printError(results.error)

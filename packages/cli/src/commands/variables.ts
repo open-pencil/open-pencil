@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { VariablesResult } from '@open-pencil/core/rpc'
 
+import { appTargetOptions } from '#cli/app-target'
 import { bold, entity, fmtList, fmtSummary } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'
 
@@ -15,13 +16,19 @@ export default defineCommand({
     },
     collection: { type: 'string', description: 'Filter by collection name' },
     type: { type: 'string', description: 'Filter by type: COLOR, FLOAT, STRING, BOOLEAN' },
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<VariablesResult>(args.file, 'variables', {
-      collection: args.collection,
-      type: args.type
-    })
+    const data = await loadRpcData<VariablesResult>(
+      args.file,
+      'variables',
+      {
+        collection: args.collection,
+        type: args.type
+      },
+      args
+    )
 
     if (data.totalVariables === 0) {
       console.log('No variables found.')

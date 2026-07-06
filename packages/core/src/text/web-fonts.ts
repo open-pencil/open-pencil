@@ -1,14 +1,13 @@
-import {
-  createUnifont,
-  providers,
-  type RemoteFontSource,
-  type ResolveFontOptions,
-  type ResolveFontResult,
-  type Unifont
-} from 'unifont'
+import type { ResolveFontResult } from 'unifont'
 
 import { IS_BROWSER } from '#core/constants'
 import { parseFontStyle } from '#core/text/face'
+import {
+  createProviderUnifont,
+  isRemoteFontSource,
+  type WebFontResolveOptions,
+  type WebUnifont
+} from '#core/text/web-font/providers'
 
 export const WEB_FONT_PROVIDER_IDS = ['google', 'fontsource', 'bunny', 'fontshare'] as const
 export type WebFontProviderId = (typeof WEB_FONT_PROVIDER_IDS)[number]
@@ -28,31 +27,6 @@ export const DEFAULT_WEB_FONT_PROVIDER_SETTINGS: Record<WebFontProviderId, boole
 }
 
 export type WebFontFetch = (url: string, init?: RequestInit) => Promise<Response>
-
-type WebFontProvider =
-  | ReturnType<typeof providers.google>
-  | ReturnType<typeof providers.fontsource>
-  | ReturnType<typeof providers.bunny>
-  | ReturnType<typeof providers.fontshare>
-type WebUnifont = Unifont<[WebFontProvider]>
-type WebFontResolveOptions = Pick<ResolveFontOptions, 'weights' | 'styles' | 'formats' | 'subsets'>
-
-const providerFactories = {
-  google: providers.google,
-  fontsource: providers.fontsource,
-  bunny: providers.bunny,
-  fontshare: providers.fontshare
-} satisfies Record<WebFontProviderId, () => WebFontProvider>
-
-async function createProviderUnifont(provider: WebFontProviderId): Promise<WebUnifont> {
-  return createUnifont([providerFactories[provider]()], { throwOnError: false })
-}
-
-function isRemoteFontSource(
-  source: RemoteFontSource | { name: string }
-): source is RemoteFontSource {
-  return 'url' in source
-}
 
 export class WebFontResolver {
   private enabled = new Set<WebFontProviderId>(

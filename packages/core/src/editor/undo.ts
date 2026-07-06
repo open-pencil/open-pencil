@@ -11,6 +11,7 @@ import {
   snapshotPage as createPageSnapshot,
   type PageSnapshot
 } from './history/snapshot'
+import { textAutoResizeChanges } from './text/auto-resize'
 import type { EditorContext } from './types'
 
 type ResizeSnapshot = Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'vectorNetwork'>
@@ -156,7 +157,11 @@ export function createUndoActions(ctx: EditorContext) {
   function commitNodeUpdate(nodeId: string, previous: Partial<SceneNode>, label = 'Update') {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
-    const current = pick(node, Object.keys(previous) as (keyof SceneNode)[]) as Partial<SceneNode>
+    const restoredPrevious = { ...previous, ...textAutoResizeChanges(node, previous) }
+    const current = pick(
+      node,
+      Object.keys(restoredPrevious) as (keyof SceneNode)[]
+    ) as Partial<SceneNode>
     ctx.undo.push({
       label,
       forward: () => {
@@ -164,7 +169,7 @@ export function createUndoActions(ctx: EditorContext) {
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, previous)
+        ctx.graph.updateNode(nodeId, restoredPrevious)
         ctx.runLayoutForNode(nodeId)
       }
     })

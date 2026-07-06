@@ -75,6 +75,43 @@ describe('export: GUID collision prevention', () => {
     expect(rects.length).toBe(2)
   })
 
+  test('cross-page cloned frames survive export roundtrip', async () => {
+    const graph = new SceneGraph()
+    const page1 = graph.getPages()[0]
+    page1.name = 'Page 1'
+    const frame = graph.createNode('FRAME', page1.id, {
+      name: 'A',
+      width: 200,
+      height: 100
+    })
+    graph.createNode('TEXT', frame.id, {
+      name: 'Label',
+      text: 'Hello',
+      width: 100,
+      height: 20
+    })
+
+    const clone = graph.cloneTree(frame.id, page1.id)
+    expect(clone).not.toBeNull()
+    if (!clone) throw new Error('Expected clone to exist')
+    const page2 = graph.addPage('Page 2')
+    graph.reparentNode(clone.id, page2.id)
+
+    const figBytes = await exportFigFile(graph)
+    const reimported = await parseFigFile(figBytes.buffer as ArrayBuffer)
+    const pages = reimported.getPages()
+
+    expect(pages.map((page) => page.name)).toEqual(['Page 1', 'Page 2'])
+    for (const page of pages) {
+      const [child] = reimported.getChildren(page.id)
+      expect(child?.name).toBe('A')
+      expect(child?.type).toBe('FRAME')
+      expect(child ? reimported.getChildren(child.id).map((node) => node.name) : []).toEqual([
+        'Label'
+      ])
+    }
+  })
+
   test('export roundtrip preserves three nodes with identical source.id', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

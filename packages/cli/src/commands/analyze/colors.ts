@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 
 import type { AnalyzeColorsResult } from '@open-pencil/core/rpc'
 
+import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtHistogram, fmtList, fmtSummary } from '#cli/format'
 import { loadRpcData } from '#cli/rpc-data'
 
@@ -20,13 +21,19 @@ export default defineCommand({
       default: '15'
     },
     similar: { type: 'boolean', description: 'Show similar color clusters' },
+    ...appTargetOptions,
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeColorsResult>(args.file, 'analyze_colors', {
-      threshold: Number(args.threshold),
-      similar: args.similar
-    })
+    const data = await loadRpcData<AnalyzeColorsResult>(
+      args.file,
+      'analyze_colors',
+      {
+        threshold: Number(args.threshold),
+        similar: args.similar
+      },
+      args
+    )
     const limit = Number(args.limit)
 
     if (args.json) {

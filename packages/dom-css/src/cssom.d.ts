@@ -10,6 +10,13 @@ declare module '@acemir/cssom' {
     style: CSSStyleDeclarationLike
   }
 
+  export class CSSFontFaceRule {
+    readonly cssText: string
+    readonly style: {
+      setProperty(property: string, value: string, priority?: string): void
+    }
+  }
+
   export interface CSSGroupingRuleLike {
     cssRules: unknown[]
   }

@@ -4,60 +4,40 @@
 
 ### Changed
 
-- Add Figma-style page management in the Pages panel with a context menu for renaming/deleting pages and drag-and-drop page reordering.
-- Add JSX authoring support for components, component sets, and instances.
-- Add design JSX variable helpers so color props can use `designVar()` / `defineVars()` references and emit graph variable bindings.
-- Add structured design JSX paint helpers for solid fills, multiple fills, and gradients.
-- Add structured design JSX effect helpers for shadows and blur effects.
-- Add the `@open-pencil/dom-css` package skeleton for DOM/CSS projection and browser/headless CSS runtime adapters.
-- Add initial `@open-pencil/dom-css` DesignDOM ⇄ SceneGraph conversion helpers for HTML/CSS-shaped card layouts.
-- Add `parse5`-backed headless HTML parsing for `@open-pencil/dom-css` DesignDOM documents.
-- Add CSSOM-backed headless style computation for basic `tag`, `.class`, `#id`, descendant, and child selectors with shorthand expansion.
-- Add an HTML/CSS card round-trip fixture covering DesignDOM style computation, SceneGraph import, and HTML serialization.
-- Add `compileTailwindCSS()` to delegate utility compilation to Tailwind v4 and cover generated CSS ingestion through CSSOM and SceneGraph conversion.
-- Add browser-oracle DOM/CSS fixtures for Tailwind cards/buttons, CSS custom properties, `calc()`, and modern computed color output.
-- Add high-level `htmlToDesignDocument()`, `htmlToSceneGraph()`, `tailwindHTMLToDesignDocument()`, and `tailwindHTMLToSceneGraph()` helpers.
-- Improve `@open-pencil/dom-css` conversion for flex alignment, independent corner radii, per-side stroke weights, clipping, and size constraints.
-- Expand DOM/CSS fixture coverage for inputs, badges, nav rows, dialogs, and Tailwind-generated utility styles.
-- Add package-local `@open-pencil/dom-css` tests so the package can be validated independently with `bun run test` from `packages/dom-css`.
-- Add standalone `@open-pencil/dom-css` typecheck, check, and built-package smoke scripts for external package maintenance.
-- Improve `@open-pencil/dom-css` SceneGraph → CSS export parity for logical padding, independent border sides, opacity, text typography, and shadows.
-- Add `@open-pencil/dom-css` JSX runtime helpers for DOM-shaped authoring into DesignDOM, CSS runtime styling, SceneGraph conversion, and Tailwind-generated CSS flows.
-- Add browser-first JSX/Tailwind helpers for native `getComputedStyle()` conversion, expand CSS mapping for flex wrapping, self alignment, absolute positioning basics, and document the future `@open-pencil/kiwi` / `@open-pencil/fig` package split plan.
-- Add a CLI `dom` command for converting HTML/CSS/Tailwind input into editable `.fig` documents through `@open-pencil/dom-css`.
-- Add type-validated `bindVariable`/`unbindVariable` with event emission and indexed binding format (`fills/N/color` instead of `fills[N]`).
-- Add `unbind_variable` MCP tool for removing variable bindings.
-- Add `openpencil analyze overlaps`, the `analyze_overlaps` RPC command, and the `analyze_overlaps` ToolDef for heuristic overlap detection. The command reports sibling overlaps, children overflowing non-clipping parents, and overlay/backdrop patterns, with filters for page/page ID, scope, category, severity, min area/ratio, node type, hidden/locked/absolute nodes, result limit, and `--json` output.
-- Add overlap analysis exports for automation consumers, including `computeOverlaps`, `analyzeOverlaps`, overlap result types, and parameter parsers from core subpath exports.
-- Add world-matrix visual bounds to overlap analysis, covering vector/stroke/text geometry, ancestor clipping, rotated clipping frames, and nested ancestor rotations.
-- Add the `@open-pencil/core/package.json` subpath export for package metadata consumers.
+- Add Figma-style page management in the Pages panel, including rename/delete actions and drag-and-drop page reordering.
+- Add DOM/CSS import and authoring support so HTML, CSS, Tailwind, and JSX can be converted into editable OpenPencil documents from the app, CLI, and SDK.
+- Add Tailwind class serialization for DOM/CSS HTML export in the SDK and CLI.
+- Add standalone browser-openable HTML export with compiled CSS and optional external image/font assets.
+- Add richer Design JSX authoring for components, variables, structured fills, gradients, shadows, and blur effects.
+- Add overlap analysis for finding layout collisions and overflowing children from the CLI, AI tools, and MCP.
+- Add saved per-node export settings for repeat exports.
+- Add desktop image drag-and-drop into the Tauri app window.
+- Add open-document discovery for live CLI and MCP automation so agents can target the intended document and page.
+- Publish lower-level SceneGraph, Pen, Kiwi, Fig, and DOM/CSS functionality through clearer package boundaries for SDK and automation consumers.
 
 ### Fixes
 
-- Match Figma auto-layout reflow when deleting children or hiding optional instance slots, including HUG-height component instances.
-- Fix desktop clipboard copy/cut/paste by using Tauri's system clipboard bridge when browser clipboard events are unavailable.
-- Add AI provider connection testing with clearer setup errors for OpenAI-compatible endpoints.
-- Increase per-test timeout for slow `gold-preview.fig` fixture tests (`clipboard roundtrip`, `group reclassification`, `glyph blob preservation`, `auto-layout text measurement`, and `render/canvas/cache`) so they no longer flake on slower CI runners.
-- Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.
-- Fix instance overrides shallow-copied on clone — override values containing objects are now deep-copied.
-- Fix stale variable bindings not cleaned up when fills/strokes arrays shrink — any indexed sub-path is now handled, not just `/color`.
-- Fix desktop "Share This File" links to use the public `https://app.openpencil.dev/share/{roomId}` URL instead of the internal `tauri://localhost` app scheme.
-- Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
-- Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
-- Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
-- Preserve rotated Figma transform origins for imported vector nodes.
-- Render complex text fills through vector glyph outlines so imported Figma text can use the normal fill pipeline for gradients, images, patterns, and other non-solid paints.
-- Fix file-backed CLI commands (`convert`, `eval --output`, `export`) to use Node `fs/promises` instead of Bun runtime APIs, so the published CLI works when installed and run under Node.
-- Fix `analyze_overlaps` stroke-overflow bounds for rotated nodes by expanding the local rectangle before transforming through the world matrix, so stroked rotated nodes are measured with their true rotated footprint.
-- Fix `analyze_overlaps` clipping across multiple rotated ancestors by preserving the clipped polygon through the full clip chain instead of collapsing to an AABB between clips, which could reintroduce corners removed by an inner clip.
-- Fix `analyze_overlaps` `limit` of `0` (or a negative value) so it caps the returned overlaps to an empty list instead of returning the full set; summary totals still reflect the complete result.
-- Trim whitespace from `analyze_overlaps` `scope` and `severity` inputs so values like `" major "` resolve instead of falling back to defaults.
-- Export `OverlapScope`, `AnalyzeOverlapsSummary`, and `OverlapIntersection` from the `@open-pencil/core/tools/analyze` barrel so consumers do not need to deep-import the overlaps module.
+- Fix live CLI and MCP automation drifting to the wrong open document or page when multiple files are open.
+- Improve Chinese, Japanese, and Korean text rendering with glyph-aware fallback fonts and outline rendering when needed.
+- Preserve imported Figma text sizing more accurately, especially auto-sized text inside auto-layout frames.
+- Match Figma auto-layout reflow when deleting children, hiding optional instance slots, or syncing component changes.
+- Fix desktop clipboard copy, cut, and paste when browser clipboard events are unavailable.
+- Fix desktop "Share This File" links so they use the public app URL.
+- Fix collaborators joining a room without receiving the current document contents.
+- Fix `.fig` round-trips that could corrupt files because of duplicate generated IDs.
+- Fix resizing groups and boolean operations so child layers scale with the parent.
+- Fix Hangul IME composition while editing text.
+- Improve large layer-tree responsiveness and keep expanded state stable while editing.
+- Improve AI provider setup with a connection test and clearer errors for OpenAI-compatible endpoints.
+- Fix published package type resolution for TypeScript consumers.
+- Fix clone operations sharing mutable data with the original, including fills, strokes, variable bindings, overrides, and vector networks.
+- Fix variable bindings left behind when fills or strokes are removed.
+- Improve Figma group, boolean, instance, rotated vector, complex text fill, layout grid, page guide, pattern/noise, and other imported visual details.
+- Fix file-backed CLI commands under Node by avoiding Bun-only filesystem APIs.
+- Improve overlap analysis accuracy for rotated stroked nodes, nested clipping, empty limits, and trimmed filter values.
 - Deduplicate file opens across all platforms (Tauri desktop, browser File System Access API, drag-and-drop) by normalizing file paths into a canonical identity key and switching to an existing tab when one is already open, rather than creating a duplicate.
-- Fix Rust path identity normalization to collapse duplicate slashes, strip trailing slashes, and preserve UNC `//` prefix so desktop file-association identity keys match the frontend `normalizeFilePath` contract.
-- Fix `downloadBlob` passing `Uint8Array.buffer` to `Blob`, which included adjacent bytes for subarray payloads; it now passes the typed-array view directly.
-- Fix `yieldToUI` leaving a dangling queued `requestAnimationFrame` callback when the `setTimeout` fallback resolved first, and fix a dangling `setTimeout` fallback when `requestAnimationFrame` is a synchronous no-op. The surviving callback always cancels the other side.
-- Fix leaking `vi.mock` calls in tab/file IO tests that replaced `computeAllLayouts` with a no-op and broke unrelated layout/text tests in the same `bun test` process. Mocks are now scoped to each test with `vi.spyOn` and restored with `vi.restoreAllMocks()`.
+- Fix `yieldToUI` leaving a dangling queued `requestAnimationFrame` callback when the `setTimeout` fallback resolved first, and fix a dangling `setTimeout` fallback when `requestAnimationFrame` is a synchronous no-op.
+- Fix leaking `vi.mock` calls in tab/file IO tests that replaced `computeAllLayouts` with a no-op and broke unrelated layout/text tests in the same `bun test` process.
 
 ## 0.13.2 — 2026-05-30
 

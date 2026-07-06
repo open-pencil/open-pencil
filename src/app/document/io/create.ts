@@ -67,6 +67,7 @@ export function createDocumentIOActions(
     downloadBlob,
     setViewportSize,
     fitCurrentPageToViewport,
+    getDocumentFilePath: sourceState.getFilePath,
     setDocumentSource: sourceActions.setDocumentSource,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
     updateSourceIdentity: sourceActions.updateSourceIdentity,

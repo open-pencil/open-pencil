@@ -50,6 +50,22 @@ export function getActiveStore(): EditorStore {
   return tab.store
 }
 
+export function getActiveTabId(): string {
+  return activeTabId.value
+}
+
+export function getTabById(tabId: string): Tab | undefined {
+  return tabsRef.value.find((tab) => tab.id === tabId)
+}
+
+export function getTabForStore(store: EditorStore): Tab | undefined {
+  return tabsRef.value.find((tab) => tab.store === store)
+}
+
+export function getTabsSnapshot(): Tab[] {
+  return [...tabsRef.value]
+}
+
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   const s = store ?? createEditorStore(initialGraph)
   const tab: Tab = { id: generateTabId(), store: s }
@@ -214,6 +230,10 @@ export function useTabsStore() {
     createTab,
     switchTab,
     closeTab,
+    getActiveTabId,
+    getTabById,
+    getTabForStore,
+    getTabsSnapshot,
     openFileInNewTab,
     getActiveStore,
     tabCount

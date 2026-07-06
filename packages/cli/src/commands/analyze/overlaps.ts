@@ -176,6 +176,11 @@ export default defineCommand({
       type: 'string',
       description: 'Limit analysis to nodes on the page with this stable ID'
     },
+    'document-id': {
+      type: 'string',
+      description: 'Target OpenPencil document/tab ID when connected to the running app',
+      required: false
+    },
     type: {
       type: 'string',
       description: 'Comma-separated node types to analyze, e.g. FRAME,TEXT'
@@ -194,7 +199,12 @@ export default defineCommand({
       process.exit(1)
     }
 
-    const data = await loadRpcData<AnalyzeOverlapsResult>(args.file, 'analyze_overlaps', rpcArgs)
+    const data = await loadRpcData<AnalyzeOverlapsResult>(
+      args.file,
+      'analyze_overlaps',
+      rpcArgs,
+      args
+    )
 
     if (args.json) {
       console.log(JSON.stringify(data, null, 2))
