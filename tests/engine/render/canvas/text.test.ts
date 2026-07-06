@@ -15,6 +15,7 @@ import { buildParagraph, isNodeFontLoaded } from '#core/canvas/text'
 import { fontManager } from '#core/text/fonts'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { repoPath } from '#tests/helpers/paths'
 
 function createMockCanvas() {
@@ -238,92 +239,98 @@ describe('renderText headless visual', () => {
     expect(resolveTextDirection('RTL', 'Hello')).toBe('RTL')
   })
 
-  test('does not require fallback families when the primary font covers CJK glyphs', async () => {
-    const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
-    const notoData = await Bun.file(notoPath).arrayBuffer()
-    fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
-    const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
-    const originalFallbacks = [...manager.cjkFallbackFamilies]
-    manager.cjkFallbackFamilies = []
+  test.skipIf(isLfsPointer(repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')))(
+    'does not require fallback families when the primary font covers CJK glyphs',
+    async () => {
+      const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+      const notoData = await Bun.file(notoPath).arrayBuffer()
+      fontManager.markLoaded('Noto Sans SC', 'Regular', notoData)
+      const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
+      const originalFallbacks = [...manager.cjkFallbackFamilies]
+      manager.cjkFallbackFamilies = []
 
-    try {
-      const loaded = isNodeFontLoaded(
-        { fontProvider: {}, fontsLoaded: true } as never,
-        textNode({ text: '你好世界', fontFamily: 'Noto Sans SC', fontWeight: 400 })
-      )
+      try {
+        const loaded = isNodeFontLoaded(
+          { fontProvider: {}, fontsLoaded: true } as never,
+          textNode({ text: '你好世界', fontFamily: 'Noto Sans SC', fontWeight: 400 })
+        )
 
-      expect(loaded).toBe(true)
-    } finally {
-      manager.cjkFallbackFamilies = originalFallbacks
-    }
-  })
-
-  test('renders CJK text via fallback font through paragraph shaper', async () => {
-    const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
-
-    const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
-    fontProvider.registerFont(interData, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', interData)
-
-    const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
-    const notoData = await Bun.file(notoPath).arrayBuffer()
-    fontProvider.registerFont(notoData, 'Noto Sans SC')
-    fontManager.setCJKFallbackFamily('Noto Sans SC')
-
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const node = graph.createNode('TEXT', page.id, {
-      text: '你好世界',
-      fontFamily: 'Inter',
-      fontSize: 32,
-      fontWeight: 400,
-      width: 200,
-      height: 50,
-      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
-    })
-
-    const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
-    const renderer = new SkiaRendererClass(ck, surface)
-    renderer.viewportWidth = 200
-    renderer.viewportHeight = 50
-    renderer.dpr = 1
-    renderer.fontsLoaded = true
-    renderer.fontProvider = fontProvider
-
-    const canvas = surface.getCanvas()
-    canvas.clear(ck.WHITE)
-    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
-    surface.flush()
-
-    const image = surface.makeImageSnapshot()
-    const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
-    image.delete()
-    surface.delete()
-
-    expect(encoded.length).toBeGreaterThan(200)
-
-    const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
-    const pixels = decodedImage.readPixels(0, 0, {
-      width: 200,
-      height: 50,
-      colorType: ck.ColorType.RGBA_8888,
-      alphaType: ck.AlphaType.Unpremul,
-      colorSpace: ck.ColorSpace.SRGB
-    })
-    decodedImage.delete()
-
-    let darkPixels = 0
-    for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] < 128 && pixels[i + 1] < 128 && pixels[i + 2] < 128) {
-        darkPixels++
+        expect(loaded).toBe(true)
+      } finally {
+        manager.cjkFallbackFamilies = originalFallbacks
       }
     }
-    // CJK characters are dense — should have many dark pixels if rendering correctly
-    // Tofu boxes would have far fewer (just outlines)
-    expect(darkPixels).toBeGreaterThan(500)
-  })
+  )
+
+  test.skipIf(isLfsPointer(repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')))(
+    'renders CJK text via fallback font through paragraph shaper',
+    async () => {
+      const ck = await initCanvasKit()
+      const fontProvider = ck.TypefaceFontProvider.Make()
+      fontManager.attachProvider(ck, fontProvider)
+
+      const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+      fontProvider.registerFont(interData, 'Inter')
+      fontManager.markLoaded('Inter', 'Regular', interData)
+
+      const notoPath = repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+      const notoData = await Bun.file(notoPath).arrayBuffer()
+      fontProvider.registerFont(notoData, 'Noto Sans SC')
+      fontManager.setCJKFallbackFamily('Noto Sans SC')
+
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0]
+      const node = graph.createNode('TEXT', page.id, {
+        text: '你好世界',
+        fontFamily: 'Inter',
+        fontSize: 32,
+        fontWeight: 400,
+        width: 200,
+        height: 50,
+        fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      })
+
+      const surface = expectDefined(ck.MakeSurface(200, 50), 'CanvasKit surface')
+      const renderer = new SkiaRendererClass(ck, surface)
+      renderer.viewportWidth = 200
+      renderer.viewportHeight = 50
+      renderer.dpr = 1
+      renderer.fontsLoaded = true
+      renderer.fontProvider = fontProvider
+
+      const canvas = surface.getCanvas()
+      canvas.clear(ck.WHITE)
+      renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
+      surface.flush()
+
+      const image = surface.makeImageSnapshot()
+      const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
+      image.delete()
+      surface.delete()
+
+      expect(encoded.length).toBeGreaterThan(200)
+
+      const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
+      const pixels = decodedImage.readPixels(0, 0, {
+        width: 200,
+        height: 50,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      })
+      decodedImage.delete()
+
+      let darkPixels = 0
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i] < 128 && pixels[i + 1] < 128 && pixels[i + 2] < 128) {
+          darkPixels++
+        }
+      }
+      // CJK characters are dense — should have many dark pixels if rendering correctly
+      // Tofu boxes would have far fewer (just outlines)
+      expect(darkPixels).toBeGreaterThan(500)
+    }
+  )
 
   test('renders linear gradient text through the canvas scene fill path', async () => {
     const ck = await initCanvasKit()
@@ -399,69 +406,72 @@ describe('renderText headless visual', () => {
     expect(blueTextPixels).toBeGreaterThan(40)
   })
 
-  test('renders Arabic text via fallback font through paragraph shaper', async () => {
-    const ck = await initCanvasKit()
-    const fontProvider = ck.TypefaceFontProvider.Make()
-    fontManager.attachProvider(ck, fontProvider)
+  test.skipIf(isLfsPointer(repoPath('tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf')))(
+    'renders Arabic text via fallback font through paragraph shaper',
+    async () => {
+      const ck = await initCanvasKit()
+      const fontProvider = ck.TypefaceFontProvider.Make()
+      fontManager.attachProvider(ck, fontProvider)
 
-    const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
-    fontProvider.registerFont(interData, 'Inter')
-    fontManager.markLoaded('Inter', 'Regular', interData)
+      const interData = await Bun.file('public/Inter-Regular.ttf').arrayBuffer()
+      fontProvider.registerFont(interData, 'Inter')
+      fontManager.markLoaded('Inter', 'Regular', interData)
 
-    const arabicPath = repoPath('tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf')
-    const arabicData = await Bun.file(arabicPath).arrayBuffer()
-    fontProvider.registerFont(arabicData, 'Noto Naskh Arabic')
-    fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
+      const arabicPath = repoPath('tests/fixtures/fonts/NotoNaskhArabic-Regular.ttf')
+      const arabicData = await Bun.file(arabicPath).arrayBuffer()
+      fontProvider.registerFont(arabicData, 'Noto Naskh Arabic')
+      fontManager.setArabicFallbackFamily('Noto Naskh Arabic')
 
-    const graph = new SceneGraph()
-    const page = graph.getPages()[0]
-    const node = graph.createNode('TEXT', page.id, {
-      text: 'مرحبا بالعالم',
-      textDirection: 'AUTO',
-      fontFamily: 'Inter',
-      fontSize: 32,
-      fontWeight: 400,
-      width: 220,
-      height: 60,
-      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
-    })
+      const graph = new SceneGraph()
+      const page = graph.getPages()[0]
+      const node = graph.createNode('TEXT', page.id, {
+        text: 'مرحبا بالعالم',
+        textDirection: 'AUTO',
+        fontFamily: 'Inter',
+        fontSize: 32,
+        fontWeight: 400,
+        width: 220,
+        height: 60,
+        fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      })
 
-    const surface = expectDefined(ck.MakeSurface(220, 60), 'CanvasKit surface')
-    const renderer = new SkiaRendererClass(ck, surface)
-    renderer.viewportWidth = 220
-    renderer.viewportHeight = 60
-    renderer.dpr = 1
-    renderer.fontsLoaded = true
-    renderer.fontProvider = fontProvider
+      const surface = expectDefined(ck.MakeSurface(220, 60), 'CanvasKit surface')
+      const renderer = new SkiaRendererClass(ck, surface)
+      renderer.viewportWidth = 220
+      renderer.viewportHeight = 60
+      renderer.dpr = 1
+      renderer.fontsLoaded = true
+      renderer.fontProvider = fontProvider
 
-    const canvas = surface.getCanvas()
-    canvas.clear(ck.WHITE)
-    renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
-    surface.flush()
+      const canvas = surface.getCanvas()
+      canvas.clear(ck.WHITE)
+      renderText(renderer, canvas, expectDefined(graph.getNode(node.id), 'text node'))
+      surface.flush()
 
-    const image = surface.makeImageSnapshot()
-    const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
-    image.delete()
-    surface.delete()
+      const image = surface.makeImageSnapshot()
+      const encoded = expectDefined(image.encodeToBytes(ck.ImageFormat.PNG, 100), 'encoded PNG')
+      image.delete()
+      surface.delete()
 
-    expect(encoded.length).toBeGreaterThan(200)
+      expect(encoded.length).toBeGreaterThan(200)
 
-    const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
-    const pixels = decodedImage.readPixels(0, 0, {
-      width: 220,
-      height: 60,
-      colorType: ck.ColorType.RGBA_8888,
-      alphaType: ck.AlphaType.Unpremul,
-      colorSpace: ck.ColorSpace.SRGB
-    })
-    decodedImage.delete()
+      const decodedImage = expectDefined(ck.MakeImageFromEncoded(encoded), 'decoded PNG image')
+      const pixels = decodedImage.readPixels(0, 0, {
+        width: 220,
+        height: 60,
+        colorType: ck.ColorType.RGBA_8888,
+        alphaType: ck.AlphaType.Unpremul,
+        colorSpace: ck.ColorSpace.SRGB
+      })
+      decodedImage.delete()
 
-    let darkPixels = 0
-    for (let i = 0; i < pixels.length; i += 4) {
-      if (pixels[i] < 128 && pixels[i + 1] < 128 && pixels[i + 2] < 128) {
-        darkPixels++
+      let darkPixels = 0
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i] < 128 && pixels[i + 1] < 128 && pixels[i + 2] < 128) {
+          darkPixels++
+        }
       }
+      expect(darkPixels).toBeGreaterThan(450)
     }
-    expect(darkPixels).toBeGreaterThan(450)
-  })
+  )
 })

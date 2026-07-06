@@ -14,6 +14,7 @@ import {
 import { initCanvasKit } from '#cli/headless'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { isLfsPointer } from '#tests/helpers/lfs'
 import { repoPath } from '#tests/helpers/paths'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
@@ -102,114 +103,123 @@ function maskYCenter(
 }
 
 describe('render cache regressions', () => {
-  test('badge label is vertically centered in the pill', async () => {
-    const surface = expectDefined(ck.MakeSurface(120, 60), 'badge surface')
-    const renderer = new SkiaRenderer(ck, surface)
-    await renderer.loadFonts()
-    try {
-      const badge = fixtureInputBadge()
-      const png = renderNodesToImage(ck, renderer, graph, graph.getPages()[0].id, [badge.id], {
-        scale: 1,
-        format: 'PNG'
-      })
-      expect(png).toBeTruthy()
-      const image = expectDefined(
-        ck.MakeImageFromEncoded(expectDefined(png, 'badge png')),
-        'badge image'
-      )
-      const width = image.width()
-      const height = image.height()
-      const pixels = image.readPixels(0, 0, {
-        width,
-        height,
-        colorType: ck.ColorType.RGBA_8888,
-        alphaType: ck.AlphaType.Unpremul,
-        colorSpace: ck.ColorSpace.SRGB
-      })
-      image.delete()
+  test.skipIf(isLfsPointer(repoPath('tests/fixtures/gold-preview.fig')))(
+    'badge label is vertically centered in the pill',
+    async () => {
+      const surface = expectDefined(ck.MakeSurface(120, 60), 'badge surface')
+      const renderer = new SkiaRenderer(ck, surface)
+      await renderer.loadFonts()
+      try {
+        const badge = fixtureInputBadge()
+        const png = renderNodesToImage(ck, renderer, graph, graph.getPages()[0].id, [badge.id], {
+          scale: 1,
+          format: 'PNG'
+        })
+        expect(png).toBeTruthy()
+        const image = expectDefined(
+          ck.MakeImageFromEncoded(expectDefined(png, 'badge png')),
+          'badge image'
+        )
+        const width = image.width()
+        const height = image.height()
+        const pixels = image.readPixels(0, 0, {
+          width,
+          height,
+          colorType: ck.ColorType.RGBA_8888,
+          alphaType: ck.AlphaType.Unpremul,
+          colorSpace: ck.ColorSpace.SRGB
+        })
+        image.delete()
 
-      const renderedPixels = expectDefined(pixels, 'badge pixels')
-      const contentCenter = maskYCenter(
-        renderedPixels,
-        width,
-        height,
-        (i) => renderedPixels[i + 3] > 10
-      )
-      const textCenter = maskYCenter(
-        renderedPixels,
-        width,
-        height,
-        (i) =>
-          renderedPixels[i + 3] > 128 &&
-          pixels[i] < 130 &&
-          pixels[i + 1] < 140 &&
-          pixels[i + 2] < 160,
-        [0, width]
-      )
-      expect(Math.abs(textCenter - contentCenter)).toBeLessThanOrEqual(0.6)
-    } finally {
-      surface.delete()
+        const renderedPixels = expectDefined(pixels, 'badge pixels')
+        const contentCenter = maskYCenter(
+          renderedPixels,
+          width,
+          height,
+          (i) => renderedPixels[i + 3] > 10
+        )
+        const textCenter = maskYCenter(
+          renderedPixels,
+          width,
+          height,
+          (i) =>
+            renderedPixels[i + 3] > 128 &&
+            pixels[i] < 130 &&
+            pixels[i + 1] < 140 &&
+            pixels[i + 2] < 160,
+          [0, width]
+        )
+        expect(Math.abs(textCenter - contentCenter)).toBeLessThanOrEqual(0.6)
+      } finally {
+        surface.delete()
+      }
     }
-  })
+  )
 
-  test('scene picture redraw keeps text after moving a node', async () => {
-    const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
-    const renderer = new SkiaRenderer(ck, surface)
-    renderer.viewportWidth = 900
-    renderer.viewportHeight = 700
-    renderer.dpr = 1
-    await renderer.loadFonts()
-    renderer.panX = 0
-    renderer.panY = 0
-    renderer.zoom = 0.75
-    renderer.pageId = graph.getPages()[0].id
+  test.skipIf(isLfsPointer(repoPath('tests/fixtures/gold-preview.fig')))(
+    'scene picture redraw keeps text after moving a node',
+    async () => {
+      const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
+      const renderer = new SkiaRenderer(ck, surface)
+      renderer.viewportWidth = 900
+      renderer.viewportHeight = 700
+      renderer.dpr = 1
+      await renderer.loadFonts()
+      renderer.panX = 0
+      renderer.panY = 0
+      renderer.zoom = 0.75
+      renderer.pageId = graph.getPages()[0].id
 
-    try {
-      const beforeDark = countDarkPixels(renderPreview(renderer, 1))
-      const movingNode = graph.getNode(movingNodeId)
-      expect(movingNode).toBeDefined()
-      const originalX = movingNode?.x ?? 0
-      graph.updateNode(movingNodeId, { x: originalX + 20 })
-      expect(graph.getNode(movingNodeId)?.x).toBeCloseTo(originalX + 20, 3)
-      const afterDark = countDarkPixels(renderPreview(renderer, 2))
+      try {
+        const beforeDark = countDarkPixels(renderPreview(renderer, 1))
+        const movingNode = graph.getNode(movingNodeId)
+        expect(movingNode).toBeDefined()
+        const originalX = movingNode?.x ?? 0
+        graph.updateNode(movingNodeId, { x: originalX + 20 })
+        expect(graph.getNode(movingNodeId)?.x).toBeCloseTo(originalX + 20, 3)
+        const afterDark = countDarkPixels(renderPreview(renderer, 2))
 
-      expect(afterDark).toBeGreaterThan(beforeDark * 0.8)
-    } finally {
-      surface.delete()
+        expect(afterDark).toBeGreaterThan(beforeDark * 0.8)
+      } finally {
+        surface.delete()
+      }
     }
-  })
+  )
 
-  test('scene picture cache recovers after position preview commits', async () => {
-    const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
-    const renderer = new SkiaRenderer(ck, surface)
-    renderer.viewportWidth = 900
-    renderer.viewportHeight = 700
-    renderer.dpr = 1
-    renderer.panX = 0
-    renderer.panY = 0
-    renderer.zoom = 0.75
-    renderer.pageId = graph.getPages()[0].id
+  test.skipIf(isLfsPointer(repoPath('tests/fixtures/gold-preview.fig')))(
+    'scene picture cache recovers after position preview commits',
+    async () => {
+      const surface = expectDefined(ck.MakeSurface(900, 700), 'preview surface')
+      const renderer = new SkiaRenderer(ck, surface)
+      renderer.viewportWidth = 900
+      renderer.viewportHeight = 700
+      renderer.dpr = 1
+      renderer.panX = 0
+      renderer.panY = 0
+      renderer.zoom = 0.75
+      renderer.pageId = graph.getPages()[0].id
 
-    try {
-      renderPreview(renderer, 10)
-      expect(renderer.profiler.stats.scenePictureMode).toBe('record')
+      try {
+        renderPreview(renderer, 10)
+        expect(renderer.profiler.stats.scenePictureMode).toBe('record')
 
-      const movingNode = expectDefined(graph.getNode(movingNodeId), 'moving node')
-      const originalX = movingNode.x
-      graph.updateNodePositionPreview(movingNodeId, originalX + 20, movingNode.y)
-      renderPreview(renderer, 10)
-      expect(renderer.profiler.stats.scenePictureMode).toBe('volatile')
-      expect(renderer.profiler.stats.scenePictureMissReason).toBe('position-preview')
+        const movingNode = expectDefined(graph.getNode(movingNodeId), 'moving node')
+        const originalX = movingNode.x
+        graph.updateNodePositionPreview(movingNodeId, originalX + 20, movingNode.y)
+        renderPreview(renderer, 10)
+        expect(renderer.profiler.stats.scenePictureMode).toBe('volatile')
+        expect(renderer.profiler.stats.scenePictureMissReason).toBe('position-preview')
 
-      graph.updateNode(movingNodeId, { x: originalX + 20 })
-      renderPreview(renderer, 11)
-      expect(renderer.profiler.stats.scenePictureMode).toBe('record')
-      expect(renderer.profiler.stats.scenePictureMissReason).toBe('position-preview-version')
+        graph.updateNode(movingNodeId, { x: originalX + 20 })
+        renderPreview(renderer, 11)
+        expect(renderer.profiler.stats.scenePictureMode).toBe('record')
+        expect(renderer.profiler.stats.scenePictureMissReason).toBe('position-preview-version')
 
-      renderPreview(renderer, 11)
-      expect(renderer.profiler.stats.scenePictureMode).toBe('hit')
-    } finally {
-      surface.delete()
+        renderPreview(renderer, 11)
+        expect(renderer.profiler.stats.scenePictureMode).toBe('hit')
+      } finally {
+        surface.delete()
+      }
     }
-  })
+  )
 })

@@ -13,6 +13,7 @@ import {
 import { deduplicateNodeChangePluginData } from '#core/kiwi'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { isLfsPointer } from '#tests/helpers/lfs'
 
 function doc(): NodeChange {
   return {
@@ -118,24 +119,27 @@ describe('plugin data', () => {
     expect(parsedProxy?.getSharedPluginDataKeys('tokens')).toEqual(['accent'])
   })
 
-  test('preserves plugin relaunch data from imported fig files', async () => {
-    await initCodec()
-    const bytes = new Uint8Array(await Bun.file('./tests/fixtures/material3.fig').arrayBuffer())
-    const graph = await parseFigFile(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
-    const nodeWithRelaunch = [...graph.getAllNodes()].find(
-      (node) => node.pluginRelaunchData.length > 0
-    )
+  test.skipIf(isLfsPointer('./tests/fixtures/material3.fig'))(
+    'preserves plugin relaunch data from imported fig files',
+    async () => {
+      await initCodec()
+      const bytes = new Uint8Array(await Bun.file('./tests/fixtures/material3.fig').arrayBuffer())
+      const graph = await parseFigFile(
+        bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+      )
+      const nodeWithRelaunch = [...graph.getAllNodes()].find(
+        (node) => node.pluginRelaunchData.length > 0
+      )
 
-    expect(nodeWithRelaunch).toBeDefined()
-    expect(nodeWithRelaunch?.pluginRelaunchData[0]).toMatchObject({
-      pluginId: expect.any(String),
-      command: expect.any(String),
-      message: expect.any(String),
-      isDeleted: expect.any(Boolean)
-    })
-  })
+      expect(nodeWithRelaunch).toBeDefined()
+      expect(nodeWithRelaunch?.pluginRelaunchData[0]).toMatchObject({
+        pluginId: expect.any(String),
+        command: expect.any(String),
+        message: expect.any(String),
+        isDeleted: expect.any(Boolean)
+      })
+    }
+  )
 })
 
 /**
