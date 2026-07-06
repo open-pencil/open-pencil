@@ -47,10 +47,25 @@ describe('Tauri font helpers', () => {
 
     const { listFamilies, listFonts } = await import('@/app/editor/fonts')
 
-    await expect(listFamilies()).resolves.toEqual([{ family: 'System UI', source: 'local' }])
-    await expect(listFonts()).resolves.toEqual([
-      { family: 'System UI', styles: ['Regular', 'Bold'] }
-    ])
+    // The global fontManager may have online providers enabled from the
+    // app font module's immediate watch. Disable them so listFamilies() only
+    // returns the mocked system fonts.
+    const previousProviders = fontManager.enabledOnlineFontProviders()
+    fontManager.setOnlineFontProviders({})
+
+    try {
+      const families = await listFamilies()
+      await expect(families).toEqual(
+        expect.arrayContaining([{ family: 'System UI', source: 'local' }])
+      )
+      await expect(listFonts()).resolves.toEqual([
+        { family: 'System UI', styles: ['Regular', 'Bold'] }
+      ])
+    } finally {
+      fontManager.setOnlineFontProviders(
+        Object.fromEntries(previousProviders.map((provider) => [provider, true]))
+      )
+    }
   })
 
   test('loads system font bytes and registers the face', async () => {
