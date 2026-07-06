@@ -20,6 +20,7 @@ describe('derived instance layout regressions', () => {
   let layoutNodes: SceneNode[]
 
   beforeAll(async () => {
+    if (isLfsPointer('tests/fixtures/gold-preview.fig')) return
     layoutGraph = await parseFixture('gold-preview.fig')
     computeAllLayouts(layoutGraph)
     layoutNodes = collectAllNodes(layoutGraph)
