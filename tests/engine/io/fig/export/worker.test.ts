@@ -122,6 +122,7 @@ heavy('fig export roundtrip', () => {
   let parsed: SceneGraph
 
   beforeAll(async () => {
+    if (isLfsPointer(resolve(FIXTURES, 'gold-preview.fig'))) return
     const buf = readFileSync(resolve(FIXTURES, 'gold-preview.fig'))
     parsed = await parseFigFile(buf.buffer as ArrayBuffer)
   })
