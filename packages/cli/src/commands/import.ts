@@ -8,7 +8,6 @@ import {
   createHeadlessCSSRuntime,
   htmlToDesignDocument,
   htmlToSceneGraph,
-  serializeHTML,
   tailwindHTMLToDesignDocument,
   tailwindHTMLToSceneGraph,
   type DesignDocument
@@ -18,9 +17,9 @@ import { requireFile } from '#cli/app-client'
 import { fmtList, ok, printError } from '#cli/format'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
-const OUTPUT_FORMATS = new Set(['fig', 'html', 'json'])
+const OUTPUT_FORMATS = new Set(['fig', 'json'])
 
-interface DomArgs {
+interface ImportArgs {
   file?: string
   output?: string
   format: string
@@ -41,14 +40,14 @@ async function readTextFile(path: string): Promise<string> {
   return readFile(requireFile(path), 'utf8')
 }
 
-async function cssTextForArgs(args: DomArgs): Promise<string | undefined> {
+async function cssTextForArgs(args: ImportArgs): Promise<string | undefined> {
   const cssParts = []
   if (args.css) cssParts.push(await readTextFile(args.css))
   if (args.cssText) cssParts.push(args.cssText)
   return cssParts.length > 0 ? cssParts.join('\n') : undefined
 }
 
-async function tailwindCandidatesForArgs(args: DomArgs): Promise<string[] | undefined> {
+async function tailwindCandidatesForArgs(args: ImportArgs): Promise<string[] | undefined> {
   const parts = []
   if (args.tailwind) parts.push(args.tailwind)
   if (args.tailwindFile) parts.push(await readTextFile(args.tailwindFile))
@@ -62,7 +61,7 @@ function childCount(document: DesignDocument): number {
   return document.children.length
 }
 
-async function convertDom(args: DomArgs) {
+async function importHTML(args: ImportArgs) {
   const file = requireFile(args.file)
   const html = await readTextFile(file)
   const runtime = createHeadlessCSSRuntime()
@@ -85,7 +84,7 @@ async function convertDom(args: DomArgs) {
 }
 
 async function writeOutput(
-  args: DomArgs,
+  args: ImportArgs,
   document: DesignDocument,
   graph: Awaited<ReturnType<typeof htmlToSceneGraph>>
 ) {
@@ -97,18 +96,13 @@ async function writeOutput(
     return output
   }
 
-  if (format === 'html') {
-    await writeFile(output, serializeHTML(document))
-    return output
-  }
-
   const result = await io.writeDocument('fig', graph)
   await writeFile(output, result.data as Uint8Array)
   return output
 }
 
 export default defineCommand({
-  meta: { description: 'Convert HTML/CSS/Tailwind into an OpenPencil document' },
+  meta: { description: 'Import HTML/CSS/Tailwind into an OpenPencil document' },
   args: {
     file: {
       type: 'positional',
@@ -124,7 +118,7 @@ export default defineCommand({
     format: {
       type: 'string',
       alias: 'f',
-      description: 'Output format: fig, html, json (default: fig)',
+      description: 'Output format: fig or json (default: fig)',
       default: 'fig'
     },
     css: {
@@ -160,11 +154,11 @@ export default defineCommand({
   async run({ args }) {
     const format = args.format.toLowerCase()
     if (!OUTPUT_FORMATS.has(format)) {
-      printError(`Invalid format "${args.format}". Use fig, html, or json.`)
+      printError(`Invalid format "${args.format}". Use fig or json.`)
       process.exit(1)
     }
 
-    const { document, graph } = await convertDom(args)
+    const { document, graph } = await importHTML(args)
     const output = await writeOutput(args, document, graph)
     const pages = graph.getPages()
     const summary = {
@@ -184,7 +178,7 @@ export default defineCommand({
     console.log(
       fmtList([
         {
-          header: 'DOM/CSS conversion',
+          header: 'HTML/CSS import',
           details: summary
         }
       ])

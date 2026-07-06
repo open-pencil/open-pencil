@@ -1,10 +1,15 @@
-import { writeFile } from 'node:fs/promises'
-import { basename, extname, resolve } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { basename, dirname, extname, join, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import type { RasterExportFormat } from '@open-pencil/core/io'
+import {
+  exportHTMLBundle,
+  sceneGraphToDesignDocument,
+  type ExportHTMLBundleOptions
+} from '@open-pencil/dom-css'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRpcArgs } from '#cli/app-target'
@@ -13,8 +18,12 @@ import { loadDocument } from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']
-const ALL_FORMATS = new Set([...RASTER_FORMATS, 'SVG', 'PDF', 'JSX', 'FIG'])
+const ALL_FORMATS = new Set([...RASTER_FORMATS, 'SVG', 'PDF', 'JSX', 'FIG', 'HTML'])
 const JSX_STYLES = new Set(['openpencil', 'tailwind'])
+const HTML_STYLES = new Set(['inline', 'tailwind'])
+const HTML_MODES = new Set(['fragment', 'standalone'])
+const HTML_ASSETS = new Set(['inline', 'external'])
+const HTML_FONTS = new Set(['assets', 'none'])
 
 interface ExportArgs {
   file?: string
@@ -25,6 +34,10 @@ interface ExportArgs {
   page?: string
   node?: string
   style: string
+  html: string
+  css: string
+  assets: string
+  fonts: string
   thumbnail?: boolean
   width: string
   height: string
@@ -69,7 +82,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
     return
   }
 
-  if (format === 'JSX' || format === 'FIG') {
+  if (format === 'JSX' || format === 'HTML' || format === 'FIG') {
     printError(`${format} export is only available in file mode right now.`)
     process.exit(1)
   }
@@ -92,6 +105,51 @@ function exportFileName(defaultName: string, extension: string, scale?: number):
 function targetLabel(pageName?: string, nodeId?: string): string {
   if (nodeId) return `node ${nodeId}`
   return pageName ? `page "${pageName}"` : 'first page'
+}
+
+type FileExportTarget = { scope: 'node'; nodeId: string } | { scope: 'page'; pageId: string }
+
+async function writeHTMLFiles(
+  output: string,
+  bundle: Awaited<ReturnType<typeof exportHTMLBundle>>
+) {
+  const entrypoint = bundle.files.find((file) => file.path === bundle.entrypoint)
+  if (!entrypoint) {
+    printError(`HTML export did not include ${bundle.entrypoint}.`)
+    process.exit(1)
+  }
+
+  await writeAndLog(output, entrypoint.content)
+  const outputDir = dirname(output)
+  const assetFiles = bundle.files.filter((file) => file.path !== bundle.entrypoint)
+  for (const file of assetFiles) {
+    const assetPath = join(outputDir, file.path)
+    await mkdir(dirname(assetPath), { recursive: true })
+    await writeFile(assetPath, file.content)
+  }
+  if (assetFiles.length > 0) console.log(ok(`Assets: ${assetFiles.length} files`))
+}
+
+async function exportHTMLFromFile(
+  args: ExportArgs,
+  graph: Awaited<ReturnType<typeof loadDocument>>,
+  target: FileExportTarget,
+  defaultName: string
+) {
+  const document = sceneGraphToDesignDocument(graph, {
+    rootId: target.scope === 'page' ? target.pageId : target.nodeId
+  })
+  const output = resolve(args.output ?? exportFileName(defaultName, 'html'))
+  const assetBasePath = `${basename(output, extname(output))}.assets`
+  const bundle = await exportHTMLBundle(document, {
+    html: args.html as ExportHTMLBundleOptions['html'],
+    style: args.css as ExportHTMLBundleOptions['style'],
+    assets: args.assets as ExportHTMLBundleOptions['assets'],
+    fonts: args.fonts as ExportHTMLBundleOptions['fonts'],
+    assetBasePath
+  })
+  await writeHTMLFiles(output, bundle)
+  console.log(ok(`Target: ${targetLabel(args.page, args.node)}`))
 }
 
 async function exportFromFile(format: string, args: ExportArgs) {
@@ -130,6 +188,11 @@ async function exportFromFile(format: string, args: ExportArgs) {
   let options:
     | { format?: string; scale?: number; quality?: number; renderThumbnail?: boolean }
     | undefined
+  if (format === 'HTML') {
+    await exportHTMLFromFile(args, graph, target, defaultName)
+    return
+  }
+
   if (format === 'JSX') {
     options = { format: args.style }
   } else if (format === 'FIG') {
@@ -156,7 +219,7 @@ async function exportFromFile(format: string, args: ExportArgs) {
 }
 
 export default defineCommand({
-  meta: { description: 'Export a document to PNG, JPG, WEBP, SVG, PDF, JSX, or .fig' },
+  meta: { description: 'Export a document to PNG, JPG, WEBP, SVG, PDF, JSX, HTML, or .fig' },
   args: {
     file: {
       type: 'positional',
@@ -172,7 +235,7 @@ export default defineCommand({
     format: {
       type: 'string',
       alias: 'f',
-      description: 'Export format: png, jpg, webp, svg, pdf, jsx, fig (default: png)',
+      description: 'Export format: png, jpg, webp, svg, pdf, jsx, html, fig (default: png)',
       default: 'png'
     },
     scale: { type: 'string', alias: 's', description: 'Export scale (default: 1)', default: '1' },
@@ -194,8 +257,28 @@ export default defineCommand({
     },
     style: {
       type: 'string',
-      description: 'JSX style: openpencil, tailwind (default: openpencil)',
+      description: 'JSX style: openpencil or tailwind (default: openpencil)',
       default: 'openpencil'
+    },
+    html: {
+      type: 'string',
+      description: 'HTML output mode: fragment or standalone (default: fragment)',
+      default: 'fragment'
+    },
+    css: {
+      type: 'string',
+      description: 'HTML CSS output: inline or tailwind (default: inline)',
+      default: 'inline'
+    },
+    assets: {
+      type: 'string',
+      description: 'HTML asset output: inline or external (default: inline)',
+      default: 'inline'
+    },
+    fonts: {
+      type: 'string',
+      description: 'HTML font output: assets or none (default: none)',
+      default: 'none'
     },
     thumbnail: { type: 'boolean', description: 'Export page thumbnail instead of full render' },
     width: { type: 'string', description: 'Thumbnail width (default: 1920)', default: '1920' },
@@ -203,14 +286,36 @@ export default defineCommand({
     ...appTargetOptions
   },
   async run({ args }) {
-    const format = args.format.toUpperCase() as RasterExportFormat | 'SVG' | 'JSX' | 'FIG'
+    const format = args.format.toUpperCase() as RasterExportFormat | 'SVG' | 'JSX' | 'FIG' | 'HTML'
     if (!ALL_FORMATS.has(format)) {
-      printError(`Invalid format "${args.format}". Use png, jpg, webp, svg, pdf, jsx, or fig.`)
+      printError(
+        `Invalid format "${args.format}". Use png, jpg, webp, svg, pdf, jsx, html, or fig.`
+      )
       process.exit(1)
     }
 
     if (format === 'JSX' && !JSX_STYLES.has(args.style)) {
       printError(`Invalid JSX style "${args.style}". Use openpencil or tailwind.`)
+      process.exit(1)
+    }
+
+    if (format === 'HTML' && !HTML_MODES.has(args.html)) {
+      printError(`Invalid HTML mode "${args.html}". Use fragment or standalone.`)
+      process.exit(1)
+    }
+
+    if (format === 'HTML' && !HTML_STYLES.has(args.css)) {
+      printError(`Invalid HTML CSS output "${args.css}". Use inline or tailwind.`)
+      process.exit(1)
+    }
+
+    if (format === 'HTML' && !HTML_ASSETS.has(args.assets)) {
+      printError(`Invalid HTML asset output "${args.assets}". Use inline or external.`)
+      process.exit(1)
+    }
+
+    if (format === 'HTML' && !HTML_FONTS.has(args.fonts)) {
+      printError(`Invalid HTML font output "${args.fonts}". Use assets or none.`)
       process.exit(1)
     }
 

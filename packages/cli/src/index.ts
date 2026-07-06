@@ -4,11 +4,11 @@ import { defineCommand, runMain } from 'citty'
 import analyze from './commands/analyze'
 import convert from './commands/convert'
 import documents from './commands/documents'
-import dom from './commands/dom'
 import evalCmd from './commands/eval'
 import exportCmd from './commands/export'
 import find from './commands/find'
 import formats from './commands/formats'
+import importCmd from './commands/import'
 import info from './commands/info'
 import lint from './commands/lint'
 import node from './commands/node'
@@ -30,9 +30,9 @@ const main = defineCommand({
     analyze,
     convert,
     documents,
-    dom,
     eval: evalCmd,
     export: exportCmd,
+    import: importCmd,
     find,
     formats,
     info,

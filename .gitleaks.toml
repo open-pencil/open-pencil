@@ -13,6 +13,7 @@ paths = [
   '''^desktop/target/''',
   '''^packages/[^/]+/dist/''',
   '''^test-results/''',
+  '''(^|/)\.playwright-mcp/''',
   '''^scratch/'''
 ]
 

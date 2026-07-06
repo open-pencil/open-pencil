@@ -1,14 +1,13 @@
-import {
-  createUnifont,
-  providers,
-  type RemoteFontSource,
-  type ResolveFontOptions,
-  type ResolveFontResult,
-  type Unifont
-} from 'unifont'
+import type { ResolveFontResult } from 'unifont'
 
 import { IS_BROWSER } from '#core/constants'
 import { parseFontStyle } from '#core/text/face'
+import {
+  createProviderUnifont,
+  isRemoteFontSource,
+  type WebFontResolveOptions,
+  type WebUnifont
+} from '#core/text/web-font/providers'
 
 export const WEB_FONT_PROVIDER_IDS = ['google', 'fontsource', 'bunny', 'fontshare'] as const
 export type WebFontProviderId = (typeof WEB_FONT_PROVIDER_IDS)[number]
@@ -28,97 +27,6 @@ export const DEFAULT_WEB_FONT_PROVIDER_SETTINGS: Record<WebFontProviderId, boole
 }
 
 export type WebFontFetch = (url: string, init?: RequestInit) => Promise<Response>
-
-type WebFontProvider =
-  | ReturnType<typeof providers.google>
-  | ReturnType<typeof providers.fontsource>
-  | ReturnType<typeof providers.bunny>
-  | ReturnType<typeof providers.fontshare>
-type WebUnifont = Unifont<[WebFontProvider]>
-type WebFontResolveOptions = Pick<ResolveFontOptions, 'weights' | 'styles' | 'formats' | 'subsets'>
-
-const providerFactories = {
-  google: providers.google,
-  fontsource: providers.fontsource,
-  bunny: providers.bunny,
-  fontshare: providers.fontshare
-} satisfies Record<WebFontProviderId, () => WebFontProvider>
-
-let fetchProxyQueue = Promise.resolve()
-
-function httpRequestUrl(input: RequestInfo | URL): string {
-  if (typeof input === 'string' || input instanceof URL) return input.toString()
-  return input.url
-}
-
-async function proxiedRequestInit(
-  input: RequestInfo | URL,
-  init?: RequestInit
-): Promise<RequestInit> {
-  const request = new Request(input, init)
-  const body = request.body ? await request.clone().arrayBuffer() : undefined
-  return {
-    body,
-    cache: request.cache,
-    credentials: request.credentials,
-    headers: request.headers,
-    integrity: request.integrity,
-    keepalive: request.keepalive,
-    method: request.method,
-    mode: request.mode,
-    redirect: request.redirect,
-    referrer: request.referrer,
-    referrerPolicy: request.referrerPolicy,
-    signal: request.signal
-  }
-}
-
-function deferredVoid(): { promise: Promise<void>; resolve: () => void } {
-  let resolvePromise: (() => void) | undefined
-  const promise = new Promise<void>((resolve) => {
-    resolvePromise = resolve
-  })
-  if (!resolvePromise) throw new Error('Failed to initialize web font fetch proxy queue')
-  return { promise, resolve: resolvePromise }
-}
-
-export async function withWebFontFetchProxy<T>(
-  fetcher: WebFontFetch | null,
-  operation: () => Promise<T>
-): Promise<T> {
-  if (!fetcher) return operation()
-
-  const previousOperation = fetchProxyQueue
-  const currentOperation = deferredVoid()
-  fetchProxyQueue = previousOperation.then(() => currentOperation.promise)
-  await previousOperation
-
-  const originalFetch = globalThis.fetch
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = httpRequestUrl(input)
-    if (url.startsWith('https://') || url.startsWith('http://')) {
-      return fetcher(url, await proxiedRequestInit(input, init))
-    }
-    return originalFetch(input, init)
-  }) as typeof fetch
-
-  try {
-    return await operation()
-  } finally {
-    globalThis.fetch = originalFetch
-    currentOperation.resolve()
-  }
-}
-
-async function createProviderUnifont(provider: WebFontProviderId): Promise<WebUnifont> {
-  return createUnifont([providerFactories[provider]()], { throwOnError: false })
-}
-
-function isRemoteFontSource(
-  source: RemoteFontSource | { name: string }
-): source is RemoteFontSource {
-  return 'url' in source
-}
 
 export class WebFontResolver {
   private enabled = new Set<WebFontProviderId>(
@@ -178,7 +86,24 @@ export class WebFontResolver {
   }
 
   private async withFetchProxy<T>(operation: () => Promise<T>): Promise<T> {
-    return withWebFontFetchProxy(this.remoteFetch, operation)
+    if (!this.remoteFetch) return operation()
+
+    const originalFetch = globalThis.fetch
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' || input instanceof URL ? input.toString() : input.url
+      if (url.startsWith('https://') || url.startsWith('http://')) {
+        return (
+          this.remoteFetch?.(url, init) ?? Promise.reject(new TypeError('No font proxy fetcher'))
+        )
+      }
+      return originalFetch(input, init)
+    }) as typeof fetch
+
+    try {
+      return await operation()
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   }
 
   private async fetchRemote(url: string, init?: RequestInit): Promise<Response> {
