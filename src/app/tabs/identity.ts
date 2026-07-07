@@ -52,7 +52,7 @@ export function normalizeFilePath(path: string): string {
       body = body.slice(4)
     }
 
-    const hasPlainUnc = body.startsWith('\\\\')
+    const hasPlainUnc = body.startsWith('\\\\') || body.startsWith('//')
     if (hasPlainUnc) {
       body = body.slice(2)
       prefixMode = 'unc'
@@ -93,7 +93,7 @@ export function normalizeFilePath(path: string): string {
 export async function findExistingTab(
   tabs: readonly Tab[],
   handle: FileSystemFileHandle | undefined,
-  path: string | undefined
+  path?: string
 ): Promise<Tab | null> {
   if (path) {
     const normalized = normalizeFilePath(path)

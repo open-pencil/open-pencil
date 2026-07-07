@@ -396,9 +396,7 @@ export class SceneGraph {
         set.add(id)
       }
     }
-    if (node.type === 'TEXT') {
-      invalidateTextPictureIfNeeded(node, changes)
-    }
+    if (node.type === 'TEXT') invalidateTextPictureIfNeeded(node, changes)
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(
       entries.filter(([, value]) => value !== undefined)
