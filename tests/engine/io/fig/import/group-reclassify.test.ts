@@ -1,12 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
+import type { NodeChange } from '#core/kiwi/fig/codec'
 import { nodeChangeToProps } from '#core/kiwi/fig/node-change/convert'
 
 import { parseFixture } from '#tests/helpers/fig-fixtures'
 import { collectAllNodes } from '#tests/helpers/fig-traversal'
-import { isLfsPointer } from '#tests/helpers/lfs'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 describe('Figma group reclassification on import', () => {
@@ -59,7 +57,7 @@ describe('Figma group reclassification on import', () => {
     expect(props.nodeType).toBe('FRAME')
   })
 
-  test.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))(
+  test(
     'gold-preview.fig fixture imports its groups as GROUP nodes',
     { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {

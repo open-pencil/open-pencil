@@ -4,10 +4,9 @@ import { SceneGraph, type SceneNode } from '@open-pencil/core'
 
 import { parseFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
 import { collectAllNodes } from '#tests/helpers/fig-traversal'
-import { isLfsPointer } from '#tests/helpers/lfs'
 import { heavy } from '#tests/helpers/test-utils'
 
-setDefaultTimeout(600_000)
+setDefaultTimeout(180_000)
 
 heavy('parse heavy .fig files', () => {
   let material3: SceneGraph
@@ -16,51 +15,39 @@ heavy('parse heavy .fig files', () => {
   let nuxtUiNodes: SceneNode[]
 
   beforeAll(async () => {
-    material3 = await parseFixture('material3.fig', { populate: 'none' })
-    nuxtui = await parseFixture('nuxtui.fig', { populate: 'none' })
+    material3 = await parseFixture('material3.fig')
+    nuxtui = await parseFixture('nuxtui.fig')
     material3Nodes = collectAllNodes(material3)
     nuxtUiNodes = collectAllNodes(nuxtui)
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('material3.fig parses with pages and nodes', () => {
+  test('material3.fig parses with pages and nodes', () => {
     expect(material3).toBeInstanceOf(SceneGraph)
     expect(material3.getPages().length).toBeGreaterThan(0)
     expect(material3Nodes.length).toBeGreaterThan(0)
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('nuxtui.fig parses with pages and nodes', () => {
+  test('nuxtui.fig parses with pages and nodes', () => {
     expect(nuxtui).toBeInstanceOf(SceneGraph)
     expect(nuxtui.getPages().length).toBeGreaterThan(0)
     expect(nuxtUiNodes.length).toBeGreaterThan(0)
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('material3: contains COMPONENT nodes', () => {
+  test('material3: contains COMPONENT nodes', () => {
     expect(material3Nodes.some((n) => n.type === 'COMPONENT')).toBe(true)
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('material3: no unmapped node types', () => {
+  test('material3: no unmapped node types', () => {
     const invalid = material3Nodes.filter((n) => !VALID_NODE_TYPES.has(n.type))
     expect(invalid.map((n) => `${n.name}: ${n.type}`)).toEqual([])
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('nuxtui: no unmapped node types', () => {
+  test('nuxtui: no unmapped node types', () => {
     const invalid = nuxtUiNodes.filter((n) => !VALID_NODE_TYPES.has(n.type))
     expect(invalid.map((n) => `${n.name}: ${n.type}`)).toEqual([])
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('material3: fills have valid colors', () => {
+  test('material3: fills have valid colors', () => {
     for (const n of material3Nodes) {
       for (const fill of n.fills) {
         if (fill.type === 'SOLID') {
@@ -78,9 +65,7 @@ heavy('parse heavy .fig files', () => {
     }
   })
 
-  test.skipIf(
-    isLfsPointer('tests/fixtures/material3.fig') || isLfsPointer('tests/fixtures/nuxtui.fig')
-  )('nuxtui: fills have valid colors', () => {
+  test('nuxtui: fills have valid colors', () => {
     for (const n of nuxtUiNodes) {
       for (const fill of n.fills) {
         if (fill.type === 'SOLID') {

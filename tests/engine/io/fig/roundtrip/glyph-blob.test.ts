@@ -6,7 +6,6 @@ import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil
 import { fontManager } from '@open-pencil/core/text'
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
-import { isLfsPointer } from '#tests/helpers/lfs'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 const FIXTURES = resolve(import.meta.dir, '../../../../fixtures')
@@ -53,7 +52,7 @@ describe('roundtrip: text glyph blobs', () => {
     { timeout: HEAVY_TEST_TIMEOUT_MS }
   )
 
-  test.skipIf(isLfsPointer(resolve(FIXTURES, 'gold-preview.fig')))(
+  test(
     'preserves imported Figma glyph blobs for fallback rendering',
     { timeout: HEAVY_TEST_TIMEOUT_MS },
     async () => {

@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { isLfsPointer } from '#tests/helpers/lfs'
 import { cliSourcePath, repoPath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
 
@@ -13,7 +12,6 @@ setDefaultTimeout(30_000)
 
 const CLI = cliSourcePath('index.ts')
 const FIXTURE = repoPath('tests/fixtures/gold-preview.fig')
-const fixtureIsLfs = isLfsPointer(FIXTURE)
 
 async function run(
   args: string[],
@@ -33,7 +31,7 @@ async function run(
 }
 
 heavy('eval CLI', () => {
-  test.skipIf(fixtureIsLfs)('returns page name', async () => {
+  test('returns page name', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -44,13 +42,13 @@ heavy('eval CLI', () => {
     expect(stdout.length).toBeGreaterThan(0)
   })
 
-  test.skipIf(fixtureIsLfs)('returns primitive number', async () => {
+  test('returns primitive number', async () => {
     const { stdout, exitCode } = await run(['eval', FIXTURE, '--code', 'return 42'])
     expect(exitCode).toBe(0)
     expect(stdout).toBe('42')
   })
 
-  test.skipIf(fixtureIsLfs)('returns page count', async () => {
+  test('returns page count', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -62,7 +60,7 @@ heavy('eval CLI', () => {
     expect(count).toBeGreaterThan(0)
   })
 
-  test.skipIf(fixtureIsLfs)('findAll queries nodes', async () => {
+  test('findAll queries nodes', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -77,7 +75,7 @@ heavy('eval CLI', () => {
     expect(data[0].type).toBe('TEXT')
   })
 
-  test.skipIf(fixtureIsLfs)('create frame and return properties', async () => {
+  test('create frame and return properties', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -93,7 +91,7 @@ heavy('eval CLI', () => {
     expect(data.type).toBe('FRAME')
   })
 
-  test.skipIf(fixtureIsLfs)('auto-layout script', async () => {
+  test('auto-layout script', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -112,7 +110,7 @@ heavy('eval CLI', () => {
     expect(data.paddingTop).toBe(16)
   })
 
-  test.skipIf(fixtureIsLfs)('text node with characters', async () => {
+  test('text node with characters', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -129,7 +127,7 @@ heavy('eval CLI', () => {
     expect(data.fontSize).toBe(24)
   })
 
-  test.skipIf(fixtureIsLfs)('top-level await works', async () => {
+  test('top-level await works', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -140,7 +138,7 @@ heavy('eval CLI', () => {
     expect(stdout).toContain('ok')
   })
 
-  test.skipIf(fixtureIsLfs)('stdin reads code from pipe', async () => {
+  test('stdin reads code from pipe', async () => {
     const proc = Bun.spawn(['bun', CLI, 'eval', FIXTURE, '--stdin'], {
       stdout: 'pipe',
       stderr: 'pipe',
@@ -157,7 +155,7 @@ heavy('eval CLI', () => {
     expect(stdout.trim().length).toBeGreaterThan(0)
   })
 
-  test.skipIf(fixtureIsLfs)('--json outputs valid JSON', async () => {
+  test('--json outputs valid JSON', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -170,31 +168,31 @@ heavy('eval CLI', () => {
     expect(data).toEqual({ a: 1, b: 'two' })
   })
 
-  test.skipIf(fixtureIsLfs)('syntax error exits with error', async () => {
+  test('syntax error exits with error', async () => {
     const { exitCode, stderr } = await run(['eval', FIXTURE, '--code', 'return {{{'])
     expect(exitCode).not.toBe(0)
     expect(stderr.length).toBeGreaterThan(0)
   })
 
-  test.skipIf(fixtureIsLfs)('runtime error exits with error', async () => {
+  test('runtime error exits with error', async () => {
     const { exitCode, stderr } = await run(['eval', FIXTURE, '--code', 'throw new Error("boom")'])
     expect(exitCode).not.toBe(0)
     expect(stderr).toContain('boom')
   })
 
-  test.skipIf(fixtureIsLfs)('no code exits with error', async () => {
+  test('no code exits with error', async () => {
     const { exitCode, stderr } = await run(['eval', FIXTURE])
     expect(exitCode).not.toBe(0)
     expect(stderr).toContain('code')
   })
 
-  test.skipIf(fixtureIsLfs)('undefined result produces no output', async () => {
+  test('undefined result produces no output', async () => {
     const { stdout, exitCode } = await run(['eval', FIXTURE, '--code', 'figma.createFrame()'])
     expect(exitCode).toBe(0)
     expect(stdout).toBe('')
   })
 
-  test.skipIf(fixtureIsLfs)('--output writes file', async () => {
+  test('--output writes file', async () => {
     const outFile = join(tmpdir(), `eval-test-${randomUUID()}.fig`)
     const { exitCode, stderr } = await run([
       'eval',
@@ -217,7 +215,7 @@ heavy('eval CLI', () => {
     }
   })
 
-  test.skipIf(fixtureIsLfs)('array of nodes serializes', async () => {
+  test('array of nodes serializes', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,
@@ -234,7 +232,7 @@ heavy('eval CLI', () => {
     expect(data[1].name).toBe('B')
   })
 
-  test.skipIf(fixtureIsLfs)('getNodeById on real file', async () => {
+  test('getNodeById on real file', async () => {
     const { stdout, exitCode } = await run([
       'eval',
       FIXTURE,

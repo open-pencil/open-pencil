@@ -3,23 +3,19 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { SceneGraph, type SceneNode } from '@open-pencil/core'
 
 import { parseGoldPreviewFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
-import { isLfsPointer } from '#tests/helpers/lfs'
 
 setDefaultTimeout(60_000)
-
-const fixtureIsLfs = isLfsPointer('tests/fixtures/gold-preview.fig')
 
 let parsed: SceneGraph
 let allNodes: SceneNode[]
 
 beforeAll(async () => {
-  if (fixtureIsLfs) return
   const fixture = await parseGoldPreviewFixture()
   parsed = fixture.graph
   allNodes = fixture.allNodes
 })
 
-describe.skipIf(fixtureIsLfs)('parse real .fig files', () => {
+describe('parse real .fig files', () => {
   test('parses without error', () => {
     expect(parsed).toBeInstanceOf(SceneGraph)
   })
@@ -33,7 +29,7 @@ describe.skipIf(fixtureIsLfs)('parse real .fig files', () => {
   })
 })
 
-describe.skipIf(fixtureIsLfs)('node type coverage', () => {
+describe('node type coverage', () => {
   test('contains FRAME nodes', () => {
     expect(allNodes.some((n) => n.type === 'FRAME')).toBe(true)
   })

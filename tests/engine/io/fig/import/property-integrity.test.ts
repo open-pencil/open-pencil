@@ -3,17 +3,17 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 import { type Fill, type SceneNode } from '@open-pencil/core'
 
 import { parseGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
-import { isLfsPointer } from '#tests/helpers/lfs'
 
 setDefaultTimeout(60_000)
 
-describe.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))('property integrity', () => {
-  let allNodes: SceneNode[]
+let allNodes: SceneNode[]
 
-  beforeAll(async () => {
-    const fixture = await parseGoldPreviewFixture()
-    allNodes = fixture.allNodes
-  })
+beforeAll(async () => {
+  const fixture = await parseGoldPreviewFixture()
+  allNodes = fixture.allNodes
+})
+
+describe('property integrity', () => {
   test('all nodes have finite dimensions', () => {
     for (const n of allNodes) {
       expect(Number.isFinite(n.width)).toBe(true)

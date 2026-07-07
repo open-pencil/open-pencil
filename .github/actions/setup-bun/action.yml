@@ -18,10 +18,21 @@ runs:
     - name: Pull LFS files
       if: inputs.lfs == 'true'
       shell: bash
-      continue-on-error: true
       run: |
         git lfs install --force
-        git lfs pull || echo "::warning::LFS pull failed — LFS fixtures may be unavailable"
+        # Try the configured LFS endpoint first (R2 proxy via .lfsconfig).
+        # If that fails (e.g. fork PR CI runners can't authenticate with the
+        # upstream's LFS proxy), fall back to GitHub's native LFS endpoint
+        # by removing the .lfsconfig override. Fork PR branches that have
+        # pushed LFS objects to the fork's own GitHub LFS storage will
+        # resolve successfully.
+        if ! git lfs pull 2>/dev/null; then
+          echo "::warning::LFS pull from configured endpoint failed, falling back to GitHub native LFS..."
+          rm -f .lfsconfig
+          git config --local --unset lfs.url 2>/dev/null || true
+          git lfs install --force
+          git lfs pull
+        fi
 
     - uses: oven-sh/setup-bun@v2
 
