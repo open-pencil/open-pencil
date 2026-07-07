@@ -230,6 +230,13 @@ export function createStdioRpcBridge({
       authFailure = true
       ready = false
       connectPromise = null
+      // When using an auto-discovered token, clear it and transportMode so
+      // the next reconnect re-reads the discovery file for a fresh token
+      // instead of reusing the stale one (which would cause another 401 loop).
+      if (!hasExplicitAuth) {
+        resolvedAuthToken = null
+        transportMode = null
+      }
       scheduleReconnect()
       return
     }

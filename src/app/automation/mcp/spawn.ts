@@ -105,11 +105,18 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
 async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
   const expected = await computeExpectedDiscoveryPath()
   if (healthDiscoveryPath && healthDiscoveryPath !== expected) {
-    console.warn(
-      `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}". ` +
-        'Using server-reported path (server is on localhost).'
-    )
-    return healthDiscoveryPath
+    // Only trust the server-reported path when the locally computed path
+    // is confirmed unusable (file doesn't exist on disk). This prevents an
+    // unauthenticated /health response from redirecting file reads to an
+    // attacker-controlled path when the local path is actually valid.
+    const localExists = await discoveryFileExists(expected)
+    if (!localExists) {
+      console.warn(
+        `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}" ` +
+          'and local path does not exist. Using server-reported path (server is on localhost).'
+      )
+      return healthDiscoveryPath
+    }
   }
   return expected
 }

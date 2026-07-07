@@ -33,6 +33,11 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         }
       })
 
+      child.on('error', (err) => {
+        console.error(`[MCP] Failed to spawn automation server: ${err.message}`)
+        child = null
+      })
+
       child.stderr?.on('data', (data: Buffer) => {
         const text = data.toString()
         if (text.includes('EADDRINUSE')) {

@@ -291,6 +291,25 @@ function buildServerContext(options: ServerOptions) {
   return { httpPort, withTcp, mcpSessions, browserRpc, sendToBrowser, app, wss, authToken }
 }
 
+/**
+ * Unified runtime shutdown: closes browserRpc, clears MCP sessions,
+ * terminates WebSocket clients, closes the WSS, and tears down HTTP
+ * listeners. Used by both the startup catch block and ServerHandle.close()
+ * to ensure no runtime resources (WebSocket, browserRpc, mcpSessions) are
+ * left alive.
+ */
+async function shutdownRuntime(
+  browserRpc: ReturnType<typeof createBrowserRpcBridge>,
+  mcpSessions: ReturnType<typeof createMcpSessionManager>,
+  wss: WebSocketServer,
+  state: ListenerState
+): Promise<void> {
+  browserRpc.close()
+  await mcpSessions.clear()
+  await closeWssGracefully(wss)
+  await teardownListeners(state)
+}
+
 function buildHandle(
   app: Hono,
   wss: WebSocketServer,
@@ -311,10 +330,7 @@ function buildHandle(
   async function close() {
     if (closePromise) return closePromise
     closePromise = (async () => {
-      browserRpc.close()
-      await mcpSessions.clear()
-      await closeWssGracefully(wss)
-      await teardownListeners(state)
+      await shutdownRuntime(browserRpc, mcpSessions, wss, state)
       await cleanupDiscovery(authToken, resolvedSocketPath, actualHttpPort, startedAt)
     })()
     return closePromise
@@ -362,10 +378,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   } catch (err) {
     // Tear down any listeners that started before the failure, then close
     // all resources so nothing leaks when startServer rejects.
-    await teardownListeners(state).catch(() => undefined)
-    ctx.browserRpc.close()
-    await closeWssGracefully(ctx.wss)
-    await ctx.mcpSessions.clear().catch(() => undefined)
+    await shutdownRuntime(ctx.browserRpc, ctx.mcpSessions, ctx.wss, state).catch(() => undefined)
     throw err
   }
 

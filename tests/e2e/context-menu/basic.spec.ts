@@ -228,10 +228,10 @@ test('outline stroke is disabled for fill-only shapes', async () => {
 })
 
 test('Copy/Paste as submenu exists', async () => {
-  // The previous test draws a rect at (200, 200) size (120, 80);
-  // its geometric center is (260, 240). Click intentionally slightly
-  // off-center at (250, 230) to exercise hit-test robustness while
-  // still landing inside the rect.
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 120, 80)
+  await editor.canvas.waitForRender()
+
   await rightClickShape(250, 230)
 
   const submenuTrigger = contextItem('context-copy-paste-as')

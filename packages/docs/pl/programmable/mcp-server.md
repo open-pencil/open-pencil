@@ -230,7 +230,7 @@ Inna instancja OpenPencil (lub inny proces) używa portu 7600. Można:
 
 - Zamknąć drugą instancję
 - Ustawić `PORT=7601` (lub dowolny wolny port) przed uruchomieniem
-- Ustawić `PORT=0`, aby całkowicie wyłączyć TCP i używać transportu tylko przez gniazdo
+- Na macOS/Linux: ustawić `PORT=0`, aby wyłączyć TCP i używać transportu tylko przez gniazdo (na Windows `PORT=0` wyłącza jedyny dostępny transport — wybierz inny wolny port)
 
 ### Błędy "Stale socket" na macOS/Linux
 
