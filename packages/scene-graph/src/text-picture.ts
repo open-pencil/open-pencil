@@ -1,3 +1,5 @@
+import type { SceneNode } from './types'
+
 export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
   'text',
   'fontSize',
@@ -52,11 +54,25 @@ export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
  * unless the same update explicitly provides new glyphs (import pipeline).
  */
 export function invalidateGlyphsIfNeeded(
-  node: { figmaDerivedTextGlyphs: unknown[] | null },
-  changes: object
+  node: Pick<SceneNode, 'figmaDerivedTextGlyphs'>,
+  changes: Partial<SceneNode>
 ): void {
   if (!node.figmaDerivedTextGlyphs) return
   if (!Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))) return
   if ('figmaDerivedTextGlyphs' in changes) return
   node.figmaDerivedTextGlyphs = null
+}
+
+/**
+ * Nulls `textPicture` when text-picture-affecting properties change, then
+ * delegates to `invalidateGlyphsIfNeeded` for glyph-vector invalidation.
+ * Extracted to share between `SceneGraph.updateNode` and `updateNodePreview`.
+ */
+export function invalidateTextPictureIfNeeded(
+  node: Pick<SceneNode, 'textPicture' | 'figmaDerivedTextGlyphs'>,
+  changes: Partial<SceneNode>
+): void {
+  const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
+  if (textChanged) node.textPicture = null
+  invalidateGlyphsIfNeeded(node, changes)
 }

@@ -161,11 +161,11 @@ export function createFileOpenLock(getTabs: () => readonly Tab[]) {
     ): Promise<T> {
       const previous = inFlight.get(GLOBAL_KEY)
 
-      let resolveDone!: () => void
+      let resolveDone: (() => void) | undefined
       const done = new Promise<void>((resolve) => {
         resolveDone = resolve
       })
-      const entry: LockEntry = { done, resolve: resolveDone }
+      const entry: LockEntry = { done, resolve: () => resolveDone?.() }
 
       // Register our entry before awaiting the previous one so any request that
       // starts while we wait chains behind us rather than racing us.
@@ -185,7 +185,7 @@ export function createFileOpenLock(getTabs: () => readonly Tab[]) {
         if (inFlight.get(GLOBAL_KEY) === entry) {
           inFlight.delete(GLOBAL_KEY)
         }
-        resolveDone()
+        resolveDone?.()
       })
     }
   }

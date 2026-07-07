@@ -1,4 +1,4 @@
-import { invalidateGlyphsIfNeeded, TEXT_PICTURE_KEYS } from './text-picture'
+import { invalidateTextPictureIfNeeded } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -56,9 +56,7 @@ export function updateNodePreview(
   const affectsLayout = Object.keys(changes).some((key) => LAYOUT_AFFECTING_KEYS.has(key))
   if (affectsLayout) graph.clearAbsPosCache()
   if (node.type === 'TEXT') {
-    const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
-    if (node.textPicture && textChanged) node.textPicture = null
-    invalidateGlyphsIfNeeded(node, changes)
+    invalidateTextPictureIfNeeded(node, changes)
   }
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }

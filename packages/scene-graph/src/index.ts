@@ -17,7 +17,11 @@ import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { clearEditedSourceMetadata } from './source-metadata'
-import { GLYPH_AFFECTING_KEYS, invalidateGlyphsIfNeeded, TEXT_PICTURE_KEYS } from './text-picture'
+import {
+  GLYPH_AFFECTING_KEYS,
+  invalidateTextPictureIfNeeded,
+  TEXT_PICTURE_KEYS
+} from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -393,9 +397,7 @@ export class SceneGraph {
       }
     }
     if (node.type === 'TEXT') {
-      const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-      if (node.textPicture && textChanged) node.textPicture = null
-      invalidateGlyphsIfNeeded(node, changes)
+      invalidateTextPictureIfNeeded(node, changes)
     }
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(
