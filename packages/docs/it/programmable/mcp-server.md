@@ -199,8 +199,8 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 | Variabile | Default | Descrizione |
 |-----------|---------|-------------|
 | `PORT` | `7600` | Porta TCP. `0` per disabilitare TCP. ⚠️ Su Windows, `PORT=0` disabilita l'unico trasporto disponibile, rendendo il server irraggiungibile. |
-| `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux) |
-| `OPENPENCIL_MCP_DISCOVERY_PATH` | Per piattaforma | Sovrascrivi posizione del file di discovery (`mcp.json`) |
+| `OPENPENCIL_MCP_SOCKET` | Per piattaforma | Sovrascrivi percorso socket (solo macOS/Linux — Windows non supporta i socket Unix) |
+| `OPENPENCIL_MCP_DISCOVERY_PATH` | Per piattaforma | Sovrascrivi posizione del file di discovery (`mcp.json`) (solo server/test; l'app desktop calcola il proprio percorso predefinito della piattaforma) |
 | `OPENPENCIL_MCP_TCP` | Deprecato | Nessun effetto — TCP è controllato da `PORT` (>0 = attivo, 0 = disattivato) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generato | Token auth del server. Se non impostato, viene generato automaticamente; se impostato a stringa vuota (`""`), l'autenticazione viene disabilitata. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directory scope per `open_file`, `new_document` e export con scrittura. `save_file` è sempre disponibile; il percorso viene validato contro questa directory quando impostato |
@@ -275,7 +275,7 @@ npx skills add open-pencil/skills@open-pencil
 
 Funziona con Claude Code, Cursor, Windsurf, Codex e qualsiasi agente che supporti [skills](https://skills.sh). Lo skill copre il CLI, strumenti MCP, rendering JSX, eval e il bridge di automazione dell'app.
 
-## Strumenti (90)
+## Strumenti (91)
 
 ### Documento
 
@@ -284,6 +284,7 @@ Funziona con Claude Code, Cursor, Windsurf, Codex e qualsiasi agente che support
 | `open_file` | Apri un file `.fig` per modifica |
 | `save_file` | Salva il documento corrente su un file `.fig` |
 | `new_document` | Crea un nuovo documento vuoto |
+| `list_documents` | Elenca i documenti/le schede aperti dell'app e le relative pagine |
 
 Nota: `open_file`, `new_document` e gli strumenti di esportazione che scrivono file sono sempre disponibili — i loro percorsi sono limitati a `OPENPENCIL_MCP_ROOT`, che per impostazione predefinita corrisponde alla directory di lavoro corrente (`cwd()`) quando non impostato. `save_file` è sempre disponibile; il suo percorso viene validato contro `OPENPENCIL_MCP_ROOT` solo quando la radice è configurata.
 

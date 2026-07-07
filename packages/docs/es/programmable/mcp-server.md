@@ -199,8 +199,8 @@ OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
 | Variable | Default | Descripción |
 |----------|---------|-------------|
 | `PORT` | `7600` | Puerto TCP. `0` para desactivar TCP. ⚠️ En Windows, `PORT=0` desactiva el único transporte disponible, haciendo que el servidor sea inalcanzable. |
-| `OPENPENCIL_MCP_SOCKET` | Por plataforma | Sobreescribir ruta de socket (solo macOS/Linux) |
-| `OPENPENCIL_MCP_DISCOVERY_PATH` | Por plataforma | Sobrescribir ubicación del archivo de descubrimiento (`mcp.json`) |
+| `OPENPENCIL_MCP_SOCKET` | Por plataforma | Sobreescribir ruta de socket (solo macOS/Linux — Windows no admite sockets Unix) |
+| `OPENPENCIL_MCP_DISCOVERY_PATH` | Por plataforma | Sobrescribir ubicación del archivo de descubrimiento (`mcp.json`) (solo servidor/test; la app de escritorio calcula su propia ruta predeterminada de plataforma) |
 | `OPENPENCIL_MCP_TCP` | Obsoleto | Sin efecto — TCP se controla con `PORT` (>0 = activado, 0 = desactivado) |
 | `OPENPENCIL_MCP_AUTH_TOKEN` | Auto-generado | Token de autenticación del servidor. Si no se establece, se genera automáticamente; si se establece como cadena vacía (`""`), la autenticación se deshabilita. |
 | `OPENPENCIL_MCP_ROOT` | `cwd()` | Directorio alcance para `open_file`, `new_document` y export con escritura. `save_file` siempre está disponible; la ruta se valida contra este directorio cuando se establece |
