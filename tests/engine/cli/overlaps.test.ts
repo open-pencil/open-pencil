@@ -6,7 +6,6 @@ import { join } from 'node:path'
 import { SceneGraph } from '@open-pencil/core'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 
-import { isLfsPointer } from '#tests/helpers/lfs'
 import { cliSourcePath, repoPath, requireBuiltWorkspacePackages } from '#tests/helpers/paths'
 import { heavy } from '#tests/helpers/test-utils'
 
@@ -16,7 +15,6 @@ setDefaultTimeout(30_000)
 
 const CLI = cliSourcePath('index.ts')
 const FIXTURE = repoPath('tests/fixtures/gold-preview.fig')
-const fixtureIsLfs = isLfsPointer(FIXTURE)
 
 async function makeTwoPageFixture(): Promise<string> {
   const graph = new SceneGraph()
@@ -49,7 +47,7 @@ async function run(args: string[]): Promise<{ stdout: string; stderr: string; ex
 }
 
 heavy('analyze overlaps CLI', () => {
-  test.skipIf(fixtureIsLfs)('--json returns valid overlap data', async () => {
+  test('--json returns valid overlap data', async () => {
     const { stdout, exitCode } = await run(['analyze', 'overlaps', FIXTURE, '--json'])
     expect(exitCode).toBe(0)
     const data = JSON.parse(stdout)
@@ -59,20 +57,20 @@ heavy('analyze overlaps CLI', () => {
     expect(typeof data.summary.overlapCount).toBe('number')
   })
 
-  test.skipIf(fixtureIsLfs)('human-readable mode prints a summary', async () => {
+  test('human-readable mode prints a summary', async () => {
     const { stdout, exitCode } = await run(['analyze', 'overlaps', FIXTURE])
     expect(exitCode).toBe(0)
     expect(stdout.length).toBeGreaterThan(0)
     expect(stdout).toContain('analyzed nodes')
   })
 
-  test.skipIf(fixtureIsLfs)('invalid scope exits with error', async () => {
+  test('invalid scope exits with error', async () => {
     const { exitCode, stderr } = await run(['analyze', 'overlaps', FIXTURE, '--scope', 'invalid'])
     expect(exitCode).not.toBe(0)
     expect(stderr).toContain('Invalid scope')
   })
 
-  test.skipIf(fixtureIsLfs)('invalid severity exits with error', async () => {
+  test('invalid severity exits with error', async () => {
     const { exitCode, stderr } = await run([
       'analyze',
       'overlaps',
@@ -84,25 +82,25 @@ heavy('analyze overlaps CLI', () => {
     expect(stderr).toContain('Invalid severity')
   })
 
-  test.skipIf(fixtureIsLfs)('invalid category exits with error', async () => {
+  test('invalid category exits with error', async () => {
     const { exitCode, stderr } = await run(['analyze', 'overlaps', FIXTURE, '--category', 'bogus'])
     expect(exitCode).not.toBe(0)
     expect(stderr).toContain('Invalid categor')
   })
 
-  test.skipIf(fixtureIsLfs)('invalid --min-area exits with error', async () => {
+  test('invalid --min-area exits with error', async () => {
     const { exitCode, stderr } = await run(['analyze', 'overlaps', FIXTURE, '--min-area', 'abc'])
     expect(exitCode).not.toBe(0)
     expect(stderr).toContain('--min-area')
   })
 
-  test.skipIf(fixtureIsLfs)('invalid --limit exits with error', async () => {
+  test('invalid --limit exits with error', async () => {
     const { exitCode, stderr } = await run(['analyze', 'overlaps', FIXTURE, '--limit', '0'])
     expect(exitCode).not.toBe(0)
     expect(stderr).toContain('--limit')
   })
 
-  test.skipIf(fixtureIsLfs)('--category filters results', async () => {
+  test('--category filters results', async () => {
     const { stdout, exitCode } = await run([
       'analyze',
       'overlaps',
@@ -118,7 +116,7 @@ heavy('analyze overlaps CLI', () => {
     )
   })
 
-  test.skipIf(fixtureIsLfs)('scope argument is case-insensitive', async () => {
+  test('scope argument is case-insensitive', async () => {
     const { stdout, exitCode } = await run([
       'analyze',
       'overlaps',

@@ -7,8 +7,6 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { isLfsPointer } from '#tests/helpers/lfs'
-
 describe('export subgraph extraction', () => {
   test('page extraction keeps the source root and page descendants', () => {
     const graph = new SceneGraph()
@@ -93,31 +91,27 @@ describe('export subgraph extraction', () => {
     expect(reparsedInstance?.childIds).toEqual([])
   })
 
-  test.skipIf(isLfsPointer('tests/fixtures/gold-preview.fig'))(
-    'fig export preserves imported instance symbol overrides and guids',
-    async () => {
-      await initCodec()
-      const fixture = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
-      const graph = await parseFigFile(
-        fixture.buffer.slice(
-          fixture.byteOffset,
-          fixture.byteOffset + fixture.byteLength
-        ) as ArrayBuffer
-      )
-      const exported = await exportFigFile(graph)
-      const parsed = parseFigBuffer(exported.buffer as ArrayBuffer)
-      const input = parsed.nodeChanges.find(
-        (node) => node.guid && guidToString(node.guid) === '1:3503'
-      )
-      const lists = parsed.nodeChanges.find(
-        (node) => node.guid && guidToString(node.guid) === '1:3491'
-      )
+  test('fig export preserves imported instance symbol overrides and guids', async () => {
+    await initCodec()
+    const fixture = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
+    const graph = await parseFigFile(
+      fixture.buffer.slice(
+        fixture.byteOffset,
+        fixture.byteOffset + fixture.byteLength
+      ) as ArrayBuffer
+    )
+    const exported = await exportFigFile(graph)
+    const parsed = parseFigBuffer(exported.buffer as ArrayBuffer)
+    const input = parsed.nodeChanges.find(
+      (node) => node.guid && guidToString(node.guid) === '1:3503'
+    )
+    const lists = parsed.nodeChanges.find(
+      (node) => node.guid && guidToString(node.guid) === '1:3491'
+    )
 
-      expect(input?.type).toBe('INSTANCE')
-      expect(input?.symbolData?.symbolOverrides?.length).toBe(9)
-      expect(input?.symbolData?.uniformScaleFactor).toBeCloseTo(0.8908441662788391)
-      expect(lists?.symbolData?.symbolOverrides?.length).toBe(5)
-    },
-    15000
-  )
+    expect(input?.type).toBe('INSTANCE')
+    expect(input?.symbolData?.symbolOverrides?.length).toBe(9)
+    expect(input?.symbolData?.uniformScaleFactor).toBeCloseTo(0.8908441662788391)
+    expect(lists?.symbolData?.symbolOverrides?.length).toBe(5)
+  }, 15000)
 })

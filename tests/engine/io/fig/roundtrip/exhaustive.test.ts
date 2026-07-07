@@ -13,8 +13,6 @@ import {
 } from '@open-pencil/core'
 import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
-import { isLfsPointer } from '#tests/helpers/lfs'
-
 import {
   type Mismatch,
   type FixtureSpec,
@@ -458,12 +456,12 @@ function verifyFixture(spec: FixtureSpec): void {
       return g2Ready
     }
 
-    test.skipIf(isLfsPointer(spec.file))('original file size', async () => {
+    test('original file size', async () => {
       await g0Ready
       expect(g0Bytes.byteLength).toBe(spec.fileSize)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('original ZIP structure', async () => {
+    test('original ZIP structure', async () => {
       await g0Ready
       const entries = Object.keys(g0Zip)
       expect(entries).toContain('canvas.fig')
@@ -473,7 +471,7 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(imageEntries.length).toBe(spec.imageCount)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('original thumbnail dimensions', async () => {
+    test('original thumbnail dimensions', async () => {
       await g0Ready
       const thumb = g0Zip['thumbnail.png']
       expect(thumb.byteLength).toBe(spec.thumbnailSize)
@@ -482,7 +480,7 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(h).toBe(spec.thumbnailHeight)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('original fig-kiwi container', async () => {
+    test('original fig-kiwi container', async () => {
       await g0Ready
       const canvas = g0Zip['canvas.fig']
       const dv = new DataView(canvas.buffer, canvas.byteOffset, canvas.byteLength)
@@ -491,12 +489,12 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(isZstdCompressed(g0Chunks[1])).toBe(true)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0 node count', async () => {
+    test('G0 node count', async () => {
       await g0Ready
       expect(g0.size).toBe(spec.nodeCount)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0 node type distribution', async () => {
+    test('G0 node type distribution', async () => {
       await g0Ready
       const typeCounts = new Map<string, number>()
       for (const node of g0.values()) {
@@ -507,29 +505,29 @@ function verifyFixture(spec: FixtureSpec): void {
       }
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0->G1 schema bytes identical', async () => {
+    test('G0->G1 schema bytes identical', async () => {
       await ensureG1()
       const g1Chunks = parseFigKiwiChunks(unzipSync(g1Export)['canvas.fig'])
       if (!g1Chunks) throw new Error('G1 canvas.fig chunks not found')
       expect(g1Chunks[0].byteLength).toBe(g0Chunks[0].byteLength)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G1 export size', async () => {
+    test('G1 export size', async () => {
       await ensureG1()
       expect(g1Export.byteLength).toBe(spec.g1ExportSize)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G2 export size', async () => {
+    test('G2 export size', async () => {
       await ensureG2()
       expect(g2Export.byteLength).toBe(spec.g2ExportSize)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0->G1 node count', async () => {
+    test('G0->G1 node count', async () => {
       await ensureG1()
       expect(g1.size, `G0=${g0.size} G1=${g1.size}`).toBe(g0.size)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0->G1 tree paths', async () => {
+    test('G0->G1 tree paths', async () => {
       await ensureG1()
       const missing = [...g0.keys()].filter((p) => !g1.has(p))
       const extra = [...g1.keys()].filter((p) => !g0.has(p))
@@ -539,7 +537,7 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(missing.length + extra.length, parts.join('\n\n')).toBe(0)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0->G1 node types', async () => {
+    test('G0->G1 node types', async () => {
       await ensureG1()
       const bad: string[] = []
       for (const [p, n0] of g0) {
@@ -549,22 +547,22 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(bad.length, bad.join('\n')).toBe(0)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0->G1 scene props', async () => {
+    test('G0->G1 scene props', async () => {
       await ensureG1()
       compareSceneProps(spec, g0Graph, g1Graph, g0, g1, 'G0->G1')
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G0->G1 rawNodeFields', async () => {
+    test('G0->G1 rawNodeFields', async () => {
       await ensureG1()
       compareRawNodeFields(spec, g0Graph, g1Graph, g0, g1, 'G0->G1')
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G1->G2 idempotent node count', async () => {
+    test('G1->G2 idempotent node count', async () => {
       await ensureG2()
       expect(g2.size, `G1=${g1.size} G2=${g2.size}`).toBe(g1.size)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G1->G2 idempotent paths', async () => {
+    test('G1->G2 idempotent paths', async () => {
       await ensureG2()
       const missing = [...g1.keys()].filter((p) => !g2.has(p))
       const extra = [...g2.keys()].filter((p) => !g1.has(p))
@@ -574,12 +572,12 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(missing.length + extra.length, parts.join('\n\n')).toBe(0)
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G1->G2 idempotent scene props', async () => {
+    test('G1->G2 idempotent scene props', async () => {
       await ensureG2()
       compareSceneProps(spec, g1Graph, g2Graph, g1, g2, 'G1->G2')
     })
 
-    test.skipIf(isLfsPointer(spec.file))('G1->G2 idempotent rawNodeFields', async () => {
+    test('G1->G2 idempotent rawNodeFields', async () => {
       await ensureG2()
       compareRawNodeFields(spec, g1Graph, g2Graph, g1, g2, 'G1->G2')
     })

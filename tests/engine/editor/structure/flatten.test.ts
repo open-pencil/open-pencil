@@ -7,8 +7,6 @@ import { createEditor } from '#core/editor'
 import { fontManager } from '#core/text/fonts'
 import { textNodeToOutlineLayout } from '#core/text/outlines'
 
-import { isLfsPointer } from '#tests/helpers/lfs'
-
 async function createEditorWithRenderer() {
   const ck = await initCanvasKit()
   const surface = ck.MakeSurface(200, 200)
@@ -238,33 +236,30 @@ describe('flattenSelected', () => {
     surface.delete()
   })
 
-  test.skipIf(isLfsPointer('tests/fixtures/fonts/NotoSansSC-Regular.ttf'))(
-    'flattens mixed Latin and CJK text with loaded fallback outlines',
-    async () => {
-      await loadInterRegular()
-      const hasCjkFallback = await loadNotoSansSC()
-      if (!hasCjkFallback) return
-      const { editor, surface } = await createEditorWithRenderer()
-      const pageId = editor.state.currentPageId
-      const text = editor.graph.createNode('TEXT', pageId, {
-        text: 'Hi你',
-        fontFamily: 'Inter',
-        fontWeight: 400,
-        fontSize: 32,
-        width: 120,
-        height: 40
-      })
+  test('flattens mixed Latin and CJK text with loaded fallback outlines', async () => {
+    await loadInterRegular()
+    const hasCjkFallback = await loadNotoSansSC()
+    if (!hasCjkFallback) return
+    const { editor, surface } = await createEditorWithRenderer()
+    const pageId = editor.state.currentPageId
+    const text = editor.graph.createNode('TEXT', pageId, {
+      text: 'Hi你',
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      fontSize: 32,
+      width: 120,
+      height: 40
+    })
 
-      editor.select([text.id])
-      editor.flattenSelected()
+    editor.select([text.id])
+    editor.flattenSelected()
 
-      const [vectorId] = [...editor.state.selectedIds]
-      const vector = editor.graph.getNode(vectorId)
-      expect(vector?.type).toBe('VECTOR')
-      expect(vector?.vectorNetwork?.vertices.length).toBeGreaterThan(0)
-      surface.delete()
-    }
-  )
+    const [vectorId] = [...editor.state.selectedIds]
+    const vector = editor.graph.getNode(vectorId)
+    expect(vector?.type).toBe('VECTOR')
+    expect(vector?.vectorNetwork?.vertices.length).toBeGreaterThan(0)
+    surface.delete()
+  })
 
   test('does not flatten complex script text without shaping support', async () => {
     await loadInterRegular()
