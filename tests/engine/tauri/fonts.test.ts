@@ -51,7 +51,8 @@ describe('Tauri font helpers', () => {
     // app font module's immediate watch. Disable them so listFamilies() only
     // returns the mocked system fonts.
     const previousProviders = fontManager.enabledOnlineFontProviders()
-    fontManager.setOnlineFontProviders({})
+    const NO_ONLINE_PROVIDERS: Record<string, boolean> = {}
+    fontManager.setOnlineFontProviders(NO_ONLINE_PROVIDERS)
 
     try {
       const families = await listFamilies()
