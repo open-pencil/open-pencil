@@ -59,7 +59,7 @@ export function invalidateGlyphsIfNeeded(
 ): void {
   if (!node.figmaDerivedTextGlyphs) return
   if (!Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))) return
-  if ('figmaDerivedTextGlyphs' in changes) return
+  if (changes.figmaDerivedTextGlyphs !== undefined) return
   node.figmaDerivedTextGlyphs = null
 }
 
