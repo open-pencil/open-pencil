@@ -23,10 +23,10 @@ export class CanvasHelper {
    */
   assertNoErrors() {
     const real = this.errors.filter((msg) => !msg.includes('status of 429'))
+    this.errors.length = 0
     if (real.length > 0) {
       throw new Error(`Browser errors:\n${real.join('\n')}`)
     }
-    this.errors.length = 0
   }
 
   async waitForRender() {
