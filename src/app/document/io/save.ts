@@ -1,7 +1,7 @@
 import type { EditorState } from '@open-pencil/core/editor'
 
 import { downloadBlob } from '@/app/document/io/browser'
-import { documentNameFromFigPath } from '@/app/document/io/names'
+import { documentNameFromFigPath, downloadNameFromPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import { createDocumentWriter } from '@/app/document/io/write'
 import { IS_TAURI } from '@/constants'
@@ -64,7 +64,7 @@ export function createSaveActions({
     if (IS_TAURI) {
       const path = await chooseTauriFigSavePath()
       if (!path) return
-      const fileName = path.split(/[\\/]/).pop() ?? 'file.fig'
+      const fileName = downloadNameFromPath(path)
       setFilePath(path)
       setFileHandle(null)
       state.documentName = documentNameFromFigPath(path)
