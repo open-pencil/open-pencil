@@ -180,6 +180,7 @@ describe('yieldToUI', () => {
   function teardownYieldMocks() {
     globalThis.requestAnimationFrame = originalRequestAnimationFrame
     globalThis.cancelAnimationFrame = originalCancelAnimationFrame
+    clearTimeoutSpy.mockRestore()
     vi.useRealTimers()
   }
 

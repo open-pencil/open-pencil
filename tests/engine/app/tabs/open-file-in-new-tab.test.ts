@@ -52,6 +52,7 @@ describe('openFileInNewTab', () => {
 
   test('does not reuse a tab that has a non-empty redo stack', async () => {
     const originalStore = getActiveStore()
+    const initialTabCount = tabCount()
     originalStore.undo.apply({
       label: 'draw',
       forward: () => void 0,
@@ -63,7 +64,7 @@ describe('openFileInNewTab', () => {
     ;(readFigFile as ReturnType<typeof vi.fn>).mockResolvedValue(new SceneGraph())
     await openFileInNewTab(new File([], 'file.fig'), undefined, '/new/file.fig')
 
-    expect(tabCount()).toBe(2)
+    expect(tabCount()).toBe(initialTabCount + 1)
     expect(originalStore.getSourcePath()).toBeNull()
   })
 
