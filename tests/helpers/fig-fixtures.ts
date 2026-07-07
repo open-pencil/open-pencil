@@ -33,9 +33,19 @@ export function readFixtureBytes(name: string): Uint8Array {
   return readFileSync(resolve(FIXTURES, name))
 }
 
-export async function parseFixture(name: string): Promise<SceneGraph> {
+export function readFixtureArrayBuffer(name: string): ArrayBuffer {
   const bytes = readFixtureBytes(name)
-  return parseFigFile(bytes.buffer as ArrayBuffer)
+  const buffer = bytes.buffer
+  if (buffer instanceof ArrayBuffer)
+    return buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return copy.buffer
+}
+
+export async function parseFixture(name: string): Promise<SceneGraph> {
+  return parseFigFile(readFixtureArrayBuffer(name))
 }
 
 export async function parseGoldPreviewFixture(): Promise<{
