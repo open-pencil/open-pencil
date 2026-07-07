@@ -81,7 +81,14 @@ export async function startSocketListener(
   try {
     await chmod(resolvedPath, 0o600)
   } catch (e) {
-    if (e instanceof Error) process.stderr.write(`  Socket: chmod warning (${e.message})\n`)
+    // Fail closed: if we cannot restrict socket permissions, refuse to
+    // serve on this socket. A world-readable socket with auth disabled
+    // (OPENPENCIL_MCP_AUTH_TOKEN="") is a security hole.
+    await closeServer(server).catch(() => undefined)
+    await cleanupSocket(resolvedPath).catch(() => undefined)
+    throw new Error(
+      `Socket chmod failed — refusing to serve with insecure permissions: ${e instanceof Error ? e.message : String(e)}`
+    )
   }
 
   return { server, resolvedPath }
