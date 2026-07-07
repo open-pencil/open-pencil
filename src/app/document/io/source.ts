@@ -100,9 +100,7 @@ export function createDocumentSourceActions({
 
     // Store identity metadata for all source formats so the tab layer can
     // deduplicate files on every platform, not only .fig files.
-    setSourceHandle(handle ?? null)
-    setSourcePath(path ?? null)
-    setSourceFileName(fileName)
+    updateSourceIdentity(fileName, handle, path)
 
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSavedVersion(state.sceneVersion)
