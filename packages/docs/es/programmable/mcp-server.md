@@ -275,7 +275,7 @@ npx skills add open-pencil/skills@open-pencil
 
 Funciona con Claude Code, Cursor, Windsurf, Codex y cualquier agente que soporte [skills](https://skills.sh). El skill cubre el CLI, herramientas MCP, renderizado JSX, eval y el puente de automatización de la app.
 
-## Herramientas (90)
+## Herramientas (91)
 
 ### Documento
 
@@ -284,6 +284,7 @@ Funciona con Claude Code, Cursor, Windsurf, Codex y cualquier agente que soporte
 | `open_file` | Abrir un archivo `.fig` para edición |
 | `save_file` | Guardar el documento actual a un archivo `.fig` |
 | `new_document` | Crear un documento vacío nuevo |
+| `list_documents` | Listar documentos/pestañas abiertas de la app y sus páginas |
 
 Nota: `open_file`, `new_document` y las herramientas de exportación que escriben archivos siempre están disponibles — sus rutas se limitan a `OPENPENCIL_MCP_ROOT`, que por defecto es el directorio de trabajo actual (`cwd()`) cuando no está configurado. `save_file` siempre está disponible; su ruta se valida contra `OPENPENCIL_MCP_ROOT` solo cuando la raíz está configurada.
 

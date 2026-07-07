@@ -118,6 +118,7 @@ describe('MCP stdio transport', () => {
     // Fail-safe: clean up any leftover state from a failed previous test
     if (client) await client.close().catch(() => undefined)
     if (browser) browser.close()
+    if (transport) await transport.close().catch(() => undefined)
     if (handle) await handle.close().catch(() => undefined)
 
     graph = new SceneGraph()

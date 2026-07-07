@@ -249,7 +249,13 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
     const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
-    const automationAuthToken = await getAutomationAuthToken()
+    let automationAuthToken: string | null
+    try {
+      automationAuthToken = await getAutomationAuthToken()
+    } catch (e) {
+      await child.kill()
+      throw new Error(formatConnectionError(e, this.agentDef))
+    }
 
     await connection.initialize({
       protocolVersion: PROTOCOL_VERSION,

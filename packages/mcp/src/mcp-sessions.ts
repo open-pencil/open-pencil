@@ -21,20 +21,39 @@ type McpSessionManagerOptions = {
 
 const MAX_MCP_SESSIONS = 10
 const MCP_SESSION_TTL_MS = 15 * 60_000
+const SESSION_CLOSE_TIMEOUT_MS = 5_000
 
 function describeError(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
 }
 
+/**
+ * Wraps a promise with a timeout. Resolves with undefined if the timeout
+ * elapses before the promise settles. Used to prevent `transport.close()`
+ * from hanging indefinitely — the MCP SDK's close() does not enforce a
+ * timeout internally.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | undefined> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  return Promise.race([
+    promise.finally(() => {
+      if (timer) clearTimeout(timer)
+    }),
+    new Promise<T | undefined>((resolve) => {
+      timer = setTimeout(() => resolve(undefined), ms)
+    })
+  ])
+}
+
 async function closeSession(session: MCPSession): Promise<void> {
   try {
-    await session.transport.close()
+    await withTimeout(session.transport.close(), SESSION_CLOSE_TIMEOUT_MS)
   } catch (e) {
     // Best-effort: the transport may already be closed or in a bad state
     process.stderr.write(`  MCP session: transport close warning (${describeError(e)})\n`)
   }
   try {
-    await session.server.close()
+    await withTimeout(session.server.close(), SESSION_CLOSE_TIMEOUT_MS)
   } catch (e) {
     // Best-effort
     process.stderr.write(`  MCP session: server close warning (${describeError(e)})\n`)

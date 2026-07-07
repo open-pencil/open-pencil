@@ -121,6 +121,7 @@ const MAX_SYMLINK_DEPTH = 16
 async function resolveDanglingSymlink(
   resolved: string,
   root: string,
+  realRoot: string,
   symlinkDepth: number
 ): Promise<string | undefined> {
   try {
@@ -134,8 +135,10 @@ async function resolveDanglingSymlink(
     const linkTarget = await readlink(resolved)
     const linkDir = dirname(resolved)
     const resolvedTarget = isAbsolute(linkTarget) ? linkTarget : resolve(linkDir, linkTarget)
-    // Recursively validate the target (handles nested symlinks)
-    const targetResult = await resolveSafePath(resolvedTarget, root, symlinkDepth + 1)
+    // Recursively validate the target (handles nested symlinks).
+    // Pass the already-canonical realRoot so the recursive call skips
+    // redundant assertNarrowRoot + realpath(root) work.
+    const targetResult = await resolveSafePath(resolvedTarget, root, symlinkDepth + 1, realRoot)
     return targetResult.realPath
   } catch (e) {
     if (e instanceof Error) {
@@ -158,7 +161,8 @@ async function resolveDanglingSymlink(
 export async function resolveSafePath(
   filePath: string,
   root: string,
-  _symlinkDepth?: number
+  _symlinkDepth?: number,
+  _realRoot?: string
 ): Promise<SafePathResult> {
   const symlinkDepth = _symlinkDepth ?? 0
   if (symlinkDepth >= MAX_SYMLINK_DEPTH) {
@@ -167,24 +171,30 @@ export async function resolveSafePath(
     )
   }
 
-  assertNarrowRoot(root, root)
-
-  // Resolve relative paths from the validated server root, not from CWD.
+  // Resolve root to its real (symlink-aware) canonical form.
+  // When _realRoot is provided (recursive call from resolveDanglingSymlink),
+  // skip the redundant assertNarrowRoot + realpath(root) work — the root was
+  // already validated and canonicalized by the outer call.
   const normalizedRoot = resolve(root)
   const resolved = isAbsolute(filePath) ? resolve(filePath) : resolve(normalizedRoot, filePath)
 
-  // Resolve root to its real (symlink-aware) canonical form.
   let realRoot: string
-  try {
-    realRoot = await realpath(root)
-  } catch (e) {
-    if (!isMissingPathError(e)) throw e
-    const { realAncestor, remainder } = await resolveRealAncestor(root)
-    realRoot = remainder ? join(realAncestor, remainder.slice(osSep.length)) : realAncestor
-  }
+  if (_realRoot) {
+    realRoot = _realRoot
+  } else {
+    assertNarrowRoot(root, root)
 
-  // Re-check the broad-root guard after resolving symlinks.
-  assertNarrowRoot(realRoot, root)
+    try {
+      realRoot = await realpath(root)
+    } catch (e) {
+      if (!isMissingPathError(e)) throw e
+      const { realAncestor, remainder } = await resolveRealAncestor(root)
+      realRoot = remainder ? join(realAncestor, remainder.slice(osSep.length)) : realAncestor
+    }
+
+    // Re-check the broad-root guard after resolving symlinks.
+    assertNarrowRoot(realRoot, root)
+  }
 
   const realSep = realRoot.endsWith('/') || realRoot.endsWith('\\') ? '' : osSep
 
@@ -195,7 +205,7 @@ export async function resolveSafePath(
   } catch (e) {
     if (!isMissingPathError(e)) throw e
     // realpath failed — may be a dangling symlink or a non-existent file.
-    const symlinkRealPath = await resolveDanglingSymlink(resolved, root, symlinkDepth)
+    const symlinkRealPath = await resolveDanglingSymlink(resolved, root, realRoot, symlinkDepth)
     realPath = symlinkRealPath ?? (await resolveRealPath(resolved))
   }
 

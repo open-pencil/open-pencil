@@ -29,13 +29,23 @@ async function setupExternalApiCache(page: Page): Promise<void> {
         })
         return
       }
-      const response = await route.fetch()
-      const body = Buffer.from(await response.body())
-      const contentType = response.headers()['content-type'] ?? 'application/json'
-      if (response.ok()) {
-        externalApiCache.set(url, { status: response.status(), body, contentType })
+      try {
+        const response = await route.fetch()
+        const body = Buffer.from(await response.body())
+        const contentType = response.headers()['content-type'] ?? 'application/json'
+        if (response.ok()) {
+          externalApiCache.set(url, { status: response.status(), body, contentType })
+        }
+        await route.fulfill({ status: response.status(), body, contentType })
+      } catch {
+        // route.fetch() can reject on DNS failure, connection reset, etc.
+        // Fulfill with an empty fallback so the route handler doesn't abort.
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'external API unavailable' })
+        })
       }
-      await route.fulfill({ status: response.status(), body, contentType })
     })
   }
 }

@@ -321,9 +321,13 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
     bridgeClosed = true
     rejectAllPending('Server shutting down')
     rejectConnectionWaiters('Server shutting down')
+    for (const client of clients) {
+      client.close()
+    }
     browserWs = null
     browserRegistered = false
     clients.clear()
+    authenticatedClients.clear()
   }
 
   return {

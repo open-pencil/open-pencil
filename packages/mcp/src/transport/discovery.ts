@@ -173,6 +173,7 @@ function testSocketConnection(socketPath: string): Promise<boolean> {
       if (result !== null) return
       result = live
       clearTimeout(timeout)
+      socket.removeAllListeners()
       socket.destroy()
       // eslint-disable-next-line promise/no-multiple-resolved
       resolve(live)
@@ -189,6 +190,13 @@ function testSocketConnection(socketPath: string): Promise<boolean> {
     socket.on('error', (err: NodeJS.ErrnoException) => {
       const isStale = err.code === 'ECONNREFUSED' || err.code === 'ENOENT'
       finish(!isStale)
+    })
+
+    // If the socket closes without an explicit connect or error event
+    // (e.g., server shuts down mid-handshake), settle promptly instead
+    // of waiting the full timeout. This ensures cleanup is not delayed.
+    socket.on('close', () => {
+      finish(false)
     })
   })
 }
