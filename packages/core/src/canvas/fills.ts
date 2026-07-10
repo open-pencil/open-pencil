@@ -7,6 +7,11 @@ import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
 
+/** Any fillGeometry path carrying its own fills (Figma styleOverrideTable)? */
+function hasPathLevelFills(node: SceneNode): boolean {
+  return node.fillGeometry.some((g) => g.fills && g.fills.length > 0)
+}
+
 /**
  * Apply each visible fill to the shared fill paint and invoke draw with it,
  * resetting shader/blend state after every fill.
@@ -41,8 +46,7 @@ export function drawVectorMultiStyleFills(
   graph: SceneGraph
 ): boolean {
   if (node.type !== 'VECTOR' || node.fillGeometry.length === 0) return false
-  const hasPathFills = node.fillGeometry.some((g) => g.fills && g.fills.length > 0)
-  if (!hasPathFills) return false
+  if (!hasPathLevelFills(node)) return false
 
   const paths = r.getFillGeometry(node)
   if (!paths) return false
@@ -68,7 +72,7 @@ export function drawNodeFill(
   switch (node.type) {
     case 'VECTOR': {
       // When path-level fills exist, multi-style drawing is handled separately.
-      if (node.fillGeometry.some((g) => g.fills && g.fills.length > 0)) break
+      if (hasPathLevelFills(node)) break
       const fg = r.getFillGeometry(node)
       if (fg) {
         for (const p of fg) canvas.drawPath(p, r.fillPaint)
