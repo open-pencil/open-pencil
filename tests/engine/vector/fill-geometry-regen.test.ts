@@ -85,10 +85,26 @@ describe('regenerateFillGeometry', () => {
     expect(decode(g.commandsBlob)[1]).toBe('C 10,0')
   })
 
-  test('region/entry count mismatch keeps the old blobs', () => {
+  test('region/entry count mismatch rebuilds without stale styles', () => {
     const network = square()
+    // Two style entries but only one region — mapping is unknown, so rebuild
+    // one path per region and drop the mismatched style metadata.
     const out = regenerateFillGeometry(network, [ENTRY, { ...ENTRY, styleID: 6 }])
-    expect(out[0].commandsBlob).toBe(ENTRY.commandsBlob)
+    expect(out).toHaveLength(1)
+    const path = out[0]
+    expect(path).toBeDefined()
+    if (!path) return
+    expect(path.styleID).toBeUndefined()
+    expect(path.fills).toBeUndefined()
+    expect(path.commandsBlob).not.toBe(ENTRY.commandsBlob)
+    expect(decode(path.commandsBlob)).toEqual([
+      'M 0,0',
+      'L 10,0',
+      'L 10,10',
+      'L 0,10',
+      'L 0,0',
+      'Z'
+    ])
   })
 
   test('regionless networks rebuild a single entry from segment chains', () => {

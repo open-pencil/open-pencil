@@ -52,6 +52,7 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
   function nodeEditDeleteSelected() {
     const es = getNodeEditState()
     if (!es) return
+    if (es.selectedHandles.size === 0 && es.selectedVertexIndices.size === 0) return
     pushNodeEditHistory(es)
     let live = getLiveNetwork(es)
 

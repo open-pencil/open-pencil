@@ -34,7 +34,11 @@ export function transformVectorNetwork(m: Mat3, vn: VectorNetwork): VectorNetwor
 
 /** Structural equality of two VectorNetworks (order-sensitive, exact values). */
 export function vectorNetworksEqual(a: VectorNetwork, b: VectorNetwork): boolean {
-  return isEqual(a, b)
+  return (
+    isEqual(a.vertices, b.vertices) &&
+    isEqual(a.segments, b.segments) &&
+    isEqual(a.regions, b.regions)
+  )
 }
 
 /** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */

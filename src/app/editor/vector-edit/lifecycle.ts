@@ -66,7 +66,10 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
         vectorNetwork: relativeNetwork,
         // Fills render from fillGeometry blobs when present — rebuild them from
         // the edited network so fills follow the edit.
-        fillGeometry: regenerateFillGeometry(relativeNetwork, node.fillGeometry)
+        fillGeometry: regenerateFillGeometry(relativeNetwork, node.fillGeometry),
+        // Drop stale imported stroke outline blobs; post-edit strokes come from
+        // the live vector network path.
+        strokeGeometry: []
       },
       'Edit vector'
     )

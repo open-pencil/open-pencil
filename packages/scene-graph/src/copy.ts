@@ -94,6 +94,36 @@ export function copyGeometryPaths(paths: GeometryPath[]): GeometryPath[] {
   }))
 }
 
+/**
+ * Scale path command blob coordinates by (sx, sy), preserving styleID/fills.
+ * Identity scale returns a deep copy (same as copyGeometryPaths).
+ */
+export function scaleGeometryPaths(paths: GeometryPath[], sx: number, sy: number): GeometryPath[] {
+  if (sx === 1 && sy === 1) return copyGeometryPaths(paths)
+  return paths.map((g) => {
+    const scaled = g.commandsBlob.slice()
+    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
+    let offset = 0
+    while (offset < scaled.length) {
+      const command = scaled[offset++]
+      let coords = 0
+      if (command === 1 || command === 2) coords = 1
+      else if (command === 4) coords = 3
+      for (let i = 0; i < coords; i++) {
+        dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
+        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
+        offset += 8
+      }
+    }
+    return {
+      windingRule: g.windingRule,
+      commandsBlob: scaled,
+      ...(g.styleID != null ? { styleID: g.styleID } : {}),
+      ...(g.fills ? { fills: copyFills(g.fills) } : {})
+    }
+  })
+}
+
 // --- Internal helpers ---
 
 /** Copy an optional array: non-empty → mapped, empty → [], undefined → undefined. */

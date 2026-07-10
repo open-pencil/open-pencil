@@ -70,8 +70,21 @@ export function regenerateFillGeometry(
     return [{ ...existing[0], commandsBlob: builder.toBlob() }]
   }
 
-  // ponytail: region count no longer matches the imported fillGeometry (e.g. a
-  // region was deleted mid-edit) — the mapping is unknown, keep the old blobs.
-  // Upgrade path: re-derive region↔style pairing geometrically.
-  return existing
+  // Region count no longer matches the imported fillGeometry (e.g. a region was
+  // deleted mid-edit) — the style mapping is unknown. Rebuild from the live
+  // network so committed fillGeometry stays coherent with vectorNetwork; styles
+  // fall back to node-level fills.
+  if (regions.length > 0) {
+    return regions.map((region) => {
+      const builder = new GeometryBlobBuilder()
+      for (const loop of region.loops) addLoopToPath(builder, loop, segments, vertices)
+      return { windingRule: region.windingRule, commandsBlob: builder.toBlob() }
+    })
+  }
+  if (segments.length > 0) {
+    const builder = new GeometryBlobBuilder()
+    addOpenSegmentsToPath(builder, segments, vertices)
+    return [{ windingRule: 'NONZERO' as const, commandsBlob: builder.toBlob() }]
+  }
+  return []
 }

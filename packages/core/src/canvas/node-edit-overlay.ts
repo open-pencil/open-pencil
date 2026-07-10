@@ -141,11 +141,15 @@ function drawLiveShape(
   }
 
   // Temporarily patch the node so renderShapeUncached uses our live network;
-  // fills draw from fillGeometry blobs, so rebuild those from the live network
+  // fills draw from fillGeometry blobs, so rebuild those from the live network.
+  // Clear strokeGeometry so strokes use the live vector network instead of
+  // stale imported stroke blobs.
   const origNetwork = node.vectorNetwork
   const origFillGeometry = node.fillGeometry
+  const origStrokeGeometry = node.strokeGeometry
   node.vectorNetwork = localNetwork
   node.fillGeometry = regenerateFillGeometry(localNetwork, origFillGeometry)
+  node.strokeGeometry = []
   invalidatePathCaches()
 
   // The overlay canvas is in screen space; renderShapeUncached expects the
@@ -162,6 +166,7 @@ function drawLiveShape(
     // original renders correctly after exit — even if rendering threw.
     node.vectorNetwork = origNetwork
     node.fillGeometry = origFillGeometry
+    node.strokeGeometry = origStrokeGeometry
     invalidatePathCaches()
   }
 }
