@@ -1,6 +1,10 @@
 import type { Editor } from '@open-pencil/core/editor'
 import { computeAccurateBounds, regenerateFillGeometry } from '@open-pencil/core/vector'
-import { cloneVectorNetwork, transformVectorNetwork } from '@open-pencil/scene-graph'
+import {
+  cloneVectorNetwork,
+  transformVectorNetwork,
+  vectorNetworksEqual
+} from '@open-pencil/scene-graph'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 import { getNodeLocalMatrix, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -21,6 +25,10 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
   function applyNodeEditToNode(es: NonNullable<typeof state.nodeEditState>) {
     const node = editor.graph.getNode(es.nodeId)
     if (node?.type !== 'VECTOR') return
+
+    // Session geometry only changes through explicit edits, so an exact
+    // comparison detects a no-op session — skip it to keep undo clean.
+    if (vectorNetworksEqual(getLiveNetwork(es), es.origAbsNetwork)) return
 
     const world = getWorldMatrix(node, editor.graph)
     const inverse = Matrix.invert(world)
@@ -76,6 +84,7 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
       nodeId,
       origNetwork: cloneVectorNetwork(node.vectorNetwork),
       origBounds: { x: node.x, y: node.y, width: node.width, height: node.height },
+      origAbsNetwork: cloneVectorNetwork(absNetwork),
       vertices: absNetwork.vertices,
       segments: absNetwork.segments,
       regions: absNetwork.regions,

@@ -134,37 +134,36 @@ function drawLiveShape(
   if (!inverse) return
   const localNetwork = transformVectorNetwork(inverse, { vertices, segments, regions })
 
+  const invalidatePathCaches = () => {
+    r.vectorPathCache.delete(nodeId)
+    r.fillGeometryCache.delete(nodeId)
+    r.strokeGeometryCache.delete(nodeId)
+  }
+
   // Temporarily patch the node so renderShapeUncached uses our live network;
   // fills draw from fillGeometry blobs, so rebuild those from the live network
   const origNetwork = node.vectorNetwork
   const origFillGeometry = node.fillGeometry
   node.vectorNetwork = localNetwork
   node.fillGeometry = regenerateFillGeometry(localNetwork, origFillGeometry)
-
-  // Invalidate cached paths so they're rebuilt from our live network
-  r.vectorPathCache.delete(nodeId)
-  r.fillGeometryCache.delete(nodeId)
-  r.strokeGeometryCache.delete(nodeId)
+  invalidatePathCaches()
 
   // The overlay canvas is in screen space; renderShapeUncached expects the
   // node's local frame, so apply viewport then the node's world matrix.
   canvas.save()
-  canvas.translate(r.panX, r.panY)
-  canvas.scale(r.zoom, r.zoom)
-  canvas.concat(world)
-
-  r.renderShapeUncached(canvas, node, graph)
-
-  canvas.restore()
-
-  // Restore the original node properties
-  node.vectorNetwork = origNetwork
-  node.fillGeometry = origFillGeometry
-
-  // Invalidate caches again so the original renders correctly after exit
-  r.vectorPathCache.delete(nodeId)
-  r.fillGeometryCache.delete(nodeId)
-  r.strokeGeometryCache.delete(nodeId)
+  try {
+    canvas.translate(r.panX, r.panY)
+    canvas.scale(r.zoom, r.zoom)
+    canvas.concat(world)
+    r.renderShapeUncached(canvas, node, graph)
+  } finally {
+    canvas.restore()
+    // Restore the original node properties and invalidate again so the
+    // original renders correctly after exit — even if rendering threw.
+    node.vectorNetwork = origNetwork
+    node.fillGeometry = origFillGeometry
+    invalidatePathCaches()
+  }
 }
 
 // ---------------------------------------------------------------------------

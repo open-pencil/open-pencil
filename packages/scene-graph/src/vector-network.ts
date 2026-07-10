@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type { Mat3 } from './matrix'
 import type { Vector } from './primitives'
 import type { VectorNetwork, VectorSegment } from './types'
@@ -28,6 +30,11 @@ export function transformVectorNetwork(m: Mat3, vn: VectorNetwork): VectorNetwor
       loops: r.loops.map((l) => [...l])
     }))
   }
+}
+
+/** Structural equality of two VectorNetworks (order-sensitive, exact values). */
+export function vectorNetworksEqual(a: VectorNetwork, b: VectorNetwork): boolean {
+  return isEqual(a, b)
 }
 
 /** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */

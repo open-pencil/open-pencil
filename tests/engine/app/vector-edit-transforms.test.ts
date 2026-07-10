@@ -96,17 +96,17 @@ describe('vector edit with rotated ancestors', () => {
   })
 
   test('enter + commit without edits is a no-op', () => {
-    const { graph, vector, lifecycle } = setup(30, 20)
+    const { graph, vector, lifecycle, undoLabels } = setup(30, 20)
     const before = worldVertices(graph, vector.id)
 
     lifecycle.enterNodeEditMode(vector.id)
     lifecycle.exitNodeEditMode(true)
 
     const node = getNodeOrThrow(graph, vector.id)
-    expect(node.x).toBeCloseTo(40, 6)
-    expect(node.y).toBeCloseTo(60, 6)
-    expect(node.width).toBeCloseTo(100, 6)
-    expect(node.height).toBeCloseTo(50, 6)
+    expect(node.x).toBe(40)
+    expect(node.y).toBe(60)
+    expect(node.width).toBe(100)
+    expect(node.height).toBe(50)
     const after = worldVertices(graph, vector.id)
     for (let i = 0; i < before.length; i++) {
       const b = expectDefined(before[i])
@@ -114,6 +114,8 @@ describe('vector edit with rotated ancestors', () => {
       expect(a.x).toBeCloseTo(b.x, 6)
       expect(a.y).toBeCloseTo(b.y, 6)
     }
+    // no geometry change → no document undo entry
+    expect(undoLabels).toEqual([])
   })
 
   test('dragging a vertex commits without moving the rest of the shape', () => {
@@ -214,5 +216,34 @@ describe('vector edit session undo/redo', () => {
     const orig = { ...expectDefined(es.vertices[0]) }
     history.nodeEditUndo()
     expect(expectDefined(es.vertices[0]).x).toBeCloseTo(orig.x, 6)
+  })
+
+  test('clicking without dragging after undo keeps redo', () => {
+    const { state, history } = editSession()
+    const es = () => expectDefined(state.nodeEditState, 'nodeEditState')
+    const orig = { ...expectDefined(es().vertices[0]) }
+
+    history.nodeEditPushHistory()
+    es().vertices[0] = { ...orig, x: orig.x + 50 }
+    history.nodeEditUndo()
+    history.nodeEditPushHistory() // click a vertex without moving it
+    history.nodeEditRedo()
+
+    expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x + 50, 6)
+  })
+
+  test('a real change after undo clears redo', () => {
+    const { state, history } = editSession()
+    const es = () => expectDefined(state.nodeEditState, 'nodeEditState')
+    const orig = { ...expectDefined(es().vertices[0]) }
+
+    history.nodeEditPushHistory()
+    es().vertices[0] = { ...orig, x: orig.x + 50 }
+    history.nodeEditUndo()
+    history.nodeEditPushHistory()
+    es().vertices[0] = { ...orig, x: orig.x - 30 } // new timeline
+    history.nodeEditRedo() // stale redo must not restore +50
+
+    expect(expectDefined(es().vertices[0]).x).toBeCloseTo(orig.x - 30, 6)
   })
 })
