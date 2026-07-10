@@ -1,16 +1,18 @@
 import type { Canvas, Paint } from 'canvaskit-wasm'
 
+import { transformVectorNetwork } from '@open-pencil/scene-graph'
 import type {
   VectorVertex,
   VectorSegment,
   VectorRegion,
   SceneGraph
 } from '@open-pencil/scene-graph'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
-import { vectorNetworkToPath } from '#core/vector'
-import { computeAccurateBounds } from '#core/vector/bezier'
+import { regenerateFillGeometry, vectorNetworkToPath } from '#core/vector'
 
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
@@ -124,44 +126,32 @@ function drawLiveShape(
   const node = graph.getNode(nodeId)
   if (!node) return
 
-  // Compute bounds from live (absolute) vertices
-  const liveNetwork = { vertices, segments, regions }
-  const bounds = computeAccurateBounds(liveNetwork)
+  // The edit state is page-absolute; map it back into the node's local frame
+  // so static fillGeometry (multi-color vectors) stays aligned, and render
+  // through the node's full world matrix (nesting, rotation, flips).
+  const world = getWorldMatrix(node, graph)
+  const inverse = Matrix.invert(world)
+  if (!inverse) return
+  const localNetwork = transformVectorNetwork(inverse, { vertices, segments, regions })
 
-  // Build a normalized VectorNetwork (relative to bounds origin)
-  const normalizedNetwork = {
-    vertices: vertices.map((v) => ({
-      ...v,
-      x: v.x - bounds.x,
-      y: v.y - bounds.y
-    })),
-    segments,
-    regions
-  }
-
-  // Temporarily patch the node so renderShapeUncached uses our live network
+  // Temporarily patch the node so renderShapeUncached uses our live network;
+  // fills draw from fillGeometry blobs, so rebuild those from the live network
   const origNetwork = node.vectorNetwork
-  const origX = node.x
-  const origY = node.y
-  const origW = node.width
-  const origH = node.height
-
-  node.vectorNetwork = normalizedNetwork
-  node.x = bounds.x
-  node.y = bounds.y
-  node.width = bounds.width
-  node.height = bounds.height
+  const origFillGeometry = node.fillGeometry
+  node.vectorNetwork = localNetwork
+  node.fillGeometry = regenerateFillGeometry(localNetwork, origFillGeometry)
 
   // Invalidate cached paths so they're rebuilt from our live network
   r.vectorPathCache.delete(nodeId)
   r.fillGeometryCache.delete(nodeId)
   r.strokeGeometryCache.delete(nodeId)
 
-  // The overlay canvas is in screen space after panX/panY + zoom scaling.
-  // renderShapeUncached expects a canvas translated to the node's local origin.
+  // The overlay canvas is in screen space; renderShapeUncached expects the
+  // node's local frame, so apply viewport then the node's world matrix.
   canvas.save()
-  canvas.translate(bounds.x * r.zoom + r.panX, bounds.y * r.zoom + r.panY)
+  canvas.translate(r.panX, r.panY)
   canvas.scale(r.zoom, r.zoom)
+  canvas.concat(world)
 
   r.renderShapeUncached(canvas, node, graph)
 
@@ -169,10 +159,7 @@ function drawLiveShape(
 
   // Restore the original node properties
   node.vectorNetwork = origNetwork
-  node.x = origX
-  node.y = origY
-  node.width = origW
-  node.height = origH
+  node.fillGeometry = origFillGeometry
 
   // Invalidate caches again so the original renders correctly after exit
   r.vectorPathCache.delete(nodeId)

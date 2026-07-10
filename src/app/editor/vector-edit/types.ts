@@ -14,6 +14,9 @@ export type NodeEditState = {
   vertices: VectorVertex[]
   segments: VectorSegment[]
   regions: VectorRegion[]
+  /** Session-local undo/redo stacks of geometry snapshots (Cmd+Z inside edit mode) */
+  history: VectorNetwork[]
+  future: VectorNetwork[]
   selectedVertexIndices: Set<number>
   draggedHandleInfo: {
     vertexIndex: number

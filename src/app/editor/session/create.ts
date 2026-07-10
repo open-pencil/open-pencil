@@ -44,7 +44,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
 
   const { selectedNodes, selectedNode, layerTree } = createEditorComputedRefs(editor, state)
 
-  const modules = createEditorStoreModules(editor, graph, state, io, viewportSize)
+  const modules = createEditorStoreModules(editor, state, io, viewportSize)
 
   // ─── Public API ───────────────────────────────────────────────
   // Spread all core Editor methods, then override getters and add app-specific.

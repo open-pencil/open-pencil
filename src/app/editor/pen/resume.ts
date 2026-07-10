@@ -4,22 +4,6 @@ import type { SceneNode, VectorSegment, VectorVertex } from '@open-pencil/scene-
 export type PenState = EditorState
 type PenStateInit = NonNullable<EditorState['penState']>
 
-export function absoluteVertices(node: SceneNode, vertices: VectorVertex[]): VectorVertex[] {
-  return vertices.map((v) => ({
-    ...v,
-    x: v.x + node.x,
-    y: v.y + node.y
-  }))
-}
-
-export function cloneSegments(segments: VectorSegment[]): VectorSegment[] {
-  return segments.map((s) => ({
-    ...s,
-    tangentStart: { ...s.tangentStart },
-    tangentEnd: { ...s.tangentEnd }
-  }))
-}
-
 export function createResumedPenState(
   node: SceneNode,
   vertices: VectorVertex[],

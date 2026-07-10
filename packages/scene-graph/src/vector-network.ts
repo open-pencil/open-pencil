@@ -1,5 +1,34 @@
+import type { Mat3 } from './matrix'
 import type { Vector } from './primitives'
 import type { VectorNetwork, VectorSegment } from './types'
+
+/**
+ * Map a VectorNetwork through an affine matrix: vertices as points,
+ * tangents as direction vectors (linear part only, no translation).
+ * Returns a deep copy; the input is not mutated.
+ */
+export function transformVectorNetwork(m: Mat3, vn: VectorNetwork): VectorNetwork {
+  const mapVector = (v: Vector): Vector => ({
+    x: m[0] * v.x + m[1] * v.y,
+    y: m[3] * v.x + m[4] * v.y
+  })
+  return {
+    vertices: vn.vertices.map((v) => ({
+      ...v,
+      x: m[0] * v.x + m[1] * v.y + m[2],
+      y: m[3] * v.x + m[4] * v.y + m[5]
+    })),
+    segments: vn.segments.map((s) => ({
+      ...s,
+      tangentStart: mapVector(s.tangentStart),
+      tangentEnd: mapVector(s.tangentEnd)
+    })),
+    regions: vn.regions.map((r) => ({
+      windingRule: r.windingRule,
+      loops: r.loops.map((l) => [...l])
+    }))
+  }
+}
 
 /** Deep-copy a VectorNetwork, stripping any Vue Proxy wrappers. */
 export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
