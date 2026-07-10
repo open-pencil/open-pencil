@@ -3,7 +3,9 @@ import { describe, expect, test } from 'bun:test'
 import {
   resolveGeometryPaths,
   styleOverrideFillsById
-} from '../../../packages/core/src/kiwi/fig/node-change/vector-geometry'
+} from '#core/kiwi/fig/node-change/vector-geometry'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 describe('vector fillGeometry style overrides', () => {
   test('maps styleOverrideTable fillPaints by styleID', () => {
@@ -29,11 +31,10 @@ describe('vector fillGeometry style overrides', () => {
 
     expect(map.has(1)).toBe(true)
     expect(map.has(2)).toBe(false)
-    const orange = map.get(1)?.[0]?.color
-    expect(orange).toBeDefined()
-    expect(orange!.r).toBeCloseTo(1, 2)
-    expect(orange!.g).toBeCloseTo(0.32, 2)
-    expect(orange!.b).toBeCloseTo(0, 2)
+    const orange = expectDefined(map.get(1)?.[0]?.color)
+    expect(orange.r).toBeCloseTo(1, 2)
+    expect(orange.g).toBeCloseTo(0.32, 2)
+    expect(orange.b).toBeCloseTo(0, 2)
   })
 
   test('resolveGeometryPaths attaches override fills for non-zero styleID', () => {

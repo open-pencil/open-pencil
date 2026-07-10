@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
+import { cloudActivityMessage } from '@/app/cloud/activity'
 import { isCloudConfigured } from '@/app/cloud/credentials'
+import { pendingSyncCount, syncStatusLabel, syncUiState } from '@/app/cloud/sync'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
@@ -17,10 +19,18 @@ import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createTab, activeTab, getActiveStore, openCloudCanvasInTab, tabCount } from '@/app/tabs'
+import {
+  createTab,
+  activeTab,
+  getActiveStore,
+  openCloudCanvasInTab,
+  refreshCloudThumbnail,
+  tabCount
+} from '@/app/tabs'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
+import SettingsDialog from '@/components/Settings/SettingsDialog.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
@@ -45,7 +55,30 @@ if (createdInitialTab && route.meta.demo && !('test' in params)) {
   createDemoShapes(firstTab.store)
 }
 
-function goToFiles() {
+const showSyncChip = computed(
+  () =>
+    syncUiState.value === 'syncing' ||
+    syncUiState.value === 'offline' ||
+    syncUiState.value === 'error'
+)
+const syncChipLabel = computed(() => {
+  if (syncUiState.value === 'syncing') {
+    const n = pendingSyncCount.value
+    // "Syncing… (3)" — how many uploads/deletes remain in the outbox
+    return n > 1 ? `${dialogs.value.cloudSyncSyncing} (${n})` : dialogs.value.cloudSyncSyncing
+  }
+  if (syncUiState.value === 'offline') return dialogs.value.cloudSyncOffline
+  return syncStatusLabel.value ?? dialogs.value.cloudSyncError
+})
+
+async function goToFiles() {
+  // Snapshot a fresh card preview while the canvas is still painted.
+  // Use the ACTIVE tab's cloud binding — the route param may point at a
+  // different tab's canvas after tab switches.
+  const binding = getActiveStore().getCloudBinding?.()
+  if (binding?.canvasId) {
+    await refreshCloudThumbnail(binding.canvasId, store)
+  }
   void router.push('/')
 }
 
@@ -107,11 +140,7 @@ onMounted(async () => {
         }
       }
     }
-  } else if (
-    isCloudConfigured.value &&
-    route.name === 'edit' &&
-    route.query.local !== '1'
-  ) {
+  } else if (isCloudConfigured.value && route.name === 'edit' && route.query.local !== '1') {
     // Belt-and-suspenders if beforeEnter did not run (e.g. in-app navigation edge cases)
     await router.replace('/')
     return
@@ -147,7 +176,7 @@ onUnmounted(() => {
     <SafariBanner />
     <div
       v-if="isCloudConfigured && showChrome"
-      class="flex items-center border-b border-border bg-panel px-2 py-1"
+      class="flex items-center justify-between gap-2 border-b border-border bg-panel px-2 py-1"
     >
       <button
         type="button"
@@ -157,6 +186,29 @@ onUnmounted(() => {
       >
         ← {{ dialogs.backToFiles }}
       </button>
+      <div class="flex items-center gap-2">
+        <span
+          v-if="cloudActivityMessage"
+          class="flex items-center gap-1.5 text-[11px] text-muted"
+          data-test-id="cloud-activity-status"
+        >
+          <icon-lucide-cloud class="size-3.5 shrink-0 animate-pulse" />
+          {{ cloudActivityMessage }}
+        </span>
+        <span
+          v-else-if="showSyncChip"
+          class="flex items-center gap-1.5 text-[11px] text-muted"
+          data-test-id="cloud-sync-status"
+        >
+          <icon-lucide-cloud-off
+            v-if="syncUiState === 'offline' || syncUiState === 'error'"
+            class="size-3.5 shrink-0 opacity-80"
+          />
+          <icon-lucide-cloud-upload v-else class="size-3.5 shrink-0 animate-pulse opacity-80" />
+          {{ syncChipLabel }}
+        </span>
+        <SettingsDialog />
+      </div>
     </div>
     <TabBar />
 

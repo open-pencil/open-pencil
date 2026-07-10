@@ -1,6 +1,9 @@
+import { IS_BROWSER } from '@open-pencil/core/constants'
+
 import { getActiveCloudAdapter } from '@/app/cloud/active'
 import { getLocalCanvasStore } from '@/app/cloud/local-store'
 import { getOutbox } from '@/app/cloud/sync/outbox'
+import { setUploadProgress } from '@/app/cloud/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/cloud/sync/status'
 import type { OutboxJob } from '@/app/cloud/sync/types'
 
@@ -14,12 +17,12 @@ let onlineBound = false
 
 function isOnline(): boolean {
   if (typeof navigator === 'undefined') return true
-  return navigator.onLine !== false
+  return navigator.onLine
 }
 
 function backoffMs(attempts: number): number {
   const exp = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** Math.max(0, attempts - 1))
-  const jitter = Math.floor(exp * 0.2 * (crypto.getRandomValues(new Uint8Array(1))[0]! / 255))
+  const jitter = Math.floor(exp * 0.2 * ((crypto.getRandomValues(new Uint8Array(1))[0] ?? 0) / 255))
   return exp + jitter
 }
 
@@ -43,7 +46,10 @@ async function runJob(job: OutboxJob): Promise<void> {
 
   if (job.type === 'deleteCanvas') {
     await adapter.deleteCanvas(job.canvasId)
-    await store.remove(job.canvasId)
+    // Keep the tombstoned row: reconcile purges it once the remote listing
+    // confirms the object is gone. Removing it here opened a race where a
+    // concurrent reconcile re-seeded the canvas from a stale remote listing.
+    await store.updateMeta(job.canvasId, { syncStatus: 'synced', lastSyncError: null })
     return
   }
 
@@ -58,10 +64,22 @@ async function runJob(job: OutboxJob): Promise<void> {
     if (!meta.hasFig) return
     const fig = await store.readFig(job.canvasId)
     if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
-    await adapter.putCanvas(job.canvasId, fig, {
-      name: meta.name,
-      updatedAt: meta.updatedAt
-    })
+    setUploadProgress(job.canvasId, 0)
+    try {
+      await adapter.putCanvas(
+        job.canvasId,
+        fig,
+        {
+          name: meta.name,
+          updatedAt: meta.updatedAt
+        },
+        ({ sentBytes, totalBytes }) => {
+          if (totalBytes) setUploadProgress(job.canvasId, sentBytes / totalBytes)
+        }
+      )
+    } finally {
+      setUploadProgress(job.canvasId, null)
+    }
     // Only mark synced if still on this revision and no other pending work for newer rev
     const latest = await store.getMeta(job.canvasId)
     if (latest && latest.revision === job.revision && !latest.tombstoned) {
@@ -74,12 +92,11 @@ async function runJob(job: OutboxJob): Promise<void> {
     return
   }
 
-  if (job.type === 'putThumb') {
-    if (!adapter.putThumbnail) return
-    const thumb = await store.readThumb(job.canvasId)
-    if (!thumb) return
-    await adapter.putThumbnail(job.canvasId, thumb)
-  }
+  // Remaining job type: putThumb
+  if (!adapter.putThumbnail) return
+  const thumb = await store.readThumb(job.canvasId)
+  if (!thumb) return
+  await adapter.putThumbnail(job.canvasId, thumb)
 }
 
 async function pumpOnce(): Promise<void> {
@@ -100,9 +117,8 @@ async function pumpOnce(): Promise<void> {
 
   setSyncUi('syncing')
   const now = Date.now()
-  const ready = jobs.filter((j) => j.nextAttemptAt <= now)
   // Single-flight globally for simplicity (large figs)
-  const job = ready[0]
+  const job = jobs.find((j) => j.nextAttemptAt <= now)
   if (!job) {
     const nextAt = Math.min(...jobs.map((j) => j.nextAttemptAt))
     scheduleWake(Math.max(250, nextAt - now))
@@ -123,15 +139,24 @@ async function pumpOnce(): Promise<void> {
     console.warn('[Cloud sync] job failed:', job.type, job.canvasId, message)
 
     if (permanent) {
-      await getLocalCanvasStore().updateMeta(job.canvasId, {
-        syncStatus: 'error',
-        lastSyncError: message
-      })
+      // A failed thumbnail upload must not poison the document's sync status —
+      // only canvas/delete jobs reflect into the meta row.
+      if (job.type !== 'putThumb') {
+        await getLocalCanvasStore().updateMeta(job.canvasId, {
+          syncStatus: 'error',
+          lastSyncError: message
+        })
+        setSyncUi('error', message.slice(0, 120))
+      } else {
+        // Keep a record without touching syncStatus so the stale remote
+        // thumbnail is at least diagnosable.
+        await getLocalCanvasStore().updateMeta(job.canvasId, { lastSyncError: message })
+      }
       await outbox.remove(job.id)
-      setSyncUi('error', message.slice(0, 120))
       const remaining = await outbox.list()
       setPendingSyncCount(remaining.length)
       if (remaining.length > 0) scheduleWake(1000)
+      else if (job.type === 'putThumb') setSyncUi('idle')
       return
     }
 
@@ -141,11 +166,17 @@ async function pumpOnce(): Promise<void> {
       nextAttemptAt: Date.now() + backoffMs(attempts)
     }
     await outbox.update(updated)
-    await getLocalCanvasStore().updateMeta(job.canvasId, {
-      syncStatus: 'pending',
-      lastSyncError: message
-    })
-    scheduleWake(backoffMs(attempts))
+    if (job.type !== 'putThumb') {
+      await getLocalCanvasStore().updateMeta(job.canvasId, {
+        syncStatus: 'pending',
+        lastSyncError: message
+      })
+    }
+    // Wake for the next ready job across the whole queue — not this job's
+    // full backoff, which starved other jobs that were ready sooner.
+    const all = await outbox.list()
+    const nextAt = Math.min(...all.map((j) => j.nextAttemptAt))
+    scheduleWake(Math.max(250, nextAt - Date.now()))
   }
 }
 
@@ -158,7 +189,7 @@ function scheduleWake(ms: number) {
 }
 
 function ensureOnlineListeners() {
-  if (onlineBound || typeof window === 'undefined') return
+  if (onlineBound || !IS_BROWSER) return
   onlineBound = true
   window.addEventListener('online', () => {
     setSyncUi('syncing')
@@ -182,6 +213,10 @@ export async function kickSyncEngine(): Promise<void> {
       const after = (await getOutbox().list()).length
       if (after === 0 || after >= before) break
     }
+  } catch (error) {
+    // Never let an escaped rejection strand the queue — retry shortly.
+    console.warn('[Cloud sync] pump failed:', error)
+    scheduleWake(5000)
   } finally {
     pumping = false
   }

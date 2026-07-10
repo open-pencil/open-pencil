@@ -106,13 +106,13 @@ async function copyCorsJson() {
   try {
     await navigator.clipboard.writeText(corsJson.value)
     corsCopied.value = true
-    toast.info(dialogs.cloudCorsCopied)
+    toast.info(dialogs.value.cloudCorsCopied)
     window.setTimeout(() => {
       corsCopied.value = false
     }, 2000)
   } catch (e) {
     console.warn('[Cloud] copy CORS JSON failed:', e)
-    toast.error(dialogs.cloudCorsCopyFailed)
+    toast.error(dialogs.value.cloudCorsCopyFailed)
   }
 }
 
@@ -131,15 +131,11 @@ async function testConnection() {
     if (result.ok) {
       // Storage works — CORS is fine for this browser (or desktop). Never show the
       // "CORS issue" alert on success; PutBucketCors may fail while ops still work.
+      // Result renders inline next to the Test button — no toast.
       testStatus.value = 'success'
       testError.value = ''
       corsHint.value = false
       corsApplied.value = result.corsApplied
-      toast.info(
-        result.corsApplied
-          ? dialogs.cloudConnectionSuccessWithCors
-          : dialogs.cloudConnectionSuccess
-      )
       void refreshUsage()
       return
     }
@@ -148,17 +144,10 @@ async function testConnection() {
     testError.value = result.message
     // Only when list/namespace failed with a CORS/network block.
     corsHint.value = result.isCorsFailure
-    if (result.isCorsFailure) {
-      toast.error(dialogs.cloudCorsAlertTitle)
-    } else {
-      toast.error(result.message)
-    }
   } catch (error) {
     testStatus.value = 'error'
-    const message = error instanceof Error ? error.message : String(error)
-    testError.value = message
+    testError.value = error instanceof Error ? error.message : String(error)
     corsHint.value = !isTauri() && isLikelyCorsOrNetworkError(error)
-    toast.error(message)
   }
 }
 
@@ -186,7 +175,9 @@ defineExpose({ saveCloud })
           :class="learnMoreDialog.content"
           data-test-id="cloud-storage-learn-more-dialog"
         >
-          <header class="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3">
+          <header
+            class="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3"
+          >
             <div class="min-w-0">
               <DialogTitle :class="learnMoreDialog.title">{{ dialogs.cloudStorage }}</DialogTitle>
               <DialogDescription :class="learnMoreDialog.description" class="mt-0.5">
@@ -204,11 +195,15 @@ defineExpose({ saveCloud })
               </button>
             </DialogClose>
           </header>
-          <div class="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3 text-xs leading-relaxed text-muted">
+          <div
+            class="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-3 text-xs leading-relaxed text-muted"
+          >
             <p>{{ dialogs.cloudStorageHint }}</p>
             <p>{{ dialogs.cloudCorsHint }}</p>
           </div>
-          <footer class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border px-4 py-3">
+          <footer
+            class="flex shrink-0 flex-wrap justify-end gap-2 border-t border-border px-4 py-3"
+          >
             <button
               type="button"
               class="rounded border border-border px-3 py-1.5 text-[11px] font-medium text-surface hover:bg-hover"
@@ -277,15 +272,31 @@ defineExpose({ saveCloud })
       />
     </ProviderSettingsField>
 
-    <button
-      type="button"
-      class="rounded border border-border px-2 py-1 text-[11px] font-medium text-surface hover:bg-hover disabled:opacity-50"
-      data-test-id="cloud-storage-test"
-      :disabled="!canTest || testStatus === 'testing'"
-      @click="testConnection"
-    >
-      {{ testStatus === 'testing' ? dialogs.testingConnection : dialogs.cloudTestAndApplyCors }}
-    </button>
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="rounded border border-border px-2 py-1 text-[11px] font-medium text-surface hover:bg-hover disabled:opacity-50"
+        data-test-id="cloud-storage-test"
+        :disabled="!canTest || testStatus === 'testing'"
+        @click="testConnection"
+      >
+        {{ testStatus === 'testing' ? dialogs.testingConnection : dialogs.cloudTestAndApplyCors }}
+      </button>
+      <p
+        v-if="testStatus === 'success'"
+        class="text-[10px] text-emerald-500"
+        data-test-id="cloud-storage-test-success"
+      >
+        {{ corsApplied ? dialogs.cloudConnectionSuccessWithCors : dialogs.cloudConnectionSuccess }}
+      </p>
+      <p
+        v-else-if="testStatus === 'error'"
+        class="text-[10px] text-red-500"
+        data-test-id="cloud-storage-test-error"
+      >
+        {{ testError || dialogs.cloudConnectionFailed }}
+      </p>
+    </div>
 
     <div
       v-if="canTest"
@@ -321,22 +332,6 @@ defineExpose({ saveCloud })
       <p class="mt-1.5 text-[10px] leading-snug text-muted/80">{{ dialogs.cloudUsageHint }}</p>
     </div>
 
-    <p
-      v-if="testStatus === 'success'"
-      class="text-[10px] text-emerald-500"
-      data-test-id="cloud-storage-test-success"
-    >
-      {{
-        corsApplied ? dialogs.cloudConnectionSuccessWithCors : dialogs.cloudConnectionSuccess
-      }}
-    </p>
-    <p
-      v-if="testStatus === 'error'"
-      class="text-[10px] text-red-500"
-      data-test-id="cloud-storage-test-error"
-    >
-      {{ testError || dialogs.cloudConnectionFailed }}
-    </p>
     <div
       v-if="corsHint"
       class="rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[10px] leading-snug text-amber-600 dark:text-amber-400"

@@ -21,6 +21,7 @@ void router.isReady().then(async () => {
     // Give Vue one tick to paint HomeView, then ensure the HTML boot loader is gone.
     requestAnimationFrame(() => fadeOutGlobalLoader())
   }
+  return undefined
 })
 
 if (!IS_TAURI) {

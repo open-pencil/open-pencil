@@ -1,19 +1,13 @@
 import { unzipSync } from 'fflate'
 
-export type DesignImportValidation =
-  | { ok: true }
-  | { ok: false; message: string }
+export type DesignImportValidation = { ok: true } | { ok: false; message: string }
 
 const FIG_KIWI_MAGIC = 'fig-kiwi'
 /** ZIP local-file / empty / spanned signatures (PK..) */
 const ZIP_LOCAL_SIG = [0x50, 0x4b] as const
 
 function isZipBytes(bytes: Uint8Array): boolean {
-  return (
-    bytes.byteLength >= 4 &&
-    bytes[0] === ZIP_LOCAL_SIG[0] &&
-    bytes[1] === ZIP_LOCAL_SIG[1]
-  )
+  return bytes.byteLength >= 4 && bytes[0] === ZIP_LOCAL_SIG[0] && bytes[1] === ZIP_LOCAL_SIG[1]
 }
 
 function hasFigKiwiMagic(bytes: Uint8Array): boolean {
@@ -46,7 +40,6 @@ function extractFigCanvasBytes(zipBytes: Uint8Array): Uint8Array | null {
     const lower = name.toLowerCase()
     if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.json')) continue
     const entry = zip[name]
-    if (!entry) continue
     if (entry.byteLength > maxSize) {
       maxSize = entry.byteLength
       best = entry

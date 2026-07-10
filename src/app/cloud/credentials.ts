@@ -57,17 +57,11 @@ export function readS3Config(): S3CompatibleConfig {
 }
 
 export function isS3ConfigComplete(config: S3CompatibleConfig): boolean {
-  return Boolean(
-    config.endpoint && config.bucket && config.accessKeyId && config.secretAccessKey
-  )
+  return Boolean(config.endpoint && config.bucket && config.accessKeyId && config.secretAccessKey)
 }
 
-export const isCloudConfigured = computed(() => {
-  if (cloudProviderId.value === 's3-compatible') {
-    return isS3ConfigComplete(readS3Config())
-  }
-  return false
-})
+// S3-compatible is the only provider today; branch on cloudProviderId when more land.
+export const isCloudConfigured = computed(() => isS3ConfigComplete(readS3Config()))
 
 export function clearS3Credentials() {
   s3Endpoint.value = ''
@@ -75,7 +69,9 @@ export function clearS3Credentials() {
   s3AccessKeyId.value = ''
   s3SecretAccessKey.value = ''
   // Drop local mirror + outbox so a later account doesn't see orphaned caches.
-  void import('@/app/cloud/sync').then((m) => m.clearCloudLocalMirror()).catch(() => {})
+  void import('@/app/cloud/sync')
+    .then((m) => m.clearCloudLocalMirror())
+    .catch((error: unknown) => console.warn('[Cloud] failed to clear local mirror:', error))
 }
 
 export function setS3Credentials(config: S3CompatibleConfig) {

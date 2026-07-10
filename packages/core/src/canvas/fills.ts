@@ -28,7 +28,7 @@ export function drawVectorMultiStyleFills(
     const fills = g.fills && g.fills.length > 0 ? g.fills : node.fills
     for (let fi = 0; fi < fills.length; fi++) {
       const fill = fills[fi]
-      if (!fill?.visible) continue
+      if (!fill.visible) continue
       if (!applyFill(r, fill, node, graph, fi)) continue
       r.fillPaint.setAlphaf(fill.opacity)
       r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))

@@ -1,7 +1,16 @@
-import { computed, onUnmounted, ref } from 'vue'
+import { tryOnScopeDispose } from '@vueuse/core'
+import { computed, ref } from 'vue'
 
 import { getActiveCloudAdapter } from '@/app/cloud/active'
 import { setCloudActivity } from '@/app/cloud/activity'
+import { cloudConnectionError } from '@/app/cloud/health'
+import {
+  deleteCloudCanvas,
+  downloadCloudCanvas,
+  duplicateCloudCanvas,
+  renameCloudCanvas
+} from '@/app/cloud/home/actions'
+import { reconcileLocalMetas, reconcileRemoteEntries } from '@/app/cloud/home/reconcile'
 import { getLocalCanvasStore } from '@/app/cloud/local-store'
 import type { LocalCanvasMeta } from '@/app/cloud/local-store'
 import {
@@ -9,9 +18,10 @@ import {
   formatBrowserCorsHelpMessage,
   isLikelyCorsOrNetworkError
 } from '@/app/cloud/s3/cors'
-import { enqueueDeleteCanvas, enqueuePutCanvas, kickSyncEngine } from '@/app/cloud/sync'
+import { getOutbox, kickSyncEngine } from '@/app/cloud/sync'
 import { thumbnailBytesToObjectUrl } from '@/app/cloud/thumbnail'
 import type { CloudCanvas } from '@/app/cloud/types'
+import { maybeSeedWelcomeProject } from '@/app/cloud/welcome-seed'
 import { isTauri } from '@/app/tauri/env'
 
 export type CloudHomePhase = 'idle' | 'connecting' | 'listing' | 'done' | 'error'
@@ -31,6 +41,33 @@ function metaToCanvas(meta: LocalCanvasMeta, thumbnailUrl: string | null = null)
     thumbnailUrl,
     syncStatus: meta.syncStatus
   }
+}
+
+function reconcileErrorMessage(e: unknown): string {
+  const isCors = e instanceof CloudCorsError || (!isTauri() && isLikelyCorsOrNetworkError(e))
+  if (isCors) return formatBrowserCorsHelpMessage()
+  return e instanceof Error ? e.message : String(e)
+}
+
+async function paintFromLocal(): Promise<CloudCanvas[]> {
+  const local = getLocalCanvasStore()
+  const metas = await local.listMetas(false)
+  const list: CloudCanvas[] = []
+  for (const meta of metas) {
+    let thumbnailUrl: string | null = null
+    if (meta.hasThumb) {
+      try {
+        const thumb = await local.readThumb(meta.id)
+        if (thumb && thumb.byteLength > 0) {
+          thumbnailUrl = thumbnailBytesToObjectUrl(thumb)
+        }
+      } catch (error) {
+        console.warn('[Cloud] local thumbnail read failed:', meta.id, error)
+      }
+    }
+    list.push(metaToCanvas(meta, thumbnailUrl))
+  }
+  return list
 }
 
 export function useCloudHome() {
@@ -54,36 +91,18 @@ export function useCloudHome() {
     }
   })
 
-  onUnmounted(() => {
+  tryOnScopeDispose(() => {
     thumbLoadGeneration += 1
     revokeThumbnailUrls(canvases.value)
   })
 
-  async function paintFromLocal(): Promise<CloudCanvas[]> {
-    const local = getLocalCanvasStore()
-    const metas = await local.listMetas(false)
-    const list: CloudCanvas[] = []
-    for (const meta of metas) {
-      let thumbnailUrl: string | null = null
-      if (meta.hasThumb) {
-        try {
-          const thumb = await local.readThumb(meta.id)
-          if (thumb && thumb.byteLength > 0) {
-            thumbnailUrl = thumbnailBytesToObjectUrl(thumb)
-          }
-        } catch {
-          // ignore
-        }
-      }
-      list.push(metaToCanvas(meta, thumbnailUrl))
-    }
-    return list
-  }
-
   async function hydrateMissingThumbs(list: CloudCanvas[]) {
     const adapter = getActiveCloudAdapter()
+    const remoteThumbGetter = adapter?.getThumbnail?.bind(adapter)
     const local = getLocalCanvasStore()
-    if (!adapter?.getThumbnail || list.length === 0) return
+    if (!remoteThumbGetter || list.length === 0) return
+    // Narrowed alias — closures below can't see the guard above.
+    const fetchRemoteThumb = remoteThumbGetter
 
     const generation = ++thumbLoadGeneration
     const concurrency = 4
@@ -95,13 +114,13 @@ export function useCloudHome() {
         const i = index
         index += 1
         const canvas = list[i]
-        if (!canvas || canvas.thumbnailUrl) continue
+        if (canvas.thumbnailUrl) continue
         try {
           // Prefer local again (race with paint)
           const localThumb = await local.readThumb(canvas.id)
           let bytes = localThumb
           if (!bytes || bytes.byteLength === 0) {
-            bytes = await adapter!.getThumbnail!(canvas.id)
+            bytes = await fetchRemoteThumb(canvas.id)
             if (bytes && bytes.byteLength > 0) {
               await local.writeThumb(canvas.id, bytes)
             }
@@ -117,8 +136,9 @@ export function useCloudHome() {
             if (c.thumbnailUrl?.startsWith('blob:')) URL.revokeObjectURL(c.thumbnailUrl)
             return { ...c, thumbnailUrl: url }
           })
-        } catch {
-          // keep placeholder
+        } catch (error) {
+          // Keep the placeholder tile — thumbnails are cosmetic.
+          console.warn('[Cloud] thumbnail hydrate failed:', canvas.id, error)
         }
       }
     }
@@ -136,61 +156,28 @@ export function useCloudHome() {
       const localMetas = await local.listMetas(true)
       const localById = new Map(localMetas.map((m) => [m.id, m]))
       const remoteIds = new Set(remote.map((r) => r.id))
+      const queuedIds = new Set((await getOutbox().list()).map((j) => j.canvasId))
 
-      // Seed index rows for remote-only canvases (fig downloaded on open).
-      for (const r of remote) {
-        const existing = localById.get(r.id)
-        if (existing?.tombstoned) continue
-        if (!existing) {
-          await local.upsertIndexMeta({
-            id: r.id,
-            providerId: adapter.id,
-            name: r.name,
-            updatedAt: r.updatedAt,
-            syncStatus: 'synced',
-            lastSyncedAt: r.updatedAt,
-            lastSyncError: null,
-            hasFig: false,
-            hasThumb: false,
-            revision: 1
-          })
-        } else if (
-          existing.syncStatus === 'synced' &&
-          r.updatedAt > existing.updatedAt &&
-          !existing.tombstoned
-        ) {
-          await local.updateMeta(r.id, {
-            name: r.name,
-            updatedAt: r.updatedAt,
-            hasFig: false // force re-download on next open
-          })
-        } else if (existing.syncStatus === 'synced' && r.name !== existing.name) {
-          await local.updateMeta(r.id, { name: r.name })
-        }
-      }
-
-      // Drop fully synced local-only that vanished remotely (not pending/error)
-      for (const m of localMetas) {
-        if (m.tombstoned) continue
-        if (!remoteIds.has(m.id) && m.syncStatus === 'synced' && !m.hasFig) {
-          await local.remove(m.id)
-        }
-      }
+      await reconcileRemoteEntries(adapter.id, remote, localById, queuedIds)
+      await reconcileLocalMetas(localMetas, remoteIds, queuedIds)
 
       syncWarning.value = null
+      cloudConnectionError.value = null
+
+      // Brand-new cloud env: seed the bundled Welcome project (once per bucket)
+      const activeLocal = localMetas.filter((m) => !m.tombstoned)
+      if (await maybeSeedWelcomeProject(remote.length, activeLocal.length)) {
+        void kickSyncEngine()
+      }
+
       const painted = await paintFromLocal()
       revokeThumbnailUrls(canvases.value)
       canvases.value = painted
       void hydrateMissingThumbs(canvases.value)
       void kickSyncEngine()
     } catch (e) {
-      const isCors =
-        e instanceof CloudCorsError || (!isTauri() && isLikelyCorsOrNetworkError(e))
-      syncWarning.value = isCors
-        ? formatBrowserCorsHelpMessage()
-        : e instanceof Error
-          ? e.message
-          : String(e)
+      syncWarning.value = reconcileErrorMessage(e)
+      cloudConnectionError.value = syncWarning.value
     }
   }
 
@@ -201,6 +188,7 @@ export function useCloudHome() {
       canvases.value = []
       error.value = null
       syncWarning.value = null
+      cloudConnectionError.value = null
       phase.value = 'idle'
       setCloudActivity(null)
       return
@@ -235,32 +223,17 @@ export function useCloudHome() {
   }
 
   async function renameCanvas(id: string, name: string) {
-    const adapter = getActiveCloudAdapter()
-    if (!adapter) throw new Error('Cloud storage is not configured')
-    const local = getLocalCanvasStore()
-    const trimmed = name.trim() || 'Untitled'
-    let fig = await local.readFig(id)
-    if (!fig || fig.byteLength === 0) {
-      fig = await adapter.getCanvas(id)
-    }
-    const meta = await local.writeCanvas({
-      id,
-      providerId: adapter.id,
-      name: trimmed,
-      figBytes: fig,
-      syncStatus: 'pending'
-    })
-    await enqueuePutCanvas(id, meta.revision)
-    void kickSyncEngine()
+    await renameCloudCanvas(id, name)
+    await refresh()
+  }
+
+  async function duplicateCanvas(id: string) {
+    await duplicateCloudCanvas(id)
     await refresh()
   }
 
   async function deleteCanvas(id: string) {
-    const adapter = getActiveCloudAdapter()
-    if (!adapter) throw new Error('Cloud storage is not configured')
-    await getLocalCanvasStore().tombstone(id)
-    await enqueueDeleteCanvas(id)
-    void kickSyncEngine()
+    await deleteCloudCanvas(id)
     await refresh()
   }
 
@@ -273,6 +246,8 @@ export function useCloudHome() {
     statusMessage,
     refresh,
     renameCanvas,
+    duplicateCanvas,
+    downloadCanvas: downloadCloudCanvas,
     deleteCanvas
   }
 }

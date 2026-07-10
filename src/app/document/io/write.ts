@@ -33,7 +33,7 @@ export function createDocumentWriter({
     const cloud = getCloudBinding()
     if (cloud) {
       const adapter = getActiveCloudAdapter()
-      if (!adapter || adapter.id !== cloud.providerId) {
+      if (!adapter) {
         throw new Error('Cloud storage is not configured for this document')
       }
       // Local-first: durable on device immediately; S3 catches up via outbox.

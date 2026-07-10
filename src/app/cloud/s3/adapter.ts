@@ -9,12 +9,6 @@ import {
   canvasThumbKey
 } from '@/app/cloud/namespace'
 import {
-  CloudCorsError,
-  ensureWebCorsOnBucket,
-  formatBrowserCorsHelpMessage,
-  isLikelyCorsOrNetworkError
-} from '@/app/cloud/s3/cors'
-import {
   deleteObject,
   getObject,
   headObject,
@@ -22,6 +16,12 @@ import {
   putObject,
   S3HttpError
 } from '@/app/cloud/s3/client'
+import {
+  CloudCorsError,
+  ensureWebCorsOnBucket,
+  formatBrowserCorsHelpMessage,
+  isLikelyCorsOrNetworkError
+} from '@/app/cloud/s3/cors'
 import type {
   CloudCanvas,
   CloudCanvasMeta,
@@ -31,19 +31,25 @@ import type {
 } from '@/app/cloud/types'
 import { isTauri } from '@/app/tauri/env'
 
-function parseMeta(bytes: Uint8Array | null, fallback: CloudCanvasMeta): CloudCanvasMeta {
-  if (!bytes) return fallback
+function parseMeta(
+  bytes: Uint8Array | null,
+  fallback: CloudCanvasMeta
+): { meta: CloudCanvasMeta; authoritative: boolean } {
+  if (!bytes) return { meta: fallback, authoritative: false }
   try {
     const parsed = JSON.parse(new TextDecoder().decode(bytes)) as Partial<CloudCanvasMeta>
+    const name = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name : null
+    const updatedAt =
+      typeof parsed.updatedAt === 'string' && parsed.updatedAt ? parsed.updatedAt : null
     return {
-      name: typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name : fallback.name,
-      updatedAt:
-        typeof parsed.updatedAt === 'string' && parsed.updatedAt
-          ? parsed.updatedAt
-          : fallback.updatedAt
+      meta: {
+        name: name ?? fallback.name,
+        updatedAt: updatedAt ?? fallback.updatedAt
+      },
+      authoritative: name != null && updatedAt != null
     }
   } catch {
-    return fallback
+    return { meta: fallback, authoritative: false }
   }
 }
 
@@ -132,8 +138,10 @@ export function createS3CompatibleAdapter(config: S3CompatibleConfig): CloudStor
             updatedAt: lastModified ?? new Date(0).toISOString()
           }
           const metaBytes = await getObject(config, canvasMetaKey(id))
-          const meta = parseMeta(metaBytes, fallback)
-          return { id, ...meta } satisfies CloudCanvas
+          // Server LastModified is not comparable with meta.json timestamps —
+          // callers must not use a fallback updatedAt to force re-downloads.
+          const { meta, authoritative } = parseMeta(metaBytes, fallback)
+          return { id, ...meta, metaAuthoritative: authoritative } satisfies CloudCanvas
         })
       )
 
@@ -141,14 +149,14 @@ export function createS3CompatibleAdapter(config: S3CompatibleConfig): CloudStor
       return canvases
     },
 
-    async getCanvas(id: string) {
-      const bytes = await getObject(config, canvasFigKey(id))
+    async getCanvas(id: string, onProgress) {
+      const bytes = await getObject(config, canvasFigKey(id), onProgress)
       if (!bytes) throw new Error(`Canvas not found: ${id}`)
       return bytes
     },
 
-    async putCanvas(id: string, bytes: Uint8Array, meta: CloudCanvasMeta) {
-      await putObject(config, canvasFigKey(id), bytes, 'application/octet-stream')
+    async putCanvas(id: string, bytes: Uint8Array, meta: CloudCanvasMeta, onProgress) {
+      await putObject(config, canvasFigKey(id), bytes, 'application/octet-stream', onProgress)
       const body = JSON.stringify({
         name: meta.name,
         updatedAt: meta.updatedAt || new Date().toISOString()

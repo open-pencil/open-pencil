@@ -5,6 +5,8 @@ import {
   resetLocalCanvasStoreForTests
 } from '@/app/cloud/local-store'
 
+import { expectDefined } from '#tests/helpers/assert'
+
 describe('local canvas store (memory)', () => {
   test('writes and reads fig bytes outside localStorage', async () => {
     const store = createMemoryLocalCanvasStore()
@@ -20,9 +22,8 @@ describe('local canvas store (memory)', () => {
     expect(meta.syncStatus).toBe('pending')
     expect(meta.hasFig).toBe(true)
 
-    const read = await store.readFig('c1')
-    expect(read).not.toBeNull()
-    expect([...read!]).toEqual([1, 2, 3, 4, 5])
+    const read = expectDefined(await store.readFig('c1'))
+    expect([...read]).toEqual([1, 2, 3, 4, 5])
 
     const list = await store.listMetas()
     expect(list.map((m) => m.id)).toEqual(['c1'])

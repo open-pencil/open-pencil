@@ -5,6 +5,7 @@ import { downloadBlob } from '@/app/document/io/browser'
 import { documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save-targets'
 import { createDocumentWriter } from '@/app/document/io/write'
+import { promptText } from '@/app/shell/prompts'
 import { IS_TAURI } from '@/constants'
 
 type SaveDocumentState = EditorState & { documentName: string }
@@ -93,7 +94,7 @@ export function createSaveActions({
       return
     }
 
-    const filename = prompt('Save as:', getDownloadName() ?? 'Untitled.fig')
+    const filename = await promptText('Save as:', getDownloadName() ?? 'Untitled.fig')
     if (!filename) return
     setCloudBinding(null)
     setDownloadName(filename)

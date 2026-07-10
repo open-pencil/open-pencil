@@ -1,57 +1,60 @@
-import {
-  makeJobId,
-  supersedePutCanvasJobs,
-  type OutboxJob,
-  type OutboxJobType
-} from '@/app/cloud/sync/types'
+import { openIdb, reqToPromise, txDone } from '@/app/cloud/idb-util'
+import { makeJobId, supersedePutCanvasJobs, type OutboxJob } from '@/app/cloud/sync/types'
 
 const DB_NAME = 'open-pencil-cloud-outbox'
 const DB_VERSION = 1
 const STORE = 'jobs'
 
+export type OutboxEnqueueInput = Omit<
+  OutboxJob,
+  'id' | 'createdAt' | 'attempts' | 'nextAttemptAt'
+> & {
+  id?: string
+  attempts?: number
+  nextAttemptAt?: number
+}
+
 export type Outbox = {
   list(): Promise<OutboxJob[]>
-  enqueue(job: Omit<OutboxJob, 'id' | 'createdAt' | 'attempts' | 'nextAttemptAt'> & {
-    id?: string
-    attempts?: number
-    nextAttemptAt?: number
-  }): Promise<OutboxJob>
+  enqueue(job: OutboxEnqueueInput): Promise<OutboxJob>
   update(job: OutboxJob): Promise<void>
   remove(id: string): Promise<void>
   clear(): Promise<void>
 }
 
 function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    if (typeof indexedDB === 'undefined') {
-      reject(new Error('IndexedDB is not available'))
-      return
-    }
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
-    req.onerror = () => reject(req.error ?? new Error('Failed to open outbox DB'))
-    req.onsuccess = () => resolve(req.result)
-    req.onupgradeneeded = () => {
-      const db = req.result
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE, { keyPath: 'id' })
-      }
+  return openIdb(DB_NAME, DB_VERSION, (db) => {
+    if (!db.objectStoreNames.contains(STORE)) {
+      db.createObjectStore(STORE, { keyPath: 'id' })
     }
   })
 }
 
-function reqToPromise<T>(req: IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result)
-    req.onerror = () => reject(req.error ?? new Error('IndexedDB request failed'))
-  })
+function buildJob(partial: OutboxEnqueueInput): OutboxJob {
+  return {
+    id: partial.id ?? makeJobId(),
+    canvasId: partial.canvasId,
+    type: partial.type,
+    revision: partial.revision,
+    createdAt: Date.now(),
+    attempts: partial.attempts ?? 0,
+    nextAttemptAt: partial.nextAttemptAt ?? Date.now()
+  }
 }
 
-function txDone(tx: IDBTransaction): Promise<void> {
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'))
-    tx.onabort = () => reject(tx.error ?? new Error('IndexedDB transaction aborted'))
-  })
+/**
+ * Queue with the new job applied: putCanvas supersedes older revisions,
+ * and only one putThumb/delete per canvas survives (latest wins).
+ */
+function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
+  let next = queue
+  if (job.type === 'putCanvas') {
+    next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
+  }
+  next = next.filter(
+    (j) => !(j.canvasId === job.canvasId && j.type === job.type && j.type !== 'putCanvas')
+  )
+  return [...next, job]
 }
 
 export function createMemoryOutbox(): Outbox {
@@ -62,21 +65,8 @@ export function createMemoryOutbox(): Outbox {
       return [...jobs].sort((a, b) => a.createdAt - b.createdAt)
     },
     async enqueue(partial) {
-      const job: OutboxJob = {
-        id: partial.id ?? makeJobId(),
-        canvasId: partial.canvasId,
-        type: partial.type,
-        revision: partial.revision,
-        createdAt: Date.now(),
-        attempts: partial.attempts ?? 0,
-        nextAttemptAt: partial.nextAttemptAt ?? Date.now()
-      }
-      if (job.type === 'putCanvas') {
-        jobs = supersedePutCanvasJobs(jobs, job.canvasId, job.revision)
-      }
-      // One pending putThumb / delete per canvas — keep latest only for same type
-      jobs = jobs.filter((j) => !(j.canvasId === job.canvasId && j.type === job.type && j.type !== 'putCanvas'))
-      jobs.push(job)
+      const job = buildJob(partial)
+      jobs = withJobQueued(jobs, job)
       return job
     },
     async update(job) {
@@ -108,23 +98,9 @@ export function createIdbOutbox(): Outbox {
     },
 
     async enqueue(partial) {
-      const job: OutboxJob = {
-        id: partial.id ?? makeJobId(),
-        canvasId: partial.canvasId,
-        type: partial.type as OutboxJobType,
-        revision: partial.revision,
-        createdAt: Date.now(),
-        attempts: partial.attempts ?? 0,
-        nextAttemptAt: partial.nextAttemptAt ?? Date.now()
-      }
+      const job = buildJob(partial)
       const existing = await this.list()
-      let next = existing
-      if (job.type === 'putCanvas') {
-        next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
-      }
-      next = next.filter(
-        (j) => !(j.canvasId === job.canvasId && j.type === job.type && j.type !== 'putCanvas')
-      )
+      const next = withJobQueued(existing, job)
       const removeIds = existing.filter((j) => !next.some((n) => n.id === j.id)).map((j) => j.id)
 
       const database = await db()

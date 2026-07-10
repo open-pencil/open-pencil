@@ -76,10 +76,43 @@ function bodyByteLength(body: BodyInit | null | undefined): number | null {
   return null
 }
 
+export type UploadProgress = { sentBytes: number; totalBytes: number | null }
+
+/**
+ * fetch() cannot observe upload progress — replay the signed request over
+ * XMLHttpRequest when a progress callback is attached (uploads only).
+ */
+function xhrSend(
+  url: string,
+  method: string,
+  headers: Headers,
+  body: BodyInit | undefined,
+  onUploadProgress: (progress: UploadProgress) => void
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open(method, url)
+    headers.forEach((value, key) => {
+      // Forbidden request headers are set by the browser itself
+      if (/^(content-length|host)$/i.test(key)) return
+      xhr.setRequestHeader(key, value)
+    })
+    xhr.responseType = 'text'
+    xhr.upload.onprogress = (e) => {
+      onUploadProgress({ sentBytes: e.loaded, totalBytes: e.lengthComputable ? e.total : null })
+    }
+    xhr.onload = () => resolve(new Response(xhr.responseText, { status: xhr.status }))
+    // Same shape the fetch path throws so CORS/network detection keeps working
+    xhr.onerror = () => reject(new TypeError('Failed to fetch'))
+    xhr.send(body as XMLHttpRequestBodyInit)
+  })
+}
+
 export async function s3Request(
   config: S3CompatibleConfig,
   url: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  onUploadProgress?: (progress: UploadProgress) => void
 ): Promise<Response> {
   const client = createAwsClient(config)
   const length = bodyByteLength(init.body ?? null)
@@ -99,12 +132,22 @@ export async function s3Request(
   })
   let res: Response
   try {
-    res = await cloudFetch(signed.url, {
-      method: signed.method,
-      headers: signed.headers,
-      body: init.body ?? undefined,
-      credentials: 'omit'
-    })
+    if (onUploadProgress && typeof XMLHttpRequest !== 'undefined') {
+      res = await xhrSend(
+        signed.url,
+        signed.method,
+        signed.headers,
+        init.body ?? undefined,
+        onUploadProgress
+      )
+    } else {
+      res = await cloudFetch(signed.url, {
+        method: signed.method,
+        headers: signed.headers,
+        body: init.body ?? undefined,
+        credentials: 'omit'
+      })
+    }
   } catch (error) {
     // Re-export as a typed error so UI can detect CORS/network blocks.
     const { CloudCorsError, isLikelyCorsOrNetworkError, formatBrowserCorsHelpMessage } =
@@ -129,7 +172,8 @@ export async function putObject(
   config: S3CompatibleConfig,
   key: string,
   body: Uint8Array | string,
-  contentType: string
+  contentType: string,
+  onUploadProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
   const bytes = typeof body === 'string' ? new TextEncoder().encode(body) : body
   // Exact ArrayBuffer so fetch/UA can set Content-Length (required by B2 for large PUTs).
@@ -137,25 +181,56 @@ export async function putObject(
     bytes.byteOffset,
     bytes.byteOffset + bytes.byteLength
   ) as ArrayBuffer
-  const res = await s3Request(config, objectUrl(config, key), {
-    method: 'PUT',
-    headers: {
-      'Content-Type': contentType
+  const res = await s3Request(
+    config,
+    objectUrl(config, key),
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': contentType
+      },
+      body: payload
     },
-    body: payload
-  })
+    onUploadProgress
+  )
   if (!res.ok) {
     throw new S3HttpError(res.status, `Failed to upload ${key}`)
   }
 }
 
+export type DownloadProgress = { receivedBytes: number; totalBytes: number | null }
+
 export async function getObject(
   config: S3CompatibleConfig,
-  key: string
+  key: string,
+  onProgress?: (progress: DownloadProgress) => void
 ): Promise<Uint8Array | null> {
   const res = await s3Request(config, objectUrl(config, key), { method: 'GET' })
   if (res.status === 404) return null
-  return new Uint8Array(await res.arrayBuffer())
+  if (!onProgress || !res.body) {
+    return new Uint8Array(await res.arrayBuffer())
+  }
+
+  // Stream so large figs can report download progress
+  const contentLength = Number(res.headers.get('content-length'))
+  const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null
+  const reader = res.body.getReader()
+  const chunks: Uint8Array[] = []
+  let receivedBytes = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    receivedBytes += value.byteLength
+    onProgress({ receivedBytes, totalBytes })
+  }
+  const out = new Uint8Array(receivedBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    out.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return out
 }
 
 export async function deleteObject(config: S3CompatibleConfig, key: string): Promise<void> {

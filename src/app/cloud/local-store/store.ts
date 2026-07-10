@@ -1,6 +1,10 @@
 import { createIdbLocalCanvasStore } from '@/app/cloud/local-store/idb'
 import { createMemoryLocalCanvasStore } from '@/app/cloud/local-store/memory'
-import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/cloud/local-store/types'
+import type {
+  LocalCanvasIndexInput,
+  LocalCanvasMeta,
+  LocalCanvasWriteInput
+} from '@/app/cloud/local-store/types'
 
 export type LocalCanvasStore = {
   listMetas(includeTombstones?: boolean): Promise<LocalCanvasMeta[]>
@@ -9,16 +13,12 @@ export type LocalCanvasStore = {
   readThumb(id: string): Promise<Uint8Array | null>
   writeCanvas(input: LocalCanvasWriteInput): Promise<LocalCanvasMeta>
   /** Index-only row for remote canvases not yet downloaded (no fig body). */
-  upsertIndexMeta(
-    meta: Omit<LocalCanvasMeta, 'hasFig' | 'hasThumb' | 'tombstoned' | 'revision'> & {
-      revision?: number
-      hasFig?: boolean
-      hasThumb?: boolean
-    }
-  ): Promise<LocalCanvasMeta>
+  upsertIndexMeta(meta: LocalCanvasIndexInput): Promise<LocalCanvasMeta>
   writeThumb(id: string, thumbBytes: Uint8Array): Promise<LocalCanvasMeta | null>
   updateMeta(id: string, patch: Partial<LocalCanvasMeta>): Promise<LocalCanvasMeta | null>
   tombstone(id: string): Promise<LocalCanvasMeta | null>
+  /** Drop only the cached fig blob (eviction) — meta and thumb stay. */
+  clearFig(id: string): Promise<LocalCanvasMeta | null>
   remove(id: string): Promise<void>
   clearAll(): Promise<void>
 }

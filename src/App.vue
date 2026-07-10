@@ -5,10 +5,11 @@ import { useHead } from '@unhead/vue'
 import { TooltipProvider } from 'reka-ui'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
+import AppPrompts from '@/components/Shell/AppPrompts.vue'
 import AppToast from '@/components/Shell/AppToast.vue'
 import SettingsDialog from '@/components/Settings/SettingsDialog.vue'
-import { cloudActivityMessage } from '@/app/cloud/activity'
-import { kickSyncEngine, syncStatusLabel, syncUiState } from '@/app/cloud/sync'
+import { isCloudConfigured } from '@/app/cloud/credentials'
+import { kickSyncEngine } from '@/app/cloud/sync'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import { useAppTheme } from '@/app/shell/theme'
@@ -22,24 +23,12 @@ const { dialogs } = useI18n()
 provideEditor(store)
 useAppTheme()
 
-// Files home has its own full-screen upload UI — don't also show the chip.
-const showActivityChip = computed(
-  () => !!cloudActivityMessage.value && route.name !== 'home'
+// Settings lives top-right everywhere it can: the Home header hosts it, and
+// editor screens host it in their cloud top bar. The floating anchor remains
+// only for local-only editors (no cloud → no top bar).
+const settingsHostedInPage = computed(
+  () => route.name === 'home' || (isCloudConfigured.value && !('no-chrome' in route.query))
 )
-
-/** Subtle local-first sync state (never blocks the canvas). */
-const showSyncChip = computed(() => {
-  if (route.name === 'home') return false
-  if (showActivityChip.value) return false
-  return syncUiState.value === 'syncing' || syncUiState.value === 'offline' || syncUiState.value === 'error'
-})
-
-const syncChipLabel = computed(() => {
-  if (syncUiState.value === 'syncing') return dialogs.value.cloudSyncSyncing
-  if (syncUiState.value === 'offline') return dialogs.value.cloudSyncOffline
-  if (syncUiState.value === 'error') return syncStatusLabel.value ?? dialogs.value.cloudSyncError
-  return syncStatusLabel.value
-})
 
 onMounted(() => {
   toast.setupGlobalErrorHandler()
@@ -51,38 +40,19 @@ onMounted(() => {
 <template>
   <TooltipProvider :delay-duration="400">
     <RouterView />
-    <!-- Always-on settings (cloud storage, etc.) — bottom-left on every screen -->
+    <!-- Always-on settings (cloud storage, etc.) — bottom-left, unless the
+         editor top bar hosts Settings + sync status -->
+    <!-- z below dialog overlays (z-40/50) so modals dim and block it -->
     <div
-      class="pointer-events-none fixed bottom-3 left-3 z-[60] flex items-end gap-2"
+      v-if="!settingsHostedInPage"
+      class="pointer-events-none fixed bottom-3 left-3 z-[35] flex items-end gap-2"
       data-test-id="app-settings-anchor"
     >
       <div class="pointer-events-auto">
         <SettingsDialog />
       </div>
-      <div
-        v-if="showActivityChip"
-        class="pointer-events-none flex items-center gap-2 rounded-lg border border-border bg-panel px-2.5 py-1.5 text-xs text-muted shadow-sm"
-        data-test-id="cloud-activity-status"
-      >
-        <icon-lucide-cloud class="size-3.5 shrink-0 animate-pulse" />
-        <span>{{ cloudActivityMessage }}</span>
-      </div>
-      <div
-        v-else-if="showSyncChip"
-        class="pointer-events-none flex items-center gap-2 rounded-lg border border-border bg-panel px-2.5 py-1.5 text-xs text-muted shadow-sm"
-        data-test-id="cloud-sync-status"
-      >
-        <icon-lucide-cloud-off
-          v-if="syncUiState === 'offline' || syncUiState === 'error'"
-          class="size-3.5 shrink-0 opacity-80"
-        />
-        <icon-lucide-cloud-upload
-          v-else
-          class="size-3.5 shrink-0 animate-pulse opacity-80"
-        />
-        <span>{{ syncChipLabel }}</span>
-      </div>
     </div>
+    <AppPrompts />
     <AppToast />
   </TooltipProvider>
 </template>

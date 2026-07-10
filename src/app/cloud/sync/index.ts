@@ -21,3 +21,4 @@ export {
   type OutboxJobType,
   type SyncUiState
 } from '@/app/cloud/sync/types'
+export { setUploadProgress, uploadProgressByCanvas } from '@/app/cloud/sync/progress'

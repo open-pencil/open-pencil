@@ -1,5 +1,6 @@
-import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/cloud/local-store/types'
+import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/cloud/local-store/meta'
 import type { LocalCanvasStore } from '@/app/cloud/local-store/store'
+import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/cloud/local-store/types'
 
 /** In-memory store for unit tests and environments without IndexedDB. */
 export function createMemoryLocalCanvasStore(): LocalCanvasStore {
@@ -9,9 +10,7 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
 
   return {
     async listMetas(includeTombstones = false) {
-      const all = [...metas.values()]
-      const filtered = includeTombstones ? all : all.filter((m) => !m.tombstoned)
-      return filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      return sortAndFilterMetas([...metas.values()], includeTombstones)
     },
 
     async getMeta(id: string) {
@@ -29,10 +28,8 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
     },
 
     async writeCanvas(input: LocalCanvasWriteInput) {
-      const existing = metas.get(input.id)
-      const revision = input.revision ?? (existing ? existing.revision + 1 : 1)
-      const figCopy = new Uint8Array(input.figBytes)
-      figs.set(input.id, figCopy)
+      const existing = metas.get(input.id) ?? null
+      figs.set(input.id, new Uint8Array(input.figBytes))
 
       let hasThumb = existing?.hasThumb ?? false
       if (input.thumbBytes != null) {
@@ -45,38 +42,13 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
         }
       }
 
-      const meta: LocalCanvasMeta = {
-        id: input.id,
-        providerId: input.providerId,
-        name: input.name,
-        updatedAt: input.updatedAt ?? new Date().toISOString(),
-        revision,
-        syncStatus: input.syncStatus ?? 'pending',
-        lastSyncedAt: existing?.lastSyncedAt ?? null,
-        lastSyncError: input.syncStatus === 'synced' ? null : (existing?.lastSyncError ?? null),
-        tombstoned: false,
-        hasFig: true,
-        hasThumb
-      }
+      const meta = buildWriteMeta(input, existing, hasThumb)
       metas.set(input.id, meta)
       return meta
     },
 
     async upsertIndexMeta(input) {
-      const existing = metas.get(input.id)
-      const meta: LocalCanvasMeta = {
-        id: input.id,
-        providerId: input.providerId,
-        name: input.name,
-        updatedAt: input.updatedAt,
-        revision: input.revision ?? existing?.revision ?? 1,
-        syncStatus: input.syncStatus,
-        lastSyncedAt: input.lastSyncedAt,
-        lastSyncError: input.lastSyncError,
-        tombstoned: false,
-        hasFig: input.hasFig ?? existing?.hasFig ?? false,
-        hasThumb: input.hasThumb ?? existing?.hasThumb ?? false
-      }
+      const meta = buildIndexMeta(input, metas.get(input.id) ?? null)
       metas.set(input.id, meta)
       return meta
     },
@@ -85,10 +57,11 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       const existing = metas.get(id)
       if (!existing) return null
       thumbs.set(id, new Uint8Array(thumbBytes))
+      // Thumb freshness is tracked by its own outbox job — never demote the
+      // document's syncStatus here (it orphaned rows as 'pending' forever).
       const meta: LocalCanvasMeta = {
         ...existing,
-        hasThumb: true,
-        syncStatus: existing.syncStatus === 'synced' ? 'pending' : existing.syncStatus
+        hasThumb: true
       }
       metas.set(id, meta)
       return meta
@@ -113,6 +86,15 @@ export function createMemoryLocalCanvasStore(): LocalCanvasStore {
       }
       metas.set(id, next)
       return next
+    },
+
+    async clearFig(id: string) {
+      const existing = metas.get(id)
+      if (!existing) return null
+      figs.delete(id)
+      const meta: LocalCanvasMeta = { ...existing, hasFig: false, figSize: 0 }
+      metas.set(id, meta)
+      return meta
     },
 
     async remove(id: string) {

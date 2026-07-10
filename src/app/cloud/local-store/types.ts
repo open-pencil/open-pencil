@@ -17,6 +17,20 @@ export type LocalCanvasMeta = {
   tombstoned: boolean
   hasFig: boolean
   hasThumb: boolean
+  /** Size of the cached fig blob in bytes (set on write; backfilled by eviction). */
+  figSize?: number
+  /** Last time this canvas was opened on this device (LRU eviction key). */
+  lastOpenedAt?: string
+}
+
+/** Index-only row for remote canvases not yet downloaded (no fig body). */
+export type LocalCanvasIndexInput = Omit<
+  LocalCanvasMeta,
+  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision'
+> & {
+  revision?: number
+  hasFig?: boolean
+  hasThumb?: boolean
 }
 
 export type LocalCanvasWriteInput = {

@@ -28,6 +28,11 @@ export type CloudCanvas = CloudCanvasMeta & {
   thumbnailUrl?: string | null
   /** Local-first sync status when known from the device cache */
   syncStatus?: 'synced' | 'pending' | 'error' | 'conflict' | null
+  /**
+   * False when updatedAt fell back to the fig object's server timestamp
+   * (meta.json missing/unreadable) — too imprecise to trigger re-downloads.
+   */
+  metaAuthoritative?: boolean
 }
 
 export type CloudDocumentBinding = {
@@ -71,8 +76,16 @@ export interface CloudStorageAdapter {
   testConnection(): Promise<CloudConnectionTestResult>
   ensureNamespace(): Promise<void>
   listCanvases(): Promise<CloudCanvas[]>
-  getCanvas(id: string): Promise<Uint8Array>
-  putCanvas(id: string, bytes: Uint8Array, meta: CloudCanvasMeta): Promise<void>
+  getCanvas(
+    id: string,
+    onProgress?: (progress: { receivedBytes: number; totalBytes: number | null }) => void
+  ): Promise<Uint8Array>
+  putCanvas(
+    id: string,
+    bytes: Uint8Array,
+    meta: CloudCanvasMeta,
+    onProgress?: (progress: { sentBytes: number; totalBytes: number | null }) => void
+  ): Promise<void>
   deleteCanvas(id: string): Promise<void>
   /** Bytes / object counts under the OpenPencil namespace (not full account free space). */
   getStorageUsage(): Promise<CloudStorageUsage>

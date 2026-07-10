@@ -6,24 +6,22 @@ import type {
   S3CompatibleConfig
 } from '@/app/cloud/types'
 
-export const CLOUD_PROVIDERS: CloudProviderDef[] = [
-  {
-    id: 's3-compatible',
-    label: 'S3 compatible',
-    description: 'AWS S3, Backblaze B2, Cloudflare R2, MinIO, and other S3-compatible buckets'
-  }
-]
+const S3_PROVIDER: CloudProviderDef = {
+  id: 's3-compatible',
+  label: 'S3 compatible',
+  description: 'AWS S3, Backblaze B2, Cloudflare R2, MinIO, and other S3-compatible buckets'
+}
 
-export function getCloudProviderDef(id: CloudProviderId): CloudProviderDef {
-  return CLOUD_PROVIDERS.find((p) => p.id === id) ?? CLOUD_PROVIDERS[0]
+export const CLOUD_PROVIDERS: CloudProviderDef[] = [S3_PROVIDER]
+
+// S3-compatible is the only provider today; branch on id when a second one lands.
+export function getCloudProviderDef(_id: CloudProviderId): CloudProviderDef {
+  return S3_PROVIDER
 }
 
 export function createCloudAdapter(
-  providerId: CloudProviderId,
+  _providerId: CloudProviderId,
   s3Config: S3CompatibleConfig
 ): CloudStorageAdapter {
-  if (providerId === 's3-compatible') {
-    return createS3CompatibleAdapter(s3Config)
-  }
-  throw new Error(`Unknown cloud storage provider: ${providerId}`)
+  return createS3CompatibleAdapter(s3Config)
 }

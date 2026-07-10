@@ -43,7 +43,9 @@ describe('cloud S3 CORS helpers', () => {
   test('collects static web and localhost origins', () => {
     const origins = collectCloudCorsOrigins()
     expect(origins).toContain(WEB_APP_ORIGIN)
-    expect(origins).toContain('http://localhost:1420')
+    expect(origins).toContain('https://*.openpencil.dev')
+    expect(origins).toContain('http://localhost:*')
+    expect(origins).toContain('http://127.0.0.1:*')
   })
 
   test('detects typical browser CORS/network failures', () => {

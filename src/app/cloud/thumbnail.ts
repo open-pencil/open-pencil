@@ -41,8 +41,9 @@ export function extractFigThumbnailPng(figBytes: Uint8Array): Uint8Array | null 
     return null
   }
 
+  if (!('thumbnail.png' in zip)) return null
   const png = zip['thumbnail.png']
-  if (!png || png.byteLength < MIN_THUMB_BYTES) return null
+  if (png.byteLength < MIN_THUMB_BYTES) return null
   // PNG magic
   if (png[0] !== 0x89 || png[1] !== 0x50 || png[2] !== 0x4e || png[3] !== 0x47) return null
   return png
@@ -61,7 +62,14 @@ export function renderGraphThumbnailPng(source: ThumbnailRenderSource): Uint8Arr
   if (!pageId) return null
 
   try {
-    return renderThumbnail(ck, renderer, source.graph, pageId, CLOUD_THUMB_WIDTH, CLOUD_THUMB_HEIGHT)
+    return renderThumbnail(
+      ck,
+      renderer,
+      source.graph,
+      pageId,
+      CLOUD_THUMB_WIDTH,
+      CLOUD_THUMB_HEIGHT
+    )
   } catch (error) {
     console.warn('[Cloud] Graph thumbnail render failed:', error)
     return null
@@ -175,7 +183,7 @@ export async function uploadFigThumbnail(
   if (!png) return false
   try {
     const jpeg = await encodeThumbnailJpeg(png)
-    return putJpegThumbnail(adapter, canvasId, jpeg)
+    return await putJpegThumbnail(adapter, canvasId, jpeg)
   } catch (error) {
     console.warn('[Cloud] Failed to process fig thumbnail:', error)
     return false
@@ -236,7 +244,7 @@ export async function uploadCanvasThumbnail(
   if (options.allowBlankPlaceholder) {
     try {
       const blank = await renderBlankCanvasThumbnailJpeg()
-      if (blank) return putJpegThumbnail(adapter, canvasId, blank)
+      if (blank) return await putJpegThumbnail(adapter, canvasId, blank)
     } catch (error) {
       console.warn('[Cloud] Failed to create blank thumbnail:', error)
     }
@@ -246,10 +254,7 @@ export async function uploadCanvasThumbnail(
 }
 
 /** Build a blob: URL for card display; caller must revoke. */
-export function thumbnailBytesToObjectUrl(
-  bytes: Uint8Array,
-  mimeType = 'image/jpeg'
-): string {
+export function thumbnailBytesToObjectUrl(bytes: Uint8Array, mimeType = 'image/jpeg'): string {
   const copy = new Uint8Array(bytes.byteLength)
   copy.set(bytes)
   return URL.createObjectURL(new Blob([copy], { type: mimeType }))

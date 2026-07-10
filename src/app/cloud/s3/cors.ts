@@ -1,22 +1,27 @@
-import { IS_BROWSER, WEB_APP_ORIGIN } from '@/constants'
-import { isTauri } from '@/app/tauri/env'
 import { createAwsClient, normalizeEndpointForCors, S3HttpError } from '@/app/cloud/s3/client'
 import { cloudFetch } from '@/app/cloud/s3/fetch'
 import type { S3CompatibleConfig } from '@/app/cloud/types'
+import { isTauri } from '@/app/tauri/env'
+import { IS_BROWSER, WEB_APP_ORIGIN } from '@/constants'
 
 /** Origins OpenPencil may run from when calling S3 from the browser. */
 export const CLOUD_CORS_STATIC_ORIGINS = [
+  // Exact production origin — providers without partial-wildcard support
+  // (e.g. R2) need it verbatim even when CORS is configured from dev.
   WEB_APP_ORIGIN,
-  'http://localhost:1420',
-  'http://127.0.0.1:1420',
-  'http://localhost:5173',
-  'http://127.0.0.1:5173'
+  // Wildcards: any openpencil.dev subdomain (staging, demo, …) and any local
+  // dev port. S3/B2 allow one '*' per origin. collectCloudCorsOrigins() also
+  // appends the current origin, so strict providers still get an exact match
+  // for wherever the app is running when CORS is applied.
+  'https://*.openpencil.dev',
+  'http://localhost:*',
+  'http://127.0.0.1:*'
 ] as const
 
 export function collectCloudCorsOrigins(extra?: string | null): string[] {
   const set = new Set<string>(CLOUD_CORS_STATIC_ORIGINS)
   if (extra?.trim()) set.add(extra.trim().replace(/\/+$/, ''))
-  if (IS_BROWSER && window.location?.origin) {
+  if (IS_BROWSER && window.location.origin) {
     set.add(window.location.origin)
   }
   return [...set].filter(Boolean).sort()
