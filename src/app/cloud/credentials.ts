@@ -18,6 +18,7 @@ function envPrefill(name: string): string {
 
 function withEnvDefault(stored: string, envName: string): string {
   if (stored.trim()) return stored
+  if (envPrefillDisabled.value) return ''
   return envPrefill(envName)
 }
 
@@ -31,8 +32,13 @@ export const s3Bucket = useLocalStorage(`${STORAGE_PREFIX}s3:bucket`, '')
 export const s3AccessKeyId = useLocalStorage(`${STORAGE_PREFIX}s3:access-key-id`, '')
 export const s3SecretAccessKey = useLocalStorage(`${STORAGE_PREFIX}s3:secret-access-key`, '')
 
+// Without this, "clear credentials" is a no-op in dev: the env prefill would
+// immediately re-fill the empty slots and the app would stay configured.
+const envPrefillDisabled = useLocalStorage(`${STORAGE_PREFIX}s3:env-prefill-disabled`, false)
+
 /** Apply gitignored env prefill into empty localStorage slots (idempotent). */
 export function prefillCloudCredentialsFromEnv(): void {
+  if (envPrefillDisabled.value) return
   const endpoint = envPrefill('ENDPOINT')
   const bucket = envPrefill('BUCKET')
   const accessKeyId = envPrefill('ACCESS_KEY_ID')
@@ -64,6 +70,7 @@ export function isS3ConfigComplete(config: S3CompatibleConfig): boolean {
 export const isCloudConfigured = computed(() => isS3ConfigComplete(readS3Config()))
 
 export function clearS3Credentials() {
+  envPrefillDisabled.value = true
   s3Endpoint.value = ''
   s3Bucket.value = ''
   s3AccessKeyId.value = ''
@@ -75,6 +82,7 @@ export function clearS3Credentials() {
 }
 
 export function setS3Credentials(config: S3CompatibleConfig) {
+  envPrefillDisabled.value = false
   s3Endpoint.value = config.endpoint.trim()
   s3Bucket.value = config.bucket.trim()
   s3AccessKeyId.value = config.accessKeyId.trim()

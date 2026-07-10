@@ -2,7 +2,7 @@ import { tryOnScopeDispose } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import { getActiveCloudAdapter } from '@/app/cloud/active'
-import { setCloudActivity } from '@/app/cloud/activity'
+import { beginCloudActivity } from '@/app/cloud/activity'
 import { cloudConnectionError } from '@/app/cloud/health'
 import {
   deleteCloudCanvas,
@@ -146,7 +146,10 @@ export function useCloudHome() {
     await Promise.all(Array.from({ length: Math.min(concurrency, list.length) }, () => worker()))
   }
 
+  let reconcileGeneration = 0
+
   async function reconcileRemote() {
+    const generation = ++reconcileGeneration
     const adapter = getActiveCloudAdapter()
     if (!adapter) return
     const local = getLocalCanvasStore()
@@ -161,21 +164,25 @@ export function useCloudHome() {
       await reconcileRemoteEntries(adapter.id, remote, localById, queuedIds)
       await reconcileLocalMetas(localMetas, remoteIds, queuedIds)
 
+      // A newer reconcile owns the UI (and the seed decision) from here on.
+      if (generation !== reconcileGeneration) return
       syncWarning.value = null
       cloudConnectionError.value = null
 
-      // Brand-new cloud env: seed the bundled Welcome project (once per bucket)
-      const activeLocal = localMetas.filter((m) => !m.tombstoned)
-      if (await maybeSeedWelcomeProject(remote.length, activeLocal.length)) {
+      // Seed Welcome for a new bucket; recount post-reconcile (tombstones purged)
+      const activeLocalCount = (await local.listMetas()).length
+      if (await maybeSeedWelcomeProject(remote.length, activeLocalCount)) {
         void kickSyncEngine()
       }
 
       const painted = await paintFromLocal()
+      if (generation !== reconcileGeneration) return
       revokeThumbnailUrls(canvases.value)
       canvases.value = painted
       void hydrateMissingThumbs(canvases.value)
       void kickSyncEngine()
     } catch (e) {
+      if (generation !== reconcileGeneration) return
       syncWarning.value = reconcileErrorMessage(e)
       cloudConnectionError.value = syncWarning.value
     }
@@ -190,7 +197,6 @@ export function useCloudHome() {
       syncWarning.value = null
       cloudConnectionError.value = null
       phase.value = 'idle'
-      setCloudActivity(null)
       return
     }
 
@@ -198,7 +204,7 @@ export function useCloudHome() {
     error.value = null
     syncWarning.value = null
     phase.value = 'listing'
-    setCloudActivity('Loading your files…')
+    const activity = beginCloudActivity('Loading your files…')
 
     try {
       // Instant local paint
@@ -207,7 +213,6 @@ export function useCloudHome() {
       canvases.value = localList
       phase.value = 'done'
       loading.value = false
-      setCloudActivity(null)
       void hydrateMissingThumbs(canvases.value)
 
       // Background remote reconcile
@@ -218,7 +223,8 @@ export function useCloudHome() {
       phase.value = 'error'
       error.value = e instanceof Error ? e.message : String(e)
       loading.value = false
-      setCloudActivity(null)
+    } finally {
+      activity.end()
     }
   }
 

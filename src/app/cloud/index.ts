@@ -12,7 +12,7 @@ export {
   setS3Credentials
 } from '@/app/cloud/credentials'
 export { inferS3Region } from '@/app/cloud/s3/region'
-export { cloudActivityMessage, setCloudActivity, withCloudActivity } from '@/app/cloud/activity'
+export { beginCloudActivity, cloudActivityMessage, withCloudActivity } from '@/app/cloud/activity'
 export { getActiveCloudAdapter, requireActiveCloudAdapter } from '@/app/cloud/active'
 export { createCanvasId } from '@/app/cloud/id'
 export { nextUniqueCloudName } from '@/app/cloud/unique-name'

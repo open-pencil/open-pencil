@@ -127,6 +127,7 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
     renderComponentSet: mock(() => undefined),
     renderEffects: mock((...args) => renderEffects(overrides as SkiaRenderer, ...args)),
     drawNodeFill: mock(() => undefined),
+    drawVectorMultiStyleFills: mock(() => false),
     drawNodeStroke: mock(() => undefined),
     drawStrokeWithAlign: mock(() => undefined),
     resolveStrokeColor: mock(() => ({ r: 0, g: 0, b: 0, a: 1 })),

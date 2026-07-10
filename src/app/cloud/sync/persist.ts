@@ -1,6 +1,6 @@
 import type { Editor } from '@open-pencil/core/editor'
 
-import { setCloudActivity } from '@/app/cloud/activity'
+import { beginCloudActivity } from '@/app/cloud/activity'
 import { getLocalCanvasStore } from '@/app/cloud/local-store'
 import { enqueuePutCanvas, enqueuePutThumb, kickSyncEngine } from '@/app/cloud/sync/engine'
 import {
@@ -26,7 +26,7 @@ export async function persistCloudCanvasLocally(options: {
   activityMessage?: string | null
 }): Promise<{ revision: number }> {
   const store = getLocalCanvasStore()
-  if (options.activityMessage) setCloudActivity(options.activityMessage)
+  const activity = options.activityMessage ? beginCloudActivity(options.activityMessage) : null
 
   try {
     const meta = await store.writeCanvas({
@@ -49,7 +49,7 @@ export async function persistCloudCanvasLocally(options: {
 
     return { revision: meta.revision }
   } finally {
-    if (options.activityMessage) setCloudActivity(null)
+    activity?.end()
   }
 }
 

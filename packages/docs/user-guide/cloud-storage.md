@@ -30,9 +30,9 @@ In Backblaze B2 / AWS / R2:
 
 ### 2. Enter credentials and test (auto CORS)
 
-1. Open OpenPencil → AI chat → gear → **Cloud storage**.
+1. Open OpenPencil → **Settings** (top right) → **Cloud storage** tab.
 2. Fill **Endpoint**, **Region**, **Bucket**, **Access key ID**, **Secret**.
-3. Click **Test connection (auto-apply CORS)**.
+3. Click **Test connection** (it auto-applies CORS where permissions allow).
 
 The app runs the same **PutBucketCors** operation as the AWS CLI:
 
@@ -58,10 +58,10 @@ Example Backblaze fields:
 
 ## Desktop (optional later)
 
-| | Web browser | Desktop (Tauri) |
-|---|---|---|
-| Network | Browser `fetch` (**CORS required**) | App HTTP bridge (no browser CORS) |
-| Setup | Copy CORS JSON once, then Test connection | Test connection can apply CORS for web |
+|         | Web browser                               | Desktop (Tauri)                        |
+| ------- | ----------------------------------------- | -------------------------------------- |
+| Network | Browser `fetch` (**CORS required**)       | App HTTP bridge (no browser CORS)      |
+| Setup   | Copy CORS JSON once, then Test connection | Test connection can apply CORS for web |
 
 ## Browser CORS details
 
@@ -101,6 +101,6 @@ If Test connection in the browser fails with a network/CORS message, apply CORS 
 
 ## Security
 
-- Keys stay in **localStorage** on this device (same pattern as AI API keys). Do not commit them.
+- Keys stay in **localStorage** on this device (same pattern as AI API keys). localStorage is readable by any script running on this origin — treat it as convenience storage, not a secure vault. Do not commit keys.
 - Prefer a key scoped to one bucket with read/write only.
 - Desktop does not need public buckets; objects stay private with signed requests.

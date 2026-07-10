@@ -87,6 +87,8 @@ export interface CloudStorageAdapter {
     onProgress?: (progress: { sentBytes: number; totalBytes: number | null }) => void
   ): Promise<void>
   deleteCanvas(id: string): Promise<void>
+  /** Single-canvas metadata without listing the whole namespace (null when absent). */
+  getCanvasMeta?(id: string): Promise<CloudCanvasMeta | null>
   /** Bytes / object counts under the OpenPencil namespace (not full account free space). */
   getStorageUsage(): Promise<CloudStorageUsage>
   putThumbnail?(id: string, jpegBytes: Uint8Array): Promise<void>

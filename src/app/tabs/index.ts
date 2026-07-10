@@ -7,7 +7,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { requireActiveCloudAdapter } from '@/app/cloud/active'
-import { setCloudActivity } from '@/app/cloud/activity'
+import { beginCloudActivity, type CloudActivityScope } from '@/app/cloud/activity'
 import { isCloudConfigured } from '@/app/cloud/credentials'
 import { formatCloudBytes } from '@/app/cloud/format-bytes'
 import { createCanvasId } from '@/app/cloud/id'
@@ -265,18 +265,16 @@ export async function refreshCloudThumbnail(canvasId: string, store: EditorStore
   }
 }
 
-function createDownloadActivityReporter() {
+function createDownloadActivityReporter(activity: CloudActivityScope) {
   let lastShownPercent = -1
   return ({ receivedBytes, totalBytes }: { receivedBytes: number; totalBytes: number | null }) => {
     if (totalBytes) {
       const percent = Math.floor((receivedBytes / totalBytes) * 100)
       if (percent === lastShownPercent) return
       lastShownPercent = percent
-      setCloudActivity(
-        `Downloading file from cloud… ${percent}% of ${formatCloudBytes(totalBytes)}`
-      )
+      activity.update(`Downloading file from cloud… ${percent}% of ${formatCloudBytes(totalBytes)}`)
     } else {
-      setCloudActivity(`Downloading file from cloud… ${formatCloudBytes(receivedBytes)}`)
+      activity.update(`Downloading file from cloud… ${formatCloudBytes(receivedBytes)}`)
     }
   }
 }
@@ -304,13 +302,18 @@ async function downloadAndSeedCanvas(
   canvasId: string,
   fallbackName: string
 ): Promise<{ bytes: Uint8Array; name: string }> {
-  setCloudActivity('Downloading file from cloud…')
-  const bytes = await adapter.getCanvas(canvasId, createDownloadActivityReporter())
+  const activity = beginCloudActivity('Downloading file from cloud…')
+  let bytes: Uint8Array
+  try {
+    bytes = await adapter.getCanvas(canvasId, createDownloadActivityReporter(activity))
+  } finally {
+    activity.end()
+  }
   let name = fallbackName
   try {
-    const listed = await adapter.listCanvases()
-    const match = listed.find((c) => c.id === canvasId)
-    if (match?.name) name = match.name
+    // Single-canvas lookup — listing the whole namespace just for one name is wasteful.
+    const meta = (await adapter.getCanvasMeta?.(canvasId)) ?? null
+    if (meta?.name) name = meta.name
     let thumb: Uint8Array | null = null
     try {
       thumb = (await adapter.getThumbnail?.(canvasId)) ?? null
@@ -321,7 +324,7 @@ async function downloadAndSeedCanvas(
       providerId: adapter.id,
       canvasId,
       name,
-      updatedAt: match?.updatedAt ?? new Date().toISOString(),
+      updatedAt: meta?.updatedAt ?? new Date().toISOString(),
       figBytes: bytes,
       thumbBytes: thumb,
       markSynced: true
@@ -337,7 +340,7 @@ export async function openCloudCanvasInTab(canvasId: string): Promise<void> {
   const adapter = requireActiveCloudAdapter()
   const store = pickStoreForOpen()
   store.state.loading = true
-  setCloudActivity('Opening file…')
+  const activity = beginCloudActivity('Opening file…')
   await yieldToUI()
 
   try {
@@ -354,7 +357,6 @@ export async function openCloudCanvasInTab(canvasId: string): Promise<void> {
       name = downloaded.name
     }
 
-    setCloudActivity('Opening file…')
     const file = new File([new Uint8Array(bytes)], `${canvasId}.fig`, {
       type: 'application/octet-stream'
     })
@@ -379,7 +381,7 @@ export async function openCloudCanvasInTab(canvasId: string): Promise<void> {
     throw error
   } finally {
     store.state.loading = false
-    setCloudActivity(null)
+    activity.end()
   }
 }
 
@@ -439,6 +441,7 @@ export async function importLocalFilesToCloud(
   const ids: string[] = []
   const total = importable.length
   const takenNames = new Set(await collectTakenCloudNames(adapter))
+  const activity = beginCloudActivity('Importing files…')
 
   async function report(progress: CloudImportProgress) {
     onProgress?.(progress)
@@ -446,7 +449,7 @@ export async function importLocalFilesToCloud(
     let phaseLabel = 'Saving'
     if (progress.phase === 'converting') phaseLabel = 'Converting'
     else if (progress.phase === 'reading') phaseLabel = 'Reading'
-    setCloudActivity(`${label}${phaseLabel} ${progress.fileName}…`)
+    activity.update(`${label}${phaseLabel} ${progress.fileName}…`)
     await yieldToUI()
     await yieldToUI()
   }
@@ -503,7 +506,7 @@ export async function importLocalFilesToCloud(
     toast.error(`Import failed: ${error instanceof Error ? error.message : String(error)}`)
     throw error
   } finally {
-    setCloudActivity(null)
+    activity.end()
   }
 }
 
@@ -520,7 +523,7 @@ export async function createCloudCanvasInTab(name = 'Untitled'): Promise<string>
   const canvasId = createCanvasId()
   const uniqueName = nextUniqueCloudName(name, await collectTakenCloudNames(adapter))
   store.state.loading = true
-  setCloudActivity('Creating fig…')
+  const activity = beginCloudActivity('Creating fig…')
   await yieldToUI()
 
   try {
@@ -551,7 +554,7 @@ export async function createCloudCanvasInTab(name = 'Untitled'): Promise<string>
     throw error
   } finally {
     store.state.loading = false
-    setCloudActivity(null)
+    activity.end()
   }
 }
 

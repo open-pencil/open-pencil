@@ -137,7 +137,11 @@ export function createS3CompatibleAdapter(config: S3CompatibleConfig): CloudStor
             name: id,
             updatedAt: lastModified ?? new Date(0).toISOString()
           }
-          const metaBytes = await getObject(config, canvasMetaKey(id))
+          // One failed meta fetch must not hide the whole workspace — degrade to fallback.
+          const metaBytes = await getObject(config, canvasMetaKey(id)).catch((error: unknown) => {
+            console.warn('[Cloud] canvas meta fetch failed, using fallback:', id, error)
+            return null
+          })
           // Server LastModified is not comparable with meta.json timestamps —
           // callers must not use a fallback updatedAt to force re-downloads.
           const { meta, authoritative } = parseMeta(metaBytes, fallback)
@@ -164,10 +168,26 @@ export function createS3CompatibleAdapter(config: S3CompatibleConfig): CloudStor
       await putObject(config, canvasMetaKey(id), body, 'application/json')
     },
 
+    async getCanvasMeta(id: string) {
+      const metaBytes = await getObject(config, canvasMetaKey(id))
+      if (!metaBytes) return null
+      const { meta, authoritative } = parseMeta(metaBytes, {
+        name: id,
+        updatedAt: new Date(0).toISOString()
+      })
+      return authoritative ? meta : null
+    },
+
     async deleteCanvas(id: string) {
-      await deleteObject(config, canvasFigKey(id))
-      await deleteObject(config, canvasMetaKey(id))
-      await deleteObject(config, canvasThumbKey(id))
+      // Attempt all three so a transient failure can't strand meta/thumb orphans;
+      // deletes are idempotent and the outbox retries on the rethrown failure.
+      const results = await Promise.allSettled([
+        deleteObject(config, canvasFigKey(id)),
+        deleteObject(config, canvasMetaKey(id)),
+        deleteObject(config, canvasThumbKey(id))
+      ])
+      const failed = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
+      if (failed) throw failed.reason
     },
 
     async getStorageUsage() {

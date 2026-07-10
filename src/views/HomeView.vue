@@ -490,11 +490,16 @@ async function onDrop(e: DragEvent) {
         <li v-for="canvas in canvases" :key="canvas.id">
           <ContextMenuRoot :modal="false">
             <ContextMenuTrigger as-child>
-              <button
-                type="button"
-                class="group flex w-full flex-col overflow-hidden rounded-lg border border-border bg-panel text-left transition hover:border-accent/50 hover:shadow-sm"
+              <!-- role=button div (not <button>): the card contains real action
+                   buttons, and interactive descendants inside <button> are invalid -->
+              <div
+                role="button"
+                tabindex="0"
+                class="group flex w-full cursor-pointer flex-col overflow-hidden rounded-lg border border-border bg-panel text-left transition hover:border-accent/50 hover:shadow-sm"
                 :data-test-id="`cloud-canvas-card-${canvas.id}`"
                 @click="onOpenCanvas(canvas.id)"
+                @keydown.enter.self.prevent="onOpenCanvas(canvas.id)"
+                @keydown.space.self.prevent="onOpenCanvas(canvas.id)"
               >
                 <div
                   class="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-[#2c2c2c] text-2xl text-muted"
@@ -528,27 +533,25 @@ async function onDrop(e: DragEvent) {
                   <!-- pointer-events gated with visibility: while invisible this row
                    must not be an invisible click-trap over the card button -->
                   <div
-                    class="pointer-events-none mt-1 flex gap-2 opacity-0 transition group-hover:pointer-events-auto group-hover:opacity-100"
+                    class="pointer-events-none mt-1 flex gap-2 opacity-0 transition group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
                   >
-                    <span
+                    <button
+                      type="button"
                       class="text-[10px] text-muted hover:text-surface"
-                      role="button"
-                      tabindex="0"
                       @click.stop="onRename(canvas.id, canvas.name)"
                     >
                       {{ dialogs.renameCanvas }}
-                    </span>
-                    <span
+                    </button>
+                    <button
+                      type="button"
                       class="text-[10px] text-red-400 hover:text-red-300"
-                      role="button"
-                      tabindex="0"
                       @click.stop="onDelete(canvas.id, canvas.name)"
                     >
                       {{ dialogs.deleteCanvas }}
-                    </span>
+                    </button>
                   </div>
                 </div>
-              </button>
+              </div>
             </ContextMenuTrigger>
             <ContextMenuPortal>
               <ContextMenuContent

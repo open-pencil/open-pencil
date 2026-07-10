@@ -99,14 +99,16 @@ export function createIdbOutbox(): Outbox {
 
     async enqueue(partial) {
       const job = buildJob(partial)
-      const existing = await this.list()
-      const next = withJobQueued(existing, job)
-      const removeIds = existing.filter((j) => !next.some((n) => n.id === j.id)).map((j) => j.id)
-
+      // Read and write in ONE transaction so concurrent enqueues can't compute
+      // supersession from the same stale snapshot (duplicate/stale jobs).
       const database = await db()
       const tx = database.transaction(STORE, 'readwrite')
       const store = tx.objectStore(STORE)
-      for (const id of removeIds) store.delete(id)
+      const existing = (await reqToPromise(store.getAll())) as OutboxJob[]
+      const next = withJobQueued(existing, job)
+      for (const j of existing) {
+        if (!next.some((n) => n.id === j.id)) store.delete(j.id)
+      }
       store.put(job)
       await txDone(tx)
       return job

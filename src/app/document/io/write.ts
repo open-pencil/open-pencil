@@ -1,7 +1,7 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 
 import { getActiveCloudAdapter } from '@/app/cloud/active'
-import { setCloudActivity } from '@/app/cloud/activity'
+import { beginCloudActivity } from '@/app/cloud/activity'
 import { persistCloudCanvasLocally } from '@/app/cloud/sync/persist'
 import type { CloudDocumentBinding } from '@/app/cloud/types'
 import { isTauri } from '@/app/tauri/env'
@@ -37,7 +37,7 @@ export function createDocumentWriter({
         throw new Error('Cloud storage is not configured for this document')
       }
       // Local-first: durable on device immediately; S3 catches up via outbox.
-      setCloudActivity('Saving…')
+      const activity = beginCloudActivity('Saving…')
       try {
         const editor = getEditor?.() ?? null
         await persistCloudCanvasLocally({
@@ -50,7 +50,7 @@ export function createDocumentWriter({
         })
         setSavedVersion(state.sceneVersion)
       } finally {
-        setCloudActivity(null)
+        activity.end()
       }
       return
     }
