@@ -1,3 +1,4 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
@@ -6,6 +7,15 @@ import { fontManager } from '#core/text/fonts'
 
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
+
+/** Page background persisted as the fig canvas backgroundColor (raw passthrough). */
+function readPageBackgroundColor(page: SceneNode | null | undefined): Color | null {
+  const raw = page?.source.fig.rawNodeFields['backgroundColor'] as Partial<Color> | undefined
+  if (!raw || typeof raw.r !== 'number' || typeof raw.g !== 'number' || typeof raw.b !== 'number') {
+    return null
+  }
+  return { r: raw.r, g: raw.g, b: raw.b, a: typeof raw.a === 'number' ? raw.a : 1 }
+}
 
 export function createPageActions(ctx: EditorContext) {
   const pageViewportStore = createPageViewportStore(ctx)
@@ -23,6 +33,11 @@ export function createPageActions(ctx: EditorContext) {
     if (previousPageId !== pageId) ctx.emitEditorEvent('page:changed', pageId, previousPageId)
 
     pageViewportStore.restorePageViewport(pageId)
+
+    // The document's stored page color wins over the session default so a
+    // reopened file keeps the color the user chose (fixes revert to #F5F5F5)
+    const storedColor = readPageBackgroundColor(page)
+    if (storedColor) ctx.state.pageColor = storedColor
 
     const populated = populateLazyFigImportRoots(ctx.graph, [pageId])
 
@@ -77,6 +92,20 @@ export function createPageActions(ctx: EditorContext) {
 
   function setPageColor(color: Color) {
     ctx.state.pageColor = color
+    // Persist on the page node — backgroundColor is part of the .fig canvas
+    // payload, so the color survives save/reload and round-trips to Figma.
+    const page = ctx.graph.getNode(ctx.state.currentPageId)
+    if (page) {
+      ctx.graph.updateNode(page.id, {
+        source: {
+          ...page.source,
+          fig: {
+            ...page.source.fig,
+            rawNodeFields: { ...page.source.fig.rawNodeFields, backgroundColor: { ...color } }
+          }
+        }
+      })
+    }
     ctx.requestRender()
   }
 
