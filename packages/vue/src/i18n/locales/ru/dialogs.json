@@ -199,5 +199,15 @@
   "cloudSyncPending": "Синхронизация",
   "cloudSyncError": "Ошибка синхронизации",
   "cloudSyncConflict": "Конфликт",
-  "openAISettings": "Открыть настройки ИИ"
+  "openAISettings": "Открыть настройки ИИ",
+  "vectorizeProvider": "Векторизация изображения",
+  "recraftAPIKey": "Recraft API Key",
+  "falAPIKey": "fal API Key",
+  "getRecraftAPIKey": "Get Recraft API key →",
+  "getFalAPIKey": "Get fal API key →",
+  "vectorizeKeyOptional": "Требуется для «Преобразовать в вектор»",
+  "vectorizeMissingKeyPrefix": "Введите API-ключ для модели «изображение в вектор». ",
+  "vectorizeMissingKeyLink": "Нажмите здесь",
+  "vectorizeKeySaved": "Ключ {provider} сохранён",
+  "settingsTabVectorize": "Изображение в вектор"
 }

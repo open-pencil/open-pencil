@@ -52,5 +52,6 @@
   "arrangeAlignRight": "右揃え",
   "arrangeAlignTop": "上揃え",
   "arrangeAlignMiddle": "上下中央揃え",
-  "arrangeAlignBottom": "下揃え"
+  "arrangeAlignBottom": "下揃え",
+  "convertToVector": "ベクターに変換"
 }

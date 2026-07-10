@@ -199,5 +199,15 @@
   "cloudSyncPending": "同期中",
   "cloudSyncError": "同期に失敗しました",
   "cloudSyncConflict": "競合",
-  "openAISettings": "AI 設定を開く"
+  "openAISettings": "AI 設定を開く",
+  "vectorizeProvider": "画像のベクター化",
+  "recraftAPIKey": "Recraft API キー",
+  "falAPIKey": "fal API キー",
+  "getRecraftAPIKey": "Recraft API キーを取得 →",
+  "getFalAPIKey": "fal API キーを取得 →",
+  "vectorizeKeyOptional": "「ベクターに変換」に必要",
+  "vectorizeMissingKeyPrefix": "画像からベクターへのモデルの API キーを入力してください。",
+  "vectorizeMissingKeyLink": "ここをクリック",
+  "vectorizeKeySaved": "{provider} キーを保存しました",
+  "settingsTabVectorize": "画像をベクターに"
 }

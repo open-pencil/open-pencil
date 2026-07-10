@@ -6,12 +6,18 @@ import type { ToastVariant } from '@/components/ui/toast'
 
 export type { ToastVariant } from '@/components/ui/toast'
 
+export interface ToastAction {
+  label: string
+  onClick: () => void
+}
+
 export interface Toast {
   id: number
   message: string
   variant: ToastVariant
   /** Number of times this message has been raised since it appeared. */
   count: number
+  action?: ToastAction
 }
 
 const TOAST_DURATION = 3000
@@ -26,33 +32,40 @@ const toasts = ref<Toast[]>([])
 let nextId = 0
 let errorHandlersInitialized = false
 
-function push(message: string, variant: ToastVariant) {
+function push(message: string, variant: ToastVariant, action?: ToastAction) {
   // Dedupe: if the same message+variant is already visible, increment
   // its repeat count instead of stacking a duplicate. Prevents the
   // cascade-on-every-frame failure mode where a single unhealthy
   // event source floods the viewport.
-  const existing = toasts.value.find((t) => t.message === message && t.variant === variant)
+  const actionLabel = action?.label ?? null
+  const existing = toasts.value.find(
+    (t) =>
+      t.message === message && t.variant === variant && (t.action?.label ?? null) === actionLabel
+  )
   if (existing) {
     existing.count += 1
     existing.id = ++nextId
-    return
+    if (action) existing.action = action
+    return existing.id
   }
-  toasts.value.push({ id: ++nextId, message, variant, count: 1 })
+  const id = ++nextId
+  toasts.value.push({ id, message, variant, count: 1, action })
   if (toasts.value.length > TOAST_STACK_LIMIT) {
     toasts.value.splice(0, toasts.value.length - TOAST_STACK_LIMIT)
   }
+  return id
 }
 
-function info(message: string) {
-  push(message, 'default')
+function info(message: string): number {
+  return push(message, 'default')
 }
 
-function warning(message: string) {
-  push(message, 'warning')
+function warning(message: string, action?: ToastAction) {
+  push(message, 'warning', action)
 }
 
-function error(message: string) {
-  push(message, 'error')
+function error(message: string, action?: ToastAction) {
+  push(message, 'error', action)
 }
 
 function remove(id: number) {

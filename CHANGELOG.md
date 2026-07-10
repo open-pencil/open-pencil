@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Added
+
+- Convert selected raster images to editable vectors via **Convert to Vector** in the canvas context menu (Recraft or fal API key in AI provider settings).
+
+### Fixes
+
+- Image vectorization now maps Recraft SVG `viewBox` coordinates correctly (avoids oversized paths) and tightens the result frame to actual path bounds instead of the full bitmap rectangle.
+- Each vectorized path is sized to its own geometry so selecting one star (or other shape) no longer shows the full image bounding box.
+- Vectorized curves keep smooth bezier handles when scaling Recraft SVG viewBox coordinates into the image bounds.
+
 ### Changed
 
 - Add the optional **Cloud Workspace**: bring-your-own-key sync to any S3-compatible bucket (AWS, Backblaze B2, R2, MinIO, …). Credentials live in the revamped tabbed Settings; files are stored under a shared-bucket namespace `open_pencil_storage/`, and a workspace home with live thumbnails opens when configured. Local-only mode is unchanged when cloud is not set up. Desktop **Test connection** applies web-friendly bucket CORS; the web UI can copy a CORS JSON for the console when the browser is blocked.

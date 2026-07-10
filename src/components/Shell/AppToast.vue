@@ -40,7 +40,22 @@ function toastClass(tone: ToastVariant) {
       <icon-lucide-check v-if="t.variant === 'default'" class="mt-0.5 size-3 shrink-0" />
       <icon-lucide-triangle-alert v-else class="mt-0.5 size-3 shrink-0" />
       <ToastDescription class="min-w-0 flex-1 select-text">
-        {{ t.message }}<span v-if="t.count > 1" class="ml-1.5 opacity-70">×{{ t.count }}</span>
+        <span>{{ t.message }}</span>
+        <button
+          v-if="t.action"
+          type="button"
+          data-test-id="toast-action"
+          class="cursor-pointer underline decoration-white/70 underline-offset-2 hover:decoration-white"
+          @click="
+            () => {
+              t.action?.onClick()
+              toast.remove(t.id)
+            }
+          "
+        >
+          {{ t.action.label }}
+        </button>
+        <span v-if="t.count > 1" class="ml-1.5 opacity-70">×{{ t.count }}</span>
       </ToastDescription>
       <Tip
         v-if="t.variant !== 'default'"

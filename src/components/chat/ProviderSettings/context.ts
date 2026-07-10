@@ -1,11 +1,16 @@
+import { watchDebounced } from '@vueuse/core'
 import { computed, inject, provide, proxyRefs, ref, watch } from 'vue'
 import type { InjectionKey, ShallowUnwrapRef } from 'vue'
+
+import { dialogMessages } from '@open-pencil/vue'
 
 import {
   testProviderConnection,
   type ProviderConnectionTestFailureReason
 } from '@/app/ai/chat/connection-test'
+import { vectorizeProviderLabel, type VectorizeProviderId } from '@/app/ai/chat/storage'
 import { useAIChat } from '@/app/ai/chat/use'
+import { toast } from '@/app/shell/ui'
 
 function createProviderSettingsContext() {
   const {
@@ -19,18 +24,25 @@ function createProviderSettingsContext() {
     customAPIType,
     maxOutputTokens,
     pexelsApiKey,
-    unsplashAccessKey
+    unsplashAccessKey,
+    vectorizeProvider,
+    recraftApiKey,
+    falApiKey
   } = useAIChat()
 
   const isACP = computed(() => providerID.value.startsWith('acp:'))
   const keyInput = ref('')
   const pexelsKeyInput = ref('')
   const unsplashKeyInput = ref('')
+  const recraftKeyInput = ref('')
+  const falKeyInput = ref('')
   const baseURLInput = ref(customBaseURL.value)
   const customModelInput = ref(customModelID.value)
   const hasExistingKey = ref(!!apiKey.value)
   const hasExistingPexelsKey = ref(!!pexelsApiKey.value)
   const hasExistingUnsplashKey = ref(!!unsplashAccessKey.value)
+  const hasExistingRecraftKey = ref(!!recraftApiKey.value)
+  const hasExistingFalKey = ref(!!falApiKey.value)
   const connectionTestStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
   const connectionTestReason = ref<ProviderConnectionTestFailureReason | null>(null)
 
@@ -58,6 +70,42 @@ function createProviderSettingsContext() {
 
   watch([keyInput, baseURLInput, customModelInput, customAPIType], resetConnectionTest)
 
+  watch(recraftApiKey, (value) => {
+    hasExistingRecraftKey.value = !!value
+  })
+
+  watch(falApiKey, (value) => {
+    hasExistingFalKey.value = !!value
+  })
+
+  function notifyVectorizeKeySaved(provider: VectorizeProviderId) {
+    const dialogs = dialogMessages.get()
+    toast.info(dialogs.vectorizeKeySaved({ provider: vectorizeProviderLabel(provider) }))
+  }
+
+  function persistRecraftKey(notify: boolean): boolean {
+    const trimmed = recraftKeyInput.value.trim()
+    if (!trimmed) return false
+    const changed = trimmed !== recraftApiKey.value
+    recraftApiKey.value = trimmed
+    hasExistingRecraftKey.value = true
+    if (notify && changed) notifyVectorizeKeySaved('recraft')
+    return changed
+  }
+
+  function persistFalKey(notify: boolean): boolean {
+    const trimmed = falKeyInput.value.trim()
+    if (!trimmed) return false
+    const changed = trimmed !== falApiKey.value
+    falApiKey.value = trimmed
+    hasExistingFalKey.value = true
+    if (notify && changed) notifyVectorizeKeySaved('fal')
+    return changed
+  }
+
+  watchDebounced(recraftKeyInput, () => persistRecraftKey(true), { debounce: 800 })
+  watchDebounced(falKeyInput, () => persistFalKey(true), { debounce: 800 })
+
   function save() {
     if (keyInput.value.trim()) {
       setAPIKey(keyInput.value.trim())
@@ -74,6 +122,8 @@ function createProviderSettingsContext() {
       hasExistingUnsplashKey.value = true
       unsplashKeyInput.value = ''
     }
+    if (persistRecraftKey(true)) recraftKeyInput.value = ''
+    if (persistFalKey(true)) falKeyInput.value = ''
     if (providerDef.value.supportsCustomBaseURL) {
       customBaseURL.value = baseURLInput.value.trim()
     }
@@ -98,6 +148,18 @@ function createProviderSettingsContext() {
     unsplashAccessKey.value = ''
     unsplashKeyInput.value = ''
     hasExistingUnsplashKey.value = false
+  }
+
+  function clearRecraftKey() {
+    recraftApiKey.value = ''
+    recraftKeyInput.value = ''
+    hasExistingRecraftKey.value = false
+  }
+
+  function clearFalKey() {
+    falApiKey.value = ''
+    falKeyInput.value = ''
+    hasExistingFalKey.value = false
   }
 
   function setCustomAPIType(value: string) {
@@ -144,15 +206,22 @@ function createProviderSettingsContext() {
     maxOutputTokens,
     pexelsApiKey,
     unsplashAccessKey,
+    vectorizeProvider,
+    recraftApiKey,
+    falApiKey,
     isACP,
     keyInput,
     pexelsKeyInput,
     unsplashKeyInput,
+    recraftKeyInput,
+    falKeyInput,
     baseURLInput,
     customModelInput,
     hasExistingKey,
     hasExistingPexelsKey,
     hasExistingUnsplashKey,
+    hasExistingRecraftKey,
+    hasExistingFalKey,
     connectionTestStatus,
     connectionTestReason,
     canTestConnection,
@@ -160,8 +229,14 @@ function createProviderSettingsContext() {
     clearKey,
     clearPexelsKey,
     clearUnsplashKey,
+    clearRecraftKey,
+    clearFalKey,
     setCustomAPIType,
-    testConnection
+    testConnection,
+    saveVectorizeKeys: () => {
+      persistRecraftKey(true)
+      persistFalKey(true)
+    }
   }
 }
 

@@ -171,6 +171,7 @@
     "@open-pencil/pen": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*",
     "@tauri-apps/api": "^2",
+    "@xmldom/xmldom": "^0.9.10",
     "acorn": "^8.16.0",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",

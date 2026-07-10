@@ -199,5 +199,15 @@
   "cloudSyncPending": "同步中",
   "cloudSyncError": "同步失败",
   "cloudSyncConflict": "冲突",
-  "openAISettings": "打开 AI 设置"
+  "openAISettings": "打开 AI 设置",
+  "vectorizeProvider": "图像矢量化",
+  "recraftAPIKey": "Recraft API Key",
+  "falAPIKey": "fal API Key",
+  "getRecraftAPIKey": "Get Recraft API key →",
+  "getFalAPIKey": "Get fal API key →",
+  "vectorizeKeyOptional": "“转换为矢量”需要此项",
+  "vectorizeMissingKeyPrefix": "输入图像转矢量模型的 API 密钥。",
+  "vectorizeMissingKeyLink": "点击此处",
+  "vectorizeKeySaved": "已保存 {provider} 密钥",
+  "settingsTabVectorize": "图像转矢量"
 }

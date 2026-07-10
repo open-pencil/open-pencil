@@ -17,7 +17,7 @@ const { dialogs } = useI18n()
     kind="api"
     :placeholder="ctx.hasExistingKey ? dialogs.keySavedReplace : ctx.providerDef.keyPlaceholder"
     :key-url="ctx.providerDef.keyURL"
-    :key-url-label="dialogs.getAPIKeyGeneric"
+    :key-url-label="dialogs.getAPIKey({ provider: ctx.providerDef.name })"
     @clear="ctx.clearKey"
     @change="ctx.save"
   />

@@ -199,5 +199,15 @@
   "cloudSyncPending": "Synchronisation",
   "cloudSyncError": "Échec de la synchronisation",
   "cloudSyncConflict": "Conflit",
-  "openAISettings": "Ouvrir les réglages IA"
+  "openAISettings": "Ouvrir les réglages IA",
+  "vectorizeProvider": "Vectorisation d'image",
+  "recraftAPIKey": "Recraft API Key",
+  "falAPIKey": "fal API Key",
+  "getRecraftAPIKey": "Get Recraft API key →",
+  "getFalAPIKey": "Get fal API key →",
+  "vectorizeKeyOptional": "Requis pour Convertir en vecteur",
+  "vectorizeMissingKeyPrefix": "Saisissez une clé API pour le modèle image vers vecteur. ",
+  "vectorizeMissingKeyLink": "Cliquez ici",
+  "vectorizeKeySaved": "Clé {provider} enregistrée",
+  "settingsTabVectorize": "Image en vecteur"
 }

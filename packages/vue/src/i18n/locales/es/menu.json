@@ -52,5 +52,6 @@
   "arrangeAlignRight": "Alinear a la derecha",
   "arrangeAlignTop": "Alinear arriba",
   "arrangeAlignMiddle": "Alinear centro verticalmente",
-  "arrangeAlignBottom": "Alinear abajo"
+  "arrangeAlignBottom": "Alinear abajo",
+  "convertToVector": "Convertir a vector"
 }

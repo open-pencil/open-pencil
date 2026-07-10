@@ -18,6 +18,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import CloudStorageSection from '@/components/chat/ProviderSettings/CloudStorageSection.vue'
 import SettingsAiPanel from '@/components/Settings/SettingsAiPanel.vue'
+import SettingsVectorizePanel from '@/components/Settings/SettingsVectorizePanel.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 import Tip from '@/components/ui/Tip.vue'
 import { cloudConnectionError } from '@/app/cloud/health'
@@ -32,10 +33,12 @@ const cls = useDialogUI({
 })
 const cloudStorageSection = ref<{ saveCloud: () => void } | null>(null)
 const aiPanel = ref<{ save: () => void } | null>(null)
+const vectorizePanel = ref<{ save: () => void } | null>(null)
 
 function saveAll() {
   cloudStorageSection.value?.saveCloud()
   aiPanel.value?.save()
+  vectorizePanel.value?.save()
 }
 
 function onOpenChange(value: boolean) {
@@ -129,6 +132,14 @@ const tabClass =
                 <icon-lucide-sparkles class="size-3.5 shrink-0" />
                 {{ dialogs.settingsTabAI }}
               </TabsTrigger>
+              <TabsTrigger
+                value="vectorize"
+                :class="tabClass"
+                data-test-id="settings-tab-vectorize"
+              >
+                <icon-lucide-pen-tool class="size-3.5 shrink-0" />
+                {{ dialogs.settingsTabVectorize }}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -138,6 +149,9 @@ const tabClass =
             </TabsContent>
             <TabsContent value="ai" class="mt-0 outline-none data-[state=inactive]:hidden">
               <SettingsAiPanel ref="aiPanel" />
+            </TabsContent>
+            <TabsContent value="vectorize" class="mt-0 outline-none data-[state=inactive]:hidden">
+              <SettingsVectorizePanel ref="vectorizePanel" />
             </TabsContent>
           </div>
         </TabsRoot>

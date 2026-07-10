@@ -11,7 +11,7 @@ const { label, modelValue, saved, kind, placeholder, keyUrl, keyUrlLabel } = def
   label: string
   modelValue: string
   saved: boolean
-  kind: 'api' | 'pexels' | 'unsplash'
+  kind: 'api' | 'pexels' | 'unsplash' | 'recraft' | 'fal'
   placeholder: string
   keyUrl?: string
   keyUrlLabel?: string
@@ -25,17 +25,13 @@ const emit = defineEmits<{
 
 const { dialogs } = useI18n()
 
-const inputDataTestId = computed(() => {
-  if (kind === 'pexels') return 'provider-settings-pexels-key'
-  if (kind === 'unsplash') return 'provider-settings-unsplash-key'
-  return 'provider-settings-api-key'
-})
+const inputDataTestId = computed(() =>
+  kind === 'api' ? 'provider-settings-api-key' : `provider-settings-${kind}-key`
+)
 
-const clearDataTestId = computed(() => {
-  if (kind === 'pexels') return 'provider-settings-clear-pexels-key'
-  if (kind === 'unsplash') return 'provider-settings-clear-unsplash-key'
-  return 'provider-settings-clear-key'
-})
+const clearDataTestId = computed(() =>
+  kind === 'api' ? 'provider-settings-clear-key' : `provider-settings-clear-${kind}-key`
+)
 </script>
 
 <template>
