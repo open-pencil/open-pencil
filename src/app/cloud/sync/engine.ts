@@ -205,6 +205,7 @@ export async function kickSyncEngine(): Promise<void> {
   ensureOnlineListeners()
   if (pumping) return
   pumping = true
+  let pumpFailed = false
   try {
     // Drain a few jobs per kick to avoid long tight loops blocking the tab.
     for (let i = 0; i < 3; i++) {
@@ -215,6 +216,7 @@ export async function kickSyncEngine(): Promise<void> {
     }
   } catch (error) {
     // Never let an escaped rejection strand the queue — retry shortly.
+    pumpFailed = true
     console.warn('[Cloud sync] pump failed:', error)
     scheduleWake(5000)
   } finally {
@@ -222,8 +224,9 @@ export async function kickSyncEngine(): Promise<void> {
   }
   // A job enqueued mid-pump can slip past the loop's exit check while its
   // kick was swallowed by the pumping guard — re-wake if work is already due.
-  // (Offline wakes are pumpOnce's job; re-waking here would spin.)
-  if (!isOnline()) return
+  // (Skip offline — pumpOnce owns those wakes — and errors, which keep their
+  // 5s backoff; re-waking would clobber it into a tight retry loop.)
+  if (pumpFailed || !isOnline()) return
   const jobs = await getOutbox().list()
   if (jobs.some((job) => job.nextAttemptAt <= Date.now())) scheduleWake(250)
 }

@@ -159,7 +159,7 @@
   "cloudLoadFailed": "无法从云存储加载你的项目。",
   "cloudConnectionLostHint": "无法连接到你的云存储。请检查你的",
   "cloudConnectionLostSettingsLink": "设置",
-  "cloudConnectionSuccessDesktop": "Connected. Namespace ready. Bucket CORS updated for the web app origins when possible.",
+  "cloudConnectionSuccessDesktop": "已连接。命名空间就绪。已尽可能为网页来源更新存储桶 CORS。",
   "cloudCorsHint": "“测试连接”会在需要时自动设置存储桶 CORS。桌面版始终可以应用;网页版仅在存储桶已允许本站点时可以。",
   "cloudCopyCorsJson": "复制 CORS JSON",
   "cloudCorsCopied": "已复制 CORS JSON — 请粘贴到存储桶 CORS 设置中",

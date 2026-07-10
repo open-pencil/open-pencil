@@ -159,7 +159,7 @@
   "cloudLoadFailed": "Impossible de charger vos projets depuis le stockage cloud.",
   "cloudConnectionLostHint": "Impossible de se connecter à votre stockage cloud. Vérifiez vos",
   "cloudConnectionLostSettingsLink": "paramètres",
-  "cloudConnectionSuccessDesktop": "Connected. Namespace ready. Bucket CORS updated for the web app origins when possible.",
+  "cloudConnectionSuccessDesktop": "Connecté. Espace de noms prêt. CORS du bucket mis à jour pour les origines web si possible.",
   "cloudCorsHint": "Tester la connexion tente de configurer le CORS du bucket automatiquement si nécessaire. L'application de bureau peut toujours l'appliquer ; l'application web uniquement si le bucket autorise déjà ce site.",
   "cloudCopyCorsJson": "Copier le JSON CORS",
   "cloudCorsCopied": "JSON CORS copié — collez-le dans les paramètres CORS du bucket",

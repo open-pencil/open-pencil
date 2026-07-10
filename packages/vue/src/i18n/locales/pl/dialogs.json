@@ -159,7 +159,7 @@
   "cloudLoadFailed": "Nie udało się wczytać projektów z magazynu w chmurze.",
   "cloudConnectionLostHint": "Nie mogliśmy połączyć się z Twoim magazynem w chmurze. Sprawdź swoje",
   "cloudConnectionLostSettingsLink": "ustawienia",
-  "cloudConnectionSuccessDesktop": "Connected. Namespace ready. Bucket CORS updated for the web app origins when possible.",
+  "cloudConnectionSuccessDesktop": "Połączono. Przestrzeń nazw gotowa. CORS bucketa zaktualizowany dla źródeł web, jeśli to możliwe.",
   "cloudCorsHint": "Testuj połączenie próbuje w razie potrzeby automatycznie ustawić CORS bucketa. Aplikacja desktopowa zawsze może to zrobić; wersja web tylko wtedy, gdy bucket już zezwala tej stronie.",
   "cloudCopyCorsJson": "Kopiuj JSON CORS",
   "cloudCorsCopied": "Skopiowano JSON CORS — wklej go w ustawieniach CORS bucketa",

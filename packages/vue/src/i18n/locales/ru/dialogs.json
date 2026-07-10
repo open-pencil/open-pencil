@@ -159,7 +159,7 @@
   "cloudLoadFailed": "Не удалось загрузить ваши проекты из облачного хранилища.",
   "cloudConnectionLostHint": "Не удалось подключиться к облачному хранилищу. Проверьте ваши",
   "cloudConnectionLostSettingsLink": "настройки",
-  "cloudConnectionSuccessDesktop": "Connected. Namespace ready. Bucket CORS updated for the web app origins when possible.",
+  "cloudConnectionSuccessDesktop": "Подключено. Пространство имён готово. CORS бакета обновлён для веб-источников, где это возможно.",
   "cloudCorsHint": "Проверить подключение при необходимости автоматически настраивает CORS бакета. Настольное приложение может применить CORS всегда; веб-версия — только если бакет уже разрешает этот сайт.",
   "cloudCopyCorsJson": "Копировать CORS JSON",
   "cloudCorsCopied": "CORS JSON скопирован — вставьте его в настройки CORS бакета",

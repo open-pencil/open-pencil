@@ -159,7 +159,7 @@
   "cloudLoadFailed": "クラウドストレージからプロジェクトを読み込めませんでした。",
   "cloudConnectionLostHint": "クラウドストレージに接続できませんでした。次を確認してください:",
   "cloudConnectionLostSettingsLink": "設定",
-  "cloudConnectionSuccessDesktop": "Connected. Namespace ready. Bucket CORS updated for the web app origins when possible.",
+  "cloudConnectionSuccessDesktop": "接続しました。ネームスペースの準備ができました。可能な場合はWebオリジン用にバケットのCORSを更新しました。",
   "cloudCorsHint": "接続をテストは必要に応じてバケットのCORSを自動設定します。デスクトップ版は常に適用できます。Web版はバケットがこのサイトを既に許可している場合のみです。",
   "cloudCopyCorsJson": "CORS JSONをコピー",
   "cloudCorsCopied": "CORS JSONをコピーしました — バケットのCORS設定に貼り付けてください",
