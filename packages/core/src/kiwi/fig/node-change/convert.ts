@@ -27,7 +27,8 @@ import {
 import {
   resolveGeometryPaths,
   resolveVectorNetwork,
-  styleOverrideFillsById
+  styleOverrideFillsById,
+  type VectorStyleOverride
 } from './vector-geometry'
 export { resolveGeometryPaths } from './vector-geometry'
 
@@ -510,9 +511,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
   // Multi-color vectors (e.g. FedEx purple + orange) store per-path paints on
   // vectorData.styleOverrideTable, referenced by fillGeometry[].styleID.
-  const vectorData = nc.vectorData as
-    | { styleOverrideTable?: Parameters<typeof styleOverrideFillsById>[0] }
-    | undefined
+  const vectorData = nc.vectorData as { styleOverrideTable?: VectorStyleOverride[] } | undefined
   const styleFills = styleOverrideFillsById(vectorData?.styleOverrideTable)
   return {
     vectorNetwork,

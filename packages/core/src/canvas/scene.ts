@@ -10,6 +10,7 @@ import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
 import { renderBooleanOperation } from './boolean'
+import { paintFills } from './fills'
 import { drawLayoutGrids } from './layout-grids'
 import { renderMaskedChildIds } from './masks'
 import type { SkiaRenderer, RenderOverlays } from './renderer'
@@ -29,16 +30,7 @@ function drawVisibleFills(
   graph: SceneGraph,
   draw: (fill: Fill) => void
 ): void {
-  for (let fi = 0; fi < node.fills.length; fi++) {
-    const fill = node.fills[fi]
-    if (!fill.visible) continue
-    if (!r.applyFill(fill, node, graph, fi)) continue
-    r.fillPaint.setAlphaf(fill.opacity)
-    r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
-    draw(fill)
-    r.fillPaint.setShader(null)
-    r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-  }
+  paintFills(r, node.fills, node, graph, draw)
 }
 function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number): boolean {
   const canCull =

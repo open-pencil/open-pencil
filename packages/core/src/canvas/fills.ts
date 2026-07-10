@@ -3,11 +3,32 @@ import type { Canvas, Paint } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { geometryBlobToPath } from '#core/vector'
-
 import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+
+/**
+ * Apply each visible fill to the shared fill paint and invoke draw with it,
+ * resetting shader/blend state after every fill.
+ */
+export function paintFills(
+  r: SkiaRenderer,
+  fills: readonly Fill[],
+  node: SceneNode,
+  graph: SceneGraph,
+  draw: (fill: Fill) => void
+): void {
+  for (let fi = 0; fi < fills.length; fi++) {
+    const fill = fills[fi]
+    if (!fill?.visible) continue
+    if (!r.applyFill(fill, node, graph, fi)) continue
+    r.fillPaint.setAlphaf(fill.opacity)
+    r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+    draw(fill)
+    r.fillPaint.setShader(null)
+    r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  }
+}
 
 /**
  * Paint a VECTOR with per-path fills from fillGeometry (Figma styleOverrideTable).
@@ -23,20 +44,15 @@ export function drawVectorMultiStyleFills(
   const hasPathFills = node.fillGeometry.some((g) => g.fills && g.fills.length > 0)
   if (!hasPathFills) return false
 
-  for (const g of node.fillGeometry) {
-    const path = geometryBlobToPath(r.ck, g.commandsBlob, g.windingRule)
+  const paths = r.getFillGeometry(node)
+  if (!paths) return false
+
+  for (let i = 0; i < node.fillGeometry.length; i++) {
+    const g = node.fillGeometry[i]
+    const path = paths[i]
+    if (!g || !path) continue
     const fills = g.fills && g.fills.length > 0 ? g.fills : node.fills
-    for (let fi = 0; fi < fills.length; fi++) {
-      const fill = fills[fi]
-      if (!fill?.visible) continue
-      if (!applyFill(r, fill, node, graph, fi)) continue
-      r.fillPaint.setAlphaf(fill.opacity)
-      r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
-      canvas.drawPath(path, r.fillPaint)
-      r.fillPaint.setShader(null)
-      r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
-    }
-    path.delete()
+    paintFills(r, fills, node, graph, () => canvas.drawPath(path, r.fillPaint))
   }
   return true
 }
