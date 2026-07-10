@@ -10,7 +10,18 @@ import router from './router'
 
 preloadFonts()
 const head = createHead()
-createApp(App).use(router).use(head).mount('#app')
+const app = createApp(App)
+app.use(router).use(head).mount('#app')
+
+// Safety: if we never open an editor canvas (e.g. cloud Files home), still clear the boot loader.
+void router.isReady().then(async () => {
+  const { fadeOutGlobalLoader } = await import('@/app/editor/canvas/loader-overlay')
+  const name = router.currentRoute.value.name
+  if (name === 'home' || name === undefined) {
+    // Give Vue one tick to paint HomeView, then ensure the HTML boot loader is gone.
+    requestAnimationFrame(() => fadeOutGlobalLoader())
+  }
+})
 
 if (!IS_TAURI) {
   void import('virtual:pwa-register').then(({ registerSW }) => {

@@ -87,6 +87,7 @@
     "@unhead/vue": "^2.1.10",
     "@vueuse/core": "^14.2.1",
     "ai": "^6.0.174",
+    "aws4fetch": "^1.0.20",
     "canvaskit-wasm": "^0.40.0",
     "culori": "^4.0.2",
     "dedent": "^1.7.1",

@@ -4,6 +4,8 @@
 
 ### Changed
 
+- Add optional **cloud storage** via any S3-compatible bucket (AWS, Backblaze B2, R2, MinIO, …): configure credentials in provider settings, store canvases under a shared-bucket namespace `open_pencil_storage/`, and open a Figma-like files home when configured. Local-only mode is unchanged when cloud is not set up. Desktop **Test connection** applies web-friendly bucket CORS; the web UI can copy a CORS JSON for the console when the browser is blocked.
+- Cloud files are **local-first**: save/import write to a device cache immediately and sync to the bucket in the background (outbox + retry). Files home paints from local cache first; subtle sync status shows Syncing / Offline · will sync / Sync failed.
 - Add Figma-style page management in the Pages panel, including rename/delete actions and drag-and-drop page reordering.
 - Add DOM/CSS import and authoring support so HTML, CSS, Tailwind, and JSX can be converted into editable OpenPencil documents from the app, CLI, and SDK.
 - Add Tailwind class serialization for DOM/CSS HTML export in the SDK and CLI.

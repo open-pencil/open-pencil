@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, provide, ref } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
+import { isCloudConfigured } from '@/app/cloud/credentials'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
@@ -16,7 +17,7 @@ import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
+import { createTab, activeTab, getActiveStore, openCloudCanvasInTab, tabCount } from '@/app/tabs'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -30,6 +31,7 @@ import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
 
 const route = useRoute()
+const router = useRouter()
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 
@@ -41,6 +43,10 @@ const { isMobile } = useViewportKind()
 
 if (createdInitialTab && route.meta.demo && !('test' in params)) {
   createDemoShapes(firstTab.store)
+}
+
+function goToFiles() {
+  void router.push('/')
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
@@ -86,6 +92,31 @@ async function bindAssociatedFileOpen() {
 }
 
 onMounted(async () => {
+  const canvasId = route.params.canvasId
+  if (typeof canvasId === 'string' && canvasId) {
+    const binding = getActiveStore().getCloudBinding?.()
+    if (binding?.canvasId !== canvasId) {
+      try {
+        await openCloudCanvasInTab(canvasId)
+      } catch (e) {
+        console.error('[Cloud open]', e)
+        // Missing/broken cloud canvas → back to the files list
+        if (isCloudConfigured.value) {
+          await router.replace('/')
+          return
+        }
+      }
+    }
+  } else if (
+    isCloudConfigured.value &&
+    route.name === 'edit' &&
+    route.query.local !== '1'
+  ) {
+    // Belt-and-suspenders if beforeEnter did not run (e.g. in-app navigation edge cases)
+    await router.replace('/')
+    return
+  }
+
   try {
     const mcp = await spawnMCPIfNeeded()
     mcpCleanup.value = mcp?.disconnect ?? null
@@ -114,6 +145,19 @@ onUnmounted(() => {
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
     <SafariBanner />
+    <div
+      v-if="isCloudConfigured && showChrome"
+      class="flex items-center border-b border-border bg-panel px-2 py-1"
+    >
+      <button
+        type="button"
+        class="rounded px-2 py-0.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
+        data-test-id="back-to-files"
+        @click="goToFiles"
+      >
+        ← {{ dialogs.backToFiles }}
+      </button>
+    </div>
     <TabBar />
 
     <!-- Desktop layout -->

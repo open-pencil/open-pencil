@@ -1,6 +1,7 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 
+import type { CloudDocumentBinding } from '@/app/cloud/types'
 import { createAutosave } from '@/app/document/autosave'
 import {
   documentNameFromFigPath,
@@ -28,6 +29,8 @@ type DocumentSourceOptions = {
   setFilePath: (path: string | null) => void
   getDownloadName: () => string | null
   setDownloadName: (name: string | null) => void
+  getCloudBinding: () => CloudDocumentBinding | null
+  setCloudBinding: (binding: CloudDocumentBinding | null) => void
   getSavedVersion: () => number
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
@@ -45,13 +48,23 @@ export function createDocumentSourceActions({
   setFilePath,
   getDownloadName,
   setDownloadName,
+  getCloudBinding,
+  setCloudBinding,
   getSavedVersion,
   setSavedVersion,
   setLastWriteTime,
   getRenderer
 }: DocumentSourceOptions) {
   function buildFigFile() {
-    return exportFigFile(editor.graph, undefined, getRenderer() ?? undefined, state.currentPageId)
+    // Pass CanvasKit + renderer so export embeds a real page thumbnail.png
+    // (used by cloud Files home cards — not the 1×1 stub).
+    const renderer = getRenderer() ?? undefined
+    return exportFigFile(
+      editor.graph,
+      renderer?.ck,
+      renderer,
+      state.currentPageId
+    )
   }
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
@@ -63,17 +76,20 @@ export function createDocumentSourceActions({
     setFileHandle,
     getDownloadName,
     setDownloadName,
+    getCloudBinding,
+    setCloudBinding,
     setSavedVersion,
     setLastWriteTime,
     startWatchingFile: () => {
       void startWatchingFile()
-    }
+    },
+    getEditor: () => editor
   })
 
   const { disposeAutosave } = createAutosave({
     state,
     getSavedVersion,
-    hasWritableSource: () => !!getFileHandle() || !!getFilePath(),
+    hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getCloudBinding(),
     saveCurrentDocument: async () => writeFile(await buildFigFile())
   })
 
@@ -84,6 +100,7 @@ export function createDocumentSourceActions({
     path?: string
   ) {
     stopWatchingFile()
+    setCloudBinding(null)
     const isFig = sourceFormat === 'fig'
     setFileHandle(isFig ? (handle ?? null) : null)
     setFilePath(isFig ? (path ?? null) : null)
@@ -94,8 +111,20 @@ export function createDocumentSourceActions({
     }
   }
 
+  function setCloudDocumentSource(binding: CloudDocumentBinding, documentName: string) {
+    stopWatchingFile()
+    setFileHandle(null)
+    setFilePath(null)
+    setDownloadName(`${documentName}.fig`)
+    setCloudBinding(binding)
+    state.documentName = documentName
+    setSavedVersion(state.sceneVersion)
+    state.autosaveEnabled = true
+  }
+
   function setPlannedFilePath(path: string) {
     stopWatchingFile()
+    setCloudBinding(null)
     setFileHandle(null)
     setFilePath(path)
     const downloadName = downloadNameFromPath(path)
@@ -114,10 +143,12 @@ export function createDocumentSourceActions({
 
   return {
     setDocumentSource,
+    setCloudDocumentSource,
     setPlannedFilePath,
     startWatchingCurrentFile,
     disposeDocumentIO,
     saveFigFile,
-    saveFigFileAs
+    saveFigFileAs,
+    getCloudBinding
   }
 }

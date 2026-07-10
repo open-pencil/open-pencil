@@ -1,5 +1,6 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@open-pencil/core/editor'
 
+import type { CloudDocumentBinding } from '@/app/cloud/types'
 import { downloadBlob } from '@/app/document/io/browser'
 import { documentNameFromFigPath } from '@/app/document/io/names'
 import { chooseBrowserFigSaveHandle, chooseTauriFigSavePath } from '@/app/document/io/save-targets'
@@ -17,9 +18,12 @@ type SaveActionsOptions = {
   setFileHandle: (handle: FileSystemFileHandle | null) => void
   getDownloadName: () => string | null
   setDownloadName: (name: string | null) => void
+  getCloudBinding: () => CloudDocumentBinding | null
+  setCloudBinding: (binding: CloudDocumentBinding | null) => void
   setSavedVersion: (version: number) => void
   setLastWriteTime: (time: number) => void
   startWatchingFile: () => void
+  getEditor?: () => Pick<Editor, 'graph' | 'renderer'> | null
 }
 
 export function createSaveActions({
@@ -31,23 +35,29 @@ export function createSaveActions({
   setFileHandle,
   getDownloadName,
   setDownloadName,
+  getCloudBinding,
+  setCloudBinding,
   setSavedVersion,
   setLastWriteTime,
-  startWatchingFile
+  startWatchingFile,
+  getEditor
 }: SaveActionsOptions) {
   const writeFile = createDocumentWriter({
     state,
     getFilePath,
     getFileHandle,
+    getCloudBinding,
     setSavedVersion,
-    setLastWriteTime
+    setLastWriteTime,
+    getEditor
   })
 
   async function saveFigFile() {
     const filePath = getFilePath()
     const fileHandle = getFileHandle()
+    const cloud = getCloudBinding()
     const downloadName = getDownloadName()
-    if (filePath || fileHandle) {
+    if (cloud || filePath || fileHandle) {
       await writeFile(await buildFigFile())
     } else if (downloadName) {
       downloadBlob(new Uint8Array(await buildFigFile()), downloadName, 'application/octet-stream')
@@ -62,6 +72,7 @@ export function createSaveActions({
     if (IS_TAURI) {
       const path = await chooseTauriFigSavePath()
       if (!path) return
+      setCloudBinding(null)
       setFilePath(path)
       setFileHandle(null)
       state.documentName = documentNameFromFigPath(path)
@@ -73,6 +84,7 @@ export function createSaveActions({
     if (window.showSaveFilePicker) {
       const handle = await chooseBrowserFigSaveHandle()
       if (!handle) return
+      setCloudBinding(null)
       setFileHandle(handle)
       setFilePath(null)
       state.documentName = documentNameFromFigPath(handle.name)
@@ -83,6 +95,7 @@ export function createSaveActions({
 
     const filename = prompt('Save as:', getDownloadName() ?? 'Untitled.fig')
     if (!filename) return
+    setCloudBinding(null)
     setDownloadName(filename)
     state.documentName = documentNameFromFigPath(filename)
     downloadBlob(new Uint8Array(data), filename, 'application/octet-stream')
