@@ -197,6 +197,10 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Fills.drawNodeFill(this, canvas, node, rect, hasRadius, fill)
   },
 
+  drawVectorMultiStyleFills(canvas: Canvas, node: SceneNode, graph: SceneGraph): boolean {
+    return Fills.drawVectorMultiStyleFills(this, canvas, node, graph)
+  },
+
   applyFill(fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex = 0): boolean {
     return Fills.applyFill(this, fill, node, graph, fillIndex)
   },
