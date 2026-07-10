@@ -3,8 +3,43 @@ import type { Canvas, Paint } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { geometryBlobToPath } from '#core/vector'
+
+import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+
+/**
+ * Paint a VECTOR with per-path fills from fillGeometry (Figma styleOverrideTable).
+ * Paths without path.fills use node.fills. Returns true when handled.
+ */
+export function drawVectorMultiStyleFills(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): boolean {
+  if (node.type !== 'VECTOR' || node.fillGeometry.length === 0) return false
+  const hasPathFills = node.fillGeometry.some((g) => g.fills && g.fills.length > 0)
+  if (!hasPathFills) return false
+
+  for (const g of node.fillGeometry) {
+    const path = geometryBlobToPath(r.ck, g.commandsBlob, g.windingRule)
+    const fills = g.fills && g.fills.length > 0 ? g.fills : node.fills
+    for (let fi = 0; fi < fills.length; fi++) {
+      const fill = fills[fi]
+      if (!fill?.visible) continue
+      if (!applyFill(r, fill, node, graph, fi)) continue
+      r.fillPaint.setAlphaf(fill.opacity)
+      r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+      canvas.drawPath(path, r.fillPaint)
+      r.fillPaint.setShader(null)
+      r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    }
+    path.delete()
+  }
+  return true
+}
 
 export function drawNodeFill(
   r: SkiaRenderer,
@@ -16,6 +51,8 @@ export function drawNodeFill(
 ): void {
   switch (node.type) {
     case 'VECTOR': {
+      // When path-level fills exist, multi-style drawing is handled separately.
+      if (node.fillGeometry.some((g) => g.fills && g.fills.length > 0)) break
       const fg = r.getFillGeometry(node)
       if (fg) {
         for (const p of fg) canvas.drawPath(p, r.fillPaint)
