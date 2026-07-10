@@ -2,12 +2,12 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
 
-import { expectDefined } from '#tests/helpers/assert'
-
 import {
   resolveGeometryPaths,
   styleOverrideFillsById
-} from '../../../packages/core/src/kiwi/fig/node-change/vector-geometry'
+} from '#core/kiwi/fig/node-change/vector-geometry'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 const ORANGE = {
   type: 'SOLID' as const,
