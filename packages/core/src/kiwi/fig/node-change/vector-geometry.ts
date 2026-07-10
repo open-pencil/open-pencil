@@ -1,15 +1,23 @@
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { GeometryPath, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Fill, GeometryPath, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { decodeVectorNetworkBlob } from '#core/vector'
+
+import { convertFills } from './paint'
+
+export type VectorStyleOverride = {
+  styleID: number
+  handleMirroring?: string
+  fillPaints?: Paint[]
+}
 
 export function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): VectorNetwork | null {
   const vectorData = nc.vectorData as
     | {
         vectorNetworkBlob?: number
         normalizedSize?: Vector
-        styleOverrideTable?: Array<{ styleID: number; handleMirroring?: string }>
+        styleOverrideTable?: VectorStyleOverride[]
       }
     | undefined
 
@@ -45,11 +53,27 @@ export function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): Vecto
 interface KiwiPath {
   windingRule?: string
   commandsBlob?: number
+  styleID?: number
+}
+
+/** Map styleOverrideTable fillPaints by styleID (Figma multi-color vectors). */
+export function styleOverrideFillsById(
+  styleOverrideTable: VectorStyleOverride[] | undefined
+): Map<number, Fill[]> {
+  const map = new Map<number, Fill[]>()
+  if (!styleOverrideTable) return map
+  for (const entry of styleOverrideTable) {
+    if (entry.styleID == null) continue
+    if (!entry.fillPaints || entry.fillPaints.length === 0) continue
+    map.set(entry.styleID, convertFills(entry.fillPaints))
+  }
+  return map
 }
 
 export function resolveGeometryPaths(
   paths: KiwiPath[] | undefined,
-  blobs: Uint8Array[]
+  blobs: Uint8Array[],
+  styleFillsById?: Map<number, Fill[]>
 ): GeometryPath[] {
   if (!paths || paths.length === 0) return []
   const result: GeometryPath[] = []
@@ -58,10 +82,17 @@ export function resolveGeometryPaths(
       continue
     const blob = blobs[p.commandsBlob]
     if (blob.length === 0) continue
-    result.push({
+    const styleID = typeof p.styleID === 'number' ? p.styleID : undefined
+    const path: GeometryPath = {
       windingRule: (p.windingRule === 'EVENODD' ? 'EVENODD' : 'NONZERO') as WindingRule,
       commandsBlob: blob
-    })
+    }
+    if (styleID != null && styleID !== 0) {
+      path.styleID = styleID
+      const fills = styleFillsById?.get(styleID)
+      if (fills && fills.length > 0) path.fills = fills
+    }
+    result.push(path)
   }
   return result
 }
