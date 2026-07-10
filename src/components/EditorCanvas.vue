@@ -174,10 +174,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             data-test-id="canvas-loading"
             class="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-canvas"
           >
-            <icon-lucide-cloud
-              v-if="cloudActivityMessage"
-              class="size-8 text-surface opacity-45"
-            />
+            <icon-lucide-cloud v-if="cloudActivityMessage" class="size-8 text-surface opacity-45" />
             <icon-lucide-pencil-line v-else class="size-8 text-surface opacity-45" />
             <div class="h-0.5 w-25 overflow-hidden rounded-full bg-surface/8">
               <div

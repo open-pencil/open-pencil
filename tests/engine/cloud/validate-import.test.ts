@@ -62,10 +62,8 @@ describe('validateDesignImportBytes', () => {
     const fig = new Uint8Array(readFileSync(fixtureFig))
     expect(validateDesignImportBytes('a.fig', fig).ok).toBe(true)
     expect(
-      validateDesignImportBytes(
-        'a.pen',
-        new TextEncoder().encode(JSON.stringify({ children: [] }))
-      ).ok
+      validateDesignImportBytes('a.pen', new TextEncoder().encode(JSON.stringify({ children: [] })))
+        .ok
     ).toBe(true)
     expect(validateDesignImportBytes('a.txt', fig).ok).toBe(false)
   })

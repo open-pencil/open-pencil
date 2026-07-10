@@ -59,12 +59,7 @@ export function createDocumentSourceActions({
     // Pass CanvasKit + renderer so export embeds a real page thumbnail.png
     // (used by cloud Files home cards — not the 1×1 stub).
     const renderer = getRenderer() ?? undefined
-    return exportFigFile(
-      editor.graph,
-      renderer?.ck,
-      renderer,
-      state.currentPageId
-    )
+    return exportFigFile(editor.graph, renderer?.ck, renderer, state.currentPageId)
   }
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({

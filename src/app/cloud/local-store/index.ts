@@ -1,4 +1,8 @@
-export type { LocalCanvasMeta, LocalCanvasWriteInput, LocalSyncStatus } from '@/app/cloud/local-store/types'
+export type {
+  LocalCanvasMeta,
+  LocalCanvasWriteInput,
+  LocalSyncStatus
+} from '@/app/cloud/local-store/types'
 export type { LocalCanvasStore } from '@/app/cloud/local-store/store'
 export {
   getLocalCanvasStore,
