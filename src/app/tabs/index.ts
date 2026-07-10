@@ -8,6 +8,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { requireActiveCloudAdapter } from '@/app/cloud/active'
 import { setCloudActivity } from '@/app/cloud/activity'
+import { isCloudConfigured } from '@/app/cloud/credentials'
 import { createCanvasId } from '@/app/cloud/id'
 import { getLocalCanvasStore } from '@/app/cloud/local-store'
 import { kickSyncEngine } from '@/app/cloud/sync'
@@ -107,8 +108,13 @@ export function closeTab(tabId: string) {
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
   if (tabsRef.value.length === 0) {
-    createTab()
     closingTab.store.dispose()
+    if (isCloudConfigured.value) {
+      // Prefer Files home over a local-only blank tab when cloud is the entry.
+      void import('@/router').then((m) => m.default.push('/'))
+      return
+    }
+    createTab()
     return
   }
 
@@ -491,11 +497,26 @@ export async function createCloudCanvasInTab(name = 'Untitled'): Promise<string>
   }
 }
 
+/**
+ * File → New / new-tab shortcut.
+ * Cloud configured → create a cloud canvas and open it; otherwise a local blank tab.
+ */
+export async function createNewDocument(name = 'Untitled'): Promise<void> {
+  if (isCloudConfigured.value) {
+    const id = await createCloudCanvasInTab(name)
+    const router = (await import('@/router')).default
+    await router.push(`/edit/cloud/${id}`)
+    return
+  }
+  createTab()
+}
+
 export function useTabsStore() {
   return {
     tabs: allTabs,
     activeTabId,
     createTab,
+    createNewDocument,
     switchTab,
     closeTab,
     getActiveTabId,

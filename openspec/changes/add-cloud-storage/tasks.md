@@ -44,8 +44,8 @@
 ## 7. Hardening and polish (remaining)
 
 - [x] 7.1 User-guide note: bucket CORS for browser; B2/AWS field mapping; namespace behavior (+ PutBucketCors from desktop, copy CORS JSON in settings)
-- [ ] 7.2 Optional thumbnail upload on save + show on home cards
+- [x] 7.2 Thumbnail generate/upload on save + show on home cards (local-first + extract/render)
 - [ ] 7.3 E2E smoke with mocked adapter (configured home empty state; unconfigured still editor)
 - [ ] 7.4 Manual smoke against Backblaze B2 (bucket + endpoint) and one other S3 host if available
-- [ ] 7.5 File → New when configured creates cloud canvas (optional product polish)
+- [x] 7.5 File → New / new-tab when configured creates cloud canvas (`createNewDocument`)
 - [ ] 7.6 Run full quality gate (`bun run check`, unit tests) and open PR to `origin/master`

@@ -10,7 +10,7 @@ import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater'
-import { createTab, closeTab, activeTab } from '@/app/tabs'
+import { createNewDocument, closeTab, activeTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 const store = useEditorStore()
@@ -52,7 +52,7 @@ export function useMenu() {
   const { runCommand } = useEditorCommands()
 
   const actions: Partial<Record<string, () => void>> = {
-    new: () => createTab(),
+    new: () => void createNewDocument(),
     open: () => void openFileDialog(),
     close: () => {
       if (activeTab.value) closeTab(activeTab.value.id)

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 import Tip from '@/components/ui/Tip.vue'
-import { useTabsStore, createTab } from '@/app/tabs'
+import { useTabsStore, createNewDocument } from '@/app/tabs'
 import { useI18n } from '@open-pencil/vue'
 
 const { dialogs } = useI18n()
@@ -65,7 +65,7 @@ function onClose(e: MouseEvent, tabId: string) {
         data-test-id="tabbar-new"
         class="flex size-9 shrink-0 cursor-pointer items-center justify-center text-muted transition-colors hover:text-surface"
         :aria-label="dialogs.newTab"
-        @click="createTab()"
+        @click="void createNewDocument()"
       >
         <icon-lucide-plus class="size-3.5" />
       </button>
