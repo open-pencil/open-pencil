@@ -51,6 +51,7 @@ function onEnter(e: KeyboardEvent) {
             ref="inputRef"
             v-model="inputValue"
             type="text"
+            :aria-label="activePrompt.title"
             class="mt-3 w-full rounded border border-border bg-input px-2 py-1.5 text-sm text-surface outline-none focus:border-accent"
             data-test-id="app-prompt-input"
             @keydown.enter.prevent="onEnter"

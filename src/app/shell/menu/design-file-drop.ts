@@ -59,10 +59,12 @@ export function useDesignFileDrop(options?: { enabled?: () => boolean }) {
     'drop',
     (e: DragEvent) => {
       if (!enabled()) return
-      const files = filesFromDataTransfer(e.dataTransfer)
-      if (files.length === 0) return
+      if (!e.dataTransfer?.files.length) return
+      // Any window-level file drop is ours — never let the browser navigate to the file.
       e.preventDefault()
       e.stopPropagation()
+      const files = filesFromDataTransfer(e.dataTransfer)
+      if (files.length === 0) return
       void openDesignFiles(files)
     },
     { capture: true }

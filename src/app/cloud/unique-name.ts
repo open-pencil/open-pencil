@@ -18,8 +18,11 @@ export function nextUniqueCloudName(desired: string, taken: Iterable<string>): s
   }
 
   // Extremely unlikely — still avoid silent overwrite of the display name.
-  const bytes = new Uint8Array(4)
-  crypto.getRandomValues(bytes)
-  const suffix = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
-  return `${base} (${suffix})`
+  for (;;) {
+    const bytes = new Uint8Array(4)
+    crypto.getRandomValues(bytes)
+    const suffix = [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')
+    const candidate = `${base} (${suffix})`
+    if (!used.has(candidate)) return candidate
+  }
 }

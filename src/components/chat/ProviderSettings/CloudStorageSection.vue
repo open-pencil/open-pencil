@@ -8,6 +8,7 @@ import {
   DialogRoot,
   DialogTitle
 } from 'reka-ui'
+import { refAutoReset } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
@@ -48,7 +49,7 @@ const testStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
 const testError = ref('')
 const corsHint = ref(false)
 const corsApplied = ref(false)
-const corsCopied = ref(false)
+const corsCopied = refAutoReset(false, 2000)
 const learnMoreOpen = ref(false)
 const usage = ref<CloudStorageUsage | null>(null)
 const usageLoading = ref(false)
@@ -107,9 +108,6 @@ async function copyCorsJson() {
     await navigator.clipboard.writeText(corsJson.value)
     corsCopied.value = true
     toast.info(dialogs.value.cloudCorsCopied)
-    window.setTimeout(() => {
-      corsCopied.value = false
-    }, 2000)
   } catch (e) {
     console.warn('[Cloud] copy CORS JSON failed:', e)
     toast.error(dialogs.value.cloudCorsCopyFailed)

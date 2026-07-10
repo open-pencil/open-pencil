@@ -133,11 +133,9 @@ onMounted(async () => {
         await openCloudCanvasInTab(canvasId)
       } catch (e) {
         console.error('[Cloud open]', e)
-        // Missing/broken cloud canvas → back to the files list
-        if (isCloudConfigured.value) {
-          await router.replace('/')
-          return
-        }
+        // Missing/broken cloud canvas → back to the files list (or local editor when cloud is off)
+        await router.replace(isCloudConfigured.value ? '/' : '/edit')
+        return
       }
     }
   } else if (isCloudConfigured.value && route.name === 'edit' && route.query.local !== '1') {

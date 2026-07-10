@@ -12,6 +12,7 @@ export function openIdb(
     }
     const req = indexedDB.open(name, version)
     req.onerror = () => reject(req.error ?? new Error(`Failed to open ${name}`))
+    req.onblocked = () => reject(new Error(`Opening ${name} blocked by another tab's connection`))
     req.onsuccess = () => resolve(req.result)
     req.onupgradeneeded = () => upgrade(req.result)
   })

@@ -236,7 +236,7 @@ async function onDuplicate(id: string) {
 
 async function onRename(id: string, current: string) {
   const next = await promptText(dialogs.value.renameCanvas, current)
-  if (next == null || next.trim() === current) return
+  if (next == null || next.trim() === '' || next.trim() === current) return
   try {
     await renameCanvas(id, next.trim())
   } catch (e) {

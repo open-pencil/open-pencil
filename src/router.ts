@@ -38,7 +38,14 @@ const router = createRouter({
       path: '/edit/cloud/:canvasId',
       name: 'edit-cloud',
       component: EditorView,
-      props: true
+      props: true,
+      beforeEnter(_to, _from, next) {
+        if (!isCloudConfigured.value) {
+          next({ path: '/edit', replace: true })
+          return
+        }
+        next()
+      }
     },
     { path: '/demo', component: EditorView, meta: { demo: true } },
     { path: '/share/:roomId', component: EditorView }

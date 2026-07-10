@@ -1,11 +1,8 @@
 import type { Editor } from '@open-pencil/core/editor'
 
+import { setCloudActivity } from '@/app/cloud/activity'
 import { getLocalCanvasStore } from '@/app/cloud/local-store'
-import {
-  enqueuePutCanvas,
-  enqueuePutThumb,
-  kickSyncEngine
-} from '@/app/cloud/sync/engine'
+import { enqueuePutCanvas, enqueuePutThumb, kickSyncEngine } from '@/app/cloud/sync/engine'
 import {
   encodeThumbnailJpeg,
   extractFigThumbnailPng,
@@ -13,7 +10,6 @@ import {
   renderGraphThumbnailPng
 } from '@/app/cloud/thumbnail'
 import type { CloudProviderId } from '@/app/cloud/types'
-import { setCloudActivity } from '@/app/cloud/activity'
 
 /**
  * Local-first save: write fig to device, mark pending, enqueue remote put.
@@ -51,7 +47,6 @@ export async function persistCloudCanvasLocally(options: {
       pageId: options.pageId
     })
 
-    void kickSyncEngine()
     return { revision: meta.revision }
   } finally {
     if (options.activityMessage) setCloudActivity(null)
