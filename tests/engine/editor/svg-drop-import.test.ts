@@ -31,10 +31,15 @@ describe('SVG drop import', () => {
     expect(star.type).toBe('VECTOR')
     expect(star.fills[0]?.color.r).toBeCloseTo(1, 2)
     expect(star.fills[0]?.color.g).toBeCloseTo(0.4, 2)
-    // viewBox is 24 units but the node is 48px — coordinates map to node space
+    // viewBox is 24 units but the node is 48px — coordinates map to node space,
+    // and each vector hugs its own path bounds (star spans x 2..22, y 2..21).
+    expect(star.x).toBeCloseTo(4, 4)
+    expect(star.y).toBeCloseTo(4, 4)
+    expect(star.width).toBeCloseTo(40, 4)
+    expect(star.height).toBeCloseTo(38, 4)
     const network = expectDefined(star.vectorNetwork, 'vectorNetwork')
-    expect(network.vertices[0]?.x).toBeCloseTo(24, 4) // 12 in viewBox units
-    expect(network.vertices[0]?.y).toBeCloseTo(4, 4) // 2 in viewBox units
+    expect(network.vertices[0]?.x).toBeCloseTo(20, 4) // (12 − 2) × 2 in node space
+    expect(network.vertices[0]?.y).toBeCloseTo(0, 4)
 
     const border = expectDefined(graph.getNode(frame.childIds[1]))
     expect(border.fills).toHaveLength(0)

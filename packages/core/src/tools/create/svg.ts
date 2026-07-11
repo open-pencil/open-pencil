@@ -7,6 +7,7 @@ import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { defineTool } from '#core/tools/schema'
+import { computeAccurateBounds } from '#core/vector'
 
 function parseSvgViewBox(svg: string): Rect | null {
   const match = svg.match(/viewBox="([^"]+)"/)
@@ -67,20 +68,24 @@ function createVectorFromPath(
   parentId: string,
   defaultColor: string
 ) {
-  const vectorNetwork = fitNetworkToNode(
-    parseSVGPath(path.d, path.fillRule),
-    viewBox,
-    width,
-    height
-  )
+  const network = fitNetworkToNode(parseSVGPath(path.d, path.fillRule), viewBox, width, height)
+
+  // Size each vector to its own path bounds — full-canvas vectors would all
+  // overlap, making selection outlines, hit-testing, and node editing useless.
+  const bounds = computeAccurateBounds(network)
+  const vectorNetwork = {
+    vertices: network.vertices.map((v) => ({ ...v, x: v.x - bounds.x, y: v.y - bounds.y })),
+    segments: network.segments,
+    regions: network.regions
+  }
   const vector = graph.createNode('VECTOR', parentId, {
     name: 'path',
-    width,
-    height,
+    width: Math.max(bounds.width, 0.01),
+    height: Math.max(bounds.height, 0.01),
     vectorNetwork
   })
-  vector.x = 0
-  vector.y = 0
+  vector.x = bounds.x
+  vector.y = bounds.y
 
   if (path.fill && path.fill !== 'none') {
     const fillColor =
