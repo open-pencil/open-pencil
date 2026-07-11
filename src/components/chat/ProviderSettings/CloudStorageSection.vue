@@ -79,6 +79,11 @@ const usageSummary = computed(() => {
   return `${size} · ${files} · ${objectCount} ${d.cloudUsageObjectsLabel}`
 })
 
+function isCorsishMessage(message: string): boolean {
+  const m = message.toLowerCase()
+  return m.includes('cors') || m.includes('blocked access to your bucket')
+}
+
 async function refreshUsage() {
   if (!canTest.value) {
     usage.value = null
@@ -92,7 +97,13 @@ async function refreshUsage() {
     usage.value = await adapter.getStorageUsage()
   } catch (e) {
     usage.value = null
-    usageError.value = e instanceof Error ? e.message : String(e)
+    const message = e instanceof Error ? e.message : String(e)
+    // CORS already has a dedicated alert under the form — don't triple the same wall of text.
+    if (corsHint.value || isCorsishMessage(message)) {
+      usageError.value = null
+    } else {
+      usageError.value = message
+    }
   } finally {
     usageLoading.value = false
   }
@@ -161,15 +172,26 @@ async function testConnection() {
     }
 
     testStatus.value = 'error'
-    testError.value = result.message
     // Only when list/namespace failed with a CORS/network block.
     corsHint.value = result.isCorsFailure
-    toast.error(result.message || dialogs.value.cloudConnectionFailed)
+    // One place for the long CORS copy: the amber alert. Inline line stays short.
+    testError.value = result.isCorsFailure
+      ? dialogs.value.cloudCorsAlertTitle
+      : result.message
+    usageError.value = null
+    if (!result.isCorsFailure) {
+      toast.error(result.message || dialogs.value.cloudConnectionFailed)
+    }
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    const isCors = !isTauri() && isLikelyCorsOrNetworkError(error)
     testStatus.value = 'error'
-    testError.value = error instanceof Error ? error.message : String(error)
-    corsHint.value = !isTauri() && isLikelyCorsOrNetworkError(error)
-    toast.error(testError.value || dialogs.value.cloudConnectionFailed)
+    corsHint.value = isCors
+    testError.value = isCors ? dialogs.value.cloudCorsAlertTitle : message
+    usageError.value = null
+    if (!isCors) {
+      toast.error(message || dialogs.value.cloudConnectionFailed)
+    }
   }
 }
 
@@ -323,8 +345,9 @@ defineExpose({ saveCloud })
           {{ dialogs.testingConnection }}
         </p>
       </div>
+      <!-- Non-CORS errors only — CORS uses the amber alert below (one place). -->
       <p
-        v-if="testStatus === 'error'"
+        v-if="testStatus === 'error' && !corsHint"
         class="text-[10px] leading-snug text-red-500"
         data-test-id="cloud-storage-test-error"
       >
@@ -333,7 +356,7 @@ defineExpose({ saveCloud })
     </div>
 
     <div
-      v-if="canTest"
+      v-if="canTest && !corsHint"
       class="rounded-md border border-border bg-input/30 px-2.5 py-2"
       data-test-id="cloud-storage-usage"
     >
