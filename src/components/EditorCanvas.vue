@@ -22,6 +22,7 @@ import {
   useTextEdit
 } from '@open-pencil/vue'
 import { useCollabInjected } from '@/app/collab/use'
+import { cloudActivityMessage } from '@/app/cloud/activity'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
@@ -171,16 +172,21 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
           <div
             v-if="store.state.loading"
             data-test-id="canvas-loading"
-            class="absolute inset-0 z-50 flex items-center justify-center bg-canvas"
+            class="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-canvas"
           >
-            <icon-lucide-pencil-line class="size-8 text-surface opacity-45" />
-            <div
-              class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
-            >
+            <icon-lucide-cloud v-if="cloudActivityMessage" class="size-8 text-surface opacity-45" />
+            <icon-lucide-pencil-line v-else class="size-8 text-surface opacity-45" />
+            <div class="h-0.5 w-25 overflow-hidden rounded-full bg-surface/8">
               <div
                 class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] rounded-full bg-surface/25"
               />
             </div>
+            <p
+              class="max-w-xs px-4 text-center text-xs text-muted"
+              data-test-id="canvas-loading-message"
+            >
+              {{ cloudActivityMessage ?? 'Loading…' }}
+            </p>
           </div>
         </Transition>
       </div>

@@ -79,7 +79,7 @@ export function useAppMenu() {
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => {
-      void import('@/app/tabs').then((m) => m.createTab())
+      void import('@/app/tabs').then((m) => m.createNewDocument())
     },
     open: () => void openFileDialog(),
     save: () => void store.saveFigFile(),

@@ -15,9 +15,15 @@ import { usePopoverUI } from '@/components/ui/popover'
 import Tip from '@/components/ui/Tip.vue'
 
 const { dialogs } = useI18n()
-const cls = usePopoverUI({ content: 'isolate z-[51] w-64 p-3' })
+const cls = usePopoverUI({
+  content: 'isolate z-[51] max-h-[min(80vh,32rem)] w-72 overflow-y-auto p-3'
+})
 const popoverOpen = ref(false)
 const providerSettings = provideProviderSettings()
+
+function saveAll() {
+  providerSettings.save()
+}
 
 function onInteractOutside(e: Event) {
   const target = e.target as HTMLElement | null
@@ -25,7 +31,7 @@ function onInteractOutside(e: Event) {
     e.preventDefault()
     return
   }
-  providerSettings.save()
+  saveAll()
 }
 </script>
 
@@ -65,7 +71,7 @@ function onInteractOutside(e: Event) {
           <PopoverClose
             class="mt-1 w-full rounded bg-accent px-2 py-1 text-center text-[11px] font-medium text-white hover:bg-accent/90"
             data-test-id="provider-settings-done"
-            @click="providerSettings.save"
+            @click="saveAll"
           >
             {{ dialogs.done }}
           </PopoverClose>

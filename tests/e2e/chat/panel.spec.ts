@@ -122,8 +122,8 @@ function chatInput() {
   return page.locator('input[placeholder="Describe a change…"]')
 }
 
-function apiKeyInput() {
-  return page.getByTestId('api-key-input')
+function settingsApiKeyInput() {
+  return page.getByTestId('provider-settings-api-key')
 }
 
 test('⌘J switches to AI tab', async () => {
@@ -139,15 +139,17 @@ test('⌘J switches back to Design tab', async () => {
 
 test('clicking AI tab shows provider setup when no key set', async () => {
   await chatTab().click()
-  await expect(apiKeyInput()).toBeVisible()
+  await expect(page.getByTestId('provider-setup')).toBeVisible()
   await expect(page.getByText('Connect an AI provider to start chatting.')).toBeVisible()
-  await expect(page.getByTestId('provider-custom-model')).toBeHidden()
+  await expect(page.getByTestId('provider-setup-open-settings')).toBeVisible()
 })
 
-test('saving API key shows chat interface', async () => {
+test('saving API key via Settings shows chat interface', async () => {
   const key = USE_REAL_LLM ? OPENROUTER_KEY : 'sk-or-test-key-12345'
-  await apiKeyInput().fill(key)
-  await page.locator('button:has-text("Connect")').click()
+  await page.getByTestId('provider-setup-open-settings').click()
+  await expect(page.getByTestId('settings-ai-panel')).toBeVisible()
+  await settingsApiKeyInput().fill(key)
+  await page.getByTestId('app-settings-done').click()
 
   await expect(chatInput()).toBeVisible()
   await expect(page.getByText('Describe what you want to create or change.')).toBeVisible()
@@ -258,8 +260,10 @@ test('"Get API key" link opens external URL via window.open', async () => {
   await page.reload()
   await canvas.waitForInit()
   await chatTab().click()
+  await page.getByTestId('provider-setup-open-settings').click()
+  await expect(page.getByTestId('settings-ai-panel')).toBeVisible()
 
-  const link = page.getByTestId('api-key-get-link')
+  const link = page.getByText('Get API key', { exact: false })
   await expect(link).toBeVisible()
 
   // Intercept window.open to verify it's called with the right URL
@@ -286,4 +290,5 @@ test('"Get API key" link opens external URL via window.open', async () => {
     const savedOpen = window.openPencil?.test?.savedOpen
     if (savedOpen) window.open = savedOpen
   })
+  await page.getByTestId('app-settings-close').click()
 })

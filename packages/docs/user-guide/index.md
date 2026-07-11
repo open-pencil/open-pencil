@@ -28,6 +28,7 @@ Throughout this guide, keyboard shortcuts use Mac notation: <kbd>⌘</kbd> = <kb
 - [Layers & Pages](./layers-and-pages) — the layers panel, pages, and properties panel
 - [Context Menu](./context-menu) — right-click actions for clipboard, grouping, components, and more
 - [Exporting](./exporting) — image export and .fig file operations
+- [Cloud storage (S3)](./cloud-storage) — optional user-owned bucket, Files home, and browser CORS
 
 ## Advanced Features
 

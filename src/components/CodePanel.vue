@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Prism from 'prismjs'
-import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { useClipboard } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
@@ -13,6 +12,23 @@ import AppTextButton from '@/components/ui/AppTextButton.vue'
 import Tip from '@/components/ui/Tip.vue'
 
 import type { JSXFormat } from '@open-pencil/core/design-jsx'
+
+// Prism language components read the global `Prism` at eval time, and the
+// bundler may order the CJS interop so a component runs before core assigns
+// it (boots the app into "Prism is not defined"). Expose the global from the
+// ESM import and load the jsx grammar dynamically instead.
+;(globalThis as { Prism?: typeof Prism }).Prism = Prism
+const grammarVersion = ref(0)
+// Dynamic grammar load: success re-highlights; failure leaves JS fallback (no unhandled rejection).
+void import('prismjs/components/prism-jsx')
+  .then(() => {
+    grammarVersion.value += 1
+    return undefined
+  })
+  .catch(() => {
+    // Highlighting degrades to Prism.languages.javascript below.
+    return undefined
+  })
 
 const store = useEditorStore()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
@@ -36,6 +52,7 @@ const jsxCode = useSceneComputed(() => {
 })
 
 const highlightedLines = computed(() => {
+  void grammarVersion.value // re-highlight once the jsx grammar loads
   if (!jsxCode.value) return []
   const grammar = Prism.languages.jsx ?? Prism.languages.javascript
   return jsxCode.value.split('\n').map((line) => Prism.highlight(line, grammar, 'jsx'))

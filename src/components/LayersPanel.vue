@@ -4,6 +4,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { isCloudConfigured } from '@/app/cloud/credentials'
 import AppMenu from '@/components/Shell/AppMenu.vue'
 import AssetsPanel from './AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
@@ -70,5 +71,12 @@ const activePanel = ref<'file' | 'assets'>('file')
         <LayerTree data-test-id="layers-tree" />
       </SplitterPanel>
     </SplitterGroup>
+    <!-- Hard stop: reserved strip so the floating Settings button never overlaps
+         layer rows. Cloud mode hosts Settings in the editor top bar instead. -->
+    <div
+      v-if="!isCloudConfigured"
+      class="h-14 shrink-0 border-t border-border"
+      aria-hidden="true"
+    />
   </aside>
 </template>
