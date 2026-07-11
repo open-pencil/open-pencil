@@ -1,5 +1,3 @@
-import { expect } from 'bun:test'
-
 import { colorToCSS } from '@open-pencil/core/color'
 import type { DesignDocument } from '@open-pencil/dom-css'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -7,10 +5,15 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 /**
  * Asserts a node is a FRAME and returns it narrowed.
  * Shared across DOM/CSS conversion test files.
+ *
+ * Uses a direct type check instead of `bun:test`'s `expect` so this helper
+ * can be safely imported by both Bun engine tests and Playwright E2E tests
+ * (Node.js runtime cannot resolve the `bun:` protocol).
  */
 export function expectFrame(node: SceneNode | undefined) {
-  expect(node?.type).toBe('FRAME')
-  if (node?.type !== 'FRAME') throw new Error('Expected frame node')
+  if (node?.type !== 'FRAME') {
+    throw new Error(`Expected FRAME node, got ${node?.type ?? 'undefined'}`)
+  }
   return node
 }
 

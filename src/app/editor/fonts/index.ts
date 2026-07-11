@@ -11,6 +11,7 @@ import {
   type LocalFontAccessState,
   type WebFontProviderId
 } from '@open-pencil/core/text'
+import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { dialogMessages } from '@open-pencil/vue'
 
@@ -115,6 +116,18 @@ export function preloadFonts(): void {
   if (isTauri()) {
     void getTauriFonts().then(registerFontFaces)
     return
+  }
+  // In browser tests, `window.fetch` is mocked to serve Google Fonts data.
+  // Set up a remote-fetch proxy so WebFontResolver doesn't short-circuit
+  // on the `IS_BROWSER && !this.remoteFetch` guard.
+  if (IS_BROWSER) {
+    const testFetch = (window as Window & { __OPENPENCIL_TEST_WEB_FONT_FETCH?: boolean })
+      .__OPENPENCIL_TEST_WEB_FONT_FETCH
+    if (testFetch) {
+      fontManager.setWebFontFetch(async (url: string, init?: RequestInit) => {
+        return globalFetch(url, init)
+      })
+    }
   }
   if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
 }
