@@ -1,5 +1,8 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import { resolvePasteTarget } from '#core/editor/clipboard/paste-target'
 import type { EditorContext } from '#core/editor/types'
+import { computeAllLayouts } from '#core/layout'
 import { createSvgNodes } from '#core/tools/create/svg'
 
 import { deleteIds, recreateSnapshots } from './history'
@@ -13,7 +16,7 @@ export function createClipboardSvgActions(ctx: EditorContext) {
     const parentId = resolvePasteTarget(ctx)
     const prevSelection = new Set(ctx.state.selectedIds)
 
-    const frames = []
+    const frames: SceneNode[] = []
     for (const file of files) {
       const markup = await file.text()
       const frame = createSvgNodes(ctx.graph, parentId, markup, {
@@ -42,14 +45,17 @@ export function createClipboardSvgActions(ctx: EditorContext) {
       label: 'Import SVG',
       forward: () => {
         recreateSnapshots(ctx, allNodes, pageId)
+        computeAllLayouts(ctx.graph, pageId)
         ctx.setSelectedIds(new Set(created))
       },
       inverse: () => {
         deleteIds(ctx, created)
+        computeAllLayouts(ctx.graph, pageId)
         ctx.setSelectedIds(prevSelection)
       }
     })
 
+    computeAllLayouts(ctx.graph, pageId)
     ctx.setSelectedIds(new Set(created))
     ctx.requestRender()
   }
