@@ -10,7 +10,6 @@
   "noVariableCollections": "没有变量集合",
   "selectLayerForJSX": "选择一个图层以查看其 JSX 代码",
   "connectAIProvider": "连接 AI 提供商以开始聊天。",
-  "connect": "连接",
   "testConnection": "Test connection",
   "testingConnection": "Testing…",
   "connectionTestSuccess": "Connected successfully. Model is reachable.",
@@ -25,13 +24,10 @@
   "connectionTestNetworkFailed": "Could not reach the endpoint. Check the URL and your network connection.",
   "connectionTestUnknownFailed": "Connection test failed. Check the provider settings and try again.",
   "getAPIKey": "获取 {provider} API 密钥 →",
-  "oneKeyManyModels": "一个密钥即可使用来自所有提供商的 100+ 模型。",
   "describeChange": "描述一个更改…",
   "describeCreateOrChange": "描述你想创建或更改的内容。",
   "stopGenerating": "停止生成",
   "sendMessage": "发送消息",
-  "baseURLPlaceholder": "Base URL（例如 http://localhost:11434/v1）",
-  "modelIDPlaceholder": "模型 ID（例如 llama-3.3-70b）",
   "yourName": "你的名字",
   "enterYourName": "请输入你的名字",
   "shareThisFile": "分享此文件",
@@ -202,5 +198,6 @@
   "cloudSyncOfflineHint": "正在显示此设备上的文件;联网后云同步会自动补齐",
   "cloudSyncPending": "同步中",
   "cloudSyncError": "同步失败",
-  "cloudSyncConflict": "冲突"
+  "cloudSyncConflict": "冲突",
+  "openAISettings": "打开 AI 设置"
 }

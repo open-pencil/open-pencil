@@ -10,7 +10,6 @@
   "noVariableCollections": "Keine Variablensammlungen",
   "selectLayerForJSX": "Wähle eine Ebene, um ihren JSX-Code zu sehen",
   "connectAIProvider": "Verbinde einen KI-Anbieter, um den Chat zu starten.",
-  "connect": "Verbinden",
   "testConnection": "Test connection",
   "testingConnection": "Testing…",
   "connectionTestSuccess": "Connected successfully. Model is reachable.",
@@ -25,13 +24,10 @@
   "connectionTestNetworkFailed": "Could not reach the endpoint. Check the URL and your network connection.",
   "connectionTestUnknownFailed": "Connection test failed. Check the provider settings and try again.",
   "getAPIKey": "Einen {provider}-API-Schlüssel erhalten →",
-  "oneKeyManyModels": "Ein Schlüssel für über 100 Modelle aller Anbieter.",
   "describeChange": "Beschreibe eine Änderung…",
   "describeCreateOrChange": "Beschreibe, was du erstellen oder ändern möchtest.",
   "stopGenerating": "Generierung stoppen",
   "sendMessage": "Nachricht senden",
-  "baseURLPlaceholder": "Base URL (z. B. http://localhost:11434/v1)",
-  "modelIDPlaceholder": "Model ID (z. B. llama-3.3-70b)",
   "yourName": "Dein Name",
   "enterYourName": "Deinen Namen eingeben",
   "shareThisFile": "Diese Datei teilen",
@@ -202,5 +198,6 @@
   "cloudSyncOfflineHint": "Dateien auf diesem Gerät werden angezeigt; die Cloud-Synchronisierung holt online wieder auf",
   "cloudSyncPending": "Synchronisiert",
   "cloudSyncError": "Synchronisierung fehlgeschlagen",
-  "cloudSyncConflict": "Konflikt"
+  "cloudSyncConflict": "Konflikt",
+  "openAISettings": "KI-Einstellungen öffnen"
 }

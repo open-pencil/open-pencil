@@ -10,7 +10,6 @@
   "noVariableCollections": "変数コレクションがありません",
   "selectLayerForJSX": "JSXコードを表示するレイヤーを選択してください",
   "connectAIProvider": "チャットを始めるには、AIプロバイダーを接続してください。",
-  "connect": "接続",
   "testConnection": "Test connection",
   "testingConnection": "Testing…",
   "connectionTestSuccess": "Connected successfully. Model is reachable.",
@@ -25,13 +24,10 @@
   "connectionTestNetworkFailed": "Could not reach the endpoint. Check the URL and your network connection.",
   "connectionTestUnknownFailed": "Connection test failed. Check the provider settings and try again.",
   "getAPIKey": "{provider} からAPIキーを取得 →",
-  "oneKeyManyModels": "1つのキーで、すべてのプロバイダーの100以上のモデルに対応。",
   "describeChange": "変更内容を入力…",
   "describeCreateOrChange": "作成または変更したい内容を入力してください。",
   "stopGenerating": "生成を停止",
   "sendMessage": "メッセージを送信",
-  "baseURLPlaceholder": "ベースURL (例: http://localhost:11434/v1)",
-  "modelIDPlaceholder": "モデルID (例: llama-3.3-70b)",
   "yourName": "お名前",
   "enterYourName": "名前を入力してください",
   "shareThisFile": "このファイルを共有",
@@ -202,5 +198,6 @@
   "cloudSyncOfflineHint": "この端末上のファイルを表示しています。オンラインになるとクラウド同期が追いつきます",
   "cloudSyncPending": "同期中",
   "cloudSyncError": "同期に失敗しました",
-  "cloudSyncConflict": "競合"
+  "cloudSyncConflict": "競合",
+  "openAISettings": "AI 設定を開く"
 }

@@ -10,7 +10,6 @@
   "noVariableCollections": "Нет коллекций переменных",
   "selectLayerForJSX": "Выберите слой, чтобы увидеть его JSX-код",
   "connectAIProvider": "Подключите AI-провайдера, чтобы начать чат.",
-  "connect": "Подключить",
   "testConnection": "Test connection",
   "testingConnection": "Testing…",
   "connectionTestSuccess": "Connected successfully. Model is reachable.",
@@ -25,13 +24,10 @@
   "connectionTestNetworkFailed": "Could not reach the endpoint. Check the URL and your network connection.",
   "connectionTestUnknownFailed": "Connection test failed. Check the provider settings and try again.",
   "getAPIKey": "Получить API-ключ {provider} →",
-  "oneKeyManyModels": "Один ключ для 100+ моделей от разных провайдеров.",
   "describeChange": "Опишите изменение…",
   "describeCreateOrChange": "Опишите, что вы хотите создать или изменить.",
   "stopGenerating": "Остановить генерацию",
   "sendMessage": "Отправить сообщение",
-  "baseURLPlaceholder": "Base URL (например, http://localhost:11434/v1)",
-  "modelIDPlaceholder": "Model ID (например, llama-3.3-70b)",
   "yourName": "Ваше имя",
   "enterYourName": "Введите ваше имя",
   "shareThisFile": "Поделиться файлом",
@@ -202,5 +198,6 @@
   "cloudSyncOfflineHint": "Показаны файлы на этом устройстве; облачная синхронизация догонит при подключении",
   "cloudSyncPending": "Синхронизация",
   "cloudSyncError": "Ошибка синхронизации",
-  "cloudSyncConflict": "Конфликт"
+  "cloudSyncConflict": "Конфликт",
+  "openAISettings": "Открыть настройки ИИ"
 }

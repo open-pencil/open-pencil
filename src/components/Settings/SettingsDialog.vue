@@ -21,13 +21,15 @@ import SettingsAiPanel from '@/components/Settings/SettingsAiPanel.vue'
 import { useDialogUI } from '@/components/ui/dialog'
 import Tip from '@/components/ui/Tip.vue'
 import { cloudConnectionError } from '@/app/cloud/health'
-import { settingsDialogOpen as open } from '@/app/shell/settings-dialog'
+import {
+  settingsDialogOpen as open,
+  settingsDialogTab as activeTab
+} from '@/app/shell/settings-dialog'
 
 const { dialogs } = useI18n()
 const cls = useDialogUI({
   content: 'flex max-h-[min(85vh,40rem)] w-[min(32rem,94vw)] flex-col overflow-hidden'
 })
-const activeTab = ref<'cloud' | 'ai'>('cloud')
 const cloudStorageSection = ref<{ saveCloud: () => void } | null>(null)
 const aiPanel = ref<{ save: () => void } | null>(null)
 

@@ -10,7 +10,6 @@
   "noVariableCollections": "Brak kolekcji zmiennych",
   "selectLayerForJSX": "Wybierz warstwę, aby zobaczyć jej kod JSX",
   "connectAIProvider": "Połącz dostawcę AI, aby rozpocząć czat.",
-  "connect": "Połącz",
   "testConnection": "Test connection",
   "testingConnection": "Testing…",
   "connectionTestSuccess": "Connected successfully. Model is reachable.",
@@ -25,13 +24,10 @@
   "connectionTestNetworkFailed": "Could not reach the endpoint. Check the URL and your network connection.",
   "connectionTestUnknownFailed": "Connection test failed. Check the provider settings and try again.",
   "getAPIKey": "Pobierz klucz API {provider} →",
-  "oneKeyManyModels": "Jeden klucz do ponad 100 modeli od wszystkich dostawców.",
   "describeChange": "Opisz zmianę…",
   "describeCreateOrChange": "Opisz, co chcesz utworzyć lub zmienić.",
   "stopGenerating": "Zatrzymaj generowanie",
   "sendMessage": "Wyślij wiadomość",
-  "baseURLPlaceholder": "Base URL (np. http://localhost:11434/v1)",
-  "modelIDPlaceholder": "Model ID (np. llama-3.3-70b)",
   "yourName": "Twoje imię",
   "enterYourName": "Wpisz swoje imię",
   "shareThisFile": "Udostępnij ten plik",
@@ -202,5 +198,6 @@
   "cloudSyncOfflineHint": "Wyświetlane są pliki z tego urządzenia; synchronizacja z chmurą nadrobi zaległości po połączeniu",
   "cloudSyncPending": "Synchronizacja",
   "cloudSyncError": "Błąd synchronizacji",
-  "cloudSyncConflict": "Konflikt"
+  "cloudSyncConflict": "Konflikt",
+  "openAISettings": "Otwórz ustawienia AI"
 }
