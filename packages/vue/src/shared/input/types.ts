@@ -1,5 +1,11 @@
 import type { Tool } from '@open-pencil/core/editor'
-import type { NodeType, VectorNetwork } from '@open-pencil/scene-graph'
+import type {
+  FigmaDerivedTextGlyph,
+  GeometryPath,
+  NodeType,
+  Stroke,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -43,6 +49,10 @@ export interface OrigChildState {
   width: number
   height: number
   vectorNetwork: VectorNetwork | null
+  fillGeometry: GeometryPath[]
+  strokeGeometry: GeometryPath[]
+  figmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
+  strokes: Stroke[]
 }
 
 export interface DragResize {
@@ -53,6 +63,10 @@ export interface DragResize {
   origRect: Rect
   nodeId: string
   origVectorNetwork: VectorNetwork | null
+  origFillGeometry: GeometryPath[]
+  origStrokeGeometry: GeometryPath[]
+  origFigmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
+  origStrokes: Stroke[]
   origChildren: Map<string, OrigChildState> | null
 }
 

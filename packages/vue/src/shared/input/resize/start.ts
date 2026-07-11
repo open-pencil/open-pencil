@@ -1,8 +1,32 @@
 import type { Editor } from '@open-pencil/core/editor'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
+import type { FigmaDerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
+import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize, OrigChildState } from '#vue/shared/input/types'
+
+function copyDerivedGlyphs(glyphs: FigmaDerivedTextGlyph[] | null): FigmaDerivedTextGlyph[] | null {
+  if (!glyphs) return null
+  return glyphs.map((g) => ({
+    ...g,
+    commandsBlob: new Uint8Array(g.commandsBlob)
+  }))
+}
+
+function snapshotNodeGeometry(node: SceneNode): OrigChildState {
+  return {
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
+    fillGeometry: copyGeometryPaths(node.fillGeometry),
+    strokeGeometry: copyGeometryPaths(node.strokeGeometry),
+    figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
+    strokes: copyStrokes(node.strokes)
+  }
+}
 
 function collectDescendants(id: string, editor: Editor): Map<string, OrigChildState> | null {
   const node = editor.graph.getNode(id)
@@ -14,13 +38,7 @@ function collectDescendants(id: string, editor: Editor): Map<string, OrigChildSt
     if (childId === undefined) break
     const child = editor.graph.getNode(childId)
     if (!child) continue
-    map.set(childId, {
-      x: child.x,
-      y: child.y,
-      width: child.width,
-      height: child.height,
-      vectorNetwork: child.vectorNetwork ? cloneVectorNetwork(child.vectorNetwork) : null
-    })
+    map.set(childId, snapshotNodeGeometry(child))
     stack.push(...child.childIds)
   }
   return map.size > 0 ? map : null
@@ -32,6 +50,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
     if (!node || node.locked) continue
     const handleResult = getHitHandleByMatrix(cx, cy, node, editor.graph, editor.renderer?.zoom)
     if (handleResult) {
+      const snap = snapshotNodeGeometry(node)
       return {
         type: 'resize',
         handle: handleResult.handle,
@@ -39,7 +58,11 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         startY: cy,
         origRect: { x: node.x, y: node.y, width: node.width, height: node.height },
         nodeId: id,
-        origVectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
+        origVectorNetwork: snap.vectorNetwork,
+        origFillGeometry: snap.fillGeometry,
+        origStrokeGeometry: snap.strokeGeometry,
+        origFigmaDerivedTextGlyphs: snap.figmaDerivedTextGlyphs,
+        origStrokes: snap.strokes,
         origChildren: collectDescendants(id, editor)
       }
     }
