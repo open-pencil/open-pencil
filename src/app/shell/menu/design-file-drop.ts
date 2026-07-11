@@ -60,11 +60,14 @@ export function useDesignFileDrop(options?: { enabled?: () => boolean }) {
     (e: DragEvent) => {
       if (!enabled()) return
       if (!e.dataTransfer?.files.length) return
-      // Any window-level file drop is ours — never let the browser navigate to the file.
+      // Never let the browser navigate to a dropped file…
       e.preventDefault()
-      e.stopPropagation()
       const files = filesFromDataTransfer(e.dataTransfer)
+      // …but only claim the event when it holds design files — this runs in the
+      // capture phase, and stopping propagation here would starve the canvas
+      // drop handler that imports images and SVGs.
       if (files.length === 0) return
+      e.stopPropagation()
       void openDesignFiles(files)
     },
     { capture: true }
