@@ -535,7 +535,10 @@ function drawNodeStroke(
     return
   }
   if (stroke.align !== 'INSIDE') {
-    if (node.type === 'VECTOR') drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+    // TEXT (incl. imported TEXT_PATH) and VECTOR store expanded stroke bands in
+    // strokeGeometry — fill those paths rather than stroking the AABB.
+    if (node.type === 'VECTOR' || node.type === 'TEXT')
+      drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
     else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
     return
   }
@@ -648,7 +651,12 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   if (!text) return
 
   canvas.save()
-  const shouldClipText = node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE'
+  // Path text glyphs often sit outside the layout box — do not clip them away.
+  const hasPathText =
+    node.figmaDerivedTextGlyphs?.some((g) => (g.rotation ?? 0) !== 0) === true ||
+    node.source.fig.kiwiNodeType === 'TEXT_PATH'
+  const shouldClipText =
+    !hasPathText && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
   if (shouldClipText) {
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }

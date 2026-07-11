@@ -12,7 +12,9 @@ export function convertFigmaDerivedTextGlyphs(
         commandsBlob: blobs[glyph.commandsBlob],
         x: glyph.position.x,
         y: glyph.position.y,
-        fontSize: glyph.fontSize
+        fontSize: glyph.fontSize,
+        // Figma Glyph.rotation is radians (path text uses non-zero values).
+        rotation: glyph.rotation ?? 0
       }
     })
     .filter((glyph): glyph is NonNullable<typeof glyph> => !!glyph)

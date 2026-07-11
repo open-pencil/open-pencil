@@ -123,7 +123,10 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   INSTANCE: 'INSTANCE',
   SYMBOL: 'COMPONENT',
   CONNECTOR: 'CONNECTOR',
-  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT'
+  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
+  // Text-on-path: engine has no first-class TEXT_PATH yet — map to TEXT and
+  // paint via derived glyphs + strokeGeometry (see fix-text-path-import).
+  TEXT_PATH: 'TEXT'
 }
 
 function mapNodeType(type?: string): NodeType | 'DOCUMENT' | 'VARIABLE' {
@@ -786,7 +789,9 @@ function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['
     fig: {
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
-      layout: extractFigmaLayoutMetadata(nc)
+      layout: extractFigmaLayoutMetadata(nc),
+      // Preserve Figma-native types that map to a different engine type (e.g. TEXT_PATH → TEXT).
+      kiwiNodeType: nc.type === 'TEXT_PATH' ? 'TEXT_PATH' : null
     }
   }
 }

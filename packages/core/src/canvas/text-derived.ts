@@ -213,15 +213,28 @@ function drawDerivedDecorations(
   }
 }
 
+/** True when any derived glyph carries a non-zero rotation (text-on-path). */
+export function hasRotatedFigmaDerivedGlyphs(
+  node: Pick<SceneNode, 'figmaDerivedTextGlyphs'>
+): boolean {
+  return node.figmaDerivedTextGlyphs?.some((glyph) => (glyph.rotation ?? 0) !== 0) === true
+}
+
 export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   if (!node.figmaDerivedTextGlyphs?.length) return false
 
+  // Path text uses sub-pixel baselines; snapping flattens curved placements.
+  const snapBaselines = !hasRotatedFigmaDerivedGlyphs(node)
   let underlineBaselineY = 0
   for (const glyph of node.figmaDerivedTextGlyphs) {
-    underlineBaselineY = Math.max(underlineBaselineY, snapFigmaDerivedGlyphBaseline(glyph.y))
+    const glyphY = snapBaselines ? snapFigmaDerivedGlyphBaseline(glyph.y) : glyph.y
+    underlineBaselineY = Math.max(underlineBaselineY, glyphY)
     const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
     canvas.save()
-    canvas.translate(glyph.x, snapFigmaDerivedGlyphBaseline(glyph.y))
+    canvas.translate(glyph.x, glyphY)
+    // Figma Glyph.rotation is radians; CanvasKit rotate() takes degrees.
+    const rotation = glyph.rotation ?? 0
+    if (rotation !== 0) canvas.rotate((rotation * 180) / Math.PI, 0, 0)
     canvas.scale(glyph.fontSize, -glyph.fontSize)
     const shouldUseHardCoverage = shouldUseHardFigmaDerivedGlyphCoverage(node)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
@@ -231,6 +244,7 @@ export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: Scen
     path.delete()
   }
 
-  drawDerivedDecorations(r, canvas, node, underlineBaselineY)
+  // Horizontal underlines don't make sense for path text — skip decorations.
+  if (snapBaselines) drawDerivedDecorations(r, canvas, node, underlineBaselineY)
   return true
 }

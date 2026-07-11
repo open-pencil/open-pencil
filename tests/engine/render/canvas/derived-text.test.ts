@@ -1,13 +1,16 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
-import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@open-pencil/core'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
+import { SkiaRenderer } from '#core/canvas/renderer'
 import {
   derivedUnderlineRect,
+  hasRotatedFigmaDerivedGlyphs,
   shouldUseHardFigmaDerivedGlyphCoverage,
   snapFigmaDerivedGlyphBaseline
 } from '#core/canvas/text-derived'
+import { renderNodesToImage } from '#core/io/formats/raster/render'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -338,6 +341,68 @@ describe('derived text rendering', () => {
       expect(redPixels).toBeGreaterThan(0)
       expect(bluePixels).toBeGreaterThan(0)
       image.delete()
+    } finally {
+      surface.delete()
+    }
+  })
+})
+
+describe('rotated derived glyphs (text-on-path)', () => {
+  test('hasRotatedFigmaDerivedGlyphs detects non-zero rotation', () => {
+    expect(
+      hasRotatedFigmaDerivedGlyphs({
+        figmaDerivedTextGlyphs: [
+          { commandsBlob: squareCommandsBlob(), x: 0, y: 0, fontSize: 12, rotation: 0 }
+        ]
+      })
+    ).toBe(false)
+    expect(
+      hasRotatedFigmaDerivedGlyphs({
+        figmaDerivedTextGlyphs: [
+          { commandsBlob: squareCommandsBlob(), x: 0, y: 0, fontSize: 12, rotation: -1.5 }
+        ]
+      })
+    ).toBe(true)
+  })
+
+  test('draws rotated derived glyphs without throwing', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, {
+      width: 200,
+      height: 200,
+      text: 'x',
+      fontFamily: '__MissingFont__',
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true
+        }
+      ],
+      figmaDerivedTextGlyphs: [
+        {
+          commandsBlob: squareCommandsBlob(),
+          x: 50,
+          y: 50,
+          fontSize: 20,
+          rotation: -Math.PI / 2
+        }
+      ]
+    })
+
+    const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    try {
+      const png = expectDefined(
+        renderNodesToImage(ck, renderer, graph, page.id, [text.id], {
+          scale: 1,
+          format: 'PNG'
+        }),
+        'png'
+      )
+      expect(png.byteLength).toBeGreaterThan(0)
     } finally {
       surface.delete()
     }

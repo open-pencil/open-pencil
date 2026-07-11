@@ -30,6 +30,11 @@ export interface FigmaSourcePayload {
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
+  /**
+   * Original Figma Kiwi NodeType when it differs from the engine type
+   * (e.g. TEXT_PATH → TEXT). Used to re-export the native type for unedited imports.
+   */
+  kiwiNodeType: string | null
 }
 
 export interface SourceMetadata {
@@ -281,6 +286,8 @@ export interface FigmaDerivedTextGlyph {
   x: number
   y: number
   fontSize: number
+  /** Per-glyph rotation from Figma derivedTextData (radians). Used for text-on-path. */
+  rotation?: number
 }
 
 export interface SymbolLink {

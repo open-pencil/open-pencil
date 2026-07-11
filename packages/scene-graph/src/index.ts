@@ -394,7 +394,11 @@ export class SceneGraph {
     if (node.type === 'TEXT') {
       const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
       if (node.textPicture && textChanged) node.textPicture = null
-      if (node.figmaDerivedTextGlyphs && textChanged) node.figmaDerivedTextGlyphs = null
+      if (node.figmaDerivedTextGlyphs && textChanged) {
+        node.figmaDerivedTextGlyphs = null
+        // Drop TEXT_PATH export marker once path-text fidelity is gone.
+        if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
+      }
     }
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(

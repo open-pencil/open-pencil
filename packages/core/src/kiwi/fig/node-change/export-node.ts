@@ -677,13 +677,23 @@ export function sceneNodeToKiwiWithContext(
 
   const strokePaints = createStrokePaints(context, node)
 
+  // Prefer preserved Figma-native type (e.g. TEXT_PATH) when the node still
+  // carries path-text fidelity (derived glyphs + import marker).
+  const kiwiNodeType = node.source.fig.kiwiNodeType
+  const exportType =
+    kiwiNodeType === 'TEXT_PATH' &&
+    node.type === 'TEXT' &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+      ? 'TEXT_PATH'
+      : context.mapToFigmaType(node.type)
+
   const nc: KiwiNodeChange = {
     guid,
     parentIndex: {
       guid: parentGuid,
       position: node.source.orderKey ?? context.fractionalPosition(childIndex)
     },
-    type: context.mapToFigmaType(node.type),
+    type: exportType,
     name: node.name,
     visible: node.visible,
     opacity: node.opacity,

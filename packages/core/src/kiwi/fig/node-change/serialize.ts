@@ -158,7 +158,7 @@ function buildDerivedTextData(
             index + 1 < derivedGlyphs.length
               ? Math.max(derivedGlyphs[index + 1].x - glyph.x, 0)
               : glyphAdvance,
-          rotation: 0
+          rotation: glyph.rotation ?? 0
         }))
       : (
           getGlyphOutlineMetricsSync(

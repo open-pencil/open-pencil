@@ -17,6 +17,7 @@
 
 ### Fixes
 
+- Fix Figma text-on-path (`TEXT_PATH`) import: map to text with rotated derived glyphs and freeform stroke geometry instead of a solid black rectangle that covered artwork underneath.
 - Fix live CLI and MCP automation drifting to the wrong open document or page when multiple files are open.
 - Improve Chinese, Japanese, and Korean text rendering with glyph-aware fallback fonts and outline rendering when needed.
 - Preserve imported Figma text sizing more accurately, especially auto-sized text inside auto-layout frames.

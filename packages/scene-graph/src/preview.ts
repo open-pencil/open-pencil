@@ -76,7 +76,10 @@ export function updateNodePreview(
   if (node.type === 'TEXT') {
     const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
     if (node.textPicture && textChanged) node.textPicture = null
-    if (node.figmaDerivedTextGlyphs && textChanged) node.figmaDerivedTextGlyphs = null
+    if (node.figmaDerivedTextGlyphs && textChanged) {
+      node.figmaDerivedTextGlyphs = null
+      if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
+    }
   }
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
