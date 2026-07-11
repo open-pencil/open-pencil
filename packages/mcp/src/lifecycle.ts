@@ -50,8 +50,11 @@ export async function startSocketListener(
   const resolvedPath = socketPathOverride ?? (await getSocketPath())
   if (socketPathOverride) {
     // Create the parent directory for the caller-provided socket path.
-    // Use mode 0o700 to restrict access to the same OS user, matching
-    // the permissions applied by getSocketDir() for the default path.
+    // For newly-created parent directories, request mode 0o700 to restrict
+    // access to the same OS user; existing directories are left unchanged
+    // (mkdir with recursive:true does not chmod existing dirs). The socket
+    // file itself is later chmodded to 0o600, and the auth token provides
+    // the primary defense against unauthorized access.
     await mkdir(dirname(resolvedPath), { recursive: true, mode: 0o700 })
   } else {
     // Ensure the default platform socket directory exists.
@@ -74,7 +77,17 @@ export async function startSocketListener(
     // a leak. The caller's catch block in startServer calls
     // shutdownRuntime, but state.socketResult is null at that point
     // because this function hasn't returned yet.
-    server.close()
+    //
+    // Remove the dangling 'error' listener (only added on the success
+    // path at ss.off above) for cleanup hygiene — the server is being
+    // discarded. Provide a no-op callback to close(): Node.js passes
+    // ERR_SERVER_NOT_RUNNING to the callback when the server never
+    // listened, which we intentionally discard.
+    ss.removeAllListeners('error')
+    server.close(() => {
+      // Intentionally empty: discards the ERR_SERVER_NOT_RUNNING error
+      // that Node.js passes to the callback on a non-listening server.
+    })
     throw err
   })
 
@@ -124,7 +137,16 @@ export async function startTcpListener(
     // If listen() fails, close the server to prevent a leak.
     // teardownListeners in the caller won't find it because
     // state.tcpResult is still null at this point.
-    server.close()
+    //
+    // Remove the dangling 'error' listener for cleanup hygiene — the
+    // server is being discarded. Provide a no-op callback to close():
+    // Node.js passes ERR_SERVER_NOT_RUNNING to the callback when the
+    // server never listened, which we intentionally discard.
+    ts.removeAllListeners('error')
+    server.close(() => {
+      // Intentionally empty: discards the ERR_SERVER_NOT_RUNNING error
+      // that Node.js passes to the callback on a non-listening server.
+    })
     throw err
   })
 
