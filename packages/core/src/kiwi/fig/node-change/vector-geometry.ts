@@ -63,7 +63,6 @@ export function styleOverrideFillsById(
   const map = new Map<number, Fill[]>()
   if (!styleOverrideTable) return map
   for (const entry of styleOverrideTable) {
-    if (entry.styleID == null) continue
     if (!entry.fillPaints || entry.fillPaints.length === 0) continue
     map.set(entry.styleID, convertFills(entry.fillPaints))
   }
