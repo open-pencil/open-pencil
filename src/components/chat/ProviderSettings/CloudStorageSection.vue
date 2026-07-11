@@ -57,7 +57,15 @@ const usageError = ref<string | null>(null)
 
 const providerOptions = CLOUD_PROVIDERS.map((p) => ({ value: p.id, label: p.label }))
 
-const canTest = computed(() => isS3ConfigComplete(readS3Config()))
+// Explicitly depend on each field so the button enables as the form is typed
+// (readS3Config alone is easy to mis-read as non-reactive).
+const canTest = computed(() => {
+  void s3Endpoint.value
+  void s3Bucket.value
+  void s3AccessKeyId.value
+  void s3SecretAccessKey.value
+  return isS3ConfigComplete(readS3Config())
+})
 
 const corsJson = computed(() => buildCorsConfigurationJson(collectCloudCorsOrigins()))
 
@@ -115,7 +123,17 @@ async function copyCorsJson() {
 }
 
 async function testConnection() {
-  if (!canTest.value || testStatus.value === 'testing') return
+  if (testStatus.value === 'testing') return
+
+  // Never silently no-op: a disabled button with no message feels broken.
+  if (!canTest.value) {
+    testStatus.value = 'error'
+    testError.value = dialogs.value.cloudTestIncomplete
+    corsHint.value = false
+    toast.error(dialogs.value.cloudTestIncomplete)
+    return
+  }
+
   testStatus.value = 'testing'
   testError.value = ''
   corsHint.value = false
@@ -129,11 +147,15 @@ async function testConnection() {
     if (result.ok) {
       // Storage works — CORS is fine for this browser (or desktop). Never show the
       // "CORS issue" alert on success; PutBucketCors may fail while ops still work.
-      // Result renders inline next to the Test button — no toast.
       testStatus.value = 'success'
       testError.value = ''
       corsHint.value = false
       corsApplied.value = result.corsApplied
+      toast.info(
+        result.corsApplied
+          ? dialogs.value.cloudConnectionSuccessWithCors
+          : dialogs.value.cloudConnectionSuccess
+      )
       void refreshUsage()
       return
     }
@@ -142,10 +164,12 @@ async function testConnection() {
     testError.value = result.message
     // Only when list/namespace failed with a CORS/network block.
     corsHint.value = result.isCorsFailure
+    toast.error(result.message || dialogs.value.cloudConnectionFailed)
   } catch (error) {
     testStatus.value = 'error'
     testError.value = error instanceof Error ? error.message : String(error)
     corsHint.value = !isTauri() && isLikelyCorsOrNetworkError(error)
+    toast.error(testError.value || dialogs.value.cloudConnectionFailed)
   }
 }
 
@@ -270,26 +294,38 @@ defineExpose({ saveCloud })
       />
     </ProviderSettingsField>
 
-    <div class="flex items-center gap-2">
-      <button
-        type="button"
-        class="rounded border border-border px-2 py-1 text-[11px] font-medium text-surface hover:bg-hover disabled:opacity-50"
-        data-test-id="cloud-storage-test"
-        :disabled="!canTest || testStatus === 'testing'"
-        @click="testConnection"
-      >
-        {{ testStatus === 'testing' ? dialogs.testingConnection : dialogs.cloudTestAndApplyCors }}
-      </button>
+    <div class="flex flex-col gap-1.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          class="rounded border border-border px-2 py-1 text-[11px] font-medium text-surface hover:bg-hover disabled:opacity-50"
+          data-test-id="cloud-storage-test"
+          :disabled="testStatus === 'testing'"
+          :aria-busy="testStatus === 'testing'"
+          @click="testConnection"
+        >
+          {{ testStatus === 'testing' ? dialogs.testingConnection : dialogs.cloudTestAndApplyCors }}
+        </button>
+        <p
+          v-if="testStatus === 'success'"
+          class="text-[10px] text-emerald-500"
+          data-test-id="cloud-storage-test-success"
+        >
+          {{
+            corsApplied ? dialogs.cloudConnectionSuccessWithCors : dialogs.cloudConnectionSuccess
+          }}
+        </p>
+        <p
+          v-else-if="testStatus === 'testing'"
+          class="text-[10px] text-muted"
+          data-test-id="cloud-storage-test-pending"
+        >
+          {{ dialogs.testingConnection }}
+        </p>
+      </div>
       <p
-        v-if="testStatus === 'success'"
-        class="text-[10px] text-emerald-500"
-        data-test-id="cloud-storage-test-success"
-      >
-        {{ corsApplied ? dialogs.cloudConnectionSuccessWithCors : dialogs.cloudConnectionSuccess }}
-      </p>
-      <p
-        v-else-if="testStatus === 'error'"
-        class="text-[10px] text-red-500"
+        v-if="testStatus === 'error'"
+        class="text-[10px] leading-snug text-red-500"
         data-test-id="cloud-storage-test-error"
       >
         {{ testError || dialogs.cloudConnectionFailed }}

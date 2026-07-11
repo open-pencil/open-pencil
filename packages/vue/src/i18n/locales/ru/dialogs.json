@@ -144,6 +144,7 @@
   "savedReplace": "Сохранено — введите новый, чтобы заменить",
   "cloudConnectionSuccess": "Подключено.",
   "cloudConnectionFailed": "Не удалось подключиться к облачному хранилищу.",
+  "cloudTestIncomplete": "Fill in endpoint, bucket, access key ID, and secret access key before testing.",
   "newCanvas": "Новый .fig",
   "openCanvas": "Открыть",
   "duplicateCanvas": "Дублировать",

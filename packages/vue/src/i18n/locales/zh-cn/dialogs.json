@@ -144,6 +144,7 @@
   "savedReplace": "已保存 — 输入新值以替换",
   "cloudConnectionSuccess": "已连接。",
   "cloudConnectionFailed": "无法连接到云存储。",
+  "cloudTestIncomplete": "Fill in endpoint, bucket, access key ID, and secret access key before testing.",
   "newCanvas": "新建 .fig",
   "openCanvas": "打开",
   "duplicateCanvas": "创建副本",

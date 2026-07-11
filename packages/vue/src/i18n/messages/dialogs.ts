@@ -145,6 +145,8 @@ export const dialogMessageDefaults = {
   cloudConnectionSuccessDesktop:
     'Connected. Namespace ready. Bucket CORS updated for web origins when possible.',
   cloudConnectionFailed: 'Could not connect to cloud storage.',
+  cloudTestIncomplete:
+    'Fill in endpoint, bucket, access key ID, and secret access key before testing.',
   cloudTestAndApplyCors: 'Test connection',
   cloudCorsHint:
     'Test connection tries to set bucket CORS automatically when needed. Desktop can always apply CORS; the web app only if the bucket already allows this site.',

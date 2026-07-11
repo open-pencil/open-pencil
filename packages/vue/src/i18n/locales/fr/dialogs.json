@@ -144,6 +144,7 @@
   "savedReplace": "Enregistré — saisissez-en une nouvelle pour remplacer",
   "cloudConnectionSuccess": "Connecté.",
   "cloudConnectionFailed": "Impossible de se connecter au stockage cloud.",
+  "cloudTestIncomplete": "Fill in endpoint, bucket, access key ID, and secret access key before testing.",
   "newCanvas": "Nouveau .fig",
   "openCanvas": "Ouvrir",
   "duplicateCanvas": "Dupliquer",

@@ -144,6 +144,7 @@
   "savedReplace": "Gespeichert — zum Ersetzen neu eingeben",
   "cloudConnectionSuccess": "Verbunden.",
   "cloudConnectionFailed": "Verbindung zum Cloud-Speicher fehlgeschlagen.",
+  "cloudTestIncomplete": "Fill in endpoint, bucket, access key ID, and secret access key before testing.",
   "newCanvas": "Neue .fig",
   "openCanvas": "Öffnen",
   "duplicateCanvas": "Duplizieren",

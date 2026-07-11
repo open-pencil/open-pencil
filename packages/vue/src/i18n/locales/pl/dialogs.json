@@ -144,6 +144,7 @@
   "savedReplace": "Zapisano — wpisz nowy, aby zastąpić",
   "cloudConnectionSuccess": "Połączono.",
   "cloudConnectionFailed": "Nie udało się połączyć z magazynem w chmurze.",
+  "cloudTestIncomplete": "Fill in endpoint, bucket, access key ID, and secret access key before testing.",
   "newCanvas": "Nowy .fig",
   "openCanvas": "Otwórz",
   "duplicateCanvas": "Duplikuj",

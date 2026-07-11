@@ -144,6 +144,7 @@
   "savedReplace": "保存済み — 置き換えるには新しい値を入力",
   "cloudConnectionSuccess": "接続しました。",
   "cloudConnectionFailed": "クラウドストレージに接続できませんでした。",
+  "cloudTestIncomplete": "Fill in endpoint, bucket, access key ID, and secret access key before testing.",
   "newCanvas": "新規 .fig",
   "openCanvas": "開く",
   "duplicateCanvas": "複製",
