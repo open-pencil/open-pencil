@@ -559,23 +559,30 @@ function drawNodeStroke(
   canvas.restore()
 }
 
-export function renderShapeUncached(
+/**
+ * Figma text-on-path stores OUTSIDE stroke as expanded strokeGeometry silhouettes
+ * that cover glyph interiors if painted after fills. Paint those first, then
+ * derived-glyph fills on top so black letter bodies sit inside the white outline.
+ */
+function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
+    node.strokeGeometry.length > 0
+  )
+}
+
+function paintNodeStrokes(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph
+  graph: SceneGraph,
+  rect: Float32Array,
+  hasRadius: boolean,
+  sg: Path[] | null,
+  vectorPaths: Path[] | null,
+  vectorStroke: Path[] | null
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-  const hasRadius = nodeHasRadius(node)
-
-  const shadowChild = getShadowShapeChild(node, graph)
-  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
-
-  drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
-
-  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
-  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
-  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     if (
       stroke.dashPattern &&
@@ -590,6 +597,36 @@ export function renderShapeUncached(
     }
     drawNodeStroke(r, canvas, node, rect, hasRadius, stroke, color, sg, vectorPaths, vectorStroke)
   })
+}
+
+export function renderShapeUncached(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+  const hasRadius = nodeHasRadius(node)
+
+  const shadowChild = getShadowShapeChild(node, graph)
+  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
+
+  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
+  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
+  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
+  const pathTextStrokeFirst = isPathTextWithStrokeGeometry(node)
+
+  // Path text: strokeGeometry silhouettes first, then glyph fills (black body
+  // inside white OUTSIDE outline). Normal shapes keep fill-then-stroke.
+  if (pathTextStrokeFirst) {
+    paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
+  }
+
+  drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
+
+  if (!pathTextStrokeFirst) {
+    paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
+  }
   r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)
 }
 

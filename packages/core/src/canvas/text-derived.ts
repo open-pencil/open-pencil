@@ -232,9 +232,11 @@ export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: Scen
     const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
     canvas.save()
     canvas.translate(glyph.x, glyphY)
-    // Figma Glyph.rotation is radians; CanvasKit rotate() takes degrees.
+    // Figma Glyph.rotation is radians. CanvasKit rotate() takes degrees, and
+    // the following Y-flip (scale y negative) means we must negate the angle
+    // so path-text tangents match strokeGeometry (see DomeSticker text-on-path).
     const rotation = glyph.rotation ?? 0
-    if (rotation !== 0) canvas.rotate((rotation * 180) / Math.PI, 0, 0)
+    if (rotation !== 0) canvas.rotate((-rotation * 180) / Math.PI, 0, 0)
     canvas.scale(glyph.fontSize, -glyph.fontSize)
     const shouldUseHardCoverage = shouldUseHardFigmaDerivedGlyphCoverage(node)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
