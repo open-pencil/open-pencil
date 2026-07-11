@@ -15,6 +15,7 @@ export { buildFontDigestMap } from './font/digests'
 
 import type { NodeChange, Paint, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { transformGeometryBlob } from '@open-pencil/scene-graph/copy'
 import type { Color, GUID, JsonObject, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { guidToString, stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
@@ -130,25 +131,7 @@ function bakeGlyphScale(
   const m00 = scaleX * cos * cos + scaleY * sin * sin
   const m01 = (scaleY - scaleX) * sin * cos
   const m11 = scaleX * sin * sin + scaleY * cos * cos
-  const out = blob.slice()
-  const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
-  let offset = 0
-  while (offset < out.length) {
-    const command = out[offset++]
-    let coords = 0
-    if (command === 1 || command === 2) coords = 1
-    else if (command === 3)
-      coords = 2 // quadTo — font glyph outlines are quad-heavy
-    else if (command === 4) coords = 3
-    for (let i = 0; i < coords; i++) {
-      const x = dv.getFloat32(offset, true)
-      const y = dv.getFloat32(offset + 4, true)
-      dv.setFloat32(offset, m00 * x + m01 * y, true)
-      dv.setFloat32(offset + 4, m01 * x + m11 * y, true)
-      offset += 8
-    }
-  }
-  return out
+  return transformGeometryBlob(blob, m00, m01, m01, m11)
 }
 
 function buildDerivedTextData(

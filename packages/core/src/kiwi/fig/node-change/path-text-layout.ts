@@ -1,4 +1,5 @@
 import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
+import { transformGeometryPaths } from '@open-pencil/scene-graph/copy'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
 /**
@@ -7,29 +8,7 @@ import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
  */
 function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): GeometryPath[] {
   if (dx === 0 && dy === 0) return paths
-  return paths.map((g) => {
-    const scaled = g.commandsBlob.slice()
-    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
-    let offset = 0
-    while (offset < scaled.length) {
-      const command = scaled[offset++]
-      let coords = 0
-      if (command === 1 || command === 2) coords = 1
-      else if (command === 3)
-        coords = 2 // quadTo — glyph-derived blobs use quads
-      else if (command === 4) coords = 3
-      for (let i = 0; i < coords; i++) {
-        if (offset + 8 > scaled.length) break
-        dv.setFloat32(offset, dv.getFloat32(offset, true) + dx, true)
-        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) + dy, true)
-        offset += 8
-      }
-    }
-    return {
-      windingRule: g.windingRule,
-      commandsBlob: scaled
-    }
-  })
+  return transformGeometryPaths(paths, 1, 0, 0, 1, dx, dy)
 }
 
 /**
@@ -41,16 +20,19 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
  * Grow width/height to cover strokeGeometry + glyph pads, then shift local
  * geometry by (dx, dy) and compensate with x/y so the design does not jump.
  */
-export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: string }): void {
-  if (props.nodeType !== 'TEXT') return
-  if (props.source?.fig?.kiwiNodeType !== 'TEXT_PATH') return
+interface ContentBounds {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
 
-  const width = props.width ?? 0
-  const height = props.height ?? 0
-  const paths: GeometryPath[] = [
-    ...((props.fillGeometry as GeometryPath[] | undefined) ?? []),
-    ...((props.strokeGeometry as GeometryPath[] | undefined) ?? [])
-  ]
+function pathTextContentBounds(
+  props: Partial<SceneNode>,
+  width: number,
+  height: number
+): ContentBounds {
+  const paths: GeometryPath[] = [...(props.fillGeometry ?? []), ...(props.strokeGeometry ?? [])]
   const geom = paths.length > 0 ? geometryBlobBounds(paths) : null
 
   let minX = geom?.x ?? 0
@@ -66,6 +48,34 @@ export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: 
     maxX = Math.max(maxX, g.x + pad)
     maxY = Math.max(maxY, g.y + pad * 0.35)
   }
+  return { minX, minY, maxX, maxY }
+}
+
+/** Shift local geometry so world positions survive the origin move. */
+function shiftLocalGeometry(props: Partial<SceneNode>, dx: number, dy: number): void {
+  if (dx === 0 && dy === 0) return
+  if (props.strokeGeometry && props.strokeGeometry.length > 0) {
+    props.strokeGeometry = translateGeometryPaths(props.strokeGeometry, dx, dy)
+  }
+  if (props.fillGeometry && props.fillGeometry.length > 0) {
+    props.fillGeometry = translateGeometryPaths(props.fillGeometry, dx, dy)
+  }
+  if (props.figmaDerivedTextGlyphs?.length) {
+    props.figmaDerivedTextGlyphs = props.figmaDerivedTextGlyphs.map((g) => ({
+      ...g,
+      x: g.x + dx,
+      y: g.y + dy
+    }))
+  }
+}
+
+export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: string }): void {
+  if (props.nodeType !== 'TEXT') return
+  if (props.source?.fig.kiwiNodeType !== 'TEXT_PATH') return
+
+  const width = props.width ?? 0
+  const height = props.height ?? 0
+  const { minX, minY, maxX, maxY } = pathTextContentBounds(props, width, height)
 
   const pad = 1
   const overflowLeft = Math.max(0, -minX + (minX < 0 ? pad : 0))
@@ -78,26 +88,9 @@ export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: 
 
   // New origin is (oldOrigin - (overflowLeft, overflowTop)) in parent space;
   // add the same delta to local geometry so world positions are unchanged.
-  const dx = overflowLeft
-  const dy = overflowTop
-  props.x = (props.x ?? 0) - dx
-  props.y = (props.y ?? 0) - dy
+  props.x = (props.x ?? 0) - overflowLeft
+  props.y = (props.y ?? 0) - overflowTop
   props.width = width + overflowLeft + overflowRight
   props.height = height + overflowTop + overflowBottom
-
-  if (dx !== 0 || dy !== 0) {
-    if (props.strokeGeometry && props.strokeGeometry.length > 0) {
-      props.strokeGeometry = translateGeometryPaths(props.strokeGeometry, dx, dy)
-    }
-    if (props.fillGeometry && props.fillGeometry.length > 0) {
-      props.fillGeometry = translateGeometryPaths(props.fillGeometry, dx, dy)
-    }
-    if (props.figmaDerivedTextGlyphs?.length) {
-      props.figmaDerivedTextGlyphs = props.figmaDerivedTextGlyphs.map((g) => ({
-        ...g,
-        x: g.x + dx,
-        y: g.y + dy
-      }))
-    }
-  }
+  shiftLocalGeometry(props, overflowLeft, overflowTop)
 }

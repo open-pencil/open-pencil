@@ -93,33 +93,63 @@ export function copyGeometryPaths(paths: GeometryPath[]): GeometryPath[] {
 }
 
 /**
+ * Affine-transform every coordinate pair in a path command blob (returns a
+ * copy): (x, y) → (m00·x + m01·y + tx, m10·x + m11·y + ty).
+ * Command layout: 1=move/2=line (1 pair), 3=quad (2 pairs), 4=cubic (3 pairs)
+ * — font-glyph blobs are quad-heavy, so skipping command 3 desyncs the walk.
+ */
+export function transformGeometryBlob(
+  blob: Uint8Array,
+  m00: number,
+  m01: number,
+  m10: number,
+  m11: number,
+  tx = 0,
+  ty = 0
+): Uint8Array {
+  const out = blob.slice()
+  const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  let offset = 0
+  while (offset < out.length) {
+    const command = out[offset++]
+    let coords = 0
+    if (command === 1 || command === 2) coords = 1
+    else if (command === 3) coords = 2
+    else if (command === 4) coords = 3
+    for (let i = 0; i < coords; i++) {
+      if (offset + 8 > out.length) break
+      const x = dv.getFloat32(offset, true)
+      const y = dv.getFloat32(offset + 4, true)
+      dv.setFloat32(offset, m00 * x + m01 * y + tx, true)
+      dv.setFloat32(offset + 4, m10 * x + m11 * y + ty, true)
+      offset += 8
+    }
+  }
+  return out
+}
+
+export function transformGeometryPaths(
+  paths: GeometryPath[],
+  m00: number,
+  m01: number,
+  m10: number,
+  m11: number,
+  tx = 0,
+  ty = 0
+): GeometryPath[] {
+  return paths.map((g) => ({
+    windingRule: g.windingRule,
+    commandsBlob: transformGeometryBlob(g.commandsBlob, m00, m01, m10, m11, tx, ty)
+  }))
+}
+
+/**
  * Scale path command blob coordinates by (sx, sy).
  * Identity scale returns a deep copy (same as copyGeometryPaths).
  */
 export function scaleGeometryPaths(paths: GeometryPath[], sx: number, sy: number): GeometryPath[] {
   if (sx === 1 && sy === 1) return copyGeometryPaths(paths)
-  return paths.map((g) => {
-    const scaled = g.commandsBlob.slice()
-    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
-    let offset = 0
-    while (offset < scaled.length) {
-      const command = scaled[offset++]
-      let coords = 0
-      if (command === 1 || command === 2) coords = 1
-      else if (command === 3)
-        coords = 2 // quadTo — glyph-derived blobs use quads
-      else if (command === 4) coords = 3
-      for (let i = 0; i < coords; i++) {
-        dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
-        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
-        offset += 8
-      }
-    }
-    return {
-      windingRule: g.windingRule,
-      commandsBlob: scaled
-    }
-  })
+  return transformGeometryPaths(paths, sx, 0, 0, sy)
 }
 
 // --- Internal helpers ---

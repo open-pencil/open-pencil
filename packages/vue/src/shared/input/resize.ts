@@ -154,53 +154,42 @@ export function applyResize(
   editor.requestRepaint()
 }
 
-export function commitResizePreview(d: DragResize, editor: Editor) {
-  const node = editor.graph.getNode(d.nodeId)
-  if (!node) return
-  const finalChanges: Partial<SceneNode> = {
+/**
+ * Deep-copy geometry read back from a previewed node — preview values can be
+ * reactivity-wrapped, and storing proxies breaks structuredClone snapshots
+ * (delete/undo would throw DataCloneError).
+ */
+function finalGeometrySnapshot(node: SceneNode): Partial<SceneNode> {
+  const final: Partial<SceneNode> = {
     x: node.x,
     y: node.y,
     width: node.width,
     height: node.height
   }
-  // Deep-copy geometry read back from the previewed node — preview values can
-  // be reactivity-wrapped, and storing proxies breaks structuredClone snapshots
-  // (delete/undo would throw DataCloneError).
-  if (node.vectorNetwork) finalChanges.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
-  if (node.fillGeometry.length > 0) finalChanges.fillGeometry = copyGeometryPaths(node.fillGeometry)
-  if (node.strokeGeometry.length > 0)
-    finalChanges.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
+  if (node.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
+  if (node.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(node.fillGeometry)
+  if (node.strokeGeometry.length > 0) final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
   if (node.figmaDerivedTextGlyphs?.length) {
-    finalChanges.figmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs.map((g) => ({
+    final.figmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs.map((g) => ({
       ...g,
       commandsBlob: new Uint8Array(g.commandsBlob)
     }))
   }
-  if (node.strokes.length > 0) finalChanges.strokes = copyStrokes(node.strokes)
+  if (node.strokes.length > 0) final.strokes = copyStrokes(node.strokes)
+  return final
+}
+
+export function commitResizePreview(d: DragResize, editor: Editor) {
+  const node = editor.graph.getNode(d.nodeId)
+  if (!node) return
+  const finalChanges = finalGeometrySnapshot(node)
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
     for (const [childId] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      const final: Partial<SceneNode> = {
-        x: child.x,
-        y: child.y,
-        width: child.width,
-        height: child.height
-      }
-      if (child.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(child.vectorNetwork)
-      if (child.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(child.fillGeometry)
-      if (child.strokeGeometry.length > 0)
-        final.strokeGeometry = copyGeometryPaths(child.strokeGeometry)
-      if (child.figmaDerivedTextGlyphs?.length) {
-        final.figmaDerivedTextGlyphs = child.figmaDerivedTextGlyphs.map((g) => ({
-          ...g,
-          commandsBlob: new Uint8Array(g.commandsBlob)
-        }))
-      }
-      if (child.strokes.length > 0) final.strokes = copyStrokes(child.strokes)
-      finalChildren.set(childId, final)
+      finalChildren.set(childId, finalGeometrySnapshot(child))
     }
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
     for (const [childId, orig] of d.origChildren) {

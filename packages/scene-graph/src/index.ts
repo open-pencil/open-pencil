@@ -60,6 +60,22 @@ function removeStaleBindings(
     changes.boundVariables = { ...node.boundVariables }
   }
 }
+/**
+ * See TEXT_PICTURE_KEYS / TEXT_DERIVED_GLYPH_INVALIDATION_KEYS. Glyphs are
+ * kept when the caller replaces them in the same update (resize supplies
+ * scaled copies).
+ */
+function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
+  const keys = Object.keys(changes)
+  if (node.textPicture && keys.some((k) => TEXT_PICTURE_KEYS.has(k))) node.textPicture = null
+  const glyphsInvalidated = keys.some((k) => TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(k))
+  if (node.figmaDerivedTextGlyphs && glyphsInvalidated && !('figmaDerivedTextGlyphs' in changes)) {
+    node.figmaDerivedTextGlyphs = null
+    // Export must not claim TEXT_PATH without baked glyphs.
+    if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
+  }
+}
+
 let nextLocalID = 1
 
 export function generateId(): string {
@@ -391,24 +407,7 @@ export class SceneGraph {
         set.add(id)
       }
     }
-    if (node.type === 'TEXT') {
-      const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-      if (node.textPicture && textChanged) node.textPicture = null
-      // See TEXT_DERIVED_GLYPH_INVALIDATION_KEYS. Skip clear when the caller is
-      // replacing glyphs in the same update (resize supplies scaled copies).
-      const glyphsInvalidated = Object.keys(changes).some((k) =>
-        TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(k)
-      )
-      if (
-        node.figmaDerivedTextGlyphs &&
-        glyphsInvalidated &&
-        !('figmaDerivedTextGlyphs' in changes)
-      ) {
-        node.figmaDerivedTextGlyphs = null
-        // Export must not claim TEXT_PATH without baked glyphs.
-        if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
-      }
-    }
+    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(
       entries.filter(([, value]) => value !== undefined)

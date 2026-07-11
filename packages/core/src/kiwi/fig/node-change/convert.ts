@@ -11,7 +11,7 @@ export { importStyleRuns } from './style-runs'
 import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
-import { expandPathTextLayoutBox } from './text-path-layout'
+import { expandPathTextLayoutBox } from './path-text-layout'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
@@ -619,7 +619,7 @@ export function nodeChangeToProps(
     ...extractComponentMetadata(nc)
   }
 
-  // See text-path-layout.ts — expand layout box before the node is created so
+  // See path-text-layout.ts — expand layout box before the node is created so
   // clipsContent parents don't shave overflowing path lettering at first paint.
   expandPathTextLayoutBox(props)
   return props

@@ -368,7 +368,8 @@ export interface NodeChange {
       fontSize: number
       firstCharacter: number
       advance: number
-      rotation: number
+      /** Radians along the text path; kiwi omits the field for axis-aligned text. */
+      rotation?: number
     }>
     fontMetaData?: Array<{
       key: { family: string; style: string; postscript?: string }

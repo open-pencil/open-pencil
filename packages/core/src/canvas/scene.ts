@@ -699,22 +699,28 @@ function drawGradientText(
   }
 }
 
+/**
+ * FIXED/TRUNCATE text normally clips to the layout box (Figma-like wrapping).
+ * Imported path text is different: Figma still draws glyphs/OUTSIDE strokes that
+ * sit outside width×height (e.g. x≈-37 on DomeSticker). Clipping here shaved
+ * the left of the circular arc even when the parent frame had room.
+ */
+function shouldClipTextToLayoutBox(node: SceneNode): boolean {
+  const hasOverflowTextPaint =
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' ||
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
+    node.strokeGeometry.length > 0
+  return (
+    !hasOverflowTextPaint && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
+  )
+}
+
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
 
   canvas.save()
-  // FIXED/TRUNCATE text normally clips to the layout box (Figma-like wrapping).
-  // Imported path text is different: Figma still draws glyphs/OUTSIDE strokes that
-  // sit outside width×height (e.g. x≈-37 on DomeSticker). Clipping here shaved
-  // the left of the circular arc even when the parent frame had room.
-  const hasOverflowTextPaint =
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' ||
-    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
-    node.strokeGeometry.length > 0
-  const shouldClipText =
-    !hasOverflowTextPaint && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
-  if (shouldClipText) {
+  if (shouldClipTextToLayoutBox(node)) {
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }
 
