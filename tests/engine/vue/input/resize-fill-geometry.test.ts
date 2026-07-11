@@ -5,7 +5,7 @@ import { cloneVectorNetwork, SceneGraph } from '@open-pencil/scene-graph'
 import type { Fill, VectorNetwork } from '@open-pencil/scene-graph'
 import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
-import { applyResize } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize } from '#vue/shared/input/types'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -107,5 +107,29 @@ describe('resize regenerates vector fill geometry', () => {
     // styleID and per-path fill survive the rebuild
     expect(geo.styleID).toBe(1)
     expect(geo.fills?.[0]?.color.r).toBeCloseTo(1, 2)
+
+    // Simulate reactivity-wrapped preview values (proxies are not
+    // structured-cloneable) — commit must store plain deep copies or the next
+    // delete/undo snapshot throws DataCloneError.
+    resized.vectorNetwork = new Proxy(expectDefined(resized.vectorNetwork), {})
+    resized.fillGeometry = resized.fillGeometry.map((g) => ({
+      ...g,
+      fills: g.fills ? (new Proxy(g.fills, {}) as typeof g.fills) : g.fills
+    }))
+    const committed: Partial<typeof resized>[] = []
+    const commitEditor = {
+      graph,
+      renderer: undefined,
+      requestRepaint: () => undefined,
+      updateNode: (id: string, changes: object) => {
+        committed.push(changes)
+        graph.updateNode(id, changes)
+      },
+      commitResize: () => undefined
+    } as Editor
+    commitResizePreview(drag, commitEditor)
+    for (const changes of committed) {
+      expect(() => structuredClone(changes)).not.toThrow()
+    }
   })
 })
