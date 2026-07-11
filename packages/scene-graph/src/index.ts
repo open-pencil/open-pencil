@@ -17,7 +17,7 @@ import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { clearEditedSourceMetadata } from './source-metadata'
-import { TEXT_PICTURE_KEYS } from './text-picture'
+import { TEXT_DERIVED_GLYPH_INVALIDATION_KEYS, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -394,7 +394,16 @@ export class SceneGraph {
     if (node.type === 'TEXT') {
       const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
       if (node.textPicture && textChanged) node.textPicture = null
-      if (node.figmaDerivedTextGlyphs && textChanged) {
+      // Only drop baked Figma glyphs on content/style edits — not geometric resize
+      // (width/height), and not when the update itself supplies new glyphs.
+      const glyphsInvalidated = Object.keys(changes).some((k) =>
+        TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(k)
+      )
+      if (
+        node.figmaDerivedTextGlyphs &&
+        glyphsInvalidated &&
+        !('figmaDerivedTextGlyphs' in changes)
+      ) {
         node.figmaDerivedTextGlyphs = null
         // Drop TEXT_PATH export marker once path-text fidelity is gone.
         if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null

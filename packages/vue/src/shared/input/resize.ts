@@ -21,14 +21,15 @@ function scaleDerivedGlyphs(
   sy: number
 ): FigmaDerivedTextGlyph[] | null {
   if (!glyphs?.length) return glyphs
-  // commandsBlob is font-unit outline; paint multiplies by fontSize, so only
-  // position + fontSize need to scale (uniform size uses average scale).
-  const fontScale = (Math.abs(sx) + Math.abs(sy)) / 2
+  // commandsBlob is font-unit outline; paint uses fontSize then optional scaleX/Y.
+  // Keep fontSize, accumulate scaleX/Y so non-uniform stretch matches strokeGeometry
+  // (S(sx,sy) must apply outside glyph rotation).
   return glyphs.map((g) => ({
     ...g,
     x: g.x * sx,
     y: g.y * sy,
-    fontSize: g.fontSize * fontScale,
+    scaleX: (g.scaleX ?? 1) * sx,
+    scaleY: (g.scaleY ?? 1) * sy,
     commandsBlob: new Uint8Array(g.commandsBlob)
   }))
 }

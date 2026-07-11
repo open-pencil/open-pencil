@@ -136,9 +136,34 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
     const g0 = expectDefined(resized.figmaDerivedTextGlyphs?.[0])
     expect(g0.x).toBeCloseTo(50, 3)
     expect(g0.y).toBeCloseTo(25, 3)
-    expect(g0.fontSize).toBeCloseTo(40, 3)
+    // fontSize stays; non-uniform/uniform scale is carried on scaleX/Y
+    expect(g0.fontSize).toBeCloseTo(80, 3)
+    expect(g0.scaleX).toBeCloseTo(0.5, 3)
+    expect(g0.scaleY).toBeCloseTo(0.5, 3)
     expect(g0.rotation).toBeCloseTo(-1.5, 4)
 
     expect(resized.strokes[0]?.weight).toBeCloseTo(2, 3)
+  })
+
+  test('width/height resize does not drop derived glyphs', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const glyphs: FigmaDerivedTextGlyph[] = [
+      { commandsBlob: squareBlob(1), x: 10, y: 20, fontSize: 40, rotation: -1 }
+    ]
+    const text = graph.createNode('TEXT', page.id, {
+      width: 100,
+      height: 100,
+      text: 'A',
+      figmaDerivedTextGlyphs: glyphs
+    })
+    text.source.fig.kiwiNodeType = 'TEXT_PATH'
+
+    graph.updateNodePreview(text.id, { width: 50, height: 80 })
+
+    const updated = expectDefined(graph.getNode(text.id))
+    expect(updated.figmaDerivedTextGlyphs).not.toBeNull()
+    expect(updated.figmaDerivedTextGlyphs).toHaveLength(1)
+    expect(updated.source.fig.kiwiNodeType).toBe('TEXT_PATH')
   })
 })

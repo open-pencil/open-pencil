@@ -232,6 +232,11 @@ export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: Scen
     const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
     canvas.save()
     canvas.translate(glyph.x, glyphY)
+    // Non-uniform resize: S(sx,sy) must sit outside R so stretched path text
+    // stays aligned with anisotropically scaled strokeGeometry.
+    const scaleX = glyph.scaleX ?? 1
+    const scaleY = glyph.scaleY ?? 1
+    if (scaleX !== 1 || scaleY !== 1) canvas.scale(scaleX, scaleY)
     // Figma Glyph.rotation is radians. CanvasKit rotate() takes degrees, and
     // the following Y-flip (scale y negative) means we must negate the angle
     // so path-text tangents match strokeGeometry (see DomeSticker text-on-path).

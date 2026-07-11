@@ -288,6 +288,12 @@ export interface FigmaDerivedTextGlyph {
   fontSize: number
   /** Per-glyph rotation from Figma derivedTextData (radians). Used for text-on-path. */
   rotation?: number
+  /**
+   * Non-uniform geometric scale from resize (default 1). Applied after translate
+   * and before rotation so stretched path text matches scaled strokeGeometry.
+   */
+  scaleX?: number
+  scaleY?: number
 }
 
 export interface SymbolLink {
