@@ -15,6 +15,9 @@ import {
 import { textAutoResizeChanges } from './text/auto-resize'
 import type { EditorContext } from './types'
 
+// Include path-text + vector geometry so undo restores stroke outlines and
+// glyphs, not just the layout rect (otherwise redo leaves full-size strokes
+// on a shrunk node — same class of bug as live resize without scaleGeometry).
 type ResizeSnapshot = Pick<
   SceneNode,
   | 'x'

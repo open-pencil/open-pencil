@@ -1,7 +1,10 @@
 import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
-/** Translate path command blob coordinates by (dx, dy). */
+/**
+ * Shift geometry command blobs in node space. Used when we grow the layout box
+ * left/top so content must move with the new origin (parent-space art stays put).
+ */
 function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): GeometryPath[] {
   if (dx === 0 && dy === 0) return paths
   return paths.map((g) => {
@@ -30,10 +33,13 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
 }
 
 /**
- * Path text (TEXT_PATH) stores glyph/stroke outlines that often extend outside
- * the node's layout box (negative x, past height). Parent frames with
- * clipsContent then cut the left/bottom of the lettering. Expand the box and
- * re-home geometry so the visual stays put while fitting inside the node.
+ * Figma often sizes the TEXT_PATH layout box tighter than the painted outlines
+ * (DomeSticker strokeGeometry minX ≈ -37). That is fine inside Figma's own
+ * painter, but our frames honor `clipsContent` against child *layout* extents
+ * during resize/cull — overflowing lettering on the left/bottom got clipped.
+ *
+ * Grow width/height to cover strokeGeometry + glyph pads, then shift local
+ * geometry by (dx, dy) and compensate with x/y so the design does not jump.
  */
 export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: string }): void {
   if (props.nodeType !== 'TEXT') return
@@ -52,7 +58,7 @@ export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: 
   let maxX = geom ? geom.x + geom.width : width
   let maxY = geom ? geom.y + geom.height : height
 
-  // Glyph positions are baselines; pad by fontSize so outlines aren't tight.
+  // Baselines only — pad with fontSize so ascent/side-bearings are covered.
   for (const g of (props.figmaDerivedTextGlyphs as FigmaDerivedTextGlyph[] | null) ?? []) {
     const pad = g.fontSize || 0
     minX = Math.min(minX, g.x - pad * 0.25)
@@ -70,6 +76,8 @@ export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: 
     return
   }
 
+  // New origin is (oldOrigin - (overflowLeft, overflowTop)) in parent space;
+  // add the same delta to local geometry so world positions are unchanged.
   const dx = overflowLeft
   const dy = overflowTop
   props.x = (props.x ?? 0) - dx

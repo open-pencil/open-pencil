@@ -213,17 +213,35 @@ function drawDerivedDecorations(
   }
 }
 
-/** True when any derived glyph carries a non-zero rotation (text-on-path). */
+/**
+ * Path-text glyphs carry non-zero Figma `Glyph.rotation` (radians). Used to
+ * disable axis-aligned assumptions (baseline snap, underline decorations).
+ */
 export function hasRotatedFigmaDerivedGlyphs(
   node: Pick<SceneNode, 'figmaDerivedTextGlyphs'>
 ): boolean {
   return node.figmaDerivedTextGlyphs?.some((glyph) => (glyph.rotation ?? 0) !== 0) === true
 }
 
+/**
+ * Paint Figma-baked glyph outlines (missing-font / path-text fidelity path).
+ *
+ * Transform order is intentional and matched against real TEXT_PATH fixtures
+ * (e.g. DomeSticker circular lettering):
+ *
+ *   1. translate(x, y)     — baseline on the path (already resize-scaled)
+ *   2. scale(scaleX,Y)     — non-uniform resize (must be *outside* rotation;
+ *                            S and R do not commute — see resize scaleX/Y)
+ *   3. rotate(-θ°)         — negate: CanvasKit degrees + following Y-flip;
+ *                            positive Figma radians would otherwise misalign
+ *                            black fills vs white strokeGeometry
+ *   4. scale(fontSize,-fs) — font units → px; Y flip (font space is up-positive)
+ */
 export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   if (!node.figmaDerivedTextGlyphs?.length) return false
 
-  // Path text uses sub-pixel baselines; snapping flattens curved placements.
+  // Pixel-snap is for horizontal Figma baselines only — on a curve it stair-steps
+  // letter positions and breaks registration with strokeGeometry.
   const snapBaselines = !hasRotatedFigmaDerivedGlyphs(node)
   let underlineBaselineY = 0
   for (const glyph of node.figmaDerivedTextGlyphs) {
@@ -232,14 +250,9 @@ export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: Scen
     const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
     canvas.save()
     canvas.translate(glyph.x, glyphY)
-    // Non-uniform resize: S(sx,sy) must sit outside R so stretched path text
-    // stays aligned with anisotropically scaled strokeGeometry.
     const scaleX = glyph.scaleX ?? 1
     const scaleY = glyph.scaleY ?? 1
     if (scaleX !== 1 || scaleY !== 1) canvas.scale(scaleX, scaleY)
-    // Figma Glyph.rotation is radians. CanvasKit rotate() takes degrees, and
-    // the following Y-flip (scale y negative) means we must negate the angle
-    // so path-text tangents match strokeGeometry (see DomeSticker text-on-path).
     const rotation = glyph.rotation ?? 0
     if (rotation !== 0) canvas.rotate((-rotation * 180) / Math.PI, 0, 0)
     canvas.scale(glyph.fontSize, -glyph.fontSize)
@@ -251,7 +264,7 @@ export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: Scen
     path.delete()
   }
 
-  // Horizontal underlines don't make sense for path text — skip decorations.
+  // Underline math assumes a single horizontal baseline — skip for path text.
   if (snapBaselines) drawDerivedDecorations(r, canvas, node, underlineBaselineY)
   return true
 }

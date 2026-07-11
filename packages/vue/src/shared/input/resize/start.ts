@@ -31,9 +31,10 @@ function snapshotNodeGeometry(node: SceneNode): OrigChildState {
 function collectDescendants(id: string, editor: Editor): Map<string, OrigChildState> | null {
   const node = editor.graph.getNode(id)
   if (!node) return null
-  // Freeform frames (no auto-layout) scale children like groups so stickers
-  // (e.g. DomeSticker) resize as a unit and path text isn't clipped by a
-  // shrunken clipsContent box while content stays full size.
+  // Groups/booleans already scaled children. Freeform frames (layoutMode NONE)
+  // did not — resizing DomeSticker only changed the clipsContent box while the
+  // icon+path-text stayed full size, so lettering was hard-clipped. Auto-layout
+  // frames are excluded: children should reflow, not geometric-scale.
   const scalesChildren =
     node.type === 'GROUP' ||
     node.type === 'BOOLEAN_OPERATION' ||

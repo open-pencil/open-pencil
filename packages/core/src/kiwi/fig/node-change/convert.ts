@@ -125,8 +125,9 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   SYMBOL: 'COMPONENT',
   CONNECTOR: 'CONNECTOR',
   SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
-  // Text-on-path: engine has no first-class TEXT_PATH yet — map to TEXT and
-  // paint via derived glyphs + strokeGeometry (see fix-text-path-import).
+  // Figma Kiwi TEXT_PATH (41): no engine NodeType yet (no path-edit product).
+  // Map to TEXT and keep fidelity via derived glyphs + strokeGeometry paint;
+  // original type is stashed on source.fig.kiwiNodeType for unedited export.
   TEXT_PATH: 'TEXT'
 }
 
@@ -618,8 +619,8 @@ export function nodeChangeToProps(
     ...extractComponentMetadata(nc)
   }
 
-  // TEXT_PATH outlines often sit outside the layout box; expand so parent
-  // clipsContent frames don't shave the left/bottom of circular lettering.
+  // See text-path-layout.ts — expand layout box before the node is created so
+  // clipsContent parents don't shave overflowing path lettering at first paint.
   expandPathTextLayoutBox(props)
   return props
 }
@@ -796,7 +797,8 @@ function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
       layout: extractFigmaLayoutMetadata(nc),
-      // Preserve Figma-native types that map to a different engine type (e.g. TEXT_PATH → TEXT).
+      // Engine type is TEXT; remember Kiwi TEXT_PATH so export can re-emit type 41
+      // while path-text fidelity (glyphs) still exists. Cleared on content edit.
       kiwiNodeType: nc.type === 'TEXT_PATH' ? 'TEXT_PATH' : null
     }
   }

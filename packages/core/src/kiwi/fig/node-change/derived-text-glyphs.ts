@@ -1,6 +1,11 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { FigmaDerivedTextGlyph } from '@open-pencil/scene-graph'
 
+/**
+ * Resolve Figma derivedTextData.glyphs into scene glyphs.
+ * Dropping `rotation` used to flatten path text to axis-aligned scribbles;
+ * units are radians (schema `float`, DomeSticker values ≈ -1.75…-0.5).
+ */
 export function convertFigmaDerivedTextGlyphs(
   derivedTextData: NodeChange['derivedTextData'],
   blobs: Uint8Array[]
@@ -13,7 +18,6 @@ export function convertFigmaDerivedTextGlyphs(
         x: glyph.position.x,
         y: glyph.position.y,
         fontSize: glyph.fontSize,
-        // Figma Glyph.rotation is radians (path text uses non-zero values).
         rotation: glyph.rotation ?? 0
       }
     })

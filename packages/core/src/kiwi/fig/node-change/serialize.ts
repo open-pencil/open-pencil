@@ -158,6 +158,7 @@ function buildDerivedTextData(
             index + 1 < derivedGlyphs.length
               ? Math.max(derivedGlyphs[index + 1].x - glyph.x, 0)
               : glyphAdvance,
+          // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
           rotation: glyph.rotation ?? 0
         }))
       : (

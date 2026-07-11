@@ -31,8 +31,10 @@ export interface FigmaSourcePayload {
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
   /**
-   * Original Figma Kiwi NodeType when it differs from the engine type
-   * (e.g. TEXT_PATH → TEXT). Used to re-export the native type for unedited imports.
+   * Figma Kiwi type when the engine type is a stand-in (TEXT_PATH → TEXT).
+   * Export re-emits this while path-text fidelity remains; cleared when the
+   * user edits text content (glyphs invalidated). Not an OpenPencil plugin key
+   * — Figma would ignore that for native node type.
    */
   kiwiNodeType: string | null
 }
@@ -281,16 +283,22 @@ export interface PluginRelaunchDataEntry {
   isDeleted: boolean
 }
 
+/**
+ * One Figma-baked glyph outline for display (path text / missing-font fidelity).
+ * commandsBlob is in font units; paint multiplies by fontSize (and scaleX/Y).
+ */
 export interface FigmaDerivedTextGlyph {
   commandsBlob: Uint8Array
   x: number
   y: number
   fontSize: number
-  /** Per-glyph rotation from Figma derivedTextData (radians). Used for text-on-path. */
+  /** Figma Glyph.rotation — radians, not degrees. Zero for axis-aligned text. */
   rotation?: number
   /**
-   * Non-uniform geometric scale from resize (default 1). Applied after translate
-   * and before rotation so stretched path text matches scaled strokeGeometry.
+   * Accumulated non-uniform resize scale (default 1). Paint order is
+   * translate → scale(scaleX,Y) → rotate → scale(fontSize,-fontSize) so
+   * anisotropic stretch matches scaleGeometryPaths(strokeGeometry).
+   * Do not fold this into fontSize or rotated letters desync from outlines.
    */
   scaleX?: number
   scaleY?: number

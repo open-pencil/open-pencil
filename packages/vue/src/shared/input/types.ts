@@ -43,6 +43,7 @@ export interface DragPan {
   startPanY: number
 }
 
+/** Snapshot at drag start so live resize can re-scale from a fixed origin. */
 export interface OrigChildState {
   x: number
   y: number
@@ -50,6 +51,7 @@ export interface OrigChildState {
   height: number
   vectorNetwork: VectorNetwork | null
   fillGeometry: GeometryPath[]
+  /** Path-text OUTSIDE outlines / vector stroke blobs — must scale with the node. */
   strokeGeometry: GeometryPath[]
   figmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
   strokes: Stroke[]
@@ -64,6 +66,7 @@ export interface DragResize {
   nodeId: string
   origVectorNetwork: VectorNetwork | null
   origFillGeometry: GeometryPath[]
+  /** See OrigChildState.strokeGeometry — root node counterpart. */
   origStrokeGeometry: GeometryPath[]
   origFigmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
   origStrokes: Stroke[]

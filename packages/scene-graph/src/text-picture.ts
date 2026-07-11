@@ -1,4 +1,7 @@
-/** Keys that invalidate cached Skia text pictures (layout box included). */
+/**
+ * Invalidate cached Skia textPicture (Paragraph snapshot). Includes width/height
+ * because wrapping/layout depends on the box.
+ */
 export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
   'text',
   'fontSize',
@@ -19,9 +22,13 @@ export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Keys that invalidate Figma-derived glyph outlines. Width/height are excluded:
- * geometric resize scales path-text glyphs/strokeGeometry in place — clearing
- * them on box size change drops path text and falls back to Paragraph (garbled).
+ * Invalidate Figma-derived glyph outlines (path text / missing-font paint).
+ *
+ * Intentionally omits width/height: resize updates the box and *also* scales
+ * glyphs via scaledGeometryChanges. If width/height cleared glyphs here, live
+ * resize fell through to Paragraph and drew garbled axis-aligned "enen.art"
+ * on top of the path (DomeSticker). Content/style keys still wipe glyphs —
+ * there is no path-layout reflow engine yet.
  */
 export const TEXT_DERIVED_GLYPH_INVALIDATION_KEYS: ReadonlySet<string> = new Set([
   'text',

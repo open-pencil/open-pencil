@@ -394,8 +394,8 @@ export class SceneGraph {
     if (node.type === 'TEXT') {
       const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
       if (node.textPicture && textChanged) node.textPicture = null
-      // Only drop baked Figma glyphs on content/style edits — not geometric resize
-      // (width/height), and not when the update itself supplies new glyphs.
+      // See TEXT_DERIVED_GLYPH_INVALIDATION_KEYS. Skip clear when the caller is
+      // replacing glyphs in the same update (resize supplies scaled copies).
       const glyphsInvalidated = Object.keys(changes).some((k) =>
         TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(k)
       )
@@ -405,7 +405,7 @@ export class SceneGraph {
         !('figmaDerivedTextGlyphs' in changes)
       ) {
         node.figmaDerivedTextGlyphs = null
-        // Drop TEXT_PATH export marker once path-text fidelity is gone.
+        // Export must not claim TEXT_PATH without baked glyphs.
         if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
       }
     }

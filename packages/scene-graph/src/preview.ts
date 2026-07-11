@@ -58,6 +58,8 @@ export function updateNodePreview(
   if (node.type === 'TEXT') {
     const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
     if (node.textPicture && textChanged) node.textPicture = null
+    // Mirror SceneGraph.updateNode: geometric resize must not wipe path glyphs
+    // (see TEXT_DERIVED_GLYPH_INVALIDATION_KEYS). Preview is on the hot path for drag.
     const glyphsInvalidated = Object.keys(changes).some((key) =>
       TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(key)
     )

@@ -15,15 +15,18 @@ import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
 import type { DragResize, OrigChildState } from '#vue/shared/input/types'
 
+/**
+ * Resize path-text glyphs without baking anisotropic scale into fontSize.
+ * commandsBlob stays in font units; paint multiplies by fontSize then scaleX/Y.
+ * Accumulating scaleX/Y (not fontSize *= avg) keeps non-uniform stretch correct
+ * under rotation — see drawFigmaDerivedText transform order.
+ */
 function scaleDerivedGlyphs(
   glyphs: FigmaDerivedTextGlyph[] | null,
   sx: number,
   sy: number
 ): FigmaDerivedTextGlyph[] | null {
   if (!glyphs?.length) return glyphs
-  // commandsBlob is font-unit outline; paint uses fontSize then optional scaleX/Y.
-  // Keep fontSize, accumulate scaleX/Y so non-uniform stretch matches strokeGeometry
-  // (S(sx,sy) must apply outside glyph rotation).
   return glyphs.map((g) => ({
     ...g,
     x: g.x * sx,
@@ -36,11 +39,17 @@ function scaleDerivedGlyphs(
 
 function scaleStrokes(strokes: Stroke[], sx: number, sy: number): Stroke[] {
   if (strokes.length === 0) return strokes
+  // Weight is a scalar; average scale is the usual 2D → 1D compromise.
   const weightScale = (Math.abs(sx) + Math.abs(sy)) / 2
   return strokes.map((s) => ({ ...copyStroke(s), weight: s.weight * weightScale }))
 }
 
-/** Geometry that must track node scale (path text stroke + vector stroke blobs). */
+/**
+ * All geometry that must track a width/height change. Historically only
+ * vectorNetwork + fillGeometry were updated — path-text strokeGeometry and
+ * glyphs stayed at the pre-resize size, so shrinking a sticker made the white
+ * OUTSIDE outlines look massively thick (DomeSticker resize bug).
+ */
 function scaledGeometryChanges(
   orig: Pick<
     OrigChildState,
@@ -70,8 +79,6 @@ function scaledGeometryChanges(
     changes.fillGeometry = scaleGeometryPaths(orig.fillGeometry, sx, sy)
   }
 
-  // strokeGeometry is pre-expanded outline (path text white OUTSIDE stroke).
-  // If we only scale width/height, outlines stay full-size and look huge.
   if (orig.strokeGeometry.length > 0) {
     changes.strokeGeometry = scaleGeometryPaths(orig.strokeGeometry, sx, sy)
   }

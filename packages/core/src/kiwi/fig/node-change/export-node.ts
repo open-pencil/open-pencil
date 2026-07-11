@@ -677,8 +677,9 @@ export function sceneNodeToKiwiWithContext(
 
   const strokePaints = createStrokePaints(context, node)
 
-  // Prefer preserved Figma-native type (e.g. TEXT_PATH) when the node still
-  // carries path-text fidelity (derived glyphs + import marker).
+  // Import maps TEXT_PATH → TEXT. Re-emit Kiwi type 41 only while path fidelity
+  // remains (marker + baked glyphs). After the user edits characters we clear
+  // both — exporting TEXT_PATH without glyphs would be a lie to Figma.
   const kiwiNodeType = node.source.fig.kiwiNodeType
   const exportType =
     kiwiNodeType === 'TEXT_PATH' &&

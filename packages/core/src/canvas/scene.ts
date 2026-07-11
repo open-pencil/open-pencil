@@ -48,8 +48,9 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
   if (!canCull) return false
 
   const vp = r.worldViewport
-  // Path text / strokeGeometry can extend past width×height — pad cull box so
-  // overflow lettering isn't skipped when only the outline is on-screen.
+  // Leaf cull uses width×height only. TEXT_PATH stroke/glyphs often sit outside
+  // that box (negative x, past height) — without padding we cull a node whose
+  // lettering is still on-screen (especially when zoomed on the outline alone).
   let pad = 0
   if (node.strokeGeometry.length > 0 || (node.figmaDerivedTextGlyphs?.length ?? 0) > 0) {
     pad = Math.max(node.width, node.height, 64) * 0.25
@@ -546,8 +547,10 @@ function drawNodeStroke(
     return
   }
   if (stroke.align !== 'INSIDE') {
-    // TEXT (incl. imported TEXT_PATH) and VECTOR store expanded stroke bands in
-    // strokeGeometry — fill those paths rather than stroking the AABB.
+    // Figma bakes OUTSIDE/CENTER strokes into strokeGeometry command blobs.
+    // Filling those paths is the correct paint (not canvas.stroke of the AABB).
+    // TEXT_PATH circular outlines live here — without this branch they became a
+    // white rectangular border around the text box.
     if (node.type === 'VECTOR' || node.type === 'TEXT')
       drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
     else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
@@ -571,9 +574,11 @@ function drawNodeStroke(
 }
 
 /**
- * Figma text-on-path stores OUTSIDE stroke as expanded strokeGeometry silhouettes
- * that cover glyph interiors if painted after fills. Paint those first, then
- * derived-glyph fills on top so black letter bodies sit inside the white outline.
+ * Path text with a baked OUTSIDE stroke: Figma's strokeGeometry for these nodes
+ * is often a *solid letter silhouette* (outer contour of fill+stroke), not a
+ * thin ring. If we paint fills first then strokeGeometry, white covers the
+ * black glyph interiors → solid white letters. Stroke-then-fill keeps black
+ * bodies inside the white outline (DomeSticker / ArnoCoenen.art).
  */
 function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
   return (
@@ -627,8 +632,8 @@ export function renderShapeUncached(
   const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   const pathTextStrokeFirst = isPathTextWithStrokeGeometry(node)
 
-  // Path text: strokeGeometry silhouettes first, then glyph fills (black body
-  // inside white OUTSIDE outline). Normal shapes keep fill-then-stroke.
+  // Default Figma/Skia order is fill then stroke. Path text is the exception
+  // (see isPathTextWithStrokeGeometry) — invert only for that case.
   if (pathTextStrokeFirst) {
     paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
   }
@@ -699,8 +704,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   if (!text) return
 
   canvas.save()
-  // Path text / derived glyphs / precomputed stroke outlines often sit outside
-  // the layout box — never clip those away (left side of circular lettering).
+  // FIXED/TRUNCATE text normally clips to the layout box (Figma-like wrapping).
+  // Imported path text is different: Figma still draws glyphs/OUTSIDE strokes that
+  // sit outside width×height (e.g. x≈-37 on DomeSticker). Clipping here shaved
+  // the left of the circular arc even when the parent frame had room.
   const hasOverflowTextPaint =
     node.source.fig.kiwiNodeType === 'TEXT_PATH' ||
     (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
