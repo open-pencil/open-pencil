@@ -52,5 +52,6 @@
   "arrangeAlignRight": "右对齐",
   "arrangeAlignTop": "顶部对齐",
   "arrangeAlignMiddle": "垂直居中",
-  "arrangeAlignBottom": "底部对齐"
+  "arrangeAlignBottom": "底部对齐",
+  "convertToVector": "转换为矢量"
 }

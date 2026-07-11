@@ -26,7 +26,9 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 - **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
 - **Components and variants** — create reusable components, group variants into component sets, insert local assets as instances, and switch variants from the inspector
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
+- **Image to vector** — convert a placed raster image into editable vectors via Recraft or fal (API key in provider settings)
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
+- **Cloud Workspace (BYOK)** — sync your files to your own S3-compatible bucket. Local-first with background sync; your data never touches an OpenPencil server
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
 - **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
 - **~7 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
@@ -222,6 +224,24 @@ npx skills add open-pencil/skills@open-pencil
 Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh).
 
 For documentation-aware agents, the docs site publishes [llms.txt](https://openpencil.dev/llms.txt), [llms-full.txt](https://openpencil.dev/llms-full.txt), and per-page Markdown files generated from the VitePress docs.
+
+## Cloud Workspace
+
+![OpenPencil Cloud Workspace](packages/docs/public/cloud-workspace.png)
+
+OpenPencil's Cloud Workspace syncs your design files to **your own cloud storage** — bring-your-own-key (BYOK), no OpenPencil account, no middleman. Point it at any S3-compatible bucket and your workspace follows you across devices while the data stays under your keys, in your bucket, in your jurisdiction.
+
+- **Any S3-compatible provider** — AWS S3, Backblaze B2, Cloudflare R2, MinIO, and friends. We test extensively against [Backblaze B2](https://www.backblaze.com/cloud-storage), which offers 10 GB free with no credit card — a zero-cost way to try it
+- **Local-first** — files are cached in the browser's local storage (IndexedDB): opens are instant, edits save locally first, and a background sync engine uploads changes through a persistent outbox queue with retry/backoff. Real progress everywhere: per-file upload bars on the workspace cards, download percentages for large files, and a live sync counter in the editor
+- **Smart cache** — the local cache cleans itself up past 500 MB, evicting the least-recently-opened files first. Unsynced work and open files are never evicted; evicted files simply re-download on next open
+- **Adapter architecture** — storage backends are pluggable adapters, so future targets (Google Drive, Nextcloud, WebDAV, …) can slot in without touching the sync engine
+- **Workspace UI** — a project grid with live thumbnails and a right-click menu: Open, Rename, Duplicate, Download .fig, Delete (with confirmation)
+
+<img src="packages/docs/public/cloud-workspace-sync.png" alt="Smart sync of large files — the card badge fills as the upload progresses" width="600">
+
+Setup: **Settings → Cloud storage**, enter your endpoint, bucket, and access keys, then hit **Test connection** — it configures the bucket's CORS rules automatically where permissions allow, or gives you a one-click **Copy CORS JSON** to paste into your provider's console.
+
+The Settings dialog itself was revamped along the way: one centralized, tabbed home for all your bring-your-own keys (Cloud storage, AI providers) — designed to grow new tabs as more integrations land. The feature shipped after extensive real-world testing, with the issues found along the way fixed and locked in by unit tests.
 
 ## Collaboration
 

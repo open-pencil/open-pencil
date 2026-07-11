@@ -3,8 +3,45 @@ import type { Canvas, Paint } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+
+/**
+ * Paint a VECTOR with per-path fills from fillGeometry (Figma styleOverrideTable).
+ * Paths without path.fills use node.fills. Returns true when handled.
+ */
+export function drawVectorMultiStyleFills(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph,
+  patternStack?: Set<string>
+): boolean {
+  if (node.type !== 'VECTOR' || node.fillGeometry.length === 0) return false
+  const hasPathFills = node.fillGeometry.some((g) => g.fills && g.fills.length > 0)
+  if (!hasPathFills) return false
+
+  // Cached paths are built from node.fillGeometry in order (see getFillGeometry).
+  const paths = r.getFillGeometry(node)
+  if (!paths) return false
+  for (let gi = 0; gi < node.fillGeometry.length; gi++) {
+    const g = node.fillGeometry[gi]
+    const path = paths[gi]
+    const fills = g.fills && g.fills.length > 0 ? g.fills : node.fills
+    for (let fi = 0; fi < fills.length; fi++) {
+      const fill = fills[fi]
+      if (!fill.visible) continue
+      if (!applyFill(r, fill, node, graph, fi, patternStack)) continue
+      r.fillPaint.setAlphaf(fill.opacity)
+      r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+      canvas.drawPath(path, r.fillPaint)
+      r.fillPaint.setShader(null)
+      r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+    }
+  }
+  return true
+}
 
 export function drawNodeFill(
   r: SkiaRenderer,
@@ -16,6 +53,8 @@ export function drawNodeFill(
 ): void {
   switch (node.type) {
     case 'VECTOR': {
+      // When path-level fills exist, multi-style drawing is handled separately.
+      if (node.fillGeometry.some((g) => g.fills && g.fills.length > 0)) break
       const fg = r.getFillGeometry(node)
       if (fg) {
         for (const p of fg) canvas.drawPath(p, r.fillPaint)
@@ -156,10 +195,14 @@ function recordPatternSource(
     canvas.save()
     canvas.translate(position.x, position.y)
     canvas.scale(layout.scale, layout.scale)
-    for (const sourceFill of source.fills.filter((item) => item.visible)) {
-      if (sourceFill.type === 'PATTERN' && sourceFill.sourceNodeId === source.id) continue
-      if (!applyFill(r, sourceFill, source, graph, 0, patternStack)) continue
-      drawNodeFill(r, canvas, source, rect, hasRadius, sourceFill)
+    // Vectors with per-path fills need the multi-style pass here too — drawNodeFill
+    // skips them, which would record an empty pattern source.
+    if (!drawVectorMultiStyleFills(r, canvas, source, graph, patternStack)) {
+      for (const sourceFill of source.fills.filter((item) => item.visible)) {
+        if (sourceFill.type === 'PATTERN' && sourceFill.sourceNodeId === source.id) continue
+        if (!applyFill(r, sourceFill, source, graph, 0, patternStack)) continue
+        drawNodeFill(r, canvas, source, rect, hasRadius, sourceFill)
+      }
     }
     canvas.restore()
   }

@@ -77,7 +77,8 @@ OpenPencil is moving toward production-grade Figma compatibility while keeping d
 
 ## Non-goals
 
-- Cloud-first storage or mandatory accounts.
+- Cloud-first storage or **mandatory** accounts (the app must remain usable fully offline/local).
+- Optional user-owned S3-compatible storage (BYOK) is allowed and is not a vendor cloud account.
 - Read-only automation surfaces that cannot modify documents.
 - Feature work that sacrifices `.fig` import/export fidelity for convenience.
 

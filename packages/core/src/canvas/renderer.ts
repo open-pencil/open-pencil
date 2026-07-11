@@ -271,6 +271,7 @@ export class SkiaRenderer {
     hasRadius: boolean,
     fill?: Fill
   ) => void
+  declare drawVectorMultiStyleFills: (canvas: Canvas, node: SceneNode, graph: SceneGraph) => boolean
   declare applyFill: (fill: Fill, node: SceneNode, graph: SceneGraph, fillIndex?: number) => boolean
   declare applyGradientFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => void
   declare applyImageFill: (fill: Fill, node: SceneNode, graph: SceneGraph) => boolean

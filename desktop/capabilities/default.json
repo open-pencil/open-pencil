@@ -46,6 +46,17 @@
       ]
     },
     "shell:allow-stdin-write",
-    "shell:allow-kill"
+    "shell:allow-kill",
+    {
+      "identifier": "http:default",
+      "allow": [
+        { "url": "https://external.api.recraft.ai/*" },
+        { "url": "https://*.recraft.ai/*" },
+        { "url": "https://fal.run/*" },
+        { "url": "https://*.fal.run/*" },
+        { "url": "https://fal.media/*" },
+        { "url": "https://*.fal.media/*" }
+      ]
+    }
   ]
 }

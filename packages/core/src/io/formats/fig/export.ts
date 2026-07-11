@@ -214,11 +214,13 @@ function appendVariablesForCollection(
 }
 
 function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange): void {
-  if (!page.source.id) return
-  if (!('pageType' in page.source.fig.rawNodeFields)) delete canvasNc.pageType
+  // Page color applies to OpenPencil-authored pages too (setPageColor writes
+  // it) — never gate it behind an imported source id.
   if ('backgroundColor' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundColor = structuredClone(page.source.fig.rawNodeFields.backgroundColor)
   }
+  if (!page.source.id) return
+  if (!('pageType' in page.source.fig.rawNodeFields)) delete canvasNc.pageType
   if ('backgroundPaints' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundPaints = structuredClone(
       page.source.fig.rawNodeFields.backgroundPaints

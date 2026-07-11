@@ -39,7 +39,7 @@ function createMobileHudContext() {
     {
       icon: IconFilePlus,
       label: 'New',
-      action: () => void import('@/app/tabs').then((m) => m.createTab())
+      action: () => void import('@/app/tabs').then((m) => m.createNewDocument())
     },
     { icon: IconFolderOpen, label: 'Open…', action: () => void openFileDialog() },
     { icon: IconSave, label: 'Save', action: () => void store.saveFigFile() },

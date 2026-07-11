@@ -123,7 +123,8 @@ export function extractPaths(svgBody: string): IconPathInfo[] {
       ),
       strokeCap: attrValue(tag, 'stroke-linecap') ?? groupAttrs.strokeCap ?? 'butt',
       strokeJoin: attrValue(tag, 'stroke-linejoin') ?? groupAttrs.strokeJoin ?? 'miter',
-      fillRule: fillRuleAttr === 'evenodd' ? 'EVENODD' : 'NONZERO'
+      fillRule: fillRuleAttr === 'evenodd' ? 'EVENODD' : 'NONZERO',
+      transform: attrValue(tag, 'transform')
     })
   }
   return result

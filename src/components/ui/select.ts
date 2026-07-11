@@ -6,7 +6,7 @@ const trigger = tv({
 })
 
 const content = tv({
-  base: 'z-[110] min-w-[var(--reka-select-trigger-width)] overflow-hidden border border-border bg-panel',
+  base: 'z-[120] min-w-[var(--reka-select-trigger-width)] overflow-hidden border border-border bg-panel',
   variants: {
     radius: {
       md: 'rounded-md',

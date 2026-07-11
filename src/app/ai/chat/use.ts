@@ -11,12 +11,15 @@ import {
   isConfigured,
   maxOutputTokens,
   modelID,
+  falApiKey,
   pexelsApiKey,
   providerDef,
   providerID,
+  recraftApiKey,
   registerAIChatEffects,
   setAPIKey,
-  unsplashAccessKey
+  unsplashAccessKey,
+  vectorizeProvider
 } from '@/app/ai/chat/storage'
 import { createChatSessionManager } from '@/app/ai/chat/transports'
 import { exposeChatTransportOverride } from '@/app/browser-bridge'
@@ -58,6 +61,9 @@ export function useAIChat() {
     maxOutputTokens,
     pexelsApiKey,
     unsplashAccessKey,
+    vectorizeProvider,
+    recraftApiKey,
+    falApiKey,
     activeTab,
     isConfigured,
     ensureChat: chatSession.ensureChat,

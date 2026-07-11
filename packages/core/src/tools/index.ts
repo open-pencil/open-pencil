@@ -17,4 +17,22 @@ export {
   parseOverlapSeverity
 } from './analyze/overlaps/params'
 export { setPexelsApiKey, setUnsplashAccessKey } from './stock-photo'
-export { importSvg } from './create'
+export { importSvg, parseSvgSize, parseSvgViewBox } from './create/svg'
+export {
+  buildImportedVectorFrame,
+  compareVectorizeRenders,
+  createVectorFrameChildren,
+  preprocessForVectorize,
+  renderImportedVectorFrame,
+  renderRawSVGVectorPaths,
+  renderVectorizeComparison,
+  resolveVectorFramePlacement,
+  svgToVectorPaths,
+  type GetCanvasKit,
+  type PreprocessForVectorizeResult,
+  type SVGVectorizeResult,
+  type VectorFramePlacement,
+  type VectorizedPath,
+  type VectorizeCompareMetrics,
+  type VectorizeCompareTargets
+} from './vectorize'

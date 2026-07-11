@@ -35,13 +35,26 @@ async function bodyToBytes(body: BodyInit | null | undefined): Promise<number[] 
 }
 
 export async function tauriFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // Materialize a Request so URL/method/headers are normalized. Body must be read
+  // carefully: callers often pass a pre-built Request as `input` with no `init`
+  // (e.g. aws4fetch-signed PUT). Using only `init?.body` dropped the payload.
   const request = new Request(input, init)
+  let body: number[] | undefined
+  if (init?.body != null) {
+    body = await bodyToBytes(init.body)
+  } else {
+    // Request may already carry a body (signed Request from aws4fetch).
+    const buf = await request.arrayBuffer()
+    if (buf.byteLength > 0) {
+      body = [...new Uint8Array(buf)]
+    }
+  }
   const { invoke } = await import('@tauri-apps/api/core')
   const payload: ProxyHttpRequest = {
     url: request.url,
     method: request.method,
     headers: headersToProxyHeaders(request.headers),
-    body: await bodyToBytes(init?.body)
+    body
   }
   const response = await invoke<ProxyHttpResponse>('proxy_http_request', { request: payload })
   return new Response(new Uint8Array(response.body), {

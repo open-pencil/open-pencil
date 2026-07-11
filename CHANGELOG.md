@@ -2,8 +2,21 @@
 
 ## Unreleased
 
+### Added
+
+- Convert selected raster images to editable vectors via **Convert to Vector** in the canvas context menu (Recraft or fal API key in AI provider settings).
+
+### Fixes
+
+- Image vectorization now maps Recraft SVG `viewBox` coordinates correctly (avoids oversized paths) and tightens the result frame to actual path bounds instead of the full bitmap rectangle.
+- Each vectorized path is sized to its own geometry so selecting one star (or other shape) no longer shows the full image bounding box.
+- Vectorized curves keep smooth bezier handles when scaling Recraft SVG viewBox coordinates into the image bounds.
+
 ### Changed
 
+- Add the optional **Cloud Workspace**: bring-your-own-key sync to any S3-compatible bucket (AWS, Backblaze B2, R2, MinIO, …). Credentials live in the revamped tabbed Settings; files are stored under a shared-bucket namespace `open_pencil_storage/`, and a workspace home with live thumbnails opens when configured. Local-only mode is unchanged when cloud is not set up. Desktop **Test connection** applies web-friendly bucket CORS; the web UI can copy a CORS JSON for the console when the browser is blocked.
+- Cloud files are **local-first**: save/import write to a device cache immediately and sync to the bucket in the background (outbox + retry). The workspace paints from local cache first; upload progress fills the card badge, downloads report percentages, and the editor shows a live pending-sync counter. The local cache self-evicts past 500 MB (least-recently-opened first; unsynced and open files are never evicted).
+- Cloud Workspace cards get a right-click menu — Open, Rename, Duplicate, Download .fig, Delete — with in-app confirmation dialogs, and a fresh bucket is seeded with a Welcome project.
 - Add Figma-style page management in the Pages panel, including rename/delete actions and drag-and-drop page reordering.
 - Add DOM/CSS import and authoring support so HTML, CSS, Tailwind, and JSX can be converted into editable OpenPencil documents from the app, CLI, and SDK.
 - Add Tailwind class serialization for DOM/CSS HTML export in the SDK and CLI.
