@@ -6,6 +6,7 @@ import { enqueuePutCanvas, enqueuePutThumb, kickSyncEngine } from '@/app/cloud/s
 import {
   encodeThumbnailJpeg,
   extractFigThumbnailPng,
+  isProvisionalCloudThumbnail,
   renderBlankCanvasThumbnailJpeg,
   renderGraphThumbnailPng
 } from '@/app/cloud/thumbnail'
@@ -77,10 +78,13 @@ async function generateAndEnqueueThumb(options: {
     if (png && png.byteLength >= 256) {
       jpeg = await encodeThumbnailJpeg(png)
     } else {
+      // Local placeholder only — never enqueue putThumb for blanks (they stick
+      // on B2 and hydrate as white cards in other sessions).
       jpeg = await renderBlankCanvasThumbnailJpeg()
     }
     if (!jpeg || jpeg.byteLength === 0) return
     await getLocalCanvasStore().writeThumb(options.canvasId, jpeg)
+    if (isProvisionalCloudThumbnail(jpeg)) return
     await enqueuePutThumb(options.canvasId, options.revision)
     void kickSyncEngine()
   } catch (error) {

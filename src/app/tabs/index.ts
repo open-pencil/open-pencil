@@ -17,7 +17,7 @@ import { persistCloudCanvasLocally, seedLocalCanvasFromRemote } from '@/app/clou
 import {
   encodeThumbnailJpeg,
   extractFigThumbnailPng,
-  renderBlankCanvasThumbnailJpeg,
+  isProvisionalCloudThumbnail,
   renderGraphThumbnailPng
 } from '@/app/cloud/thumbnail'
 import type { CloudStorageAdapter } from '@/app/cloud/types'
@@ -201,7 +201,8 @@ async function ensureCloudThumbnailAfterOpen(
   const local = getLocalCanvasStore()
   try {
     const existing = await local.readThumb(canvasId)
-    if (existing && existing.byteLength >= 256) return
+    // Real content thumbs stay; blank/stub placeholders must be regenerated.
+    if (existing && !isProvisionalCloudThumbnail(existing)) return
   } catch (error) {
     console.warn('[Cloud] readThumb probe failed:', error)
   }
@@ -213,21 +214,28 @@ async function ensureCloudThumbnailAfterOpen(
     })
   }
 
+  // Wait a couple frames so the first paint can populate layer pictures.
+  for (let i = 0; i < 2; i++) {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve())
+    })
+  }
+
   try {
-    // Prefer the embedded fig thumbnail: it was rendered from finished content,
-    // while a live render this early can capture a not-yet-painted (blank) page.
+    // Prefer live render once the surface is ready; fall back to a real fig embed
+    // (1×1 stubs are already rejected by extractFigThumbnailPng).
+    store.renderer?.invalidateAllPictures()
+    const live = renderGraphThumbnailPng({
+      graph: store.graph,
+      pageId: store.state.currentPageId,
+      renderer: store.renderer,
+      ck: store.renderer?.ck
+    })
     const png =
-      extractFigThumbnailPng(figBytes) ??
-      renderGraphThumbnailPng({
-        graph: store.graph,
-        pageId: store.state.currentPageId,
-        renderer: store.renderer,
-        ck: store.renderer?.ck
-      })
-    let jpeg: Uint8Array | null = null
-    if (png && png.byteLength >= 256) jpeg = await encodeThumbnailJpeg(png)
-    else jpeg = await renderBlankCanvasThumbnailJpeg()
-    if (!jpeg) return
+      live && live.byteLength >= 256 ? live : extractFigThumbnailPng(figBytes)
+    if (!png || png.byteLength < 256) return
+    const jpeg = await encodeThumbnailJpeg(png)
+    if (isProvisionalCloudThumbnail(jpeg)) return
     const meta = await local.writeThumb(canvasId, jpeg)
     if (meta) {
       const { enqueuePutThumb } = await import('@/app/cloud/sync')
@@ -255,11 +263,11 @@ export async function refreshCloudThumbnail(canvasId: string, store: EditorStore
     if (!png || png.byteLength < 256) return
     const jpeg = await encodeThumbnailJpeg(png)
     const meta = await getLocalCanvasStore().writeThumb(canvasId, jpeg)
-    if (meta) {
-      const { enqueuePutThumb } = await import('@/app/cloud/sync')
-      await enqueuePutThumb(canvasId, meta.revision)
-      void kickSyncEngine()
-    }
+    // Keep blank-looking captures local; wait for real content before putThumb.
+    if (!meta || isProvisionalCloudThumbnail(jpeg)) return
+    const { enqueuePutThumb } = await import('@/app/cloud/sync')
+    await enqueuePutThumb(canvasId, meta.revision)
+    void kickSyncEngine()
   } catch (error) {
     console.warn('[Cloud] Thumbnail refresh failed:', error)
   }

@@ -41,6 +41,7 @@ export type { DesignImportValidation } from '@/app/cloud/validate-import'
 export {
   encodeThumbnailJpeg,
   extractFigThumbnailPng,
+  isProvisionalCloudThumbnail,
   renderBlankCanvasThumbnailJpeg,
   renderGraphThumbnailPng,
   thumbnailBytesToObjectUrl,

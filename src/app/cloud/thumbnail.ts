@@ -15,12 +15,43 @@ const THUMB_JPEG_QUALITY = 0.85
 /** Skip 1×1 / stub thumbnails that some exporters embed. */
 const MIN_THUMB_BYTES = 256
 
+/**
+ * Blank board placeholders we generate are small (~2.5–3.2KB). Real content
+ * thumbs we measured on B2 were ≥6KB. Used only as a heal heuristic for
+ * already-uploaded blanks from older builds (fingerprint set is session-local).
+ */
+const LIKELY_BLANK_BOARD_MAX_BYTES = 3200
+
+/** Fingerprints of blank-board JPEGs generated this session (exact match). */
+const provisionalThumbFingerprints = new Set<string>()
+
 export type ThumbnailRenderSource = {
   graph: SceneGraph
   pageId?: string | null
   /** Prefer the live editor renderer (has fonts + correct page color). */
   renderer?: SkiaRenderer | null
   ck?: CanvasKit | null
+}
+
+function fingerprintThumbBytes(bytes: Uint8Array): string {
+  // FNV-1a 32-bit — fine for small JPEGs, no crypto needed.
+  let hash = 0x811c9dc5
+  for (const byte of bytes) {
+    hash ^= byte
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return `${bytes.length}:${hash >>> 0}`
+}
+
+/**
+ * True for missing/stub embeds and blank-board placeholders.
+ * These must not be treated as final cloud card previews.
+ */
+export function isProvisionalCloudThumbnail(bytes: Uint8Array | null | undefined): boolean {
+  if (!bytes || bytes.byteLength < MIN_THUMB_BYTES) return true
+  if (provisionalThumbFingerprints.has(fingerprintThumbBytes(bytes))) return true
+  // Heal blanks already on disk/B2 from earlier builds (same size band as our template).
+  return bytes.byteLength <= LIKELY_BLANK_BOARD_MAX_BYTES
 }
 
 /**
@@ -111,7 +142,9 @@ export async function renderBlankCanvasThumbnailJpeg(): Promise<Uint8Array | nul
     canvas.toBlob((b) => resolve(b), 'image/jpeg', THUMB_JPEG_QUALITY)
   })
   if (!jpegBlob) return null
-  return new Uint8Array(await jpegBlob.arrayBuffer())
+  const bytes = new Uint8Array(await jpegBlob.arrayBuffer())
+  provisionalThumbFingerprints.add(fingerprintThumbBytes(bytes))
+  return bytes
 }
 
 /**
@@ -163,6 +196,9 @@ async function putJpegThumbnail(
   jpegBytes: Uint8Array
 ): Promise<boolean> {
   if (!adapter.putThumbnail) return false
+  // Never promote blank/stub placeholders to the shared bucket — they stick
+  // forever for other browsers and look like "white" cards on the home grid.
+  if (isProvisionalCloudThumbnail(jpegBytes)) return false
   try {
     await adapter.putThumbnail(canvasId, jpegBytes)
     return true
@@ -197,7 +233,12 @@ export async function uploadFigThumbnail(
  * Priority:
  * 1) Live CanvasKit render of the current page (what the canvas looks like now)
  * 2) Embedded `thumbnail.png` from a .fig ZIP (imported Figma files)
- * 3) Blank artboard placeholder when `allowBlankPlaceholder` (create / empty page)
+ *
+ * Blank-board placeholders stay local-only (home cards hydrate them in-session).
+ * Never upload stubs — they stick on shared storage and show as white cards.
+ *
+ * `allowBlankPlaceholder` is accepted for call-site compatibility but no longer
+ * uploads anything; use local `renderBlankCanvasThumbnailJpeg` for UI-only cards.
  */
 export async function uploadCanvasThumbnail(
   adapter: CloudStorageAdapter,
@@ -208,7 +249,10 @@ export async function uploadCanvasThumbnail(
     pageId?: string | null
     renderer?: SkiaRenderer | null
     ck?: CanvasKit | null
-    /** When true, upload a blank-board JPEG if nothing else is available. */
+    /**
+     * @deprecated Blank placeholders are never uploaded. Kept so callers still
+     * type-check; pass ignored.
+     */
     allowBlankPlaceholder?: boolean
   } = {}
 ): Promise<boolean> {
@@ -240,16 +284,8 @@ export async function uploadCanvasThumbnail(
     if (await uploadFigThumbnail(adapter, canvasId, options.figBytes)) return true
   }
 
-  // 3) Still no image (empty page / no renderer) — generate a board placeholder.
-  if (options.allowBlankPlaceholder) {
-    try {
-      const blank = await renderBlankCanvasThumbnailJpeg()
-      if (blank) return await putJpegThumbnail(adapter, canvasId, blank)
-    } catch (error) {
-      console.warn('[Cloud] Failed to create blank thumbnail:', error)
-    }
-  }
-
+  // Blank placeholders are local-UI only — never promote them to shared storage.
+  // `allowBlankPlaceholder` is intentionally ignored (deprecated).
   return false
 }
 
