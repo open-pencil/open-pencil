@@ -23,9 +23,11 @@ const grammarVersion = ref(0)
 void import('prismjs/components/prism-jsx')
   .then(() => {
     grammarVersion.value += 1
+    return undefined
   })
   .catch(() => {
     // Highlighting degrades to Prism.languages.javascript below.
+    return undefined
   })
 
 const store = useEditorStore()
