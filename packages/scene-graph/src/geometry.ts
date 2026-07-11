@@ -257,6 +257,7 @@ export function intersectVisualBounds(a: VisualBounds, b: VisualBounds): VisualB
 function geometryCommandCoordCount(command: number): number | null {
   if (command === 0) return 0
   if (command === 1 || command === 2) return 1
+  if (command === 3) return 2 // quadTo — glyph-derived blobs use quads
   if (command === 4) return 3
   return null
 }

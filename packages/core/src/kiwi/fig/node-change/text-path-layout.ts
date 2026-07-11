@@ -15,6 +15,8 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
       const command = scaled[offset++]
       let coords = 0
       if (command === 1 || command === 2) coords = 1
+      else if (command === 3)
+        coords = 2 // quadTo — glyph-derived blobs use quads
       else if (command === 4) coords = 3
       for (let i = 0; i < coords; i++) {
         if (offset + 8 > scaled.length) break
@@ -25,9 +27,7 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
     }
     return {
       windingRule: g.windingRule,
-      commandsBlob: scaled,
-      ...(g.styleID != null ? { styleID: g.styleID } : {}),
-      ...(g.fills ? { fills: g.fills } : {})
+      commandsBlob: scaled
     }
   })
 }

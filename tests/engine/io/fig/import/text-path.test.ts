@@ -117,6 +117,62 @@ describe('TEXT_PATH real fixture (optional local)', () => {
   })
 })
 
+function unitSquareBlob(): Uint8Array {
+  const blob = new Uint8Array(1 + 4 * 9 + 1)
+  const view = new DataView(blob.buffer)
+  const pts = [
+    [1, 0, 0],
+    [2, 1, 0],
+    [2, 1, 1],
+    [2, 0, 1]
+  ] as const
+  let offset = 0
+  for (const [cmd, x, y] of pts) {
+    blob[offset] = cmd
+    view.setFloat32(offset + 1, x, true)
+    view.setFloat32(offset + 5, y, true)
+    offset += 9
+  }
+  return blob
+}
+
+describe('TEXT_PATH resize export', () => {
+  test('bakes glyph scaleX/scaleY into blobs — Kiwi Glyph has no scale field', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('TEXT', page.id, {
+      text: 'A',
+      width: 100,
+      height: 100,
+      figmaDerivedTextGlyphs: [
+        {
+          commandsBlob: unitSquareBlob(),
+          x: 10,
+          y: 20,
+          fontSize: 40,
+          rotation: Math.PI / 2,
+          scaleX: 0.5,
+          scaleY: 1
+        }
+      ]
+    })
+    node.source.fig.kiwiNodeType = 'TEXT_PATH'
+
+    const out = await exportFigFile(graph)
+    const reparsed = parseFigBuffer(out)
+    const exported = expectDefined(reparsed.nodeChanges.find((nc) => nc.type === 'TEXT_PATH'))
+    const glyph = expectDefined(exported.derivedTextData?.glyphs?.[0])
+    const blob = expectDefined(reparsed.blobs[expectDefined(glyph.commandsBlob)])
+
+    // At θ=π/2 the horizontal squash lands on the glyph's local Y axis:
+    // (1,1) → (1,0.5). Without baking, reload would draw unscaled shapes at
+    // scaled positions (the DomeSticker save/reopen garble).
+    const view = new DataView(blob.buffer, blob.byteOffset)
+    expect(view.getFloat32(2 * 9 + 1, true)).toBeCloseTo(1, 4)
+    expect(view.getFloat32(2 * 9 + 5, true)).toBeCloseTo(0.5, 4)
+  })
+})
+
 describe('TEXT_PATH edit invalidation', () => {
   test('clears kiwiNodeType when text content is edited', () => {
     const graph = new SceneGraph()

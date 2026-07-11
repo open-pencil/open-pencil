@@ -110,6 +110,47 @@ function appendGlyphBlob(
   return index
 }
 
+/**
+ * Bake accumulated resize scale into a glyph blob (font units). The Kiwi
+ * Glyph schema has no scaleX/scaleY, so exporting them any other way loses
+ * the scale on reload — positions and strokeGeometry persist scaled while
+ * glyph shapes revert, garbling path text (DomeSticker save/reopen bug).
+ * Paint order is T·S·R(−θ)·F (see drawFigmaDerivedText); rewriting points as
+ * p' = F⁻¹·R(θ)·S·R(−θ)·F·p lets the same world transform hold without S.
+ */
+function bakeGlyphScale(
+  blob: Uint8Array,
+  scaleX: number,
+  scaleY: number,
+  rotation: number
+): Uint8Array {
+  if (scaleX === 1 && scaleY === 1) return blob
+  const cos = Math.cos(rotation)
+  const sin = Math.sin(rotation)
+  const m00 = scaleX * cos * cos + scaleY * sin * sin
+  const m01 = (scaleY - scaleX) * sin * cos
+  const m11 = scaleX * sin * sin + scaleY * cos * cos
+  const out = blob.slice()
+  const dv = new DataView(out.buffer, out.byteOffset, out.byteLength)
+  let offset = 0
+  while (offset < out.length) {
+    const command = out[offset++]
+    let coords = 0
+    if (command === 1 || command === 2) coords = 1
+    else if (command === 3)
+      coords = 2 // quadTo — font glyph outlines are quad-heavy
+    else if (command === 4) coords = 3
+    for (let i = 0; i < coords; i++) {
+      const x = dv.getFloat32(offset, true)
+      const y = dv.getFloat32(offset + 4, true)
+      dv.setFloat32(offset, m00 * x + m01 * y, true)
+      dv.setFloat32(offset + 4, m01 * x + m11 * y, true)
+      offset += 8
+    }
+  }
+  return out
+}
+
 function buildDerivedTextData(
   node: SceneNode,
   digestMap: Map<string, Uint8Array>,
@@ -150,7 +191,16 @@ function buildDerivedTextData(
   const glyphs =
     derivedGlyphs.length > 0
       ? derivedGlyphs.map((glyph, index) => ({
-          commandsBlob: appendGlyphBlob(blobs, glyphBlobMap, glyph.commandsBlob),
+          commandsBlob: appendGlyphBlob(
+            blobs,
+            glyphBlobMap,
+            bakeGlyphScale(
+              glyph.commandsBlob,
+              glyph.scaleX ?? 1,
+              glyph.scaleY ?? 1,
+              glyph.rotation ?? 0
+            )
+          ),
           position: { x: glyph.x, y: glyph.y },
           fontSize: glyph.fontSize,
           firstCharacter: index,
