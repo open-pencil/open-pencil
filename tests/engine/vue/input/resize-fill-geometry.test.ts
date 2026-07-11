@@ -117,6 +117,7 @@ describe('resize regenerates vector fill geometry', () => {
       fills: g.fills ? (new Proxy(g.fills, {}) as typeof g.fills) : g.fills
     }))
     const committed: Partial<typeof resized>[] = []
+    let undoPayload: Partial<typeof resized> | null = null
     const commitEditor = {
       graph,
       renderer: undefined,
@@ -125,11 +126,31 @@ describe('resize regenerates vector fill geometry', () => {
         committed.push(changes)
         graph.updateNode(id, changes)
       },
-      commitResize: () => undefined
+      commitResize: (_id: string, orig: object) => {
+        undoPayload = orig
+      }
     } as Editor
     commitResizePreview(drag, commitEditor)
     for (const changes of committed) {
       expect(() => structuredClone(changes)).not.toThrow()
     }
+
+    // the commit persists the scaled fillGeometry…
+    const finalChanges = expectDefined(committed[0])
+    const finalGeo = expectDefined(finalChanges.fillGeometry?.[0])
+    expect(
+      new DataView(finalGeo.commandsBlob.buffer, finalGeo.commandsBlob.byteOffset).getFloat32(
+        10,
+        true
+      )
+    ).toBeCloseTo(50, 3)
+    expect(finalGeo.styleID).toBe(1)
+    expect(finalGeo.fills?.[0]?.color.r).toBeCloseTo(1, 2)
+
+    // …and the undo payload carries the ORIGINAL geometry for rollback
+    const undo = expectDefined(undoPayload)
+    expect(undo.width).toBeCloseTo(100, 3)
+    const undoGeo = expectDefined(undo.fillGeometry?.[0])
+    expect(Buffer.from(undoGeo.commandsBlob).equals(Buffer.from(origBlob))).toBe(true)
   })
 })
