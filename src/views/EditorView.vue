@@ -11,6 +11,7 @@ import { isCloudConfigured } from '@/app/cloud/credentials'
 import { pendingSyncCount, syncStatusLabel, syncUiState } from '@/app/cloud/sync'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
+import { useDesignFileDrop } from '@/app/shell/menu/design-file-drop'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
@@ -84,6 +85,7 @@ async function goToFiles() {
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
+useDesignFileDrop()
 useMenu()
 
 const collab = useCollab(getActiveStore)
