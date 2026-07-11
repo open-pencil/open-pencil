@@ -25,7 +25,7 @@ export function paintFills(
 ): void {
   for (let fi = 0; fi < fills.length; fi++) {
     const fill = fills[fi]
-    if (!fill?.visible) continue
+    if (!fill.visible) continue
     if (!r.applyFill(fill, node, graph, fi)) continue
     r.fillPaint.setAlphaf(fill.opacity)
     r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
@@ -54,7 +54,6 @@ export function drawVectorMultiStyleFills(
   for (let i = 0; i < node.fillGeometry.length; i++) {
     const g = node.fillGeometry[i]
     const path = paths[i]
-    if (!g || !path) continue
     const fills = g.fills && g.fills.length > 0 ? g.fills : node.fills
     paintFills(r, fills, node, graph, () => canvas.drawPath(path, r.fillPaint))
   }
