@@ -12,7 +12,7 @@ const STAR_SVG = `<svg viewBox="0 0 24 24" width="48" height="48">
 </svg>`
 
 describe('SVG drop import', () => {
-  test('createSvgNodes builds a frame of vectors sized from the markup', () => {
+  test('createSvgNodes builds a group of vectors sized from the markup', () => {
     const graph = new SceneGraph()
     const page = expectDefined(graph.getPages()[0])
 
@@ -21,7 +21,7 @@ describe('SVG drop import', () => {
       'imported frame'
     )
 
-    expect(frame.type).toBe('FRAME')
+    expect(frame.type).toBe('GROUP')
     expect(frame.name).toBe('star')
     expect(frame.width).toBe(48)
     expect(frame.height).toBe(48)
@@ -31,6 +31,10 @@ describe('SVG drop import', () => {
     expect(star.type).toBe('VECTOR')
     expect(star.fills[0]?.color.r).toBeCloseTo(1, 2)
     expect(star.fills[0]?.color.g).toBeCloseTo(0.4, 2)
+    // viewBox is 24 units but the node is 48px — coordinates map to node space
+    const network = expectDefined(star.vectorNetwork, 'vectorNetwork')
+    expect(network.vertices[0]?.x).toBeCloseTo(24, 4) // 12 in viewBox units
+    expect(network.vertices[0]?.y).toBeCloseTo(4, 4) // 2 in viewBox units
 
     const border = expectDefined(graph.getNode(frame.childIds[1]))
     expect(border.fills).toHaveLength(0)

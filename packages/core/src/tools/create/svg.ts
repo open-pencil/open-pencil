@@ -32,15 +32,47 @@ function parseSvgSize(svg: string): { width: number; height: number } {
   return { width: 24, height: 24 }
 }
 
+/** Map a parsed network from viewBox units into node-space pixels. */
+function fitNetworkToNode(
+  network: ReturnType<typeof parseSVGPath>,
+  viewBox: Rect | null,
+  width: number,
+  height: number
+) {
+  if (!viewBox || viewBox.width <= 0 || viewBox.height <= 0) return network
+  const sx = width / viewBox.width
+  const sy = height / viewBox.height
+  if (sx === 1 && sy === 1 && viewBox.x === 0 && viewBox.y === 0) return network
+  return {
+    vertices: network.vertices.map((v) => ({
+      ...v,
+      x: (v.x - viewBox.x) * sx,
+      y: (v.y - viewBox.y) * sy
+    })),
+    segments: network.segments.map((seg) => ({
+      ...seg,
+      tangentStart: { x: seg.tangentStart.x * sx, y: seg.tangentStart.y * sy },
+      tangentEnd: { x: seg.tangentEnd.x * sx, y: seg.tangentEnd.y * sy }
+    })),
+    regions: network.regions
+  }
+}
+
 function createVectorFromPath(
   graph: SceneGraph,
   path: IconPathInfo,
+  viewBox: Rect | null,
   width: number,
   height: number,
   parentId: string,
   defaultColor: string
 ) {
-  const vectorNetwork = parseSVGPath(path.d, path.fillRule)
+  const vectorNetwork = fitNetworkToNode(
+    parseSVGPath(path.d, path.fillRule),
+    viewBox,
+    width,
+    height
+  )
   const vector = graph.createNode('VECTOR', parentId, {
     name: 'path',
     width,
@@ -83,8 +115,9 @@ export interface CreateSvgNodesOptions {
   y?: number
 }
 
-/** Parse SVG markup into a frame of vector nodes. Returns the frame, or null
- *  when the markup contains no supported elements. */
+/** Parse SVG markup into a group of vector nodes (group resize scales the
+ *  vectors). Returns the group root, or null when the markup contains no
+ *  supported elements. */
 export function createSvgNodes(
   graph: SceneGraph,
   parentId: string,
@@ -95,21 +128,22 @@ export function createSvgNodes(
   if (paths.length === 0) return null
 
   const { width, height } = parseSvgSize(svg)
+  const viewBox = parseSvgViewBox(svg)
   const defaultColor = options.color ?? '#000000'
 
-  const frame = graph.createNode('FRAME', parentId, {
+  const root = graph.createNode('GROUP', parentId, {
     name: options.name ?? 'SVG',
     width,
     height,
     fills: []
   })
-  if (options.x !== undefined) frame.x = options.x
-  if (options.y !== undefined) frame.y = options.y
+  if (options.x !== undefined) root.x = options.x
+  if (options.y !== undefined) root.y = options.y
 
   for (const path of paths) {
-    createVectorFromPath(graph, path, width, height, frame.id, defaultColor)
+    createVectorFromPath(graph, path, viewBox, width, height, root.id, defaultColor)
   }
-  return frame
+  return root
 }
 
 export const importSvg = defineTool({
