@@ -19,7 +19,14 @@ import type { JSXFormat } from '@open-pencil/core/design-jsx'
 // ESM import and load the jsx grammar dynamically instead.
 ;(globalThis as { Prism?: typeof Prism }).Prism = Prism
 const grammarVersion = ref(0)
-void import('prismjs/components/prism-jsx').then(() => (grammarVersion.value += 1))
+// Dynamic grammar load: success re-highlights; failure leaves JS fallback (no unhandled rejection).
+void import('prismjs/components/prism-jsx')
+  .then(() => {
+    grammarVersion.value += 1
+  })
+  .catch(() => {
+    // Highlighting degrades to Prism.languages.javascript below.
+  })
 
 const store = useEditorStore()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
