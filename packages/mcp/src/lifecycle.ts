@@ -50,9 +50,9 @@ export async function startSocketListener(
   const resolvedPath = socketPathOverride ?? (await getSocketPath())
   if (socketPathOverride) {
     // Create the parent directory for the caller-provided socket path.
-    // Skip getSocketDir() — it would create the platform-default directory
-    // (or the OPENPENCIL_MCP_SOCKET env dir) which is unrelated to this path.
-    await mkdir(dirname(resolvedPath), { recursive: true })
+    // Use mode 0o700 to restrict access to the same OS user, matching
+    // the permissions applied by getSocketDir() for the default path.
+    await mkdir(dirname(resolvedPath), { recursive: true, mode: 0o700 })
   } else {
     // Ensure the default platform socket directory exists.
     await getSocketDir()
@@ -69,6 +69,13 @@ export async function startSocketListener(
       ss.off('error', reject)
       resolve()
     })
+  }).catch((err) => {
+    // If listen() fails (e.g. EADDRINUSE), close the server to prevent
+    // a leak. The caller's catch block in startServer calls
+    // shutdownRuntime, but state.socketResult is null at that point
+    // because this function hasn't returned yet.
+    server.close()
+    throw err
   })
 
   // NOTE: There is a brief TOCTOU window between listen() and chmod() below
@@ -113,6 +120,12 @@ export async function startTcpListener(
       const port = typeof addr === 'object' && addr ? addr.port : httpPort
       resolve(port)
     })
+  }).catch((err) => {
+    // If listen() fails, close the server to prevent a leak.
+    // teardownListeners in the caller won't find it because
+    // state.tcpResult is still null at this point.
+    server.close()
+    throw err
   })
 
   return { server, port: actualPort }

@@ -177,9 +177,11 @@ function createHonoApp(options: {
         }
         return c.json({ error: 'MCP session not found' }, 404)
       }
-      const response = await existing.handleRequest(c.req.raw)
-      mcpSessions.deleteSession(sessionId)
-      return response
+      try {
+        return await existing.handleRequest(c.req.raw)
+      } finally {
+        mcpSessions.deleteSession(sessionId)
+      }
     }
     const transport = await mcpSessions.resolveTransport(sessionId)
     if ('error' in transport) {
