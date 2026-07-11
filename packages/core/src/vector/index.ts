@@ -24,6 +24,7 @@ import type {
 import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
 export { regenerateFillGeometry } from './fill-geometry'
+export { mergeVectorNetworks } from './merge'
 
 // --- vectorNetworkBlob binary format ---
 // Header:  [numVertices:u32, numSegments:u32, numRegions:u32]  (12 bytes)

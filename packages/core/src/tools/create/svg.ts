@@ -1,4 +1,4 @@
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { GeometryPath, SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { parseColor } from '#core/color'
@@ -7,7 +7,7 @@ import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
 import { parseSVGPath } from '#core/io/formats/svg/parse-path'
 import { defineTool } from '#core/tools/schema'
-import { computeAccurateBounds } from '#core/vector'
+import { computeAccurateBounds, mergeVectorNetworks, regenerateFillGeometry } from '#core/vector'
 
 function parseSvgViewBox(svg: string): Rect | null {
   const match = svg.match(/viewBox="([^"]+)"/)
@@ -57,6 +57,72 @@ function fitNetworkToNode(
     })),
     regions: network.regions
   }
+}
+
+function fillForPath(path: IconPathInfo, defaultColor: string) {
+  if (path.fill && path.fill !== 'none') {
+    const color = path.fill === 'currentColor' ? parseColor(defaultColor) : parseColor(path.fill)
+    return { type: 'SOLID' as const, color, opacity: 1, visible: true }
+  }
+  if (path.fill === null && !path.stroke) {
+    return { type: 'SOLID' as const, color: parseColor(defaultColor), opacity: 1, visible: true }
+  }
+  return null
+}
+
+/** Flatten filled paths into one multi-color vector: a single merged network
+ *  whose regions carry per-path fills — the same representation Figma uses
+ *  for imported artwork (per-path fills via fillGeometry styleIDs, #388). */
+function createFlattenedVector(
+  graph: SceneGraph,
+  parentId: string,
+  paths: IconPathInfo[],
+  viewBox: Rect | null,
+  width: number,
+  height: number,
+  defaultColor: string,
+  name: string
+) {
+  const perPath = paths.map((path) => ({
+    network: fitNetworkToNode(parseSVGPath(path.d, path.fillRule), viewBox, width, height),
+    fill: fillForPath(path, defaultColor)
+  }))
+
+  const merged = mergeVectorNetworks(perPath.map((p) => p.network))
+  const bounds = computeAccurateBounds(merged)
+  const vectorNetwork = {
+    vertices: merged.vertices.map((v) => ({ ...v, x: v.x - bounds.x, y: v.y - bounds.y })),
+    segments: merged.segments,
+    regions: merged.regions
+  }
+
+  // One fillGeometry entry per region, carrying the source path's fill; the
+  // command blobs are rebuilt from the network by regenerateFillGeometry.
+  const placeholders: GeometryPath[] = []
+  perPath.forEach((p, index) => {
+    for (const region of p.network.regions) {
+      placeholders.push({
+        windingRule: region.windingRule,
+        commandsBlob: new Uint8Array(0),
+        styleID: index + 1,
+        ...(p.fill ? { fills: [p.fill] } : {})
+      })
+    }
+  })
+  const fillGeometry = regenerateFillGeometry(vectorNetwork, placeholders)
+
+  const firstFill = perPath.find((p) => p.fill)?.fill
+  const vector = graph.createNode('VECTOR', parentId, {
+    name,
+    width: Math.max(bounds.width, 0.01),
+    height: Math.max(bounds.height, 0.01),
+    vectorNetwork,
+    fillGeometry,
+    fills: firstFill ? [firstFill] : []
+  })
+  vector.x = bounds.x
+  vector.y = bounds.y
+  return vector
 }
 
 function createVectorFromPath(
@@ -135,17 +201,39 @@ export function createSvgNodes(
   const { width, height } = parseSvgSize(svg)
   const viewBox = parseSvgViewBox(svg)
   const defaultColor = options.color ?? '#000000'
+  const name = options.name ?? 'SVG'
 
-  const root = graph.createNode('GROUP', parentId, {
-    name: options.name ?? 'SVG',
-    width,
-    height,
-    fills: []
-  })
+  // Filled paths flatten into one multi-color vector; stroked paths keep
+  // their own node (the flattened representation has no per-path strokes).
+  const flattenable = paths.filter(
+    (p) => fillForPath(p, defaultColor) !== null && !(p.stroke && p.stroke !== 'none')
+  )
+  const separate = paths.filter((p) => !flattenable.includes(p))
+
+  if (separate.length === 0) {
+    const vector = createFlattenedVector(
+      graph,
+      parentId,
+      flattenable,
+      viewBox,
+      width,
+      height,
+      defaultColor,
+      name
+    )
+    if (options.x !== undefined) vector.x = options.x
+    if (options.y !== undefined) vector.y = options.y
+    return vector
+  }
+
+  const root = graph.createNode('GROUP', parentId, { name, width, height, fills: [] })
   if (options.x !== undefined) root.x = options.x
   if (options.y !== undefined) root.y = options.y
 
-  for (const path of paths) {
+  if (flattenable.length > 0) {
+    createFlattenedVector(graph, root.id, flattenable, viewBox, width, height, defaultColor, name)
+  }
+  for (const path of separate) {
     createVectorFromPath(graph, path, viewBox, width, height, root.id, defaultColor)
   }
   return root
