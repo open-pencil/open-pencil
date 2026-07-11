@@ -1,3 +1,4 @@
+import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { parseColor } from '#core/color'
@@ -32,7 +33,7 @@ function parseSvgSize(svg: string): { width: number; height: number } {
 }
 
 function createVectorFromPath(
-  figma: Parameters<Parameters<typeof defineTool>[0]['execute']>[0],
+  graph: SceneGraph,
   path: IconPathInfo,
   width: number,
   height: number,
@@ -40,7 +41,7 @@ function createVectorFromPath(
   defaultColor: string
 ) {
   const vectorNetwork = parseSVGPath(path.d, path.fillRule)
-  const vector = figma.graph.createNode('VECTOR', parentId, {
+  const vector = graph.createNode('VECTOR', parentId, {
     name: 'path',
     width,
     height,
@@ -52,27 +53,63 @@ function createVectorFromPath(
   if (path.fill && path.fill !== 'none') {
     const fillColor =
       path.fill === 'currentColor' ? parseColor(defaultColor) : parseColor(path.fill)
-    figma.graph.updateNode(vector.id, {
+    graph.updateNode(vector.id, {
       fills: [{ type: 'SOLID', color: fillColor, opacity: 1, visible: true }]
     })
   } else if (path.fill === null && !path.stroke) {
     const fillColor = parseColor(defaultColor)
-    figma.graph.updateNode(vector.id, {
+    graph.updateNode(vector.id, {
       fills: [{ type: 'SOLID', color: fillColor, opacity: 1, visible: true }]
     })
   } else {
-    figma.graph.updateNode(vector.id, { fills: [] })
+    graph.updateNode(vector.id, { fills: [] })
   }
 
   if (path.stroke && path.stroke !== 'none') {
     const strokeColor =
       path.stroke === 'currentColor' ? parseColor(defaultColor) : parseColor(path.stroke)
-    figma.graph.updateNode(vector.id, {
+    graph.updateNode(vector.id, {
       strokes: [createPathStroke(strokeColor, path.strokeWidth, path.strokeCap, path.strokeJoin)]
     })
   }
 
   return vector
+}
+
+export interface CreateSvgNodesOptions {
+  name?: string
+  color?: string
+  x?: number
+  y?: number
+}
+
+/** Parse SVG markup into a frame of vector nodes. Returns the frame, or null
+ *  when the markup contains no supported elements. */
+export function createSvgNodes(
+  graph: SceneGraph,
+  parentId: string,
+  svg: string,
+  options: CreateSvgNodesOptions = {}
+) {
+  const paths = extractPaths(svg)
+  if (paths.length === 0) return null
+
+  const { width, height } = parseSvgSize(svg)
+  const defaultColor = options.color ?? '#000000'
+
+  const frame = graph.createNode('FRAME', parentId, {
+    name: options.name ?? 'SVG',
+    width,
+    height,
+    fills: []
+  })
+  if (options.x !== undefined) frame.x = options.x
+  if (options.y !== undefined) frame.y = options.y
+
+  for (const path of paths) {
+    createVectorFromPath(graph, path, width, height, frame.id, defaultColor)
+  }
+  return frame
 }
 
 export const importSvg = defineTool({
@@ -99,26 +136,13 @@ export const importSvg = defineTool({
     const svg = args.svg
     if (!svg || typeof svg !== 'string') return { error: 'svg parameter is required' }
 
-    const paths = extractPaths(svg)
-    if (paths.length === 0) return { error: 'No supported SVG elements found in the markup' }
-
-    const { width, height } = parseSvgSize(svg)
-    const defaultColor = args.color ?? '#000000'
-    const parentId = args.parent_id ?? figma.currentPage.id
-
-    const frame = figma.graph.createNode('FRAME', parentId, {
-      name: args.name ?? 'SVG',
-      width,
-      height,
-      fills: []
+    const frame = createSvgNodes(figma.graph, args.parent_id ?? figma.currentPage.id, svg, {
+      name: args.name,
+      color: args.color,
+      x: args.x,
+      y: args.y
     })
-
-    if (args.x !== undefined) frame.x = args.x
-    if (args.y !== undefined) frame.y = args.y
-
-    for (const path of paths) {
-      createVectorFromPath(figma, path, width, height, frame.id, defaultColor)
-    }
+    if (!frame) return { error: 'No supported SVG elements found in the markup' }
 
     return { id: frame.id, name: frame.name, type: frame.type }
   }
