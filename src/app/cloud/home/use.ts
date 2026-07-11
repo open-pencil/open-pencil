@@ -1,5 +1,5 @@
 import { tryOnScopeDispose } from '@vueuse/core'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import { getActiveCloudAdapter } from '@/app/cloud/active'
 import { beginCloudActivity } from '@/app/cloud/activity'
@@ -10,65 +10,26 @@ import {
   duplicateCloudCanvas,
   renameCloudCanvas
 } from '@/app/cloud/home/actions'
-import { reconcileLocalMetas, reconcileRemoteEntries } from '@/app/cloud/home/reconcile'
-import { getLocalCanvasStore } from '@/app/cloud/local-store'
-import type { LocalCanvasMeta } from '@/app/cloud/local-store'
 import {
-  CloudCorsError,
-  formatBrowserCorsHelpMessage,
-  isLikelyCorsOrNetworkError
-} from '@/app/cloud/s3/cors'
-import { getOutbox, kickSyncEngine } from '@/app/cloud/sync'
+  paintFromLocal,
+  reconcileErrorMessage,
+  revokeThumbnailUrls
+} from '@/app/cloud/home/paint'
+import { reconcileLocalMetas, reconcileRemoteEntries } from '@/app/cloud/home/reconcile'
+import { applyLocalMetaToCanvases } from '@/app/cloud/home/sync-badges'
+import { getLocalCanvasStore } from '@/app/cloud/local-store'
+import {
+  getOutbox,
+  kickSyncEngine,
+  pendingSyncCount,
+  uploadProgressByCanvas
+} from '@/app/cloud/sync'
 import { thumbnailBytesToObjectUrl } from '@/app/cloud/thumbnail'
 import type { CloudCanvas } from '@/app/cloud/types'
 import { maybeSeedWelcomeProject } from '@/app/cloud/welcome-seed'
-import { isTauri } from '@/app/tauri/env'
 
 export type CloudHomePhase = 'idle' | 'connecting' | 'listing' | 'done' | 'error'
-
-function revokeThumbnailUrls(list: CloudCanvas[]) {
-  for (const canvas of list) {
-    const url = canvas.thumbnailUrl
-    if (url?.startsWith('blob:')) URL.revokeObjectURL(url)
-  }
-}
-
-function metaToCanvas(meta: LocalCanvasMeta, thumbnailUrl: string | null = null): CloudCanvas {
-  return {
-    id: meta.id,
-    name: meta.name,
-    updatedAt: meta.updatedAt,
-    thumbnailUrl,
-    syncStatus: meta.syncStatus
-  }
-}
-
-function reconcileErrorMessage(e: unknown): string {
-  const isCors = e instanceof CloudCorsError || (!isTauri() && isLikelyCorsOrNetworkError(e))
-  if (isCors) return formatBrowserCorsHelpMessage()
-  return e instanceof Error ? e.message : String(e)
-}
-
-async function paintFromLocal(): Promise<CloudCanvas[]> {
-  const local = getLocalCanvasStore()
-  const metas = await local.listMetas(false)
-  const list: CloudCanvas[] = []
-  for (const meta of metas) {
-    let thumbnailUrl: string | null = null
-    if (meta.hasThumb) {
-      try {
-        const thumb = await local.readThumb(meta.id)
-        if (thumb && thumb.byteLength > 0) {
-          thumbnailUrl = thumbnailBytesToObjectUrl(thumb)
-        }
-      } catch (error) {
-        console.warn('[Cloud] local thumbnail read failed:', meta.id, error)
-      }
-    }
-    list.push(metaToCanvas(meta, thumbnailUrl))
-  }
-  return list
-}
+export { applyLocalMetaToCanvases } from '@/app/cloud/home/sync-badges'
 
 export function useCloudHome() {
   const canvases = ref<CloudCanvas[]>([])
@@ -95,6 +56,34 @@ export function useCloudHome() {
     thumbLoadGeneration += 1
     revokeThumbnailUrls(canvases.value)
   })
+
+  /**
+   * After an outbox put finishes, IDB meta is 'synced' but the home grid still
+   * holds the stale 'pending' snapshot from the last paintFromLocal — so the
+   * blue progress fill clears while the "Syncing" badge sticks forever.
+   * Re-read metas whenever upload progress or queue depth changes.
+   */
+  async function refreshSyncBadgesFromLocal() {
+    if (canvases.value.length === 0) return
+    try {
+      const metas = await getLocalCanvasStore().listMetas(false)
+      const next = applyLocalMetaToCanvases(canvases.value, metas)
+      if (next !== canvases.value) canvases.value = next
+    } catch (error) {
+      console.warn('[Cloud] sync badge refresh failed:', error)
+    }
+  }
+
+  watch(pendingSyncCount, () => {
+    void refreshSyncBadgesFromLocal()
+  })
+  // Key set only — ignore 0..1 fraction ticks during the upload fill animation.
+  watch(
+    () => [...uploadProgressByCanvas.value.keys()].sort().join('\0'),
+    () => {
+      void refreshSyncBadgesFromLocal()
+    }
+  )
 
   async function hydrateMissingThumbs(list: CloudCanvas[]) {
     const adapter = getActiveCloudAdapter()
