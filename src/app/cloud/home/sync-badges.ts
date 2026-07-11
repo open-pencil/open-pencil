@@ -7,7 +7,6 @@ export function applyLocalMetaToCanvases(
   metas: LocalCanvasMeta[]
 ): CloudCanvas[] {
   const byId = new Map(metas.map((m) => [m.id, m]))
-  let changed = false
   const next = list.map((canvas) => {
     const meta = byId.get(canvas.id)
     if (!meta) return canvas
@@ -18,7 +17,6 @@ export function applyLocalMetaToCanvases(
     ) {
       return canvas
     }
-    changed = true
     return {
       ...canvas,
       name: meta.name,
@@ -26,5 +24,7 @@ export function applyLocalMetaToCanvases(
       syncStatus: meta.syncStatus
     }
   })
-  return changed ? next : list
+  // keep the original array identity when nothing changed (control-flow
+  // analysis can't see closure mutations, so no flag variable here)
+  return next.some((canvas, i) => canvas !== list[i]) ? next : list
 }
