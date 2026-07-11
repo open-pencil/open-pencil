@@ -3,7 +3,9 @@ export { tryStartResize } from '#vue/shared/input/resize/start'
 import type { Editor } from '@open-pencil/core/editor'
 import { computeLayout } from '@open-pencil/core/layout'
 import { regenerateFillGeometry } from '@open-pencil/core/vector'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
@@ -92,8 +94,11 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
     width: node.width,
     height: node.height
   }
-  if (node.vectorNetwork) finalChanges.vectorNetwork = node.vectorNetwork
-  if (node.fillGeometry.length > 0) finalChanges.fillGeometry = node.fillGeometry
+  // Deep-copy geometry read back from the previewed node — preview values can
+  // be reactivity-wrapped, and storing proxies breaks structuredClone snapshots
+  // (delete/undo would throw DataCloneError).
+  if (node.vectorNetwork) finalChanges.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
+  if (node.fillGeometry.length > 0) finalChanges.fillGeometry = copyGeometryPaths(node.fillGeometry)
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
@@ -106,8 +111,8 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
         width: child.width,
         height: child.height
       }
-      if (child.vectorNetwork) final.vectorNetwork = child.vectorNetwork
-      if (child.fillGeometry.length > 0) final.fillGeometry = child.fillGeometry
+      if (child.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(child.vectorNetwork)
+      if (child.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(child.fillGeometry)
       finalChildren.set(childId, final)
     }
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
