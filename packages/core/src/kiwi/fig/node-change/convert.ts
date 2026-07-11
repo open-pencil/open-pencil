@@ -11,6 +11,7 @@ export { importStyleRuns } from './style-runs'
 import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
+import { expandPathTextLayoutBox } from './text-path-layout'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
@@ -571,7 +572,7 @@ export function nodeChangeToProps(
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
 
-  return {
+  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
     nodeType,
     name: nc.name ?? nodeType,
     source: extractSourceMetadata(nc, blobs),
@@ -616,6 +617,11 @@ export function nodeChangeToProps(
     componentPropertyValues: extractComponentPropertyValues(nc),
     ...extractComponentMetadata(nc)
   }
+
+  // TEXT_PATH outlines often sit outside the layout box; expand so parent
+  // clipsContent frames don't shave the left/bottom of circular lettering.
+  expandPathTextLayoutBox(props)
+  return props
 }
 
 const COMPONENT_PROP_TYPE_MAP: Record<string, ComponentPropertyType> = {

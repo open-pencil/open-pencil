@@ -48,10 +48,16 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
   if (!canCull) return false
 
   const vp = r.worldViewport
+  // Path text / strokeGeometry can extend past width×height — pad cull box so
+  // overflow lettering isn't skipped when only the outline is on-screen.
+  let pad = 0
+  if (node.strokeGeometry.length > 0 || (node.figmaDerivedTextGlyphs?.length ?? 0) > 0) {
+    pad = Math.max(node.width, node.height, 64) * 0.25
+  }
   const bw = node.width
   const bh = node.height
   if (node.rotation !== 0) {
-    const diag = Math.hypot(bw, bh)
+    const diag = Math.hypot(bw, bh) + pad * 2
     const cx = absX + bw / 2
     const cy = absY + bh / 2
     return (
@@ -61,7 +67,12 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
       cy + diag / 2 < vp.y
     )
   }
-  return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
+  return (
+    absX - pad > vp.x + vp.w ||
+    absY - pad > vp.y + vp.h ||
+    absX + bw + pad < vp.x ||
+    absY + bh + pad < vp.y
+  )
 }
 
 function applyNodeTransforms(
@@ -688,12 +699,14 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   if (!text) return
 
   canvas.save()
-  // Path text glyphs often sit outside the layout box — do not clip them away.
-  const hasPathText =
-    node.figmaDerivedTextGlyphs?.some((g) => (g.rotation ?? 0) !== 0) === true ||
-    node.source.fig.kiwiNodeType === 'TEXT_PATH'
+  // Path text / derived glyphs / precomputed stroke outlines often sit outside
+  // the layout box — never clip those away (left side of circular lettering).
+  const hasOverflowTextPaint =
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' ||
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
+    node.strokeGeometry.length > 0
   const shouldClipText =
-    !hasPathText && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
+    !hasOverflowTextPaint && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
   if (shouldClipText) {
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }

@@ -30,7 +30,15 @@ function snapshotNodeGeometry(node: SceneNode): OrigChildState {
 
 function collectDescendants(id: string, editor: Editor): Map<string, OrigChildState> | null {
   const node = editor.graph.getNode(id)
-  if (!node || (node.type !== 'GROUP' && node.type !== 'BOOLEAN_OPERATION')) return null
+  if (!node) return null
+  // Freeform frames (no auto-layout) scale children like groups so stickers
+  // (e.g. DomeSticker) resize as a unit and path text isn't clipped by a
+  // shrunken clipsContent box while content stays full size.
+  const scalesChildren =
+    node.type === 'GROUP' ||
+    node.type === 'BOOLEAN_OPERATION' ||
+    (node.type === 'FRAME' && node.layoutMode === 'NONE')
+  if (!scalesChildren) return null
   const map = new Map<string, OrigChildState>()
   const stack = [...node.childIds]
   while (stack.length > 0) {
