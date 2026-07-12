@@ -1,5 +1,7 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
+import { toRaw } from 'vue'
+
 import type { Editor } from '@open-pencil/core/editor'
 import { computeLayout } from '@open-pencil/core/layout'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
@@ -116,12 +118,17 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
 }
 
 export function applyResize(
-  d: DragResize,
+  dragState: DragResize,
   cx: number,
   cy: number,
   constrain: boolean,
   editor: Editor
 ) {
+  // Drag state lives in Vue-reactive input state; nested arrays read through
+  // it are reactive proxies. Writing those into the graph poisons it for
+  // structuredClone consumers (export subgraph clone, undo snapshots) with
+  // DataCloneError. Unwrap once — also keeps the drag hot path off proxies.
+  const d = toRaw(dragState)
   const { changes, newRect } = resizeChanges(d, cx, cy, constrain)
   editor.graph.updateNodePreview(d.nodeId, changes)
   if (changes.fillGeometry || changes.strokeGeometry || changes.vectorNetwork) {
@@ -177,7 +184,9 @@ function finalGeometrySnapshot(node: SceneNode): Partial<SceneNode> {
   return final
 }
 
-export function commitResizePreview(d: DragResize, editor: Editor) {
+export function commitResizePreview(dragState: DragResize, editor: Editor) {
+  // See applyResize — reactive drag state must not leak into graph writes.
+  const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
   const finalChanges = finalGeometrySnapshot(node)

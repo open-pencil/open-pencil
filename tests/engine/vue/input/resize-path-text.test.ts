@@ -1,11 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 
+import { reactive } from 'vue'
+
 import type { Editor } from '@open-pencil/core/editor'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { FigmaDerivedTextGlyph, Fill, Stroke } from '@open-pencil/scene-graph'
+import type { FigmaDerivedTextGlyph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 
-import { applyResize } from '#vue/shared/input/resize'
+import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize, OrigChildState } from '#vue/shared/input/types'
 
 import { expectDefined } from '#tests/helpers/assert'
@@ -143,6 +145,76 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
     expect(g0.rotation).toBeCloseTo(-1.5, 4)
 
     expect(resized.strokes[0]?.weight).toBeCloseTo(2, 3)
+  })
+
+  test('reactive drag state does not leak proxies into the graph', () => {
+    // The app stores DragResize in a Vue ref, so commit-time reads through it
+    // yield reactive proxies. Writing those into the graph made every
+    // structuredClone consumer throw DataCloneError (export subgraph clone).
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const group = graph.createNode('GROUP', page.id, { x: 0, y: 0, width: 200, height: 200 })
+    const text = graph.createNode('TEXT', group.id, {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 200,
+      text: 'A',
+      fills: [BLACK],
+      strokes: [WHITE_STROKE],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareBlob(200) }],
+      figmaDerivedTextGlyphs: [
+        { commandsBlob: squareBlob(1), x: 100, y: 50, fontSize: 80, rotation: -1.5 }
+      ]
+    })
+
+    const editor = {
+      graph,
+      renderer: undefined,
+      requestRepaint: () => undefined,
+      updateNode: (id: string, changes: Partial<SceneNode>) => graph.updateNode(id, changes),
+      commitGroupResize: () => undefined,
+      commitResize: () => undefined
+    } as Editor
+
+    const origChild: OrigChildState = {
+      x: text.x,
+      y: text.y,
+      width: text.width,
+      height: text.height,
+      vectorNetwork: null,
+      fillGeometry: [],
+      strokeGeometry: copyGeometryPaths(text.strokeGeometry),
+      figmaDerivedTextGlyphs: expectDefined(text.figmaDerivedTextGlyphs).map((g) => ({
+        ...g,
+        commandsBlob: new Uint8Array(g.commandsBlob)
+      })),
+      strokes: copyStrokes(text.strokes)
+    }
+    const drag: DragResize = reactive({
+      type: 'resize',
+      handle: 'se',
+      startX: 200,
+      startY: 200,
+      origRect: { x: 0, y: 0, width: 200, height: 200 },
+      nodeId: group.id,
+      origVectorNetwork: null,
+      origFillGeometry: [],
+      origStrokeGeometry: [],
+      origFigmaDerivedTextGlyphs: null,
+      origStrokes: [],
+      origChildren: new Map([[text.id, origChild]])
+    }) as DragResize
+
+    applyResize(drag, 100, 100, false, editor)
+    commitResizePreview(drag, editor)
+
+    for (const id of [group.id, text.id]) {
+      const node = expectDefined(graph.getNode(id))
+      for (const key of Object.keys(node) as (keyof SceneNode)[]) {
+        expect(() => structuredClone(node[key])).not.toThrow()
+      }
+    }
   })
 
   test('width/height resize does not drop derived glyphs', () => {
