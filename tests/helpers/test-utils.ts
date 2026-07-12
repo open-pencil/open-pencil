@@ -15,7 +15,10 @@ const isBun = typeof Bun !== 'undefined'
 const bunDescribe = isBun ? (await import('bun:test')).describe : undefined
 
 export const heavy: (name: string, fn: () => void) => void =
-  bunDescribe?.if(runsHeavyTests) ?? (() => { /* no-op outside Bun runtime */ })
+  bunDescribe?.if(runsHeavyTests) ??
+  (() => {
+    /* no-op outside Bun runtime */
+  })
 
 // Default per-test timeout in CI is often too short for fixture I/O tests that parse/export
 // real .fig files. Use this timeout for tests that are bounded by fixture parsing speed.

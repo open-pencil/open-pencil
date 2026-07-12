@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { watch } from 'vue'
 
+import { IS_BROWSER } from '@open-pencil/core/constants'
 import {
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
   WEB_FONT_PROVIDER_IDS,
@@ -11,7 +12,6 @@ import {
   type LocalFontAccessState,
   type WebFontProviderId
 } from '@open-pencil/core/text'
-import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { dialogMessages } from '@open-pencil/vue'
 
